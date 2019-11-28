@@ -69,14 +69,39 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>IS_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -84,7 +109,22 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>false</OmitFramePointers>
+      <PreprocessorDefinitions>IS_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -94,11 +134,26 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <PreprocessorDefinitions>IS_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Windows</SubSystem>
     </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -108,15 +163,274 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <PreprocessorDefinitions>IS_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Windows</SubSystem>
     </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <FxCompile Include="PSBasic.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PSRectangle.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PSTexture.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PSTriangle.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="VSBasic.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="VSColor.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="VSTexture.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="Ball.h" />
+    <ClInclude Include="BasicException.h" />
+    <ClInclude Include="BasicTypes.h" />
+    <ClInclude Include="Box.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="ConstantPixelBuffer.h" />
+    <ClInclude Include="ConstantTransformBuffer.h" />
+    <ClInclude Include="ConstantVertexBuffer.h" />
+    <ClInclude Include="Cube.h" />
+    <ClInclude Include="DXGIDebugInfoManager.h" />
+    <ClInclude Include="GDIPlusManager.h" />
+    <ClInclude Include="GfxExceptionMacros.h" />
+    <ClInclude Include="GfxResources.h" />
+    <ClInclude Include="Globe.h" />
+    <ClInclude Include="Graphics.h" />
+    <ClInclude Include="GUIManager.h" />
+    <ClInclude Include="IBindable.h" />
+    <ClInclude Include="IDrawable.h" />
+    <ClInclude Include="ImGui\imconfig.h" />
+    <ClInclude Include="ImGui\imgui.h" />
+    <ClInclude Include="ImGui\imgui_freetype.h" />
+    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ImGui\imgui_internal.h" />
+    <ClInclude Include="ImGui\imgui_stdlib.h" />
+    <ClInclude Include="ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ImGui\imstb_textedit.h" />
+    <ClInclude Include="ImGui\imstb_truetype.h" />
+    <ClInclude Include="IndexBuffer.h" />
+    <ClInclude Include="IndexedTriangleList.h" />
+    <ClInclude Include="InputLayout.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Math.h" />
+    <ClInclude Include="Mouse.h" />
+    <ClInclude Include="ObjectBase.h" />
+    <ClInclude Include="Objects.h" />
+    <ClInclude Include="ObjLoader.h" />
+    <ClInclude Include="PixelShader.h" />
+    <ClInclude Include="Primitives.h" />
+    <ClInclude Include="Rectangle.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Sampler.h" />
+    <ClInclude Include="Sphere.h" />
+    <ClInclude Include="Square.h" />
+    <ClInclude Include="Surface.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
+    <ClInclude Include="Topology.h" />
+    <ClInclude Include="Triangle.h" />
+    <ClInclude Include="VertexBuffer.h" />
+    <ClInclude Include="VertexShader.h" />
+    <ClInclude Include="WinAPI.h" />
+    <ClInclude Include="WinApiException.h" />
+    <ClInclude Include="Window.h" />
+    <ClInclude Include="WindowExceptionMacros.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="BasicException.cpp" />
+    <ClCompile Include="BasicTypes.cpp" />
+    <ClCompile Include="Box.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="ConstantTransformBuffer.cpp" />
+    <ClCompile Include="DXGIDebugInfoManager.cpp" />
+    <ClCompile Include="GDIPlusManager.cpp" />
+    <ClCompile Include="Globe.cpp" />
+    <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="GUIManager.cpp" />
+    <ClCompile Include="IDrawable.cpp" />
+    <ClCompile Include="ImGui\imgui.cpp" />
+    <ClCompile Include="ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ImGui\imgui_freetype.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ImGui\imgui_stdlib.cpp" />
+    <ClCompile Include="ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="IndexBuffer.cpp" />
+    <ClCompile Include="InputLayout.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="ObjLoader.cpp" />
+    <ClCompile Include="PixelShader.cpp" />
+    <ClCompile Include="Rectangle.cpp" />
+    <ClCompile Include="Sampler.cpp" />
+    <ClCompile Include="Surface.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="Triangle.cpp" />
+    <ClCompile Include="VertexShader.cpp" />
+    <ClCompile Include="WinApiException.cpp" />
+    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="WinMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="HorusEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\boost.1.71.0.0\build\boost.targets" Condition="Exists('..\packages\boost.1.71.0.0\build\boost.targets')" />
+    <Import Project="..\packages\boost_atomic-vc141.1.71.0.0\build\boost_atomic-vc141.targets" Condition="Exists('..\packages\boost_atomic-vc141.1.71.0.0\build\boost_atomic-vc141.targets')" />
+    <Import Project="..\packages\boost_bzip2-vc141.1.71.0.0\build\boost_bzip2-vc141.targets" Condition="Exists('..\packages\boost_bzip2-vc141.1.71.0.0\build\boost_bzip2-vc141.targets')" />
+    <Import Project="..\packages\boost_chrono-vc141.1.71.0.0\build\boost_chrono-vc141.targets" Condition="Exists('..\packages\boost_chrono-vc141.1.71.0.0\build\boost_chrono-vc141.targets')" />
+    <Import Project="..\packages\boost_container-vc141.1.71.0.0\build\boost_container-vc141.targets" Condition="Exists('..\packages\boost_container-vc141.1.71.0.0\build\boost_container-vc141.targets')" />
+    <Import Project="..\packages\boost_context-vc141.1.71.0.0\build\boost_context-vc141.targets" Condition="Exists('..\packages\boost_context-vc141.1.71.0.0\build\boost_context-vc141.targets')" />
+    <Import Project="..\packages\boost_contract-vc141.1.71.0.0\build\boost_contract-vc141.targets" Condition="Exists('..\packages\boost_contract-vc141.1.71.0.0\build\boost_contract-vc141.targets')" />
+    <Import Project="..\packages\boost_coroutine-vc141.1.71.0.0\build\boost_coroutine-vc141.targets" Condition="Exists('..\packages\boost_coroutine-vc141.1.71.0.0\build\boost_coroutine-vc141.targets')" />
+    <Import Project="..\packages\boost_date_time-vc141.1.71.0.0\build\boost_date_time-vc141.targets" Condition="Exists('..\packages\boost_date_time-vc141.1.71.0.0\build\boost_date_time-vc141.targets')" />
+    <Import Project="..\packages\boost_exception-vc141.1.71.0.0\build\boost_exception-vc141.targets" Condition="Exists('..\packages\boost_exception-vc141.1.71.0.0\build\boost_exception-vc141.targets')" />
+    <Import Project="..\packages\boost_fiber-vc141.1.71.0.0\build\boost_fiber-vc141.targets" Condition="Exists('..\packages\boost_fiber-vc141.1.71.0.0\build\boost_fiber-vc141.targets')" />
+    <Import Project="..\packages\boost_filesystem-vc141.1.71.0.0\build\boost_filesystem-vc141.targets" Condition="Exists('..\packages\boost_filesystem-vc141.1.71.0.0\build\boost_filesystem-vc141.targets')" />
+    <Import Project="..\packages\boost_graph-vc141.1.71.0.0\build\boost_graph-vc141.targets" Condition="Exists('..\packages\boost_graph-vc141.1.71.0.0\build\boost_graph-vc141.targets')" />
+    <Import Project="..\packages\boost_iostreams-vc141.1.71.0.0\build\boost_iostreams-vc141.targets" Condition="Exists('..\packages\boost_iostreams-vc141.1.71.0.0\build\boost_iostreams-vc141.targets')" />
+    <Import Project="..\packages\boost_locale-vc141.1.71.0.0\build\boost_locale-vc141.targets" Condition="Exists('..\packages\boost_locale-vc141.1.71.0.0\build\boost_locale-vc141.targets')" />
+    <Import Project="..\packages\boost_log-vc141.1.71.0.0\build\boost_log-vc141.targets" Condition="Exists('..\packages\boost_log-vc141.1.71.0.0\build\boost_log-vc141.targets')" />
+    <Import Project="..\packages\boost_log_setup-vc141.1.71.0.0\build\boost_log_setup-vc141.targets" Condition="Exists('..\packages\boost_log_setup-vc141.1.71.0.0\build\boost_log_setup-vc141.targets')" />
+    <Import Project="..\packages\boost_math_c99-vc141.1.71.0.0\build\boost_math_c99-vc141.targets" Condition="Exists('..\packages\boost_math_c99-vc141.1.71.0.0\build\boost_math_c99-vc141.targets')" />
+    <Import Project="..\packages\boost_math_c99f-vc141.1.71.0.0\build\boost_math_c99f-vc141.targets" Condition="Exists('..\packages\boost_math_c99f-vc141.1.71.0.0\build\boost_math_c99f-vc141.targets')" />
+    <Import Project="..\packages\boost_math_c99l-vc141.1.71.0.0\build\boost_math_c99l-vc141.targets" Condition="Exists('..\packages\boost_math_c99l-vc141.1.71.0.0\build\boost_math_c99l-vc141.targets')" />
+    <Import Project="..\packages\boost_math_tr1-vc141.1.71.0.0\build\boost_math_tr1-vc141.targets" Condition="Exists('..\packages\boost_math_tr1-vc141.1.71.0.0\build\boost_math_tr1-vc141.targets')" />
+    <Import Project="..\packages\boost_math_tr1f-vc141.1.71.0.0\build\boost_math_tr1f-vc141.targets" Condition="Exists('..\packages\boost_math_tr1f-vc141.1.71.0.0\build\boost_math_tr1f-vc141.targets')" />
+    <Import Project="..\packages\boost_math_tr1l-vc141.1.71.0.0\build\boost_math_tr1l-vc141.targets" Condition="Exists('..\packages\boost_math_tr1l-vc141.1.71.0.0\build\boost_math_tr1l-vc141.targets')" />
+    <Import Project="..\packages\boost_prg_exec_monitor-vc141.1.71.0.0\build\boost_prg_exec_monitor-vc141.targets" Condition="Exists('..\packages\boost_prg_exec_monitor-vc141.1.71.0.0\build\boost_prg_exec_monitor-vc141.targets')" />
+    <Import Project="..\packages\boost_program_options-vc141.1.71.0.0\build\boost_program_options-vc141.targets" Condition="Exists('..\packages\boost_program_options-vc141.1.71.0.0\build\boost_program_options-vc141.targets')" />
+    <Import Project="..\packages\boost_python37-vc141.1.71.0.0\build\boost_python37-vc141.targets" Condition="Exists('..\packages\boost_python37-vc141.1.71.0.0\build\boost_python37-vc141.targets')" />
+    <Import Project="..\packages\boost_random-vc141.1.71.0.0\build\boost_random-vc141.targets" Condition="Exists('..\packages\boost_random-vc141.1.71.0.0\build\boost_random-vc141.targets')" />
+    <Import Project="..\packages\boost_regex-vc141.1.71.0.0\build\boost_regex-vc141.targets" Condition="Exists('..\packages\boost_regex-vc141.1.71.0.0\build\boost_regex-vc141.targets')" />
+    <Import Project="..\packages\boost_serialization-vc141.1.71.0.0\build\boost_serialization-vc141.targets" Condition="Exists('..\packages\boost_serialization-vc141.1.71.0.0\build\boost_serialization-vc141.targets')" />
+    <Import Project="..\packages\boost_stacktrace_noop-vc141.1.71.0.0\build\boost_stacktrace_noop-vc141.targets" Condition="Exists('..\packages\boost_stacktrace_noop-vc141.1.71.0.0\build\boost_stacktrace_noop-vc141.targets')" />
+    <Import Project="..\packages\boost_stacktrace_windbg-vc141.1.71.0.0\build\boost_stacktrace_windbg-vc141.targets" Condition="Exists('..\packages\boost_stacktrace_windbg-vc141.1.71.0.0\build\boost_stacktrace_windbg-vc141.targets')" />
+    <Import Project="..\packages\boost_stacktrace_windbg_cached-vc141.1.71.0.0\build\boost_stacktrace_windbg_cached-vc141.targets" Condition="Exists('..\packages\boost_stacktrace_windbg_cached-vc141.1.71.0.0\build\boost_stacktrace_windbg_cached-vc141.targets')" />
+    <Import Project="..\packages\boost_system-vc141.1.71.0.0\build\boost_system-vc141.targets" Condition="Exists('..\packages\boost_system-vc141.1.71.0.0\build\boost_system-vc141.targets')" />
+    <Import Project="..\packages\boost_test_exec_monitor-vc141.1.71.0.0\build\boost_test_exec_monitor-vc141.targets" Condition="Exists('..\packages\boost_test_exec_monitor-vc141.1.71.0.0\build\boost_test_exec_monitor-vc141.targets')" />
+    <Import Project="..\packages\boost_thread-vc141.1.71.0.0\build\boost_thread-vc141.targets" Condition="Exists('..\packages\boost_thread-vc141.1.71.0.0\build\boost_thread-vc141.targets')" />
+    <Import Project="..\packages\boost_timer-vc141.1.71.0.0\build\boost_timer-vc141.targets" Condition="Exists('..\packages\boost_timer-vc141.1.71.0.0\build\boost_timer-vc141.targets')" />
+    <Import Project="..\packages\boost_type_erasure-vc141.1.71.0.0\build\boost_type_erasure-vc141.targets" Condition="Exists('..\packages\boost_type_erasure-vc141.1.71.0.0\build\boost_type_erasure-vc141.targets')" />
+    <Import Project="..\packages\boost_unit_test_framework-vc141.1.71.0.0\build\boost_unit_test_framework-vc141.targets" Condition="Exists('..\packages\boost_unit_test_framework-vc141.1.71.0.0\build\boost_unit_test_framework-vc141.targets')" />
+    <Import Project="..\packages\boost_wave-vc141.1.71.0.0\build\boost_wave-vc141.targets" Condition="Exists('..\packages\boost_wave-vc141.1.71.0.0\build\boost_wave-vc141.targets')" />
+    <Import Project="..\packages\boost_wserialization-vc141.1.71.0.0\build\boost_wserialization-vc141.targets" Condition="Exists('..\packages\boost_wserialization-vc141.1.71.0.0\build\boost_wserialization-vc141.targets')" />
+    <Import Project="..\packages\boost_zlib-vc141.1.71.0.0\build\boost_zlib-vc141.targets" Condition="Exists('..\packages\boost_zlib-vc141.1.71.0.0\build\boost_zlib-vc141.targets')" />
+    <Import Project="..\packages\boost-vc141.1.71.0.0\build\boost-vc141.targets" Condition="Exists('..\packages\boost-vc141.1.71.0.0\build\boost-vc141.targets')" />
+    <Import Project="..\packages\freetype2.2.6.0.1\build\native\freetype2.targets" Condition="Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\boost.1.71.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.71.0.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_atomic-vc141.1.71.0.0\build\boost_atomic-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_atomic-vc141.1.71.0.0\build\boost_atomic-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_bzip2-vc141.1.71.0.0\build\boost_bzip2-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_bzip2-vc141.1.71.0.0\build\boost_bzip2-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_chrono-vc141.1.71.0.0\build\boost_chrono-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_chrono-vc141.1.71.0.0\build\boost_chrono-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_container-vc141.1.71.0.0\build\boost_container-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_container-vc141.1.71.0.0\build\boost_container-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_context-vc141.1.71.0.0\build\boost_context-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_context-vc141.1.71.0.0\build\boost_context-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_contract-vc141.1.71.0.0\build\boost_contract-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_contract-vc141.1.71.0.0\build\boost_contract-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_coroutine-vc141.1.71.0.0\build\boost_coroutine-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_coroutine-vc141.1.71.0.0\build\boost_coroutine-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_date_time-vc141.1.71.0.0\build\boost_date_time-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_date_time-vc141.1.71.0.0\build\boost_date_time-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_exception-vc141.1.71.0.0\build\boost_exception-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_exception-vc141.1.71.0.0\build\boost_exception-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_fiber-vc141.1.71.0.0\build\boost_fiber-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_fiber-vc141.1.71.0.0\build\boost_fiber-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_filesystem-vc141.1.71.0.0\build\boost_filesystem-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_filesystem-vc141.1.71.0.0\build\boost_filesystem-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_graph-vc141.1.71.0.0\build\boost_graph-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_graph-vc141.1.71.0.0\build\boost_graph-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_iostreams-vc141.1.71.0.0\build\boost_iostreams-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_iostreams-vc141.1.71.0.0\build\boost_iostreams-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_locale-vc141.1.71.0.0\build\boost_locale-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_locale-vc141.1.71.0.0\build\boost_locale-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_log-vc141.1.71.0.0\build\boost_log-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_log-vc141.1.71.0.0\build\boost_log-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_log_setup-vc141.1.71.0.0\build\boost_log_setup-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_log_setup-vc141.1.71.0.0\build\boost_log_setup-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_c99-vc141.1.71.0.0\build\boost_math_c99-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_c99-vc141.1.71.0.0\build\boost_math_c99-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_c99f-vc141.1.71.0.0\build\boost_math_c99f-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_c99f-vc141.1.71.0.0\build\boost_math_c99f-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_c99l-vc141.1.71.0.0\build\boost_math_c99l-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_c99l-vc141.1.71.0.0\build\boost_math_c99l-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_tr1-vc141.1.71.0.0\build\boost_math_tr1-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_tr1-vc141.1.71.0.0\build\boost_math_tr1-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_tr1f-vc141.1.71.0.0\build\boost_math_tr1f-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_tr1f-vc141.1.71.0.0\build\boost_math_tr1f-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_math_tr1l-vc141.1.71.0.0\build\boost_math_tr1l-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_math_tr1l-vc141.1.71.0.0\build\boost_math_tr1l-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_prg_exec_monitor-vc141.1.71.0.0\build\boost_prg_exec_monitor-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_prg_exec_monitor-vc141.1.71.0.0\build\boost_prg_exec_monitor-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_program_options-vc141.1.71.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_program_options-vc141.1.71.0.0\build\boost_program_options-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_python37-vc141.1.71.0.0\build\boost_python37-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_python37-vc141.1.71.0.0\build\boost_python37-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_random-vc141.1.71.0.0\build\boost_random-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_random-vc141.1.71.0.0\build\boost_random-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_regex-vc141.1.71.0.0\build\boost_regex-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_regex-vc141.1.71.0.0\build\boost_regex-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_serialization-vc141.1.71.0.0\build\boost_serialization-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_serialization-vc141.1.71.0.0\build\boost_serialization-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_stacktrace_noop-vc141.1.71.0.0\build\boost_stacktrace_noop-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_stacktrace_noop-vc141.1.71.0.0\build\boost_stacktrace_noop-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_stacktrace_windbg-vc141.1.71.0.0\build\boost_stacktrace_windbg-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_stacktrace_windbg-vc141.1.71.0.0\build\boost_stacktrace_windbg-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_stacktrace_windbg_cached-vc141.1.71.0.0\build\boost_stacktrace_windbg_cached-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_stacktrace_windbg_cached-vc141.1.71.0.0\build\boost_stacktrace_windbg_cached-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_system-vc141.1.71.0.0\build\boost_system-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_system-vc141.1.71.0.0\build\boost_system-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_test_exec_monitor-vc141.1.71.0.0\build\boost_test_exec_monitor-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_test_exec_monitor-vc141.1.71.0.0\build\boost_test_exec_monitor-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_thread-vc141.1.71.0.0\build\boost_thread-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_thread-vc141.1.71.0.0\build\boost_thread-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_timer-vc141.1.71.0.0\build\boost_timer-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_timer-vc141.1.71.0.0\build\boost_timer-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_type_erasure-vc141.1.71.0.0\build\boost_type_erasure-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_type_erasure-vc141.1.71.0.0\build\boost_type_erasure-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_unit_test_framework-vc141.1.71.0.0\build\boost_unit_test_framework-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_unit_test_framework-vc141.1.71.0.0\build\boost_unit_test_framework-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_wave-vc141.1.71.0.0\build\boost_wave-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_wave-vc141.1.71.0.0\build\boost_wave-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_wserialization-vc141.1.71.0.0\build\boost_wserialization-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_wserialization-vc141.1.71.0.0\build\boost_wserialization-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost_zlib-vc141.1.71.0.0\build\boost_zlib-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_zlib-vc141.1.71.0.0\build\boost_zlib-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\boost-vc141.1.71.0.0\build\boost-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost-vc141.1.71.0.0\build\boost-vc141.targets'))" />
+    <Error Condition="!Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\freetype2.2.6.0.1\build\native\freetype2.targets'))" />
+  </Target>
 </Project>

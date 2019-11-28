@@ -13,5 +13,384 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{80927a59-dd76-4e21-bc7f-8ffdf141ca1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\WinAPI">
+      <UniqueIdentifier>{7e2f4f83-8b95-4f64-8688-036e997288dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Exception">
+      <UniqueIdentifier>{91a585c0-adcd-44cf-89c1-9e6c3a696c57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX">
+      <UniqueIdentifier>{48fde5ec-2266-4bec-ad8b-55464e463c3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Object">
+      <UniqueIdentifier>{0eac2016-e59a-4531-825b-8dce1e7ffa52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\ImGui">
+      <UniqueIdentifier>{a3a93885-16e4-494f-82dd-c51666eb81da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Resources">
+      <UniqueIdentifier>{2d952cab-ff1b-40ef-9318-b1870c34a0ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Primitive">
+      <UniqueIdentifier>{36231758-5617-4f94-a87e-eb531515cb67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FileService">
+      <UniqueIdentifier>{0d08a7f8-c2e4-4fe4-99b5-a27d69208af1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Exception">
+      <UniqueIdentifier>{e045958d-39de-4cc7-a07b-0bf263fc9df1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\WinAPI">
+      <UniqueIdentifier>{ad3236e9-e356-41d1-a2cf-a80bb0f9fa40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FileService">
+      <UniqueIdentifier>{e788aa6c-9095-4b0a-bd21-eee990cc94e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX">
+      <UniqueIdentifier>{a831bbb3-a8e4-4e29-88ba-8a77d5b26722}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Primitive">
+      <UniqueIdentifier>{196305ee-dba2-42a3-b1be-97693614ed85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\ImGui">
+      <UniqueIdentifier>{c61ba09f-5d4e-4fea-82a3-b1558a3f4ab6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Object">
+      <UniqueIdentifier>{3393a67b-b17d-4b61-8850-4597acbad97c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Resource">
+      <UniqueIdentifier>{cdd14e09-8d07-4464-bcd6-e3e5333db173}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="PSBasic.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PSRectangle.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PSTexture.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PSTriangle.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VSBasic.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VSColor.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VSTexture.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImGui\imconfig.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_freetype.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_dx11.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_win32.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_stdlib.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_rectpack.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_textedit.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_truetype.h">
+      <Filter>Header Files\GFX\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="App.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicTypes.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Box.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Ball.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantPixelBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantTransformBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantVertexBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Cube.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGIDebugInfoManager.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="GfxExceptionMacros.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="GfxResources.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Globe.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIManager.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="IBindable.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="IDrawable.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="IndexBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="IndexedTriangleList.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLayout.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Keyboard.h">
+      <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse.h">
+      <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectBase.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Objects.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjLoader.h">
+      <Filter>Header Files\FileService</Filter>
+    </ClInclude>
+    <ClInclude Include="PixelShader.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitives.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Rectangle.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Sampler.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Square.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Surface.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_obj_loader.h">
+      <Filter>Header Files\FileService</Filter>
+    </ClInclude>
+    <ClInclude Include="Topology.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexBuffer.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexShader.h">
+      <Filter>Header Files\GFX\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="WinApiException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowExceptionMacros.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAPI.h">
+      <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="GDIPlusManager.h">
+      <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_demo.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_freetype.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_dx11.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_stdlib.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_widgets.cpp">
+      <Filter>Source Files\GFX\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Ball.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="BasicException.cpp">
+      <Filter>Source Files\Exception</Filter>
+    </ClCompile>
+    <ClCompile Include="Box.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="DXGIDebugInfoManager.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="BasicTypes.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantTransformBuffer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Globe.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="GUIManager.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="GDIPlusManager.cpp">
+      <Filter>Source Files\WinAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="IDrawable.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="IndexBuffer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="InputLayout.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Keyboard.cpp">
+      <Filter>Source Files\WinAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse.cpp">
+      <Filter>Source Files\WinAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\WinAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="WinApiException.cpp">
+      <Filter>Source Files\Exception</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Sampler.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="PixelShader.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexShader.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Rectangle.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjLoader.cpp">
+      <Filter>Source Files\FileService</Filter>
+    </ClCompile>
+    <ClCompile Include="Triangle.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="HorusEngine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
