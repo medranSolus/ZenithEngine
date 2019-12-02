@@ -100,7 +100,7 @@
       <ShaderModel>4.0</ShaderModel>
     </FxCompile>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,7 +123,7 @@
       <ShaderModel>4.0</ShaderModel>
     </FxCompile>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,7 +152,7 @@
       <ShaderModel>4.0</ShaderModel>
     </FxCompile>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -181,7 +181,7 @@
       <ShaderModel>4.0</ShaderModel>
     </FxCompile>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(SolutionDir)$(Configuration)"</Command>
+      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

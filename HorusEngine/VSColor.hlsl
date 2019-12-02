@@ -13,6 +13,6 @@ VSOut main(float3 pos : Position, float4 color : Color)
 {
 	VSOut vout;
 	vout.col = color;
-	vout.pos = mul(float4(pos, 1.0f), transform);
+	vout.pos = mul(transform, float4(pos, 1.0f));
 	return vout;
 }

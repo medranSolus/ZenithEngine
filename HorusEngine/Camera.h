@@ -3,17 +3,23 @@
 
 class Camera
 {
-	float angleZ = 0.0f;
-	float angleX = 0.0f;
-	float angleY = 0.0f;
-	float x;
-	float y;
-	float z;
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 eyeDirection;
+	DirectX::XMFLOAT3 moveDirection;
+	DirectX::XMFLOAT3 up;
+	float angleX;
+	float screenRatio;
+	float nearClip;
+	float farClip;
 
 public:
-	Camera(float x0 = 0.0f, float y0 = 0.0f, float z0 = 0.0f) : x(x0), y(y0), z(z0) {}
+	Camera(float screenRatio, float nearClip, float farClip, float x0 = 0.0f, float y0 = 0.0f, float z0 = -1.0f) noexcept;
 
-	DirectX::XMMATRIX GetMatrix() const noexcept;
-	void Move(float dX, float dY, float dZ) noexcept;
-	void Rotate(float dZ, float dX, float dY) noexcept;
+	constexpr  void MoveY(float dY) noexcept { position.y += dY; }
+
+	void MoveX(float dX) noexcept;
+	void MoveZ(float dZ) noexcept;
+	void Rotate(float angleDX, float angleDY, float angleDZ = 0.0f) noexcept;
+	DirectX::XMMATRIX GetView() const noexcept;
+	DirectX::XMMATRIX GetProjection() const noexcept;
 };

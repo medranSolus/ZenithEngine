@@ -2,22 +2,28 @@
 #include "Window.h"
 #include "Timer.h"
 #include "Objects.h"
+#include "Camera.h"
 
 class App
 {
-	static constexpr const char * windowTitle = "DirectX 11";
+	static constexpr const char * windowTitle = "Horus Engine Alpha";
 
 	static unsigned int width;
 	static unsigned int height;
-	static float screenRatio;
+
+	float cameraSpeed = 0.01f;
+	float cameraRotateSpeed = 1.0f;
+	unsigned int currScene = 0;
 
 	WinAPI::Window window;
 	Timer timer;
+	std::unique_ptr<Camera> camera = nullptr;
 	std::unique_ptr<GFX::Object::Rectangle> rect = nullptr;
 	std::unique_ptr<GFX::Object::Triangle> triangle = nullptr;
 	std::unique_ptr<GFX::Object::Globe> globe = nullptr;
 	std::unique_ptr<GFX::Object::Ball> ball = nullptr;
 	std::vector<std::unique_ptr<GFX::Object::Box>> boxes;
+	std::vector<std::unique_ptr<GFX::Object::Rectangle>> carpetRects;
 	void CreateCarpet(unsigned int depth, float x, float y, float width);
 
 	void MakeFrame();
@@ -35,7 +41,7 @@ public:
 	void Scene4();
 	void Scene5();
 
-	static float GetRatio() { return screenRatio; }
+	static constexpr float GetRatio() { return static_cast<float>(width) / height; }
 
 	unsigned long long Run();
 };

@@ -10,7 +10,7 @@ namespace GFX::Resource
 
 	void ConstantTransformBuffer::Bind(Graphics & gfx) noexcept
 	{
-		vertexBuffer->Update(gfx, std::move(DirectX::XMMatrixTranspose(parent.GetTransformMatrix() * gfx.GetCamera() * gfx.GetProjection())));
+		vertexBuffer->Update(gfx, std::move(parent.GetTransformMatrix() * gfx.GetCamera() * gfx.GetProjection()));
 		vertexBuffer->Bind(gfx);
 	}
 

@@ -2,17 +2,9 @@
 #include "Math.h"
 #include "ImGui/imgui.h"
 
-unsigned int App::width = 1366;
-unsigned int App::height = 768;
-float App::screenRatio = static_cast<float>(App::height) / App::width;
+unsigned int App::width = 1600;
+unsigned int App::height = 900;
 
-// Test code
-struct Carpet
-{
-	std::vector<std::unique_ptr<GFX::Object::Rectangle>> rects;
-} carpet;
-constexpr float depth = 40.0f;
-float dTime = 0.0f;
 float moveX = 0.0f;
 float moveY = 0.0f;
 float moveZ = 0.0f;
@@ -22,16 +14,15 @@ float rotateY = 0.0f;
 float angleZ = 0.0f;
 float angleX = 0.0f;
 float angleY = 0.0f;
-unsigned int currScene = 1;
 
 void App::MakeFrame()
 {
-	dTime = timer.Mark();
+	float dTime = timer.Mark();
 	angleZ = dTime * rotateZ;
 	angleX = dTime * rotateX;
 	angleY = dTime * rotateY;
-	window.SetTitle("Time " + std::to_string(angleZ));
 	window.Gfx().BeginFrame(0.2f, 0.2f, 0.2f);
+	window.Gfx().SetCamera(camera->GetView());
 	/*if (window.Mouse().IsLeftDown())
 	{
 		moveX = static_cast<float>(window.Mouse().GetX()) / (App::GetWidth() / 2) - 1.0f;
@@ -41,7 +32,10 @@ void App::MakeFrame()
 	{
 		if (auto opt = window.Mouse().Read())
 		{
-			switch (opt.value().GetType())
+			auto value = opt.value();
+			if (value.IsLeftDown())
+				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
+			switch (value.GetType())
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
 			{
@@ -56,6 +50,18 @@ void App::MakeFrame()
 			}
 		}
 	}
+	if (window.Keyboard().IsKeyDown('W'))
+		camera->MoveZ(cameraSpeed);
+	if (window.Keyboard().IsKeyDown('S'))
+		camera->MoveZ(-cameraSpeed);
+	if (window.Keyboard().IsKeyDown('A'))
+		camera->MoveX(-cameraSpeed);
+	if (window.Keyboard().IsKeyDown('D'))
+		camera->MoveX(cameraSpeed);
+	if (window.Keyboard().IsKeyDown(VK_SPACE))
+		camera->MoveY(cameraSpeed);
+	if (window.Keyboard().IsKeyDown('C'))
+		camera->MoveY(-cameraSpeed);
 	while (window.Keyboard().IsKeyReady())
 	{
 		if (auto opt = window.Keyboard().ReadKey())
@@ -64,24 +70,24 @@ void App::MakeFrame()
 			{
 				switch (opt.value().GetCode())
 				{
-				case 'W':
+				case VK_LEFT:
 				{
-					moveY -= 0.001f;
+					moveX -= 0.001;
 					break;
 				}
-				case 'S':
+				case VK_RIGHT:
 				{
-					moveY += 0.001f;
+					moveX += 0.001;
 					break;
 				}
-				case 'A':
+				case VK_UP:
 				{
-					moveX += 0.001f;
+					moveY += 0.001;
 					break;
 				}
-				case 'D':
+				case VK_DOWN:
 				{
-					moveX -= 0.001f;
+					moveY -= 0.001;
 					break;
 				}
 				case VK_TAB:
@@ -89,7 +95,7 @@ void App::MakeFrame()
 					currScene = ++currScene % 6;
 					break;
 				}
-				case VK_SPACE:
+				case VK_F1:
 				{
 					window.Gfx().SwitchGUI();
 					break;
@@ -130,16 +136,6 @@ void App::MakeFrame()
 		Scene5();
 		break;
 	}
-	case 6:
-	{
-		Scene0();
-		Scene1();
-		Scene2();
-		Scene3();
-		Scene4();
-		Scene5();
-		break;
-	}
 	}
 	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -147,6 +143,8 @@ void App::MakeFrame()
 		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f);
 		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f);
 		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f);
+		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.01f, 0.1f);
+		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f);
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
@@ -156,10 +154,9 @@ void App::MakeFrame()
 
 App::App() : window(width, height, windowTitle)
 {
+	camera = std::make_unique<Camera>(GetRatio(), 0.5f, 40.0f, 0.0f, 0.0f, -1.0f);
 	window.Gfx().Gui().SetFont("Fonts/SparTakus.ttf", 14.0f);
-	window.Gfx().SetProjection(DirectX::XMMatrixPerspectiveLH(1.0f, screenRatio, 0.5f, 40.0f));
-	window.Gfx().SetCamera(DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.5f));
-
+	window.Gfx().SetProjection(camera->GetProjection());
 	std::mt19937 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 100; ++i)
 		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), randWrapNDC(), randWrapNDC(), randWrapNDC(), rand(6.0f, 20.0f, engine)));
@@ -168,7 +165,7 @@ App::App() : window(width, height, windowTitle)
 	rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, width, height);
 	triangle = std::make_unique<GFX::Object::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f);
 	globe = std::make_unique<GFX::Object::Globe>(window.Gfx(), 0.0f, 0.0f, 4.0f, 25, 25, 3.0f, 3.0f);
-	ball = std::make_unique<GFX::Object::Ball>(window.Gfx(), 0.0f, 0.0f, 4.0f, 4, 3.0f);
+	ball = std::make_unique<GFX::Object::Ball>(window.Gfx(), 0.0f, 0.0f, 4.0f, 7, 3.0f);
 }
 
 void App::Scene0()
@@ -185,7 +182,7 @@ void App::Scene1()
 
 void App::Scene2()
 {
-	for (auto & rect : carpet.rects)
+	for (auto & rect : carpetRects)
 	{
 		rect->Update(moveX, moveY, moveZ, angleZ);
 		rect->Draw(window.Gfx());
@@ -215,7 +212,7 @@ void App::Scene5()
 
 unsigned long long App::Run()
 {
-	CreateCarpet(4, moveX, moveY, 10.0f);
+	CreateCarpet(4, 0.0f, 0.0f, 10.0f);
 	while (true)
 	{
 		if (const auto status = WinAPI::Window::ProcessMessage())
@@ -246,5 +243,5 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width)
 		}
 	}
 	for (auto & coord : coordBuffer)
-		carpet.rects.push_back(std::make_unique<GFX::Object::Rectangle>(window.Gfx(), coord.first, coord.second, 1.0f, width, width, true));
+		carpetRects.push_back(std::make_unique<GFX::Object::Rectangle>(window.Gfx(), coord.first, coord.second, 1.0f, width, width, true));
 }
