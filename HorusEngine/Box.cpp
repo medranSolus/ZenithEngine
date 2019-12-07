@@ -25,12 +25,6 @@ namespace GFX::Object
 			AddStaticBind(std::move(vertexShader));
 			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PhongPS.cso"));
 
-			/*struct PSLightConstants
-			{
-				DirectX::XMVECTOR pos;
-			} buffer;
-			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<PSLightConstants>>(gfx, buffer));*/
-
 			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
 			{
 				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },

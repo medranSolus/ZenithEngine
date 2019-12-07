@@ -8,12 +8,18 @@ unsigned int App::height = 900;
 float moveX = 0.0f;
 float moveY = 0.0f;
 float moveZ = 0.0f;
+
 float rotateZ = 0.0f;
 float rotateX = 0.0f;
 float rotateY = 0.0f;
+
 float angleZ = 0.0f;
 float angleX = 0.0f;
 float angleY = 0.0f;
+
+float lightX = 2.0f;
+float lightY = 1.0f;
+float lightZ = 1.0f;
 
 void App::MakeFrame()
 {
@@ -68,36 +74,22 @@ void App::MakeFrame()
 				{
 				case VK_LEFT:
 				{
-					//moveX -= 0.001;
-					pointLight->Move(-0.1f, 0.0f, 0.0f);
+					moveX -= 0.001;
 					break;
 				}
 				case VK_RIGHT:
 				{
-					//moveX += 0.001;
-					pointLight->Move(0.1f, 0.0f, 0.0f);
+					moveX += 0.001;
 					break;
 				}
 				case VK_UP:
 				{
-					//moveY += 0.001;
-					pointLight->Move(0.0f, 0.1f, 0.0f);
+					moveY += 0.001;
 					break;
 				}
 				case VK_DOWN:
 				{
-					//moveY -= 0.001;
-					pointLight->Move(0.0f, -0.1f, 0.0f);
-					break;
-				}
-				case 'I':
-				{
-					pointLight->Move(0.0f, 0.0f, 0.1f);
-					break;
-				}
-				case 'K':
-				{
-					pointLight->Move(0.0f, 0.0f, -0.1f);
+					moveY -= 0.001;
 					break;
 				}
 				case VK_TAB:
@@ -147,19 +139,23 @@ void App::MakeFrame()
 		break;
 	}
 	}
+	pointLight->SetPos(lightX, lightY, lightZ);
+	pointLight->Draw(window.Gfx());
 	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f);
-		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f);
-		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f);
-		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.05f, 0.5f);
-		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f);
+		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Light X", &lightX, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Light Y", &lightY, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Light Z", &lightZ, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.05f, 0.5f, "%.2f");
+		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
 	ImGui::End();
-	pointLight->Draw(window.Gfx());
 	window.Gfx().EndFrame();
 }
 
@@ -168,10 +164,10 @@ App::App() : window(width, height, windowTitle)
 	camera = std::make_unique<Camera>(GetRatio(), 0.5f, 60.0f);
 	window.Gfx().Gui().SetFont("Fonts/SparTakus.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
-	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), 0.0f, 0.0f, 5.0f);
+	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), lightX, lightY, lightZ);
 	std::mt19937 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 100; ++i)
-		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(6.0f, 20.0f, engine)));
+		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(6.0f, 15.0f, engine)));
 	
 	//float width = 1.0f;
 	//float height = 1.0f;

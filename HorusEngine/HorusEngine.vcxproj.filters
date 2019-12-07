@@ -394,6 +394,9 @@
     <ClCompile Include="Triangle.cpp">
       <Filter>Source Files\GFX\Object</Filter>
     </ClCompile>
+    <ClCompile Include="PointLight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
