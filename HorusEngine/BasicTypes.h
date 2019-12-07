@@ -33,6 +33,7 @@ namespace GFX::Primitive
 		inline float operator()() const { return sqrtf(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z); }
 
 		Vertex & operator*=(float scale);
+		Vertex & operator/=(float scale);
 	};
 
 	class VertexColor : public Vertex

@@ -160,13 +160,13 @@ namespace GFX::Primitive
 				indices.push_back(getIndex(lat, 0) + 3);
 			}
 			// Poles vertices
-			const unsigned int south = static_cast<unsigned int>(vertices.size());
+			const unsigned int north = static_cast<unsigned int>(vertices.size());
 			for (unsigned char i = 0; i < longitudeDensity; ++i)
 			{
 				vertices.emplace_back();
 				DirectX::XMStoreFloat3(&vertices.back().pos, std::move(DirectX::XMVectorNegate(base)));
 			}
-			const unsigned int north = static_cast<unsigned int>(vertices.size());
+			const unsigned int south = static_cast<unsigned int>(vertices.size());
 			for (unsigned char i = 0; i < longitudeDensity; ++i)
 			{
 				vertices.emplace_back();
@@ -174,15 +174,15 @@ namespace GFX::Primitive
 			}
 
 			// Triangle ring on each pole
-			leftDown = getIndex(latitudeDensity - 1, 0);
+			leftDown = getIndex(latitudeDensity - 2, 0);
 			rightUp = getIndex(0, 1) + 2;
-			for (unsigned int lon = 0; lon < longitudeDensity - 1; ++lon, ++leftDown, rightUp += 4)
+			for (unsigned int lon = 0; lon < longitudeDensity - 1; ++lon, rightUp += 4)
 			{
 				// North
 				indices.push_back(leftDown);
 				indices.push_back(north + lon);
-				leftDown += 7;
-				indices.push_back(leftDown);
+				leftDown += 4;
+				indices.push_back(leftDown + 3);
 				// South
 				indices.push_back(south + lon);
 				indices.push_back(rightUp - 5);
@@ -191,37 +191,43 @@ namespace GFX::Primitive
 			// Last triangle to connect ring
 			// North
 			indices.push_back(leftDown);
-			indices.push_back(vertices.size() - 1);
-			indices.push_back(getIndex(latitudeDensity - 1, 0) + 3);
+			indices.push_back(south - 1);
+			indices.push_back(getIndex(latitudeDensity - 2, 0) + 3);
 			// South
-			indices.push_back(north - 1);
+			indices.push_back(static_cast<unsigned int>(vertices.size() - 1));
 			indices.push_back(rightUp - 5);
 			indices.push_back(2);
-			return { std::move(vertices), std::move(indices) };
+			IndexedTriangleList<V> list = { std::move(vertices), std::move(indices) };
+			list.SetNormals();
+			return std::move(list);
 		}
 
 		template<typename V>
 		static IndexedTriangleList<V> MakeSolidIco(unsigned int density)
 		{
-			const float root = sqrtf(5.0f);
-			const float bigX = sqrtf((5.0f + root) / 8.0f);
-			const float bigZ = (root - 1) / 4.0f;;
-			const float smallX = sqrtf((5.0f - root) / 8.0f);
-			const float smallZ = (root + 1) / 4.0f;
-			const float level = smallX * sqrtf(3.0f) / 2.0f;
-			const float poleY = sqrtf(4.0f * level * level - smallX * smallX * (1.0f + 2.0f * root / 5.0f)) + level;
+			constexpr float bigAngle = M_PI / 10.0f;
+			constexpr float smallAngle = M_PI * 0.3f;
+			const float baseAngle = atanf(0.5f);
+
+			const float centerZ = cosf(baseAngle);
+			const float bigX = centerZ * cosf(bigAngle);
+			const float bigZ = centerZ * sinf(bigAngle);
+			const float smallX = centerZ * cosf(smallAngle);
+			const float smallZ = centerZ * sinf(smallAngle);
+			const float level = sinf(baseAngle);
+
 			std::vector<V> vertices
 			{
-				{{ 0.0f, poleY, 0.0f }},        // 0
-				{{ 0.0f, -poleY, 0.0f }},       // 1
+				{{ 0.0f, 1.0f, 0.0f }},        // 0
+				{{ 0.0f, -1.0f, 0.0f }},       // 1
 
-				{{ 0.0f, level, -1.0f }},       // 2
+				{{ 0.0f, level, -centerZ }},    // 2
 				{{ -bigX, level, -bigZ }},      // 3
 				{{ -smallX, level, smallZ }},   // 4
 				{{ smallX, level, smallZ }},    // 5
 				{{ bigX, level, -bigZ }},       // 6
 
-				{{ 0.0f, -level, 1.0f }},       // 7
+				{{ 0.0f, -level, centerZ }},    // 7
 				{{ bigX, -level, bigZ }},       // 8
 				{{ smallX, -level, -smallZ }},  // 9
 				{{ -smallX, -level, -smallZ }}, // 10
@@ -270,21 +276,21 @@ namespace GFX::Primitive
 					{
 						i1 = lookup.emplace(std::move(std::make_pair(indices.at(j), indices.at(j + 1))), static_cast<unsigned int>(vertices.size())).first;
 						V middle = vertices.at(indices.at(j)) + vertices.at(indices.at(j + 1));
-						vertices.emplace_back(middle *= (poleY / middle()));
+						vertices.emplace_back(middle /= middle());
 					}
 					auto i2 = lookup.find({ indices.at(j + 1), indices.at(j + 2) });
 					if (i2 == lookup.end())
 					{
 						i2 = lookup.emplace(std::move(std::make_pair(indices.at(j + 1), indices.at(j + 2))), static_cast<unsigned int>(vertices.size())).first;
 						V middle = vertices.at(indices.at(j + 1)) + vertices.at(indices.at(j + 2));
-						vertices.emplace_back(middle *= (poleY / middle()));
+						vertices.emplace_back(middle /= middle());
 					}
 					auto i3 = lookup.find({ indices.at(j + 2), indices.at(j) });
 					if (i3 == lookup.end())
 					{
 						i3 = lookup.emplace(std::move(std::make_pair(indices.at(j + 2), indices.at(j))), static_cast<unsigned int>(vertices.size())).first;
 						V middle = vertices.at(indices.at(j + 2)) + vertices.at(indices.at(j));
-						vertices.emplace_back(middle *= (poleY / middle()));
+						vertices.emplace_back(middle /= middle());
 					}
 					// Left
 					tmpIndices.emplace_back(indices.at(j));
@@ -311,33 +317,37 @@ namespace GFX::Primitive
 		template<typename V>
 		static IndexedTriangleList<V> MakeIco(unsigned int density)
 		{
-			const float root = sqrtf(5.0f);
-			const float bigX = sqrtf((5.0f + root) / 8.0f);
-			const float bigZ = (root - 1) / 4.0f;;
-			const float smallX = sqrtf((5.0f - root) / 8.0f);
-			const float smallZ = (root + 1) / 4.0f;
-			const float level = smallX * sqrtf(3.0f) / 2.0f;
-			const float poleY = sqrtf(4.0f * level * level - smallX * smallX * (1.0f + 2.0f * root / 5.0f)) + level;
+			constexpr float bigAngle = M_PI / 10.0f;
+			constexpr float smallAngle = M_PI * 0.3f;
+			const float baseAngle = atanf(0.5f);
+
+			const float centerZ = cosf(baseAngle);
+			const float bigX = centerZ * cosf(bigAngle);
+			const float bigZ = centerZ * sinf(bigAngle);
+			const float smallX = centerZ * cosf(smallAngle);
+			const float smallZ = centerZ * sinf(smallAngle);
+			const float level = sinf(baseAngle);
+
 			std::vector<V> vertices
 			{
 				// 0
-				{{ 0.0f, poleY, 0.0f }}, // 0
-				{{ 0.0f, poleY, 0.0f }}, // 1
-				{{ 0.0f, poleY, 0.0f }}, // 2
-				{{ 0.0f, poleY, 0.0f }}, // 3
-				{{ 0.0f, poleY, 0.0f }}, // 4
+				{{ 0.0f, 1.0f, 0.0f }}, // 0
+				{{ 0.0f, 1.0f, 0.0f }}, // 1
+				{{ 0.0f, 1.0f, 0.0f }}, // 2
+				{{ 0.0f, 1.0f, 0.0f }}, // 3
+				{{ 0.0f, 1.0f, 0.0f }}, // 4
 				// 1
-				{{ 0.0f, -poleY, 0.0f }}, // 5
-				{{ 0.0f, -poleY, 0.0f }}, // 6
-				{{ 0.0f, -poleY, 0.0f }}, // 7
-				{{ 0.0f, -poleY, 0.0f }}, // 8
-				{{ 0.0f, -poleY, 0.0f }}, // 9
+				{{ 0.0f, -1.0f, 0.0f }}, // 5
+				{{ 0.0f, -1.0f, 0.0f }}, // 6
+				{{ 0.0f, -1.0f, 0.0f }}, // 7
+				{{ 0.0f, -1.0f, 0.0f }}, // 8
+				{{ 0.0f, -1.0f, 0.0f }}, // 9
 				// 2
-				{{ 0.0f, level, -1.0f }}, // 10
-				{{ 0.0f, level, -1.0f }}, // 11
-				{{ 0.0f, level, -1.0f }}, // 12
-				{{ 0.0f, level, -1.0f }}, // 13
-				{{ 0.0f, level, -1.0f }}, // 14
+				{{ 0.0f, level, -centerZ }}, // 10
+				{{ 0.0f, level, -centerZ }}, // 11
+				{{ 0.0f, level, -centerZ }}, // 12
+				{{ 0.0f, level, -centerZ }}, // 13
+				{{ 0.0f, level, -centerZ }}, // 14
 				// 3
 				{{ -bigX, level, -bigZ }}, // 15
 				{{ -bigX, level, -bigZ }}, // 16
@@ -363,11 +373,11 @@ namespace GFX::Primitive
 				{{ bigX, level, -bigZ }}, // 33
 				{{ bigX, level, -bigZ }}, // 34
 				// 7
-				{{ 0.0f, -level, 1.0f }}, // 35
-				{{ 0.0f, -level, 1.0f }}, // 36
-				{{ 0.0f, -level, 1.0f }}, // 37
-				{{ 0.0f, -level, 1.0f }}, // 38
-				{{ 0.0f, -level, 1.0f }}, // 39
+				{{ 0.0f, -level, centerZ }}, // 35
+				{{ 0.0f, -level, centerZ }}, // 36
+				{{ 0.0f, -level, centerZ }}, // 37
+				{{ 0.0f, -level, centerZ }}, // 38
+				{{ 0.0f, -level, centerZ }}, // 39
 				// 8
 				{{ bigX, -level, bigZ }}, // 40
 				{{ bigX, -level, bigZ }}, // 41
@@ -413,11 +423,11 @@ namespace GFX::Primitive
 				30, 3, 26,
 				10, 4, 31,
 				// South
-				40, 5, 36,
-				45, 6, 41,
-				50, 7, 46,
-				55, 8, 51,
-				35, 9, 56
+				36, 5, 40,
+				41, 6, 45,
+				46, 7, 50,
+				51, 8, 55,
+				56, 9, 35
 			};
 
 			for (unsigned int i = 0; i < density; ++i)
@@ -431,10 +441,10 @@ namespace GFX::Primitive
 					V left = v0 + v1;
 					V right = v1 + v2;
 					V down = v2 + v0;
-					left *= poleY / left();
-					right *= poleY / right();
-					down *= poleY / down();
-					const unsigned int id = vertices.size();
+					left /= left();
+					right /= right();
+					down /= down();
+					const unsigned int id = static_cast<unsigned int>(vertices.size());
 					vertices.emplace_back(left);  // 0
 					vertices.emplace_back(left);  // 1
 					vertices.emplace_back(left);  // 2

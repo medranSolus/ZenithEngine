@@ -1,6 +1,7 @@
 #pragma once
 #include "Globe.h"
 #include "ConstantPixelBuffer.h"
+#include "BasicTypes.h"
 
 namespace GFX::Light
 {
@@ -8,8 +9,14 @@ namespace GFX::Light
 	{
 		struct LightConstantBuffer
 		{
+			Primitive::Color materialColor;
+			Primitive::Color ambientColor;
+			Primitive::Color diffuseColor;
 			DirectX::XMFLOAT3 pos;
-			float padding = 0.0f;
+			float diffuseIntensity;
+			float atteuationLinear;
+			float attenuationQuad;
+			float padding[2];
 		};
 
 		mutable Object::Globe mesh;

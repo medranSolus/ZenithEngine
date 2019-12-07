@@ -32,6 +32,14 @@ namespace GFX::Primitive
 		return *this;
 	}
 
+	Vertex & Vertex::operator/=(float scale)
+	{
+		pos.x /= scale;
+		pos.y /= scale;
+		pos.z /= scale;
+		return *this;
+	}
+
 	VertexColor & VertexColor::operator=(const VertexColor & vertex)
 	{
 		pos = vertex.pos;

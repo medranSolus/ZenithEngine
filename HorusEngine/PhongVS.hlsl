@@ -14,8 +14,8 @@ struct VSOut
 VSOut main(float3 pos : Position, float3 normal : Normal)
 {
 	VSOut vso;
-	vso.worldPos = (float3) mul(model, float4(pos, 1.0f));
-	vso.normal = mul(normal, (float3x3) model);
+	vso.worldPos = (float3)mul(model, float4(pos, 1.0f));
+    vso.normal = mul((float3x3)model, normal);
 	vso.pos = mul(modelViewProjection, float4(pos, 1.0f));
 	return vso;
 }

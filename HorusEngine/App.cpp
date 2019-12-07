@@ -17,9 +17,9 @@ float angleZ = 0.0f;
 float angleX = 0.0f;
 float angleY = 0.0f;
 
-float lightX = 2.0f;
-float lightY = 1.0f;
-float lightZ = 1.0f;
+float lightX = 1.5f;
+float lightY = 0.0f;
+float lightZ = 0.0f;
 
 void App::MakeFrame()
 {
@@ -161,13 +161,13 @@ void App::MakeFrame()
 
 App::App() : window(width, height, windowTitle)
 {
-	camera = std::make_unique<Camera>(GetRatio(), 0.5f, 60.0f);
+	camera = std::make_unique<Camera>(GetRatio(), 0.01f, 120.0f);
 	window.Gfx().Gui().SetFont("Fonts/SparTakus.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
 	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), lightX, lightY, lightZ);
 	std::mt19937 engine(std::random_device{}());
-	for (unsigned int i = 0; i < 100; ++i)
-		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(6.0f, 15.0f, engine)));
+	for (unsigned int i = 0; i < 512; ++i)
+		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
 	
 	//float width = 1.0f;
 	//float height = 1.0f;

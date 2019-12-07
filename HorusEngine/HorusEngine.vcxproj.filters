@@ -67,6 +67,9 @@
     <Filter Include="Header Files\GFX\Resource">
       <UniqueIdentifier>{2d952cab-ff1b-40ef-9318-b1870c34a0ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GFX\Light">
+      <UniqueIdentifier>{b462a5d0-f2b0-496f-960a-55cd62ef0cbd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PSRectangle.hlsl">
@@ -395,7 +398,7 @@
       <Filter>Source Files\GFX\Object</Filter>
     </ClCompile>
     <ClCompile Include="PointLight.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\GFX\Light</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

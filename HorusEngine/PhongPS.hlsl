@@ -1,12 +1,13 @@
 cbuffer LightConstantBuffer
 {
+    float4 materialColor;
+    float4 ambientColor;
+    float4 diffuseColor;
 	float3 lightPos;
+    float diffuseIntensity;
+    float atteuationLinear;
+    float attenuationQuad;
 }
-
-static const float3 materialColor = { 0.45f, 0.6f, 0.7f };
-static const float3 ambientColor = { 0.15f, 0.02f, 0.1f };
-static const float3 diffuseColor = { 1.0f, 1.0f, 1.0f };
-static const float diffuseIntensity = 1.0f;
 
 float4 main(float3 worldPos : Position, float3 normal : Normal) : SV_Target
 {
@@ -17,9 +18,9 @@ float4 main(float3 worldPos : Position, float3 normal : Normal) : SV_Target
     
 	// Diffuse attenuation
     // http://wiki.ogre3d.org/-Point+Light+Attenuation
-    float attenuation = 1.0f + 0.045f * distanceToLight + 0.0075f * (distanceToLight * distanceToLight);
+    float attenuation = 1.0f + atteuationLinear * distanceToLight + attenuationQuad * (distanceToLight * distanceToLight);
 	
 	// Diffuse intensity
-    const float3 diffuse = diffuseColor * max(0.0f, dot(directionToLight, normal)) * diffuseIntensity / attenuation;
-	return float4(saturate(diffuse + ambientColor), 1.0f);
+    const float4 diffuse = diffuseColor * max(0.0f, dot(directionToLight, normal)) * diffuseIntensity / attenuation;
+    return saturate((diffuse + ambientColor) * materialColor);
 }
