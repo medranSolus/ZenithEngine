@@ -23,6 +23,7 @@ namespace GFX::Primitive
 	{
 	public:
 		DirectX::XMFLOAT3 pos;
+		DirectX::XMFLOAT3 normal;
 
 		Vertex(const DirectX::XMFLOAT3 & pos = { 0.0f,0.0f,0.0f }) : pos(pos) {}
 		Vertex(const Vertex & vertex) : pos(vertex.pos) {}

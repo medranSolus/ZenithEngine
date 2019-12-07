@@ -5,9 +5,9 @@
 
 namespace GFX::Object
 {
-	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : x(x0), y(y0), z(z0)
+	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : ObjectBase(x0, y0, z0)
 	{
-		const float leftPow2 = left * left;
+		const	 float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
 		const float centerX = (vertex3X + down) / 3;
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
@@ -21,11 +21,11 @@ namespace GFX::Object
 
 		if (!IsStaticInit())
 		{
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"VSColor.cso");
+			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
 			auto bytecodeVS = vertexShader->GetBytecode();
 			AddStaticBind(std::move(vertexShader));
 
-			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PSBasic.cso"));
+			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
 
 			const std::vector<unsigned int> indices =
 			{
@@ -47,14 +47,15 @@ namespace GFX::Object
 
 	void Triangle::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
 	{
-		x += dX;
-		y += dY;
-		z += dZ;
-		angleZ = wrap2Pi(this->angleZ + angleDZ);
+		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
+		DirectX::XMStoreFloat3(&angle,
+			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
+				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
 	}
 
 	DirectX::XMMATRIX Triangle::GetTransformMatrix() const noexcept
 	{
-		return DirectX::XMMatrixRotationZ(angleZ) * DirectX::XMMatrixTranslation(x, y, z);
+		return DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
+			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 }

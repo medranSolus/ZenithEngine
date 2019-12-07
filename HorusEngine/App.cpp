@@ -21,19 +21,15 @@ void App::MakeFrame()
 	angleZ = dTime * rotateZ;
 	angleX = dTime * rotateX;
 	angleY = dTime * rotateY;
-	window.Gfx().BeginFrame(0.2f, 0.2f, 0.2f);
+	window.Gfx().BeginFrame(0.1f, 0.1f, 0.1f);
 	window.Gfx().SetCamera(camera->GetView());
-	/*if (window.Mouse().IsLeftDown())
-	{
-		moveX = static_cast<float>(window.Mouse().GetX()) / (App::GetWidth() / 2) - 1.0f;
-		moveY = static_cast<float>(window.Mouse().GetY()) / (-App::GetHeight() / 2) + 1.0f;
-	}*/
+	pointLight->Bind(window.Gfx());
 	while (window.Mouse().IsInput())
 	{
 		if (auto opt = window.Mouse().Read())
 		{
 			auto value = opt.value();
-			if (value.IsLeftDown())
+			if (value.IsRightDown())
 				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
 			switch (value.GetType())
 			{
@@ -72,27 +68,41 @@ void App::MakeFrame()
 				{
 				case VK_LEFT:
 				{
-					moveX -= 0.001;
+					//moveX -= 0.001;
+					pointLight->Move(-0.1f, 0.0f, 0.0f);
 					break;
 				}
 				case VK_RIGHT:
 				{
-					moveX += 0.001;
+					//moveX += 0.001;
+					pointLight->Move(0.1f, 0.0f, 0.0f);
 					break;
 				}
 				case VK_UP:
 				{
-					moveY += 0.001;
+					//moveY += 0.001;
+					pointLight->Move(0.0f, 0.1f, 0.0f);
 					break;
 				}
 				case VK_DOWN:
 				{
-					moveY -= 0.001;
+					//moveY -= 0.001;
+					pointLight->Move(0.0f, -0.1f, 0.0f);
+					break;
+				}
+				case 'I':
+				{
+					pointLight->Move(0.0f, 0.0f, 0.1f);
+					break;
+				}
+				case 'K':
+				{
+					pointLight->Move(0.0f, 0.0f, -0.1f);
 					break;
 				}
 				case VK_TAB:
 				{
-					currScene = ++currScene % 6;
+					//currScene = ++currScene % 6;
 					break;
 				}
 				case VK_F1:
@@ -143,29 +153,32 @@ void App::MakeFrame()
 		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f);
 		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f);
 		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f);
-		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.01f, 0.1f);
+		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.05f, 0.5f);
 		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f);
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
 	ImGui::End();
+	pointLight->Draw(window.Gfx());
 	window.Gfx().EndFrame();
 }
 
 App::App() : window(width, height, windowTitle)
 {
-	camera = std::make_unique<Camera>(GetRatio(), 0.5f, 40.0f, 0.0f, 0.0f, -1.0f);
+	camera = std::make_unique<Camera>(GetRatio(), 0.5f, 60.0f);
 	window.Gfx().Gui().SetFont("Fonts/SparTakus.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
+	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), 0.0f, 0.0f, 5.0f);
 	std::mt19937 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 100; ++i)
-		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), randWrapNDC(), randWrapNDC(), randWrapNDC(), rand(6.0f, 20.0f, engine)));
-	float width = 1.0f;
-	float height = 1.0f;
-	rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, width, height);
-	triangle = std::make_unique<GFX::Object::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f);
-	globe = std::make_unique<GFX::Object::Globe>(window.Gfx(), 0.0f, 0.0f, 4.0f, 25, 25, 3.0f, 3.0f);
-	ball = std::make_unique<GFX::Object::Ball>(window.Gfx(), 0.0f, 0.0f, 4.0f, 7, 3.0f);
+		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(6.0f, 20.0f, engine)));
+	
+	//float width = 1.0f;
+	//float height = 1.0f;
+	//rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, width, height);
+	//triangle = std::make_unique<GFX::Object::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f);
+	//globe = std::make_unique<GFX::Object::Globe>(window.Gfx(), 0.0f, 0.0f, 4.0f, 25, 25, 3.0f, 3.0f);
+	//ball = std::make_unique<GFX::Object::Ball>(window.Gfx(), 0.0f, 0.0f, 4.0f, 7, 3.0f);
 }
 
 void App::Scene0()
@@ -212,7 +225,7 @@ void App::Scene5()
 
 unsigned long long App::Run()
 {
-	CreateCarpet(4, 0.0f, 0.0f, 10.0f);
+	//CreateCarpet(4, 0.0f, 0.0f, 10.0f);
 	while (true)
 	{
 		if (const auto status = WinAPI::Window::ProcessMessage())

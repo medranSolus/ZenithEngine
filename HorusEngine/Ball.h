@@ -5,12 +5,7 @@ namespace GFX::Object
 {
 	class Ball : public ObjectBase<Ball>
 	{
-		float angleZ = 0.0f;
-		float angleX = 0.0f;
-		float angleY = 0.0f;
-		float x;
-		float y;
-		float z;
+		float r;
 
 	public:
 		Ball(Graphics & gfx, float x0, float y0, float z0, unsigned int density, float radius);

@@ -71,8 +71,13 @@ namespace GFX
 #ifdef _DEBUG
 		createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
+		D3D_FEATURE_LEVEL features[]
+		{
+			D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1,
+			D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0,
+		};
 		GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_HARDWARE, nullptr,
-			createFlags, nullptr, 0, D3D11_SDK_VERSION, &swapDesc, &swapChain, &device, nullptr, &context));
+			createFlags, nullptr, 0, D3D11_SDK_VERSION, &swapDesc, &swapChain, &device, features, &context));
 
 		MsWrl::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)

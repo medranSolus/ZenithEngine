@@ -5,20 +5,9 @@ namespace GFX::Object
 {
 	class Box : public ObjectBase<Box>
 	{
+		DirectX::XMFLOAT3 rotationScale;
+		DirectX::XMFLOAT3 posScale;
 		float r;
-		float rotZ = 0.0f;
-		float rotX = 0.0f;
-		float rotY = 0.0f;
-		float moveX;
-		float moveY;
-		float moveZ;
-
-		float dRotX;
-		float dRotY;
-		float dRotZ;
-		float dMoveX;
-		float dMoveY;
-		float dMoveZ;
 
 	public:
 		Box(Graphics & gfx, float x0, float y0, float z0, float rotationR);

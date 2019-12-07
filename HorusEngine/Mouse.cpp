@@ -57,43 +57,39 @@ namespace WinAPI
 		TrimBuffer();
 	}
 
-	void Mouse::OnWheelForward(int x, int y) noexcept
+	void Mouse::OnMouseMove(int x, int y) noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::WheelForward, *this, x, y);
+		eventBuffer.emplace_back(Event::Type::Move, *this, x, y);
 		this->x = x;
 		this->y = y;
 		TrimBuffer();
 	}
 
-	void Mouse::OnWheelBackward(int x, int y) noexcept
-	{
-		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, x, y);
-		this->x = x;
-		this->y = y;
-		TrimBuffer();
-	}
-
-	void Mouse::OnWheelRotation(int x, int y, int rotation) noexcept
+	void Mouse::OnWheelRotation(int rotation) noexcept
 	{
 		// Rotation for high precision mouse wheels https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
 		wheelRotation += rotation;
 		while (wheelRotation >= WHEEL_DELTA)
 		{
 			wheelRotation -= WHEEL_DELTA;
-			OnWheelForward(x, y);
+			OnWheelForward();
 		}
 		while (wheelRotation <= -WHEEL_DELTA)
 		{
 			wheelRotation += WHEEL_DELTA;
-			OnWheelBackward(x, y);
+			OnWheelBackward();
 		}
 	}
 
-	void Mouse::OnMouseMove(int x, int y) noexcept
+	void Mouse::OnWheelForward() noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::Move, *this, x, y);
-		this->x = x;
-		this->y = y;
+		eventBuffer.emplace_back(Event::Type::WheelForward, *this, this->x, this->y);
+		TrimBuffer();
+	}
+
+	void Mouse::OnWheelBackward() noexcept
+	{
+		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, this->x, this->y);
 		TrimBuffer();
 	}
 

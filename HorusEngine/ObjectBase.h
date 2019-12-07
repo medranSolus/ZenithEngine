@@ -13,6 +13,9 @@ namespace GFX::Object
 		inline const Resource::IndexBuffer * GetStaticIndexBuffer() const noexcept override { return indexBuffer; }
 
 	protected:
+		DirectX::XMFLOAT3 angle = { 0.0f,0.0f,0.0f };
+		DirectX::XMFLOAT3 pos;
+
 		inline bool IsStaticInit() const noexcept { return staticBinds.size(); }
 		
 		constexpr void AddStaticBind(std::unique_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG)
@@ -27,6 +30,14 @@ namespace GFX::Object
 			indexBuffer = buffer.get();
 			staticBinds.push_back(std::move(buffer));
 		}
+
+	public:
+		constexpr ObjectBase(float x0, float y0, float z0) noexcept : pos(x0, y0, z0) {}
+
+		constexpr DirectX::XMFLOAT3 GetPos() const noexcept { return pos; }
+		constexpr void SetPos(DirectX::XMFLOAT3 position) noexcept { pos = position; }
+		constexpr DirectX::XMFLOAT3 GetAngle() const noexcept { return angle; }
+		constexpr void SetAngle(DirectX::XMFLOAT3 meshAngle) noexcept { angle = meshAngle; }
 	};
 
 	template<typename T>

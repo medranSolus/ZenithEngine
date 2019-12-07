@@ -10,18 +10,15 @@ namespace GFX::Primitive
 		static IndexedTriangleList<V> Make()
 		{
 			constexpr float point = 0.5f;
-			std::vector<DirectX::XMFLOAT3> vertices;
-			vertices.emplace_back(-point, -point, 1.0f); // 0
-			vertices.emplace_back(-point, point, 1.0f);  // 1
-			vertices.emplace_back(point, point, 1.0f);   // 2
-			vertices.emplace_back(point, -point, 1.0f);  // 3
+			std::vector<V> vertices(4);
+			vertices[0].pos = { -point, -point, 0.0f };
+			vertices[1].pos = { -point, point, 0.0f };
+			vertices[2].pos = { point, point, 0.0f };
+			vertices[3].pos = { point, -point, 0.0f };
 
-			std::vector<V> v(4);
-			for (unsigned char i = 0; i < 4; ++i)
-				v.at(i).pos = vertices.at(i);
 			return
 			{
-				std::move(v),
+				std::move(vertices),
 				{
 					0,1,2, 0,2,3,
 				}

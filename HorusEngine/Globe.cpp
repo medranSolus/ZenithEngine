@@ -5,16 +5,16 @@
 
 namespace GFX::Object
 {
-	Globe::Globe(Graphics & gfx, float x0, float y0, float z0, unsigned int latitudeDensity, unsigned int longitudeDensity, float latitude, float longitude)
-		: x(x0), y(y0), z(z0)
+	Globe::Globe(Graphics & gfx, float x0, float y0, float z0, unsigned int latitudeDensity, unsigned int longitudeDensity, float height, float width, float length)
+		: ObjectBase(x0, y0, z0), size(width, height, length)
 	{
 		if (!IsStaticInit())
 		{
-			auto list = Primitive::Sphere::MakeUV<Primitive::Vertex>(latitudeDensity, longitudeDensity);
+			auto list = Primitive::Sphere::MakeSolidUV<Primitive::Vertex>(latitudeDensity, longitudeDensity);
 			AddStaticBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"VSBasic.cso");
+			/*auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"VSBasic.cso");
 			auto bytecodeVS = vertexShader->GetBytecode();
 			AddStaticBind(std::move(vertexShader));
 			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PSRectangle.cso"));
@@ -25,6 +25,17 @@ namespace GFX::Object
 			} colorBuffer;
 			for (unsigned int i = 0; i < 6; ++i)
 				colorBuffer.faceColors[i] = randColor();
+			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<ColorBuffer>>(gfx, colorBuffer));*/
+
+			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"SolidVS.cso");
+			auto bytecodeVS = vertexShader->GetBytecode();
+			AddStaticBind(std::move(vertexShader));
+			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"SolidPS.cso"));
+
+			struct ColorBuffer
+			{
+				Primitive::Color color = { 1.0f, 1.0f, 1.0f, 1.0f };
+			} colorBuffer;
 			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<ColorBuffer>>(gfx, colorBuffer));
 
 			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
@@ -40,16 +51,16 @@ namespace GFX::Object
 
 	void Globe::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
 	{
-		x += dX;
-		y += dY;
-		z += dZ;
-		angleZ = wrap2Pi(angleZ + angleDZ);
-		angleX = wrap2Pi(angleX + angleDX);
-		angleY = wrap2Pi(angleY + angleDY);
+		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
+		DirectX::XMStoreFloat3(&angle,
+			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
+				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
 	}
 
 	DirectX::XMMATRIX Globe::GetTransformMatrix() const noexcept
 	{
-		return DirectX::XMMatrixRotationRollPitchYaw(angleX, angleY, angleZ) * DirectX::XMMatrixTranslation(x, y, z);
+		return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&size)) *
+			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
+			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 }

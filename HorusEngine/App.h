@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "Objects.h"
 #include "Camera.h"
+#include "PointLight.h"
 
 class App
 {
@@ -11,13 +12,14 @@ class App
 	static unsigned int width;
 	static unsigned int height;
 
-	float cameraSpeed = 0.01f;
-	float cameraRotateSpeed = 1.0f;
-	unsigned int currScene = 0;
+	float cameraSpeed = 0.1f;
+	float cameraRotateSpeed = 2.0f;
+	unsigned int currScene = 3;
 
 	WinAPI::Window window;
 	Timer timer;
 	std::unique_ptr<Camera> camera = nullptr;
+	std::unique_ptr<GFX::Light::PointLight> pointLight = nullptr;
 	std::unique_ptr<GFX::Object::Rectangle> rect = nullptr;
 	std::unique_ptr<GFX::Object::Triangle> triangle = nullptr;
 	std::unique_ptr<GFX::Object::Globe> globe = nullptr;

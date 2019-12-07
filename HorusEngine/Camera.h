@@ -7,7 +7,6 @@ class Camera
 	DirectX::XMFLOAT3 eyeDirection;
 	DirectX::XMFLOAT3 moveDirection;
 	DirectX::XMFLOAT3 up;
-	float angleX;
 	float screenRatio;
 	float nearClip;
 	float farClip;
@@ -19,7 +18,7 @@ public:
 
 	void MoveX(float dX) noexcept;
 	void MoveZ(float dZ) noexcept;
-	void Rotate(float angleDX, float angleDY, float angleDZ = 0.0f) noexcept;
+	void Rotate(float angleDX, float angleDY) noexcept;
 	DirectX::XMMATRIX GetView() const noexcept;
 	DirectX::XMMATRIX GetProjection() const noexcept;
 };

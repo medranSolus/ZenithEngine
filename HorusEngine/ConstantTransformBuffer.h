@@ -7,7 +7,13 @@ namespace GFX::Resource
 {
 	class ConstantTransformBuffer : public IBindable
 	{
-		static std::unique_ptr<ConstantVertexBuffer<DirectX::XMMATRIX>> vertexBuffer;
+		struct Buffer
+		{
+			DirectX::XMMATRIX model;
+			DirectX::XMMATRIX modelViewProjection;
+		};
+
+		static std::unique_ptr<ConstantVertexBuffer<Buffer>> vertexBuffer;
 		const Object::IDrawable & parent;
 
 	public:

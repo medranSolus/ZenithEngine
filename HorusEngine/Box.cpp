@@ -5,37 +5,36 @@
 
 namespace GFX::Object
 {
-	Box::Box(Graphics& gfx, float x0, float y0, float z0, float rotationR) : r(rotationR), moveX(x0), moveY(y0), moveZ(z0)
+	Box::Box(Graphics& gfx, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
 	{
 		std::mt19937 engine(std::random_device{}());
-		dRotX = rand(-M_PI_2, M_PI_2, engine);
-		dRotY = rand(-M_PI_2, M_PI_2, engine);
-		dRotZ = rand(-M_PI_2, M_PI_2, engine);
-		dMoveX = rand(-M_PI_2, M_PI_2, engine);
-		dMoveY = rand(-M_PI_2, M_PI_2, engine);
-		dMoveZ = rand(-M_PI_2, M_PI_2, engine);
+		rotationScale.x = rand(-M_PI, M_PI, engine);
+		rotationScale.y = rand(-M_PI, M_PI, engine);
+		rotationScale.z = rand(-M_PI, M_PI, engine);
+		posScale.x = rand(-M_PI, M_PI, engine);
+		posScale.y = rand(-M_PI, M_PI, engine);
+		posScale.z = rand(-M_PI, M_PI, engine);
 		if (!IsStaticInit())
 		{
 			auto list = Primitive::Cube::Make<Primitive::Vertex>();
 			AddStaticBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 			
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"VSBasic.cso");
+			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"PhongVS.cso");
 			auto bytecodeVS = vertexShader->GetBytecode();
 			AddStaticBind(std::move(vertexShader));
-			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PSRectangle.cso"));
+			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PhongPS.cso"));
 
-			struct ColorBuffer
+			/*struct PSLightConstants
 			{
-				Primitive::Color faceColors[6];
-			} colorBuffer;
-			for (unsigned int i = 0; i < 6; ++i)
-				colorBuffer.faceColors[i] = randColor();
-			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<ColorBuffer>>(gfx, colorBuffer));
+				DirectX::XMVECTOR pos;
+			} buffer;
+			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<PSLightConstants>>(gfx, buffer));*/
 
 			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
 			{
-				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 }
+				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "Normal", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 }
 			};
 			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, inputDesc, bytecodeVS));
 
@@ -46,19 +45,18 @@ namespace GFX::Object
 
 	void Box::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
 	{
-		rotZ = wrap2Pi(rotZ + dRotZ * angleDZ);
-		rotX = wrap2Pi(rotX + dRotX * angleDX);
-		rotY = wrap2Pi(rotY + dRotY * angleDY);
-		moveX = wrap2Pi(moveX + dMoveX * dX);
-		moveY = wrap2Pi(moveY + dMoveY * dY);
-		moveZ = wrap2Pi(moveZ + dMoveZ * dZ);
+		DirectX::XMStoreFloat3(&angle,
+			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&rotationScale),
+				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f), DirectX::XMLoadFloat3(&angle))));
+		DirectX::XMStoreFloat3(&pos,
+			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&posScale),
+				DirectX::XMVectorSet(dX, dY, dZ, 0.0f), DirectX::XMLoadFloat3(&pos))));
 	}
 
 	DirectX::XMMATRIX Box::GetTransformMatrix() const noexcept
 	{
-		return DirectX::XMMatrixRotationRollPitchYaw(rotX, rotY, rotZ) * // Rotation around center
-			DirectX::XMMatrixTranslation(r, 0.0f, 0.0f) *				 // Move to side of rotation sphere
-			DirectX::XMMatrixRotationRollPitchYaw(moveX, moveY, moveZ) * // Rotate around sphere
-			DirectX::XMMatrixTranslation(0.0f, 0.0f, 10.0f);			 // Move a bit to the back
+		return DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) * // Rotation around center
+			DirectX::XMMatrixTranslation(r, 0.0f, 0.0f) *										// Move to side of rotation sphere
+			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&pos));		// Rotate around sphere
 	}
 }

@@ -29,5 +29,23 @@ namespace GFX::Primitive
 				DirectX::XMStoreFloat3(&vertex.pos, DirectX::XMVector3Transform(pos, matrix));
 			}
 		}
+
+		void SetNormals() noexcept(!IS_DEBUG)
+		{
+			assert(indices.size() % 3 == 0 && indices.size() > 0);
+			for (size_t i = 0; i < indices.size(); i += 3)
+			{
+				V & v0 = vertices.at(indices.at(i));
+				V & v1 = vertices.at(indices.at(i + 1));
+				V & v2 = vertices.at(indices.at(i + 2));
+				const auto & p0 = DirectX::XMLoadFloat3(&v0.pos);
+
+				const auto normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross((DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&v1.pos), p0)),
+					DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&v2.pos), p0)));
+				DirectX::XMStoreFloat3(&v0.normal, normal);
+				DirectX::XMStoreFloat3(&v1.normal, normal);
+				DirectX::XMStoreFloat3(&v2.normal, normal);
+			}
+		}
 	};
 }

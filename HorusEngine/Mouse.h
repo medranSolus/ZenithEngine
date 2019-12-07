@@ -59,10 +59,10 @@ namespace WinAPI
 		void OnRightUp(int x, int y) noexcept;
 		void OnWheelDown(int x, int y) noexcept;
 		void OnWheelUp(int x, int y) noexcept;
-		void OnWheelForward(int x, int y) noexcept;
-		void OnWheelBackward(int x, int y) noexcept;
-		void OnWheelRotation(int x, int y, int rotation) noexcept;
 		void OnMouseMove(int x, int y) noexcept;
+		void OnWheelRotation(int rotation) noexcept;
+		void OnWheelForward() noexcept;
+		void OnWheelBackward() noexcept;
 		void OnEnter() noexcept;
 		void OnLeave() noexcept;
 		void TrimBuffer() noexcept;

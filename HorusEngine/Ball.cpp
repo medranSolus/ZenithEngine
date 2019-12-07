@@ -5,12 +5,11 @@
 
 namespace GFX::Object
 {
-	Ball::Ball(Graphics & gfx, float x0, float y0, float z0, unsigned int density, float radius)
-		: x(x0), y(y0), z(z0)
+	Ball::Ball(Graphics & gfx, float x0, float y0, float z0, unsigned int density, float radius) : ObjectBase(x0, y0, z0), r(radius)
 	{
 		if (!IsStaticInit())
 		{
-			auto list = Primitive::Sphere::MakeIco<Primitive::Vertex>(density);
+			auto list = Primitive::Sphere::MakeSolidIco<Primitive::Vertex>(density);
 			AddStaticBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 
@@ -40,16 +39,16 @@ namespace GFX::Object
 
 	void Ball::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
 	{
-		x += dX;
-		y += dY;
-		z += dZ;
-		angleZ = wrap2Pi(angleZ + angleDZ);
-		angleX = wrap2Pi(angleX + angleDX);
-		angleY = wrap2Pi(angleY + angleDY);
+		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
+		DirectX::XMStoreFloat3(&angle, 
+			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle), 
+				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
 	}
 
 	DirectX::XMMATRIX Ball::GetTransformMatrix() const noexcept
 	{
-		return DirectX::XMMatrixRotationRollPitchYaw(angleX, angleY, angleZ) * DirectX::XMMatrixTranslation(x, y, z);
+		return DirectX::XMMatrixScaling(r, r, r) *
+			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
+			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 }

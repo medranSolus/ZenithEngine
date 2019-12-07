@@ -13,6 +13,7 @@ namespace GFX::Object
 
 		virtual const std::vector<std::unique_ptr<Resource::IBindable>> & GetStaticBinds() const noexcept = 0;
 		virtual const Resource::IndexBuffer * GetStaticIndexBuffer() const noexcept = 0;
+
 	protected:
 		void AddBind(std::unique_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG);
 

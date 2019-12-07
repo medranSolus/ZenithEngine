@@ -5,11 +5,6 @@ namespace GFX::Object
 {
 	class Triangle : public ObjectBase<Triangle>
 	{
-		float angleZ = 0.0f;
-		float x;
-		float y;
-		float z;
-		
 	public:
 		Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right);
 

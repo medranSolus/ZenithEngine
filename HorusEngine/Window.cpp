@@ -48,10 +48,6 @@ namespace WinAPI
 
 	LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
-		if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN)
-		{
-			msg = msg;
-		}
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
 			return true;
 		switch (msg)
@@ -120,15 +116,14 @@ namespace WinAPI
 			if (ImGui::GetIO().WantCaptureMouse)
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
-			mouse.OnRightDown(point.x, point.y);
+			mouse.OnRightUp(point.x, point.y);
 			break;
 		}
 		case WM_MOUSEWHEEL:
 		{
 			if (ImGui::GetIO().WantCaptureMouse)
 				break;
-			const POINTS point = MAKEPOINTS(lParam);
-			mouse.OnWheelRotation(point.x, point.y, GET_WHEEL_DELTA_WPARAM(wParam));
+			mouse.OnWheelRotation(GET_WHEEL_DELTA_WPARAM(wParam));
 			break;
 		}
 		case WM_MOUSEMOVE:

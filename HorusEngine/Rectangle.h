@@ -5,12 +5,8 @@ namespace GFX::Object
 {
 	class Rectangle : public ObjectBase<Rectangle>
 	{
-		float angleZ = 0.0f;
 		float width;
 		float height;
-		float x;
-		float y;
-		float z;
 
 	public:
 		Rectangle(Graphics & gfx, float x0, float y0, float z0, float width, float height, bool isRandom = false);

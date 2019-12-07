@@ -31,9 +31,6 @@
     <Filter Include="Header Files\GFX\ImGui">
       <UniqueIdentifier>{a3a93885-16e4-494f-82dd-c51666eb81da}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GFX\Resources">
-      <UniqueIdentifier>{2d952cab-ff1b-40ef-9318-b1870c34a0ce}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\GFX\Primitive">
       <UniqueIdentifier>{36231758-5617-4f94-a87e-eb531515cb67}</UniqueIdentifier>
     </Filter>
@@ -64,11 +61,14 @@
     <Filter Include="Source Files\GFX\Resource">
       <UniqueIdentifier>{cdd14e09-8d07-4464-bcd6-e3e5333db173}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Light">
+      <UniqueIdentifier>{66a9b62b-d099-4c35-a6cd-f46176acec4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Resource">
+      <UniqueIdentifier>{2d952cab-ff1b-40ef-9318-b1870c34a0ce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="PSBasic.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="PSRectangle.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -81,10 +81,25 @@
     <FxCompile Include="VSBasic.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="VSColor.hlsl">
+    <FxCompile Include="VSTexture.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="VSTexture.hlsl">
+    <FxCompile Include="PhongPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PhongVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SolidPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SolidVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ColorBlendVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ColorBlendPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -144,16 +159,16 @@
       <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
     <ClInclude Include="ConstantBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantPixelBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantTransformBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantVertexBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Cube.h">
       <Filter>Header Files\GFX\Primitive</Filter>
@@ -165,7 +180,7 @@
       <Filter>Header Files\Exception</Filter>
     </ClInclude>
     <ClInclude Include="GfxResources.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Globe.h">
       <Filter>Header Files\GFX\Object</Filter>
@@ -177,19 +192,19 @@
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
     <ClInclude Include="IBindable.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="IDrawable.h">
       <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
     <ClInclude Include="IndexBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="IndexedTriangleList.h">
       <Filter>Header Files\GFX\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="InputLayout.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Keyboard.h">
       <Filter>Header Files\WinAPI</Filter>
@@ -207,7 +222,7 @@
       <Filter>Header Files\FileService</Filter>
     </ClInclude>
     <ClInclude Include="PixelShader.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Primitives.h">
       <Filter>Header Files\GFX\Primitive</Filter>
@@ -216,7 +231,7 @@
       <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
     <ClInclude Include="Sampler.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Sphere.h">
       <Filter>Header Files\GFX\Primitive</Filter>
@@ -228,22 +243,22 @@
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>Header Files\FileService</Filter>
     </ClInclude>
     <ClInclude Include="Topology.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
       <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
     <ClInclude Include="VertexBuffer.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="VertexShader.h">
-      <Filter>Header Files\GFX\Resources</Filter>
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="WinApiException.h">
       <Filter>Header Files\Exception</Filter>
@@ -262,6 +277,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PointLight.h">
+      <Filter>Header Files\GFX\Light</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

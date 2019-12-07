@@ -12,7 +12,7 @@ inline float randomVertex()
 namespace GFX::Object
 {
 	Rectangle::Rectangle(Graphics & gfx, float x0, float y0, float z0, float width, float height, bool isRandom)
-		: x(x0), y(y0), z(z0), width(width), height(height)
+		: ObjectBase(x0, y0, z0), width(width), height(height)
 	{
 		auto list = Primitive::Square::Make<Primitive::VertexColor>();
 		if (isRandom)
@@ -29,11 +29,11 @@ namespace GFX::Object
 
 		if (!IsStaticInit())
 		{
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"VSColor.cso");
+			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
 			auto bytecodeVS = vertexShader->GetBytecode();
 			AddStaticBind(std::move(vertexShader));
 
-			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PSBasic.cso"));
+			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
 
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 
@@ -51,14 +51,16 @@ namespace GFX::Object
 
 	void Rectangle::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
 	{
-		x += dX;
-		y += dY;
-		z += dZ;
-		angleZ = wrap2Pi(this->angleZ + angleDZ);
+		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
+		DirectX::XMStoreFloat3(&angle,
+			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
+				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
 	}
 
 	DirectX::XMMATRIX Rectangle::GetTransformMatrix() const noexcept
 	{
-		return DirectX::XMMatrixScaling(width, height, 1.0f) * DirectX::XMMatrixRotationZ(angleZ) * DirectX::XMMatrixTranslation(x, y, z);
+		return DirectX::XMMatrixScaling(width, height, 1.0f) *
+			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
+			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 }
