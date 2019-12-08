@@ -1,7 +1,7 @@
-cbuffer ConstantBuffer
+cbuffer TransformConstatBuffer
 {
-	matrix model;
-	matrix modelViewProjection;
+    matrix modelView;
+    matrix modelViewProjection;
 };
 
 float4 main(float3 pos : Position) : SV_Position

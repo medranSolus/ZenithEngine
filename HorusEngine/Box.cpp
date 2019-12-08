@@ -5,7 +5,7 @@
 
 namespace GFX::Object
 {
-	Box::Box(Graphics& gfx, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
+	Box::Box(Graphics& gfx, Primitive::Color material, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
 	{
 		std::mt19937 engine(std::random_device{}());
 		rotationScale.x = rand(-M_PI, M_PI, engine);
@@ -14,6 +14,7 @@ namespace GFX::Object
 		posScale.x = rand(-M_PI, M_PI, engine);
 		posScale.y = rand(-M_PI, M_PI, engine);
 		posScale.z = rand(-M_PI, M_PI, engine);
+		
 		if (!IsStaticInit())
 		{
 			auto list = Primitive::Cube::Make<Primitive::Vertex>();
@@ -35,6 +36,12 @@ namespace GFX::Object
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
+
+		Resource::ObjectConstantBuffer buffer;
+		buffer.materialColor = material;
+		buffer.specularIntensity = 0.6f;
+		buffer.specularPower = 60.0f;
+		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 	}
 
 	void Box::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept

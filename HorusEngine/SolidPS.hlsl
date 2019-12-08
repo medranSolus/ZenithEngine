@@ -1,9 +1,11 @@
-cbuffer ConstantBuffer
+cbuffer ObjectConstantBuffer
 {
-	float4 color;
-}
+    float4 materialColor;
+    float specularIntensity;
+    float specularPower;
+};
 
 float4 main() : SV_Target
 {
-	return color;
+    return materialColor;
 }

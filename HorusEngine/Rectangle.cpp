@@ -23,8 +23,9 @@ namespace GFX::Object
 				list.vertices.at(i).pos.y += randomVertex();
 			}
 		}
+		std::mt19937 engine(std::random_device{}());
 		for (unsigned char i = 0; i < 4; ++i)
-			list.vertices.at(i).col = randColor();
+			list.vertices.at(i).col = randColor(engine);
 		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 
 		if (!IsStaticInit())

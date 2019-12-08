@@ -2,23 +2,22 @@
 
 namespace GFX::Resource
 {
-	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const Object::IDrawable & parent) : parent(parent)
+	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const Object::IDrawable & parent, UINT slot) : parent(parent)
 	{
 		if (!vertexBuffer)
-			vertexBuffer = std::make_unique<ConstantVertexBuffer<Buffer>>(gfx);
+			vertexBuffer = std::make_unique<ConstantVertexBuffer<TransformConstatBuffer>>(gfx, slot);
 	}
 
 	void ConstantTransformBuffer::Bind(Graphics & gfx) noexcept
 	{
-		const auto model = parent.GetTransformMatrix();
-		Buffer buffer
-		{
-			model,
-			buffer.modelViewProjection = std::move(model * gfx.GetCamera() * gfx.GetProjection())
-		};
-		vertexBuffer->Update(gfx, buffer);
+		const auto modelView = parent.GetTransformMatrix() * gfx.GetCamera();
+		vertexBuffer->Update(gfx,
+			{
+				modelView,
+				std::move(modelView * gfx.GetProjection())
+			});
 		vertexBuffer->Bind(gfx);
 	}
 
-	std::unique_ptr<ConstantVertexBuffer<ConstantTransformBuffer::Buffer>> ConstantTransformBuffer::vertexBuffer;
+	std::unique_ptr<ConstantVertexBuffer<TransformConstatBuffer>> ConstantTransformBuffer::vertexBuffer;
 }

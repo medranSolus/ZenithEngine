@@ -28,8 +28,6 @@ void App::MakeFrame()
 	angleX = dTime * rotateX;
 	angleY = dTime * rotateY;
 	window.Gfx().BeginFrame(0.1f, 0.1f, 0.1f);
-	window.Gfx().SetCamera(camera->GetView());
-	pointLight->Bind(window.Gfx());
 	while (window.Mouse().IsInput())
 	{
 		if (auto opt = window.Mouse().Read())
@@ -106,6 +104,10 @@ void App::MakeFrame()
 			}
 		}
 	}
+	window.Gfx().SetCamera(camera->GetView());
+	pointLight->SetPos(lightX, lightY, lightZ);
+	pointLight->Draw(window.Gfx());
+	pointLight->Bind(window.Gfx(), *camera);
 	switch (currScene)
 	{
 	case 0:
@@ -139,8 +141,6 @@ void App::MakeFrame()
 		break;
 	}
 	}
-	pointLight->SetPos(lightX, lightY, lightZ);
-	pointLight->Draw(window.Gfx());
 	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -162,12 +162,12 @@ void App::MakeFrame()
 App::App() : window(width, height, windowTitle)
 {
 	camera = std::make_unique<Camera>(GetRatio(), 0.01f, 120.0f);
-	window.Gfx().Gui().SetFont("Fonts/SparTakus.ttf", 14.0f);
+	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
 	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), lightX, lightY, lightZ);
 	std::mt19937 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 512; ++i)
-		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
+		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), std::move(randColor(engine)), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
 	
 	//float width = 1.0f;
 	//float height = 1.0f;

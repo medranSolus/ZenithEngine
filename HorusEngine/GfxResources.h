@@ -3,6 +3,7 @@
 #include "ConstantPixelBuffer.h"
 #include "ConstantTransformBuffer.h"
 #include "ConstantVertexBuffer.h"
+#include "ShaderConstantBuffers.h"
 #include "IndexBuffer.h"
 #include "InputLayout.h"
 #include "PixelShader.h"

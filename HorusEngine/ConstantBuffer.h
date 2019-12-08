@@ -9,9 +9,10 @@ namespace GFX::Resource
 	{
 	protected:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+		UINT slot;
 
 	public:
-		ConstantBuffer(Graphics& gfx, const T & values)
+		ConstantBuffer(Graphics& gfx, const T & values, UINT slot = 0U) : slot(slot)
 		{
 			GFX_ENABLE_ALL(gfx);
 			D3D11_BUFFER_DESC bufferDesc;
@@ -26,7 +27,7 @@ namespace GFX::Resource
 			GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, &resData, &constantBuffer));
 		}
 
-		ConstantBuffer(Graphics & gfx)
+		ConstantBuffer(Graphics & gfx, UINT slot = 0U) : slot(slot)
 		{
 			GFX_ENABLE_ALL(gfx);
 			D3D11_BUFFER_DESC bufferDesc;

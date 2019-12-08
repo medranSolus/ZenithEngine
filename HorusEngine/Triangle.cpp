@@ -11,11 +11,12 @@ namespace GFX::Object
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
 		const float centerX = (vertex3X + down) / 3;
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
+		std::mt19937 engine(std::random_device{}());
 		const std::vector<Primitive::VertexColor> vertices =
 		{
-			{ { -centerX, -centerY, 1.0f }, randColor() },
-			{ { vertex3X - centerX, 2.0f * centerY, 1.0f }, randColor() },
-			{ { down - centerX, -centerY, 1.0f }, randColor() },
+			{ { -centerX, -centerY, 1.0f }, randColor(engine) },
+			{ { vertex3X - centerX, 2.0f * centerY, 1.0f }, randColor(engine) },
+			{ { down - centerX, -centerY, 1.0f }, randColor(engine) },
 		};
 		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, vertices));
 

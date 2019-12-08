@@ -22,8 +22,9 @@ namespace GFX::Object
 			{
 				Primitive::Color faceColors[20];
 			} colorBuffer;
+			std::mt19937 engine(std::random_device{}());
 			for (unsigned int i = 0; i < 20; ++i)
-				colorBuffer.faceColors[i] = randColor();
+				colorBuffer.faceColors[i] = randColor(engine);
 			AddStaticBind(std::make_unique<Resource::ConstantPixelBuffer<ColorBuffer>>(gfx, colorBuffer));
 
 			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =

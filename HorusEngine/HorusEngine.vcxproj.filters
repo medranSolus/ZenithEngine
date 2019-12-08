@@ -75,16 +75,7 @@
     <FxCompile Include="PSRectangle.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="PSTexture.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="PSTriangle.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="VSBasic.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="VSTexture.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="PhongPS.hlsl">
@@ -103,6 +94,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="ColorBlendPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TexturePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TextureVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -283,6 +280,9 @@
     </ClInclude>
     <ClInclude Include="PointLight.h">
       <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderConstantBuffers.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
