@@ -1,4 +1,4 @@
-// dear imgui, v1.74 WIP
+// dear imgui, v1.74
 // (headers)
 
 // See imgui.cpp file for documentation.
@@ -47,8 +47,8 @@ Index of this file:
 
 // Version
 // (Integer encoded as XYYZZ for use in #if preprocessor conditionals. Work in progress versions typically starts at XYY99 then bounce up to XYY00, XYY01 etc. when release tagging happens)
-#define IMGUI_VERSION               "1.74 WIP"
-#define IMGUI_VERSION_NUM           17301
+#define IMGUI_VERSION               "1.74"
+#define IMGUI_VERSION_NUM           17400
 #define IMGUI_CHECKVERSION()        ImGui::DebugCheckVersionAndDataLayout(IMGUI_VERSION, sizeof(ImGuiIO), sizeof(ImGuiStyle), sizeof(ImVec2), sizeof(ImVec4), sizeof(ImDrawVert), sizeof(ImDrawIdx))
 
 // Define attributes of all API symbols declarations (e.g. for DLL under Windows)
@@ -1273,6 +1273,7 @@ struct ImVector
     inline int          _grow_capacity(int sz) const        { int new_capacity = Capacity ? (Capacity + Capacity/2) : 8; return new_capacity > sz ? new_capacity : sz; }
     inline void         resize(int new_size)                { if (new_size > Capacity) reserve(_grow_capacity(new_size)); Size = new_size; }
     inline void         resize(int new_size, const T& v)    { if (new_size > Capacity) reserve(_grow_capacity(new_size)); if (new_size > Size) for (int n = Size; n < new_size; n++) memcpy(&Data[n], &v, sizeof(v)); Size = new_size; }
+    inline void         shrink(int new_size)                { IM_ASSERT(new_size <= Size); Size = new_size; }
     inline void         reserve(int new_capacity)           { if (new_capacity <= Capacity) return; T* new_data = (T*)IM_ALLOC((size_t)new_capacity * sizeof(T)); if (Data) { memcpy(new_data, Data, (size_t)Size * sizeof(T)); IM_FREE(Data); } Data = new_data; Capacity = new_capacity; }
 
     // NB: It is illegal to call push_back/push_front/insert with a reference pointing inside the ImVector data itself! e.g. v.push_back(v[10]) is forbidden.
@@ -2143,7 +2144,7 @@ struct ImFontAtlas
     // After calling Build(), you can query the rectangle position and render your pixels.
     // You can also request your rectangles to be mapped as font glyph (given a font + Unicode point),
     // so you can render e.g. custom colorful icons and use them as regular glyphs.
-    // Read misc/fonts/README.txt for more details about using colorful icons.
+    // Read docs/FONTS.txt for more details about using colorful icons.
     IMGUI_API int               AddCustomRectRegular(unsigned int id, int width, int height);                                                                   // Id needs to be >= 0x110000. Id >= 0x80000000 are reserved for ImGui and ImDrawList
     IMGUI_API int               AddCustomRectFontGlyph(ImFont* font, ImWchar id, int width, int height, float advance_x, const ImVec2& offset = ImVec2(0,0));   // Id needs to be < 0x110000 to register a rectangle to map into a specific font.
     const ImFontAtlasCustomRect*GetCustomRectByIndex(int index) const { if (index < 0) return NULL; return &CustomRects[index]; }
