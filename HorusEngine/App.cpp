@@ -166,7 +166,7 @@ App::App() : window(width, height, windowTitle)
 	window.Gfx().SetProjection(camera->GetProjection());
 	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), lightX, lightY, lightZ);
 	std::mt19937 engine(std::random_device{}());
-	for (unsigned int i = 0; i < 512; ++i)
+	for (unsigned int i = 0; i < 2056; ++i)
 		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), std::move(randColor(engine)), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
 	
 	//float width = 1.0f;

@@ -72,12 +72,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="PSRectangle.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="PSTriangle.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="PhongPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -96,10 +90,10 @@
     <FxCompile Include="ColorBlendPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="TexturePS.hlsl">
+    <FxCompile Include="TexturePhongVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="TextureVS.hlsl">
+    <FxCompile Include="TexturePhongPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

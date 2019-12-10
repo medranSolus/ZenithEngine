@@ -24,8 +24,8 @@ namespace GFX::Resource
 	struct ObjectConstantBuffer
 	{
 		Primitive::Color materialColor;
-		float specularIntensity;
-		float specularPower;
+		float specularIntensity;	// The bigger the brighter
+		float specularPower;		// The smaller the less focused in one point
 		float padding[2] { 0.0f };
 	};
 }

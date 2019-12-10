@@ -31,6 +31,15 @@ namespace GFX::Object
 			staticBinds.push_back(std::move(buffer));
 		}
 
+		template<typename T>
+		T * GetResource() noexcept
+		{
+			for (auto & bind : binds)
+				if (auto res = dynamic_cast<T*>(&bind))
+					return res;
+			return nullptr;
+		}
+
 	public:
 		constexpr ObjectBase(float x0, float y0, float z0) noexcept : pos(x0, y0, z0) {}
 
