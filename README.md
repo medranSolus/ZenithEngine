@@ -1,6 +1,6 @@
 # Horus Engine
 
-DirectX 11 graphics engine
+DirectX 11 graphics engine.
 
 **IDE:** Visual Studio 2017
 
