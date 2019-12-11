@@ -6,4 +6,5 @@ DirectX 11 graphics engine
 
 **External libraries:**
   - ImGui 1.74 https://github.com/ocornut/imgui
+  - AssImp 5.0.0 https://github.com/assimp/assimp
   
