@@ -2,7 +2,6 @@
 # Set default behavior to automatically normalize line endings.
 ###############################################################################
 * text=auto
-
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
@@ -11,7 +10,6 @@
 # Note: This is only used by command line
 ###############################################################################
 #*.cs     diff=csharp
-
 ###############################################################################
 # Set the merge driver for project and solution files
 #
@@ -34,7 +32,6 @@
 #*.modelproj merge=binary
 #*.sqlproj   merge=binary
 #*.wwaproj   merge=binary
-
 ###############################################################################
 # behavior for image files
 #
@@ -43,7 +40,6 @@
 #*.jpg   binary
 #*.png   binary
 #*.gif   binary
-
 ###############################################################################
 # diff behavior for common document formats
 # 
@@ -61,3 +57,23 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+LibsExternal/x86/Release/zlib.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Release/assimp.dll filter=lfs diff=lfs merge=lfs -text
+
+LibsExternal/x86/Debug/assimp.pdb filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Debug/zlibd.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Debug/zlibd.ilk filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Debug/zlibd.pdb filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Debug/assimp.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x86/Debug/assimp.ilk filter=lfs diff=lfs merge=lfs -text
+
+LibsExternal/x64/Release/assimp.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Release/zlib.dll filter=lfs diff=lfs merge=lfs -text
+
+LibsExternal/x64/Debug/zlibd.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Debug/zlibd.ilk filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Debug/zlibd.pdb filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Debug/assimp.dll filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Debug/assimp.ilk filter=lfs diff=lfs merge=lfs -text
+LibsExternal/x64/Debug/assimp.pdb filter=lfs diff=lfs merge=lfs -text
