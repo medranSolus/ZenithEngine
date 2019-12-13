@@ -1,8 +1,6 @@
 #pragma once
 #include "IndexedTriangleList.h"
 #include "BasicTypes.h"
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 
 namespace FileService
 {

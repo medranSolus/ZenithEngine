@@ -1,6 +1,9 @@
 #include "App.h"
 #include "Math.h"
 #include "ImGui/imgui.h"
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 unsigned int App::width = 1600;
 unsigned int App::height = 900;
@@ -168,7 +171,8 @@ App::App() : window(width, height, windowTitle)
 	std::mt19937 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 2056; ++i)
 		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), std::move(randColor(engine)), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
-	
+	Assimp::Importer importer;
+	auto model = importer.ReadFile("Models/IronMan/IronMan.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 	//float width = 1.0f;
 	//float height = 1.0f;
 	//rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, width, height);
