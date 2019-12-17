@@ -4,7 +4,7 @@
 namespace GFX::Light
 {
 	PointLight::PointLight(Graphics & gfx, float x0, float y0, float z0, float radius)
-		: mesh(gfx, x0, y0, z0, 3, 3, radius, radius, radius), buffer(gfx)
+		: mesh(gfx, { 1.0f,1.0f,1.0f }, x0, y0, z0, 3, 3, radius, radius, radius), buffer(gfx)
 	{
 		lightBuffer =
 		{

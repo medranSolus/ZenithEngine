@@ -20,28 +20,20 @@ class App
 	Timer timer;
 	std::unique_ptr<Camera> camera = nullptr;
 	std::unique_ptr<GFX::Light::PointLight> pointLight = nullptr;
-	std::unique_ptr<GFX::Object::Rectangle> rect = nullptr;
-	std::unique_ptr<GFX::Object::Triangle> triangle = nullptr;
-	std::unique_ptr<GFX::Object::Globe> globe = nullptr;
-	std::unique_ptr<GFX::Object::Ball> ball = nullptr;
+	std::vector<std::unique_ptr<GFX::Object::IDrawable>> objects;
+
 	std::vector<std::unique_ptr<GFX::Object::Box>> boxes;
 	std::vector<std::unique_ptr<GFX::Object::Rectangle>> carpetRects;
 	void CreateCarpet(unsigned int depth, float x, float y, float width);
 
 	void MakeFrame();
+	inline void ProcessInput();
 
 public:
 	App();
 	App(const App &) = delete;
 	App & operator=(const App &) = delete;
 	~App() = default;
-
-	void Scene0();
-	void Scene1();
-	void Scene2();
-	void Scene3();
-	void Scene4();
-	void Scene5();
 
 	static constexpr float GetRatio() { return static_cast<float>(width) / height; }
 

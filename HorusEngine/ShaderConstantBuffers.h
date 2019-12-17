@@ -1,5 +1,5 @@
 #pragma once
-#include "BasicTypes.h"
+#include "Vertex.h"
 
 namespace GFX::Resource
 {
@@ -11,8 +11,8 @@ namespace GFX::Resource
 
 	struct LightConstantBuffer
 	{
-		Primitive::Color ambientColor;
-		Primitive::Color diffuseColor;
+		BasicType::ColorFloat ambientColor;
+		BasicType::ColorFloat diffuseColor;
 		DirectX::XMFLOAT3 pos;
 		float diffuseIntensity;
 		float atteuationConst;
@@ -23,7 +23,7 @@ namespace GFX::Resource
 
 	struct ObjectConstantBuffer
 	{
-		Primitive::Color materialColor;
+		BasicType::ColorFloat materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2] { 0.0f };

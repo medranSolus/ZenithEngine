@@ -1,9 +1,6 @@
 #include "App.h"
 #include "Math.h"
 #include "ImGui/imgui.h"
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
 
 unsigned int App::width = 1600;
 unsigned int App::height = 900;
@@ -31,6 +28,36 @@ void App::MakeFrame()
 	angleX = dTime * rotateX;
 	angleY = dTime * rotateY;
 	window.Gfx().BeginFrame(0.1f, 0.1f, 0.1f);
+	ProcessInput();
+	window.Gfx().SetCamera(camera->GetView());
+	pointLight->SetPos(lightX, lightY, lightZ);
+	pointLight->Draw(window.Gfx());
+	pointLight->Bind(window.Gfx(), *camera);
+	for (auto & obj : objects)
+	{
+		obj->Update(moveX, moveZ, moveY, angleZ, angleX, angleY);
+		obj->Draw(window.Gfx());
+	}
+	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Light X", &lightX, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Light Y", &lightY, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Light Z", &lightZ, -60.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.05f, 0.5f, "%.2f");
+		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
+		if (ImGui::Button("Reset"))
+			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
+	}
+	ImGui::End();
+	window.Gfx().EndFrame();
+}
+
+inline void App::ProcessInput()
+{
 	while (window.Mouse().IsInput())
 	{
 		if (auto opt = window.Mouse().Read())
@@ -93,11 +120,6 @@ void App::MakeFrame()
 					moveY -= 0.001;
 					break;
 				}
-				case VK_TAB:
-				{
-					//currScene = ++currScene % 6;
-					break;
-				}
 				case VK_F1:
 				{
 					window.Gfx().SwitchGUI();
@@ -107,59 +129,6 @@ void App::MakeFrame()
 			}
 		}
 	}
-	window.Gfx().SetCamera(camera->GetView());
-	pointLight->SetPos(lightX, lightY, lightZ);
-	pointLight->Draw(window.Gfx());
-	pointLight->Bind(window.Gfx(), *camera);
-	switch (currScene)
-	{
-	case 0:
-	{
-		Scene0();
-		break;
-	}
-	case 1:
-	{
-		Scene1();
-		break;
-	}
-	case 2:
-	{
-		Scene2();
-		break;
-	}
-	case 3:
-	{
-		Scene3();
-		break;
-	}
-	case 4:
-	{
-		Scene4();
-		break;
-	}
-	case 5:
-	{
-		Scene5();
-		break;
-	}
-	}
-	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Light X", &lightX, -60.0f, 60.0f, "%.1f");
-		ImGui::SliderFloat("Light Y", &lightY, -60.0f, 60.0f, "%.1f");
-		ImGui::SliderFloat("Light Z", &lightZ, -60.0f, 60.0f, "%.1f");
-		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.05f, 0.5f, "%.2f");
-		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
-		if (ImGui::Button("Reset"))
-			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
-	}
-	ImGui::End();
-	window.Gfx().EndFrame();
 }
 
 App::App() : window(width, height, windowTitle)
@@ -168,59 +137,14 @@ App::App() : window(width, height, windowTitle)
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
 	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), lightX, lightY, lightZ);
-	std::mt19937 engine(std::random_device{}());
-	for (unsigned int i = 0; i < 2056; ++i)
-		boxes.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), std::move(randColor(engine)), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
-	Assimp::Importer importer;
-	auto model = importer.ReadFile("Models/IronMan/IronMan.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-	//float width = 1.0f;
-	//float height = 1.0f;
-	//rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, width, height);
-	//triangle = std::make_unique<GFX::Object::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f);
-	//globe = std::make_unique<GFX::Object::Globe>(window.Gfx(), 0.0f, 0.0f, 4.0f, 25, 25, 3.0f, 3.0f);
-	//ball = std::make_unique<GFX::Object::Ball>(window.Gfx(), 0.0f, 0.0f, 4.0f, 7, 3.0f);
-}
-
-void App::Scene0()
-{
-	triangle->Update(moveX, moveY, moveZ, angleZ);
-	triangle->Draw(window.Gfx());
-}
-
-void App::Scene1()
-{
-	rect->Update(moveX, moveY, moveZ, angleZ);
-	rect->Draw(window.Gfx());
-}
-
-void App::Scene2()
-{
-	for (auto & rect : carpetRects)
-	{
-		rect->Update(moveX, moveY, moveZ, angleZ);
-		rect->Draw(window.Gfx());
-	}
-}
-
-void App::Scene3()
-{
-	for (auto & b : boxes)
-	{
-		b->Update(moveX, moveZ, moveY, angleZ, angleX, angleY);
-		b->Draw(window.Gfx());
-	}
-}
-
-void App::Scene4()
-{
-	globe->Update(moveX, moveY, moveZ, angleZ, angleX, angleY);
-	globe->Draw(window.Gfx());
-}
-
-void App::Scene5()
-{
-	ball->Update(moveX, moveY, moveZ, angleZ, angleX, angleY);
-	ball->Draw(window.Gfx());
+	std::mt19937_64 engine(std::random_device{}());
+	for (unsigned int i = 0; i < 8; ++i)
+		objects.push_back(std::make_unique<GFX::Object::Box>(window.Gfx(), std::move(randColor(engine)), rand(-10.0f, 10.0f, engine), rand(-10.0f, 10.0f, engine), rand(1.0f, 30.0f, engine), rand(5.0f, 30.0f, engine)));
+	objects.push_back(std::make_unique<GFX::Object::Model>(window.Gfx(), "Models/suzanne.obj", 0.0f, 0.0f, 0.0f, 1.0f));
+	//rect = std::make_unique<GFX::Object::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, 1.0f, 1.0f);
+	objects.push_back(std::make_unique<GFX::Object::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f));
+	objects.push_back(std::make_unique<GFX::Object::Globe>(window.Gfx(), std::move(randColor(engine)), 0.0f, 8.0f, -1.0f, 25, 25, 3.0f, 3.0f, 3.0f));
+	objects.push_back(std::make_unique<GFX::Object::Ball>(window.Gfx(), std::move(randColor(engine)), 0.0f, 0.0f, 7.0f, 3, 3.0f));
 }
 
 unsigned long long App::Run()

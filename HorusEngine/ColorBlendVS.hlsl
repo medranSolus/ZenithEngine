@@ -6,11 +6,11 @@ cbuffer TransformConstatBuffer
 
 struct VSOut
 {
-    float4 col : Color;
+    float4 col : COLOR;
     float4 pos : SV_Position;
 };
 
-VSOut main(float3 pos : Position, float4 color : Color)
+VSOut main(float3 pos : POSITION, float4 color : COLOR)
 {
 	VSOut vout;
 	vout.col = color;

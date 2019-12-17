@@ -49,9 +49,6 @@
     <Filter Include="Source Files\GFX">
       <UniqueIdentifier>{a831bbb3-a8e4-4e29-88ba-8a77d5b26722}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\GFX\Primitive">
-      <UniqueIdentifier>{196305ee-dba2-42a3-b1be-97693614ed85}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\GFX\ImGui">
       <UniqueIdentifier>{c61ba09f-5d4e-4fea-82a3-b1558a3f4ab6}</UniqueIdentifier>
     </Filter>
@@ -75,6 +72,12 @@
     </Filter>
     <Filter Include="Header Files\FileService\AssImp\Compiler">
       <UniqueIdentifier>{5b60c512-5fb1-4791-a289-9884505ca721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\BasicType">
+      <UniqueIdentifier>{c8d0cc4e-fd0b-42cf-b64d-4b4c89fe5a3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\BasicType">
+      <UniqueIdentifier>{196305ee-dba2-42a3-b1be-97693614ed85}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -148,9 +151,6 @@
     </ClInclude>
     <ClInclude Include="BasicException.h">
       <Filter>Header Files\Exception</Filter>
-    </ClInclude>
-    <ClInclude Include="BasicTypes.h">
-      <Filter>Header Files\GFX\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="Box.h">
       <Filter>Header Files\GFX\Object</Filter>
@@ -509,6 +509,24 @@
     <ClInclude Include="..\AssImp\include\assimp\config.h">
       <Filter>Header Files\FileService\AssImp</Filter>
     </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>Header Files\GFX\BasicType</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Header Files\GFX\BasicType</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexLayout.h">
+      <Filter>Header Files\GFX\BasicType</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexDataBuffer.h">
+      <Filter>Header Files\GFX\BasicType</Filter>
+    </ClInclude>
+    <ClInclude Include="SolidGlobe.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -558,9 +576,6 @@
     </ClCompile>
     <ClCompile Include="DXGIDebugInfoManager.cpp">
       <Filter>Source Files\GFX</Filter>
-    </ClCompile>
-    <ClCompile Include="BasicTypes.cpp">
-      <Filter>Source Files\GFX\Primitive</Filter>
     </ClCompile>
     <ClCompile Include="ConstantTransformBuffer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
@@ -624,6 +639,27 @@
     </ClCompile>
     <ClCompile Include="PointLight.cpp">
       <Filter>Source Files\GFX\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Vertex.cpp">
+      <Filter>Source Files\GFX\BasicType</Filter>
+    </ClCompile>
+    <ClCompile Include="Color.cpp">
+      <Filter>Source Files\GFX\BasicType</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexLayout.cpp">
+      <Filter>Source Files\GFX\BasicType</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexDataBuffer.cpp">
+      <Filter>Source Files\GFX\BasicType</Filter>
+    </ClCompile>
+    <ClCompile Include="Math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SolidGlobe.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

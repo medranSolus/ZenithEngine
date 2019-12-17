@@ -6,13 +6,13 @@ cbuffer TransformConstatBuffer
 
 struct VSOut
 {
-    float3 cameraPos : Position;
-	float3 normal : Normal;
-    float2 tc : TexCoord;
+    float3 cameraPos : POSITION;
+	float3 normal : NORMAL;
+    float2 tc : TEXCOORD;
 	float4 pos : SV_Position;
 };
 
-VSOut main(float3 pos : Position, float3 normal : Normal, float2 tc : TexCoord)
+VSOut main(float3 pos : POSITION, float3 normal : NORMAL, float2 tc : TEXCOORD)
 {
 	VSOut vso;
     vso.cameraPos = (float3) mul(modelView, float4(pos, 1.0f));

@@ -1,7 +1,6 @@
 #include "Rectangle.h"
 #include "Primitives.h"
 #include "GfxResources.h"
-#include "App.h"
 #include "Math.h"
 
 inline float randomVertex()
@@ -14,18 +13,18 @@ namespace GFX::Object
 	Rectangle::Rectangle(Graphics & gfx, float x0, float y0, float z0, float width, float height, bool isRandom)
 		: ObjectBase(x0, y0, z0), width(width), height(height)
 	{
-		auto list = Primitive::Square::Make<Primitive::VertexColor>();
+		auto list = Primitive::Square::Make();
 		if (isRandom)
 		{
 			for (unsigned char i = 0; i < 4; ++i)
 			{
-				list.vertices.at(i).pos.x += randomVertex();
-				list.vertices.at(i).pos.y += randomVertex();
+				list.vertices[i].Get<VertexAttribute::Position3D>().x += randomVertex();
+				list.vertices[i].Get<VertexAttribute::Position3D>().y += randomVertex();
 			}
 		}
-		std::mt19937 engine(std::random_device{}());
-		for (unsigned char i = 0; i < 4; ++i)
-			list.vertices.at(i).col = randColor(engine);
+		std::mt19937_64 engine(std::random_device{}());
+		/*for (unsigned char i = 0; i < 4; ++i)
+			list.vertices.at(i).col = randColor(engine);*/
 		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 
 		if (!IsStaticInit())
@@ -38,12 +37,7 @@ namespace GFX::Object
 
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 
-			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
-			{
-				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "Color", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 }
-			};
-			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, inputDesc, bytecodeVS));
+			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
 
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		}

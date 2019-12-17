@@ -4,7 +4,7 @@ cbuffer TransformConstatBuffer
     matrix modelViewProjection;
 };
 
-float4 main(float3 pos : Position) : SV_Position
+float4 main(float3 pos : POSITION) : SV_Position
 {
 	return mul(modelViewProjection, float4(pos, 1.0f));
 }

@@ -1,6 +1,5 @@
 #pragma once
 #include "ObjectBase.h"
-#include "BasicTypes.h"
 
 namespace GFX::Object
 {
@@ -11,7 +10,7 @@ namespace GFX::Object
 		float r;
 
 	public:
-		Box(Graphics & gfx, Primitive::Color material, float x0, float y0, float z0, float rotationR);
+		Box(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR);
 
 		void Update(float dX, float dY, float dZ, float angleDZ = 0.0f, float angleDX = 0.0f, float angleDY = 0.0f) noexcept override;
 		DirectX::XMMATRIX GetTransformMatrix() const noexcept override;

@@ -1,8 +1,6 @@
 #include "GDIPlusManager.h"
 #include <gdiplus.h>
 
-#pragma comment(lib, "gdiplus.lib")
-
 namespace WinAPI
 {
 	unsigned long long GDIPlusManager::referenceCount = 0U;

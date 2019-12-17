@@ -19,7 +19,7 @@ cbuffer ObjectConstantBuffer
 Texture2D tex;
 SamplerState splr;
 
-float4 main(float3 cameraPos : Position, float3 normal : Normal, float2 tc : TexCoord) : SV_Target
+float4 main(float3 cameraPos : POSITION, float3 normal : NORMAL, float2 tc : TEXCOORD) : SV_Target
 {
 	// Vertex to light data
     const float3 vertexToLight = lightPos - cameraPos;

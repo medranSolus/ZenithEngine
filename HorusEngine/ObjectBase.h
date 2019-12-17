@@ -1,5 +1,6 @@
 #pragma once
 #include "IDrawable.h"
+#include "Vertex.h"
 
 namespace GFX::Object
 {

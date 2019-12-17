@@ -6,19 +6,19 @@ namespace GFX::Primitive
 	class Cube
 	{
 	public:
-		template<typename V>
-		static IndexedTriangleList<V> MakeSolid()
+		static IndexedTriangleList MakeSolid()
 		{
 			constexpr float point = 0.5f;
-			std::vector<V> vertices(8);
-			vertices[0].pos = { -point, -point, -point };
-			vertices[1].pos = { -point, point, -point };
-			vertices[2].pos = { point, point, -point };
-			vertices[3].pos = { point, -point, -point };
-			vertices[4].pos = { -point, -point, point };
-			vertices[5].pos = { -point, point, point };
-			vertices[6].pos = { point, point, point };
-			vertices[7].pos = { point, -point, point };
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), 8);
+
+			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
+			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
+			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
+			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
+			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
+			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
+			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
+			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
 
 			return
 			{
@@ -34,43 +34,45 @@ namespace GFX::Primitive
 			};
 		}
 
-		template<typename V>
-		static IndexedTriangleList<V> Make()
+		static IndexedTriangleList Make()
 		{
 			constexpr float point = 0.5f;
-			std::vector<V> vertices(24);
-			// Front
-			vertices[0].pos = { -point,-point,-point };
-			vertices[1].pos = { -point,point,-point };
-			vertices[2].pos = { point,point,-point };
-			vertices[3].pos = { point,-point,-point };
-			// Left
-			vertices[4].pos = { -point,-point,point };
-			vertices[5].pos = { -point,point,point };
-			vertices[6].pos = { -point,point,-point };
-			vertices[7].pos = { -point,-point,-point };
-			// Back
-			vertices[8].pos = { point,-point,point };
-			vertices[9].pos = { point,point,point };
-			vertices[10].pos = { -point,point,point };
-			vertices[11].pos = { -point,-point,point };
-			// Right
-			vertices[12].pos = { point,-point,-point };
-			vertices[13].pos = { point,point,-point };
-			vertices[14].pos = { point,point,point };
-			vertices[15].pos = { point,-point,point };
-			// Top
-			vertices[16].pos = { -point,point,-point };
-			vertices[17].pos = { -point,point,point };
-			vertices[18].pos = { point,point,point };
-			vertices[19].pos = { point,point,-point };
-			// Down	
-			vertices[20].pos = { -point,-point,point };
-			vertices[21].pos = { -point,-point,-point };
-			vertices[22].pos = { point,-point,-point };
-			vertices[23].pos = { point,-point,point };
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
+				.Append(VertexAttribute::Position3D)
+				.Append(VertexAttribute::Normal)), 24);
 
-			IndexedTriangleList<V> list =
+			// Front
+			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
+			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
+			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
+			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
+			// Left
+			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
+			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
+			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
+			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
+			// Back
+			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
+			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
+			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
+			// Right
+			vertices[12].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
+			vertices[13].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
+			vertices[14].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
+			vertices[15].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+			// Top
+			vertices[16].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
+			vertices[17].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
+			vertices[18].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
+			vertices[19].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
+			// Down	
+			vertices[20].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
+			vertices[21].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
+			vertices[22].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
+			vertices[23].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+
+			IndexedTriangleList list =
 			{
 				std::move(vertices),
 				{

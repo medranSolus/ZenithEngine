@@ -16,7 +16,7 @@ cbuffer ObjectConstantBuffer
     float specularPower;
 };
 
-float4 main(float3 cameraPos : Position, float3 normal : Normal) : SV_Target
+float4 main(float3 cameraPos : POSITION, float3 normal : NORMAL) : SV_Target
 {
 	// Vertex to light data
 	const float3 vertexToLight = lightPos - cameraPos;

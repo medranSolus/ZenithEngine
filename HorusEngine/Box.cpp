@@ -5,9 +5,9 @@
 
 namespace GFX::Object
 {
-	Box::Box(Graphics& gfx, Primitive::Color material, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
+	Box::Box(Graphics& gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
 	{
-		std::mt19937 engine(std::random_device{}());
+		std::mt19937_64 engine(std::random_device{}());
 		rotationScale.x = rand(-M_PI, M_PI, engine);
 		rotationScale.y = rand(-M_PI, M_PI, engine);
 		rotationScale.z = rand(-M_PI, M_PI, engine);
@@ -17,7 +17,7 @@ namespace GFX::Object
 		
 		if (!IsStaticInit())
 		{
-			auto list = Primitive::Cube::Make<Primitive::Vertex>();
+			auto list = Primitive::Cube::Make();
 			AddStaticBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
 			
@@ -26,12 +26,7 @@ namespace GFX::Object
 			AddStaticBind(std::move(vertexShader));
 			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PhongPS.cso"));
 
-			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
-			{
-				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "Normal", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 }
-			};
-			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, inputDesc, bytecodeVS));
+			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
 
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
 		}

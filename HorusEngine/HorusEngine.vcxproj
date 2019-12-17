@@ -116,7 +116,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>assimp-vc141-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -141,7 +141,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>assimp-vc141-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -172,7 +172,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>assimp-vc141-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -203,7 +203,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>assimp-vc141-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -342,9 +342,11 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BasicException.h" />
-    <ClInclude Include="BasicTypes.h" />
+    <ClInclude Include="SolidGlobe.h" />
+    <ClInclude Include="Vertex.h" />
     <ClInclude Include="Box.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Color.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConstantPixelBuffer.h" />
     <ClInclude Include="ConstantTransformBuffer.h" />
@@ -374,6 +376,7 @@
     <ClInclude Include="InputLayout.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Math.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="ObjectBase.h" />
     <ClInclude Include="Objects.h" />
@@ -393,6 +396,8 @@
     <ClInclude Include="Topology.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="VertexBuffer.h" />
+    <ClInclude Include="VertexDataBuffer.h" />
+    <ClInclude Include="VertexLayout.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="WinAPI.h" />
     <ClInclude Include="WinApiException.h" />
@@ -403,7 +408,10 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="BasicException.cpp" />
-    <ClCompile Include="BasicTypes.cpp" />
+    <ClCompile Include="Color.cpp" />
+    <ClCompile Include="Math.cpp" />
+    <ClCompile Include="SolidGlobe.cpp" />
+    <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ConstantTransformBuffer.cpp" />
@@ -424,6 +432,7 @@
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="InputLayout.cpp" />
     <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="PixelShader.cpp" />
@@ -434,6 +443,8 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
+    <ClCompile Include="VertexDataBuffer.cpp" />
+    <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
     <ClCompile Include="WinApiException.cpp" />
     <ClCompile Include="Window.cpp" />

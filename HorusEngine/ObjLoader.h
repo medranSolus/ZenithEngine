@@ -1,6 +1,6 @@
 #pragma once
 #include "IndexedTriangleList.h"
-#include "BasicTypes.h"
+#include "Vertex.h"
 
 namespace FileService
 {
@@ -12,7 +12,6 @@ namespace FileService
 		ObjLoader & operator=(ObjLoader &) = delete;
 		~ObjLoader() = delete;
 
-		static GFX::Primitive::IndexedTriangleList<GFX::Primitive::Vertex> LoadMesh(const std::string & filename);
-		static GFX::Primitive::IndexedTriangleList<GFX::Primitive::VertexTexture> LoadTextured(const std::string & filename);
+		static GFX::Primitive::IndexedTriangleList LoadMesh(const std::string & filename);
 	};
 }

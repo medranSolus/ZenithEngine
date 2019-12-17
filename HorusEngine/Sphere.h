@@ -1,5 +1,6 @@
 #pragma once
 #include "IndexedTriangleList.h"
+#include "Math.h"
 #include <cmath>
 #include <unordered_map>
 #include <boost/functional/hash/hash.hpp>
@@ -10,8 +11,7 @@ namespace GFX::Primitive
 	{
 	public:
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		template<typename V>
-		static IndexedTriangleList<V> MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
+		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -24,16 +24,14 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			std::vector<V> vertices;
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), (latitudeDensity - 1) * longitudeDensity + 2);
 			// Sphere vertices without poles
-			for (unsigned int lat = 1; lat < latitudeDensity; ++lat)
+			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
 				const auto latBase = DirectX::XMVector3Transform(base, DirectX::XMMatrixRotationX(latitudeAngle * lat));
-				for (unsigned int lon = 0; lon < longitudeDensity; ++lon)
-				{
-					vertices.emplace_back();
-					DirectX::XMStoreFloat3(&vertices.back().pos, std::move(DirectX::XMVector3Transform(latBase, DirectX::XMMatrixRotationY(longitudeAngle * lon))));
-				}
+				for (unsigned int lon = 0; lon < longitudeDensity; ++lon, ++i)
+					DirectX::XMStoreFloat3(&vertices[i].Get<VertexAttribute::Position3D>(),
+						std::move(DirectX::XMVector3Transform(latBase, DirectX::XMMatrixRotationY(longitudeAngle * lon))));
 			}
 			const auto getIndex = [&latitudeDensity, &longitudeDensity](unsigned int lat, unsigned int lon) constexpr -> unsigned int
 			{ 
@@ -64,13 +62,11 @@ namespace GFX::Primitive
 				indices.push_back(baseIndex + longitudeDensity);
 			}
 			// Poles vertices
-			const unsigned int pole = static_cast<unsigned int>(vertices.size());
+			const unsigned int pole = static_cast<unsigned int>(vertices.Size() - 2);
 			// South
-			vertices.emplace_back();
-			DirectX::XMStoreFloat3(&vertices.back().pos, std::move(DirectX::XMVectorNegate(base)));
-			// Norht
-			vertices.emplace_back();
-			DirectX::XMStoreFloat3(&vertices.back().pos, std::move(base));
+			DirectX::XMStoreFloat3(&vertices[pole].Get<VertexAttribute::Position3D>(), std::move(DirectX::XMVectorNegate(base)));
+			// North
+			DirectX::XMStoreFloat3(&vertices[pole + 1].Get<VertexAttribute::Position3D>(), std::move(base));
 
 			// Triangle ring on each pole
 			for (unsigned int lon = 0; lon < longitudeDensity - 1; ++lon)
@@ -100,8 +96,7 @@ namespace GFX::Primitive
 		}
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		template<typename V>
-		static IndexedTriangleList<V> MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
+		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -114,19 +109,19 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			std::vector<V> vertices;
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
+				.Append(VertexAttribute::Position3D)
+				.Append(VertexAttribute::Normal)),
+				(latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 			// Sphere vertices without poles
-			for (unsigned int lat = 1; lat < latitudeDensity; ++lat)
+			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
 				const auto latBase = DirectX::XMVector3Transform(base, DirectX::XMMatrixRotationX(latitudeAngle * lat));
 				for (unsigned int lon = 0; lon < longitudeDensity; ++lon)
 				{
 					const DirectX::XMVECTOR vec = DirectX::XMVector3Transform(latBase, DirectX::XMMatrixRotationY(longitudeAngle * lon));
-					for (unsigned char i = 0; i < 4; ++i)
-					{
-						vertices.emplace_back();
-						DirectX::XMStoreFloat3(&vertices.back().pos, vec);
-					}
+					for (unsigned char j = 0; j < 4; ++j, ++i)
+						DirectX::XMStoreFloat3(&vertices[i].Get<VertexAttribute::Position3D>(), vec);
 				}
 			}
 			const auto getIndex = [&latitudeDensity, &longitudeDensity](unsigned int lat, unsigned int lon) constexpr -> unsigned int
@@ -160,18 +155,13 @@ namespace GFX::Primitive
 				indices.push_back(getIndex(lat, 0) + 3);
 			}
 			// Poles vertices
-			const unsigned int north = static_cast<unsigned int>(vertices.size());
+			const unsigned int north = static_cast<unsigned int>(vertices.Size() - 2 * longitudeDensity);
 			for (unsigned char i = 0; i < longitudeDensity; ++i)
-			{
-				vertices.emplace_back();
-				DirectX::XMStoreFloat3(&vertices.back().pos, std::move(DirectX::XMVectorNegate(base)));
-			}
-			const unsigned int south = static_cast<unsigned int>(vertices.size());
+				DirectX::XMStoreFloat3(&vertices[north + i].Get<VertexAttribute::Position3D>(), std::move(DirectX::XMVectorNegate(base)));
+
+			const unsigned int south = static_cast<unsigned int>(north + longitudeDensity);
 			for (unsigned char i = 0; i < longitudeDensity; ++i)
-			{
-				vertices.emplace_back();
-				DirectX::XMStoreFloat3(&vertices.back().pos, std::move(base));
-			}
+				DirectX::XMStoreFloat3(&vertices[south + i].Get<VertexAttribute::Position3D>(), std::move(base));
 
 			// Triangle ring on each pole
 			leftDown = getIndex(latitudeDensity - 2, 0);
@@ -194,16 +184,15 @@ namespace GFX::Primitive
 			indices.push_back(south - 1);
 			indices.push_back(getIndex(latitudeDensity - 2, 0) + 3);
 			// South
-			indices.push_back(static_cast<unsigned int>(vertices.size() - 1));
+			indices.push_back(static_cast<unsigned int>(vertices.Size() - 1));
 			indices.push_back(rightUp - 5);
 			indices.push_back(2);
-			IndexedTriangleList<V> list = { std::move(vertices), std::move(indices) };
+			IndexedTriangleList list = { std::move(vertices), std::move(indices) };
 			list.SetNormals();
 			return std::move(list);
 		}
 
-		template<typename V>
-		static IndexedTriangleList<V> MakeSolidIco(unsigned int density)
+		static IndexedTriangleList MakeSolidIco(unsigned int density)
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -216,23 +205,21 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			std::vector<V> vertices
-			{
-				{{ 0.0f, 1.0f, 0.0f }},        // 0
-				{{ 0.0f, -1.0f, 0.0f }},       // 1
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), 12);
 
-				{{ 0.0f, level, -centerZ }},    // 2
-				{{ -bigX, level, -bigZ }},      // 3
-				{{ -smallX, level, smallZ }},   // 4
-				{{ smallX, level, smallZ }},    // 5
-				{{ bigX, level, -bigZ }},       // 6
+			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
 
-				{{ 0.0f, -level, centerZ }},    // 7
-				{{ bigX, -level, bigZ }},       // 8
-				{{ smallX, -level, -smallZ }},  // 9
-				{{ -smallX, -level, -smallZ }}, // 10
-				{{ -bigX, -level, bigZ }}       // 11
-			};
 			std::vector<unsigned int> indices
 			{
 				// Triangle ring
@@ -274,23 +261,23 @@ namespace GFX::Primitive
 					auto i1 = lookup.find({ indices.at(j), indices.at(j + 1) });
 					if (i1 == lookup.end())
 					{
-						i1 = lookup.emplace(std::move(std::make_pair(indices.at(j), indices.at(j + 1))), static_cast<unsigned int>(vertices.size())).first;
-						V middle = vertices.at(indices.at(j)) + vertices.at(indices.at(j + 1));
-						vertices.emplace_back(middle /= middle());
+						i1 = lookup.emplace(std::move(std::make_pair(indices.at(j), indices.at(j + 1))), static_cast<unsigned int>(vertices.Size())).first;
+						vertices.EmplaceBack(addNormal(vertices[indices.at(j)].Get<VertexAttribute::Position3D>(),
+							vertices[indices.at(j + 1)].Get<VertexAttribute::Position3D>()));
 					}
 					auto i2 = lookup.find({ indices.at(j + 1), indices.at(j + 2) });
 					if (i2 == lookup.end())
 					{
-						i2 = lookup.emplace(std::move(std::make_pair(indices.at(j + 1), indices.at(j + 2))), static_cast<unsigned int>(vertices.size())).first;
-						V middle = vertices.at(indices.at(j + 1)) + vertices.at(indices.at(j + 2));
-						vertices.emplace_back(middle /= middle());
+						i2 = lookup.emplace(std::move(std::make_pair(indices.at(j + 1), indices.at(j + 2))), static_cast<unsigned int>(vertices.Size())).first;
+						vertices.EmplaceBack(addNormal(vertices[indices.at(j + 1)].Get<VertexAttribute::Position3D>(),
+							vertices[indices.at(j + 2)].Get<VertexAttribute::Position3D>()));
 					}
 					auto i3 = lookup.find({ indices.at(j + 2), indices.at(j) });
 					if (i3 == lookup.end())
 					{
-						i3 = lookup.emplace(std::move(std::make_pair(indices.at(j + 2), indices.at(j))), static_cast<unsigned int>(vertices.size())).first;
-						V middle = vertices.at(indices.at(j + 2)) + vertices.at(indices.at(j));
-						vertices.emplace_back(middle /= middle());
+						i3 = lookup.emplace(std::move(std::make_pair(indices.at(j + 2), indices.at(j))), static_cast<unsigned int>(vertices.Size())).first;
+						vertices.EmplaceBack(addNormal(vertices[indices.at(j + 2)].Get<VertexAttribute::Position3D>(),
+							vertices[indices.at(j)].Get<VertexAttribute::Position3D>()));
 					}
 					// Left
 					tmpIndices.emplace_back(indices.at(j));
@@ -314,8 +301,7 @@ namespace GFX::Primitive
 			return { std::move(vertices), std::move(indices) };
 		}
 	
-		template<typename V>
-		static IndexedTriangleList<V> MakeIco(unsigned int density)
+		static IndexedTriangleList MakeIco(unsigned int density)
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -328,81 +314,82 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			std::vector<V> vertices
-			{
-				// 0
-				{{ 0.0f, 1.0f, 0.0f }}, // 0
-				{{ 0.0f, 1.0f, 0.0f }}, // 1
-				{{ 0.0f, 1.0f, 0.0f }}, // 2
-				{{ 0.0f, 1.0f, 0.0f }}, // 3
-				{{ 0.0f, 1.0f, 0.0f }}, // 4
-				// 1
-				{{ 0.0f, -1.0f, 0.0f }}, // 5
-				{{ 0.0f, -1.0f, 0.0f }}, // 6
-				{{ 0.0f, -1.0f, 0.0f }}, // 7
-				{{ 0.0f, -1.0f, 0.0f }}, // 8
-				{{ 0.0f, -1.0f, 0.0f }}, // 9
-				// 2
-				{{ 0.0f, level, -centerZ }}, // 10
-				{{ 0.0f, level, -centerZ }}, // 11
-				{{ 0.0f, level, -centerZ }}, // 12
-				{{ 0.0f, level, -centerZ }}, // 13
-				{{ 0.0f, level, -centerZ }}, // 14
-				// 3
-				{{ -bigX, level, -bigZ }}, // 15
-				{{ -bigX, level, -bigZ }}, // 16
-				{{ -bigX, level, -bigZ }}, // 17
-				{{ -bigX, level, -bigZ }}, // 18
-				{{ -bigX, level, -bigZ }}, // 19
-				// 4
-				{{ -smallX, level, smallZ }}, // 20
-				{{ -smallX, level, smallZ }}, // 21
-				{{ -smallX, level, smallZ }}, // 22
-				{{ -smallX, level, smallZ }}, // 23
-				{{ -smallX, level, smallZ }}, // 24
-				// 5
-				{{ smallX, level, smallZ }}, // 25
-				{{ smallX, level, smallZ }}, // 26
-				{{ smallX, level, smallZ }}, // 27
-				{{ smallX, level, smallZ }}, // 28
-				{{ smallX, level, smallZ }}, // 29
-				// 6
-				{{ bigX, level, -bigZ }}, // 30
-				{{ bigX, level, -bigZ }}, // 31
-				{{ bigX, level, -bigZ }}, // 32
-				{{ bigX, level, -bigZ }}, // 33
-				{{ bigX, level, -bigZ }}, // 34
-				// 7
-				{{ 0.0f, -level, centerZ }}, // 35
-				{{ 0.0f, -level, centerZ }}, // 36
-				{{ 0.0f, -level, centerZ }}, // 37
-				{{ 0.0f, -level, centerZ }}, // 38
-				{{ 0.0f, -level, centerZ }}, // 39
-				// 8
-				{{ bigX, -level, bigZ }}, // 40
-				{{ bigX, -level, bigZ }}, // 41
-				{{ bigX, -level, bigZ }}, // 42
-				{{ bigX, -level, bigZ }}, // 43
-				{{ bigX, -level, bigZ }}, // 44
-				// 9
-				{{ smallX, -level, -smallZ }}, // 45
-				{{ smallX, -level, -smallZ }}, // 46
-				{{ smallX, -level, -smallZ }}, // 47
-				{{ smallX, -level, -smallZ }}, // 48
-				{{ smallX, -level, -smallZ }}, // 49
-				// 10
-				{{ -smallX, -level, -smallZ }}, // 50
-				{{ -smallX, -level, -smallZ }}, // 51
-				{{ -smallX, -level, -smallZ }}, // 52
-				{{ -smallX, -level, -smallZ }}, // 53
-				{{ -smallX, -level, -smallZ }}, // 54
-				// 11
-				{{ -bigX, -level, bigZ }}, // 55
-				{{ -bigX, -level, bigZ }}, // 56
-				{{ -bigX, -level, bigZ }}, // 57
-				{{ -bigX, -level, bigZ }}, // 58
-				{{ -bigX, -level, bigZ }}, // 59
-			};
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
+				.Append(VertexAttribute::Position3D)
+				.Append(VertexAttribute::Normal)), 60);
+			// 0
+			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			// 1
+			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			// 2
+			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[12].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[13].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[14].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			// 3
+			vertices[15].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[16].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[17].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[18].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[19].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			// 4
+			vertices[20].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[21].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[22].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[23].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[24].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			// 5
+			vertices[25].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[26].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[27].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[28].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[29].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			// 6
+			vertices[30].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[31].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[32].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[33].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[34].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			// 7
+			vertices[35].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[36].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[37].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[38].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[39].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			// 8
+			vertices[40].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[41].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[42].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[43].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[44].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			// 9
+			vertices[45].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[46].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[47].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[48].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[49].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			// 10
+			vertices[50].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[51].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[52].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[53].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[54].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			// 11
+			vertices[55].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[56].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[57].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[58].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[59].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+
 			std::vector<unsigned int> indices
 			{
 				// Triangle ring
@@ -435,25 +422,22 @@ namespace GFX::Primitive
 				std::vector<unsigned int> tmpIndices;
 				for (unsigned int j = 0; j < indices.size(); j += 3)
 				{
-					V & v0 = vertices.at(indices.at(j));
-					V & v1 = vertices.at(indices.at(j + 1));
-					V & v2 = vertices.at(indices.at(j + 2));
-					V left = v0 + v1;
-					V right = v1 + v2;
-					V down = v2 + v0;
-					left /= left();
-					right /= right();
-					down /= down();
-					const unsigned int id = static_cast<unsigned int>(vertices.size());
-					vertices.emplace_back(left);  // 0
-					vertices.emplace_back(left);  // 1
-					vertices.emplace_back(left);  // 2
-					vertices.emplace_back(right); // 3
-					vertices.emplace_back(right); // 4
-					vertices.emplace_back(right); // 5
-					vertices.emplace_back(down);  // 6
-					vertices.emplace_back(down);  // 7
-					vertices.emplace_back(down);  // 8
+					BasicType::Vertex v0 = vertices[indices.at(j)];
+					BasicType::Vertex v1 = vertices[indices.at(j + 1)];
+					BasicType::Vertex v2 = vertices[indices.at(j + 2)];
+					DirectX::XMFLOAT3 left = addNormal(v0.Get<VertexAttribute::Position3D>(), v1.Get<VertexAttribute::Position3D>());
+					DirectX::XMFLOAT3 right = addNormal(v1.Get<VertexAttribute::Position3D>(), v2.Get<VertexAttribute::Position3D>());
+					DirectX::XMFLOAT3 down = addNormal(v2.Get<VertexAttribute::Position3D>(), v0.Get<VertexAttribute::Position3D>());
+					const unsigned int id = static_cast<unsigned int>(vertices.Size());
+					vertices.EmplaceBack(left);  // 0
+					vertices.EmplaceBack(left);  // 1
+					vertices.EmplaceBack(left);  // 2
+					vertices.EmplaceBack(right); // 3
+					vertices.EmplaceBack(right); // 4
+					vertices.EmplaceBack(right); // 5
+					vertices.EmplaceBack(down);  // 6
+					vertices.EmplaceBack(down);  // 7
+					vertices.EmplaceBack(down);  // 8
 
 					// Left
 					tmpIndices.emplace_back(indices.at(j));
@@ -474,7 +458,7 @@ namespace GFX::Primitive
 				}
 				indices = std::move(tmpIndices);
 			}
-			IndexedTriangleList<V> list = { std::move(vertices), std::move(indices) };
+			IndexedTriangleList list = { std::move(vertices), std::move(indices) };
 			list.SetNormals();
 			return std::move(list);
 		}

@@ -3,8 +3,6 @@
 #include "GfxExceptionMacros.h"
 #include <memory>
 
-#pragma comment(lib, "dxguid.lib")
-
 namespace GFX
 {
 	DXGIDebugInfoManager::DXGIDebugInfoManager()

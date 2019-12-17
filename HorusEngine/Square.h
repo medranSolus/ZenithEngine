@@ -6,15 +6,14 @@ namespace GFX::Primitive
 	class Square
 	{
 	public:
-		template<typename V>
-		static IndexedTriangleList<V> Make()
+		static IndexedTriangleList Make()
 		{
 			constexpr float point = 0.5f;
-			std::vector<V> vertices(4);
-			vertices[0].pos = { -point, -point, 0.0f };
-			vertices[1].pos = { -point, point, 0.0f };
-			vertices[2].pos = { point, point, 0.0f };
-			vertices[3].pos = { point, -point, 0.0f };
+			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), 4);
+			vertices.EmplaceBack(DirectX::XMFLOAT3(-point, -point, 0.0f),
+				DirectX::XMFLOAT3(-point, point, 0.0f),
+				DirectX::XMFLOAT3(point, point, 0.0f),
+				DirectX::XMFLOAT3(point, -point, 0.0f));
 
 			return
 			{

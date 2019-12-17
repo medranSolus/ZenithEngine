@@ -1,5 +1,5 @@
 #pragma once
-#include "Globe.h"
+#include "SolidGlobe.h"
 #include "ConstantPixelBuffer.h"
 #include "ShaderConstantBuffers.h"
 #include "Camera.h"
@@ -9,7 +9,7 @@ namespace GFX::Light
 	class PointLight
 	{
 		mutable Resource::LightConstantBuffer lightBuffer;
-		mutable Object::Globe mesh;
+		mutable Object::SolidGlobe mesh;
 		mutable Resource::ConstantPixelBuffer<Resource::LightConstantBuffer> buffer;
 
 	public:

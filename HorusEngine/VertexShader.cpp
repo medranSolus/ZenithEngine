@@ -2,8 +2,6 @@
 #include "GfxExceptionMacros.h"
 #include <d3dcompiler.h>
 
-#pragma comment(lib, "D3DCompiler.lib")
-
 namespace GFX::Resource
 {
 	VertexShader::VertexShader(Graphics & gfx, const std::wstring & path)

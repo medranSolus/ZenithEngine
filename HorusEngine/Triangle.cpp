@@ -7,17 +7,20 @@ namespace GFX::Object
 {
 	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : ObjectBase(x0, y0, z0)
 	{
-		const	 float leftPow2 = left * left;
+		const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
 		const float centerX = (vertex3X + down) / 3;
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
-		std::mt19937 engine(std::random_device{}());
-		const std::vector<Primitive::VertexColor> vertices =
-		{
-			{ { -centerX, -centerY, 1.0f }, randColor(engine) },
-			{ { vertex3X - centerX, 2.0f * centerY, 1.0f }, randColor(engine) },
-			{ { down - centerX, -centerY, 1.0f }, randColor(engine) },
-		};
+		std::mt19937_64 engine(std::random_device{}());
+
+		BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
+			.Append(VertexAttribute::Position3D)
+			.Append(VertexAttribute::ColorFloat)));
+
+		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), randColor(engine));
+		vertices.EmplaceBack(DirectX::XMFLOAT3(vertex3X - centerX, 2.0f * centerY, 0.0f), randColor(engine));
+		vertices.EmplaceBack(DirectX::XMFLOAT3(down - centerX, -centerY, 0.0f), randColor(engine));
+
 		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, vertices));
 
 		if (!IsStaticInit())
@@ -28,18 +31,9 @@ namespace GFX::Object
 
 			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
 
-			const std::vector<unsigned int> indices =
-			{
-				0, 1, 2
-			};
-			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, indices));
+			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, std::move(std::vector<unsigned int>({ 0, 1, 2 }))));
 
-			const std::vector<D3D11_INPUT_ELEMENT_DESC> inputDesc =
-			{
-				{ "Position", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "Color", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 }
-			};
-			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, inputDesc, bytecodeVS));
+			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, vertices.GetLayout().GetDXLayout(), bytecodeVS));
 
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		}
