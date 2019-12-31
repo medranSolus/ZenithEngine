@@ -5,7 +5,7 @@
 
 namespace GFX::Object
 {
-	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : ObjectBase(x0, y0, z0)
+	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : pos(x0, y0, z0)
 	{
 		const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);

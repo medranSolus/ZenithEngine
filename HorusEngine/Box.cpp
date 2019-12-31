@@ -5,7 +5,7 @@
 
 namespace GFX::Object
 {
-	Box::Box(Graphics& gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR) : ObjectBase(x0, y0, z0), r(rotationR)
+	Box::Box(Graphics& gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR) : pos(x0, y0, z0), r(rotationR)
 	{
 		std::mt19937_64 engine(std::random_device{}());
 		rotationScale.x = rand(-M_PI, M_PI, engine);

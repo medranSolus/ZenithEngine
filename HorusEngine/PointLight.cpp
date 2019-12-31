@@ -8,7 +8,7 @@ namespace GFX::Light
 	{
 		lightBuffer =
 		{
-			{ 0.1f, 0.1f, 0.1f, 0.1f },
+			{ 0.05f, 0.05f, 0.05f, 1.0f },
 			{ 1.0f, 1.0f, 1.0f, 1.0f },
 			mesh.GetPos(),
 			1.0f,

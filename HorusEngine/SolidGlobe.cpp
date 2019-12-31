@@ -6,7 +6,7 @@
 namespace GFX::Object
 {
 	SolidGlobe::SolidGlobe(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, unsigned int latitudeDensity, unsigned int longitudeDensity, float height, float width, float length)
-		: ObjectBase(x0, y0, z0), size(width, height, length)
+		: pos(x0, y0, z0), size(width, height, length)
 	{
 		if (!IsStaticInit())
 		{

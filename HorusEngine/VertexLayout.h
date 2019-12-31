@@ -69,6 +69,8 @@ namespace GFX::BasicType
 		std::vector<Element> elements;
 
 	public:
+		VertexLayout(bool position3D = true) noexcept;
+
 		template<ElementType Type>
 		const Element & Resolve() const noexcept(!IS_DEBUG)
 		{

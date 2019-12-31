@@ -9,13 +9,10 @@ namespace GFX::Object
 		template<typename T>
 		friend class ObjectBase;
 
-		std::vector<std::unique_ptr<Resource::IBindable>> binds;
-
+		virtual const std::vector<std::unique_ptr<Resource::IBindable>> & GetBinds() const noexcept = 0;
 		virtual const std::vector<std::unique_ptr<Resource::IBindable>> & GetStaticBinds() const noexcept = 0;
 		virtual const Resource::IndexBuffer * GetStaticIndexBuffer() const noexcept = 0;
-
-	protected:
-		void AddBind(std::unique_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG);
+		virtual const Resource::IndexBuffer * GetIndexBuffer() const noexcept = 0;
 
 	public:
 		IDrawable() = default;
@@ -24,7 +21,7 @@ namespace GFX::Object
 		virtual ~IDrawable() = default;
 		
 		virtual DirectX::XMMATRIX GetTransformMatrix() const noexcept = 0;
-		virtual void Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept = 0;
+		virtual void Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept {}
 
 		void Draw(Graphics & gfx) const noexcept;
 	};

@@ -11,7 +11,7 @@ namespace GFX::Primitive
 	{
 	public:
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
+		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute> && attributes = {})
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -24,7 +24,10 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), (latitudeDensity - 1) * longitudeDensity + 2);
+			BasicType::VertexLayout layout;
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), (latitudeDensity - 1) * longitudeDensity + 2);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -96,7 +99,7 @@ namespace GFX::Primitive
 		}
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity)
+		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute> && attributes = {})
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -109,10 +112,11 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
-				.Append(VertexAttribute::Position3D)
-				.Append(VertexAttribute::Normal)),
-				(latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
+			BasicType::VertexLayout layout;
+			layout.Append(VertexAttribute::Normal);
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -192,7 +196,7 @@ namespace GFX::Primitive
 			return std::move(list);
 		}
 
-		static IndexedTriangleList MakeSolidIco(unsigned int density)
+		static IndexedTriangleList MakeSolidIco(unsigned int density, const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -205,20 +209,23 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), 12);
+			BasicType::VertexLayout layout;
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), 12);
 
-			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
-			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
-			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
-			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
-			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
-			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
-			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
-			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
-			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
-			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
+			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
+			vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
+			vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
+			vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
+			vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
+			vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
+			vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
+			vertices[8].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
+			vertices[9].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
+			vertices[10].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
+			vertices[11].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
 
 			std::vector<unsigned int> indices
 			{
@@ -301,7 +308,7 @@ namespace GFX::Primitive
 			return { std::move(vertices), std::move(indices) };
 		}
 	
-		static IndexedTriangleList MakeIco(unsigned int density)
+		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -314,81 +321,83 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
-				.Append(VertexAttribute::Position3D)
-				.Append(VertexAttribute::Normal)), 60);
+			BasicType::VertexLayout layout;
+			layout.Append(VertexAttribute::Normal);
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), 60);
 			// 0
-			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
+			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
+			vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
+			vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
+			vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 			// 1
-			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
+			vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
+			vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
+			vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
+			vertices[8].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
+			vertices[9].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
 			// 2
-			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
-			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
-			vertices[12].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
-			vertices[13].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
-			vertices[14].SetByIndex(0, DirectX::XMFLOAT3(0.0f, level, -centerZ));
+			vertices[10].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
+			vertices[11].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
+			vertices[12].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
+			vertices[13].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
+			vertices[14].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, level, -centerZ)));
 			// 3
-			vertices[15].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
-			vertices[16].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
-			vertices[17].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
-			vertices[18].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
-			vertices[19].SetByIndex(0, DirectX::XMFLOAT3(-bigX, level, -bigZ));
+			vertices[15].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
+			vertices[16].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
+			vertices[17].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
+			vertices[18].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
+			vertices[19].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, level, -bigZ)));
 			// 4
-			vertices[20].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
-			vertices[21].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
-			vertices[22].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
-			vertices[23].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
-			vertices[24].SetByIndex(0, DirectX::XMFLOAT3(-smallX, level, smallZ));
+			vertices[20].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
+			vertices[21].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
+			vertices[22].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
+			vertices[23].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
+			vertices[24].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, level, smallZ)));
 			// 5
-			vertices[25].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
-			vertices[26].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
-			vertices[27].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
-			vertices[28].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
-			vertices[29].SetByIndex(0, DirectX::XMFLOAT3(smallX, level, smallZ));
+			vertices[25].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
+			vertices[26].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
+			vertices[27].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
+			vertices[28].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
+			vertices[29].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, level, smallZ)));
 			// 6
-			vertices[30].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
-			vertices[31].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
-			vertices[32].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
-			vertices[33].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
-			vertices[34].SetByIndex(0, DirectX::XMFLOAT3(bigX, level, -bigZ));
+			vertices[30].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
+			vertices[31].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
+			vertices[32].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
+			vertices[33].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
+			vertices[34].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, level, -bigZ)));
 			// 7
-			vertices[35].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
-			vertices[36].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
-			vertices[37].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
-			vertices[38].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
-			vertices[39].SetByIndex(0, DirectX::XMFLOAT3(0.0f, -level, centerZ));
+			vertices[35].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
+			vertices[36].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
+			vertices[37].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
+			vertices[38].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
+			vertices[39].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -level, centerZ)));
 			// 8
-			vertices[40].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
-			vertices[41].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
-			vertices[42].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
-			vertices[43].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
-			vertices[44].SetByIndex(0, DirectX::XMFLOAT3(bigX, -level, bigZ));
+			vertices[40].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
+			vertices[41].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
+			vertices[42].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
+			vertices[43].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
+			vertices[44].SetByIndex(0, std::move(DirectX::XMFLOAT3(bigX, -level, bigZ)));
 			// 9
-			vertices[45].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
-			vertices[46].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
-			vertices[47].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
-			vertices[48].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
-			vertices[49].SetByIndex(0, DirectX::XMFLOAT3(smallX, -level, -smallZ));
+			vertices[45].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
+			vertices[46].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
+			vertices[47].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
+			vertices[48].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
+			vertices[49].SetByIndex(0, std::move(DirectX::XMFLOAT3(smallX, -level, -smallZ)));
 			// 10
-			vertices[50].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
-			vertices[51].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
-			vertices[52].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
-			vertices[53].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
-			vertices[54].SetByIndex(0, DirectX::XMFLOAT3(-smallX, -level, -smallZ));
+			vertices[50].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
+			vertices[51].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
+			vertices[52].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
+			vertices[53].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
+			vertices[54].SetByIndex(0, std::move(DirectX::XMFLOAT3(-smallX, -level, -smallZ)));
 			// 11
-			vertices[55].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
-			vertices[56].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
-			vertices[57].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
-			vertices[58].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
-			vertices[59].SetByIndex(0, DirectX::XMFLOAT3(-bigX, -level, bigZ));
+			vertices[55].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
+			vertices[56].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
+			vertices[57].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
+			vertices[58].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
+			vertices[59].SetByIndex(0, std::move(DirectX::XMFLOAT3(-bigX, -level, bigZ)));
 
 			std::vector<unsigned int> indices
 			{

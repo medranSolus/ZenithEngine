@@ -11,9 +11,9 @@ inline float randomVertex()
 namespace GFX::Object
 {
 	Rectangle::Rectangle(Graphics & gfx, float x0, float y0, float z0, float width, float height, bool isRandom)
-		: ObjectBase(x0, y0, z0), width(width), height(height)
+		: pos(x0, y0, z0), width(width), height(height)
 	{
-		auto list = Primitive::Square::Make();
+		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat });
 		if (isRandom)
 		{
 			for (unsigned char i = 0; i < 4; ++i)
@@ -23,8 +23,8 @@ namespace GFX::Object
 			}
 		}
 		std::mt19937_64 engine(std::random_device{}());
-		/*for (unsigned char i = 0; i < 4; ++i)
-			list.vertices.at(i).col = randColor(engine);*/
+		for (unsigned char i = 0; i < 4; ++i)
+			list.vertices[i].Get<VertexAttribute::ColorFloat>() = std::move(randColor(engine));
 		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
 
 		if (!IsStaticInit())

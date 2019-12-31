@@ -15,6 +15,7 @@ namespace GFX::BasicType
 		inline const char * GetData() const noexcept(!IS_DEBUG) { return buffer.data(); }
 		inline size_t Bytes() const noexcept(!IS_DEBUG) { return buffer.size(); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return buffer.size() / layout.Size(); }
+		inline void Reserve(size_t capacity) noexcept { buffer.reserve(capacity * layout.Size()); }
 
 		void Resize(size_t newSize) noexcept(!IS_DEBUG);
 

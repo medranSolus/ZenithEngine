@@ -5,7 +5,7 @@
 
 namespace GFX::Object
 {
-	Ball::Ball(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, unsigned int density, float radius) : ObjectBase(x0, y0, z0), r(radius)
+	Ball::Ball(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, unsigned int density, float radius) : pos(x0, y0, z0), r(radius)
 	{
 		if (!IsStaticInit())
 		{

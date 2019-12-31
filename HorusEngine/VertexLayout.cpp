@@ -41,6 +41,12 @@ namespace GFX::BasicType
 		return { "INVALID", 0, DXGI_FORMAT_UNKNOWN, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 	}
 
+	VertexLayout::VertexLayout(bool position3D) noexcept
+	{
+		if (position3D)
+			elements.emplace_back(ElementType::Position3D, 0);
+	}
+
 	VertexLayout& VertexLayout::Append(ElementType type) noexcept(!IS_DEBUG)
 	{
 		elements.emplace_back(type, Size());

@@ -342,6 +342,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BasicException.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Box.h" />
@@ -376,7 +377,7 @@
     <ClInclude Include="InputLayout.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Math.h" />
-    <ClInclude Include="Model.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="ObjectBase.h" />
     <ClInclude Include="Objects.h" />
@@ -410,6 +411,7 @@
     <ClCompile Include="BasicException.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Math.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Box.cpp" />
@@ -432,7 +434,7 @@
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="InputLayout.cpp" />
     <ClCompile Include="Keyboard.cpp" />
-    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="PixelShader.cpp" />

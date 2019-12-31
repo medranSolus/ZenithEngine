@@ -509,9 +509,6 @@
     <ClInclude Include="..\AssImp\include\assimp\config.h">
       <Filter>Header Files\FileService\AssImp</Filter>
     </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>Header Files\GFX\Object</Filter>
-    </ClInclude>
     <ClInclude Include="Vertex.h">
       <Filter>Header Files\GFX\BasicType</Filter>
     </ClInclude>
@@ -525,6 +522,12 @@
       <Filter>Header Files\GFX\BasicType</Filter>
     </ClInclude>
     <ClInclude Include="SolidGlobe.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files\GFX\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
       <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
   </ItemGroup>
@@ -640,9 +643,6 @@
     <ClCompile Include="PointLight.cpp">
       <Filter>Source Files\GFX\Light</Filter>
     </ClCompile>
-    <ClCompile Include="Model.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
-    </ClCompile>
     <ClCompile Include="Vertex.cpp">
       <Filter>Source Files\GFX\BasicType</Filter>
     </ClCompile>
@@ -659,6 +659,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SolidGlobe.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files\GFX\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
       <Filter>Source Files\GFX\Object</Filter>
     </ClCompile>
   </ItemGroup>

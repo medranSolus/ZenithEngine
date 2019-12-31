@@ -6,19 +6,22 @@ namespace GFX::Primitive
 	class Cube
 	{
 	public:
-		static IndexedTriangleList MakeSolid()
+		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Position3D)), 8);
+			BasicType::VertexLayout layout;
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), 8);
 
-			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
-			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
-			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
-			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
-			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
-			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
-			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
-			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
+			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
+			vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
+			vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
+			vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
+			vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
+			vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
+			vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
 
 			return
 			{
@@ -34,43 +37,45 @@ namespace GFX::Primitive
 			};
 		}
 
-		static IndexedTriangleList Make()
+		static IndexedTriangleList Make(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;
-			BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
-				.Append(VertexAttribute::Position3D)
-				.Append(VertexAttribute::Normal)), 24);
+			BasicType::VertexLayout layout;
+			layout.Append(VertexAttribute::Normal);
+			for (const auto & attrib : attributes)
+				layout.Append(attrib);
+			BasicType::VertexDataBuffer vertices(std::move(layout), 24);
 
 			// Front
-			vertices[0].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
-			vertices[1].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
-			vertices[2].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
-			vertices[3].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
+			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
+			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
+			vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
+			vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
 			// Left
-			vertices[4].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
-			vertices[5].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
-			vertices[6].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
-			vertices[7].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
+			vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
+			vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
+			vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
+			vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
 			// Back
-			vertices[8].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
-			vertices[9].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
-			vertices[10].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
-			vertices[11].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
+			vertices[8].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
+			vertices[9].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
+			vertices[10].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
+			vertices[11].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
 			// Right
-			vertices[12].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
-			vertices[13].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
-			vertices[14].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
-			vertices[15].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+			vertices[12].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
+			vertices[13].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
+			vertices[14].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
+			vertices[15].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
 			// Top
-			vertices[16].SetByIndex(0, DirectX::XMFLOAT3(-point, point, -point));
-			vertices[17].SetByIndex(0, DirectX::XMFLOAT3(-point, point, point));
-			vertices[18].SetByIndex(0, DirectX::XMFLOAT3(point, point, point));
-			vertices[19].SetByIndex(0, DirectX::XMFLOAT3(point, point, -point));
+			vertices[16].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
+			vertices[17].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
+			vertices[18].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
+			vertices[19].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
 			// Down	
-			vertices[20].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, point));
-			vertices[21].SetByIndex(0, DirectX::XMFLOAT3(-point, -point, -point));
-			vertices[22].SetByIndex(0, DirectX::XMFLOAT3(point, -point, -point));
-			vertices[23].SetByIndex(0, DirectX::XMFLOAT3(point, -point, point));
+			vertices[20].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
+			vertices[21].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
+			vertices[22].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
+			vertices[23].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
 
 			IndexedTriangleList list =
 			{

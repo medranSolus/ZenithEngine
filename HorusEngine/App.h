@@ -8,6 +8,7 @@
 class App
 {
 	static constexpr const char * windowTitle = "Horus Engine Alpha";
+	static constexpr float viewDistance = 4194304.0f;
 
 	static unsigned int width;
 	static unsigned int height;
@@ -21,6 +22,7 @@ class App
 	std::unique_ptr<Camera> camera = nullptr;
 	std::unique_ptr<GFX::Light::PointLight> pointLight = nullptr;
 	std::vector<std::unique_ptr<GFX::Object::IDrawable>> objects;
+	std::unique_ptr<GFX::Object::Model> model = nullptr;
 
 	std::vector<std::unique_ptr<GFX::Object::Box>> boxes;
 	std::vector<std::unique_ptr<GFX::Object::Rectangle>> carpetRects;
