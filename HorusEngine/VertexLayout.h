@@ -35,32 +35,17 @@ namespace GFX::BasicType
 			}
 
 		public:
-			Element(ElementType type, size_t offset) : type(type), offset(offset) {}
+			constexpr Element(ElementType type, size_t offset) : type(type), offset(offset) {}
+			Element & operator=(const Element&) = default;
+			~Element() = default;
 
 			constexpr size_t GetEnd() const noexcept(!IS_DEBUG) { return offset + Size(); }
 			constexpr size_t GetOffset() const { return offset; }
 			constexpr size_t Size() const noexcept(!IS_DEBUG) { return SizeOf(type); }
-
-			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG)
-			{
-				switch (type)
-				{
-				case Position3D:
-					return sizeof(Desc<Position3D>::DataType);
-				case Texture2D:
-					return sizeof(Desc<Texture2D>::DataType);
-				case Normal:
-					return sizeof(Desc<Normal>::DataType);
-				case ColorFloat:
-					return sizeof(Desc<ColorFloat>::DataType);
-				case ColorByte:
-					return sizeof(Desc<ColorByte>::DataType);
-				}
-				assert("Invalid element type" && false);
-				return 0U;
-			}
-
 			constexpr ElementType GetType() const noexcept { return type; }
+
+			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG);
+
 			constexpr const char * GetCode() const noexcept;
 			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG);
 		};
@@ -70,18 +55,13 @@ namespace GFX::BasicType
 
 	public:
 		VertexLayout(bool position3D = true) noexcept;
+		VertexLayout & operator=(const VertexLayout&) = default;
+		~VertexLayout() = default;
 
 		template<ElementType Type>
-		const Element & Resolve() const noexcept(!IS_DEBUG)
-		{
-			for (auto & e : elements)
-				if (e.GetType() == Type)
-					return e;
-			assert("Could not resolve element type" && false);
-			return elements.front();
-		}
+		const Element & Resolve() const noexcept(!IS_DEBUG);
 
-		inline const Element & ResolveByIndex(size_t i) const noexcept(!IS_DEBUG) { return elements[i]; }
+		inline const Element & ResolveByIndex(size_t i) const { return elements.at(i); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
 		inline size_t GetElementCount() const noexcept { return elements.size(); }
 
@@ -131,6 +111,35 @@ namespace GFX::BasicType
 		};
 #pragma endregion
 	};
+
+	constexpr size_t VertexLayout::Element::SizeOf(VertexLayout::ElementType type) noexcept(!IS_DEBUG)
+	{
+		switch (type)
+		{
+		case Position3D:
+			return sizeof(Desc<Position3D>::DataType);
+		case Texture2D:
+			return sizeof(Desc<Texture2D>::DataType);
+		case Normal:
+			return sizeof(Desc<Normal>::DataType);
+		case ColorFloat:
+			return sizeof(Desc<ColorFloat>::DataType);
+		case ColorByte:
+			return sizeof(Desc<ColorByte>::DataType);
+		}
+		assert("Invalid element type" && false);
+		return 0U;
+	}
+
+	template<VertexLayout::ElementType Type>
+	const VertexLayout::Element & VertexLayout::Resolve() const noexcept(!IS_DEBUG)
+	{
+		for (auto & e : elements)
+			if (e.GetType() == Type)
+				return e;
+		assert("Could not resolve element type" && false);
+		return elements.front();
+	}
 }
 
 typedef GFX::BasicType::VertexLayout::ElementType VertexAttribute;

@@ -1,8 +1,8 @@
-#include "IDrawable.h"
+#include "IShape.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	void IDrawable::Draw(Graphics & gfx) const noexcept
+	void IShape::Draw(Graphics & gfx) const noexcept
 	{
 		for (auto & b : GetStaticBinds())
 			b->Bind(gfx);

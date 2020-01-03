@@ -3,9 +3,10 @@
 #include "GfxResources.h"
 #include "Math.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Triangle::Triangle(Graphics & gfx, float x0, float y0, float z0, float down, float left, float right) : pos(x0, y0, z0)
+	Triangle::Triangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float down, float left, float right)
+		: Object(position, name)
 	{
 		const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
@@ -38,14 +39,6 @@ namespace GFX::Object
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
-	}
-
-	void Triangle::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
-	{
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
-		DirectX::XMStoreFloat3(&angle,
-			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
 	}
 
 	DirectX::XMMATRIX Triangle::GetTransformMatrix() const noexcept

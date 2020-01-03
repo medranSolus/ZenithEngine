@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "ImGui/imgui.h"
 
 namespace GFX
 {
@@ -7,7 +8,7 @@ namespace GFX
 	{
 	public:
 		GUIManager();
-		~GUIManager();
+		inline ~GUIManager() { ImGui::DestroyContext(); }
 		
 		void SetFont(const std::string & font, float size);
 	};

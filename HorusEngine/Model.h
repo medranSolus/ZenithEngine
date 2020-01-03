@@ -1,19 +1,21 @@
 #pragma once
+#include "Object.h"
 #include "Mesh.h"
 #include "assimp/scene.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	class Model
+	class Model : public Object
 	{
 		class Node
 		{
+			std::string name;
 			std::vector<std::unique_ptr<Node>> children;
 			std::vector<std::shared_ptr<Mesh>> meshes;
 			DirectX::XMFLOAT4X4 transform;
 
 		public:
-			Node(std::vector<std::shared_ptr<Mesh>> && meshes, const DirectX::FXMMATRIX & nodeTransform) noexcept;
+			Node(const std::string & name, std::vector<std::shared_ptr<Mesh>> && meshes, const DirectX::FXMMATRIX & nodeTransform) noexcept;
 
 			inline void ReserveChildren(size_t capacity) noexcept { children.reserve(capacity); }
 			inline void AddChild(std::unique_ptr<Node> child) noexcept(!IS_DEBUG)
@@ -25,25 +27,19 @@ namespace GFX::Object
 			void Draw(Graphics & gfx, const DirectX::FXMMATRIX & higherTransform) const noexcept;
 		};
 
+		static unsigned long long modelCount;
+
 		std::unique_ptr<Node> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
-		DirectX::XMFLOAT3 angle = { 0.0f,0.0f,0.0f };
-		DirectX::XMFLOAT3 pos;
 		float scale;
 
-		std::unique_ptr<Node> ParseNode(const aiNode & node);
+		std::unique_ptr<Node> ParseNode(const aiNode & node) noexcept;
 
 	public:
-		Model(Graphics & gfx, const std::string & file, float x0 = 0.0f, float y0 = 0.0f, float z0 = 0.0f, float scale = 1.0f);
-
-		constexpr DirectX::XMFLOAT3 GetPos() const noexcept { return pos; }
-		constexpr void SetPos(DirectX::XMFLOAT3 position) noexcept { pos = position; }
-		constexpr DirectX::XMFLOAT3 GetAngle() const noexcept { return angle; }
-		constexpr void SetAngle(DirectX::XMFLOAT3 meshAngle) noexcept { angle = meshAngle; }
+		Model(Graphics & gfx, const std::string & file, const DirectX::XMFLOAT3 & position = { 0.0f,0.0f,0.0f }, const std::string & modelName = "Model_", float scale = 1.0f);
 
 		static std::shared_ptr<Mesh> ParseMesh(Graphics & gfx, const aiMesh & mesh);
 
-		void Update(float dX, float dY, float dZ, float angleDZ = 0.0f, float angleDX = 0.0f, float angleDY = 0.0f) noexcept;
-		void Draw(Graphics & gfx) const noexcept;
+		void Draw(Graphics & gfx) const noexcept override;
 	};
 }

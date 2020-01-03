@@ -3,9 +3,10 @@
 #include "GfxResources.h"
 #include "Math.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Ball::Ball(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, unsigned int density, float radius) : pos(x0, y0, z0), r(radius)
+	Ball::Ball(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int density, float radius)
+		: Object(position, name), r(radius)
 	{
 		if (!IsStaticInit())
 		{
@@ -30,15 +31,7 @@ namespace GFX::Object
 		buffer.specularPower = 60.0f;
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 	}
-
-	void Ball::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
-	{
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
-		DirectX::XMStoreFloat3(&angle, 
-			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle), 
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
-	}
-
+	
 	DirectX::XMMATRIX Ball::GetTransformMatrix() const noexcept
 	{
 		return DirectX::XMMatrixScaling(r, r, r) *

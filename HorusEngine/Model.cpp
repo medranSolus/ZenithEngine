@@ -5,10 +5,12 @@
 #include "assimp/postprocess.h"
 #include <random>
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Model::Node::Node(std::vector<std::shared_ptr<Mesh>> && meshes, const DirectX::FXMMATRIX & nodeTransform) noexcept
-		: meshes(std::move(meshes))
+	unsigned long long Model::modelCount = 0U;
+
+	Model::Node::Node(const std::string & name, std::vector<std::shared_ptr<Mesh>> && meshes, const DirectX::FXMMATRIX & nodeTransform) noexcept
+		: name(name), meshes(std::move(meshes))
 	{
 		DirectX::XMStoreFloat4x4(&transform, nodeTransform);
 	}
@@ -22,14 +24,14 @@ namespace GFX::Object
 			child->Draw(gfx, currentTransform);
 	}
 
-	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode & node)
+	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode & node) noexcept
 	{
 		std::vector<std::shared_ptr<Mesh>> currentMeshes;
 		currentMeshes.reserve(node.mNumMeshes);
 		for (unsigned int i = 0; i < node.mNumMeshes; ++i)
 			currentMeshes.emplace_back(meshes.at(node.mMeshes[i]));
 
-		std::unique_ptr<Node> currentNode = std::make_unique<Node>(std::move(currentMeshes), 
+		std::unique_ptr<Node> currentNode = std::make_unique<Node>(node.mName.C_Str(), std::move(currentMeshes), 
 			DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(&node.mTransformation))));
 
 		currentNode->ReserveChildren(node.mNumChildren);
@@ -38,11 +40,13 @@ namespace GFX::Object
 		return currentNode;
 	}
 
-	Model::Model(Graphics & gfx, const std::string & file, float x0, float y0, float z0, float scale) : pos(x0, y0, z0), scale(scale)
+	Model::Model(Graphics & gfx, const std::string & file, const DirectX::XMFLOAT3 & position, const std::string & modelName, float scale)
+		: Object(position, modelName), scale(scale)
 	{
 		Assimp::Importer importer;
 		const aiScene * model = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
 		meshes.reserve(model->mNumMeshes);
+		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
 		for (unsigned int i = 0; i < model->mNumMeshes; ++i)
 			meshes.emplace_back(ParseMesh(gfx, *model->mMeshes[i]));
 		root = ParseNode(*model->mRootNode);
@@ -89,15 +93,7 @@ namespace GFX::Object
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
-
-	void Model::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
-	{
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
-		DirectX::XMStoreFloat3(&angle,
-			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
-	}
-
+	
 	void Model::Draw(Graphics & gfx) const noexcept
 	{
 		root->Draw(gfx, DirectX::XMMatrixScaling(scale, scale, scale) *

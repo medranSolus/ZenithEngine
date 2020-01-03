@@ -8,6 +8,7 @@ namespace WinAPI
 	class Keyboard
 	{
 		friend class Window;
+
 	public:
 		class Event
 		{
@@ -30,8 +31,8 @@ namespace WinAPI
 		};
 
 	private:
-		constexpr static unsigned int numberOfVKeys = 256U;
-		constexpr static unsigned int bufferSize = 32U;
+		static constexpr unsigned int numberOfVKeys = 256U;
+		static constexpr unsigned int bufferSize = 32U;
 
 		bool autorepeatEnabled = false; // Accounting long key press
 		std::bitset<numberOfVKeys> keystates; // States for all virtual keys from WinAPI
@@ -40,21 +41,21 @@ namespace WinAPI
 
 		inline void ClearStates() noexcept { keystates.reset(); }
 
+		template<typename T>
+		static void TrimBuffer(std::deque<T> & buffer) noexcept;
+
 		void OnKeyDown(unsigned char keycode) noexcept;
 		void OnKeyUp(unsigned char keycode) noexcept;
 		void OnChar(char character) noexcept;
-		template<typename T>
-		static void TrimBuffer(std::deque<T>& buffer) noexcept;
 
 	public:
 		Keyboard() = default;
-		constexpr Keyboard(const Keyboard&) = delete;
-		constexpr Keyboard & operator=(const Keyboard &) = delete;
+		Keyboard(const Keyboard&) = delete;
+		Keyboard & operator=(const Keyboard&) = delete;
 		~Keyboard() = default;
 
-		constexpr void EnableAutorepeat() noexcept { autorepeatEnabled = false; }
-		constexpr void DisableAutorepeat() noexcept { autorepeatEnabled = true; }
 		constexpr bool IsAutorepeat() const noexcept { return autorepeatEnabled; }
+		constexpr void SetAutorepeat(bool mode) noexcept { autorepeatEnabled = mode; }
 
 		constexpr bool IsKeyDown(unsigned char keycode) const noexcept { return keystates[keycode]; }
 		inline bool IsKeyReady() const noexcept { return keybuffer.size(); }
@@ -63,6 +64,7 @@ namespace WinAPI
 		inline void FlushChars() noexcept { charbuffer = std::deque<char>(); }
 
 		void Flush() noexcept;
+
 		std::optional<Event> ReadKey() noexcept;
 		std::optional<char> ReadChar() noexcept;
 	};

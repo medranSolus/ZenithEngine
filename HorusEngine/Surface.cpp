@@ -41,7 +41,7 @@ namespace GFX
 		return *this;
 	}
 	
-	inline void Surface::PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG)
+	constexpr void Surface::PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG)
 	{
 		assert(x >= 0);
 		assert(y >= 0);
@@ -50,13 +50,20 @@ namespace GFX
 		buffer[y * width + x] = c;
 	}
 
-	inline Surface::Pixel Surface::GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG)
+	constexpr Surface::Pixel Surface::GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG)
 	{
 		assert(x >= 0);
 		assert(y >= 0);
 		assert(x < width);
 		assert(y < height);
 		return buffer[y * width + x];
+	}
+
+	inline void Surface::Copy(const Surface& surface) noexcept(!IS_DEBUG)
+	{
+		assert(width >= surface.width);
+		assert(height >= surface.height);
+		memcpy(buffer.get(), surface.buffer.get(), surface.width * surface.height * sizeof(Pixel));
 	}
 
 	void Surface::Save(const std::string& filename) const
@@ -92,14 +99,7 @@ namespace GFX
 		IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot find matching encoder <" +
 			boost::locale::conv::from_utf(format, "UTF-8") + ">.");
 	}
-
-	void Surface::Copy(const Surface& surface) noexcept(!IS_DEBUG)
-	{
-		assert(width >= surface.width);
-		assert(height >= surface.height);
-		memcpy(buffer.get(), surface.buffer.get(), surface.width * surface.height * sizeof(Pixel));
-	}
-
+	
 	const char * Surface::ImageException::what() const noexcept
 	{
 		std::ostringstream stream;

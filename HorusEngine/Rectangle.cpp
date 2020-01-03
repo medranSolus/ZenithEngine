@@ -8,10 +8,10 @@ inline float randomVertex()
 	return (rand() % 200 - 100) / 100.0f;
 }
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Rectangle::Rectangle(Graphics & gfx, float x0, float y0, float z0, float width, float height, bool isRandom)
-		: pos(x0, y0, z0), width(width), height(height)
+	Rectangle::Rectangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float width, float height, bool isRandom)
+		: Object(position, name), width(width), height(height)
 	{
 		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat });
 		if (isRandom)
@@ -43,15 +43,7 @@ namespace GFX::Object
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
 	}
-
-	void Rectangle::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
-	{
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
-		DirectX::XMStoreFloat3(&angle,
-			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
-	}
-
+	
 	DirectX::XMMATRIX Rectangle::GetTransformMatrix() const noexcept
 	{
 		return DirectX::XMMatrixScaling(width, height, 1.0f) *

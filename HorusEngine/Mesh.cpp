@@ -4,7 +4,7 @@
 #include "Primitives.h"
 #include "Math.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
 	Mesh::Mesh(Graphics & gfx, std::vector<std::unique_ptr<Resource::IBindable>> && binds)
 	{
@@ -27,6 +27,6 @@ namespace GFX::Object
 	void Mesh::Draw(Graphics & gfx, const DirectX::FXMMATRIX & finalTransform) const noexcept
 	{
 		DirectX::XMStoreFloat4x4(&transform, finalTransform);
-		IDrawable::Draw(gfx);
+		IShape::Draw(gfx);
 	}
 }

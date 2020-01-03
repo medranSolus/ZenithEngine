@@ -11,19 +11,21 @@ namespace GFX
 		{
 		public:
 			// ARGB
-			unsigned int dword;
+			unsigned int dword = 255 << 24U;
 
-			constexpr Pixel() noexcept : dword() {}
-			constexpr Pixel(const Pixel & col) noexcept : dword(col.dword) {}
+			Pixel() = default;
+			constexpr Pixel(const Pixel & p) noexcept : dword(p.dword) {}
 			constexpr Pixel(unsigned int dw) noexcept : dword(dw) {}
 			constexpr Pixel(unsigned char r, unsigned char g, unsigned char b) noexcept : dword((r << 16U) | (g << 8U) | b) {}
 			constexpr Pixel(unsigned char a, unsigned char r, unsigned char g, unsigned char b) noexcept : dword((a << 24U) | (r << 16U) | (g << 8U) | b) {}
 			constexpr Pixel(Pixel col, unsigned char a) noexcept : Pixel((a << 24U) | col.dword) {}
 			constexpr Pixel & operator=(const Pixel & color) noexcept { dword = color.dword; return *this; }
+
 			constexpr unsigned char GetA() const noexcept { return dword >> 24U; }
 			constexpr unsigned char GetR() const noexcept { return (dword >> 16U) & 0xFFU; }
 			constexpr unsigned char GetG() const noexcept { return (dword >> 8U) & 0xFFU; }
 			constexpr unsigned char GetB() const noexcept { return dword & 0xFFU; }
+
 			constexpr void SetA(unsigned char x) noexcept { dword = (dword & 0x00FFFFFFU) | (x << 24U); }
 			constexpr void SetR(unsigned char r) noexcept { dword = (dword & 0xFF00FFFFU) | (r << 16U); }
 			constexpr void SetG(unsigned char g) noexcept { dword = (dword & 0xFFFF00FFU) | (g << 8U); }
@@ -42,28 +44,30 @@ namespace GFX
 		Surface(const std::string & name);
 		Surface(unsigned int width, unsigned int height) noexcept : buffer(std::make_unique<Pixel[]>(width * height)), width(width), height(height) {}
 		Surface(Surface && surface) noexcept : buffer(std::move(surface.buffer)), width(surface.width), height(surface.height) {}
-		Surface(Surface &) = delete;
+		Surface(const Surface &) = delete;
 		Surface & operator=(Surface && surface) noexcept;
 		Surface & operator=(const Surface &) = delete;
-		~Surface() {}
+		~Surface() = default;
 
 		constexpr unsigned int GetWidth() const noexcept { return width; }
 		constexpr unsigned int GetHeight() const noexcept { return height; }
-		void Clear(const Pixel & value) noexcept { memset(buffer.get(), value.dword, width * height * sizeof(Pixel)); }
-		Pixel * GetBuffer() noexcept { return buffer.get(); }
-		const Pixel * GetBuffer() const noexcept { return buffer.get(); }
-		inline void PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG);
+		inline Pixel * GetBuffer() noexcept { return buffer.get(); }
+		inline const Pixel * GetBuffer() const noexcept { return buffer.get(); }
+		inline void Clear(const Pixel & value) noexcept { memset(buffer.get(), value.dword, width * height * sizeof(Pixel)); }
 
-		inline Pixel GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG);
+		constexpr void PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG);
+		constexpr Pixel GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG);
+		inline void Copy(const Surface & surface) noexcept(!IS_DEBUG);
+
 		void Save(const std::string & filename) const;
-		void Copy(const Surface & surface) noexcept(!IS_DEBUG);
 		
 		class ImageException : public Exception::BasicException
 		{
 			std::string info;
 
 		public:
-			ImageException(unsigned int line, const char* file, std::string note) noexcept : BasicException(line, file), info(std::move(info)) {}
+			ImageException(unsigned int line, const char* file, std::string note) noexcept
+				: BasicException(line, file), info(std::move(info)) {}
 
 			inline const char * GetType() const noexcept override { return "Image Exception"; }
 			constexpr const std::string & GetImageInfo() const noexcept { return info; }

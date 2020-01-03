@@ -2,7 +2,7 @@
 
 namespace GFX::Resource
 {
-	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const Object::IDrawable & parent, UINT slot) : parent(parent)
+	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const Shape::IShape & parent, UINT slot) : parent(parent)
 	{
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstantVertexBuffer<TransformConstatBuffer>>(gfx, slot);

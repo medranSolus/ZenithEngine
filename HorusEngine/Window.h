@@ -18,11 +18,12 @@ namespace WinAPI
 			WindowClass() noexcept;
 			WindowClass(const WindowClass &) = delete;
 			WindowClass & operator=(const WindowClass &) = delete;
-			~WindowClass() { UnregisterClass(wndClassName, hInstance); }
+			inline ~WindowClass() { UnregisterClass(wndClassName, hInstance); }
 
 			constexpr static const char * GetName() noexcept { return wndClassName; }
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
+
 		static WindowClass wndClass;
 
 		unsigned int wndWidth;
@@ -34,6 +35,7 @@ namespace WinAPI
 
 		static LRESULT WINAPI HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 		static LRESULT WINAPI HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
 		LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	public:
@@ -42,9 +44,10 @@ namespace WinAPI
 
 		constexpr Keyboard & Keyboard() noexcept { return keyboard; }
 		constexpr Mouse & Mouse() noexcept { return mouse; }
-		GFX::Graphics & Gfx();
 
 		static std::optional<unsigned long long> ProcessMessage() noexcept;
+
+		GFX::Graphics & Gfx();
 		void SetTitle(const std::string & title);
 
 #pragma region Exceptions

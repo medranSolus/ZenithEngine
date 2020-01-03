@@ -29,6 +29,11 @@ inline float rand(float min, float max, std::mt19937_64 & eng)
 	return std::uniform_real_distribution<float>(min, max)(eng);
 }
 
+inline DirectX::XMFLOAT3 randPosition(float min, float max, std::mt19937_64 & eng)
+{
+	return { rand(min, max, eng), rand(min, max, eng), rand(min, max, eng) };
+}
+
 inline float rand01(std::mt19937_64 & eng)
 {
 	return std::uniform_real_distribution<float>(0.0f, 1.0f)(eng);

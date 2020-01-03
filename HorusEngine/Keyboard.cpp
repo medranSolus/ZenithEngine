@@ -2,6 +2,13 @@
 
 namespace WinAPI
 {
+	template<typename T>
+	void Keyboard::TrimBuffer(std::deque<T> & buffer) noexcept
+	{
+		while (buffer.size() > bufferSize)
+			buffer.pop_back();
+	}
+
 	void Keyboard::OnKeyDown(unsigned char keycode) noexcept
 	{
 		keystates[keycode] = true;
@@ -20,13 +27,6 @@ namespace WinAPI
 	{
 		charbuffer.emplace_back(character);
 		TrimBuffer(charbuffer);
-	}
-
-	template<typename T>
-	void Keyboard::TrimBuffer(std::deque<T>& buffer) noexcept
-	{
-		while (buffer.size() > bufferSize)
-			buffer.pop_back();
 	}
 
 	void Keyboard::Flush() noexcept

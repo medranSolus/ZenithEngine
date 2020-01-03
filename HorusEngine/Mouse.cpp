@@ -3,6 +3,12 @@
 
 namespace WinAPI
 {
+	void Mouse::TrimBuffer() noexcept
+	{
+		while (eventBuffer.size() > bufferSize)
+			eventBuffer.pop_back();
+	}
+
 	void Mouse::OnLeftDown(int x, int y) noexcept
 	{
 		left = true;
@@ -105,12 +111,6 @@ namespace WinAPI
 		window = false;
 		eventBuffer.emplace_back(Event::Type::Leave, *this, x, y);
 		TrimBuffer();
-	}
-
-	void Mouse::TrimBuffer() noexcept
-	{
-		while (eventBuffer.size() > bufferSize)
-			eventBuffer.pop_back();
 	}
 
 	std::optional<Mouse::Event> Mouse::Read() noexcept

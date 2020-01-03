@@ -6,6 +6,7 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include <DirectXMath.h>
+#include "ImGui/imgui_impl_dx11.h"
 
 namespace GFX
 {
@@ -35,7 +36,7 @@ namespace GFX
 		Graphics(HWND hWnd, unsigned int width, unsigned int height);
 		Graphics(const Graphics &) = delete;
 		Graphics & operator=(const Graphics &) = delete;
-		~Graphics();
+		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
 		constexpr GUIManager & Gui() noexcept { return guiManager; }
 		constexpr DirectX::XMMATRIX GetProjection() const noexcept { return projection; }

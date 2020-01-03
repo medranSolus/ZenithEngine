@@ -1,7 +1,7 @@
 #pragma once
 #include "Window.h"
 #include "Timer.h"
-#include "Objects.h"
+#include "Shapes.h"
 #include "Camera.h"
 #include "PointLight.h"
 
@@ -21,15 +21,13 @@ class App
 	Timer timer;
 	std::unique_ptr<Camera> camera = nullptr;
 	std::unique_ptr<GFX::Light::PointLight> pointLight = nullptr;
-	std::vector<std::unique_ptr<GFX::Object::IDrawable>> objects;
-	std::unique_ptr<GFX::Object::Model> model = nullptr;
+	std::vector<std::unique_ptr<GFX::IObject>> objects;
+	std::vector<std::unique_ptr<GFX::Shape::Rectangle>> carpetRects;
 
-	std::vector<std::unique_ptr<GFX::Object::Box>> boxes;
-	std::vector<std::unique_ptr<GFX::Object::Rectangle>> carpetRects;
-	void CreateCarpet(unsigned int depth, float x, float y, float width);
-
-	void MakeFrame();
 	inline void ProcessInput();
+	inline void ShowObjectWindow();
+	void CreateCarpet(unsigned int depth, float x, float y, float width);
+	void MakeFrame();
 
 public:
 	App();

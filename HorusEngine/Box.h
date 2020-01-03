@@ -1,25 +1,19 @@
 #pragma once
-#include "ObjectBase.h"
+#include "BaseShape.h"
+#include "Object.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	class Box : public ObjectBase<Box>
+	class Box : public BaseShape<Box>, public Object
 	{
-		DirectX::XMFLOAT3 angle = { 0.0f,0.0f,0.0f };
-		DirectX::XMFLOAT3 pos;
 		DirectX::XMFLOAT3 rotationScale;
 		DirectX::XMFLOAT3 posScale;
 		float r;
 
 	public:
-		Box(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR);
+		Box(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, float rotationR);
 
-		constexpr DirectX::XMFLOAT3 GetPos() const noexcept { return pos; }
-		constexpr void SetPos(DirectX::XMFLOAT3 position) noexcept { pos = position; }
-		constexpr DirectX::XMFLOAT3 GetAngle() const noexcept { return angle; }
-		constexpr void SetAngle(DirectX::XMFLOAT3 meshAngle) noexcept { angle = meshAngle; }
-
-		void Update(float dX, float dY, float dZ, float angleDZ = 0.0f, float angleDX = 0.0f, float angleDY = 0.0f) noexcept override;
+		void Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
 		DirectX::XMMATRIX GetTransformMatrix() const noexcept override;
 	};
 }

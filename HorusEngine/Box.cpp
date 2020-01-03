@@ -3,9 +3,10 @@
 #include "GfxResources.h"
 #include "Math.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, BasicType::ColorFloat material, float x0, float y0, float z0, float rotationR) : pos(x0, y0, z0), r(rotationR)
+	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, float rotationR)
+		: Object(position, name), r(rotationR)
 	{
 		std::mt19937_64 engine(std::random_device{}());
 		rotationScale.x = rand(-M_PI, M_PI, engine);
@@ -39,14 +40,14 @@ namespace GFX::Object
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 	}
 
-	void Box::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
+	void Box::Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle) noexcept
 	{
 		DirectX::XMStoreFloat3(&angle,
 			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&rotationScale),
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f), DirectX::XMLoadFloat3(&angle))));
+				DirectX::XMLoadFloat3(&deltaAngle), DirectX::XMLoadFloat3(&angle))));
 		DirectX::XMStoreFloat3(&pos,
 			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&posScale),
-				DirectX::XMVectorSet(dX, dY, dZ, 0.0f), DirectX::XMLoadFloat3(&pos))));
+				DirectX::XMLoadFloat3(&delta), DirectX::XMLoadFloat3(&pos))));
 	}
 
 	DirectX::XMMATRIX Box::GetTransformMatrix() const noexcept

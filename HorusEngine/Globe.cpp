@@ -3,10 +3,10 @@
 #include "GfxResources.h"
 #include "Math.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	Globe::Globe(Graphics & gfx, BasicType::ColorFloat material, float x0, float y0, float z0, unsigned int latitudeDensity, unsigned int longitudeDensity, float height, float width, float length)
-		: pos(x0, y0, z0), size(width, height, length)
+	Globe::Globe(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int latitudeDensity, unsigned int longitudeDensity, float height, float width, float length)
+		: Object(position, name), size(width, height, length)
 	{
 		if (!IsStaticInit())
 		{
@@ -31,15 +31,7 @@ namespace GFX::Object
 		buffer.specularPower = 60.0f;
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 	}
-
-	void Globe::Update(float dX, float dY, float dZ, float angleDZ, float angleDX, float angleDY) noexcept
-	{
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorSet(dX, dY, dZ, 0.0f)));
-		DirectX::XMStoreFloat3(&angle,
-			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&angle),
-				DirectX::XMVectorSet(angleDX, angleDY, angleDZ, 0.0f))));
-	}
-
+	
 	DirectX::XMMATRIX Globe::GetTransformMatrix() const noexcept
 	{
 		return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&size)) *

@@ -7,6 +7,7 @@ namespace WinAPI
 	class Mouse
 	{
 		friend class Window;
+
 	public:
 		class Event
 		{
@@ -24,7 +25,7 @@ namespace WinAPI
 			bool wheel;
 
 		public:
-			Event(Type type, const Mouse & mouse, int x, int y) noexcept
+			constexpr Event(Type type, const Mouse & mouse, int x, int y) noexcept
 				: type(type), x(x), y(y), dX(x - mouse.x), dY(y - mouse.y), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			constexpr Event(const Event &) = default;
 			constexpr Event & operator=(const Event &) = default;
@@ -42,7 +43,7 @@ namespace WinAPI
 		};
 
 	private:
-		constexpr static unsigned int bufferSize = 64U;
+		static constexpr unsigned int bufferSize = 64U;
 
 		int x = 0;
 		int y = 0;
@@ -53,6 +54,7 @@ namespace WinAPI
 		bool window = false;
 		std::deque<Event> eventBuffer;
 
+		void TrimBuffer() noexcept;
 		void OnLeftDown(int x, int y) noexcept;
 		void OnLeftUp(int x, int y) noexcept;
 		void OnRightDown(int x, int y) noexcept;
@@ -65,23 +67,22 @@ namespace WinAPI
 		void OnWheelBackward() noexcept;
 		void OnEnter() noexcept;
 		void OnLeave() noexcept;
-		void TrimBuffer() noexcept;
 
 	public:
 		Mouse() = default;
-		constexpr Mouse(const Mouse &) = delete;
-		constexpr Mouse & operator=(const Mouse &) = delete;
+		Mouse(const Mouse &) = delete;
+		Mouse & operator=(const Mouse &) = delete;
 		~Mouse() = default;
 
 		constexpr std::pair<int, int> GetPosition() const noexcept { return std::move(std::make_pair(x, y)); }
-		constexpr inline int GetX() const noexcept { return x; }
-		constexpr inline int GetY() const noexcept { return y; }
-		constexpr inline bool IsLeftDown() const noexcept { return left; }
-		constexpr inline bool IsRightDown() const noexcept { return right; }
-		constexpr inline bool IsWheelDown() const noexcept { return wheel; }
-		constexpr inline bool IsInWindow() const noexcept { return window; }
+		constexpr int GetX() const noexcept { return x; }
+		constexpr int GetY() const noexcept { return y; }
+		constexpr bool IsLeftDown() const noexcept { return left; }
+		constexpr bool IsRightDown() const noexcept { return right; }
+		constexpr bool IsWheelDown() const noexcept { return wheel; }
+		constexpr bool IsInWindow() const noexcept { return window; }
 		inline bool IsInput() const noexcept { return eventBuffer.size(); }
-		inline void Flush() noexcept { eventBuffer = std::deque<Event>(); }
+		inline void Flush() noexcept { eventBuffer = std::deque<Event>{}; }
 
 		std::optional<Event> Read() noexcept;
 	};

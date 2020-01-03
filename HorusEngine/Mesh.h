@@ -1,9 +1,9 @@
 #pragma once
-#include "ObjectBase.h"
+#include "BaseShape.h"
 
-namespace GFX::Object
+namespace GFX::Shape
 {
-	class Mesh : public ObjectBase<Mesh>
+	class Mesh : public BaseShape<Mesh>
 	{
 		mutable DirectX::XMFLOAT4X4 transform;
 

@@ -1,5 +1,4 @@
 #include "GfxExceptionMacros.h"
-#include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 #include <d3dcompiler.h>
 
@@ -7,43 +6,6 @@ namespace MsWrl = Microsoft::WRL;
 
 namespace GFX
 {
-#pragma region Exceptions
-#ifdef _DEBUG
-	const char * Graphics::DebugException::what() const noexcept
-	{
-		std::ostringstream stream;
-		stream << this->BasicException::what() << GetDebugInfo();
-		whatBuffer = stream.str();
-		return whatBuffer.c_str();
-	}
-
-	std::string Graphics::DebugException::GetDebugInfo() const noexcept
-	{
-		std::ostringstream stream;
-		size_t size = debugInfo.size();
-		if (size > 0)
-		{
-			stream << "\n\n[Error Info]";
-			for (size_t i = 0; i < size; ++i)
-				stream << "\n\n[" << i + 1 << "] " << debugInfo.at(i);
-			stream << std::endl;
-		}
-		return stream.str();
-	}
-#endif
-
-	const char * Graphics::GraphicsException::what() const noexcept
-	{
-		std::ostringstream stream;
-		stream << this->WinApiException::what();
-#ifdef _DEBUG
-		stream << GetDebugInfo();
-#endif
-		whatBuffer = stream.str();
-		return whatBuffer.c_str();
-	}
-#pragma endregion
-
 	Graphics::Graphics(HWND hWnd, unsigned int width, unsigned int height)
 	{
 		GFX_ENABLE_EXCEPT();
@@ -120,11 +82,6 @@ namespace GFX
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
 
-	Graphics::~Graphics()
-	{
-		ImGui_ImplDX11_Shutdown();
-	}
-
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)
 	{
 		GFX_THROW_FAILED_INFO(context->DrawIndexed(count, 0U, 0U));
@@ -160,4 +117,41 @@ namespace GFX
 			ImGui::NewFrame();
 		}
 	}
+
+#pragma region Exceptions
+#ifdef _DEBUG
+	const char * Graphics::DebugException::what() const noexcept
+	{
+		std::ostringstream stream;
+		stream << this->BasicException::what() << GetDebugInfo();
+		whatBuffer = stream.str();
+		return whatBuffer.c_str();
+	}
+
+	std::string Graphics::DebugException::GetDebugInfo() const noexcept
+	{
+		std::ostringstream stream;
+		size_t size = debugInfo.size();
+		if (size > 0)
+		{
+			stream << "\n\n[Error Info]";
+			for (size_t i = 0; i < size; ++i)
+				stream << "\n\n[" << i + 1 << "] " << debugInfo.at(i);
+			stream << std::endl;
+		}
+		return stream.str();
+	}
+#endif
+
+	const char * Graphics::GraphicsException::what() const noexcept
+	{
+		std::ostringstream stream;
+		stream << this->WinApiException::what();
+#ifdef _DEBUG
+		stream << GetDebugInfo();
+#endif
+		whatBuffer = stream.str();
+		return whatBuffer.c_str();
+	}
+#pragma endregion
 }

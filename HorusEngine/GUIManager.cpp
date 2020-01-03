@@ -1,5 +1,4 @@
 #include "GUIManager.h"
-#include "ImGui/imgui.h"
 
 namespace GFX
 {
@@ -8,11 +7,6 @@ namespace GFX
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
-	}
-
-	GUIManager::~GUIManager()
-	{
-		ImGui::DestroyContext();
 	}
 
 	void GUIManager::SetFont(const std::string & font, float size)

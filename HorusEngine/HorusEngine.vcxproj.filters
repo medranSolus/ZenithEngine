@@ -25,9 +25,6 @@
     <Filter Include="Header Files\GFX">
       <UniqueIdentifier>{48fde5ec-2266-4bec-ad8b-55464e463c3a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GFX\Object">
-      <UniqueIdentifier>{0eac2016-e59a-4531-825b-8dce1e7ffa52}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\GFX\ImGui">
       <UniqueIdentifier>{a3a93885-16e4-494f-82dd-c51666eb81da}</UniqueIdentifier>
     </Filter>
@@ -52,9 +49,6 @@
     <Filter Include="Source Files\GFX\ImGui">
       <UniqueIdentifier>{c61ba09f-5d4e-4fea-82a3-b1558a3f4ab6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\GFX\Object">
-      <UniqueIdentifier>{3393a67b-b17d-4b61-8850-4597acbad97c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\GFX\Resource">
       <UniqueIdentifier>{cdd14e09-8d07-4464-bcd6-e3e5333db173}</UniqueIdentifier>
     </Filter>
@@ -78,6 +72,15 @@
     </Filter>
     <Filter Include="Source Files\GFX\BasicType">
       <UniqueIdentifier>{196305ee-dba2-42a3-b1be-97693614ed85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Shape">
+      <UniqueIdentifier>{0eac2016-e59a-4531-825b-8dce1e7ffa52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Primitive">
+      <UniqueIdentifier>{cd9d5709-eea4-44b1-aa69-b99e6e2e2ae3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Shape">
+      <UniqueIdentifier>{3393a67b-b17d-4b61-8850-4597acbad97c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -153,10 +156,10 @@
       <Filter>Header Files\Exception</Filter>
     </ClInclude>
     <ClInclude Include="Box.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Ball.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="ConstantBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -183,7 +186,7 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Globe.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Graphics.h">
       <Filter>Header Files\GFX</Filter>
@@ -193,9 +196,6 @@
     </ClInclude>
     <ClInclude Include="IBindable.h">
       <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="IDrawable.h">
-      <Filter>Header Files\GFX\Object</Filter>
     </ClInclude>
     <ClInclude Include="IndexBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -212,12 +212,6 @@
     <ClInclude Include="Mouse.h">
       <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectBase.h">
-      <Filter>Header Files\GFX\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Objects.h">
-      <Filter>Header Files\GFX\Object</Filter>
-    </ClInclude>
     <ClInclude Include="ObjLoader.h">
       <Filter>Header Files\FileService</Filter>
     </ClInclude>
@@ -228,7 +222,7 @@
       <Filter>Header Files\GFX\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="Rectangle.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Sampler.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -249,7 +243,7 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="VertexBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -522,13 +516,31 @@
       <Filter>Header Files\GFX\BasicType</Filter>
     </ClInclude>
     <ClInclude Include="SolidGlobe.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
-      <Filter>Header Files\GFX\Object</Filter>
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="IObject.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="IShape.h">
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Shapes.h">
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="IDrawable.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseShape.h">
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -569,13 +581,13 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Ball.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="BasicException.cpp">
       <Filter>Source Files\Exception</Filter>
     </ClCompile>
     <ClCompile Include="Box.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="DXGIDebugInfoManager.cpp">
       <Filter>Source Files\GFX</Filter>
@@ -584,7 +596,7 @@
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Globe.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="GUIManager.cpp">
       <Filter>Source Files\GFX</Filter>
@@ -594,9 +606,6 @@
     </ClCompile>
     <ClCompile Include="Graphics.cpp">
       <Filter>Source Files\GFX</Filter>
-    </ClCompile>
-    <ClCompile Include="IDrawable.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
     </ClCompile>
     <ClCompile Include="IndexBuffer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
@@ -632,13 +641,13 @@
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Rectangle.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="ObjLoader.cpp">
       <Filter>Source Files\FileService</Filter>
     </ClCompile>
     <ClCompile Include="Triangle.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="PointLight.cpp">
       <Filter>Source Files\GFX\Light</Filter>
@@ -659,13 +668,25 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SolidGlobe.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
     <ClCompile Include="Model.cpp">
-      <Filter>Source Files\GFX\Object</Filter>
+      <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="IndexedTriangleList.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexBuffer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="IShape.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Source Files\GFX</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
