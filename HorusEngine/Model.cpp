@@ -37,13 +37,17 @@ namespace GFX::Shape
 	void Model::Node::ShowTree(unsigned long long & nodeId, unsigned long long & selectedId, Node * & selectedNode) const noexcept
 	{
 		const unsigned long long currentNode = nodeId++;
-		if (ImGui::TreeNodeEx((void*)currentNode, ImGuiTreeNodeFlags_OpenOnArrow | (children.size() ? 0 : ImGuiTreeNodeFlags_Leaf) | (currentNode == selectedId ? ImGuiTreeNodeFlags_Selected : 0), name.c_str()))
+		const bool expanded = ImGui::TreeNodeEx((void*)currentNode,
+			ImGuiTreeNodeFlags_OpenOnArrow |
+			(children.size() ? 0 : ImGuiTreeNodeFlags_Leaf) |
+			(currentNode == selectedId ? ImGuiTreeNodeFlags_Selected : 0), name.c_str());
+		if (ImGui::IsItemClicked())
 		{
-			if (ImGui::IsItemClicked())
-			{
-				selectedId = currentNode;
-				selectedNode = const_cast<Node*>(this);
-			}
+			selectedId = currentNode;
+			selectedNode = const_cast<Node*>(this);
+		}
+		if (expanded)
+		{
 			for (auto & child : children)
 				child->ShowTree(nodeId, selectedId, selectedNode);
 			ImGui::TreePop();
@@ -128,6 +132,9 @@ namespace GFX::Shape
 	{
 		Assimp::Importer importer;
 		const aiScene * model = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
+		if (!model)
+			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
+
 		meshes.reserve(model->mNumMeshes);
 		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
 		for (unsigned int i = 0; i < model->mNumMeshes; ++i)
@@ -136,5 +143,14 @@ namespace GFX::Shape
 		root->SetScale(scale);
 		root->SetPos(position);
 		window = std::make_unique<Window>(const_cast<Model*>(this));
+	}
+
+	const char * Model::ModelException::what() const noexcept
+	{
+		std::ostringstream stream;
+		stream << BasicException::what()
+			<< "\n[Assimp Error] " << error;
+		whatBuffer = stream.str();
+		return whatBuffer.c_str();
 	}
 }

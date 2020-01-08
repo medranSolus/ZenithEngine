@@ -32,6 +32,7 @@ namespace GFX::Light
 		ImGui::DragScalar("Const", ImGuiDataType_Float, &lightBuffer.atteuationConst, 0.001f, &f32Min, &f32Max, "%.3f");
 		ImGui::DragScalar("Linear", ImGuiDataType_Float, &lightBuffer.atteuationLinear, 0.0001f, &f32Min, &f32Max, "%.4f");
 		ImGui::DragScalar("Quad", ImGuiDataType_Float, &lightBuffer.attenuationQuad, 0.00001f, &f32Min, &f32Max, "%.5f");
+		ImGui::NewLine();
 		mesh.Object::ShowWindow();
 	}
 

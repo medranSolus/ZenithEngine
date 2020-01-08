@@ -5,7 +5,7 @@ namespace Exception
 	const char * WinApiException::what() const noexcept
 	{
 		std::ostringstream stream;
-		stream << this->BasicException::what()
+		stream << BasicException::what()
 			<< "\n[Message] " << GetErrorString()
 			<< "[Code] 0x" << std::hex << result << std::dec;
 		whatBuffer = stream.str();

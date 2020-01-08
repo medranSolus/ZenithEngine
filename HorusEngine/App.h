@@ -16,7 +16,6 @@ class App
 
 	float cameraSpeed = 0.1f;
 	float cameraRotateSpeed = 2.0f;
-	unsigned int currScene = 3;
 
 	WinAPI::Window window;
 	Timer timer;
@@ -28,6 +27,7 @@ class App
 	
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
+	inline void ShowOptionsWindow();
 	inline void AddShape(std::shared_ptr<GFX::IObject> shape);
 	void CreateCarpet(unsigned int depth, float x, float y, float width);
 	void MakeFrame();

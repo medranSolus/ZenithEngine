@@ -31,6 +31,8 @@ namespace GFX::Shape
 		buffer.specularIntensity = 0.6f;
 		buffer.specularPower = 60.0f;
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer));
+
+		UpdateScalingMatrix();
 	}
 
 	void SolidGlobe::UpdateScalingMatrix() noexcept

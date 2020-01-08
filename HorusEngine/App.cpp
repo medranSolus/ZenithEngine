@@ -112,12 +112,20 @@ inline void App::ShowObjectWindow()
 		ImGui::NewLine();
 		if (currentItem->second)
 			currentItem->second->ShowWindow();
-		//ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+	}
+	ImGui::End();
+}
+
+inline void App::ShowOptionsWindow()
+{
+	if (ImGui::Begin("Options"))
+	{
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		//ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
-		//ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.001f, 1.0f, "%.3f");
-		//ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
+		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.001f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
@@ -175,6 +183,7 @@ void App::MakeFrame()
 		obj->Draw(window.Gfx());
 	}
 	ShowObjectWindow();
+	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
 	window.Gfx().EndFrame();
 }
@@ -190,8 +199,10 @@ App::App() : window(width, height, windowTitle)
 	std::mt19937_64 engine(std::random_device{}());
 	for (unsigned int i = 0; i < 0; ++i)
 		AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
 	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(0.0f, 5.0f, -15.0f), "Nanosuit"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, 1.0f, 1.0f));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Globe>(window.Gfx(), std::move(randColor(engine)), 0.0f, 8.0f, -1.0f, 25, 25, 3.0f, 3.0f, 3.0f));

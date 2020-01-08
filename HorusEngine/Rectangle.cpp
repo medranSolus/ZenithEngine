@@ -42,6 +42,8 @@ namespace GFX::Shape
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
+
+		UpdateScalingMatrix();
 	}
 
 	void Rectangle::UpdateScalingMatrix() noexcept

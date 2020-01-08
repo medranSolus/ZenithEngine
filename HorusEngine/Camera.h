@@ -22,6 +22,7 @@ public:
 	void MoveX(float dX) noexcept;
 	void MoveZ(float dZ) noexcept;
 	void Rotate(float angleDX, float angleDY) noexcept;
+
 	DirectX::XMMATRIX GetView() const noexcept;
 	DirectX::XMMATRIX GetProjection() const noexcept;
 };

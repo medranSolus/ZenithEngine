@@ -1,9 +1,8 @@
 #pragma once
 #include "Object.h"
 #include "Mesh.h"
+#include "BasicException.h"
 #include "assimp/scene.h"
-#include <optional>
-#include <unordered_map>
 
 namespace GFX::Shape
 {
@@ -84,5 +83,23 @@ namespace GFX::Shape
 
 		inline void Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
 		inline void ShowWindow() noexcept override { window->Show(); }
+
+		class ModelException : public Exception::BasicException
+		{
+			std::string error;
+
+		public:
+			inline ModelException(unsigned int line, const char * file, const std::string & error) noexcept
+				: BasicException(line, file), error(error) {}
+			ModelException(const ModelException &) = default;
+			ModelException & operator=(const ModelException &) = default;
+			virtual ~ModelException() = default;
+
+
+			inline const char * GetType() const noexcept override { return "Model Exception"; }
+			constexpr const std::string & GetErrorString() const noexcept { return error; }
+
+			const char * what() const noexcept override;
+		};
 	};
 }

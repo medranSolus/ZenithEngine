@@ -9,7 +9,8 @@ namespace Exception
 		HRESULT result;
 
 	public:
-		WinApiException(unsigned int line, const char * file, HRESULT hResult) noexcept : BasicException(line, file), result(hResult) {}
+		WinApiException(unsigned int line, const char * file, HRESULT hResult) noexcept
+			: BasicException(line, file), result(hResult) {}
 		WinApiException(const WinApiException &) = default;
 		constexpr WinApiException & operator=(const WinApiException &) = default;
 		virtual ~WinApiException() = default;
