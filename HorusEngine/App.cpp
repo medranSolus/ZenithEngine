@@ -96,23 +96,22 @@ inline void App::ShowObjectWindow()
 {
 	if (ImGui::Begin("Object options"))
 	{
-		// (your selection data could be an index, a pointer to the object, an id for the object, a flag stored in the object itself, etc.)
-		const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO" };
-		static const char* item_current = items[0];            // Here our selection is a single pointer stored outside the object.
-		if (ImGui::BeginCombo("Selected object", item_current)) // The second parameter is the label previewed before opening the combo.
+		static std::map<std::string, std::shared_ptr<GFX::IObject>>::iterator currentItem = objects.find("---None---");
+		if (ImGui::BeginCombo("Selected object", currentItem->first.c_str()))
 		{
-			for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+			for (auto it = objects.begin(); it != objects.end(); ++it)
 			{
-				bool is_selected = (item_current == items[n]);
-				if (ImGui::Selectable(items[n], is_selected))
-					item_current = items[n];
-				if (is_selected)
-					ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
+				bool selected = (currentItem == it);
+				if (ImGui::Selectable(it->first.c_str(), selected))
+					currentItem = it;
+				if (selected)
+					ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
 		ImGui::NewLine();
-		pointLight->ShowWindow();
+		if (currentItem->second)
+			currentItem->second->ShowWindow();
 		//ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		//ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
@@ -123,6 +122,12 @@ inline void App::ShowObjectWindow()
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
 	ImGui::End();
+}
+
+inline void App::AddShape(std::shared_ptr<GFX::IObject> shape)
+{
+	shapes.emplace_back(shape);
+	objects.emplace(shape->GetName(), shape);
 }
 
 void App::CreateCarpet(unsigned int depth, float x, float y, float width)
@@ -161,31 +166,32 @@ void App::MakeFrame()
 	window.Gfx().SetCamera(camera->GetView());
 	pointLight->Draw(window.Gfx());
 	pointLight->Bind(window.Gfx(), *camera);
-	for (auto & obj : objects)
-	{
-		obj->Update({ moveX, moveZ, moveY }, { angleZ, angleX, angleY });
-		obj->Draw(window.Gfx());
-	}
+	for (auto & shape : shapes)
+		if (shape)
+			shape->Draw(window.Gfx());
 	for (auto & obj : carpetRects)
 	{
 		obj->Update({ moveX, moveZ, moveY }, { angleZ, angleX, angleY });
 		obj->Draw(window.Gfx());
 	}
 	ShowObjectWindow();
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	window.Gfx().EndFrame();
 }
 
 App::App() : window(width, height, windowTitle)
 {
+	objects.emplace("---None---", nullptr);
 	camera = std::make_unique<Camera>(GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	window.Gfx().SetProjection(camera->GetProjection());
-	pointLight = std::make_unique<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(1.5f, 2.0f, 0.0f), "PointLight");
+	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(1.5f, 2.0f, 0.0f), "PointLight");
+	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
-	for (unsigned int i = 0; i < 1024; ++i)
-		objects.emplace_back(std::make_unique<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
-	objects.emplace_back(std::make_unique<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), "Sting_Sword"));
+	for (unsigned int i = 0; i < 0; ++i)
+		AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, 1.0f, 1.0f));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f));
 	//objects.emplace_back(std::make_unique<GFX::Shape::Globe>(window.Gfx(), std::move(randColor(engine)), 0.0f, 8.0f, -1.0f, 25, 25, 3.0f, 3.0f, 3.0f));

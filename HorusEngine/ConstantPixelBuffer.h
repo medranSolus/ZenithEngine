@@ -12,6 +12,10 @@ namespace GFX::Resource
 		using ConstantBuffer<T>::slot;
 
 	public:
+		ConstantPixelBuffer(const ConstantPixelBuffer&) = delete;
+		ConstantPixelBuffer & operator=(const ConstantPixelBuffer&) = delete;
+		~ConstantPixelBuffer() = default;
+
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
 	};
 }

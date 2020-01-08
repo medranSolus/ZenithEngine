@@ -6,6 +6,8 @@ namespace GFX::Primitive
 	class Cube
 	{
 	public:
+		Cube() = delete;
+
 		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;

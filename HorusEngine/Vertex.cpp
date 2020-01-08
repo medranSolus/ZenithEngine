@@ -1,6 +1,4 @@
 #include "Vertex.h"
-#include <utility>
-#include <cstring>
 
 namespace GFX::BasicType
 {

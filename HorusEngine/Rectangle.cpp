@@ -43,11 +43,11 @@ namespace GFX::Shape
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
 	}
-	
-	DirectX::XMMATRIX Rectangle::GetTransformMatrix() const noexcept
+
+	void Rectangle::UpdateScalingMatrix() noexcept
 	{
-		return DirectX::XMMatrixScaling(width, height, 1.0f) *
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
+		DirectX::XMStoreFloat4x4(scaling.get(),
+			DirectX::XMMatrixScaling(width, height, 1.0f) *
+			DirectX::XMMatrixScaling(scale, scale, scale));
 	}
 }

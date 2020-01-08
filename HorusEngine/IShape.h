@@ -1,7 +1,6 @@
 #pragma once
 #include "IDrawable.h"
 #include "IndexBuffer.h"
-#include <DirectXMath.h>
 
 namespace GFX::Shape
 {
@@ -16,13 +15,8 @@ namespace GFX::Shape
 		virtual const Resource::IndexBuffer * GetIndexBuffer() const noexcept = 0;
 
 	public:
-		IShape() = default;
-		IShape(const IShape &) = delete;
-		IShape & operator=(const IShape &) = delete;
 		virtual ~IShape() = default;
 		
-		virtual DirectX::XMMATRIX GetTransformMatrix() const noexcept = 0;
-
 		void Draw(Graphics & gfx) const noexcept override;
 	};
 }

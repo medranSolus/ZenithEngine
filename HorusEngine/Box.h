@@ -6,14 +6,15 @@ namespace GFX::Shape
 {
 	class Box : public BaseShape<Box>, public Object
 	{
-		DirectX::XMFLOAT3 rotationScale;
-		DirectX::XMFLOAT3 posScale;
-		float r;
+		DirectX::XMFLOAT3 sizes;
 
 	public:
-		Box(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, float rotationR);
-
-		void Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
-		DirectX::XMMATRIX GetTransformMatrix() const noexcept override;
+		Box(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material,
+			float width = 1.0f, float height = 1.0f, float length = 1.0f);
+		Box(const Box&) = delete;
+		Box & operator=(const Box&) = delete;
+		virtual ~Box() = default;
+		
+		void UpdateScalingMatrix() noexcept override;
 	};
 }

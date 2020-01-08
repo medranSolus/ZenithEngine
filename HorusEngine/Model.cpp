@@ -1,56 +1,69 @@
+#define _USE_MATH_DEFINES
 #include "Model.h"
 #include "GfxResources.h"
 #include "Math.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
-#include <random>
+#include "ImGui/imgui.h"
 
 namespace GFX::Shape
 {
-	unsigned long long Model::modelCount = 0U;
-
-	Model::Node::Node(const std::string & name, std::vector<std::shared_ptr<Mesh>> && meshes, const DirectX::FXMMATRIX & nodeTransform) noexcept
-		: name(name), meshes(std::move(meshes))
+	Model::Node::Node(const std::string & name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX & nodeTransform) noexcept
+		: Object(name), meshes(std::move(nodeMeshes))
 	{
-		DirectX::XMStoreFloat4x4(&transform, nodeTransform);
+		DirectX::XMStoreFloat4x4(&baseTransform, nodeTransform);
+		currentTransform = std::make_shared<DirectX::XMFLOAT4X4>();
+		currentScaling = std::make_shared<DirectX::XMFLOAT4X4>();
+		for (auto & mesh : meshes)
+		{
+			mesh->SetTransformMatrix(currentTransform);
+			mesh->SetScalingMatrix(currentScaling);
+		}
 	}
-
-	void Model::Node::Draw(Graphics & gfx, const DirectX::FXMMATRIX & higherTransform) const noexcept
+	
+	void Model::Node::Draw(Graphics & gfx, const DirectX::FXMMATRIX & higherTransform, const DirectX::FXMMATRIX & higherScaling) const noexcept
 	{
-		const DirectX::XMMATRIX currentTransform = DirectX::XMLoadFloat4x4(&transform) * higherTransform;
+		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
+			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
+		const DirectX::XMMATRIX scalingMatrix = DirectX::XMLoadFloat4x4(scaling.get()) * higherScaling;
+		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
+		DirectX::XMStoreFloat4x4(currentScaling.get(), scalingMatrix);
 		for (const auto & mesh : meshes)
-			mesh->Draw(gfx, currentTransform);
+			mesh->Draw(gfx);
 		for (const auto & child : children)
-			child->Draw(gfx, currentTransform);
+			child->Draw(gfx, transformMatrix, scalingMatrix);
 	}
 
-	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode & node) noexcept
+	void Model::Node::ShowTree(unsigned long long & nodeId, unsigned long long & selectedId, Node * & selectedNode) const noexcept
 	{
-		std::vector<std::shared_ptr<Mesh>> currentMeshes;
-		currentMeshes.reserve(node.mNumMeshes);
-		for (unsigned int i = 0; i < node.mNumMeshes; ++i)
-			currentMeshes.emplace_back(meshes.at(node.mMeshes[i]));
-
-		std::unique_ptr<Node> currentNode = std::make_unique<Node>(node.mName.C_Str(), std::move(currentMeshes), 
-			DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(&node.mTransformation))));
-
-		currentNode->ReserveChildren(node.mNumChildren);
-		for (unsigned int i = 0; i < node.mNumChildren; ++i)
-			currentNode->AddChild(ParseNode(*node.mChildren[i]));
-		return currentNode;
+		const unsigned long long currentNode = nodeId++;
+		if (ImGui::TreeNodeEx((void*)currentNode, ImGuiTreeNodeFlags_OpenOnArrow | (children.size() ? 0 : ImGuiTreeNodeFlags_Leaf) | (currentNode == selectedId ? ImGuiTreeNodeFlags_Selected : 0), name.c_str()))
+		{
+			if (ImGui::IsItemClicked())
+			{
+				selectedId = currentNode;
+				selectedNode = const_cast<Node*>(this);
+			}
+			for (auto & child : children)
+				child->ShowTree(nodeId, selectedId, selectedNode);
+			ImGui::TreePop();
+		}
 	}
 
-	Model::Model(Graphics & gfx, const std::string & file, const DirectX::XMFLOAT3 & position, const std::string & modelName, float scale)
-		: Object(position, modelName), scale(scale)
+	void Model::Window::Show() noexcept
 	{
-		Assimp::Importer importer;
-		const aiScene * model = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
-		meshes.reserve(model->mNumMeshes);
-		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
-		for (unsigned int i = 0; i < model->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(gfx, *model->mMeshes[i]));
-		root = ParseNode(*model->mRootNode);
+		ImGui::Columns(2);
+		ImGui::BeginChild("##scroll", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
+		unsigned long long startId = 0;
+		parent->root->ShowTree(startId, selectedId, selectedNode);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		ImGui::NewLine();
+		selectedNode->Object::ShowWindow();
+		ImGui::Columns(1);
 	}
+
+	unsigned long long Model::modelCount = 0U;
 
 	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const aiMesh & mesh)
 	{
@@ -93,11 +106,35 @@ namespace GFX::Shape
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
-	
-	void Model::Draw(Graphics & gfx) const noexcept
+
+	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode & node) noexcept
 	{
-		root->Draw(gfx, DirectX::XMMatrixScaling(scale, scale, scale) *
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos)));
+		std::vector<std::shared_ptr<Mesh>> currentMeshes;
+		currentMeshes.reserve(node.mNumMeshes);
+		for (unsigned int i = 0; i < node.mNumMeshes; ++i)
+			currentMeshes.emplace_back(meshes.at(node.mMeshes[i]));
+
+		std::unique_ptr<Node> currentNode = std::make_unique<Node>(node.mName.C_Str(), std::move(currentMeshes), 
+			DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(&node.mTransformation))));
+
+		currentNode->ReserveChildren(node.mNumChildren);
+		for (unsigned int i = 0; i < node.mNumChildren; ++i)
+			currentNode->AddChild(ParseNode(*node.mChildren[i]));
+		return currentNode;
+	}
+
+	Model::Model(Graphics & gfx, const std::string & file, const DirectX::XMFLOAT3 & position, const std::string & modelName, float scale)
+		: name(modelName)
+	{
+		Assimp::Importer importer;
+		const aiScene * model = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
+		meshes.reserve(model->mNumMeshes);
+		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
+		for (unsigned int i = 0; i < model->mNumMeshes; ++i)
+			meshes.emplace_back(ParseMesh(gfx, *model->mMeshes[i]));
+		root = ParseNode(*model->mRootNode);
+		root->SetScale(scale);
+		root->SetPos(position);
+		window = std::make_unique<Window>(const_cast<Model*>(this));
 	}
 }

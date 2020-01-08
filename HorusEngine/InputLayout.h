@@ -10,6 +10,9 @@ namespace GFX::Resource
 
 	public:
 		InputLayout(Graphics & gfx, const std::vector<D3D11_INPUT_ELEMENT_DESC> & layoutDescs, ID3DBlob * vertexShaderBytecode);
+		InputLayout(const InputLayout&) = delete;
+		InputLayout & operator=(const InputLayout&) = delete;
+		~InputLayout() = default;
 
 		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->IASetInputLayout(inputLayout.Get()); }
 	};

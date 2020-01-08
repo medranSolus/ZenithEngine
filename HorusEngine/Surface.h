@@ -37,7 +37,7 @@ namespace GFX
 		unsigned int width;
 		unsigned int height;
 
-		Surface(unsigned int width, unsigned int height, std::unique_ptr<Pixel[]> bufferParam) noexcept 
+		inline Surface(unsigned int width, unsigned int height, std::unique_ptr<Pixel[]> bufferParam) noexcept 
 			: buffer(std::move(bufferParam)), width(width), height(height) {}
 
 	public:

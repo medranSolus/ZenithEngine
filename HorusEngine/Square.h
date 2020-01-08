@@ -6,6 +6,8 @@ namespace GFX::Primitive
 	class Square
 	{
 	public:
+		Square() = delete;
+
 		static IndexedTriangleList Make(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;

@@ -1,5 +1,4 @@
 #include "VertexLayout.h"
-#include <cassert>
 
 namespace GFX::BasicType
 {

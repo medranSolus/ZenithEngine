@@ -10,6 +10,9 @@ namespace GFX::Resource
 
 	public:
 		PixelShader(Graphics & gfx, const std::wstring & path);
+		PixelShader(const PixelShader&) = delete;
+		PixelShader & operator=(const PixelShader&) = delete;
+		~PixelShader() = default;
 
 		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0U); }
 	};

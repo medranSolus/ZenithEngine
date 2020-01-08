@@ -140,6 +140,7 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +152,9 @@
     <PostBuildEvent>
       <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -346,10 +350,12 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BasicException.h" />
+    <ClInclude Include="GfxObject.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="IDrawable.h" />
     <ClInclude Include="IObject.h" />
     <ClInclude Include="Model.h" />
-    <ClInclude Include="Object.h" />
+    <ClInclude Include="BasicObject.h" />
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Box.h" />
@@ -388,7 +394,6 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="BaseShape.h" />
     <ClInclude Include="Shapes.h" />
-    <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="Primitives.h" />
@@ -417,10 +422,12 @@
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="BasicException.cpp" />
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="GfxObject.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="IndexedTriangleList.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Box.cpp" />
@@ -445,7 +452,6 @@
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Mouse.cpp" />
-    <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rectangle.cpp" />

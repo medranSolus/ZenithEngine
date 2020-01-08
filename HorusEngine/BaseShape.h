@@ -18,6 +18,11 @@ namespace GFX::Shape
 		inline const Resource::IndexBuffer * GetIndexBuffer() const noexcept override { return indexBuffer; }
 
 	protected:
+		BaseShape() = default;
+		BaseShape(const BaseShape&) = delete;
+		BaseShape & operator=(const BaseShape&) = delete;
+		virtual ~BaseShape() = default;
+
 		inline bool IsStaticInit() const noexcept { return staticBinds.size(); }
 
 		template<typename R>

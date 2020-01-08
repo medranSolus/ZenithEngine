@@ -13,6 +13,9 @@ namespace GFX::Resource
 
 	public:
 		VertexBuffer(Graphics & gfx, const BasicType::VertexDataBuffer & buffer);
+		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer & operator=(const VertexBuffer&) = delete;
+		~VertexBuffer() = default;
 
 		inline void Bind(Graphics& gfx) noexcept override 
 		{

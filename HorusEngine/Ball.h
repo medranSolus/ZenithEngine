@@ -6,11 +6,10 @@ namespace GFX::Shape
 {
 	class Ball : public BaseShape<Ball>, public Object
 	{
-		float r;
-
 	public:
 		Ball(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int density, float radius);
-
-		DirectX::XMMATRIX GetTransformMatrix() const noexcept override;
+		Ball(const Ball&) = delete;
+		Ball & operator=(const Ball&) = delete;
+		virtual ~Ball() = default;
 	};
 }

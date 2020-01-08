@@ -5,8 +5,9 @@
 
 namespace GFX::Shape
 {
-	SolidGlobe::SolidGlobe(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int latitudeDensity, unsigned int longitudeDensity, float height, float width, float length)
-		: Object(position, name), size(width, height, length)
+	SolidGlobe::SolidGlobe(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material,
+		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
+		: Object(position, name), sizes(width, height, length)
 	{
 		if (!IsStaticInit())
 		{
@@ -32,10 +33,10 @@ namespace GFX::Shape
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer));
 	}
 
-	DirectX::XMMATRIX SolidGlobe::GetTransformMatrix() const noexcept
+	void SolidGlobe::UpdateScalingMatrix() noexcept
 	{
-		return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&size)) *
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
+		DirectX::XMStoreFloat4x4(scaling.get(),
+			DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&sizes)) *
+			DirectX::XMMatrixScaling(scale, scale, scale));
 	}
 }

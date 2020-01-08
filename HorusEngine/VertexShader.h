@@ -11,6 +11,9 @@ namespace GFX::Resource
 
 	public:
 		VertexShader(Graphics& gfx, const std::wstring & path);
+		VertexShader(const VertexShader&) = delete;
+		VertexShader & operator=(const VertexShader&) = delete;
+		~VertexShader() = default;
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->VSSetShader(vertexShader.Get(), nullptr, 0U); }
 		inline ID3DBlob * GetBytecode() const noexcept { return bytecode.Get(); }

@@ -1,12 +1,12 @@
 #include "Mesh.h"
-#include "GfxResources.h"
-#include "VertexDataBuffer.h"
 #include "Primitives.h"
+#include "GfxResources.h"
 #include "Math.h"
 
 namespace GFX::Shape
 {
 	Mesh::Mesh(Graphics & gfx, std::vector<std::unique_ptr<Resource::IBindable>> && binds)
+		: GfxObject(false)
 	{
 		if (!IsStaticInit())
 			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
@@ -22,11 +22,5 @@ namespace GFX::Shape
 				AddBind(std::move(bind));
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
-	}
-
-	void Mesh::Draw(Graphics & gfx, const DirectX::FXMMATRIX & finalTransform) const noexcept
-	{
-		DirectX::XMStoreFloat4x4(&transform, finalTransform);
-		IShape::Draw(gfx);
 	}
 }

@@ -27,8 +27,8 @@ namespace WinAPI
 		public:
 			constexpr Event(Type type, const Mouse & mouse, int x, int y) noexcept
 				: type(type), x(x), y(y), dX(x - mouse.x), dY(y - mouse.y), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
-			constexpr Event(const Event &) = default;
-			constexpr Event & operator=(const Event &) = default;
+			Event(const Event &) = default;
+			Event & operator=(const Event &) = default;
 			~Event() = default;
 
 			constexpr Type GetType() const noexcept { return type; }

@@ -40,9 +40,6 @@
     <Filter Include="Source Files\WinAPI">
       <UniqueIdentifier>{ad3236e9-e356-41d1-a2cf-a80bb0f9fa40}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\FileService">
-      <UniqueIdentifier>{e788aa6c-9095-4b0a-bd21-eee990cc94e0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\GFX">
       <UniqueIdentifier>{a831bbb3-a8e4-4e29-88ba-8a77d5b26722}</UniqueIdentifier>
     </Filter>
@@ -211,9 +208,6 @@
     </ClInclude>
     <ClInclude Include="Mouse.h">
       <Filter>Header Files\WinAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjLoader.h">
-      <Filter>Header Files\FileService</Filter>
     </ClInclude>
     <ClInclude Include="PixelShader.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -533,14 +527,20 @@
     <ClInclude Include="Shapes.h">
       <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
-      <Filter>Header Files\GFX</Filter>
-    </ClInclude>
     <ClInclude Include="IDrawable.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
     <ClInclude Include="BaseShape.h">
       <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicObject.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="GfxObject.h">
+      <Filter>Header Files\GFX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -643,9 +643,6 @@
     <ClCompile Include="Rectangle.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
-    <ClCompile Include="ObjLoader.cpp">
-      <Filter>Source Files\FileService</Filter>
-    </ClCompile>
     <ClCompile Include="Triangle.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
@@ -685,8 +682,14 @@
     <ClCompile Include="IShape.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
+    <ClCompile Include="BasicObject.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>Source Files\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="GfxObject.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

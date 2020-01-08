@@ -40,10 +40,4 @@ namespace GFX::Shape
 		}
 		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
 	}
-
-	DirectX::XMMATRIX Triangle::GetTransformMatrix() const noexcept
-	{
-		return DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
-	}
 }

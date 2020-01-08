@@ -1,7 +1,6 @@
 #include "DXGIDebugInfoManager.h"
 #include "WindowExceptionMacros.h"
 #include "GfxExceptionMacros.h"
-#include <memory>
 
 namespace GFX
 {

@@ -6,7 +6,7 @@
 namespace GFX::Shape
 {
 	Ball::Ball(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int density, float radius)
-		: Object(position, name), r(radius)
+		: Object(position, name, radius)
 	{
 		if (!IsStaticInit())
 		{
@@ -30,12 +30,5 @@ namespace GFX::Shape
 		buffer.specularIntensity = 0.6f;
 		buffer.specularPower = 60.0f;
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
-	}
-	
-	DirectX::XMMATRIX Ball::GetTransformMatrix() const noexcept
-	{
-		return DirectX::XMMatrixScaling(r, r, r) *
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 }

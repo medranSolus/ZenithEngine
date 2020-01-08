@@ -18,7 +18,7 @@ namespace Exception
 		constexpr BasicException(unsigned int line, const char * file) noexcept : line(line), file(file) {}
 		constexpr BasicException(const BasicException &) = default;
 		constexpr BasicException & operator=(const BasicException &) = default;
-		virtual ~BasicException() {}
+		virtual ~BasicException() = default;
 
 		constexpr unsigned int GetLine() const noexcept { return line; }
 		constexpr const std::string & GetFile() const noexcept { return file; }

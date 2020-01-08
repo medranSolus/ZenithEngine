@@ -10,6 +10,9 @@ namespace GFX::BasicType
 
 	public:
 		VertexDataBuffer(VertexLayout layout, size_t size = 0U) noexcept(!IS_DEBUG);
+		VertexDataBuffer(const VertexDataBuffer&) = default;
+		VertexDataBuffer & operator=(const VertexDataBuffer&) = default;
+		~VertexDataBuffer() = default;
 
 		constexpr const VertexLayout & GetLayout() const noexcept { return layout; }
 		inline const char * GetData() const noexcept(!IS_DEBUG) { return buffer.data(); }

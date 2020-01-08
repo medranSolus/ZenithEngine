@@ -2,7 +2,7 @@
 
 namespace GFX::Resource
 {
-	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const Shape::IShape & parent, UINT slot) : parent(parent)
+	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const GfxObject & parent, UINT slot) : parent(parent)
 	{
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstantVertexBuffer<TransformConstatBuffer>>(gfx, slot);
@@ -10,11 +10,12 @@ namespace GFX::Resource
 
 	void ConstantTransformBuffer::Bind(Graphics & gfx) noexcept
 	{
-		const auto modelView = parent.GetTransformMatrix() * gfx.GetCamera();
 		vertexBuffer->Update(gfx,
 			{
-				modelView,
-				std::move(modelView * gfx.GetProjection())
+				std::move(DirectX::XMMatrixTranspose(parent.GetTransformMatrix())),
+				std::move(DirectX::XMMatrixTranspose(parent.GetScalingMatrix())),
+				std::move(DirectX::XMMatrixTranspose(gfx.GetCamera())),
+				std::move(DirectX::XMMatrixTranspose(gfx.GetProjection()))
 			});
 		vertexBuffer->Bind(gfx);
 	}

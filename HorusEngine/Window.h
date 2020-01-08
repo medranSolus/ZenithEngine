@@ -3,7 +3,6 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Graphics.h"
-#include <memory>
 
 namespace WinAPI
 {
@@ -40,6 +39,8 @@ namespace WinAPI
 
 	public:
 		Window(unsigned int width, unsigned int height, const char * name);
+		Window(const Window&) = delete;
+		Window & operator=(const Window&) = delete;
 		~Window();
 
 		constexpr Keyboard & Keyboard() noexcept { return keyboard; }
@@ -56,15 +57,21 @@ namespace WinAPI
 			using WinApiException::WinApiException;
 
 		public:
-			WindowException(unsigned int line, const char * file, HRESULT hResult) noexcept
+			inline WindowException(unsigned int line, const char * file, HRESULT hResult) noexcept
 				: BasicException(line, file), WinApiException(line, file, hResult) {}
+			WindowException(const WindowException&) = default;
+			WindowException & operator=(const WindowException&) = default;
+			virtual ~WindowException() = default;
 
 			inline const char * GetType() const noexcept override { return "Window Exception"; }
 		};
 		class NoGfxException : public virtual Exception::BasicException
 		{
 		public:
-			NoGfxException(unsigned int line, const char * file) noexcept : BasicException(line, file) {}
+			inline NoGfxException(unsigned int line, const char * file) noexcept : BasicException(line, file) {}
+			NoGfxException(const NoGfxException&) = default;
+			NoGfxException & operator=(const NoGfxException&) = default;
+			virtual ~NoGfxException() = default;
 
 			inline const char * GetType() const noexcept override { return "No Graphics Exception"; }
 		};

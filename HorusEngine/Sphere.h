@@ -1,15 +1,16 @@
 #pragma once
 #include "IndexedTriangleList.h"
 #include "Math.h"
-#include <cmath>
-#include <unordered_map>
 #include <boost/functional/hash/hash.hpp>
+#include <unordered_map>
 
 namespace GFX::Primitive
 {
 	class Sphere
 	{
 	public:
+		Sphere() = delete;
+
 		//latitudeDensity: N-S, longitudeDensity: W-E
 		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute> && attributes = {})
 		{

@@ -8,7 +8,8 @@ namespace GFX::Shape
 	{
 	public:
 		Triangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float down, float left, float right);
-		
-		DirectX::XMMATRIX GetTransformMatrix() const noexcept override;
+		Triangle(const Triangle&) = delete;
+		Triangle & operator=(const Triangle&) = delete;
+		virtual ~Triangle() = default;
 	};
 }

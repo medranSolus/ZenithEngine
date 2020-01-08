@@ -13,6 +13,9 @@ class Camera
 
 public:
 	Camera(float screenRatio, float nearClip, float farClip, float x0 = 0.0f, float y0 = 0.0f, float z0 = -1.0f) noexcept;
+	Camera(const Camera&) = default;
+	Camera & operator=(const Camera&) = default;
+	~Camera() = default;
 
 	constexpr  void MoveY(float dY) noexcept { position.y += dY; }
 

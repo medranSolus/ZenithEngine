@@ -3,10 +3,10 @@
 #include "DXGIDebugInfoManager.h"
 #include "GDIPlusManager.h"
 #include "GUIManager.h"
+#include "ImGui/imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <wrl.h>
 #include <DirectXMath.h>
-#include "ImGui/imgui_impl_dx11.h"
 
 namespace GFX
 {
@@ -63,7 +63,11 @@ namespace GFX
 			std::vector<std::string> debugInfo;
 
 		public:
-			DebugException(unsigned int line, const char * file, const std::vector<std::string> & info) noexcept : BasicException(line, file), debugInfo(info) {}
+			inline DebugException(unsigned int line, const char * file, const std::vector<std::string> & info) noexcept
+				: BasicException(line, file), debugInfo(info) {}
+			DebugException(const DebugException&) = default;
+			DebugException & operator=(const DebugException&) = default;
+			virtual ~DebugException() = default;
 
 			inline const char * GetType() const noexcept override { return "DirectX Debug Exception"; }
 			const char * what() const noexcept override;
@@ -72,13 +76,19 @@ namespace GFX
 		class GraphicsException : public Exception::WinApiException, public DebugException
 		{
 		public:
-			GraphicsException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept : BasicException(line, file), WinApiException(line, file, hResult), DebugException(line, file, info) {}
+			inline GraphicsException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept
+				: BasicException(line, file), WinApiException(line, file, hResult), DebugException(line, file, info) {}
 #else
 		class GraphicsException : public Exception::WinApiException
 		{
 		public:
-			GraphicsException(unsigned int line, const char * file, HRESULT hResult) noexcept : BasicException(line, file), WinApiException(line, file, hResult) {}
+			inline GraphicsException(unsigned int line, const char * file, HRESULT hResult) noexcept
+				: BasicException(line, file), WinApiException(line, file, hResult) {}
 #endif
+			GraphicsException(const GraphicsException&) = default;
+			GraphicsException & operator=(const GraphicsException&) = default;
+			virtual ~GraphicsException() = default;
+
 			inline const char * GetType() const noexcept override { return "DirectX Exception"; }
 			const char * what() const noexcept override;
 		};
@@ -87,10 +97,15 @@ namespace GFX
 		{
 		public:
 #ifdef _DEBUG
-			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept : BasicException(line, file), GraphicsException(line, file, hResult, info) {}
+			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept
+				: BasicException(line, file), GraphicsException(line, file, hResult, info) {}
 #else
-			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult) noexcept : BasicException(line, file), GraphicsException(line, file, hResult) {}
+			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult) noexcept
+				: BasicException(line, file), GraphicsException(line, file, hResult) {}
 #endif
+			DeviceRemovedException(const DeviceRemovedException&) = default;
+			DeviceRemovedException & operator=(const DeviceRemovedException&) = default;
+			virtual ~DeviceRemovedException() = default;
 
 			inline const char * GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};

@@ -21,8 +21,8 @@ namespace WinAPI
 
 		public:
 			constexpr Event(Type type, unsigned char code) noexcept : type(type), code(code) {}
-			constexpr Event(const Event &) = default;
-			constexpr Event & operator=(const Event &) = default;
+			Event(const Event &) = default;
+			Event & operator=(const Event &) = default;
 			~Event() = default;
 
 			constexpr bool IsDown() const noexcept { return type == Type::Down; }

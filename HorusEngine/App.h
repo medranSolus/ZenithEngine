@@ -4,6 +4,7 @@
 #include "Shapes.h"
 #include "Camera.h"
 #include "PointLight.h"
+#include <map>
 
 class App
 {
@@ -20,12 +21,14 @@ class App
 	WinAPI::Window window;
 	Timer timer;
 	std::unique_ptr<Camera> camera = nullptr;
-	std::unique_ptr<GFX::Light::PointLight> pointLight = nullptr;
-	std::vector<std::unique_ptr<GFX::IObject>> objects;
+	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;
+	std::vector< std::shared_ptr<GFX::IObject>> shapes;
+	std::map<std::string, std::shared_ptr<GFX::IObject>> objects;
 	std::vector<std::unique_ptr<GFX::Shape::Rectangle>> carpetRects;
-
+	
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
+	inline void AddShape(std::shared_ptr<GFX::IObject> shape);
 	void CreateCarpet(unsigned int depth, float x, float y, float width);
 	void MakeFrame();
 

@@ -5,17 +5,10 @@
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, float rotationR)
-		: Object(position, name), r(rotationR)
-	{
-		std::mt19937_64 engine(std::random_device{}());
-		rotationScale.x = rand(-M_PI, M_PI, engine);
-		rotationScale.y = rand(-M_PI, M_PI, engine);
-		rotationScale.z = rand(-M_PI, M_PI, engine);
-		posScale.x = rand(-M_PI, M_PI, engine);
-		posScale.y = rand(-M_PI, M_PI, engine);
-		posScale.z = rand(-M_PI, M_PI, engine);
-		
+	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material,
+		float width, float height, float length)
+		: Object(position, name), sizes(width, height, length)
+	{		
 		if (!IsStaticInit())
 		{
 			auto list = Primitive::Cube::Make();
@@ -40,20 +33,10 @@ namespace GFX::Shape
 		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 	}
 
-	void Box::Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle) noexcept
+	void Box::UpdateScalingMatrix() noexcept
 	{
-		DirectX::XMStoreFloat3(&angle,
-			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&rotationScale),
-				DirectX::XMLoadFloat3(&deltaAngle), DirectX::XMLoadFloat3(&angle))));
-		DirectX::XMStoreFloat3(&pos,
-			DirectX::XMVectorModAngles(DirectX::XMVectorMultiplyAdd(DirectX::XMLoadFloat3(&posScale),
-				DirectX::XMLoadFloat3(&delta), DirectX::XMLoadFloat3(&pos))));
-	}
-
-	DirectX::XMMATRIX Box::GetTransformMatrix() const noexcept
-	{
-		return DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) * // Rotation around center
-			DirectX::XMMatrixTranslation(r, 0.0f, 0.0f) *										// Move to side of rotation sphere
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&pos));		// Rotate around sphere
+		DirectX::XMStoreFloat4x4(scaling.get(),
+			DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&sizes)) *
+			DirectX::XMMatrixScaling(scale, scale, scale));
 	}
 }

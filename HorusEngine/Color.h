@@ -16,6 +16,7 @@ namespace GFX::BasicType
 		constexpr ColorByte(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255) noexcept : r(r), g(g), b(b), a(a) {}
 		constexpr ColorByte(const ColorByte & c) noexcept : r(c.r), g(c.g), b(c.b), a(c.a) {}
 		constexpr ColorByte & operator=(const ColorByte & c) noexcept;
+		~ColorByte() = default;
 
 		constexpr ColorByte operator+(const ColorByte & c) const noexcept;
 	};
@@ -34,10 +35,13 @@ namespace GFX::BasicType
 		constexpr ColorFloat(const ColorFloat & c) noexcept : col(c.col) {}
 		constexpr ColorFloat(ColorFloat && c) noexcept : col(std::move(c.col)) {}
 
-		constexpr ColorFloat(const ColorByte & c) noexcept : col(c.r, c.g, c.b, c.a) {}
+		constexpr ColorFloat(const ColorByte & c) noexcept : col(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f) {}
 
 		constexpr ColorFloat & operator=(const ColorFloat & c) noexcept;
 		constexpr ColorFloat & operator=(ColorFloat && c) noexcept;
+
+		ColorFloat & operator=(const ColorByte & c) noexcept;
+		~ColorFloat() = default;
 
 		ColorFloat operator+(const ColorFloat & c) const;
 	};

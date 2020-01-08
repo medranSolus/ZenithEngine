@@ -12,7 +12,7 @@ namespace Exception
 		WinApiException(unsigned int line, const char * file, HRESULT hResult) noexcept : BasicException(line, file), result(hResult) {}
 		WinApiException(const WinApiException &) = default;
 		constexpr WinApiException & operator=(const WinApiException &) = default;
-		~WinApiException() = default;
+		virtual ~WinApiException() = default;
 
 		inline const char * GetType() const noexcept override { return "WinAPI Exception"; }
 		constexpr HRESULT GetErrorCode() const noexcept { return result; }

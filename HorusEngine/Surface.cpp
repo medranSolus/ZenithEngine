@@ -2,9 +2,9 @@
 #define USE_WINDOWS_DEFINES
 #include "WinAPI.h"
 #include <gdiplus.h>
+#include <boost/locale/encoding.hpp>
 #include <fstream>
 #include <cassert>
-#include "boost/locale/encoding.hpp"
 
 #pragma comment(lib, "libboost_locale-vc141-mt-gd-x64-1_71.lib")
 

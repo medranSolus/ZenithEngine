@@ -40,6 +40,10 @@ namespace GFX::Resource
 			GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, nullptr, &constantBuffer));
 		}
 
+		ConstantBuffer(const ConstantBuffer&) = delete;
+		ConstantBuffer & operator=(const ConstantBuffer&) = delete;
+		virtual ~ConstantBuffer() = default;
+
 		void Update(Graphics & gfx, const T & values)
 		{
 			GFX_ENABLE_ALL(gfx);

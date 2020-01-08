@@ -10,7 +10,8 @@ namespace GFX::Resource
 		inline static ID3D11Device* GetDevice(Graphics & gfx) noexcept { return gfx.device.Get(); }
 
 	public:
-		virtual void Bind(Graphics& gfx) noexcept = 0;
 		virtual ~IBindable() = default;
+
+		virtual void Bind(Graphics& gfx) noexcept = 0;
 	};
 }

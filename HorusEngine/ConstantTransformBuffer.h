@@ -1,18 +1,20 @@
 #pragma once
 #include "ConstantVertexBuffer.h"
 #include "ShaderConstantBuffers.h"
-#include "IShape.h"
-#include <DirectXMath.h>
+#include "GfxObject.h"
 
 namespace GFX::Resource
 {
 	class ConstantTransformBuffer : public IBindable
 	{
 		static std::unique_ptr<ConstantVertexBuffer<TransformConstatBuffer>> vertexBuffer;
-		const Shape::IShape & parent;
+		const GfxObject & parent;
 
 	public:
-		ConstantTransformBuffer(Graphics & gfx, const Shape::IShape & parent, UINT slot = 0U);
+		ConstantTransformBuffer(Graphics & gfx, const GfxObject & parent, UINT slot = 0U);
+		ConstantTransformBuffer(const ConstantTransformBuffer&) = delete;
+		ConstantTransformBuffer & operator=(const ConstantTransformBuffer&) = delete;
+		~ConstantTransformBuffer() = default;
 
 		void Bind(Graphics & gfx) noexcept override;
 	};

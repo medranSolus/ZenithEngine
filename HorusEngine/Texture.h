@@ -10,6 +10,9 @@ namespace GFX::Resource
 
 	public:
 		Texture(Graphics & gfx, const Surface & surface);
+		Texture(const Texture&) = delete;
+		Texture & operator=(const Texture&) = delete;
+		~Texture() = default;
 
 		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(0U, 1U, textureView.GetAddressOf()); }
 	};

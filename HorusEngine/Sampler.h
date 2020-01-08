@@ -10,6 +10,9 @@ namespace GFX::Resource
 
 	public:
 		Sampler(Graphics & gfx);
+		Sampler(const Sampler&) = delete;
+		Sampler & operator=(const Sampler&) = delete;
+		~Sampler() = default;
 
 		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
 	};
