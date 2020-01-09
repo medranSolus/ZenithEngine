@@ -24,18 +24,26 @@ inline void App::ProcessInput()
 		if (auto opt = window.Mouse().Read())
 		{
 			auto value = opt.value();
-			if (value.IsRightDown())
+			if (value.IsRightDown() && window.IsCursorEnabled())
 				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
 			switch (value.GetType())
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
 			{
 				moveZ += 0.001;
+				camera->Roll(-cameraRollSpeed);
 				break;
 			}
 			case WinAPI::Mouse::Event::Type::WheelBackward:
 			{
 				moveZ -= 0.001;
+				camera->Roll(cameraRollSpeed);
+				break;
+			}
+			case WinAPI::Mouse::Event::Type::RawMove:
+			{
+				if (!window.IsCursorEnabled())
+					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
 				break;
 			}
 			}
@@ -53,6 +61,10 @@ inline void App::ProcessInput()
 		camera->MoveY(cameraSpeed);
 	if (window.Keyboard().IsKeyDown('C'))
 		camera->MoveY(-cameraSpeed);
+	if (window.Keyboard().IsKeyDown(VK_LEFT))
+		camera->Roll(-cameraRollSpeed);
+	if (window.Keyboard().IsKeyDown(VK_RIGHT))
+		camera->Roll(cameraRollSpeed);
 	while (window.Keyboard().IsKeyReady())
 	{
 		if (auto opt = window.Keyboard().ReadKey())
@@ -63,22 +75,27 @@ inline void App::ProcessInput()
 				{
 				case VK_LEFT:
 				{
-					moveX -= 0.001;
+					moveX -= 0.001f;
 					break;
 				}
 				case VK_RIGHT:
 				{
-					moveX += 0.001;
+					moveX += 0.001f;
 					break;
 				}
 				case VK_UP:
 				{
-					moveY += 0.001;
+					moveY += 0.001f;
 					break;
 				}
 				case VK_DOWN:
 				{
-					moveY -= 0.001;
+					moveY -= 0.001f;
+					break;
+				}
+				case VK_ESCAPE:
+				{
+					window.EnableCursor();
 					break;
 				}
 				case VK_F1:
@@ -125,9 +142,15 @@ inline void App::ShowOptionsWindow()
 		//ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
 		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.001f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Roll speed", &cameraRollSpeed, 0.01f, 0.5f, "%.2f");
 		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
+		ImGui::Text("Camera:");
+		camera->ShowWindow();
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
+		ImGui::SameLine();
+		if (ImGui::Button("Hide Cursor"))
+			window.DisableCursor();
 	}
 	ImGui::End();
 }
@@ -171,7 +194,7 @@ void App::MakeFrame()
 	angleY = dTime * rotateY;
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
-	window.Gfx().SetCamera(camera->GetView());
+	camera->Update(window.Gfx());
 	pointLight->Draw(window.Gfx());
 	pointLight->Bind(window.Gfx(), *camera);
 	for (auto & shape : shapes)
@@ -191,9 +214,8 @@ void App::MakeFrame()
 App::App() : window(width, height, windowTitle)
 {
 	objects.emplace("---None---", nullptr);
-	camera = std::make_unique<Camera>(GetRatio(), 0.01f, viewDistance);
+	camera = std::make_unique<Camera>(1.047f, GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
-	window.Gfx().SetProjection(camera->GetProjection());
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(1.5f, 2.0f, 0.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());

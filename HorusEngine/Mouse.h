@@ -12,21 +12,27 @@ namespace WinAPI
 		class Event
 		{
 		public:
-			enum Type : char { LeftUp, LeftDown, RightUp, RightDown, WheelUp, WheelDown, WheelForward, WheelBackward, Move, Enter, Leave };
+			enum Type : char { LeftUp, LeftDown, RightUp, RightDown, WheelUp, WheelDown, WheelForward, WheelBackward, Move, RawMove, Enter, Leave };
+			struct RawInput
+			{
+				int dX;
+				int dY;
+			};
 
 		private:
 			Type type;
 			int x;
 			int y;
-			int dX;
-			int dY;
+			RawInput delta;
 			bool left;
 			bool right;
 			bool wheel;
 
 		public:
 			constexpr Event(Type type, const Mouse & mouse, int x, int y) noexcept
-				: type(type), x(x), y(y), dX(x - mouse.x), dY(y - mouse.y), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
+				: type(type), x(x), y(y), delta({ x - mouse.x, y - mouse.y }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
+			constexpr Event(Type type, const Mouse & mouse, RawInput delta) noexcept
+				: type(type), x(x), y(y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			Event(const Event &) = default;
 			Event & operator=(const Event &) = default;
 			~Event() = default;
@@ -35,15 +41,15 @@ namespace WinAPI
 			constexpr std::pair<int, int> GetPosition() const noexcept { return std::move(std::make_pair(x, y)); }
 			constexpr int GetX() const noexcept { return x; }
 			constexpr int GetY() const noexcept { return y; }
-			constexpr int GetDX() const noexcept { return dX; }
-			constexpr int GetDY() const noexcept { return dY; }
+			constexpr int GetDX() const noexcept { return delta.dX; }
+			constexpr int GetDY() const noexcept { return delta.dY; }
 			constexpr bool IsLeftDown() const noexcept { return left; }
 			constexpr bool IsRightDown() const noexcept { return right; }
 			constexpr bool IsWheelDown() const noexcept { return wheel; }
 		};
 
 	private:
-		static constexpr unsigned int bufferSize = 64U;
+		static constexpr unsigned int bufferSize = 256U;
 
 		int x = 0;
 		int y = 0;
@@ -62,6 +68,7 @@ namespace WinAPI
 		void OnWheelDown(int x, int y) noexcept;
 		void OnWheelUp(int x, int y) noexcept;
 		void OnMouseMove(int x, int y) noexcept;
+		void OnRawDelta(int dx, int dy) noexcept;
 		void OnWheelRotation(int rotation) noexcept;
 		void OnWheelForward() noexcept;
 		void OnWheelBackward() noexcept;

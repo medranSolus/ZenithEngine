@@ -15,6 +15,7 @@ class App
 	static unsigned int height;
 
 	float cameraSpeed = 0.1f;
+	float cameraRollSpeed = 0.01;
 	float cameraRotateSpeed = 2.0f;
 
 	WinAPI::Window window;

@@ -71,6 +71,14 @@ namespace WinAPI
 		TrimBuffer();
 	}
 
+	void Mouse::OnRawDelta(int dx, int dy) noexcept
+	{
+		this->x += dx;
+		this->y += dy;
+		eventBuffer.emplace_back(Event::Type::RawMove, *this, Event::RawInput({ dx, dy }));
+		TrimBuffer();
+	}
+
 	void Mouse::OnWheelRotation(int rotation) noexcept
 	{
 		// Rotation for high precision mouse wheels https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel

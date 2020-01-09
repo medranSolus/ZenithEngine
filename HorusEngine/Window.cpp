@@ -57,12 +57,24 @@ namespace WinAPI
 			PostQuitMessage(0);
 			return 0;
 		}
+		case WM_ACTIVATE:
+		{
+			if (!cursorEnabled)
+			{
+				if (wParam & WA_ACTIVE)
+					TrapCursor();
+				else
+					FreeCursor();
+			}
+			break; 
+		}
 		case WM_KILLFOCUS:
 		{
 			// No keys left down after focus changed
 			keyboard.ClearStates();
 			break;
 		}
+#pragma region Keyboard
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 		{
@@ -75,8 +87,6 @@ namespace WinAPI
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 		{
-			if (ImGui::GetIO().WantCaptureKeyboard)
-				break;
 			keyboard.OnKeyUp(static_cast<unsigned char>(wParam));
 			break;
 		}
@@ -87,8 +97,16 @@ namespace WinAPI
 			keyboard.OnChar(static_cast<unsigned char>(wParam));
 			break;
 		}
+#pragma endregion
+#pragma region Mouse Input
 		case WM_LBUTTONDOWN:
 		{
+			SetForegroundWindow(hWnd);
+			if (!cursorEnabled)
+			{
+				HideCursor();
+				TrapCursor();
+			}
 			if (ImGui::GetIO().WantCaptureMouse)
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
@@ -153,8 +171,34 @@ namespace WinAPI
 			}
 			break;
 		}
+#pragma endregion
+#pragma region Raw Input
+		case WM_INPUT:
+		{
+			UINT inputSize = 0U;
+			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &inputSize, sizeof(RAWINPUTHEADER)) == -1)
+				break;
+			rawBuffer.resize(inputSize);
+			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER)) != inputSize)
+				break;
+
+			const RAWINPUT & input = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+			if (input.header.dwType == RIM_TYPEMOUSE &&
+				(input.data.mouse.lLastX != 0 || input.data.mouse.lLastY != 0))
+				mouse.OnRawDelta(input.data.mouse.lLastX, input.data.mouse.lLastY);
+			break;
+		}
+#pragma endregion
 		}
 		return DefWindowProc(hWnd, msg, wParam, lParam);
+	}
+
+	void Window::TrapCursor() noexcept
+	{
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+		ClipCursor(&rect);
 	}
 
 	Window::Window(unsigned int width, unsigned int height, const char * name) : wndWidth(width), wndHeight(height)
@@ -175,6 +219,14 @@ namespace WinAPI
 		ShowWindow(hWnd, SW_SHOW);
 		graphics = std::make_unique<GFX::Graphics>(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);
+
+		RAWINPUTDEVICE rid;
+		rid.usUsagePage = 1; // Mouse page
+		rid.usUsage = 2; // Mouse usage
+		rid.dwFlags = 0;
+		rid.hwndTarget = nullptr;
+		if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
+			throw WND_EXCEPT_LAST();
 	}
 
 	Window::~Window()
@@ -207,5 +259,27 @@ namespace WinAPI
 	{
 		if (SetWindowText(hWnd, title.c_str()) == 0)
 			throw WND_EXCEPT_LAST();
+	}
+
+	void Window::EnableCursor() noexcept
+	{
+		if (!cursorEnabled)
+		{
+			cursorEnabled = true;
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+			ShowCursor();
+			FreeCursor();
+		}
+	}
+
+	void Window::DisableCursor() noexcept
+	{
+		if (cursorEnabled)
+		{
+			cursorEnabled = false;
+			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+			HideCursor();
+			TrapCursor();
+		}
 	}
 }

@@ -39,10 +39,12 @@ namespace GFX
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
 		constexpr GUIManager & Gui() noexcept { return guiManager; }
-		constexpr DirectX::XMMATRIX GetProjection() const noexcept { return projection; }
-		constexpr void SetProjection(DirectX::FXMMATRIX projection) noexcept { this->projection = projection; }
-		constexpr DirectX::XMMATRIX GetCamera() const noexcept { return camera; }
-		constexpr void SetCamera(DirectX::FXMMATRIX camera) noexcept { this->camera = camera; }
+		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
+		constexpr DirectX::XMMATRIX & GetProjection() noexcept { return projection; }
+		constexpr void SetProjection(DirectX::FXMMATRIX projection) noexcept { this->projection = std::move(projection); }
+		constexpr DirectX::FXMMATRIX GetCamera() const noexcept { return camera; }
+		constexpr DirectX::XMMATRIX & GetCamera() noexcept { return camera; }
+		constexpr void SetCamera(DirectX::FXMMATRIX camera) noexcept { this->camera = std::move(camera); }
 		constexpr void EnableGUI() noexcept { guiEnabled = true; }
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }

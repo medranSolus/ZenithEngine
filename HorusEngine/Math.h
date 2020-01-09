@@ -4,6 +4,16 @@
 #include <cmath>
 #include <random>
 
+constexpr bool equals(float a, float b)
+{
+	return a >= b - FLT_EPSILON && a <= b + FLT_EPSILON;
+}
+
+constexpr bool notEquals(float a, float b)
+{
+	return a <= b - FLT_EPSILON || a >= b + FLT_EPSILON;
+}
+
 inline float wrap2Pi(float x)
 {
 	return static_cast<float>(fmod(x, 2.0f * M_PI));
