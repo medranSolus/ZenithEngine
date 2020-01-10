@@ -2,7 +2,7 @@
 #include "SolidGlobe.h"
 #include "ConstantPixelBuffer.h"
 #include "ShaderConstantBuffers.h"
-#include "Camera.h"
+#include "ICamera.h"
 
 namespace GFX::Light
 {
@@ -35,6 +35,6 @@ namespace GFX::Light
 		inline void Update(const DirectX::XMFLOAT3 & delta, const DirectX::XMFLOAT3 & deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { mesh.Update(delta, deltaAngle); }
 		
 		void ShowWindow() noexcept override;
-		void Bind(Graphics & gfx, const Camera & camera) const noexcept;
+		void Bind(Graphics & gfx, const Camera::ICamera & camera) const noexcept;
 	};
 }

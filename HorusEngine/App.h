@@ -2,14 +2,14 @@
 #include "Window.h"
 #include "Timer.h"
 #include "Shapes.h"
-#include "Camera.h"
 #include "PointLight.h"
 #include <map>
 
 class App
 {
 	static constexpr const char * windowTitle = "Horus Engine Alpha";
-	static constexpr float viewDistance = 4194304.0f;
+	static constexpr float viewDistance = 5000.0f;
+	static constexpr float maxMoveSpeed = 3.0f;
 
 	static unsigned int width;
 	static unsigned int height;
@@ -20,7 +20,7 @@ class App
 
 	WinAPI::Window window;
 	Timer timer;
-	std::unique_ptr<Camera> camera = nullptr;
+	std::unique_ptr<Camera::ICamera> camera = nullptr;
 	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;
 	std::vector< std::shared_ptr<GFX::IObject>> shapes;
 	std::map<std::string, std::shared_ptr<GFX::IObject>> objects;

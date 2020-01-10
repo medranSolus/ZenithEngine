@@ -36,7 +36,7 @@ namespace GFX::Light
 		mesh.Object::ShowWindow();
 	}
 
-	void PointLight::Bind(Graphics & gfx, const Camera & camera) const noexcept
+	void PointLight::Bind(Graphics & gfx, const Camera::ICamera & camera) const noexcept
 	{
 		DirectX::XMStoreFloat3(&lightBuffer.pos, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
 		buffer.Update(gfx, lightBuffer);

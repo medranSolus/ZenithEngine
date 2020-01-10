@@ -1,4 +1,5 @@
 #include "App.h"
+#include "Cameras.h"
 #include "Math.h"
 #include "ImGui/imgui.h"
 
@@ -31,13 +32,15 @@ inline void App::ProcessInput()
 			case WinAPI::Mouse::Event::Type::WheelForward:
 			{
 				moveZ += 0.001;
-				camera->Roll(-cameraRollSpeed);
+				if (!window.IsCursorEnabled() && cameraSpeed <= maxMoveSpeed - 0.01f - FLT_EPSILON)
+					cameraSpeed += 0.01f;
 				break;
 			}
 			case WinAPI::Mouse::Event::Type::WheelBackward:
 			{
 				moveZ -= 0.001;
-				camera->Roll(cameraRollSpeed);
+				if (!window.IsCursorEnabled() && cameraSpeed >= 0.012f + FLT_EPSILON)
+					cameraSpeed -= 0.01f;
 				break;
 			}
 			case WinAPI::Mouse::Event::Type::RawMove:
@@ -62,9 +65,9 @@ inline void App::ProcessInput()
 	if (window.Keyboard().IsKeyDown('C'))
 		camera->MoveY(-cameraSpeed);
 	if (window.Keyboard().IsKeyDown(VK_LEFT))
-		camera->Roll(-cameraRollSpeed);
-	if (window.Keyboard().IsKeyDown(VK_RIGHT))
 		camera->Roll(cameraRollSpeed);
+	if (window.Keyboard().IsKeyDown(VK_RIGHT))
+		camera->Roll(-cameraRollSpeed);
 	while (window.Keyboard().IsKeyReady())
 	{
 		if (auto opt = window.Keyboard().ReadKey())
@@ -95,7 +98,7 @@ inline void App::ProcessInput()
 				}
 				case VK_ESCAPE:
 				{
-					window.EnableCursor();
+					window.SwitchCursor();
 					break;
 				}
 				case VK_F1:
@@ -141,16 +144,14 @@ inline void App::ShowOptionsWindow()
 		//ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
 		//ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Camera speed", &cameraSpeed, 0.001f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Move speed", &cameraSpeed, 0.001f, maxMoveSpeed, "%.3f");
 		ImGui::SliderFloat("Roll speed", &cameraRollSpeed, 0.01f, 0.5f, "%.2f");
-		ImGui::SliderFloat("Mouse speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
-		ImGui::Text("Camera:");
+		ImGui::SliderFloat("Camera speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
+		const auto & cameraPos = camera->GetPos();
+		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
 		camera->ShowWindow();
 		if (ImGui::Button("Reset"))
 			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
-		ImGui::SameLine();
-		if (ImGui::Button("Hide Cursor"))
-			window.DisableCursor();
 	}
 	ImGui::End();
 }
@@ -214,7 +215,7 @@ void App::MakeFrame()
 App::App() : window(width, height, windowTitle)
 {
 	objects.emplace("---None---", nullptr);
-	camera = std::make_unique<Camera>(1.047f, GetRatio(), 0.01f, viewDistance);
+	camera = std::make_unique<Camera::PersonCamera>(1.047f, GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(1.5f, 2.0f, 0.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);

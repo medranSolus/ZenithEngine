@@ -349,8 +349,12 @@
     <ClInclude Include="..\AssImp\include\assimp\ZipArchiveIOSystem.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Ball.h" />
+    <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BasicException.h" />
+    <ClInclude Include="Cameras.h" />
+    <ClInclude Include="FloatingCamera.h" />
     <ClInclude Include="GfxObject.h" />
+    <ClInclude Include="ICamera.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="IDrawable.h" />
     <ClInclude Include="IObject.h" />
@@ -359,7 +363,7 @@
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Box.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="PersonCamera.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConstantPixelBuffer.h" />
@@ -420,8 +424,10 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="BaseCamera.cpp" />
     <ClCompile Include="BasicException.cpp" />
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="GfxObject.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="IndexedTriangleList.cpp" />
@@ -431,7 +437,7 @@
     <ClCompile Include="SolidGlobe.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Box.cpp" />
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="PersonCamera.cpp" />
     <ClCompile Include="ConstantTransformBuffer.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="GDIPlusManager.cpp" />

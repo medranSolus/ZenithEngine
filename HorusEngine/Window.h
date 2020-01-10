@@ -53,6 +53,7 @@ namespace WinAPI
 		constexpr Keyboard & Keyboard() noexcept { return keyboard; }
 		constexpr Mouse & Mouse() noexcept { return mouse; }
 		constexpr bool IsCursorEnabled() const noexcept { return cursorEnabled; }
+		inline void SwitchCursor() noexcept { cursorEnabled ? DisableCursor() : EnableCursor(); }
 		
 		static std::optional<unsigned long long> ProcessMessage() noexcept;
 
