@@ -3,7 +3,7 @@
 
 namespace GFX::Resource
 {
-	Texture::Texture(Graphics & gfx, const Surface & surface)
+	Texture::Texture(Graphics & gfx, const Surface & surface, UINT slot) : slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };

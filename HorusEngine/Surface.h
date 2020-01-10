@@ -67,7 +67,7 @@ namespace GFX
 
 		public:
 			ImageException(unsigned int line, const char* file, std::string note) noexcept
-				: BasicException(line, file), info(std::move(info)) {}
+				: BasicException(line, file), info(std::move(note)) {}
 
 			inline const char * GetType() const noexcept override { return "Image Exception"; }
 			constexpr const std::string & GetImageInfo() const noexcept { return info; }

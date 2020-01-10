@@ -57,7 +57,7 @@ namespace GFX::Shape
 		std::unique_ptr<Node> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 
-		static std::shared_ptr<Mesh> ParseMesh(Graphics & gfx, const aiMesh & mesh);
+		static std::shared_ptr<Mesh> ParseMesh(Graphics & gfx, const aiMesh & mesh, const aiMaterial *const * materials);
 
 		std::unique_ptr<Node> ParseNode(const aiNode & node) noexcept;
 

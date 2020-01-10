@@ -1,6 +1,7 @@
 #define _USE_MATH_DEFINES
 #include "Model.h"
 #include "GfxResources.h"
+#include "Surface.h"
 #include "Math.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
@@ -69,14 +70,17 @@ namespace GFX::Shape
 
 	unsigned long long Model::modelCount = 0U;
 
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const aiMesh & mesh)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const aiMesh & mesh, const aiMaterial *const * materials)
 	{
-		BasicType::VertexDataBuffer vertexBuffer(std::move(BasicType::VertexLayout{}.Append(VertexAttribute::Normal)));
+		BasicType::VertexDataBuffer vertexBuffer(std::move(BasicType::VertexLayout{}
+			.Append(VertexAttribute::Normal)
+			.Append(VertexAttribute::Texture2D)));
 
 		vertexBuffer.Reserve(mesh.mNumVertices);
 		for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
 			vertexBuffer.EmplaceBack(*reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mVertices[i]),
-				*reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]));
+				*reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]),
+				*reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][i]));
 
 		std::vector<unsigned int> indices;
 		indices.reserve(mesh.mNumFaces * 3);
@@ -93,21 +97,35 @@ namespace GFX::Shape
 		binds.reserve(6U);
 		binds.emplace_back(std::make_unique<Resource::IndexBuffer>(gfx, std::move(indices)));
 
-		auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"PhongVS.cso");
+		auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"TexturePhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		binds.emplace_back(std::move(vertexShader));
-		binds.emplace_back(std::make_unique<Resource::PixelShader>(gfx, L"PhongPS.cso"));
 
 		binds.emplace_back(std::make_unique<Resource::InputLayout>(gfx, vertexBuffer.GetLayout().GetDXLayout(), bytecodeVS));
 		binds.emplace_back(std::make_unique<Resource::VertexBuffer>(gfx, std::move(vertexBuffer)));
 
-		std::mt19937_64 engine(std::random_device{}());
-		Resource::ObjectConstantBuffer buffer;
-		buffer.materialColor = randColor(engine);
-		buffer.specularIntensity = 0.9f;
-		buffer.specularPower = 40.0f;
-		binds.emplace_back(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
-
+		if (mesh.mMaterialIndex >= 0)
+		{
+			const aiMaterial & material = *materials[mesh.mMaterialIndex];
+			aiString texFile;
+			material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile);
+			binds.emplace_back(std::make_unique<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str()))));
+			if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
+			{
+				binds.emplace_back(std::make_unique<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str())), 1U));
+				binds.emplace_back(std::make_unique<Resource::PixelShader>(gfx, L"TextureSpecularPhongPS.cso"));
+			}
+			else
+			{
+				Resource::ObjectConstantBuffer buffer;
+				material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
+				binds.emplace_back(std::make_unique<Resource::PixelShader>(gfx, L"TexturePhongPS.cso"));
+				buffer.specularIntensity = 0.9f;
+				binds.emplace_back(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
+			}
+			binds.emplace_back(std::make_unique<Resource::Sampler>(gfx));
+		}
+		
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
 
@@ -131,15 +149,15 @@ namespace GFX::Shape
 		: name(modelName)
 	{
 		Assimp::Importer importer;
-		const aiScene * model = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
-		if (!model)
+		const aiScene * scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
+		if (!scene)
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
 
-		meshes.reserve(model->mNumMeshes);
+		meshes.reserve(scene->mNumMeshes);
 		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
-		for (unsigned int i = 0; i < model->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(gfx, *model->mMeshes[i]));
-		root = ParseNode(*model->mRootNode);
+		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
+			meshes.emplace_back(ParseMesh(gfx, *scene->mMeshes[i], scene->mMaterials));
+		root = ParseNode(*scene->mRootNode);
 		root->SetScale(scale);
 		root->SetPos(position);
 		window = std::make_unique<Window>(const_cast<Model*>(this));
