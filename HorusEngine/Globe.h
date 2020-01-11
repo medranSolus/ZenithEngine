@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class Globe : public BaseShape<Globe>, public Object
+	class Globe : public BaseShape, public Object
 	{
 		DirectX::XMFLOAT3 sizes;
 

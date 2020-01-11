@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class Box : public BaseShape<Box>, public Object
+	class Box : public BaseShape, public Object
 	{
 		DirectX::XMFLOAT3 sizes;
 

@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class SolidGlobe : public BaseShape<SolidGlobe>, public Object
+	class SolidGlobe : public BaseShape, public Object
 	{
 		DirectX::XMFLOAT3 sizes;
 

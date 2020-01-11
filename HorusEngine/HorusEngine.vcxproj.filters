@@ -527,9 +527,6 @@
     <ClInclude Include="IObject.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
-    <ClInclude Include="IShape.h">
-      <Filter>Header Files\GFX\Shape</Filter>
-    </ClInclude>
     <ClInclude Include="Shapes.h">
       <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
@@ -697,9 +694,6 @@
     <ClCompile Include="VertexBuffer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="IShape.cpp">
-      <Filter>Source Files\GFX\Shape</Filter>
-    </ClCompile>
     <ClCompile Include="BasicObject.cpp">
       <Filter>Source Files\GFX</Filter>
     </ClCompile>
@@ -717,6 +711,9 @@
     </ClCompile>
     <ClCompile Include="PersonCamera.cpp">
       <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseShape.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -93,37 +93,37 @@ namespace GFX::Shape
 			indices.emplace_back(face.mIndices[2]);
 		}
 
-		std::vector<std::unique_ptr<Resource::IBindable>> binds;
+		std::vector<std::shared_ptr<Resource::IBindable>> binds;
 		binds.reserve(6U);
-		binds.emplace_back(std::make_unique<Resource::IndexBuffer>(gfx, std::move(indices)));
+		binds.emplace_back(std::make_shared<Resource::IndexBuffer>(gfx, std::move(indices)));
 
-		auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"TexturePhongVS.cso");
+		auto vertexShader = std::make_shared<Resource::VertexShader>(gfx, L"TexturePhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
-		binds.emplace_back(std::move(vertexShader));
+		binds.emplace_back(vertexShader);
 
-		binds.emplace_back(std::make_unique<Resource::InputLayout>(gfx, vertexBuffer.GetLayout().GetDXLayout(), bytecodeVS));
-		binds.emplace_back(std::make_unique<Resource::VertexBuffer>(gfx, std::move(vertexBuffer)));
+		binds.emplace_back(std::make_shared<Resource::InputLayout>(gfx, vertexBuffer.GetLayout().GetDXLayout(), bytecodeVS));
+		binds.emplace_back(std::make_shared<Resource::VertexBuffer>(gfx, std::move(vertexBuffer)));
 
 		if (mesh.mMaterialIndex >= 0)
 		{
 			const aiMaterial & material = *materials[mesh.mMaterialIndex];
 			aiString texFile;
 			material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile);
-			binds.emplace_back(std::make_unique<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str()))));
+			binds.emplace_back(std::make_shared<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str()))));
 			if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 			{
-				binds.emplace_back(std::make_unique<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str())), 1U));
-				binds.emplace_back(std::make_unique<Resource::PixelShader>(gfx, L"TextureSpecularPhongPS.cso"));
+				binds.emplace_back(std::make_shared<Resource::Texture>(gfx, Surface("Models/nanosuit/" + std::string(texFile.C_Str())), 1U));
+				binds.emplace_back(std::make_shared<Resource::PixelShader>(gfx, L"TextureSpecularPhongPS.cso"));
 			}
 			else
 			{
 				Resource::ObjectConstantBuffer buffer;
 				material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
-				binds.emplace_back(std::make_unique<Resource::PixelShader>(gfx, L"TexturePhongPS.cso"));
+				binds.emplace_back(std::make_shared<Resource::PixelShader>(gfx, L"TexturePhongPS.cso"));
 				buffer.specularIntensity = 0.9f;
-				binds.emplace_back(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
+				binds.emplace_back(std::make_shared<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 			}
-			binds.emplace_back(std::make_unique<Resource::Sampler>(gfx));
+			binds.emplace_back(std::make_shared<Resource::Sampler>(gfx));
 		}
 		
 		return std::make_shared<Mesh>(gfx, std::move(binds));

@@ -25,23 +25,23 @@ namespace GFX::Shape
 		std::mt19937_64 engine(std::random_device{}());
 		for (unsigned char i = 0; i < 4; ++i)
 			list.vertices[i].Get<VertexAttribute::ColorFloat>() = std::move(randColor(engine));
-		AddBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
+		AddBind(std::make_shared<Resource::VertexBuffer>(gfx, list.vertices));
 
-		if (!IsStaticInit())
-		{
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
-			auto bytecodeVS = vertexShader->GetBytecode();
-			AddStaticBind(std::move(vertexShader));
 
-			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
+		auto vertexShader = std::make_shared<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
+		auto bytecodeVS = vertexShader->GetBytecode();
+		AddBind(vertexShader);
 
-			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
+		AddBind(std::make_shared<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
 
-			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
+		AddBind(std::make_shared<Resource::IndexBuffer>(gfx, list.indices));
 
-			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-		}
-		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
+		AddBind(std::make_shared<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
+
+		AddBind(std::make_shared<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+
+
+		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 
 		UpdateScalingMatrix();
 	}

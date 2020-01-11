@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class Rectangle : public BaseShape<Rectangle>, public Object
+	class Rectangle : public BaseShape, public Object
 	{
 		float width;
 		float height;

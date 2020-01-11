@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class Ball : public BaseShape<Ball>, public Object
+	class Ball : public BaseShape, public Object
 	{
 	public:
 		Ball(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int density, float radius);

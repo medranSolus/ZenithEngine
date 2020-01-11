@@ -9,28 +9,27 @@ namespace GFX::Shape
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: Object(position, name), sizes(width, height, length)
 	{
-		if (!IsStaticInit())
-		{
-			auto list = Primitive::Sphere::MakeUV(latitudeDensity, longitudeDensity);
-			AddStaticBind(std::make_unique<Resource::VertexBuffer>(gfx, list.vertices));
-			AddStaticIndexBuffer(std::make_unique<Resource::IndexBuffer>(gfx, list.indices));
+		auto list = Primitive::Sphere::MakeUV(latitudeDensity, longitudeDensity);
+		AddBind(std::make_shared<Resource::VertexBuffer>(gfx, list.vertices));
+		AddBind(std::make_shared<Resource::IndexBuffer>(gfx, list.indices));
 
-			auto vertexShader = std::make_unique<Resource::VertexShader>(gfx, L"PhongVS.cso");
-			auto bytecodeVS = vertexShader->GetBytecode();
-			AddStaticBind(std::move(vertexShader));
-			AddStaticBind(std::make_unique<Resource::PixelShader>(gfx, L"PhongPS.cso"));
-			
-			AddStaticBind(std::make_unique<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
+		auto vertexShader = std::make_shared<Resource::VertexShader>(gfx, L"PhongVS.cso");
+		auto bytecodeVS = vertexShader->GetBytecode();
+		AddBind(vertexShader);
+		AddBind(std::make_shared<Resource::PixelShader>(gfx, L"PhongPS.cso"));
 
-			AddStaticBind(std::make_unique<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
-		}
-		AddBind(std::make_unique<Resource::ConstantTransformBuffer>(gfx, *this));
+		AddBind(std::make_shared<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
+
+		AddBind(std::make_shared<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
+
+
+		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 
 		Resource::ObjectConstantBuffer buffer;
 		buffer.materialColor = material;
 		buffer.specularIntensity = 0.6f;
 		buffer.specularPower = 60.0f;
-		AddBind(std::make_unique<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
+		AddBind(std::make_shared<Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>>(gfx, buffer, 1U));
 
 		UpdateScalingMatrix();
 	}
