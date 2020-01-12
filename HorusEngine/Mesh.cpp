@@ -8,10 +8,9 @@ namespace GFX::Shape
 	Mesh::Mesh(Graphics & gfx, std::vector<std::shared_ptr<Resource::IBindable>> && binds)
 		: GfxObject(false)
 	{
-		AddBind(std::make_shared<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-
+		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+		AddBind(Resource::ConstantTransformBuffer::Get(gfx, *this));
 		for (auto & bind : binds)
 			AddBind(bind);
-		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 	}
 }

@@ -1,24 +1,25 @@
 #pragma once
 #include "Vertex.h"
+#include <memory>
 
 namespace GFX::BasicType
 {
 	class VertexDataBuffer
 	{
 		std::vector<char> buffer;
-		VertexLayout layout;
+		std::shared_ptr<VertexLayout> layout = nullptr;
 
 	public:
-		VertexDataBuffer(VertexLayout layout, size_t size = 0U) noexcept(!IS_DEBUG);
+		VertexDataBuffer(std::shared_ptr<VertexLayout> layout, size_t size = 0U) noexcept(!IS_DEBUG);
 		VertexDataBuffer(const VertexDataBuffer&) = default;
 		VertexDataBuffer & operator=(const VertexDataBuffer&) = default;
 		~VertexDataBuffer() = default;
 
-		constexpr const VertexLayout & GetLayout() const noexcept { return layout; }
+		inline std::shared_ptr<VertexLayout> GetLayout() const noexcept { return layout; }
 		inline const char * GetData() const noexcept(!IS_DEBUG) { return buffer.data(); }
 		inline size_t Bytes() const noexcept(!IS_DEBUG) { return buffer.size(); }
-		inline size_t Size() const noexcept(!IS_DEBUG) { return buffer.size() / layout.Size(); }
-		inline void Reserve(size_t capacity) noexcept { buffer.reserve(capacity * layout.Size()); }
+		inline size_t Size() const noexcept(!IS_DEBUG) { return buffer.size() / layout->Size(); }
+		inline void Reserve(size_t capacity) noexcept { buffer.reserve(capacity * layout->Size()); }
 
 		void Resize(size_t newSize) noexcept(!IS_DEBUG);
 
@@ -37,8 +38,8 @@ namespace GFX::BasicType
 	template<typename ...Params>
 	void VertexDataBuffer::EmplaceBack(Params && ...params) noexcept(!IS_DEBUG)
 	{
-		assert(sizeof...(params) <= layout.GetElementCount() && "Param count doesn't match number of vertex elements!");
-		buffer.resize(buffer.size() + layout.Size());
+		assert(sizeof...(params) <= layout->GetElementCount() && "Param count doesn't match number of vertex elements!");
+		buffer.resize(buffer.size() + layout->Size());
 		Back().SetByIndex(0U, std::forward<Params>(params)...);
 	}
 }

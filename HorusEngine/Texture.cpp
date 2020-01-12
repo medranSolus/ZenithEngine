@@ -1,11 +1,14 @@
 #include "Texture.h"
+#include "Surface.h"
+#include "Codex.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
 {
-	Texture::Texture(Graphics & gfx, const Surface & surface, UINT slot) : slot(slot)
+	Texture::Texture(Graphics & gfx, const std::string & path, UINT slot) : slot(slot), path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
+		Surface surface(path);
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.Width = surface.GetWidth();
 		textureDesc.Height = surface.GetHeight();

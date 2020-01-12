@@ -14,29 +14,28 @@ namespace GFX::Shape
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
 		std::mt19937_64 engine(std::random_device{}());
 
-		BasicType::VertexDataBuffer vertices(std::move(BasicType::VertexLayout{}
-			.Append(VertexAttribute::Position3D)
-			.Append(VertexAttribute::ColorFloat)));
+		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+		layout->Append(VertexAttribute::Position3D).Append(VertexAttribute::ColorFloat);
+		BasicType::VertexDataBuffer vertices(layout);
 
 		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), randColor(engine));
 		vertices.EmplaceBack(DirectX::XMFLOAT3(vertex3X - centerX, 2.0f * centerY, 0.0f), randColor(engine));
 		vertices.EmplaceBack(DirectX::XMFLOAT3(down - centerX, -centerY, 0.0f), randColor(engine));
 
-		AddBind(std::make_shared<Resource::VertexBuffer>(gfx, vertices));
+		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Triangle).name() + name, vertices));
 
-		auto vertexShader = std::make_shared<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
+		auto vertexShader = Resource::VertexShader::Get(gfx, "ColorBlendVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 
-		AddBind(std::make_shared<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
+		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
 
-		AddBind(std::make_shared<Resource::IndexBuffer>(gfx, std::move(std::vector<unsigned int>({ 0, 1, 2 }))));
+		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Triangle).name(), std::move(std::vector<unsigned int>({ 0, 1, 2 }))));
 
-		AddBind(std::make_shared<Resource::InputLayout>(gfx, vertices.GetLayout().GetDXLayout(), bytecodeVS));
+		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
 
-		AddBind(std::make_shared<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-
-		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
+		AddBind(Resource::ConstantTransformBuffer::Get(gfx, *this));
 	}
 }

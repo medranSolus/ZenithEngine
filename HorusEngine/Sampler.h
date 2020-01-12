@@ -1,5 +1,5 @@
 #pragma once
-#include "IBindable.h"
+#include "Codex.h"
 
 namespace GFX::Resource
 {
@@ -14,6 +14,16 @@ namespace GFX::Resource
 		Sampler & operator=(const Sampler&) = delete;
 		~Sampler() = default;
 
+		static inline std::shared_ptr<Sampler> Get(Graphics & gfx) { return Codex::Resolve<Sampler>(gfx); }
+		static inline std::string GenerateRID() noexcept { return "#" + std::string(typeid(Sampler).name()) + "#"; }
+
 		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(); }
+	};
+
+	template<>
+	struct is_resolvable_by_codex<Sampler>
+	{
+		static constexpr bool value{ true };
 	};
 }

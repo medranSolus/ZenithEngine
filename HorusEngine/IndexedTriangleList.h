@@ -8,9 +8,10 @@ namespace GFX::Primitive
 	public:
 		BasicType::VertexDataBuffer vertices;
 		std::vector<unsigned int> indices;
+		std::string typeName;
 
 		IndexedTriangleList() = default;
-		IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn);
+		IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn, const std::string & typeName);
 		IndexedTriangleList(const IndexedTriangleList&) = default;
 		IndexedTriangleList & operator=(const IndexedTriangleList&) = default;
 		~IndexedTriangleList() = default;

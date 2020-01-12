@@ -3,45 +3,31 @@
 #include "GfxResources.h"
 #include "Math.h"
 
-inline float randomVertex()
-{
-	return (rand() % 200 - 100) / 100.0f;
-}
-
 namespace GFX::Shape
 {
-	Rectangle::Rectangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float width, float height, bool isRandom)
+	Rectangle::Rectangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float width, float height)
 		: Object(position, name), width(width), height(height)
 	{
 		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat });
-		if (isRandom)
-		{
-			for (unsigned char i = 0; i < 4; ++i)
-			{
-				list.vertices[i].Get<VertexAttribute::Position3D>().x += randomVertex();
-				list.vertices[i].Get<VertexAttribute::Position3D>().y += randomVertex();
-			}
-		}
 		std::mt19937_64 engine(std::random_device{}());
 		for (unsigned char i = 0; i < 4; ++i)
 			list.vertices[i].Get<VertexAttribute::ColorFloat>() = std::move(randColor(engine));
-		AddBind(std::make_shared<Resource::VertexBuffer>(gfx, list.vertices));
+		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.vertices));
 
 
-		auto vertexShader = std::make_shared<Resource::VertexShader>(gfx, L"ColorBlendVS.cso");
+		auto vertexShader = Resource::VertexShader::Get(gfx, "ColorBlendVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 
-		AddBind(std::make_shared<Resource::PixelShader>(gfx, L"ColorBlendPS.cso"));
+		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
 
-		AddBind(std::make_shared<Resource::IndexBuffer>(gfx, list.indices));
+		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.indices));
 
-		AddBind(std::make_shared<Resource::InputLayout>(gfx, list.vertices.GetLayout().GetDXLayout(), bytecodeVS));
+		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
 
-		AddBind(std::make_shared<Resource::Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-
-		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
+		AddBind(Resource::ConstantTransformBuffer::Get(gfx, *this));
 
 		UpdateScalingMatrix();
 	}

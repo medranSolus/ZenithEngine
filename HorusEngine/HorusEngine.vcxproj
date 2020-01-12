@@ -362,6 +362,7 @@
     <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BasicException.h" />
     <ClInclude Include="Cameras.h" />
+    <ClInclude Include="Codex.h" />
     <ClInclude Include="FloatingCamera.h" />
     <ClInclude Include="GfxObject.h" />
     <ClInclude Include="ICamera.h" />
@@ -371,6 +372,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="BasicObject.h" />
     <ClInclude Include="SolidGlobe.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Box.h" />
     <ClInclude Include="PersonCamera.h" />

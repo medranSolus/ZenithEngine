@@ -1,9 +1,11 @@
 #include "IndexBuffer.h"
+#include "Codex.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
 {
-	IndexBuffer::IndexBuffer(Graphics & gfx, const std::vector<unsigned int> & indices) : count(static_cast<unsigned int>(indices.size()))
+	IndexBuffer::IndexBuffer(Graphics & gfx, const std::string & tag, const std::vector<unsigned int> & indices)
+		: count(static_cast<unsigned int>(indices.size())), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);
 		D3D11_BUFFER_DESC bufferDesc = { 0 };

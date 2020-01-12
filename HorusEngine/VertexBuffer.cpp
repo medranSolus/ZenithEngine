@@ -1,9 +1,11 @@
 #include "VertexBuffer.h"
+#include "Codex.h"
+#include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
 {
-	VertexBuffer::VertexBuffer(Graphics & gfx, const BasicType::VertexDataBuffer & buffer)
-		: stride(static_cast<UINT>(buffer.GetLayout().Size()))
+	VertexBuffer::VertexBuffer(Graphics & gfx, const std::string & tag, const BasicType::VertexDataBuffer & buffer)
+		: stride(static_cast<UINT>(buffer.GetLayout()->Size())), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);
 		D3D11_BUFFER_DESC bufferDesc = { 0 };

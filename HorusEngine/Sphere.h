@@ -25,10 +25,10 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			BasicType::VertexLayout layout;
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), (latitudeDensity - 1) * longitudeDensity + 2);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity + 2);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -96,7 +96,11 @@ namespace GFX::Primitive
 			indices.push_back(baseIndex);
 			indices.push_back(baseIndex + longitudeDensity - 1);
 			indices.push_back(pole);
-			return { std::move(vertices), std::move(indices) };
+			return
+			{ 
+				std::move(vertices), std::move(indices),
+				std::string(typeid(Primitive::Sphere).name()) + "UVSla" + std::to_string(latitudeDensity) + "lo" + std::to_string(longitudeDensity)
+			};
 		}
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
@@ -113,11 +117,11 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			BasicType::VertexLayout layout;
-			layout.Append(VertexAttribute::Normal);
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			layout->Append(VertexAttribute::Normal);
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -192,7 +196,11 @@ namespace GFX::Primitive
 			indices.push_back(static_cast<unsigned int>(vertices.Size() - 1));
 			indices.push_back(rightUp - 5);
 			indices.push_back(2);
-			IndexedTriangleList list = { std::move(vertices), std::move(indices) };
+			IndexedTriangleList list =
+			{
+				std::move(vertices), std::move(indices),
+				std::string(typeid(Primitive::Sphere).name()) + "UVNla" + std::to_string(latitudeDensity) + "lo" + std::to_string(longitudeDensity)
+			};
 			list.SetNormals();
 			return std::move(list);
 		}
@@ -210,10 +218,10 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			BasicType::VertexLayout layout;
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), 12);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, 12);
 
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
@@ -306,7 +314,11 @@ namespace GFX::Primitive
 				}
 				indices = std::move(tmpIndices);
 			}
-			return { std::move(vertices), std::move(indices) };
+			return
+			{
+				std::move(vertices), std::move(indices),
+				std::string(typeid(Primitive::Sphere).name()) + "ICOS" + std::to_string(density)
+			};
 		}
 	
 		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute> && attributes = {})
@@ -322,11 +334,11 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			BasicType::VertexLayout layout;
-			layout.Append(VertexAttribute::Normal);
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			layout->Append(VertexAttribute::Normal);
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), 60);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, 60);
 			// 0
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
@@ -468,7 +480,11 @@ namespace GFX::Primitive
 				}
 				indices = std::move(tmpIndices);
 			}
-			IndexedTriangleList list = { std::move(vertices), std::move(indices) };
+			IndexedTriangleList list =
+			{
+				std::move(vertices), std::move(indices),
+				std::string(typeid(Primitive::Sphere).name()) + "ICON" + std::to_string(density)
+			};
 			list.SetNormals();
 			return std::move(list);
 		}

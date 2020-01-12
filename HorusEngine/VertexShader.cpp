@@ -1,13 +1,15 @@
 #include "VertexShader.h"
+#include "Codex.h"
 #include "GfxExceptionMacros.h"
+#include "Utils.h"
 #include <d3dcompiler.h>
 
 namespace GFX::Resource
 {
-	VertexShader::VertexShader(Graphics & gfx, const std::wstring & path)
+	VertexShader::VertexShader(Graphics & gfx, const std::string & path) : path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
-		GFX_THROW_FAILED(D3DReadFileToBlob(path.c_str(), &bytecode));
+		GFX_THROW_FAILED(D3DReadFileToBlob(toUtf8(path).c_str(), &bytecode));
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateVertexShader(bytecode->GetBufferPointer(), 
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
 	}

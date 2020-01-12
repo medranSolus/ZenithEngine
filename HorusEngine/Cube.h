@@ -11,10 +11,10 @@ namespace GFX::Primitive
 		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;
-			BasicType::VertexLayout layout;
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), 8);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, 8);
 
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
@@ -35,18 +35,18 @@ namespace GFX::Primitive
 					3,2,6, 3,6,7, // Right
 					1,5,6, 1,6,2, // Top
 					4,0,3, 4,3,7  // Down
-				}
+				}, std::string(typeid(Cube).name()) + 'S'
 			};
 		}
 
 		static IndexedTriangleList Make(const std::vector<VertexAttribute> && attributes = {})
 		{
 			constexpr float point = 0.5f;
-			BasicType::VertexLayout layout;
-			layout.Append(VertexAttribute::Normal);
+			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			layout->Append(VertexAttribute::Normal);
 			for (const auto & attrib : attributes)
-				layout.Append(attrib);
-			BasicType::VertexDataBuffer vertices(std::move(layout), 24);
+				layout->Append(attrib);
+			BasicType::VertexDataBuffer vertices(layout, 24);
 
 			// Front
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
@@ -89,7 +89,7 @@ namespace GFX::Primitive
 					12,13,14, 12,14,15, // Right
 					16,17,18, 16,18,19, // Top
 					20,21,22, 20,22,23  // Down
-				}
+				}, std::string(typeid(Cube).name()) + 'N'
 			};
 			list.SetNormals();
 			return std::move(list);

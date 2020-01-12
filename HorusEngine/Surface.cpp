@@ -1,12 +1,10 @@
 #include "Surface.h"
 #define USE_WINDOWS_DEFINES
 #include "WinAPI.h"
+#include "Utils.h"
 #include <gdiplus.h>
-#include <boost/locale/encoding.hpp>
 #include <fstream>
 #include <cassert>
-
-#pragma comment(lib, "libboost_locale-vc141-mt-gd-x64-1_71.lib")
 
 #define IMG_THROW_EXCEPT(info) throw ImageException(__LINE__, __FILE__, info)
 
@@ -14,7 +12,7 @@ namespace GFX
 {
 	Surface::Surface(const std::string & name)
 	{
-		Gdiplus::Bitmap bitmap(boost::locale::conv::to_utf<wchar_t>(name, "UTF-8").c_str());
+		Gdiplus::Bitmap bitmap(toUtf8(name).c_str());
 		if (bitmap.GetLastStatus() != Gdiplus::Status::Ok)
 			IMG_THROW_EXCEPT("Loading image \"" + name + "\": failed.");
 

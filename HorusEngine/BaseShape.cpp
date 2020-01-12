@@ -4,10 +4,11 @@ namespace GFX::Shape
 {
 	void BaseShape::AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG)
 	{
+		assert(bind != nullptr);
 		if (typeid(*bind) == typeid(Resource::IndexBuffer))
 		{
 			assert("Attempting to add index buffer a second time" && indexBuffer == nullptr);
-			indexBuffer = dynamic_cast<Resource::IndexBuffer*>(bind.get());
+			indexBuffer = &static_cast<Resource::IndexBuffer&>(*bind);
 		}
 		binds.emplace_back(bind);
 	}

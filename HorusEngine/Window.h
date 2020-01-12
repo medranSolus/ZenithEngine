@@ -10,7 +10,7 @@ namespace WinAPI
 	{
 		class WindowClass final
 		{
-			constexpr static const char * wndClassName = "horusEngineWindow";
+			static constexpr const char * wndClassName = "horusEngineWindow";
 			HINSTANCE hInstance;
 
 		public:
@@ -19,7 +19,7 @@ namespace WinAPI
 			WindowClass & operator=(const WindowClass &) = delete;
 			inline ~WindowClass() { UnregisterClass(wndClassName, hInstance); }
 
-			constexpr static const char * GetName() noexcept { return wndClassName; }
+			static constexpr const char * GetName() noexcept { return wndClassName; }
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
 

@@ -184,7 +184,7 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width)
 		}
 	}
 	for (auto & coord : coordBuffer)
-		carpetRects.push_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", width, width, true));
+		carpetRects.push_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", width, width));
 }
 
 void App::MakeFrame()
