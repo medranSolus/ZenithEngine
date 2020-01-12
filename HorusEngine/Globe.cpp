@@ -22,7 +22,7 @@ namespace GFX::Shape
 
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
 
-		AddBind(Resource::ConstantTransformBuffer::Get(gfx, *this));
+		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 
 		Resource::ObjectConstantBuffer buffer;
 		buffer.materialColor = material;

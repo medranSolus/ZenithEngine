@@ -6,6 +6,7 @@
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "ImGui/imgui.h"
+#include <filesystem>
 
 namespace GFX::Shape
 {
@@ -70,7 +71,7 @@ namespace GFX::Shape
 
 	unsigned long long Model::modelCount = 0U;
 
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const aiMesh & mesh, const aiMaterial *const * materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const std::string & path, const aiMesh & mesh, const aiMaterial *const * materials)
 	{
 		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 		layout->Append(VertexAttribute::Normal).Append(VertexAttribute::Texture2D);
@@ -109,10 +110,10 @@ namespace GFX::Shape
 			const aiMaterial & material = *materials[mesh.mMaterialIndex];
 			aiString texFile;
 			material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile);
-			binds.emplace_back(Resource::Texture::Get(gfx, "Models/nanosuit/" + std::string(texFile.C_Str())));
+			binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str())));
 			if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 			{
-				binds.emplace_back(Resource::Texture::Get(gfx, "Models/nanosuit/" + std::string(texFile.C_Str()), 1U));
+				binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
 				binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
 			}
 			else
@@ -149,14 +150,16 @@ namespace GFX::Shape
 		: name(modelName)
 	{
 		Assimp::Importer importer;
-		const aiScene * scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
+		const aiScene * scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
+			aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords);
 		if (!scene)
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
 
 		meshes.reserve(scene->mNumMeshes);
 		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
+		std::string path = std::filesystem::path(file).remove_filename().string();
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(gfx, *scene->mMeshes[i], scene->mMaterials));
+			meshes.emplace_back(ParseMesh(gfx, path, *scene->mMeshes[i], scene->mMaterials));
 		root = ParseNode(*scene->mRootNode);
 		root->SetScale(scale);
 		root->SetPos(position);

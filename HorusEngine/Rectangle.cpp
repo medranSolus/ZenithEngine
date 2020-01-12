@@ -27,7 +27,7 @@ namespace GFX::Shape
 
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-		AddBind(Resource::ConstantTransformBuffer::Get(gfx, *this));
+		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 
 		UpdateScalingMatrix();
 	}
