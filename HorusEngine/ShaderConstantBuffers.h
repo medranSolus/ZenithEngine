@@ -23,11 +23,23 @@ namespace GFX::Resource
 		float padding = 0.0f;
 	};
 
-	struct ObjectConstantBuffer
+	struct PhongPixelBuffer
 	{
 		BasicType::ColorFloat materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2] { 0.0f };
+	};
+
+	struct TexPhongPixelBuffer
+	{
+		float specularIntensity;	// The bigger the brighter
+		float specularPower;		// The smaller the less focused in one point
+		float padding[2]{ 0.0f };
+	};
+
+	struct SolidPixelBuffer
+	{
+		BasicType::ColorFloat materialColor;
 	};
 }

@@ -71,17 +71,10 @@ namespace GFX::Shape
 
 	unsigned long long Model::modelCount = 0U;
 
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const std::string & path, const aiMesh & mesh, const aiMaterial *const * materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics & gfx, const std::string & path, const aiMesh & mesh, aiMaterial *const * materials)
 	{
-		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
-		layout->Append(VertexAttribute::Normal).Append(VertexAttribute::Texture2D);
-		BasicType::VertexDataBuffer vertexBuffer(layout);
-
-		vertexBuffer.Reserve(mesh.mNumVertices);
-		for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
-			vertexBuffer.EmplaceBack(*reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mVertices[i]),
-				*reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]),
-				*reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][i]));
+		std::vector<std::shared_ptr<Resource::IBindable>> binds;
+		binds.reserve(8U);
 
 		std::vector<unsigned int> indices;
 		indices.reserve(mesh.mNumFaces * 3);
@@ -93,40 +86,98 @@ namespace GFX::Shape
 			indices.emplace_back(face.mIndices[1]);
 			indices.emplace_back(face.mIndices[2]);
 		}
+		std::string meshID = std::string(mesh.mName.C_Str()) + std::to_string(indices.size()) + std::to_string(mesh.mNumVertices);
+		// Maybe layout code needed too, TODO: Check this
+		binds.emplace_back(Resource::IndexBuffer::Get(gfx, meshID, std::move(indices)));
 
-		std::vector<std::shared_ptr<Resource::IBindable>> binds;
-		binds.reserve(6U);
-		binds.emplace_back(Resource::IndexBuffer::Get(gfx, mesh.mName.C_Str(), std::move(indices)));
+		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+		bool normals = mesh.HasNormals();
+		bool textureCoord = mesh.HasTextureCoords(0);
 
-		auto vertexShader = Resource::VertexShader::Get(gfx, "TexturePhongVS.cso");
-		auto bytecodeVS = vertexShader->GetBytecode();
-		binds.emplace_back(vertexShader);
-
-		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
-		binds.emplace_back(Resource::VertexBuffer::Get(gfx, mesh.mName.C_Str(), std::move(vertexBuffer)));
-
-		if (mesh.mMaterialIndex >= 0)
+		std::shared_ptr<Resource::VertexShader> vertexShader = nullptr;
+		if (normals)
 		{
-			const aiMaterial & material = *materials[mesh.mMaterialIndex];
-			aiString texFile;
-			material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile);
-			binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str())));
-			if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
+			bool noTexture = true;
+			Resource::PhongPixelBuffer buffer;
+			if (textureCoord && mesh.mMaterialIndex >= 0)
 			{
-				binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
-				binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
+				aiMaterial & material = *materials[mesh.mMaterialIndex];
+				aiString texFile;
+				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					noTexture = false;
+					vertexShader = Resource::VertexShader::Get(gfx, "TexturePhongVS.cso");
+					binds.emplace_back(Resource::Sampler::Get(gfx));
+					
+					binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str())));
+					if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
+					{
+						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
+						binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
+					}
+					else
+					{
+						binds.emplace_back(Resource::PixelShader::Get(gfx, "TexturePhongPS.cso"));
+						Resource::TexPhongPixelBuffer buffer;
+						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
+						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
+							buffer.specularIntensity = 0.9f;
+						// Maybe path needed too, TOD: Check this
+						binds.emplace_back(Resource::ConstantPixelBuffer<Resource::TexPhongPixelBuffer>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
+					}
+				}
+				else
+				{
+					textureCoord = false;
+					if (material.Get(AI_MATKEY_SHININESS, buffer.specularPower) != aiReturn_SUCCESS)
+						buffer.specularPower = 40.0f;
+					if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
+						buffer.specularIntensity = 0.9f;
+				}
 			}
 			else
-			{
-				Resource::ObjectConstantBuffer buffer;
-				material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
-				binds.emplace_back(Resource::PixelShader::Get(gfx, "TexturePhongPS.cso"));
 				buffer.specularIntensity = 0.9f;
-				binds.emplace_back(Resource::ConstantPixelBuffer<Resource::ObjectConstantBuffer>::Get(gfx, buffer, 1U));
+			if (noTexture)
+			{
+				std::mt19937_64 eng(std::random_device{}());
+				buffer.materialColor = randColor(eng);
+				if (buffer.specularPower <= FLT_EPSILON)
+					buffer.specularPower = 40.0f;
+				vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
+				binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
+				binds.emplace_back(Resource::ConstantPixelBuffer<Resource::PhongPixelBuffer>::Get(gfx, path + meshID, buffer, 1U));
 			}
-			binds.emplace_back(Resource::Sampler::Get(gfx));
 		}
-		
+		else
+		{
+			vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
+			binds.emplace_back(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
+		}
+
+		if (normals)
+		{
+			layout->Append(VertexAttribute::Normal);
+			if (textureCoord)
+				layout->Append(VertexAttribute::Texture2D);
+		}
+
+		BasicType::VertexDataBuffer vertexBuffer(layout, mesh.mNumVertices);
+		for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
+		{
+			vertexBuffer[i].SetByIndex(0, *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mVertices[i]));
+			if (normals)
+			{
+				vertexBuffer[i].Get<VertexAttribute::Normal>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]);
+				if (textureCoord)
+					vertexBuffer[i].Get<VertexAttribute::Texture2D>() = *reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][i]);
+			}
+		}
+		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID + layout->GetLayoutCode(), std::move(vertexBuffer)));
+
+		auto bytecodeVS = vertexShader->GetBytecode();
+		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
+		binds.emplace_back(vertexShader);
+
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
 

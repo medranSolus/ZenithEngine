@@ -9,9 +9,8 @@ cbuffer LightConstantBuffer
     float attenuationQuad;
 }
 
-cbuffer ObjectConstantBuffer
+cbuffer TexPhongPixelBuffer
 {
-    float4 materialColor;
     float specularIntensity;
     float specularPower;
 };

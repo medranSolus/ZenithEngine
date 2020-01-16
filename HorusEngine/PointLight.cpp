@@ -5,7 +5,7 @@
 namespace GFX::Light
 {
 	PointLight::PointLight(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float radius)
-		: mesh(gfx, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius), buffer(gfx)
+		: mesh(gfx, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius), buffer(gfx, name)
 	{
 		lightBuffer =
 		{

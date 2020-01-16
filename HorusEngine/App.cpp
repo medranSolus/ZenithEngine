@@ -220,19 +220,17 @@ App::App() : window(width, height, windowTitle)
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 5.0f, 8.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
-	for (unsigned int i = 0; i < 0; ++i)
-		AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(0.0f, 5.0f, -15.0f), "Nanosuit"));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(-3.0f, -10.0f, 15.0f), "Nanosuit_tex"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));
-
-	//objects.emplace_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), 0.0f, 0.0f, 0.7f, 1.0f, 1.0f));
-	//objects.emplace_back(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), 0.2f, -0.1f, 1.0f, 3.1f, 1.5f, 2.5f));
-	//objects.emplace_back(std::make_unique<GFX::Shape::Globe>(window.Gfx(), std::move(randColor(engine)), 0.0f, 8.0f, -1.0f, 25, 25, 3.0f, 3.0f, 3.0f));
-	//objects.emplace_back(std::make_unique<GFX::Shape::Ball>(window.Gfx(), std::move(randColor(engine)), 0.0f, 0.0f, 7.0f, 3, 3.0f));
+	AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(-3.0f, -5.0f, 15.0f), "Nanosuit_tex"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(6.0f, 5.0f, -15.0f), "Nanosuit"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));
+	AddShape(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), DirectX::XMFLOAT3(-5.0f, 0.0f, 5.7f), "GetRect", 1.0f, 1.0f));
+	AddShape(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), DirectX::XMFLOAT3(4.2f, -0.1f, 1.0f), "Tri", 3.1f, 1.5f, 2.5f));
+	AddShape(std::make_unique<GFX::Shape::Globe>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 8.0f, -1.0f), "Globe", std::move(randColor(engine)), 25, 25, 2.0f, 3.0f, 1.5f));
+	AddShape(std::make_unique<GFX::Shape::Ball>(window.Gfx(), DirectX::XMFLOAT3(2.0f, 0.0f, -7.0f), "Ball", std::move(randColor(engine)), 3, 3.0f));
 }
 
 unsigned long long App::Run()

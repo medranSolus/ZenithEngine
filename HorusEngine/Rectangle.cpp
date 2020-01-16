@@ -13,20 +13,15 @@ namespace GFX::Shape
 		for (unsigned char i = 0; i < 4; ++i)
 			list.vertices[i].Get<VertexAttribute::ColorFloat>() = std::move(randColor(engine));
 		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.vertices));
-
+		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.indices));
 
 		auto vertexShader = Resource::VertexShader::Get(gfx, "ColorBlendVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
-
 		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
 
-		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.indices));
-
 		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
-
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-
 		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
 
 		UpdateScalingMatrix();

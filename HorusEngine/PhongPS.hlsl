@@ -9,7 +9,7 @@ cbuffer LightConstantBuffer
     float attenuationQuad;
 }
 
-cbuffer ObjectConstantBuffer
+cbuffer PhongPixelBuffer
 {
     float4 materialColor;
     float specularIntensity;
