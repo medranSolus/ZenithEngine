@@ -2,7 +2,7 @@
 
 DirectX 11 graphics engine.
 
-**IDE:** Visual Studio 2017
+**IDE:** Visual Studio 2019
 
 **External libraries:**
   - [ImGui 1.74](https://github.com/ocornut/imgui)

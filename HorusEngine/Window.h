@@ -12,7 +12,7 @@ namespace WinAPI
 		{
 			static constexpr const char * wndClassName = "horusEngineWindow";
 			HINSTANCE hInstance;
-
+			
 		public:
 			WindowClass() noexcept;
 			WindowClass(const WindowClass &) = delete;

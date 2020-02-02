@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <dxgidebug.h>
 #include <vector>
+#include <string>
 
 namespace GFX
 {
