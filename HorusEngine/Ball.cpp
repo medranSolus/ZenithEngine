@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Ball::Ball(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material, unsigned int density, float radius)
+	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat material, unsigned int density, float radius)
 		: Object(position, name, radius)
 	{
 		auto list = Primitive::Sphere::MakeIco(density);

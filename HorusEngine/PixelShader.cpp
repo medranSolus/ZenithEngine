@@ -6,7 +6,7 @@
 
 namespace GFX::Resource
 {
-	PixelShader::PixelShader(Graphics & gfx, const std::string & path) : path(path)
+	PixelShader::PixelShader(Graphics& gfx, const std::string& path) : path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
 		Microsoft::WRL::ComPtr<ID3DBlob> blob;

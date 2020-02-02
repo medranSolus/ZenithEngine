@@ -28,7 +28,7 @@ namespace GFX::Resource
 		BasicType::ColorFloat materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
-		float padding[2] { 0.0f };
+		float padding[2]{ 0.0f };
 	};
 
 	struct TexPhongPixelBuffer

@@ -29,12 +29,12 @@ namespace WinAPI
 			bool wheel;
 
 		public:
-			constexpr Event(Type type, const Mouse & mouse, int x, int y) noexcept
+			constexpr Event(Type type, const Mouse& mouse, int x, int y) noexcept
 				: type(type), x(x), y(y), delta({ x - mouse.x, y - mouse.y }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
-			constexpr Event(Type type, const Mouse & mouse, RawInput delta) noexcept
+			constexpr Event(Type type, const Mouse& mouse, RawInput delta) noexcept
 				: type(type), x(x), y(y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
-			Event(const Event &) = default;
-			Event & operator=(const Event &) = default;
+			Event(const Event&) = default;
+			Event& operator=(const Event&) = default;
 			~Event() = default;
 
 			constexpr Type GetType() const noexcept { return type; }
@@ -77,8 +77,8 @@ namespace WinAPI
 
 	public:
 		Mouse() = default;
-		Mouse(const Mouse &) = delete;
-		Mouse & operator=(const Mouse &) = delete;
+		Mouse(const Mouse&) = delete;
+		Mouse& operator=(const Mouse&) = delete;
 		~Mouse() = default;
 
 		constexpr std::pair<int, int> GetPosition() const noexcept { return std::move(std::make_pair(x, y)); }

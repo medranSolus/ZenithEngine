@@ -12,7 +12,7 @@ namespace GFX::Primitive
 		Sphere() = delete;
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute> && attributes = {})
+		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {})
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -26,7 +26,7 @@ namespace GFX::Primitive
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity + 2);
 			// Sphere vertices without poles
@@ -38,8 +38,8 @@ namespace GFX::Primitive
 						std::move(DirectX::XMVector3Transform(latBase, DirectX::XMMatrixRotationY(longitudeAngle * lon))));
 			}
 			const auto getIndex = [&latitudeDensity, &longitudeDensity](unsigned int lat, unsigned int lon) constexpr -> unsigned int
-			{ 
-				return lat * longitudeDensity + lon; 
+			{
+				return lat * longitudeDensity + lon;
 			};
 			unsigned int baseIndex;
 			std::vector<unsigned int> indices;
@@ -97,14 +97,14 @@ namespace GFX::Primitive
 			indices.push_back(baseIndex + longitudeDensity - 1);
 			indices.push_back(pole);
 			return
-			{ 
+			{
 				std::move(vertices), std::move(indices),
 				std::string(typeid(Primitive::Sphere).name()) + "UVSla" + std::to_string(latitudeDensity) + "lo" + std::to_string(longitudeDensity)
 			};
 		}
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute> && attributes = {})
+		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {})
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -119,7 +119,7 @@ namespace GFX::Primitive
 
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			layout->Append(VertexAttribute::Normal);
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 			// Sphere vertices without poles
@@ -205,7 +205,7 @@ namespace GFX::Primitive
 			return std::move(list);
 		}
 
-		static IndexedTriangleList MakeSolidIco(unsigned int density, const std::vector<VertexAttribute> && attributes = {})
+		static IndexedTriangleList MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {})
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -219,7 +219,7 @@ namespace GFX::Primitive
 			const float level = sinf(baseAngle);
 
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, 12);
 
@@ -262,9 +262,9 @@ namespace GFX::Primitive
 				8,7,1,
 				9,8,1
 			};
-			
+
 			typedef std::pair<unsigned int, unsigned int> Key;
-			auto comparator = [](const Key & x, const Key & y) constexpr -> bool
+			auto comparator = [](const Key& x, const Key& y) constexpr -> bool
 			{
 				return (x.first == y.first && x.second == y.second) || (x.first == y.second && x.second == y.first);
 			};
@@ -320,8 +320,8 @@ namespace GFX::Primitive
 				std::string(typeid(Primitive::Sphere).name()) + "ICOS" + std::to_string(density)
 			};
 		}
-	
-		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute> && attributes = {})
+
+		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {})
 		{
 			constexpr float bigAngle = M_PI / 10.0f;
 			constexpr float smallAngle = M_PI * 0.3f;
@@ -336,7 +336,7 @@ namespace GFX::Primitive
 
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			layout->Append(VertexAttribute::Normal);
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, 60);
 			// 0
@@ -488,5 +488,5 @@ namespace GFX::Primitive
 			list.SetNormals();
 			return std::move(list);
 		}
-};
+	};
 }

@@ -4,7 +4,7 @@
 
 namespace GFX::Resource
 {
-	Sampler::Sampler(Graphics & gfx)
+	Sampler::Sampler(Graphics& gfx)
 	{
 		GFX_ENABLE_ALL(gfx);
 

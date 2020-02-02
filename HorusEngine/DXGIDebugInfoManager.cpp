@@ -7,7 +7,7 @@ namespace GFX
 	DXGIDebugInfoManager::DXGIDebugInfoManager()
 	{
 		GFX_ENABLE_EXCEPT();
-		typedef HRESULT(WINAPI* DXGIGetDebugInterface)(REFIID, void **);
+		typedef HRESULT(WINAPI* DXGIGetDebugInterface)(REFIID, void**);
 		const auto dxgiDebugModule = LoadLibraryEx("dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 		if (dxgiDebugModule == nullptr)
 			throw WND_EXCEPT_LAST();
@@ -27,7 +27,7 @@ namespace GFX
 			SIZE_T msgLen = 0;
 			GFX_THROW_FAILED_NOINFO(infoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &msgLen)); // Get length of msg
 			std::unique_ptr<char[]> bytes = std::make_unique<char[]>(msgLen);
-			DXGI_INFO_QUEUE_MESSAGE * msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());
+			DXGI_INFO_QUEUE_MESSAGE* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());
 			GFX_THROW_FAILED_NOINFO(infoQueue->GetMessage(DXGI_DEBUG_ALL, i, msg, &msgLen)); // Get msg
 			messages.emplace_back(msg->pDescription);
 		}

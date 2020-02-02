@@ -19,7 +19,7 @@ namespace GFX::BasicType
 			ColorByte,
 			Count,
 		};
-		
+
 		// Type of single descriptor of layout
 		template<ElementType> struct Desc;
 
@@ -37,7 +37,7 @@ namespace GFX::BasicType
 
 		public:
 			constexpr Element(ElementType type, size_t offset) : type(type), offset(offset) {}
-			Element & operator=(const Element&) = default;
+			Element& operator=(const Element&) = default;
 			~Element() = default;
 
 			constexpr size_t GetEnd() const noexcept(!IS_DEBUG) { return offset + Size(); }
@@ -47,7 +47,7 @@ namespace GFX::BasicType
 
 			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG);
 
-			constexpr const char * GetCode() const noexcept;
+			constexpr const char* GetCode() const noexcept;
 			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG);
 		};
 
@@ -56,17 +56,17 @@ namespace GFX::BasicType
 
 	public:
 		VertexLayout(bool position3D = true) noexcept;
-		VertexLayout & operator=(const VertexLayout&) = default;
+		VertexLayout& operator=(const VertexLayout&) = default;
 		~VertexLayout() = default;
 
 		template<ElementType Type>
-		const Element & Resolve() const noexcept(!IS_DEBUG);
+		const Element& Resolve() const noexcept(!IS_DEBUG);
 
-		inline const Element & ResolveByIndex(size_t i) const { return elements.at(i); }
+		inline const Element& ResolveByIndex(size_t i) const { return elements.at(i); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
 		inline size_t GetElementCount() const noexcept { return elements.size(); }
 
-		VertexLayout & Append(ElementType type) noexcept(!IS_DEBUG);
+		VertexLayout& Append(ElementType type) noexcept(!IS_DEBUG);
 		std::vector<D3D11_INPUT_ELEMENT_DESC> GetDXLayout() const noexcept(!IS_DEBUG);
 		std::string GetLayoutCode() const noexcept(!IS_DEBUG);
 
@@ -75,40 +75,40 @@ namespace GFX::BasicType
 		{
 			using DataType = DirectX::XMFLOAT3;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-			static constexpr const char * semantic = "POSITION";
-			static constexpr const char * code = "P3";
+			static constexpr const char* semantic = "POSITION";
+			static constexpr const char* code = "P3";
 		};
 
 		template<> struct Desc<Texture2D>
 		{
 			using DataType = DirectX::XMFLOAT2;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32_FLOAT;
-			static constexpr const char * semantic = "TEXCOORD";
-			static constexpr const char * code = "T2";
+			static constexpr const char* semantic = "TEXCOORD";
+			static constexpr const char* code = "T2";
 		};
 
 		template<> struct Desc<Normal>
 		{
 			using DataType = DirectX::XMFLOAT3;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-			static constexpr const char * semantic = "NORMAL";
-			static constexpr const char * code = "N";
+			static constexpr const char* semantic = "NORMAL";
+			static constexpr const char* code = "N";
 		};
 
 		template<> struct Desc<ColorFloat>
 		{
 			using DataType = GFX::BasicType::ColorFloat;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			static constexpr const char * semantic = "COLOR";
-			static constexpr const char * code = "C4";
+			static constexpr const char* semantic = "COLOR";
+			static constexpr const char* code = "C4";
 		};
 
 		template<> struct Desc<ColorByte>
 		{
 			using DataType = GFX::BasicType::ColorByte;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-			static constexpr const char * semantic = "COLOR";
-			static constexpr const char * code = "C1";
+			static constexpr const char* semantic = "COLOR";
+			static constexpr const char* code = "C1";
 		};
 #pragma endregion
 	};
@@ -133,9 +133,9 @@ namespace GFX::BasicType
 	}
 
 	template<VertexLayout::ElementType Type>
-	const VertexLayout::Element & VertexLayout::Resolve() const noexcept(!IS_DEBUG)
+	const VertexLayout::Element& VertexLayout::Resolve() const noexcept(!IS_DEBUG)
 	{
-		for (auto & e : elements)
+		for (auto& e : elements)
 			if (e.GetType() == Type)
 				return e;
 		assert("Could not resolve element type" && false);

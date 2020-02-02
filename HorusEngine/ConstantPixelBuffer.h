@@ -14,14 +14,14 @@ namespace GFX::Resource
 
 	public:
 		ConstantPixelBuffer(const ConstantPixelBuffer&) = delete;
-		ConstantPixelBuffer & operator=(const ConstantPixelBuffer&) = delete;
+		ConstantPixelBuffer& operator=(const ConstantPixelBuffer&) = delete;
 		~ConstantPixelBuffer() = default;
 
-		static inline std::shared_ptr<ConstantPixelBuffer> Get(Graphics& gfx, const std::string & tag, const T & values, UINT slot = 0U);
-		static inline std::shared_ptr<ConstantPixelBuffer> Get(Graphics& gfx, const std::string & tag, UINT slot = 0U);
+		static inline std::shared_ptr<ConstantPixelBuffer> Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
+		static inline std::shared_ptr<ConstantPixelBuffer> Get(Graphics& gfx, const std::string& tag, UINT slot = 0U);
 
-		static inline std::string GenerateRID(const std::string & tag, const T & values, UINT slot = 0U) noexcept { return GenerateRID(tag, slot); }
-		static inline std::string GenerateRID(const std::string & tag, UINT slot = 0U) noexcept;
+		static inline std::string GenerateRID(const std::string& tag, const T& values, UINT slot = 0U) noexcept { return GenerateRID(tag, slot); }
+		static inline std::string GenerateRID(const std::string& tag, UINT slot = 0U) noexcept;
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, slot); }
@@ -34,19 +34,19 @@ namespace GFX::Resource
 	};
 
 	template<typename T>
-	inline std::shared_ptr<ConstantPixelBuffer<T>> ConstantPixelBuffer<T>::Get(Graphics & gfx, const std::string & tag, const T & values, UINT slot)
+	inline std::shared_ptr<ConstantPixelBuffer<T>> ConstantPixelBuffer<T>::Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot)
 	{
 		return Codex::Resolve<ConstantPixelBuffer<T>>(gfx, tag, values, slot);
 	}
 
 	template<typename T>
-	inline std::shared_ptr<ConstantPixelBuffer<T>> ConstantPixelBuffer<T>::Get(Graphics & gfx, const std::string & tag, UINT slot)
+	inline std::shared_ptr<ConstantPixelBuffer<T>> ConstantPixelBuffer<T>::Get(Graphics& gfx, const std::string& tag, UINT slot)
 	{
 		return Codex::Resolve<ConstantPixelBuffer<T>>(gfx, tag, slot);
 	}
 
 	template<typename T>
-	inline std::string ConstantPixelBuffer<T>::GenerateRID(const std::string & tag, UINT slot) noexcept
+	inline std::string ConstantPixelBuffer<T>::GenerateRID(const std::string& tag, UINT slot) noexcept
 	{
 		return "#" + std::string(typeid(ConstantPixelBuffer<T>).name()) + "#" + tag + "#" + std::to_string(slot) + "#";
 	}

@@ -13,9 +13,9 @@ namespace GFX::Shape
 		binds.emplace_back(bind);
 	}
 
-	void BaseShape::Draw(Graphics & gfx) const noexcept
+	void BaseShape::Draw(Graphics& gfx) const noexcept
 	{
-		for (auto & b : binds)
+		for (auto& b : binds)
 			b->Bind(gfx);
 		gfx.DrawIndexed(indexBuffer->GetCount());
 	}

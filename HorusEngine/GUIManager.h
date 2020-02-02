@@ -9,9 +9,9 @@ namespace GFX
 	public:
 		GUIManager();
 		GUIManager(const GUIManager&) = delete;
-		GUIManager & operator=(const GUIManager&) = delete;
+		GUIManager& operator=(const GUIManager&) = delete;
 		inline ~GUIManager() { ImGui::DestroyContext(); }
-		
-		void SetFont(const std::string & font, float size);
+
+		void SetFont(const std::string& font, float size);
 	};
 }

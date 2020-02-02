@@ -10,7 +10,7 @@
 
 namespace GFX
 {
-	Surface::Surface(const std::string & name)
+	Surface::Surface(const std::string& name)
 	{
 		Gdiplus::Bitmap bitmap(toUtf8(name).c_str());
 		if (bitmap.GetLastStatus() != Gdiplus::Status::Ok)
@@ -30,7 +30,7 @@ namespace GFX
 		}
 	}
 
-	Surface & Surface::operator=(Surface && surface) noexcept
+	Surface& Surface::operator=(Surface&& surface) noexcept
 	{
 		width = surface.width;
 		height = surface.height;
@@ -38,7 +38,7 @@ namespace GFX
 		surface.buffer = nullptr;
 		return *this;
 	}
-	
+
 	constexpr void Surface::PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG)
 	{
 		assert(x >= 0);
@@ -69,10 +69,10 @@ namespace GFX
 		// https://docs.microsoft.com/en-gb/windows/win32/gdiplus/-gdiplus-retrieving-the-class-identifier-for-an-encoder-use?redirectedfrom=MSDN
 
 		CLSID clsId;
-		const WCHAR * format = L"image/png";
+		const WCHAR* format = L"image/png";
 		UINT num = 0;  // number of image encoders
 		UINT size = 0; // size of the image encoder array in bytes
-		Gdiplus::ImageCodecInfo * imgCodecInfo = nullptr;
+		Gdiplus::ImageCodecInfo* imgCodecInfo = nullptr;
 		Gdiplus::GetImageEncodersSize(&num, &size);
 		if (size == 0)
 			IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot get encoder size.");
@@ -97,8 +97,8 @@ namespace GFX
 		IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot find matching encoder <" +
 			boost::locale::conv::from_utf(format, "UTF-8") + ">.");
 	}
-	
-	const char * Surface::ImageException::what() const noexcept
+
+	const char* Surface::ImageException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << this->BasicException::what()

@@ -4,7 +4,7 @@
 
 namespace GFX::Resource
 {
-	IndexBuffer::IndexBuffer(Graphics & gfx, const std::string & tag, const std::vector<unsigned int> & indices)
+	IndexBuffer::IndexBuffer(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices)
 		: count(static_cast<unsigned int>(indices.size())), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);

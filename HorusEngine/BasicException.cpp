@@ -2,7 +2,7 @@
 
 namespace Exception
 {
-	const char * BasicException::what() const throw()
+	const char* BasicException::what() const throw()
 	{
 		std::ostringstream stream;
 		stream << "[Exception] " << GetType()

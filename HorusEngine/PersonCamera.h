@@ -14,9 +14,9 @@ namespace Camera
 
 	public:
 		PersonCamera(const PersonCamera&) = default;
-		PersonCamera & operator=(const PersonCamera&) = default;
+		PersonCamera& operator=(const PersonCamera&) = default;
 		virtual ~PersonCamera() = default;
-		
+
 		void MoveX(float dX) noexcept override;
 		inline void MoveY(float dY) noexcept override { position.y += dY; viewUpdate = true; }
 		void MoveZ(float dZ) noexcept override;

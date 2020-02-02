@@ -2,13 +2,13 @@
 
 namespace GFX::Resource
 {
-	ConstantTransformBuffer::ConstantTransformBuffer(Graphics & gfx, const GfxObject & parent, UINT slot) : parent(parent)
+	ConstantTransformBuffer::ConstantTransformBuffer(Graphics& gfx, const GfxObject& parent, UINT slot) : parent(parent)
 	{
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstantVertexBuffer<TransformConstatBuffer>>(gfx, "", slot);
 	}
 
-	void ConstantTransformBuffer::Bind(Graphics & gfx) noexcept
+	void ConstantTransformBuffer::Bind(Graphics& gfx) noexcept
 	{
 		vertexBuffer->Update(gfx,
 			{

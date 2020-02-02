@@ -9,9 +9,9 @@ namespace GFX
 		ImGui::StyleColorsDark();
 	}
 
-	void GUIManager::SetFont(const std::string & font, float size)
+	void GUIManager::SetFont(const std::string& font, float size)
 	{
-		ImFontAtlas * atlas = ImGui::GetIO().Fonts;
+		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		if (atlas->Fonts.size())
 			atlas->Clear();
 		atlas->AddFontFromFileTTF(font.c_str(), size);

@@ -21,8 +21,8 @@ namespace WinAPI
 
 		public:
 			constexpr Event(Type type, unsigned char code) noexcept : type(type), code(code) {}
-			Event(const Event &) = default;
-			Event & operator=(const Event &) = default;
+			Event(const Event&) = default;
+			Event& operator=(const Event&) = default;
 			~Event() = default;
 
 			constexpr bool IsDown() const noexcept { return type == Type::Down; }
@@ -42,7 +42,7 @@ namespace WinAPI
 		inline void ClearStates() noexcept { keystates.reset(); }
 
 		template<typename T>
-		static void TrimBuffer(std::deque<T> & buffer) noexcept;
+		static void TrimBuffer(std::deque<T>& buffer) noexcept;
 
 		void OnKeyDown(unsigned char keycode) noexcept;
 		void OnKeyUp(unsigned char keycode) noexcept;
@@ -51,7 +51,7 @@ namespace WinAPI
 	public:
 		Keyboard() = default;
 		Keyboard(const Keyboard&) = delete;
-		Keyboard & operator=(const Keyboard&) = delete;
+		Keyboard& operator=(const Keyboard&) = delete;
 		~Keyboard() = default;
 
 		constexpr bool IsAutorepeat() const noexcept { return autorepeatEnabled; }

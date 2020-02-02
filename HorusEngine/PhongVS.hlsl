@@ -1,14 +1,14 @@
 cbuffer TransformConstatBuffer
 {
-    matrix transform;
-    matrix scaling;
-    matrix view;
-    matrix projection;
+	matrix transform;
+	matrix scaling;
+	matrix view;
+	matrix projection;
 };
 
 struct VSOut
 {
-    float3 cameraPos : POSITION;
+	float3 cameraPos : POSITION;
 	float3 normal : NORMAL;
 	float4 pos : SV_Position;
 };
@@ -16,10 +16,10 @@ struct VSOut
 VSOut main(float3 pos : POSITION, float3 normal : NORMAL)
 {
 	VSOut vso;
-    matrix viewTransform = mul(transform, view);
-    matrix viewTransformScaling = mul(scaling, viewTransform);
-    vso.cameraPos = (float3) mul(float4(pos, 1.0f), viewTransformScaling);
-    vso.normal = mul(normal, (float3x3)viewTransform);
-    vso.pos = mul(float4(pos, 1.0f), mul(viewTransformScaling, projection));
+	matrix viewTransform = mul(transform, view);
+	matrix viewTransformScaling = mul(scaling, viewTransform);
+	vso.cameraPos = (float3) mul(float4(pos, 1.0f), viewTransformScaling);
+	vso.normal = mul(normal, (float3x3)viewTransform);
+	vso.pos = mul(float4(pos, 1.0f), mul(viewTransformScaling, projection));
 	return vso;
 }

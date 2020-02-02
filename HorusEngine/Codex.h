@@ -8,14 +8,14 @@ namespace GFX::Resource
 	{
 		std::unordered_map<std::string, std::shared_ptr<IBindable>> binds;
 
-		static inline Codex & Get() noexcept
+		static inline Codex& Get() noexcept
 		{
 			static Codex codex;
 			return codex;
 		}
 
 		template<typename T, typename ...Params>
-		std::shared_ptr<T> Find(Graphics & gfx, Params && ...p) noexcept
+		std::shared_ptr<T> Find(Graphics& gfx, Params&& ...p) noexcept
 		{
 			const std::string id = IBindable::GenerateRID<T>(std::forward<Params>(p)...);
 			const auto it = binds.find(id);
@@ -30,7 +30,7 @@ namespace GFX::Resource
 
 	public:
 		template<typename T, typename ...Params>
-		static inline std::shared_ptr<T> Resolve(Graphics & gfx, Params && ...p) noexcept
+		static inline std::shared_ptr<T> Resolve(Graphics& gfx, Params&& ...p) noexcept
 		{
 			return Get().Find<T>(gfx, std::forward<Params>(p)...);
 		}

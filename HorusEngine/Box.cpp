@@ -5,10 +5,10 @@
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material,
+	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat material,
 		float width, float height, float length)
 		: Object(position, name), sizes(width, height, length)
-	{		
+	{
 		auto list = Primitive::Cube::Make();
 		AddBind(Resource::VertexBuffer::Get(gfx, list.typeName, list.vertices));
 		AddBind(Resource::IndexBuffer::Get(gfx, list.typeName, list.indices));

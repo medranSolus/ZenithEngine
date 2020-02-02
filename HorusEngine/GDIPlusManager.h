@@ -13,7 +13,7 @@ namespace WinAPI
 	public:
 		GDIPlusManager();
 		GDIPlusManager(const GDIPlusManager&) = delete;
-		GDIPlusManager & operator=(const GDIPlusManager&) = delete;
+		GDIPlusManager& operator=(const GDIPlusManager&) = delete;
 		~GDIPlusManager();
 	};
 }

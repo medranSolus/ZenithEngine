@@ -10,16 +10,16 @@ namespace WinAPI
 	{
 		class WindowClass final
 		{
-			static constexpr const char * wndClassName = "horusEngineWindow";
+			static constexpr const char* wndClassName = "horusEngineWindow";
 			HINSTANCE hInstance;
-			
+
 		public:
 			WindowClass() noexcept;
-			WindowClass(const WindowClass &) = delete;
-			WindowClass & operator=(const WindowClass &) = delete;
+			WindowClass(const WindowClass&) = delete;
+			WindowClass& operator=(const WindowClass&) = delete;
 			inline ~WindowClass() { UnregisterClass(wndClassName, hInstance); }
 
-			static constexpr const char * GetName() noexcept { return wndClassName; }
+			static constexpr const char* GetName() noexcept { return wndClassName; }
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
 
@@ -45,20 +45,20 @@ namespace WinAPI
 		void TrapCursor() noexcept;
 
 	public:
-		Window(unsigned int width, unsigned int height, const char * name);
+		Window(unsigned int width, unsigned int height, const char* name);
 		Window(const Window&) = delete;
-		Window & operator=(const Window&) = delete;
+		Window& operator=(const Window&) = delete;
 		~Window();
 
-		constexpr Keyboard & Keyboard() noexcept { return keyboard; }
-		constexpr Mouse & Mouse() noexcept { return mouse; }
+		constexpr Keyboard& Keyboard() noexcept { return keyboard; }
+		constexpr Mouse& Mouse() noexcept { return mouse; }
 		constexpr bool IsCursorEnabled() const noexcept { return cursorEnabled; }
 		inline void SwitchCursor() noexcept { cursorEnabled ? DisableCursor() : EnableCursor(); }
-		
+
 		static std::optional<unsigned long long> ProcessMessage() noexcept;
 
-		GFX::Graphics & Gfx();
-		void SetTitle(const std::string & title);
+		GFX::Graphics& Gfx();
+		void SetTitle(const std::string& title);
 		void EnableCursor() noexcept;
 		void DisableCursor() noexcept;
 
@@ -68,23 +68,23 @@ namespace WinAPI
 			using WinApiException::WinApiException;
 
 		public:
-			inline WindowException(unsigned int line, const char * file, HRESULT hResult) noexcept
+			inline WindowException(unsigned int line, const char* file, HRESULT hResult) noexcept
 				: BasicException(line, file), WinApiException(line, file, hResult) {}
 			WindowException(const WindowException&) = default;
-			WindowException & operator=(const WindowException&) = default;
+			WindowException& operator=(const WindowException&) = default;
 			virtual ~WindowException() = default;
 
-			inline const char * GetType() const noexcept override { return "Window Exception"; }
+			inline const char* GetType() const noexcept override { return "Window Exception"; }
 		};
 		class NoGfxException : public virtual Exception::BasicException
 		{
 		public:
-			inline NoGfxException(unsigned int line, const char * file) noexcept : BasicException(line, file) {}
+			inline NoGfxException(unsigned int line, const char* file) noexcept : BasicException(line, file) {}
 			NoGfxException(const NoGfxException&) = default;
-			NoGfxException & operator=(const NoGfxException&) = default;
+			NoGfxException& operator=(const NoGfxException&) = default;
 			virtual ~NoGfxException() = default;
 
-			inline const char * GetType() const noexcept override { return "No Graphics Exception"; }
+			inline const char* GetType() const noexcept override { return "No Graphics Exception"; }
 		};
 #pragma endregion
 	};

@@ -10,15 +10,15 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 
 	public:
-		PixelShader(Graphics & gfx, const std::string & path);
+		PixelShader(Graphics& gfx, const std::string& path);
 		PixelShader(const PixelShader&) = delete;
-		PixelShader & operator=(const PixelShader&) = delete;
+		PixelShader& operator=(const PixelShader&) = delete;
 		~PixelShader() = default;
 
-		static inline std::shared_ptr<PixelShader> Get(Graphics& gfx, const std::string & path) { return Codex::Resolve<PixelShader>(gfx, path); }
-		static inline std::string GenerateRID(const std::string & path) noexcept { return "#" + std::string(typeid(PixelShader).name()) + "#" + path + "#"; }
+		static inline std::shared_ptr<PixelShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<PixelShader>(gfx, path); }
+		static inline std::string GenerateRID(const std::string& path) noexcept { return "#" + std::string(typeid(PixelShader).name()) + "#" + path + "#"; }
 
-		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0U); }
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0U); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path); }
 	};
 

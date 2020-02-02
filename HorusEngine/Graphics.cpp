@@ -120,7 +120,7 @@ namespace GFX
 
 #pragma region Exceptions
 #ifdef _DEBUG
-	const char * Graphics::DebugException::what() const noexcept
+	const char* Graphics::DebugException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << this->BasicException::what() << GetDebugInfo();
@@ -143,7 +143,7 @@ namespace GFX
 	}
 #endif
 
-	const char * Graphics::GraphicsException::what() const noexcept
+	const char* Graphics::GraphicsException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << this->WinApiException::what();

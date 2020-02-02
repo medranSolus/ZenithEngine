@@ -34,23 +34,23 @@ namespace GFX
 
 	public:
 		Graphics(HWND hWnd, unsigned int width, unsigned int height);
-		Graphics(const Graphics &) = delete;
-		Graphics & operator=(const Graphics &) = delete;
+		Graphics(const Graphics&) = delete;
+		Graphics& operator=(const Graphics&) = delete;
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
-		constexpr GUIManager & Gui() noexcept { return guiManager; }
+		constexpr GUIManager& Gui() noexcept { return guiManager; }
 		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
-		constexpr DirectX::XMMATRIX & GetProjection() noexcept { return projection; }
+		constexpr DirectX::XMMATRIX& GetProjection() noexcept { return projection; }
 		constexpr void SetProjection(DirectX::FXMMATRIX projection) noexcept { this->projection = std::move(projection); }
 		constexpr DirectX::FXMMATRIX GetCamera() const noexcept { return camera; }
-		constexpr DirectX::XMMATRIX & GetCamera() noexcept { return camera; }
+		constexpr DirectX::XMMATRIX& GetCamera() noexcept { return camera; }
 		constexpr void SetCamera(DirectX::FXMMATRIX camera) noexcept { this->camera = std::move(camera); }
 		constexpr void EnableGUI() noexcept { guiEnabled = true; }
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }
 		constexpr bool IsGuiEnabled() const noexcept { return guiEnabled; }
 #ifdef _DEBUG
-		constexpr DXGIDebugInfoManager & GetInfoManager() { return debugInfoManager; }
+		constexpr DXGIDebugInfoManager& GetInfoManager() { return debugInfoManager; }
 #endif
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
@@ -65,52 +65,52 @@ namespace GFX
 			std::vector<std::string> debugInfo;
 
 		public:
-			inline DebugException(unsigned int line, const char * file, const std::vector<std::string> & info) noexcept
+			inline DebugException(unsigned int line, const char* file, const std::vector<std::string>& info) noexcept
 				: BasicException(line, file), debugInfo(info) {}
 			DebugException(const DebugException&) = default;
-			DebugException & operator=(const DebugException&) = default;
+			DebugException& operator=(const DebugException&) = default;
 			virtual ~DebugException() = default;
 
-			inline const char * GetType() const noexcept override { return "DirectX Debug Exception"; }
-			const char * what() const noexcept override;
+			inline const char* GetType() const noexcept override { return "DirectX Debug Exception"; }
+			const char* what() const noexcept override;
 			std::string GetDebugInfo() const noexcept;
 		};
 		class GraphicsException : public Exception::WinApiException, public DebugException
 		{
 		public:
-			inline GraphicsException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept
+			inline GraphicsException(unsigned int line, const char* file, HRESULT hResult, const std::vector<std::string>& info = std::vector<std::string>()) noexcept
 				: BasicException(line, file), WinApiException(line, file, hResult), DebugException(line, file, info) {}
 #else
 		class GraphicsException : public Exception::WinApiException
 		{
 		public:
-			inline GraphicsException(unsigned int line, const char * file, HRESULT hResult) noexcept
+			inline GraphicsException(unsigned int line, const char* file, HRESULT hResult) noexcept
 				: BasicException(line, file), WinApiException(line, file, hResult) {}
 #endif
 			GraphicsException(const GraphicsException&) = default;
-			GraphicsException & operator=(const GraphicsException&) = default;
+			GraphicsException& operator=(const GraphicsException&) = default;
 			virtual ~GraphicsException() = default;
 
-			inline const char * GetType() const noexcept override { return "DirectX Exception"; }
-			const char * what() const noexcept override;
+			inline const char* GetType() const noexcept override { return "DirectX Exception"; }
+			const char* what() const noexcept override;
 		};
 		// Exception getting info from DXGI_ERROR_DEVICE_REMOVED error (driver crash, device hung, overheat, etc.)
 		class DeviceRemovedException : public GraphicsException
 		{
 		public:
 #ifdef _DEBUG
-			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult, const std::vector<std::string> & info = std::vector<std::string>()) noexcept
+			DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult, const std::vector<std::string>& info = std::vector<std::string>()) noexcept
 				: BasicException(line, file), GraphicsException(line, file, hResult, info) {}
 #else
-			DeviceRemovedException(unsigned int line, const char * file, HRESULT hResult) noexcept
+			DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult) noexcept
 				: BasicException(line, file), GraphicsException(line, file, hResult) {}
 #endif
 			DeviceRemovedException(const DeviceRemovedException&) = default;
-			DeviceRemovedException & operator=(const DeviceRemovedException&) = default;
+			DeviceRemovedException& operator=(const DeviceRemovedException&) = default;
 			virtual ~DeviceRemovedException() = default;
 
-			inline const char * GetType() const noexcept override { return "Graphics Removed Exception"; }
+			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-	};
-}
+		};
+	}

@@ -4,7 +4,7 @@
 
 namespace GFX::Light
 {
-	PointLight::PointLight(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float radius)
+	PointLight::PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius)
 		: mesh(gfx, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius), buffer(gfx, name)
 	{
 		lightBuffer =
@@ -36,7 +36,7 @@ namespace GFX::Light
 		mesh.Object::ShowWindow();
 	}
 
-	void PointLight::Bind(Graphics & gfx, const Camera::ICamera & camera) const noexcept
+	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept
 	{
 		DirectX::XMStoreFloat3(&lightBuffer.pos, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
 		buffer.Update(gfx, lightBuffer);

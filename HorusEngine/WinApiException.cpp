@@ -2,7 +2,7 @@
 
 namespace Exception
 {
-	const char * WinApiException::what() const noexcept
+	const char* WinApiException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << BasicException::what()

@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Rectangle::Rectangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float width, float height)
+	Rectangle::Rectangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float width, float height)
 		: Object(position, name), width(width), height(height)
 	{
 		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat });

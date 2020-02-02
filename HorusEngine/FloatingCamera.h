@@ -13,7 +13,7 @@ namespace Camera
 
 	public:
 		FloatingCamera(const FloatingCamera&) = default;
-		FloatingCamera & operator=(const FloatingCamera&) = default;
+		FloatingCamera& operator=(const FloatingCamera&) = default;
 		virtual ~FloatingCamera() = default;
 
 		void MoveX(float dX) noexcept override;

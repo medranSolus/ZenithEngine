@@ -9,15 +9,15 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> state;
 
 	public:
-		Sampler(Graphics & gfx);
+		Sampler(Graphics& gfx);
 		Sampler(const Sampler&) = delete;
-		Sampler & operator=(const Sampler&) = delete;
+		Sampler& operator=(const Sampler&) = delete;
 		~Sampler() = default;
 
-		static inline std::shared_ptr<Sampler> Get(Graphics & gfx) { return Codex::Resolve<Sampler>(gfx); }
+		static inline std::shared_ptr<Sampler> Get(Graphics& gfx) { return Codex::Resolve<Sampler>(gfx); }
 		static inline std::string GenerateRID() noexcept { return "#" + std::string(typeid(Sampler).name()) + "#"; }
 
-		inline void Bind(Graphics & gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(); }
 	};
 

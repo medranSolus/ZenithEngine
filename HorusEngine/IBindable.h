@@ -12,14 +12,14 @@ namespace GFX::Resource
 	class IBindable
 	{
 	protected:
-		static inline ID3D11DeviceContext* GetContext(Graphics & gfx) noexcept { return gfx.context.Get(); }
-		static inline ID3D11Device* GetDevice(Graphics & gfx) noexcept { return gfx.device.Get(); }
+		static inline ID3D11DeviceContext* GetContext(Graphics& gfx) noexcept { return gfx.context.Get(); }
+		static inline ID3D11Device* GetDevice(Graphics& gfx) noexcept { return gfx.device.Get(); }
 
 	public:
 		virtual ~IBindable() = default;
 
 		template<typename T, typename ...Params>
-		static constexpr std::string GenerateRID(Params && ...p)
+		static constexpr std::string GenerateRID(Params&& ...p)
 		{
 			static_assert(is_resolvable_by_codex<T>::value == true, "Class does not implement static method GenerateRID(...)!");
 			return T::template GenerateRID(std::forward<Params>(p)...);

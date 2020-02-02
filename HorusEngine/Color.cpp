@@ -2,7 +2,7 @@
 
 namespace GFX::BasicType
 {
-	ColorFloat & ColorFloat::operator=(const ColorByte & c) noexcept
+	ColorFloat& ColorFloat::operator=(const ColorByte& c) noexcept
 	{
 		col.x = c.r / 255.0f;
 		col.y = c.g / 255.0f;
@@ -11,7 +11,7 @@ namespace GFX::BasicType
 		return *this;
 	}
 
-	ColorFloat ColorFloat::operator+(const ColorFloat & c) const
+	ColorFloat ColorFloat::operator+(const ColorFloat& c) const
 	{
 		ColorFloat nc;
 		DirectX::XMStoreFloat4(&nc.col, DirectX::XMVectorSaturate(DirectX::XMVectorAdd(DirectX::XMLoadFloat4(&col), DirectX::XMLoadFloat4(&c.col))));

@@ -5,7 +5,7 @@
 
 namespace GFX::Resource
 {
-	Texture::Texture(Graphics & gfx, const std::string & path, UINT slot) : slot(slot), path(path)
+	Texture::Texture(Graphics& gfx, const std::string& path, UINT slot) : slot(slot), path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
 		Surface surface(path);

@@ -26,7 +26,7 @@ inline void App::ProcessInput()
 		{
 			auto value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
-				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
+				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed* static_cast<float>(value.GetDX()) / width);
 			switch (value.GetType())
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
@@ -46,7 +46,7 @@ inline void App::ProcessInput()
 			case WinAPI::Mouse::Event::Type::RawMove:
 			{
 				if (!window.IsCursorEnabled())
-					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
+					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed* static_cast<float>(value.GetDX()) / width);
 				break;
 			}
 			}
@@ -147,7 +147,7 @@ inline void App::ShowOptionsWindow()
 		ImGui::SliderFloat("Move speed", &cameraSpeed, 0.001f, maxMoveSpeed, "%.3f");
 		ImGui::SliderFloat("Roll speed", &cameraRollSpeed, 0.01f, 0.5f, "%.2f");
 		ImGui::SliderFloat("Camera speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
-		const auto & cameraPos = camera->GetPos();
+		const auto& cameraPos = camera->GetPos();
 		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
 		camera->ShowWindow();
 		if (ImGui::Button("Reset"))
@@ -183,7 +183,7 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width)
 			coordBuffer.emplace_back(current.first, current.second - width);
 		}
 	}
-	for (auto & coord : coordBuffer)
+	for (auto& coord : coordBuffer)
 		carpetRects.push_back(std::make_unique<GFX::Shape::Rectangle>(window.Gfx(), DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", width, width));
 }
 
@@ -198,10 +198,10 @@ void App::MakeFrame()
 	camera->Update(window.Gfx());
 	pointLight->Draw(window.Gfx());
 	pointLight->Bind(window.Gfx(), *camera);
-	for (auto & shape : shapes)
+	for (auto& shape : shapes)
 		if (shape)
 			shape->Draw(window.Gfx());
-	for (auto & obj : carpetRects)
+	for (auto& obj : carpetRects)
 	{
 		obj->Update({ moveX, moveZ, moveY }, { angleZ, angleX, angleY });
 		obj->Draw(window.Gfx());

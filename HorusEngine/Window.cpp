@@ -29,9 +29,9 @@ namespace WinAPI
 		// Reroute WNDPROC to normal function and save pointer to Window object on WinAPI side to retrieve
 		if (msg == WM_NCCREATE)
 		{
-			const CREATESTRUCTW * const create = reinterpret_cast<CREATESTRUCTW*>(lParam);
+			const CREATESTRUCTW* const create = reinterpret_cast<CREATESTRUCTW*>(lParam);
 			// Passed to CreateWindowEX
-			Window * const wnd = static_cast<Window*>(create->lpCreateParams);
+			Window* const wnd = static_cast<Window*>(create->lpCreateParams);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
 			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgStub));
 			return wnd->HandleMsg(hWnd, msg, wParam, lParam);
@@ -42,7 +42,7 @@ namespace WinAPI
 	LRESULT WINAPI Window::HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		// Get saved Window object
-		Window * const wnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		Window* const wnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 		return wnd->HandleMsg(hWnd, msg, wParam, lParam);
 	}
 
@@ -66,7 +66,7 @@ namespace WinAPI
 				else
 					FreeCursor();
 			}
-			break; 
+			break;
 		}
 		case WM_KILLFOCUS:
 		{
@@ -150,7 +150,7 @@ namespace WinAPI
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
 			// Allow window to capture mouse input when left/righ/middle button are pressed when escaping client area
-			if (point.x >= 0 && static_cast<unsigned int>(point.x) < wndWidth && point.y >= 0 && static_cast<unsigned int>(point.y) < wndHeight)
+			if (point.x >= 0 && static_cast<unsigned int>(point.x) < wndWidth&& point.y >= 0 && static_cast<unsigned int>(point.y) < wndHeight)
 			{
 				mouse.OnMouseMove(point.x, point.y);
 				if (!mouse.IsInWindow())
@@ -182,7 +182,7 @@ namespace WinAPI
 			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER)) != inputSize)
 				break;
 
-			const RAWINPUT & input = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+			const RAWINPUT& input = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
 			if (input.header.dwType == RIM_TYPEMOUSE &&
 				(input.data.mouse.lLastX != 0 || input.data.mouse.lLastY != 0))
 				mouse.OnRawDelta(input.data.mouse.lLastX, input.data.mouse.lLastY);
@@ -201,7 +201,7 @@ namespace WinAPI
 		ClipCursor(&rect);
 	}
 
-	Window::Window(unsigned int width, unsigned int height, const char * name) : wndWidth(width), wndHeight(height)
+	Window::Window(unsigned int width, unsigned int height, const char* name) : wndWidth(width), wndHeight(height)
 	{
 		constexpr DWORD winStyle = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		constexpr DWORD winStyleEx = 0;
@@ -248,14 +248,14 @@ namespace WinAPI
 		return {};
 	}
 
-	GFX::Graphics & Window::Gfx()
+	GFX::Graphics& Window::Gfx()
 	{
 		if (!graphics)
 			throw WND_NO_GFX_EXCEPT();
 		return *graphics;
 	}
 
-	void Window::SetTitle(const std::string & title)
+	void Window::SetTitle(const std::string& title)
 	{
 		if (SetWindowText(hWnd, title.c_str()) == 0)
 			throw WND_EXCEPT_LAST();

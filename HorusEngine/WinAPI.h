@@ -8,7 +8,7 @@
  * https://stackoverflow.com/questions/1394910/how-to-tame-the-windows-headers-useful-defines */
 
 #ifndef USE_WINDOWS_DEFINES
-// Cryptography, DDE, RPC, Shell, and Windows Sockets
+ // Cryptography, DDE, RPC, Shell, and Windows Sockets
 #define WIN32_LEAN_AND_MEAN
 // CC_*, LC_*, PC_*, CP_*, TC_*, RC_
 #define NOGDICAPMASKS
@@ -80,6 +80,5 @@
 #define STRICT
 // Allow cmath defines
 #define _USE_MATH_DEFINES
-
 
 #include <Windows.h>

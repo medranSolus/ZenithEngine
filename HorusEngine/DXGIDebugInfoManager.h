@@ -15,8 +15,8 @@ namespace GFX
 
 	public:
 		DXGIDebugInfoManager();
-		DXGIDebugInfoManager(const DXGIDebugInfoManager &) = delete;
-		DXGIDebugInfoManager & operator=(const DXGIDebugInfoManager &) = delete;
+		DXGIDebugInfoManager(const DXGIDebugInfoManager&) = delete;
+		DXGIDebugInfoManager& operator=(const DXGIDebugInfoManager&) = delete;
 		~DXGIDebugInfoManager() = default;
 
 		inline void BeginRecord() noexcept { offset = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL); }

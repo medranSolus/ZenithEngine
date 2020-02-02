@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Triangle::Triangle(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, float down, float left, float right)
+	Triangle::Triangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float down, float left, float right)
 		: Object(position, name)
 	{
 		const float leftPow2 = left * left;
@@ -29,7 +29,6 @@ namespace GFX::Shape
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
-
 
 		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));

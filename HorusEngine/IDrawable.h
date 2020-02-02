@@ -8,6 +8,6 @@ namespace GFX
 	public:
 		virtual ~IDrawable() = default;
 
-		virtual void Draw(Graphics & gfx) const noexcept = 0;
+		virtual void Draw(Graphics& gfx) const noexcept = 0;
 	};
 }

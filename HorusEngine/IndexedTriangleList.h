@@ -11,9 +11,9 @@ namespace GFX::Primitive
 		std::string typeName;
 
 		IndexedTriangleList() = default;
-		IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn, const std::string & typeName);
+		IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName);
 		IndexedTriangleList(const IndexedTriangleList&) = default;
-		IndexedTriangleList & operator=(const IndexedTriangleList&) = default;
+		IndexedTriangleList& operator=(const IndexedTriangleList&) = default;
 		~IndexedTriangleList() = default;
 
 		void Transform(DirectX::FXMMATRIX matrix);

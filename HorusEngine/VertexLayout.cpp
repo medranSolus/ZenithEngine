@@ -2,7 +2,7 @@
 
 namespace GFX::BasicType
 {
-	constexpr const char * VertexLayout::Element::GetCode() const noexcept
+	constexpr const char* VertexLayout::Element::GetCode() const noexcept
 	{
 		switch (type)
 		{
@@ -56,7 +56,7 @@ namespace GFX::BasicType
 	{
 		std::vector<D3D11_INPUT_ELEMENT_DESC> desc;
 		desc.reserve(GetElementCount());
-		for (const auto & e : elements)
+		for (const auto& e : elements)
 			desc.emplace_back(e.GetDesc());
 		return desc;
 	}

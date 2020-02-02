@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Globe::Globe(Graphics & gfx, const DirectX::XMFLOAT3 & position, const std::string & name, BasicType::ColorFloat material,
+	Globe::Globe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat material,
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: Object(position, name), sizes(width, height, length)
 	{

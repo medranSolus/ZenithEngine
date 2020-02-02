@@ -6,11 +6,11 @@
 
 namespace GFX::Resource
 {
-	VertexShader::VertexShader(Graphics & gfx, const std::string & path) : path(path)
+	VertexShader::VertexShader(Graphics& gfx, const std::string& path) : path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
 		GFX_THROW_FAILED(D3DReadFileToBlob(toUtf8(path).c_str(), &bytecode));
-		GFX_THROW_FAILED(GetDevice(gfx)->CreateVertexShader(bytecode->GetBufferPointer(), 
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateVertexShader(bytecode->GetBufferPointer(),
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
 	}
 }

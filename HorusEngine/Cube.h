@@ -8,11 +8,11 @@ namespace GFX::Primitive
 	public:
 		Cube() = delete;
 
-		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute> && attributes = {})
+		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute>&& attributes = {})
 		{
 			constexpr float point = 0.5f;
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, 8);
 
@@ -39,12 +39,12 @@ namespace GFX::Primitive
 			};
 		}
 
-		static IndexedTriangleList Make(const std::vector<VertexAttribute> && attributes = {})
+		static IndexedTriangleList Make(const std::vector<VertexAttribute>&& attributes = {})
 		{
 			constexpr float point = 0.5f;
 			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 			layout->Append(VertexAttribute::Normal);
-			for (const auto & attrib : attributes)
+			for (const auto& attrib : attributes)
 				layout->Append(attrib);
 			BasicType::VertexDataBuffer vertices(layout, 24);
 
@@ -73,7 +73,7 @@ namespace GFX::Primitive
 			vertices[17].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
 			vertices[18].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
 			vertices[19].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
-			// Down	
+			// Down
 			vertices[20].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
 			vertices[21].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
 			vertices[22].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));

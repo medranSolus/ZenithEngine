@@ -7,7 +7,7 @@
 
 class App
 {
-	static constexpr const char * windowTitle = "Horus Engine Alpha";
+	static constexpr const char* windowTitle = "Horus Engine Alpha";
 	static constexpr float viewDistance = 5000.0f;
 	static constexpr float maxMoveSpeed = 3.0f;
 
@@ -25,7 +25,7 @@ class App
 	std::vector< std::shared_ptr<GFX::IObject>> shapes;
 	std::map<std::string, std::shared_ptr<GFX::IObject>> objects;
 	std::vector<std::unique_ptr<GFX::Shape::Rectangle>> carpetRects;
-	
+
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
 	inline void ShowOptionsWindow();
@@ -35,8 +35,8 @@ class App
 
 public:
 	App();
-	App(const App &) = delete;
-	App & operator=(const App &) = delete;
+	App(const App&) = delete;
+	App& operator=(const App&) = delete;
 	~App() = default;
 
 	static constexpr float GetRatio() { return static_cast<float>(width) / height; }
