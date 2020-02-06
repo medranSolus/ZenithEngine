@@ -26,7 +26,6 @@ float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in floa
 	);
 	// Sample normal to tangent space
 	float3 tangentNormal = normalMap.Sample(splr, texcoord).bgr * 2.0f - 1.0f;
-	tangentNormal.y *= -1.0f;
 	// Transform from tangent into view space
 	return normalize(mul(tangentNormal, tangentToView));
 }

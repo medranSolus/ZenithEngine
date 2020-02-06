@@ -217,14 +217,15 @@ App::App() : window(width, height, windowTitle)
 	objects.emplace("---None---", nullptr);
 	camera = std::make_unique<Camera::PersonCamera>(1.047f, GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
-	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 6.0f, 5.0f), "PointLight");
+	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));
+	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(-3.0f, -5.0f, 15.0f), "Nanosuit_tex"));
+	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(-3.0f, -5.0f, 15.0f), "Nanosuit_tex"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(6.0f, 5.0f, -15.0f), "Nanosuit"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));
