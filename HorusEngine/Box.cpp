@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat material,
+	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat4 material,
 		float width, float height, float length)
 		: Object(position, name), sizes(width, height, length)
 	{
@@ -28,13 +28,13 @@ namespace GFX::Shape
 		buffer.specularPower = 60.0f;
 		AddBind(Resource::ConstantPixelBuffer<Resource::PhongPixelBuffer>::Get(gfx, name, buffer, 1U));
 
-		UpdateScalingMatrix();
+		UpdateTransformMatrix();
 	}
 
-	void Box::UpdateScalingMatrix() noexcept
+	void Box::UpdateTransformMatrix() noexcept
 	{
-		DirectX::XMStoreFloat4x4(scaling.get(),
+		DirectX::XMStoreFloat4x4(transform.get(),
 			DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&sizes)) *
-			DirectX::XMMatrixScaling(scale, scale, scale));
+			CreateTransformMatrix());
 	}
 }

@@ -1,20 +1,19 @@
 cbuffer TransformConstatBuffer
 {
 	matrix transformView;
-	matrix scalingTransformView;
-	matrix scalingTransformViewProjection;
+	matrix transformViewProjection;
 };
 
 struct VSOut
 {
-	float4 col : COLOR;
+	float4 color : COLOR;
 	float4 pos : SV_Position;
 };
 
 VSOut main(float3 pos : POSITION, float4 color : COLOR)
 {
 	VSOut vso;
-	vso.col = color;
-	vso.pos = mul(float4(pos, 1.0f), scalingTransformViewProjection);
+	vso.color = color;
+	vso.pos = mul(float4(pos, 1.0f), transformViewProjection);
 	return vso;
 }

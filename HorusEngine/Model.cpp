@@ -15,25 +15,19 @@ namespace GFX::Shape
 	{
 		DirectX::XMStoreFloat4x4(&baseTransform, nodeTransform);
 		currentTransform = std::make_shared<DirectX::XMFLOAT4X4>();
-		currentScaling = std::make_shared<DirectX::XMFLOAT4X4>();
 		for (auto& mesh : meshes)
-		{
 			mesh->SetTransformMatrix(currentTransform);
-			mesh->SetScalingMatrix(currentScaling);
-		}
 	}
 
-	void Model::Node::Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform, const DirectX::FXMMATRIX& higherScaling) const noexcept
+	void Model::Node::Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform) const noexcept
 	{
 		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
 			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
-		const DirectX::XMMATRIX scalingMatrix = DirectX::XMLoadFloat4x4(scaling.get()) * higherScaling;
 		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
-		DirectX::XMStoreFloat4x4(currentScaling.get(), scalingMatrix);
 		for (const auto& mesh : meshes)
 			mesh->Draw(gfx);
 		for (const auto& child : children)
-			child->Draw(gfx, transformMatrix, scalingMatrix);
+			child->Draw(gfx, transformMatrix);
 	}
 
 	void Model::Node::ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept
@@ -68,8 +62,6 @@ namespace GFX::Shape
 		selectedNode->Object::ShowWindow();
 		ImGui::Columns(1);
 	}
-
-	unsigned long long Model::modelCount = 0U;
 
 	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, const std::string& path, const aiMesh& mesh, aiMaterial* const* materials)
 	{
@@ -120,6 +112,7 @@ namespace GFX::Shape
 
 					if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 					{
+						// TODO: Check texture HasAlpha, otherwise get alpha from material and send via cbuff.
 						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 2U));
 						if (normalMap)
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureNormalSpecularPhongPS.cso"));
@@ -236,7 +229,6 @@ namespace GFX::Shape
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
 
 		meshes.reserve(scene->mNumMeshes);
-		name = modelName == "Model_" ? "Model_" + modelCount++ : modelName;
 		std::string path = std::filesystem::path(file).remove_filename().string();
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
 			meshes.emplace_back(ParseMesh(gfx, path, *scene->mMeshes[i], scene->mMaterials));

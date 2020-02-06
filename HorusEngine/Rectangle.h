@@ -15,6 +15,6 @@ namespace GFX::Shape
 		Rectangle& operator=(const Rectangle&) = delete;
 		virtual ~Rectangle() = default;
 
-		void UpdateScalingMatrix() noexcept override;
+		void UpdateTransformMatrix() noexcept override;
 	};
 }

@@ -9,13 +9,13 @@ namespace GFX::Light
 	{
 		lightBuffer =
 		{
-			{ 0.05f, 0.05f, 0.05f, 1.0f },
-			{ 1.0f, 1.0f, 1.0f, 1.0f },
-			mesh.GetPos(),
+			{ 0.05f, 0.05f, 0.05f },
 			1.0f,
-			1.0f,
+			{ 1.0f, 1.0f, 1.0f },
 			0.045f,
-			0.0075f
+			mesh.GetPos(),
+			0.0075f,
+			1.0f
 		};
 	}
 
@@ -23,10 +23,10 @@ namespace GFX::Light
 	{
 		static constexpr float f32Max = FLT_MAX;
 		static constexpr float f32Min = -FLT_MAX;
-		ImGui::ColorEdit4("Color", (float*)&lightBuffer.diffuseColor,
+		ImGui::ColorEdit3("Color", (float*)&lightBuffer.lightColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
-		ImGui::DragScalar("Intensity", ImGuiDataType_Float, &lightBuffer.diffuseIntensity, 0.001f, &f32Min, &f32Max, "%.3f");
-		ImGui::ColorEdit4("Ambient Color", (float*)&lightBuffer.ambientColor,
+		ImGui::DragScalar("Intensity", ImGuiDataType_Float, &lightBuffer.lightIntensity, 0.001f, &f32Min, &f32Max, "%.3f");
+		ImGui::ColorEdit3("Ambient Color", (float*)&lightBuffer.ambientColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		ImGui::Text("Attenuation:");
 		ImGui::DragScalar("Const", ImGuiDataType_Float, &lightBuffer.atteuationConst, 0.001f, &f32Min, &f32Max, "%.3f");
@@ -38,7 +38,7 @@ namespace GFX::Light
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept
 	{
-		DirectX::XMStoreFloat3(&lightBuffer.pos, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
+		DirectX::XMStoreFloat3(&lightBuffer.lightPos, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
 		buffer.Update(gfx, lightBuffer);
 		buffer.Bind(gfx);
 	}

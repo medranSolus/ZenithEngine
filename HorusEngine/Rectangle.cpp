@@ -8,10 +8,10 @@ namespace GFX::Shape
 	Rectangle::Rectangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float width, float height)
 		: Object(position, name), width(width), height(height)
 	{
-		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat });
+		auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat4 });
 		std::mt19937_64 engine(std::random_device{}());
 		for (unsigned char i = 0; i < 4; ++i)
-			list.vertices[i].Get<VertexAttribute::ColorFloat>() = std::move(randColor(engine));
+			list.vertices[i].Get<VertexAttribute::ColorFloat4>() = std::move(randColor(engine));
 		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.vertices));
 		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.indices));
 
@@ -24,13 +24,13 @@ namespace GFX::Shape
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		AddBind(std::make_shared<Resource::ConstantTransformBufferVS>(gfx, *this));
 
-		UpdateScalingMatrix();
+		UpdateTransformMatrix();
 	}
 
-	void Rectangle::UpdateScalingMatrix() noexcept
+	void Rectangle::UpdateTransformMatrix() noexcept
 	{
-		DirectX::XMStoreFloat4x4(scaling.get(),
+		DirectX::XMStoreFloat4x4(transform.get(),
 			DirectX::XMMatrixScaling(width, height, 1.0f) *
-			DirectX::XMMatrixScaling(scale, scale, scale));
+			CreateTransformMatrix());
 	}
 }

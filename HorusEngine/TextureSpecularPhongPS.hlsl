@@ -1,40 +1,25 @@
-cbuffer LightConstantBuffer
-{
-	float4 ambientColor;
-	float4 diffuseColor;
-	float3 lightPos;
-	float diffuseIntensity;
-	float atteuationConst;
-	float atteuationLinear;
-	float attenuationQuad;
-}
+#include "Utils.fx"
+#include "LightConstantBuffer.fx"
+#include "TexPhongPixelBuffer.fx"
 
 Texture2D tex;
 Texture2D spec : register(t2);
 SamplerState splr;
 
-float4 main(float3 cameraPos : POSITION, float3 normal : NORMAL, float2 tc : TEXCOORD) : SV_Target
+float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float2 tc : TEXCOORD) : SV_Target
 {
-	// Vertex to light data
-	const float3 vertexToLight = lightPos - cameraPos;
-	const float distanceToLight = length(vertexToLight);
-	const float3 directionToLight = vertexToLight / distanceToLight;
-
-	// Diffuse attenuation
-	// http://wiki.ogre3d.org/-Point+Light+Attenuation
-	float attenuation = atteuationConst + atteuationLinear * distanceToLight + attenuationQuad * (distanceToLight * distanceToLight);
-
-	const float4 diffuseColorScaled = diffuseColor * diffuseIntensity / attenuation;
-	// Diffuse intensity
-	const float4 diffuse = diffuseColorScaled * max(0.0f, dot(directionToLight, normal));
-
-	// Specular intensity based on angle between viewing vector and reflection vector
-	const float3 reflection = normal * dot(vertexToLight, normal) * 2.0f - vertexToLight;
+	viewNormal = normalize(viewNormal);
+	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
+	
+	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
+	const float3 scaledLightColor = lightColor * lightIntensity / attenuation;
+	
+	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal);
+	
 	const float4 specularTex = spec.Sample(splr, tc);
+	
+	const float specularPower = GetSampledSpecularPower(specularTex);
+	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, scaledLightColor, specularPower, specularIntensity);
 
-	// https://gamedev.stackexchange.com/questions/74879/specular-map-what-about-the-specular-reflections-highlight-size
-	const float specularPower = pow(2.0f, specularTex.a * 13.0f);
-	const float4 specular = diffuseColorScaled * pow(max(0.0f, dot(normalize(-reflection), normalize(cameraPos))), specularPower);
-
-	return saturate((diffuse + ambientColor) * tex.Sample(splr, tc).bgra + specular * specularTex.bgra);
+	return float4(saturate((diffuse + ambientColor) * tex.Sample(splr, tc).bgr + specular * specularTex.bgr), 1.0f);
 }

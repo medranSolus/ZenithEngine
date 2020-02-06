@@ -10,6 +10,7 @@ namespace GFX::Resource
 		GFX_ENABLE_ALL(gfx);
 		Surface surface(path);
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
+		alpha = surface.HasAlpha();
 		textureDesc.Width = surface.GetWidth();
 		textureDesc.Height = surface.GetHeight();
 		textureDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM; // Same as backbuffer

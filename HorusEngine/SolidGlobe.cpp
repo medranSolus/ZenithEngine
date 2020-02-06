@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	SolidGlobe::SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat material,
+	SolidGlobe::SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat4 material,
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: Object(position, name), sizes(width, height, length)
 	{
@@ -25,13 +25,13 @@ namespace GFX::Shape
 		Resource::SolidPixelBuffer buffer{ material };
 		AddBind(Resource::ConstantPixelBuffer<Resource::SolidPixelBuffer>::Get(gfx, name, buffer));
 
-		UpdateScalingMatrix();
+		UpdateTransformMatrix();
 	}
 
-	void SolidGlobe::UpdateScalingMatrix() noexcept
+	void SolidGlobe::UpdateTransformMatrix() noexcept
 	{
-		DirectX::XMStoreFloat4x4(scaling.get(),
+		DirectX::XMStoreFloat4x4(transform.get(),
 			DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&sizes)) *
-			DirectX::XMMatrixScaling(scale, scale, scale));
+			CreateTransformMatrix());
 	}
 }

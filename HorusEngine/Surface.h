@@ -9,9 +9,10 @@ namespace GFX
 	public:
 		class Pixel
 		{
-		public:
 			// ARGB
 			unsigned int dword = 255 << 24U;
+
+		public:
 
 			Pixel() = default;
 			constexpr Pixel(const Pixel& p) noexcept : dword(p.dword) {}
@@ -21,6 +22,7 @@ namespace GFX
 			constexpr Pixel(Pixel col, unsigned char a) noexcept : Pixel((a << 24U) | col.dword) {}
 			constexpr Pixel& operator=(const Pixel& color) noexcept { dword = color.dword; return *this; }
 
+			constexpr unsigned int GetValue() const noexcept { return dword; }
 			constexpr unsigned char GetA() const noexcept { return dword >> 24U; }
 			constexpr unsigned char GetR() const noexcept { return (dword >> 16U) & 0xFFU; }
 			constexpr unsigned char GetG() const noexcept { return (dword >> 8U) & 0xFFU; }
@@ -36,6 +38,7 @@ namespace GFX
 		std::unique_ptr<Pixel[]> buffer;
 		unsigned int width;
 		unsigned int height;
+		bool alpha = false;
 
 		inline Surface(unsigned int width, unsigned int height, std::unique_ptr<Pixel[]> bufferParam) noexcept
 			: buffer(std::move(bufferParam)), width(width), height(height) {}
@@ -51,9 +54,10 @@ namespace GFX
 
 		constexpr unsigned int GetWidth() const noexcept { return width; }
 		constexpr unsigned int GetHeight() const noexcept { return height; }
+		constexpr bool HasAlpha() const noexcept { return alpha; }
 		inline Pixel* GetBuffer() noexcept { return buffer.get(); }
 		inline const Pixel* GetBuffer() const noexcept { return buffer.get(); }
-		inline void Clear(const Pixel& value) noexcept { memset(buffer.get(), value.dword, width * height * sizeof(Pixel)); }
+		inline void Clear(const Pixel& value) noexcept { memset(buffer.get(), value.GetValue(), width * height * sizeof(Pixel)); }
 
 		constexpr void PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG);
 		constexpr Pixel GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG);

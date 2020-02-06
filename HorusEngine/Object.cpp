@@ -2,34 +2,27 @@
 
 namespace GFX
 {
-	Object::Object()
+
+	DirectX::FXMMATRIX Object::CreateTransformMatrix() const noexcept
 	{
-		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixIdentity());
-		DirectX::XMStoreFloat4x4(scaling.get(), DirectX::XMMatrixIdentity());
+		return DirectX::XMMatrixScaling(scale, scale, scale) *
+			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
+			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos));
 	}
 
 	Object::Object(const DirectX::XMFLOAT3& position) : BasicObject(position)
 	{
 		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos)));
-		DirectX::XMStoreFloat4x4(scaling.get(), DirectX::XMMatrixIdentity());
 	}
 
 	Object::Object(const std::string& name) : BasicObject(name)
 	{
 		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixIdentity());
-		DirectX::XMStoreFloat4x4(scaling.get(), DirectX::XMMatrixIdentity());
 	}
 
 	Object::Object(const DirectX::XMFLOAT3& position, const std::string& name, float scale) : BasicObject(position, name, scale)
 	{
-		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos)));
-		DirectX::XMStoreFloat4x4(scaling.get(), DirectX::XMMatrixScaling(scale, scale, scale));
-	}
-
-	inline void Object::UpdateMatrices() noexcept
-	{
-		UpdateTransformMatrix();
-		UpdateScalingMatrix();
+		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixScaling(scale, scale, scale) * DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos)));
 	}
 
 	void Object::SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept
@@ -41,7 +34,7 @@ namespace GFX
 	void Object::SetScale(float newScale) noexcept
 	{
 		BasicObject::SetScale(newScale);
-		UpdateScalingMatrix();
+		UpdateTransformMatrix();
 	}
 
 	void Object::SetPos(const DirectX::XMFLOAT3& position) noexcept
@@ -59,18 +52,11 @@ namespace GFX
 	void Object::ShowWindow() noexcept
 	{
 		BasicObject::ShowWindow();
-		UpdateMatrices();
+		UpdateTransformMatrix();
 	}
 
 	void Object::UpdateTransformMatrix() noexcept
 	{
-		DirectX::XMStoreFloat4x4(transform.get(),
-			DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&angle)) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&pos)));
-	}
-
-	void Object::UpdateScalingMatrix() noexcept
-	{
-		DirectX::XMStoreFloat4x4(scaling.get(), DirectX::XMMatrixScaling(scale, scale, scale));
+		DirectX::XMStoreFloat4x4(transform.get(), CreateTransformMatrix());
 	}
 }

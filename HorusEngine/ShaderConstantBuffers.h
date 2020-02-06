@@ -6,25 +6,24 @@ namespace GFX::Resource
 	struct TransformConstatBuffer
 	{
 		DirectX::XMMATRIX transformView;
-		DirectX::XMMATRIX scalingTransformView;
-		DirectX::XMMATRIX scalingTransformViewProjection;
+		DirectX::XMMATRIX transformViewProjection;
 	};
 
 	struct LightConstantBuffer
 	{
-		BasicType::ColorFloat ambientColor;
-		BasicType::ColorFloat diffuseColor;
-		DirectX::XMFLOAT3 pos;
-		float diffuseIntensity;
+		DirectX::XMFLOAT3 ambientColor;
 		float atteuationConst;
+		DirectX::XMFLOAT3 lightColor;
 		float atteuationLinear;
+		DirectX::XMFLOAT3 lightPos;
 		float attenuationQuad;
-		float padding = 0.0f;
+		float lightIntensity;
+		float padding[3] = { 0.0f };
 	};
 
 	struct PhongPixelBuffer
 	{
-		BasicType::ColorFloat materialColor;
+		BasicType::ColorFloat4 materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2]{ 0.0f };
@@ -39,6 +38,6 @@ namespace GFX::Resource
 
 	struct SolidPixelBuffer
 	{
-		BasicType::ColorFloat materialColor;
+		BasicType::ColorFloat4 materialColor;
 	};
 }

@@ -5,12 +5,10 @@ namespace GFX::Resource
 	TransformConstatBuffer ConstantTransformBufferVS::GetBufferData(Graphics& gfx) noexcept
 	{
 		const DirectX::XMMATRIX transformView = std::move(parent.GetTransformMatrix() * gfx.GetCamera());
-		const DirectX::XMMATRIX scalingTransformView = std::move(parent.GetScalingMatrix() * transformView);
 		return
 		{
 				std::move(DirectX::XMMatrixTranspose(transformView)),
-				std::move(DirectX::XMMatrixTranspose(scalingTransformView)),
-				std::move(DirectX::XMMatrixTranspose(scalingTransformView * gfx.GetProjection()))
+				std::move(DirectX::XMMatrixTranspose(transformView * gfx.GetProjection()))
 		};
 	}
 

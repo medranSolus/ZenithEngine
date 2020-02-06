@@ -16,8 +16,8 @@ namespace GFX::BasicType
 			return Desc<Tangent>::code;
 		case Bitangent:
 			return Desc<Bitangent>::code;
-		case ColorFloat:
-			return Desc<ColorFloat>::code;
+		case ColorFloat4:
+			return Desc<ColorFloat4>::code;
 		case ColorByte:
 			return Desc<ColorByte>::code;
 		}
@@ -39,8 +39,8 @@ namespace GFX::BasicType
 			return GenerateDesc<Tangent>(GetOffset());
 		case Bitangent:
 			return GenerateDesc<Bitangent>(GetOffset());
-		case ColorFloat:
-			return GenerateDesc<ColorFloat>(GetOffset());
+		case ColorFloat4:
+			return GenerateDesc<ColorFloat4>(GetOffset());
 		case ColorByte:
 			return GenerateDesc<ColorByte>(GetOffset());
 		}

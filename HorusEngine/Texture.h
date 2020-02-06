@@ -6,6 +6,7 @@ namespace GFX::Resource
 	class Texture : public IBindable
 	{
 		UINT slot;
+		bool alpha;
 		std::string path;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
 
@@ -17,6 +18,8 @@ namespace GFX::Resource
 
 		static inline std::shared_ptr<Texture> Get(Graphics& gfx, const std::string& path, UINT slot = 0U);
 		static inline std::string GenerateRID(const std::string& path, UINT slot = 0U) noexcept;
+
+		constexpr bool HasAlpha() const noexcept { return alpha; }
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path, slot); }

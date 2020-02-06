@@ -15,7 +15,7 @@ namespace GFX::Shape
 		std::mt19937_64 engine(std::random_device{}());
 
 		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
-		layout->Append(VertexAttribute::ColorFloat);
+		layout->Append(VertexAttribute::ColorFloat4);
 		BasicType::VertexDataBuffer vertices(layout);
 
 		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), randColor(engine));

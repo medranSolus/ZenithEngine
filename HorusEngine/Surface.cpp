@@ -18,7 +18,7 @@ namespace GFX
 
 		width = bitmap.GetWidth();
 		height = bitmap.GetHeight();
-		buffer = std::make_unique<Pixel[]>(width * height);
+		buffer = std::make_unique<Pixel[]>(static_cast<size_t>(width) * height);
 		for (unsigned int y = 0; y < height; ++y)
 		{
 			for (unsigned int x = 0; x < width; ++x)
@@ -26,6 +26,8 @@ namespace GFX
 				Gdiplus::Color c;
 				bitmap.GetPixel(x, y, &c);
 				buffer[y * width + x] = c.GetValue();
+				if (c.GetAlpha() != 255)
+					alpha = true;
 			}
 		}
 	}
