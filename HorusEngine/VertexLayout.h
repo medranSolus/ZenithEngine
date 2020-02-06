@@ -15,6 +15,8 @@ namespace GFX::BasicType
 			Position3D,
 			Texture2D,
 			Normal,
+			Tangent,
+			Bitangent,
 			ColorFloat,
 			ColorByte,
 			Count,
@@ -95,6 +97,22 @@ namespace GFX::BasicType
 			static constexpr const char* code = "N";
 		};
 
+		template<> struct Desc<Tangent>
+		{
+			using DataType = DirectX::XMFLOAT3;
+			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+			static constexpr const char* semantic = "TANGENT";
+			static constexpr const char* code = "T";
+		};
+
+		template<> struct Desc<Bitangent>
+		{
+			using DataType = DirectX::XMFLOAT3;
+			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+			static constexpr const char* semantic = "BITANGENT";
+			static constexpr const char* code = "B";
+		};
+
 		template<> struct Desc<ColorFloat>
 		{
 			using DataType = GFX::BasicType::ColorFloat;
@@ -123,6 +141,10 @@ namespace GFX::BasicType
 			return sizeof(Desc<Texture2D>::DataType);
 		case Normal:
 			return sizeof(Desc<Normal>::DataType);
+		case Tangent:
+			return sizeof(Desc<Tangent>::DataType);
+		case Bitangent:
+			return sizeof(Desc<Bitangent>::DataType);
 		case ColorFloat:
 			return sizeof(Desc<ColorFloat>::DataType);
 		case ColorByte:

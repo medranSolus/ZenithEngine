@@ -5,10 +5,9 @@ namespace GFX::Resource
 {
 	struct TransformConstatBuffer
 	{
-		DirectX::XMMATRIX transform;
-		DirectX::XMMATRIX scaling;
-		DirectX::XMMATRIX view;
-		DirectX::XMMATRIX projection;
+		DirectX::XMMATRIX transformView;
+		DirectX::XMMATRIX scalingTransformView;
+		DirectX::XMMATRIX scalingTransformViewProjection;
 	};
 
 	struct LightConstantBuffer

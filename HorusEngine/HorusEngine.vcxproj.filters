@@ -111,9 +111,6 @@
     <ClCompile Include="Color.cpp">
       <Filter>Source Files\GFX\BasicType</Filter>
     </ClCompile>
-    <ClCompile Include="ConstantTransformBuffer.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="DXGIDebugInfoManager.cpp">
       <Filter>Source Files\GFX</Filter>
     </ClCompile>
@@ -237,15 +234,18 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp">
       <Filter>Source Files\GFX\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="ConstantTransformBufferVS.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantTransformBufferVSPS.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TextureSpecularPhongPS.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="TexturePhongVS.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="TexturePhongPS.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="SolidVS.hlsl">
@@ -264,6 +264,18 @@
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="ColorBlendPS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="TextureNormalPhongPS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="TexturePhongPS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="TextureNormalPhongVS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="TextureNormalSpecularPhongPS.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>
@@ -311,9 +323,6 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantPixelBuffer.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantTransformBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantVertexBuffer.h">
@@ -717,6 +726,12 @@
     </ClInclude>
     <ClInclude Include="..\AssImp\include\assimp\Compiler\pushpack1.h">
       <Filter>Header Files\AssImp\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantTransformBufferVS.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantTransformBufferVSPS.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -76,6 +76,12 @@ namespace GFX::BasicType
 		case VertexLayout::ElementType::Normal:
 			Set<VertexLayout::ElementType::Normal>(attribute, std::forward<T>(val));
 			break;
+		case VertexLayout::ElementType::Tangent:
+			Set<VertexLayout::ElementType::Tangent>(attribute, std::forward<T>(val));
+			break;
+		case VertexLayout::ElementType::Bitangent:
+			Set<VertexLayout::ElementType::Bitangent>(attribute, std::forward<T>(val));
+			break;
 		case VertexLayout::ElementType::ColorFloat:
 			Set<VertexLayout::ElementType::ColorFloat>(attribute, std::forward<T>(val));
 			break;

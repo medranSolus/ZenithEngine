@@ -10,11 +10,26 @@ cbuffer LightConstantBuffer
 }
 
 Texture2D tex;
-Texture2D spec : register(t2);
+Texture2D normalMap;
+Texture2D spec;
 SamplerState splr;
 
-float4 main(float3 cameraPos : POSITION, float3 normal : NORMAL, float2 tc : TEXCOORD) : SV_Target
+float4 main(float3 cameraPos : POSITION, float3 tan : TANGENT, float3 bitan : BITANGENT, float3 normal : NORMAL, float2 tc : TEXCOORD) : SV_Target
 {
+	// Get rotation from tangent space
+	const float3x3 tangentToView = float3x3
+	(
+		normalize(tan),
+		normalize(bitan),
+		normalize(normal)
+	);
+	// Sample normal to tangent space
+	const float3 normalSample = normalMap.Sample(splr, tc).bgr;
+	normal = normalSample * 2.0f - 1.0f;
+	normal.y *= -1.0f;
+	// Transform from tangent into view space
+	normal = normalize(mul(normal, tangentToView));
+
 	// Vertex to light data
 	const float3 vertexToLight = lightPos - cameraPos;
 	const float distanceToLight = length(vertexToLight);

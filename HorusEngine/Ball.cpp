@@ -19,7 +19,7 @@ namespace GFX::Shape
 
 		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ
-		AddBind(std::make_shared<Resource::ConstantTransformBuffer>(gfx, *this));
+		AddBind(std::make_shared<Resource::ConstantTransformBufferVS>(gfx, *this));
 
 		Resource::PhongPixelBuffer buffer;
 		buffer.materialColor = material;

@@ -1,12 +1,11 @@
 cbuffer TransformConstatBuffer
 {
-	matrix transform;
-	matrix scaling;
-	matrix view;
-	matrix projection;
+	matrix transformView;
+	matrix scalingTransformView;
+	matrix scalingTransformViewProjection;
 };
 
 float4 main(float3 pos : POSITION) : SV_Position
 {
-	return mul(float4(pos, 1.0f), mul(mul(mul(scaling, transform), view), projection));
+	return mul(float4(pos, 1.0f), scalingTransformViewProjection);
 }

@@ -1,7 +1,8 @@
 #pragma once
 #include "ConstantBuffer.h"
 #include "ConstantPixelBuffer.h"
-#include "ConstantTransformBuffer.h"
+#include "ConstantTransformBufferVS.h"
+#include "ConstantTransformBufferVSPS.h"
 #include "ConstantVertexBuffer.h"
 #include "IndexBuffer.h"
 #include "InputLayout.h"

@@ -12,6 +12,10 @@ namespace GFX::BasicType
 			return Desc<Texture2D>::code;
 		case Normal:
 			return Desc<Normal>::code;
+		case Tangent:
+			return Desc<Tangent>::code;
+		case Bitangent:
+			return Desc<Bitangent>::code;
 		case ColorFloat:
 			return Desc<ColorFloat>::code;
 		case ColorByte:
@@ -31,6 +35,10 @@ namespace GFX::BasicType
 			return GenerateDesc<Texture2D>(GetOffset());
 		case Normal:
 			return GenerateDesc<Normal>(GetOffset());
+		case Tangent:
+			return GenerateDesc<Tangent>(GetOffset());
+		case Bitangent:
+			return GenerateDesc<Bitangent>(GetOffset());
 		case ColorFloat:
 			return GenerateDesc<ColorFloat>(GetOffset());
 		case ColorByte:

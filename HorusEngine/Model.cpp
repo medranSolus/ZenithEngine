@@ -76,8 +76,9 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Resource::IBindable>> binds;
 		binds.reserve(8U);
 
+		// Get IndexBuffer
 		std::vector<unsigned int> indices;
-		indices.reserve(mesh.mNumFaces * 3);
+		indices.reserve(static_cast<size_t>(mesh.mNumFaces) * 3);
 		for (unsigned int i = 0; i < mesh.mNumFaces; ++i)
 		{
 			const auto& face = mesh.mFaces[i];
@@ -90,10 +91,9 @@ namespace GFX::Shape
 		// Maybe layout code needed too, TODO: Check this
 		binds.emplace_back(Resource::IndexBuffer::Get(gfx, meshID, std::move(indices)));
 
-		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 		bool normals = mesh.HasNormals();
 		bool textureCoord = mesh.HasTextureCoords(0);
-
+		bool normalMap = false;
 		std::shared_ptr<Resource::VertexShader> vertexShader = nullptr;
 		if (normals)
 		{
@@ -106,18 +106,32 @@ namespace GFX::Shape
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					noTexture = false;
-					vertexShader = Resource::VertexShader::Get(gfx, "TexturePhongVS.cso");
 					binds.emplace_back(Resource::Sampler::Get(gfx));
-
 					binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str())));
+
+					normalMap = mesh.HasTangentsAndBitangents() && material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS;
+					if (normalMap)
+					{
+						vertexShader = Resource::VertexShader::Get(gfx, "TextureNormalPhongVS.cso");
+						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
+					}
+					else
+						vertexShader = Resource::VertexShader::Get(gfx, "TexturePhongVS.cso");
+
 					if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 					{
-						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
-						binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
+						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 2U));
+						if (normalMap)
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureNormalSpecularPhongPS.cso"));
+						else
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
 					}
 					else
 					{
-						binds.emplace_back(Resource::PixelShader::Get(gfx, "TexturePhongPS.cso"));
+						if (normalMap)
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureNormalPhongPS.cso"));
+						else
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "TexturePhongPS.cso"));
 						Resource::TexPhongPixelBuffer buffer;
 						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
 						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
@@ -154,11 +168,19 @@ namespace GFX::Shape
 			binds.emplace_back(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
 		}
 
+		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
 		if (normals)
 		{
 			layout->Append(VertexAttribute::Normal);
 			if (textureCoord)
+			{
 				layout->Append(VertexAttribute::Texture2D);
+				if (normalMap)
+				{
+					layout->Append(VertexAttribute::Tangent);
+					layout->Append(VertexAttribute::Bitangent);
+				}
+			}
 		}
 
 		BasicType::VertexDataBuffer vertexBuffer(layout, mesh.mNumVertices);
@@ -169,7 +191,14 @@ namespace GFX::Shape
 			{
 				vertexBuffer[i].Get<VertexAttribute::Normal>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]);
 				if (textureCoord)
+				{
 					vertexBuffer[i].Get<VertexAttribute::Texture2D>() = *reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][i]);
+					if (normalMap)
+					{
+						vertexBuffer[i].Get<VertexAttribute::Tangent>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mTangents[i]);
+						vertexBuffer[i].Get<VertexAttribute::Bitangent>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mBitangents[i]);
+					}
+				}
 			}
 		}
 		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID + layout->GetLayoutCode(), std::move(vertexBuffer)));
@@ -202,7 +231,7 @@ namespace GFX::Shape
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
-			aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords);
+			aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace);
 		if (!scene)
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
 

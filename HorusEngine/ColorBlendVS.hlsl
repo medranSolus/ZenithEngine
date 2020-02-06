@@ -1,9 +1,8 @@
 cbuffer TransformConstatBuffer
 {
-	matrix transform;
-	matrix scaling;
-	matrix view;
-	matrix projection;
+	matrix transformView;
+	matrix scalingTransformView;
+	matrix scalingTransformViewProjection;
 };
 
 struct VSOut
@@ -14,8 +13,8 @@ struct VSOut
 
 VSOut main(float3 pos : POSITION, float4 color : COLOR)
 {
-	VSOut vout;
-	vout.col = color;
-	vout.pos = mul(float4(pos, 1.0f), mul(mul(mul(scaling, transform), view), projection));
-	return vout;
+	VSOut vso;
+	vso.col = color;
+	vso.pos = mul(float4(pos, 1.0f), scalingTransformViewProjection);
+	return vso;
 }
