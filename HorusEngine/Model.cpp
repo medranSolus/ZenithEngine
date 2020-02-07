@@ -83,6 +83,7 @@ namespace GFX::Shape
 		// Maybe layout code needed too, TODO: Check this
 		binds.emplace_back(Resource::IndexBuffer::Get(gfx, meshID, std::move(indices)));
 
+		bool hasAlpha = false;
 		bool normals = mesh.HasNormals();
 		bool textureCoord = mesh.HasTextureCoords(0);
 		bool normalMap = false;
@@ -99,7 +100,9 @@ namespace GFX::Shape
 				{
 					noTexture = false;
 					binds.emplace_back(Resource::Sampler::Get(gfx));
-					binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str())));
+					std::shared_ptr<Resource::Texture> diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()));
+					//hasAlpha = diffuseTexture->HasAlpha();
+					binds.emplace_back(diffuseTexture);
 
 					normalMap = mesh.HasTangentsAndBitangents() && material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS;
 					if (normalMap)
@@ -199,6 +202,9 @@ namespace GFX::Shape
 		auto bytecodeVS = vertexShader->GetBytecode();
 		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
 		binds.emplace_back(vertexShader);
+
+		binds.emplace_back(Resource::Blender::Get(gfx, hasAlpha));
+		binds.emplace_back(Resource::Rasterizer::Get(gfx, hasAlpha));
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}

@@ -8,6 +8,11 @@ SamplerState splr;
 
 float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float2 tc : TEXCOORD) : SV_Target
 {
+	const float4 texColor = tex.Sample(splr, tc);
+	clip(texColor.a < 0.005f ? -1 : 1);
+	
+	if (dot(viewNormal, viewPos) >= 0.0f)
+		viewNormal *= -1.0f;
 	viewNormal = normalize(viewNormal);
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 	
@@ -21,5 +26,5 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float2 tc : T
 	const float specularPower = GetSampledSpecularPower(specularTex);
 	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, scaledLightColor, specularPower, specularIntensity);
 
-	return float4(saturate((diffuse + ambientColor) * tex.Sample(splr, tc).bgr + specular * specularTex.bgr), 1.0f);
+	return float4(saturate((diffuse + ambientColor) * texColor.bgr + specular * specularTex.bgr), texColor.a);
 }

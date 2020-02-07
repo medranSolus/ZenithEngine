@@ -225,6 +225,7 @@
     <ClCompile Include="BaseShape.cpp" />
     <ClCompile Include="BasicException.cpp" />
     <ClCompile Include="BasicObject.cpp" />
+    <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ConstantTransformBufferVS.cpp" />
@@ -256,6 +257,7 @@
     <ClCompile Include="PersonCamera.cpp" />
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
+    <ClCompile Include="Rasterizer.cpp" />
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
@@ -489,6 +491,7 @@
     <ClInclude Include="BaseShape.h" />
     <ClInclude Include="BasicException.h" />
     <ClInclude Include="BasicObject.h" />
+    <ClInclude Include="Blender.h" />
     <ClInclude Include="Box.h" />
     <ClInclude Include="Cameras.h" />
     <ClInclude Include="Codex.h" />
@@ -535,6 +538,7 @@
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="Primitives.h" />
+    <ClInclude Include="Rasterizer.h" />
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sampler.h" />

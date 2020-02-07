@@ -1,5 +1,4 @@
 #include "PixelShader.h"
-#include "Codex.h"
 #include "GfxExceptionMacros.h"
 #include "Utils.h"
 #include <d3dcompiler.h>

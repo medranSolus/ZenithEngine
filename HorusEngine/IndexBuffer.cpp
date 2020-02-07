@@ -1,5 +1,4 @@
 #include "IndexBuffer.h"
-#include "Codex.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Resource

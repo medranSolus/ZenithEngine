@@ -4,6 +4,10 @@
 
 float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL) : SV_Target
 {
+	clip(materialColor.a < 0.005f ? -1 : 1);
+	
+	if (dot(viewNormal, viewPos) >= 0.0f)
+		viewNormal *= -1.0f;
 	viewNormal = normalize(viewNormal);
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 	
@@ -13,5 +17,5 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL) : SV_Target
 	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal);
 	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, scaledLightColor, specularPower, specularIntensity);
 
-	return float4(saturate((diffuse + ambientColor + specular) * (float3) materialColor), 1.0f);
+	return saturate(float4(diffuse + ambientColor + specular, 1.0f) * materialColor);
 }

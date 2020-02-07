@@ -249,6 +249,12 @@
     <ClCompile Include="ConstantTransformBufferVSPS.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Blender.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Rasterizer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="LightConstantBuffer.hlsl">
@@ -752,6 +758,12 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ConstantTransformBufferVSPS.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Blender.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Rasterizer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>

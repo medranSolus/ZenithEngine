@@ -1,4 +1,5 @@
 #pragma once
+#include "Blender.h"
 #include "ConstantBuffer.h"
 #include "ConstantPixelBuffer.h"
 #include "ConstantTransformBufferVS.h"
@@ -7,6 +8,7 @@
 #include "IndexBuffer.h"
 #include "InputLayout.h"
 #include "PixelShader.h"
+#include "Rasterizer.h"
 #include "Sampler.h"
 #include "ShaderConstantBuffers.h"
 #include "Texture.h"
