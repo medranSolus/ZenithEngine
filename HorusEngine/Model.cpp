@@ -107,27 +107,27 @@ namespace GFX::Shape
 					normalMap = mesh.HasTangentsAndBitangents() && material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS;
 					if (normalMap)
 					{
-						vertexShader = Resource::VertexShader::Get(gfx, "TextureNormalPhongVS.cso");
+						vertexShader = Resource::VertexShader::Get(gfx, "PhongVSTextureNormal.cso");
 						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U));
 					}
 					else
-						vertexShader = Resource::VertexShader::Get(gfx, "TexturePhongVS.cso");
+						vertexShader = Resource::VertexShader::Get(gfx, "PhongVSTexture.cso");
 
 					if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 					{
 						// TODO: Check texture HasAlpha, otherwise get alpha from material and send via cbuff.
 						binds.emplace_back(Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 2U));
 						if (normalMap)
-							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureNormalSpecularPhongPS.cso"));
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureNormalSpecular.cso"));
 						else
-							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureSpecularPhongPS.cso"));
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureSpecular.cso"));
 					}
 					else
 					{
 						if (normalMap)
-							binds.emplace_back(Resource::PixelShader::Get(gfx, "TextureNormalPhongPS.cso"));
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureNormal.cso"));
 						else
-							binds.emplace_back(Resource::PixelShader::Get(gfx, "TexturePhongPS.cso"));
+							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTexture.cso"));
 						Resource::TexPhongPixelBuffer buffer;
 						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
 						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
@@ -204,7 +204,7 @@ namespace GFX::Shape
 		binds.emplace_back(vertexShader);
 
 		binds.emplace_back(Resource::Blender::Get(gfx, hasAlpha));
-		binds.emplace_back(Resource::Rasterizer::Get(gfx, hasAlpha));
+		//binds.emplace_back(Resource::Rasterizer::Get(gfx, hasAlpha));
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}

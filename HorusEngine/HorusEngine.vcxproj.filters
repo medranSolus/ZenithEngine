@@ -91,6 +91,12 @@
     <Filter Include="Shader Files\Vertex Shaders">
       <UniqueIdentifier>{5b774374-8c91-4580-b8c7-46baa3c9bd57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\Phong Extensions">
+      <UniqueIdentifier>{2cdee5d9-287c-4788-942e-a761c4175cc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Vertex Shaders\Phong Extensions">
+      <UniqueIdentifier>{d1ced4a9-83c7-4c7b-8c7d-d67124f464bd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -257,18 +263,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="LightConstantBuffer.hlsl">
-      <Filter>Shader Files\Buffers</Filter>
-    </FxCompile>
-    <FxCompile Include="PhongPixelBuffer.hlsl">
-      <Filter>Shader Files\Buffers</Filter>
-    </FxCompile>
-    <FxCompile Include="Utils.fx">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="TexPhongPixelBuffer.fx">
-      <Filter>Shader Files\Buffers</Filter>
-    </FxCompile>
     <FxCompile Include="ColorBlendPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
@@ -287,23 +281,23 @@
     <FxCompile Include="SolidVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="TextureNormalPhongPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders</Filter>
+    <FxCompile Include="PhongPSTexture.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="TextureNormalPhongVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
+    <FxCompile Include="PhongPSTextureNormal.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="TextureNormalSpecularPhongPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders</Filter>
+    <FxCompile Include="PhongPSTextureNormalSpecular.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="TexturePhongPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders</Filter>
+    <FxCompile Include="PhongPSTextureSpecular.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="TexturePhongVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
+    <FxCompile Include="PhongVSTexture.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="TextureSpecularPhongPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders</Filter>
+    <FxCompile Include="PhongVSTextureNormal.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -798,6 +792,18 @@
     </None>
     <None Include="..\AssImp\include\assimp\vector3.inl">
       <Filter>Header Files\AssImp</Filter>
+    </None>
+    <None Include="LightConstantBuffer.fx">
+      <Filter>Shader Files\Buffers</Filter>
+    </None>
+    <None Include="PhongPixelBuffer.fx">
+      <Filter>Shader Files\Buffers</Filter>
+    </None>
+    <None Include="TexPhongPixelBuffer.fx">
+      <Filter>Shader Files\Buffers</Filter>
+    </None>
+    <None Include="Utils.fx">
+      <Filter>Shader Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

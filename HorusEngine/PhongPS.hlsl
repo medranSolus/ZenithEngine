@@ -1,21 +1,58 @@
 #include "Utils.fx"
 #include "LightConstantBuffer.fx"
-#include "PhongPixelBuffer.fx"
 
-float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL) : SV_Target
+#ifdef _TEX
+#include "TexPhongPixelBuffer.fx"
+
+	SamplerState splr;
+	Texture2D tex;
+	#ifdef _TEX_NORMAL
+		Texture2D normalMap;
+	#endif
+	#ifdef _TEX_SPEC
+		Texture2D spec : register(t2);
+	#endif
+#else
+#include "PhongPixelBuffer.fx"
+#endif
+
+float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
+#ifdef _TEX
+	, float2 tc : TEXCOORD
+#ifdef _TEX_NORMAL
+	, float3 viewTan : TANGENT,
+	float3 viewBitan : BITANGENT
+#endif
+#endif
+) : SV_Target
 {
-	clip(materialColor.a < 0.005f ? -1 : 1);
+#ifdef _TEX
+	const float4 color = tex.Sample(splr, tc);
+#else
+	const float4 color = materialColor;
+#endif
+	clip(color.a - 0.0039f);
 	
+#ifdef _TEX_NORMAL
+	viewNormal = GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr);
+#else
+	viewNormal = normalize(viewNormal);
+#endif
 	if (dot(viewNormal, viewPos) >= 0.0f)
 		viewNormal *= -1.0f;
-	viewNormal = normalize(viewNormal);
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 	
 	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
 	const float3 scaledLightColor = lightColor * lightIntensity / attenuation;
-	
 	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal);
-	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, scaledLightColor, specularPower, specularIntensity);
+	
+	float3 specularColor = scaledLightColor;
+#ifdef _TEX_SPEC
+	const float4 specularTex = spec.Sample(splr, tc);
+	const float specularPower = GetSampledSpecularPower(specularTex);
+	specularColor *= specularTex.bgr;
+#endif
+	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, specularColor, specularPower, specularIntensity);
 
-	return saturate(float4(diffuse + ambientColor + specular, 1.0f) * materialColor);
+	return float4(saturate((diffuse + ambientColor) * color.bgr + specular), color.a);
 }

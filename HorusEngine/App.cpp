@@ -225,7 +225,7 @@ App::App() : window(width, height, windowTitle)
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));
 	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(-3.0f, -5.0f, 15.0f), "Nanosuit_tex"));
+	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 8.0f), "Nanosuit_tex", 0.78f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(6.0f, 5.0f, -15.0f), "Nanosuit"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));

@@ -12,7 +12,7 @@ namespace GFX::Resource
 		if (enabled)
 		{
 			blendTarget.BlendEnable = TRUE;
-			blendTarget.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+			blendTarget.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA; // Maybe ONE
 			blendTarget.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
 		}
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateBlendState(&blendDesc, &state));
