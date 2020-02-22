@@ -1,16 +1,16 @@
 #pragma once
 #include "SolidGlobe.h"
-#include "ConstantPixelBuffer.h"
-#include "ShaderConstantBuffers.h"
+#include "ConstBufferPixel.h"
+#include "ShaderCBuffers.h"
 #include "ICamera.h"
 
 namespace GFX::Light
 {
 	class PointLight : public IObject
 	{
-		mutable Resource::LightConstantBuffer lightBuffer;
+		mutable Resource::LightCBuffer lightBuffer;
 		mutable Shape::SolidGlobe mesh;
-		mutable Resource::ConstantPixelBuffer<Resource::LightConstantBuffer> buffer;
+		mutable Resource::ConstBufferPixel<Resource::LightCBuffer> buffer;
 
 	public:
 		PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);

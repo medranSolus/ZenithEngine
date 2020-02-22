@@ -232,8 +232,7 @@
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Color.cpp" />
-    <ClCompile Include="ConstantTransformBufferVS.cpp" />
-    <ClCompile Include="ConstantTransformBufferVSPS.cpp" />
+    <ClCompile Include="ConstBufferTransform.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="GfxObject.cpp" />
@@ -290,7 +289,13 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <None Include="LightConstantBuffer.fx">
+    <None Include="SolidCBuffer.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="TransformCBuffer.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="LightCBuffer.fx">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -305,7 +310,7 @@
       </EntryPointName>
       <FileType>Document</FileType>
     </None>
-    <None Include="PhongPixelBuffer.fx">
+    <None Include="PhongCBuffer.fx">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -320,7 +325,7 @@
       </EntryPointName>
       <FileType>Document</FileType>
     </None>
-    <None Include="TexPhongPixelBuffer.fx">
+    <None Include="TexPhongCBuffer.fx">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -499,11 +504,10 @@
     <ClInclude Include="Cameras.h" />
     <ClInclude Include="Codex.h" />
     <ClInclude Include="Color.h" />
-    <ClInclude Include="ConstantBuffer.h" />
-    <ClInclude Include="ConstantPixelBuffer.h" />
-    <ClInclude Include="ConstantTransformBufferVS.h" />
-    <ClInclude Include="ConstantTransformBufferVSPS.h" />
-    <ClInclude Include="ConstantVertexBuffer.h" />
+    <ClInclude Include="ConstBuffer.h" />
+    <ClInclude Include="ConstBufferPixel.h" />
+    <ClInclude Include="ConstBufferTransform.h" />
+    <ClInclude Include="ConstBufferVertex.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="DXGIDebugInfoManager.h" />
     <ClInclude Include="FloatingCamera.h" />
@@ -544,7 +548,7 @@
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sampler.h" />
-    <ClInclude Include="ShaderConstantBuffers.h" />
+    <ClInclude Include="ShaderCBuffers.h" />
     <ClInclude Include="Shapes.h" />
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Sphere.h" />

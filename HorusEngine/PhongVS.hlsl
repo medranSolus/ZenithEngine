@@ -1,8 +1,4 @@
-cbuffer TransformConstatBuffer
-{
-	matrix transformView;
-	matrix transformViewProjection;
-};
+#include "TransformCBuffer.fx"
 
 struct VSOut
 {

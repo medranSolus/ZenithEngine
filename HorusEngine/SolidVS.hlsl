@@ -1,8 +1,4 @@
-cbuffer TransformConstatBuffer
-{
-	matrix transformView;
-	matrix transformViewProjection;
-};
+#include "TransformCBuffer.fx"
 
 float4 main(float3 pos : POSITION) : SV_Position
 {

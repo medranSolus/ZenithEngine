@@ -91,7 +91,7 @@ namespace GFX::Shape
 		if (normals)
 		{
 			bool noTexture = true;
-			Resource::PhongPixelBuffer buffer;
+			Resource::PhongCBuffer buffer;
 			if (textureCoord && mesh.mMaterialIndex >= 0)
 			{
 				aiMaterial& material = *materials[mesh.mMaterialIndex];
@@ -128,12 +128,12 @@ namespace GFX::Shape
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureNormal.cso"));
 						else
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTexture.cso"));
-						Resource::TexPhongPixelBuffer buffer;
+						Resource::TexPhongCBuffer buffer;
 						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
 						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
 							buffer.specularIntensity = 0.9f;
 						// Maybe path needed too, TOD: Check this
-						binds.emplace_back(Resource::ConstantPixelBuffer<Resource::TexPhongPixelBuffer>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
+						binds.emplace_back(Resource::ConstBufferPixel<Resource::TexPhongCBuffer>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
 					}
 				}
 				else
@@ -155,7 +155,7 @@ namespace GFX::Shape
 					buffer.specularPower = 40.0f;
 				vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 				binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
-				binds.emplace_back(Resource::ConstantPixelBuffer<Resource::PhongPixelBuffer>::Get(gfx, path + meshID, buffer, 1U));
+				binds.emplace_back(Resource::ConstBufferPixel<Resource::PhongCBuffer>::Get(gfx, path + meshID, buffer, 1U));
 			}
 		}
 		else

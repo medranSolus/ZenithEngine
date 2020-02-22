@@ -5,7 +5,7 @@
 namespace GFX::Resource
 {
 	template<typename T>
-	class ConstantBuffer : public IBindable
+	class ConstBuffer : public IBindable
 	{
 	protected:
 		UINT slot;
@@ -13,11 +13,11 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
 
 	public:
-		ConstantBuffer(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
-		ConstantBuffer(Graphics& gfx, const std::string& tag, UINT slot = 0U);
-		ConstantBuffer(const ConstantBuffer&) = delete;
-		ConstantBuffer& operator=(const ConstantBuffer&) = delete;
-		virtual ~ConstantBuffer() = default;
+		ConstBuffer(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
+		ConstBuffer(Graphics& gfx, const std::string& tag, UINT slot = 0U);
+		ConstBuffer(const ConstBuffer&) = delete;
+		ConstBuffer& operator=(const ConstBuffer&) = delete;
+		virtual ~ConstBuffer() = default;
 
 		constexpr UINT GetSlot() const noexcept { return slot; }
 
@@ -25,7 +25,7 @@ namespace GFX::Resource
 	};
 
 	template<typename T>
-	inline ConstantBuffer<T>::ConstantBuffer(Graphics& gfx, const std::string& tag, const T& values, UINT slot)
+	inline ConstBuffer<T>::ConstBuffer(Graphics& gfx, const std::string& tag, const T& values, UINT slot)
 		: slot(slot), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);
@@ -42,7 +42,7 @@ namespace GFX::Resource
 	}
 
 	template<typename T>
-	inline ConstantBuffer<T>::ConstantBuffer(Graphics& gfx, const std::string& tag, UINT slot)
+	inline ConstBuffer<T>::ConstBuffer(Graphics& gfx, const std::string& tag, UINT slot)
 		: slot(slot), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);
@@ -57,7 +57,7 @@ namespace GFX::Resource
 	}
 
 	template<typename T>
-	inline void ConstantBuffer<T>::Update(Graphics& gfx, const T& values)
+	inline void ConstBuffer<T>::Update(Graphics& gfx, const T& values)
 	{
 		GFX_ENABLE_ALL(gfx);
 		D3D11_MAPPED_SUBRESOURCE subres;

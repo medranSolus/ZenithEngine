@@ -3,13 +3,13 @@
 
 namespace GFX::Resource
 {
-	struct TransformConstatBuffer
+	struct TransformCBuffer
 	{
 		DirectX::XMMATRIX transformView;
 		DirectX::XMMATRIX transformViewProjection;
 	};
 
-	struct LightConstantBuffer
+	struct LightCBuffer
 	{
 		DirectX::XMFLOAT3 ambientColor;
 		float atteuationConst;
@@ -21,7 +21,7 @@ namespace GFX::Resource
 		float padding[3] = { 0.0f };
 	};
 
-	struct PhongPixelBuffer
+	struct PhongCBuffer
 	{
 		BasicType::ColorFloat4 materialColor;
 		float specularIntensity;	// The bigger the brighter
@@ -29,14 +29,14 @@ namespace GFX::Resource
 		float padding[2]{ 0.0f };
 	};
 
-	struct TexPhongPixelBuffer
+	struct TexPhongCBuffer
 	{
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2]{ 0.0f };
 	};
 
-	struct SolidPixelBuffer
+	struct SolidCBuffer
 	{
 		BasicType::ColorFloat4 materialColor;
 	};

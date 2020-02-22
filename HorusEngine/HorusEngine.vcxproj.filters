@@ -85,9 +85,6 @@
     <Filter Include="Shader Files\Pixel Shaders">
       <UniqueIdentifier>{9a40133e-2ef8-43f5-b3db-5dbaf354a4fb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader Files\Buffers">
-      <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader Files\Vertex Shaders">
       <UniqueIdentifier>{5b774374-8c91-4580-b8c7-46baa3c9bd57}</UniqueIdentifier>
     </Filter>
@@ -96,6 +93,9 @@
     </Filter>
     <Filter Include="Shader Files\Vertex Shaders\Phong Extensions">
       <UniqueIdentifier>{d1ced4a9-83c7-4c7b-8c7d-d67124f464bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\CBuffers">
+      <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -246,16 +246,13 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp">
       <Filter>Source Files\GFX\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="ConstantTransformBufferVS.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="ConstantTransformBufferVSPS.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Blender.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Rasterizer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferTransform.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
   </ItemGroup>
@@ -295,6 +292,12 @@
     </FxCompile>
     <FxCompile Include="PhongVSTextureNormal.hlsl">
       <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="TransformCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
+    </FxCompile>
+    <FxCompile Include="SolidCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -336,15 +339,6 @@
     </ClInclude>
     <ClInclude Include="Color.h">
       <Filter>Header Files\GFX\BasicType</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantBuffer.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantPixelBuffer.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantVertexBuffer.h">
-      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Cube.h">
       <Filter>Header Files\GFX\Primitive</Filter>
@@ -476,9 +470,6 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderConstantBuffers.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
@@ -742,16 +733,25 @@
     <ClInclude Include="..\AssImp\include\assimp\Compiler\pushpack1.h">
       <Filter>Header Files\AssImp\Compiler</Filter>
     </ClInclude>
-    <ClInclude Include="ConstantTransformBufferVS.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantTransformBufferVSPS.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Blender.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Rasterizer.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderCBuffers.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBuffer.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferPixel.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferTransform.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferVertex.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
@@ -787,17 +787,17 @@
     <None Include="..\AssImp\include\assimp\vector3.inl">
       <Filter>Header Files\AssImp</Filter>
     </None>
-    <None Include="LightConstantBuffer.fx">
-      <Filter>Shader Files\Buffers</Filter>
-    </None>
-    <None Include="PhongPixelBuffer.fx">
-      <Filter>Shader Files\Buffers</Filter>
-    </None>
-    <None Include="TexPhongPixelBuffer.fx">
-      <Filter>Shader Files\Buffers</Filter>
-    </None>
     <None Include="Utils.fx">
       <Filter>Shader Files</Filter>
+    </None>
+    <None Include="LightCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
+    </None>
+    <None Include="PhongCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
+    </None>
+    <None Include="TexPhongCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

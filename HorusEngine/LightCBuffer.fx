@@ -1,4 +1,4 @@
-cbuffer LightConstantBuffer
+cbuffer LightBuffer
 {
 	float3 ambientColor;
 	float atteuationConst;

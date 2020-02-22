@@ -1,8 +1,8 @@
 #include "Utils.fx"
-#include "LightConstantBuffer.fx"
+#include "LightCBuffer.fx"
 
 #ifdef _TEX
-#include "TexPhongPixelBuffer.fx"
+#include "TexPhongCBuffer.fx"
 
 	SamplerState splr;
 	Texture2D tex;
@@ -13,7 +13,7 @@
 		Texture2D spec : register(t2);
 	#endif
 #else
-#include "PhongPixelBuffer.fx"
+#include "PhongCBuffer.fx"
 #endif
 
 float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL

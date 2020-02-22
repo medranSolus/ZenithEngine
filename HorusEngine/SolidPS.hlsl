@@ -1,7 +1,4 @@
-cbuffer SolidPixelBuffer
-{
-	float4 materialColor;
-};
+#include "SolidCBuffer.fx"
 
 float4 main() : SV_Target
 {
