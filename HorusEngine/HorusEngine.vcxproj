@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -141,7 +141,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -176,7 +176,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -211,7 +211,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -236,7 +236,6 @@
     <ClCompile Include="ConstantTransformBufferVSPS.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
-    <ClCompile Include="GDIPlusManager.cpp" />
     <ClCompile Include="GfxObject.cpp" />
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="Graphics.cpp" />
@@ -508,7 +507,6 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="DXGIDebugInfoManager.h" />
     <ClInclude Include="FloatingCamera.h" />
-    <ClInclude Include="GDIPlusManager.h" />
     <ClInclude Include="GfxExceptionMacros.h" />
     <ClInclude Include="GfxObject.h" />
     <ClInclude Include="GfxResources.h" />
@@ -633,6 +631,7 @@
     <Import Project="..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets" Condition="Exists('..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets')" />
     <Import Project="..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets" Condition="Exists('..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets')" />
     <Import Project="..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets" Condition="Exists('..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -681,5 +680,6 @@
     <Error Condition="!Exists('..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets'))" />
     <Error Condition="!Exists('..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets'))" />
     <Error Condition="!Exists('..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets'))" />
   </Target>
 </Project>

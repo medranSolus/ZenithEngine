@@ -5,7 +5,6 @@
 #define GFX_ENABLE_EXCEPT() HRESULT __hResult
 // Before using needs call to GFX_ENABLE_EXCET()
 #define	GFX_THROW_FAILED_NOINFO(call) if( FAILED(__hResult = (call))) throw GFX::Graphics::GraphicsException(__LINE__, __FILE__, __hResult)
-// Before using needs call to GFX_ENABLE_EXCET()
 #define	GFX_EXCEPT_NOINFO(code) GFX::Graphics::GraphicsException(__LINE__, __FILE__, code)
 
 #ifdef _DEBUG

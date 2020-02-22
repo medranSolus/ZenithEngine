@@ -19,7 +19,7 @@ namespace Exception
 		DWORD msgLen = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
 			nullptr, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPTSTR>(&msgBuffer), 0, nullptr);
 		if (msgLen == 0)
-			return "Unidentified error code\n";
+			return "Unknown error code\n";
 		std::string error = msgBuffer;
 		LocalFree(msgBuffer);
 		return error;

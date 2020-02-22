@@ -10,8 +10,8 @@ namespace GFX::Resource
 		Surface surface(path);
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		alpha = surface.HasAlpha();
-		textureDesc.Width = surface.GetWidth();
-		textureDesc.Height = surface.GetHeight();
+		textureDesc.Width = static_cast<UINT>(surface.GetWidth());
+		textureDesc.Height = static_cast<UINT>(surface.GetHeight());
 		textureDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM; // Same as backbuffer
 		textureDesc.MipLevels = 0;
 		textureDesc.ArraySize = 1;
@@ -24,7 +24,7 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateTexture2D(&textureDesc, nullptr, &texture));
 
-		GetContext(gfx)->UpdateSubresource(texture.Get(), 0U, nullptr, surface.GetBuffer(), surface.GetWidth() * sizeof(Surface::Pixel), 0U);
+		GetContext(gfx)->UpdateSubresource(texture.Get(), 0U, nullptr, surface.GetBuffer(), static_cast<UINT>(surface.GetWidth() * sizeof(Surface::Pixel)), 0U);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
 		viewDesc.Format = textureDesc.Format;

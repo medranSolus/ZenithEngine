@@ -1,105 +1,70 @@
 #include "Surface.h"
-#define USE_WINDOWS_DEFINES
-#include "WinAPI.h"
 #include "Utils.h"
-#include <gdiplus.h>
-#include <fstream>
-#include <cassert>
+#include <filesystem>
 
-#define IMG_THROW_EXCEPT(info) throw ImageException(__LINE__, __FILE__, info)
+#define IMG_EXCEPT(info) GFX::Surface::ImageException(__LINE__, __FILE__, info)
+// Enables useage of IMG_ macros in current scope
+#define DXT_ENABLE_EXCEPT() HRESULT __hResult
+// Before using needs call to DXT_ENABLE_EXCEPT()
+#define DXT_EXCEPT(info) GFX::Surface::DirectXTexException(__LINE__, __FILE__, __hResult, info)
+// Before using needs call to DXT_ENABLE_EXCEPT()
+#define	DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw DXT_EXCEPT(info)
 
 namespace GFX
 {
 	Surface::Surface(const std::string& name)
 	{
-		Gdiplus::Bitmap bitmap(toUtf8(name).c_str());
-		if (bitmap.GetLastStatus() != Gdiplus::Status::Ok)
-			IMG_THROW_EXCEPT("Loading image \"" + name + "\": failed.");
+		DXT_ENABLE_EXCEPT();
+		DXT_THROW_FAILED(DirectX::LoadFromWICFile(toUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
+			"Loading image \"" + name + "\": failed.");
+		image = scratch.GetImage(0, 0, 0);
 
-		width = bitmap.GetWidth();
-		height = bitmap.GetHeight();
-		buffer = std::make_unique<Pixel[]>(static_cast<size_t>(width) * height);
-		for (unsigned int y = 0; y < height; ++y)
+		if (image->format != pixelFormat)
 		{
-			for (unsigned int x = 0; x < width; ++x)
-			{
-				Gdiplus::Color c;
-				bitmap.GetPixel(x, y, &c);
-				buffer[y * width + x] = c.GetValue();
-				if (c.GetAlpha() != 255)
-					alpha = true;
-			}
+			DirectX::ScratchImage converted;
+			DXT_THROW_FAILED(DirectX::Convert(*image, pixelFormat, DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted),
+				"Converting image \"" + name + "\": failed.");
+			scratch = std::move(converted);
+			image = scratch.GetImage(0, 0, 0);
 		}
 	}
 
-	Surface& Surface::operator=(Surface&& surface) noexcept
+	Surface::Surface(size_t width, size_t height)
 	{
-		width = surface.width;
-		height = surface.height;
-		buffer = std::move(surface.buffer);
-		surface.buffer = nullptr;
-		return *this;
-	}
-
-	constexpr void Surface::PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG)
-	{
-		assert(x >= 0);
-		assert(y >= 0);
-		assert(x < width);
-		assert(y < height);
-		buffer[y * width + x] = c;
-	}
-
-	constexpr Surface::Pixel Surface::GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG)
-	{
-		assert(x >= 0);
-		assert(y >= 0);
-		assert(x < width);
-		assert(y < height);
-		return buffer[y * width + x];
-	}
-
-	inline void Surface::Copy(const Surface& surface) noexcept(!IS_DEBUG)
-	{
-		assert(width >= surface.width);
-		assert(height >= surface.height);
-		memcpy(buffer.get(), surface.buffer.get(), surface.width * surface.height * sizeof(Pixel));
+		DXT_ENABLE_EXCEPT();
+		DXT_THROW_FAILED(scratch.Initialize2D(pixelFormat, width, height, 1U, 1U),
+			"Creating image " + std::to_string(width) + "x" + std::to_string(height) + ": failed.");
+		image = scratch.GetImage(0, 0, 0);
 	}
 
 	void Surface::Save(const std::string& filename) const
 	{
-		// https://docs.microsoft.com/en-gb/windows/win32/gdiplus/-gdiplus-retrieving-the-class-identifier-for-an-encoder-use?redirectedfrom=MSDN
-
-		CLSID clsId;
-		const WCHAR* format = L"image/png";
-		UINT num = 0;  // number of image encoders
-		UINT size = 0; // size of the image encoder array in bytes
-		Gdiplus::ImageCodecInfo* imgCodecInfo = nullptr;
-		Gdiplus::GetImageEncodersSize(&num, &size);
-		if (size == 0)
-			IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot get encoder size.");
-		imgCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));
-		if (imgCodecInfo == nullptr)
-			IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot allocate memory.");
-
-		GetImageEncoders(num, size, imgCodecInfo);
-		for (UINT i = 0; i < num; ++i)
+		DXT_ENABLE_EXCEPT();
+		const auto GetCodecID = [](const std::string& filename) -> DirectX::WICCodecs
 		{
-			if (wcscmp(imgCodecInfo[i].MimeType, format) == 0)
-			{
-				clsId = imgCodecInfo[i].Clsid;
-				free(imgCodecInfo);
-				Gdiplus::Bitmap bitmap(width, height, width * sizeof(Pixel), PixelFormat32bppARGB, (BYTE*)buffer.get());
-				if (bitmap.Save(boost::locale::conv::to_utf<wchar_t>(filename, "UTF-8").c_str(), &clsId, nullptr) != Gdiplus::Status::Ok)
-					IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": failed to save.");
-				return;
-			}
-		}
-		free(imgCodecInfo);
-		IMG_THROW_EXCEPT("Saving surface to \"" + filename + "\": cannot find matching encoder <" +
-			boost::locale::conv::from_utf(format, "UTF-8") + ">.");
+			const std::filesystem::path path = filename;
+			const std::string ext = path.extension().string();
+			if (ext == ".png")
+				return DirectX::WICCodecs::WIC_CODEC_PNG;
+			else if (ext == ".jpg" || ext == ".jpeg")
+				return DirectX::WICCodecs::WIC_CODEC_JPEG;
+			else if (ext == ".bmp")
+				return DirectX::WICCodecs::WIC_CODEC_BMP;
+			else if (ext == ".tif" || ext == ".tiff")
+				return DirectX::WICCodecs::WIC_CODEC_TIFF;
+			else if (ext == ".ico")
+				return DirectX::WICCodecs::WIC_CODEC_ICO;
+			else if (ext == ".gif")
+				return DirectX::WICCodecs::WIC_CODEC_GIF;
+			else if (ext == ".hdp" || ext == ".jxr" || ext == ".wdp")
+				return DirectX::WICCodecs::WIC_CODEC_WMP;
+			throw IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
+		};
+		DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)),toUtf8(filename).c_str()),
+			"Saving surface to \"" + filename + "\": failed to save.");
 	}
 
+#pragma region Exception
 	const char* Surface::ImageException::what() const noexcept
 	{
 		std::ostringstream stream;
@@ -108,4 +73,14 @@ namespace GFX
 		whatBuffer = stream.str();
 		return whatBuffer.c_str();
 	}
+
+	const char* Surface::DirectXTexException::what() const noexcept
+	{
+		std::ostringstream stream;
+		stream << this->WinApiException::what()
+			<< "\n[Image Info] " << GetImageInfo();
+		whatBuffer = stream.str();
+		return whatBuffer.c_str();
+	}
+#pragma endregion
 }

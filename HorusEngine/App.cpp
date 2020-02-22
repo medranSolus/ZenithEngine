@@ -212,7 +212,7 @@ void App::MakeFrame()
 	window.Gfx().EndFrame();
 }
 
-App::App() : window(width, height, windowTitle)
+App::App(const std::string& commandLine) : window(width, height, windowTitle)
 {
 	objects.emplace("---None---", nullptr);
 	camera = std::make_unique<Camera::PersonCamera>(1.047f, GetRatio(), 0.01f, viewDistance);

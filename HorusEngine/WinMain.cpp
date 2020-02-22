@@ -8,7 +8,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	try
 	{
 		srand(static_cast<unsigned int>(time(NULL)));
-		return static_cast<int>(App{}.Run());
+		return static_cast<int>(App(lpCmdLine).Run());
 	}
 	catch (const Exception::BasicException & e)
 	{

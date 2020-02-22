@@ -1,6 +1,8 @@
 #pragma once
-#include "BasicException.h"
+#include "WinApiException.h"
+#include <DirectXTex.h>
 #include <memory>
+#include <cassert>
 
 namespace GFX
 {
@@ -9,63 +11,59 @@ namespace GFX
 	public:
 		class Pixel
 		{
-			// ARGB
-			unsigned int dword = 255 << 24U;
+			// RGBA
+			uint32_t dword = 255 << 24U;
 
 		public:
 
 			Pixel() = default;
 			constexpr Pixel(const Pixel& p) noexcept : dword(p.dword) {}
-			constexpr Pixel(unsigned int dw) noexcept : dword(dw) {}
-			constexpr Pixel(unsigned char r, unsigned char g, unsigned char b) noexcept : dword((r << 16U) | (g << 8U) | b) {}
-			constexpr Pixel(unsigned char a, unsigned char r, unsigned char g, unsigned char b) noexcept : dword((a << 24U) | (r << 16U) | (g << 8U) | b) {}
-			constexpr Pixel(Pixel col, unsigned char a) noexcept : Pixel((a << 24U) | col.dword) {}
+			constexpr Pixel(uint32_t dw) noexcept : dword(dw) {}
+			constexpr Pixel(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept : dword((a << 24U) | (b << 16U) | (g << 8U) | r) {}
+			constexpr Pixel(Pixel col, uint8_t a) noexcept : Pixel((a << 24U) | col.dword) {}
 			constexpr Pixel& operator=(const Pixel& color) noexcept { dword = color.dword; return *this; }
 
-			constexpr unsigned int GetValue() const noexcept { return dword; }
-			constexpr unsigned char GetA() const noexcept { return dword >> 24U; }
-			constexpr unsigned char GetR() const noexcept { return (dword >> 16U) & 0xFFU; }
-			constexpr unsigned char GetG() const noexcept { return (dword >> 8U) & 0xFFU; }
-			constexpr unsigned char GetB() const noexcept { return dword & 0xFFU; }
+			constexpr uint32_t GetValue() const noexcept { return dword; }
+			constexpr uint8_t GetA() const noexcept { return dword >> 24U; }
+			constexpr uint8_t GetR() const noexcept { return (dword >> 16U) & 0xFFU; }
+			constexpr uint8_t GetG() const noexcept { return (dword >> 8U) & 0xFFU; }
+			constexpr uint8_t GetB() const noexcept { return dword & 0xFFU; }
 
-			constexpr void SetA(unsigned char x) noexcept { dword = (dword & 0x00FFFFFFU) | (x << 24U); }
-			constexpr void SetR(unsigned char r) noexcept { dword = (dword & 0xFF00FFFFU) | (r << 16U); }
-			constexpr void SetG(unsigned char g) noexcept { dword = (dword & 0xFFFF00FFU) | (g << 8U); }
-			constexpr void SetB(unsigned char b) noexcept { dword = (dword & 0xFFFFFF00U) | b; }
+			constexpr void SetA(uint8_t x) noexcept { dword = (dword & 0x00FFFFFFU) | (x << 24U); }
+			constexpr void SetR(uint8_t r) noexcept { dword = (dword & 0xFF00FFFFU) | (r << 16U); }
+			constexpr void SetG(uint8_t g) noexcept { dword = (dword & 0xFFFF00FFU) | (g << 8U); }
+			constexpr void SetB(uint8_t b) noexcept { dword = (dword & 0xFFFFFF00U) | b; }
 		};
 
 	private:
-		std::unique_ptr<Pixel[]> buffer;
-		unsigned int width;
-		unsigned int height;
-		bool alpha = false;
+		static constexpr DXGI_FORMAT pixelFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
 
-		inline Surface(unsigned int width, unsigned int height, std::unique_ptr<Pixel[]> bufferParam) noexcept
-			: buffer(std::move(bufferParam)), width(width), height(height) {}
-
+		DirectX::ScratchImage scratch;
+		const DirectX::Image* image;
+		
 	public:
 		Surface(const std::string& name);
-		Surface(unsigned int width, unsigned int height) noexcept : buffer(std::make_unique<Pixel[]>(width* height)), width(width), height(height) {}
-		Surface(Surface&& surface) noexcept : buffer(std::move(surface.buffer)), width(surface.width), height(surface.height) {}
+		Surface(size_t width, size_t height);
+		Surface(Surface&& surface) noexcept = default;
 		Surface(const Surface&) = delete;
-		Surface& operator=(Surface&& surface) noexcept;
+		Surface& operator=(Surface&& surface) noexcept = default;
 		Surface& operator=(const Surface&) = delete;
 		~Surface() = default;
 
-		constexpr unsigned int GetWidth() const noexcept { return width; }
-		constexpr unsigned int GetHeight() const noexcept { return height; }
-		constexpr bool HasAlpha() const noexcept { return alpha; }
-		inline Pixel* GetBuffer() noexcept { return buffer.get(); }
-		inline const Pixel* GetBuffer() const noexcept { return buffer.get(); }
-		inline void Clear(const Pixel& value) noexcept { memset(buffer.get(), value.GetValue(), width * height * sizeof(Pixel)); }
+		constexpr size_t GetWidth() const noexcept { return image->width; }
+		constexpr size_t GetHeight() const noexcept { return image->height; }
+		inline bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
+		inline Pixel* GetBuffer() noexcept { return reinterpret_cast<Pixel*>(image->pixels); }
+		inline const Pixel* GetBuffer() const noexcept { return reinterpret_cast<const Pixel*>(image->pixels); }
+		inline void Clear(const Pixel& value) noexcept { memset(GetBuffer(), value.GetValue(), GetWidth() * GetHeight() * sizeof(Pixel)); }
 
-		constexpr void PutPixel(unsigned int x, unsigned int y, Pixel c) noexcept(!IS_DEBUG);
-		constexpr Pixel GetPixel(unsigned int x, unsigned int y) const noexcept(!IS_DEBUG);
-		inline void Copy(const Surface& surface) noexcept(!IS_DEBUG);
-
+		constexpr void PutPixel(size_t x, size_t y, Pixel c) noexcept(!IS_DEBUG);
+		constexpr Pixel GetPixel(size_t x, size_t y) const noexcept(!IS_DEBUG);
+		
 		void Save(const std::string& filename) const;
 
-		class ImageException : public Exception::BasicException
+#pragma region Exception
+		class ImageException : public virtual Exception::BasicException
 		{
 			std::string info;
 
@@ -78,5 +76,35 @@ namespace GFX
 
 			const char* what() const noexcept override;
 		};
+
+		class DirectXTexException : public ImageException, public Exception::WinApiException
+		{
+		public:
+			DirectXTexException(unsigned int line, const char* file, HRESULT hResult, std::string note) noexcept
+				: BasicException(line, file), ImageException(line, file, note), WinApiException(line, file, hResult) {}
+
+			inline const char* GetType() const noexcept override { return "DirectXTex Exception"; }
+
+			const char* what() const noexcept override;
+		};
+#pragma endregion
 	};
+
+	constexpr void Surface::PutPixel(size_t x, size_t y, Pixel c) noexcept(!IS_DEBUG)
+	{
+		assert(x >= 0);
+		assert(y >= 0);
+		assert(x < GetWidth());
+		assert(y < GetHeight());
+		GetBuffer()[y * GetWidth() + x] = c;
+	}
+
+	constexpr Surface::Pixel Surface::GetPixel(size_t x, size_t y) const noexcept(!IS_DEBUG)
+	{
+		assert(x >= 0);
+		assert(y >= 0);
+		assert(x < GetWidth());
+		assert(y < GetHeight());
+		return GetBuffer()[y * GetWidth() + x];
+	}
 }

@@ -3,6 +3,7 @@
 DirectX 11 graphics engine.
 
 **IDE:** Visual Studio 2019
+
 **Code style and formatting:** Provided by VS extension [CodeMaid](http://www.codemaid.net/)
 
 **External libraries:**

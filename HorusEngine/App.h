@@ -34,7 +34,7 @@ class App
 	void MakeFrame();
 
 public:
-	App();
+	App(const std::string& commandLine = "");
 	App(const App&) = delete;
 	App& operator=(const App&) = delete;
 	~App() = default;

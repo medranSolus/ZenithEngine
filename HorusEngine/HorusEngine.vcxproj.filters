@@ -138,9 +138,6 @@
     <ClCompile Include="FloatingCamera.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="GDIPlusManager.cpp">
-      <Filter>Source Files\WinAPI</Filter>
-    </ClCompile>
     <ClCompile Include="GfxObject.cpp">
       <Filter>Source Files\GFX</Filter>
     </ClCompile>
@@ -357,9 +354,6 @@
     </ClInclude>
     <ClInclude Include="FloatingCamera.h">
       <Filter>Header Files\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="GDIPlusManager.h">
-      <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
     <ClInclude Include="GfxExceptionMacros.h">
       <Filter>Header Files\Exception</Filter>

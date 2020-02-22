@@ -38,8 +38,9 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 #else
 	viewNormal = normalize(viewNormal);
 #endif
-	if (dot(viewNormal, viewPos) >= 0.0f)
-		viewNormal *= -1.0f;
+	// Only for double sided objects
+	//if (dot(viewNormal, viewPos) >= 0.0f)
+	//	viewNormal *= -1.0f;
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 	
 	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
@@ -50,9 +51,9 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr, tc);
 	const float specularPower = GetSampledSpecularPower(specularTex);
-	specularColor *= specularTex.bgr;
+	specularColor *= specularTex.rgb;
 #endif
 	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, specularColor, specularPower, specularIntensity);
 
-	return float4(saturate((diffuse + ambientColor) * color.bgr + specular), color.a);
+	return float4(saturate((diffuse + ambientColor) * color.rgb + specular), color.a);
 }
