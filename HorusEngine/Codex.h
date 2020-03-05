@@ -8,21 +8,21 @@ namespace GFX::Resource
 	{
 		std::unordered_map<std::string, std::shared_ptr<IBindable>> binds;
 
-		static inline Codex& Get() noexcept;
+		static inline Codex& Get() noexcept
+		{
+			static Codex codex;
+			return codex;
+		}
 
 		template<typename T, typename ...Params>
 		std::shared_ptr<T> Find(Graphics& gfx, Params&& ...p) noexcept;
+
+		Codex() = default;
 
 	public:
 		template<typename T, typename ...Params>
 		static inline std::shared_ptr<T> Resolve(Graphics& gfx, Params&& ...p) noexcept;
 	};
-
-	Codex& Codex::Get() noexcept
-	{
-		static Codex codex;
-		return codex;
-	}
 
 	template<typename T, typename ...Params>
 	inline std::shared_ptr<T> Codex::Find(Graphics& gfx, Params&& ...p) noexcept

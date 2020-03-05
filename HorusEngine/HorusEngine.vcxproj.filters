@@ -267,6 +267,18 @@
     <ClCompile Include="DCBLayout.cpp">
       <Filter>Source Files\GFX\Data\CBuffer</Filter>
     </ClCompile>
+    <ClCompile Include="DynamicCBuffer.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="DCBLayoutCodex.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="DCBElement.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="DCBElementConst.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -769,13 +781,22 @@
     <ClInclude Include="DCBLayoutElement.h">
       <Filter>Header Files\GFX\Data\CBuffer</Filter>
     </ClInclude>
-    <ClInclude Include="IDCBLayout.h">
-      <Filter>Header Files\GFX\Data\CBuffer</Filter>
-    </ClInclude>
     <ClInclude Include="DCBLayout.h">
       <Filter>Header Files\GFX\Data\CBuffer</Filter>
     </ClInclude>
     <ClInclude Include="DCBLayoutFinal.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBLayoutBase.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBElement.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBLayoutCodex.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBElementConst.h">
       <Filter>Header Files\GFX\Data\CBuffer</Filter>
     </ClInclude>
   </ItemGroup>

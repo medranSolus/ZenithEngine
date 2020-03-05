@@ -39,10 +39,10 @@ namespace GFX
 		constexpr GUIManager& Gui() noexcept { return guiManager; }
 		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
 		constexpr DirectX::XMMATRIX& GetProjection() noexcept { return projection; }
-		constexpr void SetProjection(DirectX::FXMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
+		constexpr void SetProjection(DirectX::XMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
 		constexpr DirectX::FXMMATRIX GetCamera() const noexcept { return camera; }
 		constexpr DirectX::XMMATRIX& GetCamera() noexcept { return camera; }
-		constexpr void SetCamera(DirectX::FXMMATRIX cameraMatrix) noexcept { camera = std::move(cameraMatrix); }
+		constexpr void SetCamera(DirectX::XMMATRIX cameraMatrix) noexcept { camera = std::move(cameraMatrix); }
 		constexpr void EnableGUI() noexcept { guiEnabled = true; }
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }
