@@ -48,7 +48,7 @@ namespace GFX::Shape
 
 			void Show() noexcept;
 		};
-		
+
 		std::string name = "";
 		std::unique_ptr<Window> window = nullptr;
 		std::unique_ptr<Node> root = nullptr;

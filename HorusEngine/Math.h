@@ -49,7 +49,7 @@ inline float rand01(std::mt19937_64& eng)
 	return std::uniform_real_distribution<float>(0.0f, 1.0f)(eng);
 }
 
-inline GFX::BasicType::ColorFloat4 randColor(std::mt19937_64& eng)
+inline GFX::Data::ColorFloat4 randColor(std::mt19937_64& eng)
 {
 	return { rand01(eng), rand01(eng), rand01(eng) };
 }

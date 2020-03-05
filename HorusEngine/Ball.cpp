@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, BasicType::ColorFloat4 material, unsigned int density, float radius)
+	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material, unsigned int density, float radius)
 		: Object(position, name, radius)
 	{
 		auto list = Primitive::Sphere::MakeIco(density);
@@ -21,10 +21,10 @@ namespace GFX::Shape
 		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ
 		AddBind(std::make_shared<Resource::ConstBufferTransform>(gfx, *this));
 
-		Resource::PhongCBuffer buffer;
+		Data::CBuffer::Phong buffer;
 		buffer.materialColor = material;
 		buffer.specularIntensity = 0.6f;
 		buffer.specularPower = 60.0f;
-		AddBind(Resource::ConstBufferPixel<Resource::PhongCBuffer>::Get(gfx, name, buffer, 1U));
+		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, name, buffer, 1U));
 	}
 }

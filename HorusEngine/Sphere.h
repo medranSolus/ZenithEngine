@@ -25,10 +25,10 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 			for (const auto& attrib : attributes)
 				layout->Append(attrib);
-			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity + 2);
+			Data::VertexBufferData vertices(layout, (latitudeDensity - 1) * longitudeDensity + 2);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -117,11 +117,11 @@ namespace GFX::Primitive
 			const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 			const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 			layout->Append(VertexAttribute::Normal);
 			for (const auto& attrib : attributes)
 				layout->Append(attrib);
-			BasicType::VertexDataBuffer vertices(layout, (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
+			Data::VertexBufferData vertices(layout, (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 			// Sphere vertices without poles
 			for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 			{
@@ -218,10 +218,10 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 			for (const auto& attrib : attributes)
 				layout->Append(attrib);
-			BasicType::VertexDataBuffer vertices(layout, 12);
+			Data::VertexBufferData vertices(layout, 12);
 
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
@@ -334,11 +334,11 @@ namespace GFX::Primitive
 			const float smallZ = centerZ * sinf(smallAngle);
 			const float level = sinf(baseAngle);
 
-			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 			layout->Append(VertexAttribute::Normal);
 			for (const auto& attrib : attributes)
 				layout->Append(attrib);
-			BasicType::VertexDataBuffer vertices(layout, 60);
+			Data::VertexBufferData vertices(layout, 60);
 			// 0
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
@@ -444,9 +444,9 @@ namespace GFX::Primitive
 				std::vector<unsigned int> tmpIndices;
 				for (unsigned int j = 0; j < indices.size(); j += 3)
 				{
-					BasicType::Vertex v0 = vertices[indices.at(j)];
-					BasicType::Vertex v1 = vertices[indices.at(j + 1)];
-					BasicType::Vertex v2 = vertices[indices.at(j + 2)];
+					Data::Vertex v0 = vertices[indices.at(j)];
+					Data::Vertex v1 = vertices[indices.at(j + 1)];
+					Data::Vertex v2 = vertices[indices.at(j + 2)];
 					DirectX::XMFLOAT3 left = addNormal(v0.Get<VertexAttribute::Position3D>(), v1.Get<VertexAttribute::Position3D>());
 					DirectX::XMFLOAT3 right = addNormal(v1.Get<VertexAttribute::Position3D>(), v2.Get<VertexAttribute::Position3D>());
 					DirectX::XMFLOAT3 down = addNormal(v2.Get<VertexAttribute::Position3D>(), v0.Get<VertexAttribute::Position3D>());

@@ -14,9 +14,9 @@ namespace GFX::Shape
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
 		std::mt19937_64 engine(std::random_device{}());
 
-		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 		layout->Append(VertexAttribute::ColorFloat4);
-		BasicType::VertexDataBuffer vertices(layout);
+		Data::VertexBufferData vertices(layout);
 
 		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), randColor(engine));
 		vertices.EmplaceBack(DirectX::XMFLOAT3(vertex3X - centerX, 2.0f * centerY, 0.0f), randColor(engine));

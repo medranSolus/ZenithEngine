@@ -31,9 +31,6 @@
     <Filter Include="Header Files\GFX\Resource">
       <UniqueIdentifier>{1fe8d25d-c8ba-4547-9c42-fc1102e1b65f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GFX\BasicType">
-      <UniqueIdentifier>{4396efc1-1e6a-4e8e-83fe-b3e0501dd30c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\GFX\Primitive">
       <UniqueIdentifier>{933c21ae-715b-4895-a0ef-f9d9d4367d53}</UniqueIdentifier>
     </Filter>
@@ -63,9 +60,6 @@
     </Filter>
     <Filter Include="Source Files\GFX\Light">
       <UniqueIdentifier>{afe1f209-b7ba-4264-a287-4237ec24381f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\GFX\BasicType">
-      <UniqueIdentifier>{4eab6b52-fc9b-4008-aab7-7b9a51a66af3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\GFX\Primitive">
       <UniqueIdentifier>{65d34731-8fd2-497e-81f0-8972031bcd5d}</UniqueIdentifier>
@@ -97,6 +91,18 @@
     <Filter Include="Shader Files\CBuffers">
       <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Data">
+      <UniqueIdentifier>{4396efc1-1e6a-4e8e-83fe-b3e0501dd30c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Data\CBuffer">
+      <UniqueIdentifier>{5bb875da-3e19-49d5-84d2-2e2835632685}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Data">
+      <UniqueIdentifier>{4eab6b52-fc9b-4008-aab7-7b9a51a66af3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Data\CBuffer">
+      <UniqueIdentifier>{d7cc9ba3-e7dc-4053-acb6-e45134a106de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -124,7 +130,7 @@
       <Filter>Source Files\GFX</Filter>
     </ClCompile>
     <ClCompile Include="Color.cpp">
-      <Filter>Source Files\GFX\BasicType</Filter>
+      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
     <ClCompile Include="DXGIDebugInfoManager.cpp">
       <Filter>Source Files\GFX</Filter>
@@ -205,13 +211,13 @@
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Vertex.cpp">
-      <Filter>Source Files\GFX\BasicType</Filter>
+      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
     <ClCompile Include="VertexDataBuffer.cpp">
-      <Filter>Source Files\GFX\BasicType</Filter>
+      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
     <ClCompile Include="VertexLayout.cpp">
-      <Filter>Source Files\GFX\BasicType</Filter>
+      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
     <ClCompile Include="VertexShader.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
@@ -255,6 +261,12 @@
     <ClCompile Include="ConstBufferTransform.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="DCBLayoutElement.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="DCBLayout.cpp">
+      <Filter>Source Files\GFX\Data\CBuffer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -292,12 +304,6 @@
     </FxCompile>
     <FxCompile Include="PhongVSTextureNormal.hlsl">
       <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
-    </FxCompile>
-    <FxCompile Include="TransformCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
-    </FxCompile>
-    <FxCompile Include="SolidCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -338,7 +344,7 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Color.h">
-      <Filter>Header Files\GFX\BasicType</Filter>
+      <Filter>Header Files\GFX\Data</Filter>
     </ClInclude>
     <ClInclude Include="Cube.h">
       <Filter>Header Files\GFX\Primitive</Filter>
@@ -428,13 +434,10 @@
       <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
     <ClInclude Include="VertexLayout.h">
-      <Filter>Header Files\GFX\BasicType</Filter>
-    </ClInclude>
-    <ClInclude Include="VertexDataBuffer.h">
-      <Filter>Header Files\GFX\BasicType</Filter>
+      <Filter>Header Files\GFX\Data</Filter>
     </ClInclude>
     <ClInclude Include="Vertex.h">
-      <Filter>Header Files\GFX\BasicType</Filter>
+      <Filter>Header Files\GFX\Data</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
       <Filter>Header Files\GFX\Shape</Filter>
@@ -739,9 +742,6 @@
     <ClInclude Include="Rasterizer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderCBuffers.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="ConstBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -753,6 +753,30 @@
     </ClInclude>
     <ClInclude Include="ConstBufferVertex.h">
       <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexBufferData.h">
+      <Filter>Header Files\GFX\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="DataTypes.h">
+      <Filter>Header Files\GFX\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="CBuffers.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicCBuffer.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBLayoutElement.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="IDCBLayout.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBLayout.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="DCBLayoutFinal.h">
+      <Filter>Header Files\GFX\Data\CBuffer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -797,6 +821,12 @@
       <Filter>Shader Files\CBuffers</Filter>
     </None>
     <None Include="TexPhongCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
+    </None>
+    <None Include="SolidCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
+    </None>
+    <None Include="TransformCBuffer.fx">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
   </ItemGroup>

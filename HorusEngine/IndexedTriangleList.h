@@ -1,17 +1,17 @@
 #pragma once
-#include "VertexDataBuffer.h"
+#include "VertexBufferData.h"
 
 namespace GFX::Primitive
 {
 	class IndexedTriangleList
 	{
 	public:
-		BasicType::VertexDataBuffer vertices;
+		Data::VertexBufferData vertices;
 		std::vector<unsigned int> indices;
 		std::string typeName;
 
 		IndexedTriangleList() = default;
-		IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName);
+		IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName);
 		IndexedTriangleList(const IndexedTriangleList&) = default;
 		IndexedTriangleList& operator=(const IndexedTriangleList&) = default;
 		~IndexedTriangleList() = default;

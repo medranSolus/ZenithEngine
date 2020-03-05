@@ -1,15 +1,15 @@
 #pragma once
 #include "Vertex.h"
 
-namespace GFX::Resource
+namespace GFX::Data::CBuffer
 {
-	struct TransformCBuffer
+	struct Transform
 	{
 		DirectX::XMMATRIX transformView;
 		DirectX::XMMATRIX transformViewProjection;
 	};
 
-	struct LightCBuffer
+	struct Light
 	{
 		DirectX::XMFLOAT3 ambientColor;
 		float atteuationConst;
@@ -21,23 +21,23 @@ namespace GFX::Resource
 		float padding[3] = { 0.0f };
 	};
 
-	struct PhongCBuffer
+	struct Phong
 	{
-		BasicType::ColorFloat4 materialColor;
+		ColorFloat4 materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2]{ 0.0f };
 	};
 
-	struct TexPhongCBuffer
+	struct TexPhong
 	{
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2]{ 0.0f };
 	};
 
-	struct SolidCBuffer
+	struct Solid
 	{
-		BasicType::ColorFloat4 materialColor;
+		ColorFloat4 materialColor;
 	};
 }

@@ -110,5 +110,5 @@ namespace GFX
 			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-	};
-}
+		};
+	}

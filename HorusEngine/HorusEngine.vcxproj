@@ -97,7 +97,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <WarningVersion>
@@ -107,6 +106,7 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +126,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <WarningVersion>
@@ -137,6 +136,7 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -158,7 +158,6 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <WarningVersion>
@@ -170,6 +169,7 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -193,7 +193,6 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <WarningVersion>
@@ -205,6 +204,7 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -233,7 +233,9 @@
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
+    <ClCompile Include="DCBLayout.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
+    <ClCompile Include="DCBLayoutElement.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="GfxObject.cpp" />
     <ClCompile Include="Globe.cpp" />
@@ -509,7 +511,13 @@
     <ClInclude Include="ConstBufferTransform.h" />
     <ClInclude Include="ConstBufferVertex.h" />
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="DataTypes.h" />
+    <ClInclude Include="DCBLayout.h" />
+    <ClInclude Include="DCBLayoutFinal.h" />
     <ClInclude Include="DXGIDebugInfoManager.h" />
+    <ClInclude Include="DynamicCBuffer.h" />
+    <ClInclude Include="IDCBLayout.h" />
+    <ClInclude Include="DCBLayoutElement.h" />
     <ClInclude Include="FloatingCamera.h" />
     <ClInclude Include="GfxExceptionMacros.h" />
     <ClInclude Include="GfxObject.h" />
@@ -548,7 +556,7 @@
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sampler.h" />
-    <ClInclude Include="ShaderCBuffers.h" />
+    <ClInclude Include="CBuffers.h" />
     <ClInclude Include="Shapes.h" />
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Sphere.h" />
@@ -561,7 +569,7 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VertexBuffer.h" />
-    <ClInclude Include="VertexDataBuffer.h" />
+    <ClInclude Include="VertexBufferData.h" />
     <ClInclude Include="VertexLayout.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="WinAPI.h" />

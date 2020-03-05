@@ -40,7 +40,7 @@ namespace GFX
 
 		DirectX::ScratchImage scratch;
 		const DirectX::Image* image;
-		
+
 	public:
 		Surface(const std::string& name);
 		Surface(size_t width, size_t height);
@@ -59,7 +59,7 @@ namespace GFX
 
 		constexpr void PutPixel(size_t x, size_t y, Pixel c) noexcept(!IS_DEBUG);
 		constexpr Pixel GetPixel(size_t x, size_t y) const noexcept(!IS_DEBUG);
-		
+
 		void Save(const std::string& filename) const;
 
 #pragma region Exception

@@ -1,18 +1,18 @@
 #pragma once
 #include "ConstBufferVertex.h"
-#include "ShaderCBuffers.h"
+#include "CBuffers.h"
 #include "GfxObject.h"
 
 namespace GFX::Resource
 {
 	class ConstBufferTransform : public IBindable
 	{
-		static std::unique_ptr<ConstBufferVertex<TransformCBuffer>> vertexBuffer;
+		static std::unique_ptr<ConstBufferVertex<Data::CBuffer::Transform>> vertexBuffer;
 		const GfxObject& parent;
 
 	protected:
-		TransformCBuffer GetBufferData(Graphics& gfx) noexcept;
-		virtual void UpdateBind(Graphics& gfx, const TransformCBuffer& buffer) noexcept;
+		Data::CBuffer::Transform GetBufferData(Graphics& gfx) noexcept;
+		virtual void UpdateBind(Graphics& gfx, const Data::CBuffer::Transform& buffer) noexcept;
 
 	public:
 		ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot = 0U);

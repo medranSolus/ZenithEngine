@@ -1,6 +1,6 @@
 #include "Color.h"
 
-namespace GFX::BasicType
+namespace GFX::Data
 {
 	ColorFloat4& ColorFloat4::operator=(const ColorByte& c) noexcept
 	{

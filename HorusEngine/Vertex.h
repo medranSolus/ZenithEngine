@@ -2,11 +2,11 @@
 #include "VertexLayout.h"
 #include <type_traits>
 
-namespace GFX::BasicType
+namespace GFX::Data
 {
 	class Vertex
 	{
-		friend class VertexDataBuffer;
+		friend class VertexBufferData;
 
 		char* data = nullptr;
 		const VertexLayout& layout;

@@ -2,7 +2,6 @@
 
 namespace GFX
 {
-
 	DirectX::FXMMATRIX Object::CreateTransformMatrix() const noexcept
 	{
 		return DirectX::XMMatrixScaling(scale, scale, scale) *

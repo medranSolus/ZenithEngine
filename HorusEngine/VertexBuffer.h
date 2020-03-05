@@ -1,6 +1,6 @@
 #pragma once
 #include "Codex.h"
-#include "VertexDataBuffer.h"
+#include "VertexBufferData.h"
 
 namespace GFX::Resource
 {
@@ -12,12 +12,12 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	public:
-		VertexBuffer(Graphics& gfx, const std::string& tag, const BasicType::VertexDataBuffer& buffer);
+		VertexBuffer(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		VertexBuffer(const VertexBuffer&) = delete;
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		~VertexBuffer() = default;
 
-		static inline std::shared_ptr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const BasicType::VertexDataBuffer& buffer);
+		static inline std::shared_ptr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
 
@@ -31,7 +31,7 @@ namespace GFX::Resource
 		static constexpr bool value{ true };
 	};
 
-	inline std::shared_ptr<VertexBuffer> VertexBuffer::Get(Graphics& gfx, const std::string& tag, const BasicType::VertexDataBuffer& buffer)
+	inline std::shared_ptr<VertexBuffer> VertexBuffer::Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer)
 	{
 		return Codex::Resolve<VertexBuffer>(gfx, tag, buffer);
 	}

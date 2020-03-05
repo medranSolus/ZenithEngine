@@ -2,7 +2,7 @@
 #include <DirectXMath.h>
 #include <utility>
 
-namespace GFX::BasicType
+namespace GFX::Data
 {
 	class ColorByte
 	{

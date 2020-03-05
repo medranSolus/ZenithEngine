@@ -3,7 +3,7 @@
 
 namespace GFX::Resource
 {
-	InputLayout::InputLayout(Graphics& gfx, std::shared_ptr<BasicType::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode)
+	InputLayout::InputLayout(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode)
 		: vertexLayout(vertexLayout)
 	{
 		GFX_ENABLE_ALL(gfx);

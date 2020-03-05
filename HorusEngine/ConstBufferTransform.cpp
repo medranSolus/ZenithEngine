@@ -1,7 +1,7 @@
 #include "ConstBufferTransform.h"
 namespace GFX::Resource
 {
-	TransformCBuffer ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept
+	Data::CBuffer::Transform ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept
 	{
 		const DirectX::XMMATRIX transformView = std::move(parent.GetTransformMatrix() * gfx.GetCamera());
 		return
@@ -11,7 +11,7 @@ namespace GFX::Resource
 		};
 	}
 
-	void ConstBufferTransform::UpdateBind(Graphics& gfx, const TransformCBuffer& buffer) noexcept
+	void ConstBufferTransform::UpdateBind(Graphics& gfx, const Data::CBuffer::Transform& buffer) noexcept
 	{
 		vertexBuffer->Update(gfx, buffer);
 		vertexBuffer->Bind(gfx);
@@ -20,8 +20,8 @@ namespace GFX::Resource
 	ConstBufferTransform::ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot) : parent(parent)
 	{
 		if (!vertexBuffer)
-			vertexBuffer = std::make_unique<ConstBufferVertex<TransformCBuffer>>(gfx, "", slot);
+			vertexBuffer = std::make_unique<ConstBufferVertex<Data::CBuffer::Transform>>(gfx, "", slot);
 	}
 
-	std::unique_ptr<ConstBufferVertex<TransformCBuffer>> ConstBufferTransform::vertexBuffer;
+	std::unique_ptr<ConstBufferVertex<Data::CBuffer::Transform>> ConstBufferTransform::vertexBuffer;
 }

@@ -91,7 +91,7 @@ namespace GFX::Shape
 		if (normals)
 		{
 			bool noTexture = true;
-			Resource::PhongCBuffer buffer;
+			Data::CBuffer::Phong buffer;
 			if (textureCoord && mesh.mMaterialIndex >= 0)
 			{
 				aiMaterial& material = *materials[mesh.mMaterialIndex];
@@ -128,12 +128,12 @@ namespace GFX::Shape
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureNormal.cso"));
 						else
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTexture.cso"));
-						Resource::TexPhongCBuffer buffer;
+						Data::CBuffer::TexPhong buffer;
 						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
 						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
 							buffer.specularIntensity = 0.9f;
 						// Maybe path needed too, TOD: Check this
-						binds.emplace_back(Resource::ConstBufferPixel<Resource::TexPhongCBuffer>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
+						binds.emplace_back(Resource::ConstBufferPixel<Data::CBuffer::TexPhong>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
 					}
 				}
 				else
@@ -155,7 +155,7 @@ namespace GFX::Shape
 					buffer.specularPower = 40.0f;
 				vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 				binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
-				binds.emplace_back(Resource::ConstBufferPixel<Resource::PhongCBuffer>::Get(gfx, path + meshID, buffer, 1U));
+				binds.emplace_back(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, path + meshID, buffer, 1U));
 			}
 		}
 		else
@@ -164,7 +164,7 @@ namespace GFX::Shape
 			binds.emplace_back(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
 		}
 
-		std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 		if (normals)
 		{
 			layout->Append(VertexAttribute::Normal);
@@ -179,7 +179,7 @@ namespace GFX::Shape
 			}
 		}
 
-		BasicType::VertexDataBuffer vertexBuffer(layout, mesh.mNumVertices);
+		Data::VertexBufferData vertexBuffer(layout, mesh.mNumVertices);
 		for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
 		{
 			vertexBuffer[i].SetByIndex(0, *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mVertices[i]));

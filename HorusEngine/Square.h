@@ -11,10 +11,10 @@ namespace GFX::Primitive
 		static IndexedTriangleList Make(const std::vector<VertexAttribute>&& attributes = {})
 		{
 			constexpr float point = 0.5f;
-			std::shared_ptr<BasicType::VertexLayout> layout = std::make_shared<BasicType::VertexLayout>();
+			std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 			for (const auto& attrib : attributes)
 				layout->Append(attrib);
-			BasicType::VertexDataBuffer vertices(layout, 4);
+			Data::VertexBufferData vertices(layout, 4);
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, 0.0f)));
 			vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, 0.0f)));

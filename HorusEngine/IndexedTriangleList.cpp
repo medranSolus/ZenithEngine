@@ -2,7 +2,7 @@
 
 namespace GFX::Primitive
 {
-	IndexedTriangleList::IndexedTriangleList(BasicType::VertexDataBuffer verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName)
+	IndexedTriangleList::IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName)
 		: vertices(std::move(verticesIn)), indices(std::move(indicesIn)), typeName(typeName)
 	{
 		assert(vertices.Size() > 2);
@@ -21,9 +21,9 @@ namespace GFX::Primitive
 		assert(indices.size() % 3 == 0 && indices.size() > 0);
 		for (size_t i = 0; i < indices.size(); i += 3)
 		{
-			BasicType::Vertex v0 = vertices[indices.at(i)];
-			BasicType::Vertex v1 = vertices[indices.at(i + 1)];
-			BasicType::Vertex v2 = vertices[indices.at(i + 2)];
+			Data::Vertex v0 = vertices[indices.at(i)];
+			Data::Vertex v1 = vertices[indices.at(i + 1)];
+			Data::Vertex v2 = vertices[indices.at(i + 2)];
 			const auto& p0 = DirectX::XMLoadFloat3(&v0.Get<VertexAttribute::Position3D>());
 
 			const auto normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(

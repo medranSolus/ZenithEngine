@@ -1,6 +1,6 @@
 #include "Vertex.h"
 
-namespace GFX::BasicType
+namespace GFX::Data
 {
 	Vertex::Vertex(char* data, const VertexLayout& layout) noexcept(!IS_DEBUG)
 		: data(data), layout(layout)
