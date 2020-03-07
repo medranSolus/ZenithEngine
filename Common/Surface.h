@@ -52,6 +52,7 @@ namespace GFX
 
 		constexpr size_t GetWidth() const noexcept { return image->width; }
 		constexpr size_t GetHeight() const noexcept { return image->height; }
+		constexpr size_t GetSize() const noexcept { return GetWidth() * GetHeight(); }
 		inline bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
 		inline Pixel* GetBuffer() noexcept { return reinterpret_cast<Pixel*>(image->pixels); }
 		inline const Pixel* GetBuffer() const noexcept { return reinterpret_cast<const Pixel*>(image->pixels); }

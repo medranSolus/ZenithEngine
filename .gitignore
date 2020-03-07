@@ -264,5 +264,6 @@ __pycache__/
 *.pyc
 
 # Don't ignore data and libs
-!LibsExternal/**/*
+!Lib/**/*
+Lib/**/Common*
 !HorusEngine/Data/**/*

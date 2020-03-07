@@ -74,24 +74,28 @@
     <OutDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -106,13 +110,14 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IS_DEBUG=1;WIN32;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mtd.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -141,8 +146,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mtd.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mtd.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -169,15 +175,16 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IS_DEBUG=0;WIN32;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -211,8 +218,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)LibsExternal\$(PlatformShortName)\$(Configuration)\assimp-vc141-mt.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -227,11 +235,13 @@
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="BaseCamera.cpp" />
     <ClCompile Include="BaseShape.cpp" />
-    <ClCompile Include="BasicException.cpp" />
     <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="ConstBufferEx.cpp" />
+    <ClCompile Include="ConstBufferExPixel.cpp" />
+    <ClCompile Include="ConstBufferExPixelCache.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
     <ClCompile Include="DCBElement.cpp" />
     <ClCompile Include="DCBElementConst.cpp" />
@@ -269,7 +279,6 @@
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
-    <ClCompile Include="Surface.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
@@ -278,7 +287,6 @@
     <ClCompile Include="VertexDataBuffer.cpp" />
     <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
-    <ClCompile Include="WinApiException.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
@@ -295,6 +303,8 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <None Include="..\README.md" />
+    <None Include="packages.config" />
     <None Include="SolidCBuffer.fx">
       <FileType>Document</FileType>
     </None>
@@ -503,7 +513,6 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BaseShape.h" />
-    <ClInclude Include="BasicException.h" />
     <ClInclude Include="BasicObject.h" />
     <ClInclude Include="Blender.h" />
     <ClInclude Include="Box.h" />
@@ -511,6 +520,9 @@
     <ClInclude Include="Codex.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="ConstBuffer.h" />
+    <ClInclude Include="ConstBufferEx.h" />
+    <ClInclude Include="ConstBufferExPixel.h" />
+    <ClInclude Include="ConstBufferExPixelCache.h" />
     <ClInclude Include="ConstBufferPixel.h" />
     <ClInclude Include="ConstBufferTransform.h" />
     <ClInclude Include="ConstBufferVertex.h" />
@@ -568,19 +580,16 @@
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Square.h" />
-    <ClInclude Include="Surface.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />
     <ClInclude Include="Triangle.h" />
-    <ClInclude Include="Utils.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VertexBufferData.h" />
     <ClInclude Include="VertexLayout.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="WinAPI.h" />
-    <ClInclude Include="WinApiException.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="WindowExceptionMacros.h" />
   </ItemGroup>
@@ -597,7 +606,6 @@
     <None Include="..\AssImp\include\assimp\SmoothingGroups.inl" />
     <None Include="..\AssImp\include\assimp\vector2.inl" />
     <None Include="..\AssImp\include\assimp\vector3.inl" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="HorusEngine.rc" />
@@ -650,7 +658,7 @@
     <Import Project="..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets" Condition="Exists('..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets')" />
     <Import Project="..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets" Condition="Exists('..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets')" />
     <Import Project="..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets" Condition="Exists('..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets')" />
-    <Import Project="..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2020.2.15.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2020.2.15.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -699,6 +707,6 @@
     <Error Condition="!Exists('..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_wserialization-vc142.1.71.0.0\build\boost_wserialization-vc142.targets'))" />
     <Error Condition="!Exists('..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_zlib-vc142.1.71.0.0\build\boost_zlib-vc142.targets'))" />
     <Error Condition="!Exists('..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost-vc142.1.71.0.0\build\boost-vc142.targets'))" />
-    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2019.12.17.1\build\native\directxtex_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2020.2.15.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2020.2.15.1\build\native\directxtex_desktop_win10.targets'))" />
   </Target>
 </Project>

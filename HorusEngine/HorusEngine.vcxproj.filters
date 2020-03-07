@@ -46,9 +46,6 @@
     <Filter Include="Source Files\WinAPI">
       <UniqueIdentifier>{ce89e5e6-05db-44c7-8201-218e75cb97ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Exception">
-      <UniqueIdentifier>{33f228d6-9fb0-4a40-9357-3647df1ac822}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Camera">
       <UniqueIdentifier>{8aeb80b2-09b3-453a-9672-33db229c4e13}</UniqueIdentifier>
     </Filter>
@@ -119,9 +116,6 @@
     </ClCompile>
     <ClCompile Include="BaseCamera.cpp">
       <Filter>Source Files\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="BasicException.cpp">
-      <Filter>Source Files\Exception</Filter>
     </ClCompile>
     <ClCompile Include="BaseShape.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
@@ -198,9 +192,6 @@
     <ClCompile Include="SolidGlobe.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
-    <ClCompile Include="Surface.cpp">
-      <Filter>Source Files\GFX</Filter>
-    </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
@@ -224,9 +215,6 @@
     </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source Files\WinAPI</Filter>
-    </ClCompile>
-    <ClCompile Include="WinApiException.cpp">
-      <Filter>Source Files\Exception</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui.cpp">
       <Filter>Source Files\GFX\ImGui</Filter>
@@ -279,6 +267,15 @@
     <ClCompile Include="DCBElementConst.cpp">
       <Filter>Source Files\GFX\Data\CBuffer</Filter>
     </ClCompile>
+    <ClCompile Include="ConstBufferEx.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferExPixel.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferExPixelCache.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -319,9 +316,6 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -333,9 +327,6 @@
     </ClInclude>
     <ClInclude Include="BaseShape.h">
       <Filter>Header Files\GFX\Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="BasicException.h">
-      <Filter>Header Files\Exception</Filter>
     </ClInclude>
     <ClInclude Include="BasicObject.h">
       <Filter>Header Files\GFX</Filter>
@@ -436,9 +427,6 @@
     <ClInclude Include="Window.h">
       <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
-    <ClInclude Include="WinApiException.h">
-      <Filter>Header Files\Exception</Filter>
-    </ClInclude>
     <ClInclude Include="WindowExceptionMacros.h">
       <Filter>Header Files\Exception</Filter>
     </ClInclude>
@@ -471,9 +459,6 @@
     </ClInclude>
     <ClInclude Include="Primitives.h">
       <Filter>Header Files\GFX\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Surface.h">
-      <Filter>Header Files\GFX</Filter>
     </ClInclude>
     <ClInclude Include="VertexShader.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -799,12 +784,20 @@
     <ClInclude Include="DCBElementConst.h">
       <Filter>Header Files\GFX\Data\CBuffer</Filter>
     </ClInclude>
+    <ClInclude Include="ConstBufferEx.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferExPixel.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferExPixelCache.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="..\AssImp\include\assimp\color4.inl">
       <Filter>Header Files\AssImp</Filter>
     </None>
@@ -850,6 +843,8 @@
     <None Include="TransformCBuffer.fx">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
+    <None Include="..\README.md" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="HorusEngine.rc">
