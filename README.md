@@ -9,3 +9,4 @@ DirectX 11 graphics engine.
 **External libraries:**
   - [ImGui 1.74](https://github.com/ocornut/imgui)
   - [AssImp 5.0.0](https://github.com/assimp/assimp) ([**Notes**](https://github.com/medranSolus/HorusEngine/blob/master/AssImpInfo.md) about provided DLLs and build guide)
+  - [JSON for modern C++ 3.7.3](https://github.com/nlohmann/json)
