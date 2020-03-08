@@ -40,6 +40,8 @@ namespace GFX::Data
 		constexpr ColorFloat4& operator=(const ColorFloat4& c) noexcept;
 		constexpr ColorFloat4& operator=(ColorFloat4&& c) noexcept;
 
+		inline operator DirectX::XMFLOAT4() const noexcept { return col; }
+
 		ColorFloat4& operator=(const ColorByte& c) noexcept;
 		~ColorFloat4() = default;
 

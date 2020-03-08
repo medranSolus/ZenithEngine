@@ -9,8 +9,8 @@ namespace GFX::Resource
 		using ConstBuffer<T>::ConstBuffer;
 		using ConstBuffer<T>::GetContext;
 		using ConstBuffer<T>::constantBuffer;
-		using ConstBuffer<T>::slot;
 		using ConstBuffer<T>::name;
+		using ConstBuffer<T>::slot;
 
 	public:
 		ConstBufferVertex(const ConstBufferVertex&) = delete;

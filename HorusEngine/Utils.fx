@@ -19,11 +19,11 @@ float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in floa
 {
 	// Get rotation from tangent space
 	const float3x3 tangentToView = float3x3
-	(
-		normalize(tan),
-		normalize(bitan),
-		normalize(normal)
-	);
+		(
+			normalize(tan),
+			normalize(bitan),
+			normalize(normal)
+			);
 	// Sample normal to tangent space
 	float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
 	// Transform from tangent into view space

@@ -1,4 +1,5 @@
 #pragma once
+#include "Color.h"
 #include <DirectXMath.h>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 	X(Float2) \
 	X(Float3) \
 	X(Float4) \
+	X(Color4) \
 	X(Matrix)
 
 namespace GFX::Data::CBuffer
@@ -77,6 +79,13 @@ namespace GFX::Data::CBuffer
 		static constexpr const char* code = "F4";
 		static constexpr bool valid = true;
 	};
+	template<> struct Map<ElementType::Color4>
+	{
+		using DataType = GFX::Data::ColorFloat4;
+		static constexpr size_t hlslSize = sizeof(DataType);
+		static constexpr const char* code = "C4";
+		static constexpr bool valid = true;
+	};
 	template<> struct Map<ElementType::Matrix>
 	{
 		using DataType = DirectX::XMFLOAT4X4;
@@ -115,6 +124,9 @@ namespace GFX::Data::CBuffer
 		ElementType type = ElementType::Empty;
 		std::unique_ptr<ExtraDataBase> extraData = nullptr;
 
+		DCBLayoutElement() = default;
+		DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG);
+
 		static constexpr size_t AdvanceToBoundary(size_t offset) noexcept;
 		static constexpr bool CrossesBoundary(size_t offset, size_t size) noexcept;
 		static constexpr size_t AdvanceIfCrossesBoundary(size_t offset, size_t size) noexcept;
@@ -124,9 +136,6 @@ namespace GFX::Data::CBuffer
 		static bool ValidateSymbol(const std::string& name) noexcept;
 
 		size_t Finalize(size_t offsetIn) noexcept(!IS_DEBUG);
-
-		DCBLayoutElement() = default;
-		DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG);
 
 	public:
 		constexpr bool Exists() const noexcept { return type != ElementType::Empty; }
@@ -175,6 +184,8 @@ namespace GFX::Data::CBuffer
 		}
 	}
 }
+
+typedef GFX::Data::CBuffer::ElementType DCBElementType;
 
 #ifndef DCB_LAYOUTELEMENT_IMPL
 #undef LEAF_ELEMENT_TYPES

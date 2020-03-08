@@ -1,6 +1,9 @@
 #pragma once
 #include "Blender.h"
 #include "ConstBuffer.h"
+#include "ConstBufferEx.h"
+#include "ConstBufferExPixel.h"
+#include "ConstBufferExPixelCache.h"
 #include "ConstBufferPixel.h"
 #include "ConstBufferTransform.h"
 #include "ConstBufferVertex.h"

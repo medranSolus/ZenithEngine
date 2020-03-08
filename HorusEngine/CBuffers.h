@@ -23,10 +23,10 @@ namespace GFX::Data::CBuffer
 
 	struct Phong
 	{
-		ColorFloat4 materialColor;
 		float specularIntensity;	// The bigger the brighter
 		float specularPower;		// The smaller the less focused in one point
 		float padding[2]{ 0.0f };
+		ColorFloat4 materialColor;
 	};
 
 	struct TexPhong

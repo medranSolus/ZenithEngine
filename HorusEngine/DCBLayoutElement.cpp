@@ -18,9 +18,18 @@ namespace GFX::Data::CBuffer
 		};
 	};
 
+	DCBLayoutElement::DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG) : type(elementType)
+	{
+		assert(type != ElementType::Empty);
+		if (type == ElementType::Struct)
+			extraData = std::make_unique<ExtraData::Struct>();
+		else if (type == ElementType::Array)
+			extraData = std::make_unique<ExtraData::Array>();
+	}
+
 	constexpr size_t DCBLayoutElement::AdvanceToBoundary(size_t offset) noexcept
 	{
-		return (offset & (not 0xFU)) + (static_cast<size_t>(static_cast<bool>(offset & 0xFU)) << 4);
+		return (offset & (~static_cast<size_t>(0xFU))) + (static_cast<size_t>(static_cast<bool>(offset & 0xFU)) << 4);
 	}
 
 	constexpr bool DCBLayoutElement::CrossesBoundary(size_t offset, size_t size) noexcept
@@ -83,15 +92,6 @@ namespace GFX::Data::CBuffer
 			return 0U;
 		}
 		}
-	}
-
-	DCBLayoutElement::DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG) : type(elementType)
-	{
-		assert(type != ElementType::Empty);
-		if (type == ElementType::Struct)
-			extraData = std::make_unique<ExtraData::Struct>();
-		else if (type == ElementType::Array)
-			extraData = std::make_unique<ExtraData::Array>();
 	}
 
 	constexpr DCBLayoutElement& DCBLayoutElement::ArrayType() noexcept(!IS_DEBUG)

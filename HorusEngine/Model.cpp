@@ -91,7 +91,10 @@ namespace GFX::Shape
 		if (normals)
 		{
 			bool noTexture = true;
-			Data::CBuffer::Phong buffer;
+			Data::CBuffer::DCBLayout cbufferLayout;
+			cbufferLayout.Add(DCBElementType::Float, "specularIntensity");
+			cbufferLayout.Add(DCBElementType::Float, "specularPower");
+			std::shared_ptr<Data::CBuffer::DynamicCBuffer> buffer = nullptr;
 			if (textureCoord && mesh.mMaterialIndex >= 0)
 			{
 				aiMaterial& material = *materials[mesh.mMaterialIndex];
@@ -101,7 +104,7 @@ namespace GFX::Shape
 					noTexture = false;
 					binds.emplace_back(Resource::Sampler::Get(gfx));
 					std::shared_ptr<Resource::Texture> diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()));
-					//hasAlpha = diffuseTexture->HasAlpha();
+					hasAlpha = diffuseTexture->HasAlpha();
 					binds.emplace_back(diffuseTexture);
 
 					normalMap = mesh.HasTangentsAndBitangents() && material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS;
@@ -128,34 +131,40 @@ namespace GFX::Shape
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTextureNormal.cso"));
 						else
 							binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPSTexture.cso"));
-						Data::CBuffer::TexPhong buffer;
-						material.Get(AI_MATKEY_SHININESS, buffer.specularPower);
-						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
-							buffer.specularIntensity = 0.9f;
-						// Maybe path needed too, TOD: Check this
-						binds.emplace_back(Resource::ConstBufferPixel<Data::CBuffer::TexPhong>::Get(gfx, material.GetName().C_Str(), buffer, 1U));
+						buffer = std::make_shared<Data::CBuffer::DynamicCBuffer>(std::move(cbufferLayout));
+						material.Get(AI_MATKEY_SHININESS, static_cast<float&>((*buffer)["specularPower"]));
+						if (material.Get(AI_MATKEY_SHININESS_STRENGTH, static_cast<float&>((*buffer)["specularIntensity"])) != aiReturn_SUCCESS)
+							(*buffer)["specularIntensity"] = 0.9f;
+						// Maybe path needed too, TODO: Check this
+						binds.emplace_back(Resource::ConstBufferExPixel::Get(gfx, material.GetName().C_Str(), buffer->GetRootElement(), 1U, buffer.get()));
 					}
 				}
 				else
 				{
+					cbufferLayout.Add(DCBElementType::Color4, "materialColor");
+					buffer = std::make_shared<Data::CBuffer::DynamicCBuffer>(std::move(cbufferLayout));
 					textureCoord = false;
-					if (material.Get(AI_MATKEY_SHININESS, buffer.specularPower) != aiReturn_SUCCESS)
-						buffer.specularPower = 40.0f;
-					if (material.Get(AI_MATKEY_SHININESS_STRENGTH, buffer.specularIntensity) != aiReturn_SUCCESS)
-						buffer.specularIntensity = 0.9f;
+					if (material.Get(AI_MATKEY_SHININESS, static_cast<float&>((*buffer)["specularPower"])) != aiReturn_SUCCESS)
+						(*buffer)["specularPower"] = 40.0f;
+					if (material.Get(AI_MATKEY_SHININESS_STRENGTH, static_cast<float&>((*buffer)["specularIntensity"])) != aiReturn_SUCCESS)
+						(*buffer)["specularIntensity"] = 0.9f;
 				}
 			}
 			else
-				buffer.specularIntensity = 0.9f;
+			{
+				cbufferLayout.Add(DCBElementType::Color4, "materialColor");
+				buffer = std::make_shared<Data::CBuffer::DynamicCBuffer>(std::move(cbufferLayout));
+				(*buffer)["specularIntensity"] = 0.9f;
+			}
 			if (noTexture)
 			{
 				std::mt19937_64 eng(std::random_device{}());
-				buffer.materialColor = randColor(eng);
-				if (buffer.specularPower <= FLT_EPSILON)
-					buffer.specularPower = 40.0f;
+				(*buffer)["materialColor"] = randColor(eng);
+				if (static_cast<float>((*buffer)["specularPower"]) <= FLT_EPSILON)
+					(*buffer)["specularPower"] = 40.0f;
 				vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 				binds.emplace_back(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
-				binds.emplace_back(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, path + meshID, buffer, 1U));
+				binds.emplace_back(Resource::ConstBufferExPixel::Get(gfx, path + meshID, buffer->GetRootElement(), 1U, buffer.get()));
 			}
 		}
 		else
