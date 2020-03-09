@@ -307,7 +307,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <None Include="..\README.md" />
     <None Include="packages.config" />
     <None Include="SolidCBuffer.fx">
       <FileType>Document</FileType>

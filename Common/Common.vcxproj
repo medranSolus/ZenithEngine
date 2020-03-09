@@ -31,6 +31,10 @@
     <ClInclude Include="WinApiException.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.gitattributes" />
+    <None Include="..\.gitignore" />
+    <None Include="..\AssImpInfo.md" />
+    <None Include="..\README.md" />
     <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

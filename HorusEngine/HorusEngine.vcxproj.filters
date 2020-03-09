@@ -840,7 +840,6 @@
     <None Include="TransformCBuffer.fx">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
-    <None Include="..\README.md" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
