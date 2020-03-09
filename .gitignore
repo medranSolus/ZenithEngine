@@ -267,3 +267,6 @@ __pycache__/
 !Lib/**/*
 Lib/**/Common*
 !HorusEngine/Data/**/*
+
+#Intel profiler
+**/VTune*

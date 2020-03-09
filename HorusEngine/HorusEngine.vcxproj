@@ -288,7 +288,7 @@
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="VertexBuffer.cpp" />
-    <ClCompile Include="VertexDataBuffer.cpp" />
+    <ClCompile Include="VertexBufferData.cpp" />
     <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
     <ClCompile Include="Window.cpp" />

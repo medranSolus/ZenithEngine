@@ -22,9 +22,6 @@
     <Filter Include="Header Files\GFX\Shape">
       <UniqueIdentifier>{a3fc2373-3196-4d93-8063-fe0e39dda05a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Exception">
-      <UniqueIdentifier>{05ef5940-4145-4ff2-83ff-b72b80a6bf0d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Camera">
       <UniqueIdentifier>{c752413f-7221-42b2-95bc-db749955c5c2}</UniqueIdentifier>
     </Filter>
@@ -204,9 +201,6 @@
     <ClCompile Include="Vertex.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
-    <ClCompile Include="VertexDataBuffer.cpp">
-      <Filter>Source Files\GFX\Data</Filter>
-    </ClCompile>
     <ClCompile Include="VertexLayout.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
@@ -275,6 +269,9 @@
     </ClCompile>
     <ClCompile Include="ConstBufferExPixelCache.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexBufferData.cpp">
+      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -358,9 +355,6 @@
     <ClInclude Include="FloatingCamera.h">
       <Filter>Header Files\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="GfxExceptionMacros.h">
-      <Filter>Header Files\Exception</Filter>
-    </ClInclude>
     <ClInclude Include="GfxObject.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
@@ -426,9 +420,6 @@
     </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Header Files\WinAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowExceptionMacros.h">
-      <Filter>Header Files\Exception</Filter>
     </ClInclude>
     <ClInclude Include="WinAPI.h">
       <Filter>Header Files\WinAPI</Filter>
@@ -792,6 +783,12 @@
     </ClInclude>
     <ClInclude Include="ConstBufferExPixelCache.h">
       <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="GfxExceptionMacros.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowExceptionMacros.h">
+      <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

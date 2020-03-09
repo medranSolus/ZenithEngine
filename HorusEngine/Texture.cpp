@@ -1,15 +1,21 @@
 #include "Texture.h"
 #include "Surface.h"
 #include "GfxExceptionMacros.h"
+#include <thread>
 
 namespace GFX::Resource
 {
-	Texture::Texture(Graphics& gfx, const std::string& path, UINT slot) : slot(slot), path(path)
+	Texture::Texture(Graphics& gfx, const std::string& path, UINT slot, bool alphaEnable) : slot(slot), path(path)
 	{
 		GFX_ENABLE_ALL(gfx);
 		Surface surface(path);
+		std::thread* checkAlpha = nullptr;
+		if (alphaEnable)
+			checkAlpha = new std::thread([&surface, this]() { alpha = surface.HasAlpha(); });
+		else
+			alpha = false;
+
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
-		alpha = surface.HasAlpha();
 		textureDesc.Width = static_cast<UINT>(surface.GetWidth());
 		textureDesc.Height = static_cast<UINT>(surface.GetHeight());
 		textureDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM; // Same as backbuffer
@@ -34,5 +40,10 @@ namespace GFX::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
 
 		GetContext(gfx)->GenerateMips(textureView.Get());
+		if (alphaEnable)
+		{
+			checkAlpha->join();
+			delete checkAlpha;
+		}
 	}
 }

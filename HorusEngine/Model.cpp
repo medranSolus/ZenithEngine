@@ -7,6 +7,8 @@
 #include "assimp/postprocess.h"
 #include "ImGui/imgui.h"
 #include <filesystem>
+#include <thread>
+#include <array>
 
 namespace GFX::Shape
 {
@@ -63,7 +65,7 @@ namespace GFX::Shape
 		ImGui::Columns(1);
 	}
 
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, const std::string& path, const aiMesh& mesh, aiMaterial* const* materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, aiMaterial* const* materials)
 	{
 		std::vector<std::shared_ptr<Resource::IBindable>> binds;
 		binds.reserve(8U);
@@ -103,9 +105,9 @@ namespace GFX::Shape
 				{
 					noTexture = false;
 					binds.emplace_back(Resource::Sampler::Get(gfx));
-					std::shared_ptr<Resource::Texture> diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()));
+					std::shared_ptr<Resource::Texture> diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 0U, true);
 					hasAlpha = diffuseTexture->HasAlpha();
-					binds.emplace_back(diffuseTexture);
+					binds.emplace_back(std::move(diffuseTexture));
 
 					normalMap = mesh.HasTangentsAndBitangents() && material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS;
 					if (normalMap)
@@ -189,31 +191,42 @@ namespace GFX::Shape
 		}
 
 		Data::VertexBufferData vertexBuffer(layout, mesh.mNumVertices);
-		for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
+		auto loadVertexAttrib = [&vertexBuffer, &mesh]<typename T>(size_t index, aiVector3D* attribs, const T& vectorType) -> void
 		{
-			vertexBuffer[i].SetByIndex(0, *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mVertices[i]));
-			if (normals)
+			for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
+				vertexBuffer[i].SetByIndex(index, *reinterpret_cast<T*>(&attribs[i]));
+		};
+		std::array<std::thread*, 5> vectorAttribThreads{ nullptr };
+		DirectX::XMFLOAT3 vec3;
+		vectorAttribThreads[0] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(0, mesh.mVertices, vec3); });
+		if (normals)
+		{
+			vectorAttribThreads[1] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(1, mesh.mNormals, vec3); });
+			if (textureCoord)
 			{
-				vertexBuffer[i].Get<VertexAttribute::Normal>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mNormals[i]);
-				if (textureCoord)
+				DirectX::XMFLOAT2 vec2;
+				vectorAttribThreads[2] = new std::thread([&loadVertexAttrib, &mesh, &vec2]() { loadVertexAttrib(2, mesh.mTextureCoords[0], vec2); });
+				if (normalMap)
 				{
-					vertexBuffer[i].Get<VertexAttribute::Texture2D>() = *reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][i]);
-					if (normalMap)
-					{
-						vertexBuffer[i].Get<VertexAttribute::Tangent>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mTangents[i]);
-						vertexBuffer[i].Get<VertexAttribute::Bitangent>() = *reinterpret_cast<DirectX::XMFLOAT3*>(&mesh.mBitangents[i]);
-					}
+					vectorAttribThreads[3] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(3, mesh.mTangents, vec3); });
+					vectorAttribThreads[4] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(4, mesh.mBitangents, vec3); });
 				}
 			}
 		}
-		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID + layout->GetLayoutCode(), std::move(vertexBuffer)));
 
-		auto bytecodeVS = vertexShader->GetBytecode();
-		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
+		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, vertexShader->GetBytecode()));
 		binds.emplace_back(vertexShader);
 
 		binds.emplace_back(Resource::Blender::Get(gfx, hasAlpha));
 		//binds.emplace_back(Resource::Rasterizer::Get(gfx, hasAlpha));
+
+		for (auto& thread : vectorAttribThreads)
+			if (thread)
+			{
+				thread->join();
+				delete thread;
+			}
+		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID + layout->GetLayoutCode(), std::move(vertexBuffer)));
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
