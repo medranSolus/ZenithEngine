@@ -15,7 +15,7 @@ namespace Exception
 		mutable std::string whatBuffer;
 
 	public:
-		constexpr BasicException(unsigned int line, const char* file) noexcept : line(line), file(file) {}
+		inline BasicException(unsigned int line, const char* file) noexcept : line(line), file(file) {}
 		BasicException(const BasicException&) = default;
 		BasicException& operator=(const BasicException&) = default;
 		virtual ~BasicException() = default;

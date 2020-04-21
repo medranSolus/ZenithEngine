@@ -6,18 +6,6 @@
 unsigned int App::width = 1600;
 unsigned int App::height = 900;
 
-float moveX = 0.0f;
-float moveY = 0.0f;
-float moveZ = 0.0f;
-
-float rotateZ = 0.0f;
-float rotateX = 0.0f;
-float rotateY = 0.0f;
-
-float angleZ = 0.0f;
-float angleX = 0.0f;
-float angleY = 0.0f;
-
 inline void App::ProcessInput()
 {
 	while (window.Mouse().IsInput())
@@ -31,14 +19,12 @@ inline void App::ProcessInput()
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
 			{
-				moveZ += 0.001;
 				if (!window.IsCursorEnabled() && cameraSpeed <= maxMoveSpeed - 0.01f - FLT_EPSILON)
 					cameraSpeed += 0.01f;
 				break;
 			}
 			case WinAPI::Mouse::Event::Type::WheelBackward:
 			{
-				moveZ -= 0.001;
 				if (!window.IsCursorEnabled() && cameraSpeed >= 0.012f + FLT_EPSILON)
 					cameraSpeed -= 0.01f;
 				break;
@@ -76,26 +62,6 @@ inline void App::ProcessInput()
 			{
 				switch (opt.value().GetCode())
 				{
-				case VK_LEFT:
-				{
-					moveX -= 0.001f;
-					break;
-				}
-				case VK_RIGHT:
-				{
-					moveX += 0.001f;
-					break;
-				}
-				case VK_UP:
-				{
-					moveY += 0.001f;
-					break;
-				}
-				case VK_DOWN:
-				{
-					moveY -= 0.001f;
-					break;
-				}
 				case VK_ESCAPE:
 				{
 					window.SwitchCursor();
@@ -141,17 +107,12 @@ inline void App::ShowOptionsWindow()
 	if (ImGui::Begin("Options"))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		//ImGui::SliderFloat("Rotation X speed", &rotateX, -10.0f, 10.0f, "%.2f");
-		//ImGui::SliderFloat("Rotation Y speed", &rotateY, -10.0f, 10.0f, "%.2f");
-		//ImGui::SliderFloat("Rotation Z speed", &rotateZ, -10.0f, 10.0f, "%.2f");
 		ImGui::SliderFloat("Move speed", &cameraSpeed, 0.001f, maxMoveSpeed, "%.3f");
 		ImGui::SliderFloat("Roll speed", &cameraRollSpeed, 0.01f, 0.5f, "%.2f");
 		ImGui::SliderFloat("Camera speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
 		const auto& cameraPos = camera->GetPos();
 		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
 		camera->ShowWindow();
-		if (ImGui::Button("Reset"))
-			moveX = moveY = moveZ = rotateZ = rotateX = rotateY = 0.0f;
 	}
 	ImGui::End();
 }
@@ -189,10 +150,6 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width)
 
 void App::MakeFrame()
 {
-	float dTime = timer.Mark();
-	angleZ = dTime * rotateZ;
-	angleX = dTime * rotateX;
-	angleY = dTime * rotateY;
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
 	camera->Update(window.Gfx());
@@ -203,7 +160,6 @@ void App::MakeFrame()
 			shape->Draw(window.Gfx());
 	for (auto& obj : carpetRects)
 	{
-		obj->Update({ moveX, moveZ, moveY }, { angleZ, angleX, angleY });
 		obj->Draw(window.Gfx());
 	}
 	ShowObjectWindow();
@@ -237,7 +193,6 @@ App::App(const std::string& commandLine) : window(width, height, windowTitle)
 
 unsigned long long App::Run()
 {
-	//CreateCarpet(5, 0.0f, 0.0f, 10.0f);
 	while (true)
 	{
 		if (const auto status = WinAPI::Window::ProcessMessage())
