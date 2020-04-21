@@ -6,7 +6,7 @@
 namespace GFX::Shape
 {
 	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material, unsigned int density, float radius)
-		: Object(position, name, radius)
+		: BaseShape(gfx, *this), Object(position, name, radius)
 	{
 		auto list = Primitive::Sphere::MakeIco(density);
 		AddBind(Resource::VertexBuffer::Get(gfx, list.typeName, list.vertices));
@@ -16,10 +16,8 @@ namespace GFX::Shape
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
-
 		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
-		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ
-		AddBind(std::make_shared<Resource::ConstBufferTransform>(gfx, *this));
+		// Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ
 
 		Data::CBuffer::Phong buffer;
 		buffer.materialColor = material;

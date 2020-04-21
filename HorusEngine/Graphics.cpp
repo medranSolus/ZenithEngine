@@ -42,20 +42,12 @@ namespace GFX
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
 		GFX_THROW_FAILED(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTarget)); // Create view to back buffer allowing writing data
 
-		D3D11_DEPTH_STENCIL_DESC depthDesc = { 0 };
-		depthDesc.DepthEnable = TRUE;
-		depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL;
-		depthDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
-		MsWrl::ComPtr<ID3D11DepthStencilState> depthStencilState = nullptr;
-		GFX_THROW_FAILED(device->CreateDepthStencilState(&depthDesc, &depthStencilState)); // Enable objects to overlap each other depending on Z coord
-		context->OMSetDepthStencilState(depthStencilState.Get(), 1U);
-
 		D3D11_TEXTURE2D_DESC depthTexDesc = { 0 };
 		depthTexDesc.Width = width;
 		depthTexDesc.Height = height;
 		depthTexDesc.MipLevels = 0U; // Texture stuff
 		depthTexDesc.ArraySize = 1U; // Only 1 texture
-		depthTexDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+		depthTexDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
 		depthTexDesc.SampleDesc.Count = 1U; // Antialiasing stuff
 		depthTexDesc.SampleDesc.Quality = 0U;
 		depthTexDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
@@ -64,7 +56,7 @@ namespace GFX
 		GFX_THROW_FAILED(device->CreateTexture2D(&depthTexDesc, nullptr, &depthTexture)); // Texture to render into with depth stencil
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = { };
-		depthViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+		depthViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
 		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthViewDesc.Texture2D.MipSlice = 0U;
 		GFX_THROW_FAILED(device->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencil));
@@ -109,7 +101,7 @@ namespace GFX
 	{
 		const float color[] = { red, green, blue, 1.0f };
 		context->ClearRenderTargetView(renderTarget.Get(), color);
-		context->ClearDepthStencilView(depthStencil.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH, 1.0f, 0U);
+		context->ClearDepthStencilView(depthStencil.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.0f, 0U);
 		if (guiEnabled)
 		{
 			ImGui_ImplDX11_NewFrame();

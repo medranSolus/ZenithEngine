@@ -12,7 +12,7 @@ namespace GFX::Resource
 		Rasterizer(Graphics& gfx, bool culling);
 		Rasterizer(const Rasterizer&) = delete;
 		Rasterizer& operator=(const Rasterizer&) = delete;
-		~Rasterizer() = default;
+		virtual ~Rasterizer() = default;
 
 		static inline std::shared_ptr<Rasterizer> Get(Graphics& gfx, bool culling) { return Codex::Resolve<Rasterizer>(gfx, culling); }
 		static inline std::string GenerateRID(bool culling) noexcept { return "#" + std::string(typeid(Rasterizer).name()) + "#" + std::to_string(culling) + "#"; }

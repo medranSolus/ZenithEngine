@@ -1,7 +1,7 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include "Vertex.h"
-#include <cmath>
+#include <math.h>
 #include <random>
 
 constexpr bool equals(float a, float b)

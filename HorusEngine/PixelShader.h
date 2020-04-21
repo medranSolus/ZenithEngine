@@ -13,7 +13,7 @@ namespace GFX::Resource
 		PixelShader(Graphics& gfx, const std::string& path);
 		PixelShader(const PixelShader&) = delete;
 		PixelShader& operator=(const PixelShader&) = delete;
-		~PixelShader() = default;
+		virtual ~PixelShader() = default;
 
 		static inline std::shared_ptr<PixelShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<PixelShader>(gfx, path); }
 		static inline std::string GenerateRID(const std::string& path) noexcept { return "#" + std::string(typeid(PixelShader).name()) + "#" + path + "#"; }

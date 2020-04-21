@@ -97,7 +97,7 @@ inline void App::ShowObjectWindow()
 		}
 		ImGui::NewLine();
 		if (currentItem->second)
-			currentItem->second->ShowWindow();
+			currentItem->second->ShowWindow(window.Gfx());
 	}
 	ImGui::End();
 }

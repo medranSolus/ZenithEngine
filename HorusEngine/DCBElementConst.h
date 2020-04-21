@@ -18,9 +18,10 @@ namespace GFX::Data::CBuffer
 			inline Ptr(const DCBElementConst* element) noexcept : element(element) {}
 
 		public:
+			~Ptr() = default;
+
 			template<typename T>
 			operator const T* () const noexcept(!IS_DEBUG);
-		private:
 		};
 
 	private:
@@ -32,6 +33,8 @@ namespace GFX::Data::CBuffer
 			: layout(layout), bytes(bytes), offset(offset) {}
 
 	public:
+		~DCBElementConst() = default;
+
 		constexpr bool Exists() const noexcept { return layout->Exists(); }
 
 		inline DCBElementConst operator[](const std::string& key) const noexcept(!IS_DEBUG) { return { &(*layout)[key], bytes, offset }; }

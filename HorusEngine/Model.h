@@ -14,6 +14,7 @@ namespace GFX::Shape
 			mutable std::shared_ptr<DirectX::XMFLOAT4X4> currentTransform = nullptr;
 			std::vector<std::unique_ptr<Node>> children;
 			std::vector<std::shared_ptr<Mesh>> meshes;
+			bool isMesh = false;
 
 		public:
 			Node(const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX& nodeTransform) noexcept;
@@ -33,6 +34,8 @@ namespace GFX::Shape
 
 			void Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform) const noexcept;
 			void ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept;
+			void ShowWindow(Graphics& gfx) noexcept override;
+			void SetMesh(Graphics& gfx, bool meshOnly) noexcept;
 		};
 		class Window
 		{
@@ -44,9 +47,9 @@ namespace GFX::Shape
 			inline Window(Model* parent) noexcept : parent(parent), selectedNode(parent->root.get()) {}
 			Window(const Window&) = default;
 			Window& operator=(const Window&) = default;
-			~Window() = default;
+			virtual ~Window() = default;
 
-			void Show() noexcept;
+			void Show(Graphics& gfx) noexcept;
 		};
 
 		std::string name = "";
@@ -79,7 +82,7 @@ namespace GFX::Shape
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
-		inline void ShowWindow() noexcept override { window->Show(); }
+		inline void ShowWindow(Graphics& gfx) noexcept override { window->Show(gfx); }
 
 		class ModelException : public Exception::BasicException
 		{

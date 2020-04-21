@@ -177,7 +177,9 @@ namespace GFX::Data::CBuffer
 		data.size = size;
 		return *this;
 	}
-
+	//error C2679: binary '=': no operator found which takes a right-hand operand of type 'initializer list' (or there is no acceptable conversion)
+	//message: or (const std::optional<GFX::Data::CBuffer::DCBLayoutElement> &)
+	//message: or (std::nullopt_t) noexcept
 	std::pair<size_t, const DCBLayoutElement*> DCBLayoutElement::CalculateIndexOffset(size_t offset, size_t index) const noexcept(!IS_DEBUG)
 	{
 		assert("Indexing into non-array" && type == ElementType::Array);

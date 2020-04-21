@@ -14,7 +14,7 @@ namespace GFX::Resource
 		VertexShader(Graphics& gfx, const std::string& path);
 		VertexShader(const VertexShader&) = delete;
 		VertexShader& operator=(const VertexShader&) = delete;
-		~VertexShader() = default;
+		virtual ~VertexShader() = default;
 
 		static inline std::shared_ptr<VertexShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<VertexShader>(gfx, path); }
 		static inline std::string GenerateRID(const std::string& path) noexcept { return "#" + std::string(typeid(VertexShader).name()) + "#" + path + "#"; }

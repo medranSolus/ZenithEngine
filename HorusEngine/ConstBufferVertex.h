@@ -15,7 +15,7 @@ namespace GFX::Resource
 	public:
 		ConstBufferVertex(const ConstBufferVertex&) = delete;
 		ConstBufferVertex& operator=(const ConstBufferVertex&) = delete;
-		~ConstBufferVertex() = default;
+		virtual ~ConstBufferVertex() = default;
 
 		static inline std::shared_ptr<ConstBufferVertex> Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
 		static inline std::shared_ptr<ConstBufferVertex> Get(Graphics& gfx, const std::string& tag, UINT slot = 0U);

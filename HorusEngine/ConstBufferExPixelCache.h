@@ -24,6 +24,7 @@ namespace GFX::Resource
 		ConstBufferExPixelCache(Graphics& gfx, const std::string& tag,
 			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U)
 			: ConstBufferExPixel(gfx, tag, buffer.GetRootElement(), slot, &buffer), buffer(buffer) {}
+		virtual ~ConstBufferExPixelCache() = default;
 
 		static std::shared_ptr<ConstBufferExPixelCache> Get(Graphics& gfx, const std::string& tag,
 			const Data::CBuffer::DCBLayoutFinal& layout, UINT slot = 0U);

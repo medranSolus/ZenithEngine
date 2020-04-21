@@ -1,7 +1,15 @@
 #include "BaseShape.h"
+#include "ImGui/imgui.h"
 
 namespace GFX::Shape
 {
+	BaseShape::BaseShape(Graphics& gfx, const GfxObject& parent)
+	{
+		binds.emplace_back(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+		binds.emplace_back(Resource::DepthStencil::Get(gfx, Resource::DepthStencil::StencilMode::Off));
+		binds.emplace_back(std::make_shared<Resource::ConstBufferTransform>(gfx, parent));
+	}
+
 	void BaseShape::AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG)
 	{
 		assert(bind != nullptr);

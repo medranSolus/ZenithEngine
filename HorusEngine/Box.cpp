@@ -7,7 +7,7 @@ namespace GFX::Shape
 {
 	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material,
 		float width, float height, float length)
-		: Object(position, name), sizes(width, height, length)
+		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
 	{
 		auto list = Primitive::Cube::Make();
 		AddBind(Resource::VertexBuffer::Get(gfx, list.typeName, list.vertices));
@@ -17,10 +17,8 @@ namespace GFX::Shape
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
-
 		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
-		AddBind(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); // Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
-		AddBind(std::make_shared<Resource::ConstBufferTransform>(gfx, *this));
+		// Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
 
 		Data::CBuffer::Phong buffer;
 		buffer.materialColor = material;

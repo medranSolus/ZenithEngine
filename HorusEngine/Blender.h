@@ -12,7 +12,7 @@ namespace GFX::Resource
 		Blender(Graphics& gfx, bool enabled);
 		Blender(const Blender&) = delete;
 		Blender& operator=(const Blender&) = delete;
-		~Blender() = default;
+		virtual ~Blender() = default;
 
 		static inline std::shared_ptr<Blender> Get(Graphics& gfx, bool enabled) { return Codex::Resolve<Blender>(gfx, enabled); }
 		static inline std::string GenerateRID(bool enabled) noexcept { return "#" + std::string(typeid(Blender).name()) + "#" + std::to_string(enabled) + "#"; }

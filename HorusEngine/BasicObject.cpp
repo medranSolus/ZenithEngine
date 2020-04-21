@@ -11,7 +11,7 @@ namespace GFX
 				DirectX::XMLoadFloat3(&deltaAngle))));
 	}
 
-	void BasicObject::ShowWindow() noexcept
+	void BasicObject::ShowWindow(Graphics& gfx) noexcept
 	{
 		static constexpr float f32Max = FLT_MAX;
 		static constexpr float f32Min = -FLT_MAX;

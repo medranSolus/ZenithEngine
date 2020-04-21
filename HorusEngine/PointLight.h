@@ -34,7 +34,7 @@ namespace GFX::Light
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { mesh.Update(delta, deltaAngle); }
 
-		void ShowWindow() noexcept override;
+		void ShowWindow(Graphics& gfx) noexcept override;
 		void Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept;
 	};
 }

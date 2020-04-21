@@ -14,7 +14,7 @@ namespace GFX::Resource
 		InputLayout(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode);
 		InputLayout(const InputLayout&) = delete;
 		InputLayout& operator=(const InputLayout&) = delete;
-		~InputLayout() = default;
+		virtual ~InputLayout() = default;
 
 		static inline std::shared_ptr<InputLayout> Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode);
 		static inline std::string GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode = nullptr) noexcept;

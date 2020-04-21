@@ -12,7 +12,7 @@ namespace WinAPI
 		class Event
 		{
 		public:
-			enum Type : char { LeftUp, LeftDown, RightUp, RightDown, WheelUp, WheelDown, WheelForward, WheelBackward, Move, RawMove, Enter, Leave };
+			enum class Type : char { LeftUp, LeftDown, RightUp, RightDown, WheelUp, WheelDown, WheelForward, WheelBackward, Move, RawMove, Enter, Leave };
 			struct RawInput
 			{
 				int dX;
@@ -32,7 +32,7 @@ namespace WinAPI
 			constexpr Event(Type type, const Mouse& mouse, int x, int y) noexcept
 				: type(type), x(x), y(y), delta({ x - mouse.x, y - mouse.y }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			constexpr Event(Type type, const Mouse& mouse, RawInput delta) noexcept
-				: type(type), x(x), y(y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
+				: type(type), x(mouse.x), y(mouse.y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			Event(const Event&) = default;
 			Event& operator=(const Event&) = default;
 			~Event() = default;

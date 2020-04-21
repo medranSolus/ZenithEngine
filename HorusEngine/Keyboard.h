@@ -13,7 +13,7 @@ namespace WinAPI
 		class Event
 		{
 		public:
-			enum Type : bool { Down, Up };
+			enum class Type : bool { Down, Up };
 
 		private:
 			Type type;

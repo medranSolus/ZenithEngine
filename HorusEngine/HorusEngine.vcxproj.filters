@@ -273,6 +273,18 @@
     <ClCompile Include="VertexBufferData.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
+    <ClCompile Include="DepthStencil.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Cube.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Sphere.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Square.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -789,6 +801,9 @@
     </ClInclude>
     <ClInclude Include="WindowExceptionMacros.h">
       <Filter>Header Files\WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthStencil.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

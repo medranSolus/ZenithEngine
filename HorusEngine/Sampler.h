@@ -12,7 +12,7 @@ namespace GFX::Resource
 		Sampler(Graphics& gfx);
 		Sampler(const Sampler&) = delete;
 		Sampler& operator=(const Sampler&) = delete;
-		~Sampler() = default;
+		virtual ~Sampler() = default;
 
 		static inline std::shared_ptr<Sampler> Get(Graphics& gfx) { return Codex::Resolve<Sampler>(gfx); }
 		static inline std::string GenerateRID() noexcept { return "#" + std::string(typeid(Sampler).name()) + "#"; }

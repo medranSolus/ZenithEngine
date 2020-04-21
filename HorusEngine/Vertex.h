@@ -23,9 +23,10 @@ namespace GFX::Data
 		Vertex(char* data, const VertexLayout& layout) noexcept(!IS_DEBUG);
 		Vertex(const Vertex&) = default;
 		Vertex& operator=(const Vertex&) = default;
-		~Vertex() = default;
 
 	public:
+		~Vertex() = default;
+
 		template<VertexLayout::ElementType T>
 		inline auto& Get() noexcept(!IS_DEBUG)
 		{

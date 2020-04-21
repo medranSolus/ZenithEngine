@@ -14,7 +14,7 @@ namespace GFX::Resource
 		Texture(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);
 		Texture(const Texture&) = delete;
 		Texture& operator=(const Texture&) = delete;
-		~Texture() = default;
+		virtual ~Texture() = default;
 
 		static inline std::shared_ptr<Texture> Get(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);
 		static inline std::string GenerateRID(const std::string& path, UINT slot = 0U, bool alphaEnable = false) noexcept;

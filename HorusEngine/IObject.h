@@ -21,6 +21,6 @@ namespace GFX
 		virtual void SetName(const std::string& newName) noexcept = 0;
 
 		virtual void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept = 0;
-		virtual void ShowWindow() noexcept = 0;
+		virtual void ShowWindow(Graphics& gfx) noexcept = 0;
 	};
 }

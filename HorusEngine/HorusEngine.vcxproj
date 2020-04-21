@@ -247,6 +247,7 @@
     <ClCompile Include="ConstBufferExPixel.cpp" />
     <ClCompile Include="ConstBufferExPixelCache.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
+    <ClCompile Include="Cube.cpp" />
     <ClCompile Include="DCBElement.cpp" />
     <ClCompile Include="DCBElementConst.cpp" />
     <ClCompile Include="DCBLayout.cpp" />
@@ -283,6 +284,9 @@
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
+    <ClCompile Include="DepthStencil.cpp" />
+    <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="Square.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
@@ -583,6 +587,7 @@
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Square.h" />
+    <ClInclude Include="DepthStencil.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />

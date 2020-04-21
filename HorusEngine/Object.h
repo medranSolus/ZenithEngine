@@ -21,7 +21,7 @@ namespace GFX
 		void SetScale(float newScale) noexcept override;
 		void SetPos(const DirectX::XMFLOAT3& position) noexcept override;
 		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
-		void ShowWindow() noexcept override;
+		void ShowWindow(Graphics& gfx) noexcept override;
 
 		virtual void UpdateTransformMatrix() noexcept;
 	};

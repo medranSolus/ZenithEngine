@@ -17,9 +17,10 @@ namespace GFX::Data::CBuffer
 			inline Ptr(DCBElement* element) noexcept : element(element) {}
 
 		public:
+			~Ptr() = default;
+
 			template<typename T>
 			operator T* () const noexcept(!IS_DEBUG);
-		private:
 		};
 
 	private:
@@ -31,6 +32,8 @@ namespace GFX::Data::CBuffer
 			: layout(layout), bytes(bytes), offset(offset) {}
 
 	public:
+		~DCBElement() = default;
+
 		constexpr bool Exists() const noexcept { return layout->Exists(); }
 
 		template<typename T>

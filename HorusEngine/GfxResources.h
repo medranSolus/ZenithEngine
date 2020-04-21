@@ -7,6 +7,7 @@
 #include "ConstBufferPixel.h"
 #include "ConstBufferTransform.h"
 #include "ConstBufferVertex.h"
+#include "DepthStencil.h"
 #include "IndexBuffer.h"
 #include "InputLayout.h"
 #include "PixelShader.h"

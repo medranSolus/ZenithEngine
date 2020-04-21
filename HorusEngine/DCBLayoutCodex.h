@@ -18,6 +18,8 @@ namespace GFX::Data::CBuffer
 		DCBLayoutCodex() = default;
 
 	public:
+		~DCBLayoutCodex() = default;
+
 		static DCBLayoutFinal Resolve(DCBLayout&& layout) noexcept(!IS_DEBUG);
 	};
 }

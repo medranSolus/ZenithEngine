@@ -19,7 +19,7 @@ namespace GFX::Light
 		};
 	}
 
-	void PointLight::ShowWindow() noexcept
+	void PointLight::ShowWindow(Graphics& gfx) noexcept
 	{
 		static constexpr float f32Max = FLT_MAX;
 		static constexpr float f32Min = -FLT_MAX;
@@ -33,7 +33,7 @@ namespace GFX::Light
 		ImGui::DragScalar("Linear", ImGuiDataType_Float, &lightBuffer.atteuationLinear, 0.0001f, &f32Min, &f32Max, "%.4f");
 		ImGui::DragScalar("Quad", ImGuiDataType_Float, &lightBuffer.attenuationQuad, 0.00001f, &f32Min, &f32Max, "%.5f");
 		ImGui::NewLine();
-		mesh.Object::ShowWindow();
+		mesh.Object::ShowWindow(gfx);
 	}
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept

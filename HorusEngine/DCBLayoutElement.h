@@ -110,7 +110,7 @@ namespace GFX::Data::CBuffer
 #undef X
 #pragma endregion
 
-		class DCBLayoutElement
+	class DCBLayoutElement
 	{
 		friend class DCBLayout;
 		friend struct ExtraData;

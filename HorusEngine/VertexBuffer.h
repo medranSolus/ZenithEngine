@@ -15,7 +15,7 @@ namespace GFX::Resource
 		VertexBuffer(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		VertexBuffer(const VertexBuffer&) = delete;
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
-		~VertexBuffer() = default;
+		virtual ~VertexBuffer() = default;
 
 		static inline std::shared_ptr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		template<typename ...Ignore>

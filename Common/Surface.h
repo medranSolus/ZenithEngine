@@ -15,13 +15,13 @@ namespace GFX
 			uint32_t dword = 255 << 24U;
 
 		public:
-
 			Pixel() = default;
 			constexpr Pixel(const Pixel& p) noexcept : dword(p.dword) {}
 			constexpr Pixel(uint32_t dw) noexcept : dword(dw) {}
 			constexpr Pixel(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept : dword((a << 24U) | (b << 16U) | (g << 8U) | r) {}
 			constexpr Pixel(Pixel col, uint8_t a) noexcept : Pixel((a << 24U) | col.dword) {}
 			constexpr Pixel& operator=(const Pixel& color) noexcept { dword = color.dword; return *this; }
+			~Pixel() = default;
 
 			constexpr uint32_t GetValue() const noexcept { return dword; }
 			constexpr uint8_t GetA() const noexcept { return dword >> 24U; }
@@ -71,6 +71,7 @@ namespace GFX
 		public:
 			ImageException(unsigned int line, const char* file, std::string note) noexcept
 				: BasicException(line, file), info(std::move(note)) {}
+			virtual ~ImageException() = default;
 
 			inline const char* GetType() const noexcept override { return "Image Exception"; }
 			constexpr const std::string& GetImageInfo() const noexcept { return info; }
@@ -83,6 +84,7 @@ namespace GFX
 		public:
 			DirectXTexException(unsigned int line, const char* file, HRESULT hResult, std::string note) noexcept
 				: BasicException(line, file), ImageException(line, file, note), WinApiException(line, file, hResult) {}
+			virtual ~DirectXTexException() = default;
 
 			inline const char* GetType() const noexcept override { return "DirectXTex Exception"; }
 

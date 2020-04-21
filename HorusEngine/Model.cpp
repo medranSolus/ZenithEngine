@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "Model.h"
 #include "GfxResources.h"
 #include "Surface.h"
@@ -52,7 +51,32 @@ namespace GFX::Shape
 		}
 	}
 
-	void Model::Window::Show() noexcept
+	void Model::Node::ShowWindow(Graphics& gfx) noexcept
+	{
+		Object::ShowWindow(gfx);
+		bool meshOnly = isMesh;
+		ImGui::Checkbox("Mesh-only", &meshOnly);
+		if (isMesh != meshOnly)
+			SetMesh(gfx, meshOnly);
+	}
+
+	void Model::Node::SetMesh(Graphics& gfx, bool meshOnly) noexcept
+	{
+		if (isMesh != meshOnly)
+		{
+			isMesh = meshOnly;
+			if (isMesh)
+				for (auto& nodeMesh : meshes)
+					nodeMesh->SetTopologyMesh(gfx);
+			else
+				for (auto& nodeMesh : meshes)
+					nodeMesh->SetTopologyPlain(gfx);
+		}
+		for (auto& node : children)
+			node->SetMesh(gfx, meshOnly);
+	}
+
+	void Model::Window::Show(Graphics& gfx) noexcept
 	{
 		ImGui::Columns(2);
 		ImGui::BeginChild("##scroll", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -61,7 +85,7 @@ namespace GFX::Shape
 		ImGui::EndChild();
 		ImGui::NextColumn();
 		ImGui::NewLine();
-		selectedNode->Object::ShowWindow();
+		selectedNode->ShowWindow(gfx);
 		ImGui::Columns(1);
 	}
 

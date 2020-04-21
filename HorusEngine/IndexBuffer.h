@@ -14,7 +14,7 @@ namespace GFX::Resource
 		IndexBuffer(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
 		IndexBuffer(const IndexBuffer&) = delete;
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
-		~IndexBuffer() = default;
+		virtual ~IndexBuffer() = default;
 
 		static inline std::shared_ptr<IndexBuffer> Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
 		template<typename ...Ignore>

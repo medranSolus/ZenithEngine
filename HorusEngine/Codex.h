@@ -20,6 +20,8 @@ namespace GFX::Resource
 		Codex() = default;
 
 	public:
+		~Codex() = default;
+
 		template<typename T, typename ...Params>
 		static inline std::shared_ptr<T> Resolve(Graphics& gfx, Params&& ...p) noexcept;
 	};

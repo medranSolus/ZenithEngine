@@ -13,9 +13,9 @@ namespace GFX::Data::CBuffer
 		DCBLayoutBase& operator=(const DCBLayoutBase&) = default;
 
 	public:
+		virtual ~DCBLayoutBase() = default;
+
 		inline size_t GetByteSize() const { return root->GetByteSize(); }
 		inline std::string GetSignature() const noexcept(!IS_DEBUG) { return root->GetSignature(); }
-
-		virtual ~DCBLayoutBase() = default;
 	};
 }

@@ -48,9 +48,9 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
-	void Object::ShowWindow() noexcept
+	void Object::ShowWindow(Graphics& gfx) noexcept
 	{
-		BasicObject::ShowWindow();
+		BasicObject::ShowWindow(gfx);
 		UpdateTransformMatrix();
 	}
 
