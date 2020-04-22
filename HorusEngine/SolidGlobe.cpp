@@ -31,8 +31,10 @@ namespace GFX::Shape
 		}
 
 		Data::CBuffer::Solid buffer{ material };
-		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Solid>::Get(gfx, name, buffer));
-
+		auto materialData = Resource::ConstBufferPixel<Data::CBuffer::Solid>::Get(gfx, name, buffer);
+		materialBuffer = materialData.get();
+		AddBind(std::move(materialData));
+		
 		UpdateTransformMatrix();
 	}
 

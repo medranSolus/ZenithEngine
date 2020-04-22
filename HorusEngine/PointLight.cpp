@@ -25,6 +25,7 @@ namespace GFX::Light
 		static constexpr float f32Min = -FLT_MAX;
 		ImGui::ColorEdit3("Color", (float*)&lightBuffer.lightColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+		mesh.GetMaterial().Update(gfx, { lightBuffer.lightColor });
 		ImGui::DragScalar("Intensity", ImGuiDataType_Float, &lightBuffer.lightIntensity, 0.001f, &f32Min, &f32Max, "%.3f");
 		ImGui::ColorEdit3("Ambient Color", (float*)&lightBuffer.ambientColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
@@ -34,6 +35,8 @@ namespace GFX::Light
 		ImGui::DragScalar("Quad", ImGuiDataType_Float, &lightBuffer.attenuationQuad, 0.00001f, &f32Min, &f32Max, "%.5f");
 		ImGui::NewLine();
 		mesh.ShowWindow(gfx);
+		ImGui::SameLine();
+		ImGui::Checkbox("Object visible", &visible);
 	}
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept

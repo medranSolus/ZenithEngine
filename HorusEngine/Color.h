@@ -31,6 +31,7 @@ namespace GFX::Data
 
 		constexpr ColorFloat4(const DirectX::XMFLOAT4& col) noexcept : col(col) {}
 		constexpr ColorFloat4(DirectX::XMFLOAT4&& col) noexcept : col(std::move(col)) {}
+		constexpr ColorFloat4(const DirectX::XMFLOAT3& col) noexcept : col(col.x, col.y, col.z, 1.0f) {}
 
 		constexpr ColorFloat4(const ColorFloat4& c) noexcept : col(c.col) {}
 		constexpr ColorFloat4(ColorFloat4&& c) noexcept : col(std::move(c.col)) {}
