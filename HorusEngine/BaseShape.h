@@ -10,6 +10,7 @@ namespace GFX::Shape
 	{
 		Resource::IndexBuffer* indexBuffer = nullptr;
 		std::vector<std::shared_ptr<Resource::IBindable>> binds;
+		bool visible = true;
 
 	protected:
 		BaseShape(Graphics& gfx, const GfxObject& parent);
@@ -27,9 +28,14 @@ namespace GFX::Shape
 		void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG);
 
 	public:
+		constexpr bool IsVisible() const noexcept { return visible; }
+		constexpr void SetVisible() noexcept { visible = true; }
+		constexpr void SetHidden() noexcept { visible = false; }
+		constexpr void SwitchVisible() noexcept { visible = !visible; }
+
 		inline void SetTopologyPlain(Graphics& gfx) noexcept { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); }
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST)); }
-
+		
 		void Draw(Graphics& gfx) const noexcept override;
 		void ShowWindow(Graphics& gfx) noexcept override;
 	};

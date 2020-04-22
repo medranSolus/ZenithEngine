@@ -11,7 +11,6 @@ namespace GFX::Light
 		mutable Data::CBuffer::Light lightBuffer;
 		mutable Shape::SolidGlobe mesh;
 		mutable Resource::ConstBufferPixel<Data::CBuffer::Light> buffer;
-		bool visible = true;
 
 	public:
 		PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);
@@ -19,7 +18,7 @@ namespace GFX::Light
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
-		inline void Draw(Graphics& gfx) const noexcept override { if (visible) mesh.Draw(gfx); }
+		inline void Draw(Graphics& gfx) const noexcept override { mesh.Draw(gfx); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return mesh.GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { mesh.SetAngle(meshAngle); }

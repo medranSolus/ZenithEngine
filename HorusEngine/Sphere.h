@@ -22,8 +22,8 @@ namespace GFX::Primitive
 		static std::string GetNameIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 		static std::string GetNameIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 
-		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIcoSolid(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
-		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIco(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
+		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIcoSolid(const std::vector<VertexAttribute>&& attributes = {}) noexcept { return GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes)); }
+		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIco(const std::vector<VertexAttribute>&& attributes = {}) noexcept { return GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes)); }
 
 		static IndexedTriangleList MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {});
 		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {});

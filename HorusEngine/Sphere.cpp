@@ -239,16 +239,6 @@ namespace GFX::Primitive
 		return std::move(name + "N" + std::to_string(density));
 	}
 
-	inline std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutIcoSolid(const std::vector<VertexAttribute>&& attributes) noexcept
-	{
-		return GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes));
-	}
-
-	inline std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutIco(const std::vector<VertexAttribute>&& attributes) noexcept
-	{
-		return GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes));
-	}
-	
 	IndexedTriangleList Sphere::MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes)
 	{
 		constexpr float bigAngle = M_PI / 10.0f;

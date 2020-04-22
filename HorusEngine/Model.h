@@ -15,6 +15,7 @@ namespace GFX::Shape
 			std::vector<std::unique_ptr<Node>> children;
 			std::vector<std::shared_ptr<Mesh>> meshes;
 			bool isMesh = false;
+			bool visible = true;
 
 		public:
 			Node(const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX& nodeTransform) noexcept;

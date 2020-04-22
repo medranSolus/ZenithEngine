@@ -22,13 +22,16 @@ namespace GFX::Shape
 
 	void Model::Node::Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform) const noexcept
 	{
-		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
-			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
-		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
-		for (const auto& mesh : meshes)
-			mesh->Draw(gfx);
-		for (const auto& child : children)
-			child->Draw(gfx, transformMatrix);
+		if (visible)
+		{
+			const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
+				DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
+			DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
+			for (const auto& mesh : meshes)
+				mesh->Draw(gfx);
+			for (const auto& child : children)
+				child->Draw(gfx, transformMatrix);
+		}
 	}
 
 	void Model::Node::ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept
@@ -58,6 +61,7 @@ namespace GFX::Shape
 		ImGui::Checkbox("Mesh-only", &meshOnly);
 		if (isMesh != meshOnly)
 			SetMesh(gfx, meshOnly);
+		ImGui::Checkbox("Object visible", &visible);
 	}
 
 	void Model::Node::SetMesh(Graphics& gfx, bool meshOnly) noexcept

@@ -23,9 +23,12 @@ namespace GFX::Shape
 
 	void BaseShape::Draw(Graphics& gfx) const noexcept
 	{
-		for (auto& b : binds)
-			b->Bind(gfx);
-		gfx.DrawIndexed(indexBuffer->GetCount());
+		if (visible)
+		{
+			for (auto& b : binds)
+				b->Bind(gfx);
+			gfx.DrawIndexed(indexBuffer->GetCount());
+		}
 	}
 
 	void BaseShape::ShowWindow(Graphics& gfx) noexcept
@@ -41,5 +44,7 @@ namespace GFX::Shape
 			else
 				SetTopologyPlain(gfx);
 		}
+		ImGui::SameLine();
+		ImGui::Checkbox("Object visible", &visible);
 	}
 }
