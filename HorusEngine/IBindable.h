@@ -6,7 +6,7 @@ namespace GFX::Resource
 	template<typename T>
 	struct is_resolvable_by_codex
 	{
-		static constexpr bool value{ false };
+		static constexpr bool generate{ false };
 	};
 
 	class IBindable
@@ -21,7 +21,7 @@ namespace GFX::Resource
 		template<typename T, typename ...Params>
 		static constexpr std::string GenerateRID(Params&& ...p)
 		{
-			static_assert(is_resolvable_by_codex<T>::value == true, "Class does not implement static method GenerateRID(...)!");
+			static_assert(is_resolvable_by_codex<T>::generate == true, "Class does not implement static method GenerateRID(...)!");
 			return T::template GenerateRID(std::forward<Params>(p)...);
 		}
 

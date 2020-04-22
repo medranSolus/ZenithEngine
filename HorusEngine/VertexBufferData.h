@@ -10,6 +10,7 @@ namespace GFX::Data
 		std::shared_ptr<VertexLayout> layout = nullptr;
 
 	public:
+		VertexBufferData() noexcept {}
 		VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size = 0U) noexcept(!IS_DEBUG);
 		VertexBufferData(const VertexBufferData&) = default;
 		VertexBufferData& operator=(const VertexBufferData&) = default;

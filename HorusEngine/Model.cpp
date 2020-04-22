@@ -95,18 +95,22 @@ namespace GFX::Shape
 		binds.reserve(8U);
 
 		// Get IndexBuffer
+		const size_t indiciesSize = static_cast<size_t>(mesh.mNumFaces) * 3;
 		std::vector<unsigned int> indices;
-		indices.reserve(static_cast<size_t>(mesh.mNumFaces) * 3);
-		for (unsigned int i = 0; i < mesh.mNumFaces; ++i)
-		{
-			const auto& face = mesh.mFaces[i];
-			assert(face.mNumIndices == 3);
-			indices.emplace_back(face.mIndices[0]);
-			indices.emplace_back(face.mIndices[1]);
-			indices.emplace_back(face.mIndices[2]);
-		}
-		std::string meshID = std::string(mesh.mName.C_Str()) + std::to_string(indices.size()) + std::to_string(mesh.mNumVertices);
 		// Maybe layout code needed too, TODO: Check this
+		std::string meshID = std::string(mesh.mName.C_Str()) + std::to_string(indiciesSize) + std::to_string(mesh.mNumVertices);
+		if (Resource::IndexBuffer::NotStored(meshID))
+		{
+			indices.reserve(indiciesSize);
+			for (unsigned int i = 0; i < mesh.mNumFaces; ++i)
+			{
+				const auto& face = mesh.mFaces[i];
+				assert(face.mNumIndices == 3);
+				indices.emplace_back(face.mIndices[0]);
+				indices.emplace_back(face.mIndices[1]);
+				indices.emplace_back(face.mIndices[2]);
+			}
+		}
 		binds.emplace_back(Resource::IndexBuffer::Get(gfx, meshID, std::move(indices)));
 
 		bool hasAlpha = false;
@@ -214,43 +218,47 @@ namespace GFX::Shape
 			}
 		}
 
-		Data::VertexBufferData vertexBuffer(layout, mesh.mNumVertices);
-		auto loadVertexAttrib = [&vertexBuffer, &mesh]<typename T>(size_t index, aiVector3D* attribs, const T& vectorType) -> void
+		meshID += layout->GetLayoutCode();
+		Data::VertexBufferData vertexBuffer(layout);
+		if (Resource::VertexBuffer::NotStored(meshID))
 		{
-			for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
-				vertexBuffer[i].SetByIndex(index, *reinterpret_cast<T*>(&attribs[i]));
-		};
-		std::array<std::thread*, 5> vectorAttribThreads{ nullptr };
-		DirectX::XMFLOAT3 vec3;
-		vectorAttribThreads[0] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(0, mesh.mVertices, vec3); });
-		if (normals)
-		{
-			vectorAttribThreads[1] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(1, mesh.mNormals, vec3); });
-			if (textureCoord)
+			vertexBuffer.Resize(mesh.mNumVertices);
+			auto loadVertexAttrib = [&vertexBuffer, &mesh]<typename T>(size_t index, aiVector3D * attribs, const T & vectorType) -> void
 			{
-				DirectX::XMFLOAT2 vec2;
-				vectorAttribThreads[2] = new std::thread([&loadVertexAttrib, &mesh, &vec2]() { loadVertexAttrib(2, mesh.mTextureCoords[0], vec2); });
-				if (normalMap)
+				for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
+					vertexBuffer[i].SetByIndex(index, *reinterpret_cast<T*>(&attribs[i]));
+			};
+			std::array<std::thread*, 5> vectorAttribThreads{ nullptr };
+			DirectX::XMFLOAT3 vec3;
+			vectorAttribThreads[0] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(0, mesh.mVertices, vec3); });
+			if (normals)
+			{
+				vectorAttribThreads[1] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(1, mesh.mNormals, vec3); });
+				if (textureCoord)
 				{
-					vectorAttribThreads[3] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(3, mesh.mTangents, vec3); });
-					vectorAttribThreads[4] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(4, mesh.mBitangents, vec3); });
+					DirectX::XMFLOAT2 vec2;
+					vectorAttribThreads[2] = new std::thread([&loadVertexAttrib, &mesh, &vec2]() { loadVertexAttrib(2, mesh.mTextureCoords[0], vec2); });
+					if (normalMap)
+					{
+						vectorAttribThreads[3] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(3, mesh.mTangents, vec3); });
+						vectorAttribThreads[4] = new std::thread([&loadVertexAttrib, &mesh, &vec3]() { loadVertexAttrib(4, mesh.mBitangents, vec3); });
+					}
 				}
 			}
+
+			for (auto& thread : vectorAttribThreads)
+				if (thread)
+				{
+					thread->join();
+					delete thread;
+				}
 		}
+		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID, std::move(vertexBuffer)));
 
-		binds.emplace_back(Resource::InputLayout::Get(gfx, layout, vertexShader->GetBytecode()));
-		binds.emplace_back(vertexShader);
-
+		binds.emplace_back(Resource::InputLayout::Get(gfx, std::move(layout), vertexShader->GetBytecode()));
+		binds.emplace_back(std::move(vertexShader));
 		binds.emplace_back(Resource::Blender::Get(gfx, hasAlpha));
 		//binds.emplace_back(Resource::Rasterizer::Get(gfx, hasAlpha));
-
-		for (auto& thread : vectorAttribThreads)
-			if (thread)
-			{
-				thread->join();
-				delete thread;
-			}
-		binds.emplace_back(Resource::VertexBuffer::Get(gfx, meshID + layout->GetLayoutCode(), std::move(vertexBuffer)));
 
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}

@@ -31,4 +31,10 @@ namespace GFX::Shape
 		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
 		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
 	}
+	
+	void Triangle::ShowWindow(Graphics& gfx) noexcept
+	{
+		Object::ShowWindow(gfx);
+		BaseShape::ShowWindow(gfx);
+	}
 }

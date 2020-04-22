@@ -12,8 +12,8 @@ namespace GFX::Shape
 		std::mt19937_64 engine(std::random_device{}());
 		for (unsigned char i = 0; i < 4; ++i)
 			list.vertices[i].Get<VertexAttribute::ColorFloat4>() = std::move(randColor(engine));
-		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.vertices));
-		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Rectangle).name() + name, list.indices));
+		AddBind(Resource::VertexBuffer::Get(gfx, name, list.vertices));
+		AddBind(Resource::IndexBuffer::Get(gfx, name, list.indices));
 
 		auto vertexShader = Resource::VertexShader::Get(gfx, "ColorBlendVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
@@ -22,6 +22,12 @@ namespace GFX::Shape
 		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
 
 		UpdateTransformMatrix();
+	}
+
+	void Rectangle::ShowWindow(Graphics& gfx) noexcept
+	{
+		Object::ShowWindow(gfx);
+		BaseShape::ShowWindow(gfx);
 	}
 
 	void Rectangle::UpdateTransformMatrix() noexcept

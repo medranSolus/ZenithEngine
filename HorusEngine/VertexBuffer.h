@@ -17,6 +17,7 @@ namespace GFX::Resource
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		virtual ~VertexBuffer() = default;
 
+		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<VertexBuffer>(tag); }
 		static inline std::shared_ptr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
@@ -28,7 +29,7 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<VertexBuffer>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 
 	inline std::shared_ptr<VertexBuffer> VertexBuffer::Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer)

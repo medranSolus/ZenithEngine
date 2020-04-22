@@ -28,6 +28,6 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<VertexShader>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 }

@@ -9,21 +9,37 @@ namespace GFX::Shape
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
 	{
-		auto list = Primitive::Sphere::MakeSolidUV(latitudeDensity, longitudeDensity);
-		AddBind(Resource::VertexBuffer::Get(gfx, list.typeName, list.vertices));
-		AddBind(Resource::IndexBuffer::Get(gfx, list.typeName, list.indices));
-
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
-		AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
-		// Mesh: D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ
+
+		std::string typeName = Primitive::Sphere::GetNameUVSolid(latitudeDensity, longitudeDensity);
+		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
+		{
+			auto list = Primitive::Sphere::MakeSolidUV(latitudeDensity, longitudeDensity);
+			AddBind(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			AddBind(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
+			AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
+		}
+		else
+		{
+			Primitive::IndexedTriangleList list;
+			AddBind(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			AddBind(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
+			AddBind(Resource::InputLayout::Get(gfx, Primitive::Sphere::GetLayoutUVSolid(), bytecodeVS));
+		}
 
 		Data::CBuffer::Solid buffer{ material };
 		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Solid>::Get(gfx, name, buffer));
 
 		UpdateTransformMatrix();
+	}
+
+	void SolidGlobe::ShowWindow(Graphics& gfx) noexcept
+	{
+		Object::ShowWindow(gfx);
+		BaseShape::ShowWindow(gfx);
 	}
 
 	void SolidGlobe::UpdateTransformMatrix() noexcept

@@ -25,6 +25,6 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<PixelShader>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 }

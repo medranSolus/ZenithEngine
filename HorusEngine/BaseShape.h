@@ -27,10 +27,11 @@ namespace GFX::Shape
 		void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept(!IS_DEBUG);
 
 	public:
-		void Draw(Graphics& gfx) const noexcept override;
-
 		inline void SetTopologyPlain(Graphics& gfx) noexcept { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)); }
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST)); }
+
+		void Draw(Graphics& gfx) const noexcept override;
+		void ShowWindow(Graphics& gfx) noexcept override;
 	};
 
 	template<typename R>

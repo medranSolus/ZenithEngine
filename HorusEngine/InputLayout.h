@@ -26,7 +26,7 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<InputLayout>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 
 	inline std::shared_ptr<InputLayout> InputLayout::Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode)

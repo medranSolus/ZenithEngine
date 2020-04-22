@@ -11,5 +11,7 @@ namespace GFX::Shape
 		Triangle(const Triangle&) = delete;
 		Triangle& operator=(const Triangle&) = delete;
 		virtual ~Triangle() = default;
+
+		void ShowWindow(Graphics& gfx) noexcept override;
 	};
 }

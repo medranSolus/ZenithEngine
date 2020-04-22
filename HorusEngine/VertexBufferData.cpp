@@ -5,7 +5,7 @@ namespace GFX::Data
 	VertexBufferData::VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size) noexcept(!IS_DEBUG) : layout(layout)
 	{
 		assert(layout != nullptr && "VertexLayout cannot be null!");
-		buffer.resize(layout->Size() * (size));
+		buffer.resize(layout->Size() * size);
 	}
 
 	void VertexBufferData::Resize(size_t newSize) noexcept(!IS_DEBUG)

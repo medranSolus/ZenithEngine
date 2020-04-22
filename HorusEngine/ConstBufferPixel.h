@@ -30,7 +30,7 @@ namespace GFX::Resource
 	template<typename T>
 	struct is_resolvable_by_codex<ConstBufferPixel<T>>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 
 	template<typename T>

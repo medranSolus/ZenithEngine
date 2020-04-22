@@ -27,4 +27,19 @@ namespace GFX::Shape
 			b->Bind(gfx);
 		gfx.DrawIndexed(indexBuffer->GetCount());
 	}
+
+	void BaseShape::ShowWindow(Graphics& gfx) noexcept
+	{
+		static bool previousMesh = false;
+		static bool meshOnly = false;
+		ImGui::Checkbox("Mesh-only", &meshOnly);
+		if (previousMesh != meshOnly)
+		{
+			previousMesh = meshOnly;
+			if (meshOnly)
+				SetTopologyMesh(gfx);
+			else
+				SetTopologyPlain(gfx);
+		}
+	}
 }

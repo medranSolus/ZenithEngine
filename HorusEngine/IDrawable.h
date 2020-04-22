@@ -9,5 +9,6 @@ namespace GFX
 		virtual ~IDrawable() = default;
 
 		virtual void Draw(Graphics& gfx) const noexcept = 0;
+		virtual void ShowWindow(Graphics& gfx) noexcept = 0;
 	};
 }

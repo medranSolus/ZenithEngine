@@ -15,6 +15,9 @@ namespace GFX::Shape
 		Box& operator=(const Box&) = delete;
 		virtual ~Box() = default;
 
+		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ)); }
+
+		void ShowWindow(Graphics& gfx) noexcept override;
 		void UpdateTransformMatrix() noexcept override;
 	};
 }

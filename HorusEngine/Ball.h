@@ -11,5 +11,9 @@ namespace GFX::Shape
 		Ball(const Ball&) = delete;
 		Ball& operator=(const Ball&) = delete;
 		virtual ~Ball() = default;
+
+		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetResource(Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ)); }
+
+		void ShowWindow(Graphics& gfx) noexcept override;
 	};
 }

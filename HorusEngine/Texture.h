@@ -28,7 +28,7 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<Texture>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 
 	inline std::shared_ptr<Texture> Texture::Get(Graphics& gfx, const std::string& path, UINT slot, bool alphaEnable)

@@ -5,6 +5,39 @@
 
 namespace GFX::Primitive
 {
+	std::string Sphere::GetNameUVSolid(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::string name = std::string(typeid(Primitive::Sphere).name()) + "U";
+		for (const auto& attrib : attributes)
+			name += std::to_string(static_cast<unsigned char>(attrib));
+		return std::move(name + "Sa" + std::to_string(latitudeDensity) + "o" + std::to_string(longitudeDensity));
+	}
+
+	std::string Sphere::GetNameUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::string name = std::string(typeid(Primitive::Sphere).name()) + "U";
+		for (const auto& attrib : attributes)
+			name += std::to_string(static_cast<unsigned char>(attrib));
+		return std::move(name + "Na" + std::to_string(latitudeDensity) + "o" + std::to_string(longitudeDensity));
+	}
+
+	std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutUVSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
+		for (const auto& attrib : attributes)
+			layout->Append(attrib);
+		return layout;
+	}
+
+	std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutUV(const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
+		layout->Append(VertexAttribute::Normal);
+		for (const auto& attrib : attributes)
+			layout->Append(attrib);
+		return layout;
+	}
+
 	IndexedTriangleList Sphere::MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes)
 	{
 		if (!latitudeDensity)
@@ -18,10 +51,8 @@ namespace GFX::Primitive
 		const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 		const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
-		for (const auto& attrib : attributes)
-			layout->Append(attrib);
-		Data::VertexBufferData vertices(layout, (latitudeDensity - 1) * longitudeDensity + 2);
+		Data::VertexBufferData vertices(GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes)),
+			(latitudeDensity - 1) * longitudeDensity + 2);
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -91,8 +122,7 @@ namespace GFX::Primitive
 		indices.push_back(pole);
 		return
 		{
-			std::move(vertices), std::move(indices),
-			std::string(typeid(Primitive::Sphere).name()) + "UVSla" + std::to_string(latitudeDensity) + "lo" + std::to_string(longitudeDensity)
+			std::move(vertices), std::move(indices)
 		};
 	}
 	
@@ -109,11 +139,8 @@ namespace GFX::Primitive
 		const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 		const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
 
-		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
-		layout->Append(VertexAttribute::Normal);
-		for (const auto& attrib : attributes)
-			layout->Append(attrib);
-		Data::VertexBufferData vertices(layout, (latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
+		Data::VertexBufferData vertices(GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes)),
+			(latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -190,11 +217,36 @@ namespace GFX::Primitive
 		indices.push_back(2);
 		IndexedTriangleList list =
 		{
-			std::move(vertices), std::move(indices),
-			std::string(typeid(Primitive::Sphere).name()) + "UVNla" + std::to_string(latitudeDensity) + "lo" + std::to_string(longitudeDensity)
+			std::move(vertices), std::move(indices)
 		};
 		list.SetNormals();
 		return std::move(list);
+	}
+
+	std::string Sphere::GetNameIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::string name = std::string(typeid(Primitive::Sphere).name()) + "I";
+		for (const auto& attrib : attributes)
+			name += std::to_string(static_cast<unsigned char>(attrib));
+		return std::move(name + "S" + std::to_string(density));
+	}
+
+	std::string Sphere::GetNameIco(unsigned int density, const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		std::string name = std::string(typeid(Primitive::Sphere).name()) + "I";
+		for (const auto& attrib : attributes)
+			name += std::to_string(static_cast<unsigned char>(attrib));
+		return std::move(name + "N" + std::to_string(density));
+	}
+
+	inline std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutIcoSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		return GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes));
+	}
+
+	inline std::shared_ptr<Data::VertexLayout> Sphere::GetLayoutIco(const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		return GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes));
 	}
 	
 	IndexedTriangleList Sphere::MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes)
@@ -210,10 +262,7 @@ namespace GFX::Primitive
 		const float smallZ = centerZ * sinf(smallAngle);
 		const float level = sinf(baseAngle);
 
-		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
-		for (const auto& attrib : attributes)
-			layout->Append(attrib);
-		Data::VertexBufferData vertices(layout, 12);
+		Data::VertexBufferData vertices(GetLayoutIcoSolid(std::forward<const std::vector<VertexAttribute>>(attributes)), 12);
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
@@ -308,8 +357,7 @@ namespace GFX::Primitive
 		}
 		return
 		{
-			std::move(vertices), std::move(indices),
-			std::string(typeid(Primitive::Sphere).name()) + "ICOS" + std::to_string(density)
+			std::move(vertices), std::move(indices)
 		};
 	}
 	
@@ -326,11 +374,7 @@ namespace GFX::Primitive
 		const float smallZ = centerZ * sinf(smallAngle);
 		const float level = sinf(baseAngle);
 
-		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
-		layout->Append(VertexAttribute::Normal);
-		for (const auto& attrib : attributes)
-			layout->Append(attrib);
-		Data::VertexBufferData vertices(layout, 60);
+		Data::VertexBufferData vertices(GetLayoutIco(std::forward<const std::vector<VertexAttribute>>(attributes)), 60);
 		// 0
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
@@ -474,8 +518,7 @@ namespace GFX::Primitive
 		}
 		IndexedTriangleList list =
 		{
-			std::move(vertices), std::move(indices),
-			std::string(typeid(Primitive::Sphere).name()) + "ICON" + std::to_string(density)
+			std::move(vertices), std::move(indices)
 		};
 		list.SetNormals();
 		return std::move(list);

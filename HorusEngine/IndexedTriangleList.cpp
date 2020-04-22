@@ -2,8 +2,8 @@
 
 namespace GFX::Primitive
 {
-	IndexedTriangleList::IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn, const std::string& typeName)
-		: vertices(std::move(verticesIn)), indices(std::move(indicesIn)), typeName(typeName)
+	IndexedTriangleList::IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn)
+		: vertices(std::move(verticesIn)), indices(std::move(indicesIn))
 	{
 		assert(vertices.Size() > 2);
 		assert(indices.size() % 3 == 0);

@@ -16,6 +16,7 @@ namespace GFX::Resource
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		virtual ~IndexBuffer() = default;
 
+		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<IndexBuffer>(tag); }
 		static inline std::shared_ptr<IndexBuffer> Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
@@ -29,7 +30,7 @@ namespace GFX::Resource
 	template<>
 	struct is_resolvable_by_codex<IndexBuffer>
 	{
-		static constexpr bool value{ true };
+		static constexpr bool generate{ true };
 	};
 
 	inline std::shared_ptr<IndexBuffer> IndexBuffer::Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices)
