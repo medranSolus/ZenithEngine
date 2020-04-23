@@ -8,12 +8,19 @@ namespace GFX::Data
 	{
 		friend class VertexBufferData;
 
+		template<VertexAttribute Type>
+		struct AttributeSetting
+		{
+			template<typename T>
+			static constexpr void Exec(Vertex* vertex, char* attribute, T&& val) noexcept(!IS_DEBUG) { vertex->Set<Type>(attribute, std::forward<T>(val)); }
+		};
+
 		char* data = nullptr;
 		const VertexLayout& layout;
 
 		// Enables parameter pack setting of multiple parameters by element index
 		template<typename First, typename ...Rest>
-		constexpr void SetByIndex(size_t i, First&& first, Rest&&... rest) noexcept(!IS_DEBUG);
+		constexpr void SetByIndex(size_t i, First&& first, Rest&&... rest);
 
 		// Check for proper parameter
 		template<VertexLayout::ElementType T, typename SrcType>
@@ -61,36 +68,9 @@ namespace GFX::Data
 	}
 
 	template<typename T>
-	constexpr void Vertex::SetByIndex(size_t i, T&& val) noexcept(!IS_DEBUG)
+	constexpr void Vertex::SetByIndex(size_t i, T&& val)
 	{
 		const auto& element = layout.ResolveByIndex(i);
-		auto attribute = data + element.GetOffset();
-
-		switch (element.GetType())
-		{
-		case VertexLayout::ElementType::Position3D:
-			Set<VertexLayout::ElementType::Position3D>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::Texture2D:
-			Set<VertexLayout::ElementType::Texture2D>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::Normal:
-			Set<VertexLayout::ElementType::Normal>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::Tangent:
-			Set<VertexLayout::ElementType::Tangent>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::Bitangent:
-			Set<VertexLayout::ElementType::Bitangent>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::ColorFloat4:
-			Set<VertexLayout::ElementType::ColorFloat4>(attribute, std::forward<T>(val));
-			break;
-		case VertexLayout::ElementType::ColorByte:
-			Set<VertexLayout::ElementType::ColorByte>(attribute, std::forward<T>(val));
-			break;
-		default:
-			assert("Bad element type" && false);
-		}
+		VertexLayout::Bridge<AttributeSetting>(element.GetType(), this, data + element.GetOffset(), std::forward<T>(val));
 	}
 }

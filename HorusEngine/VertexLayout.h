@@ -22,30 +22,46 @@ namespace GFX::Data
 	public:
 		enum class ElementType : unsigned char
 		{
-#define X(el) el,
+			#define X(el) el,
 			VERTEX_LAYOUT_ELEMENTS
-#undef X
+			#undef X
 			Count,
 		};
 
 		// Type of single descriptor of layout
 		template<ElementType>
-		struct Desc
-		{
-			static constexpr bool valid = false;
-		};
+		struct Desc { static constexpr bool valid = false; };
 
 		// Single element inside vertex buffer
 		class Element
 		{
+#pragma region Brigde functors
+			template<VertexLayout::ElementType Type>
+			struct CodeLookup
+			{
+				static constexpr const char* Exec() noexcept { return Desc<Type>::code; }
+			};
+			template<VertexLayout::ElementType Type>
+			struct SizeLookup
+			{
+				static constexpr size_t Exec() noexcept { return sizeof(Desc<Type>::DataType); }
+			};
+			template<VertexLayout::ElementType Type>
+			struct DescGenerate
+			{
+				static constexpr D3D11_INPUT_ELEMENT_DESC Exec(size_t offset) noexcept
+				{
+					return
+					{
+						Desc<Type>::semantic, 0, Desc<Type>::dxgiFormat,
+						0, static_cast<UINT>(offset), D3D11_INPUT_PER_VERTEX_DATA, 0
+					};
+				}
+			};
+#pragma endregion
+
 			ElementType type;
 			size_t offset;
-
-			template<ElementType type>
-			static constexpr D3D11_INPUT_ELEMENT_DESC GenerateDesc(size_t offset) noexcept
-			{
-				return { Desc<type>::semantic, 0, Desc<type>::dxgiFormat, 0, static_cast<UINT>(offset), D3D11_INPUT_PER_VERTEX_DATA, 0 };
-			}
 
 		public:
 			constexpr Element(ElementType type, size_t offset) noexcept : type(type), offset(offset) {}
@@ -56,11 +72,10 @@ namespace GFX::Data
 			constexpr size_t GetOffset() const noexcept { return offset; }
 			constexpr size_t Size() const noexcept(!IS_DEBUG) { return SizeOf(type); }
 			constexpr ElementType GetType() const noexcept { return type; }
+			constexpr const char* GetCode() const noexcept(!IS_DEBUG) { return VertexLayout::Bridge<CodeLookup>(type); }
+			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG) { return VertexLayout::Bridge<DescGenerate>(type, GetOffset()); }
 
-			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG);
-
-			constexpr const char* GetCode() const noexcept(!IS_DEBUG);
-			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG);
+			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG) { return VertexLayout::Bridge<SizeLookup>(type); }
 		};
 
 	private:
@@ -71,6 +86,23 @@ namespace GFX::Data
 		VertexLayout& operator=(const VertexLayout&) = default;
 		~VertexLayout() = default;
 
+		template<template<ElementType> class Functor, typename... Params>
+		static constexpr decltype(auto) Bridge(ElementType type, Params&&... p) noexcept(!IS_DEBUG)
+		{
+			switch (type)
+			{
+			#define X(el) \
+			case ElementType::el: \
+				return Functor<ElementType::el>::Exec(std::forward<Params>(p)...);
+			VERTEX_LAYOUT_ELEMENTS
+			#undef X
+			}
+			assert("Invalid element type" && false);
+			return Functor<ElementType::Count>::Exec(std::forward<Params>(p)...);
+		}
+
+		template<ElementType Type>
+		bool Has() const noexcept;
 		template<ElementType Type>
 		const Element& Resolve() const noexcept(!IS_DEBUG);
 
@@ -139,6 +171,13 @@ namespace GFX::Data
 			static constexpr const char* code = "C1";
 			static constexpr bool valid = true;
 		};
+		template<> struct Desc<ElementType::Count>
+		{
+			using DataType = unsigned char;
+			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+			static constexpr const char* semantic = "?";
+			static constexpr const char* code = "?";
+		};
 
 		// Sanity check to make sure that all elements have corresponding Desc specialization.
 #define X(el) static_assert(Desc<ElementType::el>::valid, "Missing Desc implementation for " #el);
@@ -147,18 +186,13 @@ namespace GFX::Data
 #pragma endregion
 	};
 
-	constexpr size_t VertexLayout::Element::SizeOf(VertexLayout::ElementType type) noexcept(!IS_DEBUG)
+	template<VertexLayout::ElementType Type>
+	bool VertexLayout::Has() const noexcept
 	{
-		switch (type)
-		{
-#define X(el) \
-		case ElementType::el: \
-			return sizeof(Desc<ElementType::el>::DataType);
-			VERTEX_LAYOUT_ELEMENTS
-#undef X
-		}
-		assert("Invalid element type" && false);
-		return 0U;
+		for (auto& e : elements)
+			if (e.GetType() == Type)
+				return true;
+		return false;
 	}
 
 	template<VertexLayout::ElementType Type>
