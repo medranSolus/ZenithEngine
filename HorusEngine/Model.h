@@ -31,9 +31,9 @@ namespace GFX::Shape
 				children.emplace_back(std::move(child));
 			}
 
-			inline void Draw(Graphics& gfx) const noexcept override { Draw(gfx, DirectX::XMMatrixIdentity()); }
+			inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { Submit(renderer, DirectX::XMMatrixIdentity()); }
 
-			void Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform) const noexcept;
+			void Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG);
 			void ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept;
 			void ShowWindow(Graphics& gfx) noexcept override;
 			void SetMesh(Graphics& gfx, bool meshOnly) noexcept;
@@ -60,7 +60,7 @@ namespace GFX::Shape
 
 		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, aiMaterial* const* materials);
 
-		std::unique_ptr<Node> ParseNode(const aiNode& node) noexcept;
+		std::unique_ptr<Node> ParseNode(const aiNode& node) noexcept(!IS_DEBUG);
 
 	public:
 		Model(Graphics& gfx, const std::string& file, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,0.0f }, const std::string& modelName = "Model", float scale = 1.0f);
@@ -68,7 +68,7 @@ namespace GFX::Shape
 		Model& operator=(const Model&) = delete;
 		virtual ~Model() = default;
 
-		inline void Draw(Graphics& gfx) const noexcept override { root->Draw(gfx); }
+		inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { root->Submit(renderer); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return root->GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { root->SetAngle(meshAngle); }

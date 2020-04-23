@@ -20,7 +20,7 @@ namespace GFX::Shape
 			mesh->SetTransformMatrix(currentTransform);
 	}
 
-	void Model::Node::Draw(Graphics& gfx, const DirectX::FXMMATRIX& higherTransform) const noexcept
+	void Model::Node::Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG)
 	{
 		if (visible)
 		{
@@ -28,9 +28,9 @@ namespace GFX::Shape
 				DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
 			DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
 			for (const auto& mesh : meshes)
-				mesh->Draw(gfx);
+				mesh->Submit(renderer);
 			for (const auto& child : children)
-				child->Draw(gfx, transformMatrix);
+				child->Submit(renderer, transformMatrix);
 		}
 	}
 
@@ -267,7 +267,7 @@ namespace GFX::Shape
 		return std::make_shared<Mesh>(gfx, std::move(binds));
 	}
 
-	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode& node) noexcept
+	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode& node) noexcept(!IS_DEBUG)
 	{
 		std::vector<std::shared_ptr<Mesh>> currentMeshes;
 		currentMeshes.reserve(node.mNumMeshes);

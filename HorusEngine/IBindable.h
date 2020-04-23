@@ -19,7 +19,7 @@ namespace GFX::Resource
 		virtual ~IBindable() = default;
 
 		template<typename T, typename ...Params>
-		static constexpr std::string GenerateRID(Params&& ...p)
+		static constexpr std::string GenerateRID(Params&& ...p) noexcept
 		{
 			static_assert(is_resolvable_by_codex<T>::generate == true, "Class does not implement static method GenerateRID(...)!");
 			return T::template GenerateRID(std::forward<Params>(p)...);

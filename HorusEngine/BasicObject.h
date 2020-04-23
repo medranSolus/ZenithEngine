@@ -18,7 +18,7 @@ namespace GFX
 		inline BasicObject(const DirectX::XMFLOAT3& position, const std::string& name, float scale = 1.0f) : pos(position), name(name), scale(scale) {}
 		BasicObject(const BasicObject&) = default;
 		BasicObject& operator=(const BasicObject&) = default;
-		virtual ~BasicObject() {}
+		virtual ~BasicObject() = default;
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return angle; }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { angle = meshAngle; }

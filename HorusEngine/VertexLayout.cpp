@@ -3,7 +3,7 @@
 
 namespace GFX::Data
 {
-	constexpr const char* VertexLayout::Element::GetCode() const noexcept
+	constexpr const char* VertexLayout::Element::GetCode() const noexcept(!IS_DEBUG)
 	{
 		switch (type)
 		{

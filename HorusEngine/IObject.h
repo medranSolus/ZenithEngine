@@ -1,9 +1,9 @@
 #pragma once
-#include "IDrawable.h"
+#include "IRenderable.h"
 
 namespace GFX
 {
-	class IObject : public virtual IDrawable
+	class IObject : public virtual IRenderable
 	{
 	public:
 		virtual ~IObject() = default;

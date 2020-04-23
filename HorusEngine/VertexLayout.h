@@ -48,18 +48,18 @@ namespace GFX::Data
 			}
 
 		public:
-			constexpr Element(ElementType type, size_t offset) : type(type), offset(offset) {}
+			constexpr Element(ElementType type, size_t offset) noexcept : type(type), offset(offset) {}
 			Element& operator=(const Element&) = default;
 			~Element() = default;
 
 			constexpr size_t GetEnd() const noexcept(!IS_DEBUG) { return offset + Size(); }
-			constexpr size_t GetOffset() const { return offset; }
+			constexpr size_t GetOffset() const noexcept { return offset; }
 			constexpr size_t Size() const noexcept(!IS_DEBUG) { return SizeOf(type); }
 			constexpr ElementType GetType() const noexcept { return type; }
 
 			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG);
 
-			constexpr const char* GetCode() const noexcept;
+			constexpr const char* GetCode() const noexcept(!IS_DEBUG);
 			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG);
 		};
 

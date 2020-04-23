@@ -271,6 +271,7 @@
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="IndexedTriangleList.cpp" />
     <ClCompile Include="InputLayout.cpp" />
+    <ClCompile Include="Job.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -282,11 +283,15 @@
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
     <ClCompile Include="Rectangle.cpp" />
+    <ClCompile Include="RenderCommander.cpp" />
+    <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
     <ClCompile Include="DepthStencil.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Square.cpp" />
+    <ClCompile Include="Technique.cpp" />
+    <ClCompile Include="TechniqueStep.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
@@ -553,7 +558,7 @@
     <ClInclude Include="GUIManager.h" />
     <ClInclude Include="IBindable.h" />
     <ClInclude Include="ICamera.h" />
-    <ClInclude Include="IDrawable.h" />
+    <ClInclude Include="IRenderable.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_freetype.h" />
@@ -568,11 +573,13 @@
     <ClInclude Include="IndexedTriangleList.h" />
     <ClInclude Include="InputLayout.h" />
     <ClInclude Include="IObject.h" />
+    <ClInclude Include="Job.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Mouse.h" />
+    <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="PersonCamera.h" />
     <ClInclude Include="PixelShader.h" />
@@ -580,6 +587,8 @@
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Rasterizer.h" />
     <ClInclude Include="Rectangle.h" />
+    <ClInclude Include="RenderCommander.h" />
+    <ClInclude Include="RenderPass.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sampler.h" />
     <ClInclude Include="CBuffers.h" />
@@ -588,6 +597,8 @@
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Square.h" />
     <ClInclude Include="DepthStencil.h" />
+    <ClInclude Include="Technique.h" />
+    <ClInclude Include="TechniqueStep.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />

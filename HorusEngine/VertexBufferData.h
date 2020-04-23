@@ -17,10 +17,10 @@ namespace GFX::Data
 		~VertexBufferData() = default;
 
 		inline std::shared_ptr<VertexLayout> GetLayout() const noexcept { return layout; }
-		inline const char* GetData() const noexcept(!IS_DEBUG) { return buffer.data(); }
-		inline size_t Bytes() const noexcept(!IS_DEBUG) { return buffer.size(); }
+		inline const char* GetData() const noexcept { return buffer.data(); }
+		inline size_t Bytes() const noexcept { return buffer.size(); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return buffer.size() / layout->Size(); }
-		inline void Reserve(size_t capacity) noexcept { buffer.reserve(capacity * layout->Size()); }
+		inline void Reserve(size_t capacity) noexcept(!IS_DEBUG) { buffer.reserve(capacity * layout->Size()); }
 
 		void Resize(size_t newSize) noexcept(!IS_DEBUG);
 

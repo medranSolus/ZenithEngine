@@ -21,7 +21,7 @@ namespace GFX::Data::CBuffer
 			~Ptr() = default;
 
 			template<typename T>
-			operator const T* () const noexcept(!IS_DEBUG);
+			operator const T* () const noexcept;
 		};
 
 	private:
@@ -38,7 +38,7 @@ namespace GFX::Data::CBuffer
 		constexpr bool Exists() const noexcept { return layout->Exists(); }
 
 		inline DCBElementConst operator[](const std::string& key) const noexcept(!IS_DEBUG) { return { &(*layout)[key], bytes, offset }; }
-		inline Ptr operator&() const noexcept(!IS_DEBUG) { return Ptr{ this }; }
+		inline Ptr operator&() const noexcept { return Ptr{ this }; }
 
 		template<typename T>
 		operator const T& () const noexcept(!IS_DEBUG);
@@ -46,7 +46,7 @@ namespace GFX::Data::CBuffer
 	};
 
 	template<typename T>
-	DCBElementConst::Ptr::operator const T* () const noexcept(!IS_DEBUG)
+	DCBElementConst::Ptr::operator const T* () const noexcept
 	{
 		static_assert(ReverseMap<std::remove_const_t<T>>::valid, "Unsupported DataType used in pointer conversion!");
 		return &static_cast<const T&>(*element);

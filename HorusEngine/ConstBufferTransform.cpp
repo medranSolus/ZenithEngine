@@ -6,8 +6,8 @@ namespace GFX::Resource
 		const DirectX::XMMATRIX transformView = std::move(parent.GetTransformMatrix() * gfx.GetCamera());
 		return
 		{
-				std::move(DirectX::XMMatrixTranspose(transformView)),
-				std::move(DirectX::XMMatrixTranspose(transformView * gfx.GetProjection()))
+			std::move(DirectX::XMMatrixTranspose(transformView)),
+			std::move(DirectX::XMMatrixTranspose(transformView * gfx.GetProjection()))
 		};
 	}
 

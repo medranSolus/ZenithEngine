@@ -10,6 +10,7 @@
 #include "DepthStencil.h"
 #include "IndexBuffer.h"
 #include "InputLayout.h"
+#include "NullPixelShader.h"
 #include "PixelShader.h"
 #include "Rasterizer.h"
 #include "Sampler.h"

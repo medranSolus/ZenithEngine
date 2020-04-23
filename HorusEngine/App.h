@@ -19,6 +19,7 @@ class App
 	float cameraRotateSpeed = 2.0f;
 
 	WinAPI::Window window;
+	GFX::Pipeline::RenderCommander renderer;
 	Timer timer;
 	std::unique_ptr<Camera::ICamera> camera = nullptr;
 	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;

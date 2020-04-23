@@ -18,7 +18,7 @@ namespace GFX::Light
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
-		inline void Draw(Graphics& gfx) const noexcept override { mesh.Draw(gfx); }
+		inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { mesh.Submit(renderer); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return mesh.GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { mesh.SetAngle(meshAngle); }

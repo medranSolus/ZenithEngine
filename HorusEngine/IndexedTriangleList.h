@@ -10,12 +10,12 @@ namespace GFX::Primitive
 		std::vector<unsigned int> indices;
 
 		IndexedTriangleList() noexcept {}
-		IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn);
+		IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn) noexcept(!IS_DEBUG);
 		IndexedTriangleList(const IndexedTriangleList&) = default;
 		IndexedTriangleList& operator=(const IndexedTriangleList&) = default;
 		~IndexedTriangleList() = default;
 
-		void Transform(DirectX::FXMMATRIX matrix);
+		void Transform(DirectX::FXMMATRIX matrix) noexcept(!IS_DEBUG);
 		void SetNormals() noexcept(!IS_DEBUG);
 	};
 }

@@ -20,7 +20,7 @@ namespace GFX::Data::CBuffer
 			~Ptr() = default;
 
 			template<typename T>
-			operator T* () const noexcept(!IS_DEBUG);
+			operator T* () const noexcept;
 		};
 
 	private:
@@ -37,28 +37,28 @@ namespace GFX::Data::CBuffer
 		constexpr bool Exists() const noexcept { return layout->Exists(); }
 
 		template<typename T>
-		constexpr bool SetIfExists(const T& val) noexcept(!IS_DEBUG);
+		constexpr bool SetIfExists(const T& val) noexcept;
 
 		inline operator DCBElementConst() const noexcept { return { layout, bytes, offset }; }
 		inline DCBElement operator[](const std::string& key) const noexcept(!IS_DEBUG) { return { &(*layout)[key], bytes, offset }; }
-		inline Ptr operator&() const noexcept(!IS_DEBUG) { return Ptr{ const_cast<DCBElement*>(this) }; }
+		inline Ptr operator&() const noexcept { return Ptr{ const_cast<DCBElement*>(this) }; }
 
 		template<typename T>
 		operator T& () noexcept(!IS_DEBUG);
 		template<typename T>
-		T& operator=(const T& rhs) noexcept(!IS_DEBUG);
+		T& operator=(const T& rhs) noexcept;
 		DCBElement operator[](size_t index) const noexcept(!IS_DEBUG);
 	};
 
 	template<typename T>
-	DCBElement::Ptr::operator T* () const noexcept(!IS_DEBUG)
+	DCBElement::Ptr::operator T* () const noexcept
 	{
 		static_assert(ReverseMap<std::remove_const_t<T>>::valid, "Unsupported SysType used in pointer conversion");
 		return &static_cast<T&>(*element);
 	}
 
 	template<typename T>
-	constexpr bool DCBElement::SetIfExists(const T& val) noexcept(!IS_DEBUG)
+	constexpr bool DCBElement::SetIfExists(const T& val) noexcept
 	{
 		if (Exists())
 		{
@@ -76,7 +76,7 @@ namespace GFX::Data::CBuffer
 	}
 
 	template<typename T>
-	T& DCBElement::operator=(const T& val) noexcept(!IS_DEBUG)
+	T& DCBElement::operator=(const T& val) noexcept
 	{
 		static_assert(ReverseMap<std::remove_const_t<T>>::valid, "Unsupported DataType used in assignment!");
 		return static_cast<T&>(*this) = val;

@@ -15,9 +15,9 @@ namespace GFX::Resource
 		}
 
 		template<typename T, typename ...Params>
-		std::shared_ptr<T> Find(Graphics& gfx, Params&& ...p) noexcept;
+		std::shared_ptr<T> Find(Graphics& gfx, Params&& ...p);
 		template<typename T, typename ...Params>
-		inline bool CheckIfNotStored(Params&& ...p) noexcept;
+		inline bool CheckIfNotStored(Params&& ...p) const noexcept;
 
 		Codex() = default;
 
@@ -25,13 +25,13 @@ namespace GFX::Resource
 		~Codex() = default;
 
 		template<typename T, typename ...Params>
-		static inline std::shared_ptr<T> Resolve(Graphics& gfx, Params&& ...p) noexcept { return Get().Find<T>(gfx, std::forward<Params>(p)...); }
+		static inline std::shared_ptr<T> Resolve(Graphics& gfx, Params&& ...p) { return Get().Find<T>(gfx, std::forward<Params>(p)...); }
 		template<typename T, typename ...Params>
 		static inline bool NotStored(Params&& ...p) noexcept { return Get().CheckIfNotStored<T>(std::forward<Params>(p)...); }
 	};
 
 	template<typename T, typename ...Params>
-	inline std::shared_ptr<T> Codex::Find(Graphics& gfx, Params&& ...p) noexcept
+	inline std::shared_ptr<T> Codex::Find(Graphics& gfx, Params&& ...p)
 	{
 		const std::string id = IBindable::GenerateRID<T>(std::forward<Params>(p)...);
 		const auto it = binds.find(id);
@@ -45,7 +45,7 @@ namespace GFX::Resource
 	}
 
 	template<typename T, typename ...Params>
-	inline bool Codex::CheckIfNotStored(Params&& ...p) noexcept
+	inline bool Codex::CheckIfNotStored(Params&& ...p) const noexcept
 	{
 		return binds.end() == binds.find(IBindable::GenerateRID<T>(std::forward<Params>(p)...));
 	}

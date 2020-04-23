@@ -97,6 +97,12 @@
     <Filter Include="Source Files\GFX\Data\CBuffer">
       <UniqueIdentifier>{d7cc9ba3-e7dc-4053-acb6-e45134a106de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Pipeline">
+      <UniqueIdentifier>{73be0a3c-4d60-4d04-af53-360572c9aebf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Pipeline">
+      <UniqueIdentifier>{33e93b02-cc11-4248-a0cb-b541390d7dbd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -285,6 +291,21 @@
     <ClCompile Include="Square.cpp">
       <Filter>Source Files\GFX\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="RenderCommander.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPass.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Job.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="TechniqueStep.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Technique.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -387,9 +408,6 @@
     </ClInclude>
     <ClInclude Include="ICamera.h">
       <Filter>Header Files\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="IDrawable.h">
-      <Filter>Header Files\GFX</Filter>
     </ClInclude>
     <ClInclude Include="IndexBuffer.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -804,6 +822,27 @@
     </ClInclude>
     <ClInclude Include="DepthStencil.h">
       <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderCommander.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Technique.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="TechniqueStep.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="NullPixelShader.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderable.h">
+      <Filter>Header Files\GFX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

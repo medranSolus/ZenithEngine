@@ -177,10 +177,10 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		default:
-			{
-				assert("Tried to get offset of non-leaf element" && false);
-				return 0U;
-			}
+		{
+			assert("Tried to get offset of non-leaf element" && false);
+			return 0U;
+		}
 		}
 	}
 }
