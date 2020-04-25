@@ -64,12 +64,6 @@
     <Filter Include="Header Files\GFX\ImGui">
       <UniqueIdentifier>{b959e9b7-c0ce-4300-a157-daca5c4a5705}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\AssImp">
-      <UniqueIdentifier>{289cd104-c510-472a-9857-6b49e58cc095}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\AssImp\Compiler">
-      <UniqueIdentifier>{0843bc5a-f1e8-4f84-908f-c0c09593cd25}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader Files\Pixel Shaders">
       <UniqueIdentifier>{9a40133e-2ef8-43f5-b3db-5dbaf354a4fb}</UniqueIdentifier>
     </Filter>
@@ -102,6 +96,18 @@
     </Filter>
     <Filter Include="Source Files\GFX\Pipeline">
       <UniqueIdentifier>{33e93b02-cc11-4248-a0cb-b541390d7dbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Visual">
+      <UniqueIdentifier>{38f01ec7-afd3-4e10-9876-9f42ebe5ab6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Visual">
+      <UniqueIdentifier>{e862c441-3c0a-4774-b8a7-4affb8dc4f19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\AssImp">
+      <UniqueIdentifier>{289cd104-c510-472a-9857-6b49e58cc095}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\AssImp\Compiler">
+      <UniqueIdentifier>{0843bc5a-f1e8-4f84-908f-c0c09593cd25}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -300,11 +306,14 @@
     <ClCompile Include="Job.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="TechniqueStep.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Technique.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="IVisual.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -843,6 +852,18 @@
     </ClInclude>
     <ClInclude Include="IRenderable.h">
       <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="IVisual.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="Visuals.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

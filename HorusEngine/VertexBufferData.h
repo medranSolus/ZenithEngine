@@ -6,12 +6,23 @@ namespace GFX::Data
 {
 	class VertexBufferData
 	{
+		template<VertexAttribute Type>
+		struct AttributeFill
+		{
+			static constexpr void Exec(VertexBufferData& buffer, const aiMesh& mesh, size_t index) noexcept
+			{
+				for (auto size = mesh.mNumVertices, i = 0U; i < size; ++i)
+					buffer[i].SetByIndex(index, VertexLayout::Desc<Type>::Extract(mesh, i));
+			}
+		};
+
 		std::vector<char> buffer;
 		std::shared_ptr<VertexLayout> layout = nullptr;
 
 	public:
 		VertexBufferData() noexcept {}
 		VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size = 0U) noexcept(!IS_DEBUG);
+		VertexBufferData(std::shared_ptr<VertexLayout> layout, const aiMesh& mesh) noexcept(!IS_DEBUG);
 		VertexBufferData(const VertexBufferData&) = default;
 		VertexBufferData& operator=(const VertexBufferData&) = default;
 		~VertexBufferData() = default;

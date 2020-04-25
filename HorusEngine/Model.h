@@ -1,8 +1,8 @@
 #pragma once
 #include "Object.h"
 #include "Mesh.h"
+#include "Material.h"
 #include "BasicException.h"
-#include "assimp/scene.h"
 
 namespace GFX::Shape
 {
@@ -57,8 +57,9 @@ namespace GFX::Shape
 		std::unique_ptr<Window> window = nullptr;
 		std::unique_ptr<Node> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
+		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
 
-		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, aiMaterial* const* materials);
+		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
 
 		std::unique_ptr<Node> ParseNode(const aiNode& node) noexcept(!IS_DEBUG);
 

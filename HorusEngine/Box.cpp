@@ -9,7 +9,7 @@ namespace GFX::Shape
 		float width, float height, float length)
 		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
 	{
-		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
+		/*auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
@@ -36,7 +36,7 @@ namespace GFX::Shape
 		buffer.specularPower = 60.0f;
 		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, name, buffer, 1U));
 
-		UpdateTransformMatrix();
+		UpdateTransformMatrix();*/
 	}
 
 	void Box::ShowWindow(Graphics& gfx) noexcept

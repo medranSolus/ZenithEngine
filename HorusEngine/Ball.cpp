@@ -8,7 +8,7 @@ namespace GFX::Shape
 	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material, unsigned int density, float radius)
 		: BaseShape(gfx, *this), Object(position, name, radius)
 	{
-		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
+		/*auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
@@ -33,7 +33,7 @@ namespace GFX::Shape
 		buffer.materialColor = material;
 		buffer.specularIntensity = 0.6f;
 		buffer.specularPower = 60.0f;
-		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, name, buffer, 1U));
+		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, name, buffer, 1U));*/
 	}
 
 	void Ball::ShowWindow(Graphics& gfx) noexcept

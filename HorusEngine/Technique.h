@@ -5,10 +5,17 @@ namespace GFX::Pipeline
 {
 	class Technique
 	{
-		bool active = true;
+		bool active;
+		std::string name;
 		std::vector<TechniqueStep> steps;
 
 	public:
+		inline Technique(const std::string& name, bool active = true) noexcept : active(active), name(name) {}
+		inline Technique(std::string&& name, bool active = true) noexcept : active(active), name(std::move(name)) {}
+		Technique(const Technique&) = default;
+		Technique& operator=(const Technique&) = default;
+		~Technique() = default;
+
 		constexpr bool IsActive() const noexcept { return active; }
 		constexpr bool& IsActive() noexcept { return active; }
 		constexpr void Activate() noexcept { active = true; }

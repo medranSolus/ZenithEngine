@@ -14,6 +14,7 @@
 	X(Float2) \
 	X(Float3) \
 	X(Float4) \
+	X(Color3) \
 	X(Color4) \
 	X(Matrix)
 
@@ -77,6 +78,13 @@ namespace GFX::Data::CBuffer
 		using DataType = DirectX::XMFLOAT4;
 		static constexpr size_t hlslSize = sizeof(DataType);
 		static constexpr const char* code = "F4";
+		static constexpr bool valid = true;
+	};
+	template<> struct Map<ElementType::Color3>
+	{
+		using DataType = GFX::Data::ColorFloat3;
+		static constexpr size_t hlslSize = sizeof(DataType);
+		static constexpr const char* code = "C3";
 		static constexpr bool valid = true;
 	};
 	template<> struct Map<ElementType::Color4>

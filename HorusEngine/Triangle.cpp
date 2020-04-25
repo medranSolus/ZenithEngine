@@ -8,7 +8,7 @@ namespace GFX::Shape
 	Triangle::Triangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float down, float left, float right)
 		: BaseShape(gfx, *this), Object(position, name)
 	{
-		const float leftPow2 = left * left;
+		/*const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
 		const float centerX = (vertex3X + down) / 3;
 		const float centerY = sqrtf(leftPow2 - vertex3X * vertex3X) / 3;
@@ -29,7 +29,7 @@ namespace GFX::Shape
 		auto bytecodeVS = vertexShader->GetBytecode();
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
-		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));
+		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));*/
 	}
 	
 	void Triangle::ShowWindow(Graphics& gfx) noexcept

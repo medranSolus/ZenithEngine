@@ -153,7 +153,7 @@ void App::MakeFrame()
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
 	camera->Update(window.Gfx());
-	pointLight->Submit(renderer);
+	//pointLight->Submit(renderer);
 	pointLight->Bind(window.Gfx(), *camera);
 	for (auto& shape : shapes)
 		if (shape)
@@ -165,6 +165,7 @@ void App::MakeFrame()
 	//ImGui::ShowDemoWindow();
 	renderer.Render(window.Gfx());
 	window.Gfx().EndFrame();
+	renderer.Reset();
 }
 
 App::App(const std::string& commandLine) : window(width, height, windowTitle)

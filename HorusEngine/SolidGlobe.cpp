@@ -1,6 +1,6 @@
 #include "SolidGlobe.h"
 #include "Primitives.h"
-#include "GfxResources.h"
+#include "Material.h"
 #include "Math.h"
 
 namespace GFX::Shape
@@ -9,32 +9,25 @@ namespace GFX::Shape
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
 	{
-		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
-		auto bytecodeVS = vertexShader->GetBytecode();
-		AddBind(vertexShader);
-		AddBind(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
-
 		std::string typeName = Primitive::Sphere::GetNameUVSolid(latitudeDensity, longitudeDensity);
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
 		{
 			auto list = Primitive::Sphere::MakeSolidUV(latitudeDensity, longitudeDensity);
-			AddBind(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
-			AddBind(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
-			AddBind(Resource::InputLayout::Get(gfx, list.vertices.GetLayout(), bytecodeVS));
+			SetVertexBuffer(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			SetIndexBuffer(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
 		}
 		else
 		{
 			Primitive::IndexedTriangleList list;
-			AddBind(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
-			AddBind(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
-			AddBind(Resource::InputLayout::Get(gfx, Primitive::Sphere::GetLayoutUVSolid(), bytecodeVS));
+			SetVertexBuffer(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			SetIndexBuffer(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
 		}
 
-		Data::CBuffer::Solid buffer{ material };
-		auto materialData = Resource::ConstBufferPixel<Data::CBuffer::Solid>::Get(gfx, name, buffer);
-		materialBuffer = materialData.get();
-		AddBind(std::move(materialData));
-		
+		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
+		techniques.back()->AddStep({ 0, std::make_shared<Visual::Material>(gfx, material, name) });
+		SetTechniques(std::move(techniques));
+
 		UpdateTransformMatrix();
 	}
 

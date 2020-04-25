@@ -3,11 +3,11 @@
 
 namespace GFX::Shape
 {
-	BaseShape::BaseShape(Graphics& gfx, const GfxObject& parent)
+	BaseShape::BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
+		: indexBuffer(std::move(indexBuffer)), vertexBuffer(std::move(vertexBuffer))
 	{
 		topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent);
-		//binds.emplace_back(Resource::DepthStencil::Get(gfx, Resource::DepthStencil::StencilMode::Off));
 	}
 
 	void BaseShape::Bind(Graphics& gfx) noexcept

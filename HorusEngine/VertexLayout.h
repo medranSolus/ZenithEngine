@@ -1,8 +1,16 @@
 #pragma once
 #include "Color.h"
+#include "assimp/scene.h"
 #include <d3d11.h>
 #include <vector>
 #include <string>
+
+// Extract DataType from assimp mesh
+#define VERTEX_ELEMENT_AI_EXTRACTOR(member) \
+	static inline DataType Extract(const aiMesh& mesh, size_t i) noexcept \
+	{ \
+		return *reinterpret_cast<const DataType*>(&mesh.member[i]); \
+	}
 
 // List of vertex layout element types names. Each name have invocation of macro X() on it. Define your X() macro for various behavior in code.
 #define VERTEX_LAYOUT_ELEMENTS \
@@ -101,15 +109,13 @@ namespace GFX::Data
 			return Functor<ElementType::Count>::Exec(std::forward<Params>(p)...);
 		}
 
-		template<ElementType Type>
-		bool Has() const noexcept;
-		template<ElementType Type>
-		const Element& Resolve() const noexcept(!IS_DEBUG);
 
 		inline const Element& ResolveByIndex(size_t i) const { return elements.at(i); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
 		inline size_t GetElementCount() const noexcept { return elements.size(); }
 
+		const Element& Resolve(ElementType type) const noexcept(!IS_DEBUG);
+		bool Has(ElementType type) const noexcept;
 		VertexLayout& Append(ElementType type) noexcept(!IS_DEBUG);
 		std::vector<D3D11_INPUT_ELEMENT_DESC> GetDXLayout() const noexcept(!IS_DEBUG);
 		std::string GetLayoutCode() const noexcept(!IS_DEBUG);
@@ -122,6 +128,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "POSITION";
 			static constexpr const char* code = "P3";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mVertices)
 		};
 		template<> struct Desc<ElementType::Texture2D>
 		{
@@ -130,6 +137,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "TEXCOORD";
 			static constexpr const char* code = "T2";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mTextureCoords[0])
 		};
 		template<> struct Desc<ElementType::Normal>
 		{
@@ -138,6 +146,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "NORMAL";
 			static constexpr const char* code = "N";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mNormals)
 		};
 		template<> struct Desc<ElementType::Tangent>
 		{
@@ -146,6 +155,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "TANGENT";
 			static constexpr const char* code = "T";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mTangents)
 		};
 		template<> struct Desc<ElementType::Bitangent>
 		{
@@ -154,6 +164,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "BITANGENT";
 			static constexpr const char* code = "B";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mBitangents)
 		};
 		template<> struct Desc<ElementType::ColorFloat4>
 		{
@@ -162,6 +173,7 @@ namespace GFX::Data
 			static constexpr const char* semantic = "COLOR";
 			static constexpr const char* code = "C4";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mColors[0])
 		};
 		template<> struct Desc<ElementType::ColorByte>
 		{
@@ -170,13 +182,15 @@ namespace GFX::Data
 			static constexpr const char* semantic = "COLOR";
 			static constexpr const char* code = "C1";
 			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mColors[0])
 		};
 		template<> struct Desc<ElementType::Count>
 		{
 			using DataType = unsigned char;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
 			static constexpr const char* semantic = "?";
-			static constexpr const char* code = "?";
+			static constexpr const char* code = "?"; 
+			VERTEX_ELEMENT_AI_EXTRACTOR(mFaces)
 		};
 
 		// Sanity check to make sure that all elements have corresponding Desc specialization.
@@ -185,25 +199,6 @@ namespace GFX::Data
 #undef X
 #pragma endregion
 	};
-
-	template<VertexLayout::ElementType Type>
-	bool VertexLayout::Has() const noexcept
-	{
-		for (auto& e : elements)
-			if (e.GetType() == Type)
-				return true;
-		return false;
-	}
-
-	template<VertexLayout::ElementType Type>
-	const VertexLayout::Element& VertexLayout::Resolve() const noexcept(!IS_DEBUG)
-	{
-		for (auto& e : elements)
-			if (e.GetType() == Type)
-				return e;
-		assert("Could not resolve element type" && false);
-		return elements.front();
-	}
 }
 
 typedef GFX::Data::VertexLayout::ElementType VertexAttribute;

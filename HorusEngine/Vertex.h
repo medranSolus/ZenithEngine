@@ -37,13 +37,13 @@ namespace GFX::Data
 		template<VertexLayout::ElementType T>
 		inline auto& Get() noexcept(!IS_DEBUG)
 		{
-			return *reinterpret_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve<T>().GetOffset());
+			return *reinterpret_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
 		}
 
 		template<VertexLayout::ElementType T>
 		inline const auto& Get() const noexcept(!IS_DEBUG)
 		{
-			return *const_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve<T>().GetOffset());
+			return *const_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
 		}
 
 		template<typename T>

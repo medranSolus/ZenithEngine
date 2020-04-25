@@ -15,7 +15,8 @@ namespace GFX::Shape
 		bool visible = true;
 
 	protected:
-		BaseShape(Graphics& gfx, const GfxObject& parent);
+		BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr,
+			std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr);
 		BaseShape(const BaseShape&) = delete;
 		BaseShape& operator=(const BaseShape&) = delete;
 		virtual ~BaseShape() = default;
@@ -23,6 +24,7 @@ namespace GFX::Shape
 		inline void SetIndexBuffer(std::shared_ptr<Resource::IndexBuffer> index) noexcept { indexBuffer = std::move(index); }
 		inline void SetVertexBuffer(std::shared_ptr<Resource::VertexBuffer> vertex) noexcept { vertexBuffer = std::move(vertex); }
 		inline void SetTopology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY newTopology) noexcept { topology = Resource::Topology::Get(gfx, newTopology); }
+		inline void SetTechniques(std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques) noexcept { techniques = std::move(newTechniques); }
 
 	public:
 		constexpr UINT GetIndexCount() const noexcept { return indexBuffer->GetCount(); }

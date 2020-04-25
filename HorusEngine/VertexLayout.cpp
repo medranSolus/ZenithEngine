@@ -9,9 +9,27 @@ namespace GFX::Data
 			elements.emplace_back(ElementType::Position3D, 0);
 	}
 
+	const VertexLayout::Element& VertexLayout::Resolve(ElementType type) const noexcept(!IS_DEBUG)
+	{
+		for (auto& e : elements)
+			if (e.GetType() == type)
+				return e;
+		assert("Could not resolve element type" && false);
+		return elements.front();
+	}
+
+	bool VertexLayout::Has(ElementType type) const noexcept
+	{
+		for (auto& e : elements)
+			if (e.GetType() == type)
+				return true;
+		return false;
+	}
+
 	VertexLayout& VertexLayout::Append(ElementType type) noexcept(!IS_DEBUG)
 	{
-		elements.emplace_back(type, Size());
+		if (!Has(type))
+			elements.emplace_back(type, Size());
 		return *this;
 	}
 

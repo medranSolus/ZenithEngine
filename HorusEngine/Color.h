@@ -20,6 +20,33 @@ namespace GFX::Data
 
 		constexpr ColorByte operator+(const ColorByte& c) const noexcept;
 	};
+	
+	class ColorFloat3
+	{
+	public:
+		DirectX::XMFLOAT3 col = { 0.0f,0.0f,0.0f };
+
+		ColorFloat3() = default;
+		constexpr ColorFloat3(float r, float g, float b) noexcept : col(r, g, b) {}
+
+		constexpr ColorFloat3(const DirectX::XMFLOAT3& col) noexcept : col(col) {}
+		constexpr ColorFloat3(DirectX::XMFLOAT3&& col) noexcept : col(std::move(col)) {}
+
+		constexpr ColorFloat3(const ColorFloat3& c) noexcept : col(c.col) {}
+		constexpr ColorFloat3(ColorFloat3&& c) noexcept : col(std::move(c.col)) {}
+
+		constexpr ColorFloat3(const ColorByte& c) noexcept : col(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f) {}
+
+		constexpr ColorFloat3& operator=(const ColorFloat3& c) noexcept;
+		constexpr ColorFloat3& operator=(ColorFloat3&& c) noexcept;
+
+		inline operator DirectX::XMFLOAT3() const noexcept { return col; }
+
+		ColorFloat3& operator=(const ColorByte& c) noexcept;
+		~ColorFloat3() = default;
+
+		ColorFloat3 operator+(const ColorFloat3& c) const;
+	};
 
 	class ColorFloat4
 	{
@@ -37,6 +64,7 @@ namespace GFX::Data
 		constexpr ColorFloat4(ColorFloat4&& c) noexcept : col(std::move(c.col)) {}
 
 		constexpr ColorFloat4(const ColorByte& c) noexcept : col(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f) {}
+		constexpr ColorFloat4(const ColorFloat3& col) noexcept : col(col.col.x, col.col.y, col.col.z, 1.0f) {}
 
 		constexpr ColorFloat4& operator=(const ColorFloat4& c) noexcept;
 		constexpr ColorFloat4& operator=(ColorFloat4&& c) noexcept;
@@ -44,6 +72,7 @@ namespace GFX::Data
 		inline operator DirectX::XMFLOAT4() const noexcept { return col; }
 
 		ColorFloat4& operator=(const ColorByte& c) noexcept;
+		ColorFloat4& operator=(const ColorFloat3& c) noexcept;
 		~ColorFloat4() = default;
 
 		ColorFloat4 operator+(const ColorFloat4& c) const;
@@ -64,6 +93,18 @@ namespace GFX::Data
 			static_cast<unsigned char>((g + c.g) >> 1),
 			static_cast<unsigned char>((b + c.b) >> 1),
 			static_cast<unsigned char>((a + c.a) >> 1) };
+	}
+
+	constexpr ColorFloat3& ColorFloat3::operator=(const ColorFloat3& c) noexcept
+	{
+		col = c.col;
+		return *this;
+	}
+
+	constexpr ColorFloat3& ColorFloat3::operator=(ColorFloat3&& c) noexcept
+	{
+		col = std::move(c.col);
+		return *this;
 	}
 
 	constexpr ColorFloat4& ColorFloat4::operator=(const ColorFloat4& c) noexcept

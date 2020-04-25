@@ -34,7 +34,8 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 	clip(color.a - 0.0039f);
 
 #ifdef _TEX_NORMAL
-	viewNormal = GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr);
+	viewNormal = lerp(viewNormal,
+			GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr), normalMapWeight); // TODO: Add this
 #else
 	viewNormal = normalize(viewNormal);
 #endif
@@ -43,17 +44,17 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 	//	viewNormal *= -1.0f;
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 
-	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
-	const float3 scaledLightColor = lightColor * lightIntensity / attenuation;
+	const float attenuation = 1.0f / GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
+	const float3 scaledLightColor = lightColor * lightIntensity * attenuation;
 	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal);
 
-	float3 specularColor = scaledLightColor;
+	float3 specColor = specularColor * attenuation;
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr, tc);
 	const float specularPower = GetSampledSpecularPower(specularTex);
-	specularColor *= specularTex.rgb;
+	specColor *= specularTex.rgb;
 #endif
-	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, specularColor, specularPower, specularIntensity);
+	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, specColor, specularPower, specularIntensity);
 
 	return float4(saturate((diffuse + ambientColor) * color.rgb + specular), color.a);
 }
