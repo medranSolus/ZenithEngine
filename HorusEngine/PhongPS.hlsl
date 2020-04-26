@@ -1,9 +1,19 @@
 #include "Utils.fx"
 #include "LightCBuffer.fx"
 
+cbuffer PixelBuffer
+{
+	float3 specularColor;
+	float specularIntensity;
+	float specularPower;
 #ifdef _TEX
-#include "TexPhongCBuffer.fx"
+	float normalMapWeight;
+#else
+	float4 materialColor;
+#endif
+};
 
+#ifdef _TEX
 SamplerState splr;
 Texture2D tex;
 #ifdef _TEX_NORMAL
@@ -12,8 +22,6 @@ Texture2D normalMap;
 #ifdef _TEX_SPEC
 Texture2D spec : register(t2);
 #endif
-#else
-#include "PhongCBuffer.fx"
 #endif
 
 float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL

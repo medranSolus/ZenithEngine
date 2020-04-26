@@ -14,7 +14,7 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color4, "materialColor"); // TODO: Maybe alpha not needed
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["materialColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer));
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
 	}
 
 	Material::Material(Graphics& gfx, aiMaterial& material, const std::string& path)

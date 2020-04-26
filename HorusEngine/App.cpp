@@ -153,7 +153,7 @@ void App::MakeFrame()
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
 	camera->Update(window.Gfx());
-	//pointLight->Submit(renderer);
+	pointLight->Submit(renderer);
 	pointLight->Bind(window.Gfx(), *camera);
 	for (auto& shape : shapes)
 		if (shape)

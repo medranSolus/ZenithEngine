@@ -903,15 +903,6 @@
     <None Include="LightCBuffer.fx">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
-    <None Include="PhongCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
-    </None>
-    <None Include="TexPhongCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
-    </None>
-    <None Include="SolidCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
-    </None>
     <None Include="TransformCBuffer.fx">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
