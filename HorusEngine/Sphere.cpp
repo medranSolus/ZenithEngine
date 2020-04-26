@@ -120,12 +120,9 @@ namespace GFX::Primitive
 		indices.push_back(baseIndex);
 		indices.push_back(baseIndex + longitudeDensity - 1);
 		indices.push_back(pole);
-		return
-		{
-			std::move(vertices), std::move(indices)
-		};
+		return { std::move(vertices), std::move(indices) };
 	}
-	
+
 	IndexedTriangleList Sphere::MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes)
 	{
 		if (!latitudeDensity)
@@ -345,12 +342,9 @@ namespace GFX::Primitive
 			}
 			indices = std::move(tmpIndices);
 		}
-		return
-		{
-			std::move(vertices), std::move(indices)
-		};
+		return { std::move(vertices), std::move(indices) };
 	}
-	
+
 	IndexedTriangleList Sphere::MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes)
 	{
 		constexpr float bigAngle = M_PI / 10.0f;
@@ -506,10 +500,7 @@ namespace GFX::Primitive
 			}
 			indices = std::move(tmpIndices);
 		}
-		IndexedTriangleList list =
-		{
-			std::move(vertices), std::move(indices)
-		};
+		IndexedTriangleList list = { std::move(vertices), std::move(indices) };
 		list.SetNormals();
 		return std::move(list);
 	}

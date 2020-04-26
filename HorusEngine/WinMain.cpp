@@ -1,6 +1,4 @@
 #include "App.h"
-#include <ctime>
-#include <cstdlib>
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
@@ -10,11 +8,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		srand(static_cast<unsigned int>(time(NULL)));
 		return static_cast<int>(App(lpCmdLine).Run());
 	}
-	catch (const Exception::BasicException & e)
+	catch (const Exception::BasicException& e)
 	{
 		MessageBox(nullptr, e.what(), e.GetType(), errorBoxStyle);
 	}
-	catch (const std::exception & e)
+	catch (const std::exception& e)
 	{
 		MessageBox(nullptr, e.what(), "std::exception", errorBoxStyle);
 	}

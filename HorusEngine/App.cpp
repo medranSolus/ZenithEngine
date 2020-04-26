@@ -1,7 +1,6 @@
 #include "App.h"
 #include "Cameras.h"
 #include "Math.h"
-#include "ImGui/imgui.h"
 
 unsigned int App::width = 1600;
 unsigned int App::height = 900;
@@ -14,7 +13,7 @@ inline void App::ProcessInput()
 		{
 			auto value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
-				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed* static_cast<float>(value.GetDX()) / width);
+				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
 			switch (value.GetType())
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
@@ -32,7 +31,7 @@ inline void App::ProcessInput()
 			case WinAPI::Mouse::Event::Type::RawMove:
 			{
 				if (!window.IsCursorEnabled())
-					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed* static_cast<float>(value.GetDX()) / width);
+					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
 				break;
 			}
 			}

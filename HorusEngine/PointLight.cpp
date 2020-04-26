@@ -1,6 +1,4 @@
 #include "PointLight.h"
-#include "Math.h"
-#include "ImGui/imgui.h"
 
 namespace GFX::Light
 {
@@ -26,7 +24,7 @@ namespace GFX::Light
 		ImGui::ColorEdit3("Color", (float*)&lightBuffer.lightColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		if (mesh.IsVisible())
-			mesh.GetMaterial().Update(gfx, { lightBuffer.lightColor });
+			mesh.GetMaterial().Set("materialColor", Data::ColorFloat4(lightBuffer.lightColor));
 		ImGui::DragScalar("Intensity", ImGuiDataType_Float, &lightBuffer.lightIntensity, 0.001f, &f32Min, &f32Max, "%.3f");
 		ImGui::ColorEdit3("Ambient Color", (float*)&lightBuffer.ambientColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);

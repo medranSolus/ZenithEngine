@@ -1,12 +1,7 @@
 #include "Model.h"
-#include "Surface.h"
-#include "Math.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
-#include "ImGui/imgui.h"
 #include <filesystem>
-#include <thread>
-#include <array>
 
 namespace GFX::Shape
 {
@@ -152,7 +147,7 @@ namespace GFX::Shape
 			aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace);
 		if (!scene)
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
-		
+
 		meshes.reserve(scene->mNumMeshes);
 		materials.reserve(scene->mNumMaterials);
 		std::string path = std::filesystem::path(file).remove_filename().string();

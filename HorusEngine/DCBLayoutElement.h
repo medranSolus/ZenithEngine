@@ -1,8 +1,6 @@
 #pragma once
 #include "Color.h"
-#include <DirectXMath.h>
 #include <string>
-#include <vector>
 #include <memory>
 #include <optional>
 #include <cassert>
@@ -114,7 +112,7 @@ namespace GFX::Data::CBuffer
 		static constexpr ElementType type = ElementType::el; \
 		static constexpr bool valid = true; \
 	};
-		LEAF_ELEMENT_TYPES
+	LEAF_ELEMENT_TYPES
 #undef X
 #pragma endregion
 
@@ -182,7 +180,7 @@ namespace GFX::Data::CBuffer
 			assert(typeid(Map<ElementType::el>::DataType) == typeid(T)); \
 			return *offset; \
 		}
-			LEAF_ELEMENT_TYPES
+		LEAF_ELEMENT_TYPES
 #undef X
 		default:
 		{

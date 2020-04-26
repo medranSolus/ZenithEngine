@@ -1,5 +1,4 @@
 #include "BasicObject.h"
-#include "ImGui/imgui.h"
 
 namespace GFX
 {

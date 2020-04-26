@@ -18,9 +18,12 @@ namespace GFX::Data
 		constexpr ColorByte& operator=(const ColorByte& c) noexcept;
 		~ColorByte() = default;
 
+		constexpr bool operator==(const ColorByte& c) const noexcept { return c.r == r && c.g == g && c.b == b && c.a == a; }
+		constexpr bool operator!=(const ColorByte& c) const noexcept { return c.r != r || c.g != g || c.b != b || c.a != a; }
+
 		constexpr ColorByte operator+(const ColorByte& c) const noexcept;
 	};
-	
+
 	class ColorFloat3
 	{
 	public:
@@ -44,6 +47,9 @@ namespace GFX::Data
 
 		ColorFloat3& operator=(const ColorByte& c) noexcept;
 		~ColorFloat3() = default;
+
+		inline bool operator==(const ColorFloat3& c) const { return DirectX::XMVector3Equal(DirectX::XMLoadFloat3(&c.col), DirectX::XMLoadFloat3(&col)); }
+		inline bool operator!=(const ColorFloat3& c) const { return DirectX::XMVector3NotEqual(DirectX::XMLoadFloat3(&c.col), DirectX::XMLoadFloat3(&col)); }
 
 		ColorFloat3 operator+(const ColorFloat3& c) const;
 	};
@@ -74,6 +80,9 @@ namespace GFX::Data
 		ColorFloat4& operator=(const ColorByte& c) noexcept;
 		ColorFloat4& operator=(const ColorFloat3& c) noexcept;
 		~ColorFloat4() = default;
+
+		inline bool operator==(const ColorFloat4& c) const { return DirectX::XMVector4Equal(DirectX::XMLoadFloat4(&c.col), DirectX::XMLoadFloat4(&col)); }
+		inline bool operator!=(const ColorFloat4& c) const { return DirectX::XMVector4NotEqual(DirectX::XMLoadFloat4(&c.col), DirectX::XMLoadFloat4(&col)); }
 
 		ColorFloat4 operator+(const ColorFloat4& c) const;
 	};

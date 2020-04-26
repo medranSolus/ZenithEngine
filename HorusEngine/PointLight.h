@@ -1,6 +1,5 @@
 #pragma once
 #include "SolidGlobe.h"
-#include "ConstBufferPixel.h"
 #include "CBuffers.h"
 #include "ICamera.h"
 

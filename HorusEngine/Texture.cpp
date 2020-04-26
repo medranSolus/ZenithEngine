@@ -9,11 +9,9 @@ namespace GFX::Resource
 	{
 		GFX_ENABLE_ALL(gfx);
 		Surface surface(path);
-		std::thread* checkAlpha = nullptr;
+		std::unique_ptr<std::thread> checkAlpha = nullptr;
 		if (alphaEnable)
-			checkAlpha = new std::thread([&surface, this]() { alpha = surface.HasAlpha(); });
-		else
-			alpha = false;
+			checkAlpha = std::make_unique<std::thread>([&surface, this]() { alpha = surface.HasAlpha(); });
 
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.Width = static_cast<UINT>(surface.GetWidth());
@@ -41,9 +39,6 @@ namespace GFX::Resource
 
 		GetContext(gfx)->GenerateMips(textureView.Get());
 		if (alphaEnable)
-		{
 			checkAlpha->join();
-			delete checkAlpha;
-		}
 	}
 }

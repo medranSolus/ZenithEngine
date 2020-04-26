@@ -1,6 +1,5 @@
-#include "Job.h"
-#include "BaseShape.h"
 #include "TechniqueStep.h"
+#include "BaseShape.h"
 
 namespace GFX::Pipeline
 {

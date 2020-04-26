@@ -6,7 +6,7 @@ namespace Camera
 	DirectX::FXMMATRIX BaseCamera::GetView() const noexcept
 	{
 		if (viewUpdate)
-			return std::move(UpdateView());
+			return UpdateView();
 		return DirectX::XMLoadFloat4x4(&view);
 	}
 
@@ -21,11 +21,11 @@ namespace Camera
 	void BaseCamera::Update(GFX::Graphics& gfx) const noexcept
 	{
 		if (viewUpdate)
-			gfx.GetCamera() = std::move(UpdateView());
+			gfx.GetCamera() = UpdateView();
 		if (projectionUpdate)
 		{
 			projectionUpdate = false;
-			gfx.GetProjection() = std::move(GetProjection());
+			gfx.GetProjection() = GetProjection();
 		}
 	}
 

@@ -150,7 +150,7 @@ namespace WinAPI
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
 			// Allow window to capture mouse input when left/righ/middle button are pressed when escaping client area
-			if (point.x >= 0 && static_cast<unsigned int>(point.x) < wndWidth&& point.y >= 0 && static_cast<unsigned int>(point.y) < wndHeight)
+			if (point.x >= 0 && static_cast<unsigned int>(point.x) < wndWidth && point.y >= 0 && static_cast<unsigned int>(point.y) < wndHeight)
 			{
 				mouse.OnMouseMove(point.x, point.y);
 				if (!mouse.IsInWindow())

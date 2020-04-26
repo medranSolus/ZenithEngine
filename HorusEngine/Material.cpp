@@ -74,7 +74,7 @@ namespace GFX::Visual
 		AddBind(std::move(vertexShader));
 		if (hasTexture)
 			AddBind(Resource::Sampler::Get(gfx));
-		
+
 		// Material elements
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		if (material.Get(AI_MATKEY_COLOR_SPECULAR, reinterpret_cast<aiColor3D&>(static_cast<Data::ColorFloat3&>(cbuffer["specularColor"]))) != aiReturn_SUCCESS)

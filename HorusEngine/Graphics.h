@@ -4,7 +4,6 @@
 #include "GUIManager.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include <d3d11.h>
-#include <wrl.h>
 #include <DirectXMath.h>
 
 namespace GFX
@@ -110,5 +109,5 @@ namespace GFX
 			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-	};
-}
+		};
+	}

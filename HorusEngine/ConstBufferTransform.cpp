@@ -1,4 +1,5 @@
 #include "ConstBufferTransform.h"
+
 namespace GFX::Resource
 {
 	Data::CBuffer::Transform ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept

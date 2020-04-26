@@ -1,11 +1,10 @@
 #include "SolidGlobe.h"
 #include "Primitives.h"
 #include "Material.h"
-#include "Math.h"
 
 namespace GFX::Shape
 {
-	SolidGlobe::SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material,
+	SolidGlobe::SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color,
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
 	{
@@ -25,7 +24,9 @@ namespace GFX::Shape
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
-		techniques.back()->AddStep({ 0, std::make_shared<Visual::Material>(gfx, material, name) });
+		auto material = std::make_shared<Visual::Material>(gfx, color, name);
+		materialBuffer = &material->GetPixelBuffer();
+		techniques.back()->AddStep({ 0, std::move(material) });
 		SetTechniques(std::move(techniques));
 
 		UpdateTransformMatrix();

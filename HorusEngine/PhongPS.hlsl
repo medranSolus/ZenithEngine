@@ -4,8 +4,8 @@
 cbuffer PixelBuffer
 {
 	float3 specularColor;
-	float specularIntensity;
-	float specularPower;
+	float specularIntensity; // The bigger the brighter
+	float specularPower;     // The smaller the less focused in one point
 #ifdef _TEX
 	float normalMapWeight;
 #else

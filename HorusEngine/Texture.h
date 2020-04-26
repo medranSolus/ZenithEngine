@@ -6,7 +6,7 @@ namespace GFX::Resource
 	class Texture : public IBindable
 	{
 		UINT slot;
-		bool alpha;
+		bool alpha = false;
 		std::string path;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "Graphics.h"
 #include "RenderCommander.h"
 
 namespace GFX

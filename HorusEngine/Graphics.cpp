@@ -1,8 +1,5 @@
 #include "GfxExceptionMacros.h"
 #include "ImGui/imgui_impl_win32.h"
-#include <d3dcompiler.h>
-
-namespace MsWrl = Microsoft::WRL;
 
 namespace GFX
 {
@@ -38,7 +35,7 @@ namespace GFX
 		GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_HARDWARE, nullptr,
 			createFlags, nullptr, 0, D3D11_SDK_VERSION, &swapDesc, &swapChain, &device, features, &context));
 
-		MsWrl::ComPtr<ID3D11Resource> backBuffer = nullptr;
+		Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
 		GFX_THROW_FAILED(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTarget)); // Create view to back buffer allowing writing data
 
@@ -52,7 +49,7 @@ namespace GFX
 		depthTexDesc.SampleDesc.Quality = 0U;
 		depthTexDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
 		depthTexDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
-		MsWrl::ComPtr<ID3D11Texture2D> depthTexture = nullptr;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> depthTexture = nullptr;
 		GFX_THROW_FAILED(device->CreateTexture2D(&depthTexDesc, nullptr, &depthTexture)); // Texture to render into with depth stencil
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = { };

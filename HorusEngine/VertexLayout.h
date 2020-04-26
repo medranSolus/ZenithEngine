@@ -30,9 +30,9 @@ namespace GFX::Data
 	public:
 		enum class ElementType : unsigned char
 		{
-			#define X(el) el,
+#define X(el) el,
 			VERTEX_LAYOUT_ELEMENTS
-			#undef X
+#undef X
 			Count,
 		};
 
@@ -99,16 +99,15 @@ namespace GFX::Data
 		{
 			switch (type)
 			{
-			#define X(el) \
+#define X(el) \
 			case ElementType::el: \
 				return Functor<ElementType::el>::Exec(std::forward<Params>(p)...);
-			VERTEX_LAYOUT_ELEMENTS
-			#undef X
+				VERTEX_LAYOUT_ELEMENTS
+#undef X
 			}
 			assert("Invalid element type" && false);
 			return Functor<ElementType::Count>::Exec(std::forward<Params>(p)...);
 		}
-
 
 		inline const Element& ResolveByIndex(size_t i) const { return elements.at(i); }
 		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
@@ -189,7 +188,7 @@ namespace GFX::Data
 			using DataType = unsigned char;
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
 			static constexpr const char* semantic = "?";
-			static constexpr const char* code = "?"; 
+			static constexpr const char* code = "?";
 			VERTEX_ELEMENT_AI_EXTRACTOR(mFaces)
 		};
 

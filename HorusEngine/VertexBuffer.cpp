@@ -7,6 +7,7 @@ namespace GFX::Resource
 		: stride(static_cast<UINT>(buffer.GetLayout()->Size())), name(tag)
 	{
 		GFX_ENABLE_ALL(gfx);
+
 		D3D11_BUFFER_DESC bufferDesc = { 0 };
 		bufferDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
 		bufferDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;

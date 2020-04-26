@@ -62,7 +62,7 @@ namespace GFX::Primitive
 			}
 		};
 	}
-	
+
 	IndexedTriangleList Cube::Make(const std::vector<VertexAttribute>&& attributes)
 	{
 		constexpr float point = 0.5f;

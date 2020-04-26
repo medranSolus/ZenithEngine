@@ -1,5 +1,4 @@
 #include "BaseShape.h"
-#include "ImGui/imgui.h"
 
 namespace GFX::Shape
 {

@@ -20,24 +20,4 @@ namespace GFX::Data::CBuffer
 		float lightIntensity;
 		float padding[3] = { 0.0f };
 	};
-
-	struct Phong
-	{
-		float specularIntensity;	// The bigger the brighter
-		float specularPower;		// The smaller the less focused in one point
-		float padding[2]{ 0.0f };
-		ColorFloat4 materialColor;
-	};
-
-	struct TexPhong
-	{
-		float specularIntensity;	// The bigger the brighter
-		float specularPower;		// The smaller the less focused in one point
-		float padding[2]{ 0.0f };
-	};
-
-	struct Solid
-	{
-		ColorFloat4 materialColor;
-	};
 }

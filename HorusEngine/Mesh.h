@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseShape.h"
-#include "GfxObject.h"
 
 namespace GFX::Shape
 {
