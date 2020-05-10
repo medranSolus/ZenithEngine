@@ -79,7 +79,7 @@ inline void App::ProcessInput()
 
 inline void App::ShowObjectWindow()
 {
-	static GFX::Probe probe;
+	static GFX::Probe::ModelProbe probe;
 	if (ImGui::Begin("Object options"))
 	{
 		static std::map<std::string, std::shared_ptr<GFX::IObject>>::iterator currentItem = objects.find("---None---");
@@ -97,7 +97,7 @@ inline void App::ShowObjectWindow()
 		}
 		ImGui::NewLine();
 		if (currentItem->second)
-			currentItem->second->Accept(probe);
+			currentItem->second->Accept(window.Gfx(), probe);
 	}
 	ImGui::End();
 }

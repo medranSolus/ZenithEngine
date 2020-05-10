@@ -23,11 +23,11 @@ namespace GFX::Shape
 			technique->Submit(renderer, *this);
 	}
 
-	void BaseShape::Accept(Probe& probe) noexcept
+	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		probe.VisitShape(*this);
 		for (auto& technique : techniques)
-			technique->Accept(probe);
+			technique->Accept(gfx, probe);
 	}
 
 	//void BaseShape::ShowWindow(Graphics& gfx) noexcept

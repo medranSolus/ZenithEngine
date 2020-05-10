@@ -15,7 +15,7 @@ namespace GFX::Shape
 		Rectangle& operator=(const Rectangle&) = delete;
 		virtual ~Rectangle() = default;
 
-		void Accept(Probe& probe) noexcept override;
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void UpdateTransformMatrix() noexcept override;
 	};
 }

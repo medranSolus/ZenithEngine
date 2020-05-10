@@ -12,6 +12,6 @@ namespace GFX::Shape
 		Triangle& operator=(const Triangle&) = delete;
 		virtual ~Triangle() = default;
 
-		void Accept(Probe& probe) noexcept override;
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

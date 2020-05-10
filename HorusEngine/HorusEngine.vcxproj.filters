@@ -109,6 +109,12 @@
     <Filter Include="Header Files\AssImp\Compiler">
       <UniqueIdentifier>{0843bc5a-f1e8-4f84-908f-c0c09593cd25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Probe">
+      <UniqueIdentifier>{2bcf6cb8-d1ee-42c8-b317-71cd1fbade8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Probe">
+      <UniqueIdentifier>{3ecfd9b5-2a2c-419c-9c56-828094c3c5bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -315,8 +321,14 @@
     <ClCompile Include="Material.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
-    <ClCompile Include="Probe.cpp">
-      <Filter>Source Files\GFX</Filter>
+    <ClCompile Include="BaseProbe.cpp">
+      <Filter>Source Files\GFX\Probe</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelNode.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelProbe.cpp">
+      <Filter>Source Files\GFX\Probe</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -869,10 +881,16 @@
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
     <ClInclude Include="IProbeable.h">
-      <Filter>Header Files\GFX</Filter>
+      <Filter>Header Files\GFX\Probe</Filter>
     </ClInclude>
-    <ClInclude Include="Probe.h">
-      <Filter>Header Files\GFX</Filter>
+    <ClInclude Include="BaseProbe.h">
+      <Filter>Header Files\GFX\Probe</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelProbe.h">
+      <Filter>Header Files\GFX\Probe</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelNode.h">
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

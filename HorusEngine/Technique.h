@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline
 {
-	class Technique : public IProbeable
+	class Technique : public Probe::IProbeable
 	{
 		bool active;
 		std::string name;
@@ -24,6 +24,6 @@ namespace GFX::Pipeline
 		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::move(step)); }
 
 		void Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept;
-		void Accept(Probe& probe) noexcept override;
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

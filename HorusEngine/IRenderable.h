@@ -4,7 +4,7 @@
 
 namespace GFX
 {
-	class IRenderable : public IProbeable
+	class IRenderable : public Probe::IProbeable
 	{
 	public:
 		virtual ~IRenderable() = default;

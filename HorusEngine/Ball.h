@@ -14,6 +14,6 @@ namespace GFX::Shape
 
 		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ); }
 
-		void Accept(Probe& probe) noexcept override;
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

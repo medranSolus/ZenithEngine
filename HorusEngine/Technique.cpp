@@ -11,12 +11,12 @@ namespace GFX::Pipeline
 		}
 	}
 
-	void Technique::Accept(Probe& probe) noexcept
+	void Technique::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		probe.SetTechnique(this);
 		if (active)
 			for (auto& step : steps)
-				step.Accept(probe);
-		probe.Release();
+				step.Accept(gfx, probe);
+		probe.ReleaseTechnique();
 	}
 }

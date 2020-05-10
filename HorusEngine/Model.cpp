@@ -5,84 +5,6 @@
 
 namespace GFX::Shape
 {
-	Model::Node::Node(const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX& nodeTransform) noexcept
-		: Object(name), meshes(std::move(nodeMeshes))
-	{
-		DirectX::XMStoreFloat4x4(&baseTransform, nodeTransform);
-		currentTransform = std::make_shared<DirectX::XMFLOAT4X4>();
-		for (auto& mesh : meshes)
-			mesh->SetTransformMatrix(currentTransform);
-	}
-
-	void Model::Node::Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG)
-	{
-		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
-			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
-		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
-		for (const auto& mesh : meshes)
-			mesh->Submit(renderer);
-		for (const auto& child : children)
-			child->Submit(renderer, transformMatrix);
-	}
-
-	void Model::Node::ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept
-	{
-		const unsigned long long currentNode = nodeId++;
-		const bool expanded = ImGui::TreeNodeEx((void*)currentNode,
-			ImGuiTreeNodeFlags_OpenOnArrow |
-			(children.size() ? 0 : ImGuiTreeNodeFlags_Leaf) |
-			(currentNode == selectedId ? ImGuiTreeNodeFlags_Selected : 0), name.c_str());
-		if (ImGui::IsItemClicked())
-		{
-			selectedId = currentNode;
-			selectedNode = const_cast<Node*>(this);
-		}
-		if (expanded)
-		{
-			for (auto& child : children)
-				child->ShowTree(nodeId, selectedId, selectedNode);
-			ImGui::TreePop();
-		}
-	}
-
-	void Model::Node::Accept(Probe& probe) noexcept
-	{
-		Object::Accept(probe);
-		/*bool meshOnly = isMesh;
-		ImGui::Checkbox("Mesh-only", &meshOnly);
-		if (isMesh != meshOnly)
-			SetMesh(gfx, meshOnly);*/
-	}
-
-	void Model::Node::SetMesh(Graphics& gfx, bool meshOnly) noexcept
-	{
-		if (isMesh != meshOnly)
-		{
-			isMesh = meshOnly;
-			if (isMesh)
-				for (auto& nodeMesh : meshes)
-					nodeMesh->SetTopologyMesh(gfx);
-			else
-				for (auto& nodeMesh : meshes)
-					nodeMesh->SetTopologyPlain(gfx);
-		}
-		for (auto& node : children)
-			node->SetMesh(gfx, meshOnly);
-	}
-
-	void Model::Window::Show(Graphics& gfx) noexcept
-	{
-		ImGui::Columns(2);
-		ImGui::BeginChild("##scroll", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
-		unsigned long long startId = 0;
-		parent->root->ShowTree(startId, selectedId, selectedNode);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::NewLine();
-		//selectedNode->Accept(gfx);
-		ImGui::Columns(1);
-	}
-
 	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
 	{
 		// Maybe layout code needed too, TODO: Check this
@@ -119,19 +41,19 @@ namespace GFX::Shape
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}
 
-	std::unique_ptr<Model::Node> Model::ParseNode(const aiNode& node) noexcept(!IS_DEBUG)
+	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, unsigned long long& id) noexcept(!IS_DEBUG)
 	{
 		std::vector<std::shared_ptr<Mesh>> currentMeshes;
 		currentMeshes.reserve(node.mNumMeshes);
 		for (unsigned int i = 0; i < node.mNumMeshes; ++i)
 			currentMeshes.emplace_back(meshes.at(node.mMeshes[i]));
 
-		std::unique_ptr<Node> currentNode = std::make_unique<Node>(node.mName.C_Str(), std::move(currentMeshes),
+		std::unique_ptr<ModelNode> currentNode = std::make_unique<ModelNode>(id, node.mName.C_Str(), std::move(currentMeshes),
 			DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(&node.mTransformation))));
 
 		currentNode->ReserveChildren(node.mNumChildren);
 		for (unsigned int i = 0; i < node.mNumChildren; ++i)
-			currentNode->AddChild(ParseNode(*node.mChildren[i]));
+			currentNode->AddChild(ParseNode(*node.mChildren[i], ++id));
 		return currentNode;
 	}
 
@@ -151,10 +73,10 @@ namespace GFX::Shape
 			materials.emplace_back(std::make_shared<Visual::Material>(gfx, *scene->mMaterials[i], path));
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
 			meshes.emplace_back(ParseMesh(gfx, path, *scene->mMeshes[i], materials));
-		root = ParseNode(*scene->mRootNode);
+		unsigned long long startID = 1ULL;
+		root = ParseNode(*scene->mRootNode, startID);
 		root->SetScale(scale);
 		root->SetPos(position);
-		window = std::make_unique<Window>(const_cast<Model*>(this));
 	}
 
 	const char* Model::ModelException::what() const noexcept

@@ -34,6 +34,6 @@ namespace GFX::Shape
 
 		void Bind(Graphics& gfx) noexcept;
 		void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override;
-		void Accept(Probe& probe) noexcept override;
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

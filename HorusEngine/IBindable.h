@@ -10,7 +10,7 @@ namespace GFX::Resource
 		static constexpr bool generate{ false };
 	};
 
-	class IBindable : public IProbeable
+	class IBindable : public Probe::IProbeable
 	{
 	protected:
 		static inline ID3D11DeviceContext* GetContext(Graphics& gfx) noexcept { return gfx.context.Get(); }
@@ -28,6 +28,6 @@ namespace GFX::Resource
 
 		virtual void Bind(Graphics& gfx) noexcept = 0;
 		virtual std::string GetRID() const noexcept = 0;
-		void Accept(Probe& probe) noexcept override {}
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
 	};
 }

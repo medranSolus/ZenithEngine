@@ -1,6 +1,5 @@
 #pragma once
-#include "Object.h"
-#include "Mesh.h"
+#include "ModelNode.h"
 #include "Material.h"
 #include "BasicException.h"
 
@@ -8,59 +7,14 @@ namespace GFX::Shape
 {
 	class Model : public IObject
 	{
-		class Node : public Object
-		{
-			DirectX::XMFLOAT4X4 baseTransform;
-			mutable std::shared_ptr<DirectX::XMFLOAT4X4> currentTransform = nullptr;
-			std::vector<std::unique_ptr<Node>> children;
-			std::vector<std::shared_ptr<Mesh>> meshes;
-			bool isMesh = false;
-
-		public:
-			Node(const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX& nodeTransform) noexcept;
-			Node(const Node&) = default;
-			Node& operator=(const Node&) = default;
-			virtual ~Node() = default;
-
-			constexpr DirectX::XMFLOAT4X4* GetBaseTransform() noexcept { return &baseTransform; }
-			inline void ReserveChildren(size_t capacity) noexcept { children.reserve(capacity); }
-			inline void AddChild(std::unique_ptr<Node> child) noexcept(!IS_DEBUG)
-			{
-				assert(child);
-				children.emplace_back(std::move(child));
-			}
-
-			inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { Submit(renderer, DirectX::XMMatrixIdentity()); }
-
-			void Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG);
-			void ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept;
-			void Accept(Probe& probe) noexcept override;
-			void SetMesh(Graphics& gfx, bool meshOnly) noexcept;
-		};
-		class Window
-		{
-			Model* parent = nullptr;
-			Node* selectedNode = nullptr;
-			unsigned long long selectedId = 0;
-
-		public:
-			inline Window(Model* parent) noexcept : parent(parent), selectedNode(parent->root.get()) {}
-			Window(const Window&) = default;
-			Window& operator=(const Window&) = default;
-			virtual ~Window() = default;
-
-			void Show(Graphics& gfx) noexcept;
-		};
-
 		std::string name = "";
-		std::unique_ptr<Window> window = nullptr;
-		std::unique_ptr<Node> root = nullptr;
+		std::unique_ptr<ModelNode> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
 
 		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
 
-		std::unique_ptr<Node> ParseNode(const aiNode& node) noexcept(!IS_DEBUG);
+		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, unsigned long long& id) noexcept(!IS_DEBUG);
 
 	public:
 		Model(Graphics& gfx, const std::string& file, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,0.0f }, const std::string& modelName = "Model", float scale = 1.0f);
@@ -83,7 +37,8 @@ namespace GFX::Shape
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
-		inline void Accept(Probe& probe) noexcept override { /*window->Show(gfx);*/ }
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Object::Accept(gfx, probe); }
+		inline void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { probe.Visit(gfx, *this, *root); }
 
 		class ModelException : public Exception::BasicException
 		{

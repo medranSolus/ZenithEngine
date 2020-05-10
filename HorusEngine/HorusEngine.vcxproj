@@ -242,7 +242,7 @@
     <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
-    <ClCompile Include="Probe.cpp" />
+    <ClCompile Include="BaseProbe.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ConstBufferEx.cpp" />
     <ClCompile Include="ConstBufferExPixel.cpp" />
@@ -279,6 +279,8 @@
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelNode.cpp" />
+    <ClCompile Include="ModelProbe.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
@@ -529,7 +531,7 @@
     <ClInclude Include="IBindable.h" />
     <ClInclude Include="ICamera.h" />
     <ClInclude Include="IProbeable.h" />
-    <ClInclude Include="Probe.h" />
+    <ClInclude Include="BaseProbe.h" />
     <ClInclude Include="IVisual.h" />
     <ClInclude Include="IRenderable.h" />
     <ClInclude Include="ImGui\imconfig.h" />
@@ -552,6 +554,8 @@
     <ClInclude Include="Math.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelNode.h" />
+    <ClInclude Include="ModelProbe.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
