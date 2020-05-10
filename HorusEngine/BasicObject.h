@@ -20,19 +20,22 @@ namespace GFX
 		BasicObject& operator=(const BasicObject&) = default;
 		virtual ~BasicObject() = default;
 
+		constexpr DirectX::XMFLOAT3& GetAngle() noexcept { return angle; }
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return angle; }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { angle = meshAngle; }
 
+		constexpr float& GetScale() noexcept { return scale; }
 		inline float GetScale() const noexcept override { return scale; }
 		inline void SetScale(float newScale) noexcept override { scale = newScale; }
 
+		constexpr DirectX::XMFLOAT3& GetPos() noexcept { return pos; }
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return pos; }
 		inline void SetPos(const DirectX::XMFLOAT3& position) noexcept override { pos = position; }
 
 		inline const std::string& GetName() const noexcept override { return name; }
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
+		inline void Accept(Probe& probe) noexcept override { probe.VisitObject(*this); }
 		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
-		void ShowWindow(Graphics& gfx) noexcept override;
 	};
 }

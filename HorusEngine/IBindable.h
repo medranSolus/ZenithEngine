@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics.h"
+#include "IProbeable.h"
 
 namespace GFX::Resource
 {
@@ -9,7 +10,7 @@ namespace GFX::Resource
 		static constexpr bool generate{ false };
 	};
 
-	class IBindable
+	class IBindable : public IProbeable
 	{
 	protected:
 		static inline ID3D11DeviceContext* GetContext(Graphics& gfx) noexcept { return gfx.context.Get(); }
@@ -27,5 +28,6 @@ namespace GFX::Resource
 
 		virtual void Bind(Graphics& gfx) noexcept = 0;
 		virtual std::string GetRID() const noexcept = 0;
+		void Accept(Probe& probe) noexcept override {}
 	};
 }

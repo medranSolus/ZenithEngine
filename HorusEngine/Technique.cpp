@@ -10,4 +10,13 @@ namespace GFX::Pipeline
 				step.Submit(renderer, shape);
 		}
 	}
+
+	void Technique::Accept(Probe& probe) noexcept
+	{
+		probe.SetTechnique(this);
+		if (active)
+			for (auto& step : steps)
+				step.Accept(probe);
+		probe.Release();
+	}
 }

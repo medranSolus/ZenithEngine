@@ -32,9 +32,9 @@ namespace GFX::Shape
 		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));*/
 	}
 
-	void Triangle::ShowWindow(Graphics& gfx) noexcept
+	void Triangle::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		BaseShape::ShowWindow(gfx);
+		Object::Accept(probe);
+		BaseShape::Accept(probe);
 	}
 }

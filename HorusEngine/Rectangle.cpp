@@ -24,10 +24,10 @@ namespace GFX::Shape
 		UpdateTransformMatrix();*/
 	}
 
-	void Rectangle::ShowWindow(Graphics& gfx) noexcept
+	void Rectangle::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		BaseShape::ShowWindow(gfx);
+		Object::Accept(probe);
+		BaseShape::Accept(probe);
 	}
 
 	void Rectangle::UpdateTransformMatrix() noexcept

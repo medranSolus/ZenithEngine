@@ -19,27 +19,29 @@ namespace GFX::Shape
 
 	void BaseShape::Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG)
 	{
-		if (visible)
-		{
-			for (auto& technique : techniques)
-				technique->Submit(renderer, *this);
-		}
+		for (auto& technique : techniques)
+			technique->Submit(renderer, *this);
 	}
 
-	void BaseShape::ShowWindow(Graphics& gfx) noexcept
+	void BaseShape::Accept(Probe& probe) noexcept
 	{
-		static bool previousMesh = false;
-		static bool meshOnly = false;
-		ImGui::Checkbox("Mesh-only", &meshOnly);
-		if (previousMesh != meshOnly)
-		{
-			previousMesh = meshOnly;
-			if (meshOnly)
-				SetTopologyMesh(gfx);
-			else
-				SetTopologyPlain(gfx);
-		}
-		ImGui::SameLine();
-		ImGui::Checkbox("Object visible", &visible);
+		probe.VisitShape(*this);
+		for (auto& technique : techniques)
+			technique->Accept(probe);
 	}
+
+	//void BaseShape::ShowWindow(Graphics& gfx) noexcept
+	//{
+	//	static bool previousMesh = false;
+	//	static bool meshOnly = false;
+	//	ImGui::Checkbox("Mesh-only", &meshOnly);
+	//	if (previousMesh != meshOnly)
+	//	{
+	//		previousMesh = meshOnly;
+	//		if (meshOnly)
+	//			SetTopologyMesh(gfx);
+	//		else
+	//			SetTopologyPlain(gfx);
+	//	}
+	//}
 }

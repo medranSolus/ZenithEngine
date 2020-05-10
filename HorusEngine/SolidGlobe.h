@@ -19,7 +19,7 @@ namespace GFX::Shape
 		inline Resource::ConstBufferExPixelCache& GetMaterial() noexcept { return *materialBuffer; }
 		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ); }
 
-		void ShowWindow(Graphics& gfx) noexcept override;
+		void Accept(Probe& probe) noexcept override;
 		void UpdateTransformMatrix() noexcept override;
 	};
 }

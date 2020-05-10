@@ -315,6 +315,9 @@
     <ClCompile Include="Material.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
+    <ClCompile Include="Probe.cpp">
+      <Filter>Source Files\GFX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -864,6 +867,12 @@
     </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="IProbeable.h">
+      <Filter>Header Files\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Probe.h">
+      <Filter>Header Files\GFX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

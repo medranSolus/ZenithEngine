@@ -9,7 +9,7 @@ namespace GFX::Resource
 		D3D11_PRIMITIVE_TOPOLOGY type;
 
 	public:
-		Topology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY type) : type(type) {}
+		constexpr Topology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY type) : type(type) {}
 		Topology(const Topology&) = default;
 		Topology& operator=(const Topology&) = default;
 		virtual ~Topology() = default;

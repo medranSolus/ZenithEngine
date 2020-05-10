@@ -36,9 +36,9 @@ namespace GFX::Shape
 		AddBind(Resource::ConstBufferPixel<Data::CBuffer::Phong>::Get(gfx, name, buffer, 1U));*/
 	}
 
-	void Ball::ShowWindow(Graphics& gfx) noexcept
+	void Ball::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		BaseShape::ShowWindow(gfx);
+		Object::Accept(probe);
+		BaseShape::Accept(probe);
 	}
 }

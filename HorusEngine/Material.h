@@ -24,5 +24,6 @@ namespace GFX::Visual
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 
 		void Bind(Graphics& gfx) noexcept override;
+		void Accept(Probe& probe) noexcept override;
 	};
 }

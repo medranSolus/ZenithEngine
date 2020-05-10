@@ -4,7 +4,7 @@
 
 namespace GFX::Pipeline
 {
-	class TechniqueStep
+	class TechniqueStep : public IProbeable
 	{
 		size_t targetPass;
 		std::shared_ptr<Visual::IVisual> data = nullptr;
@@ -18,5 +18,6 @@ namespace GFX::Pipeline
 		inline void AddData(std::shared_ptr<Visual::IVisual> stepData) noexcept { data = std::move(stepData); }
 		inline void Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept { renderer.Add({ &shape, this }, targetPass); }
 		inline void Bind(Graphics& gfx) noexcept { data->Bind(gfx); }
+		inline void Accept(Probe& probe) noexcept override { if (data) data->Accept(probe); }
 	};
 }

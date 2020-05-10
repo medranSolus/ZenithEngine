@@ -10,9 +10,8 @@ namespace GFX::Shape
 		std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr;
 		std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr;
 		std::shared_ptr<Resource::Topology> topology = nullptr;
-		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr;
+		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr; // Maybe move to TechniqueStep
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
-		bool visible = true;
 
 	protected:
 		BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr,
@@ -28,17 +27,13 @@ namespace GFX::Shape
 
 	public:
 		constexpr UINT GetIndexCount() const noexcept { return indexBuffer->GetCount(); }
-		constexpr bool IsVisible() const noexcept { return visible; }
-		constexpr void SetVisible() noexcept { visible = true; }
-		constexpr void SetHidden() noexcept { visible = false; }
-		constexpr void SwitchVisible() noexcept { visible = !visible; }
 
 		inline void AddTechnique(std::shared_ptr<Pipeline::Technique> technique) noexcept { techniques.emplace_back(std::move(technique)); }
 		inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); }
-		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST); }
+		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); }
 
 		void Bind(Graphics& gfx) noexcept;
 		void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override;
-		void ShowWindow(Graphics& gfx) noexcept override;
+		void Accept(Probe& probe) noexcept override;
 	};
 }

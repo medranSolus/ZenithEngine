@@ -39,10 +39,10 @@ namespace GFX::Shape
 		UpdateTransformMatrix();*/
 	}
 
-	void Globe::ShowWindow(Graphics& gfx) noexcept
+	void Globe::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		BaseShape::ShowWindow(gfx);
+		Object::Accept(probe);
+		BaseShape::Accept(probe);
 	}
 
 	void Globe::UpdateTransformMatrix() noexcept

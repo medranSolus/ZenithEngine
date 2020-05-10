@@ -32,10 +32,10 @@ namespace GFX::Shape
 		UpdateTransformMatrix();
 	}
 
-	void SolidGlobe::ShowWindow(Graphics& gfx) noexcept
+	void SolidGlobe::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		BaseShape::ShowWindow(gfx);
+		Object::Accept(probe);
+		BaseShape::Accept(probe);
 	}
 
 	void SolidGlobe::UpdateTransformMatrix() noexcept

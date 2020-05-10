@@ -15,7 +15,6 @@ namespace GFX::Shape
 			std::vector<std::unique_ptr<Node>> children;
 			std::vector<std::shared_ptr<Mesh>> meshes;
 			bool isMesh = false;
-			bool visible = true;
 
 		public:
 			Node(const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes, const DirectX::FXMMATRIX& nodeTransform) noexcept;
@@ -35,7 +34,7 @@ namespace GFX::Shape
 
 			void Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG);
 			void ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept;
-			void ShowWindow(Graphics& gfx) noexcept override;
+			void Accept(Probe& probe) noexcept override;
 			void SetMesh(Graphics& gfx, bool meshOnly) noexcept;
 		};
 		class Window
@@ -84,7 +83,7 @@ namespace GFX::Shape
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
-		inline void ShowWindow(Graphics& gfx) noexcept override { window->Show(gfx); }
+		inline void Accept(Probe& probe) noexcept override { /*window->Show(gfx);*/ }
 
 		class ModelException : public Exception::BasicException
 		{

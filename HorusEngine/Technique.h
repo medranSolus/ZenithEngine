@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline
 {
-	class Technique
+	class Technique : public IProbeable
 	{
 		bool active;
 		std::string name;
@@ -16,6 +16,7 @@ namespace GFX::Pipeline
 		Technique& operator=(const Technique&) = default;
 		~Technique() = default;
 
+		constexpr const std::string& GetName() const noexcept { return name; }
 		constexpr bool IsActive() const noexcept { return active; }
 		constexpr bool& IsActive() noexcept { return active; }
 		constexpr void Activate() noexcept { active = true; }
@@ -23,5 +24,6 @@ namespace GFX::Pipeline
 		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::move(step)); }
 
 		void Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept;
+		void Accept(Probe& probe) noexcept override;
 	};
 }

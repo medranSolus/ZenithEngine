@@ -48,10 +48,10 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
-	void Object::ShowWindow(Graphics& gfx) noexcept
+	void Object::Accept(Probe& probe) noexcept
 	{
-		BasicObject::ShowWindow(gfx);
-		UpdateTransformMatrix();
+		if (probe.VisitObject(*this))
+			UpdateTransformMatrix();
 	}
 
 	void Object::UpdateTransformMatrix() noexcept

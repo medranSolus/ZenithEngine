@@ -104,4 +104,10 @@ namespace GFX::Visual
 		if (specularMap)
 			specularMap->Bind(gfx);
 	}
+
+	void Material::Accept(Probe& probe) noexcept
+	{
+		// Add later for turning on or of some texture stuff
+		pixelBuffer->Accept(probe);
+	}
 }

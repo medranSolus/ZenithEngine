@@ -32,26 +32,6 @@ namespace GFX::Resource
 		return GenerateRID(tag, buffer.GetRootElement(), slot);
 	}
 
-	template<>
-	void ConstBufferExPixelCache::Set<DirectX::XMFLOAT4>(const std::string& propertyName, const DirectX::XMFLOAT4& value) noexcept(!IS_DEBUG)
-	{
-		if (DirectX::XMVector4NotEqual(DirectX::XMLoadFloat4(&value), DirectX::XMLoadFloat4(&buffer[propertyName])))
-		{
-			buffer[propertyName] = value;
-			dirty = true;
-		}
-	}
-
-	template<>
-	void ConstBufferExPixelCache::Set<DirectX::XMFLOAT3>(const std::string& propertyName, const DirectX::XMFLOAT3& value) noexcept(!IS_DEBUG)
-	{
-		if (DirectX::XMVector3NotEqual(DirectX::XMLoadFloat3(&value), DirectX::XMLoadFloat3(&buffer[propertyName])))
-		{
-			buffer[propertyName] = value;
-			dirty = true;
-		}
-	}
-
 	void ConstBufferExPixelCache::Bind(Graphics& gfx) noexcept
 	{
 		if (dirty)

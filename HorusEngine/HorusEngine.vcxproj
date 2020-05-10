@@ -242,6 +242,7 @@
     <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
+    <ClCompile Include="Probe.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ConstBufferEx.cpp" />
     <ClCompile Include="ConstBufferExPixel.cpp" />
@@ -527,6 +528,8 @@
     <ClInclude Include="GUIManager.h" />
     <ClInclude Include="IBindable.h" />
     <ClInclude Include="ICamera.h" />
+    <ClInclude Include="IProbeable.h" />
+    <ClInclude Include="Probe.h" />
     <ClInclude Include="IVisual.h" />
     <ClInclude Include="IRenderable.h" />
     <ClInclude Include="ImGui\imconfig.h" />

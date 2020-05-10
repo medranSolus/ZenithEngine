@@ -1,6 +1,5 @@
 #pragma once
 #include "Codex.h"
-#include "DynamicCBuffer.h"
 
 namespace GFX::Resource
 {

@@ -16,16 +16,13 @@ namespace GFX::Shape
 
 	void Model::Node::Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG)
 	{
-		if (visible)
-		{
-			const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
-				DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
-			DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
-			for (const auto& mesh : meshes)
-				mesh->Submit(renderer);
-			for (const auto& child : children)
-				child->Submit(renderer, transformMatrix);
-		}
+		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
+			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
+		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
+		for (const auto& mesh : meshes)
+			mesh->Submit(renderer);
+		for (const auto& child : children)
+			child->Submit(renderer, transformMatrix);
 	}
 
 	void Model::Node::ShowTree(unsigned long long& nodeId, unsigned long long& selectedId, Node*& selectedNode) const noexcept
@@ -48,14 +45,13 @@ namespace GFX::Shape
 		}
 	}
 
-	void Model::Node::ShowWindow(Graphics& gfx) noexcept
+	void Model::Node::Accept(Probe& probe) noexcept
 	{
-		Object::ShowWindow(gfx);
-		bool meshOnly = isMesh;
+		Object::Accept(probe);
+		/*bool meshOnly = isMesh;
 		ImGui::Checkbox("Mesh-only", &meshOnly);
 		if (isMesh != meshOnly)
-			SetMesh(gfx, meshOnly);
-		ImGui::Checkbox("Object visible", &visible);
+			SetMesh(gfx, meshOnly);*/
 	}
 
 	void Model::Node::SetMesh(Graphics& gfx, bool meshOnly) noexcept
@@ -83,7 +79,7 @@ namespace GFX::Shape
 		ImGui::EndChild();
 		ImGui::NextColumn();
 		ImGui::NewLine();
-		selectedNode->ShowWindow(gfx);
+		//selectedNode->Accept(gfx);
 		ImGui::Columns(1);
 	}
 

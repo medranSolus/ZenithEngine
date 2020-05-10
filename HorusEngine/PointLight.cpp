@@ -17,14 +17,15 @@ namespace GFX::Light
 		};
 	}
 
-	void PointLight::ShowWindow(Graphics& gfx) noexcept
+	void PointLight::Accept(Probe& probe) noexcept
 	{
+		// TODO: Move to DCB
 		static constexpr float f32Max = FLT_MAX;
 		static constexpr float f32Min = -FLT_MAX;
 		ImGui::ColorEdit3("Color", (float*)&lightBuffer.lightColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
-		if (mesh.IsVisible())
-			mesh.GetMaterial().Set("materialColor", Data::ColorFloat4(lightBuffer.lightColor));
+		//if (mesh.IsVisible())
+		//	mesh.GetMaterial().Set("materialColor", Data::ColorFloat4(lightBuffer.lightColor));
 		ImGui::DragScalar("Intensity", ImGuiDataType_Float, &lightBuffer.lightIntensity, 0.001f, &f32Min, &f32Max, "%.3f");
 		ImGui::ColorEdit3("Ambient Color", (float*)&lightBuffer.ambientColor,
 			ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
@@ -33,7 +34,7 @@ namespace GFX::Light
 		ImGui::DragScalar("Linear", ImGuiDataType_Float, &lightBuffer.atteuationLinear, 0.0001f, &f32Min, &f32Max, "%.4f");
 		ImGui::DragScalar("Quad", ImGuiDataType_Float, &lightBuffer.attenuationQuad, 0.00001f, &f32Min, &f32Max, "%.5f");
 		ImGui::NewLine();
-		mesh.ShowWindow(gfx);
+		mesh.Accept(probe);
 	}
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept

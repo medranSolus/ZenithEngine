@@ -3,7 +3,7 @@
 
 namespace GFX::Visual
 {
-	class IVisual
+	class IVisual : public IProbeable
 	{
 		std::vector<std::shared_ptr<Resource::IBindable>> binds;
 

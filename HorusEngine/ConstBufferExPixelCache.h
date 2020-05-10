@@ -36,11 +36,9 @@ namespace GFX::Resource
 		static std::string GenerateRID(const std::string& tag,
 			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U) noexcept;
 
-		template<typename T>
-		void Set(const std::string& propertyName, const T& value) noexcept(!IS_DEBUG);
-
 		void Bind(Graphics& gfx) noexcept override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }
+		inline void Accept(Probe& probe) noexcept override { dirty = probe.VisitBuffer(buffer); }
 	};
 
 	template<>
@@ -48,19 +46,4 @@ namespace GFX::Resource
 	{
 		static constexpr bool generate{ true };
 	};
-
-	template<typename T>
-	void ConstBufferExPixelCache::Set(const std::string& propertyName, const T& value) noexcept(!IS_DEBUG)
-	{
-		if (buffer[propertyName] != value)
-		{
-			buffer[propertyName] = value;
-			dirty = true;
-		}
-	}
-
-	template<>
-	void ConstBufferExPixelCache::Set<DirectX::XMFLOAT4>(const std::string& propertyName, const DirectX::XMFLOAT4& value) noexcept(!IS_DEBUG);
-	template<>
-	void ConstBufferExPixelCache::Set<DirectX::XMFLOAT3>(const std::string& propertyName, const DirectX::XMFLOAT3& value) noexcept(!IS_DEBUG);
 }

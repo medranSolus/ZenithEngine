@@ -1,14 +1,14 @@
 #pragma once
+#include "IProbeable.h"
 #include "RenderCommander.h"
 
 namespace GFX
 {
-	class IRenderable
+	class IRenderable : public IProbeable
 	{
 	public:
 		virtual ~IRenderable() = default;
 
 		virtual void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) = 0;
-		virtual void ShowWindow(Graphics& gfx) noexcept = 0;
 	};
 }
