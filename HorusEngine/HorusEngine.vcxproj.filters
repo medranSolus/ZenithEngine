@@ -330,6 +330,12 @@
     <ClCompile Include="ModelProbe.cpp">
       <Filter>Source Files\GFX\Probe</Filter>
     </ClCompile>
+    <ClCompile Include="OutlineMask.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineDraw.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -891,6 +897,12 @@
     </ClInclude>
     <ClInclude Include="ModelNode.h">
       <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineMask.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineDraw.h">
+      <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

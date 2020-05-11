@@ -7,7 +7,7 @@ namespace GFX::Shape
 {
 	Globe::Globe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material,
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
-		: BaseShape(gfx, *this), Object(position, name), sizes(width, height, length)
+		: BaseShape(gfx), Object(position, name), sizes(width, height, length)
 	{
 		/*auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();

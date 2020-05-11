@@ -2,7 +2,7 @@
 
 namespace GFX::Visual
 {
-	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
+	Material::Material(Graphics& gfx, Data::ColorFloat3 color, const std::string& name)
 	{
 		AddBind(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
 		vertexLayout = std::make_shared<Data::VertexLayout>();
@@ -11,9 +11,9 @@ namespace GFX::Visual
 		AddBind(std::move(vertexShader));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
-		cbufferLayout.Add(DCBElementType::Color4, "materialColor"); // TODO: Maybe alpha not needed
+		cbufferLayout.Add(DCBElementType::Color3, "solidColor"); // TODO: Maybe alpha not needed
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
-		cbuffer["materialColor"] = std::move(color);
+		cbuffer["solidColor"] = std::move(color);
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
 	}
 

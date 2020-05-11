@@ -1,5 +1,6 @@
 #pragma once
 #include "IVisual.h"
+#include "GfxResources.h"
 
 namespace GFX::Visual
 {

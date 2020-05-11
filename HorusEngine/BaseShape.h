@@ -10,12 +10,11 @@ namespace GFX::Shape
 		std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr;
 		std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr;
 		std::shared_ptr<Resource::Topology> topology = nullptr;
-		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr; // Maybe move to TechniqueStep
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		bool isMesh = false;
 
 	protected:
-		BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr,
+		BaseShape(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr,
 			std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr);
 		BaseShape(const BaseShape&) = delete;
 		BaseShape& operator=(const BaseShape&) = delete;
@@ -24,7 +23,8 @@ namespace GFX::Shape
 		inline void SetIndexBuffer(std::shared_ptr<Resource::IndexBuffer> index) noexcept { indexBuffer = std::move(index); }
 		inline void SetVertexBuffer(std::shared_ptr<Resource::VertexBuffer> vertex) noexcept { vertexBuffer = std::move(vertex); }
 		inline void SetTopology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY newTopology) noexcept { topology = Resource::Topology::Get(gfx, newTopology); isMesh = true; }
-		inline void SetTechniques(std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques) noexcept { techniques = std::move(newTechniques); }
+
+		void SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept;
 
 	public:
 		constexpr UINT GetIndexCount() const noexcept { return indexBuffer->GetCount(); }

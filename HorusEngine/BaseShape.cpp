@@ -2,11 +2,17 @@
 
 namespace GFX::Shape
 {
-	BaseShape::BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
+	BaseShape::BaseShape(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
 		: indexBuffer(std::move(indexBuffer)), vertexBuffer(std::move(vertexBuffer))
 	{
 		topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent);
+	}
+
+	void BaseShape::SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept
+	{
+		techniques = std::move(newTechniques);
+		for (auto& technique : techniques)
+			technique->SetParentReference(gfx, parent);
 	}
 
 	void BaseShape::Bind(Graphics& gfx) noexcept
@@ -14,7 +20,6 @@ namespace GFX::Shape
 		indexBuffer->Bind(gfx);
 		vertexBuffer->Bind(gfx);
 		topology->Bind(gfx);
-		transformBuffer->Bind(gfx);
 	}
 
 	void BaseShape::Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG)

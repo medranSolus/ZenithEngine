@@ -6,7 +6,7 @@
 namespace GFX::Shape
 {
 	Ball::Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 material, unsigned int density, float radius)
-		: BaseShape(gfx, *this), Object(position, name, radius)
+		: BaseShape(gfx), Object(position, name, radius)
 	{
 		/*auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 		auto bytecodeVS = vertexShader->GetBytecode();

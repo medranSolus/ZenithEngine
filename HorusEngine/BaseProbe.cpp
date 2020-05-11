@@ -7,15 +7,8 @@ namespace GFX::Probe
 	void BaseProbe::SetTechnique(Pipeline::Technique* currentTechnique) noexcept
 	{
 		technique = currentTechnique;
-		ImGui::BeginChild(("##" + technique->GetName()).c_str());
 		ImGui::TextColored({ 0.4f, 1.0f, 0.6f, 1.0f }, ("--Technique " + technique->GetName() + "--").c_str());
-		ImGui::Checkbox("Active", &technique->IsActive());
-	}
-
-	void BaseProbe::ReleaseTechnique() noexcept
-	{
-		technique = nullptr;
-		ImGui::EndChild();
+		ImGui::Checkbox(("Active##" + technique->GetName()).c_str(), &technique->IsActive());
 	}
 
 	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
@@ -53,6 +46,10 @@ namespace GFX::Probe
 	bool BaseProbe::VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
 	{
 		bool dirty = false;
+		if (auto color = buffer["solidColor"]; color.Exists())
+		{
+			dirty |= ImGui::ColorEdit3("Color##Solid", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
+		}
 		if (auto color = buffer["materialColor"]; color.Exists())
 		{
 			dirty |= ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat4&>(color)),

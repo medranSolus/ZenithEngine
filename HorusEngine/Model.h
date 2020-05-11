@@ -1,6 +1,6 @@
 #pragma once
 #include "ModelNode.h"
-#include "Material.h"
+#include "Visuals.h"
 #include "BasicException.h"
 
 namespace GFX::Shape

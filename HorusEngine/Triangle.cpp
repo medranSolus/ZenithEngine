@@ -6,7 +6,7 @@
 namespace GFX::Shape
 {
 	Triangle::Triangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float down, float left, float right)
-		: BaseShape(gfx, *this), Object(position, name)
+		: BaseShape(gfx), Object(position, name)
 	{
 		/*const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);

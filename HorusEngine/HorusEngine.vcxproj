@@ -283,6 +283,8 @@
     <ClCompile Include="ModelProbe.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="OutlineDraw.cpp" />
+    <ClCompile Include="OutlineMask.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
@@ -559,6 +561,8 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="OutlineDraw.h" />
+    <ClInclude Include="OutlineMask.h" />
     <ClInclude Include="PersonCamera.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="PointLight.h" />

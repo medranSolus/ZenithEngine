@@ -14,7 +14,7 @@ namespace GFX::Visual
 		std::shared_ptr<Data::VertexLayout> vertexLayout = nullptr;
 
 	public:
-		Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name);
+		Material(Graphics& gfx, Data::ColorFloat3 color, const std::string& name);
 		Material(Graphics& gfx, aiMaterial& material, const std::string& path);
 		Material(const Material&) = default;
 		Material& operator=(const Material&) = default;

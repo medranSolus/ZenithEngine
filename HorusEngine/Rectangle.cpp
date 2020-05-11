@@ -6,7 +6,7 @@
 namespace GFX::Shape
 {
 	Rectangle::Rectangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float width, float height)
-		: BaseShape(gfx, *this), Object(position, name), width(width), height(height)
+		: BaseShape(gfx), Object(position, name), width(width), height(height)
 	{
 		/*auto list = Primitive::Square::Make({ VertexAttribute::ColorFloat4 });
 		std::mt19937_64 engine(std::random_device{}());

@@ -23,8 +23,9 @@ namespace GFX::Probe
 		BaseProbe& operator=(const BaseProbe&) = default;
 		virtual ~BaseProbe() = default;
 
+		constexpr void ReleaseTechnique() noexcept { technique = nullptr; }
+
 		void SetTechnique(Pipeline::Technique* currentTechnique) noexcept;
-		void ReleaseTechnique() noexcept;
 
 		bool Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
 		bool VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);

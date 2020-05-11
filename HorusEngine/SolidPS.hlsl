@@ -1,10 +1,9 @@
 cbuffer SolidCBuffer : register(b1)
 {
-	float4 materialColor;
+	float3 solidColor;
 };
 
 float4 main() : SV_Target
 {
-	clip(materialColor.a < 0.005f ? -1 : 1);
-	return materialColor;
+	return float4(solidColor, 1.0f);
 }

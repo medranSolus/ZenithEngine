@@ -2,6 +2,12 @@
 
 namespace GFX::Pipeline
 {
+	void Technique::SetParentReference(Graphics& gfx, const GfxObject& parent)
+	{
+		for (auto& step : steps)
+			step.SetParentReference(gfx, parent);
+	}
+
 	void Technique::Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept
 	{
 		if (active)

@@ -1,5 +1,5 @@
 #pragma once
-#include "IBindable.h"
+#include "GfxResources.h"
 
 namespace GFX::Visual
 {
@@ -7,13 +7,18 @@ namespace GFX::Visual
 	{
 		std::vector<std::shared_ptr<Resource::IBindable>> binds;
 
-	public:
+	protected:
+		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr;
+
 		IVisual() = default;
 		IVisual(const IVisual&) = default;
 		IVisual& operator=(const IVisual&) = default;
+
+	public:
 		virtual ~IVisual() = default;
 
 		inline void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
+		inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent); }
 
 		template<typename R>
 		R* GetResource() noexcept;

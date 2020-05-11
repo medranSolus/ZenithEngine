@@ -19,5 +19,6 @@ namespace GFX::Pipeline
 		inline void Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept { renderer.Add({ &shape, this }, targetPass); }
 		inline void Bind(Graphics& gfx) noexcept { data->Bind(gfx); }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { if (data) data->Accept(gfx, probe); }
+		inline void SetParentReference(Graphics& gfx, const GfxObject& parent) { data->SetTransformBuffer(gfx, parent); }
 	};
 }
