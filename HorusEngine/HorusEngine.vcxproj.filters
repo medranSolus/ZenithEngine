@@ -336,6 +336,9 @@
     <ClCompile Include="ConstBufferExVertex.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="OutlineMaskOffset.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -373,6 +376,9 @@
     </FxCompile>
     <FxCompile Include="PhongVSTextureNormal.hlsl">
       <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="OffsetVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -909,6 +915,9 @@
     </ClInclude>
     <ClInclude Include="ConstBufferExVertex.h">
       <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineMaskOffset.h">
+      <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -30,6 +30,10 @@ namespace GFX::Probe
 	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
 	{
 		bool dirty = false;
+		if (auto offset = buffer["offset"]; offset.Exists())
+		{
+			dirty |= ImGui::DragFloat(Tag("Offset"), &offset, 0.001f, 0.001f, FLT_MAX, "%.3f");
+		}
 		if (auto scale = buffer["scale"]; scale.Exists())
 		{
 			dirty |= ImGui::DragFloat(Tag("Scale"), &scale, 0.01f, 0.01f, FLT_MAX, "%.2f");

@@ -283,6 +283,7 @@
     <ClCompile Include="ModelProbe.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="OutlineMaskOffset.cpp" />
     <ClCompile Include="OutlineWrite.cpp" />
     <ClCompile Include="OutlineMaskScale.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
@@ -356,6 +357,12 @@
       </EntryPointName>
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="OffsetVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="PhongPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -563,6 +570,7 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="OutlineMaskOffset.h" />
     <ClInclude Include="OutlineWrite.h" />
     <ClInclude Include="OutlineMaskScale.h" />
     <ClInclude Include="PersonCamera.h" />

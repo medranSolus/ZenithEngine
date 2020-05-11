@@ -23,7 +23,7 @@ namespace GFX::Resource
 		static std::string GenerateRID(const std::string& tag, const Data::CBuffer::DCBLayoutElement& root,
 			UINT slot = 0U, const Data::CBuffer::DynamicCBuffer* buffer = nullptr) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->VSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, rootLayout, slot, nullptr); }
 	};
 
