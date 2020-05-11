@@ -4,7 +4,7 @@ namespace GFX::Resource
 {
 	Data::CBuffer::Transform ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept
 	{
-		const DirectX::XMMATRIX transformView = std::move(parent.GetTransformMatrix() * gfx.GetCamera());
+		const DirectX::XMMATRIX transformView = std::move(GetTransformView(gfx));
 		return
 		{
 			std::move(DirectX::XMMatrixTranspose(transformView)),

@@ -1,18 +1,17 @@
-#include "Box.h"
+#include "SolidRectangle.h"
 #include "Primitives.h"
 #include "GfxResources.h"
 #include "Visuals.h"
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color,
-		float width, float height, float length)
-		: BaseShape(gfx), Object(position, name), sizes(width, height, length)
+	SolidRectangle::SolidRectangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color, float width, float height)
+		: BaseShape(gfx), Object(position, name), width(width), height(height)
 	{
-		std::string typeName = Primitive::Cube::GetName();
+		std::string typeName = Primitive::Square::GetName();
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
 		{
-			auto list = Primitive::Cube::Make();
+			auto list = Primitive::Square::Make();
 			SetVertexBuffer(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
 			SetIndexBuffer(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
 		}
@@ -27,7 +26,7 @@ namespace GFX::Shape
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
 		auto vertexLayout = material->GerVertexLayout();
 
-		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Phong"));
+		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
 		techniques.back()->AddStep({ 0, std::move(material) });
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
@@ -38,16 +37,16 @@ namespace GFX::Shape
 		UpdateTransformMatrix();
 	}
 
-	void Box::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	void SolidRectangle::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		Object::Accept(gfx, probe);
 		BaseShape::Accept(gfx, probe);
 	}
 
-	void Box::UpdateTransformMatrix() noexcept
+	void SolidRectangle::UpdateTransformMatrix() noexcept
 	{
 		DirectX::XMStoreFloat4x4(transform.get(),
-			DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&sizes)) *
+			DirectX::XMMatrixScaling(width, height, 1.0f) *
 			CreateTransformMatrix());
 	}
 }

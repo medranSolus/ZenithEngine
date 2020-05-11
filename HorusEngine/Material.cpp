@@ -11,9 +11,35 @@ namespace GFX::Visual
 		AddBind(std::move(vertexShader));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
-		cbufferLayout.Add(DCBElementType::Color3, "solidColor"); // TODO: Maybe alpha not needed
+		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
+	}
+
+	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
+	{
+		AddBind(Resource::Rasterizer::Get(gfx, false));
+		AddBind(Resource::Blender::Get(gfx, false));
+		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
+
+		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
+		vertexLayout = std::make_shared<Data::VertexLayout>();
+		vertexLayout->Append(VertexAttribute::Normal);
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(std::move(vertexShader));
+
+		GFX::Data::CBuffer::DCBLayout cbufferLayout;
+		cbufferLayout.Add(DCBElementType::Color3, "specularColor");
+		cbufferLayout.Add(DCBElementType::Float, "specularIntensity");
+		cbufferLayout.Add(DCBElementType::Float, "specularPower");
+		cbufferLayout.Add(DCBElementType::Color4, "materialColor");
+		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
+
+		cbuffer["specularColor"] = std::move(Data::ColorFloat3(1.0f, 1.0f, 1.0f));
+		cbuffer["specularIntensity"] = 0.9f;
+		cbuffer["specularPower"] = 40.0f;
+		cbuffer["materialColor"] = std::move(Data::ColorFloat4(0.6f, 0.5f, 0.4f));
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
 	}
 
@@ -42,7 +68,7 @@ namespace GFX::Visual
 			vertexLayout->Append(VertexAttribute::Texture2D);
 		}
 		else
-			cbufferLayout.Add(DCBElementType::Color4, "materialColor"); // TODO: Maybe alpha not needed
+			cbufferLayout.Add(DCBElementType::Color4, "materialColor");
 
 		// Get normal map texture
 		if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
@@ -103,11 +129,5 @@ namespace GFX::Visual
 			normalMap->Bind(gfx);
 		if (specularMap)
 			specularMap->Bind(gfx);
-	}
-
-	void Material::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		// Add later for turning on or of some texture stuff
-		pixelBuffer->Accept(gfx, probe);
 	}
 }

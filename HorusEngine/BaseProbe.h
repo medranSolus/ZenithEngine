@@ -17,6 +17,8 @@ namespace GFX::Probe
 	{
 		Pipeline::Technique* technique = nullptr;
 
+		inline std::string MakeTag(const std::string& label) const noexcept;
+
 	public:
 		BaseProbe() = default;
 		BaseProbe(const BaseProbe&) = default;

@@ -25,13 +25,13 @@ class App
 	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;
 	std::vector< std::shared_ptr<GFX::IObject>> shapes;
 	std::map<std::string, std::shared_ptr<GFX::IObject>> objects;
-	std::vector<std::unique_ptr<GFX::Shape::Rectangle>> carpetRects;
+	std::vector<std::unique_ptr<GFX::Shape::SolidRectangle>> carpetRects;
 
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
 	inline void ShowOptionsWindow();
 	inline void AddShape(std::shared_ptr<GFX::IObject> shape);
-	void CreateCarpet(unsigned int depth, float x, float y, float width);
+	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 	void MakeFrame();
 
 public:

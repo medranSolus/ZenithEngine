@@ -1,6 +1,5 @@
 #pragma once
 #include "IVisual.h"
-#include "GfxResources.h"
 #include "assimp\scene.h"
 
 namespace GFX::Visual
@@ -15,6 +14,7 @@ namespace GFX::Visual
 
 	public:
 		Material(Graphics& gfx, Data::ColorFloat3 color, const std::string& name);
+		Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name);
 		Material(Graphics& gfx, aiMaterial& material, const std::string& path);
 		Material(const Material&) = default;
 		Material& operator=(const Material&) = default;
@@ -22,8 +22,9 @@ namespace GFX::Visual
 
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
+		// Add later for turning on or of some texture stuff
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }
 
 		void Bind(Graphics& gfx) noexcept override;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

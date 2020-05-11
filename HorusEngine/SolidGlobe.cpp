@@ -31,8 +31,8 @@ namespace GFX::Shape
 		techniques.back()->AddStep({ 0, std::move(material) });
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
-		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineMask>(gfx, std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineDraw>(gfx, std::move(vertexLayout)) });
+		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
+		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMask>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 		SetTechniques(gfx, std::move(techniques), *this);
 
 		UpdateTransformMatrix();

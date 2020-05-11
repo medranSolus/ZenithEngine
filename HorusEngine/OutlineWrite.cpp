@@ -1,8 +1,8 @@
-#include "OutlineDraw.h"
+#include "OutlineWrite.h"
 
 namespace GFX::Visual
 {
-	OutlineDraw::OutlineDraw(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout)
+	OutlineWrite::OutlineWrite(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout)
 	{
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));

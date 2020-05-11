@@ -198,9 +198,6 @@
     <ClCompile Include="PixelShader.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Rectangle.cpp">
-      <Filter>Source Files\GFX\Shape</Filter>
-    </ClCompile>
     <ClCompile Include="Sampler.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
@@ -333,8 +330,11 @@
     <ClCompile Include="OutlineMask.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
-    <ClCompile Include="OutlineDraw.cpp">
+    <ClCompile Include="OutlineWrite.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="SolidRectangle.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -471,9 +471,6 @@
     </ClInclude>
     <ClInclude Include="Object.h">
       <Filter>Header Files\GFX</Filter>
-    </ClInclude>
-    <ClInclude Include="Rectangle.h">
-      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Sampler.h">
       <Filter>Header Files\GFX\Resource</Filter>
@@ -901,8 +898,14 @@
     <ClInclude Include="OutlineMask.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
-    <ClInclude Include="OutlineDraw.h">
+    <ClInclude Include="ConstBufferTransformEx.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineWrite.h">
       <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="SolidRectangle.h">
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

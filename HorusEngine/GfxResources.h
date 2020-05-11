@@ -6,6 +6,7 @@
 #include "ConstBufferExPixelCache.h"
 #include "ConstBufferPixel.h"
 #include "ConstBufferTransform.h"
+#include "ConstBufferTransformEx.h"
 #include "ConstBufferVertex.h"
 #include "DepthStencil.h"
 #include "IndexBuffer.h"

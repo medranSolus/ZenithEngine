@@ -2,13 +2,20 @@
 #include "Technique.h"
 #include "BaseShape.h"
 
+#define Tag(label) MakeTag(label).c_str()
+
 namespace GFX::Probe
 {
+	inline std::string BaseProbe::MakeTag(const std::string& label) const noexcept
+	{
+		return label + "##" + (technique == nullptr ? "None" : technique->GetName());
+	}
+
 	void BaseProbe::SetTechnique(Pipeline::Technique* currentTechnique) noexcept
 	{
 		technique = currentTechnique;
 		ImGui::TextColored({ 0.4f, 1.0f, 0.6f, 1.0f }, ("--Technique " + technique->GetName() + "--").c_str());
-		ImGui::Checkbox(("Active##" + technique->GetName()).c_str(), &technique->IsActive());
+		ImGui::Checkbox(Tag("Active"), &technique->IsActive());
 	}
 
 	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
@@ -25,20 +32,20 @@ namespace GFX::Probe
 		bool dirty = false;
 		if (auto scale = buffer["scale"]; scale.Exists())
 		{
-			dirty |= ImGui::DragFloat("Scale", &scale, 0.01f, 0.01f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat(Tag("Scale"), &scale, 0.01f, 0.01f, FLT_MAX, "%.2f");
 		}
 		if (auto position = buffer["position"]; position.Exists())
 		{
 			ImGui::Text("Position: [X|Y|Z]");
-			dirty |= ImGui::DragFloat3("##Position", reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(position)), 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat3(Tag("##Position"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(position)), 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
 		}
 		if (auto angle = buffer["angle"]; angle.Exists())
 		{
 			DirectX::XMFLOAT3& rotation = static_cast<DirectX::XMFLOAT3&>(angle);
 			ImGui::Text("Rotation:");
-			dirty |= ImGui::SliderAngle("X##Rotation", &rotation.x, 0.0f, 360.0f, "%.2f");
-			dirty |= ImGui::SliderAngle("Y##Rotation", &rotation.y, 0.0f, 360.0f, "%.2f");
-			dirty |= ImGui::SliderAngle("Z##Rotation", &rotation.z, 0.0f, 360.0f, "%.2f");
+			dirty |= ImGui::SliderAngle(Tag("X##Rotation"), &rotation.x, 0.0f, 360.0f, "%.2f");
+			dirty |= ImGui::SliderAngle(Tag("Y##Rotation"), &rotation.y, 0.0f, 360.0f, "%.2f");
+			dirty |= ImGui::SliderAngle(Tag("Z##Rotation"), &rotation.z, 0.0f, 360.0f, "%.2f");
 		}
 		return dirty;
 	}
@@ -48,32 +55,32 @@ namespace GFX::Probe
 		bool dirty = false;
 		if (auto color = buffer["solidColor"]; color.Exists())
 		{
-			dirty |= ImGui::ColorEdit3("Color##Solid", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
+			dirty |= ImGui::ColorEdit3(Tag("Color##Solid"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
 		}
 		if (auto color = buffer["materialColor"]; color.Exists())
 		{
-			dirty |= ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat4&>(color)),
+			dirty |= ImGui::ColorEdit4(Tag("Material color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat4&>(color)),
 				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}
 		if (auto color = buffer["specularColor"]; color.Exists())
 		{
-			dirty |= ImGui::ColorEdit3("Specular color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
+			dirty |= ImGui::ColorEdit3(Tag("Specular color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
 		}
 		if (auto intensity = buffer["specularIntensity"]; intensity.Exists())
 		{
-			dirty |= ImGui::DragFloat("Specular intensity", &intensity, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat(Tag("Specular intensity"), &intensity, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		if (auto useSpecularAlpha = buffer["useSpecularPowerAlpha"]; useSpecularAlpha.Exists())
 		{
-			dirty |= ImGui::Checkbox("Use map alpha as specular power", &useSpecularAlpha);
+			dirty |= ImGui::Checkbox(Tag("Use map alpha as specular power"), &useSpecularAlpha);
 		}
 		if (auto power = buffer["specularPower"]; power.Exists())
 		{
-			dirty |= ImGui::DragFloat("Specular power", &power, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		if (auto weight = buffer["normalMapWeight"]; weight.Exists())
 		{
-			dirty |= ImGui::DragFloat("Normal map weight", &weight, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat(Tag("Normal map weight"), &weight, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		return dirty;
 	}
@@ -83,29 +90,29 @@ namespace GFX::Probe
 		bool dirty = false;
 		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
 		{
-			dirty |= ImGui::ColorEdit3("Light color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
+			dirty |= ImGui::ColorEdit3(Tag("Light color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
 				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}
 		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
 		{
-			dirty |= ImGui::DragFloat("Intensity", &lightIntensity, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
+			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
 		}
 		if (auto ambientColor = buffer["ambientColor"]; ambientColor.Exists())
 		{
-			dirty |= ImGui::ColorEdit3("Ambient color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
+			dirty |= ImGui::ColorEdit3(Tag("Ambient color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
 				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}
 		if (auto atteuationConst = buffer["atteuationConst"]; atteuationConst.Exists())
 		{
 			ImGui::Text("Attenuation:");
-			dirty |= ImGui::DragFloat("Const", &atteuationConst, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
+			dirty |= ImGui::DragFloat(Tag("Const"), &atteuationConst, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
 			if (auto atteuationLinear = buffer["atteuationLinear"]; atteuationLinear.Exists())
 			{
-				dirty |= ImGui::DragFloat("Linear", &atteuationLinear, 0.0001f, -FLT_MAX, FLT_MAX, "%.4f");
+				dirty |= ImGui::DragFloat(Tag("Linear"), &atteuationLinear, 0.0001f, -FLT_MAX, FLT_MAX, "%.4f");
 			}
 			if (auto attenuationQuad = buffer["attenuationQuad"]; attenuationQuad.Exists())
 			{
-				dirty |= ImGui::DragFloat("Quad", &attenuationQuad, 0.00001f, -FLT_MAX, FLT_MAX, "%.5f");
+				dirty |= ImGui::DragFloat(Tag("Quad"), &attenuationQuad, 0.00001f, -FLT_MAX, FLT_MAX, "%.5f");
 			}
 		}
 		return dirty;
@@ -114,7 +121,7 @@ namespace GFX::Probe
 	void BaseProbe::VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept
 	{
 		bool meshOnly = shape.IsMesh();
-		ImGui::Checkbox("Mesh-only", &meshOnly);
+		ImGui::Checkbox(Tag("Mesh-only"), &meshOnly);
 		if (shape.IsMesh() != meshOnly)
 		{
 			if (meshOnly)

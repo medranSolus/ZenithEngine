@@ -9,6 +9,8 @@ namespace GFX::Resource
 		{
 		case GFX::Resource::DepthStencil::Write:
 		{
+			desc.DepthEnable = FALSE;
+			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
 			desc.StencilEnable = TRUE;
 			desc.StencilWriteMask = 0xFF;
 			desc.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
@@ -18,6 +20,7 @@ namespace GFX::Resource
 		case GFX::Resource::DepthStencil::Mask:
 		{
 			desc.DepthEnable = FALSE;
+			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
 			desc.StencilEnable = TRUE;
 			desc.StencilReadMask = 0xFF;
 			desc.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NOT_EQUAL;

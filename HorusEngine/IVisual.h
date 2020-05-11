@@ -18,7 +18,7 @@ namespace GFX::Visual
 		virtual ~IVisual() = default;
 
 		inline void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
-		inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent); }
+		virtual inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent); }
 
 		template<typename R>
 		R* GetResource() noexcept;
