@@ -31,7 +31,7 @@ namespace GFX::Shape
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
 		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMask>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMaskScale>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 

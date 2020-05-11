@@ -39,7 +39,7 @@ namespace GFX::Shape
 		techniques.back()->AddStep({ 0, std::move(material) });
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
 		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMask>(gfx, meshID + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMaskScale>(gfx, meshID + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}

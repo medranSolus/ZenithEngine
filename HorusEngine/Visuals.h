@@ -1,4 +1,4 @@
 #pragma once
 #include "Material.h"
-#include "OutlineMask.h"
+#include "OutlineMaskScale.h"
 #include "OutlineWrite.h"

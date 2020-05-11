@@ -246,7 +246,7 @@
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ConstBufferEx.cpp" />
     <ClCompile Include="ConstBufferExPixel.cpp" />
-    <ClCompile Include="ConstBufferExPixelCache.cpp" />
+    <ClCompile Include="ConstBufferExVertex.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="DCBElement.cpp" />
@@ -284,7 +284,7 @@
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OutlineWrite.cpp" />
-    <ClCompile Include="OutlineMask.cpp" />
+    <ClCompile Include="OutlineMaskScale.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
@@ -507,7 +507,8 @@
     <ClInclude Include="ConstBuffer.h" />
     <ClInclude Include="ConstBufferEx.h" />
     <ClInclude Include="ConstBufferExPixel.h" />
-    <ClInclude Include="ConstBufferExPixelCache.h" />
+    <ClInclude Include="ConstBufferExCache.h" />
+    <ClInclude Include="ConstBufferExVertex.h" />
     <ClInclude Include="ConstBufferPixel.h" />
     <ClInclude Include="ConstBufferTransform.h" />
     <ClInclude Include="ConstBufferTransformEx.h" />
@@ -563,7 +564,7 @@
     <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="OutlineWrite.h" />
-    <ClInclude Include="OutlineMask.h" />
+    <ClInclude Include="OutlineMaskScale.h" />
     <ClInclude Include="PersonCamera.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="PointLight.h" />

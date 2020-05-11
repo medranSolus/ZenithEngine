@@ -282,9 +282,6 @@
     <ClCompile Include="ConstBufferExPixel.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="ConstBufferExPixelCache.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="VertexBufferData.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
@@ -327,14 +324,17 @@
     <ClCompile Include="ModelProbe.cpp">
       <Filter>Source Files\GFX\Probe</Filter>
     </ClCompile>
-    <ClCompile Include="OutlineMask.cpp">
-      <Filter>Source Files\GFX\Visual</Filter>
-    </ClCompile>
     <ClCompile Include="OutlineWrite.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
     <ClCompile Include="SolidRectangle.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineMaskScale.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferExVertex.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -838,9 +838,6 @@
     <ClInclude Include="ConstBufferExPixel.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="ConstBufferExPixelCache.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="GfxExceptionMacros.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
@@ -895,9 +892,6 @@
     <ClInclude Include="ModelNode.h">
       <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
-    <ClInclude Include="OutlineMask.h">
-      <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
     <ClInclude Include="ConstBufferTransformEx.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -906,6 +900,15 @@
     </ClInclude>
     <ClInclude Include="SolidRectangle.h">
       <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineMaskScale.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferExCache.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferExVertex.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,8 +1,8 @@
-#include "OutlineMask.h"
+#include "OutlineMaskScale.h"
 
 namespace GFX::Visual
 {
-	Data::CBuffer::DCBLayout OutlineMask::MakeLayout() noexcept
+	Data::CBuffer::DCBLayout OutlineMaskScale::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
@@ -14,7 +14,7 @@ namespace GFX::Visual
 		return layout;
 	}
 
-	void OutlineMask::UpdateTransform() noexcept
+	void OutlineMaskScale::UpdateTransform() noexcept
 	{
 		float scale = buffer["scale"];
 		DirectX::XMFLOAT4X4 scaling;
@@ -22,7 +22,7 @@ namespace GFX::Visual
 		std::static_pointer_cast<Resource::ConstBufferTransformEx>(transformBuffer)->UpdateTransform(std::move(scaling));
 	}
 
-	OutlineMask::OutlineMask(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout)
+	OutlineMaskScale::OutlineMaskScale(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout)
 		: buffer(MakeLayout())
 	{
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
@@ -37,19 +37,19 @@ namespace GFX::Visual
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(cbuffer), 1U);
 	}
 
-	void OutlineMask::SetTransformBuffer(Graphics& gfx, const GfxObject& parent)
+	void OutlineMaskScale::SetTransformBuffer(Graphics& gfx, const GfxObject& parent)
 	{
 		transformBuffer = std::make_shared<Resource::ConstBufferTransformEx>(gfx, parent);
 		UpdateTransform();
 	}
 
-	void OutlineMask::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	void OutlineMaskScale::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		dirty = probe.VisitObject(buffer);
 		pixelBuffer->Accept(gfx, probe);
 	}
 
-	void OutlineMask::Bind(Graphics& gfx) noexcept
+	void OutlineMaskScale::Bind(Graphics& gfx) noexcept
 	{
 		if (dirty)
 			UpdateTransform();
