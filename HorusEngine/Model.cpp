@@ -73,7 +73,7 @@ namespace GFX::Shape
 			materials.emplace_back(std::make_shared<Visual::Material>(gfx, *scene->mMaterials[i], path));
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
 			meshes.emplace_back(ParseMesh(gfx, path, *scene->mMeshes[i], materials));
-		unsigned long long startID = 1ULL;
+		unsigned long long startID = 0ULL;
 		root = ParseNode(*scene->mRootNode, startID);
 		root->SetScale(scale);
 		root->SetPos(position);

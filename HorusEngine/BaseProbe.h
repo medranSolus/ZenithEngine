@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphics.h"
 #include "DynamicCBuffer.h"
 
 namespace GFX::Pipeline
@@ -28,6 +29,7 @@ namespace GFX::Probe
 		bool Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
 		bool VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
 		bool VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
-		bool VisitShape(Shape::BaseShape& shape) noexcept;
+		bool VisitLight(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
+		void VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept;
 	};
 }

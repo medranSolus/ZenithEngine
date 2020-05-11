@@ -25,23 +25,8 @@ namespace GFX::Shape
 
 	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		probe.VisitShape(*this);
+		probe.VisitShape(gfx, *this);
 		for (auto& technique : techniques)
 			technique->Accept(gfx, probe);
 	}
-
-	//void BaseShape::ShowWindow(Graphics& gfx) noexcept
-	//{
-	//	static bool previousMesh = false;
-	//	static bool meshOnly = false;
-	//	ImGui::Checkbox("Mesh-only", &meshOnly);
-	//	if (previousMesh != meshOnly)
-	//	{
-	//		previousMesh = meshOnly;
-	//		if (meshOnly)
-	//			SetTopologyMesh(gfx);
-	//		else
-	//			SetTopologyPlain(gfx);
-	//	}
-	//}
 }

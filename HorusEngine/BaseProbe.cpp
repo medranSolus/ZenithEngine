@@ -1,5 +1,6 @@
 #include "BaseProbe.h"
 #include "Technique.h"
+#include "BaseShape.h"
 
 namespace GFX::Probe
 {
@@ -22,6 +23,7 @@ namespace GFX::Probe
 		bool dirty = false;
 		dirty |= VisitObject(buffer);
 		dirty |= VisitMaterial(buffer);
+		dirty |= VisitLight(buffer);
 		return dirty;
 	}
 
@@ -34,7 +36,7 @@ namespace GFX::Probe
 		}
 		if (auto position = buffer["position"]; position.Exists())
 		{
-			ImGui::Text("Position: (X,Y,Z)");
+			ImGui::Text("Position: [X|Y|Z]");
 			dirty |= ImGui::DragFloat3("##Position", reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(position)), 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
 		}
 		if (auto angle = buffer["angle"]; angle.Exists())
@@ -62,26 +64,66 @@ namespace GFX::Probe
 		}
 		if (auto intensity = buffer["specularIntensity"]; intensity.Exists())
 		{
-			dirty |= ImGui::DragFloat("Specular intensity", (float*)&intensity, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat("Specular intensity", &intensity, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		if (auto useSpecularAlpha = buffer["useSpecularPowerAlpha"]; useSpecularAlpha.Exists())
 		{
-			dirty |= ImGui::Checkbox("Use map alpha as specular power", (bool*)&useSpecularAlpha);
+			dirty |= ImGui::Checkbox("Use map alpha as specular power", &useSpecularAlpha);
 		}
 		if (auto power = buffer["specularPower"]; power.Exists())
 		{
-			dirty |= ImGui::DragFloat("Specular power", (float*)&power, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat("Specular power", &power, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		if (auto weight = buffer["normalMapWeight"]; weight.Exists())
 		{
-			dirty |= ImGui::DragFloat("Normal map weight", (float*)&weight, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat("Normal map weight", &weight, 0.01f, 0.0f, FLT_MAX, "%.2f");
 		}
 		return dirty;
 	}
 
-	bool BaseProbe::VisitShape(Shape::BaseShape& shape) noexcept
+	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
 	{
-		// Mesh
-		return false;
+		bool dirty = false;
+		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
+		{
+			dirty |= ImGui::ColorEdit3("Light color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
+				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+		}
+		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
+		{
+			dirty |= ImGui::DragFloat("Intensity", &lightIntensity, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
+		}
+		if (auto ambientColor = buffer["ambientColor"]; ambientColor.Exists())
+		{
+			dirty |= ImGui::ColorEdit3("Ambient color", reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
+				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+		}
+		if (auto atteuationConst = buffer["atteuationConst"]; atteuationConst.Exists())
+		{
+			ImGui::Text("Attenuation:");
+			dirty |= ImGui::DragFloat("Const", &atteuationConst, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
+			if (auto atteuationLinear = buffer["atteuationLinear"]; atteuationLinear.Exists())
+			{
+				dirty |= ImGui::DragFloat("Linear", &atteuationLinear, 0.0001f, -FLT_MAX, FLT_MAX, "%.4f");
+			}
+			if (auto attenuationQuad = buffer["attenuationQuad"]; attenuationQuad.Exists())
+			{
+				dirty |= ImGui::DragFloat("Quad", &attenuationQuad, 0.00001f, -FLT_MAX, FLT_MAX, "%.5f");
+			}
+		}
+		return dirty;
+	}
+
+	void BaseProbe::VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept
+	{
+		bool meshOnly = shape.IsMesh();
+		ImGui::Checkbox("Mesh-only", &meshOnly);
+		if (shape.IsMesh() != meshOnly)
+		{
+			if (meshOnly)
+				shape.SetTopologyMesh(gfx);
+			else
+				shape.SetTopologyPlain(gfx);
+		}
 	}
 }

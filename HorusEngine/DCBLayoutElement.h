@@ -112,11 +112,11 @@ namespace GFX::Data::CBuffer
 		static constexpr ElementType type = ElementType::el; \
 		static constexpr bool valid = true; \
 	};
-	LEAF_ELEMENT_TYPES
+		LEAF_ELEMENT_TYPES
 #undef X
 #pragma endregion
 
-	class DCBLayoutElement
+		class DCBLayoutElement
 	{
 		friend class DCBLayout;
 		friend struct ExtraData;
@@ -180,13 +180,13 @@ namespace GFX::Data::CBuffer
 			assert(typeid(Map<ElementType::el>::DataType) == typeid(T)); \
 			return *offset; \
 		}
-		LEAF_ELEMENT_TYPES
+			LEAF_ELEMENT_TYPES
 #undef X
 		default:
-		{
-			assert("Tried to get offset of non-leaf element" && false);
-			return 0U;
-		}
+			{
+				assert("Tried to get offset of non-leaf element" && false);
+				return 0U;
+			}
 		}
 	}
 }

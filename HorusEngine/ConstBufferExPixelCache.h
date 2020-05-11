@@ -36,9 +36,12 @@ namespace GFX::Resource
 		static std::string GenerateRID(const std::string& tag,
 			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U) noexcept;
 
+		constexpr Data::CBuffer::DynamicCBuffer& GetBuffer() noexcept { dirty = true; return buffer; }
+		constexpr const Data::CBuffer::DynamicCBuffer& GetBuffer() const noexcept { return buffer; }
+
 		void Bind(Graphics& gfx) noexcept override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { dirty = probe.VisitMaterial(buffer); }
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { dirty = probe.Visit(buffer); }
 	};
 
 	template<>

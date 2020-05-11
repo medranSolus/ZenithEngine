@@ -12,6 +12,7 @@ namespace GFX::Shape
 		std::shared_ptr<Resource::Topology> topology = nullptr;
 		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr; // Maybe move to TechniqueStep
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		bool isMesh = false;
 
 	protected:
 		BaseShape(Graphics& gfx, const GfxObject& parent, std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr,
@@ -22,15 +23,16 @@ namespace GFX::Shape
 
 		inline void SetIndexBuffer(std::shared_ptr<Resource::IndexBuffer> index) noexcept { indexBuffer = std::move(index); }
 		inline void SetVertexBuffer(std::shared_ptr<Resource::VertexBuffer> vertex) noexcept { vertexBuffer = std::move(vertex); }
-		inline void SetTopology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY newTopology) noexcept { topology = Resource::Topology::Get(gfx, newTopology); }
+		inline void SetTopology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY newTopology) noexcept { topology = Resource::Topology::Get(gfx, newTopology); isMesh = true; }
 		inline void SetTechniques(std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques) noexcept { techniques = std::move(newTechniques); }
 
 	public:
 		constexpr UINT GetIndexCount() const noexcept { return indexBuffer->GetCount(); }
 
+		constexpr bool IsMesh() const noexcept { return isMesh; }
 		inline void AddTechnique(std::shared_ptr<Pipeline::Technique> technique) noexcept { techniques.emplace_back(std::move(technique)); }
-		inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); }
-		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); }
+		inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); isMesh = false; }
+		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); isMesh = true; }
 
 		void Bind(Graphics& gfx) noexcept;
 		void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override;

@@ -25,17 +25,16 @@ namespace GFX::Probe
 
 	void ModelProbe::Visit(Graphics& gfx, Shape::Model& model, Shape::ModelNode& root) noexcept
 	{
+		if (selectedNode == nullptr)
+			selectedNode = &root;
 		ImGui::Columns(2);
 		ImGui::BeginChild("##NodeTree", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
 		root.Accept(gfx, *this);
 		ImGui::EndChild();
 		ImGui::NextColumn();
 		ImGui::NewLine();
-		if (selectedNode != nullptr)
-		{
-			selectedNode->Object::Accept(gfx, *this);
-			Visit(gfx, *selectedNode);
-		}
+		Visit(gfx, *selectedNode);
+		selectedNode->Accept(gfx, static_cast<BaseProbe&>(*this));
 		ImGui::Columns(1);
 	}
 }

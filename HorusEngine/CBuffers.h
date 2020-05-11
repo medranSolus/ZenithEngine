@@ -8,16 +8,4 @@ namespace GFX::Data::CBuffer
 		DirectX::XMMATRIX transformView;
 		DirectX::XMMATRIX transformViewProjection;
 	};
-
-	struct Light
-	{
-		DirectX::XMFLOAT3 ambientColor;
-		float atteuationConst;
-		DirectX::XMFLOAT3 lightColor;
-		float atteuationLinear;
-		DirectX::XMFLOAT3 lightPos;
-		float attenuationQuad;
-		float lightIntensity;
-		float padding[3] = { 0.0f };
-	};
 }

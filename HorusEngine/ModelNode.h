@@ -34,6 +34,7 @@ namespace GFX::Shape
 		inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { Submit(renderer, DirectX::XMMatrixIdentity()); }
 
 		void Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG);
+		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override;
 
 		void SetMesh(Graphics& gfx, bool meshOnly) noexcept;

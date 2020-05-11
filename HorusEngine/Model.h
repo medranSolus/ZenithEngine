@@ -37,7 +37,7 @@ namespace GFX::Shape
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Object::Accept(gfx, probe); }
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Accept(gfx, probe); }
 		inline void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { probe.Visit(gfx, *this, *root); }
 
 		class ModelException : public Exception::BasicException

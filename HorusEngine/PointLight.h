@@ -7,9 +7,10 @@ namespace GFX::Light
 {
 	class PointLight : public IObject
 	{
-		mutable Data::CBuffer::Light lightBuffer;
 		mutable Shape::SolidGlobe mesh;
-		mutable Resource::ConstBufferPixel<Data::CBuffer::Light> buffer;
+		mutable std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
+
+		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);

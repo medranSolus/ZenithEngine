@@ -23,6 +23,13 @@ namespace GFX::Shape
 			child->Submit(renderer, transformMatrix);
 	}
 
+	void ModelNode::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	{
+		Object::Accept(gfx, probe);
+		for (const auto& mesh : meshes)
+			mesh->Accept(gfx, probe);
+	}
+
 	void ModelNode::Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept
 	{
 		if (probe.PushNode(*this))
