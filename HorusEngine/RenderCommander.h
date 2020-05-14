@@ -1,15 +1,17 @@
 #pragma once
 #include "RenderPass.h"
+#include "DepthStencil.h"
 #include <array>
 
 namespace GFX::Pipeline
 {
 	class RenderCommander
 	{
+		DepthStencil depthStencil;
 		std::array<RenderPass, 3> passes;
 
 	public:
-		RenderCommander() = default;
+		inline RenderCommander(Graphics& gfx) : depthStencil(gfx, gfx.GetWidth(), gfx.GetHeight()) {}
 		RenderCommander(const RenderCommander&) = default;
 		RenderCommander& operator=(const RenderCommander&) = default;
 		~RenderCommander() = default;

@@ -11,9 +11,6 @@ class App
 	static constexpr float viewDistance = 5000.0f;
 	static constexpr float maxMoveSpeed = 3.0f;
 
-	static unsigned int width;
-	static unsigned int height;
-
 	float cameraSpeed = 0.1f;
 	float cameraRollSpeed = 0.01;
 	float cameraRotateSpeed = 2.0f;
@@ -39,8 +36,6 @@ public:
 	App(const App&) = delete;
 	App& operator=(const App&) = delete;
 	~App() = default;
-
-	static constexpr float GetRatio() { return static_cast<float>(width) / height; }
 
 	unsigned long long Run();
 };

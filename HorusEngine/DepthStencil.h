@@ -1,33 +1,22 @@
 #pragma once
-#include "Codex.h"
+#include "GraphicsResource.h"
 
-namespace GFX::Resource
+namespace GFX::Pipeline
 {
-	class DepthStencil : public IBindable
+	class DepthStencil : public GraphicsResource
 	{
-	public:
-		enum StencilMode : unsigned char { Off, Write, Mask };
+		friend class Graphics;
+		friend class RenderTarget;
 
-	private:
-		StencilMode mode;
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> state;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
 
 	public:
-		DepthStencil(Graphics& gfx, StencilMode mode);
+		DepthStencil(Graphics& gfx, unsigned int width, unsigned int height);
 		DepthStencil(const DepthStencil&) = delete;
 		DepthStencil& operator=(const DepthStencil&) = delete;
 		virtual ~DepthStencil() = default;
 
-		static inline std::shared_ptr<DepthStencil> Get(Graphics& gfx, StencilMode mode) { return Codex::Resolve<DepthStencil>(gfx, mode); }
-		static inline std::string GenerateRID(StencilMode mode) noexcept { return "#" + std::string(typeid(DepthStencil).name()) + "#" + std::to_string(mode) + "#"; }
-
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetDepthStencilState(state.Get(), 0xFF); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(mode); }
-	};
-
-	template<>
-	struct is_resolvable_by_codex<DepthStencil>
-	{
-		static constexpr bool generate{ true };
+		inline void Bind(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, nullptr, depthStencilView.Get()); }
+		inline void Clear(Graphics& gfx) noexcept { GetContext(gfx)->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.0f, 0U); }
 	};
 }

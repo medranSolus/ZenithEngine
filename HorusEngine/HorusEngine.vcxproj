@@ -253,6 +253,7 @@
     <ClCompile Include="DCBElementConst.cpp" />
     <ClCompile Include="DCBLayout.cpp" />
     <ClCompile Include="DCBLayoutCodex.cpp" />
+    <ClCompile Include="DepthStencil.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="DCBLayoutElement.cpp" />
     <ClCompile Include="DynamicCBuffer.cpp" />
@@ -290,12 +291,13 @@
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
+    <ClCompile Include="RenderTarget.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="RenderCommander.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
-    <ClCompile Include="DepthStencil.cpp" />
+    <ClCompile Include="DepthStencilState.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Square.cpp" />
     <ClCompile Include="Technique.cpp" />
@@ -527,6 +529,7 @@
     <ClInclude Include="DCBLayout.h" />
     <ClInclude Include="DCBLayoutCodex.h" />
     <ClInclude Include="DCBLayoutFinal.h" />
+    <ClInclude Include="DepthStencil.h" />
     <ClInclude Include="DXGIDebugInfoManager.h" />
     <ClInclude Include="DynamicCBuffer.h" />
     <ClInclude Include="DCBLayoutBase.h" />
@@ -538,6 +541,7 @@
     <ClInclude Include="GfxResources.h" />
     <ClInclude Include="Globe.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="GraphicsResource.h" />
     <ClInclude Include="GUIManager.h" />
     <ClInclude Include="IBindable.h" />
     <ClInclude Include="ICamera.h" />
@@ -578,6 +582,7 @@
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Rasterizer.h" />
+    <ClInclude Include="RenderTarget.h" />
     <ClInclude Include="SolidRectangle.h" />
     <ClInclude Include="RenderCommander.h" />
     <ClInclude Include="RenderPass.h" />
@@ -588,7 +593,7 @@
     <ClInclude Include="SolidGlobe.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Square.h" />
-    <ClInclude Include="DepthStencil.h" />
+    <ClInclude Include="DepthStencilState.h" />
     <ClInclude Include="Technique.h" />
     <ClInclude Include="TechniqueStep.h" />
     <ClInclude Include="Texture.h" />

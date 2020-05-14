@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics.h"
+#include "GraphicsResource.h"
 #include "IProbeable.h"
 
 namespace GFX::Resource
@@ -10,12 +10,8 @@ namespace GFX::Resource
 		static constexpr bool generate{ false };
 	};
 
-	class IBindable : public Probe::IProbeable
+	class IBindable : public GraphicsResource, public Probe::IProbeable
 	{
-	protected:
-		static inline ID3D11DeviceContext* GetContext(Graphics& gfx) noexcept { return gfx.context.Get(); }
-		static inline ID3D11Device* GetDevice(Graphics& gfx) noexcept { return gfx.device.Get(); }
-
 	public:
 		virtual ~IBindable() = default;
 

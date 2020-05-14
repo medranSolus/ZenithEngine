@@ -8,18 +8,23 @@
 
 namespace GFX
 {
-	namespace Resource
+	class GraphicsResource;
+
+	namespace Pipeline
 	{
-		class IBindable;
+		class DepthStencil;
 	}
+
 	class Graphics
 	{
-		friend class Resource::IBindable;
+		friend class GraphicsResource;
 
 #ifdef _DEBUG
 		DXGIDebugInfoManager debugInfoManager;
 #endif
 		GUIManager guiManager;
+		unsigned int width;
+		unsigned int height;
 		bool guiEnabled = true;
 		DirectX::XMMATRIX projection;
 		DirectX::XMMATRIX camera;
@@ -27,7 +32,6 @@ namespace GFX
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain = nullptr; // Using pipeline: https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-graphics-pipeline
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = nullptr; // Configure pipeline
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTarget = nullptr; // Back buffer from swap chain
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencil = nullptr; // Information about Z-buffering (object overlaping)
 
 	public:
 		Graphics(HWND hWnd, unsigned int width, unsigned int height);
@@ -36,6 +40,9 @@ namespace GFX
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
 		constexpr GUIManager& Gui() noexcept { return guiManager; }
+		constexpr unsigned int GetWidth() const noexcept { return width; }
+		constexpr unsigned int GetHeight() const noexcept { return height; }
+		constexpr float GetRatio() { return static_cast<float>(width) / height; }
 		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
 		constexpr DirectX::XMMATRIX& GetProjection() noexcept { return projection; }
 		constexpr void SetProjection(DirectX::XMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
@@ -49,7 +56,9 @@ namespace GFX
 #ifdef _DEBUG
 		constexpr DXGIDebugInfoManager& GetInfoManager() { return debugInfoManager; }
 #endif
+		inline void BindSwapBuffer() noexcept { context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), nullptr); }
 
+		void BindSwapBuffer(Pipeline::DepthStencil& depthStencil) noexcept;
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
 		void BeginFrame(float red, float green, float blue) noexcept;
@@ -109,5 +118,5 @@ namespace GFX
 			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-		};
-	}
+	};
+}

@@ -9,7 +9,7 @@
 #include "ConstBufferTransform.h"
 #include "ConstBufferTransformEx.h"
 #include "ConstBufferVertex.h"
-#include "DepthStencil.h"
+#include "DepthStencilState.h"
 #include "IndexBuffer.h"
 #include "InputLayout.h"
 #include "NullPixelShader.h"

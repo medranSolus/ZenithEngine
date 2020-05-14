@@ -1,9 +1,10 @@
+#include "DepthStencil.h"
 #include "GfxExceptionMacros.h"
 #include "ImGui/imgui_impl_win32.h"
 
 namespace GFX
 {
-	Graphics::Graphics(HWND hWnd, unsigned int width, unsigned int height)
+	Graphics::Graphics(HWND hWnd, unsigned int width, unsigned int height) : width(width), height(height)
 	{
 		GFX_ENABLE_EXCEPT();
 		DXGI_SWAP_CHAIN_DESC swapDesc = { 0 };
@@ -39,26 +40,6 @@ namespace GFX
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
 		GFX_THROW_FAILED(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTarget)); // Create view to back buffer allowing writing data
 
-		D3D11_TEXTURE2D_DESC depthTexDesc = { 0 };
-		depthTexDesc.Width = width;
-		depthTexDesc.Height = height;
-		depthTexDesc.MipLevels = 0U; // Texture stuff
-		depthTexDesc.ArraySize = 1U; // Only 1 texture
-		depthTexDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthTexDesc.SampleDesc.Count = 1U; // Antialiasing stuff
-		depthTexDesc.SampleDesc.Quality = 0U;
-		depthTexDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
-		depthTexDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> depthTexture = nullptr;
-		GFX_THROW_FAILED(device->CreateTexture2D(&depthTexDesc, nullptr, &depthTexture)); // Texture to render into with depth stencil
-
-		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = { };
-		depthViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
-		depthViewDesc.Texture2D.MipSlice = 0U;
-		GFX_THROW_FAILED(device->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencil));
-		context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), depthStencil.Get()); // Bind render target and depth stencil
-
 		D3D11_VIEWPORT viewPort = { 0 };
 		viewPort.Width = static_cast<FLOAT>(width);
 		viewPort.Height = static_cast<FLOAT>(height);
@@ -69,6 +50,11 @@ namespace GFX
 		context->RSSetViewports(1U, &viewPort);
 
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
+	}
+
+	void Graphics::BindSwapBuffer(Pipeline::DepthStencil& depthStencil) noexcept
+	{
+		context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), depthStencil.depthStencilView.Get());
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)
@@ -98,7 +84,6 @@ namespace GFX
 	{
 		const float color[] = { red, green, blue, 1.0f };
 		context->ClearRenderTargetView(renderTarget.Get(), color);
-		context->ClearDepthStencilView(depthStencil.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.0f, 0U);
 		if (guiEnabled)
 		{
 			ImGui_ImplDX11_NewFrame();

@@ -2,9 +2,6 @@
 #include "Cameras.h"
 #include "Math.h"
 
-unsigned int App::width = 1600;
-unsigned int App::height = 900;
-
 inline void App::ProcessInput()
 {
 	while (window.Mouse().IsInput())
@@ -13,7 +10,8 @@ inline void App::ProcessInput()
 		{
 			auto value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
-				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
+				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / window.Gfx().GetHeight(),
+					cameraRotateSpeed * static_cast<float>(value.GetDX()) / window.Gfx().GetWidth());
 			switch (value.GetType())
 			{
 			case WinAPI::Mouse::Event::Type::WheelForward:
@@ -31,7 +29,8 @@ inline void App::ProcessInput()
 			case WinAPI::Mouse::Event::Type::RawMove:
 			{
 				if (!window.IsCursorEnabled())
-					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / height, cameraRotateSpeed * static_cast<float>(value.GetDX()) / width);
+					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / window.Gfx().GetHeight(),
+						cameraRotateSpeed * static_cast<float>(value.GetDX()) / window.Gfx().GetWidth());
 				break;
 			}
 			}
@@ -168,10 +167,10 @@ void App::MakeFrame()
 	renderer.Reset();
 }
 
-App::App(const std::string& commandLine) : window(width, height, windowTitle)
+App::App(const std::string& commandLine) : window(1600, 900, windowTitle), renderer(window.Gfx())
 {
 	objects.emplace("---None---", nullptr);
-	camera = std::make_unique<Camera::PersonCamera>(1.047f, GetRatio(), 0.01f, viewDistance);
+	camera = std::make_unique<Camera::PersonCamera>(1.047f, window.Gfx().GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
