@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderPass.h"
-#include "DepthStencil.h"
+#include "RenderTarget.h"
+#include "GfxResources.h"
 #include <array>
 
 namespace GFX::Pipeline
@@ -8,10 +9,16 @@ namespace GFX::Pipeline
 	class RenderCommander
 	{
 		DepthStencil depthStencil;
+		RenderTarget target;
+		std::shared_ptr<Resource::VertexBuffer> fullscreenVertexBuffer = nullptr;
+		std::shared_ptr<Resource::IndexBuffer> fullscreenIndexBuffer = nullptr;
+		std::shared_ptr<Resource::InputLayout> fullscreenInputLayout = nullptr;
+		std::shared_ptr<Resource::VertexShader> fullscreenVS = nullptr;
+		std::shared_ptr<Resource::PixelShader> fullscreenPS = nullptr;
 		std::array<RenderPass, 3> passes;
 
 	public:
-		inline RenderCommander(Graphics& gfx) : depthStencil(gfx, gfx.GetWidth(), gfx.GetHeight()) {}
+		RenderCommander(Graphics& gfx);
 		RenderCommander(const RenderCommander&) = default;
 		RenderCommander& operator=(const RenderCommander&) = default;
 		~RenderCommander() = default;

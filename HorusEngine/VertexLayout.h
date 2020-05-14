@@ -14,12 +14,14 @@
 
 // List of vertex layout element types names. Each name have invocation of macro X() on it. Define your X() macro for various behavior in code.
 #define VERTEX_LAYOUT_ELEMENTS \
+	X(Position2D) \
 	X(Position3D) \
 	X(Texture2D) \
 	X(Normal) \
 	X(Tangent) \
 	X(Bitangent) \
 	X(ColorFloat4) \
+	X(ColorFloat3) \
 	X(ColorByte)
 
 namespace GFX::Data
@@ -120,6 +122,15 @@ namespace GFX::Data
 		std::string GetLayoutCode() const noexcept(!IS_DEBUG);
 
 #pragma region Layout Element Info
+		template<> struct Desc<ElementType::Position2D>
+		{
+			using DataType = DirectX::XMFLOAT2;
+			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32_FLOAT;
+			static constexpr const char* semantic = "POSITION";
+			static constexpr const char* code = "P2";
+			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mVertices)
+		};
 		template<> struct Desc<ElementType::Position3D>
 		{
 			using DataType = DirectX::XMFLOAT3;
@@ -171,6 +182,15 @@ namespace GFX::Data
 			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			static constexpr const char* semantic = "COLOR";
 			static constexpr const char* code = "C4";
+			static constexpr bool valid = true;
+			VERTEX_ELEMENT_AI_EXTRACTOR(mColors[0])
+		};
+		template<> struct Desc<ElementType::ColorFloat3>
+		{
+			using DataType = GFX::Data::ColorFloat3;
+			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+			static constexpr const char* semantic = "COLOR";
+			static constexpr const char* code = "C3";
 			static constexpr bool valid = true;
 			VERTEX_ELEMENT_AI_EXTRACTOR(mColors[0])
 		};

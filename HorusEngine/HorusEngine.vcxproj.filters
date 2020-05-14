@@ -115,6 +115,9 @@
     <Filter Include="Source Files\GFX\Probe">
       <UniqueIdentifier>{3ecfd9b5-2a2c-419c-9c56-828094c3c5bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\Fullscreen Effects">
+      <UniqueIdentifier>{4801aebf-a312-4476-b765-79b9058b66b5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -385,6 +388,15 @@
     </FxCompile>
     <FxCompile Include="OffsetVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="FullscreenVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="NegativePS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="FullscreenPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
