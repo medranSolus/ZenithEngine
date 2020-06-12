@@ -398,6 +398,9 @@
     <FxCompile Include="FullscreenPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
+    <FxCompile Include="BlurPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Timer.h">
