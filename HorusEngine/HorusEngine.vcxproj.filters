@@ -348,6 +348,9 @@
     <ClCompile Include="DepthStencil.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="OutlineMaskBlur.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -948,6 +951,9 @@
     </ClInclude>
     <ClInclude Include="DepthStencil.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineMaskBlur.h">
+      <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

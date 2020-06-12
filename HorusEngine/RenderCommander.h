@@ -10,6 +10,8 @@ namespace GFX::Pipeline
 	{
 		DepthStencil depthStencil;
 		RenderTarget target;
+		std::shared_ptr<Resource::Blender> fullscreenBlender = nullptr;
+		std::shared_ptr<Resource::Sampler> fullscreenSampler = nullptr;
 		std::shared_ptr<Resource::VertexBuffer> fullscreenVertexBuffer = nullptr;
 		std::shared_ptr<Resource::IndexBuffer> fullscreenIndexBuffer = nullptr;
 		std::shared_ptr<Resource::InputLayout> fullscreenInputLayout = nullptr;

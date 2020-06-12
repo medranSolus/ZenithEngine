@@ -284,6 +284,7 @@
     <ClCompile Include="ModelProbe.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="OutlineMaskBlur.cpp" />
     <ClCompile Include="OutlineMaskOffset.cpp" />
     <ClCompile Include="OutlineWrite.cpp" />
     <ClCompile Include="OutlineMaskScale.cpp" />
@@ -598,6 +599,7 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="NullPixelShader.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="OutlineMaskBlur.h" />
     <ClInclude Include="OutlineMaskOffset.h" />
     <ClInclude Include="OutlineWrite.h" />
     <ClInclude Include="OutlineMaskScale.h" />
