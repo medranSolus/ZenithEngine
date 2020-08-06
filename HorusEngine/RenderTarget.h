@@ -6,6 +6,8 @@ namespace GFX::Pipeline
 {
 	class RenderTarget : public GraphicsResource
 	{
+		static const Microsoft::WRL::ComPtr<ID3D11RenderTargetView> nullTargetView;
+		static const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> nullTextureView;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> targetView = nullptr;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
 
@@ -18,6 +20,9 @@ namespace GFX::Pipeline
 		inline void BindTexture(Graphics& gfx, UINT slot) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline void BindTarget(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), nullptr); }
 		inline void BindTarget(Graphics& gfx, DepthStencil& depthStencil) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), depthStencil.depthStencilView.Get()); }
+
+		inline void UnbindTexture(Graphics& gfx, UINT slot) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullTextureView.GetAddressOf()); }
+		inline void UnbindTarget(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, nullTargetView.GetAddressOf(), nullptr); }
 
 		inline void Clear(Graphics& gfx) noexcept { Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f }); }
 		inline void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept { GetContext(gfx)->ClearRenderTargetView(targetView.Get(), reinterpret_cast<const FLOAT*>(&color.col)); }

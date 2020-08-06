@@ -3,7 +3,7 @@
 
 namespace GFX::Resource
 {
-	Sampler::Sampler(Graphics& gfx, bool anisotropic, bool textureCoordWrap) : anisotropic(anisotropic), textureCoordWrap(textureCoordWrap)
+	Sampler::Sampler(Graphics& gfx, bool anisotropic, bool textureCoordReflect) : anisotropic(anisotropic), textureCoordReflect(textureCoordReflect)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -11,7 +11,7 @@ namespace GFX::Resource
 		samplerDesc.Filter = anisotropic ? D3D11_FILTER::D3D11_FILTER_ANISOTROPIC : D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT;
 		samplerDesc.MaxAnisotropy = D3D11_REQ_MAXANISOTROPY;
 		samplerDesc.AddressV = samplerDesc.AddressU =
-			textureCoordWrap ? D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR : D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+			textureCoordReflect ? D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR : D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateSamplerState(&samplerDesc, &state));
 	}
 }

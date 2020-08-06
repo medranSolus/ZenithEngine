@@ -3,6 +3,9 @@
 
 namespace GFX::Pipeline
 {
+	const Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RenderTarget::nullTargetView = nullptr;
+	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> RenderTarget::nullTextureView = nullptr;
+
 	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height)
 	{
 		GFX_ENABLE_ALL(gfx);

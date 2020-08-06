@@ -1,4 +1,4 @@
-cbuffer TransformCBuffer
+cbuffer TransformBuffer
 {
 	matrix transformView;
 	matrix transformViewProjection;

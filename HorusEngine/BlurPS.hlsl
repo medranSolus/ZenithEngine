@@ -1,25 +1,39 @@
+cbuffer GaussBuffer
+{
+	int radius; // Must not exceed coefficients size
+	float coefficients[15]; // Should be 6 * sigma - 1, current sigma for best effect 2.6
+}
+
+cbuffer DirectionBuffer
+{
+	bool vertical;
+}
+
 SamplerState splr;
 Texture2D tex;
-
-static const int r = 7;
-static const float accumulatedDivisor = (2 * r + 1) * (2 * r + 1);
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {
 	uint width, height;
 	tex.GetDimensions(width, height);
-	const float dx = 1.0f / width;
-	const float dy = 1.0f / height;
-	float alphaSum = 0.0f;
-	float3 maxColor = 0.0f;
-	for (int y = -r; y <= r; ++y)
+	float dx, dy;
+	if (vertical)
 	{
-		for (int x = -r; x <= r; ++x)
-		{
-			const float4 pixel = tex.Sample(splr, tc + float2(dx * x, dy * y)).rgba;
-			alphaSum += pixel.a;
-			maxColor = max(pixel.rgb, maxColor);
-		}
+		dx = 0.0f;
+		dy = 1.0f / height;
 	}
-	return float4(maxColor, alphaSum / accumulatedDivisor);
+	else
+	{
+		dx = 1.0f / width;
+		dy = 0.0f;
+	}
+	float3 maxColor = 0.0f;
+	float alpha = 0.0f;
+	for (int i = -radius; i <= radius; ++i)
+	{
+		const float4 color = tex.Sample(splr, tc + float2(dx * i, dy * i));
+		alpha += color.a * coefficients[abs(i)];
+		maxColor = max(maxColor, color.rgb);
+	}
+	return float4(maxColor, alpha);
 }

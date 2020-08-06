@@ -351,6 +351,9 @@
     <ClCompile Include="OutlineMaskBlur.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
+    <ClCompile Include="Blur.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -954,6 +957,9 @@
     </ClInclude>
     <ClInclude Include="OutlineMaskBlur.h">
       <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="Blur.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
