@@ -27,7 +27,7 @@ namespace GFX::Pipeline
 
 	public:
 		inline Blur(Graphics& gfx, int radius = 7, float sigma = 2.6f)
-			: shader(gfx, "BlurPS.cso"), kernelBuffer(gfx, "$blurKernel"), controlBuffer(gfx, "$blurControl", 1U) { SetKernel(gfx, radius, sigma); }
+			: radius(radius), sigma(sigma), shader(gfx, "BlurPS.cso"), kernelBuffer(gfx, "$blurKernel"), controlBuffer(gfx, "$blurControl", 1U) { SetKernel(gfx, radius, sigma); }
 
 		inline void SetVertical(Graphics& gfx) { controlBuffer.Update(gfx, { TRUE }); }
 		inline void SetHorizontal(Graphics& gfx) { controlBuffer.Update(gfx, { FALSE }); }

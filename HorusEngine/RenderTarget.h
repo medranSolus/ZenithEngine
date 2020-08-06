@@ -10,6 +10,9 @@ namespace GFX::Pipeline
 		static const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> nullTextureView;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> targetView = nullptr;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
+		D3D11_VIEWPORT viewport = { 0 );
+
+		inline void BindViewport(Graphics& gfx) noexcept { GetContext(gfx)->RSSetViewports(1U, &viewport); }
 
 	public:
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height);
@@ -18,8 +21,8 @@ namespace GFX::Pipeline
 		virtual ~RenderTarget() = default;
 
 		inline void BindTexture(Graphics& gfx, UINT slot) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
-		inline void BindTarget(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), nullptr); }
-		inline void BindTarget(Graphics& gfx, DepthStencil& depthStencil) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), depthStencil.depthStencilView.Get()); }
+		inline void BindTarget(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), nullptr); BindViewport(gfx); }
+		inline void BindTarget(Graphics& gfx, DepthStencil& depthStencil) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), depthStencil.depthStencilView.Get()); BindViewport(gfx); }
 
 		inline void UnbindTexture(Graphics& gfx, UINT slot) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullTextureView.GetAddressOf()); }
 		inline void UnbindTarget(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, nullTargetView.GetAddressOf(), nullptr); }

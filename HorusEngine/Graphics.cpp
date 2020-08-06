@@ -40,14 +40,12 @@ namespace GFX
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
 		GFX_THROW_FAILED(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTarget)); // Create view to back buffer allowing writing data
 
-		D3D11_VIEWPORT viewPort = { 0 };
-		viewPort.Width = static_cast<FLOAT>(width);
-		viewPort.Height = static_cast<FLOAT>(height);
-		viewPort.MinDepth = 0;
-		viewPort.MaxDepth = 1;
-		viewPort.TopLeftX = 0;
-		viewPort.TopLeftY = 0;
-		context->RSSetViewports(1U, &viewPort);
+		viewport.Width = static_cast<FLOAT>(width);
+		viewport.Height = static_cast<FLOAT>(height);
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.TopLeftX = 0.0f;
+		viewport.TopLeftY = 0.0f;
 
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
@@ -55,6 +53,7 @@ namespace GFX
 	void Graphics::BindSwapBuffer(Pipeline::DepthStencil& depthStencil) noexcept
 	{
 		context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), depthStencil.depthStencilView.Get());
+		context->RSSetViewports(1U, &viewport);
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)

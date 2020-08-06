@@ -10,8 +10,9 @@ namespace GFX::Pipeline
 	{
 		Blur blurData;
 		DepthStencil depthStencil;
-		RenderTarget sceneTarget;
-		RenderTarget blurHalfTarget;
+		int downfactor = 2;
+		std::optional<RenderTarget> sceneTarget;
+		std::optional<RenderTarget> blurHalfTarget;
 		std::shared_ptr<Resource::Sampler> fullscreenSampler = nullptr;
 		std::shared_ptr<Resource::Sampler> blurSampler = nullptr;
 		std::shared_ptr<Resource::VertexBuffer> fullscreenVertexBuffer = nullptr;
@@ -28,9 +29,9 @@ namespace GFX::Pipeline
 		~RenderCommander() = default;
 
 		inline void Add(Job&& job, size_t targetPass) noexcept { passes.at(targetPass).Add(std::forward<Job>(job)); }
-		inline void ShowWindow(Graphics& gfx) noexcept { blurData.ShowWindow(gfx); }
 
 		void Render(Graphics& gfx) noexcept(!IS_DEBUG);
 		void Reset() noexcept;
+		void ShowWindow(Graphics& gfx) noexcept;
 	};
 }

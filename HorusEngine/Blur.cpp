@@ -6,8 +6,6 @@ namespace GFX::Pipeline
 	void Blur::SetKernel(Graphics& gfx, int radius, float sigma)
 	{
 		assert(radius < maxRadius);
-		this->radius = radius;
-		this->sigma = sigma;
 		GaussBuffer buffer;
 		buffer.radius = radius;
 		float sum = 0.0f;
@@ -31,11 +29,7 @@ namespace GFX::Pipeline
 
 	void Blur::ShowWindow(Graphics& gfx) noexcept
 	{
-		int r = radius;
-		float s = sigma;
-		ImGui::SliderInt("Blur radius", &r, 1, maxRadius - 1);
-		ImGui::SliderFloat("Blur sigma", &s, 0.0f, 10.0f, "%.1f");
-		if (r != radius || notEquals(s, sigma))
-			SetKernel(gfx, r, s);
+		if (ImGui::SliderInt("Blur radius", &radius, 1, maxRadius - 1) || ImGui::SliderFloat("Blur sigma", &sigma, 0.0f, 10.0f, "%.1f"))
+			SetKernel(gfx, radius, sigma);
 	}
 }

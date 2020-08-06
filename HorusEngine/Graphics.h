@@ -26,6 +26,7 @@ namespace GFX
 		unsigned int width;
 		unsigned int height;
 		bool guiEnabled = true;
+		D3D11_VIEWPORT viewport = { 0 };
 		DirectX::XMMATRIX projection;
 		DirectX::XMMATRIX camera;
 		Microsoft::WRL::ComPtr<ID3D11Device> device = nullptr; // Resources allocation

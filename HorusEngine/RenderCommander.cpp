@@ -3,11 +3,11 @@
 namespace GFX::Pipeline
 {
 	RenderCommander::RenderCommander(Graphics& gfx)
-		: depthStencil(gfx, gfx.GetWidth(), gfx.GetHeight()), sceneTarget(gfx, gfx.GetWidth(), gfx.GetHeight()),
-		blurHalfTarget(gfx, gfx.GetWidth(), gfx.GetHeight()), blurData(gfx)
+		: depthStencil(gfx, gfx.GetWidth(), gfx.GetHeight()), sceneTarget(std::make_optional<RenderTarget>(gfx, gfx.GetWidth() / downfactor, gfx.GetHeight() / downfactor)),
+		blurHalfTarget(std::make_optional<RenderTarget>(gfx, gfx.GetWidth() / downfactor, gfx.GetHeight() / downfactor)), blurData(gfx)
 	{
 		fullscreenSampler = Resource::Sampler::Get(gfx, false, true);
-		blurSampler = Resource::Sampler::Get(gfx, false, true);
+		blurSampler = Resource::Sampler::Get(gfx, true, true);
 		// Fullscreen geometry (2 triangles)
 		auto layout = std::make_shared<Data::VertexLayout>(false);
 		layout->Append(VertexAttribute::Position2D);
@@ -27,8 +27,8 @@ namespace GFX::Pipeline
 	{
 		// Draw to texture
 		depthStencil.Clear(gfx);
-		sceneTarget.Clear(gfx);
-		blurHalfTarget.Clear(gfx);
+		sceneTarget->Clear(gfx);
+		blurHalfTarget->Clear(gfx);
 		gfx.BindSwapBuffer(depthStencil);
 
 		// Classic render pass
@@ -44,13 +44,14 @@ namespace GFX::Pipeline
 		// Mask render target with stencil buffer
 		Resource::DepthStencilState::Get(gfx, Resource::DepthStencilState::StencilMode::Off)->Bind(gfx);
 		Resource::PixelShader::Get(gfx, "SolidPS.cso")->Bind(gfx);
-		sceneTarget.BindTarget(gfx);
+		sceneTarget->BindTarget(gfx);
 		passes.at(2).Execute(gfx);
-		sceneTarget.UnbindTarget(gfx);
+		sceneTarget->UnbindTarget(gfx);
 
 		// Blur previous texture
-		blurHalfTarget.BindTarget(gfx);
-		sceneTarget.BindTexture(gfx, 0U);
+		Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST)->Bind(gfx);
+		blurHalfTarget->BindTarget(gfx);
+		sceneTarget->BindTexture(gfx, 0U);
 		fullscreenVertexBuffer->Bind(gfx);
 		fullscreenIndexBuffer->Bind(gfx);
 		fullscreenVS->Bind(gfx);
@@ -59,24 +60,34 @@ namespace GFX::Pipeline
 		blurData.SetHorizontal(gfx);
 		blurData.Bind(gfx);
 		gfx.DrawIndexed(fullscreenIndexBuffer->GetCount());
-		blurHalfTarget.UnbindTarget(gfx);
-		sceneTarget.UnbindTexture(gfx, 0U);
+		blurHalfTarget->UnbindTarget(gfx);
+		sceneTarget->UnbindTexture(gfx, 0U);
 
 		// Draw previous texture to screen with effect
 		Resource::Blender::Get(gfx, true)->Bind(gfx);
 		Resource::DepthStencilState::Get(gfx, Resource::DepthStencilState::StencilMode::Mask)->Bind(gfx);
 		gfx.BindSwapBuffer(depthStencil);
-		blurHalfTarget.BindTexture(gfx, 0U);
+		blurHalfTarget->BindTexture(gfx, 0U);
 		blurSampler->Bind(gfx);
 		blurData.SetVertical(gfx);
 		blurData.Bind(gfx);
 		gfx.DrawIndexed(fullscreenIndexBuffer->GetCount());
-		blurHalfTarget.UnbindTexture(gfx, 0U);
+		blurHalfTarget->UnbindTexture(gfx, 0U);
 	}
 
 	void RenderCommander::Reset() noexcept
 	{
 		for (auto& pass : passes)
 			pass.Reset();
+	}
+
+	void RenderCommander::ShowWindow(Graphics& gfx) noexcept
+	{
+		if (ImGui::SliderInt("Blur downsize factor", &downfactor, 1, 15))
+		{
+			sceneTarget.emplace(gfx, gfx.GetWidth() / downfactor, gfx.GetHeight() / downfactor);
+			blurHalfTarget.emplace(gfx, gfx.GetWidth() / downfactor, gfx.GetHeight() / downfactor);
+		}
+		blurData.ShowWindow(gfx);
 	}
 }
