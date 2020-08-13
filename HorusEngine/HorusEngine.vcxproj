@@ -267,6 +267,7 @@
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="GUIManager.cpp" />
+    <ClCompile Include="HorizontalBlurPass.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -290,17 +291,20 @@
     <ClCompile Include="ModelProbe.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="OutlineDrawBlurPass.cpp" />
+    <ClCompile Include="OutlineDrawPass.cpp" />
     <ClCompile Include="OutlineMaskBlur.cpp" />
     <ClCompile Include="OutlineMaskOffset.cpp" />
     <ClCompile Include="OutlineWrite.cpp" />
     <ClCompile Include="OutlineMaskScale.cpp" />
-    <ClCompile Include="OutlineWritePass.cpp" />
+    <ClCompile Include="OutlineGenerationPass.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
     <ClCompile Include="RenderGraphCompileException.cpp" />
     <ClCompile Include="RenderTarget.cpp" />
+    <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="RenderCommander.cpp" />
@@ -320,6 +324,7 @@
     <ClCompile Include="VertexBufferData.cpp" />
     <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
+    <ClCompile Include="VerticalBlurPass.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
@@ -542,6 +547,9 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BasePass.h" />
+    <ClInclude Include="HorizontalBlurPass.h" />
+    <ClInclude Include="OutlineDrawBlurPass.h" />
+    <ClInclude Include="OutlineDrawPass.h" />
     <ClInclude Include="PipelineResources.h" />
     <ClInclude Include="RenderPassesBase.h" />
     <ClInclude Include="BaseShape.h" />
@@ -621,7 +629,7 @@
     <ClInclude Include="OutlineMaskOffset.h" />
     <ClInclude Include="OutlineWrite.h" />
     <ClInclude Include="OutlineMaskScale.h" />
-    <ClInclude Include="OutlineWritePass.h" />
+    <ClInclude Include="OutlineGenerationPass.h" />
     <ClInclude Include="PersonCamera.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="PointLight.h" />
@@ -630,6 +638,7 @@
     <ClInclude Include="RenderGraph.h" />
     <ClInclude Include="RenderGraphCompileException.h" />
     <ClInclude Include="RenderTarget.h" />
+    <ClInclude Include="RenderTargetShaderInput.h" />
     <ClInclude Include="Sink.h" />
     <ClInclude Include="SinkContainerBindable.h" />
     <ClInclude Include="SinkDirectBindable.h" />
@@ -659,6 +668,7 @@
     <ClInclude Include="VertexBufferData.h" />
     <ClInclude Include="VertexLayout.h" />
     <ClInclude Include="VertexShader.h" />
+    <ClInclude Include="VerticalBlurPass.h" />
     <ClInclude Include="Visuals.h" />
     <ClInclude Include="WinAPI.h" />
     <ClInclude Include="Window.h" />

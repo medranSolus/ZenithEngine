@@ -6,21 +6,25 @@ namespace GFX::Resource
 	// How to perform lookups into texture
 	class Sampler : public IBindable
 	{
-		bool anisotropic;
+	public:
+		enum Type : unsigned char { Point, Linear, Anisotropic };
+
+	private:
+		Type type;
 		bool textureCoordReflect;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> state;
 
 	public:
-		Sampler(Graphics& gfx, bool anisotropic, bool textureCoordReflect);
+		Sampler(Graphics& gfx, Type type, bool textureCoordReflect);
 		Sampler(const Sampler&) = delete;
 		Sampler& operator=(const Sampler&) = delete;
 		virtual ~Sampler() = default;
 
-		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, bool anisotropic = true, bool textureCoordReflect = false);
-		static inline std::string GenerateRID(bool anisotropic = true, bool textureCoordWrap = false) noexcept;
+		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect);
+		static inline std::string GenerateRID(Type type, bool textureCoordReflect) noexcept;
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(anisotropic, textureCoordReflect); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(type, textureCoordReflect); }
 	};
 
 	template<>
@@ -29,13 +33,13 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<Sampler> Sampler::Get(Graphics& gfx, bool anisotropic, bool textureCoordReflect)
+	inline std::shared_ptr<Sampler> Sampler::Get(Graphics& gfx, Type type, bool textureCoordReflect)
 	{
-		return Codex::Resolve<Sampler>(gfx, anisotropic, textureCoordReflect);
+		return Codex::Resolve<Sampler>(gfx, type, textureCoordReflect);
 	}
 
-	inline std::string Sampler::GenerateRID(bool anisotropic, bool textureCoordReflect) noexcept
+	inline std::string Sampler::GenerateRID(Type type, bool textureCoordReflect) noexcept
 	{
-		return "#" + std::string(typeid(Sampler).name()) + "#" + std::to_string(anisotropic) + "#" + std::to_string(textureCoordReflect) + "#";
+		return "#" + std::string(typeid(Sampler).name()) + "#" + std::to_string(type) + "#" + std::to_string(textureCoordReflect) + "#";
 	}
 }

@@ -23,7 +23,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		inline void AddBind(std::shared_ptr<GFX::Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
 
 		template<typename T>
-		void AddSink(const std::string& name);
+		void AddBindableSink(const std::string& name);
 
 		void BindAll(Graphics& gfx) noexcept;
 		void Finalize() override;
@@ -33,7 +33,7 @@ namespace GFX::Pipeline::RenderPass::Base
 	};
 
 	template<typename T>
-	void BindingPass::AddSink(const std::string& name)
+	void BindingPass::AddBindableSink(const std::string& name)
 	{
 		const size_t index = binds.size();
 		binds.emplace_back();

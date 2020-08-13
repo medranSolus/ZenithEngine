@@ -390,9 +390,6 @@
     <ClCompile Include="LambertianPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="OutlineWritePass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="Sink.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClCompile>
@@ -403,6 +400,24 @@
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
     <ClCompile Include="DepthStencil.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineGenerationPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineDrawPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineDrawBlurPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="VerticalBlurPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="HorizontalBlurPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTargetShaderInput.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1036,9 +1051,6 @@
     <ClInclude Include="SinkDirectBuffer.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClInclude>
-    <ClInclude Include="OutlineWritePass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
     <ClInclude Include="SinkDirectBindable.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClInclude>
@@ -1061,6 +1073,24 @@
       <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClInclude>
     <ClInclude Include="PipelineResources.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineGenerationPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineDrawPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineDrawBlurPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="VerticalBlurPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="HorizontalBlurPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTargetShaderInput.h">
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
   </ItemGroup>
