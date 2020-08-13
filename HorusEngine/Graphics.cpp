@@ -50,7 +50,7 @@ namespace GFX
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
 
-	void Graphics::BindSwapBuffer(Pipeline::DepthStencil& depthStencil) noexcept
+	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept
 	{
 		context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), depthStencil.depthStencilView.Get());
 		context->RSSetViewports(1U, &viewport);

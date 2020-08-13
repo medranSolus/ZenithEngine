@@ -21,9 +21,9 @@ namespace GFX::Pipeline
 
 		int radius;
 		float sigma;
-		Resource::PixelShader shader;
-		Resource::ConstBufferPixel<GaussBuffer> kernelBuffer;
-		Resource::ConstBufferPixel<DirectionBuffer> controlBuffer;
+		GFX::Resource::PixelShader shader;
+		GFX::Resource::ConstBufferPixel<GaussBuffer> kernelBuffer;
+		GFX::Resource::ConstBufferPixel<DirectionBuffer> controlBuffer;
 
 	public:
 		inline Blur(Graphics& gfx, int radius = 7, float sigma = 2.6f)

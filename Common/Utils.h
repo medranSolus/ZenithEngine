@@ -14,3 +14,5 @@ inline std::string toAscii(const std::wstring& s)
 }
 
 std::vector<std::string> parseQuoted(const std::string& input);
+
+std::vector<std::string> splitString(const std::string& input, const std::string& delimeter);

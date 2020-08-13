@@ -1,7 +1,7 @@
 #include "DepthStencil.h"
 #include "GfxExceptionMacros.h"
 
-namespace GFX::Pipeline
+namespace GFX::Pipeline::Resource
 {
 	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height)
 	{

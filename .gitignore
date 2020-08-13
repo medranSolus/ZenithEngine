@@ -270,3 +270,6 @@ Lib/**/Common*
 
 #Intel profiler
 **/VTune*
+
+#Strange lfs lock file (?)
+/lfs/cache/locks/refs/heads/master/verifiable

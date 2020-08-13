@@ -21,10 +21,10 @@ namespace GFX::Pipeline
 		constexpr bool& IsActive() noexcept { return active; }
 		constexpr void Activate() noexcept { active = true; }
 		constexpr void Dectivate() noexcept { active = false; }
-		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::move(step)); }
+		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::forward<TechniqueStep>(step)); }
 
 		void SetParentReference(Graphics& gfx, const GfxObject& parent);
-		void Submit(RenderCommander& renderer, Shape::BaseShape& shape) noexcept;
+		void Submit(Shape::BaseShape& shape) noexcept;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

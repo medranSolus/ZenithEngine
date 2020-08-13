@@ -118,6 +118,30 @@
     <Filter Include="Shader Files\Pixel Shaders\Fullscreen Effects">
       <UniqueIdentifier>{4801aebf-a312-4476-b765-79b9058b66b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Pipeline\RenderPass">
+      <UniqueIdentifier>{b7d253cd-7734-428e-9109-5e5e685e1269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Pipeline\RenderPass">
+      <UniqueIdentifier>{fc4a7bb2-f227-4dfa-96aa-579d689a8f4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Exception">
+      <UniqueIdentifier>{7ee5cb66-9048-4268-8720-1881d6f88d2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Exception">
+      <UniqueIdentifier>{6b52e355-5626-40cf-9beb-442a34bad409}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Pipeline\RenderPass\Base">
+      <UniqueIdentifier>{a0497f21-837b-4c6d-ad24-686f1edf641c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Pipeline\RenderPass\Base">
+      <UniqueIdentifier>{591ee3d9-359a-480f-9a7c-fc2934c53062}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Pipeline\Resource">
+      <UniqueIdentifier>{4688ceac-8f03-49e0-a7e8-3a3203f99e89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Pipeline\Resource">
+      <UniqueIdentifier>{e5d04e4b-9573-4c8c-97ce-f92a12537c8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -300,9 +324,6 @@
     <ClCompile Include="RenderCommander.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="RenderPass.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Job.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
@@ -339,20 +360,50 @@
     <ClCompile Include="OutlineMaskOffset.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
-    <ClCompile Include="RenderTarget.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="DepthStencilState.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="DepthStencil.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="OutlineMaskBlur.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
     <ClCompile Include="Blur.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraphCompileException.cpp">
+      <Filter>Source Files\Exception</Filter>
+    </ClCompile>
+    <ClCompile Include="ClearBufferPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="BasePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="BindingPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="FullscreenPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="QueuePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="LambertianPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="OutlineWritePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Sink.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTarget.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthStencil.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -883,9 +934,6 @@
     <ClInclude Include="Job.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="RenderPass.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Technique.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
@@ -946,20 +994,74 @@
     <ClInclude Include="DepthStencilState.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsResource.h">
-      <Filter>Header Files\GFX</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderTarget.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="DepthStencil.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="OutlineMaskBlur.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
     <ClInclude Include="Blur.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraph.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraphCompileException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="ClearBufferPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="BasePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="BindingPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="FullscreenPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="QueuePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Sink.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="LambertianPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceDirectBuffer.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="SinkDirectBuffer.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineWritePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="SinkDirectBindable.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="SinkContainerBindable.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceDirectBindable.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthStencil.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTarget.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="IBufferResource.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPassesBase.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="PipelineResources.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

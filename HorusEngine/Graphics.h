@@ -8,16 +8,19 @@
 
 namespace GFX
 {
-	class GraphicsResource;
+	namespace Resource
+	{
+		class IBindable;
+	}
 
-	namespace Pipeline
+	namespace Pipeline::Resource
 	{
 		class DepthStencil;
 	}
 
 	class Graphics
 	{
-		friend class GraphicsResource;
+		friend class Resource::IBindable;
 
 #ifdef _DEBUG
 		DXGIDebugInfoManager debugInfoManager;
@@ -59,7 +62,7 @@ namespace GFX
 #endif
 		inline void BindSwapBuffer() noexcept { context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), nullptr); }
 
-		void BindSwapBuffer(Pipeline::DepthStencil& depthStencil) noexcept;
+		void BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept;
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
 		void BeginFrame(float red, float green, float blue) noexcept;

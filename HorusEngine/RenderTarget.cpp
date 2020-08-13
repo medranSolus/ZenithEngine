@@ -1,7 +1,7 @@
 #include "RenderTarget.h"
 #include "GfxExceptionMacros.h"
 
-namespace GFX::Pipeline
+namespace GFX::Pipeline::Resource
 {
 	const Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RenderTarget::nullTargetView = nullptr;
 	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> RenderTarget::nullTextureView = nullptr;
