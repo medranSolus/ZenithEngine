@@ -321,9 +321,6 @@
     <ClCompile Include="Square.cpp">
       <Filter>Source Files\GFX\Primitive</Filter>
     </ClCompile>
-    <ClCompile Include="RenderCommander.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Job.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
@@ -365,9 +362,6 @@
     </ClCompile>
     <ClCompile Include="OutlineMaskBlur.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
-    </ClCompile>
-    <ClCompile Include="Blur.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="RenderGraphCompileException.cpp">
       <Filter>Source Files\Exception</Filter>
@@ -419,6 +413,12 @@
     </ClCompile>
     <ClCompile Include="RenderTargetShaderInput.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraph.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraphBlurOutline.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -943,9 +943,6 @@
     <ClInclude Include="WindowExceptionMacros.h">
       <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
-    <ClInclude Include="RenderCommander.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Job.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
@@ -1011,9 +1008,6 @@
     </ClInclude>
     <ClInclude Include="OutlineMaskBlur.h">
       <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
-    <ClInclude Include="Blur.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="RenderGraph.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
@@ -1092,6 +1086,12 @@
     </ClInclude>
     <ClInclude Include="RenderTargetShaderInput.h">
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraphBlurOutline.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

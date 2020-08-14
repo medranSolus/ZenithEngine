@@ -112,7 +112,6 @@ inline void App::ShowOptionsWindow()
 		const auto& cameraPos = camera->GetPos();
 		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
 		camera->ShowWindow();
-		renderer.ShowWindow(window.Gfx());
 	}
 	ImGui::End();
 }
@@ -145,7 +144,7 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::D
 		}
 	}
 	for (auto& coord : coordBuffer)
-		carpetRects.push_back(std::make_unique<GFX::Shape::SolidRectangle>(window.Gfx(), DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", color, width, width));
+		carpetRects.push_back(std::make_unique<GFX::Shape::SolidRectangle>(window.Gfx(), renderer, DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", color, width, width));
 }
 
 void App::MakeFrame()
@@ -153,17 +152,17 @@ void App::MakeFrame()
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
 	camera->Update(window.Gfx());
-	pointLight->Submit(renderer);
+	pointLight->Submit();
 	pointLight->Bind(window.Gfx(), *camera);
 	for (auto& shape : shapes)
 		if (shape)
-			shape->Submit(renderer);
+			shape->Submit();
 	for (auto& obj : carpetRects)
-		obj->Submit(renderer);
+		obj->Submit();
 	ShowObjectWindow();
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
-	renderer.Render(window.Gfx());
+	renderer.Execute(window.Gfx());
 	window.Gfx().EndFrame();
 	renderer.Reset();
 }
@@ -173,10 +172,10 @@ App::App(const std::string& commandLine) : window(1600, 900, windowTitle), rende
 	objects.emplace("---None---", nullptr);
 	camera = std::make_unique<Camera::PersonCamera>(1.047f, window.Gfx().GetRatio(), 0.01f, viewDistance);
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
-	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f), "PointLight");
+	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), randPosition(-10.0f, 10.0f, engine), "Box", std::move(randColor(engine)), rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));

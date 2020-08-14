@@ -1,7 +1,7 @@
 cbuffer GaussBuffer
 {
 	int radius; // Must not exceed coefficients size
-	float coefficients[15]; // Should be 6 * sigma - 1, current sigma for best effect 2.6
+	float coefficients[8]; // Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target sigma can be 2.6)
 }
 
 cbuffer DirectionBuffer

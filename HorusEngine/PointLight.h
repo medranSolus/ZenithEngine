@@ -13,12 +13,12 @@ namespace GFX::Light
 		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
-		PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);
+		PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);
 		PointLight(const PointLight&) = delete;
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
-		inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { mesh.Submit(renderer); }
+		inline void Submit() noexcept override { mesh.Submit(); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return mesh.GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { mesh.SetAngle(meshAngle); }

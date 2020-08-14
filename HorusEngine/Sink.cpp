@@ -20,7 +20,7 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		if (passName.empty())
 			throw RGC_EXCEPT("Sink \"" + registeredName + "\" pass name empty!");
-		if (!IsValidName(passName))
+		if (passName != "$" && !IsValidName(passName))
 			throw RGC_EXCEPT("Invalid Sink \"" + registeredName + "\" pass name: " + passName);
 		this->passName = passName;
 		if (sourceName.empty())

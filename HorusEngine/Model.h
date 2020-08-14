@@ -12,17 +12,17 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
 
-		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
+		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
 
 		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, unsigned long long& id) noexcept(!IS_DEBUG);
 
 	public:
-		Model(Graphics& gfx, const std::string& file, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,0.0f }, const std::string& modelName = "Model", float scale = 1.0f);
+		Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,0.0f }, const std::string& modelName = "Model", float scale = 1.0f);
 		Model(const Model&) = delete;
 		Model& operator=(const Model&) = delete;
 		virtual ~Model() = default;
 
-		inline void Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG) override { root->Submit(renderer); }
+		inline void Submit() noexcept override { root->Submit(); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return root->GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { root->SetAngle(meshAngle); }

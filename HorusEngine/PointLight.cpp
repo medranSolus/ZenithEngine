@@ -20,8 +20,8 @@ namespace GFX::Light
 		return layout;
 	}
 
-	PointLight::PointLight(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float radius)
-		: mesh(gfx, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius)
+	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, float radius)
+		: mesh(gfx, graph, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());
 		buffer["ambientColor"] = std::move(Data::ColorFloat3(0.05f, 0.05f, 0.05f));

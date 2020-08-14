@@ -10,7 +10,7 @@ namespace GFX::Shape
 		float height;
 
 	public:
-		SolidRectangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color, float width, float height);
+		SolidRectangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color, float width, float height);
 		SolidRectangle(const SolidRectangle&) = delete;
 		SolidRectangle& operator=(const SolidRectangle&) = delete;
 		virtual ~SolidRectangle() = default;

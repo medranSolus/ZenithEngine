@@ -12,15 +12,15 @@ namespace GFX::Shape
 			mesh->SetTransformMatrix(currentTransform);
 	}
 
-	void ModelNode::Submit(Pipeline::RenderCommander& renderer, const DirectX::FXMMATRIX& higherTransform) noexcept(!IS_DEBUG)
+	void ModelNode::Submit(const DirectX::FXMMATRIX& higherTransform) noexcept
 	{
 		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
 			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;
 		DirectX::XMStoreFloat4x4(currentTransform.get(), transformMatrix);
 		for (const auto& mesh : meshes)
-			mesh->Submit(renderer);
+			mesh->Submit();
 		for (const auto& child : children)
-			child->Submit(renderer, transformMatrix);
+			child->Submit(transformMatrix);
 	}
 
 	void ModelNode::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

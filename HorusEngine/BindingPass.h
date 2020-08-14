@@ -37,6 +37,6 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		const size_t index = binds.size();
 		binds.emplace_back();
-		RegisterSink(std::make_unique<SinkContainerBind<T>>(name, binds, index));
+		RegisterSink(std::make_unique<SinkContainerBindable<T>>(name, binds, index));
 	}
 }

@@ -15,7 +15,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		inline SinkDirectBindable(const std::string& registeredName, std::shared_ptr<T>& bind) : Sink(registeredName), target(bind) {}
 		virtual ~SinkDirectBindable() = default;
 
-		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& bind) { return std::make_unique<SinkDirectBindable>(registeredName, target); }
+		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& bind) { return std::make_unique<SinkDirectBindable>(registeredName, bind); }
 
 		inline void ValidateLink() const override { if (!linked) throw RGC_EXCEPT("Unlinked Sink \"" + GetRegisteredName() + "\"!"); }
 

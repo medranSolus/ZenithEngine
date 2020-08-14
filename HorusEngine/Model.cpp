@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
 	{
 		// Maybe layout code needed too, TODO: Check this
 		std::string meshID = std::to_string(mesh.mNumFaces) + std::string(mesh.mName.C_Str()) + std::to_string(mesh.mNumVertices) + "#";
@@ -36,10 +36,10 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		techniques.reserve(2);
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Phong"));
-		techniques.back()->AddStep({ 0, std::move(material) });
+		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline Blur", false));
-		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMaskBlur>(gfx, meshID + "OutlineBlur", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
+		techniques.back()->AddStep({ graph, "outlineDrawBlur", std::make_shared<Visual::OutlineMaskBlur>(gfx, meshID + "OutlineBlur", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}
@@ -60,7 +60,7 @@ namespace GFX::Shape
 		return currentNode;
 	}
 
-	Model::Model(Graphics& gfx, const std::string& file, const DirectX::XMFLOAT3& position, const std::string& modelName, float scale)
+	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const DirectX::XMFLOAT3& position, const std::string& modelName, float scale)
 		: name(modelName)
 	{
 		Assimp::Importer importer;
@@ -75,7 +75,7 @@ namespace GFX::Shape
 		for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
 			materials.emplace_back(std::make_shared<Visual::Material>(gfx, *scene->mMaterials[i], path));
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(gfx, path, *scene->mMeshes[i], materials));
+			meshes.emplace_back(ParseMesh(gfx, graph, path, *scene->mMeshes[i], materials));
 		unsigned long long startID = 0ULL;
 		root = ParseNode(*scene->mRootNode, startID);
 		root->SetScale(scale);

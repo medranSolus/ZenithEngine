@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Triangle::Triangle(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, float down, float left, float right)
+	Triangle::Triangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, float down, float left, float right)
 		: BaseShape(gfx), Object(position, name)
 	{
 		/*const float leftPow2 = left * left;

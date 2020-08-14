@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	SolidGlobe::SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color,
+	SolidGlobe::SolidGlobe(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color,
 		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
 		: BaseShape(gfx), Object(position, name), sizes(width, height, length)
 	{
@@ -28,11 +28,11 @@ namespace GFX::Shape
 		materialBuffer = &material->GetPixelBuffer();
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
-		techniques.back()->AddStep({ 0, std::move(material) });
+		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline Blur", false));
-		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMaskBlur>(gfx, name + "OutlineBlur", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
+		techniques.back()->AddStep({ graph, "outlineDrawBlur", std::make_shared<Visual::OutlineMaskBlur>(gfx, name + "OutlineBlur", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 		SetTechniques(gfx, std::move(techniques), *this);
 
 		UpdateTransformMatrix();

@@ -16,6 +16,7 @@ namespace GFX
 	namespace Pipeline::Resource
 	{
 		class DepthStencil;
+		class RenderTarget;
 	}
 
 	class Graphics
@@ -26,16 +27,13 @@ namespace GFX
 		DXGIDebugInfoManager debugInfoManager;
 #endif
 		GUIManager guiManager;
-		unsigned int width;
-		unsigned int height;
 		bool guiEnabled = true;
-		D3D11_VIEWPORT viewport = { 0 };
 		DirectX::XMMATRIX projection;
 		DirectX::XMMATRIX camera;
 		Microsoft::WRL::ComPtr<ID3D11Device> device = nullptr; // Resources allocation
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain = nullptr; // Using pipeline: https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-graphics-pipeline
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = nullptr; // Configure pipeline
-		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTarget = nullptr; // Back buffer from swap chain
+		std::shared_ptr<Pipeline::Resource::RenderTarget> renderTarget; // Back buffer from swap chain
 
 	public:
 		Graphics(HWND hWnd, unsigned int width, unsigned int height);
@@ -44,9 +42,6 @@ namespace GFX
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
 		constexpr GUIManager& Gui() noexcept { return guiManager; }
-		constexpr unsigned int GetWidth() const noexcept { return width; }
-		constexpr unsigned int GetHeight() const noexcept { return height; }
-		constexpr float GetRatio() { return static_cast<float>(width) / height; }
 		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
 		constexpr DirectX::XMMATRIX& GetProjection() noexcept { return projection; }
 		constexpr void SetProjection(DirectX::XMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
@@ -60,9 +55,14 @@ namespace GFX
 #ifdef _DEBUG
 		constexpr DXGIDebugInfoManager& GetInfoManager() { return debugInfoManager; }
 #endif
-		inline void BindSwapBuffer() noexcept { context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), nullptr); }
+		inline float GetRatio() { return static_cast<float>(GetWidth()) / GetHeight(); }
+		inline std::shared_ptr<Pipeline::Resource::RenderTarget> GetBackBuffer() noexcept { return renderTarget; }
 
+		unsigned int GetWidth() const noexcept;
+		unsigned int GetHeight() const noexcept;
+		void BindSwapBuffer() noexcept;
 		void BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept;
+
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
 		void BeginFrame(float red, float green, float blue) noexcept;

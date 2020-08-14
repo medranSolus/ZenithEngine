@@ -14,8 +14,10 @@ namespace GFX::Pipeline::Resource
 
 		inline void BindViewport(Graphics& gfx) noexcept { GetContext(gfx)->RSSetViewports(1U, &viewport); }
 
+		void SetupViewPort() noexcept;
+
 	protected:
-		constexpr RenderTarget() {}
+		inline RenderTarget(unsigned int width, unsigned int height) noexcept : width(width), height(height) {}
 
 		static Microsoft::WRL::ComPtr<ID3D11Texture2D> CreateTexture(Graphics& gfx, unsigned int width, unsigned int height, D3D11_TEXTURE2D_DESC& textureDesc);
 
@@ -23,7 +25,10 @@ namespace GFX::Pipeline::Resource
 
 	public:
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height);
+		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer);
 		virtual ~RenderTarget() = default;
+
+		static inline void UnbindAll(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, nullTargetView.GetAddressOf(), nullptr); }
 
 		constexpr unsigned int GetWidth() const noexcept { return width; }
 		constexpr unsigned int GetHeight() const noexcept { return height; }
@@ -31,7 +36,7 @@ namespace GFX::Pipeline::Resource
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), nullptr); BindViewport(gfx); }
 		inline void Bind(Graphics& gfx, DepthStencil& depthStencil) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, targetView.GetAddressOf(), depthStencil.depthStencilView.Get()); BindViewport(gfx); }
 
-		virtual inline void Unbind(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(1U, nullTargetView.GetAddressOf(), nullptr); }
+		virtual inline void Unbind(Graphics& gfx) noexcept { UnbindAll(gfx); }
 
 		inline void Clear(Graphics& gfx) noexcept override { Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f }); }
 		inline void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept override { GetContext(gfx)->ClearRenderTargetView(targetView.Get(), reinterpret_cast<const FLOAT*>(&color.col)); }

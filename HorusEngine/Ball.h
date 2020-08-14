@@ -7,7 +7,7 @@ namespace GFX::Shape
 	class Ball : public BaseShape, public Object
 	{
 	public:
-		Ball(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color, unsigned int density, float radius);
+		Ball(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color, unsigned int density, float radius);
 		Ball(const Ball&) = delete;
 		Ball& operator=(const Ball&) = delete;
 		virtual ~Ball() = default;

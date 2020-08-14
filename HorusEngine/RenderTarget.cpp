@@ -5,6 +5,17 @@ namespace GFX::Pipeline::Resource
 {
 	const Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RenderTarget::nullTargetView = nullptr;
 
+	void RenderTarget::SetupViewPort() noexcept
+	{
+		// Viewport for different resolutions
+		viewport.Width = static_cast<FLOAT>(width);
+		viewport.Height = static_cast<FLOAT>(height);
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.TopLeftX = 0.0f;
+		viewport.TopLeftY = 0.0f;
+	}
+
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> RenderTarget::CreateTexture(Graphics& gfx, unsigned int width, unsigned int height, D3D11_TEXTURE2D_DESC& textureDesc)
 	{
 		GFX_ENABLE_ALL(gfx);
@@ -36,13 +47,7 @@ namespace GFX::Pipeline::Resource
 		targetViewDesc.Texture2D = D3D11_TEX2D_RTV{ 0 };
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 
-		// Viewport for different resolutions
-		viewport.Width = static_cast<FLOAT>(width);
-		viewport.Height = static_cast<FLOAT>(height);
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
+		SetupViewPort();
 	}
 
 	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height) : width(width), height(height)
@@ -50,5 +55,12 @@ namespace GFX::Pipeline::Resource
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc);
 		InitializeTargetView(gfx, textureDesc, texture);
+	}
+
+	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer) : width(width), height(height)
+	{
+		GFX_ENABLE_ALL(gfx);
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(backBuffer.Get(), nullptr, &targetView));
+		SetupViewPort();
 	}
 }

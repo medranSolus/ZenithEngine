@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "Shapes.h"
 #include "PointLight.h"
+#include "RenderGraphBlurOutline.h"
 #include <map>
 
 class App
@@ -16,7 +17,7 @@ class App
 	float cameraRotateSpeed = 2.0f;
 
 	WinAPI::Window window;
-	GFX::Pipeline::RenderCommander renderer;
+	GFX::Pipeline::RenderGraphBlurOutline renderer;
 	Timer timer;
 	std::unique_ptr<Camera::ICamera> camera = nullptr;
 	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;

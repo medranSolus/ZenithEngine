@@ -7,10 +7,15 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		if (renderTarget == nullptr)
 			depthStencil->Bind(gfx);
-		else if (depthStencil == nullptr)
-			renderTarget->Bind(gfx);
 		else
-			renderTarget->Bind(gfx, *depthStencil);
+		{
+			Resource::RenderTarget::UnbindAll(gfx);
+			renderTarget->Unbind(gfx);
+			if (depthStencil == nullptr)
+				renderTarget->RenderTarget::Bind(gfx);
+			else
+				renderTarget->Bind(gfx, *depthStencil);
+		}
 	}
 
 	void BindingPass::BindAll(Graphics& gfx) noexcept

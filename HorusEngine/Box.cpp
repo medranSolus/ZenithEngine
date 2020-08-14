@@ -5,7 +5,7 @@
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color,
+	Box::Box(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color,
 		float width, float height, float length)
 		: BaseShape(gfx), Object(position, name), sizes(width, height, length)
 	{
@@ -28,11 +28,11 @@ namespace GFX::Shape
 		auto vertexLayout = material->GerVertexLayout();
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Phong"));
-		techniques.back()->AddStep({ 0, std::move(material) });
+		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
-		techniques.back()->AddStep({ 1, std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ 2, std::make_shared<Visual::OutlineMaskScale>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
+		techniques.back()->AddStep({ graph, "outlineDraw", std::make_shared<Visual::OutlineMaskScale>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
 		SetTechniques(gfx, std::move(techniques), *this);
 
 		UpdateTransformMatrix();

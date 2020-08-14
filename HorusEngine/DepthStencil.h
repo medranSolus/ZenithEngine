@@ -14,7 +14,7 @@ namespace GFX::Pipeline::Resource
 		DepthStencil(Graphics& gfx, unsigned int width, unsigned int height);
 		virtual ~DepthStencil() = default;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetRenderTargets(1U, nullptr, depthStencilView.Get()); }
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, depthStencilView.Get()); }
 		inline void Clear(Graphics& gfx) noexcept override { GetContext(gfx)->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.0f, 0U); }
 	};
 }

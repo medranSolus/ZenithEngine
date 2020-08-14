@@ -10,7 +10,7 @@ namespace GFX::Shape
 		Resource::ConstBufferExPixelCache* materialBuffer = nullptr;
 
 	public:
-		SolidGlobe(Graphics& gfx, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color,
+		SolidGlobe(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color,
 			unsigned int latitudeDensity, unsigned int longitudeDensity, float width = 1.0f, float height = 1.0f, float length = 1.0f);
 		SolidGlobe(const SolidGlobe&) = delete;
 		SolidGlobe& operator=(const SolidGlobe&) = delete;

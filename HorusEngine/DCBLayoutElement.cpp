@@ -184,7 +184,7 @@ namespace GFX::Data::CBuffer
 		assert("Indexing into non-array" && type == ElementType::Array);
 		const auto& data = static_cast<ExtraData::Array&>(*extraData);
 		assert(index < data.size);
-		return { offset + data.layoutElement->GetByteSize() * index, &*data.layoutElement };
+		return { offset + 16U * index, &*data.layoutElement };
 	}
 
 	DCBLayoutElement& DCBLayoutElement::operator[](const std::string& key) noexcept(!IS_DEBUG)

@@ -243,7 +243,6 @@
     <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="BindingPass.cpp" />
     <ClCompile Include="Blender.cpp" />
-    <ClCompile Include="Blur.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="BaseProbe.cpp" />
     <ClCompile Include="ClearBufferPass.cpp" />
@@ -302,12 +301,13 @@
     <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
+    <ClCompile Include="RenderGraph.cpp" />
+    <ClCompile Include="RenderGraphBlurOutline.cpp" />
     <ClCompile Include="RenderGraphCompileException.cpp" />
     <ClCompile Include="RenderTarget.cpp" />
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
-    <ClCompile Include="RenderCommander.cpp" />
     <ClCompile Include="QueuePass.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
@@ -551,12 +551,13 @@
     <ClInclude Include="OutlineDrawBlurPass.h" />
     <ClInclude Include="OutlineDrawPass.h" />
     <ClInclude Include="PipelineResources.h" />
+    <ClInclude Include="RenderGraphBlurOutline.h" />
+    <ClInclude Include="RenderPasses.h" />
     <ClInclude Include="RenderPassesBase.h" />
     <ClInclude Include="BaseShape.h" />
     <ClInclude Include="BasicObject.h" />
     <ClInclude Include="BindingPass.h" />
     <ClInclude Include="Blender.h" />
-    <ClInclude Include="Blur.h" />
     <ClInclude Include="Box.h" />
     <ClInclude Include="Cameras.h" />
     <ClInclude Include="ClearBufferPass.h" />
@@ -644,7 +645,6 @@
     <ClInclude Include="SinkDirectBindable.h" />
     <ClInclude Include="SinkDirectBuffer.h" />
     <ClInclude Include="SolidRectangle.h" />
-    <ClInclude Include="RenderCommander.h" />
     <ClInclude Include="QueuePass.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sampler.h" />

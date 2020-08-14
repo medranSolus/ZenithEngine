@@ -5,7 +5,7 @@ namespace GFX::Pipeline::Resource
 {
 	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> RenderTargetShaderInput::nullTextureView = nullptr;
 
-	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot)
+	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot) : RenderTarget(width, height), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 

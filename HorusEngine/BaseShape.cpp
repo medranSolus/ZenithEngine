@@ -22,10 +22,10 @@ namespace GFX::Shape
 		topology->Bind(gfx);
 	}
 
-	void BaseShape::Submit(Pipeline::RenderCommander& renderer) noexcept(!IS_DEBUG)
+	void BaseShape::Submit() noexcept
 	{
 		for (auto& technique : techniques)
-			technique->Submit(renderer, *this);
+			technique->Submit(*this);
 	}
 
 	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

@@ -1,10 +1,10 @@
-#include "DepthStencil.h"
+#include "RenderTarget.h"
 #include "GfxExceptionMacros.h"
 #include "ImGui/imgui_impl_win32.h"
 
 namespace GFX
 {
-	Graphics::Graphics(HWND hWnd, unsigned int width, unsigned int height) : width(width), height(height)
+	Graphics::Graphics(HWND hWnd, unsigned int width, unsigned int height)
 	{
 		GFX_ENABLE_EXCEPT();
 		DXGI_SWAP_CHAIN_DESC swapDesc = { 0 };
@@ -38,22 +38,29 @@ namespace GFX
 
 		Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
-		GFX_THROW_FAILED(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTarget)); // Create view to back buffer allowing writing data
-
-		viewport.Width = static_cast<FLOAT>(width);
-		viewport.Height = static_cast<FLOAT>(height);
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
+		renderTarget = std::make_shared<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer); // Create view to back buffer allowing writing data
 
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
 
+	unsigned int Graphics::GetWidth() const noexcept
+	{
+		return renderTarget->GetWidth();
+	}
+
+	unsigned int Graphics::GetHeight() const noexcept
+	{
+		return renderTarget->GetHeight();
+	}
+
+	void Graphics::BindSwapBuffer() noexcept
+	{
+		renderTarget->Bind(*this);
+	}
+
 	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept
 	{
-		context->OMSetRenderTargets(1U, renderTarget.GetAddressOf(), depthStencil.depthStencilView.Get());
-		context->RSSetViewports(1U, &viewport);
+		renderTarget->Bind(*this, depthStencil);
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)
@@ -81,8 +88,7 @@ namespace GFX
 
 	void Graphics::BeginFrame(float red, float green, float blue) noexcept
 	{
-		const float color[] = { red, green, blue, 1.0f };
-		context->ClearRenderTargetView(renderTarget.Get(), color);
+		renderTarget->Clear(*this, { red, green, blue, 1.0f });
 		if (guiEnabled)
 		{
 			ImGui_ImplDX11_NewFrame();

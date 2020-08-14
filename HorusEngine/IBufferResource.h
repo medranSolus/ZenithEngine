@@ -13,5 +13,6 @@ namespace GFX::Pipeline::Resource
 
 		virtual void Clear(Graphics& gfx) noexcept = 0;
 		virtual inline void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept { Clear(gfx); }
+		inline std::string GetRID() const noexcept override { return "?"; }
 	};
 }
