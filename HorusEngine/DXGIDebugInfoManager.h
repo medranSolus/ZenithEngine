@@ -1,6 +1,8 @@
 #pragma once
 #include "WinAPI.h"
+#pragma warning(disable:4265)
 #include <wrl.h>
+#pragma warning(default:4265)
 #include <dxgidebug.h>
 #include <vector>
 #include <string>

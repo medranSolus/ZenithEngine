@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderTarget.h"
+#include "Surface.h"
 
 namespace GFX::Pipeline::Resource
 {
@@ -16,5 +17,7 @@ namespace GFX::Pipeline::Resource
 		constexpr UINT GetSlot() const noexcept { return slot; }
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline void Unbind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullTextureView.GetAddressOf()); }
+
+		Surface ToSurface(Graphics& gfx) const;
 	};
 }

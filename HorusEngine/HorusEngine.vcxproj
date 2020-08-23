@@ -116,6 +116,7 @@
       <PreprocessorDefinitions>IS_DEBUG=1;WIN32;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/w34265 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +152,7 @@
       <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/w34265 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -189,6 +191,7 @@
       <PreprocessorDefinitions>IS_DEBUG=0;WIN32;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/w34265 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -229,6 +232,7 @@
       <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/w34265 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
