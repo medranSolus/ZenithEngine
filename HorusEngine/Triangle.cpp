@@ -18,9 +18,9 @@ namespace GFX::Shape
 		layout->Append(VertexAttribute::ColorFloat4);
 		Data::VertexBufferData vertices(layout);
 
-		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), randColor(engine));
-		vertices.EmplaceBack(DirectX::XMFLOAT3(vertex3X - centerX, 2.0f * centerY, 0.0f), randColor(engine));
-		vertices.EmplaceBack(DirectX::XMFLOAT3(down - centerX, -centerY, 0.0f), randColor(engine));
+		vertices.EmplaceBack(DirectX::XMFLOAT3(-centerX, -centerY, 0.0f), RandColor(engine));
+		vertices.EmplaceBack(DirectX::XMFLOAT3(vertex3X - centerX, 2.0f * centerY, 0.0f), RandColor(engine));
+		vertices.EmplaceBack(DirectX::XMFLOAT3(down - centerX, -centerY, 0.0f), RandColor(engine));
 
 		AddBind(Resource::VertexBuffer::Get(gfx, typeid(Triangle).name() + name, vertices));
 		AddBind(Resource::IndexBuffer::Get(gfx, typeid(Triangle).name(), std::move(std::vector<unsigned int>({ 0, 1, 2 }))));

@@ -15,7 +15,7 @@ namespace GFX
 	Surface::Surface(const std::string& name)
 	{
 		DXT_ENABLE_EXCEPT();
-		DXT_THROW_FAILED(DirectX::LoadFromWICFile(toUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
+		DXT_THROW_FAILED(DirectX::LoadFromWICFile(Utils::ToUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
 			"Loading image \"" + name + "\": failed.");
 		image = scratch.GetImage(0, 0, 0);
 
@@ -60,7 +60,7 @@ namespace GFX
 				return DirectX::WICCodecs::WIC_CODEC_WMP;
 			throw IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
 		};
-		DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)), toUtf8(filename).c_str()),
+		DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)), Utils::ToUtf8(filename).c_str()),
 			"Saving surface to \"" + filename + "\": failed to save.");
 	}
 

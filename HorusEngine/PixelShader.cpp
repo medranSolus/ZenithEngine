@@ -9,7 +9,7 @@ namespace GFX::Resource
 	{
 		GFX_ENABLE_ALL(gfx);
 		Microsoft::WRL::ComPtr<ID3DBlob> blob;
-		GFX_THROW_FAILED(D3DReadFileToBlob(toUtf8("Shaders\\" + path).c_str(), &blob));
+		GFX_THROW_FAILED(D3DReadFileToBlob(Utils::ToUtf8("Shaders\\" + path).c_str(), &blob));
 		GFX_THROW_FAILED(GetDevice(gfx)->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &pixelShader));
 	}
 }

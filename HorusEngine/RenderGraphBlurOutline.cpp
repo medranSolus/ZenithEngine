@@ -13,7 +13,7 @@ namespace GFX::Pipeline
 		float sum = 0.0f;
 		for (int i = 0; i <= radius; ++i)
 		{
-			const float g = gauss(static_cast<float>(i), sigma);
+			const float g = Math::Gauss(static_cast<float>(i), sigma);
 			sum += g;
 			buffer["coefficients"][i] = g;
 		}

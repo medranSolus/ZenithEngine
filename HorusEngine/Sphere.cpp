@@ -306,21 +306,21 @@ namespace GFX::Primitive
 				if (i1 == lookup.end())
 				{
 					i1 = lookup.emplace(std::move(std::make_pair(indices.at(j), indices.at(j + 1))), static_cast<unsigned int>(vertices.Size())).first;
-					vertices.EmplaceBack(addNormal(vertices[indices.at(j)].Get<VertexAttribute::Position3D>(),
+					vertices.EmplaceBack(Math::AddNormal(vertices[indices.at(j)].Get<VertexAttribute::Position3D>(),
 						vertices[indices.at(j + 1)].Get<VertexAttribute::Position3D>()));
 				}
 				auto i2 = lookup.find({ indices.at(j + 1), indices.at(j + 2) });
 				if (i2 == lookup.end())
 				{
 					i2 = lookup.emplace(std::move(std::make_pair(indices.at(j + 1), indices.at(j + 2))), static_cast<unsigned int>(vertices.Size())).first;
-					vertices.EmplaceBack(addNormal(vertices[indices.at(j + 1)].Get<VertexAttribute::Position3D>(),
+					vertices.EmplaceBack(Math::AddNormal(vertices[indices.at(j + 1)].Get<VertexAttribute::Position3D>(),
 						vertices[indices.at(j + 2)].Get<VertexAttribute::Position3D>()));
 				}
 				auto i3 = lookup.find({ indices.at(j + 2), indices.at(j) });
 				if (i3 == lookup.end())
 				{
 					i3 = lookup.emplace(std::move(std::make_pair(indices.at(j + 2), indices.at(j))), static_cast<unsigned int>(vertices.Size())).first;
-					vertices.EmplaceBack(addNormal(vertices[indices.at(j + 2)].Get<VertexAttribute::Position3D>(),
+					vertices.EmplaceBack(Math::AddNormal(vertices[indices.at(j + 2)].Get<VertexAttribute::Position3D>(),
 						vertices[indices.at(j)].Get<VertexAttribute::Position3D>()));
 				}
 				// Left
@@ -467,9 +467,9 @@ namespace GFX::Primitive
 				Data::Vertex v0 = vertices[indices.at(j)];
 				Data::Vertex v1 = vertices[indices.at(j + 1)];
 				Data::Vertex v2 = vertices[indices.at(j + 2)];
-				DirectX::XMFLOAT3 left = addNormal(v0.Get<VertexAttribute::Position3D>(), v1.Get<VertexAttribute::Position3D>());
-				DirectX::XMFLOAT3 right = addNormal(v1.Get<VertexAttribute::Position3D>(), v2.Get<VertexAttribute::Position3D>());
-				DirectX::XMFLOAT3 down = addNormal(v2.Get<VertexAttribute::Position3D>(), v0.Get<VertexAttribute::Position3D>());
+				DirectX::XMFLOAT3 left = Math::AddNormal(v0.Get<VertexAttribute::Position3D>(), v1.Get<VertexAttribute::Position3D>());
+				DirectX::XMFLOAT3 right = Math::AddNormal(v1.Get<VertexAttribute::Position3D>(), v2.Get<VertexAttribute::Position3D>());
+				DirectX::XMFLOAT3 down = Math::AddNormal(v2.Get<VertexAttribute::Position3D>(), v0.Get<VertexAttribute::Position3D>());
 				const unsigned int id = static_cast<unsigned int>(vertices.Size());
 				vertices.EmplaceBack(left);  // 0
 				vertices.EmplaceBack(left);  // 1

@@ -119,7 +119,7 @@ namespace GFX::Pipeline
 			});
 		if (iter == globalSinks.end())
 			throw RGC_EXCEPT("Global Sink does not exist: " + sink + "!");
-		auto source = splitString(targetName, ".");
+		auto source = Utils::SplitString(targetName, ".");
 		if (source.size() != 2U)
 			throw RGC_EXCEPT("Setting Source in RenderGraph with incorrect format \"" + targetName + "\" for Sink \"" + sink + "\"!");
 		(*iter)->SetSource(std::move(source.at(0)), std::move(source.at(1)));
