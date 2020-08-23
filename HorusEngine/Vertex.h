@@ -20,7 +20,7 @@ namespace GFX::Data
 
 		// Enables parameter pack setting of multiple parameters by element index
 		template<typename First, typename ...Rest>
-		constexpr void SetByIndex(size_t i, First&& first, Rest&&... rest);
+		constexpr void SetByIndex(size_t i, First&& first, Rest&&... rest) noexcept(!IS_DEBUG);
 
 		// Check for proper parameter
 		template<VertexLayout::ElementType T, typename SrcType>
@@ -68,7 +68,7 @@ namespace GFX::Data
 	}
 
 	template<typename T>
-	constexpr void Vertex::SetByIndex(size_t i, T&& val)
+	constexpr void Vertex::SetByIndex(size_t i, T&& val) noexcept(!IS_DEBUG)
 	{
 		const auto& element = layout.ResolveByIndex(i);
 		VertexLayout::Bridge<AttributeSetting>(element.GetType(), this, data + element.GetOffset(), std::forward<T>(val));
