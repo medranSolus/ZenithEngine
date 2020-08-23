@@ -5,7 +5,23 @@
 
 namespace GFX::Pipeline
 {
-	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx) : RenderGraph(gfx)
+	void RenderGraphBlurOutline::SetKernel()
+	{
+		assert(radius <= maxRadius);
+		auto& buffer = kernel->GetBuffer();
+		buffer["radius"] = radius;
+		float sum = 0.0f;
+		for (int i = 0; i <= radius; ++i)
+		{
+			const float g = gauss(static_cast<float>(i), sigma);
+			sum += g;
+			buffer["coefficients"][i] = g;
+		}
+		for (int i = 0; i <= radius; ++i)
+			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
+	}
+
+	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma) : RenderGraph(gfx), radius(radius), sigma(sigma)
 	{
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
@@ -14,7 +30,7 @@ namespace GFX::Pipeline
 		kernelLayout["coefficients"].InitArray(DCBElementType::Float, maxRadius + 1);
 		Data::CBuffer::DynamicCBuffer kernelBuffer(std::move(kernelLayout));
 		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 0U);
-		SetKernel(7, 2.6f);
+		SetKernel();
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("kernel", kernel));
 
 		Data::CBuffer::DCBLayout directionLayout;
@@ -70,17 +86,15 @@ namespace GFX::Pipeline
 
 	void RenderGraphBlurOutline::SetKernel(int radius, float sigma)
 	{
-		assert(radius <= maxRadius);
-		auto& buffer = kernel->GetBuffer();
-		buffer["radius"] = radius;
-		float sum = 0.0f;
-		for (int i = 0; i <= radius; ++i)
-		{
-			const float g = gauss(static_cast<float>(i), sigma);
-			sum += g;
-			buffer["coefficients"][i] = g;
-		}
-		for (int i = 0; i <= radius; ++i)
-			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
+		this->sigma = sigma;
+		this->radius = radius;
+		SetKernel();
+	}
+
+	void RenderGraphBlurOutline::ShowWindow() noexcept
+	{
+		ImGui::Text("Blur Control");
+		if (ImGui::SliderInt("Radius", &radius, 1, maxRadius) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
+			SetKernel();
 	}
 }

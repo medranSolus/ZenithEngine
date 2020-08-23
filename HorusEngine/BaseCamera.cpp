@@ -31,10 +31,9 @@ namespace Camera
 
 	void BaseCamera::ShowWindow() noexcept
 	{
-		if (ImGui::SliderAngle("FOV", &fov, 1.0f, 179.0f, "%.1f") ||
+		projectionUpdate = ImGui::SliderAngle("FOV", &fov, 1.0f, 179.0f, "%.1f") ||
 			ImGui::SliderFloat("Near clip", &nearClip, 0.001f, 10.0f, "%.3f") ||
 			ImGui::SliderFloat("Far clip", &farClip, 1.0f, 50000.0f, "%.1f") ||
-			ImGui::SliderFloat("Ratio", &screenRatio, 0.1f, 5.0f, "%.2f"))
-			projectionUpdate = true;
+			ImGui::SliderFloat("Ratio", &screenRatio, 0.1f, 5.0f, "%.2f");
 	}
 }

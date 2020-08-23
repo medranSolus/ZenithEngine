@@ -112,6 +112,7 @@ inline void App::ShowOptionsWindow()
 		const auto& cameraPos = camera->GetPos();
 		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
 		camera->ShowWindow();
+		renderer.ShowWindow();
 	}
 	ImGui::End();
 }
