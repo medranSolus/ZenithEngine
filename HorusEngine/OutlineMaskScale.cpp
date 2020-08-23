@@ -26,7 +26,7 @@ namespace GFX::Visual
 		: buffer(MakeLayout())
 	{
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
-		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		buffer["scale"] = 1.3f;
 

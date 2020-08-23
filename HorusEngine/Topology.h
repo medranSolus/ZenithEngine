@@ -5,7 +5,6 @@ namespace GFX::Resource
 {
 	class Topology : public IBindable
 	{
-	protected:
 		D3D11_PRIMITIVE_TOPOLOGY type;
 
 	public:

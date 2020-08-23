@@ -5,7 +5,6 @@ namespace GFX::Resource
 {
 	class VertexShader : public IBindable
 	{
-	protected:
 		std::string path;
 		Microsoft::WRL::ComPtr<ID3DBlob> bytecode;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
@@ -21,6 +20,7 @@ namespace GFX::Resource
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->VSSetShader(vertexShader.Get(), nullptr, 0U); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path); }
+		inline const std::string& GetName() const noexcept { return path; }
 
 		inline ID3DBlob* GetBytecode() const noexcept { return bytecode.Get(); }
 	};

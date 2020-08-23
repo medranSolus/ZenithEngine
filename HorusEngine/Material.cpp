@@ -7,7 +7,7 @@ namespace GFX::Visual
 		AddBind(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
 		vertexLayout = std::make_shared<Data::VertexLayout>();
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
-		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
@@ -26,7 +26,7 @@ namespace GFX::Visual
 		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
 		vertexLayout = std::make_shared<Data::VertexLayout>();
 		vertexLayout->Append(VertexAttribute::Normal);
-		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
@@ -96,7 +96,7 @@ namespace GFX::Visual
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS + ".cso"));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS + ".cso");
-		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		if (hasTexture)
 			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, true));

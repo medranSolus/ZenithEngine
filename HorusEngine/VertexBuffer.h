@@ -6,7 +6,6 @@ namespace GFX::Resource
 {
 	class VertexBuffer : public IBindable
 	{
-	protected:
 		UINT stride;
 		std::string name;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;

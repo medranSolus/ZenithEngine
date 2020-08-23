@@ -5,7 +5,7 @@ namespace GFX::Visual
 	OutlineMaskOffset::OutlineMaskOffset(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout)
 	{
 		auto vertexShader = Resource::VertexShader::Get(gfx, "OffsetVS.cso");
-		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader->GetBytecode()));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 
 		GFX::Data::CBuffer::DCBLayout vertexCBbufferLayout;

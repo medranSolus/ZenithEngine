@@ -5,7 +5,6 @@ namespace GFX::Resource
 {
 	class PixelShader : public IBindable
 	{
-	protected:
 		std::string path;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 

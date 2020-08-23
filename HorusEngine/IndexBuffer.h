@@ -5,7 +5,6 @@ namespace GFX::Resource
 {
 	class IndexBuffer : public IBindable
 	{
-	protected:
 		unsigned int count;
 		std::string name;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;

@@ -1,26 +1,26 @@
 #pragma once
-#include "Codex.h"
+#include "VertexShader.h"
 #include "VertexLayout.h"
 
 namespace GFX::Resource
 {
 	class InputLayout : public IBindable
 	{
-	protected:
 		std::shared_ptr<Data::VertexLayout> vertexLayout = nullptr;
+		std::shared_ptr<VertexShader> shader = nullptr;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
 	public:
-		InputLayout(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode);
+		InputLayout(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader);
 		InputLayout(const InputLayout&) = delete;
 		InputLayout& operator=(const InputLayout&) = delete;
 		virtual ~InputLayout() = default;
 
-		static inline std::shared_ptr<InputLayout> Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode);
-		static inline std::string GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode = nullptr) noexcept;
+		static inline std::shared_ptr<InputLayout> Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader);
+		static inline std::string GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader) noexcept;
 
 		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->IASetInputLayout(inputLayout.Get()); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(vertexLayout); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(vertexLayout, shader); }
 	};
 
 	template<>
@@ -29,13 +29,13 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<InputLayout> InputLayout::Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode)
+	inline std::shared_ptr<InputLayout> InputLayout::Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader)
 	{
-		return Codex::Resolve<InputLayout>(gfx, vertexLayout, vertexShaderBytecode);
+		return Codex::Resolve<InputLayout>(gfx, vertexLayout, shader);
 	}
 
-	inline std::string InputLayout::GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, ID3DBlob* vertexShaderBytecode) noexcept
+	inline std::string InputLayout::GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader) noexcept
 	{
-		return "#" + std::string(typeid(InputLayout).name()) + "#" + vertexLayout->GetLayoutCode() + "#";
+		return "#" + std::string(typeid(InputLayout).name()) + "#" + vertexLayout->GetLayoutCode() + "#" + shader->GetName() + "#";
 	}
 }
