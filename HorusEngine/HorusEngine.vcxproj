@@ -75,6 +75,7 @@
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
+    <MultiProcFXC>true</MultiProcFXC>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -82,6 +83,7 @@
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
+    <MultiProcFXC>true</MultiProcFXC>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -89,6 +91,7 @@
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
+    <MultiProcFXC>true</MultiProcFXC>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -96,6 +99,7 @@
     <IntDir>$(PlatformShortName)\$(Configuration)\</IntDir>
     <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     <IncludePath>$(SolutionDir);$(SolutionDir)Common;$(IncludePath)</IncludePath>
+    <MultiProcFXC>true</MultiProcFXC>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,6 +131,9 @@
       <ShaderModel>5.0</ShaderModel>
       <ObjectFileOutput>$(OutDir)Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)Shaders" mkdir "$(OutDir)Shaders"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -159,6 +166,9 @@
       <ShaderModel>5.0</ShaderModel>
       <ObjectFileOutput>$(OutDir)Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)Shaders" mkdir "$(OutDir)Shaders"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -196,6 +206,9 @@
       <ShaderModel>5.0</ShaderModel>
       <ObjectFileOutput>$(OutDir)Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)Shaders" mkdir "$(OutDir)Shaders"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -233,6 +246,9 @@
       <ShaderModel>5.0</ShaderModel>
       <ObjectFileOutput>$(OutDir)Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)Shaders" mkdir "$(OutDir)Shaders"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
