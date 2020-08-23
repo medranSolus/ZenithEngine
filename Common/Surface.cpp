@@ -15,17 +15,53 @@ namespace GFX
 	Surface::Surface(const std::string& name)
 	{
 		DXT_ENABLE_EXCEPT();
-		DXT_THROW_FAILED(DirectX::LoadFromWICFile(Utils::ToUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
-			"Loading image \"" + name + "\": failed.");
-		image = scratch.GetImage(0, 0, 0);
+		const std::filesystem::path path = name;
+		std::string ext = path.extension().string();
+		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return std::tolower(c); });
 
-		if (image->format != pixelFormat)
+		if (ext == ".dds")
 		{
-			DirectX::ScratchImage converted;
-			DXT_THROW_FAILED(DirectX::Convert(*image, pixelFormat, DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted),
-				"Converting image \"" + name + "\": failed.");
-			scratch = std::move(converted);
+			DXT_THROW_FAILED(DirectX::LoadFromDDSFile(Utils::ToUtf8(name).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_FORCE_RGB, nullptr, scratch),
+				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
+
+			if (image->format != pixelFormat)
+			{
+				DirectX::ScratchImage decompressed;
+				DXT_THROW_FAILED(DirectX::Decompress(*image, pixelFormat, decompressed),
+					"Decompressing image \"" + name + "\": failed.");
+				scratch = std::move(decompressed);
+				image = scratch.GetImage(0, 0, 0);
+			}
+		}
+		else if (ext == ".hdr")
+		{
+			DXT_THROW_FAILED(DirectX::LoadFromHDRFile(Utils::ToUtf8(name).c_str(), nullptr, scratch),
+				"Loading image \"" + name + "\": failed.");
+
+			throw IMG_EXCEPT("HDR textures not implemented!");
+		}
+		else if (ext == ".tga")
+		{
+			DXT_THROW_FAILED(DirectX::LoadFromTGAFile(Utils::ToUtf8(name).c_str(), nullptr, scratch),
+				"Loading image \"" + name + "\": failed.");
+
+			throw IMG_EXCEPT("TGA textures not implemented!");
+		}
+		else
+		{
+			DXT_THROW_FAILED(DirectX::LoadFromWICFile(Utils::ToUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
+				"Loading image \"" + name + "\": failed.");
+			image = scratch.GetImage(0, 0, 0);
+
+			if (image->format != pixelFormat)
+			{
+				DirectX::ScratchImage converted;
+				DXT_THROW_FAILED(DirectX::Convert(*image, pixelFormat, DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted),
+					"Converting image \"" + name + "\": failed.");
+				scratch = std::move(converted);
+				image = scratch.GetImage(0, 0, 0);
+			}
 		}
 	}
 
@@ -40,28 +76,48 @@ namespace GFX
 	void Surface::Save(const std::string& filename) const
 	{
 		DXT_ENABLE_EXCEPT();
-		const auto GetCodecID = [](const std::string& filename) -> DirectX::WICCodecs
+		const std::filesystem::path path = filename;
+		std::string ext = path.extension().string();
+		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return std::tolower(c); });
+
+		if (ext == ".dds")
 		{
-			const std::filesystem::path path = filename;
-			const std::string ext = path.extension().string();
-			if (ext == ".png")
-				return DirectX::WICCodecs::WIC_CODEC_PNG;
-			else if (ext == ".jpg" || ext == ".jpeg")
-				return DirectX::WICCodecs::WIC_CODEC_JPEG;
-			else if (ext == ".bmp")
-				return DirectX::WICCodecs::WIC_CODEC_BMP;
-			else if (ext == ".tif" || ext == ".tiff")
-				return DirectX::WICCodecs::WIC_CODEC_TIFF;
-			else if (ext == ".ico")
-				return DirectX::WICCodecs::WIC_CODEC_ICO;
-			else if (ext == ".gif")
-				return DirectX::WICCodecs::WIC_CODEC_GIF;
-			else if (ext == ".hdp" || ext == ".jxr" || ext == ".wdp")
-				return DirectX::WICCodecs::WIC_CODEC_WMP;
-			throw IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
-		};
-		DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)), Utils::ToUtf8(filename).c_str()),
-			"Saving surface to \"" + filename + "\": failed to save.");
+			DXT_THROW_FAILED(DirectX::SaveToDDSFile(image, scratch.GetImageCount(), scratch.GetMetadata(), DirectX::DDS_FLAGS::DDS_FLAGS_FORCE_DX10_EXT, Utils::ToUtf8(filename).c_str()),
+				"Saving surface to \"" + filename + "\": failed to save.");
+		}
+		else if (ext == ".hdr")
+		{
+			DXT_THROW_FAILED(DirectX::SaveToHDRFile(*image, Utils::ToUtf8(filename).c_str()),
+				"Saving surface to \"" + filename + "\": failed to save.");
+		}
+		else if (ext == ".tga")
+		{
+			DXT_THROW_FAILED(DirectX::SaveToTGAFile(*image, Utils::ToUtf8(filename).c_str()),
+				"Saving surface to \"" + filename + "\": failed to save.");
+		}
+		else
+		{
+			const auto GetCodecID = [&filename](const std::string& ext) -> DirectX::WICCodecs
+			{
+				if (ext == ".png")
+					return DirectX::WICCodecs::WIC_CODEC_PNG;
+				else if (ext == ".jpg" || ext == ".jpeg")
+					return DirectX::WICCodecs::WIC_CODEC_JPEG;
+				else if (ext == ".bmp")
+					return DirectX::WICCodecs::WIC_CODEC_BMP;
+				else if (ext == ".tif" || ext == ".tiff")
+					return DirectX::WICCodecs::WIC_CODEC_TIFF;
+				else if (ext == ".ico")
+					return DirectX::WICCodecs::WIC_CODEC_ICO;
+				else if (ext == ".gif")
+					return DirectX::WICCodecs::WIC_CODEC_GIF;
+				else if (ext == ".hdp" || ext == ".jxr" || ext == ".wdp")
+					return DirectX::WICCodecs::WIC_CODEC_WMP;
+				throw IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
+			};
+			DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)), Utils::ToUtf8(filename).c_str()),
+				"Saving surface to \"" + filename + "\": failed to save.");
+		}
 	}
 
 #pragma region Exception
