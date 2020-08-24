@@ -265,6 +265,7 @@
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="BaseProbe.cpp" />
+    <ClCompile Include="CameraIndicator.cpp" />
     <ClCompile Include="CameraPool.cpp" />
     <ClCompile Include="ClearBufferPass.cpp" />
     <ClCompile Include="Color.cpp" />
@@ -568,6 +569,7 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BasePass.h" />
+    <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
     <ClInclude Include="OutlineDrawBlurPass.h" />

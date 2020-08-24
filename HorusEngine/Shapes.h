@@ -1,8 +1,9 @@
 #pragma once
+#include "Ball.h"
 #include "Box.h"
-#include "Triangle.h"
+#include "CameraIndicator.h"
 #include "Globe.h"
+#include "Model.h"
 #include "SolidGlobe.h"
 #include "SolidRectangle.h"
-#include "Ball.h"
-#include "Model.h"
+#include "Triangle.h"

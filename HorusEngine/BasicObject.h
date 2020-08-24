@@ -37,6 +37,7 @@ namespace GFX
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { probe.VisitObject(buffer); }
-		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
+		void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override;
+		void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override;
 	};
 }

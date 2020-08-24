@@ -3,11 +3,11 @@
 
 namespace Camera
 {
-	DirectX::FXMMATRIX BaseCamera::GetView() const noexcept
+	BaseCamera::BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
+		float fov, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept
+		: ICamera(name), position(position), projection({ fov, gfx.GetRatio(), nearClip, farClip })
 	{
-		if (viewUpdate)
-			return UpdateView();
-		return DirectX::XMLoadFloat4x4(&view);
+		indicator = std::make_shared<GFX::Shape::CameraIndicator>(gfx, graph, position, DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f));
 	}
 
 	void BaseCamera::Roll(float delta) noexcept
@@ -15,13 +15,17 @@ namespace Camera
 		DirectX::XMStoreFloat3(&up,
 			DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&up),
 				DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, delta)));
+		indicator->UpdateAngle({ 0.0f, 0.0f, delta });
 		viewUpdate = true;
 	}
 
 	void BaseCamera::Update(GFX::Graphics& gfx) const noexcept
 	{
 		if (viewUpdate)
+		{
 			gfx.GetCamera() = UpdateView();
+			indicator->SetPos(position);
+		}
 		if (projectionUpdate)
 		{
 			projectionUpdate = false;
@@ -29,11 +33,9 @@ namespace Camera
 		}
 	}
 
-	void BaseCamera::ShowWindow() noexcept
+	void BaseCamera::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
-		projectionUpdate = ImGui::SliderAngle("FOV", &fov, 1.0f, 179.0f, "%.1f") ||
-			ImGui::SliderFloat("Near clip", &nearClip, 0.001f, 10.0f, "%.3f") ||
-			ImGui::SliderFloat("Far clip", &farClip, 1.0f, 50000.0f, "%.1f") ||
-			ImGui::SliderFloat("Ratio", &screenRatio, 0.1f, 5.0f, "%.2f");
+		projectionUpdate = probe.VisitCamera(projection);
+		//indicator->Accept(gfx, probe);
 	}
 }

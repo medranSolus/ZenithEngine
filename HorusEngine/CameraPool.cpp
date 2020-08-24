@@ -73,7 +73,14 @@ namespace Camera
 		return true;
 	}
 
-	void CameraPool::ShowWindow() noexcept
+	void CameraPool::Submit() noexcept
+	{
+		for (auto it = cameras.begin(); it != cameras.end(); ++it)
+			if (it->first != active)
+				it->second->Submit();
+	}
+
+	void CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
 		ImGui::SliderFloat("Move speed", &moveSpeed, 0.001f, maxMoveSpeed, "%.3f");
 		ImGui::SliderFloat("Roll speed", &rollSpeed, 0.01f, 0.5f, "%.2f");
@@ -98,6 +105,6 @@ namespace Camera
 		ImGui::NewLine();
 		const auto& cameraPos = GetCamera().GetPos();
 		ImGui::Text("Position: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
-		GetCamera().ShowWindow();
+		GetCamera().Accept(gfx, probe);
 	}
 }

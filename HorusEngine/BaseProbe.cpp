@@ -1,6 +1,7 @@
 #include "BaseProbe.h"
 #include "Technique.h"
 #include "BaseShape.h"
+#include "ICamera.h"
 
 #define Tag(label) MakeTag(label).c_str()
 
@@ -133,5 +134,13 @@ namespace GFX::Probe
 			else
 				shape.SetTopologyPlain(gfx);
 		}
+	}
+
+	bool BaseProbe::VisitCamera(Camera::ProjectionData& projection) noexcept
+	{
+		return ImGui::SliderAngle("FOV", &projection.fov, 1.0f, 179.0f, "%.1f") ||
+			ImGui::SliderFloat("Near clip", &projection.nearClip, 0.001f, 10.0f, "%.3f") ||
+			ImGui::SliderFloat("Far clip", &projection.farClip, 1.0f, 50000.0f, "%.1f") ||
+			ImGui::SliderFloat("Ratio", &projection.screenRatio, 0.1f, 5.0f, "%.2f");
 	}
 }

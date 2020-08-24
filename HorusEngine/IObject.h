@@ -20,6 +20,8 @@ namespace GFX
 		virtual const std::string& GetName() const noexcept = 0;
 		virtual void SetName(const std::string& newName) noexcept = 0;
 
-		virtual void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept = 0;
+		virtual inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept { UpdatePos(delta); UpdateAngle(deltaAngle); }
+		virtual void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept = 0;
+		virtual void UpdateAngle(const DirectX::XMFLOAT3& delta) noexcept = 0;
 	};
 }

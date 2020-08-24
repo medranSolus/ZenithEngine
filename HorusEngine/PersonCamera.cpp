@@ -12,13 +12,13 @@ namespace Camera
 		return std::move(matrix);
 	}
 
-	PersonCamera::PersonCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip,
-		short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept
-		: BaseCamera(name, fov, screenRatio, nearClip, farClip, position)
+	PersonCamera::PersonCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name, float fov,
+		float nearClip, float farClip, short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept
+		: BaseCamera(gfx, graph, name, fov, nearClip, farClip, position)
 	{
 		constexpr float pi = static_cast<float>(M_PI - FLT_EPSILON);
 		Rotate(pi * static_cast<float>(Math::ClampAngle(angleVertical, 180)) / 361.0f,
-			static_cast<float>(angleHorizontal) * pi / (180.0f * screenRatio));
+			static_cast<float>(angleHorizontal) * pi / (180.0f * gfx.GetRatio()));
 	}
 
 	void PersonCamera::MoveX(float dX) noexcept
@@ -55,9 +55,10 @@ namespace Camera
 		if (angleDX || angleDY)
 		{
 			DirectX::XMVECTOR vForward = DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&eyeDirection),
-				DirectX::XMMatrixRotationRollPitchYaw(moveDirection.z * angleDX, angleDY * screenRatio, moveDirection.x * angleDX * -1.0f));
+				DirectX::XMMatrixRotationRollPitchYaw(moveDirection.z * angleDX, angleDY * projection.screenRatio, moveDirection.x * angleDX * -1.0f));
 			DirectX::XMStoreFloat3(&eyeDirection, DirectX::XMVector3Normalize(vForward));
 			DirectX::XMStoreFloat3(&moveDirection, DirectX::XMVector3Normalize(DirectX::XMVectorSetY(vForward, 0.0f)));
+			indicator->UpdateAngle({ angleDX, angleDY, 0.0f });
 			viewUpdate = true;
 		}
 	}

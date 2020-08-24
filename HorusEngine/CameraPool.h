@@ -5,7 +5,7 @@
 
 namespace Camera
 {
-	class CameraPool
+	class CameraPool : public GFX::IRenderable
 	{
 		static constexpr float maxMoveSpeed = 3.0f;
 
@@ -25,6 +25,7 @@ namespace Camera
 		void ProcessInput(WinAPI::Window& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
-		void ShowWindow() noexcept;
+		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
+		void Submit() noexcept override;
 	};
 }

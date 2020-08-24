@@ -32,7 +32,9 @@ namespace GFX::Light
 		inline const std::string& GetName() const noexcept override { return mesh.GetName(); }
 		inline void SetName(const std::string& newName) noexcept override { mesh.SetName(newName); }
 
-		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { mesh.Update(delta, deltaAngle); }
+		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept override { mesh.Update(delta, deltaAngle); }
+		inline void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override { mesh.UpdatePos(delta); }
+		inline void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override { mesh.UpdateAngle(deltaAngle); }
 
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept;

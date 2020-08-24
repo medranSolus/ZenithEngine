@@ -43,7 +43,7 @@ namespace GFX::Resource
 
 		void Bind(Graphics& gfx) noexcept override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { dirty = probe.Visit(buffer); }
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { dirty |= probe.Visit(buffer); }
 	};
 
 	template<typename T>

@@ -5,15 +5,13 @@ namespace Camera
 {
 	class FloatingCamera : public BaseCamera
 	{
-		using Camera::BaseCamera::BaseCamera;
-
 		DirectX::XMFLOAT3 moveDirection = { 0.0f, 0.0f, 1.0f };
 
 		DirectX::FXMMATRIX UpdateView() const noexcept override;
 
 	public:
-		FloatingCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip,
-			short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept;
+		FloatingCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name, float fov,
+			float nearClip, float farClip, short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept;
 		FloatingCamera(const FloatingCamera&) = default;
 		FloatingCamera& operator=(const FloatingCamera&) = default;
 		virtual ~FloatingCamera() = default;

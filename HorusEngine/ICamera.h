@@ -1,9 +1,17 @@
 #pragma once
-#include "Graphics.h"
+#include "IRenderable.h"
 
 namespace Camera
 {
-	class ICamera
+	struct ProjectionData
+	{
+		float fov;
+		float screenRatio;
+		float nearClip;
+		float farClip;
+	};
+
+	class ICamera : public GFX::IRenderable
 	{
 		std::string name;
 
@@ -26,8 +34,6 @@ namespace Camera
 
 		virtual void Rotate(float angleDX, float angleDY) noexcept = 0;
 		virtual void Roll(float delta) noexcept = 0;
-
 		virtual void Update(GFX::Graphics& gfx) const noexcept = 0;
-		virtual void ShowWindow() noexcept = 0;
 	};
 }

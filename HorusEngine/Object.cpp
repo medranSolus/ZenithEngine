@@ -50,6 +50,18 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
+	void Object::UpdatePos(const DirectX::XMFLOAT3& delta) noexcept
+	{
+		BasicObject::UpdatePos(delta);
+		UpdateTransformMatrix();
+	}
+
+	void Object::UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept
+	{
+		BasicObject::UpdateAngle(deltaAngle);
+		UpdateTransformMatrix();
+	}
+
 	void Object::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		if (probe.VisitObject(buffer))

@@ -36,7 +36,10 @@ namespace GFX::Shape
 		inline const std::string& GetName() const noexcept override { return name; }
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }
 
-		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override { root->Update(delta, deltaAngle); }
+		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept override { root->Update(delta, deltaAngle); }
+		inline void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override { root->UpdatePos(delta); }
+		inline void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override { root->UpdateAngle(deltaAngle); }
+
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Accept(gfx, probe); }
 		inline void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { probe.Visit(gfx, *this, *root); }
 

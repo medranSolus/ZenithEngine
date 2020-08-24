@@ -20,7 +20,9 @@ namespace GFX
 		void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override;
 		void SetScale(float newScale) noexcept override;
 		void SetPos(const DirectX::XMFLOAT3& position) noexcept override;
-		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle = { 0.0f,0.0f,0.0f }) noexcept override;
+		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept override;
+		void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override;
+		void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 
 		virtual void UpdateTransformMatrix() noexcept;

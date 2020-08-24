@@ -24,9 +24,13 @@ namespace GFX
 		buffer["scale"] = scale;
 	}
 
-	void BasicObject::Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept
+	void BasicObject::UpdatePos(const DirectX::XMFLOAT3& delta) noexcept
 	{
 		DirectX::XMStoreFloat3(&buffer["position"], DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&buffer["position"]), DirectX::XMLoadFloat3(&delta)));
+	}
+
+	void BasicObject::UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept
+	{
 		DirectX::XMStoreFloat3(&buffer["angle"],
 			DirectX::XMVectorModAngles(DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&buffer["angle"]),
 				DirectX::XMLoadFloat3(&deltaAngle))));
