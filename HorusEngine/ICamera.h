@@ -5,8 +5,13 @@ namespace Camera
 {
 	class ICamera
 	{
+		std::string name;
+
 	public:
+		inline ICamera(const std::string& name) noexcept : name(name) {}
 		virtual ~ICamera() = default;
+
+		inline const std::string& GetName() const noexcept { return name; }
 
 		virtual void ResetView() const noexcept = 0;
 		virtual void ResetProjection() const noexcept = 0;

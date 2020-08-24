@@ -6,6 +6,15 @@
 
 namespace Math
 {
+	constexpr short ClampAngle(short angle, short maxAngle = 360) noexcept
+	{
+		if (angle > maxAngle)
+			return maxAngle;
+		else if (angle < -maxAngle)
+			return -maxAngle;
+		return angle;
+	}
+
 	constexpr bool Equals(float a, float b) noexcept
 	{
 		return a >= b - FLT_EPSILON && a <= b + FLT_EPSILON;

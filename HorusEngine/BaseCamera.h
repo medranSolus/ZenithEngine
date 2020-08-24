@@ -19,8 +19,8 @@ namespace Camera
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
 
 	public:
-		BaseCamera(float fov, float screenRatio, float nearClip, float farClip, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,-1.0f }) noexcept
-			: position(position), fov(fov), screenRatio(screenRatio), nearClip(nearClip), farClip(farClip) {}
+		inline BaseCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept
+			: ICamera(name), position(position), fov(fov), screenRatio(screenRatio), nearClip(nearClip), farClip(farClip) {}
 		BaseCamera(const BaseCamera&) = default;
 		BaseCamera& operator=(const BaseCamera&) = default;
 		virtual ~BaseCamera() = default;

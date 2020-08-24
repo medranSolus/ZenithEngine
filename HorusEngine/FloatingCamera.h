@@ -12,6 +12,8 @@ namespace Camera
 		DirectX::FXMMATRIX UpdateView() const noexcept override;
 
 	public:
+		FloatingCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip,
+			short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept;
 		FloatingCamera(const FloatingCamera&) = default;
 		FloatingCamera& operator=(const FloatingCamera&) = default;
 		virtual ~FloatingCamera() = default;

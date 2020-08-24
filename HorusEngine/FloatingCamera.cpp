@@ -1,4 +1,5 @@
 #include "FloatingCamera.h"
+#include "Math.h"
 
 namespace Camera
 {
@@ -9,6 +10,15 @@ namespace Camera
 		DirectX::XMStoreFloat4x4(&view, matrix);
 		viewUpdate = false;
 		return std::move(matrix);
+	}
+
+	FloatingCamera::FloatingCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip,
+		short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept
+		: BaseCamera(name, fov, screenRatio, nearClip, farClip, position)
+	{
+		constexpr float pi = static_cast<float>(M_PI - FLT_EPSILON);
+		Rotate(pi * static_cast<float>(Math::ClampAngle(angleVertical, 180)) / 361.0f,
+			static_cast<float>(angleHorizontal) * pi / (180.0f * screenRatio));
 	}
 
 	void FloatingCamera::MoveX(float dX) noexcept

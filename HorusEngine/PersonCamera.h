@@ -13,6 +13,8 @@ namespace Camera
 		DirectX::FXMMATRIX UpdateView() const noexcept override;
 
 	public:
+		PersonCamera(const std::string& name, float fov, float screenRatio, float nearClip, float farClip,
+			short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept;
 		PersonCamera(const PersonCamera&) = default;
 		PersonCamera& operator=(const PersonCamera&) = default;
 		virtual ~PersonCamera() = default;

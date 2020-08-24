@@ -1,57 +1,9 @@
 #include "App.h"
-#include "Cameras.h"
 #include "Math.h"
 
 inline void App::ProcessInput()
 {
-	while (window.Mouse().IsInput())
-	{
-		if (auto opt = window.Mouse().Read())
-		{
-			const auto& value = opt.value();
-			if (value.IsRightDown() && window.IsCursorEnabled())
-				camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / window.Gfx().GetHeight(),
-					cameraRotateSpeed * static_cast<float>(value.GetDX()) / window.Gfx().GetWidth());
-			switch (value.GetType())
-			{
-			case WinAPI::Mouse::Event::Type::WheelForward:
-			{
-				if (!window.IsCursorEnabled() && cameraSpeed <= maxMoveSpeed - 0.01f - FLT_EPSILON)
-					cameraSpeed += 0.01f;
-				break;
-			}
-			case WinAPI::Mouse::Event::Type::WheelBackward:
-			{
-				if (!window.IsCursorEnabled() && cameraSpeed >= 0.012f + FLT_EPSILON)
-					cameraSpeed -= 0.01f;
-				break;
-			}
-			case WinAPI::Mouse::Event::Type::RawMove:
-			{
-				if (!window.IsCursorEnabled())
-					camera->Rotate(cameraRotateSpeed * static_cast<float>(value.GetDY()) / window.Gfx().GetHeight(),
-						cameraRotateSpeed * static_cast<float>(value.GetDX()) / window.Gfx().GetWidth());
-				break;
-			}
-			}
-		}
-	}
-	if (window.Keyboard().IsKeyDown('W'))
-		camera->MoveZ(cameraSpeed);
-	if (window.Keyboard().IsKeyDown('S'))
-		camera->MoveZ(-cameraSpeed);
-	if (window.Keyboard().IsKeyDown('A'))
-		camera->MoveX(-cameraSpeed);
-	if (window.Keyboard().IsKeyDown('D'))
-		camera->MoveX(cameraSpeed);
-	if (window.Keyboard().IsKeyDown(VK_SPACE))
-		camera->MoveY(cameraSpeed);
-	if (window.Keyboard().IsKeyDown('C'))
-		camera->MoveY(-cameraSpeed);
-	if (window.Keyboard().IsKeyDown(VK_LEFT))
-		camera->Roll(cameraRollSpeed);
-	if (window.Keyboard().IsKeyDown(VK_RIGHT))
-		camera->Roll(-cameraRollSpeed);
+	cameras->ProcessInput(window);
 	while (window.Keyboard().IsKeyReady())
 	{
 		if (auto opt = window.Keyboard().ReadKey())
@@ -106,12 +58,8 @@ inline void App::ShowOptionsWindow()
 	if (ImGui::Begin("Options"))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		ImGui::SliderFloat("Move speed", &cameraSpeed, 0.001f, maxMoveSpeed, "%.3f");
-		ImGui::SliderFloat("Roll speed", &cameraRollSpeed, 0.01f, 0.5f, "%.2f");
-		ImGui::SliderFloat("Camera speed", &cameraRotateSpeed, 1.0f, 5.0f, "%.1f");
-		const auto& cameraPos = camera->GetPos();
-		ImGui::Text("Camera: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
-		camera->ShowWindow();
+		cameras->ShowWindow();
+		ImGui::NewLine();
 		renderer.ShowWindow();
 	}
 	ImGui::End();
@@ -152,9 +100,9 @@ void App::MakeFrame()
 {
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
-	camera->Update(window.Gfx());
+	cameras->Bind(window.Gfx());
 	pointLight->Submit();
-	pointLight->Bind(window.Gfx(), *camera);
+	pointLight->Bind(window.Gfx(), cameras->GetCamera());
 	for (auto& shape : shapes)
 		if (shape)
 			shape->Submit();
@@ -171,9 +119,10 @@ void App::MakeFrame()
 App::App(const std::string& commandLine) : window(1600, 900, windowTitle), renderer(window.Gfx())
 {
 	objects.emplace("---None---", nullptr);
-	camera = std::make_unique<Camera::PersonCamera>(1.047f, window.Gfx().GetRatio(), 0.01f, viewDistance);
+	cameras = std::make_unique<Camera::CameraPool>(std::make_unique<Camera::PersonCamera>("Camera_1", 1.047f, window.Gfx().GetRatio(), 0.01f, viewDistance, 180, 0, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)));
+	cameras->AddCamera(std::make_unique<Camera::PersonCamera>("Camera_2", 1.047f, window.Gfx().GetRatio(), 0.01f, viewDistance, 90, 45, DirectX::XMFLOAT3(0.0f, 7.0f, -3.0f)));
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
-	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f), "PointLight");
+	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 0.0f, -4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
 	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
