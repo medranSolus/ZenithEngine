@@ -3,14 +3,6 @@
 
 namespace Camera
 {
-	struct ProjectionData
-	{
-		float fov;
-		float screenRatio;
-		float nearClip;
-		float farClip;
-	};
-
 	class ICamera : public GFX::IRenderable
 	{
 		std::string name;

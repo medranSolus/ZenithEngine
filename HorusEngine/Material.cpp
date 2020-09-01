@@ -99,7 +99,7 @@ namespace GFX::Visual
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		if (hasTexture)
-			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, true));
+			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
 
 		// Material elements
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));

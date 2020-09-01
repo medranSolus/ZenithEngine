@@ -426,6 +426,9 @@
     <ClCompile Include="CameraIndicator.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
+    <ClCompile Include="CameraFrustrum.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1104,6 +1107,12 @@
     </ClInclude>
     <ClInclude Include="CameraIndicator.h">
       <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraFrustrum.h">
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectionData.h">
+      <Filter>Header Files\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

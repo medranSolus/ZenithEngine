@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics.h"
 #include "DynamicCBuffer.h"
+#include "ProjectionData.h"
 
 namespace Camera
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include "ICamera.h"
+#include "CameraFrustrum.h"
 #include "CameraIndicator.h"
 
 namespace Camera
@@ -12,6 +13,7 @@ namespace Camera
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
 		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
+		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 		mutable bool viewUpdate = true;
 		mutable bool projectionUpdate = true;
 
@@ -35,6 +37,6 @@ namespace Camera
 
 		void Update(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		inline void Submit() noexcept override { indicator->Submit(); }
+		inline void Submit() noexcept override { indicator->Submit(); frustrum->Submit(); }
 	};
 }
