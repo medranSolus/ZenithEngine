@@ -80,7 +80,13 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("direction", "$.blurDirection");
 			AppendPass(std::move(pass));
 		}
-		SetSinkSource("backbuffer", "verticalBlur.renderTarget");
+		{
+			auto pass = std::make_unique<RenderPass::WireframePass>(gfx, "wireframe");
+			pass->SetSinkLinkage("renderTarget", "verticalBlur.renderTarget");
+			pass->SetSinkLinkage("depthStencil", "verticalBlur.depthStencil");
+			AppendPass(std::move(pass));
+		}
+		SetSinkSource("backbuffer", "wireframe.renderTarget");
 		Finalize();
 	}
 

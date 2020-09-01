@@ -12,10 +12,12 @@ namespace Camera
 		ProjectionData projection;
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
-		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
-		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 		mutable bool viewUpdate = true;
 		mutable bool projectionUpdate = true;
+		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
+		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
+		bool enableIndicator = true;
+		bool enableFrustrum = true;
 
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
 
@@ -26,6 +28,10 @@ namespace Camera
 		BaseCamera& operator=(const BaseCamera&) = default;
 		virtual ~BaseCamera() = default;
 
+		constexpr void EnableIndicator() noexcept { enableIndicator = true; }
+		constexpr void DisableIndicator() noexcept { enableIndicator = false; }
+		constexpr void EnableFrustrumIndicator() noexcept { enableFrustrum = true; }
+		constexpr void DisableFrustrumIndicator() noexcept { enableFrustrum = false; }
 		inline void ResetView() const noexcept override { viewUpdate = true; }
 		inline void ResetProjection() const noexcept override { projectionUpdate = true; }
 
@@ -37,6 +43,6 @@ namespace Camera
 
 		void Update(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		inline void Submit() noexcept override { indicator->Submit(); frustrum->Submit(); }
+		void Submit() noexcept override;
 	};
 }

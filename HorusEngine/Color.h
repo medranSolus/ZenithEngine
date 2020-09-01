@@ -22,6 +22,7 @@ namespace GFX::Data
 		constexpr bool operator!=(const ColorByte& c) const noexcept { return c.r != r || c.g != g || c.b != b || c.a != a; }
 
 		constexpr ColorByte operator+(const ColorByte& c) const noexcept;
+		constexpr ColorByte operator*(float x) const noexcept;
 	};
 
 	class ColorFloat3
@@ -52,6 +53,7 @@ namespace GFX::Data
 		inline bool operator!=(const ColorFloat3& c) const { return DirectX::XMVector3NotEqual(DirectX::XMLoadFloat3(&c.col), DirectX::XMLoadFloat3(&col)); }
 
 		ColorFloat3 operator+(const ColorFloat3& c) const;
+		ColorFloat3 operator*(float x) const;
 	};
 
 	class ColorFloat4
@@ -85,6 +87,7 @@ namespace GFX::Data
 		inline bool operator!=(const ColorFloat4& c) const { return DirectX::XMVector4NotEqual(DirectX::XMLoadFloat4(&c.col), DirectX::XMLoadFloat4(&col)); }
 
 		ColorFloat4 operator+(const ColorFloat4& c) const;
+		ColorFloat4 operator*(float x) const;
 	};
 
 	constexpr ColorByte& ColorByte::operator=(const ColorByte& c) noexcept
@@ -102,6 +105,13 @@ namespace GFX::Data
 			static_cast<unsigned char>((g + c.g) >> 1),
 			static_cast<unsigned char>((b + c.b) >> 1),
 			static_cast<unsigned char>((a + c.a) >> 1) };
+	}
+
+	constexpr ColorByte ColorByte::operator*(float x) const noexcept
+	{
+		return { static_cast<unsigned char>(r * x),
+			static_cast<unsigned char>(g * x),
+			static_cast<unsigned char>(b * x), a };
 	}
 
 	constexpr ColorFloat3& ColorFloat3::operator=(const ColorFloat3& c) noexcept

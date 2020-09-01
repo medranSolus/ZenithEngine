@@ -25,10 +25,13 @@ namespace GFX::Shape
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		auto material = std::make_shared<Visual::Material>(gfx, color, typeName + name);
-		auto vertexLayout = material->GerVertexLayout();
+		auto dimmedMaterial = std::make_shared<Visual::Material>(gfx, color * 0.75f, typeName + name + "Dim");
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
 		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
+
+		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Wireframe"));
+		techniques.back()->AddStep({ graph, "wireframe", std::move(dimmedMaterial) });
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 
@@ -42,8 +45,8 @@ namespace GFX::Shape
 	{
 		Data::VertexBufferData vertices(std::make_shared<Data::VertexLayout>(), 8U);
 		const float zRatio = data.farClip / data.nearClip;
-		const float nearX = data.nearClip * tanf(data.fov / 2.0f);
-		const float nearY = nearX / data.screenRatio;
+		const float nearY = data.nearClip * tanf(data.fov / 2.0f);
+		const float nearX = nearY * data.screenRatio;
 		const float farY = nearY * zRatio, farX = nearX * zRatio;
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-nearX, nearY, data.nearClip)));

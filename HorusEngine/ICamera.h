@@ -12,7 +12,7 @@ namespace Camera
 		virtual ~ICamera() = default;
 
 		inline const std::string& GetName() const noexcept { return name; }
-
+		inline void Reset() const noexcept { ResetView(); ResetProjection(); }
 		virtual void ResetView() const noexcept = 0;
 		virtual void ResetProjection() const noexcept = 0;
 

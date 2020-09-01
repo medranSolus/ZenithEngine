@@ -140,7 +140,7 @@ namespace GFX::Probe
 	{
 		return ImGui::SliderAngle("FOV", &projection.fov, 1.0f, 179.0f, "%.1f") ||
 			ImGui::DragFloat("Near clip", &projection.nearClip, 0.01f, 0.01f, 10.0f, "%.3f") ||
-			ImGui::DragFloat("Far clip", &projection.farClip, 1.0f, projection.nearClip, 50000.0f, "%.1f") ||
+			ImGui::DragFloat("Far clip", &projection.farClip, 0.1f, projection.nearClip + 0.01f, 50000.0f, "%.1f") ||
 			ImGui::SliderFloat("Ratio", &projection.screenRatio, 0.1f, 5.0f, "%.2f");
 	}
 }

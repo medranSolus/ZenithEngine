@@ -42,10 +42,19 @@ namespace GFX::Shape
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		auto material = std::make_shared<Visual::Material>(gfx, color, typeName + name);
+		auto dimmedMaterial = std::make_shared<Visual::Material>(gfx, color * 0.75f, typeName + name + "Dim");
 		auto vertexLayout = material->GerVertexLayout();
 
 		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Solid"));
 		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
+
+		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Wireframe"));
+		techniques.back()->AddStep({ graph, "wireframe", std::move(dimmedMaterial) });
+
+		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline Blur", false));
+		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
+		techniques.back()->AddStep({ graph, "outlineDrawBlur", std::make_shared<Visual::OutlineMaskBlur>(gfx, name + "OutlineBlur", std::move(Data::ColorFloat3(0.5f, 1.0f, 0.5f)), std::move(vertexLayout)) });
+
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 

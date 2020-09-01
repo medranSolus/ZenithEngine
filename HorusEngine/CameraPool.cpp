@@ -86,7 +86,7 @@ namespace Camera
 		ImGui::SliderFloat("Roll speed", &rollSpeed, 0.01f, 0.5f, "%.2f");
 		ImGui::SliderFloat("Camera speed", &rotateSpeed, 1.0f, 5.0f, "%.1f");
 		static std::map<std::string, std::unique_ptr<ICamera>>::iterator currentItem = cameras.find(active);
-		if (ImGui::BeginCombo("Active camera", active.c_str()))
+		if (ImGui::BeginCombo("Active camera", currentItem->first.c_str()))
 		{
 			for (auto it = cameras.begin(); it != cameras.end(); ++it)
 			{
@@ -94,17 +94,20 @@ namespace Camera
 				if (ImGui::Selectable(it->first.c_str(), selected))
 				{
 					currentItem = it;
-					active = currentItem->first;
-					currentItem->second->ResetView();
 				}
 				if (selected)
 					ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
+		if (ImGui::Button("Select camera") && currentItem->first != active)
+		{
+			active = currentItem->first;
+			currentItem->second->Reset();
+		}
 		ImGui::NewLine();
-		const auto& cameraPos = GetCamera().GetPos();
+		const auto& cameraPos = currentItem->second->GetPos();
 		ImGui::Text("Position: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
-		GetCamera().Accept(gfx, probe);
+		currentItem->second->Accept(gfx, probe);
 	}
 }

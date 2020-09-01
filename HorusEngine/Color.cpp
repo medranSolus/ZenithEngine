@@ -17,6 +17,13 @@ namespace GFX::Data
 		return std::move(nc);
 	}
 
+	ColorFloat3 ColorFloat3::operator*(float x) const
+	{
+		ColorFloat3 nc(x, x, x);
+		DirectX::XMStoreFloat3(&nc.col, DirectX::XMVectorSaturate(DirectX::XMVectorMultiply(DirectX::XMLoadFloat3(&col), DirectX::XMLoadFloat3(&nc.col))));
+		return std::move(nc);
+	}
+
 	ColorFloat4& ColorFloat4::operator=(const ColorByte& c) noexcept
 	{
 		col.x = c.r / 255.0f;
@@ -39,6 +46,14 @@ namespace GFX::Data
 	{
 		ColorFloat4 nc;
 		DirectX::XMStoreFloat4(&nc.col, DirectX::XMVectorSaturate(DirectX::XMVectorAdd(DirectX::XMLoadFloat4(&col), DirectX::XMLoadFloat4(&c.col))));
+		return std::move(nc);
+	}
+
+	ColorFloat4 ColorFloat4::operator*(float x) const
+	{
+		ColorFloat4 nc(x, x, x);
+		DirectX::XMStoreFloat4(&nc.col, DirectX::XMVectorSaturate(DirectX::XMVectorMultiply(DirectX::XMLoadFloat4(&col), DirectX::XMLoadFloat4(&nc.col))));
+		nc.col.w = col.w;
 		return std::move(nc);
 	}
 }

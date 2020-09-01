@@ -350,6 +350,7 @@
     <ClCompile Include="VerticalBlurPass.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
+    <ClCompile Include="WireframePass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BlurPS.hlsl">
@@ -700,6 +701,7 @@
     <ClInclude Include="WinAPI.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="WindowExceptionMacros.h" />
+    <ClInclude Include="WireframePass.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />

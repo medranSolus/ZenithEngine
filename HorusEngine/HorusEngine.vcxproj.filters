@@ -429,6 +429,9 @@
     <ClCompile Include="CameraFrustrum.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
+    <ClCompile Include="WireframePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1113,6 +1116,9 @@
     </ClInclude>
     <ClInclude Include="ProjectionData.h">
       <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="WireframePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

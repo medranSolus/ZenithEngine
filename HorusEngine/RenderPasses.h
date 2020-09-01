@@ -7,3 +7,4 @@
 #include "OutlineDrawPass.h"
 #include "OutlineGenerationPass.h"
 #include "VerticalBlurPass.h"
+#include "WireframePass.h"

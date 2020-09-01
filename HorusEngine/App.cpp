@@ -122,14 +122,14 @@ App::App(const std::string& commandLine) : window(1600, 900, windowTitle), rende
 {
 	objects.emplace("---None---", nullptr);
 	cameras = std::make_unique<Camera::CameraPool>(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1",
-		1.047f, 0.01f, viewDistance, 360, -90, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		1.047f, 0.01f, viewDistance, 90, 0, DirectX::XMFLOAT3(-4.0f, 0.0f, 0.0f)));
 	cameras->AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, viewDistance, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 0.0f, -4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
 	std::mt19937_64 engine(std::random_device{}());
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
+	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f), "Sting Sword", 4.0f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));

@@ -7,7 +7,7 @@ namespace GFX::Resource
 		D3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC{ CD3D11_DEFAULT{} };
 		switch (mode)
 		{
-		case GFX::Resource::DepthStencilState::Write:
+		case StencilMode::Write:
 		{
 			desc.DepthEnable = FALSE;
 			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -17,7 +17,7 @@ namespace GFX::Resource
 			desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_REPLACE;
 			break;
 		}
-		case GFX::Resource::DepthStencilState::Mask:
+		case StencilMode::Mask:
 		{
 			desc.DepthEnable = FALSE;
 			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -25,6 +25,17 @@ namespace GFX::Resource
 			desc.StencilReadMask = 0xFF;
 			desc.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NOT_EQUAL;
 			desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+			break;
+		}
+		case StencilMode::DepthOff:
+		{
+			desc.DepthEnable = FALSE;
+			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
+			break;
+		}
+		case StencilMode::Reverse:
+		{
+			desc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_GREATER;
 			break;
 		}
 		}
