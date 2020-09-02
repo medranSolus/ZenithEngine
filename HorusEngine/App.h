@@ -9,7 +9,7 @@
 class App
 {
 	static constexpr const char* windowTitle = "Horus Engine Alpha";
-	static constexpr float viewDistance = 5000.0f;
+	static constexpr float viewDistance = 500.0f;
 
 	WinAPI::Window window;
 	GFX::Pipeline::RenderGraphBlurOutline renderer;

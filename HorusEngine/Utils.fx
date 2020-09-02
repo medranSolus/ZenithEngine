@@ -23,9 +23,9 @@ float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in floa
 			normalize(tan),
 			normalize(bitan),
 			normalize(normal)
-			);
+		);
 	// Sample normal to tangent space
-	float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
+	const float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
 	// Transform from tangent into view space
 	return normalize(mul(tangentNormal, tangentToView));
 }
@@ -34,20 +34,20 @@ float GetAttenuation(uniform float attConst, uniform float attLinear, uniform fl
 {
 	// Diffuse attenuation
 	// http://wiki.ogre3d.org/-Point+Light+Attenuation
-	return attConst + attLinear * distanceToLight + attQuad * (distanceToLight * distanceToLight);
+	return 1.0f / (attConst + (attLinear + attQuad * distanceToLight) * distanceToLight);
 }
 
-float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight, const in float3 normal)
+float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight, const in float3 normal, const in float attenutaion)
 {
-	return diffuseColor * max(0.0f, dot(directionToLight, normal));
+	return diffuseColor * (attenutaion * max(0.0f, dot(directionToLight, normal)));
 }
 
-float3 GetSpecular(const in float3 vertexToLight, const in float3 pos, const in float3 normal,
+float3 GetSpecular(const in float3 vertexToLight, const in float3 pos, const in float3 normal, const in float attenuation,
 	const in float3 specularColor, const in float specularPower, uniform float specularIntensity)
 {
 	// Specular intensity based on angle between viewing vector and reflection vector
-	const float3 reflection = normal * dot(vertexToLight, normal) * 2.0f - vertexToLight;
-	return specularColor * specularIntensity * pow(max(0.0f, dot(normalize(-reflection), normalize(pos))), specularPower);
+	const float3 reflection = normalize(normal * dot(vertexToLight, normal) * 2.0f - vertexToLight);
+	return specularColor * (attenuation * specularIntensity * pow(max(0.0f, dot(-reflection, normalize(pos))), specularPower));
 }
 
 float GetSampledSpecularPower(const in float4 specularData)

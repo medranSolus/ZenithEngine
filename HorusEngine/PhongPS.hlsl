@@ -7,7 +7,12 @@ cbuffer PixelBuffer
 	float specularIntensity; // The bigger the brighter
 	float specularPower;     // The smaller the less focused in one point
 #ifdef _TEX
+#ifdef _TEX_NORMAL
 	float normalMapWeight;
+#endif
+#ifdef _TEX_SPEC
+	bool useSpecularPowerAlpha;
+#endif
 #else
 	float4 materialColor;
 #endif
@@ -52,17 +57,22 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 	//	viewNormal *= -1.0f;
 	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 
-	const float attenuation = 1.0f / GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
+	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
 	const float3 scaledLightColor = lightColor * lightIntensity * attenuation;
-	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal);
+	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation);
 
-	float3 specColor = specularColor * attenuation;
+	float3 specColor;
+	float specPower;
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr, tc);
-	const float specularPower = GetSampledSpecularPower(specularTex);
-	specColor *= specularTex.rgb;
+	if (useSpecularPowerAlpha)
+		specPower = GetSampledSpecularPower(specularTex);
+	specColor = specularTex.rgb;
+#else
+	specColor = specularColor;
+	specPower = specularPower;
 #endif
-	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, specColor, specularPower, specularIntensity);
+	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specularPower, specularIntensity);
 
 	return float4(saturate((diffuse + ambientColor) * color.rgb + specular), color.a);
 }
