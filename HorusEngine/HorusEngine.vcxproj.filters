@@ -432,6 +432,9 @@
     <ClCompile Include="WireframePass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="DepthStencilShaderInput.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1119,6 +1122,9 @@
     </ClInclude>
     <ClInclude Include="WireframePass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthStencilShaderInput.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

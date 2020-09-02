@@ -280,6 +280,7 @@
     <ClCompile Include="DCBLayout.cpp" />
     <ClCompile Include="DCBLayoutCodex.cpp" />
     <ClCompile Include="DepthStencil.cpp" />
+    <ClCompile Include="DepthStencilShaderInput.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="DCBLayoutElement.cpp" />
     <ClCompile Include="DynamicCBuffer.cpp" />
@@ -574,6 +575,7 @@
     <ClInclude Include="CameraFrustrum.h" />
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
+    <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
     <ClInclude Include="OutlineDrawBlurPass.h" />
     <ClInclude Include="OutlineDrawPass.h" />
