@@ -435,6 +435,9 @@
     <ClCompile Include="DepthStencilShaderInput.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="TechniqueFactory.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1125,6 +1128,12 @@
     </ClInclude>
     <ClInclude Include="DepthStencilShaderInput.h">
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderChannels.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="TechniqueFactory.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

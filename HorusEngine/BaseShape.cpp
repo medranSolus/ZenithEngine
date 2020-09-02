@@ -22,10 +22,10 @@ namespace GFX::Shape
 		topology->Bind(gfx);
 	}
 
-	void BaseShape::Submit() noexcept
+	void BaseShape::Submit(uint64_t channelFilter) noexcept
 	{
 		for (auto& technique : techniques)
-			technique->Submit(*this);
+			technique->Submit(*this, channelFilter);
 	}
 
 	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

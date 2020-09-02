@@ -36,7 +36,7 @@ namespace GFX::Shape
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); isMesh = true; }
 
 		void Bind(Graphics& gfx) noexcept;
-		void Submit() noexcept override;
+		void Submit(uint64_t channelFilter) noexcept override;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

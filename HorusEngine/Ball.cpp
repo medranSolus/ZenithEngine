@@ -1,7 +1,6 @@
 #include "Ball.h"
 #include "Primitives.h"
-#include "GfxResources.h"
-#include "Visuals.h"
+#include "TechniqueFactory.h"
 
 namespace GFX::Shape
 {
@@ -23,15 +22,12 @@ namespace GFX::Shape
 		}
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		techniques.reserve(2);
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
 		auto vertexLayout = material->GerVertexLayout();
 
-		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Phong"));
-		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
-
-		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline", false));
-		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ graph, "outlineDraw", std::make_shared<Visual::OutlineMaskScale>(gfx, name + "Outline", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineScale(gfx, graph, RenderChannel::Main, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 

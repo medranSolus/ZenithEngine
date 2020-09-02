@@ -1,4 +1,5 @@
 #include "Model.h"
+#include "TechniqueFactory.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include <filesystem>
@@ -35,11 +36,8 @@ namespace GFX::Shape
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		techniques.reserve(2);
-		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Phong"));
-		techniques.back()->AddStep({ graph, "lambertian", std::move(material) });
-		techniques.emplace_back(std::make_shared<Pipeline::Technique>("Outline Blur", false));
-		techniques.back()->AddStep({ graph, "outlineGeneration", std::make_shared<Visual::OutlineWrite>(gfx, vertexLayout) });
-		techniques.back()->AddStep({ graph, "outlineDrawBlur", std::make_shared<Visual::OutlineMaskBlur>(gfx, meshID + "OutlineBlur", std::move(Data::ColorFloat3(1.0f, 1.0f, 0.0f)), std::move(vertexLayout)) });
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, RenderChannel::Main, meshID, std::move(vertexLayout)));
 
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}

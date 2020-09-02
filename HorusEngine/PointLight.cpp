@@ -1,4 +1,5 @@
 #include "PointLight.h"
+#include "PersonCamera.h"
 
 namespace GFX::Light
 {
@@ -32,6 +33,7 @@ namespace GFX::Light
 		buffer["attenuationQuad"] = 0.0075f;
 		buffer["lightIntensity"] = 1.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
+		lightCamera = std::make_shared<Camera::PersonCamera>(gfx, graph, name + "Cam", 1.047f, 0.01f, 500.0f, 0, 0, position);
 	}
 
 	void PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
@@ -43,6 +45,7 @@ namespace GFX::Light
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept
 	{
 		DirectX::XMStoreFloat3(&lightBuffer->GetBuffer()["lightPos"], DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
+		lightCamera->SetPos(mesh.GetPos());
 		lightBuffer->Bind(gfx);
 	}
 }

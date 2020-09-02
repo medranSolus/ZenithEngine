@@ -8,6 +8,6 @@ namespace GFX
 	public:
 		virtual ~IRenderable() = default;
 
-		virtual void Submit() noexcept = 0;
+		virtual void Submit(uint64_t channelFilter) noexcept = 0;
 	};
 }

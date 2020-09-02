@@ -13,9 +13,11 @@ namespace Camera
 
 		inline const std::string& GetName() const noexcept { return name; }
 		inline void Reset() const noexcept { ResetView(); ResetProjection(); }
+
 		virtual void ResetView() const noexcept = 0;
 		virtual void ResetProjection() const noexcept = 0;
 
+		virtual void SetPos(const DirectX::XMFLOAT3& pos) noexcept = 0;
 		virtual const DirectX::XMFLOAT3& GetPos() const noexcept = 0;
 		virtual DirectX::FXMMATRIX GetProjection() const noexcept = 0;
 		virtual DirectX::FXMMATRIX GetView() const noexcept = 0;

@@ -22,7 +22,7 @@ namespace GFX::Shape
 		Model& operator=(const Model&) = delete;
 		virtual ~Model() = default;
 
-		inline void Submit() noexcept override { root->Submit(); }
+		inline void Submit(uint64_t channelFilter) noexcept override { root->Submit(channelFilter); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return root->GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { root->SetAngle(meshAngle); }

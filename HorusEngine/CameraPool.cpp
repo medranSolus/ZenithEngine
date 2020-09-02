@@ -73,11 +73,11 @@ namespace Camera
 		return true;
 	}
 
-	void CameraPool::Submit() noexcept
+	void CameraPool::Submit(uint64_t channelFilter) noexcept
 	{
 		for (auto it = cameras.begin(); it != cameras.end(); ++it)
 			if (it->first != active)
-				it->second->Submit();
+				it->second->Submit(channelFilter);
 	}
 
 	void CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept

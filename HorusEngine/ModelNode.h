@@ -31,9 +31,9 @@ namespace GFX::Shape
 			children.emplace_back(std::move(child));
 		}
 
-		inline void Submit() noexcept override { Submit(DirectX::XMMatrixIdentity()); }
+		inline void Submit(uint64_t channelFilter) noexcept override { Submit(channelFilter, DirectX::XMMatrixIdentity()); }
 
-		void Submit(const DirectX::FXMMATRIX& higherTransform) noexcept;
+		void Submit(uint64_t channelFilter, const DirectX::FXMMATRIX& higherTransform) noexcept;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override;
 

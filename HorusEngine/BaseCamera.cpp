@@ -54,13 +54,13 @@ namespace Camera
 		//indicator->Accept(gfx, probe);
 	}
 
-	void BaseCamera::Submit() noexcept
+	void BaseCamera::Submit(uint64_t channelFilter) noexcept
 	{
 		if (enableIndicator)
 		{
-			indicator->Submit();
+			indicator->Submit(channelFilter);
 			if (enableFrustrum)
-				frustrum->Submit();
+				frustrum->Submit(channelFilter);
 		}
 	}
 }

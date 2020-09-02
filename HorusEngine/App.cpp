@@ -102,14 +102,14 @@ void App::MakeFrame()
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
 	cameras->Bind(window.Gfx());
-	cameras->Submit();
-	pointLight->Submit();
+	cameras->Submit(RenderChannel::Main);
+	pointLight->Submit(RenderChannel::Main);
 	pointLight->Bind(window.Gfx(), cameras->GetCamera());
 	for (auto& shape : shapes)
 		if (shape)
-			shape->Submit();
+			shape->Submit(RenderChannel::Main);
 	for (auto& obj : carpetRects)
-		obj->Submit();
+		obj->Submit(RenderChannel::Main);
 	ShowObjectWindow();
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();

@@ -32,9 +32,11 @@ namespace Camera
 		constexpr void DisableIndicator() noexcept { enableIndicator = false; }
 		constexpr void EnableFrustrumIndicator() noexcept { enableFrustrum = true; }
 		constexpr void DisableFrustrumIndicator() noexcept { enableFrustrum = false; }
+
 		inline void ResetView() const noexcept override { viewUpdate = true; }
 		inline void ResetProjection() const noexcept override { projectionUpdate = true; }
 
+		inline void SetPos(const DirectX::XMFLOAT3& pos) noexcept override { position = pos; viewUpdate = true; }
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return position; }
 		inline DirectX::FXMMATRIX GetProjection() const noexcept override { return DirectX::XMMatrixPerspectiveFovLH(projection.fov, projection.screenRatio, projection.nearClip, projection.farClip); }
 		DirectX::FXMMATRIX GetView() const noexcept override { return DirectX::XMLoadFloat4x4(&view); }
@@ -43,6 +45,6 @@ namespace Camera
 
 		void Update(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		void Submit() noexcept override;
+		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

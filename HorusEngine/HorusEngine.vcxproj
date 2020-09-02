@@ -340,6 +340,7 @@
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Square.cpp" />
     <ClCompile Include="Technique.cpp" />
+    <ClCompile Include="TechniqueFactory.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
@@ -575,6 +576,7 @@
     <ClInclude Include="CameraFrustrum.h" />
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
+    <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
     <ClInclude Include="OutlineDrawBlurPass.h" />
@@ -688,6 +690,7 @@
     <ClInclude Include="Square.h" />
     <ClInclude Include="DepthStencilState.h" />
     <ClInclude Include="Technique.h" />
+    <ClInclude Include="TechniqueFactory.h" />
     <ClInclude Include="TechniqueStep.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Timer.h" />

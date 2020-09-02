@@ -7,6 +7,7 @@ namespace GFX::Pipeline::Resource
 	{
 		switch (usage)
 		{
+		default:
 		case Usage::DepthStencil:
 			return DXGI_FORMAT::DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		case Usage::ShadowDepth:

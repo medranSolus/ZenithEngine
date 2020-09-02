@@ -1,5 +1,6 @@
 #pragma once
 #include "TechniqueStep.h"
+#include "RenderChannels.h"
 
 namespace GFX::Pipeline
 {
@@ -7,11 +8,12 @@ namespace GFX::Pipeline
 	{
 		bool active;
 		std::string name;
+		uint64_t channels;
 		std::vector<TechniqueStep> steps;
 
 	public:
-		inline Technique(const std::string& name, bool active = true) noexcept : active(active), name(name) {}
-		inline Technique(std::string&& name, bool active = true) noexcept : active(active), name(std::move(name)) {}
+		inline Technique(const std::string& name, uint64_t channels, bool active = true) noexcept : active(active), name(name), channels(channels) {}
+		inline Technique(std::string&& name, uint64_t channels, bool active = true) noexcept : active(active), name(std::move(name)), channels(channels) {}
 		Technique(const Technique&) = default;
 		Technique& operator=(const Technique&) = default;
 		~Technique() = default;
@@ -24,7 +26,7 @@ namespace GFX::Pipeline
 		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::forward<TechniqueStep>(step)); }
 
 		void SetParentReference(Graphics& gfx, const GfxObject& parent);
-		void Submit(Shape::BaseShape& shape) noexcept;
+		void Submit(Shape::BaseShape& shape, uint64_t channelFilter) noexcept;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

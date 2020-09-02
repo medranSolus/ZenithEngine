@@ -9,6 +9,7 @@ namespace GFX::Light
 	{
 		mutable Shape::SolidGlobe mesh;
 		mutable std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
+		std::shared_ptr<Camera::ICamera> lightCamera = nullptr;
 
 		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
@@ -18,7 +19,7 @@ namespace GFX::Light
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
-		inline void Submit() noexcept override { mesh.Submit(); }
+		inline void Submit(uint64_t channelFilter) noexcept override { mesh.Submit(channelFilter); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return mesh.GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { mesh.SetAngle(meshAngle); }
