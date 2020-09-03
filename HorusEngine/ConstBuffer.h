@@ -63,6 +63,6 @@ namespace GFX::Resource
 		D3D11_MAPPED_SUBRESOURCE subres;
 		GFX_THROW_FAILED(GetContext(gfx)->Map(constantBuffer.Get(), 0U, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0U, &subres));
 		memcpy(subres.pData, &values, sizeof(values));
-		GetContext(gfx)->Unmap(constantBuffer.Get(), 0u);
+		GetContext(gfx)->Unmap(constantBuffer.Get(), 0U);
 	}
 }

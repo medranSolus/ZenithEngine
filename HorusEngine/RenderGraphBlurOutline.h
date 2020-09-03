@@ -21,8 +21,8 @@ namespace GFX::Pipeline
 		virtual ~RenderGraphBlurOutline() = default;
 
 		inline void BindMainCamera(Camera::ICamera& camera) { dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera); }
-		inline void BindShadowCamera(Camera::ICamera& camera) {}
 
+		void BindShadowCamera(Camera::ICamera& camera);
 		void SetKernel(int radius, float sigma);
 		void ShowWindow() noexcept;
 	};

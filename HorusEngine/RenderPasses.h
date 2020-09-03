@@ -6,5 +6,6 @@
 #include "OutlineDrawBlurPass.h"
 #include "OutlineDrawPass.h"
 #include "OutlineGenerationPass.h"
+#include "ShadowMapPass.h"
 #include "VerticalBlurPass.h"
 #include "WireframePass.h"

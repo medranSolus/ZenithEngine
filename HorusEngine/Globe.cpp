@@ -23,10 +23,11 @@ namespace GFX::Shape
 		}
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
-		techniques.reserve(2);
+		techniques.reserve(3);
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
 		auto vertexLayout = material->GerVertexLayout();
 
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineScale(gfx, graph, RenderChannel::Main, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);

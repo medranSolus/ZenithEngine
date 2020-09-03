@@ -18,11 +18,14 @@ namespace GFX::Pipeline::Resource
 	protected:
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
 
+		DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage = Usage::DepthStencil);
+
 		static inline DXGI_FORMAT UsageTypeless(Usage usage) noexcept;
 		static inline DXGI_FORMAT UsageTyped(Usage usage) noexcept;
 
 	public:
-		DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil);
+		inline DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil)
+			: DepthStencil(gfx, width, height, false, usage) {}
 		virtual ~DepthStencil() = default;
 
 		constexpr unsigned int GetWidth() const noexcept { return width; }

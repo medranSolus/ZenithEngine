@@ -105,7 +105,7 @@ void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::D
 
 void App::MakeFrame()
 {
-	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
+	window.Gfx().BeginFrame();
 	ProcessInput();
 	renderer.BindMainCamera(cameras->GetCamera());
 	cameras->Submit(RenderChannel::Main);
@@ -120,8 +120,8 @@ void App::MakeFrame()
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
 	renderer.Execute(window.Gfx());
-	window.Gfx().EndFrame();
 	renderer.Reset();
+	window.Gfx().EndFrame();
 }
 
 App::App(const std::string& commandLine) : window(1600, 900, windowTitle), renderer(window.Gfx())
@@ -148,6 +148,7 @@ App::App(const std::string& commandLine) : window(1600, 900, windowTitle), rende
 	//AddShape(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), DirectX::XMFLOAT3(4.2f, -0.1f, 1.0f), "Tri", 3.1f, 1.5f, 2.5f));
 	//AddShape(std::make_unique<GFX::Shape::Globe>(window.Gfx(), DirectX::XMFLOAT3(0.0f, -2.0f, 8.0f), "Globe", std::move(RandColor(engine)), 25, 25, 3.0f, 3.0f, 3.0f));
 	//AddShape(std::make_unique<GFX::Shape::Ball>(window.Gfx(), DirectX::XMFLOAT3(2.0f, 0.0f, -7.0f), "Ball", std::move(RandColor(engine)), 3, 3.0f));
+	renderer.BindShadowCamera(pointLight->GetCamera());
 }
 
 unsigned long long App::Run()

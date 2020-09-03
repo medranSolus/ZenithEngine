@@ -86,9 +86,8 @@ namespace GFX
 		}
 	}
 
-	void Graphics::BeginFrame(float red, float green, float blue) noexcept
+	void Graphics::BeginFrame() noexcept
 	{
-		renderTarget->Clear(*this, { red, green, blue, 1.0f });
 		if (guiEnabled)
 		{
 			ImGui_ImplDX11_NewFrame();

@@ -330,6 +330,8 @@
     <ClCompile Include="RenderGraphCompileException.cpp" />
     <ClCompile Include="RenderTarget.cpp" />
     <ClCompile Include="RenderTargetShaderInput.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
+    <ClCompile Include="ShadowMapPass.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="QueuePass.cpp" />
@@ -576,6 +578,7 @@
     <ClInclude Include="CameraFrustrum.h" />
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
+    <ClInclude Include="ConstBufferShadow.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
@@ -672,6 +675,8 @@
     <ClInclude Include="RenderGraphCompileException.h" />
     <ClInclude Include="RenderTarget.h" />
     <ClInclude Include="RenderTargetShaderInput.h" />
+    <ClInclude Include="ShadowMap.h" />
+    <ClInclude Include="ShadowMapPass.h" />
     <ClInclude Include="Sink.h" />
     <ClInclude Include="SinkContainerBindable.h" />
     <ClInclude Include="SinkDirectBindable.h" />

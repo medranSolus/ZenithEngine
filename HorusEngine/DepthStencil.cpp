@@ -27,7 +27,7 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
-	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage) : width(width), height(height)
+	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage) : width(width), height(height)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -40,7 +40,7 @@ namespace GFX::Pipeline::Resource
 		depthTexDesc.SampleDesc.Count = 1U; // Antialiasing stuff
 		depthTexDesc.SampleDesc.Quality = 0U;
 		depthTexDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
-		depthTexDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
+		depthTexDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL | (shaderResource ? D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE : 0U);
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> depthTexture = nullptr;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateTexture2D(&depthTexDesc, nullptr, &depthTexture));
 

@@ -35,7 +35,8 @@ namespace GFX::Shape
 			vertexBuffer = Resource::VertexBuffer::Get(gfx, meshID, { vertexLayout });
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
-		techniques.reserve(2);
+		techniques.reserve(3);
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, RenderChannel::Main, meshID, std::move(vertexLayout)));
 

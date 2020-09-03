@@ -16,7 +16,7 @@ namespace GFX::Pipeline::Resource
 	}
 
 	DepthStencilShaderInput::DepthStencilShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, Usage usage)
-		: DepthStencil(gfx, width, height, usage), slot(slot)
+		: DepthStencil(gfx, width, height, true, usage), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 

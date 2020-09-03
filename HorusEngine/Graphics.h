@@ -65,7 +65,7 @@ namespace GFX
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
-		void BeginFrame(float red, float green, float blue) noexcept;
+		void BeginFrame() noexcept;
 
 #pragma region Exceptions
 #ifdef _DEBUG

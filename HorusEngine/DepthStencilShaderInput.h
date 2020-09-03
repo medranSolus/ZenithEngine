@@ -11,6 +11,8 @@ namespace GFX::Pipeline::Resource
 		static inline DXGI_FORMAT UsageShaderInput(Usage usage) noexcept;
 
 	public:
+		inline DepthStencilShaderInput(Graphics& gfx, UINT slot, Usage usage = Usage::DepthStencil)
+			: DepthStencilShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, usage) {}
 		DepthStencilShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, Usage usage = Usage::DepthStencil);
 
 		constexpr UINT GetSlot() const noexcept { return slot; }

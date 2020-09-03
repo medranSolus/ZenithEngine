@@ -18,6 +18,13 @@ namespace GFX::Pipeline
 		return std::move(technique);
 	}
 
+	std::shared_ptr<Technique> TechniqueFactory::MakeShadowMap(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Data::VertexLayout> layout) noexcept
+	{
+		auto technique = std::make_shared<Pipeline::Technique>("Shadow Map", RenderChannel::Shadow);
+		technique->AddStep({ graph, "shadowMap", std::make_shared<Visual::ShadowMap>(gfx, layout) });
+		return std::move(technique);
+	}
+
 	std::shared_ptr<Technique> TechniqueFactory::MakeOutlineBlur(Graphics& gfx, RenderGraph& graph, uint64_t channels,
 		const std::string& name, std::shared_ptr<Data::VertexLayout> layout) noexcept
 	{

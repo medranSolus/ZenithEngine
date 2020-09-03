@@ -19,6 +19,7 @@ namespace GFX::Light
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
+		inline Camera::ICamera& GetCamera() noexcept { return *lightCamera; }
 		inline void SetOutline() noexcept override { mesh.SetOutline(); }
 		inline void DisableOutline() noexcept override { mesh.DisableOutline(); }
 		inline void Submit(uint64_t channelFilter) noexcept override { mesh.Submit(channelFilter); }

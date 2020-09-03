@@ -7,18 +7,23 @@ namespace GFX::Pipeline::RenderPass
 {
 	LambertianPass::LambertianPass(Graphics& gfx, const std::string& name) : QueuePass(name)
 	{
+		RegisterSink(Base::SinkDirectBindable<GFX::Resource::IBindable>::Make("depthMap", depthMap));
 		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
+		shadowBuffer = std::make_shared<GFX::Resource::ConstBufferShadow>(gfx, 2U);
+		AddBind(shadowBuffer);
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 	}
-	
+
 	void LambertianPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
 	{
 		assert(mainCamera);
+		mainCamera->ResetView();
 		mainCamera->Bind(gfx);
+		shadowBuffer->Update(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

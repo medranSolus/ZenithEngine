@@ -24,10 +24,11 @@ namespace GFX::Shape
 		SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
-		techniques.reserve(2);
+		techniques.reserve(3);
 		auto material = std::make_shared<Visual::Material>(gfx, color, typeName + name);
 		auto dimmedMaterial = std::make_shared<Visual::Material>(gfx, color * 0.75f, typeName + name + "Dim");
 
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, std::make_shared<Data::VertexLayout>()));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, RenderChannel::Main, std::move(dimmedMaterial)));
 		SetTechniques(gfx, std::move(techniques), *this);

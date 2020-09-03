@@ -4,3 +4,4 @@
 #include "OutlineMaskOffset.h"
 #include "OutlineMaskScale.h"
 #include "OutlineWrite.h"
+#include "ShadowMap.h"
