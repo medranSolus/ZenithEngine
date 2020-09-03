@@ -18,8 +18,7 @@ namespace GFX::Probe
 	void ModelProbe::Visit(Graphics& gfx, Shape::ModelNode& node) noexcept
 	{
 		bool meshOnly = node.IsMesh();
-		ImGui::Checkbox("Node mesh-only", &meshOnly);
-		if (node.IsMesh() != meshOnly)
+		if (ImGui::Checkbox("Node mesh-only", &meshOnly))
 			node.SetMesh(gfx, meshOnly);
 	}
 
@@ -33,6 +32,14 @@ namespace GFX::Probe
 		ImGui::EndChild();
 		ImGui::NextColumn();
 		ImGui::NewLine();
+		bool outline = model.IsOutline();
+		if (ImGui::Checkbox("Model outline", &outline))
+		{
+			if (outline)
+				model.SetOutline();
+			else
+				model.DisableOutline();
+		}
 		Visit(gfx, *selectedNode);
 		selectedNode->Accept(gfx, static_cast<BaseProbe&>(*this));
 		ImGui::Columns(1);

@@ -126,13 +126,21 @@ namespace GFX::Probe
 	void BaseProbe::VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept
 	{
 		bool meshOnly = shape.IsMesh();
-		ImGui::Checkbox(Tag("Mesh-only"), &meshOnly);
-		if (shape.IsMesh() != meshOnly)
+		if (ImGui::Checkbox(Tag("Mesh-only"), &meshOnly))
 		{
 			if (meshOnly)
 				shape.SetTopologyMesh(gfx);
 			else
 				shape.SetTopologyPlain(gfx);
+		}
+		bool ouline = shape.IsOutline();
+		ImGui::SameLine(); ;
+		if (ImGui::Checkbox(Tag("Outline"), &ouline))
+		{
+			if (ouline)
+				shape.SetOutline();
+			else
+				shape.DisableOutline();
 		}
 	}
 

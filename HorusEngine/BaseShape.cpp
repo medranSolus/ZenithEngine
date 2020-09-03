@@ -22,6 +22,28 @@ namespace GFX::Shape
 		topology->Bind(gfx);
 	}
 
+	void BaseShape::SetOutline() noexcept
+	{
+		for (auto& technique : techniques)
+			if (technique->GetName().find("Outline") != std::string::npos)
+			{
+				technique->Activate();
+				isOutline = true;
+				break;
+			}
+	}
+
+	void BaseShape::DisableOutline() noexcept
+	{
+		for (auto& technique : techniques)
+			if (technique->GetName().find("Outline") != std::string::npos)
+			{
+				technique->Dectivate();
+				isOutline = false;
+				break;
+			}
+	}
+
 	void BaseShape::Submit(uint64_t channelFilter) noexcept
 	{
 		for (auto& technique : techniques)

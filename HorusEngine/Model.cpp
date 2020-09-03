@@ -80,6 +80,20 @@ namespace GFX::Shape
 		root->SetPos(position);
 	}
 
+	void Model::SetOutline() noexcept
+	{
+		for (auto& mesh : meshes)
+			mesh->SetOutline();
+		isOutline = true;
+	}
+
+	void Model::DisableOutline() noexcept
+	{
+		for (auto& mesh : meshes)
+			mesh->DisableOutline();
+		isOutline = false;
+	}
+
 	const char* Model::ModelException::what() const noexcept
 	{
 		std::ostringstream stream;

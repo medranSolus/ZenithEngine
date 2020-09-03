@@ -12,6 +12,22 @@ namespace GFX::Shape
 			mesh->SetTransformMatrix(currentTransform);
 	}
 
+	void ModelNode::SetOutline() noexcept
+	{
+		for (const auto& mesh : meshes)
+			mesh->SetOutline();
+		for (const auto& child : children)
+			child->SetOutline();
+	}
+
+	void ModelNode::DisableOutline() noexcept
+	{
+		for (const auto& mesh : meshes)
+			mesh->DisableOutline();
+		for (const auto& child : children)
+			child->DisableOutline();
+	}
+
 	void ModelNode::Submit(uint64_t channelFilter, const DirectX::FXMMATRIX& higherTransform) noexcept
 	{
 		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *

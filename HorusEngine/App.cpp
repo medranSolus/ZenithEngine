@@ -40,7 +40,13 @@ inline void App::ShowObjectWindow()
 			{
 				bool selected = (currentItem == it);
 				if (ImGui::Selectable(it->first.c_str(), selected))
+				{
+					if (currentItem->second)
+						currentItem->second->DisableOutline();
 					currentItem = it;
+					if (currentItem->second)
+						currentItem->second->SetOutline();
+				}
 				if (selected)
 					ImGui::SetItemDefaultFocus();
 			}

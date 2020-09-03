@@ -45,6 +45,8 @@ namespace Camera
 
 		void Update(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
+		inline void SetOutline() noexcept override { indicator->SetOutline(); }
+		inline void DisableOutline() noexcept override { indicator->DisableOutline(); }
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

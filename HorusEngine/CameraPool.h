@@ -26,6 +26,8 @@ namespace Camera
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
+		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
+		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

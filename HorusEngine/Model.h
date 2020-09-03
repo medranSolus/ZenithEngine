@@ -11,6 +11,7 @@ namespace GFX::Shape
 		std::unique_ptr<ModelNode> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
+		bool isOutline = false;
 
 		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
 
@@ -22,6 +23,7 @@ namespace GFX::Shape
 		Model& operator=(const Model&) = delete;
 		virtual ~Model() = default;
 
+		constexpr bool IsOutline() const noexcept { return isOutline; }
 		inline void Submit(uint64_t channelFilter) noexcept override { root->Submit(channelFilter); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return root->GetAngle(); }
@@ -42,6 +44,9 @@ namespace GFX::Shape
 
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Accept(gfx, probe); }
 		inline void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { probe.Visit(gfx, *this, *root); }
+
+		void SetOutline() noexcept override;
+		void DisableOutline() noexcept override;
 
 		class ModelException : public Exception::BasicException
 		{
