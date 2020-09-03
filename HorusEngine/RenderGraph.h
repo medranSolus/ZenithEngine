@@ -19,6 +19,7 @@ namespace GFX::Pipeline
 		inline void AddGlobalSink(std::unique_ptr<RenderPass::Base::Sink> sink) { globalSinks.emplace_back(std::move(sink)); }
 		inline void AddGlobalSource(std::unique_ptr<RenderPass::Base::Source> source) { globalSources.emplace_back(std::move(source)); }
 
+		RenderPass::Base::BasePass& FindPass(const std::string& name);
 		void AppendPass(std::unique_ptr<RenderPass::Base::BasePass> pass);
 		void SetSinkSource(const std::string& sink, const std::string& source);
 		void Finalize();

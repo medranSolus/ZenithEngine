@@ -43,7 +43,7 @@ namespace Camera
 
 		void Roll(float delta) noexcept override;
 
-		void Update(GFX::Graphics& gfx) const noexcept override;
+		void Bind(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
 		inline void SetOutline() noexcept override { indicator->SetOutline(); }
 		inline void DisableOutline() noexcept override { indicator->DisableOutline(); }

@@ -14,4 +14,11 @@ namespace GFX::Pipeline::RenderPass
 
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 	}
+	
+	void LambertianPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	{
+		assert(mainCamera);
+		mainCamera->Bind(gfx);
+		QueuePass::Execute(gfx);
+	}
 }

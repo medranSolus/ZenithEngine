@@ -21,7 +21,7 @@ namespace Camera
 		viewUpdate = true;
 	}
 
-	void BaseCamera::Update(GFX::Graphics& gfx) const noexcept
+	void BaseCamera::Bind(GFX::Graphics& gfx) const noexcept
 	{
 		if (viewUpdate)
 		{

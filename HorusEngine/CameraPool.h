@@ -20,7 +20,7 @@ namespace Camera
 		virtual ~CameraPool() = default;
 
 		inline ICamera& GetCamera() noexcept { return *cameras.at(active); }
-		inline void Bind(GFX::Graphics& gfx) const noexcept { cameras.at(active)->Update(gfx); }
+		inline void Bind(GFX::Graphics& gfx) const noexcept { cameras.at(active)->Bind(gfx); }
 
 		void ProcessInput(WinAPI::Window& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;

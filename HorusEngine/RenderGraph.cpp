@@ -100,6 +100,14 @@ namespace GFX::Pipeline
 		}
 	}
 
+	RenderPass::Base::BasePass& RenderGraph::FindPass(const std::string& name)
+	{
+		for (auto& pass : passes)
+			if (pass->GetName() == name)
+				return *pass;
+		throw RGC_EXCEPT("Pass not present in RenderGraph \"" + name + "\"!");
+	}
+
 	void RenderGraph::AppendPass(std::unique_ptr<RenderPass::Base::BasePass> pass)
 	{
 		assert(!finalized);

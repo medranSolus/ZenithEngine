@@ -107,7 +107,7 @@ void App::MakeFrame()
 {
 	window.Gfx().BeginFrame(0.05f, 0.05f, 0.05f);
 	ProcessInput();
-	cameras->Bind(window.Gfx());
+	renderer.BindMainCamera(cameras->GetCamera());
 	cameras->Submit(RenderChannel::Main);
 	pointLight->Submit(RenderChannel::Main);
 	pointLight->Bind(window.Gfx(), cameras->GetCamera());

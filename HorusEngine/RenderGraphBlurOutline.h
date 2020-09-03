@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderGraph.h"
+#include "LambertianPass.h"
 #include "ConstBufferExCache.h"
 
 namespace GFX::Pipeline
@@ -18,6 +19,9 @@ namespace GFX::Pipeline
 	public:
 		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f);
 		virtual ~RenderGraphBlurOutline() = default;
+
+		inline void BindMainCamera(Camera::ICamera& camera) { dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera); }
+		inline void BindShadowCamera(Camera::ICamera& camera) {}
 
 		void SetKernel(int radius, float sigma);
 		void ShowWindow() noexcept;
