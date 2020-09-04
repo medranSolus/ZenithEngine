@@ -1,3 +1,4 @@
+#include "UtilsVS.hlsli"
 #include "TransformCBuffer.hlsli"
 #include "ShadowCBuffer.hlsli"
 
@@ -27,19 +28,17 @@ VSOut main(float3 pos : POSITION, float3 normal : NORMAL
 )
 {
 	VSOut vso;
-	vso.viewPos = (float3) mul(float4(pos, 1.0f), transformView);
-	vso.viewNormal = mul(normal, (float3x3) transformView);
-
-	const float4 shadowSpacePos = mul(mul(float4(pos, 1.0f), transform), shadowViewProjection);
-	vso.shadowPos = shadowSpacePos * float4(0.5f, -0.5f, 1.0f, 1.0f) + float4(0.5f, 0.5f, 0.0f, 0.0f) * shadowSpacePos.w;
+	vso.viewPos = (float3) mul(float4(pos, 1.0f), cb_transformView);
+	vso.viewNormal = mul(normal, (float3x3) cb_transformView);
+	vso.shadowPos = ToShadowSpacePos(pos, cb_transform, cb_shadowViewProjection);
 
 #ifdef _TEX
 	vso.tc = tc;
 #ifdef _TEX_NORMAL
-	vso.viewTan = mul(tangent, (float3x3) transformView);
-	vso.viewBitan = mul(bitangent, (float3x3) transformView);
+	vso.viewTan = mul(tangent, (float3x3) cb_transformView);
+	vso.viewBitan = mul(bitangent, (float3x3) cb_transformView);
 #endif
 #endif
-	vso.pos = mul(float4(pos, 1.0f), transformViewProjection);
+	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
 	return vso;
 }

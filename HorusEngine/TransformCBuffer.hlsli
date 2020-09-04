@@ -1,6 +1,6 @@
 cbuffer TransformBuffer : register(b0)
 {
-	matrix transform;
-	matrix transformView;
-	matrix transformViewProjection;
+	matrix cb_transform;
+	matrix cb_transformView;
+	matrix cb_transformViewProjection;
 };

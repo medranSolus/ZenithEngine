@@ -1,4 +1,4 @@
 cbuffer ShadowBuffer : register(b1)
 {
-	matrix shadowViewProjection;
+	matrix cb_shadowViewProjection;
 };

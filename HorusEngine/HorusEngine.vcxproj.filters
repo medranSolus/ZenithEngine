@@ -1189,15 +1189,18 @@
       <Filter>Header Files\AssImp</Filter>
     </None>
     <None Include="packages.config" />
-    <None Include="Utils.hlsli">
-      <Filter>Shader Files</Filter>
-    </None>
     <None Include="LightCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
     <None Include="ShadowCBuffer.hlsli" />
     <None Include="TransformCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
+    </None>
+    <None Include="UtilsPS.hlsli">
+      <Filter>Shader Files\Pixel Shaders</Filter>
+    </None>
+    <None Include="UtilsVS.hlsli">
+      <Filter>Shader Files\Vertex Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
