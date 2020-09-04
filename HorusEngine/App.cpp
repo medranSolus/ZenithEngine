@@ -113,7 +113,7 @@ void App::MakeFrame()
 	pointLight->Bind(window.Gfx(), cameras->GetCamera());
 	for (auto& shape : shapes)
 		if (shape)
-			shape->Submit(RenderChannel::Main);
+			shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& obj : carpetRects)
 		obj->Submit(RenderChannel::Main);
 	ShowObjectWindow();

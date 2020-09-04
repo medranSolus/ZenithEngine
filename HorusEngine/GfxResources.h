@@ -17,6 +17,7 @@
 #include "PixelShader.h"
 #include "Rasterizer.h"
 #include "Sampler.h"
+#include "ShadowSampler.h"
 #include "Texture.h"
 #include "Topology.h"
 #include "VertexBuffer.h"

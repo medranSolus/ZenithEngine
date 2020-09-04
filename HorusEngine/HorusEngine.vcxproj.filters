@@ -444,6 +444,9 @@
     <ClCompile Include="ShadowMapPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowSampler.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -496,6 +499,9 @@
     </FxCompile>
     <FxCompile Include="BlurPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCBuffer.fx">
+      <Filter>Shader Files\CBuffers</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1148,6 +1154,9 @@
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
     <ClInclude Include="ConstBufferShadow.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowSampler.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>

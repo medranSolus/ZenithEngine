@@ -11,7 +11,7 @@ namespace GFX::Resource
 		const GfxObject& parent;
 
 	protected:
-		virtual inline DirectX::FXMMATRIX GetTransformView(Graphics& gfx) noexcept { return parent.GetTransformMatrix() * gfx.GetCamera(); }
+		virtual inline DirectX::FXMMATRIX GetTransform() noexcept { return parent.GetTransformMatrix(); }
 
 		Data::CBuffer::Transform GetBufferData(Graphics& gfx) noexcept;
 		virtual void UpdateBind(Graphics& gfx, const Data::CBuffer::Transform& buffer) noexcept;

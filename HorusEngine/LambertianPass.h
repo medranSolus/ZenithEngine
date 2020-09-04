@@ -9,7 +9,6 @@ namespace GFX::Pipeline::RenderPass
 	{
 		Camera::ICamera* mainCamera = nullptr;
 		std::shared_ptr<GFX::Resource::ConstBufferShadow> shadowBuffer = nullptr;
-		std::shared_ptr<GFX::Resource::IBindable> depthMap = nullptr;
 
 	public:
 		LambertianPass(Graphics& gfx, const std::string& name);

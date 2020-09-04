@@ -115,7 +115,7 @@ namespace GFX
 					return DirectX::WICCodecs::WIC_CODEC_WMP;
 				throw IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
 			};
-			DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(filename)), Utils::ToUtf8(filename).c_str()),
+			DXT_THROW_FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS::WIC_FLAGS_NONE, DirectX::GetWICCodec(GetCodecID(ext)), Utils::ToUtf8(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
 		}
 	}

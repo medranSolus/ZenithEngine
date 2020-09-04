@@ -8,7 +8,7 @@ namespace GFX::Resource
 		DirectX::XMFLOAT4X4 transform;
 
 	protected:
-		inline DirectX::FXMMATRIX GetTransformView(Graphics& gfx) noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransformView(gfx); }
+		inline DirectX::FXMMATRIX GetTransform() noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransform(); }
 
 	public:
 		inline ConstBufferTransformEx(Graphics& gfx, const GfxObject& parent, UINT slot = 0U)

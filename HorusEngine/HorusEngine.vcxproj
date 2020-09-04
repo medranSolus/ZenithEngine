@@ -332,6 +332,7 @@
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
+    <ClCompile Include="ShadowSampler.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="QueuePass.cpp" />
@@ -445,6 +446,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <None Include="ShadowCBuffer.fx">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="SolidPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -677,6 +681,7 @@
     <ClInclude Include="RenderTargetShaderInput.h" />
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="ShadowMapPass.h" />
+    <ClInclude Include="ShadowSampler.h" />
     <ClInclude Include="Sink.h" />
     <ClInclude Include="SinkContainerBindable.h" />
     <ClInclude Include="SinkDirectBindable.h" />

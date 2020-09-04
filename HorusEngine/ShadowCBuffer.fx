@@ -1,0 +1,4 @@
+cbuffer ShadowBuffer
+{
+	matrix shadowViewProjection;
+};

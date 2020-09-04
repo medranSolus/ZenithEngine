@@ -28,8 +28,10 @@ Texture2D normalMap;
 Texture2D spec : register(t2);
 #endif
 #endif
+SamplerState shadowSplr;
+Texture2D shadowMap : register(t3);
 
-float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
+float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadowPos : SHADOW_POSITION
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
@@ -46,33 +48,42 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL
 #endif
 	clip(color.a - 0.0039f);
 
+	float3 diffuse, specular;
+	shadowPos.xyz /= shadowPos.w;
+
+	// Shadow test
+	if (shadowMap.Sample(shadowSplr, shadowPos.xy).r > shadowPos.z - 0.001f)
+	{
 #ifdef _TEX_NORMAL
-	viewNormal = lerp(viewNormal,
+		viewNormal = lerp(viewNormal,
 			GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr), normalMapWeight); // TODO: Add this
 #else
-	viewNormal = normalize(viewNormal);
+		viewNormal = normalize(viewNormal);
 #endif
-	// Only for double sided objects
-	//if (dot(viewNormal, viewPos) >= 0.0f)
-	//	viewNormal *= -1.0f;
-	LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
+		// Only for double sided objects
+		//if (dot(viewNormal, viewPos) >= 0.0f)
+		//	viewNormal *= -1.0f;
+		LightVectorData lightVD = GetLightVectorData(lightPos, viewPos);
 
-	const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
-	const float3 scaledLightColor = lightColor * lightIntensity * attenuation;
-	const float3 diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation);
+		const float attenuation = GetAttenuation(atteuationConst, atteuationLinear, attenuationQuad, lightVD.distanceToLight);
+		const float3 scaledLightColor = lightColor * lightIntensity * attenuation;
+		diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation);
 
-	float3 specColor;
-	float specPower;
+		float3 specColor;
+		float specPower;
 #ifdef _TEX_SPEC
-	const float4 specularTex = spec.Sample(splr, tc);
-	if (useSpecularPowerAlpha)
-		specPower = GetSampledSpecularPower(specularTex);
-	specColor = specularTex.rgb;
+		const float4 specularTex = spec.Sample(splr, tc);
+		if (useSpecularPowerAlpha)
+			specPower = GetSampledSpecularPower(specularTex);
+		specColor = specularTex.rgb;
 #else
-	specColor = specularColor;
-	specPower = specularPower;
+		specColor = specularColor;
+		specPower = specularPower;
 #endif
-	const float3 specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specularPower, specularIntensity);
+		specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specularPower, specularIntensity);
+	}
+	else
+		diffuse = specular = float3(0.0f, 0.0f, 0.0f);
 
 	return float4(saturate((diffuse + ambientColor) * color.rgb + specular), color.a);
 }
