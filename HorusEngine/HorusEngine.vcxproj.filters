@@ -500,9 +500,6 @@
     <FxCompile Include="BlurPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
-    <FxCompile Include="ShadowCBuffer.fx">
-      <Filter>Shader Files\CBuffers</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Timer.h">
@@ -1191,16 +1188,17 @@
     <None Include="..\AssImp\include\assimp\vector3.inl">
       <Filter>Header Files\AssImp</Filter>
     </None>
-    <None Include="Utils.fx">
+    <None Include="packages.config" />
+    <None Include="Utils.hlsli">
       <Filter>Shader Files</Filter>
     </None>
-    <None Include="LightCBuffer.fx">
+    <None Include="LightCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
-    <None Include="TransformCBuffer.fx">
+    <None Include="ShadowCBuffer.hlsli" />
+    <None Include="TransformCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="HorusEngine.rc">

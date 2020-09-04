@@ -377,10 +377,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <None Include="packages.config" />
-    <None Include="TransformCBuffer.fx">
+    <None Include="TransformCBuffer.hlsli">
       <FileType>Document</FileType>
     </None>
-    <None Include="LightCBuffer.fx">
+    <None Include="LightCBuffer.hlsli">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -395,7 +395,7 @@
       </EntryPointName>
       <FileType>Document</FileType>
     </None>
-    <None Include="Utils.fx">
+    <None Include="Utils.hlsli">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -446,7 +446,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <None Include="ShadowCBuffer.fx">
+    <None Include="ShadowCBuffer.hlsli">
       <FileType>Document</FileType>
     </None>
     <FxCompile Include="SolidPS.hlsl">

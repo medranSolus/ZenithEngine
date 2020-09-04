@@ -1,5 +1,5 @@
-#include "Utils.fx"
-#include "LightCBuffer.fx"
+#include "Utils.hlsli"
+#include "LightCBuffer.hlsli"
 
 cbuffer PixelBuffer
 {

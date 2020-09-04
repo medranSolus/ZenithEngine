@@ -1,5 +1,5 @@
-#include "TransformCBuffer.fx"
-#include "ShadowCBuffer.fx"
+#include "TransformCBuffer.hlsli"
+#include "ShadowCBuffer.hlsli"
 
 struct VSOut
 {

@@ -1,4 +1,4 @@
-cbuffer LightBuffer
+cbuffer LightBuffer : register(b0)
 {
 	float3 ambientColor;
 	float atteuationConst;
