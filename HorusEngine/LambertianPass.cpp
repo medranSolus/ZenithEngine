@@ -22,9 +22,9 @@ namespace GFX::Pipeline::RenderPass
 	void LambertianPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
 	{
 		assert(mainCamera);
+		shadowBuffer->Update(gfx);
 		mainCamera->ResetView();
 		mainCamera->Bind(gfx);
-		shadowBuffer->Update(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

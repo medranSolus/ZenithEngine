@@ -5,16 +5,22 @@ namespace GFX::Pipeline::RenderPass::Base
 {
 	void BindingPass::BindResources(Graphics& gfx) noexcept
 	{
+		Resource::IBufferResource::UnbindAll(gfx);
 		if (renderTarget == nullptr)
-			depthStencil->Bind(gfx);
+		{
+			depthStencil->Unbind(gfx);
+			depthStencil->DepthStencil::Bind(gfx);
+		}
 		else
 		{
-			Resource::RenderTarget::UnbindAll(gfx);
 			renderTarget->Unbind(gfx);
 			if (depthStencil == nullptr)
 				renderTarget->RenderTarget::Bind(gfx);
 			else
+			{
+				depthStencil->Unbind(gfx);
 				renderTarget->Bind(gfx, *depthStencil);
+			}
 		}
 	}
 

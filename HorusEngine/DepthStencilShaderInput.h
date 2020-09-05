@@ -1,6 +1,5 @@
 #pragma once
 #include "DepthStencil.h"
-#include "Surface.h"
 
 namespace GFX::Pipeline::Resource
 {
@@ -15,10 +14,11 @@ namespace GFX::Pipeline::Resource
 		inline DepthStencilShaderInput(Graphics& gfx, UINT slot, Usage usage = Usage::DepthStencil)
 			: DepthStencilShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, usage) {}
 		DepthStencilShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, Usage usage = Usage::DepthStencil);
+		virtual ~DepthStencilShaderInput() = default;
 
 		constexpr UINT GetSlot() const noexcept { return slot; }
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 
-		Surface ToSurface(Graphics& gfx, bool linearScale = true) const;
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
+		inline void Unbind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullShaderResource.GetAddressOf()); }
 	};
 }

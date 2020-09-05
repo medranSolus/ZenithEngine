@@ -1,7 +1,7 @@
 #include "UtilsPS.hlsli"
 #include "LightCBuffer.hlsli"
 
-cbuffer PixelBuffer
+cbuffer PixelBuffer : register(b1)
 {
 	float3 cb_specularColor;
 	float cb_specularIntensity; // The bigger the brighter
@@ -19,16 +19,16 @@ cbuffer PixelBuffer
 };
 
 #ifdef _TEX
-SamplerState splr;
-Texture2D tex;
+SamplerState splr : register(s0);
+Texture2D tex : register(t0);
 #ifdef _TEX_NORMAL
-Texture2D normalMap;
+Texture2D normalMap : register(t1);
 #endif
 #ifdef _TEX_SPEC
 Texture2D spec : register(t2);
 #endif
 #endif
-SamplerState shadowSplr;
+SamplerState shadowSplr : register(s1);
 Texture2D shadowMap : register(t3);
 
 float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadowPos : SHADOW_POSITION
@@ -51,8 +51,9 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 	float3 diffuse, specular;
 	shadowPos.xyz /= shadowPos.w;
 
+	float4 shadowSample = shadowMap.Sample(shadowSplr, shadowPos.xy);
 	// Shadow test
-	if (shadowMap.Sample(shadowSplr, shadowPos.xy).r > shadowPos.z - 0.001f)
+	if (shadowPos.z > 1.0f || shadowSample.x > shadowPos.z - 0.00001f)
 	{
 #ifdef _TEX_NORMAL
 		viewNormal = lerp(viewNormal,
@@ -75,6 +76,8 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 		const float4 specularTex = spec.Sample(splr, tc);
 		if (cb_useSpecularPowerAlpha)
 			specPower = GetSampledSpecularPower(specularTex);
+		else
+			specPower = cb_specularPower;
 		specColor = specularTex.rgb;
 #else
 		specColor = cb_specularColor;

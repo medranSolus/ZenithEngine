@@ -31,6 +31,7 @@ VSOut main(float3 pos : POSITION, float3 normal : NORMAL
 	vso.viewPos = (float3) mul(float4(pos, 1.0f), cb_transformView);
 	vso.viewNormal = mul(normal, (float3x3) cb_transformView);
 	vso.shadowPos = ToShadowSpacePos(pos, cb_transform, cb_shadowViewProjection);
+	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
 
 #ifdef _TEX
 	vso.tc = tc;
@@ -39,6 +40,5 @@ VSOut main(float3 pos : POSITION, float3 normal : NORMAL
 	vso.viewBitan = mul(bitangent, (float3x3) cb_transformView);
 #endif
 #endif
-	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
 	return vso;
 }

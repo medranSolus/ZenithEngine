@@ -8,7 +8,8 @@ namespace Camera
 	class BaseCamera : public ICamera
 	{
 	protected:
-		mutable DirectX::XMFLOAT4X4 view;
+		mutable DirectX::XMFLOAT4X4 viewMatrix;
+		mutable DirectX::XMFLOAT4X4 projectionMatrix;
 		ProjectionData projection;
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
@@ -20,6 +21,7 @@ namespace Camera
 		bool enableFrustrum = true;
 
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
+		DirectX::FXMMATRIX UpdateProjection() const noexcept;
 
 	public:
 		BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
@@ -38,8 +40,9 @@ namespace Camera
 
 		inline void SetPos(const DirectX::XMFLOAT3& pos) noexcept override { position = pos; viewUpdate = true; }
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return position; }
-		inline DirectX::FXMMATRIX GetProjection() const noexcept override { return DirectX::XMMatrixPerspectiveFovLH(projection.fov, projection.screenRatio, projection.nearClip, projection.farClip); }
-		DirectX::FXMMATRIX GetView() const noexcept override { return DirectX::XMLoadFloat4x4(&view); }
+
+		DirectX::FXMMATRIX GetProjection() const noexcept override;
+		DirectX::FXMMATRIX GetView() const noexcept override;
 
 		void Roll(float delta) noexcept override;
 

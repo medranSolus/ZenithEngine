@@ -447,6 +447,9 @@
     <ClCompile Include="ShadowSampler.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="IBufferResource.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">

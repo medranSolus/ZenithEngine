@@ -29,9 +29,9 @@ namespace GFX::Light
 		buffer["atteuationConst"] = 1.0f;
 		buffer["lightColor"] = std::move(Data::ColorFloat3(1.0f, 1.0f, 1.0f));
 		buffer["atteuationLinear"] = 0.045f;
-		buffer["lightPos"] = mesh.GetPos();
+		buffer["lightPos"] = position;
 		buffer["attenuationQuad"] = 0.0075f;
-		buffer["lightIntensity"] = 1.0f;
+		buffer["lightIntensity"] = 5.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
 		lightCamera = std::make_shared<Camera::PersonCamera>(gfx, graph, name + "Cam", 1.047f, 0.01f, 500.0f, 0, 0, position);
 	}

@@ -7,8 +7,7 @@ namespace Camera
 	{
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&position),
 			DirectX::XMLoadFloat3(&eyeDirection), DirectX::XMLoadFloat3(&up));
-		DirectX::XMStoreFloat4x4(&view, matrix);
-		viewUpdate = false;
+		DirectX::XMStoreFloat4x4(&viewMatrix, matrix);
 		return std::move(matrix);
 	}
 

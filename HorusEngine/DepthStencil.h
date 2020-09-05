@@ -1,5 +1,6 @@
 #pragma once
 #include "IBufferResource.h"
+#include "Surface.h"
 
 namespace GFX::Pipeline::Resource
 {
@@ -10,10 +11,6 @@ namespace GFX::Pipeline::Resource
 
 	public:
 		enum class Usage { DepthStencil, ShadowDepth };
-
-	private:
-		unsigned int width;
-		unsigned int height;
 
 	protected:
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
@@ -28,10 +25,9 @@ namespace GFX::Pipeline::Resource
 			: DepthStencil(gfx, width, height, false, usage) {}
 		virtual ~DepthStencil() = default;
 
-		constexpr unsigned int GetWidth() const noexcept { return width; }
-		constexpr unsigned int GetHeight() const noexcept { return height; }
-
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, depthStencilView.Get()); }
+		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, depthStencilView.Get()); BindViewport(gfx); }
 		inline void Clear(Graphics& gfx) noexcept override { GetContext(gfx)->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.0f, 0U); }
+
+		Surface ToSurface(Graphics& gfx, bool linearScale = true) const;
 	};
 }

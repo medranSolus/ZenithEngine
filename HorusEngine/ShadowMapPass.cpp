@@ -19,6 +19,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		assert(shadowCamera);
 		shadowCamera->Bind(gfx);
+		depthStencil->Clear(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

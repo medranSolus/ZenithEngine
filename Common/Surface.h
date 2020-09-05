@@ -24,10 +24,12 @@ namespace GFX
 			~Pixel() = default;
 
 			constexpr uint32_t GetValue() const noexcept { return dword; }
+			constexpr uint32_t GetRGBA() const noexcept { return dword; }
+			constexpr uint32_t GetBGRA() const noexcept { return (dword & 0xFF00FF00) | GetB() | (static_cast<uint32_t>(GetR()) << 16U); }
 			constexpr uint8_t GetA() const noexcept { return dword >> 24U; }
-			constexpr uint8_t GetR() const noexcept { return (dword >> 16U) & 0xFFU; }
+			constexpr uint8_t GetB() const noexcept { return (dword >> 16U) & 0xFFU; }
 			constexpr uint8_t GetG() const noexcept { return (dword >> 8U) & 0xFFU; }
-			constexpr uint8_t GetB() const noexcept { return dword & 0xFFU; }
+			constexpr uint8_t GetR() const noexcept { return dword & 0xFFU; }
 
 			constexpr void SetA(uint8_t x) noexcept { dword = (dword & 0x00FFFFFFU) | (x << 24U); }
 			constexpr void SetR(uint8_t r) noexcept { dword = (dword & 0xFF00FFFFU) | (r << 16U); }

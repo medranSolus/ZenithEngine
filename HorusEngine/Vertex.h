@@ -28,10 +28,10 @@ namespace GFX::Data
 
 	protected:
 		Vertex(char* data, const VertexLayout& layout) noexcept(!IS_DEBUG);
-		Vertex(const Vertex&) = default;
-		Vertex& operator=(const Vertex&) = default;
 
 	public:
+		Vertex(const Vertex&) = default;
+		Vertex& operator=(const Vertex&) = default;
 		~Vertex() = default;
 
 		template<VertexLayout::ElementType T>

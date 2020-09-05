@@ -291,6 +291,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="HorizontalBlurPass.cpp" />
+    <ClCompile Include="IBufferResource.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
