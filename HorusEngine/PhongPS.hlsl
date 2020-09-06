@@ -49,11 +49,9 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 	clip(color.a - 0.0039f);
 
 	float3 diffuse, specular;
-	shadowPos.xyz /= shadowPos.w;
-
-	float4 shadowSample = shadowMap.Sample(shadowSplr, shadowPos.xy);
 	// Shadow test
-	if (shadowPos.z > 1.0f || shadowSample.x > shadowPos.z - 0.00001f)
+	const float shadowLevel = GetShadowLevel(shadowPos, shadowSplr, shadowMap);
+	if (shadowLevel != 0.0f)
 	{
 #ifdef _TEX_NORMAL
 		viewNormal = lerp(viewNormal,
@@ -68,7 +66,7 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 
 		const float attenuation = GetAttenuation(cb_atteuationConst, cb_atteuationLinear, cb_attenuationQuad, lightVD.distanceToLight);
 		const float3 scaledLightColor = cb_lightColor * cb_lightIntensity * attenuation;
-		diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation);
+		diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation) * shadowLevel;
 
 		float3 specColor;
 		float specPower;
@@ -83,7 +81,7 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 		specColor = cb_specularColor;
 		specPower = cb_specularPower;
 #endif
-		specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specPower, cb_specularIntensity);
+		specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specPower, cb_specularIntensity) * shadowLevel;
 	}
 	else
 		diffuse = specular = float3(0.0f, 0.0f, 0.0f);
