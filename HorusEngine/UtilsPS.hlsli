@@ -56,39 +56,26 @@ float GetSampledSpecularPower(const in float4 specularData)
 	return pow(2.0f, specularData.a * 13.0f);
 }
 
-float GetShadowLevel(const in float4 shadowPos, uniform SamplerState shadowSplr, uniform Texture2D shadowMap)
+float GetShadowLevel(const in float4 shadowPos, uniform SamplerComparisonState shadowSplr, uniform Texture2D shadowMap)
 {
 	const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide
 	float level = 0.0f;
-	if (shadowUVZ.z > 1.0f)
+	if (shadowUVZ.z > 1.0f || shadowUVZ.z < 0.0f)
 		level = 1.0f;
 	else
 	{
 		const float zBias = shadowUVZ.z - 0.00001f;
-		uint width, height;
-		shadowMap.GetDimensions(width, height);
-		const float dxNear = 0.5f / width;
-		const float dyNear = 0.5f / height;
-		const float dxFar = 1.5f / width;
-		const float dyFar = 1.5f / height;
 
 		// PCF anti-aliasing https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxNear, -dyNear)).x >= zBias ? 3.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxNear, dyFar)).x >= zBias ? 3.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxFar, dyFar)).x >= zBias ? 3.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxFar, -dyNear)).x >= zBias ? 3.0f : 0.0f;
-
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxNear, dyNear)).x >= zBias ? 2.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxNear, -dyFar)).x >= zBias ? 2.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxFar, -dyFar)).x >= zBias ? 2.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxFar, dyNear)).x >= zBias ? 2.0f : 0.0f;
-
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxNear, dyNear)).x >= zBias ? 1.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxFar, dyNear)).x >= zBias ? 1.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(dxFar, -dyFar)).x >= zBias ? 1.0f : 0.0f;
-		level += shadowMap.Sample(shadowSplr, shadowUVZ.xy + float2(-dxNear, -dyFar)).x >= zBias ? 1.0f : 0.0f;
-
-		level /= 24.0f;
+		static const int PCF_RANGE = 2;
+		[unroll]
+		for (int x = -PCF_RANGE; x <= PCF_RANGE; ++x)
+		{
+			[unroll]
+			for (int y = -PCF_RANGE; y <= PCF_RANGE; ++y)
+				level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, zBias, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
+		}
+		level /= (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
 	}
 	return level;
 }
