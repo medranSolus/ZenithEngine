@@ -39,7 +39,7 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadow
 	float3 viewBitan : BITANGENT
 #endif
 #endif
-) : SV_Target
+) : SV_TARGET
 {
 #ifdef _TEX
 	const float4 color = tex.Sample(splr, tc);

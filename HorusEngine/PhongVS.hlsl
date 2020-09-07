@@ -14,7 +14,7 @@ struct VSOut
 	float3 viewBitan : BITANGENT;
 #endif
 #endif
-	float4 pos : SV_Position;
+	float4 pos : SV_POSITION;
 };
 
 VSOut main(float3 pos : POSITION, float3 normal : NORMAL

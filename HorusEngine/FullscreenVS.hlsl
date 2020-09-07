@@ -1,7 +1,7 @@
 struct VSOut
 {
 	float2 tc : TEXCOORD;
-	float4 pos : SV_Position;
+	float4 pos : SV_POSITION;
 };
 
 VSOut main(float2 pos : POSITION)
