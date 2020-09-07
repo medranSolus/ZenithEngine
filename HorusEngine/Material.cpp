@@ -4,9 +4,9 @@ namespace GFX::Visual
 {
 	Material::Material(Graphics& gfx, Data::ColorFloat3 color, const std::string& name)
 	{
-		AddBind(Resource::PixelShader::Get(gfx, "SolidPS.cso"));
+		AddBind(Resource::PixelShader::Get(gfx, "SolidPS"));
 		vertexLayout = std::make_shared<Data::VertexLayout>();
-		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
+		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 
@@ -21,9 +21,9 @@ namespace GFX::Visual
 	{
 		AddBind(Resource::Rasterizer::Get(gfx, false));
 		AddBind(Resource::Blender::Get(gfx, false));
-		AddBind(Resource::PixelShader::Get(gfx, "PhongPS.cso"));
+		AddBind(Resource::PixelShader::Get(gfx, "PhongPS"));
 
-		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS.cso");
+		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS");
 		vertexLayout = std::make_shared<Data::VertexLayout>();
 		vertexLayout->Append(VertexAttribute::Normal);
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
@@ -94,8 +94,8 @@ namespace GFX::Visual
 		// Common elements
 		AddBind(Resource::Rasterizer::Get(gfx, hasAlpha)); // TODO: Better way to check for double sided meshes (and transparent too)
 		AddBind(Resource::Blender::Get(gfx, false));
-		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS + ".cso"));
-		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS + ".cso");
+		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
+		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		if (hasTexture)

@@ -44,6 +44,7 @@ inline void App::ShowObjectWindow()
 					if (currentItem->second)
 						currentItem->second->DisableOutline();
 					currentItem = it;
+					probe.ResetNode();
 					if (currentItem->second)
 						currentItem->second->SetOutline();
 				}

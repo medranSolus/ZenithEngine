@@ -10,7 +10,7 @@ namespace GFX::Pipeline::RenderPass
 		renderTarget = std::make_unique<Resource::RenderTargetShaderInput>(gfx, width, height, 0U);
 		RegisterSource(Base::SourceDirectBindable<Resource::RenderTarget>::Make("blurTarget", renderTarget));
 
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "SolidPS.cso"));
+		AddBind(GFX::Resource::PixelShader::Get(gfx, "SolidPS"));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
 	}

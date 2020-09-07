@@ -15,11 +15,11 @@ namespace GFX::Pipeline::RenderPass
 		renderTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, width, height, 0U);
 		RegisterSource(Base::SourceDirectBindable<Resource::RenderTarget>::Make("halfTarget", renderTarget));
 
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS.cso"));
+		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true));
 	}
-	
+
 	void HorizontalBlurPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
 	{
 		direction->GetBuffer()["vertical"] = false;

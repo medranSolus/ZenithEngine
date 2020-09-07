@@ -9,7 +9,7 @@ namespace GFX::Resource
 	{
 		GFX_ENABLE_ALL(gfx);
 
-		GFX_THROW_FAILED(D3DReadFileToBlob(Utils::ToUtf8("Shaders\\" + path).c_str(), &bytecode));
+		GFX_THROW_FAILED(D3DReadFileToBlob(Utils::ToUtf8("Shaders\\" + path + ".cso").c_str(), &bytecode));
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateVertexShader(bytecode->GetBufferPointer(),
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
 	}

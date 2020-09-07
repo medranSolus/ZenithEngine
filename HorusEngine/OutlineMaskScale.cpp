@@ -25,7 +25,7 @@ namespace GFX::Visual
 	OutlineMaskScale::OutlineMaskScale(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout)
 		: buffer(MakeLayout())
 	{
-		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS.cso");
+		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		buffer["scale"] = 1.3f;

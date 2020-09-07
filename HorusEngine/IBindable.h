@@ -17,6 +17,7 @@ namespace GFX::Resource
 		static inline ID3D11Device* GetDevice(Graphics& gfx) noexcept { return gfx.device.Get(); }
 
 	public:
+		IBindable() = default;
 		IBindable(const IBindable&) = delete;
 		IBindable& operator=(const IBindable&) = delete;
 		virtual ~IBindable() = default;
