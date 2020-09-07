@@ -10,8 +10,6 @@ namespace GFX::Resource
 
 	public:
 		Rasterizer(Graphics& gfx, bool culling);
-		Rasterizer(const Rasterizer&) = delete;
-		Rasterizer& operator=(const Rasterizer&) = delete;
 		virtual ~Rasterizer() = default;
 
 		static inline std::shared_ptr<Rasterizer> Get(Graphics& gfx, bool culling) { return Codex::Resolve<Rasterizer>(gfx, culling); }

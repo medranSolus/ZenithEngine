@@ -14,8 +14,6 @@ namespace GFX::Resource
 	public:
 		ConstBufferEx(Graphics& gfx, const std::string& tag, const Data::CBuffer::DCBLayoutElement& root,
 			UINT slot = 0U, const Data::CBuffer::DynamicCBuffer* buffer = nullptr);
-		ConstBufferEx(const ConstBufferEx&) = delete;
-		ConstBufferEx& operator=(const ConstBufferEx&) = delete;
 		virtual ~ConstBufferEx() = default;
 
 		void Update(Graphics& gfx, const Data::CBuffer::DynamicCBuffer& buffer);

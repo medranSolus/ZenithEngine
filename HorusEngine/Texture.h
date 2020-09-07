@@ -12,8 +12,6 @@ namespace GFX::Resource
 
 	public:
 		Texture(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);
-		Texture(const Texture&) = delete;
-		Texture& operator=(const Texture&) = delete;
 		virtual ~Texture() = default;
 
 		static inline std::shared_ptr<Texture> Get(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);

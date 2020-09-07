@@ -12,8 +12,6 @@ namespace GFX::Resource
 
 	public:
 		ShadowRasterizer(Graphics& gfx, int depthBias, float slopeBias, float biasClamp);
-		ShadowRasterizer(const ShadowRasterizer&) = delete;
-		ShadowRasterizer& operator=(const ShadowRasterizer&) = delete;
 		virtual ~ShadowRasterizer() = default;
 
 		static inline std::shared_ptr<ShadowRasterizer> Get(Graphics& gfx, int depthBias, float slopeBias, float biasClamp) { return std::make_shared<ShadowRasterizer>(gfx, depthBias, slopeBias, biasClamp); }

@@ -11,8 +11,6 @@ namespace GFX::Resource
 
 	public:
 		IndexBuffer(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
-		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		virtual ~IndexBuffer() = default;
 
 		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<IndexBuffer>(tag); }

@@ -16,8 +16,6 @@ namespace GFX::Pipeline::Resource
 
 	public:
 		IBufferResource(unsigned int width, unsigned int height) noexcept;
-		IBufferResource(const IBufferResource&) = delete;
-		IBufferResource& operator=(const IBufferResource&) = delete;
 		virtual ~IBufferResource() = default;
 
 		static inline void UnbindAll(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, nullptr); }

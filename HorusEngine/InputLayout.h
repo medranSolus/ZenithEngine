@@ -12,8 +12,6 @@ namespace GFX::Resource
 
 	public:
 		InputLayout(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader);
-		InputLayout(const InputLayout&) = delete;
-		InputLayout& operator=(const InputLayout&) = delete;
 		virtual ~InputLayout() = default;
 
 		static inline std::shared_ptr<InputLayout> Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader);

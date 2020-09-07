@@ -10,8 +10,6 @@ namespace GFX::Resource
 
 	public:
 		Blender(Graphics& gfx, bool enabled);
-		Blender(const Blender&) = delete;
-		Blender& operator=(const Blender&) = delete;
 		virtual ~Blender() = default;
 
 		static inline std::shared_ptr<Blender> Get(Graphics& gfx, bool enabled) { return Codex::Resolve<Blender>(gfx, enabled); }

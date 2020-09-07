@@ -13,8 +13,6 @@ namespace GFX::Resource
 		using ConstBuffer<T>::slot;
 
 	public:
-		ConstBufferPixel(const ConstBufferPixel&) = delete;
-		ConstBufferPixel& operator=(const ConstBufferPixel&) = delete;
 		virtual ~ConstBufferPixel() = default;
 
 		static inline std::shared_ptr<ConstBufferPixel> Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);

@@ -12,8 +12,6 @@ namespace GFX::Resource
 
 	public:
 		VertexBuffer(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
-		VertexBuffer(const VertexBuffer&) = delete;
-		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		virtual ~VertexBuffer() = default;
 
 		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<VertexBuffer>(tag); }

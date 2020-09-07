@@ -16,8 +16,6 @@ namespace GFX::Resource
 
 	public:
 		Sampler(Graphics& gfx, Type type, bool textureCoordReflect);
-		Sampler(const Sampler&) = delete;
-		Sampler& operator=(const Sampler&) = delete;
 		virtual ~Sampler() = default;
 
 		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect);

@@ -9,8 +9,6 @@ namespace GFX::Resource
 
 	public:
 		ShadowSampler(Graphics& gfx);
-		ShadowSampler(const ShadowSampler&) = delete;
-		ShadowSampler& operator=(const ShadowSampler&) = delete;
 		virtual ~ShadowSampler() = default;
 
 		static inline std::shared_ptr<ShadowSampler> Get(Graphics& gfx);

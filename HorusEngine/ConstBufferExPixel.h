@@ -13,8 +13,6 @@ namespace GFX::Resource
 		using ConstBufferEx::slot;
 
 	public:
-		ConstBufferExPixel(const ConstBufferExPixel&) = delete;
-		ConstBufferExPixel& operator=(const ConstBufferExPixel&) = delete;
 		virtual ~ConstBufferExPixel() = default;
 
 		static std::shared_ptr<ConstBufferExPixel> Get(Graphics& gfx, const std::string& tag, const Data::CBuffer::DCBLayoutElement& root,

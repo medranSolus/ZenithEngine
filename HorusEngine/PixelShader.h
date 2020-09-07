@@ -10,8 +10,6 @@ namespace GFX::Resource
 
 	public:
 		PixelShader(Graphics& gfx, const std::string& path);
-		PixelShader(const PixelShader&) = delete;
-		PixelShader& operator=(const PixelShader&) = delete;
 		virtual ~PixelShader() = default;
 
 		static inline std::shared_ptr<PixelShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<PixelShader>(gfx, path); }

@@ -15,8 +15,6 @@ namespace GFX::Resource
 	public:
 		ConstBuffer(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
 		ConstBuffer(Graphics& gfx, const std::string& tag, UINT slot = 0U);
-		ConstBuffer(const ConstBuffer&) = delete;
-		ConstBuffer& operator=(const ConstBuffer&) = delete;
 		virtual ~ConstBuffer() = default;
 
 		constexpr UINT GetSlot() const noexcept { return slot; }

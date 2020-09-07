@@ -11,8 +11,6 @@ namespace GFX::Resource
 
 	public:
 		VertexShader(Graphics& gfx, const std::string& path);
-		VertexShader(const VertexShader&) = delete;
-		VertexShader& operator=(const VertexShader&) = delete;
 		virtual ~VertexShader() = default;
 
 		static inline std::shared_ptr<VertexShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<VertexShader>(gfx, path); }

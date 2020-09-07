@@ -9,8 +9,6 @@ namespace GFX::Resource
 
 	public:
 		constexpr Topology(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY type) : type(type) {}
-		Topology(const Topology&) = default;
-		Topology& operator=(const Topology&) = default;
 		virtual ~Topology() = default;
 
 		static inline std::shared_ptr<Topology> Get(Graphics& gfx, D3D11_PRIMITIVE_TOPOLOGY type) { return Codex::Resolve<Topology>(gfx, type); }

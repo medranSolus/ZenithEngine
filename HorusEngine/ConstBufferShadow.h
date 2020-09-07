@@ -11,8 +11,6 @@ namespace GFX::Resource
 
 	public:
 		inline ConstBufferShadow(Graphics& gfx, UINT slot = 1U) : vertexBuffer(std::make_unique<ConstBufferVertex<DirectX::XMMATRIX>>(gfx, "", slot)) {}
-		ConstBufferShadow(const ConstBufferShadow&) = delete;
-		ConstBufferShadow& operator=(const ConstBufferShadow&) = delete;
 		virtual ~ConstBufferShadow() = default;
 
 		inline void SetCamera(Camera::ICamera& shadowCamera) noexcept { camera = &shadowCamera; }

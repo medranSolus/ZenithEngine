@@ -18,8 +18,6 @@ namespace GFX::Resource
 
 	public:
 		ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot = 0U);
-		ConstBufferTransform(const ConstBufferTransform&) = delete;
-		ConstBufferTransform& operator=(const ConstBufferTransform&) = delete;
 		virtual ~ConstBufferTransform() = default;
 
 		inline void Bind(Graphics& gfx) noexcept override { UpdateBind(gfx, GetBufferData(gfx)); }
