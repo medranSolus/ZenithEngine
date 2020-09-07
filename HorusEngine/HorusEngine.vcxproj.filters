@@ -450,6 +450,9 @@
     <ClCompile Include="IBufferResource.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowRasterizer.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1157,6 +1160,9 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ShadowSampler.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowRasterizer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>

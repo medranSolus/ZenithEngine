@@ -64,8 +64,6 @@ float GetShadowLevel(const in float4 shadowPos, uniform SamplerComparisonState s
 		level = 1.0f;
 	else
 	{
-		const float zBias = shadowUVZ.z - 0.00001f;
-
 		// PCF anti-aliasing https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
 		static const int PCF_RANGE = 2;
 		[unroll]
@@ -73,7 +71,7 @@ float GetShadowLevel(const in float4 shadowPos, uniform SamplerComparisonState s
 		{
 			[unroll]
 			for (int y = -PCF_RANGE; y <= PCF_RANGE; ++y)
-				level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, zBias, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
+				level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, shadowUVZ.z, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
 		}
 		level /= (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
 	}

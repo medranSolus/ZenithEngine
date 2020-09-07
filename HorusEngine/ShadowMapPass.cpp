@@ -13,6 +13,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::NullPixelShader::Get(gfx));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
+		AddBind(GFX::Resource::ShadowRasterizer::Get(gfx, 40, 3.0f, 0.5f));
 	}
 
 	void ShadowMapPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)

@@ -333,6 +333,7 @@
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
+    <ClCompile Include="ShadowRasterizer.cpp" />
     <ClCompile Include="ShadowSampler.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
@@ -683,6 +684,7 @@
     <ClInclude Include="RenderTargetShaderInput.h" />
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="ShadowMapPass.h" />
+    <ClInclude Include="ShadowRasterizer.h" />
     <ClInclude Include="ShadowSampler.h" />
     <ClInclude Include="Sink.h" />
     <ClInclude Include="SinkContainerBindable.h" />
