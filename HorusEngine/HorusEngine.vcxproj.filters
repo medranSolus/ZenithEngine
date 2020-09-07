@@ -453,6 +453,12 @@
     <ClCompile Include="ShadowRasterizer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="TextureCube.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyboxPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -505,6 +511,12 @@
     </FxCompile>
     <FxCompile Include="BlurPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1163,6 +1175,15 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="ShadowRasterizer.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureCube.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyboxPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferTransformSkybox.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>

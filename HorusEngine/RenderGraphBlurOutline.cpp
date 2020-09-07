@@ -39,6 +39,9 @@ namespace GFX::Pipeline
 		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 1U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
+		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\Space", ".png");
+		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
+
 		// Setup all passes
 		{
 			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearRT");
@@ -62,8 +65,15 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = std::make_unique<RenderPass::OutlineGenerationPass>(gfx, "outlineGeneration");
+			auto pass = std::make_unique<RenderPass::SkyboxPass>(gfx, "skybox");
+			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
+			pass->SetSinkLinkage("renderTarget", "lambertian.renderTarget");
 			pass->SetSinkLinkage("depthStencil", "lambertian.depthStencil");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::OutlineGenerationPass>(gfx, "outlineGeneration");
+			pass->SetSinkLinkage("depthStencil", "skybox.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		const unsigned int blurTargetWidth = gfx.GetWidth() / 2;
@@ -79,7 +89,7 @@ namespace GFX::Pipeline
 		{
 			auto pass = std::make_unique<RenderPass::VerticalBlurPass>(gfx, "verticalBlur");
 			pass->SetSinkLinkage("halfTarget", "horizontalBlur.halfTarget");
-			pass->SetSinkLinkage("renderTarget", "lambertian.renderTarget");
+			pass->SetSinkLinkage("renderTarget", "skybox.renderTarget");
 			pass->SetSinkLinkage("depthStencil", "outlineGeneration.depthStencil");
 			pass->SetSinkLinkage("kernel", "$.kernel");
 			pass->SetSinkLinkage("direction", "$.blurDirection");
@@ -93,6 +103,12 @@ namespace GFX::Pipeline
 		}
 		SetSinkSource("backbuffer", "wireframe.renderTarget");
 		Finalize();
+	}
+
+	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
+	{
+		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera);
+		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
 
 	void RenderGraphBlurOutline::BindShadowCamera(Camera::ICamera& camera)

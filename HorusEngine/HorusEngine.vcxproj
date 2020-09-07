@@ -336,6 +336,7 @@
     <ClCompile Include="ShadowRasterizer.cpp" />
     <ClCompile Include="ShadowSampler.cpp" />
     <ClCompile Include="Sink.cpp" />
+    <ClCompile Include="SkyboxPass.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="QueuePass.cpp" />
     <ClCompile Include="Sampler.cpp" />
@@ -347,6 +348,7 @@
     <ClCompile Include="Technique.cpp" />
     <ClCompile Include="TechniqueFactory.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureCube.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Vertex.cpp" />
@@ -451,6 +453,18 @@
     <None Include="ShadowCBuffer.hlsli">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="SkyboxPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="SkyboxVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="SolidPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -586,6 +600,7 @@
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
     <ClInclude Include="ConstBufferShadow.h" />
+    <ClInclude Include="ConstBufferTransformSkybox.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
@@ -690,6 +705,7 @@
     <ClInclude Include="SinkContainerBindable.h" />
     <ClInclude Include="SinkDirectBindable.h" />
     <ClInclude Include="SinkDirectBuffer.h" />
+    <ClInclude Include="SkyboxPass.h" />
     <ClInclude Include="SolidRectangle.h" />
     <ClInclude Include="QueuePass.h" />
     <ClInclude Include="resource.h" />
@@ -707,6 +723,7 @@
     <ClInclude Include="TechniqueFactory.h" />
     <ClInclude Include="TechniqueStep.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TextureCube.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />
     <ClInclude Include="Triangle.h" />

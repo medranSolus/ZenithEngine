@@ -35,6 +35,34 @@ namespace GFX::Primitive
 		return layout;
 	}
 
+	IndexedTriangleList Cube::MakeSkybox()
+	{
+		constexpr float point = 0.5f;
+		Data::VertexBufferData vertices(GetLayoutSkybox(), 8);
+
+		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
+		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
+		vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
+		vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
+		vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
+		vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
+		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
+		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
+
+		return
+		{
+			std::move(vertices),
+			{
+				2,1,0, 3,2,0, // Front
+				1,5,4, 0,1,4, // Left
+				5,6,7, 4,5,7, // Back
+				6,2,3, 7,6,3, // Right
+				6,5,1, 2,6,1, // Top
+				3,0,4, 7,3,4  // Down
+			}
+		};
+	}
+
 	IndexedTriangleList Cube::MakeSolid(const std::vector<VertexAttribute>&& attributes)
 	{
 		constexpr float point = 0.5f;

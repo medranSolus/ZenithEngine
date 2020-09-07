@@ -6,7 +6,7 @@ namespace GFX::Resource
 	class DepthStencilState : public IBindable
 	{
 	public:
-		enum StencilMode : unsigned char { Off, Write, Mask, DepthOff, Reverse };
+		enum StencilMode : unsigned char { Off, Write, Mask, DepthOff, Reverse, DepthFirst };
 
 	private:
 		StencilMode mode;
@@ -14,8 +14,6 @@ namespace GFX::Resource
 
 	public:
 		DepthStencilState(Graphics& gfx, StencilMode mode);
-		DepthStencilState(const DepthStencilState&) = delete;
-		DepthStencilState& operator=(const DepthStencilState&) = delete;
 		virtual ~DepthStencilState() = default;
 
 		static inline std::shared_ptr<DepthStencilState> Get(Graphics& gfx, StencilMode mode) { return Codex::Resolve<DepthStencilState>(gfx, mode); }

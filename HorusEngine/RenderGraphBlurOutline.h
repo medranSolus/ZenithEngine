@@ -2,6 +2,7 @@
 #include "RenderGraph.h"
 #include "LambertianPass.h"
 #include "ConstBufferExCache.h"
+#include "TextureCube.h"
 
 namespace GFX::Pipeline
 {
@@ -13,6 +14,7 @@ namespace GFX::Pipeline
 
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
+		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
 
 		void SetKernel();
 
@@ -20,8 +22,7 @@ namespace GFX::Pipeline
 		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f);
 		virtual ~RenderGraphBlurOutline() = default;
 
-		inline void BindMainCamera(Camera::ICamera& camera) { dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera); }
-
+		void BindMainCamera(Camera::ICamera& camera);
 		void BindShadowCamera(Camera::ICamera& camera);
 		void SetKernel(int radius, float sigma);
 		void ShowWindow() noexcept;
