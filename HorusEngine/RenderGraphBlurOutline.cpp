@@ -111,10 +111,10 @@ namespace GFX::Pipeline
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
 
-	void RenderGraphBlurOutline::BindShadowCamera(Camera::ICamera& camera)
+	void RenderGraphBlurOutline::BindLight(Light::ILight& light)
 	{
-		dynamic_cast<RenderPass::ShadowMapPass&>(FindPass("shadowMap")).BindCamera(camera);
-		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindShadowCamera(camera);
+		dynamic_cast<RenderPass::ShadowMapPass&>(FindPass("shadowMap")).BindLight(light);
+		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindLight(light);
 	}
 
 	void RenderGraphBlurOutline::SetKernel(int radius, float sigma)

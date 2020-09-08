@@ -610,6 +610,7 @@
     <ClInclude Include="CameraPool.h" />
     <ClInclude Include="ConstBufferShadow.h" />
     <ClInclude Include="ConstBufferTransformSkybox.h" />
+    <ClInclude Include="ILight.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />

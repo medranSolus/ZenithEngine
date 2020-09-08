@@ -1204,6 +1204,9 @@
     <ClInclude Include="Viewport.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="ILight.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />

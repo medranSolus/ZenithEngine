@@ -23,7 +23,7 @@ namespace GFX::Pipeline
 		virtual ~RenderGraphBlurOutline() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);
-		void BindShadowCamera(Camera::ICamera& camera);
+		void BindLight(Light::ILight& light);
 		void SetKernel(int radius, float sigma);
 		void ShowWindow() noexcept;
 	};

@@ -15,7 +15,7 @@ namespace GFX::Pipeline::RenderPass
 		virtual ~LambertianPass() = default;
 
 		inline void BindMainCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
-		inline void BindShadowCamera(Camera::ICamera& camera) noexcept { shadowBuffer->SetCamera(camera); }
+		inline void BindLight(Light::ILight& light) noexcept { shadowBuffer->SetLight(light); }
 
 		void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override;
 	};

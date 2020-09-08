@@ -130,8 +130,8 @@ App::App(const std::string& commandLine) : window(1600, 900, windowTitle), rende
 	objects.emplace("---None---", nullptr);
 	cameras = std::make_unique<Camera::CameraPool>(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1",
 		1.047f, 0.01f, viewDistance, 90, 0, DirectX::XMFLOAT3(-8.0f, 0.0f, 0.0f)));
-	/*cameras->AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
-		1.047f, 0.01f, viewDistance, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));*/
+	cameras->AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
+		1.047f, 0.01f, viewDistance, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight");
 	objects.emplace(pointLight->GetName(), pointLight);
@@ -149,7 +149,7 @@ App::App(const std::string& commandLine) : window(1600, 900, windowTitle), rende
 	//AddShape(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), DirectX::XMFLOAT3(4.2f, -0.1f, 1.0f), "Tri", 3.1f, 1.5f, 2.5f));
 	//AddShape(std::make_unique<GFX::Shape::Globe>(window.Gfx(), DirectX::XMFLOAT3(0.0f, -2.0f, 8.0f), "Globe", std::move(RandColor(engine)), 25, 25, 3.0f, 3.0f, 3.0f));
 	//AddShape(std::make_unique<GFX::Shape::Ball>(window.Gfx(), DirectX::XMFLOAT3(2.0f, 0.0f, -7.0f), "Ball", std::move(RandColor(engine)), 3, 3.0f));
-	renderer.BindShadowCamera(pointLight->GetCamera());
+	renderer.BindLight(*pointLight);
 }
 
 unsigned long long App::Run()

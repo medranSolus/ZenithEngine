@@ -41,11 +41,11 @@ namespace GFX::Pipeline::RenderPass
 
 	void ShadowMapPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
 	{
-		assert(shadowCamera);
+		assert(shadowSource);
 		gfx.SetProjection(DirectX::XMLoadFloat4x4(&projection));
 		depthCube->Unbind(gfx);
 
-		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&shadowCamera->GetPos());
+		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&shadowSource->GetPos());
 		for (unsigned char i = 0; i < 6; ++i)
 		{
 			depthStencil = depthCube->GetBuffer(i);

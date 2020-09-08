@@ -1,5 +1,5 @@
 #include "PointLight.h"
-#include "PersonCamera.h"
+#include "SolidGlobe.h"
 
 namespace GFX::Light
 {
@@ -22,7 +22,6 @@ namespace GFX::Light
 	}
 
 	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, float radius)
-		: mesh(gfx, graph, position, name, { 1.0f, 1.0f, 1.0f }, 3, 3, radius, radius, radius)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());
 		buffer["ambientColor"] = std::move(Data::ColorFloat3(0.05f, 0.05f, 0.05f));
@@ -33,19 +32,18 @@ namespace GFX::Light
 		buffer["attenuationQuad"] = 0.0075f;
 		buffer["lightIntensity"] = 5.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
-		lightCamera = std::make_shared<Camera::PersonCamera>(gfx, graph, name + "Cam", 1.047f, 0.01f, 500.0f, 0, 0, position);
+		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 3, 3, radius, radius, radius);
 	}
 
 	void PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		lightBuffer->Accept(gfx, probe);
-		mesh.Accept(gfx, probe);
-		lightCamera->SetPos(mesh.GetPos());
+		ILight::Accept(gfx, probe);
 	}
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept
 	{
-		DirectX::XMStoreFloat3(&lightBuffer->GetBuffer()["lightPos"], DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh.GetPos()), camera.GetView()));
+		DirectX::XMStoreFloat3(&lightBuffer->GetBuffer()["lightPos"], DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh->GetPos()), camera.GetView()));
 		lightBuffer->Bind(gfx);
 	}
 }
