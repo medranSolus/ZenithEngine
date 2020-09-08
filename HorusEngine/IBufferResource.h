@@ -1,27 +1,26 @@
 #pragma once
-#include "IBindable.h"
+#include "Viewport.h"
 
 namespace GFX::Pipeline::Resource
 {
 	class IBufferResource : public GFX::Resource::IBindable
 	{
-		D3D11_VIEWPORT viewport = { 0 };
-		unsigned int width;
-		unsigned int height;
+		std::shared_ptr<GFX::Resource::Viewport> viewport = nullptr;
 
 	protected:
 		static const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> nullShaderResource;
 
-		inline void BindViewport(Graphics& gfx) noexcept { GetContext(gfx)->RSSetViewports(1U, &viewport); }
+		inline void BindViewport(Graphics& gfx) noexcept { viewport->Bind(gfx); }
 
 	public:
-		IBufferResource(unsigned int width, unsigned int height) noexcept;
+		inline IBufferResource(std::shared_ptr<GFX::Resource::Viewport> viewport) noexcept : viewport(std::move(viewport)) {}
+		IBufferResource(Graphics& gfx, unsigned int width, unsigned int height) noexcept;
 		virtual ~IBufferResource() = default;
 
 		static inline void UnbindAll(Graphics& gfx) noexcept { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, nullptr); }
 
-		constexpr unsigned int GetWidth() const noexcept { return width; }
-		constexpr unsigned int GetHeight() const noexcept { return height; }
+		inline unsigned int GetWidth() const noexcept { return viewport->GetWidth(); }
+		inline unsigned int GetHeight() const noexcept { return viewport->GetHeight(); }
 
 		virtual inline void Unbind(Graphics& gfx) noexcept { UnbindAll(gfx); }
 		virtual void Clear(Graphics& gfx) noexcept = 0;

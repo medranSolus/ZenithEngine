@@ -21,6 +21,7 @@ namespace GFX::Pipeline::Resource
 		static inline DXGI_FORMAT UsageTyped(Usage usage) noexcept;
 
 	public:
+		DepthStencil(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face);
 		inline DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil)
 			: DepthStencil(gfx, width, height, false, usage) {}
 		virtual ~DepthStencil() = default;

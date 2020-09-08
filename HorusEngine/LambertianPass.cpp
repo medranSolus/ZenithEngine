@@ -23,7 +23,6 @@ namespace GFX::Pipeline::RenderPass
 	{
 		assert(mainCamera);
 		shadowBuffer->Update(gfx);
-		mainCamera->ResetView();
 		mainCamera->Bind(gfx);
 		QueuePass::Execute(gfx);
 	}

@@ -8,7 +8,7 @@ namespace GFX::Pipeline::Resource
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> targetView = nullptr;
 
 	protected:
-		inline RenderTarget(unsigned int width, unsigned int height) noexcept : IBufferResource(width, height) {}
+		inline RenderTarget(unsigned int width, unsigned int height, Graphics& gfx) noexcept : IBufferResource(gfx, width, height) {}
 
 		static Microsoft::WRL::ComPtr<ID3D11Texture2D> CreateTexture(Graphics& gfx, unsigned int width, unsigned int height, D3D11_TEXTURE2D_DESC& textureDesc);
 

@@ -56,24 +56,25 @@ float GetSampledSpecularPower(const in float4 specularData)
 	return pow(2.0f, specularData.a * 13.0f);
 }
 
-float GetShadowLevel(const in float4 shadowPos, uniform SamplerComparisonState shadowSplr, uniform Texture2D shadowMap)
+float GetShadowLevel(const in float3 shadowPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
 {
-	const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide
-	float level = 0.0f;
-	if (shadowUVZ.z > 1.0f || shadowUVZ.z < 0.0f)
-		level = 1.0f;
-	else
-	{
-		// PCF anti-aliasing https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
-		static const int PCF_RANGE = 2;
-		[unroll]
-		for (int x = -PCF_RANGE; x <= PCF_RANGE; ++x)
-		{
-			[unroll]
-			for (int y = -PCF_RANGE; y <= PCF_RANGE; ++y)
-				level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, shadowUVZ.z, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
-		}
-		level /= (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
-	}
-	return level;
+	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, length(shadowPos) / 1000.0f);
+	//const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide
+	//float level = 0.0f;
+	//if (shadowUVZ.z > 1.0f || shadowUVZ.z < 0.0f)
+	//	level = 1.0f;
+	//else
+	//{
+	//	// PCF anti-aliasing https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
+	//	static const int PCF_RANGE = 2;
+	//	[unroll]
+	//	for (int x = -PCF_RANGE; x <= PCF_RANGE; ++x)
+	//	{
+	//		[unroll]
+	//		for (int y = -PCF_RANGE; y <= PCF_RANGE; ++y)
+	//			level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, shadowUVZ.z, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
+	//	}
+	//	level /= (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
+	//}
+	//return level;
 }

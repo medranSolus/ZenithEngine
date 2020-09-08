@@ -27,7 +27,24 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
-	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage) : IBufferResource(width, height)
+	DepthStencil::DepthStencil(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face)
+		: IBufferResource(gfx, size, size)
+	{
+		GFX_ENABLE_ALL(gfx);
+		D3D11_TEXTURE2D_DESC depthTexDesc;
+		texture->GetDesc(&depthTexDesc);
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
+		depthViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+		depthViewDesc.Flags = 0U;
+		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		depthViewDesc.Texture2DArray.MipSlice = 0U;
+		depthViewDesc.Texture2DArray.ArraySize = 1U;
+		depthViewDesc.Texture2DArray.FirstArraySlice = face;
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(texture.Get(), &depthViewDesc, &depthStencilView));
+	}
+
+	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage) : IBufferResource(gfx, width, height)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -66,9 +83,22 @@ namespace GFX::Pipeline::Resource
 		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
 		textureDesc.Usage = D3D11_USAGE::D3D11_USAGE_STAGING;
 		textureDesc.BindFlags = 0U;
+		textureDesc.MiscFlags = 0U;
+		textureDesc.ArraySize = 1U;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> textureStaged;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateTexture2D(&textureDesc, nullptr, &textureStaged));
-		GFX_THROW_FAILED_INFO(GetContext(gfx)->CopyResource(textureStaged.Get(), texture.Get()));
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+		depthStencilView->GetDesc(&depthDesc);
+		// Texture in  cube map
+		if (depthDesc.ViewDimension == D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DARRAY)
+		{
+			GFX_THROW_FAILED_INFO(GetContext(gfx)->CopySubresourceRegion(textureStaged.Get(), 0U, 0U, 0U, 0U, texture.Get(), depthDesc.Texture2DArray.FirstArraySlice, nullptr));
+		}
+		else
+		{
+			GFX_THROW_FAILED_INFO(GetContext(gfx)->CopyResource(textureStaged.Get(), texture.Get()));
+		}
 
 		Surface surface(GetWidth(), GetHeight());
 		D3D11_MAPPED_SUBRESOURCE subResource = { 0 };

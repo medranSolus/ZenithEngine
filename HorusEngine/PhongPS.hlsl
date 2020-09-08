@@ -29,9 +29,9 @@ Texture2D spec : register(t2);
 #endif
 #endif
 SamplerComparisonState shadowSplr : register(s1);
-Texture2D shadowMap : register(t3);
+TextureCube shadowMap : register(t3);
 
-float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float4 shadowPos : SHADOW_POSITION
+float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float3 shadowPos : SHADOW_POSITION
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL

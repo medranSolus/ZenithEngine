@@ -22,6 +22,8 @@
 #include "ShadowSampler.h"
 #include "Texture.h"
 #include "TextureCube.h"
+#include "TextureDepthCube.h"
 #include "Topology.h"
 #include "VertexBuffer.h"
 #include "VertexShader.h"
+#include "Viewport.h"

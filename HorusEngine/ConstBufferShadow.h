@@ -14,8 +14,9 @@ namespace GFX::Resource
 		virtual ~ConstBufferShadow() = default;
 
 		inline void SetCamera(Camera::ICamera& shadowCamera) noexcept { camera = &shadowCamera; }
-		inline void Update(Graphics& gfx) { assert(camera); vertexBuffer->Update(gfx, DirectX::XMMatrixTranspose(camera->GetView() * camera->GetProjection())); }
 		inline void Bind(Graphics& gfx) noexcept override { vertexBuffer->Bind(gfx); }
 		inline std::string GetRID() const noexcept override { return "?"; }
+
+		void Update(Graphics& gfx);
 	};
 }

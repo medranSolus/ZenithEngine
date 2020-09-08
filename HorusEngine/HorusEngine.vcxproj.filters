@@ -459,6 +459,15 @@
     <ClCompile Include="SkyboxPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="TextureDepthCube.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Viewport.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferShadow.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -517,6 +526,9 @@
     </FxCompile>
     <FxCompile Include="SkyboxPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1186,6 +1198,12 @@
     <ClInclude Include="ConstBufferTransformSkybox.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="TextureDepthCube.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Viewport.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1231,6 +1249,9 @@
     </None>
     <None Include="UtilsVS.hlsli">
       <Filter>Shader Files\Vertex Shaders</Filter>
+    </None>
+    <None Include="ShadowCBuffer.hlsli">
+      <Filter>Shader Files\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

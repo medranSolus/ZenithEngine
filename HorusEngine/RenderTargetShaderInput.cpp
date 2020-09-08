@@ -3,7 +3,8 @@
 
 namespace GFX::Pipeline::Resource
 {
-	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot) : RenderTarget(width, height), slot(slot)
+	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot)
+		: RenderTarget(gfx, width, height), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 

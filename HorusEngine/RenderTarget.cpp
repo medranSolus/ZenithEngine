@@ -35,14 +35,16 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height) : IBufferResource(width, height)
+	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height)
+		: IBufferResource(gfx, width, height)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc);
 		InitializeTargetView(gfx, textureDesc, texture);
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer) : IBufferResource(width, height)
+	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer)
+		: IBufferResource(gfx, width, height)
 	{
 		GFX_ENABLE_ALL(gfx);
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(backBuffer.Get(), nullptr, &targetView));

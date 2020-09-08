@@ -273,6 +273,7 @@
     <ClCompile Include="ConstBufferEx.cpp" />
     <ClCompile Include="ConstBufferExPixel.cpp" />
     <ClCompile Include="ConstBufferExVertex.cpp" />
+    <ClCompile Include="ConstBufferShadow.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="DCBElement.cpp" />
@@ -349,6 +350,7 @@
     <ClCompile Include="TechniqueFactory.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureCube.cpp" />
+    <ClCompile Include="TextureDepthCube.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Vertex.cpp" />
@@ -357,6 +359,7 @@
     <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
     <ClCompile Include="VerticalBlurPass.cpp" />
+    <ClCompile Include="Viewport.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WireframePass.cpp" />
@@ -453,6 +456,12 @@
     <None Include="ShadowCBuffer.hlsli">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="ShadowVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="SkyboxPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -724,6 +733,7 @@
     <ClInclude Include="TechniqueStep.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureCube.h" />
+    <ClInclude Include="TextureDepthCube.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />
     <ClInclude Include="Triangle.h" />
@@ -733,6 +743,7 @@
     <ClInclude Include="VertexLayout.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="VerticalBlurPass.h" />
+    <ClInclude Include="Viewport.h" />
     <ClInclude Include="Visuals.h" />
     <ClInclude Include="WinAPI.h" />
     <ClInclude Include="Window.h" />
