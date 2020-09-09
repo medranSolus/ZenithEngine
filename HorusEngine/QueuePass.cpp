@@ -2,7 +2,7 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	void QueuePass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void QueuePass::Execute(Graphics& gfx)
 	{
 		BindAll(gfx);
 		for (auto& job : jobs)

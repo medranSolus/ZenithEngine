@@ -38,7 +38,7 @@ namespace GFX::Primitive
 		return layout;
 	}
 
-	IndexedTriangleList Sphere::MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Sphere::MakeUVSolid(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		if (!latitudeDensity)
 			latitudeDensity = 1;
@@ -47,12 +47,12 @@ namespace GFX::Primitive
 		latitudeDensity *= 3;
 		longitudeDensity *= 3;
 		constexpr float radius = 1.0f;
-		const auto base = DirectX::XMVectorSet(0.0f, radius, 0.0f, 0.0f);
 		const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 		const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
+		DirectX::XMVECTOR base = DirectX::XMVectorSet(0.0f, radius, 0.0f, 0.0f);
 
 		Data::VertexBufferData vertices(GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes)),
-			(latitudeDensity - 1) * longitudeDensity + 2);
+			static_cast<size_t>(latitudeDensity - 1) * longitudeDensity + 2);
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -94,7 +94,7 @@ namespace GFX::Primitive
 		// South
 		DirectX::XMStoreFloat3(&vertices[pole].Get<VertexAttribute::Position3D>(), std::move(DirectX::XMVectorNegate(base)));
 		// North
-		DirectX::XMStoreFloat3(&vertices[pole + 1].Get<VertexAttribute::Position3D>(), std::move(base));
+		DirectX::XMStoreFloat3(&vertices[static_cast<size_t>(pole) + 1].Get<VertexAttribute::Position3D>(), std::move(base));
 
 		// Triangle ring on each pole
 		for (unsigned int lon = 0; lon < longitudeDensity - 1; ++lon)
@@ -123,7 +123,7 @@ namespace GFX::Primitive
 		return { std::move(vertices), std::move(indices) };
 	}
 
-	IndexedTriangleList Sphere::MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Sphere::MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		if (!latitudeDensity)
 			latitudeDensity = 1;
@@ -132,12 +132,12 @@ namespace GFX::Primitive
 		latitudeDensity *= 3;
 		longitudeDensity *= 3;
 		constexpr float radius = 1.0f;
-		const auto base = DirectX::XMVectorSet(0.0f, radius, 0.0f, 0.0f);
 		const float latitudeAngle = static_cast<float>(M_PI / latitudeDensity);
 		const float longitudeAngle = 2.0f * static_cast<float>(M_PI / longitudeDensity);
+		DirectX::XMVECTOR base = DirectX::XMVectorSet(0.0f, radius, 0.0f, 0.0f);
 
 		Data::VertexBufferData vertices(GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes)),
-			(latitudeDensity - 1) * longitudeDensity * 4 + 2 * longitudeDensity);
+			static_cast<size_t>(latitudeDensity - 1) * longitudeDensity * 4 + 2 * static_cast<size_t>(longitudeDensity));
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -180,13 +180,13 @@ namespace GFX::Primitive
 			indices.push_back(getIndex(lat, 0) + 3);
 		}
 		// Poles vertices
-		const unsigned int north = static_cast<unsigned int>(vertices.Size() - 2 * longitudeDensity);
+		const unsigned int north = static_cast<unsigned int>(vertices.Size() - 2 * static_cast<size_t>(longitudeDensity));
 		for (unsigned char i = 0; i < longitudeDensity; ++i)
-			DirectX::XMStoreFloat3(&vertices[north + i].Get<VertexAttribute::Position3D>(), std::move(DirectX::XMVectorNegate(base)));
+			DirectX::XMStoreFloat3(&vertices[static_cast<size_t>(north) + i].Get<VertexAttribute::Position3D>(), std::move(DirectX::XMVectorNegate(base)));
 
 		const unsigned int south = static_cast<unsigned int>(north + longitudeDensity);
 		for (unsigned char i = 0; i < longitudeDensity; ++i)
-			DirectX::XMStoreFloat3(&vertices[south + i].Get<VertexAttribute::Position3D>(), std::move(base));
+			DirectX::XMStoreFloat3(&vertices[static_cast<size_t>(south) + i].Get<VertexAttribute::Position3D>(), std::move(base));
 
 		// Triangle ring on each pole
 		leftDown = getIndex(latitudeDensity - 2, 0);
@@ -236,7 +236,7 @@ namespace GFX::Primitive
 		return std::move(name + "N" + std::to_string(density));
 	}
 
-	IndexedTriangleList Sphere::MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Sphere::MakeIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		constexpr float bigAngle = M_PI / 10.0f;
 		constexpr float smallAngle = M_PI * 0.3f;
@@ -300,7 +300,7 @@ namespace GFX::Primitive
 		{
 			std::unordered_map<Key, unsigned int, boost::hash<Key>, decltype(comparator)> lookup(0, boost::hash<Key>{}, comparator);
 			std::vector<unsigned int> tmpIndices;
-			for (unsigned int j = 0; j < indices.size(); j += 3)
+			for (size_t j = 0; j < indices.size(); j += 3)
 			{
 				auto i1 = lookup.find({ indices.at(j), indices.at(j + 1) });
 				if (i1 == lookup.end())
@@ -345,7 +345,7 @@ namespace GFX::Primitive
 		return { std::move(vertices), std::move(indices) };
 	}
 
-	IndexedTriangleList Sphere::MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Sphere::MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		constexpr float bigAngle = M_PI / 10.0f;
 		constexpr float smallAngle = M_PI * 0.3f;
@@ -462,7 +462,7 @@ namespace GFX::Primitive
 		for (unsigned int i = 0; i < density; ++i)
 		{
 			std::vector<unsigned int> tmpIndices;
-			for (unsigned int j = 0; j < indices.size(); j += 3)
+			for (size_t j = 0; j < indices.size(); j += 3)
 			{
 				Data::Vertex v0 = vertices[indices.at(j)];
 				Data::Vertex v1 = vertices[indices.at(j + 1)];

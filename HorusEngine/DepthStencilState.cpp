@@ -1,9 +1,12 @@
 #include "DepthStencilState.h"
+#include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
 {
 	DepthStencilState::DepthStencilState(Graphics& gfx, StencilMode mode) : mode(mode)
 	{
+		GFX_ENABLE_ALL(gfx);
+
 		D3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC{ CD3D11_DEFAULT{} };
 		switch (mode)
 		{
@@ -45,6 +48,6 @@ namespace GFX::Resource
 			break;
 		}
 		}
-		GetDevice(gfx)->CreateDepthStencilState(&desc, &state);
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilState(&desc, &state));
 	}
 }

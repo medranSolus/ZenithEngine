@@ -180,9 +180,6 @@
     <ClCompile Include="FloatingCamera.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="GfxObject.cpp">
-      <Filter>Source Files\GFX</Filter>
-    </ClCompile>
     <ClCompile Include="Globe.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
@@ -239,9 +236,6 @@
     </ClCompile>
     <ClCompile Include="VertexBuffer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Vertex.cpp">
-      <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
     <ClCompile Include="VertexLayout.cpp">
       <Filter>Source Files\GFX\Data</Filter>
@@ -462,9 +456,6 @@
     <ClCompile Include="TextureDepthCube.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Viewport.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="ConstBufferShadow.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
@@ -632,9 +623,6 @@
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Window.h">
-      <Filter>Header Files\WinAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="WinAPI.h">
       <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
     <ClInclude Include="VertexLayout.h">
@@ -996,9 +984,6 @@
     </ClInclude>
     <ClInclude Include="GfxExceptionMacros.h">
       <Filter>Header Files\GFX</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowExceptionMacros.h">
-      <Filter>Header Files\WinAPI</Filter>
     </ClInclude>
     <ClInclude Include="Job.h">
       <Filter>Header Files\GFX\Pipeline</Filter>

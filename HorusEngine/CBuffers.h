@@ -1,5 +1,4 @@
 #pragma once
-#include "Vertex.h"
 
 namespace GFX::Data::CBuffer
 {

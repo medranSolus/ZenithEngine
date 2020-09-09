@@ -14,8 +14,8 @@ LightVectorData GetLightVectorData(uniform float3 lightPos, const in float3 vert
 	return lvd;
 }
 
-float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in float3 normal, const in float2 texcoord,
-	uniform Texture2D normalMap, uniform SamplerState splr)
+float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in float3 normal,
+	const in float2 texcoord, uniform Texture2D normalMap, uniform SamplerState splr)
 {
 	// Get rotation from tangent space
 	const float3x3 tangentToView = float3x3

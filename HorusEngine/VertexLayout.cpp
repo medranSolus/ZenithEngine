@@ -1,4 +1,4 @@
-#define VERTEX_LAYOUT_IMPL
+#define _VERTEX_LAYOUT_IMPL
 #include "VertexLayout.h"
 
 namespace GFX::Data
@@ -9,6 +9,14 @@ namespace GFX::Data
 			elements.emplace_back(ElementType::Position3D, 0);
 	}
 
+	bool VertexLayout::Has(ElementType type) const noexcept
+	{
+		for (auto& e : elements)
+			if (e.GetType() == type)
+				return true;
+		return false;
+	}
+
 	const VertexLayout::Element& VertexLayout::Resolve(ElementType type) const noexcept(!IS_DEBUG)
 	{
 		for (auto& e : elements)
@@ -16,14 +24,6 @@ namespace GFX::Data
 				return e;
 		assert("Could not resolve element type" && false);
 		return elements.front();
-	}
-
-	bool VertexLayout::Has(ElementType type) const noexcept
-	{
-		for (auto& e : elements)
-			if (e.GetType() == type)
-				return true;
-		return false;
 	}
 
 	VertexLayout& VertexLayout::Append(ElementType type) noexcept(!IS_DEBUG)

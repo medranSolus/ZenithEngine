@@ -23,13 +23,10 @@ namespace GFX::Shape
 		constexpr bool IsMesh() const noexcept { return isMesh; }
 		constexpr unsigned long long GetID() const noexcept { return id; }
 		constexpr DirectX::XMFLOAT4X4* GetBaseTransform() noexcept { return &baseTransform; }
+
 		inline bool HasChildren() const noexcept { return children.size(); }
 		inline void ReserveChildren(size_t capacity) noexcept { children.reserve(capacity); }
-		inline void AddChild(std::unique_ptr<ModelNode> child) noexcept(!IS_DEBUG)
-		{
-			assert(child);
-			children.emplace_back(std::move(child));
-		}
+		inline void AddChild(std::unique_ptr<ModelNode> child) noexcept(!IS_DEBUG) { assert(child); children.emplace_back(std::move(child)); }
 
 		inline void Submit(uint64_t channelFilter) noexcept override { Submit(channelFilter, DirectX::XMMatrixIdentity()); }
 

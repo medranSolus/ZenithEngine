@@ -4,7 +4,8 @@
 namespace GFX::Resource
 {
 	ConstBufferEx::ConstBufferEx(Graphics& gfx, const std::string& tag, const Data::CBuffer::DCBLayoutElement& root,
-		UINT slot, const Data::CBuffer::DynamicCBuffer* buffer) : slot(slot), name(tag), rootLayout(root)
+		UINT slot, const Data::CBuffer::DynamicCBuffer* buffer)
+		: slot(slot), name(tag), rootLayout(root)
 	{
 		GFX_ENABLE_ALL(gfx);
 		D3D11_BUFFER_DESC bufferDesc;

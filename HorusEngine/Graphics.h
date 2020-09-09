@@ -29,7 +29,7 @@ namespace GFX
 		GUIManager guiManager;
 		bool guiEnabled = true;
 		DirectX::XMMATRIX projection;
-		DirectX::XMMATRIX camera;
+		DirectX::XMMATRIX view;
 		Microsoft::WRL::ComPtr<ID3D11Device> device = nullptr; // Resources allocation
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain = nullptr; // Using pipeline: https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-graphics-pipeline
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = nullptr; // Configure pipeline
@@ -43,11 +43,9 @@ namespace GFX
 
 		constexpr GUIManager& Gui() noexcept { return guiManager; }
 		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
-		constexpr DirectX::XMMATRIX& GetProjection() noexcept { return projection; }
 		constexpr void SetProjection(DirectX::XMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
-		constexpr DirectX::FXMMATRIX GetCamera() const noexcept { return camera; }
-		constexpr DirectX::XMMATRIX& GetCamera() noexcept { return camera; }
-		constexpr void SetCamera(DirectX::XMMATRIX cameraMatrix) noexcept { camera = std::move(cameraMatrix); }
+		constexpr DirectX::FXMMATRIX GetView() const noexcept { return view; }
+		constexpr void SetView(DirectX::XMMATRIX cameraMatrix) noexcept { view = std::move(cameraMatrix); }
 		constexpr void EnableGUI() noexcept { guiEnabled = true; }
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }
@@ -60,8 +58,8 @@ namespace GFX
 
 		unsigned int GetWidth() const noexcept;
 		unsigned int GetHeight() const noexcept;
-		void BindSwapBuffer() noexcept;
-		void BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept;
+		void BindSwapBuffer();
+		void BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil);
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
@@ -82,6 +80,7 @@ namespace GFX
 			virtual ~DebugException() = default;
 
 			inline const char* GetType() const noexcept override { return "DirectX Debug Exception"; }
+
 			const char* what() const noexcept override;
 			std::string GetDebugInfo() const noexcept;
 		};
@@ -102,6 +101,7 @@ namespace GFX
 			virtual ~GraphicsException() = default;
 
 			inline const char* GetType() const noexcept override { return "DirectX Exception"; }
+
 			const char* what() const noexcept override;
 		};
 		// Exception getting info from DXGI_ERROR_DEVICE_REMOVED error (driver crash, device hung, overheat, etc.)
@@ -109,10 +109,10 @@ namespace GFX
 		{
 		public:
 #ifdef _DEBUG
-			DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult, const std::vector<std::string>& info = std::vector<std::string>()) noexcept
+			inline DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult, const std::vector<std::string>& info = std::vector<std::string>()) noexcept
 				: BasicException(line, file), GraphicsException(line, file, hResult, info) {}
 #else
-			DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult) noexcept
+			inline DeviceRemovedException(unsigned int line, const char* file, HRESULT hResult) noexcept
 				: BasicException(line, file), GraphicsException(line, file, hResult) {}
 #endif
 			DeviceRemovedException(const DeviceRemovedException&) = default;
@@ -122,5 +122,5 @@ namespace GFX
 			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-	};
-}
+		};
+	}

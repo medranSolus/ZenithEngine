@@ -1,6 +1,6 @@
 #pragma once
-#include "HorusEngine/WinAPI.h"
 #include "BasicException.h"
+#include "WinAPI.h"
 
 namespace Exception
 {
@@ -15,11 +15,12 @@ namespace Exception
 		constexpr WinApiException& operator=(const WinApiException&) = default;
 		virtual ~WinApiException() = default;
 
-		inline const char* GetType() const noexcept override { return "WinAPI Exception"; }
+		static std::string TranslateErrorCode(HRESULT code) noexcept;
+
 		constexpr HRESULT GetErrorCode() const noexcept { return result; }
 		inline std::string GetErrorString() const noexcept { return TranslateErrorCode(result); }
+		inline const char* GetType() const noexcept override { return "WinAPI Exception"; }
 
 		const char* what() const noexcept override;
-		static std::string TranslateErrorCode(HRESULT code) noexcept;
 	};
 }

@@ -1,5 +1,4 @@
 #include "BasePass.h"
-#include "RenderGraphCompileException.h"
 #include "Utils.h"
 
 namespace GFX::Pipeline::RenderPass::Base
@@ -20,7 +19,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		sources.emplace_back(std::move(source));
 	}
 
-	void BasePass::Finalize()
+	void BasePass::Finalize() const
 	{
 		for (auto& sink : sinks)
 			sink->ValidateLink();

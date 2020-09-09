@@ -1,5 +1,4 @@
 #pragma once
-#include "IRenderable.h"
 #include "GfxResources.h"
 #include "Technique.h"
 
@@ -37,7 +36,7 @@ namespace GFX::Shape
 		virtual inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); isMesh = false; }
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); isMesh = true; }
 
-		void Bind(Graphics& gfx) noexcept;
+		void Bind(Graphics& gfx);
 		void SetOutline() noexcept override;
 		void DisableOutline() noexcept override;
 		void Submit(uint64_t channelFilter) noexcept override;

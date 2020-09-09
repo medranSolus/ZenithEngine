@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline::Resource
 {
-	inline DXGI_FORMAT DepthStencil::UsageTypeless(Usage usage) noexcept
+	constexpr DXGI_FORMAT DepthStencil::UsageTypeless(Usage usage) noexcept
 	{
 		switch (usage)
 		{
@@ -15,7 +15,7 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
-	inline DXGI_FORMAT DepthStencil::UsageTyped(Usage usage) noexcept
+	constexpr DXGI_FORMAT DepthStencil::UsageTyped(Usage usage) noexcept
 	{
 		switch (usage)
 		{
@@ -44,7 +44,8 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(texture.Get(), &depthViewDesc, &depthStencilView));
 	}
 
-	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage) : IBufferResource(gfx, width, height)
+	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage)
+		: IBufferResource(gfx, width, height)
 	{
 		GFX_ENABLE_ALL(gfx);
 

@@ -4,8 +4,9 @@
 
 namespace GFX::Shape
 {
-	CameraFrustrum::CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name,
-		Data::ColorFloat3 color, const Camera::ProjectionData& data) : BaseShape(gfx), Object(position, name)
+	CameraFrustrum::CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, Data::ColorFloat3 color, const Camera::ProjectionData& data)
+		: BaseShape(gfx), Object(position, name)
 	{
 		const std::string typeName = typeid(CameraFrustrum).name();
 		if (Resource::IndexBuffer::NotStored(typeName))

@@ -4,7 +4,8 @@
 
 namespace GFX::Shape
 {
-	Ball::Ball(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color, unsigned int density, float radius)
+	Ball::Ball(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, Data::ColorFloat4 color, unsigned int density, float radius)
 		: BaseShape(gfx), Object(position, name, radius)
 	{
 		std::string typeName = Primitive::Sphere::GetNameIco(density);

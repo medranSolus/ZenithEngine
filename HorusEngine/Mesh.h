@@ -8,8 +8,6 @@ namespace GFX::Shape
 	public:
 		Mesh(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer,
 			std::shared_ptr<Resource::VertexBuffer> vertexBuffer, std::vector<std::shared_ptr<Pipeline::Technique>>&& techniques);
-		Mesh(const Mesh&) = delete;
-		Mesh& operator=(const Mesh&) = delete;
 		virtual ~Mesh() = default;
 	};
 }

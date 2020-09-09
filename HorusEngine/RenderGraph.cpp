@@ -28,7 +28,7 @@ namespace GFX::Pipeline
 		throw RGC_EXCEPT("Requested RenderQueue not found \"" + passName + "\"!");
 	}
 
-	void RenderGraph::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void RenderGraph::Execute(Graphics& gfx)
 	{
 		assert(finalized);
 		for (auto& pass : passes)

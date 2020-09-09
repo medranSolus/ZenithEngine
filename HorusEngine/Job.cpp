@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline
 {
-	void Job::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void Job::Execute(Graphics& gfx)
 	{
 		shape->Bind(gfx);
 		step->Bind(gfx);

@@ -11,7 +11,7 @@ namespace GFX::Shape
 		std::string typeName = Primitive::Sphere::GetNameUVSolid(latitudeDensity, longitudeDensity);
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
 		{
-			auto list = Primitive::Sphere::MakeSolidUV(latitudeDensity, longitudeDensity);
+			auto list = Primitive::Sphere::MakeUVSolid(latitudeDensity, longitudeDensity);
 			SetVertexBuffer(Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
 			SetIndexBuffer(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
 		}

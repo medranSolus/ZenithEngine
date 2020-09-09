@@ -20,11 +20,13 @@ namespace GFX::Data
 		std::shared_ptr<VertexLayout> layout = nullptr;
 
 	public:
-		VertexBufferData() noexcept {}
+		inline VertexBufferData() noexcept {}
 		VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size = 0U) noexcept(!IS_DEBUG);
 		VertexBufferData(std::shared_ptr<VertexLayout> layout, const aiMesh& mesh) noexcept(!IS_DEBUG);
 		VertexBufferData(const VertexBufferData&) = default;
+		VertexBufferData(VertexBufferData&&) = default;
 		VertexBufferData& operator=(const VertexBufferData&) = default;
+		VertexBufferData& operator=(VertexBufferData&&) = default;
 		~VertexBufferData() = default;
 
 		inline std::shared_ptr<VertexLayout> GetLayout() const noexcept { return layout; }
@@ -33,11 +35,10 @@ namespace GFX::Data
 		inline size_t Size() const noexcept(!IS_DEBUG) { return buffer.size() / layout->Size(); }
 		inline void Reserve(size_t capacity) noexcept(!IS_DEBUG) { buffer.reserve(capacity * layout->Size()); }
 
-		void Resize(size_t newSize) noexcept(!IS_DEBUG);
-
 		template<typename ...Params>
 		void EmplaceBack(Params&&... params) noexcept(!IS_DEBUG);
 
+		void Resize(size_t newSize) noexcept(!IS_DEBUG);
 		Vertex Back() noexcept(!IS_DEBUG);
 		Vertex Front() noexcept(!IS_DEBUG);
 		Vertex operator[](size_t i) noexcept(!IS_DEBUG);

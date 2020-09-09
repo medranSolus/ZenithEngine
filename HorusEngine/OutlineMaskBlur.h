@@ -11,7 +11,8 @@ namespace GFX::Visual
 		OutlineMaskBlur(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout);
 		virtual ~OutlineMaskBlur() = default;
 
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-		void Bind(Graphics& gfx) noexcept override;
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }
+
+		void Bind(Graphics& gfx) override;
 	};
 }

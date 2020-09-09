@@ -15,9 +15,9 @@ namespace Camera
 		float nearClip, float farClip, short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept
 		: BaseCamera(gfx, graph, name, fov, nearClip, farClip, position)
 	{
-		constexpr float pi = static_cast<float>(M_PI - FLT_EPSILON);
-		Rotate(pi * static_cast<float>(Math::ClampAngle(angleVertical, 180)) / 361.0f,
-			static_cast<float>(angleHorizontal) * pi / (180.0f * gfx.GetRatio()));
+		constexpr float PI = static_cast<float>(M_PI - FLT_EPSILON);
+		Rotate(PI * static_cast<float>(Math::ClampAngle(angleVertical, 180)) / 361.0f,
+			static_cast<float>(angleHorizontal) * PI / (180.0f * gfx.GetRatio()));
 	}
 
 	void FloatingCamera::MoveX(float dX) noexcept
@@ -48,17 +48,17 @@ namespace Camera
 
 	void FloatingCamera::Rotate(float angleDX, float angleDY) noexcept
 	{
-		constexpr float moveEpsilon = 0.001f - FLT_EPSILON;
-		if (abs(angleDX) < moveEpsilon)
+		constexpr float MOVE_EPSILON = 0.001f - FLT_EPSILON;
+		if (abs(angleDX) < MOVE_EPSILON)
 			angleDX = 0.0f;
 		else
 		{
-			constexpr float flipEpsilon = 16.0f * FLT_EPSILON;
+			constexpr float FLIP_EPSILON = 16.0f * FLT_EPSILON;
 			const float angle = DirectX::XMVectorGetX(DirectX::XMVector3AngleBetweenNormals(DirectX::XMLoadFloat3(&up), DirectX::XMLoadFloat3(&moveDirection))) + angleDX;
-			if (angle <= flipEpsilon || angle >= M_PI - flipEpsilon)
+			if (angle <= FLIP_EPSILON || angle >= M_PI - FLIP_EPSILON)
 				angleDX = 0.0f;
 		}
-		if (abs(angleDY) < moveEpsilon)
+		if (abs(angleDY) < MOVE_EPSILON)
 			angleDY = 0.0f;
 		if (angleDX || angleDY)
 		{

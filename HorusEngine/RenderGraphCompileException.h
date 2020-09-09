@@ -8,6 +8,7 @@ namespace Exception
 	class RenderGraphCompileException : public BasicException
 	{
 		std::string message;
+
 	public:
 		inline RenderGraphCompileException(unsigned int line, const char* file, const std::string& message) noexcept
 			: BasicException(line, file), message(message) {}

@@ -28,7 +28,7 @@ namespace GFX::Resource
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateTexture2D(&textureDesc, nullptr, &texture));
 
-		GetContext(gfx)->UpdateSubresource(texture.Get(), 0U, nullptr, surface.GetBuffer(), static_cast<UINT>(surface.GetWidth() * sizeof(Surface::Pixel)), 0U);
+		GetContext(gfx)->UpdateSubresource(texture.Get(), 0U, nullptr, surface.GetBuffer(), static_cast<UINT>(surface.GetRowByteSize()), 0U);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
 		viewDesc.Format = textureDesc.Format;

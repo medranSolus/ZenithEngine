@@ -1,9 +1,12 @@
 #include "ScriptProcess.h"
-#include <Windows.h>
+#define _USE_WINDOWS_DEFINES
+#include "WinApiExceptionMacros.h"
 
 int main(int argc, char* argv[])
 {
-	CoInitializeEx(NULL, COINIT::COINIT_MULTITHREADED);
+	WIN_ENABLE_EXCEPT();
+
+	WIN_THROW_FAILED(CoInitializeEx(NULL, COINIT::COINIT_MULTITHREADED));
 	std::vector<std::string> input;
 	for (int i = 1; i < argc; ++i)
 		input.emplace_back(argv[i]);

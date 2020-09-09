@@ -12,8 +12,7 @@ namespace GFX::Data::CBuffer
 		std::shared_ptr<DCBLayoutElement> Finalize() noexcept;
 
 	public:
-		inline DCBLayout() noexcept(!IS_DEBUG)
-			: DCBLayoutBase(std::shared_ptr<DCBLayoutElement>(new DCBLayoutElement(ElementType::Struct))) {}
+		inline DCBLayout() noexcept : DCBLayoutBase(std::shared_ptr<DCBLayoutElement>(new DCBLayoutElement(ElementType::Struct))) {}
 		DCBLayout(const DCBLayout&) = default;
 		DCBLayout& operator=(const DCBLayout&) = default;
 		virtual ~DCBLayout() = default;

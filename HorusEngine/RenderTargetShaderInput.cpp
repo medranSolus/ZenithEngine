@@ -4,11 +4,12 @@
 namespace GFX::Pipeline::Resource
 {
 	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot)
-		: RenderTarget(gfx, width, height), slot(slot)
+		: RenderTarget(width, height, gfx), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
+		textureDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc);
 		InitializeTargetView(gfx, textureDesc, texture);
 

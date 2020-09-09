@@ -287,7 +287,6 @@
     <ClCompile Include="DynamicCBuffer.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="FullscreenPass.cpp" />
-    <ClCompile Include="GfxObject.cpp" />
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="GUIManager.cpp" />
@@ -353,13 +352,11 @@
     <ClCompile Include="TextureDepthCube.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Triangle.cpp" />
-    <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="VertexBuffer.cpp" />
     <ClCompile Include="VertexBufferData.cpp" />
     <ClCompile Include="VertexLayout.cpp" />
     <ClCompile Include="VertexShader.cpp" />
     <ClCompile Include="VerticalBlurPass.cpp" />
-    <ClCompile Include="Viewport.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WireframePass.cpp" />
@@ -746,9 +743,7 @@
     <ClInclude Include="VerticalBlurPass.h" />
     <ClInclude Include="Viewport.h" />
     <ClInclude Include="Visuals.h" />
-    <ClInclude Include="WinAPI.h" />
     <ClInclude Include="Window.h" />
-    <ClInclude Include="WindowExceptionMacros.h" />
     <ClInclude Include="WireframePass.h" />
   </ItemGroup>
   <ItemGroup>

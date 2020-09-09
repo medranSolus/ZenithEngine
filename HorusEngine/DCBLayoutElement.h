@@ -139,7 +139,7 @@ namespace GFX::Data::CBuffer
 		std::unique_ptr<ExtraDataBase> extraData = nullptr;
 
 		DCBLayoutElement() = default;
-		DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG);
+		DCBLayoutElement(ElementType elementType) noexcept;
 
 		static constexpr size_t AdvanceToBoundary(size_t offset) noexcept;
 		static constexpr bool CrossesBoundary(size_t offset, size_t size) noexcept;
@@ -153,15 +153,15 @@ namespace GFX::Data::CBuffer
 
 	public:
 		constexpr bool Exists() const noexcept { return type != ElementType::Empty; }
-		constexpr const DCBLayoutElement& ArrayType() const noexcept(!IS_DEBUG) { return const_cast<DCBLayoutElement&>(*this).ArrayType(); }
+		inline const DCBLayoutElement& ArrayType() const noexcept(!IS_DEBUG) { return const_cast<DCBLayoutElement&>(*this).ArrayType(); }
 		constexpr size_t GetBeginOffset() const { return *offset; }
 		inline size_t GetByteSize() const { return GetEndOffset() - GetBeginOffset(); }
 
-		// Only for ElementType::Array
-		constexpr DCBLayoutElement& ArrayType() noexcept(!IS_DEBUG);
 		template<typename T>
 		size_t GetLeafOffset() const noexcept(!IS_DEBUG);
 
+		// Only for ElementType::Array
+		DCBLayoutElement& ArrayType() noexcept(!IS_DEBUG);
 		std::string GetSignature() const noexcept(!IS_DEBUG);
 		size_t GetEndOffset() const noexcept(!IS_DEBUG);
 		// Only for ElementType::Struct
@@ -191,16 +191,16 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		default:
-			{
-				assert("Tried to get offset of non-leaf element" && false);
-				return 0U;
-			}
+		{
+			assert("Tried to get offset of non-leaf element" && false);
+			return 0U;
+		}
 		}
 	}
 }
 
 typedef GFX::Data::CBuffer::ElementType DCBElementType;
 
-#ifndef DCB_LAYOUTELEMENT_IMPL
+#ifndef _DCB_LAYOUTELEMENT_IMPL
 #undef LEAF_ELEMENT_TYPES
 #endif

@@ -8,10 +8,8 @@ namespace GFX::Shape
 	class CameraFrustrum : public BaseShape, public Object
 	{
 	public:
-		CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name,
-			Data::ColorFloat3 color, const Camera::ProjectionData& data);
-		CameraFrustrum(const CameraFrustrum&) = delete;
-		CameraFrustrum& operator=(const CameraFrustrum&) = delete;
+		CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+			const std::string& name, Data::ColorFloat3 color, const Camera::ProjectionData& data);
 		virtual ~CameraFrustrum() = default;
 
 		inline void SetTopologyPlain(Graphics& gfx) noexcept override {}

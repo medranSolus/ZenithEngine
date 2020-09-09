@@ -11,7 +11,7 @@ namespace Camera
 		inline ICamera(const std::string& name) noexcept : name(name) {}
 		virtual ~ICamera() = default;
 
-		inline const std::string& GetName() const noexcept { return name; }
+		constexpr const std::string& GetName() const noexcept { return name; }
 		inline void Reset() const noexcept { ResetView(); ResetProjection(); }
 
 		virtual void ResetView() const noexcept = 0;
@@ -28,6 +28,6 @@ namespace Camera
 
 		virtual void Rotate(float angleDX, float angleDY) noexcept = 0;
 		virtual void Roll(float delta) noexcept = 0;
-		virtual void Bind(GFX::Graphics& gfx) const noexcept = 0;
+		virtual void Bind(GFX::Graphics& gfx) const = 0;
 	};
 }

@@ -1,6 +1,5 @@
 #include "WireframePass.h"
 #include "RenderPassesBase.h"
-#include "PipelineResources.h"
 #include "GfxResources.h"
 
 namespace GFX::Pipeline::RenderPass
@@ -9,6 +8,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
+
 		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 

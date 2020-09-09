@@ -1,4 +1,5 @@
-#include "WindowExceptionMacros.h"
+#include "Window.h"
+#include "WinApiExceptionMacros.h"
 #include "resource.h"
 #include "ImGui/imgui_impl_win32.h"
 
@@ -19,7 +20,7 @@ namespace WinAPI
 		wndClass.hIconSm = static_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0));
 		wndClass.lpszMenuName = nullptr;
 		wndClass.style = CS_OWNDC;
-		wndClass.lpszClassName = wndClassName;
+		wndClass.lpszClassName = WND_CLASS_NAME;
 		wndClass.lpfnWndProc = HandleMsgSetup;
 		RegisterClassEx(&wndClass);
 	}
@@ -212,12 +213,12 @@ namespace WinAPI
 		area.right = wndWidth + area.left;
 		area.bottom = wndHeight + area.top;
 		if (AdjustWindowRectEx(&area, winStyle, FALSE, winStyleEx) == 0)
-			throw WND_EXCEPT_LAST();
+			throw WIN_EXCEPT_LAST();
 		hWnd = CreateWindowEx(winStyleEx, WindowClass::GetName(), name, winStyle,
 			CW_USEDEFAULT, CW_USEDEFAULT, area.right - area.left, area.bottom - area.top,
 			nullptr, nullptr, wndClass.GetInstance(), this);
 		if (hWnd == nullptr)
-			throw WND_EXCEPT_LAST();
+			throw WIN_EXCEPT_LAST();
 		ShowWindow(hWnd, SW_SHOW);
 		graphics = std::make_unique<GFX::Graphics>(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);
@@ -228,7 +229,7 @@ namespace WinAPI
 		rid.dwFlags = 0;
 		rid.hwndTarget = nullptr;
 		if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
-			throw WND_EXCEPT_LAST();
+			throw WIN_EXCEPT_LAST();
 	}
 
 	Window::~Window()
@@ -250,17 +251,10 @@ namespace WinAPI
 		return {};
 	}
 
-	GFX::Graphics& Window::Gfx()
-	{
-		if (!graphics)
-			throw WND_NO_GFX_EXCEPT();
-		return *graphics;
-	}
-
 	void Window::SetTitle(const std::string& title)
 	{
 		if (SetWindowText(hWnd, title.c_str()) == 0)
-			throw WND_EXCEPT_LAST();
+			throw WIN_EXCEPT_LAST();
 	}
 
 	void Window::EnableCursor() noexcept

@@ -9,6 +9,6 @@ namespace GFX::Pipeline::RenderPass::Base
 		FullscreenPass(Graphics& gfx, const std::string& name);
 		virtual ~FullscreenPass() = default;
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG);
+		void Execute(Graphics& gfx) override;
 	};
 }

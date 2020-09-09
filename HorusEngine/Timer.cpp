@@ -1,6 +1,6 @@
 #include "Timer.h"
 
-float Timer::Mark()
+float Timer::Mark() noexcept
 {
 	std::chrono::steady_clock::time_point before = lastMark;
 	lastMark = std::chrono::steady_clock::now();

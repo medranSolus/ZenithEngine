@@ -5,7 +5,7 @@ namespace WinAPI
 	template<typename T>
 	void Keyboard::TrimBuffer(std::deque<T>& buffer) noexcept
 	{
-		while (buffer.size() > bufferSize)
+		while (buffer.size() > BUFFER_SIZE)
 			buffer.pop_back();
 	}
 

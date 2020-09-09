@@ -1,4 +1,4 @@
-#define DCB_LAYOUTELEMENT_IMPL
+#define _DCB_LAYOUTELEMENT_IMPL
 #include "DCBLayoutElement.h"
 #include <vector>
 #include <algorithm>
@@ -19,7 +19,7 @@ namespace GFX::Data::CBuffer
 		};
 	};
 
-	DCBLayoutElement::DCBLayoutElement(ElementType elementType) noexcept(!IS_DEBUG) : type(elementType)
+	DCBLayoutElement::DCBLayoutElement(ElementType elementType) noexcept : type(elementType)
 	{
 		assert(type != ElementType::Empty);
 		if (type == ElementType::Struct)
@@ -95,7 +95,7 @@ namespace GFX::Data::CBuffer
 		}
 	}
 
-	constexpr DCBLayoutElement& DCBLayoutElement::ArrayType() noexcept(!IS_DEBUG)
+	DCBLayoutElement& DCBLayoutElement::ArrayType() noexcept(!IS_DEBUG)
 	{
 		assert("Accessing ArrayType of non-array" && type == ElementType::Array);
 		return *static_cast<ExtraData::Array&>(*extraData).layoutElement;

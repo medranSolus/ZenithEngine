@@ -78,14 +78,15 @@ namespace GFX::Data
 			Element& operator=(const Element&) = default;
 			~Element() = default;
 
-			constexpr size_t GetEnd() const noexcept(!IS_DEBUG) { return offset + Size(); }
+			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG) { return VertexLayout::Bridge<SizeLookup>(type); }
+
 			constexpr size_t GetOffset() const noexcept { return offset; }
-			constexpr size_t Size() const noexcept(!IS_DEBUG) { return SizeOf(type); }
 			constexpr ElementType GetType() const noexcept { return type; }
+
+			constexpr size_t GetEnd() const noexcept(!IS_DEBUG) { return offset + Size(); }
+			constexpr size_t Size() const noexcept(!IS_DEBUG) { return SizeOf(type); }
 			constexpr const char* GetCode() const noexcept(!IS_DEBUG) { return VertexLayout::Bridge<CodeLookup>(type); }
 			constexpr D3D11_INPUT_ELEMENT_DESC GetDesc() const noexcept(!IS_DEBUG) { return VertexLayout::Bridge<DescGenerate>(type, GetOffset()); }
-
-			static constexpr size_t SizeOf(ElementType type) noexcept(!IS_DEBUG) { return VertexLayout::Bridge<SizeLookup>(type); }
 		};
 
 	private:
@@ -111,12 +112,12 @@ namespace GFX::Data
 			return Functor<ElementType::Count>::Exec(std::forward<Params>(p)...);
 		}
 
-		inline const Element& ResolveByIndex(size_t i) const { return elements.at(i); }
-		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
 		inline size_t GetElementCount() const noexcept { return elements.size(); }
+		inline size_t Size() const noexcept(!IS_DEBUG) { return elements.empty() ? 0U : elements.back().GetEnd(); }
+		inline const Element& ResolveByIndex(size_t i) const { return elements.at(i); }
 
-		const Element& Resolve(ElementType type) const noexcept(!IS_DEBUG);
 		bool Has(ElementType type) const noexcept;
+		const Element& Resolve(ElementType type) const noexcept(!IS_DEBUG);
 		VertexLayout& Append(ElementType type) noexcept(!IS_DEBUG);
 		std::vector<D3D11_INPUT_ELEMENT_DESC> GetDXLayout() const noexcept(!IS_DEBUG);
 		std::string GetLayoutCode() const noexcept(!IS_DEBUG);
@@ -222,6 +223,6 @@ namespace GFX::Data
 
 typedef GFX::Data::VertexLayout::ElementType VertexAttribute;
 
-#ifndef VERTEX_LAYOUT_IMPL
+#ifndef _VERTEX_LAYOUT_IMPL
 #undef VERTEX_LAYOUT_ELEMENTS
 #endif

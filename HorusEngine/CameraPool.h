@@ -7,7 +7,7 @@ namespace Camera
 {
 	class CameraPool : public GFX::IRenderable
 	{
-		static constexpr float maxMoveSpeed = 3.0f;
+		static constexpr float MAX_MOVE_SPEED = 5.0f;
 
 		float moveSpeed = 0.1f;
 		float rollSpeed = 0.01;
@@ -20,14 +20,15 @@ namespace Camera
 		virtual ~CameraPool() = default;
 
 		inline ICamera& GetCamera() noexcept { return *cameras.at(active); }
-		inline void Bind(GFX::Graphics& gfx) const noexcept { cameras.at(active)->Bind(gfx); }
+		inline void Bind(GFX::Graphics& gfx) const { cameras.at(active)->Bind(gfx); }
+
+		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
+		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }
 
 		void ProcessInput(WinAPI::Window& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
-		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

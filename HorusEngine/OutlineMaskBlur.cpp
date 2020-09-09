@@ -15,12 +15,7 @@ namespace GFX::Visual
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(pixelCBuffer), 1U);
 	}
 
-	void OutlineMaskBlur::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		pixelBuffer->Accept(gfx, probe);
-	}
-
-	void OutlineMaskBlur::Bind(Graphics& gfx) noexcept
+	void OutlineMaskBlur::Bind(Graphics& gfx)
 	{
 		pixelBuffer->Bind(gfx);
 		Effect::Bind(gfx);

@@ -28,7 +28,9 @@
     <ClInclude Include="BasicException.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="WinAPI.h" />
     <ClInclude Include="WinApiException.h" />
+    <ClInclude Include="WinApiExceptionMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitattributes" />

@@ -27,7 +27,7 @@ namespace GFX::Data
 		constexpr void Set(char* attribute, SrcType&& val) noexcept(!IS_DEBUG);
 
 	protected:
-		Vertex(char* data, const VertexLayout& layout) noexcept(!IS_DEBUG);
+		constexpr Vertex(char* data, const VertexLayout& layout) noexcept(!IS_DEBUG) : data(data), layout(layout) { assert(data != nullptr); }
 
 	public:
 		Vertex(const Vertex&) = default;
@@ -35,16 +35,10 @@ namespace GFX::Data
 		~Vertex() = default;
 
 		template<VertexLayout::ElementType T>
-		inline auto& Get() noexcept(!IS_DEBUG)
-		{
-			return *reinterpret_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
-		}
+		inline auto& Get() noexcept(!IS_DEBUG);
 
 		template<VertexLayout::ElementType T>
-		inline const auto& Get() const noexcept(!IS_DEBUG)
-		{
-			return *const_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
-		}
+		inline const auto& Get() const noexcept(!IS_DEBUG);
 
 		template<typename T>
 		constexpr void SetByIndex(size_t i, T&& val) noexcept(!IS_DEBUG);
@@ -65,6 +59,18 @@ namespace GFX::Data
 			*reinterpret_cast<Dest*>(attribute) = val;
 		else
 			assert("Parameter attribute type mismatch" && false);
+	}
+
+	template<VertexLayout::ElementType T>
+	inline auto& Vertex::Get() noexcept(!IS_DEBUG)
+	{
+		return *reinterpret_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
+	}
+
+	template<VertexLayout::ElementType T>
+	inline const auto& Vertex::Get() const noexcept(!IS_DEBUG)
+	{
+		return *const_cast<typename VertexLayout::Desc<T>::DataType*>(data + layout.Resolve(T).GetOffset());
 	}
 
 	template<typename T>

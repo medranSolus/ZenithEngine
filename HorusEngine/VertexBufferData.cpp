@@ -2,18 +2,20 @@
 
 namespace GFX::Data
 {
-	VertexBufferData::VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size) noexcept(!IS_DEBUG) : layout(layout)
+	VertexBufferData::VertexBufferData(std::shared_ptr<VertexLayout> layout, size_t size) noexcept(!IS_DEBUG)
+		: layout(layout)
 	{
 		assert(layout != nullptr && "VertexLayout cannot be null!");
 		buffer.resize(layout->Size() * size);
 	}
 
-	VertexBufferData::VertexBufferData(std::shared_ptr<VertexLayout> layout, const aiMesh& mesh) noexcept(!IS_DEBUG) : layout(layout)
+	VertexBufferData::VertexBufferData(std::shared_ptr<VertexLayout> layout, const aiMesh& mesh) noexcept(!IS_DEBUG)
+		: layout(layout)
 	{
 		assert(layout != nullptr && "VertexLayout cannot be null!");
 		buffer.resize(layout->Size() * mesh.mNumVertices);
 		for (size_t i = 0, size = layout->GetElementCount(); i < size; ++i)
-			VertexLayout::Bridge<AttributeFill>(layout->ResolveByIndex(i).GetType(), *this, mesh, i); // Can be concurrent
+			VertexLayout::Bridge<AttributeFill>(layout->ResolveByIndex(i).GetType(), *this, mesh, i); // TODO: Can be concurrent
 	}
 
 	void VertexBufferData::Resize(size_t newSize) noexcept(!IS_DEBUG)

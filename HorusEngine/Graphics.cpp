@@ -26,7 +26,7 @@ namespace GFX
 
 		UINT createFlags = 0;
 #ifdef _DEBUG
-		createFlags |= D3D11_CREATE_DEVICE_DEBUG;
+		createFlags |= D3D11_CREATE_DEVICE_FLAG::D3D11_CREATE_DEVICE_DEBUG;
 #endif
 		D3D_FEATURE_LEVEL features[]
 		{
@@ -53,12 +53,12 @@ namespace GFX
 		return renderTarget->GetHeight();
 	}
 
-	void Graphics::BindSwapBuffer() noexcept
+	void Graphics::BindSwapBuffer()
 	{
 		renderTarget->Bind(*this);
 	}
 
-	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil) noexcept
+	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil)
 	{
 		renderTarget->Bind(*this, depthStencil);
 	}
@@ -112,9 +112,9 @@ namespace GFX
 		size_t size = debugInfo.size();
 		if (size > 0)
 		{
-			stream << "\n\n[Error Info]";
+			stream << "\n[Debug Error Info]";
 			for (size_t i = 0; i < size; ++i)
-				stream << "\n\n[" << i + 1 << "] " << debugInfo.at(i);
+				stream << "\n[" << i + 1 << "] " << debugInfo.at(i);
 			stream << std::endl;
 		}
 		return stream.str();

@@ -52,8 +52,8 @@ namespace Camera
 
 	void BaseCamera::Bind(GFX::Graphics& gfx) const noexcept
 	{
-		gfx.GetCamera() = GetView();
-		gfx.GetProjection() = GetProjection();
+		gfx.SetView(GetView());
+		gfx.SetProjection(GetProjection());
 		if (enableIndicator)
 		{
 			indicator->SetPos(position);

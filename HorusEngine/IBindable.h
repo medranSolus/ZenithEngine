@@ -1,5 +1,4 @@
 #pragma once
-#include "Graphics.h"
 #include "IProbeable.h"
 
 namespace GFX::Resource
@@ -29,8 +28,9 @@ namespace GFX::Resource
 			return T::template GenerateRID(std::forward<Params>(p)...);
 		}
 
-		virtual void Bind(Graphics& gfx) noexcept = 0;
+		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
+
+		virtual void Bind(Graphics& gfx) = 0;
 		virtual std::string GetRID() const noexcept = 0;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
 	};
 }

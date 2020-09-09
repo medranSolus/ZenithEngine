@@ -8,7 +8,7 @@ namespace GFX::Pipeline::Resource
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
 		UINT slot;
 
-		static inline DXGI_FORMAT UsageShaderInput(Usage usage) noexcept;
+		static constexpr DXGI_FORMAT UsageShaderInput(Usage usage) noexcept;
 
 	public:
 		inline DepthStencilShaderInput(Graphics& gfx, UINT slot, Usage usage = Usage::DepthStencil)
@@ -18,7 +18,7 @@ namespace GFX::Pipeline::Resource
 
 		constexpr UINT GetSlot() const noexcept { return slot; }
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline void Unbind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullShaderResource.GetAddressOf()); }
 	};
 }

@@ -38,7 +38,7 @@ namespace GFX
 		};
 
 	private:
-		static constexpr DXGI_FORMAT pixelFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		static constexpr DXGI_FORMAT PIXEL_FORMAT = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		DirectX::ScratchImage scratch;
 		const DirectX::Image* image;
@@ -72,12 +72,12 @@ namespace GFX
 			std::string info;
 
 		public:
-			ImageException(unsigned int line, const char* file, std::string note) noexcept
+			inline ImageException(unsigned int line, const char* file, std::string note) noexcept
 				: BasicException(line, file), info(std::move(note)) {}
 			virtual ~ImageException() = default;
 
-			inline const char* GetType() const noexcept override { return "Image Exception"; }
 			constexpr const std::string& GetImageInfo() const noexcept { return info; }
+			inline const char* GetType() const noexcept override { return "Image Exception"; }
 
 			const char* what() const noexcept override;
 		};
@@ -85,7 +85,7 @@ namespace GFX
 		class DirectXTexException : public ImageException, public Exception::WinApiException
 		{
 		public:
-			DirectXTexException(unsigned int line, const char* file, HRESULT hResult, std::string note) noexcept
+			inline DirectXTexException(unsigned int line, const char* file, HRESULT hResult, std::string note) noexcept
 				: BasicException(line, file), ImageException(line, file, note), WinApiException(line, file, hResult) {}
 			virtual ~DirectXTexException() = default;
 

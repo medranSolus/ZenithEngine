@@ -19,7 +19,7 @@ namespace GFX::Resource
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override;
+		inline void Bind(Graphics& gfx) override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name); }
 	};
 
@@ -40,7 +40,7 @@ namespace GFX::Resource
 		return "#" + std::string(typeid(VertexBuffer).name()) + "#" + tag + "#";
 	}
 
-	inline void VertexBuffer::Bind(Graphics& gfx) noexcept
+	inline void VertexBuffer::Bind(Graphics& gfx)
 	{
 		const UINT offset = 0U;
 		GetContext(gfx)->IASetVertexBuffers(0U, 1U, vertexBuffer.GetAddressOf(), &stride, &offset);

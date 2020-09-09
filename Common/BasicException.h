@@ -24,6 +24,6 @@ namespace Exception
 		constexpr const std::string& GetFile() const noexcept { return file; }
 		inline virtual const char* GetType() const noexcept { return "Basic Exception"; }
 
-		virtual const char* what() const throw();
+		virtual const char* what() const noexcept;
 	};
 }

@@ -16,6 +16,6 @@ namespace GFX::Pipeline::RenderPass::Base
 		inline void Add(Job&& job) noexcept { jobs.emplace_back(std::forward<Job>(job)); }
 		inline void Reset() noexcept override { jobs.clear(); }
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override;
+		void Execute(Graphics& gfx) override;
 	};
 }

@@ -15,9 +15,9 @@ namespace GFX::Primitive
 		static std::shared_ptr<Data::VertexLayout> GetLayoutUV(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeSolidUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {});
+		static IndexedTriangleList MakeUVSolid(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 		//latitudeDensity: N-S, longitudeDensity: W-E
-		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {});
+		static IndexedTriangleList MakeUV(unsigned int latitudeDensity, unsigned int longitudeDensity, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 
 		static std::string GetNameIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 		static std::string GetNameIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
@@ -25,7 +25,7 @@ namespace GFX::Primitive
 		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIcoSolid(const std::vector<VertexAttribute>&& attributes = {}) noexcept { return GetLayoutUVSolid(std::forward<const std::vector<VertexAttribute>>(attributes)); }
 		static inline std::shared_ptr<Data::VertexLayout> GetLayoutIco(const std::vector<VertexAttribute>&& attributes = {}) noexcept { return GetLayoutUV(std::forward<const std::vector<VertexAttribute>>(attributes)); }
 
-		static IndexedTriangleList MakeSolidIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {});
-		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {});
+		static IndexedTriangleList MakeIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
+		static IndexedTriangleList MakeIco(unsigned int density, const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 	};
 }

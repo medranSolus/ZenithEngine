@@ -23,7 +23,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Linear, true));
 	}
 
-	void VerticalBlurPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void VerticalBlurPass::Execute(Graphics& gfx)
 	{
 		direction->GetBuffer()["vertical"] = true;
 		direction->Bind(gfx);

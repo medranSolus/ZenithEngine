@@ -21,7 +21,7 @@ namespace GFX::Resource
 		static inline std::string GenerateRID(const std::string& tag, const T& values, UINT slot = 0U) noexcept { return GenerateRID(tag, slot); }
 		static inline std::string GenerateRID(const std::string& tag, UINT slot = 0U) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->VSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->VSSetConstantBuffers(slot, 1U, constantBuffer.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, slot); }
 	};
 

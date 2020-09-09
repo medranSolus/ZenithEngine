@@ -1,7 +1,8 @@
 #pragma once
 #include "ILight.h"
-#include "CBuffers.h"
 #include "ICamera.h"
+#include "ConstBufferExCache.h"
+#include "RenderGraph.h"
 
 namespace GFX::Light
 {
@@ -18,6 +19,6 @@ namespace GFX::Light
 		virtual ~PointLight() = default;
 
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-		void Bind(Graphics& gfx, const Camera::ICamera& camera) const noexcept;
+		void Bind(Graphics& gfx, const Camera::ICamera& camera) const;
 	};
 }

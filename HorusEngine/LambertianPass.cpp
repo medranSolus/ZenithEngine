@@ -10,6 +10,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBindableSink<GFX::Resource::IBindable>("depthMap");
 		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
+
 		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
@@ -19,7 +20,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 	}
 
-	void LambertianPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void LambertianPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
 		shadowBuffer->Update(gfx);

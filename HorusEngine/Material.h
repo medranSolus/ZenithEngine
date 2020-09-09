@@ -22,9 +22,8 @@ namespace GFX::Visual
 
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
-		// Add later for turning on or of some texture stuff
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }
 
-		void Bind(Graphics& gfx) noexcept override;
+		void Bind(Graphics& gfx) override;
 	};
 }

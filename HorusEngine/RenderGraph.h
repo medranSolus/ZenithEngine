@@ -32,7 +32,7 @@ namespace GFX::Pipeline
 
 		RenderPass::Base::QueuePass& GetRenderQueue(const std::string& passName);
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG);
+		void Execute(Graphics& gfx);
 		void Reset() noexcept(!IS_DEBUG);
 	};
 }

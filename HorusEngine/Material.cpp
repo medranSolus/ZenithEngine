@@ -23,9 +23,9 @@ namespace GFX::Visual
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS"));
 
-		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS");
 		vertexLayout = std::make_shared<Data::VertexLayout>();
 		vertexLayout->Append(VertexAttribute::Normal);
+		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 
@@ -119,7 +119,7 @@ namespace GFX::Visual
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer), 1U);
 	}
 
-	void Material::Bind(Graphics& gfx) noexcept
+	void Material::Bind(Graphics& gfx)
 	{
 		IVisual::Bind(gfx);
 		pixelBuffer->Bind(gfx);

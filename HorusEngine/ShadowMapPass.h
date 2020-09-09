@@ -19,8 +19,8 @@ namespace GFX::Pipeline::RenderPass
 		ShadowMapPass(Graphics& gfx, const std::string& name);
 		virtual ~ShadowMapPass() = default;
 
-		inline void BindLight(Light::ILight& light) noexcept { shadowSource = &light; }
+		constexpr void BindLight(Light::ILight& light) noexcept { shadowSource = &light; }
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override;
+		void Execute(Graphics& gfx) override;
 	};
 }

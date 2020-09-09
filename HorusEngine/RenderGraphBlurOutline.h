@@ -1,14 +1,15 @@
 #pragma once
 #include "RenderGraph.h"
-#include "LambertianPass.h"
 #include "ConstBufferExCache.h"
 #include "TextureCube.h"
+#include "ICamera.h"
+#include "ILight.h"
 
 namespace GFX::Pipeline
 {
 	class RenderGraphBlurOutline : public RenderGraph
 	{
-		static constexpr int maxRadius = 7;
+		static constexpr int MAX_RADIUS = 7;
 		int radius;
 		float sigma;
 
@@ -16,7 +17,7 @@ namespace GFX::Pipeline
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
 		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
 
-		void SetKernel();
+		void SetKernel() noexcept(!IS_DEBUG);
 
 	public:
 		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f);
@@ -24,7 +25,7 @@ namespace GFX::Pipeline
 
 		void BindMainCamera(Camera::ICamera& camera);
 		void BindLight(Light::ILight& light);
-		void SetKernel(int radius, float sigma);
+		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);
 		void ShowWindow() noexcept;
 	};
 }

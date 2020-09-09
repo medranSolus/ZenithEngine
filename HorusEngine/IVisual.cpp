@@ -2,7 +2,7 @@
 
 namespace GFX::Visual
 {
-	void IVisual::Bind(Graphics& gfx) noexcept
+	void IVisual::Bind(Graphics& gfx)
 	{
 		transformBuffer->Bind(gfx);
 		for (auto& bind : binds)

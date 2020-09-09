@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline::Resource
 {
-	inline DXGI_FORMAT DepthStencilShaderInput::UsageShaderInput(Usage usage) noexcept
+	constexpr DXGI_FORMAT DepthStencilShaderInput::UsageShaderInput(Usage usage) noexcept
 	{
 		switch (usage)
 		{

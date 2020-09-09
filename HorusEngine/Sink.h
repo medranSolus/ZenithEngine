@@ -9,7 +9,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		std::string passName;
 		std::string sourceName;
 
-		static bool IsValidName(const std::string& name);
+		static inline bool IsValidName(const std::string& name) noexcept;
 
 	protected:
 		Sink(const std::string& registeredName);
@@ -17,9 +17,9 @@ namespace GFX::Pipeline::RenderPass::Base
 	public:
 		virtual ~Sink() = default;
 
-		inline const std::string& GetRegisteredName() const noexcept { return registeredName; }
-		inline const std::string& GetPassName() const noexcept { return passName; }
-		inline const std::string& GetSourceName() const noexcept { return sourceName; }
+		constexpr const std::string& GetRegisteredName() const noexcept { return registeredName; }
+		constexpr const std::string& GetPassName() const noexcept { return passName; }
+		constexpr const std::string& GetSourceName() const noexcept { return sourceName; }
 
 		virtual void Bind(Source& source) = 0;
 		virtual void ValidateLink() const = 0;

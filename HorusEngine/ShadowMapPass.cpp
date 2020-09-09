@@ -1,6 +1,5 @@
 #include "ShadowMapPass.h"
 #include "RenderPassesBase.h"
-#include "PipelineResources.h"
 #include "GfxResources.h"
 
 namespace GFX::Pipeline::RenderPass
@@ -39,7 +38,7 @@ namespace GFX::Pipeline::RenderPass
 		cameraUps.emplace_back(0.0f, 1.0f, 0.0f);
 	}
 
-	void ShadowMapPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void ShadowMapPass::Execute(Graphics& gfx)
 	{
 		assert(shadowSource);
 		gfx.SetProjection(DirectX::XMLoadFloat4x4(&projection));
@@ -50,10 +49,9 @@ namespace GFX::Pipeline::RenderPass
 		{
 			depthStencil = depthCube->GetBuffer(i);
 			depthStencil->Clear(gfx);
-			gfx.SetCamera(DirectX::XMMatrixLookAtLH(position,
+			gfx.SetView(DirectX::XMMatrixLookAtLH(position,
 				DirectX::XMVectorAdd(position, DirectX::XMLoadFloat3(&cameraDirections.at(i))), DirectX::XMLoadFloat3(&cameraUps.at(i))));
 			QueuePass::Execute(gfx);
-			//depthStencil->ToSurface(gfx, false).Save("__shadow" + std::to_string(i) + ".png");
 		}
 	}
 }

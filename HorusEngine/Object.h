@@ -10,9 +10,9 @@ namespace GFX
 		DirectX::FXMMATRIX CreateTransformMatrix() const noexcept;
 
 	public:
-		Object(const DirectX::XMFLOAT3& position);
-		Object(const std::string& name = "");
-		Object(const DirectX::XMFLOAT3& position, const std::string& name, float scale = 1.0f);
+		Object(const DirectX::XMFLOAT3& position) noexcept;
+		Object(const std::string& name = "") noexcept;
+		Object(const DirectX::XMFLOAT3& position, const std::string& name, float scale = 1.0f) noexcept;
 		Object(const Object&) = default;
 		Object& operator=(const Object&) = default;
 		virtual ~Object() = default;

@@ -21,7 +21,7 @@ namespace GFX::Resource
 		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect);
 		static inline std::string GenerateRID(Type type, bool textureCoordReflect) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(type, textureCoordReflect); }
 	};
 

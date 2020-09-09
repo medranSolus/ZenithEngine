@@ -19,7 +19,7 @@ namespace GFX::Resource
 		static inline std::shared_ptr<DepthStencilState> Get(Graphics& gfx, StencilMode mode) { return Codex::Resolve<DepthStencilState>(gfx, mode); }
 		static inline std::string GenerateRID(StencilMode mode) noexcept { return "#" + std::string(typeid(DepthStencilState).name()) + "#" + std::to_string(mode) + "#"; }
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->OMSetDepthStencilState(state.Get(), 0xFF); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->OMSetDepthStencilState(state.Get(), 0xFF); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(mode); }
 	};
 

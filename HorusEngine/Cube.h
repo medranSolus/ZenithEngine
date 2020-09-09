@@ -8,6 +8,9 @@ namespace GFX::Primitive
 	public:
 		Cube() = delete;
 
+		static constexpr size_t GetSkyboxIndexCount() noexcept { return GetSolidIndexCount(); }
+		static constexpr size_t GetSolidIndexCount() noexcept { return 36U; }
+
 		static inline std::string GetNameSkyboxVertexBuffer() noexcept { return GetNameSolid(); }
 		static inline std::string GetNameSkyboxIndexBuffer() noexcept { return std::string(typeid(Cube).name()) + "IX"; }
 
@@ -18,8 +21,14 @@ namespace GFX::Primitive
 		static std::shared_ptr<Data::VertexLayout> GetLayoutSolid(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 		static std::shared_ptr<Data::VertexLayout> GetLayout(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 
-		static IndexedTriangleList MakeSkybox();
-		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute>&& attributes = {});
-		static IndexedTriangleList Make(const std::vector<VertexAttribute>&& attributes = {});
+		static Data::VertexBufferData MakeSolidVertex(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
+		static std::vector<unsigned int> MakeSolidIndex() noexcept;
+		static IndexedTriangleList MakeSolid(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
+
+		static inline Data::VertexBufferData MakeSkyboxVertex() noexcept { return std::move(MakeSolidVertex()); }
+		static std::vector<unsigned int> MakeSkyboxIndex() noexcept;
+		static IndexedTriangleList MakeSkybox() noexcept;
+
+		static IndexedTriangleList Make(const std::vector<VertexAttribute>&& attributes = {}) noexcept;
 	};
 }

@@ -9,7 +9,7 @@ namespace GFX::Primitive
 		Data::VertexBufferData vertices;
 		std::vector<unsigned int> indices;
 
-		IndexedTriangleList() noexcept {}
+		inline IndexedTriangleList() noexcept {}
 		IndexedTriangleList(Data::VertexBufferData verticesIn, std::vector<unsigned int> indicesIn) noexcept(!IS_DEBUG);
 		IndexedTriangleList(const IndexedTriangleList&) = default;
 		IndexedTriangleList& operator=(const IndexedTriangleList&) = default;

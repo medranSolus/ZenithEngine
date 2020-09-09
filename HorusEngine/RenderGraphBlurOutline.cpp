@@ -5,9 +5,9 @@
 
 namespace GFX::Pipeline
 {
-	void RenderGraphBlurOutline::SetKernel()
+	void RenderGraphBlurOutline::SetKernel() noexcept(!IS_DEBUG)
 	{
-		assert(radius <= maxRadius);
+		assert(radius <= MAX_RADIUS);
 		auto& buffer = kernel->GetBuffer();
 		buffer["radius"] = radius;
 		float sum = 0.0f;
@@ -21,13 +21,14 @@ namespace GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma) : RenderGraph(gfx), radius(radius), sigma(sigma)
+	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma)
+		: RenderGraph(gfx), radius(radius), sigma(sigma)
 	{
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
 		kernelLayout.Add(DCBElementType::Integer, "radius");
 		kernelLayout.Add(DCBElementType::Array, "coefficients");
-		kernelLayout["coefficients"].InitArray(DCBElementType::Float, maxRadius + 1);
+		kernelLayout["coefficients"].InitArray(DCBElementType::Float, MAX_RADIUS + 1);
 		Data::CBuffer::DynamicCBuffer kernelBuffer(std::move(kernelLayout));
 		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 0U);
 		SetKernel();
@@ -117,7 +118,7 @@ namespace GFX::Pipeline
 		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindLight(light);
 	}
 
-	void RenderGraphBlurOutline::SetKernel(int radius, float sigma)
+	void RenderGraphBlurOutline::SetKernel(int radius, float sigma) noexcept(!IS_DEBUG)
 	{
 		this->sigma = sigma;
 		this->radius = radius;
@@ -127,7 +128,7 @@ namespace GFX::Pipeline
 	void RenderGraphBlurOutline::ShowWindow() noexcept
 	{
 		ImGui::Text("Blur Control");
-		if (ImGui::SliderInt("Radius", &radius, 1, maxRadius) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
+		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
 			SetKernel();
 	}
 }

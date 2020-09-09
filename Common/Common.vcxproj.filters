@@ -49,6 +49,12 @@
     <ClInclude Include="Surface.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
+    <ClInclude Include="WinApiExceptionMacros.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -49,7 +49,7 @@ namespace WinAPI
 		};
 
 	private:
-		static constexpr unsigned int bufferSize = 256U;
+		static constexpr size_t BUFFER_SIZE = 256U;
 
 		int x = 0;
 		int y = 0;

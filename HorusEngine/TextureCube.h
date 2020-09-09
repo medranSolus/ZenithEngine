@@ -17,7 +17,7 @@ namespace GFX::Resource
 		static inline std::shared_ptr<TextureCube> Get(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot = 0U);
 		static inline std::string GenerateRID(const std::string& path, const std::string& ext, UINT slot = 0U) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path, ext, slot); }
 	};
 

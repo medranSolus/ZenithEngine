@@ -26,7 +26,8 @@ namespace GFX::Resource
 
 		inline std::shared_ptr<Pipeline::Resource::DepthStencil> GetBuffer(size_t index) noexcept { return depthBuffers.at(index); }
 		inline void Unbind(Graphics& gfx) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullShaderResource.GetAddressOf()); }
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
+
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(size, slot); }
 	};
 

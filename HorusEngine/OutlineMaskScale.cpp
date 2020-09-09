@@ -49,7 +49,7 @@ namespace GFX::Visual
 		pixelBuffer->Accept(gfx, probe);
 	}
 
-	void OutlineMaskScale::Bind(Graphics& gfx) noexcept
+	void OutlineMaskScale::Bind(Graphics& gfx)
 	{
 		if (dirty)
 			UpdateTransform();

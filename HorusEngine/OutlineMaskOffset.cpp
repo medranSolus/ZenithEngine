@@ -27,7 +27,7 @@ namespace GFX::Visual
 		pixelBuffer->Accept(gfx, probe);
 	}
 
-	void OutlineMaskOffset::Bind(Graphics& gfx) noexcept
+	void OutlineMaskOffset::Bind(Graphics& gfx)
 	{
 		vertexBuffer->Bind(gfx);
 		pixelBuffer->Bind(gfx);

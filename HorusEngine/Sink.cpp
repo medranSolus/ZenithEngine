@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	bool Sink::IsValidName(const std::string& name)
+	inline bool Sink::IsValidName(const std::string& name) noexcept
 	{
 		return !std::isdigit(name.front()) && std::all_of(name.begin(), name.end(), [](char c) { return std::isalnum(c) || c == '_'; });
 	}

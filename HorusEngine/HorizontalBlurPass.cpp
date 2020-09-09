@@ -9,7 +9,6 @@ namespace GFX::Pipeline::RenderPass
 	{
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("kernel");
 		AddBindableSink<Resource::RenderTarget>("blurTarget");
-
 		RegisterSink(Base::SinkDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("direction", direction));
 
 		renderTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, width, height, 0U);
@@ -20,7 +19,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true));
 	}
 
-	void HorizontalBlurPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void HorizontalBlurPass::Execute(Graphics& gfx)
 	{
 		direction->GetBuffer()["vertical"] = false;
 		direction->Bind(gfx);

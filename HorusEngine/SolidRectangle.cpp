@@ -4,7 +4,8 @@
 
 namespace GFX::Shape
 {
-	SolidRectangle::SolidRectangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color, float width, float height)
+	SolidRectangle::SolidRectangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, Data::ColorFloat3 color, float width, float height)
 		: BaseShape(gfx), Object(position, name), width(width), height(height)
 	{
 		std::string typeName = Primitive::Square::GetName();

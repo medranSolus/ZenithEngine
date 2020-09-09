@@ -15,7 +15,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
 	}
 
-	void OutlineDrawBlurPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void OutlineDrawBlurPass::Execute(Graphics& gfx)
 	{
 		renderTarget->Clear(gfx);
 		QueuePass::Execute(gfx);

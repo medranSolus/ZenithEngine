@@ -5,7 +5,7 @@ namespace WinAPI
 {
 	void Mouse::TrimBuffer() noexcept
 	{
-		while (eventBuffer.size() > bufferSize)
+		while (eventBuffer.size() > BUFFER_SIZE)
 			eventBuffer.pop_back();
 	}
 
@@ -97,13 +97,13 @@ namespace WinAPI
 
 	void Mouse::OnWheelForward() noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::WheelForward, *this, this->x, this->y);
+		eventBuffer.emplace_back(Event::Type::WheelForward, *this, x, y);
 		TrimBuffer();
 	}
 
 	void Mouse::OnWheelBackward() noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, this->x, this->y);
+		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, x, y);
 		TrimBuffer();
 	}
 

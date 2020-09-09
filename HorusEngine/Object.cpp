@@ -10,17 +10,18 @@ namespace GFX
 			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&GetPos()));
 	}
 
-	Object::Object(const DirectX::XMFLOAT3& position) : BasicObject(position)
+	Object::Object(const DirectX::XMFLOAT3& position) noexcept : BasicObject(position)
 	{
 		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&position)));
 	}
 
-	Object::Object(const std::string& name) : BasicObject(name)
+	Object::Object(const std::string& name) noexcept : BasicObject(name)
 	{
 		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixIdentity());
 	}
 
-	Object::Object(const DirectX::XMFLOAT3& position, const std::string& name, float scale) : BasicObject(position, name, scale)
+	Object::Object(const DirectX::XMFLOAT3& position, const std::string& name, float scale) noexcept
+		: BasicObject(position, name, scale)
 	{
 		DirectX::XMStoreFloat4x4(transform.get(), DirectX::XMMatrixScaling(scale, scale, scale) *
 			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&position)));

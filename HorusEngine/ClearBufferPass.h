@@ -11,6 +11,6 @@ namespace GFX::Pipeline::RenderPass
 		ClearBufferPass(const std::string& name);
 		virtual ~ClearBufferPass() = default;
 
-		inline void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override { buffer->Clear(gfx); }
+		inline void Execute(Graphics& gfx) override { buffer->Clear(gfx); }
 	};
 }

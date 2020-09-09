@@ -35,63 +35,68 @@ namespace GFX::Primitive
 		return layout;
 	}
 
-	IndexedTriangleList Cube::MakeSkybox()
+	Data::VertexBufferData Cube::MakeSolidVertex(const std::vector<VertexAttribute>&& attributes) noexcept
 	{
-		constexpr float point = 0.5f;
-		Data::VertexBufferData vertices(GetLayoutSkybox(), 8);
-
-		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
-		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
-		vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
-		vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
-		vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
-		vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
-		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
-		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
-
-		return
-		{
-			std::move(vertices),
-			{
-				2,1,0, 3,2,0, // Front
-				1,5,4, 0,1,4, // Left
-				5,6,7, 4,5,7, // Back
-				6,2,3, 7,6,3, // Right
-				6,5,1, 2,6,1, // Top
-				3,0,4, 7,3,4  // Down
-			}
-		};
-	}
-
-	IndexedTriangleList Cube::MakeSolid(const std::vector<VertexAttribute>&& attributes)
-	{
-		constexpr float point = 0.5f;
+		constexpr float POINT = 0.5f;
 		Data::VertexBufferData vertices(GetLayoutSolid(std::forward<const std::vector<VertexAttribute>>(attributes)), 8);
 
-		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
-		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, -point)));
-		vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, -point)));
-		vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, -point)));
-		vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, point)));
-		vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, point)));
-		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, point, point)));
-		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(point, -point, point)));
+		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, -POINT, -POINT)));
+		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, POINT, -POINT)));
+		vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT3(POINT, POINT, -POINT)));
+		vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT3(POINT, -POINT, -POINT)));
+		vertices[4].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, -POINT, POINT)));
+		vertices[5].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, POINT, POINT)));
+		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(POINT, POINT, POINT)));
+		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(POINT, -POINT, POINT)));
 
+		return std::move(vertices);
+	}
+
+	std::vector<unsigned int> Cube::MakeSolidIndex() noexcept
+	{
 		return
 		{
-			std::move(vertices),
-			{
-				0,1,2, 0,2,3, // Front
-				4,5,1, 4,1,0, // Left
-				7,6,5, 7,5,4, // Back
-				3,2,6, 3,6,7, // Right
-				1,5,6, 1,6,2, // Top
-				4,0,3, 4,3,7  // Down
-			}
+			0,1,2, 0,2,3, // Front
+			4,5,1, 4,1,0, // Left
+			7,6,5, 7,5,4, // Back
+			3,2,6, 3,6,7, // Right
+			1,5,6, 1,6,2, // Top
+			4,0,3, 4,3,7  // Down
 		};
 	}
 
-	IndexedTriangleList Cube::Make(const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Cube::MakeSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	{
+		return
+		{
+			std::move(MakeSolidVertex(std::forward<const std::vector<VertexAttribute>>(attributes))),
+			std::move(MakeSolidIndex())
+		};
+	}
+
+	std::vector<unsigned int> Cube::MakeSkyboxIndex() noexcept
+	{
+		return
+		{
+			2,1,0, 3,2,0, // Front
+			1,5,4, 0,1,4, // Left
+			5,6,7, 4,5,7, // Back
+			6,2,3, 7,6,3, // Right
+			6,5,1, 2,6,1, // Top
+			3,0,4, 7,3,4  // Down
+		};
+	}
+
+	IndexedTriangleList Cube::MakeSkybox() noexcept
+	{
+		return
+		{
+			std::move(MakeSolidVertex()),
+			std::move(MakeSkyboxIndex())
+		};
+	}
+
+	IndexedTriangleList Cube::Make(const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		constexpr float point = 0.5f;
 		Data::VertexBufferData vertices(GetLayout(std::forward<const std::vector<VertexAttribute>>(attributes)), 24);

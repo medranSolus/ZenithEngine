@@ -25,7 +25,7 @@ namespace GFX::Visual
 		template<typename R>
 		void SetResource(std::shared_ptr<R> resource) noexcept;
 
-		virtual void Bind(Graphics& gfx) noexcept;
+		virtual void Bind(Graphics& gfx);
 	};
 
 	template<typename R>

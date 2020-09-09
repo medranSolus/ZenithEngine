@@ -18,6 +18,6 @@ namespace GFX::Pipeline
 		Job& operator=(const Job&) = default;
 		~Job() = default;
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG);
+		void Execute(Graphics& gfx);
 	};
 }

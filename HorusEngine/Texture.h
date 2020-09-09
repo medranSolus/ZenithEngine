@@ -19,7 +19,7 @@ namespace GFX::Resource
 
 		constexpr bool HasAlpha() const noexcept { return alpha; }
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path, slot, alpha); }
 	};
 

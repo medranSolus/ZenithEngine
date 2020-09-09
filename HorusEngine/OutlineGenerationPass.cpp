@@ -1,6 +1,5 @@
 #include "OutlineGenerationPass.h"
 #include "RenderPassesBase.h"
-#include "PipelineResources.h"
 #include "GfxResources.h"
 
 namespace GFX::Pipeline::RenderPass

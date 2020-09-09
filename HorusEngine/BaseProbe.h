@@ -3,10 +3,6 @@
 #include "DynamicCBuffer.h"
 #include "ProjectionData.h"
 
-namespace Camera
-{
-	struct ProjectionData;
-}
 namespace GFX::Pipeline
 {
 	class Technique;
@@ -34,11 +30,11 @@ namespace GFX::Probe
 
 		void SetTechnique(Pipeline::Technique* currentTechnique) noexcept;
 
-		bool Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
-		bool VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
-		bool VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
-		bool VisitLight(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
-		void VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept;
-		bool VisitCamera(Camera::ProjectionData& projection) noexcept;
+		bool Visit(Data::CBuffer::DynamicCBuffer& buffer) const noexcept;
+		bool VisitObject(Data::CBuffer::DynamicCBuffer& buffer) const noexcept;
+		bool VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) const noexcept;
+		bool VisitLight(Data::CBuffer::DynamicCBuffer& buffer) const noexcept;
+		void VisitShape(Graphics& gfx, Shape::BaseShape& shape) const noexcept;
+		bool VisitCamera(Camera::ProjectionData& projection) const noexcept;
 	};
 }

@@ -12,6 +12,6 @@ namespace GFX::Pipeline::RenderPass
 		VerticalBlurPass(Graphics& gfx, const std::string& name);
 		virtual ~VerticalBlurPass() = default;
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override;
+		void Execute(Graphics& gfx) override;
 	};
 }

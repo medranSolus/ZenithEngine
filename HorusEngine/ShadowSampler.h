@@ -14,7 +14,7 @@ namespace GFX::Resource
 		static inline std::shared_ptr<ShadowSampler> Get(Graphics& gfx);
 		static inline std::string GenerateRID() noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->PSSetSamplers(1U, 1U, state.GetAddressOf()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetSamplers(1U, 1U, state.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(); }
 	};
 

@@ -6,7 +6,8 @@
 
 namespace GFX::Shape
 {
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path,
+		aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
 	{
 		// Maybe layout code needed too, TODO: Check this
 		std::string meshID = std::to_string(mesh.mNumFaces) + std::string(mesh.mName.C_Str()) + std::to_string(mesh.mNumVertices) + "#";
@@ -43,7 +44,7 @@ namespace GFX::Shape
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}
 
-	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, unsigned long long& id) noexcept(!IS_DEBUG)
+	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, unsigned long long& id)
 	{
 		std::vector<std::shared_ptr<Mesh>> currentMeshes;
 		currentMeshes.reserve(node.mNumMeshes);
@@ -59,7 +60,8 @@ namespace GFX::Shape
 		return currentNode;
 	}
 
-	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const DirectX::XMFLOAT3& position, const std::string& modelName, float scale)
+	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file,
+		const DirectX::XMFLOAT3& position, const std::string& modelName, float scale)
 		: name(modelName)
 	{
 		Assimp::Importer importer;

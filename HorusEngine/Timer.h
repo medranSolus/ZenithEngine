@@ -11,7 +11,7 @@ public:
 	Timer& operator=(const Timer&) = default;
 	~Timer() = default;
 
-	inline float Peek() const { return std::chrono::duration<float>(std::chrono::steady_clock::now() - lastMark).count(); }
+	inline float Peek() const noexcept { return std::chrono::duration<float>(std::chrono::steady_clock::now() - lastMark).count(); }
 
-	float Mark();
+	float Mark() noexcept;
 };

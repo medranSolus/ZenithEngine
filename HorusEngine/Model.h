@@ -13,12 +13,14 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
 		bool isOutline = false;
 
-		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
+		static std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path,
+			aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials);
 
-		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, unsigned long long& id) noexcept(!IS_DEBUG);
+		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, unsigned long long& id);
 
 	public:
-		Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const DirectX::XMFLOAT3& position = { 0.0f,0.0f,0.0f }, const std::string& modelName = "Model", float scale = 1.0f);
+		Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file,
+			const DirectX::XMFLOAT3& position, const std::string& modelName, float scale = 1.0f);
 		Model(const Model&) = delete;
 		Model& operator=(const Model&) = delete;
 		virtual ~Model() = default;

@@ -1,6 +1,5 @@
 #include "SkyboxPass.h"
 #include "RenderPassesBase.h"
-#include "PipelineResources.h"
 #include "GfxResources.h"
 #include "Cube.h"
 
@@ -11,6 +10,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBindableSink<GFX::Resource::TextureCube>("skyboxTexture");
 		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
+
 		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
@@ -21,16 +21,36 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(std::make_shared<GFX::Resource::ConstBufferTransformSkybox>(gfx));
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-		auto model = Primitive::Cube::MakeSkybox();
-		indexCount = static_cast<UINT>(model.indices.size());
-		AddBind(GFX::Resource::VertexBuffer::Get(gfx, Primitive::Cube::GetNameSkyboxVertexBuffer(), model.vertices));
-		AddBind(GFX::Resource::IndexBuffer::Get(gfx, Primitive::Cube::GetNameSkyboxIndexBuffer(), model.indices));
+		const std::string vertexBufferTag = Primitive::Cube::GetNameSkyboxVertexBuffer();
+		const std::string indexBufferTag = Primitive::Cube::GetNameSkyboxIndexBuffer();
+		if (GFX::Resource::VertexBuffer::NotStored(vertexBufferTag))
+		{
+			auto vertices = Primitive::Cube::MakeSkyboxVertex();
+			AddBind(GFX::Resource::VertexBuffer::Get(gfx, vertexBufferTag, vertices));
+		}
+		else
+		{
+			Data::VertexBufferData vertices;
+			AddBind(GFX::Resource::VertexBuffer::Get(gfx, vertexBufferTag, vertices));
+		}
+		if (GFX::Resource::IndexBuffer::NotStored(indexBufferTag))
+		{
+			auto indices = Primitive::Cube::MakeSkyboxIndex();
+			AddBind(GFX::Resource::IndexBuffer::Get(gfx, indexBufferTag, indices));
+		}
+		else
+		{
+			std::vector<unsigned int> indices;
+			AddBind(GFX::Resource::IndexBuffer::Get(gfx, indexBufferTag, indices));
+		}
+		indexCount = static_cast<UINT>(Primitive::Cube::GetSkyboxIndexCount());
+
 		auto vertexShader = GFX::Resource::VertexShader::Get(gfx, "SkyboxVS");
-		AddBind(GFX::Resource::InputLayout::Get(gfx, model.vertices.GetLayout(), vertexShader));
+		AddBind(GFX::Resource::InputLayout::Get(gfx, Primitive::Cube::GetLayoutSkybox(), vertexShader));
 		AddBind(std::move(vertexShader));
 	}
 
-	void SkyboxPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void SkyboxPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
 		mainCamera->Bind(gfx);

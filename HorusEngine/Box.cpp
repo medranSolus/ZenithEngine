@@ -4,8 +4,8 @@
 
 namespace GFX::Shape
 {
-	Box::Box(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat4 color,
-		float width, float height, float length)
+	Box::Box(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, Data::ColorFloat4 color, float width, float height, float length)
 		: BaseShape(gfx), Object(position, name), sizes(width, height, length)
 	{
 		std::string typeName = Primitive::Cube::GetName();

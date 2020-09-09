@@ -4,7 +4,8 @@
 
 namespace GFX::Shape
 {
-	CameraIndicator::CameraIndicator(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color)
+	CameraIndicator::CameraIndicator(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, Data::ColorFloat3 color)
 		: BaseShape(gfx), Object(position, name)
 	{
 		const std::string typeName = typeid(CameraIndicator).name();

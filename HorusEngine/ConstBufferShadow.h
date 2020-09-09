@@ -13,8 +13,8 @@ namespace GFX::Resource
 		inline ConstBufferShadow(Graphics& gfx, UINT slot = 1U) : vertexBuffer(std::make_unique<ConstBufferVertex<DirectX::XMMATRIX>>(gfx, "", slot)) {}
 		virtual ~ConstBufferShadow() = default;
 
-		inline void SetLight(Light::ILight& shadowSource) noexcept { light = &shadowSource; }
-		inline void Bind(Graphics& gfx) noexcept override { vertexBuffer->Bind(gfx); }
+		constexpr void SetLight(Light::ILight& shadowSource) noexcept { light = &shadowSource; }
+		inline void Bind(Graphics& gfx) override { vertexBuffer->Bind(gfx); }
 		inline std::string GetRID() const noexcept override { return "?"; }
 
 		void Update(Graphics& gfx);

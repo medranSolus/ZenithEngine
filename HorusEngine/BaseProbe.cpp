@@ -1,7 +1,5 @@
 #include "BaseProbe.h"
-#include "Technique.h"
 #include "BaseShape.h"
-#include "ICamera.h"
 
 #define Tag(label) MakeTag(label).c_str()
 
@@ -19,7 +17,7 @@ namespace GFX::Probe
 		ImGui::Checkbox(Tag("Active"), &technique->IsActive());
 	}
 
-	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
+	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
 		dirty |= VisitObject(buffer);
@@ -28,7 +26,7 @@ namespace GFX::Probe
 		return dirty;
 	}
 
-	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
+	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
 		if (auto offset = buffer["offset"]; offset.Exists())
@@ -55,7 +53,7 @@ namespace GFX::Probe
 		return dirty;
 	}
 
-	bool BaseProbe::VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
+	bool BaseProbe::VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
 		if (auto color = buffer["solidColor"]; color.Exists())
@@ -90,7 +88,7 @@ namespace GFX::Probe
 		return dirty;
 	}
 
-	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) noexcept(!IS_DEBUG)
+	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
 		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
@@ -123,7 +121,7 @@ namespace GFX::Probe
 		return dirty;
 	}
 
-	void BaseProbe::VisitShape(Graphics& gfx, Shape::BaseShape& shape) noexcept
+	void BaseProbe::VisitShape(Graphics& gfx, Shape::BaseShape& shape) const noexcept
 	{
 		bool meshOnly = shape.IsMesh();
 		if (ImGui::Checkbox(Tag("Mesh-only"), &meshOnly))
@@ -144,7 +142,7 @@ namespace GFX::Probe
 		}
 	}
 
-	bool BaseProbe::VisitCamera(Camera::ProjectionData& projection) noexcept
+	bool BaseProbe::VisitCamera(Camera::ProjectionData& projection) const noexcept
 	{
 		return ImGui::SliderAngle("FOV", &projection.fov, 1.0f, 179.0f, "%.1f") ||
 			ImGui::DragFloat("Near clip", &projection.nearClip, 0.01f, 0.01f, 10.0f, "%.3f") ||

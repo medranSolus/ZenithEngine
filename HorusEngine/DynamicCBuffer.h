@@ -11,7 +11,7 @@ namespace GFX::Data::CBuffer
 
 	public:
 		inline DynamicCBuffer(DCBLayout&& layout) noexcept(!IS_DEBUG)
-			: DynamicCBuffer(DCBLayoutCodex::Resolve(std::move(layout))) {}
+			: DynamicCBuffer(DCBLayoutCodex::Resolve(std::forward<DCBLayout&&>(layout))) {}
 		inline DynamicCBuffer(const DCBLayoutFinal& layout) noexcept(!IS_DEBUG)
 			: bytes(root->GetEndOffset()), root(layout.GetRoot()) {}
 		inline DynamicCBuffer(DCBLayoutFinal&& layout)
@@ -27,10 +27,9 @@ namespace GFX::Data::CBuffer
 		inline const DCBLayoutElement& GetRootElement() const noexcept { return *root; }
 		inline std::shared_ptr<DCBLayoutElement> GetRoot() const noexcept { return root; }
 
-		void Copy(const DynamicCBuffer& buffer) noexcept(!IS_DEBUG);
+		void Copy(const DynamicCBuffer& buffer) noexcept;
 
 		inline DCBElementConst operator[](const std::string& key) const noexcept(!IS_DEBUG) { return const_cast<DynamicCBuffer&>(*this)[key]; }
-
-		DCBElement operator[](const std::string& key) noexcept(!IS_DEBUG) { return { &(*root)[key], bytes.data(), 0U }; }
+		inline DCBElement operator[](const std::string& key) noexcept(!IS_DEBUG) { return { &(*root)[key], bytes.data(), 0U }; }
 	};
 }

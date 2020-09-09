@@ -23,7 +23,7 @@ namespace GFX::Probe
 		inline void PopNode() const noexcept { ImGui::TreePop(); }
 
 		bool PushNode(Shape::ModelNode& node) noexcept;
-		void Visit(Graphics& gfx, Shape::ModelNode& node) noexcept;
+		void Visit(Graphics& gfx, Shape::ModelNode& node) const noexcept;
 		void Visit(Graphics& gfx, Shape::Model& model, Shape::ModelNode& root) noexcept;
 	};
 }

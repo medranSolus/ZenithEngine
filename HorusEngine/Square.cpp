@@ -18,7 +18,7 @@ namespace GFX::Primitive
 		return layout;
 	}
 
-	IndexedTriangleList Square::Make(const std::vector<VertexAttribute>&& attributes)
+	IndexedTriangleList Square::Make(const std::vector<VertexAttribute>&& attributes) noexcept
 	{
 		constexpr float point = 0.5f;
 		Data::VertexBufferData vertices(GetLayout(std::forward<const std::vector<VertexAttribute>>(attributes)), 4);

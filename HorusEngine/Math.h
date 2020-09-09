@@ -1,6 +1,6 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include "Vertex.h"
+#include "Color.h"
 #include <math.h>
 #include <random>
 
@@ -77,6 +77,6 @@ namespace Math
 		return static_cast<T>(M_2_SQRTPI) * exp(static_cast<T>(-0.5) * x * x / sigma) / (sigma * static_cast<T>(M_SQRT2 * 2.0));
 	}
 
-	DirectX::XMFLOAT3 Add(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2);
-	DirectX::XMFLOAT3 AddNormal(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2);
+	DirectX::XMFLOAT3 Add(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2) noexcept;
+	DirectX::XMFLOAT3 AddNormal(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2) noexcept;
 }

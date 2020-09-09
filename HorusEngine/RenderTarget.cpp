@@ -15,7 +15,7 @@ namespace GFX::Pipeline::Resource
 		textureDesc.SampleDesc.Count = 1U;
 		textureDesc.SampleDesc.Quality = 0U;
 		textureDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET;
+		textureDesc.BindFlags |= D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET;
 		textureDesc.CPUAccessFlags = 0U;
 		textureDesc.MiscFlags = 0U;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = nullptr;
@@ -39,6 +39,7 @@ namespace GFX::Pipeline::Resource
 		: IBufferResource(gfx, width, height)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
+		textureDesc.BindFlags = 0U;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc);
 		InitializeTargetView(gfx, textureDesc, texture);
 	}

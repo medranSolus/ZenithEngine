@@ -19,6 +19,6 @@ namespace GFX::Visual
 
 		void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) override;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-		void Bind(Graphics& gfx) noexcept override;
+		void Bind(Graphics& gfx) override;
 	};
 }

@@ -7,7 +7,7 @@
 /* Exclude unused WinAPI stuff
  * https://stackoverflow.com/questions/1394910/how-to-tame-the-windows-headers-useful-defines */
 
-#ifndef USE_WINDOWS_DEFINES
+#ifndef _USE_WINDOWS_DEFINES
  // Cryptography, DDE, RPC, Shell, and Windows Sockets
 #define WIN32_LEAN_AND_MEAN
 // CC_*, LC_*, PC_*, CP_*, TC_*, RC_

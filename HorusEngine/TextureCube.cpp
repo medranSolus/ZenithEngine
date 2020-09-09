@@ -9,6 +9,7 @@ namespace GFX::Resource
 		GFX_ENABLE_ALL(gfx);
 
 		std::vector<Surface> surfaces;
+		surfaces.reserve(6);
 		surfaces.emplace_back(path + "\\px" + ext); // Right
 		surfaces.emplace_back(path + "\\nx" + ext); // Left
 		surfaces.emplace_back(path + "\\py" + ext); // Up

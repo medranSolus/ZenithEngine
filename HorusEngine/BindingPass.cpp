@@ -1,9 +1,8 @@
 #include "BindingPass.h"
-#include "RenderGraphCompileException.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	void BindingPass::BindResources(Graphics& gfx) noexcept
+	void BindingPass::BindResources(Graphics& gfx)
 	{
 		Resource::IBufferResource::UnbindAll(gfx);
 		if (renderTarget == nullptr)
@@ -24,14 +23,14 @@ namespace GFX::Pipeline::RenderPass::Base
 		}
 	}
 
-	void BindingPass::BindAll(Graphics& gfx) noexcept
+	void BindingPass::BindAll(Graphics& gfx)
 	{
 		BindResources(gfx);
 		for (auto& bind : binds)
 			bind->Bind(gfx);
 	}
 
-	void BindingPass::Finalize()
+	void BindingPass::Finalize() const
 	{
 		if (renderTarget == nullptr && depthStencil == nullptr)
 			throw RGC_EXCEPT("BindingPass \"" + GetName() + "\" needs at least one RenderTarget or DepthStencil!");

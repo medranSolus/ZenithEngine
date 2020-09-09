@@ -10,16 +10,18 @@ namespace WinAPI
 	{
 		class WindowClass final
 		{
-			static constexpr const char* wndClassName = "horusEngineWindow";
+			static constexpr const char* WND_CLASS_NAME = "horusEngineWindow";
+
 			HINSTANCE hInstance;
 
 		public:
 			WindowClass() noexcept;
 			WindowClass(const WindowClass&) = delete;
 			WindowClass& operator=(const WindowClass&) = delete;
-			inline ~WindowClass() { UnregisterClass(wndClassName, hInstance); }
+			inline ~WindowClass() { UnregisterClass(WND_CLASS_NAME, hInstance); }
 
-			static constexpr const char* GetName() noexcept { return wndClassName; }
+			static constexpr const char* GetName() noexcept { return WND_CLASS_NAME; }
+
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
 
@@ -54,38 +56,12 @@ namespace WinAPI
 		constexpr Mouse& Mouse() noexcept { return mouse; }
 		constexpr bool IsCursorEnabled() const noexcept { return cursorEnabled; }
 		inline void SwitchCursor() noexcept { cursorEnabled ? DisableCursor() : EnableCursor(); }
+		inline GFX::Graphics& Gfx() noexcept { return *graphics; }
 
 		static std::optional<unsigned long long> ProcessMessage() noexcept;
 
-		GFX::Graphics& Gfx();
 		void SetTitle(const std::string& title);
 		void EnableCursor() noexcept;
 		void DisableCursor() noexcept;
-
-#pragma region Exceptions
-		class WindowException : public Exception::WinApiException
-		{
-			using WinApiException::WinApiException;
-
-		public:
-			inline WindowException(unsigned int line, const char* file, HRESULT hResult) noexcept
-				: BasicException(line, file), WinApiException(line, file, hResult) {}
-			WindowException(const WindowException&) = default;
-			WindowException& operator=(const WindowException&) = default;
-			virtual ~WindowException() = default;
-
-			inline const char* GetType() const noexcept override { return "Window Exception"; }
-		};
-		class NoGfxException : public virtual Exception::BasicException
-		{
-		public:
-			inline NoGfxException(unsigned int line, const char* file) noexcept : BasicException(line, file) {}
-			NoGfxException(const NoGfxException&) = default;
-			NoGfxException& operator=(const NoGfxException&) = default;
-			virtual ~NoGfxException() = default;
-
-			inline const char* GetType() const noexcept override { return "No Graphics Exception"; }
-		};
-#pragma endregion
 	};
 }

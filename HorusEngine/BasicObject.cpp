@@ -16,7 +16,7 @@ namespace GFX
 		return layout;
 	}
 
-	BasicObject::BasicObject(const DirectX::XMFLOAT3& position, const std::string& name, float scale)
+	BasicObject::BasicObject(const DirectX::XMFLOAT3& position, const std::string& name, float scale) noexcept
 		: buffer(MakeLayout()), name(name)
 	{
 		buffer["position"] = position;

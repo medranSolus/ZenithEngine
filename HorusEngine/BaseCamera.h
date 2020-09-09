@@ -41,6 +41,9 @@ namespace Camera
 		inline void SetPos(const DirectX::XMFLOAT3& pos) noexcept override { position = pos; viewUpdate = true; }
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return position; }
 
+		inline void SetOutline() noexcept override { indicator->SetOutline(); }
+		inline void DisableOutline() noexcept override { indicator->DisableOutline(); }
+
 		DirectX::FXMMATRIX GetProjection() const noexcept override;
 		DirectX::FXMMATRIX GetView() const noexcept override;
 
@@ -48,8 +51,6 @@ namespace Camera
 
 		void Bind(GFX::Graphics& gfx) const noexcept override;
 		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		inline void SetOutline() noexcept override { indicator->SetOutline(); }
-		inline void DisableOutline() noexcept override { indicator->DisableOutline(); }
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

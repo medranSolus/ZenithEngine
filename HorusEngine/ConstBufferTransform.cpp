@@ -2,10 +2,12 @@
 
 namespace GFX::Resource
 {
+	std::unique_ptr<ConstBufferVertex<Data::CBuffer::Transform>> ConstBufferTransform::vertexBuffer;
+
 	Data::CBuffer::Transform ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept
 	{
 		const DirectX::XMMATRIX transform = GetTransform();
-		const DirectX::XMMATRIX transformView = std::move(transform * gfx.GetCamera());
+		const DirectX::XMMATRIX transformView = std::move(transform * gfx.GetView());
 		return
 		{
 			std::move(DirectX::XMMatrixTranspose(transform)),
@@ -14,7 +16,7 @@ namespace GFX::Resource
 		};
 	}
 
-	void ConstBufferTransform::UpdateBind(Graphics& gfx, const Data::CBuffer::Transform& buffer) noexcept
+	void ConstBufferTransform::UpdateBind(Graphics& gfx, const Data::CBuffer::Transform& buffer)
 	{
 		vertexBuffer->Update(gfx, buffer);
 		vertexBuffer->Bind(gfx);
@@ -25,6 +27,4 @@ namespace GFX::Resource
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstBufferVertex<Data::CBuffer::Transform>>(gfx, "", slot);
 	}
-
-	std::unique_ptr<ConstBufferVertex<Data::CBuffer::Transform>> ConstBufferTransform::vertexBuffer;
 }

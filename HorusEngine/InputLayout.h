@@ -17,7 +17,7 @@ namespace GFX::Resource
 		static inline std::shared_ptr<InputLayout> Get(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader);
 		static inline std::string GenerateRID(std::shared_ptr<Data::VertexLayout> vertexLayout, std::shared_ptr<VertexShader> shader) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->IASetInputLayout(inputLayout.Get()); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->IASetInputLayout(inputLayout.Get()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(vertexLayout, shader); }
 	};
 

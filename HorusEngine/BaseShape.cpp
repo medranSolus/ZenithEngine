@@ -15,7 +15,7 @@ namespace GFX::Shape
 			technique->SetParentReference(gfx, parent);
 	}
 
-	void BaseShape::Bind(Graphics& gfx) noexcept
+	void BaseShape::Bind(Graphics& gfx)
 	{
 		indexBuffer->Bind(gfx);
 		vertexBuffer->Bind(gfx);

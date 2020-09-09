@@ -24,7 +24,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, false));
 	}
 
-	void FullscreenPass::Execute(Graphics& gfx) noexcept(!IS_DEBUG)
+	void FullscreenPass::Execute(Graphics& gfx)
 	{
 		BindAll(gfx);
 		gfx.DrawIndexed(6U);

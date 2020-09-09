@@ -17,7 +17,7 @@ namespace Camera
 				{
 				case WinAPI::Mouse::Event::Type::WheelForward:
 				{
-					if (!window.IsCursorEnabled() && moveSpeed <= maxMoveSpeed - 0.01f - FLT_EPSILON)
+					if (!window.IsCursorEnabled() && moveSpeed <= MAX_MOVE_SPEED - 0.01f - FLT_EPSILON)
 						moveSpeed += 0.01f;
 					break;
 				}
@@ -82,7 +82,7 @@ namespace Camera
 
 	void CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
-		ImGui::SliderFloat("Move speed", &moveSpeed, 0.001f, maxMoveSpeed, "%.3f");
+		ImGui::SliderFloat("Move speed", &moveSpeed, 0.001f, MAX_MOVE_SPEED, "%.3f");
 		ImGui::SliderFloat("Roll speed", &rollSpeed, 0.01f, 0.5f, "%.2f");
 		ImGui::SliderFloat("Camera speed", &rotateSpeed, 1.0f, 5.0f, "%.1f");
 		static std::map<std::string, std::unique_ptr<ICamera>>::iterator currentItem = cameras.find(active);

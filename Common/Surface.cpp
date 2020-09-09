@@ -25,10 +25,10 @@ namespace GFX
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 
-			if (image->format != pixelFormat)
+			if (image->format != PIXEL_FORMAT)
 			{
 				DirectX::ScratchImage decompressed;
-				DXT_THROW_FAILED(DirectX::Decompress(*image, pixelFormat, decompressed),
+				DXT_THROW_FAILED(DirectX::Decompress(*image, PIXEL_FORMAT, decompressed),
 					"Decompressing image \"" + name + "\": failed.");
 				scratch = std::move(decompressed);
 				image = scratch.GetImage(0, 0, 0);
@@ -54,10 +54,10 @@ namespace GFX
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 
-			if (image->format != pixelFormat)
+			if (image->format != PIXEL_FORMAT)
 			{
 				DirectX::ScratchImage converted;
-				DXT_THROW_FAILED(DirectX::Convert(*image, pixelFormat, DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted),
+				DXT_THROW_FAILED(DirectX::Convert(*image, PIXEL_FORMAT, DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, converted),
 					"Converting image \"" + name + "\": failed.");
 				scratch = std::move(converted);
 				image = scratch.GetImage(0, 0, 0);
@@ -68,7 +68,7 @@ namespace GFX
 	Surface::Surface(size_t width, size_t height)
 	{
 		DXT_ENABLE_EXCEPT();
-		DXT_THROW_FAILED(scratch.Initialize2D(pixelFormat, width, height, 1U, 1U),
+		DXT_THROW_FAILED(scratch.Initialize2D(PIXEL_FORMAT, width, height, 1U, 1U),
 			"Creating image " + std::to_string(width) + "x" + std::to_string(height) + ": failed.");
 		image = scratch.GetImage(0, 0, 0);
 	}

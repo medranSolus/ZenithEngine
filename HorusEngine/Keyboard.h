@@ -31,11 +31,11 @@ namespace WinAPI
 		};
 
 	private:
-		static constexpr unsigned int numberOfVKeys = 256U;
-		static constexpr unsigned int bufferSize = 32U;
+		static constexpr size_t NUMBER_OF_VKEYS = 256U;
+		static constexpr size_t BUFFER_SIZE = 32U;
 
 		bool autorepeatEnabled = false; // Accounting long key press
-		std::bitset<numberOfVKeys> keystates; // States for all virtual keys from WinAPI
+		std::bitset<NUMBER_OF_VKEYS> keystates; // States for all virtual keys from WinAPI
 		std::deque<Event> keybuffer; // Buffer for KEY_UP/DOWN events
 		std::deque<char> charbuffer; // Buffer for ON_CHAR events
 

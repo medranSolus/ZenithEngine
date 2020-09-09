@@ -1,7 +1,6 @@
 #pragma once
 #include "BasePass.h"
 #include "RenderTarget.h"
-#include "IBindable.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
@@ -11,7 +10,7 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		std::vector<std::shared_ptr<GFX::Resource::IBindable>> binds;
 
-		void BindResources(Graphics& gfx) noexcept;
+		void BindResources(Graphics& gfx);
 
 	protected:
 		std::shared_ptr<Resource::RenderTarget> renderTarget;
@@ -25,8 +24,8 @@ namespace GFX::Pipeline::RenderPass::Base
 		template<typename T>
 		void AddBindableSink(const std::string& name);
 
-		void BindAll(Graphics& gfx) noexcept;
-		void Finalize() override;
+		void BindAll(Graphics& gfx);
+		void Finalize() const override;
 
 	public:
 		virtual ~BindingPass() = default;

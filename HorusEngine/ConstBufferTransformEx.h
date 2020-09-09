@@ -16,9 +16,8 @@ namespace GFX::Resource
 		{
 			DirectX::XMStoreFloat4x4(&transform, DirectX::XMMatrixIdentity());
 		}
-
 		virtual ~ConstBufferTransformEx() = default;
 
-		void UpdateTransform(const DirectX::XMFLOAT4X4& transformMatrix) noexcept { transform = transformMatrix; }
+		constexpr void UpdateTransform(const DirectX::XMFLOAT4X4& transformMatrix) noexcept { transform = transformMatrix; }
 	};
 }

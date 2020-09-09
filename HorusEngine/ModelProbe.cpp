@@ -15,7 +15,7 @@ namespace GFX::Probe
 		return expanded;
 	}
 
-	void ModelProbe::Visit(Graphics& gfx, Shape::ModelNode& node) noexcept
+	void ModelProbe::Visit(Graphics& gfx, Shape::ModelNode& node) const noexcept
 	{
 		bool meshOnly = node.IsMesh();
 		if (ImGui::Checkbox("Node mesh-only", &meshOnly))

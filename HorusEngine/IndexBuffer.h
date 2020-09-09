@@ -18,10 +18,10 @@ namespace GFX::Resource
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
 
-		inline void Bind(Graphics& gfx) noexcept override { GetContext(gfx)->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0U); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(name); }
-
 		constexpr unsigned int GetCount() const noexcept { return count; }
+
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0U); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(name); }
 	};
 
 	template<>

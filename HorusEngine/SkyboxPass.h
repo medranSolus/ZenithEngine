@@ -13,8 +13,8 @@ namespace GFX::Pipeline::RenderPass
 		SkyboxPass(Graphics& gfx, const std::string& name);
 		virtual ~SkyboxPass() = default;
 
-		inline void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
+		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
 
-		void Execute(Graphics& gfx) noexcept(!IS_DEBUG) override;
+		void Execute(Graphics& gfx) override;
 	};
 }

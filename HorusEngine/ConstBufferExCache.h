@@ -41,7 +41,7 @@ namespace GFX::Resource
 		constexpr Data::CBuffer::DynamicCBuffer& GetBuffer() noexcept { dirty = true; return buffer; }
 		constexpr const Data::CBuffer::DynamicCBuffer& GetBuffer() const noexcept { return buffer; }
 
-		void Bind(Graphics& gfx) noexcept override;
+		void Bind(Graphics& gfx) override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { dirty |= probe.Visit(buffer); }
 	};
@@ -88,7 +88,7 @@ namespace GFX::Resource
 	}
 
 	template<typename T>
-	inline void ConstBufferExCache<T>::Bind(Graphics& gfx) noexcept
+	inline void ConstBufferExCache<T>::Bind(Graphics& gfx)
 	{
 		if (dirty)
 		{
