@@ -26,7 +26,7 @@ namespace GFX
 
 		std::vector<std::string> messages;
 		const uint64_t end = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
-		for (long long i = offset; i < end; ++i)
+		for (uint64_t i = offset; i < end; ++i)
 		{
 			SIZE_T msgLen = 0;
 			GFX_THROW_FAILED_NOINFO(infoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &msgLen)); // Get length of msg

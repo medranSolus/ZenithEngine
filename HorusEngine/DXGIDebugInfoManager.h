@@ -12,7 +12,7 @@ namespace GFX
 	// Manager to get info from DirectX Debug Layer
 	class DXGIDebugInfoManager
 	{
-		unsigned long long offset = 0U;
+		uint64_t offset = 0U;
 		Microsoft::WRL::ComPtr<IDXGIInfoQueue> infoQueue = nullptr;
 
 	public:

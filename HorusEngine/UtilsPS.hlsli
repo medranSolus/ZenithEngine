@@ -58,7 +58,7 @@ float GetSampledSpecularPower(const in float4 specularData)
 
 float GetShadowLevel(const in float3 shadowPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
 {
-	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, length(shadowPos) / 1000.0f);
+	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, saturate(length(shadowPos) / 1000.0f));
 	//const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide
 	//float level = 0.0f;
 	//if (shadowUVZ.z > 1.0f || shadowUVZ.z < 0.0f)
