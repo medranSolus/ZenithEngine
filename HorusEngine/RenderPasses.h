@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderPassesBase.h"
 #include "ClearBufferPass.h"
+#include "DepthOnlyPass.h"
 #include "HorizontalBlurPass.h"
 #include "LambertianPass.h"
 #include "OutlineDrawBlurPass.h"

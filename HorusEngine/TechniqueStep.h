@@ -19,8 +19,8 @@ namespace GFX::Pipeline
 
 		inline void AddData(std::shared_ptr<Visual::IVisual> stepData) noexcept { data = std::move(stepData); }
 		inline void Submit(Shape::BaseShape& shape) noexcept { pass->Add({ &shape, this }); }
-		inline void Bind(Graphics& gfx) { data->Bind(gfx); }
+		inline void Bind(Graphics& gfx) { if (data) data->Bind(gfx); }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { if (data) data->Accept(gfx, probe); }
-		inline void SetParentReference(Graphics& gfx, const GfxObject& parent) { data->SetTransformBuffer(gfx, parent); }
+		inline void SetParentReference(Graphics& gfx, const GfxObject& parent) { if (data) data->SetTransformBuffer(gfx, parent); }
 	};
 }

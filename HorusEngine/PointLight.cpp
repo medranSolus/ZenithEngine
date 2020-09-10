@@ -15,6 +15,7 @@ namespace GFX::Light
 			layout.Add(DCBElementType::Float, "atteuationLinear");
 			layout.Add(DCBElementType::Float3, "lightPos");
 			layout.Add(DCBElementType::Float, "attenuationQuad");
+			layout.Add(DCBElementType::Color3, "shadowColor");
 			layout.Add(DCBElementType::Float, "lightIntensity");
 			initNeeded = false;
 		}
@@ -30,6 +31,7 @@ namespace GFX::Light
 		buffer["atteuationLinear"] = 0.045f;
 		buffer["lightPos"] = position;
 		buffer["attenuationQuad"] = 0.0075f;
+		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 		buffer["lightIntensity"] = 5.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
 		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 3, 3, radius, radius, radius);

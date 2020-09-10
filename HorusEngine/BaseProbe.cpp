@@ -91,19 +91,25 @@ namespace GFX::Probe
 	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
+		ImGui::Text("Color:");
 		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
 		{
-			dirty |= ImGui::ColorEdit3(Tag("Light color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
+			dirty |= ImGui::ColorEdit3(Tag("Light"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
+				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+		}
+		if (auto ambientColor = buffer["ambientColor"]; ambientColor.Exists())
+		{
+			dirty |= ImGui::ColorEdit3(Tag("Ambient"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
+				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+		}
+		if (auto shadowColor = buffer["shadowColor"]; shadowColor.Exists())
+		{
+			dirty |= ImGui::ColorEdit3(Tag("Shadow"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(shadowColor)),
 				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}
 		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
 		{
 			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
-		}
-		if (auto ambientColor = buffer["ambientColor"]; ambientColor.Exists())
-		{
-			dirty |= ImGui::ColorEdit3(Tag("Ambient color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
-				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}
 		if (auto atteuationConst = buffer["atteuationConst"]; atteuationConst.Exists())
 		{

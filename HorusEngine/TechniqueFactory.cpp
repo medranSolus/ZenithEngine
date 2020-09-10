@@ -4,17 +4,18 @@ namespace GFX::Pipeline
 {
 	Data::ColorFloat3 TechniqueFactory::outlineColor = { 1.0f, 1.0f, 0.0f };
 
-	std::shared_ptr<Technique> TechniqueFactory::MakeLambertian(RenderGraph& graph, uint64_t channels, std::shared_ptr<Visual::Material> material)
-	{
-		auto technique = std::make_shared<Pipeline::Technique>("Lambertian", channels);
-		technique->AddStep({ graph, "lambertian", material });
-		return std::move(technique);
-	}
-
 	std::shared_ptr<Technique> TechniqueFactory::MakeWireframe(RenderGraph& graph, uint64_t channels, std::shared_ptr<Visual::Material> material)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Wireframe", channels);
 		technique->AddStep({ graph, "wireframe", material });
+		return std::move(technique);
+	}
+
+	std::shared_ptr<Technique> TechniqueFactory::MakeLambertian(Graphics& gfx, RenderGraph& graph, uint64_t channels, std::shared_ptr<Visual::Material> material)
+	{
+		auto technique = std::make_shared<Pipeline::Technique>("Lambertian", channels);
+		technique->AddStep({ graph, "depthOnly", std::make_shared<Visual::DepthWrite>(gfx, material) });
+		technique->AddStep({ graph, "lambertian", material });
 		return std::move(technique);
 	}
 

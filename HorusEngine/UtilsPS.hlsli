@@ -59,20 +59,7 @@ float GetSampledSpecularPower(const in float4 specularData)
 float GetShadowLevel(const in float3 shadowPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
 {
 	const float len = sqrt(length(shadowPos));
-	const float lenFunction = len / (len + 1.0f);
-	static const float DELTA = 0.01f;
-	float level = 0.0f;
-
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(DELTA, DELTA, DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(DELTA, DELTA, -DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(DELTA, -DELTA, DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(DELTA, -DELTA, -DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(-DELTA, DELTA, DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(-DELTA, DELTA, -DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(-DELTA, -DELTA, DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos + float3(-DELTA, -DELTA, -DELTA), lenFunction);
-	level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, lenFunction);
-	return level / 9.0f;
+	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, len / (len + 1.0f));
 
 	//return saturate(1.0f - exp(e_x)); //exp(30.0f * (saturate(length(shadowPos) / 1000.0f) - shadowMap.Sample(shadowSplr, shadowPos).x));
 	//const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide

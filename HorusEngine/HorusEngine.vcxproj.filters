@@ -459,6 +459,12 @@
     <ClCompile Include="ConstBufferShadow.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="DepthWrite.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthOnlyPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -1191,6 +1197,12 @@
     </ClInclude>
     <ClInclude Include="ILight.h">
       <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthWrite.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthOnlyPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

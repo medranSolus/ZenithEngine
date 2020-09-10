@@ -17,7 +17,7 @@ namespace GFX::Pipeline::RenderPass
 		shadowBuffer = std::make_shared<GFX::Resource::ConstBufferShadow>(gfx);
 		AddBind(shadowBuffer);
 		AddBind(GFX::Resource::ShadowSampler::Get(gfx));
-		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
+		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::DepthBefore));
 	}
 
 	void LambertianPass::Execute(Graphics& gfx)

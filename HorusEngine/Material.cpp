@@ -9,6 +9,7 @@ namespace GFX::Visual
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
+		AddBind(Resource::Rasterizer::Get(gfx, false));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");

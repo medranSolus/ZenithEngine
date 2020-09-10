@@ -29,7 +29,7 @@ namespace GFX::Shape
 		materialBuffer = &material->GetPixelBuffer();
 
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(graph, RenderChannel::Main, std::move(material)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, RenderChannel::Main, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, RenderChannel::Main, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);
 

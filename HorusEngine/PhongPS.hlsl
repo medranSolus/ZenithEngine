@@ -66,25 +66,33 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float3 shadow
 
 		const float attenuation = GetAttenuation(cb_atteuationConst, cb_atteuationLinear, cb_attenuationQuad, lightVD.distanceToLight);
 		const float3 scaledLightColor = cb_lightColor * cb_lightIntensity * attenuation;
-		diffuse = GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation) * shadowLevel;
+		diffuse = lerp(cb_shadowColor, GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation), shadowLevel);
 
-		float3 specColor;
-		float specPower;
+		if (shadowLevel >= 0.999999f)
+		{
+			float3 specColor;
+			float specPower;
 #ifdef _TEX_SPEC
-		const float4 specularTex = spec.Sample(splr, tc);
-		if (cb_useSpecularPowerAlpha)
-			specPower = GetSampledSpecularPower(specularTex);
-		else
-			specPower = cb_specularPower;
-		specColor = specularTex.rgb;
+			const float4 specularTex = spec.Sample(splr, tc);
+			if (cb_useSpecularPowerAlpha)
+				specPower = GetSampledSpecularPower(specularTex);
+			else
+				specPower = cb_specularPower;
+			specColor = specularTex.rgb;
 #else
-		specColor = cb_specularColor;
-		specPower = cb_specularPower;
+			specColor = cb_specularColor;
+			specPower = cb_specularPower;
 #endif
-		specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specPower, cb_specularIntensity) * shadowLevel;
+			specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specPower, cb_specularIntensity);
+		}
+		else
+			specular = float3(0.0f, 0.0f, 0.0f);
 	}
 	else
-		diffuse = specular = float3(0.0f, 0.0f, 0.0f);
+	{
+		diffuse = cb_shadowColor;
+		specular = float3(0.0f, 0.0f, 0.0f);
+	}
 
-	return float4(saturate((diffuse + cb_ambientColor) * color.rgb + specular), color.a);
+	return float4(saturate(diffuse + cb_ambientColor) * color.rgb + specular, color.a);
 }

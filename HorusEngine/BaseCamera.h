@@ -18,7 +18,7 @@ namespace Camera
 		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
 		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 		bool enableIndicator = true;
-		bool enableFrustrum = true;
+		bool enableFrustrum = false;
 
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
 		DirectX::FXMMATRIX UpdateProjection() const noexcept;

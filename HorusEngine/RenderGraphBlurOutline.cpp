@@ -55,6 +55,11 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
+			auto pass = std::make_unique<RenderPass::DepthOnlyPass>(gfx, "depthOnly");
+			pass->SetSinkLinkage("depthStencil", "clearDS.buffer");
+			AppendPass(std::move(pass));
+		}
+		{
 			auto pass = std::make_unique<RenderPass::ShadowMapPass>(gfx, "shadowMap");
 			AppendPass(std::move(pass));
 		}
@@ -62,7 +67,7 @@ namespace GFX::Pipeline
 			auto pass = std::make_unique<RenderPass::LambertianPass>(gfx, "lambertian");
 			pass->SetSinkLinkage("depthMap", "shadowMap.depthMap");
 			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
-			pass->SetSinkLinkage("depthStencil", "clearDS.buffer");
+			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
@@ -108,6 +113,7 @@ namespace GFX::Pipeline
 
 	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
 	{
+		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindMainCamera(camera);
 		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera);
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
