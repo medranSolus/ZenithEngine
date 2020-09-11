@@ -47,11 +47,6 @@ namespace GFX::Resource
 			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO;
 			break;
 		}
-		case StencilMode::DepthBefore:
-		{
-			desc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
-			break;
-		}
 		}
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilState(&desc, &state));
 	}

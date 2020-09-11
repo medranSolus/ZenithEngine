@@ -6,7 +6,7 @@ namespace GFX::Resource
 	class DepthStencilState : public IBindable
 	{
 	public:
-		enum StencilMode : unsigned char { Off, Write, Mask, DepthOff, Reverse, DepthFirst, DepthBefore };
+		enum StencilMode : unsigned char { Off, Write, Mask, DepthOff, Reverse, DepthFirst };
 
 	private:
 		StencilMode mode;

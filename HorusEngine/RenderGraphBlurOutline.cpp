@@ -45,11 +45,6 @@ namespace GFX::Pipeline
 
 		// Setup all passes
 		{
-			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearRT");
-			pass->SetSinkLinkage("buffer", "$.backbuffer");
-			AppendPass(std::move(pass));
-		}
-		{
 			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearDS");
 			pass->SetSinkLinkage("buffer", "$.depthStencil");
 			AppendPass(std::move(pass));
@@ -66,7 +61,7 @@ namespace GFX::Pipeline
 		{
 			auto pass = std::make_unique<RenderPass::LambertianPass>(gfx, "lambertian");
 			pass->SetSinkLinkage("depthMap", "shadowMap.depthMap");
-			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
+			pass->SetSinkLinkage("renderTarget", "$.backbuffer");
 			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
 			AppendPass(std::move(pass));
 		}
