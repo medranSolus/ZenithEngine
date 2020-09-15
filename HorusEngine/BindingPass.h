@@ -1,6 +1,6 @@
 #pragma once
 #include "BasePass.h"
-#include "RenderTarget.h"
+#include "IRenderTarget.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
@@ -13,7 +13,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		void BindResources(Graphics& gfx);
 
 	protected:
-		std::shared_ptr<Resource::RenderTarget> renderTarget;
+		std::shared_ptr<Resource::IRenderTarget> renderTarget;
 		std::shared_ptr<Resource::DepthStencil> depthStencil;
 
 		inline BindingPass(const std::string& name, std::vector<std::shared_ptr<GFX::Resource::IBindable>>&& binds)

@@ -3,7 +3,7 @@
 
 namespace GFX::Light
 {
-	class ILight : public IObject
+	class BaseLight : public IObject
 	{
 	protected:
 		mutable std::shared_ptr<IObject> mesh = nullptr;

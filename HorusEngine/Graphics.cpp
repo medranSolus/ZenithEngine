@@ -60,7 +60,7 @@ namespace GFX
 
 	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil)
 	{
-		renderTarget->Bind(*this, depthStencil);
+		renderTarget->BindTarget(*this, depthStencil);
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)

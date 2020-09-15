@@ -6,9 +6,9 @@ namespace GFX::Pipeline::RenderPass
 {
 	OutlineDrawPass::OutlineDrawPass(Graphics& gfx, const std::string& name) : QueuePass(name)
 	{
-		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
+		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
-		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
+		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "SolidPS"));

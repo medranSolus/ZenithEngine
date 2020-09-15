@@ -14,11 +14,11 @@ namespace GFX::Pipeline::RenderPass::Base
 		{
 			renderTarget->Unbind(gfx);
 			if (depthStencil == nullptr)
-				renderTarget->RenderTarget::Bind(gfx);
+				renderTarget->BindTarget(gfx);
 			else
 			{
 				depthStencil->Unbind(gfx);
-				renderTarget->Bind(gfx, *depthStencil);
+				renderTarget->BindTarget(gfx, *depthStencil);
 			}
 		}
 	}

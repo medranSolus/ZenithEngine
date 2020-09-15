@@ -435,9 +435,6 @@
     <ClCompile Include="ShadowMap.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
-    <ClCompile Include="ShadowMapPass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="ShadowSampler.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
@@ -463,6 +460,12 @@
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
     <ClCompile Include="DepthOnlyPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTargetEx.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMapPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1165,9 +1168,6 @@
     <ClInclude Include="TechniqueFactory.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="ShadowMapPass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
     <ClInclude Include="ShadowMap.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
@@ -1195,13 +1195,22 @@
     <ClInclude Include="Viewport.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="ILight.h">
-      <Filter>Header Files\GFX\Light</Filter>
-    </ClInclude>
     <ClInclude Include="DepthWrite.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
     <ClInclude Include="DepthOnlyPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTargetEx.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderTarget.h">
+      <Filter>Header Files\GFX\Pipeline\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseLight.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>

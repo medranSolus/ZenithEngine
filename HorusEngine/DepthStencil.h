@@ -8,6 +8,7 @@ namespace GFX::Pipeline::Resource
 	{
 		friend class Graphics;
 		friend class RenderTarget;
+		friend class RenderTargetEx;
 
 	public:
 		enum class Usage { DepthStencil, ShadowDepth };

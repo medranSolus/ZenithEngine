@@ -1,6 +1,6 @@
 #pragma once
 #include "QueuePass.h"
-#include "ILight.h"
+#include "BaseLight.h"
 #include "TextureDepthCube.h"
 
 namespace GFX::Pipeline::RenderPass
@@ -9,7 +9,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		static constexpr UINT DEPTH_TEXTURE_SIZE = 1024U;
 
-		Light::ILight* shadowSource = nullptr;
+		Light::BaseLight* shadowSource = nullptr;
 		std::shared_ptr<GFX::Resource::TextureDepthCube> depthCube;
 		DirectX::XMFLOAT4X4 projection;
 		std::vector<DirectX::XMFLOAT3> cameraDirections;
@@ -19,7 +19,7 @@ namespace GFX::Pipeline::RenderPass
 		ShadowMapPass(Graphics& gfx, const std::string& name);
 		virtual ~ShadowMapPass() = default;
 
-		constexpr void BindLight(Light::ILight& light) noexcept { shadowSource = &light; }
+		constexpr void BindLight(Light::BaseLight& light) noexcept { shadowSource = &light; }
 
 		void Execute(Graphics& gfx) override;
 	};

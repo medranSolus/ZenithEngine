@@ -12,7 +12,7 @@ namespace GFX::Pipeline::RenderPass
 		DepthOnlyPass(Graphics& gfx, const std::string& name);
 		virtual ~DepthOnlyPass() = default;
 
-		constexpr void BindMainCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
+		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
 
 		void Execute(Graphics& gfx) override;
 	};

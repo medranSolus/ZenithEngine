@@ -332,6 +332,7 @@
     <ClCompile Include="RenderGraphBlurOutline.cpp" />
     <ClCompile Include="RenderGraphCompileException.cpp" />
     <ClCompile Include="RenderTarget.cpp" />
+    <ClCompile Include="RenderTargetEx.cpp" />
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
@@ -611,7 +612,8 @@
     <ClInclude Include="ConstBufferTransformSkybox.h" />
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
-    <ClInclude Include="ILight.h" />
+    <ClInclude Include="BaseLight.h" />
+    <ClInclude Include="IRenderTarget.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
@@ -707,6 +709,7 @@
     <ClInclude Include="RenderGraph.h" />
     <ClInclude Include="RenderGraphCompileException.h" />
     <ClInclude Include="RenderTarget.h" />
+    <ClInclude Include="RenderTargetEx.h" />
     <ClInclude Include="RenderTargetShaderInput.h" />
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="ShadowMapPass.h" />

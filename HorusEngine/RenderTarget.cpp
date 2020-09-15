@@ -36,7 +36,7 @@ namespace GFX::Pipeline::Resource
 	}
 
 	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height)
-		: IBufferResource(gfx, width, height)
+		: IRenderTarget(gfx, width, height)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.BindFlags = 0U;
@@ -45,7 +45,7 @@ namespace GFX::Pipeline::Resource
 	}
 
 	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer)
-		: IBufferResource(gfx, width, height)
+		: IRenderTarget(gfx, width, height)
 	{
 		GFX_ENABLE_ALL(gfx);
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(backBuffer.Get(), nullptr, &targetView));

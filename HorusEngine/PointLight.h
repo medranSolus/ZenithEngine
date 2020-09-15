@@ -1,12 +1,12 @@
 #pragma once
-#include "ILight.h"
+#include "BaseLight.h"
 #include "ICamera.h"
 #include "ConstBufferExCache.h"
 #include "RenderGraph.h"
 
 namespace GFX::Light
 {
-	class PointLight : public ILight
+	class PointLight : public BaseLight
 	{
 		mutable std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
 
