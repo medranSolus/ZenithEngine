@@ -48,9 +48,9 @@ namespace GFX::Shape
 		auto vertexLayout = material->GerVertexLayout();
 
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, RenderChannel::Main, std::move(material)));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, RenderChannel::Main, std::move(dimmedMaterial)));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, RenderChannel::Main, name, std::move(vertexLayout)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, std::move(dimmedMaterial)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 

@@ -309,6 +309,7 @@
     <ClCompile Include="Job.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LambertianPass.cpp" />
+    <ClCompile Include="LightingPass.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -321,7 +322,6 @@
     <ClCompile Include="OutlineDrawPass.cpp" />
     <ClCompile Include="OutlineMaskBlur.cpp" />
     <ClCompile Include="OutlineMaskOffset.cpp" />
-    <ClCompile Include="OutlineWrite.cpp" />
     <ClCompile Include="OutlineMaskScale.cpp" />
     <ClCompile Include="OutlineGenerationPass.cpp" />
     <ClCompile Include="PersonCamera.cpp" />
@@ -614,6 +614,7 @@
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="BaseLight.h" />
     <ClInclude Include="IRenderTarget.h" />
+    <ClInclude Include="LightingPass.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
@@ -698,7 +699,6 @@
     <ClInclude Include="Object.h" />
     <ClInclude Include="OutlineMaskBlur.h" />
     <ClInclude Include="OutlineMaskOffset.h" />
-    <ClInclude Include="OutlineWrite.h" />
     <ClInclude Include="OutlineMaskScale.h" />
     <ClInclude Include="OutlineGenerationPass.h" />
     <ClInclude Include="PersonCamera.h" />

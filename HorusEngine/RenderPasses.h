@@ -4,6 +4,7 @@
 #include "DepthOnlyPass.h"
 #include "HorizontalBlurPass.h"
 #include "LambertianPass.h"
+#include "LightingPass.h"
 #include "OutlineDrawBlurPass.h"
 #include "OutlineDrawPass.h"
 #include "OutlineGenerationPass.h"

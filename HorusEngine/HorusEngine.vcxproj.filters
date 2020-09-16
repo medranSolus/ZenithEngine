@@ -336,9 +336,6 @@
     <ClCompile Include="ModelProbe.cpp">
       <Filter>Source Files\GFX\Probe</Filter>
     </ClCompile>
-    <ClCompile Include="OutlineWrite.cpp">
-      <Filter>Source Files\GFX\Visual</Filter>
-    </ClCompile>
     <ClCompile Include="SolidRectangle.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
@@ -466,6 +463,9 @@
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
     <ClCompile Include="ShadowMapPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="LightingPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1036,9 +1036,6 @@
     <ClInclude Include="ConstBufferTransformEx.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="OutlineWrite.h">
-      <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
     <ClInclude Include="SolidRectangle.h">
       <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
@@ -1211,6 +1208,9 @@
       <Filter>Header Files\GFX\Light</Filter>
     </ClInclude>
     <ClInclude Include="ShadowMapPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="LightingPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>

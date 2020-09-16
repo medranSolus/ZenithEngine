@@ -16,13 +16,28 @@ namespace GFX::Pipeline::RenderPass::Base
 			throw RGC_EXCEPT("Invalid Sink name: " + registeredName);
 	}
 
-	void Sink::SetSource(const std::string passName, const std::string& sourceName)
+	std::string Sink::GetPassPathString() const noexcept
 	{
-		if (passName.empty())
-			throw RGC_EXCEPT("Sink \"" + registeredName + "\" pass name empty!");
-		if (passName != "$" && !IsValidName(passName))
-			throw RGC_EXCEPT("Invalid Sink \"" + registeredName + "\" pass name: " + passName);
-		this->passName = passName;
+		std::string path;
+		for (const auto& passName : passPath)
+			path += passName + ".";
+		path.pop_back();
+		return path;
+	}
+
+	void Sink::SetSource(const std::deque<std::string>& passPath, const std::string& sourceName)
+	{
+		if (passPath.empty())
+			throw RGC_EXCEPT("Sink \"" + registeredName + "\" pass path empty!");
+		for (auto& passName : passPath)
+		{
+			if (passName.empty())
+				throw RGC_EXCEPT("Sink \"" + registeredName + "\" pass name empty!");
+			if (passName != "$" && !IsValidName(passName))
+				throw RGC_EXCEPT("Invalid Sink \"" + registeredName + "\" pass name: " + passName);
+		}
+		this->passPath = passPath;
+
 		if (sourceName.empty())
 			throw RGC_EXCEPT("Sink \"" + registeredName + "\" source name empty!");
 		if (!IsValidName(sourceName))

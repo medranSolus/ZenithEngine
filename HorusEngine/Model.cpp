@@ -38,8 +38,8 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		techniques.reserve(3);
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, RenderChannel::Main, std::move(material)));
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, RenderChannel::Main, meshID, std::move(vertexLayout)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, meshID, std::move(vertexLayout)));
 
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}

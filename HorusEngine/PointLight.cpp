@@ -40,7 +40,7 @@ namespace GFX::Light
 	void PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		lightBuffer->Accept(gfx, probe);
-		ILight::Accept(gfx, probe);
+		BaseLight::Accept(gfx, probe);
 	}
 
 	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const

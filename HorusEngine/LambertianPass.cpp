@@ -8,10 +8,10 @@ namespace GFX::Pipeline::RenderPass
 	LambertianPass::LambertianPass(Graphics& gfx, const std::string& name) : QueuePass(name)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("depthMap");
-		RegisterSink(Base::SinkDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
+		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
-		RegisterSource(Base::SourceDirectBuffer<Resource::RenderTarget>::Make("renderTarget", renderTarget));
+		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		shadowBuffer = std::make_shared<GFX::Resource::ConstBufferShadow>(gfx);

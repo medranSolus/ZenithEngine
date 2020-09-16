@@ -1,12 +1,13 @@
 #pragma once
 #include "Source.h"
+#include <deque>
 
 namespace GFX::Pipeline::RenderPass::Base
 {
 	class Sink
 	{
 		std::string registeredName;
-		std::string passName;
+		std::deque<std::string> passPath;
 		std::string sourceName;
 
 		static inline bool IsValidName(const std::string& name) noexcept;
@@ -18,11 +19,12 @@ namespace GFX::Pipeline::RenderPass::Base
 		virtual ~Sink() = default;
 
 		constexpr const std::string& GetRegisteredName() const noexcept { return registeredName; }
-		constexpr const std::string& GetPassName() const noexcept { return passName; }
+		constexpr const std::deque<std::string>& GetPassPath() const noexcept { return passPath; }
 		constexpr const std::string& GetSourceName() const noexcept { return sourceName; }
 
 		virtual void Bind(Source& source) = 0;
 		virtual void ValidateLink() const = 0;
-		void SetSource(const std::string passName, const std::string& sourceName);
+		std::string GetPassPathString() const noexcept;
+		void SetSource(const std::deque<std::string>& passPath, const std::string& sourceName);
 	};
 }

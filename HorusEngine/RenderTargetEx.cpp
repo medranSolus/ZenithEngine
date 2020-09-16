@@ -32,7 +32,7 @@ namespace GFX::Pipeline::Resource
 		targetViewDesc.Texture2DArray.MipSlice = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetViews));
 	}
-	
+
 	void RenderTargetEx::Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept
 	{
 		GetContext(gfx)->ClearRenderTargetView(targetViews.Get(), reinterpret_cast<const FLOAT*>(&color.col));

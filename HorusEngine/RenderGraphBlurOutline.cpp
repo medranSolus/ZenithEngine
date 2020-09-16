@@ -45,6 +45,11 @@ namespace GFX::Pipeline
 
 		// Setup all passes
 		{
+			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearRT");
+			pass->SetSinkLinkage("buffer", "$.backbuffer");
+			AppendPass(std::move(pass));
+		}
+		{
 			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearDS");
 			pass->SetSinkLinkage("buffer", "$.depthStencil");
 			AppendPass(std::move(pass));
@@ -55,14 +60,15 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = std::make_unique<RenderPass::ShadowMapPass>(gfx, "shadowMap");
+			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
+			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::LambertianPass>(gfx, "lambertian");
-			pass->SetSinkLinkage("depthMap", "shadowMap.depthMap");
-			pass->SetSinkLinkage("renderTarget", "$.backbuffer");
-			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
+			pass->SetSinkLinkage("depthMap", "lighting.shadowMap.depthMap");
+			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
+			pass->SetSinkLinkage("depthStencil", "lighting.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
@@ -108,14 +114,14 @@ namespace GFX::Pipeline
 
 	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
 	{
-		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindMainCamera(camera);
+		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindCamera(camera);
 		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera);
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
 
-	void RenderGraphBlurOutline::BindLight(Light::ILight& light)
+	void RenderGraphBlurOutline::BindLight(Light::BaseLight& light)
 	{
-		dynamic_cast<RenderPass::ShadowMapPass&>(FindPass("shadowMap")).BindLight(light);
+		dynamic_cast<RenderPass::ShadowMapPass&>(FindPass("lighting.shadowMap")).BindLight(light);
 		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindLight(light);
 	}
 

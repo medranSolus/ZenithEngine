@@ -1,5 +1,6 @@
 #pragma once
 #include "Sink.h"
+#include <deque>
 
 namespace GFX::Pipeline::RenderPass::Base
 {
@@ -21,7 +22,8 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		constexpr const std::string& GetName() const noexcept { return name; }
 		constexpr const std::vector<std::unique_ptr<Sink>>& GetSinks() const noexcept { return sinks; }
-		inline virtual void Reset() noexcept {}
+		virtual inline void Reset() noexcept {}
+		virtual inline BasePass& GetInnerPass(std::deque<std::string> nameChain) { throw RGC_EXCEPT("Pass \"" + name + "\" don't have inner pass named: " + nameChain.front()); }
 
 		virtual void Execute(Graphics& gfx) = 0;
 		virtual void Finalize() const;

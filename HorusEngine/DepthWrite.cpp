@@ -2,10 +2,10 @@
 
 namespace GFX::Visual
 {
-	DepthWrite::DepthWrite(Graphics& gfx, std::shared_ptr<Material> material)
+	DepthWrite::DepthWrite(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout)
 	{
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
-		AddBind(Resource::InputLayout::Get(gfx, material->GerVertexLayout(), vertexShader));
+		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 	}
 }

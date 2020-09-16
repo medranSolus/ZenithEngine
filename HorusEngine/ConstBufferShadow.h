@@ -1,6 +1,6 @@
 #pragma once
 #include "ConstBufferVertex.h"
-#include "ILight.h"
+#include "BaseLight.h"
 
 namespace GFX::Resource
 {

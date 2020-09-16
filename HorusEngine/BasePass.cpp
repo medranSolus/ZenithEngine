@@ -29,11 +29,12 @@ namespace GFX::Pipeline::RenderPass::Base
 
 	void BasePass::SetSinkLinkage(const std::string& registeredName, const std::string& targetName)
 	{
-		auto& sink = GetSink(registeredName);
-		auto source = Utils::SplitString(targetName, ".");
-		if (source.size() != 2U)
-			throw RGC_EXCEPT("Cannot set linkage, Source name in wrong format \"" + registeredName + "\" in pass: " + GetName());
-		sink.SetSource(std::move(source.at(0)), std::move(source.at(1)));
+		auto nameChain = Utils::SplitString(targetName, ".");
+		const std::string source = nameChain.back();
+		nameChain.pop_back();
+		if (nameChain.size() == 0)
+			throw RGC_EXCEPT("Cannot set linkage, Source name in wrong format \"" + targetName + "\" in pass: " + GetName());
+		GetSink(registeredName).SetSource(nameChain, source);
 	}
 
 	Sink& BasePass::GetSink(const std::string& registeredName) const

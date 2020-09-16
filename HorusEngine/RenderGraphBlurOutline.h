@@ -3,7 +3,7 @@
 #include "ConstBufferExCache.h"
 #include "TextureCube.h"
 #include "ICamera.h"
-#include "ILight.h"
+#include "BaseLight.h"
 
 namespace GFX::Pipeline
 {
@@ -24,7 +24,7 @@ namespace GFX::Pipeline
 		virtual ~RenderGraphBlurOutline() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);
-		void BindLight(Light::ILight& light);
+		void BindLight(Light::BaseLight& light);
 		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);
 		void ShowWindow() noexcept;
 	};

@@ -1,5 +1,6 @@
 #include "RenderGraph.h"
 #include "RenderPassesBase.h"
+#include "RenderTarget.h"
 #include "Utils.h"
 
 namespace GFX::Pipeline
@@ -17,9 +18,21 @@ namespace GFX::Pipeline
 	{
 		try
 		{
-			for (auto& pass : passes)
-				if (pass->GetName() == passName)
-					return dynamic_cast<RenderPass::Base::QueuePass&>(*pass);
+			auto nameChain = Utils::SplitString(passName, ".");
+			if (nameChain.size() == 1)
+			{
+				for (auto& pass : passes)
+					if (pass->GetName() == passName)
+						return dynamic_cast<RenderPass::Base::QueuePass&>(*pass);
+			}
+			else
+			{
+				std::string outerName = nameChain.front();
+				nameChain.pop_front();
+				for (auto& pass : passes)
+					if (pass->GetName() == outerName)
+						return dynamic_cast<RenderPass::Base::QueuePass&>(pass->GetInnerPass(nameChain));
+			}
 		}
 		catch (std::bad_cast&)
 		{
@@ -46,7 +59,8 @@ namespace GFX::Pipeline
 	{
 		for (auto& sink : pass.GetSinks())
 		{
-			const std::string sinkSourcePassName = sink->GetPassName();
+			auto nameChain = sink->GetPassPath();
+			const std::string sinkSourcePassName = nameChain.front();
 			bool sinkOrphaned = true;
 			// Global sources
 			if (sinkSourcePassName == "$")
@@ -60,6 +74,12 @@ namespace GFX::Pipeline
 						break;
 					}
 				}
+			}
+			else if (nameChain.size() > 1)
+			{
+				nameChain.pop_front();
+				sink->Bind(FindPass(sinkSourcePassName).GetInnerPass(nameChain).GetSource(sink->GetSourceName()));
+				sinkOrphaned = false;
 			}
 			else
 			{
@@ -83,16 +103,26 @@ namespace GFX::Pipeline
 	{
 		for (auto& sink : globalSinks)
 		{
-			const std::string sinkSourcePassName = sink->GetPassName();
+			auto nameChain = sink->GetPassPath();
+			const std::string sinkSourcePassName = nameChain.front();
 			bool sinkOrphaned = true;
-			for (auto& existingPass : passes)
+			if (nameChain.size() == 1)
 			{
-				if (existingPass->GetName() == sinkSourcePassName)
+				for (auto& existingPass : passes)
 				{
-					sink->Bind(existingPass->GetSource(sink->GetSourceName()));
-					sinkOrphaned = false;
-					break;
+					if (existingPass->GetName() == sinkSourcePassName)
+					{
+						sink->Bind(existingPass->GetSource(sink->GetSourceName()));
+						sinkOrphaned = false;
+						break;
+					}
 				}
+			}
+			else
+			{
+				nameChain.pop_front();
+				sink->Bind(FindPass(sinkSourcePassName).GetInnerPass(nameChain).GetSource(sink->GetSourceName()));
+				sinkOrphaned = false;
 			}
 			// Sink not found any source
 			if (sinkOrphaned)
@@ -102,10 +132,22 @@ namespace GFX::Pipeline
 
 	RenderPass::Base::BasePass& RenderGraph::FindPass(const std::string& name)
 	{
-		for (auto& pass : passes)
-			if (pass->GetName() == name)
-				return *pass;
-		throw RGC_EXCEPT("Pass not present in RenderGraph \"" + name + "\"!");
+		auto nameChain = Utils::SplitString(name, ".");
+		if (nameChain.size() == 1)
+		{
+			for (auto& pass : passes)
+				if (pass->GetName() == name)
+					return *pass;
+		}
+		else
+		{
+			const std::string outerName = nameChain.front();
+			nameChain.pop_front();
+			for (auto& pass : passes)
+				if (pass->GetName() == outerName)
+					return pass->GetInnerPass(nameChain);
+		}
+		throw RGC_EXCEPT("Pass \"" + name + "\" not present in RenderGraph!");
 	}
 
 	void RenderGraph::AppendPass(std::unique_ptr<RenderPass::Base::BasePass> pass)
@@ -127,10 +169,13 @@ namespace GFX::Pipeline
 			});
 		if (iter == globalSinks.end())
 			throw RGC_EXCEPT("Global Sink does not exist: " + sink + "!");
-		auto source = Utils::SplitString(targetName, ".");
-		if (source.size() != 2U)
+
+		auto nameChain = Utils::SplitString(targetName, ".");
+		if (nameChain.size() < 2)
 			throw RGC_EXCEPT("Setting Source in RenderGraph with incorrect format \"" + targetName + "\" for Sink \"" + sink + "\"!");
-		(*iter)->SetSource(std::move(source.at(0)), std::move(source.at(1)));
+		const std::string source = nameChain.back();
+		nameChain.pop_back();
+		(*iter)->SetSource(nameChain, source);
 	}
 
 	void RenderGraph::Finalize()

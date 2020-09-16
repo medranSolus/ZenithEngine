@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <deque>
 #include <boost/locale/encoding.hpp>
 
 namespace Utils
@@ -16,5 +17,5 @@ namespace Utils
 	}
 
 	std::vector<std::string> ParseQuoted(const std::string& input);
-	std::vector<std::string> SplitString(const std::string& input, const std::string& delimeter);
+	std::deque<std::string> SplitString(const std::string& input, const std::string& delimeter);
 }
