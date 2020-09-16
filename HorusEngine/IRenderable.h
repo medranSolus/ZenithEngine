@@ -1,7 +1,7 @@
 #pragma once
 #include "IProbeable.h"
 
-namespace GFX
+namespace GFX::Pipeline
 {
 	class IRenderable : public Probe::IProbeable
 	{

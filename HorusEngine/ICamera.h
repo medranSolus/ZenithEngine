@@ -3,7 +3,7 @@
 
 namespace Camera
 {
-	class ICamera : public GFX::IRenderable
+	class ICamera : public GFX::Pipeline::IRenderable
 	{
 		std::string name;
 
@@ -28,6 +28,6 @@ namespace Camera
 
 		virtual void Rotate(float angleDX, float angleDY) noexcept = 0;
 		virtual void Roll(float delta) noexcept = 0;
-		virtual void Bind(GFX::Graphics& gfx) const = 0;
+		virtual void Bind(GFX::Graphics& gfx) const noexcept = 0;
 	};
 }

@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class BaseShape : public virtual IRenderable
+	class BaseShape : public virtual Pipeline::IRenderable, public Pipeline::JobData
 	{
 		std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr;
 		std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr;
@@ -27,7 +27,7 @@ namespace GFX::Shape
 		void SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept;
 
 	public:
-		constexpr UINT GetIndexCount() const noexcept { return indexBuffer->GetCount(); }
+		inline UINT GetIndexCount() const noexcept override { return indexBuffer->GetCount(); }
 
 		constexpr bool IsMesh() const noexcept { return isMesh; }
 		constexpr bool IsOutline() const noexcept { return isOutline; }
@@ -36,7 +36,7 @@ namespace GFX::Shape
 		virtual inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); isMesh = false; }
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); isMesh = true; }
 
-		void Bind(Graphics& gfx);
+		void Bind(Graphics& gfx) override;
 		void SetOutline() noexcept override;
 		void DisableOutline() noexcept override;
 		void Submit(uint64_t channelFilter) noexcept override;

@@ -10,6 +10,7 @@ namespace GFX::Pipeline
 	class RenderGraphBlurOutline : public RenderGraph
 	{
 		static constexpr int MAX_RADIUS = 7;
+
 		int radius;
 		float sigma;
 

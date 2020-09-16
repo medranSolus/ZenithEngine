@@ -3,7 +3,7 @@
 
 namespace GFX
 {
-	class IObject : public virtual IRenderable
+	class IObject : public virtual Pipeline::IRenderable
 	{
 	public:
 		virtual ~IObject() = default;

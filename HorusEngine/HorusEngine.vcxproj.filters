@@ -1006,9 +1006,6 @@
     <ClInclude Include="NullPixelShader.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="IRenderable.h">
-      <Filter>Header Files\GFX</Filter>
-    </ClInclude>
     <ClInclude Include="IVisual.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
@@ -1212,6 +1209,12 @@
     </ClInclude>
     <ClInclude Include="LightingPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderable.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="JobData.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

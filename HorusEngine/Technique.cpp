@@ -8,11 +8,11 @@ namespace GFX::Pipeline
 			step.SetParentReference(gfx, parent);
 	}
 
-	void Technique::Submit(Shape::BaseShape& shape, uint64_t channelFilter) noexcept
+	void Technique::Submit(JobData& data, uint64_t channelFilter) noexcept
 	{
 		if (active && channels & channelFilter)
 			for (auto& step : steps)
-				step.Submit(shape);
+				step.Submit(data);
 	}
 
 	void Technique::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

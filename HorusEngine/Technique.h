@@ -26,7 +26,7 @@ namespace GFX::Pipeline
 		inline void AddStep(TechniqueStep&& step) noexcept { steps.emplace_back(std::forward<TechniqueStep>(step)); }
 
 		void SetParentReference(Graphics& gfx, const GfxObject& parent);
-		void Submit(Shape::BaseShape& shape, uint64_t channelFilter) noexcept;
+		void Submit(JobData& data, uint64_t channelFilter) noexcept;
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

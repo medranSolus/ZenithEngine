@@ -1,19 +1,16 @@
 #pragma once
 #include "Graphics.h"
+#include "JobData.h"
 
-namespace GFX::Shape
-{
-	class BaseShape;
-}
 namespace GFX::Pipeline
 {
 	class Job
 	{
-		Shape::BaseShape* shape = nullptr;
+		JobData* data = nullptr;
 		class TechniqueStep* step = nullptr;
 
 	public:
-		constexpr Job(Shape::BaseShape* shape, class TechniqueStep* step) noexcept : shape(shape), step(step) {}
+		constexpr Job(JobData* data, class TechniqueStep* step) noexcept : data(data), step(step) {}
 		Job(const Job&) = default;
 		Job& operator=(const Job&) = default;
 		~Job() = default;
