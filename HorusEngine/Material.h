@@ -1,5 +1,7 @@
 #pragma once
 #include "IVisual.h"
+#include "Texture.h"
+#include "ConstBufferExCache.h"
 #include "assimp\scene.h"
 
 namespace GFX::Visual

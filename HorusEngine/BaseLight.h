@@ -12,7 +12,6 @@ namespace GFX::Light
 	public:
 		inline void SetOutline() noexcept override { mesh->SetOutline(); }
 		inline void DisableOutline() noexcept override { mesh->DisableOutline(); }
-		inline void Submit(uint64_t channelFilter) noexcept override { mesh->Submit(channelFilter); }
 
 		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return mesh->GetAngle(); }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override { mesh->SetAngle(meshAngle); }

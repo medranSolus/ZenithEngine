@@ -1,4 +1,5 @@
 #include "OutlineMaskBlur.h"
+#include "GfxResources.h"
 
 namespace GFX::Visual
 {

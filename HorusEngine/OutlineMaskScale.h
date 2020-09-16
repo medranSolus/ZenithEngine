@@ -1,5 +1,6 @@
 #pragma once
 #include "Effect.h"
+#include "ConstBufferExCache.h"
 
 namespace GFX::Visual
 {

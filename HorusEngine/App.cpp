@@ -111,7 +111,7 @@ void App::MakeFrame()
 	ProcessInput();
 	renderer.BindMainCamera(cameras->GetCamera());
 	cameras->Submit(RenderChannel::Main);
-	pointLight->Submit(RenderChannel::Main);
+	pointLight->Submit(RenderChannel::Main | RenderChannel::Light);
 	pointLight->Bind(window.Gfx(), cameras->GetCamera());
 	for (auto& shape : shapes)
 		if (shape)

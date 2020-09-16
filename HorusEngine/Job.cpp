@@ -1,4 +1,5 @@
 #include "TechniqueStep.h"
+#include "JobData.h"
 
 namespace GFX::Pipeline
 {

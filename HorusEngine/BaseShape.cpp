@@ -8,13 +8,6 @@ namespace GFX::Shape
 		topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	void BaseShape::SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept
-	{
-		techniques = std::move(newTechniques);
-		for (auto& technique : techniques)
-			technique->SetParentReference(gfx, parent);
-	}
-
 	void BaseShape::Bind(Graphics& gfx)
 	{
 		indexBuffer->Bind(gfx);
@@ -44,16 +37,9 @@ namespace GFX::Shape
 			}
 	}
 
-	void BaseShape::Submit(uint64_t channelFilter) noexcept
-	{
-		for (auto& technique : techniques)
-			technique->Submit(*this, channelFilter);
-	}
-
 	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		probe.VisitShape(gfx, *this);
-		for (auto& technique : techniques)
-			technique->Accept(gfx, probe);
+		JobData::Accept(gfx, probe);
 	}
 }

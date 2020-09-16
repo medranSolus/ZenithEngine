@@ -35,6 +35,12 @@ namespace GFX::Light
 		buffer["lightIntensity"] = 5.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
 		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 3, 3, radius, radius, radius);
+
+		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		auto technique = std::make_shared<Pipeline::Technique>("Lighting", RenderChannel::Light);
+		technique->AddStep({ graph, "lighting" });
+		techniques.emplace_back(std::move(technique));
+		SetTechniques(gfx, std::move(techniques), *mesh);
 	}
 
 	void PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

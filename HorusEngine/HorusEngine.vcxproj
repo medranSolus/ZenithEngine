@@ -307,6 +307,7 @@
     <ClCompile Include="InputLayout.cpp" />
     <ClCompile Include="IVisual.cpp" />
     <ClCompile Include="Job.cpp" />
+    <ClCompile Include="JobData.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LambertianPass.cpp" />
     <ClCompile Include="LightingPass.cpp" />

@@ -18,6 +18,8 @@ namespace GFX::Light
 		PointLight& operator=(const PointLight&) = delete;
 		virtual ~PointLight() = default;
 
+		inline void Submit(uint64_t channelFilter) noexcept override { mesh->Submit(channelFilter); JobData::Submit(channelFilter); }
+
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void Bind(Graphics& gfx, const Camera::ICamera& camera) const;
 	};

@@ -1,4 +1,5 @@
 #include "OutlineMaskOffset.h"
+#include "GfxResources.h"
 
 namespace GFX::Visual
 {

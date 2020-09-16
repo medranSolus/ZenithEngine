@@ -1,5 +1,6 @@
 #pragma once
-#include "GfxResources.h"
+#include "ConstBufferTransform.h"
+#include "VertexLayout.h"
 
 namespace GFX::Visual
 {
