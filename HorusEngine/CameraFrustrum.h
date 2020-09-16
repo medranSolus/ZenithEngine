@@ -1,11 +1,10 @@
 #pragma once
-#include "BaseShape.h"
-#include "Object.h"
+#include "IShape.h"
 #include "ProjectionData.h"
 
 namespace GFX::Shape
 {
-	class CameraFrustrum : public BaseShape, public Object
+	class CameraFrustrum : public IShape
 	{
 	public:
 		CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
@@ -14,7 +13,6 @@ namespace GFX::Shape
 
 		inline void SetTopologyPlain(Graphics& gfx) noexcept override {}
 
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void SetParams(Graphics& gfx, const Camera::ProjectionData& data);
 	};
 }

@@ -1,10 +1,9 @@
 #pragma once
-#include "BaseShape.h"
-#include "Object.h"
+#include "IShape.h"
 
 namespace GFX::Shape
 {
-	class SolidRectangle : public BaseShape, public Object
+	class SolidRectangle : public IShape
 	{
 		float width;
 		float height;
@@ -14,7 +13,6 @@ namespace GFX::Shape
 			const std::string& name, Data::ColorFloat3 color, float width, float height);
 		virtual ~SolidRectangle() = default;
 
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void UpdateTransformMatrix() noexcept override;
 	};
 }

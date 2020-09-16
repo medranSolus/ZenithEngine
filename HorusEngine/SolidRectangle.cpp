@@ -6,7 +6,7 @@ namespace GFX::Shape
 {
 	SolidRectangle::SolidRectangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 		const std::string& name, Data::ColorFloat3 color, float width, float height)
-		: BaseShape(gfx), Object(position, name), width(width), height(height)
+		: IShape(gfx, position, name), width(width), height(height)
 	{
 		std::string typeName = Primitive::Square::GetName();
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
@@ -33,12 +33,6 @@ namespace GFX::Shape
 		SetTechniques(gfx, std::move(techniques), *this);
 
 		UpdateTransformMatrix();
-	}
-
-	void SolidRectangle::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		Object::Accept(gfx, probe);
-		BaseShape::Accept(gfx, probe);
 	}
 
 	void SolidRectangle::UpdateTransformMatrix() noexcept

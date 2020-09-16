@@ -1216,6 +1216,12 @@
     <ClInclude Include="JobData.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="IShape.h">
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="ILight.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />

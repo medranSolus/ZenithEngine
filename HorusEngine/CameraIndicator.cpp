@@ -6,7 +6,7 @@ namespace GFX::Shape
 {
 	CameraIndicator::CameraIndicator(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 		const std::string& name, Data::ColorFloat3 color)
-		: BaseShape(gfx), Object(position, name)
+		: IShape(gfx, position, name)
 	{
 		const std::string typeName = typeid(CameraIndicator).name();
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
@@ -52,11 +52,5 @@ namespace GFX::Shape
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, std::move(dimmedMaterial)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);
-	}
-
-	void CameraIndicator::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		Object::Accept(gfx, probe);
-		BaseShape::Accept(gfx, probe);
 	}
 }

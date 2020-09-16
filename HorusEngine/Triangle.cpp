@@ -7,7 +7,7 @@ namespace GFX::Shape
 {
 	Triangle::Triangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 		const std::string& name, float down, float left, float right)
-		: BaseShape(gfx), Object(position, name)
+		: IShape(gfx, position, name)
 	{
 		/*const float leftPow2 = left * left;
 		const float vertex3X = (right * right - leftPow2 - down * down) / (-2.0f * down);
@@ -31,11 +31,5 @@ namespace GFX::Shape
 		AddBind(vertexShader);
 		AddBind(Resource::PixelShader::Get(gfx, "ColorBlendPS.cso"));
 		AddBind(Resource::InputLayout::Get(gfx, layout, bytecodeVS));*/
-	}
-
-	void Triangle::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		Object::Accept(gfx, probe);
-		BaseShape::Accept(gfx, probe);
 	}
 }

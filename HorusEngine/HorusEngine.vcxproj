@@ -613,6 +613,8 @@
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="BaseLight.h" />
+    <ClInclude Include="ILight.h" />
+    <ClInclude Include="IShape.h" />
     <ClInclude Include="JobData.h" />
     <ClInclude Include="IRenderTarget.h" />
     <ClInclude Include="LightingPass.h" />

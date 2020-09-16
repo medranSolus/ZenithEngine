@@ -1,10 +1,9 @@
 #pragma once
-#include "BaseShape.h"
-#include "Object.h"
+#include "IShape.h"
 
 namespace GFX::Shape
 {
-	class Ball : public BaseShape, public Object
+	class Ball : public IShape
 	{
 	public:
 		Ball(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
@@ -12,7 +11,5 @@ namespace GFX::Shape
 		virtual ~Ball() = default;
 
 		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ); }
-
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

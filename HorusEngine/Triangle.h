@@ -1,16 +1,13 @@
 #pragma once
-#include "BaseShape.h"
-#include "Object.h"
+#include "IShape.h"
 
 namespace GFX::Shape
 {
-	class Triangle : public BaseShape, public Object
+	class Triangle : public IShape
 	{
 	public:
 		Triangle(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 			const std::string& name, float down, float left, float right);
 		virtual ~Triangle() = default;
-
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

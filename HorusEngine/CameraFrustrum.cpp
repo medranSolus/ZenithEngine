@@ -6,7 +6,7 @@ namespace GFX::Shape
 {
 	CameraFrustrum::CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 		const std::string& name, Data::ColorFloat3 color, const Camera::ProjectionData& data)
-		: BaseShape(gfx), Object(position, name)
+		: IShape(gfx, position, name)
 	{
 		const std::string typeName = typeid(CameraFrustrum).name();
 		if (Resource::IndexBuffer::NotStored(typeName))
@@ -33,12 +33,6 @@ namespace GFX::Shape
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, std::move(dimmedMaterial)));
 		SetTechniques(gfx, std::move(techniques), *this);
-	}
-
-	void CameraFrustrum::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		Object::Accept(gfx, probe);
-		BaseShape::Accept(gfx, probe);
 	}
 
 	void CameraFrustrum::SetParams(Graphics& gfx, const Camera::ProjectionData& data)

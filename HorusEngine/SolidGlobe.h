@@ -1,10 +1,9 @@
 #pragma once
-#include "BaseShape.h"
-#include "Object.h"
+#include "IShape.h"
 
 namespace GFX::Shape
 {
-	class SolidGlobe : public BaseShape, public Object
+	class SolidGlobe : public IShape
 	{
 		DirectX::XMFLOAT3 sizes;
 		Resource::ConstBufferExPixelCache* materialBuffer = nullptr;
@@ -17,7 +16,6 @@ namespace GFX::Shape
 		constexpr Resource::ConstBufferExPixelCache& GetMaterial() noexcept { return *materialBuffer; }
 		inline void SetTopologyMesh(Graphics& gfx) noexcept override { SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ); }
 
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void UpdateTransformMatrix() noexcept override;
 	};
 }

@@ -1,16 +1,15 @@
 #pragma once
-#include "IObject.h"
-#include "JobData.h"
+#include "ILight.h"
+#include "IShape.h"
 
 namespace GFX::Light
 {
-	class BaseLight : public IObject, public Pipeline::JobData
+	class BaseLight : public ILight
 	{
 	protected:
-		mutable std::shared_ptr<IObject> mesh = nullptr;
+		mutable std::shared_ptr<Shape::IShape> mesh = nullptr;
 
 	public:
-		inline UINT GetIndexCount() const noexcept override { return 6U; }
 		inline void SetOutline() noexcept override { mesh->SetOutline(); }
 		inline void DisableOutline() noexcept override { mesh->DisableOutline(); }
 		inline void Submit(uint64_t channelFilter) noexcept override { mesh->Submit(channelFilter); }
@@ -32,7 +31,5 @@ namespace GFX::Light
 		inline void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override { mesh->UpdateAngle(deltaAngle); }
 
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { mesh->Accept(gfx, probe); }
-
-		void Bind(Graphics& gfx) override {}
 	};
 }
