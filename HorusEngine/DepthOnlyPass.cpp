@@ -18,7 +18,7 @@ namespace GFX::Pipeline::RenderPass
 	void DepthOnlyPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		mainCamera->Bind(gfx);
+		mainCamera->BindCamera(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

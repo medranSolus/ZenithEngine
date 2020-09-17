@@ -36,12 +36,12 @@ struct PSOut
 	float4 normal : SV_TARGET3;   // RGB - normal, A - power
 };
 
-PSOut main(float3 viewPos : POSITION, float3 viewNormal : NORMAL//, float3 shadowPos : SHADOW_POSITION
+PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL//, float3 shadowPos : SHADOW_POSITION
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
-	, float3 viewTan : TANGENT,
-	float3 viewBitan : BITANGENT
+	, float3 worldTan : TANGENT,
+	float3 worldBitan : BITANGENT
 #endif
 #endif
 )
@@ -53,13 +53,13 @@ PSOut main(float3 viewPos : POSITION, float3 viewNormal : NORMAL//, float3 shado
 	pso.color = cb_materialColor;
 #endif
 	clip(pso.color.a - 0.0039f);
-	pso.position = float4(viewPos, cb_specularIntensity);
+	pso.position = float4(worldPos, cb_specularIntensity);
 
 #ifdef _TEX_NORMAL
-	pso.normal.rgb = lerp(viewNormal,
-		GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr), cb_normalMapWeight);
+	pso.normal.rgb = lerp(worldPos,
+		GetMappedNormal(worldTan, worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight);
 #else
-	pso.normal.rgb = normalize(viewNormal);
+	pso.normal.rgb = normalize(worldNormal);
 #endif
 	// Only for double sided objects
 	//if (dot(viewNormal, viewPos) >= 0.0f)

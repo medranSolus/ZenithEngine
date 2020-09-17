@@ -39,7 +39,7 @@ namespace GFX::Resource
 			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U) noexcept;
 
 		constexpr Data::CBuffer::DynamicCBuffer& GetBuffer() noexcept { dirty = true; return buffer; }
-		constexpr const Data::CBuffer::DynamicCBuffer& GetBuffer() const noexcept { return buffer; }
+		constexpr const Data::CBuffer::DynamicCBuffer& GetBufferConst() const noexcept { return buffer; }
 
 		void Bind(Graphics& gfx) override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }

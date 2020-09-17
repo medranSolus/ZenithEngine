@@ -5,7 +5,7 @@ namespace Camera
 {
 	DirectX::FXMMATRIX PersonCamera::UpdateView() const noexcept
 	{
-		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&position),
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&cameraBuffer->GetBufferConst()["cameraPos"]),
 			DirectX::XMLoadFloat3(&eyeDirection), DirectX::XMLoadFloat3(&up));
 		DirectX::XMStoreFloat4x4(&viewMatrix, matrix);
 		return std::move(matrix);
@@ -22,6 +22,7 @@ namespace Camera
 
 	void PersonCamera::MoveX(float dX) noexcept
 	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
 				DirectX::XMVectorScale(DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&moveDirection), DirectX::XMMatrixRotationY(M_PI_2)), dX)));
@@ -30,6 +31,7 @@ namespace Camera
 
 	void PersonCamera::MoveZ(float dZ) noexcept
 	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
 				DirectX::XMVectorScale(DirectX::XMLoadFloat3(&moveDirection), dZ)));

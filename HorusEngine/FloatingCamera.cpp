@@ -5,7 +5,7 @@ namespace Camera
 {
 	DirectX::FXMMATRIX FloatingCamera::UpdateView() const noexcept
 	{
-		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&position),
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&cameraBuffer->GetBufferConst()["cameraPos"]),
 			DirectX::XMLoadFloat3(&moveDirection), DirectX::XMLoadFloat3(&up));
 		DirectX::XMStoreFloat4x4(&viewMatrix, matrix);
 		return std::move(matrix);
@@ -22,6 +22,7 @@ namespace Camera
 
 	void FloatingCamera::MoveX(float dX) noexcept
 	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
 		float y = position.y;
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
@@ -32,6 +33,7 @@ namespace Camera
 
 	void FloatingCamera::MoveY(float dY) noexcept
 	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
 				DirectX::XMVectorScale(DirectX::XMLoadFloat3(&up), dY)));
@@ -40,6 +42,7 @@ namespace Camera
 
 	void FloatingCamera::MoveZ(float dZ) noexcept
 	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
 				DirectX::XMVectorScale(DirectX::XMLoadFloat3(&moveDirection), dZ)));

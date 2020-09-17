@@ -3,6 +3,18 @@
 
 namespace Camera
 {
+	GFX::Data::CBuffer::DCBLayout BaseCamera::MakeLayout() noexcept
+	{
+		static GFX::Data::CBuffer::DCBLayout layout;
+		static bool initNeeded = true;
+		if (initNeeded)
+		{
+			layout.Add(DCBElementType::Float3, "cameraPos");
+			initNeeded = false;
+		}
+		return layout;
+	}
+
 	DirectX::FXMMATRIX BaseCamera::UpdateProjection() const noexcept
 	{
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixPerspectiveFovLH(projection.fov, projection.screenRatio, projection.nearClip, projection.farClip);
@@ -12,8 +24,10 @@ namespace Camera
 
 	BaseCamera::BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
 		float fov, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept
-		: ICamera(name), position(position), projection({ fov, gfx.GetRatio(), nearClip, farClip })
+		: ICamera(name), projection({ fov, gfx.GetRatio(), nearClip, farClip })
 	{
+		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayout(), 2U);
+		cameraBuffer->GetBuffer()["cameraPos"] = position;
 		indicator = std::make_shared<GFX::Shape::CameraIndicator>(gfx, graph, position, name, DirectX::XMFLOAT3(0.5f, 0.5f, 1.0f));
 		frustrum = std::make_shared<GFX::Shape::CameraFrustrum>(gfx, graph, position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);
 	}
@@ -50,16 +64,10 @@ namespace Camera
 		viewUpdate = true;
 	}
 
-	void BaseCamera::Bind(GFX::Graphics& gfx) const noexcept
+	void BaseCamera::BindCamera(GFX::Graphics& gfx) const noexcept
 	{
 		gfx.SetView(GetView());
 		gfx.SetProjection(GetProjection());
-		if (enableIndicator)
-		{
-			indicator->SetPos(position);
-			if (enableFrustrum)
-				frustrum->SetPos(position);
-		}
 	}
 
 	void BaseCamera::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
@@ -80,9 +88,14 @@ namespace Camera
 	{
 		if (enableIndicator)
 		{
+			const DirectX::XMFLOAT3& position = cameraBuffer->GetBufferConst()["cameraPos"];
+			indicator->SetPos(position);
 			indicator->Submit(channelFilter);
 			if (enableFrustrum)
+			{
+				frustrum->SetPos(position);
 				frustrum->Submit(channelFilter);
+			}
 		}
 	}
 }

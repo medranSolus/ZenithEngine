@@ -7,12 +7,10 @@ namespace GFX::Resource
 	Data::CBuffer::Transform ConstBufferTransform::GetBufferData(Graphics& gfx) noexcept
 	{
 		const DirectX::XMMATRIX transform = GetTransform();
-		const DirectX::XMMATRIX transformView = std::move(transform * gfx.GetView());
 		return
 		{
 			std::move(DirectX::XMMatrixTranspose(transform)),
-			std::move(DirectX::XMMatrixTranspose(transformView)),
-			std::move(DirectX::XMMatrixTranspose(transformView * gfx.GetProjection()))
+			std::move(DirectX::XMMatrixTranspose(transform * gfx.GetView() * gfx.GetProjection()))
 		};
 	}
 

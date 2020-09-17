@@ -42,12 +42,13 @@ namespace GFX::Pipeline::RenderPass
 
 	void LightingPass::Execute(Graphics& gfx)
 	{
+		mainCamera->Bind(gfx);
 		for (auto& job : GetJobs())
 		{
 			auto& light = dynamic_cast<Light::ILight&>(job.GetData());
 			shadowMapPass->BindLight(light);
-			//shadowMapPass->Execute(gfx);
-			mainCamera->Bind(gfx);
+			shadowMapPass->Execute(gfx);
+			mainCamera->BindCamera(gfx);
 			//shadowBuffer->Update(gfx, light);
 			BindAll(gfx);
 			job.Execute(gfx);

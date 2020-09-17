@@ -1,6 +1,11 @@
 #include "UtilsPS.hlsli"
 #include "LightCBuffer.hlsli"
 
+cbuffer CameraBuffer : register (b2)
+{
+	float3 cb_cameraPos;
+};
+
 SamplerState splr : register(s0);
 SamplerComparisonState shadowSplr : register(s1);
 
@@ -26,7 +31,7 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 		const float attenuation = GetAttenuation(cb_atteuationConst, cb_atteuationLinear, cb_attenuationQuad, lightVD.distanceToLight);
 		float3 diffuse = lerp(cb_shadowColor, GetDiffuse(cb_lightColor * cb_lightIntensity * attenuation,
 			lightVD.directionToLight, normal.rgb, attenuation), shadowLevel);
-		float3 specular = GetSpecular(lightVD.vertexToLight, position.rgb, normal.rgb, attenuation, diffuse * specularData.rgb, normal.a, position.a);
+		float3 specular = GetSpecular(cb_cameraPos, lightVD.directionToLight, position.rgb, normal.rgb, attenuation, diffuse * specularData.rgb, normal.a, position.a);
 
 		return float4(saturate(diffuse + cb_ambientColor) * color.rgb + specular, color.a);
 	}

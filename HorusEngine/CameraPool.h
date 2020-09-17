@@ -20,7 +20,6 @@ namespace Camera
 		virtual ~CameraPool() = default;
 
 		inline ICamera& GetCamera() noexcept { return *cameras.at(active); }
-		inline void Bind(GFX::Graphics& gfx) const noexcept { cameras.at(active)->Bind(gfx); }
 
 		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
 		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }

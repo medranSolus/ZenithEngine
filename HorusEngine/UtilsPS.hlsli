@@ -42,12 +42,12 @@ float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight
 	return diffuseColor * (attenutaion * max(0.0f, dot(directionToLight, normal)));
 }
 
-float3 GetSpecular(const in float3 vertexToLight, const in float3 pos, const in float3 normal, const in float attenuation,
+float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, const in float3 pos, const in float3 normal, const in float attenuation,
 	const in float3 specularColor, const in float specularPower, uniform float specularIntensity)
 {
-	// Specular intensity based on angle between viewing vector and reflection vector
-	const float3 reflection = normalize(normal * dot(vertexToLight, normal) * 2.0f - vertexToLight);
-	return specularColor * (attenuation * specularIntensity * pow(max(0.0f, dot(-reflection, normalize(pos))), specularPower));
+	// Halfway vector between directionToLight and directionToCamera
+	const float3 H = normalize(normalize(cameraPos - pos) + directionToLight);
+	return specularColor * (attenuation * specularIntensity * pow(saturate(dot(normal, H)), specularPower));
 }
 
 float GetSampledSpecularPower(const in float4 specularData)

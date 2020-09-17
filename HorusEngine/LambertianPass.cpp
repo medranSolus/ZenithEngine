@@ -20,7 +20,7 @@ namespace GFX::Pipeline::RenderPass
 	void LambertianPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		mainCamera->Bind(gfx);
+		mainCamera->BindCamera(gfx);
 		QueuePass::Execute(gfx);
 	}
 }
