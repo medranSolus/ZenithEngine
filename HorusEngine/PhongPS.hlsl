@@ -1,5 +1,4 @@
 #include "UtilsPS.hlsli"
-#include "LightCBuffer.hlsli"
 
 cbuffer PixelBuffer : register(b1)
 {
@@ -28,10 +27,16 @@ Texture2D normalMap : register(t1);
 Texture2D spec : register(t2);
 #endif
 #endif
-SamplerComparisonState shadowSplr : register(s1);
-TextureCube shadowMap : register(t3);
 
-float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float3 shadowPos : SHADOW_POSITION
+struct PSOut
+{
+	float4 color : SV_TARGET0;
+	float4 specular : SV_TARGET1; // RGB - color, A = 1.0f
+	float4 position : SV_TARGET2; // RGB - position, A - specular intensity
+	float4 normal : SV_TARGET3;   // RGB - normal, A - power
+};
+
+PSOut main(float3 viewPos : POSITION, float3 viewNormal : NORMAL//, float3 shadowPos : SHADOW_POSITION
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
@@ -39,60 +44,34 @@ float4 main(float3 viewPos : POSITION, float3 viewNormal : NORMAL, float3 shadow
 	float3 viewBitan : BITANGENT
 #endif
 #endif
-) : SV_TARGET
+)
 {
+	PSOut pso;
 #ifdef _TEX
-	const float4 color = tex.Sample(splr, tc);
+	pso.color = tex.Sample(splr, tc);
 #else
-	const float4 color = cb_materialColor;
+	pso.color = cb_materialColor;
 #endif
-	clip(color.a - 0.0039f);
+	clip(pso.color.a - 0.0039f);
+	pso.position = float4(viewPos, cb_specularIntensity);
 
-	float3 diffuse, specular;
-	// Shadow test
-	const float shadowLevel = GetShadowLevel(shadowPos, shadowSplr, shadowMap);
-	if (shadowLevel != 0.0f)
-	{
 #ifdef _TEX_NORMAL
-		viewNormal = lerp(viewNormal,
-			GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr), cb_normalMapWeight); // TODO: Add this
+	pso.normal.rgb = lerp(viewNormal,
+		GetMappedNormal(viewTan, viewBitan, viewNormal, tc, normalMap, splr), cb_normalMapWeight);
 #else
-		viewNormal = normalize(viewNormal);
+	pso.normal.rgb = normalize(viewNormal);
 #endif
-		// Only for double sided objects
-		//if (dot(viewNormal, viewPos) >= 0.0f)
-		//	viewNormal *= -1.0f;
-		LightVectorData lightVD = GetLightVectorData(cb_lightPos, viewPos);
+	// Only for double sided objects
+	//if (dot(viewNormal, viewPos) >= 0.0f)
+	//	viewNormal *= -1.0f;
 
-		const float attenuation = GetAttenuation(cb_atteuationConst, cb_atteuationLinear, cb_attenuationQuad, lightVD.distanceToLight);
-		const float3 scaledLightColor = cb_lightColor * cb_lightIntensity * attenuation;
-		diffuse = lerp(cb_shadowColor, GetDiffuse(scaledLightColor, lightVD.directionToLight, viewNormal, attenuation), shadowLevel);
-
-		if (shadowLevel >= 0.999999f)
-		{
-			float3 specColor;
-			float specPower;
 #ifdef _TEX_SPEC
-			const float4 specularTex = spec.Sample(splr, tc);
-			if (cb_useSpecularPowerAlpha)
-				specPower = GetSampledSpecularPower(specularTex);
-			else
-				specPower = cb_specularPower;
-			specColor = specularTex.rgb;
+	const float4 specularTex = spec.Sample(splr, tc);
+	pso.specular = float4(specularTex.rgb, 1.0f);
+	pso.normal.a = cb_useSpecularPowerAlpha ? GetSampledSpecularPower(specularTex) : cb_specularPower;
 #else
-			specColor = cb_specularColor;
-			specPower = cb_specularPower;
+	pso.specular = float4(cb_specularColor, 1.0f);
+	pso.normal.a = cb_specularPower;
 #endif
-			specular = GetSpecular(lightVD.vertexToLight, viewPos, viewNormal, attenuation, diffuse * specColor, specPower, cb_specularIntensity);
-		}
-		else
-			specular = float3(0.0f, 0.0f, 0.0f);
-	}
-	else
-	{
-		diffuse = cb_shadowColor;
-		specular = float3(0.0f, 0.0f, 0.0f);
-	}
-
-	return float4(saturate(diffuse + cb_ambientColor) * color.rgb + specular, color.a);
+	return pso;
 }

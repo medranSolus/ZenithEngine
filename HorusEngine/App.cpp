@@ -109,18 +109,17 @@ void App::MakeFrame()
 {
 	window.Gfx().BeginFrame();
 	ProcessInput();
+	ShowObjectWindow();
+	ShowOptionsWindow();
+	//ImGui::ShowDemoWindow();
 	renderer.BindMainCamera(cameras->GetCamera());
 	cameras->Submit(RenderChannel::Main);
 	pointLight->Submit(RenderChannel::Main | RenderChannel::Light);
-	pointLight->Bind(window.Gfx(), cameras->GetCamera());
 	for (auto& shape : shapes)
 		if (shape)
 			shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& obj : carpetRects)
 		obj->Submit(RenderChannel::Main);
-	ShowObjectWindow();
-	ShowOptionsWindow();
-	//ImGui::ShowDemoWindow();
 	renderer.Execute(window.Gfx());
 	renderer.Reset();
 	window.Gfx().EndFrame();
@@ -150,7 +149,6 @@ App::App(const std::string& commandLine) : window(1600, 900, WINDOW_TITLE), rend
 	//AddShape(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), DirectX::XMFLOAT3(4.2f, -0.1f, 1.0f), "Tri", 3.1f, 1.5f, 2.5f));
 	//AddShape(std::make_unique<GFX::Shape::Globe>(window.Gfx(), DirectX::XMFLOAT3(0.0f, -2.0f, 8.0f), "Globe", std::move(RandColor(engine)), 25, 25, 3.0f, 3.0f, 3.0f));
 	//AddShape(std::make_unique<GFX::Shape::Ball>(window.Gfx(), DirectX::XMFLOAT3(2.0f, 0.0f, -7.0f), "Ball", std::move(RandColor(engine)), 3, 3.0f));
-	renderer.BindLight(*pointLight);
 }
 
 size_t App::Run()

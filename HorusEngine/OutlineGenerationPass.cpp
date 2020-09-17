@@ -4,7 +4,8 @@
 
 namespace GFX::Pipeline::RenderPass
 {
-	OutlineGenerationPass::OutlineGenerationPass(Graphics& gfx, const std::string& name) : QueuePass(name)
+	OutlineGenerationPass::OutlineGenerationPass(Graphics& gfx, const std::string& name)
+		: BindingPass(name), QueuePass(name)
 	{
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));

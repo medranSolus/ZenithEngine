@@ -24,6 +24,10 @@ namespace GFX::Pipeline
 	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma)
 		: RenderGraph(gfx), radius(radius), sigma(sigma)
 	{
+		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 0U,
+			{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT });
+		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
+
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
 		kernelLayout.Add(DCBElementType::Integer, "radius");
@@ -60,22 +64,28 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
-			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
+			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearGBuff");
+			pass->SetSinkLinkage("buffer", "$.geometryBuffer");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::LambertianPass>(gfx, "lambertian");
-			pass->SetSinkLinkage("depthMap", "lighting.shadowMap.depthMap");
+			pass->SetSinkLinkage("geometryBuffer", "clearGBuff.buffer");
+			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
+			pass->SetSinkLinkage("geometryBuffer", "lambertian.geometryBuffer");
 			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
-			pass->SetSinkLinkage("depthStencil", "lighting.depthStencil");
+			pass->SetSinkLinkage("depthStencil", "lambertian.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::SkyboxPass>(gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
-			pass->SetSinkLinkage("renderTarget", "lambertian.renderTarget");
-			pass->SetSinkLinkage("depthStencil", "lambertian.depthStencil");
+			pass->SetSinkLinkage("renderTarget", "lighting.renderTarget");
+			pass->SetSinkLinkage("depthStencil", "lighting.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
@@ -115,14 +125,9 @@ namespace GFX::Pipeline
 	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
 	{
 		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindCamera(camera);
-		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindMainCamera(camera);
+		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindCamera(camera);
+		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).BindCamera(camera);
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
-	}
-
-	void RenderGraphBlurOutline::BindLight(Light::ILight& light)
-	{
-		dynamic_cast<RenderPass::ShadowMapPass&>(FindPass("lighting.shadowMap")).BindLight(light);
-		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindLight(light);
 	}
 
 	void RenderGraphBlurOutline::SetKernel(int radius, float sigma) noexcept(!IS_DEBUG)

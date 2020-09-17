@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderGraph.h"
+#include "RenderTargetEx.h"
 #include "ConstBufferExCache.h"
 #include "TextureCube.h"
 #include "ICamera.h"
@@ -14,6 +15,7 @@ namespace GFX::Pipeline
 		int radius;
 		float sigma;
 
+		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
 		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
@@ -25,7 +27,6 @@ namespace GFX::Pipeline
 		virtual ~RenderGraphBlurOutline() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);
-		void BindLight(Light::ILight& light);
 		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);
 		void ShowWindow() noexcept;
 	};

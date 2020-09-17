@@ -14,6 +14,8 @@ namespace GFX::Pipeline
 		Job& operator=(const Job&) = default;
 		~Job() = default;
 
+		constexpr JobData& GetData() noexcept { return *data; }
+
 		void Execute(Graphics& gfx);
 	};
 }

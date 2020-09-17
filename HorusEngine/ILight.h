@@ -10,6 +10,5 @@ namespace GFX::Light
 		virtual ~ILight() = default;
 
 		inline UINT GetIndexCount() const noexcept override { return 6U; }
-		void Bind(Graphics& gfx) override {}
 	};
 }

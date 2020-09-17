@@ -142,6 +142,9 @@
     <Filter Include="Source Files\GFX\Pipeline\Resource">
       <UniqueIdentifier>{e5d04e4b-9573-4c8c-97ce-f92a12537c8f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\Lights">
+      <UniqueIdentifier>{5c50600f-3c8e-4ded-b95e-3f138553ccd2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -532,6 +535,9 @@
     </FxCompile>
     <FxCompile Include="ShadowVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PointLightPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

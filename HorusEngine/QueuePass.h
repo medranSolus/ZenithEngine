@@ -4,11 +4,14 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	class QueuePass : public BindingPass
+	class QueuePass : public virtual BindingPass
 	{
 		using BindingPass::BindingPass;
 
 		std::vector<Job> jobs;
+
+	protected:
+		constexpr std::vector<Job>& GetJobs() noexcept { return jobs; }
 
 	public:
 		virtual ~QueuePass() = default;

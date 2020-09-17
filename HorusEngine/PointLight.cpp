@@ -49,9 +49,11 @@ namespace GFX::Light
 		BaseLight::Accept(gfx, probe);
 	}
 
-	void PointLight::Bind(Graphics& gfx, const Camera::ICamera& camera) const
+	void PointLight::Bind(Graphics& gfx)
 	{
-		DirectX::XMStoreFloat3(&lightBuffer->GetBuffer()["lightPos"], DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh->GetPos()), camera.GetView()));
+		DirectX::XMStoreFloat3(&lightBuffer->GetBuffer()["lightPos"],
+			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&mesh->GetPos()), gfx.GetView()));
+		//lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();
 		lightBuffer->Bind(gfx);
 	}
 }

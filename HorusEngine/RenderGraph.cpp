@@ -156,9 +156,10 @@ namespace GFX::Pipeline
 		for (auto& p : passes)
 			if (p->GetName() == pass->GetName())
 				throw RGC_EXCEPT("Pass name already in RenderGraph: " + pass->GetName());
-		// Link outputs from other passes to this pass inputs
-		LinkSinks(*pass);
+		auto& currentPass = *pass;
 		passes.emplace_back(std::move(pass));
+		// Link outputs from other passes to this pass inputs
+		LinkSinks(currentPass);
 	}
 
 	void RenderGraph::SetSinkSource(const std::string& sink, const std::string& targetName)

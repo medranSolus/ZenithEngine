@@ -5,7 +5,8 @@
 
 namespace GFX::Pipeline::RenderPass
 {
-	VerticalBlurPass::VerticalBlurPass(Graphics& gfx, const std::string& name) : FullscreenPass(gfx, name)
+	VerticalBlurPass::VerticalBlurPass(Graphics& gfx, const std::string& name)
+		: BindingPass(name), FullscreenPass(gfx, name)
 	{
 		AddBindableSink<Resource::RenderTargetShaderInput>("halfTarget");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("kernel");

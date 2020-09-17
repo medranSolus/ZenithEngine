@@ -21,6 +21,6 @@ namespace GFX::Light
 		inline void Submit(uint64_t channelFilter) noexcept override { mesh->Submit(channelFilter); JobData::Submit(channelFilter); }
 
 		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-		void Bind(Graphics& gfx, const Camera::ICamera& camera) const;
+		void Bind(Graphics& gfx) override;
 	};
 }
