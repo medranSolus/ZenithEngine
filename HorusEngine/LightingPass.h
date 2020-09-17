@@ -1,7 +1,6 @@
 #pragma once
 #include "ShadowMapPass.h"
 #include "FullscreenPass.h"
-#include "ConstBufferShadow.h"
 #include "ICamera.h"
 
 namespace GFX::Pipeline::RenderPass
@@ -9,7 +8,6 @@ namespace GFX::Pipeline::RenderPass
 	class LightingPass : public Base::QueuePass, public Base::FullscreenPass
 	{
 		std::unique_ptr<ShadowMapPass> shadowMapPass = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferShadow> shadowBuffer = nullptr;
 		Camera::ICamera* mainCamera = nullptr;
 
 	public:

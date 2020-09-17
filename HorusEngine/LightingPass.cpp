@@ -1,25 +1,23 @@
 #include "LightingPass.h"
 #include "RenderPassesBase.h"
+#include "PipelineResources.h"
 #include "GfxResources.h"
 
 namespace GFX::Pipeline::RenderPass
 {
 	LightingPass::LightingPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), QueuePass(name), FullscreenPass(gfx, name)
+		: BindingPass(name), QueuePass(name), FullscreenPass(gfx, name, "LightVS")
 	{
 		shadowMapPass = std::make_unique<ShadowMapPass>(gfx, "shadowMap");
 		AddBindableSink<GFX::Resource::IBindable>("depthMap");
 		SetSinkLinkage("depthMap", name + ".shadowMap.depthMap");
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
+		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
-		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
-		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
-		shadowBuffer = std::make_shared<GFX::Resource::ConstBufferShadow>(gfx);
-		//AddBind(shadowBuffer);
 		AddBind(GFX::Resource::ShadowSampler::Get(gfx));
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "PointLightPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, true));
@@ -49,7 +47,6 @@ namespace GFX::Pipeline::RenderPass
 			shadowMapPass->BindLight(light);
 			shadowMapPass->Execute(gfx);
 			mainCamera->BindCamera(gfx);
-			//shadowBuffer->Update(gfx, light);
 			BindAll(gfx);
 			job.Execute(gfx);
 		}

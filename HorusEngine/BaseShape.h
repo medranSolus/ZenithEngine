@@ -1,6 +1,6 @@
 #pragma once
 #include "GfxResources.h"
-#include "Technique.h"
+#include "JobData.h"
 
 namespace GFX::Shape
 {

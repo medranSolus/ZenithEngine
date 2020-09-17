@@ -10,7 +10,7 @@ namespace GFX::Pipeline::Resource
 		default:
 		case Usage::DepthStencil:
 			return DXGI_FORMAT::DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-		case Usage::ShadowDepth:
+		case Usage::DepthOnly:
 			return DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
 		}
 	}

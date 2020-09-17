@@ -56,8 +56,9 @@ float GetSampledSpecularPower(const in float4 specularData)
 	return pow(2.0f, specularData.a * 13.0f);
 }
 
-float GetShadowLevel(const in float3 shadowPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
+float GetShadowLevel(const in float3 pos, uniform float3 lightPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
 {
+	const float3 shadowPos = pos - lightPos;
 	const float len = sqrt(length(shadowPos));
 	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, len / (len + 1.0f));
 

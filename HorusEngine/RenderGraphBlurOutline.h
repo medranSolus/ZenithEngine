@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderGraph.h"
+#include "DepthStencilShaderInput.h"
 #include "RenderTargetEx.h"
 #include "ConstBufferExCache.h"
 #include "TextureCube.h"
@@ -15,6 +16,7 @@ namespace GFX::Pipeline
 		int radius;
 		float sigma;
 
+		std::shared_ptr<Resource::DepthStencilShaderInput> depthOnly;
 		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;

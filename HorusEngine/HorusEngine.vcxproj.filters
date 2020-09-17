@@ -225,9 +225,6 @@
     <ClCompile Include="PixelShader.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Sampler.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="SolidGlobe.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
@@ -426,9 +423,6 @@
     <ClCompile Include="WireframePass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="DepthStencilShaderInput.cpp">
-      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="TechniqueFactory.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
@@ -453,9 +447,6 @@
     <ClCompile Include="TextureDepthCube.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="ConstBufferShadow.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="DepthWrite.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
@@ -473,6 +464,12 @@
     </ClCompile>
     <ClCompile Include="JobData.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Sampler.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthStencilShaderInput.cpp">
+      <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -538,6 +535,9 @@
     </FxCompile>
     <FxCompile Include="PointLightPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="LightVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1174,9 +1174,6 @@
     <ClInclude Include="ShadowMap.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
-    <ClInclude Include="ConstBufferShadow.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="ShadowSampler.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -1273,9 +1270,6 @@
     </None>
     <None Include="UtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders</Filter>
-    </None>
-    <None Include="UtilsVS.hlsli">
-      <Filter>Shader Files\Vertex Shaders</Filter>
     </None>
     <None Include="ShadowCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>

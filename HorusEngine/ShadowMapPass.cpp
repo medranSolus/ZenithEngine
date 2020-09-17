@@ -7,10 +7,11 @@ namespace GFX::Pipeline::RenderPass
 	ShadowMapPass::ShadowMapPass(Graphics& gfx, const std::string& name)
 		: BindingPass(name), QueuePass(name)
 	{
-		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, DEPTH_TEXTURE_SIZE, 4U);
+		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, DEPTH_TEXTURE_SIZE, 8U);
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("depthMap", depthCube));
 		depthStencil = depthCube->GetBuffer(0);
 
+		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(ShadowMapPass).name(), 1U);
 		AddBind(GFX::Resource::NullPixelShader::Get(gfx));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
@@ -45,7 +46,10 @@ namespace GFX::Pipeline::RenderPass
 		gfx.SetProjection(DirectX::XMLoadFloat4x4(&projection));
 		depthCube->Unbind(gfx);
 
-		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&shadowSource->GetPos());
+		const auto& pos = shadowSource->GetPos();
+		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&pos);
+		positionBuffer->Update(gfx, DirectX::XMFLOAT4(pos.x, pos.y, pos.z, 0.0f));
+		positionBuffer->Bind(gfx);
 		for (unsigned char i = 0; i < 6; ++i)
 		{
 			depthStencil = depthCube->GetBuffer(i);

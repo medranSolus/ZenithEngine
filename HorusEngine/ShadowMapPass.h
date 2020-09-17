@@ -2,6 +2,7 @@
 #include "QueuePass.h"
 #include "ILight.h"
 #include "TextureDepthCube.h"
+#include "ConstBufferVertex.h"
 
 namespace GFX::Pipeline::RenderPass
 {
@@ -10,6 +11,7 @@ namespace GFX::Pipeline::RenderPass
 		static constexpr UINT DEPTH_TEXTURE_SIZE = 1024U;
 
 		Light::ILight* shadowSource = nullptr;
+		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
 		std::shared_ptr<GFX::Resource::TextureDepthCube> depthCube;
 		DirectX::XMFLOAT4X4 projection;
 		std::vector<DirectX::XMFLOAT3> cameraDirections;

@@ -6,7 +6,6 @@
 #include "ConstBufferExPixel.h"
 #include "ConstBufferExVertex.h"
 #include "ConstBufferPixel.h"
-#include "ConstBufferShadow.h"
 #include "ConstBufferTransform.h"
 #include "ConstBufferTransformEx.h"
 #include "ConstBufferTransformSkybox.h"

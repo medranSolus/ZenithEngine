@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	FullscreenPass::FullscreenPass(Graphics& gfx, const std::string& name) : BindingPass(name)
+	FullscreenPass::FullscreenPass(Graphics& gfx, const std::string& name, const std::string& vertexShaderName) : BindingPass(name)
 	{
 		// Fullscreen geometry (2 triangles)
 		auto layout = std::make_shared<Data::VertexLayout>(false);
@@ -17,7 +17,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		AddBind(GFX::Resource::VertexBuffer::Get(gfx, "$Fullscreen", std::move(vBuffer)));
 		AddBind(GFX::Resource::IndexBuffer::Get(gfx, "$Fullscreen", { 0, 1, 2, 1, 3, 2 }));
 		// Other needed bindables
-		auto shaderVS = GFX::Resource::VertexShader::Get(gfx, "FullscreenVS");
+		auto shaderVS = GFX::Resource::VertexShader::Get(gfx, vertexShaderName);
 		AddBind(GFX::Resource::InputLayout::Get(gfx, layout, shaderVS));
 		AddBind(std::move(shaderVS));
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));

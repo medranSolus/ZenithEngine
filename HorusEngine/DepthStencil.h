@@ -11,7 +11,7 @@ namespace GFX::Pipeline::Resource
 		friend class RenderTargetEx;
 
 	public:
-		enum class Usage { DepthStencil, ShadowDepth };
+		enum class Usage { DepthStencil, DepthOnly };
 
 	protected:
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
