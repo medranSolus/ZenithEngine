@@ -24,6 +24,7 @@ namespace Camera
 
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
 		DirectX::FXMMATRIX UpdateProjection() const noexcept;
+		void UpdateBuffer() noexcept;
 
 	public:
 		BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
@@ -46,7 +47,7 @@ namespace Camera
 		inline void SetOutline() noexcept override { indicator->SetOutline(); }
 		inline void DisableOutline() noexcept override { indicator->DisableOutline(); }
 
-		inline void Bind(GFX::Graphics& gfx) override { cameraBuffer->Bind(gfx); }
+		inline void Bind(GFX::Graphics& gfx) override { UpdateBuffer(); cameraBuffer->Bind(gfx); }
 
 		DirectX::FXMMATRIX GetProjection() const noexcept override;
 		DirectX::FXMMATRIX GetView() const noexcept override;

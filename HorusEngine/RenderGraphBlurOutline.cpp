@@ -24,11 +24,11 @@ namespace GFX::Pipeline
 	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma)
 		: RenderGraph(gfx), radius(radius), sigma(sigma)
 	{
-		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 9U, Resource::DepthStencil::Usage::DepthOnly);
+		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
 
 		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4U,
-			{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT });
+			{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32B32A32_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
 
 		// Setup blur cbuffers

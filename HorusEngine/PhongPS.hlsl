@@ -32,8 +32,7 @@ struct PSOut
 {
 	float4 color : SV_TARGET0;
 	float4 specular : SV_TARGET1; // RGB - color, A = 1.0f
-	float4 position : SV_TARGET2; // RGB - position, A - specular intensity
-	float4 normal : SV_TARGET3;   // RGB - normal, A - power
+	float4 normal : SV_TARGET2;   // RGB - normal, A - power
 };
 
 PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL//, float3 shadowPos : SHADOW_POSITION
@@ -53,7 +52,6 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL//, float3 sha
 	pso.color = cb_materialColor;
 #endif
 	clip(pso.color.a - 0.0039f);
-	pso.position = float4(worldPos, cb_specularIntensity);
 
 #ifdef _TEX_NORMAL
 	pso.normal.rgb = lerp(worldPos,
@@ -67,10 +65,10 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL//, float3 sha
 
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr, tc);
-	pso.specular = float4(specularTex.rgb, 1.0f);
+	pso.specular = float4(specularTex.rgb * cb_specularIntensity, 1.0f);
 	pso.normal.a = cb_useSpecularPowerAlpha ? GetSampledSpecularPower(specularTex) : cb_specularPower;
 #else
-	pso.specular = float4(cb_specularColor, 1.0f);
+	pso.specular = float4(cb_specularColor * cb_specularIntensity, 1.0f);
 	pso.normal.a = cb_specularPower;
 #endif
 	return pso;

@@ -9,6 +9,7 @@ namespace Camera
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
+			layout.Add(DCBElementType::Matrix, "inverseViewProjection");
 			layout.Add(DCBElementType::Float3, "cameraPos");
 			initNeeded = false;
 		}
@@ -20,6 +21,12 @@ namespace Camera
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixPerspectiveFovLH(projection.fov, projection.screenRatio, projection.nearClip, projection.farClip);
 		DirectX::XMStoreFloat4x4(&projectionMatrix, matrix);
 		return matrix;
+	}
+
+	void BaseCamera::UpdateBuffer() noexcept
+	{
+		DirectX::XMStoreFloat4x4(&cameraBuffer->GetBuffer()["inverseViewProjection"],
+			DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, GetView() * GetProjection())));
 	}
 
 	BaseCamera::BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,

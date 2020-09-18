@@ -43,17 +43,25 @@ float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight
 }
 
 float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, const in float3 pos, const in float3 normal, const in float attenuation,
-	const in float3 specularColor, const in float specularPower, uniform float specularIntensity)
+	const in float3 specularColor, const in float specularPower)
 {
 	// Halfway vector between directionToLight and directionToCamera
 	const float3 H = normalize(normalize(cameraPos - pos) + directionToLight);
-	return specularColor * (attenuation * specularIntensity * pow(saturate(dot(normal, H)), specularPower));
+	return specularColor * (attenuation * pow(saturate(dot(normal, H)), specularPower));
 }
 
 float GetSampledSpecularPower(const in float4 specularData)
 {
 	// https://gamedev.stackexchange.com/questions/74879/specular-map-what-about-the-specular-reflections-highlight-size
 	return pow(2.0f, specularData.a * 13.0f);
+}
+
+float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform matrix inverseViewProjection)
+{
+	const float x = texCoord.x * 2.0f - 1.0f;
+	const float y = (1.0f - texCoord.y) * 2.0f - 1.0f;
+	const float4 pos = mul(float4(x, y, depth, 1.0f), inverseViewProjection);
+	return pos.xyz / pos.w;
 }
 
 float GetShadowLevel(const in float3 pos, uniform float3 lightPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)

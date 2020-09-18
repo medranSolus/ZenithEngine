@@ -7,7 +7,7 @@ namespace GFX::Pipeline::RenderPass
 	ShadowMapPass::ShadowMapPass(Graphics& gfx, const std::string& name)
 		: BindingPass(name), QueuePass(name)
 	{
-		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, DEPTH_TEXTURE_SIZE, 8U);
+		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, DEPTH_TEXTURE_SIZE, 7U);
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("depthMap", depthCube));
 		depthStencil = depthCube->GetBuffer(0);
 
