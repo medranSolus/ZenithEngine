@@ -4,13 +4,13 @@
 
 namespace GFX::Pipeline::RenderPass
 {
-	class LambertianPass : public Base::QueuePass
+	class LambertianDepthOptimizedPass : public Base::QueuePass
 	{
 		Camera::ICamera* mainCamera = nullptr;
 
 	public:
-		LambertianPass(Graphics& gfx, const std::string& name);
-		virtual ~LambertianPass() = default;
+		LambertianDepthOptimizedPass(Graphics& gfx, const std::string& name);
+		virtual ~LambertianDepthOptimizedPass() = default;
 
 		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
 

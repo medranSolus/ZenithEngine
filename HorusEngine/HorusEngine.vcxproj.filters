@@ -372,9 +372,6 @@
     <ClCompile Include="QueuePass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClCompile>
-    <ClCompile Include="LambertianPass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="Sink.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClCompile>
@@ -470,6 +467,12 @@
     </ClCompile>
     <ClCompile Include="DepthStencilShaderInput.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="LambertianClassicPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="LambertianDepthOptimizedPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1090,9 +1093,6 @@
     <ClInclude Include="Source.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClInclude>
-    <ClInclude Include="LambertianPass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
     <ClInclude Include="SourceDirectBuffer.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass\Base</Filter>
     </ClInclude>
@@ -1228,6 +1228,12 @@
     <ClInclude Include="ILight.h">
       <Filter>Header Files\GFX\Light</Filter>
     </ClInclude>
+    <ClInclude Include="LambertianDepthOptimizedPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="LambertianClassicPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1264,7 +1270,6 @@
     <None Include="LightCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
     </None>
-    <None Include="ShadowCBuffer.hlsli" />
     <None Include="TransformCBuffer.hlsli">
       <Filter>Shader Files\CBuffers</Filter>
     </None>

@@ -77,23 +77,29 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = std::make_unique<RenderPass::LambertianPass>(gfx, "lambertian");
+			auto pass = std::make_unique<RenderPass::LambertianDepthOptimizedPass>(gfx, "lambertianDepthOptimized");
 			pass->SetSinkLinkage("geometryBuffer", "clearGBuff.buffer");
 			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
+			auto pass = std::make_unique<RenderPass::LambertianClassicPass>(gfx, "lambertianClassic");
+			pass->SetSinkLinkage("geometryBuffer", "lambertianDepthOptimized.geometryBuffer");
+			pass->SetSinkLinkage("depthStencil", "lambertianDepthOptimized.depthStencil");
+			AppendPass(std::move(pass));
+		}
+		{
 			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
-			pass->SetSinkLinkage("geometryBuffer", "lambertian.geometryBuffer");
+			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
-			pass->SetSinkLinkage("depth", "lambertian.depth");
+			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::SkyboxPass>(gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
 			pass->SetSinkLinkage("renderTarget", "lighting.renderTarget");
-			pass->SetSinkLinkage("depthStencil", "lambertian.depthStencil");
+			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
@@ -133,7 +139,8 @@ namespace GFX::Pipeline
 	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
 	{
 		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindCamera(camera);
-		dynamic_cast<RenderPass::LambertianPass&>(FindPass("lambertian")).BindCamera(camera);
+		dynamic_cast<RenderPass::LambertianDepthOptimizedPass&>(FindPass("lambertianDepthOptimized")).BindCamera(camera);
+		dynamic_cast<RenderPass::LambertianClassicPass&>(FindPass("lambertianClassic")).BindCamera(camera);
 		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).BindCamera(camera);
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}

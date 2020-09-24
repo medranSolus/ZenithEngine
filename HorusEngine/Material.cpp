@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "GfxResources.h"
+#include "Math.h"
 
 namespace GFX::Visual
 {
@@ -11,6 +12,7 @@ namespace GFX::Visual
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		AddBind(Resource::Rasterizer::Get(gfx, false));
+		AddBind(Resource::Blender::Get(gfx, false));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
@@ -21,6 +23,7 @@ namespace GFX::Visual
 
 	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
 	{
+		translucent = Math::NotEquals(color.col.w, 1.0f);
 		AddBind(Resource::Rasterizer::Get(gfx, false));
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS"));
@@ -41,7 +44,7 @@ namespace GFX::Visual
 		cbuffer["specularColor"] = std::move(Data::ColorFloat3(1.0f, 1.0f, 1.0f));
 		cbuffer["specularIntensity"] = 0.9f;
 		cbuffer["specularPower"] = 40.0f;
-		cbuffer["materialColor"] = std::move(Data::ColorFloat4(0.6f, 0.5f, 0.4f));
+		cbuffer["materialColor"] = std::move(color);
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
 	}
 
@@ -51,7 +54,6 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color3, "specularColor");
 		cbufferLayout.Add(DCBElementType::Float, "specularIntensity");
 		cbufferLayout.Add(DCBElementType::Float, "specularPower");
-		bool hasAlpha = false;
 		bool hasTexture = false;
 		aiString texFile;
 		std::string shaderCodePS = "PhongPS";
@@ -64,7 +66,7 @@ namespace GFX::Visual
 		{
 			hasTexture = true;
 			diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 0U, true);
-			hasAlpha = diffuseTexture->HasAlpha();
+			translucent = diffuseTexture->HasAlpha();
 			shaderCodePS += "Texture";
 			shaderCodeVS += "Texture";
 			vertexLayout->Append(VertexAttribute::Texture2D);
@@ -94,7 +96,7 @@ namespace GFX::Visual
 		}
 
 		// Common elements
-		AddBind(Resource::Rasterizer::Get(gfx, hasAlpha)); // TODO: Better way to check for double sided meshes (and transparent too)
+		AddBind(Resource::Rasterizer::Get(gfx, translucent)); // TODO: Better way to check for double sided meshes
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);

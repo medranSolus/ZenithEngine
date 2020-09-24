@@ -8,6 +8,7 @@ namespace GFX::Visual
 {
 	class Material : public IVisual
 	{
+		bool translucent = false;
 		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
 		std::shared_ptr<Resource::Texture> normalMap = nullptr;
 		std::shared_ptr<Resource::Texture> specularMap = nullptr;
@@ -22,6 +23,7 @@ namespace GFX::Visual
 		Material& operator=(const Material&) = default;
 		virtual ~Material() = default;
 
+		constexpr bool IsTranslucent() const noexcept { return translucent; }
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }

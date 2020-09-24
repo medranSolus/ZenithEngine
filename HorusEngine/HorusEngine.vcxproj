@@ -308,7 +308,8 @@
     <ClCompile Include="Job.cpp" />
     <ClCompile Include="JobData.cpp" />
     <ClCompile Include="Keyboard.cpp" />
-    <ClCompile Include="LambertianPass.cpp" />
+    <ClCompile Include="LambertianClassicPass.cpp" />
+    <ClCompile Include="LambertianDepthOptimizedPass.cpp" />
     <ClCompile Include="LightingPass.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Math.cpp" />
@@ -624,6 +625,8 @@
     <ClInclude Include="IShape.h" />
     <ClInclude Include="JobData.h" />
     <ClInclude Include="IRenderTarget.h" />
+    <ClInclude Include="LambertianClassicPass.h" />
+    <ClInclude Include="LambertianDepthOptimizedPass.h" />
     <ClInclude Include="LightingPass.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
@@ -697,7 +700,6 @@
     <ClInclude Include="IObject.h" />
     <ClInclude Include="Job.h" />
     <ClInclude Include="Keyboard.h" />
-    <ClInclude Include="LambertianPass.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Mesh.h" />

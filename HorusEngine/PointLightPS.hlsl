@@ -21,14 +21,15 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	const float4 color = colorTex.Sample(splr, tc);
 	const float4 specularData = specularTex.Sample(splr, tc);
 
+	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr, tc).x, cb_inverseViewProjection);
+	const float shadowLevel = GetShadowLevel(position, cb_lightPos, shadowSplr, shadowMap);
+
 	if (specularData.a == 1.0f)
 	{
-		const float3 position = GetWorldPosition(tc, depthMap.Sample(splr, tc).x, cb_inverseViewProjection);
 		const float4 normal = normalTex.Sample(splr, tc);
 		LightVectorData lightVD = GetLightVectorData(cb_lightPos, position.rgb);
 
 		// Shadow test
-		const float shadowLevel = GetShadowLevel(position, cb_lightPos, shadowSplr, shadowMap);
 		float3 diffuse, specular;
 		if (shadowLevel != 0.0f)
 		{
@@ -48,5 +49,5 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 		return float4(saturate(diffuse + cb_ambientColor) * color.rgb + specular, color.a);
 	}
 	else
-		return color;
+		return float4(lerp(cb_shadowColor, color.rgb, shadowLevel), color.a);
 }
