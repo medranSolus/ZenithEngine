@@ -145,6 +145,12 @@
     <Filter Include="Shader Files\Pixel Shaders\Lights">
       <UniqueIdentifier>{5c50600f-3c8e-4ded-b95e-3f138553ccd2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Vertex Shaders\Shadow Extensions">
+      <UniqueIdentifier>{ba60a858-52d8-4569-b054-0eed964889c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\Shadow Extensions">
+      <UniqueIdentifier>{49d9ae57-b731-4383-969b-838faa198f35}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -541,6 +547,12 @@
     </FxCompile>
     <FxCompile Include="ShadowPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTexture.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowPSTexture.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

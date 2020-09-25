@@ -96,7 +96,7 @@ namespace GFX::Visual
 		}
 
 		// Common elements
-		AddBind(Resource::Rasterizer::Get(gfx, translucent)); // TODO: Better way to check for double sided meshes
+		AddBind(Resource::Rasterizer::Get(gfx, !translucent)); // TODO: Better way to check for double sided meshes
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);

@@ -29,7 +29,7 @@ namespace GFX::Shape
 		auto material = std::make_shared<Visual::Material>(gfx, color, typeName + name);
 		auto dimmedMaterial = std::make_shared<Visual::Material>(gfx, color * 0.75f, typeName + name + "Dim");
 
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, std::make_shared<Data::VertexLayout>()));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, material));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeWireframe(graph, std::move(dimmedMaterial)));
 		SetTechniques(gfx, std::move(techniques), *this);

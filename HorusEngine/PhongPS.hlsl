@@ -35,7 +35,7 @@ struct PSOut
 	float4 normal : SV_TARGET2;   // RGB - normal, A - power
 };
 
-PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL//, float3 shadowPos : SHADOW_POSITION
+PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL

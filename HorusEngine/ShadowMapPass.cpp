@@ -29,7 +29,6 @@ namespace GFX::Pipeline::RenderPass
 		biasBuffer->GetBuffer()["size"] = DEPTH_TEXTURE_SIZE;
 		biasBuffer->GetBuffer()["bias"] = 2.0f;
 		AddBind(GFX::Resource::ShadowRasterizer::Get(gfx, 40, 5.0f, 0.1f));
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "ShadowPS"));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
 

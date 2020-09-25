@@ -24,10 +24,10 @@ namespace GFX::Pipeline
 		return std::move(technique);
 	}
 
-	std::shared_ptr<Technique> TechniqueFactory::MakeShadowMap(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Data::VertexLayout> layout)
+	std::shared_ptr<Technique> TechniqueFactory::MakeShadowMap(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Visual::Material> material)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Shadow Map", RenderChannel::Shadow);
-		technique->AddStep({ graph, "lighting.shadowMap", std::make_shared<Visual::ShadowMap>(gfx, layout) });
+		technique->AddStep({ graph, "lighting.shadowMap", std::make_shared<Visual::ShadowMap>(gfx, material) });
 		return std::move(technique);
 	}
 

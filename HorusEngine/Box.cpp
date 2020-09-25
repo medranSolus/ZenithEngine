@@ -27,7 +27,7 @@ namespace GFX::Shape
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
 		auto vertexLayout = material->GerVertexLayout();
 
-		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, vertexLayout));
+		techniques.emplace_back(Pipeline::TechniqueFactory::MakeShadowMap(gfx, graph, material));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineScale(gfx, graph, name, std::move(vertexLayout)));
 		SetTechniques(gfx, std::move(techniques), *this);

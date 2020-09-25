@@ -28,6 +28,7 @@ namespace GFX::Visual
 		inline bool IsNormalMap() const noexcept { return normalMap != nullptr; }
 		inline bool IsSpecularMap() const noexcept { return specularMap != nullptr; }
 
+		inline std::shared_ptr<Resource::Texture> GetTexture() noexcept { return diffuseTexture; }
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }
