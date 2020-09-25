@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "TechniqueFactory.h"
+#include "Math.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include <filesystem>
@@ -65,14 +66,42 @@ namespace GFX::Shape
 		: name(modelName)
 	{
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
-			aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace);
+		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
+		importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+			aiComponent_COLORS | aiComponent_CAMERAS | aiComponent_ANIMATIONS | aiComponent_LIGHTS);
+		// aiProcess_FindInstances <- takes a while??
+		// aiProcess_GenBoundingBoxes ??? No info
+		const aiScene* scene = importer.ReadFile(file,
+			aiProcess_ConvertToLeftHanded |
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_RemoveComponent |
+			aiProcess_GenSmoothNormals |
+			aiProcess_CalcTangentSpace |
+			aiProcess_GenUVCoords |
+			aiProcess_TransformUVCoords |
+			aiProcess_SortByPType |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_FindInvalidData |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_ValidateDataStructure |
+			//aiProcess_OptimizeGraph | // Use when disabling all scene edition, for almost 2x performance hit
+			aiProcess_OptimizeMeshes);
 		if (!scene)
 			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
 
 		meshes.reserve(scene->mNumMeshes);
 		materials.reserve(scene->mNumMaterials);
-		std::string path = std::filesystem::path(file).remove_filename().string();
+		std::filesystem::path filePath(file);
+		bool flipYZ = filePath.extension().string() == ".3ds";
+		if (flipYZ) // Fix for incorrect format with YZ coords
+		{
+			float temp = scene->mRootNode->mTransformation.b2;
+			scene->mRootNode->mTransformation.b2 = -scene->mRootNode->mTransformation.b3;
+			scene->mRootNode->mTransformation.b3 = temp;
+			std::swap(scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.c3);
+		}
+		std::string path = filePath.remove_filename().string();
 		for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
 			materials.emplace_back(std::make_shared<Visual::Material>(gfx, *scene->mMaterials[i], path));
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
@@ -81,6 +110,8 @@ namespace GFX::Shape
 		root = ParseNode(*scene->mRootNode, startID);
 		root->SetScale(scale);
 		root->SetPos(position);
+		if (flipYZ)
+			root->SetAngle({ M_PI_2, 0.0f, 0.0f });
 	}
 
 	void Model::SetOutline() noexcept
