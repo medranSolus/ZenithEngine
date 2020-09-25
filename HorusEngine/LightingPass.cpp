@@ -18,11 +18,10 @@ namespace GFX::Pipeline::RenderPass
 
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
-		AddBind(GFX::Resource::ShadowSampler::Get(gfx));
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "PointLightPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, true));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::DepthOff));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, false));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, false));
 	}
 
 	void LightingPass::Reset() noexcept

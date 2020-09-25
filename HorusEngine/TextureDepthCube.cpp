@@ -1,5 +1,5 @@
 #include "TextureDepthCube.h"
-#include "DepthStencil.h"
+#include "RenderTarget.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
@@ -18,7 +18,7 @@ namespace GFX::Resource
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
+		textureDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET;
 		textureDesc.CPUAccessFlags = 0;
 		textureDesc.MiscFlags = D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_TEXTURECUBE;
 
@@ -33,6 +33,6 @@ namespace GFX::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
 
 		for (UINT i = 0; i < 6; ++i)
-			depthBuffers.emplace_back(std::make_unique<Pipeline::Resource::DepthStencil>(gfx, texture, size, i));
+			depthBuffers.emplace_back(std::make_unique<Pipeline::Resource::RenderTarget>(gfx, texture, size, i));
 	}
 }

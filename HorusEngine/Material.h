@@ -24,6 +24,10 @@ namespace GFX::Visual
 		virtual ~Material() = default;
 
 		constexpr bool IsTranslucent() const noexcept { return translucent; }
+		inline bool IsTexture() const noexcept { return diffuseTexture != nullptr; }
+		inline bool IsNormalMap() const noexcept { return normalMap != nullptr; }
+		inline bool IsSpecularMap() const noexcept { return specularMap != nullptr; }
+
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { pixelBuffer->Accept(gfx, probe); }

@@ -18,7 +18,6 @@
 #include "Rasterizer.h"
 #include "Sampler.h"
 #include "ShadowRasterizer.h"
-#include "ShadowSampler.h"
 #include "Texture.h"
 #include "TextureCube.h"
 #include "TextureDepthCube.h"

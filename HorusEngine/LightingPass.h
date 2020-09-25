@@ -15,6 +15,7 @@ namespace GFX::Pipeline::RenderPass
 		virtual ~LightingPass() = default;
 
 		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
+		inline void ShowWindow(Graphics& gfx) { shadowMapPass->ShowWindow(gfx); }
 
 		void Reset() noexcept override;
 		Base::BasePass& GetInnerPass(std::deque<std::string> nameChain) override;

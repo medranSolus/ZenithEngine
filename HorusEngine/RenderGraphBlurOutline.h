@@ -30,6 +30,6 @@ namespace GFX::Pipeline
 
 		void BindMainCamera(Camera::ICamera& camera);
 		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);
-		void ShowWindow() noexcept;
+		void ShowWindow(Graphics& gfx);
 	};
 }

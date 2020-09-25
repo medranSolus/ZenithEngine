@@ -23,7 +23,7 @@ float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in floa
 			normalize(tan),
 			normalize(bitan),
 			normalize(normal)
-		);
+			);
 	// Sample normal to tangent space
 	const float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
 	// Transform from tangent into view space
@@ -64,29 +64,28 @@ float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform 
 	return pos.xyz / pos.w;
 }
 
-float GetShadowLevel(const in float3 pos, uniform float3 lightPos, uniform SamplerComparisonState shadowSplr, uniform TextureCube shadowMap)
+float GetShadowLevel(const in float3 pos, const in float3 normal, const in float3 directionToLight,
+	uniform float3 lightPos, uniform SamplerState shadowSplr, uniform TextureCube shadowMap)
 {
+	float size;
+	shadowMap.GetDimensions(size, size);
 	const float3 shadowPos = pos - lightPos;
-	const float len = sqrt(length(shadowPos));
-	return shadowMap.SampleCmpLevelZero(shadowSplr, shadowPos, len / (len + 1.0f));
+	const float slope = dot(normal, directionToLight);
+	float shadowLength = length(shadowPos) - 0.02f * sqrt(1.0f - slope * slope) / slope;
+	float level = 0.0f;
 
-	//return saturate(1.0f - exp(e_x)); //exp(30.0f * (saturate(length(shadowPos) / 1000.0f) - shadowMap.Sample(shadowSplr, shadowPos).x));
-	//const float3 shadowUVZ = shadowPos.xyz / shadowPos.w; // Perspecitve divide
-	//float level = 0.0f;
-	//if (shadowUVZ.z > 1.0f || shadowUVZ.z < 0.0f)
-	//	level = 1.0f;
-	//else
-	//{
-	//	// PCF anti-aliasing https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
-	//	static const int PCF_RANGE = 2;
-	//	[unroll]
-	//	for (int x = -PCF_RANGE; x <= PCF_RANGE; ++x)
-	//	{
-	//		[unroll]
-	//		for (int y = -PCF_RANGE; y <= PCF_RANGE; ++y)
-	//			level += shadowMap.SampleCmpLevelZero(shadowSplr, shadowUVZ.xy, shadowUVZ.z, int2(x, y)); // Hardware comparison (hardware PCF 2x2 grid)
-	//	}
-	//	level /= (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
-	//}
-	//return level;
+	static const int MSAA_RANGE = 3;
+	[unroll]
+	for (int x = -MSAA_RANGE; x <= MSAA_RANGE; ++x)
+	{
+		[unroll]
+		for (int y = -MSAA_RANGE; y <= MSAA_RANGE; ++y)
+		{
+			[unroll]
+			for (int z = -MSAA_RANGE; z <= MSAA_RANGE; ++z)
+				level += saturate(exp(30.0f * (shadowMap.Sample(shadowSplr, shadowPos + float3(x, y, z) / size).x - shadowLength)));
+		}
+	}
+
+	return level / ((MSAA_RANGE * 2 + 1) * (MSAA_RANGE * 2 + 1) * (MSAA_RANGE * 2 + 1));
 }

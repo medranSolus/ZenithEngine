@@ -33,7 +33,7 @@ namespace GFX::Pipeline
 
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
-		kernelLayout.Add(DCBElementType::Integer, "radius");
+		kernelLayout.Add(DCBElementType::SInteger, "radius");
 		kernelLayout.Add(DCBElementType::Array, "coefficients");
 		kernelLayout["coefficients"].InitArray(DCBElementType::Float, MAX_RADIUS + 1);
 		Data::CBuffer::DynamicCBuffer kernelBuffer(std::move(kernelLayout));
@@ -152,10 +152,12 @@ namespace GFX::Pipeline
 		SetKernel();
 	}
 
-	void RenderGraphBlurOutline::ShowWindow() noexcept
+	void RenderGraphBlurOutline::ShowWindow(Graphics& gfx)
 	{
 		ImGui::Text("Blur Control");
 		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
 			SetKernel();
+		ImGui::NewLine();
+		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).ShowWindow(gfx);
 	}
 }

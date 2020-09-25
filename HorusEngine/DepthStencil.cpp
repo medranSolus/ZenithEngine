@@ -27,23 +27,6 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
-	DepthStencil::DepthStencil(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face)
-		: IBufferResource(gfx, size, size)
-	{
-		GFX_ENABLE_ALL(gfx);
-		D3D11_TEXTURE2D_DESC depthTexDesc;
-		texture->GetDesc(&depthTexDesc);
-
-		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
-		depthViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
-		depthViewDesc.Flags = 0U;
-		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		depthViewDesc.Texture2DArray.MipSlice = 0U;
-		depthViewDesc.Texture2DArray.ArraySize = 1U;
-		depthViewDesc.Texture2DArray.FirstArraySlice = face;
-		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(texture.Get(), &depthViewDesc, &depthStencilView));
-	}
-
 	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage)
 		: IBufferResource(gfx, width, height)
 	{

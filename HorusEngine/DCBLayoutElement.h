@@ -8,7 +8,8 @@
 // List of leaf element types names. Each name have invocation of macro X() on it. Define your X() macro for various behavior in code.
 #define LEAF_ELEMENT_TYPES \
 	X(Bool) \
-	X(Integer) \
+	X(SInteger) \
+	X(UInteger) \
 	X(Float) \
 	X(Float2) \
 	X(Float3) \
@@ -51,11 +52,18 @@ namespace GFX::Data::CBuffer
 		static constexpr const char* code = "BL";
 		static constexpr bool valid = true;
 	};
-	template<> struct Map<ElementType::Integer>
+	template<> struct Map<ElementType::SInteger>
 	{
-		using DataType = int;
+		using DataType = int32_t;
 		static constexpr size_t hlslSize = sizeof(DataType);
-		static constexpr const char* code = "I1";
+		static constexpr const char* code = "S1";
+		static constexpr bool valid = true;
+	};
+	template<> struct Map<ElementType::UInteger>
+	{
+		using DataType = uint32_t;
+		static constexpr size_t hlslSize = sizeof(DataType);
+		static constexpr const char* code = "U1";
 		static constexpr bool valid = true;
 	};
 	template<> struct Map<ElementType::Float>

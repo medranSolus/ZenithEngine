@@ -426,9 +426,6 @@
     <ClCompile Include="ShadowMap.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
-    <ClCompile Include="ShadowSampler.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="IBufferResource.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
@@ -541,6 +538,9 @@
     </FxCompile>
     <FxCompile Include="LightVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1174,9 +1174,6 @@
     <ClInclude Include="ShadowMap.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
-    <ClInclude Include="ShadowSampler.h">
-      <Filter>Header Files\GFX\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="ShadowRasterizer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -1275,9 +1272,6 @@
     </None>
     <None Include="UtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders</Filter>
-    </None>
-    <None Include="ShadowCBuffer.hlsli">
-      <Filter>Shader Files\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

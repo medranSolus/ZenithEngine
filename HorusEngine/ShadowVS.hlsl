@@ -5,13 +5,19 @@ cbuffer CameraBuffer : register (b1)
 	float3 cb_cameraPos;
 };
 
-float4 main(float3 pos : POSITION) : SV_POSITION
+struct VSOut
 {
+	float3 length : LENGTH;
+	float4 pos : SV_POSITION;
+};
+
+VSOut main(float3 pos : POSITION)
+{
+	VSOut vso;
 	// Vertex position relative to camera
-	float4 position = mul(float4(pos, 1.0f), cb_transformViewProjection);
-	// Depth is linear length from light, not just Z (premultiply by .w so no perspective divide)
+	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
+
 	const float3 worldPos = mul(float4(pos, 1.0f), cb_transform).xyz;
-	const float len = sqrt(length(worldPos - cb_cameraPos));
-	position.z = len / (len + 1.0f) * position.w;
-	return position;
+	vso.length = length(worldPos - cb_cameraPos);
+	return vso;
 }

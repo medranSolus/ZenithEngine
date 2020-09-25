@@ -35,6 +35,20 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 	}
 
+	RenderTarget::RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face)
+		: IRenderTarget(gfx, size, size)
+	{
+		GFX_ENABLE_ALL(gfx);
+
+		D3D11_RENDER_TARGET_VIEW_DESC targetViewDesc = {};
+		targetViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
+		targetViewDesc.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		targetViewDesc.Texture2DArray.MipSlice = 0U;
+		targetViewDesc.Texture2DArray.ArraySize = 1U;
+		targetViewDesc.Texture2DArray.FirstArraySlice = face;
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
+	}
+
 	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height)
 		: IRenderTarget(gfx, width, height)
 	{

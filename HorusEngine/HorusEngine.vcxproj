@@ -339,7 +339,6 @@
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
     <ClCompile Include="ShadowRasterizer.cpp" />
-    <ClCompile Include="ShadowSampler.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SkyboxPass.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
@@ -461,6 +460,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="PointLightPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="ShadowPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -726,7 +731,6 @@
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="ShadowMapPass.h" />
     <ClInclude Include="ShadowRasterizer.h" />
-    <ClInclude Include="ShadowSampler.h" />
     <ClInclude Include="Sink.h" />
     <ClInclude Include="SinkContainerBindable.h" />
     <ClInclude Include="SinkDirectBindable.h" />
