@@ -10,7 +10,6 @@ namespace GFX::Pipeline::RenderPass
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
-			layout.Add(DCBElementType::UInteger, "size");
 			layout.Add(DCBElementType::Float, "bias");
 			initNeeded = false;
 		}
@@ -26,8 +25,7 @@ namespace GFX::Pipeline::RenderPass
 
 		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(ShadowMapPass).name(), 1U);
 		biasBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(ShadowMapPass).name(), MakeLayout(), 1U);
-		biasBuffer->GetBuffer()["size"] = DEPTH_TEXTURE_SIZE;
-		biasBuffer->GetBuffer()["bias"] = 2.0f;
+		biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 		AddBind(GFX::Resource::ShadowRasterizer::Get(gfx, 40, 5.0f, 0.1f));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, false));
@@ -80,8 +78,8 @@ namespace GFX::Pipeline::RenderPass
 	void ShadowMapPass::ShowWindow(Graphics& gfx)
 	{
 		ImGui::Text("Shadows");
-		float bias = biasBuffer->GetBufferConst()["bias"];
-		if (ImGui::DragFloat("Depth bias", &bias))
-			biasBuffer->GetBuffer()["bias"] = bias;
+		int bias = static_cast<int>(static_cast<float>(biasBuffer->GetBufferConst()["bias"]));
+		if (ImGui::DragInt("Depth bias", &bias))
+			biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 	}
 }

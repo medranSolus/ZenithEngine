@@ -9,6 +9,7 @@ namespace GFX::Pipeline::Resource
 		std::unique_ptr<ID3D11RenderTargetView* []> targetsArray = nullptr;
 		std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureViews;
 		std::unique_ptr<ID3D11ShaderResourceView* []> texturesArray = nullptr;
+		std::unique_ptr<ID3D11ShaderResourceView* []> nullTexturesArray = nullptr;
 		UINT slot;
 		UINT count;
 
@@ -22,7 +23,7 @@ namespace GFX::Pipeline::Resource
 		inline void BindTarget(Graphics& gfx, DepthStencil& depthStencil) override { GetContext(gfx)->OMSetRenderTargets(count, targetsArray.get(), depthStencil.depthStencilView.Get()); BindViewport(gfx); }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, count, texturesArray.get()); }
-		inline void Unbind(Graphics& gfx) noexcept override { UnbindAll(gfx); GetContext(gfx)->PSSetShaderResources(slot, count, nullShaderResource.GetAddressOf()); }
+		inline void Unbind(Graphics& gfx) noexcept override { UnbindAll(gfx); GetContext(gfx)->PSSetShaderResources(slot, count, nullTexturesArray.get()); }
 
 		void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept override;
 		Surface ToSurface(Graphics& gfx) const override;

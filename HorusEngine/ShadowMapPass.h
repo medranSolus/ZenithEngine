@@ -11,6 +11,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		static constexpr UINT DEPTH_TEXTURE_SIZE = 1024U;
 
+		int bias = 2;
 		Light::ILight* shadowSource = nullptr;
 		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> biasBuffer;

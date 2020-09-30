@@ -3,7 +3,7 @@
 
 inline void App::ProcessInput()
 {
-	cameras->ProcessInput(window);
+	cameras.ProcessInput(window);
 	while (window.Keyboard().IsKeyReady())
 	{
 		if (auto opt = window.Keyboard().ReadKey())
@@ -33,7 +33,7 @@ inline void App::ShowObjectWindow()
 	static GFX::Probe::ModelProbe probe;
 	if (ImGui::Begin("Object options"))
 	{
-		static std::map<std::string, std::shared_ptr<GFX::IObject>>::iterator currentItem = objects.find("---None---");
+		static std::map<std::string, GFX::IObject*>::iterator currentItem = objects.find("---None---");
 		if (ImGui::BeginCombo("Selected object", currentItem->first.c_str()))
 		{
 			for (auto it = objects.begin(); it != objects.end(); ++it)
@@ -66,17 +66,23 @@ inline void App::ShowOptionsWindow()
 	if (ImGui::Begin("Options"))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		cameras->Accept(window.Gfx(), probe);
+		cameras.Accept(window.Gfx(), probe);
 		ImGui::NewLine();
 		renderer.ShowWindow(window.Gfx());
 	}
 	ImGui::End();
 }
 
-inline void App::AddShape(std::shared_ptr<GFX::IObject> shape)
+inline void App::AddShape(std::shared_ptr<GFX::Shape::IShape> shape)
 {
 	shapes.emplace_back(shape);
-	objects.emplace(shape->GetName(), shape);
+	objects.emplace(shape->GetName(), shape.get());
+}
+
+inline void App::AddShape(GFX::Shape::Model&& model)
+{
+	objects.emplace(model.GetName(), &model);
+	models.emplace_back(std::forward<GFX::Shape::Model&&>(model));
 }
 
 void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
@@ -112,33 +118,32 @@ void App::MakeFrame()
 	ShowObjectWindow();
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
-	renderer.BindMainCamera(cameras->GetCamera());
-	cameras->Submit(RenderChannel::Main);
-	pointLight->Submit(RenderChannel::Main | RenderChannel::Light);
+	renderer.BindMainCamera(cameras.GetCamera());
+	cameras.Submit(RenderChannel::Main);
+	pointLight.Submit(RenderChannel::Main | RenderChannel::Light);
+	for (auto& model : models)
+		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& shape : shapes)
-		if (shape)
-			shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
-	for (auto& obj : carpetRects)
-		obj->Submit(RenderChannel::Main);
+		shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
 	renderer.Execute(window.Gfx());
 	renderer.Reset();
 	window.Gfx().EndFrame();
 }
 
-App::App(const std::string& commandLine) : window(1600, 900, WINDOW_TITLE), renderer(window.Gfx())
+App::App(const std::string& commandLine)
+	: window(1600, 900, WINDOW_TITLE), renderer(window.Gfx()),
+	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1", 1.047f, 0.01f, VIEW_DISTANCE, 90, 0, DirectX::XMFLOAT3(-8.0f, 0.0f, 0.0f))),
+	pointLight(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight")
 {
-	objects.emplace("---None---", nullptr);
-	cameras = std::make_unique<Camera::CameraPool>(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1",
-		1.047f, 0.01f, VIEW_DISTANCE, 90, 0, DirectX::XMFLOAT3(-8.0f, 0.0f, 0.0f)));
-	/*cameras->AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
-		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));*/
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
-	pointLight = std::make_shared<GFX::Light::PointLight>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight");
-	objects.emplace(pointLight->GetName(), pointLight);
+	objects.emplace("---None---", nullptr);
+	objects.emplace(pointLight.GetName(), &pointLight);
+	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
+		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	//std::mt19937_64 engine(std::random_device{}());
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f));
-	AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f));
+	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });
+	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f });
+	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -2.0f, 3.0f), "Sting Sword", 0.5f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));

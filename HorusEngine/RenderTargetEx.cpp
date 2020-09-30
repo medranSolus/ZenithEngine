@@ -35,6 +35,7 @@ namespace GFX::Pipeline::Resource
 		targetsArray = std::make_unique<ID3D11RenderTargetView* []>(count);
 		textureViews.resize(count);
 		texturesArray = std::make_unique<ID3D11ShaderResourceView* []>(count);
+		nullTexturesArray = std::make_unique<ID3D11ShaderResourceView* []>(count);
 		for (UINT i = 0U; i < count; ++i)
 		{
 			textureDesc.Format = formats.at(i);

@@ -7,8 +7,7 @@
 
 namespace GFX::Shape
 {
-	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path,
-		aiMesh& mesh, std::vector<std::shared_ptr<Visual::Material>>& materials)
+	std::shared_ptr<Mesh> Model::ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh)
 	{
 		// Maybe layout code needed too, TODO: Check this
 		std::string meshID = std::to_string(mesh.mNumFaces) + std::string(mesh.mName.C_Str()) + std::to_string(mesh.mNumVertices) + "#";
@@ -105,13 +104,23 @@ namespace GFX::Shape
 		for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
 			materials.emplace_back(std::make_shared<Visual::Material>(gfx, *scene->mMaterials[i], path));
 		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(gfx, graph, path, *scene->mMeshes[i], materials));
+			meshes.emplace_back(ParseMesh(gfx, graph, path, *scene->mMeshes[i]));
 		unsigned long long startID = 0ULL;
 		root = ParseNode(*scene->mRootNode, startID);
 		root->SetScale(scale);
 		root->SetPos(position);
 		if (flipYZ)
 			root->SetAngle({ M_PI_2, 0.0f, 0.0f });
+	}
+
+	Model& Model::operator=(Model&& model) noexcept
+	{
+		name = std::move(model.name);
+		root = std::move(model.root);
+		meshes = std::move(model.meshes);
+		materials = std::move(model.materials);
+		isOutline = model.isOutline;
+		return *this;
 	}
 
 	void Model::SetOutline() noexcept

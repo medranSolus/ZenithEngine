@@ -7,7 +7,7 @@ cbuffer CameraBuffer : register (b1)
 
 struct VSOut
 {
-	float length : LENGTH;
+	float3 lightToVertex : VECTOR;
 #ifdef _TEX
 	float2 tc : TEXCOORD;
 #endif
@@ -25,7 +25,7 @@ VSOut main(float3 pos : POSITION
 	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
 
 	const float3 worldPos = mul(float4(pos, 1.0f), cb_transform).xyz;
-	vso.length = length(worldPos - cb_cameraPos);
+	vso.lightToVertex = worldPos - cb_cameraPos;
 
 #ifdef _TEX
 	vso.tc = tc;

@@ -13,17 +13,19 @@ class App
 
 	WinAPI::Window window;
 	GFX::Pipeline::RenderGraphBlurOutline renderer;
+	Camera::CameraPool cameras;
 	Timer timer;
-	std::unique_ptr<Camera::CameraPool> cameras = nullptr;
-	std::shared_ptr<GFX::Light::PointLight> pointLight = nullptr;
-	std::vector< std::shared_ptr<GFX::IObject>> shapes;
-	std::map<std::string, std::shared_ptr<GFX::IObject>> objects;
+	GFX::Light::PointLight pointLight;
+	std::vector<GFX::Shape::Model> models;
+	std::vector<std::shared_ptr<GFX::Shape::IShape>> shapes;
+	std::map<std::string, GFX::IObject*> objects;
 	std::vector<std::unique_ptr<GFX::Shape::SolidRectangle>> carpetRects;
 
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
 	inline void ShowOptionsWindow();
-	inline void AddShape(std::shared_ptr<GFX::IObject> shape);
+	inline void AddShape(std::shared_ptr<GFX::Shape::IShape> shape);
+	inline void AddShape(GFX::Shape::Model&& model);
 	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 	void MakeFrame();
 

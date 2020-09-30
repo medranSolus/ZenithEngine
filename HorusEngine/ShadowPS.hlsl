@@ -1,6 +1,5 @@
 cbuffer BiasBuffer : register(b1)
 {
-	uint cb_size;
 	float cb_bias;
 };
 
@@ -9,7 +8,7 @@ SamplerState splr : register(s0);
 Texture2D tex : register(t0);
 #endif
 
-float main(float length : LENGTH
+float main(float3 lightToVertex : VECTOR
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #endif
@@ -18,5 +17,5 @@ float main(float length : LENGTH
 #ifdef _TEX
 	clip(tex.Sample(splr, tc).a - 0.0039f);
 #endif
-	return length + (cb_bias / cb_size);
+	return length(lightToVertex) + cb_bias;
 }

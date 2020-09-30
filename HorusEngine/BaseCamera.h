@@ -15,10 +15,10 @@ namespace Camera
 		mutable bool viewUpdate = true;
 		mutable bool projectionUpdate = true;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer = nullptr;
-		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
-		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 		bool enableIndicator = true;
 		bool enableFrustrum = false;
+		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
+		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 
 		static GFX::Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
