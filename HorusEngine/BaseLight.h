@@ -10,6 +10,11 @@ namespace GFX::Light
 		mutable std::shared_ptr<Shape::IShape> mesh = nullptr;
 
 	public:
+		BaseLight() = default;
+		BaseLight(BaseLight&& light) noexcept { *this = std::forward<BaseLight&&>(light); }
+		inline BaseLight& operator=(BaseLight&& light) noexcept { this->JobData::operator=(std::forward<JobData&&>(light)); mesh = std::move(light.mesh); return *this; }
+		virtual ~BaseLight() = default;
+
 		inline void SetOutline() noexcept override { mesh->SetOutline(); }
 		inline void DisableOutline() noexcept override { mesh->DisableOutline(); }
 

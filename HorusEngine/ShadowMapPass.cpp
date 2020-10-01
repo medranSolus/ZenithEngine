@@ -78,7 +78,6 @@ namespace GFX::Pipeline::RenderPass
 	void ShadowMapPass::ShowWindow(Graphics& gfx)
 	{
 		ImGui::Text("Shadows");
-		int bias = static_cast<int>(static_cast<float>(biasBuffer->GetBufferConst()["bias"]));
 		if (ImGui::DragInt("Depth bias", &bias))
 			biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 	}

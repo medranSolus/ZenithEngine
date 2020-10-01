@@ -8,6 +8,8 @@
 
 class App
 {
+	enum class Container { None, Model, Shape, PointLight };
+
 	static constexpr const char* WINDOW_TITLE = "Horus Engine Alpha";
 	static constexpr float VIEW_DISTANCE = 500.0f;
 
@@ -15,10 +17,10 @@ class App
 	GFX::Pipeline::RenderGraphBlurOutline renderer;
 	Camera::CameraPool cameras;
 	Timer timer;
-	GFX::Light::PointLight pointLight;
 	std::vector<GFX::Shape::Model> models;
 	std::vector<std::shared_ptr<GFX::Shape::IShape>> shapes;
-	std::map<std::string, GFX::IObject*> objects;
+	std::vector<GFX::Light::PointLight> pointLights;
+	std::map<std::string, std::pair<Container, size_t>> objects;
 	std::vector<std::unique_ptr<GFX::Shape::SolidRectangle>> carpetRects;
 
 	inline void ProcessInput();
@@ -26,6 +28,7 @@ class App
 	inline void ShowOptionsWindow();
 	inline void AddShape(std::shared_ptr<GFX::Shape::IShape> shape);
 	inline void AddShape(GFX::Shape::Model&& model);
+	inline void AddLight(GFX::Light::PointLight&& pointLight);
 	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 	void MakeFrame();
 
