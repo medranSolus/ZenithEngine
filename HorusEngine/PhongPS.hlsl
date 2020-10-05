@@ -30,9 +30,9 @@ Texture2D spec : register(t2);
 
 struct PSOut
 {
-	float4 color : SV_TARGET0;
-	float4 specular : SV_TARGET1; // RGB - color, A = 1.0f
-	float4 normal : SV_TARGET2;   // RGB - normal, A - power
+	float4 color : SV_TARGET0;    // RGB - color, A = 0.0f
+	float2 normal : SV_TARGET1;
+	float4 specular : SV_TARGET2; // RGB - color, A - power
 };
 
 PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
@@ -52,12 +52,13 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 	pso.color = cb_materialColor;
 #endif
 	clip(pso.color.a - 0.0039f);
+	pso.color.a = 0.0f;
 
 #ifdef _TEX_NORMAL
-	pso.normal.rgb = lerp(worldPos,
-		GetMappedNormal(worldTan, worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight);
+	pso.normal = EncodeNormal(lerp(worldPos,
+		GetMappedNormal(worldTan, worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight));
 #else
-	pso.normal.rgb = normalize(worldNormal);
+	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif
 	// Only for double sided objects
 	//if (dot(viewNormal, viewPos) >= 0.0f)
@@ -65,11 +66,10 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr, tc);
-	pso.specular = float4(specularTex.rgb * cb_specularIntensity, 1.0f);
-	pso.normal.a = cb_useSpecularPowerAlpha ? GetSampledSpecularPower(specularTex) : cb_specularPower;
+	pso.specular = float4(specularTex.rgb * cb_specularIntensity,
+		cb_useSpecularPowerAlpha ? specularTex.a : cb_specularPower);
 #else
-	pso.specular = float4(cb_specularColor * cb_specularIntensity, 1.0f);
-	pso.normal.a = cb_specularPower;
+	pso.specular = float4(cb_specularColor * cb_specularIntensity, cb_specularPower);
 #endif
 	return pso;
 }

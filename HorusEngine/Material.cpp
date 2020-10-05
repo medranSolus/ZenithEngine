@@ -43,7 +43,7 @@ namespace GFX::Visual
 
 		cbuffer["specularColor"] = std::move(Data::ColorFloat3(1.0f, 1.0f, 1.0f));
 		cbuffer["specularIntensity"] = 0.9f;
-		cbuffer["specularPower"] = 40.0f;
+		cbuffer["specularPower"] = 0.409f;
 		cbuffer["materialColor"] = std::move(color);
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
 	}
@@ -111,8 +111,15 @@ namespace GFX::Visual
 			cbuffer["specularColor"] = std::move(Data::ColorFloat3(1.0f, 1.0f, 1.0f));
 		if (material.Get(AI_MATKEY_SHININESS_STRENGTH, static_cast<float&>(cbuffer["specularIntensity"])) != aiReturn_SUCCESS)
 			cbuffer["specularIntensity"] = 0.9f;
-		if (material.Get(AI_MATKEY_SHININESS, static_cast<float&>(cbuffer["specularPower"])) != aiReturn_SUCCESS)
-			cbuffer["specularPower"] = 40.0f;
+		float specularPower;
+		if (material.Get(AI_MATKEY_SHININESS, specularPower) == aiReturn_SUCCESS)
+		{
+			if (specularPower > 1.0f)
+				specularPower = static_cast<float>(log(static_cast<double>(specularPower)) / log(8192.0));
+			cbuffer["specularPower"] = specularPower;
+		}
+		else
+			cbuffer["specularPower"] = 0.409f;
 		if (cbuffer["materialColor"].Exists())
 			if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(static_cast<Data::ColorFloat4&>(cbuffer["materialColor"]))) != aiReturn_SUCCESS)
 				cbuffer["materialColor"] = std::move(Data::ColorFloat4(0.0f, 0.8f, 1.0f));

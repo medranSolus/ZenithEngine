@@ -79,7 +79,7 @@ namespace GFX::Probe
 		}
 		if (auto power = buffer["specularPower"]; power.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.001f, 0.0f, 1.0f, "%.3f");
 		}
 		if (auto weight = buffer["normalMapWeight"]; weight.Exists())
 		{

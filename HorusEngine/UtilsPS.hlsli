@@ -14,6 +14,32 @@ LightVectorData GetLightVectorData(uniform float3 lightPos, const in float3 vert
 	return lvd;
 }
 
+// Encode normal into modified spherical coordinates
+float2 EncodeNormal(const in float3 normal)
+{
+	/*
+		phi = atan(y/x)
+		theta = z
+	*/
+	return float2(atan2(normal.y, normal.x) / 3.14159265f, normal.z) * 0.5f + 0.5f;
+}
+
+// Decode normal from modified spherical coordinates
+float3 DecodeNormal(const in float2 packedNormal)
+{
+	/*
+		x = sqrt(1 - z^2) * cos(phi)
+		y = sqrt(1 - z^2) * sin(phi)
+		z = z
+	*/
+	float2 codedNormal = packedNormal * 2.0f - 1.0f;
+	float2 sinCosPhi;
+	sincos(codedNormal.x * 3.14159265f, sinCosPhi.x, sinCosPhi.y);
+	sinCosPhi *= sqrt(1.0f - codedNormal.y * codedNormal.y);
+
+	return float3(sinCosPhi.y, sinCosPhi.x, codedNormal.y);
+}
+
 float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in float3 normal,
 	const in float2 texcoord, uniform Texture2D normalMap, uniform SamplerState splr)
 {
