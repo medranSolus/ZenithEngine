@@ -10,7 +10,7 @@ namespace GFX::Visual
 		Data::CBuffer::DynamicCBuffer buffer;
 		bool dirty = false;
 
-		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 		void UpdateTransform() noexcept;
 

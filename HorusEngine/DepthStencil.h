@@ -22,6 +22,8 @@ namespace GFX::Pipeline::Resource
 		static constexpr DXGI_FORMAT UsageTyped(Usage usage) noexcept;
 
 	public:
+		inline DepthStencil(Graphics& gfx, Usage usage = Usage::DepthStencil)
+			: DepthStencil(gfx, gfx.GetWidth(), gfx.GetHeight(), false, usage) {}
 		inline DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil)
 			: DepthStencil(gfx, width, height, false, usage) {}
 		virtual ~DepthStencil() = default;

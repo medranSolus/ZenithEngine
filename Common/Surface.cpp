@@ -50,7 +50,7 @@ namespace GFX
 		}
 		else
 		{
-			DXT_THROW_FAILED(DirectX::LoadFromWICFile(Utils::ToUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_FORCE_RGB, nullptr, scratch),
+			DXT_THROW_FAILED(DirectX::LoadFromWICFile(Utils::ToUtf8(name).c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_IGNORE_SRGB, nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 

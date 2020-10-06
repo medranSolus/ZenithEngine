@@ -3,7 +3,7 @@
 
 namespace GFX::Light
 {
-	Data::CBuffer::DCBLayout PointLight::MakeLayout() noexcept
+	inline Data::CBuffer::DCBLayout PointLight::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
@@ -32,7 +32,7 @@ namespace GFX::Light
 		buffer["lightPos"] = position;
 		buffer["attenuationQuad"] = 0.0075f;
 		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
-		buffer["lightIntensity"] = 5.0f;
+		buffer["lightIntensity"] = 2.0f;
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
 		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 3, 3, radius, radius, radius);
 

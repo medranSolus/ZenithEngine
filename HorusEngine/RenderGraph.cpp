@@ -7,7 +7,7 @@ namespace GFX::Pipeline
 {
 	RenderGraph::RenderGraph(Graphics& gfx) : backbuffer(gfx.GetBackBuffer())
 	{
-		depthStencil = std::make_shared<Resource::DepthStencil>(gfx, gfx.GetWidth(), gfx.GetHeight());
+		depthStencil = std::make_shared<Resource::DepthStencil>(gfx);
 
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTarget>::Make("backbuffer", backbuffer));

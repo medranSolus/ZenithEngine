@@ -9,7 +9,7 @@ namespace GFX
 		Data::CBuffer::DynamicCBuffer buffer;
 		std::string name = "";
 
-		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		inline BasicObject() noexcept : BasicObject({ 0.0f,0.0f,0.0f }, "") {}

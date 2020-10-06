@@ -2,7 +2,7 @@
 
 namespace GFX
 {
-	Data::CBuffer::DCBLayout BasicObject::MakeLayout() noexcept
+	inline Data::CBuffer::DCBLayout BasicObject::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;

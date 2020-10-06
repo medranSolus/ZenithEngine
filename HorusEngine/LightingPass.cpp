@@ -14,6 +14,7 @@ namespace GFX::Pipeline::RenderPass
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
+		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));

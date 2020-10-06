@@ -2,6 +2,7 @@
 #include "RenderGraph.h"
 #include "DepthStencilShaderInput.h"
 #include "RenderTargetEx.h"
+#include "RenderTargetShaderInput.h"
 #include "ConstBufferExCache.h"
 #include "TextureCube.h"
 #include "ICamera.h"
@@ -15,9 +16,12 @@ namespace GFX::Pipeline
 
 		int radius;
 		float sigma;
+		float gamma;
 
 		std::shared_ptr<Resource::DepthStencilShaderInput> depthOnly;
 		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
+		std::shared_ptr<Resource::RenderTargetShaderInput> sceneTarget;
+		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> gammaCorrection;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
 		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
@@ -25,7 +29,7 @@ namespace GFX::Pipeline
 		void SetKernel() noexcept(!IS_DEBUG);
 
 	public:
-		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f);
+		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f, float gamma = 2.2f);
 		virtual ~RenderGraphBlurOutline() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);

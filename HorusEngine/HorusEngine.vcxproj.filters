@@ -477,6 +477,9 @@
     <ClCompile Include="LambertianDepthOptimizedPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="GammaCorrectionPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -553,6 +556,9 @@
     </FxCompile>
     <FxCompile Include="ShadowPSTexture.hlsl">
       <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="GammaPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1243,6 +1249,9 @@
     <ClInclude Include="LambertianClassicPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="GammaCorrectionPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1284,6 +1293,9 @@
     </None>
     <None Include="UtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders</Filter>
+    </None>
+    <None Include="GammaCBuffer.hlsli">
+      <Filter>Shader Files\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -73,7 +73,7 @@ float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, c
 {
 	// Halfway vector between directionToLight and directionToCamera
 	const float3 H = normalize(normalize(cameraPos - pos) + directionToLight);
-	return specularColor * (attenuation * pow(saturate(dot(normal, H)), specularPower));
+	return specularColor * (attenuation * pow(max(dot(normal, H), 0.0f), specularPower));
 }
 
 float GetSampledSpecularPower(const in float4 specularData)

@@ -10,7 +10,7 @@ namespace GFX::Light
 	{
 		mutable std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
 
-		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, float radius = 0.5f);

@@ -8,6 +8,7 @@ namespace GFX::Pipeline::RenderPass
 	SkyboxPass::SkyboxPass(Graphics& gfx, const std::string& name) : BindingPass(name)
 	{
 		AddBindableSink<GFX::Resource::TextureCube>("skyboxTexture");
+		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 

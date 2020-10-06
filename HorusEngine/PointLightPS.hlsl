@@ -1,5 +1,6 @@
 #include "UtilsPS.hlsli"
 #include "LightCBuffer.hlsli"
+#include "GammaCBuffer.hlsli"
 
 cbuffer CameraBuffer : register (b2)
 {
@@ -18,8 +19,9 @@ Texture2D depthMap    : register(t8);
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {
-	const float4 color = colorTex.Sample(splr, tc);
-	if (color.a == 0.0f)
+	const float4 srgb = colorTex.Sample(splr, tc);
+	const float3 color = pow(srgb.rgb, float3(cb_deGamma, cb_deGamma, cb_deGamma));
+	if (srgb.a == 0.0f)
 	{
 		const float3 position = GetWorldPosition(tc, depthMap.Sample(splr, tc).x, cb_inverseViewProjection);
 		const float3 normal = DecodeNormal(normalTex.Sample(splr, tc).rg);
@@ -48,8 +50,8 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 			diffuse = cb_shadowColor;
 			specular = float3(0.0f, 0.0f, 0.0f);
 		}
-		return float4(saturate(diffuse + cb_ambientColor) * color.rgb + specular, 1.0f);
+		return float4(saturate(diffuse + cb_ambientColor) * color + specular, 1.0f);
 	}
 	else
-		return color;
+		return float4(color, 1.0f);
 }

@@ -212,12 +212,14 @@ namespace GFX::Primitive
 		indices.push_back(static_cast<unsigned int>(vertices.Size() - 1));
 		indices.push_back(rightUp - 5);
 		indices.push_back(2);
-		IndexedTriangleList list =
+
+		DirectX::XMFLOAT3 normal;
+		for (size_t i = 0; i < vertices.Size(); ++i)
 		{
-			std::move(vertices), std::move(indices)
-		};
-		list.SetNormals();
-		return std::move(list);
+			DirectX::XMStoreFloat3(&normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vertices[i].Get<VertexAttribute::Position3D>())));
+			vertices[i].SetByIndex(1, normal);
+		}
+		return { std::move(vertices), std::move(indices) };
 	}
 
 	std::string Sphere::GetNameIcoSolid(unsigned int density, const std::vector<VertexAttribute>&& attributes) noexcept
@@ -500,8 +502,12 @@ namespace GFX::Primitive
 			}
 			indices = std::move(tmpIndices);
 		}
-		IndexedTriangleList list = { std::move(vertices), std::move(indices) };
-		list.SetNormals();
-		return std::move(list);
+		DirectX::XMFLOAT3 normal;
+		for (size_t i = 0; i < vertices.Size(); ++i)
+		{
+			DirectX::XMStoreFloat3(&normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vertices[i].Get<VertexAttribute::Position3D>())));
+			vertices[i].SetByIndex(1, normal);
+		}
+		return { std::move(vertices), std::move(indices) };
 	}
 }

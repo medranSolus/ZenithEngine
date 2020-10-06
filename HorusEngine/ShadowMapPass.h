@@ -20,7 +20,7 @@ namespace GFX::Pipeline::RenderPass
 		std::vector<DirectX::XMFLOAT3> cameraDirections;
 		std::vector<DirectX::XMFLOAT3> cameraUps;
 
-		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		ShadowMapPass(Graphics& gfx, const std::string& name);

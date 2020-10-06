@@ -16,7 +16,7 @@ namespace GFX::Resource
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.Width = static_cast<UINT>(surface.GetWidth());
 		textureDesc.Height = static_cast<UINT>(surface.GetHeight());
-		textureDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM; // Same as backbuffer
+		textureDesc.Format = surface.GetFormat();
 		textureDesc.MipLevels = 0;
 		textureDesc.ArraySize = 1;
 		textureDesc.SampleDesc.Count = 1;

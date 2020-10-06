@@ -52,6 +52,7 @@ namespace GFX
 		Surface& operator=(const Surface&) = delete;
 		~Surface() = default;
 
+		constexpr DXGI_FORMAT GetFormat() const noexcept { return image->format; }
 		constexpr size_t GetWidth() const noexcept { return image->width; }
 		constexpr size_t GetHeight() const noexcept { return image->height; }
 		constexpr size_t GetRowByteSize() const noexcept { return image->rowPitch; }

@@ -20,7 +20,7 @@ namespace Camera
 		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
 		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
 
-		static GFX::Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline GFX::Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
 		DirectX::FXMMATRIX UpdateProjection() const noexcept;

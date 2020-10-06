@@ -288,6 +288,7 @@
     <ClCompile Include="DynamicCBuffer.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="FullscreenPass.cpp" />
+    <ClCompile Include="GammaCorrectionPass.cpp" />
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="GUIManager.cpp" />
@@ -383,6 +384,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <None Include="GammaCBuffer.hlsli" />
     <None Include="packages.config" />
     <None Include="TransformCBuffer.hlsli">
       <FileType>Document</FileType>
@@ -428,6 +430,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="GammaPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="LightVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -638,6 +646,7 @@
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="BaseLight.h" />
+    <ClInclude Include="GammaCorrectionPass.h" />
     <ClInclude Include="ILight.h" />
     <ClInclude Include="IShape.h" />
     <ClInclude Include="JobData.h" />
@@ -806,7 +815,7 @@
     <Import Project="..\packages\freetype2.2.6.0.1\build\native\freetype2.targets" Condition="Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" />
     <Import Project="..\packages\boost.1.72.0.0\build\boost.targets" Condition="Exists('..\packages\boost.1.72.0.0\build\boost.targets')" />
     <Import Project="..\packages\boost_locale-vc142.1.72.0.0\build\boost_locale-vc142.targets" Condition="Exists('..\packages\boost_locale-vc142.1.72.0.0\build\boost_locale-vc142.targets')" />
-    <Import Project="..\packages\directxtex_desktop_win10.2020.5.11.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2020.5.11.1\build\native\directxtex_desktop_win10.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2020.9.30.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2020.9.30.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -815,6 +824,6 @@
     <Error Condition="!Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\freetype2.2.6.0.1\build\native\freetype2.targets'))" />
     <Error Condition="!Exists('..\packages\boost.1.72.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.72.0.0\build\boost.targets'))" />
     <Error Condition="!Exists('..\packages\boost_locale-vc142.1.72.0.0\build\boost_locale-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_locale-vc142.1.72.0.0\build\boost_locale-vc142.targets'))" />
-    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2020.5.11.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2020.5.11.1\build\native\directxtex_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2020.9.30.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2020.9.30.1\build\native\directxtex_desktop_win10.targets'))" />
   </Target>
 </Project>

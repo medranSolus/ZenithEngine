@@ -15,6 +15,7 @@ namespace GFX::Pipeline::Resource
 		void InitializeTargetView(Graphics& gfx, D3D11_TEXTURE2D_DESC& textureDesc, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture);
 
 	public:
+		inline RenderTarget(Graphics& gfx) : RenderTarget(gfx, gfx.GetWidth(), gfx.GetHeight()) {}
 		RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face);
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height);
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer);

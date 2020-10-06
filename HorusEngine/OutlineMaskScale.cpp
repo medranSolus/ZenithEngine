@@ -3,7 +3,7 @@
 
 namespace GFX::Visual
 {
-	Data::CBuffer::DCBLayout OutlineMaskScale::MakeLayout() noexcept
+	inline Data::CBuffer::DCBLayout OutlineMaskScale::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;

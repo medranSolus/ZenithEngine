@@ -21,8 +21,8 @@ namespace GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma)
-		: RenderGraph(gfx), radius(radius), sigma(sigma)
+	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma, float gamma)
+		: RenderGraph(gfx), radius(radius), sigma(sigma), gamma(gamma)
 	{
 		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
@@ -30,6 +30,19 @@ namespace GFX::Pipeline
 		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4U,
 			{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
+
+		sceneTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 0U);
+		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("sceneTarget", sceneTarget));
+
+		// Setup gamma cbuffer
+		Data::CBuffer::DCBLayout gammaLayout;
+		gammaLayout.Add(DCBElementType::Float, "gamma");
+		gammaLayout.Add(DCBElementType::Float, "deGamma");
+		Data::CBuffer::DynamicCBuffer gammaBuffer(std::move(gammaLayout));
+		gammaBuffer["gamma"] = gamma;
+		gammaBuffer["deGamma"] = 1.0f / gamma;
+		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 3U);
+		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("gammaCorrection", gammaCorrection));
 
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
@@ -47,15 +60,10 @@ namespace GFX::Pipeline
 		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 1U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
-		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\Space", ".png");
+		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\TropicalSunnyDay", ".jpg");
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
 
 		// Setup all passes
-		{
-			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearRT");
-			pass->SetSinkLinkage("buffer", "$.backbuffer");
-			AppendPass(std::move(pass));
-		}
 		{
 			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearDS");
 			pass->SetSinkLinkage("buffer", "$.depthStencil");
@@ -91,14 +99,17 @@ namespace GFX::Pipeline
 		{
 			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
-			pass->SetSinkLinkage("renderTarget", "clearRT.buffer");
+			pass->SetSinkLinkage("renderTarget", "$.sceneTarget");
 			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
+			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::SkyboxPass>(gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
+			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			pass->SetSinkLinkage("renderTarget", "lighting.renderTarget");
+			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}
@@ -132,7 +143,14 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("depthStencil", "verticalBlur.depthStencil");
 			AppendPass(std::move(pass));
 		}
-		SetSinkSource("backbuffer", "wireframe.renderTarget");
+		{
+			auto pass = std::make_unique<RenderPass::GammaCorrectionPass>(gfx, "gamma");
+			pass->SetSinkLinkage("scene", "wireframe.renderTarget");
+			pass->SetSinkLinkage("renderTarget", "$.backbuffer");
+			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
+			AppendPass(std::move(pass));
+		}
+		SetSinkSource("backbuffer", "gamma.renderTarget");
 		Finalize();
 	}
 
@@ -154,6 +172,11 @@ namespace GFX::Pipeline
 
 	void RenderGraphBlurOutline::ShowWindow(Graphics& gfx)
 	{
+		if (ImGui::DragFloat("Gamma correction", &gamma, 0.1f, 0.1f, 7.9f, "%.1f"))
+		{
+			gammaCorrection->GetBuffer()["gamma"] = gamma;
+			gammaCorrection->GetBuffer()["deGamma"] = 1.0f / gamma;
+		}
 		ImGui::Text("Blur Control");
 		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
 			SetKernel();

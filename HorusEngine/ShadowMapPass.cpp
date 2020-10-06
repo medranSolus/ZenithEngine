@@ -4,7 +4,7 @@
 
 namespace GFX::Pipeline::RenderPass
 {
-	Data::CBuffer::DCBLayout ShadowMapPass::MakeLayout() noexcept
+	inline Data::CBuffer::DCBLayout ShadowMapPass::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
@@ -77,8 +77,7 @@ namespace GFX::Pipeline::RenderPass
 
 	void ShadowMapPass::ShowWindow(Graphics& gfx)
 	{
-		ImGui::Text("Shadows");
-		if (ImGui::DragInt("Depth bias", &bias))
+		if (ImGui::DragInt("Shadow depth bias", &bias))
 			biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 	}
 }

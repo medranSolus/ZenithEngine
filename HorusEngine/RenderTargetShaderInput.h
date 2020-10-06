@@ -9,6 +9,7 @@ namespace GFX::Pipeline::Resource
 		UINT slot;
 
 	public:
+		inline RenderTargetShaderInput(Graphics& gfx, UINT slot) : RenderTargetShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot) {}
 		RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot);
 		virtual ~RenderTargetShaderInput() = default;
 

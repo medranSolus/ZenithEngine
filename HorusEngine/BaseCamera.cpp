@@ -3,7 +3,7 @@
 
 namespace Camera
 {
-	GFX::Data::CBuffer::DCBLayout BaseCamera::MakeLayout() noexcept
+	inline GFX::Data::CBuffer::DCBLayout BaseCamera::MakeLayout() noexcept
 	{
 		static GFX::Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
