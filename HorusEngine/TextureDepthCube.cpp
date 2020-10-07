@@ -32,7 +32,7 @@ namespace GFX::Resource
 		viewDesc.Texture2D.MostDetailedMip = 0;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
 
-		for (UINT i = 0; i < 6; ++i)
-			depthBuffers.emplace_back(std::make_unique<Pipeline::Resource::RenderTarget>(gfx, texture, size, i));
+		depthBuffer = std::make_shared<Pipeline::Resource::RenderTarget>(gfx, texture, size);
+		stencil = std::make_shared<Pipeline::Resource::DepthStencil>(gfx, size);
 	}
 }

@@ -11,7 +11,7 @@ struct VSOut
 #ifdef _TEX
 	float2 tc : TEXCOORD;
 #endif
-	float4 pos : SV_POSITION;
+	float3 worldPos : POSITION;
 };
 
 VSOut main(float3 pos : POSITION
@@ -21,11 +21,8 @@ VSOut main(float3 pos : POSITION
 )
 {
 	VSOut vso;
-	// Vertex position relative to camera
-	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
-
-	const float3 worldPos = mul(float4(pos, 1.0f), cb_transform).xyz;
-	vso.lightToVertex = worldPos - cb_cameraPos;
+	vso.worldPos = mul(float4(pos, 1.0f), cb_transform).xyz;
+	vso.lightToVertex = vso.worldPos - cb_cameraPos;
 
 #ifdef _TEX
 	vso.tc = tc;

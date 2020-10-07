@@ -1,4 +1,5 @@
 #pragma once
+#include "ConstBufferExGeometry.h"
 #include "ConstBufferExPixel.h"
 #include "ConstBufferExVertex.h"
 
@@ -98,6 +99,7 @@ namespace GFX::Resource
 		T::Bind(gfx);
 	}
 
+	typedef ConstBufferExCache<ConstBufferExGeometry> ConstBufferExGeometryCache;
 	typedef ConstBufferExCache<ConstBufferExPixel> ConstBufferExPixelCache;
 	typedef ConstBufferExCache<ConstBufferExVertex> ConstBufferExVertexCache;
 }

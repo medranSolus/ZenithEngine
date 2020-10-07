@@ -16,7 +16,7 @@ namespace GFX::Pipeline::Resource
 
 	public:
 		inline RenderTarget(Graphics& gfx) : RenderTarget(gfx, gfx.GetWidth(), gfx.GetHeight()) {}
-		RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face);
+		RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size);
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height);
 		RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer);
 		virtual ~RenderTarget() = default;

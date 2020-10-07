@@ -35,7 +35,7 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size, UINT face)
+	RenderTarget::RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, UINT size)
 		: IRenderTarget(gfx, size, size)
 	{
 		GFX_ENABLE_ALL(gfx);
@@ -44,8 +44,8 @@ namespace GFX::Pipeline::Resource
 		targetViewDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
 		targetViewDesc.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		targetViewDesc.Texture2DArray.MipSlice = 0U;
-		targetViewDesc.Texture2DArray.ArraySize = 1U;
-		targetViewDesc.Texture2DArray.FirstArraySlice = face;
+		targetViewDesc.Texture2DArray.ArraySize = 6U;
+		targetViewDesc.Texture2DArray.FirstArraySlice = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 	}
 

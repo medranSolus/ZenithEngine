@@ -100,18 +100,16 @@ float GetShadowLevel(const in float3 pos, const in float3 normal, const in float
 	float shadowLength = length(shadowPos) - 0.02f * sqrt(1.0f - slope * slope) / slope;
 	float level = 0.0f;
 
-	static const int MSAA_RANGE = 3;
-	[unroll]
-	for (int x = -MSAA_RANGE; x <= MSAA_RANGE; ++x)
+	static const float3 OFFSETS[20] =
 	{
-		[unroll]
-		for (int y = -MSAA_RANGE; y <= MSAA_RANGE; ++y)
-		{
-			[unroll]
-			for (int z = -MSAA_RANGE; z <= MSAA_RANGE; ++z)
-				level += saturate(exp(30.0f * (shadowMap.Sample(shadowSplr, shadowPos + float3(x, y, z) / size).x - shadowLength)));
-		}
-	}
+		float3(2.0f, 2.0f, 2.0f),   float3(-2.0f, 2.0f, 2.0f),   float3(2.0f, 2.0f, 0.0f),   float3(2.0f, 0.0f, 2.0f),   float3(0.0f, 2.0f, 2.0f),
+		float3(2.0f, 2.0f, -2.0f),  float3(-2.0f, 2.0f, -2.0f),  float3(2.0f, -2.0f, 0.0f),  float3(2.0f, 0.0f, -2.0f),  float3(0.0f, 2.0f, -2.0f),
+		float3(2.0f, -2.0f, 2.0f),  float3(-2.0f, -2.0f, 2.0f),  float3(-2.0f, 2.0f, 0.0f),  float3(-2.0f, 0.0f, 2.0f),  float3(0.0f, -2.0f, 2.0f),
+		float3(2.0f, -2.0f, -2.0f), float3(-2.0f, -2.0f, -2.0f), float3(-2.0f, -2.0f, 0.0f), float3(-2.0f, 0.0f, -2.0f), float3(0.0f, -2.0f, -2.0f)
+	};
+	[unroll]
+	for (int i = 0; i < 20; ++i)
+		level += saturate(exp(30.0f * (shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / size).x - shadowLength)));
 
-	return level / ((MSAA_RANGE * 2 + 1) * (MSAA_RANGE * 2 + 1) * (MSAA_RANGE * 2 + 1));
+	return level / 20.0f;
 }

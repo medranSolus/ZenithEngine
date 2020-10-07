@@ -4,6 +4,7 @@
 namespace GFX::Pipeline::Resource
 {
 	class IRenderTarget;
+	class DepthStencil;
 }
 
 namespace GFX::Resource
@@ -15,7 +16,8 @@ namespace GFX::Resource
 		UINT slot;
 		UINT size;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
-		std::vector<std::shared_ptr<Pipeline::Resource::IRenderTarget>> depthBuffers;
+		std::shared_ptr<Pipeline::Resource::IRenderTarget> depthBuffer;
+		std::shared_ptr<Pipeline::Resource::DepthStencil> stencil;
 
 	public:
 		TextureDepthCube(Graphics& gfx, UINT size, UINT slot = 0U);
@@ -24,7 +26,8 @@ namespace GFX::Resource
 		static inline std::shared_ptr<TextureDepthCube> Get(Graphics& gfx, UINT size, UINT slot = 0U);
 		static inline std::string GenerateRID(UINT size, UINT slot = 0U) noexcept;
 
-		inline std::shared_ptr<Pipeline::Resource::IRenderTarget> GetBuffer(size_t index) noexcept { return depthBuffers.at(index); }
+		inline std::shared_ptr<Pipeline::Resource::IRenderTarget> GetBuffer() noexcept { return depthBuffer; }
+		inline std::shared_ptr<Pipeline::Resource::DepthStencil> GetStencil() noexcept { return stencil; }
 		inline void Unbind(Graphics& gfx) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullShaderResource.GetAddressOf()); }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }

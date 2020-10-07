@@ -26,6 +26,7 @@ namespace GFX::Pipeline::Resource
 			: DepthStencil(gfx, gfx.GetWidth(), gfx.GetHeight(), false, usage) {}
 		inline DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil)
 			: DepthStencil(gfx, width, height, false, usage) {}
+		DepthStencil(Graphics& gfx, UINT size);
 		virtual ~DepthStencil() = default;
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->OMSetRenderTargets(0U, nullptr, depthStencilView.Get()); BindViewport(gfx); }

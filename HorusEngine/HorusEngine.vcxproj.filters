@@ -151,6 +151,12 @@
     <Filter Include="Shader Files\Pixel Shaders\Shadow Extensions">
       <UniqueIdentifier>{49d9ae57-b731-4383-969b-838faa198f35}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Geometry Shaders">
+      <UniqueIdentifier>{b1ec7e33-f334-4083-b215-bf4edcb308d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Geometry Shaders\Shadow Extensions">
+      <UniqueIdentifier>{a823a363-c823-4f4a-9f96-9f7f6498c74c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -480,6 +486,12 @@
     <ClCompile Include="GammaCorrectionPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="GeometryShader.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstBufferExGeometry.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -559,6 +571,12 @@
     </FxCompile>
     <FxCompile Include="GammaPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowGS.hlsl">
+      <Filter>Shader Files\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowGSTexture.hlsl">
+      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1251,6 +1269,15 @@
     </ClInclude>
     <ClInclude Include="GammaCorrectionPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryShader.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="NullGeometryShader.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstBufferExGeometry.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

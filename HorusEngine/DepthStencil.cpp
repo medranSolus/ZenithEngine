@@ -53,6 +53,34 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencilView));
 	}
 
+	DepthStencil::DepthStencil(Graphics& gfx, UINT size)
+		: IBufferResource(gfx, size, size)
+	{
+		GFX_ENABLE_ALL(gfx);
+
+		D3D11_TEXTURE2D_DESC depthTexDesc = { 0 };
+		depthTexDesc.Width = size;
+		depthTexDesc.Height = size;
+		depthTexDesc.MipLevels = 1U;
+		depthTexDesc.ArraySize = 6U;
+		depthTexDesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+		depthTexDesc.SampleDesc.Count = 1U; // Antialiasing stuff
+		depthTexDesc.SampleDesc.Quality = 0U;
+		depthTexDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+		depthTexDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> depthTexture = nullptr;
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateTexture2D(&depthTexDesc, nullptr, &depthTexture));
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
+		depthViewDesc.Format = depthTexDesc.Format;
+		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		depthViewDesc.Flags = 0U;
+		depthViewDesc.Texture2DArray.MipSlice = 0U;
+		depthViewDesc.Texture2DArray.ArraySize = 6U;
+		depthViewDesc.Texture2DArray.FirstArraySlice = 0U;
+		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencilView));
+	}
+
 	Surface DepthStencil::ToSurface(Graphics& gfx, bool linearScale) const
 	{
 		GFX_ENABLE_ALL(gfx);

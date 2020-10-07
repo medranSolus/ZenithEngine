@@ -14,13 +14,13 @@ namespace GFX::Pipeline::RenderPass
 		int bias = 2;
 		Light::ILight* shadowSource = nullptr;
 		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
+		std::shared_ptr<GFX::Resource::ConstBufferExGeometryCache> viewBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> biasBuffer;
 		std::shared_ptr<GFX::Resource::TextureDepthCube> depthCube;
 		DirectX::XMFLOAT4X4 projection;
-		std::vector<DirectX::XMFLOAT3> cameraDirections;
-		std::vector<DirectX::XMFLOAT3> cameraUps;
 
-		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayoutView() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayoutBias() noexcept;
 
 	public:
 		ShadowMapPass(Graphics& gfx, const std::string& name);

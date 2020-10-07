@@ -2,6 +2,14 @@
 
 namespace GFX::Shape
 {
+	void BaseShape::SetMesh(bool mesh) noexcept
+	{
+		isMesh = mesh;
+		for (auto& technique : techniques)
+			if (technique->GetName().find("Shadow Map") != std::string::npos)
+				isMesh ? technique->Dectivate() : technique->Activate();
+	}
+
 	BaseShape::BaseShape(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
 		: indexBuffer(std::move(indexBuffer)), vertexBuffer(std::move(vertexBuffer))
 	{

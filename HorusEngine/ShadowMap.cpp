@@ -13,6 +13,7 @@ namespace GFX::Visual
 			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
 		}
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
+		AddBind(GFX::Resource::GeometryShader::Get(gfx, "ShadowGS" + shaderType));
 		auto vertexShader = Resource::VertexShader::Get(gfx, "ShadowVS" + shaderType);
 		AddBind(Resource::InputLayout::Get(gfx, material->GerVertexLayout(), vertexShader));
 		AddBind(std::move(vertexShader));
