@@ -39,8 +39,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
-	, float3 worldTan : TANGENT,
-	float3 worldBitan : BITANGENT
+	, float3 worldBitan : BITANGENT
 #endif
 #endif
 )
@@ -56,7 +55,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 
 #ifdef _TEX_NORMAL
 	pso.normal = EncodeNormal(lerp(worldPos,
-		GetMappedNormal(worldTan, worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight));
+		GetMappedNormal(worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif

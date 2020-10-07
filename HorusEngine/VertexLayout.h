@@ -18,7 +18,6 @@
 	X(Position3D) \
 	X(Texture2D) \
 	X(Normal) \
-	X(Tangent) \
 	X(Bitangent) \
 	X(ColorFloat4) \
 	X(ColorFloat3) \
@@ -158,15 +157,6 @@ namespace GFX::Data
 			static constexpr const char* code = "N";
 			static constexpr bool valid = true;
 			VERTEX_ELEMENT_AI_EXTRACTOR(mNormals)
-		};
-		template<> struct Desc<ElementType::Tangent>
-		{
-			using DataType = DirectX::XMFLOAT3;
-			static constexpr DXGI_FORMAT dxgiFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-			static constexpr const char* semantic = "TANGENT";
-			static constexpr const char* code = "T";
-			static constexpr bool valid = true;
-			VERTEX_ELEMENT_AI_EXTRACTOR(mTangents)
 		};
 		template<> struct Desc<ElementType::Bitangent>
 		{

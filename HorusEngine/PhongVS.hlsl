@@ -7,7 +7,6 @@ struct VSOut
 #ifdef _TEX
 	float2 tc : TEXCOORD;
 #ifdef _TEX_NORMAL
-	float3 worldTan : TANGENT;
 	float3 worldBitan : BITANGENT;
 #endif
 #endif
@@ -18,8 +17,7 @@ VSOut main(float3 pos : POSITION, float3 normal : NORMAL
 #ifdef _TEX
 	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
-	, float3 tangent : TANGENT,
-	float3 bitangent : BITANGENT
+	, float3 bitangent : BITANGENT
 #endif
 #endif
 )
@@ -32,7 +30,6 @@ VSOut main(float3 pos : POSITION, float3 normal : NORMAL
 #ifdef _TEX
 	vso.tc = tc;
 #ifdef _TEX_NORMAL
-	vso.worldTan = mul(tangent, (float3x3) cb_transform);
 	vso.worldBitan = mul(bitangent, (float3x3) cb_transform);
 #endif
 #endif

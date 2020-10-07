@@ -81,7 +81,7 @@ namespace GFX::Visual
 			normalMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U);
 			shaderCodePS += "Normal";
 			shaderCodeVS += "Normal";
-			vertexLayout->Append(VertexAttribute::Texture2D).Append(VertexAttribute::Tangent).Append(VertexAttribute::Bitangent);
+			vertexLayout->Append(VertexAttribute::Texture2D).Append(VertexAttribute::Bitangent);
 			cbufferLayout.Add(DCBElementType::Float, "normalMapWeight");
 		}
 

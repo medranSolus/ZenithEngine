@@ -40,13 +40,13 @@ float3 DecodeNormal(const in float2 packedNormal)
 	return float3(sinCosPhi.y, sinCosPhi.x, codedNormal.y);
 }
 
-float3 GetMappedNormal(const in float3 tan, const in float3 bitan, const in float3 normal,
-	const in float2 texcoord, uniform Texture2D normalMap, uniform SamplerState splr)
+float3 GetMappedNormal(const in float3 bitan, const in float3 normal, const in float2 texcoord,
+	uniform Texture2D normalMap, uniform SamplerState splr)
 {
 	// Get rotation from tangent space
 	const float3x3 tangentToView = float3x3
 		(
-			normalize(tan),
+			normalize(cross(normal, bitan)),
 			normalize(bitan),
 			normalize(normal)
 			);
