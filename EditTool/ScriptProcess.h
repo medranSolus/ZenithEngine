@@ -1,7 +1,7 @@
 #pragma once
 #include "json.hpp"
 #include <string>
-#include <vector>
+#include <deque>
 
 namespace json = nlohmann;
 
@@ -19,11 +19,12 @@ class ScriptProcess
 		InvalidJsonCommand = -6
 	};
 
+	static OutCode GetSrcDest(std::string& source, std::string& destination, std::deque<std::string>& params) noexcept;
 	static OutCode ProcessJsonCommand(const json::json& command);
 	static OutCode ProcessJson(const std::string& jsonFile);
 
 public:
 	ScriptProcess() = delete;
 
-	static int Run(const std::vector<std::string>& params);
+	static int Run(std::deque<std::string>& params);
 };

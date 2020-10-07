@@ -126,7 +126,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
+      <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
@@ -162,7 +162,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
+      <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
@@ -203,7 +203,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
+      <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
@@ -244,7 +244,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
+      <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>

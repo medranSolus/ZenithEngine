@@ -3,6 +3,26 @@
 #include "Logger.h"
 #include <fstream>
 
+ScriptProcess::OutCode ScriptProcess::GetSrcDest(std::string& source, std::string& destination, std::deque<std::string>& params) noexcept
+{
+	params.pop_front();
+	if (params.size() == 0 || params.front().at(0) == '-')
+	{
+		Logger::Error("No files in input!");
+		return OutCode::NotEnoughParams;
+	}
+	source = params.front();
+	params.pop_front();
+	if (params.size() && params.front().at(0) != '-')
+	{
+		destination = params.front();
+		params.pop_front();
+	}
+	else
+		destination = source;
+	return OutCode::Good;
+}
+
 ScriptProcess::OutCode ScriptProcess::ProcessJsonCommand(const json::json& command)
 {
 	const std::string commandName = command["command"].get<std::string>();
@@ -13,6 +33,13 @@ ScriptProcess::OutCode ScriptProcess::ProcessJsonCommand(const json::json& comma
 		const std::string source = params["source"].get<std::string>();
 		const std::string destination = it != params.end() ? it->get<std::string>() : source;
 		TextureEdit::NoAlpha(source, destination);
+	}
+	else if (commandName == "flip-y")
+	{
+		const auto it = params.find("destination");
+		const std::string source = params["source"].get<std::string>();
+		const std::string destination = it != params.end() ? it->get<std::string>() : source;
+		TextureEdit::FlipY(source, destination);
 	}
 	else
 	{
@@ -47,37 +74,55 @@ ScriptProcess::OutCode ScriptProcess::ProcessJson(const std::string& jsonFile)
 		return ProcessJsonCommand(jsonArray);
 }
 
-int ScriptProcess::Run(const std::vector<std::string>& params)
+int ScriptProcess::Run(std::deque<std::string>& params)
 {
-	if (params.size())
+	if (params.size() == 0)
+		return OutCode::NoInput;
+	while (params.size())
 	{
 		if (params.front() == "--json" || params.front() == "-j")
 		{
-			if (params.size() >= 2)
-			{
-				OutCode code;
-				for (size_t i = 1; i < params.size(); ++i)
-				{
-					code = ProcessJson(params.at(i));
-					if (code != OutCode::Good)
-					{
-						Logger::Error("Error processing JSON!");
-						return code;
-					}
-				}
-			}
-			else
+			params.pop_front();
+			if (params.size() == 0)
 			{
 				Logger::Error("No JSON files in input!");
 				return OutCode::NotEnoughParams;
 			}
+			size_t i = 0;
+			for (; i < params.size(); ++i)
+			{
+				if (params.at(i).at(0) == '-')
+					break;
+				OutCode code = ProcessJson(params.at(i));
+				if (code != OutCode::Good)
+				{
+					Logger::Error("Error processing JSON!");
+					return code;
+				}
+			}
+			params.erase(params.begin(), params.begin() + i);
+		}
+		else if (params.front() == "--no-alpha")
+		{
+			std::string source, destination;
+			OutCode code = GetSrcDest(source, destination, params);
+			if (code != OutCode::Good)
+				return code;
+			TextureEdit::NoAlpha(source, destination);
+		}
+		else if (params.front() == "--flip-y")
+		{
+			std::string source, destination;
+			OutCode code = GetSrcDest(source, destination, params);
+			if (code != OutCode::Good)
+				return code;
+			TextureEdit::FlipY(source, destination);
 		}
 		else
 		{
 			Logger::Error("Invalid option!");
 			return OutCode::WrongOption;
 		}
-		return OutCode::Good;
 	}
-	return OutCode::NoInput;
+	return OutCode::Good;
 }
