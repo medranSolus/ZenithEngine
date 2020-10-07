@@ -1,7 +1,4 @@
-cbuffer TransformCBuffer : register(b0)
-{
-	matrix cb_viewProjection;
-}
+#include "TransformSkyboxVB.hlsli"
 
 struct VSOut
 {

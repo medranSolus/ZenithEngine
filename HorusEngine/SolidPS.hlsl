@@ -1,7 +1,4 @@
-cbuffer SolidCBuffer : register(b1)
-{
-	float3 cb_solidColor;
-};
+#include "SolidPB.hlsli"
 
 float4 main() : SV_TARGET
 {

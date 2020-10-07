@@ -1,9 +1,5 @@
-#include "TransformCBuffer.hlsli"
-
-cbuffer CameraBuffer : register (b1)
-{
-	float3 cb_cameraPos;
-};
+#include "TransformVB.hlsli"
+#include "CameraVB.hlsli"
 
 struct VSOut
 {

@@ -1,4 +1,4 @@
-#include "GammaCBuffer.hlsli"
+#include "GammaPB.hlsli"
 
 SamplerState splr : register(s0);
 Texture2D tex : register(t0);

@@ -76,9 +76,6 @@
     <Filter Include="Shader Files\Vertex Shaders\Phong Extensions">
       <UniqueIdentifier>{d1ced4a9-83c7-4c7b-8c7d-d67124f464bd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader Files\CBuffers">
-      <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\GFX\Data">
       <UniqueIdentifier>{4396efc1-1e6a-4e8e-83fe-b3e0501dd30c}</UniqueIdentifier>
     </Filter>
@@ -156,6 +153,15 @@
     </Filter>
     <Filter Include="Shader Files\Geometry Shaders\Shadow Extensions">
       <UniqueIdentifier>{a823a363-c823-4f4a-9f96-9f7f6498c74c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Vertex Shaders\CBuffers">
+      <UniqueIdentifier>{a9e25989-8bb6-4228-9d56-707aabb104b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Geometry Shaders\CBuffers">
+      <UniqueIdentifier>{0e5adb3d-8995-4329-8de7-0930711daf81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\CBuffers">
+      <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -577,6 +583,12 @@
     </FxCompile>
     <FxCompile Include="ShadowGSTexture.hlsl">
       <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="PhongPSTextureNormalParallax.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="PhongPSTextureNormalParallaxSpecular.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1312,17 +1324,47 @@
       <Filter>Header Files\AssImp</Filter>
     </None>
     <None Include="packages.config" />
-    <None Include="LightCBuffer.hlsli">
-      <Filter>Shader Files\CBuffers</Filter>
-    </None>
-    <None Include="TransformCBuffer.hlsli">
-      <Filter>Shader Files\CBuffers</Filter>
-    </None>
     <None Include="UtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </None>
-    <None Include="GammaCBuffer.hlsli">
-      <Filter>Shader Files\CBuffers</Filter>
+    <None Include="CameraVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="OffsetVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="TransformVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="TransformSkyboxVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="GammaPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="ViewGB.hlsli">
+      <Filter>Shader Files\Geometry Shaders\CBuffers</Filter>
+    </None>
+    <None Include="SolidPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="BiasPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="PhongPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="CameraPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="GaussPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="BlurDirectionPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="PointLightPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

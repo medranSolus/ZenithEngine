@@ -43,17 +43,16 @@ float3 DecodeNormal(const in float2 packedNormal)
 float3 GetMappedNormal(const in float3 bitan, const in float3 normal, const in float2 texcoord,
 	uniform Texture2D normalMap, uniform SamplerState splr)
 {
+	// Make bitangent again orthogonal to normal (Gram-Schmidt process)
+	const float3 N = normalize(normal);
+	float3 B = normalize(bitan);
+	B = normalize(B - dot(B, N) * N);
 	// Get rotation from tangent space
-	const float3x3 tangentToView = float3x3
-		(
-			normalize(cross(normal, bitan)),
-			normalize(bitan),
-			normalize(normal)
-			);
+	const float3x3 tangentToWorld = float3x3(normalize(cross(N, B)), B, N);
 	// Sample normal to tangent space
-	float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
+	const float3 tangentNormal = normalMap.Sample(splr, texcoord).rgb * 2.0f - 1.0f;
 	// Transform from tangent into view space
-	return normalize(mul(tangentNormal, tangentToView));
+	return normalize(mul(tangentNormal, tangentToWorld));
 }
 
 float GetAttenuation(uniform float attConst, uniform float attLinear, uniform float attQuad, const in float distanceToLight)

@@ -85,6 +85,15 @@ namespace GFX::Visual
 			cbufferLayout.Add(DCBElementType::Float, "normalMapWeight");
 		}
 
+		// Get parallax map texture
+		if (material.GetTexture(aiTextureType_DISPLACEMENT, 0, &texFile) == aiReturn_SUCCESS)
+		{
+			hasTexture = true;
+			parallaxMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 3U);
+			shaderCodePS += "Parallax";
+			shaderCodeVS += "Parallax";
+		}
+
 		// Get specular data
 		if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 		{
@@ -138,6 +147,8 @@ namespace GFX::Visual
 			diffuseTexture->Bind(gfx);
 		if (normalMap)
 			normalMap->Bind(gfx);
+		if (parallaxMap)
+			parallaxMap->Bind(gfx);
 		if (specularMap)
 			specularMap->Bind(gfx);
 	}

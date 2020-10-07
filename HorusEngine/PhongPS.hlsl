@@ -1,27 +1,14 @@
 #include "UtilsPS.hlsli"
-
-cbuffer PixelBuffer : register(b1)
-{
-	float3 cb_specularColor;
-	float cb_specularIntensity; // The bigger the brighter
-	float cb_specularPower;     // The smaller the less focused in one point
-#ifdef _TEX
-#ifdef _TEX_NORMAL
-	float cb_normalMapWeight;
-#endif
-#ifdef _TEX_SPEC
-	bool cb_useSpecularPowerAlpha;
-#endif
-#else
-	float4 cb_materialColor;
-#endif
-};
+#include "PhongPB.hlsli"
 
 #ifdef _TEX
 SamplerState splr : register(s0);
 Texture2D tex : register(t0);
 #ifdef _TEX_NORMAL
 Texture2D normalMap : register(t1);
+#ifdef _TEX_PAX
+Texture2D parallax : register(t3);
+#endif
 #endif
 #ifdef _TEX_SPEC
 Texture2D spec : register(t2);
@@ -35,15 +22,19 @@ struct PSOut
 	float4 specular : SV_TARGET2; // RGB - color, A - power
 };
 
-PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
+PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL,
 #ifdef _TEX
-	, float2 tc : TEXCOORD
+	float2 tc : TEXCOORD,
 #ifdef _TEX_NORMAL
-	, float3 worldBitan : BITANGENT
+	float3 worldBitan : BITANGENT,
 #endif
 #endif
-)
+	float4 pos : SV_POSITION)
 {
+#ifdef _TEX_PAX
+	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
+		discard;
+#endif
 	PSOut pso;
 #ifdef _TEX
 	pso.color = tex.Sample(splr, tc);

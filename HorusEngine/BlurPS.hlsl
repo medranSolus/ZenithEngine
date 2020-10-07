@@ -1,13 +1,5 @@
-cbuffer GaussBuffer : register(b0)
-{
-	int cb_radius; // Must not exceed coefficients size
-	float cb_coefficients[8]; // Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target sigma can be 2.6)
-}
-
-cbuffer DirectionBuffer : register(b1)
-{
-	bool cb_vertical;
-}
+#include "GaussPB.hlsli"
+#include "BlurDirectionPB.hlsli"
 
 SamplerState splr : register(s0);
 Texture2D tex : register(t0);

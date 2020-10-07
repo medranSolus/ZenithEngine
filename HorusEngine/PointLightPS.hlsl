@@ -1,12 +1,7 @@
 #include "UtilsPS.hlsli"
-#include "LightCBuffer.hlsli"
-#include "GammaCBuffer.hlsli"
-
-cbuffer CameraBuffer : register (b2)
-{
-	matrix cb_inverseViewProjection;
-	float3 cb_cameraPos;
-};
+#include "PointLightPB.hlsli"
+#include "GammaPB.hlsli"
+#include "CameraPB.hlsli"
 
 SamplerState splr : register(s0);
 

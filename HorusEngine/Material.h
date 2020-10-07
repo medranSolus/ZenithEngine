@@ -11,6 +11,7 @@ namespace GFX::Visual
 		bool translucent = false;
 		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
 		std::shared_ptr<Resource::Texture> normalMap = nullptr;
+		std::shared_ptr<Resource::Texture> parallaxMap = nullptr;
 		std::shared_ptr<Resource::Texture> specularMap = nullptr;
 		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
 		std::shared_ptr<Data::VertexLayout> vertexLayout = nullptr;
@@ -25,8 +26,7 @@ namespace GFX::Visual
 
 		constexpr bool IsTranslucent() const noexcept { return translucent; }
 		inline bool IsTexture() const noexcept { return diffuseTexture != nullptr; }
-		inline bool IsNormalMap() const noexcept { return normalMap != nullptr; }
-		inline bool IsSpecularMap() const noexcept { return specularMap != nullptr; }
+		inline bool IsParallax() const noexcept { return parallaxMap != nullptr; }
 
 		inline std::shared_ptr<Resource::Texture> GetTexture() noexcept { return diffuseTexture; }
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }

@@ -1,7 +1,4 @@
-cbuffer BiasBuffer : register(b1)
-{
-	float cb_bias;
-};
+#include "BiasPB.hlsli"
 
 #ifdef _TEX
 SamplerState splr : register(s0);
