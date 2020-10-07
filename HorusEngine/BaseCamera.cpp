@@ -33,7 +33,7 @@ namespace Camera
 		float fov, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept
 		: ICamera(name), projection({ fov, gfx.GetRatio(), nearClip, farClip })
 	{
-		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayout(), 2U);
+		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayout(), 7U);
 		cameraBuffer->GetBuffer()["cameraPos"] = position;
 		indicator = std::make_shared<GFX::Shape::CameraIndicator>(gfx, graph, position, name, DirectX::XMFLOAT3(0.5f, 0.5f, 1.0f));
 		frustrum = std::make_shared<GFX::Shape::CameraFrustrum>(gfx, graph, position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);

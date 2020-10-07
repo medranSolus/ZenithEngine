@@ -45,8 +45,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL,
 	pso.color.a = 0.0f;
 
 #ifdef _TEX_NORMAL
-	pso.normal = EncodeNormal(lerp(worldPos,
-		GetMappedNormal(worldBitan, worldNormal, tc, normalMap, splr), cb_normalMapWeight));
+	pso.normal = EncodeNormal(GetMappedNormal(worldBitan, worldNormal, tc, normalMap, splr));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif

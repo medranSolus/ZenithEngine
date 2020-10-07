@@ -424,7 +424,7 @@ bool    ImGui_ImplDX11_CreateDeviceObjects()
             float4 col : COLOR0;\
             float2 uv  : TEXCOORD0;\
             };\
-            cbuffer CorrectionBuffer : register(b3)\
+            cbuffer CorrectionBuffer : register(b2)\
             {\
             float cb_gamma;\
             float cb_deGamma;\

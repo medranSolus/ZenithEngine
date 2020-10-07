@@ -390,12 +390,15 @@
     <None Include="BlurDirectionPB.hlsli" />
     <None Include="CameraPB.hlsli" />
     <None Include="CameraVB.hlsli" />
+    <None Include="DirectionalLightPB.hlsli" />
     <None Include="GammaPB.hlsli" />
     <None Include="GaussPB.hlsli" />
+    <None Include="LightUtilsPS.hlsli" />
     <None Include="OffsetVB.hlsli" />
     <None Include="packages.config" />
     <None Include="PhongPB.hlsli" />
     <None Include="SolidPB.hlsli" />
+    <None Include="SpotLightPB.hlsli" />
     <None Include="TransformVB.hlsli">
       <FileType>Document</FileType>
     </None>

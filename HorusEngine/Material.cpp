@@ -18,7 +18,7 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 8U);
 	}
 
 	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
@@ -45,7 +45,7 @@ namespace GFX::Visual
 		cbuffer["specularIntensity"] = 0.9f;
 		cbuffer["specularPower"] = 0.409f;
 		cbuffer["materialColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 1U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 9U);
 	}
 
 	Material::Material(Graphics& gfx, aiMaterial& material, const std::string& path)
@@ -82,7 +82,6 @@ namespace GFX::Visual
 			shaderCodePS += "Normal";
 			shaderCodeVS += "Normal";
 			vertexLayout->Append(VertexAttribute::Texture2D).Append(VertexAttribute::Bitangent);
-			cbufferLayout.Add(DCBElementType::Float, "normalMapWeight");
 		}
 
 		// Get parallax map texture
@@ -132,11 +131,10 @@ namespace GFX::Visual
 		if (cbuffer["materialColor"].Exists())
 			if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(static_cast<Data::ColorFloat4&>(cbuffer["materialColor"]))) != aiReturn_SUCCESS)
 				cbuffer["materialColor"] = std::move(Data::ColorFloat4(0.0f, 0.8f, 1.0f));
-		cbuffer["normalMapWeight"].SetIfExists(1.0f);
 		if (specularMap != nullptr)
 			cbuffer["useSpecularPowerAlpha"] = specularMap->HasAlpha();
 		// Maybe path needed too, TODO: Check this
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer), 1U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer), 9U);
 	}
 
 	void Material::Bind(Graphics& gfx)

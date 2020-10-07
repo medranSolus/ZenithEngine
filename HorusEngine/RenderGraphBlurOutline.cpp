@@ -41,7 +41,7 @@ namespace GFX::Pipeline
 		Data::CBuffer::DynamicCBuffer gammaBuffer(std::move(gammaLayout));
 		gammaBuffer["gamma"] = gamma;
 		gammaBuffer["deGamma"] = 1.0f / gamma;
-		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 3U);
+		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 2U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("gammaCorrection", gammaCorrection));
 
 		// Setup blur cbuffers
@@ -57,7 +57,7 @@ namespace GFX::Pipeline
 		Data::CBuffer::DCBLayout directionLayout;
 		directionLayout.Add(DCBElementType::Bool, "vertical");
 		Data::CBuffer::DynamicCBuffer directionBuffer(std::move(directionLayout));
-		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 1U);
+		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 3U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
 		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\TropicalSunnyDay", ".jpg");

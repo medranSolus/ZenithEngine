@@ -33,7 +33,7 @@ namespace GFX::Light
 		buffer["attenuationQuad"] = 0.0075f;
 		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 		buffer["lightIntensity"] = 2.0f;
-		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer));
+		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer), 4U);
 		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 3, 3, radius, radius, radius);
 
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;

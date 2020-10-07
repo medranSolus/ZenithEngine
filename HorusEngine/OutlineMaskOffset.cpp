@@ -19,7 +19,7 @@ namespace GFX::Visual
 		pixelCBbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer pixelCBuffer(std::move(pixelCBbufferLayout));
 		pixelCBuffer["solidColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(pixelCBuffer), 1U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(pixelCBuffer), 8U);
 	}
 
 	void OutlineMaskOffset::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

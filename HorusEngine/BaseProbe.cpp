@@ -81,10 +81,6 @@ namespace GFX::Probe
 		{
 			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.001f, 0.0f, 1.0f, "%.3f");
 		}
-		if (auto weight = buffer["normalMapWeight"]; weight.Exists())
-		{
-			dirty |= ImGui::DragFloat(Tag("Normal map weight"), &weight, 0.01f, 0.0f, FLT_MAX, "%.2f");
-		}
 		return dirty;
 	}
 

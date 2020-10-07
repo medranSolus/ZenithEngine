@@ -1,4 +1,4 @@
-cbuffer PointLightBuffer : register(b0)
+cbuffer PointLightBuffer : register(b4)
 {
 	float3 cb_ambientColor;
 	float cb_atteuationConst;
