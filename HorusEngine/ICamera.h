@@ -30,6 +30,7 @@ namespace Camera
 		virtual void Roll(float delta) noexcept = 0;
 
 		virtual void BindCamera(GFX::Graphics& gfx) const noexcept = 0;
-		virtual void Bind(GFX::Graphics& gfx) = 0;
+		virtual void BindVS(GFX::Graphics& gfx) = 0;
+		virtual void BindPS(GFX::Graphics& gfx) = 0;
 	};
 }

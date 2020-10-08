@@ -85,12 +85,13 @@ namespace GFX::Visual
 		}
 
 		// Get parallax map texture
-		if (material.GetTexture(aiTextureType_DISPLACEMENT, 0, &texFile) == aiReturn_SUCCESS)
+		if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 		{
 			hasTexture = true;
 			parallaxMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 3U);
 			shaderCodePS += "Parallax";
 			shaderCodeVS += "Parallax";
+			cbufferLayout.Add(DCBElementType::Float, "parallaxScale");
 		}
 
 		// Get specular data
@@ -104,7 +105,10 @@ namespace GFX::Visual
 		}
 
 		// Common elements
-		AddBind(Resource::Rasterizer::Get(gfx, !translucent)); // TODO: Better way to check for double sided meshes
+		int twoSided;
+		if (material.Get(AI_MATKEY_TWOSIDED, twoSided) != aiReturn_SUCCESS)
+			twoSided = !translucent;
+		AddBind(Resource::Rasterizer::Get(gfx, twoSided));
 		AddBind(Resource::Blender::Get(gfx, false));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);
@@ -131,6 +135,9 @@ namespace GFX::Visual
 		if (cbuffer["materialColor"].Exists())
 			if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(static_cast<Data::ColorFloat4&>(cbuffer["materialColor"]))) != aiReturn_SUCCESS)
 				cbuffer["materialColor"] = std::move(Data::ColorFloat4(0.0f, 0.8f, 1.0f));
+		if (cbuffer["parallaxScale"].Exists())
+			if (material.Get(AI_MATKEY_BUMPSCALING, static_cast<float&>(cbuffer["parallaxScale"])) != aiReturn_SUCCESS)
+				cbuffer["parallaxScale"] = 0.1f;
 		if (specularMap != nullptr)
 			cbuffer["useSpecularPowerAlpha"] = specularMap->HasAlpha();
 		// Maybe path needed too, TODO: Check this

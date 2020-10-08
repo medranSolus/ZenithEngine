@@ -41,7 +41,7 @@ namespace GFX::Pipeline::RenderPass
 
 	void LightingPass::Execute(Graphics& gfx)
 	{
-		mainCamera->Bind(gfx);
+		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())
 		{
 			auto& light = dynamic_cast<Light::ILight&>(job.GetData());

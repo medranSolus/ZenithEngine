@@ -590,6 +590,9 @@
     <FxCompile Include="PhongPSTextureNormalParallaxSpecular.hlsl">
       <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
     </FxCompile>
+    <FxCompile Include="PhongVSTextureNormalParallax.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Timer.h">

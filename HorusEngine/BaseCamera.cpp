@@ -3,7 +3,7 @@
 
 namespace Camera
 {
-	inline GFX::Data::CBuffer::DCBLayout BaseCamera::MakeLayout() noexcept
+	inline GFX::Data::CBuffer::DCBLayout BaseCamera::MakeLayoutPS() noexcept
 	{
 		static GFX::Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
@@ -23,7 +23,16 @@ namespace Camera
 		return matrix;
 	}
 
-	void BaseCamera::UpdateBuffer() noexcept
+	void BaseCamera::UpdateBufferVS(GFX::Graphics& gfx) noexcept
+	{
+		if (positionUpdate)
+		{
+			const DirectX::XMFLOAT3& pos = GetPos();
+			positionBuffer->Update(gfx, { pos.x, pos.y, pos.z, 0.0f });
+		}
+	}
+
+	void BaseCamera::UpdateBufferPS() noexcept
 	{
 		DirectX::XMStoreFloat4x4(&cameraBuffer->GetBuffer()["inverseViewProjection"],
 			DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, GetView() * GetProjection())));
@@ -33,7 +42,8 @@ namespace Camera
 		float fov, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept
 		: ICamera(name), projection({ fov, gfx.GetRatio(), nearClip, farClip })
 	{
-		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayout(), 7U);
+		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(BaseCamera).name() + name, 1U);
+		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayoutPS(), 7U);
 		cameraBuffer->GetBuffer()["cameraPos"] = position;
 		indicator = std::make_shared<GFX::Shape::CameraIndicator>(gfx, graph, position, name, DirectX::XMFLOAT3(0.5f, 0.5f, 1.0f));
 		frustrum = std::make_shared<GFX::Shape::CameraFrustrum>(gfx, graph, position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);

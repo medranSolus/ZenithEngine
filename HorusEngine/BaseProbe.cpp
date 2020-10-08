@@ -81,15 +81,19 @@ namespace GFX::Probe
 		{
 			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.001f, 0.0f, 1.0f, "%.3f");
 		}
+		if (auto parallax = buffer["parallaxScale"]; parallax.Exists())
+		{
+			dirty |= ImGui::DragFloat(Tag("Bump scaling"), &parallax, 0.01f, 0.0f, FLT_MAX, "%.2f");
+		}
 		return dirty;
 	}
 
 	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
-		ImGui::Text("Color:");
 		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
 		{
+			ImGui::Text("Color:");
 			dirty |= ImGui::ColorEdit3(Tag("Light"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
 				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
 		}

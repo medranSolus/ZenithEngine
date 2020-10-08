@@ -14,13 +14,13 @@ namespace GFX::Pipeline
 	std::shared_ptr<Technique> TechniqueFactory::MakeLambertian(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Visual::Material> material)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Lambertian", RenderChannel::Main);
-		if (!material->IsTranslucent())
+		if (material->IsTranslucent() || material->IsParallax())
+			technique->AddStep({ graph, "lambertianClassic", material });
+		else
 		{
 			technique->AddStep({ graph, "depthOnly", std::make_shared<Visual::DepthWrite>(gfx, material->GerVertexLayout()) });
 			technique->AddStep({ graph, "lambertianDepthOptimized", material });
 		}
-		else
-			technique->AddStep({ graph, "lambertianClassic", material });
 		return std::move(technique);
 	}
 

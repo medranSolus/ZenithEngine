@@ -22,6 +22,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		assert(mainCamera);
 		mainCamera->BindCamera(gfx);
+		mainCamera->BindVS(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

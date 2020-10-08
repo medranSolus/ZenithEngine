@@ -202,12 +202,13 @@ App::App(const std::string& commandLine)
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });
 	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f });
-	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
+	//AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
+	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), "Wall", 2.0f });
+	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon", 0.15f });
 	//std::mt19937_64 engine(std::random_device{}());
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -2.0f, 3.0f), "Sting Sword", 0.5f));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(6.0f, 5.0f, -15.0f), "Nanosuit_old"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));

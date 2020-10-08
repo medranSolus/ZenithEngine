@@ -57,7 +57,7 @@ namespace GFX::Pipeline::RenderPass
 
 		const auto& pos = shadowSource->GetPos();
 		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&pos);
-		positionBuffer->Update(gfx, DirectX::XMFLOAT4(pos.x, pos.y, pos.z, 0.0f));
+		positionBuffer->Update(gfx, { pos.x, pos.y, pos.z, 0.0f });
 
 		const DirectX::XMMATRIX projectionMatrix = DirectX::XMLoadFloat4x4(&projection);
 		const DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);

@@ -22,19 +22,27 @@ struct PSOut
 	float4 specular : SV_TARGET2; // RGB - color, A - power
 };
 
-PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL,
+PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX
-	float2 tc : TEXCOORD,
+	, float2 tc : TEXCOORD
 #ifdef _TEX_NORMAL
-	float3 worldBitan : BITANGENT,
-#endif
-#endif
-	float4 pos : SV_POSITION)
-{
+	, float3 worldBitan : BITANGENT
 #ifdef _TEX_PAX
+	, float3 cameraDir : CAMERADIR
+#endif
+#endif
+#endif
+)
+{
+#ifdef _TEX_NORMAL
+	const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
+#ifdef _TEX_PAX
+	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr);
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
 #endif
+#endif
+
 	PSOut pso;
 #ifdef _TEX
 	pso.color = tex.Sample(splr, tc);
@@ -45,7 +53,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL,
 	pso.color.a = 0.0f;
 
 #ifdef _TEX_NORMAL
-	pso.normal = EncodeNormal(GetMappedNormal(worldBitan, worldNormal, tc, normalMap, splr));
+	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif

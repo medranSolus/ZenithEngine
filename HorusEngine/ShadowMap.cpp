@@ -11,6 +11,12 @@ namespace GFX::Visual
 			shaderType = "Texture";
 			diffuseTexture = material->GetTexture();
 			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
+			if (material->IsParallax())
+			{
+				//shaderType += "Parallax";
+				//normalMap = material->GetNormalMap();
+				//parallaxMap = material->GetParallaxMap();
+			}
 		}
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
 		AddBind(GFX::Resource::GeometryShader::Get(gfx, "ShadowGS" + shaderType));
@@ -24,5 +30,9 @@ namespace GFX::Visual
 		IVisual::Bind(gfx);
 		if (diffuseTexture)
 			diffuseTexture->Bind(gfx);
+		if (normalMap)
+			normalMap->Bind(gfx);
+		if (parallaxMap)
+			parallaxMap->Bind(gfx);
 	}
 }
