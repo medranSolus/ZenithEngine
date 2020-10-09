@@ -13,9 +13,9 @@ namespace GFX::Visual
 			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
 			if (material->IsParallax())
 			{
-				//shaderType += "Parallax";
+				shaderType += "Parallax";
 				//normalMap = material->GetNormalMap();
-				//parallaxMap = material->GetParallaxMap();
+				parallaxMap = material->GetParallaxMap();
 			}
 		}
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));

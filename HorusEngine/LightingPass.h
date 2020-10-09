@@ -1,7 +1,6 @@
 #pragma once
 #include "ShadowMapPass.h"
 #include "FullscreenPass.h"
-#include "ICamera.h"
 
 namespace GFX::Pipeline::RenderPass
 {
@@ -14,7 +13,7 @@ namespace GFX::Pipeline::RenderPass
 		LightingPass(Graphics& gfx, const std::string& name);
 		virtual ~LightingPass() = default;
 
-		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
+		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; shadowMapPass->BindCamera(camera); }
 		inline void ShowWindow(Graphics& gfx) { shadowMapPass->ShowWindow(gfx); }
 
 		void Reset() noexcept override;

@@ -593,6 +593,15 @@
     <FxCompile Include="PhongVSTextureNormalParallax.hlsl">
       <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
     </FxCompile>
+    <FxCompile Include="ShadowGSTextureParallax.hlsl">
+      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowPSTextureParallax.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTextureParallax.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Timer.h">
@@ -1377,6 +1386,9 @@
     </None>
     <None Include="LightUtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </None>
+    <None Include="ShadowParallaxPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

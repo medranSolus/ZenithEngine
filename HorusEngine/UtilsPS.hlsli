@@ -31,8 +31,8 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 	// Shift tex coords to next layer in pixel<->camera line
 	const float2 deltaTexCoords = tangentViewDir.xy * (depthScale / layers);
 
-	float currentLayerDepth = 0.0f;
 	float currentDepthMapValue;
+	float currentLayerDepth = 0.0f;
 	float2 currentUV = uv;
 
 	// Follow pixel<->camera line to find intersection with geometry displacement (bump)
@@ -52,6 +52,15 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 	const float prevDepth = depthMap.Sample(splr, prevUV).r - currentLayerDepth + layerDepth;
 
 	return lerp(currentUV, prevUV, nextDepth / (nextDepth - prevDepth));
+}
+
+float GetParallaxDepth(const in float2 uv, const in float3 tangentLightDir,
+	uniform Texture2D depthMap, uniform SamplerState splr)
+{
+	float currentDepth = depthMap.Sample(splr, uv).r;
+	if (currentDepth == 0.0f)
+		return 0.0f;
+	return 1.0f;
 }
 
 float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,

@@ -12,6 +12,7 @@ namespace GFX::Pipeline::RenderPass
 		{
 			layout.Add(DCBElementType::Array, "viewProjection");
 			layout["viewProjection"].InitArray(DCBElementType::Matrix, 6);
+			layout.Add(DCBElementType::Float3, "cameraPos");
 			initNeeded = false;
 		}
 		return layout;
@@ -58,6 +59,7 @@ namespace GFX::Pipeline::RenderPass
 		const auto& pos = shadowSource->GetPos();
 		const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&pos);
 		positionBuffer->Update(gfx, { pos.x, pos.y, pos.z, 0.0f });
+		viewBuffer->GetBuffer()["cameraPos"] = mainCamera->GetPos();
 
 		const DirectX::XMMATRIX projectionMatrix = DirectX::XMLoadFloat4x4(&projection);
 		const DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
