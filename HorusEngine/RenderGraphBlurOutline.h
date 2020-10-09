@@ -17,6 +17,7 @@ namespace GFX::Pipeline
 		int radius;
 		float sigma;
 		float gamma;
+		float hdrExposure;
 
 		std::shared_ptr<Resource::DepthStencilShaderInput> depthOnly;
 		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
@@ -29,7 +30,7 @@ namespace GFX::Pipeline
 		void SetKernel() noexcept(!IS_DEBUG);
 
 	public:
-		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f, float gamma = 2.2f);
+		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f, float gamma = 2.2f, float hdrExposure = 1.5f);
 		virtual ~RenderGraphBlurOutline() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);

@@ -1,6 +1,6 @@
 #include "LightUtilsPS.hlsli"
 #include "PointLightPB.hlsli"
-#include "GammaPB.hlsli"
+#include "HDRGammaPB.hlsli"
 #include "CameraPB.hlsli"
 
 SamplerState splr : register(s0);
@@ -45,8 +45,8 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 			diffuse = cb_shadowColor;
 			specular = float3(0.0f, 0.0f, 0.0f);
 		}
-		return float4(saturate(diffuse + cb_ambientColor) * color + specular, 1.0f);
+		return float4((diffuse + cb_ambientColor) * color + specular, 1.0f);
 	}
 	else
-		return float4(color, 1.0f);
+		return float4(color * cb_lightIntensity, 1.0f);
 }

@@ -2,7 +2,7 @@
 #include "RenderPassesBase.h"
 #include "ClearBufferPass.h"
 #include "DepthOnlyPass.h"
-#include "GammaCorrectionPass.h"
+#include "HDRGammaCorrectionPass.h"
 #include "HorizontalBlurPass.h"
 #include "LambertianClassicPass.h"
 #include "LambertianDepthOptimizedPass.h"

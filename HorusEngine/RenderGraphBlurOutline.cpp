@@ -21,8 +21,8 @@ namespace GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma, float gamma)
-		: RenderGraph(gfx), radius(radius), sigma(sigma), gamma(gamma)
+	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma, float gamma, float hdrExposure)
+		: RenderGraph(gfx), radius(radius), sigma(sigma), gamma(gamma), hdrExposure(hdrExposure)
 	{
 		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
@@ -31,25 +31,29 @@ namespace GFX::Pipeline
 			{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
 
-		sceneTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 0U);
+		sceneTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 0U, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("sceneTarget", sceneTarget));
 
 		// Setup gamma cbuffer
 		Data::CBuffer::DCBLayout gammaLayout;
 		gammaLayout.Add(DCBElementType::Float, "gamma");
 		gammaLayout.Add(DCBElementType::Float, "deGamma");
+		gammaLayout.Add(DCBElementType::Float, "hdrExposure");
 		Data::CBuffer::DynamicCBuffer gammaBuffer(std::move(gammaLayout));
 		gammaBuffer["gamma"] = gamma;
 		gammaBuffer["deGamma"] = 1.0f / gamma;
+		gammaBuffer["hdrExposure"] = hdrExposure;
 		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 2U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("gammaCorrection", gammaCorrection));
 
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
 		kernelLayout.Add(DCBElementType::SInteger, "radius");
+		kernelLayout.Add(DCBElementType::Float, "intensity");
 		kernelLayout.Add(DCBElementType::Array, "coefficients");
 		kernelLayout["coefficients"].InitArray(DCBElementType::Float, MAX_RADIUS + 1);
 		Data::CBuffer::DynamicCBuffer kernelBuffer(std::move(kernelLayout));
+		kernelBuffer["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
 		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 0U);
 		SetKernel();
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("kernel", kernel));
@@ -144,13 +148,13 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = std::make_unique<RenderPass::GammaCorrectionPass>(gfx, "gamma");
+			auto pass = std::make_unique<RenderPass::HDRGammaCorrectionPass>(gfx, "hdrGamma");
 			pass->SetSinkLinkage("scene", "wireframe.renderTarget");
 			pass->SetSinkLinkage("renderTarget", "$.backbuffer");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			AppendPass(std::move(pass));
 		}
-		SetSinkSource("backbuffer", "gamma.renderTarget");
+		SetSinkSource("backbuffer", "hdrGamma.renderTarget");
 		Finalize();
 	}
 
@@ -176,6 +180,11 @@ namespace GFX::Pipeline
 		{
 			gammaCorrection->GetBuffer()["gamma"] = gamma;
 			gammaCorrection->GetBuffer()["deGamma"] = 1.0f / gamma;
+		}
+		if (ImGui::DragFloat("HDR exposure", &hdrExposure, 0.1f, 0.1f, FLT_MAX, "%.1f"))
+		{
+			gammaCorrection->GetBuffer()["hdrExposure"] = hdrExposure;
+			kernel->GetBuffer()["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
 		}
 		ImGui::Text("Blur Control");
 		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))

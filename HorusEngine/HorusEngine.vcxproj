@@ -289,7 +289,7 @@
     <ClCompile Include="DynamicCBuffer.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="FullscreenPass.cpp" />
-    <ClCompile Include="GammaCorrectionPass.cpp" />
+    <ClCompile Include="HDRGammaCorrectionPass.cpp" />
     <ClCompile Include="GeometryShader.cpp" />
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="Graphics.cpp" />
@@ -391,7 +391,7 @@
     <None Include="CameraPB.hlsli" />
     <None Include="CameraVB.hlsli" />
     <None Include="DirectionalLightPB.hlsli" />
-    <None Include="GammaPB.hlsli" />
+    <None Include="HDRGammaPB.hlsli" />
     <None Include="GaussPB.hlsli" />
     <None Include="LightUtilsPS.hlsli" />
     <None Include="OffsetVB.hlsli" />
@@ -446,7 +446,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="GammaPS.hlsl">
+    <FxCompile Include="HDRGammaPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -723,7 +723,7 @@
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="BaseLight.h" />
-    <ClInclude Include="GammaCorrectionPass.h" />
+    <ClInclude Include="HDRGammaCorrectionPass.h" />
     <ClInclude Include="GeometryShader.h" />
     <ClInclude Include="ILight.h" />
     <ClInclude Include="IShape.h" />

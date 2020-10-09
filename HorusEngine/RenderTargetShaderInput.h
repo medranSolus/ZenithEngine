@@ -9,8 +9,9 @@ namespace GFX::Pipeline::Resource
 		UINT slot;
 
 	public:
-		inline RenderTargetShaderInput(Graphics& gfx, UINT slot) : RenderTargetShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot) {}
-		RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot);
+		inline RenderTargetShaderInput(Graphics& gfx, UINT slot, DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM)
+			: RenderTargetShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, format) {}
+		RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM);
 		virtual ~RenderTargetShaderInput() = default;
 
 		constexpr UINT GetSlot() const noexcept { return slot; }

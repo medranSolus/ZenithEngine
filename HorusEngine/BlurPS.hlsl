@@ -27,5 +27,5 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 		alpha += color.a * cb_coefficients[abs(i)];
 		maxColor = max(maxColor, color.rgb);
 	}
-	return float4(maxColor, alpha);
+	return float4(maxColor * cb_intensity, alpha);
 }

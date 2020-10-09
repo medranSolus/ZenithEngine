@@ -3,7 +3,8 @@
 
 namespace GFX::Pipeline::Resource
 {
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> RenderTarget::CreateTexture(Graphics& gfx, unsigned int width, unsigned int height, D3D11_TEXTURE2D_DESC& textureDesc)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> RenderTarget::CreateTexture(Graphics& gfx, unsigned int width, unsigned int height,
+		D3D11_TEXTURE2D_DESC& textureDesc, DXGI_FORMAT format)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -11,7 +12,7 @@ namespace GFX::Pipeline::Resource
 		textureDesc.Height = static_cast<UINT>(height);
 		textureDesc.ArraySize = 1U;
 		textureDesc.MipLevels = 1U;
-		textureDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format = format;
 		textureDesc.SampleDesc.Count = 1U;
 		textureDesc.SampleDesc.Quality = 0U;
 		textureDesc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
@@ -49,12 +50,12 @@ namespace GFX::Pipeline::Resource
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height)
+	RenderTarget::RenderTarget(Graphics& gfx, unsigned int width, unsigned int height, DXGI_FORMAT format)
 		: IRenderTarget(gfx, width, height)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.BindFlags = 0U;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc);
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc, format);
 		InitializeTargetView(gfx, textureDesc, texture);
 	}
 

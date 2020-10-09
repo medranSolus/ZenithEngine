@@ -1,4 +1,4 @@
-#include "GammaPB.hlsli"
+#include "HDRGammaPB.hlsli"
 
 SamplerState splr : register(s0);
 TextureCube box : register(t0);

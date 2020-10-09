@@ -489,14 +489,14 @@
     <ClCompile Include="LambertianDepthOptimizedPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="GammaCorrectionPass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="GeometryShader.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="ConstBufferExGeometry.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="HDRGammaCorrectionPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -575,9 +575,6 @@
     <FxCompile Include="ShadowPSTexture.hlsl">
       <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="GammaPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
-    </FxCompile>
     <FxCompile Include="ShadowGS.hlsl">
       <Filter>Shader Files\Geometry Shaders</Filter>
     </FxCompile>
@@ -601,6 +598,9 @@
     </FxCompile>
     <FxCompile Include="ShadowVSTextureParallax.hlsl">
       <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="HDRGammaPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1291,9 +1291,6 @@
     <ClInclude Include="LambertianClassicPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="GammaCorrectionPass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
     <ClInclude Include="GeometryShader.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -1302,6 +1299,9 @@
     </ClInclude>
     <ClInclude Include="ConstBufferExGeometry.h">
       <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="HDRGammaCorrectionPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1351,9 +1351,6 @@
     <None Include="TransformSkyboxVB.hlsli">
       <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
     </None>
-    <None Include="GammaPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
     <None Include="ViewGB.hlsli">
       <Filter>Shader Files\Geometry Shaders\CBuffers</Filter>
     </None>
@@ -1388,6 +1385,9 @@
       <Filter>Shader Files\Pixel Shaders\Lights</Filter>
     </None>
     <None Include="ShadowParallaxPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="HDRGammaPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>
