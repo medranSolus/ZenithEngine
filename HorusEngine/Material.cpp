@@ -11,8 +11,8 @@ namespace GFX::Visual
 		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
-		AddBind(Resource::Rasterizer::Get(gfx, false));
-		AddBind(Resource::Blender::Get(gfx, false));
+		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
+		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
@@ -24,8 +24,8 @@ namespace GFX::Visual
 	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
 	{
 		translucent = Math::NotEquals(color.col.w, 1.0f);
-		AddBind(Resource::Rasterizer::Get(gfx, false));
-		AddBind(Resource::Blender::Get(gfx, false));
+		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
+		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS"));
 
 		vertexLayout = std::make_shared<Data::VertexLayout>();
@@ -108,8 +108,8 @@ namespace GFX::Visual
 		int twoSided;
 		if (material.Get(AI_MATKEY_TWOSIDED, twoSided) != aiReturn_SUCCESS)
 			twoSided = !translucent;
-		AddBind(Resource::Rasterizer::Get(gfx, twoSided));
-		AddBind(Resource::Blender::Get(gfx, false));
+		AddBind(Resource::Rasterizer::Get(gfx, twoSided == 1 ? D3D11_CULL_NONE : D3D11_CULL_BACK));
+		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));

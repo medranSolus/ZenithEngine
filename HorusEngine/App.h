@@ -3,7 +3,7 @@
 #include "Cameras.h"
 #include "Shapes.h"
 #include "PointLight.h"
-#include "RenderGraphBlurOutline.h"
+#include "MainPipelineGraph.h"
 #include <map>
 
 class App
@@ -14,7 +14,7 @@ class App
 	static constexpr float VIEW_DISTANCE = 500.0f;
 
 	WinAPI::Window window;
-	GFX::Pipeline::RenderGraphBlurOutline renderer;
+	GFX::Pipeline::MainPipelineGraph renderer;
 	Camera::CameraPool cameras;
 	Timer timer;
 	std::vector<GFX::Shape::Model> models;

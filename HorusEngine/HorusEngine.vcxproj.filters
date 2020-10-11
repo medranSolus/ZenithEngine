@@ -163,6 +163,12 @@
     <Filter Include="Shader Files\Pixel Shaders\CBuffers">
       <UniqueIdentifier>{73968ba4-fa1e-4656-896d-abb3dd7a711f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Light\Volume">
+      <UniqueIdentifier>{c13f65bc-d49b-4491-ad8a-cdd20d2ccc9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Light\Volume">
+      <UniqueIdentifier>{10cfb8f4-8f52-4e7e-9355-1ea3eb0def73}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -423,9 +429,6 @@
     <ClCompile Include="RenderGraph.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="RenderGraphBlurOutline.cpp">
-      <Filter>Source Files\GFX\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="CameraPool.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
@@ -498,6 +501,18 @@
     <ClCompile Include="HDRGammaCorrectionPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="GlobeVolume.cpp">
+      <Filter>Source Files\GFX\Light\Volume</Filter>
+    </ClCompile>
+    <ClCompile Include="IVolume.cpp">
+      <Filter>Source Files\GFX\Light\Volume</Filter>
+    </ClCompile>
+    <ClCompile Include="LightCombinePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="MainPipelineGraph.cpp">
+      <Filter>Source Files\GFX\Pipeline</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -563,9 +578,6 @@
     <FxCompile Include="PointLightPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Lights</Filter>
     </FxCompile>
-    <FxCompile Include="LightVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="ShadowPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
@@ -601,6 +613,12 @@
     </FxCompile>
     <FxCompile Include="HDRGammaPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="LightCombinePS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="LightVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1201,9 +1219,6 @@
     <ClInclude Include="RenderTargetShaderInput.h">
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="RenderGraphBlurOutline.h">
-      <Filter>Header Files\GFX\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="RenderPasses.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
@@ -1303,6 +1318,18 @@
     <ClInclude Include="HDRGammaCorrectionPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="GlobeVolume.h">
+      <Filter>Header Files\GFX\Light\Volume</Filter>
+    </ClInclude>
+    <ClInclude Include="IVolume.h">
+      <Filter>Header Files\GFX\Light\Volume</Filter>
+    </ClInclude>
+    <ClInclude Include="LightCombinePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="MainPipelineGraph.h">
+      <Filter>Header Files\GFX\Pipeline</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1388,6 +1415,9 @@
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="HDRGammaPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="LightAmbientPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>

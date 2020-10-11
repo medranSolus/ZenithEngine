@@ -1,10 +1,9 @@
 #pragma once
 #include "ShadowMapPass.h"
-#include "FullscreenPass.h"
 
 namespace GFX::Pipeline::RenderPass
 {
-	class LightingPass : public Base::QueuePass, public Base::FullscreenPass
+	class LightingPass : public Base::QueuePass
 	{
 		std::unique_ptr<ShadowMapPass> shadowMapPass = nullptr;
 		Camera::ICamera* mainCamera = nullptr;

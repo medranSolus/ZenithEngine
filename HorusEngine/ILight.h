@@ -8,7 +8,5 @@ namespace GFX::Light
 	{
 	public:
 		virtual ~ILight() = default;
-
-		inline UINT GetIndexCount() const noexcept override { return 6U; }
 	};
 }

@@ -3,12 +3,13 @@
 
 namespace GFX::Resource
 {
-	Rasterizer::Rasterizer(Graphics& gfx, bool culling) : culling(culling)
+	Rasterizer::Rasterizer(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable) : culling(culling), depthEnable(depthEnable)
 	{
 		GFX_ENABLE_ALL(gfx);
 
 		D3D11_RASTERIZER_DESC rasterDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT{});
-		rasterDesc.CullMode = culling ? D3D11_CULL_MODE::D3D11_CULL_BACK : D3D11_CULL_MODE::D3D11_CULL_NONE;
+		rasterDesc.CullMode = culling;
+		rasterDesc.DepthClipEnable = depthEnable;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRasterizerState(&rasterDesc, &state));
 	}
 }

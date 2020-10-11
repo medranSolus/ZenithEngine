@@ -3,7 +3,8 @@
 
 namespace GFX::Resource
 {
-	Sampler::Sampler(Graphics& gfx, Type type, bool textureCoordReflect) : type(type), textureCoordReflect(textureCoordReflect)
+	Sampler::Sampler(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot)
+		: type(type), textureCoordReflect(textureCoordReflect), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 

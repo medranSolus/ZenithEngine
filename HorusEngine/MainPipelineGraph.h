@@ -10,7 +10,7 @@
 
 namespace GFX::Pipeline
 {
-	class RenderGraphBlurOutline : public RenderGraph
+	class MainPipelineGraph : public RenderGraph
 	{
 		static constexpr int MAX_RADIUS = 7;
 
@@ -30,8 +30,8 @@ namespace GFX::Pipeline
 		void SetKernel() noexcept(!IS_DEBUG);
 
 	public:
-		RenderGraphBlurOutline(Graphics& gfx, int radius = 7, float sigma = 2.6f, float gamma = 2.2f, float hdrExposure = 1.5f);
-		virtual ~RenderGraphBlurOutline() = default;
+		MainPipelineGraph(Graphics& gfx, float hdrExposure = 1.5f, int radius = 7, float sigma = 2.6f, float gamma = 2.2f);
+		virtual ~MainPipelineGraph() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);
 		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);

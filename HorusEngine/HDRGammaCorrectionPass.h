@@ -1,6 +1,5 @@
 #pragma once
 #include "FullscreenPass.h"
-#include "ConstBufferExCache.h"
 
 namespace GFX::Pipeline::RenderPass
 {

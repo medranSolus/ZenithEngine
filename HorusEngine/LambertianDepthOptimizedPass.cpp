@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	LambertianDepthOptimizedPass::LambertianDepthOptimizedPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), QueuePass(name)
+		: QueuePass(name)
 	{
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("geometryBuffer", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));

@@ -6,24 +6,28 @@
 namespace GFX::Pipeline::RenderPass
 {
 	LightingPass::LightingPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), QueuePass(name), FullscreenPass(gfx, name, "LightVS")
+		: QueuePass(name)
 	{
 		shadowMapPass = std::make_unique<ShadowMapPass>(gfx, "shadowMap");
-		AddBindableSink<GFX::Resource::IBindable>("depthMap");
-		SetSinkLinkage("depthMap", name + ".shadowMap.depthMap");
+		AddBindableSink<GFX::Resource::IBindable>("shadowMap");
+		SetSinkLinkage("shadowMap", name + ".shadowMap.shadowMap");
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
-		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
-		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
-		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
+		renderTarget = Resource::RenderTargetEx::Get(gfx, 9U, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
+		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 
 		AddBind(GFX::Resource::NullGeometryShader::Get(gfx));
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "PointLightPS"));
-		AddBind(GFX::Resource::Blender::Get(gfx, true));
-		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::DepthOff));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, false));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Light));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, true, 0U));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true, 1U));
+		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_FRONT));
+
+		auto vertexShader = GFX::Resource::VertexShader::Get(gfx, "LightVS");
+		AddBind(GFX::Resource::InputLayout::Get(gfx, std::make_shared<Data::VertexLayout>(), vertexShader));
+		AddBind(std::move(vertexShader));
+		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 	}
 
 	void LightingPass::Reset() noexcept
@@ -41,11 +45,11 @@ namespace GFX::Pipeline::RenderPass
 
 	void LightingPass::Execute(Graphics& gfx)
 	{
+		renderTarget->Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f });
 		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())
 		{
-			auto& light = dynamic_cast<Light::ILight&>(job.GetData());
-			shadowMapPass->BindLight(light);
+			shadowMapPass->BindLight(dynamic_cast<Light::ILight&>(job.GetData()));
 			shadowMapPass->Execute(gfx);
 			mainCamera->BindCamera(gfx);
 			BindAll(gfx);

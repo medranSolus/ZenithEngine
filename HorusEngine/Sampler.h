@@ -12,17 +12,18 @@ namespace GFX::Resource
 	private:
 		Type type;
 		bool textureCoordReflect;
+		UINT slot;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> state;
 
 	public:
-		Sampler(Graphics& gfx, Type type, bool textureCoordReflect);
+		Sampler(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot = 0U);
 		virtual ~Sampler() = default;
 
-		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect);
-		static inline std::string GenerateRID(Type type, bool textureCoordReflect) noexcept;
+		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot = 0U);
+		static inline std::string GenerateRID(Type type, bool textureCoordReflect, UINT slot = 0U) noexcept;
 
-		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetSamplers(0U, 1U, state.GetAddressOf()); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(type, textureCoordReflect); }
+		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetSamplers(slot, 1U, state.GetAddressOf()); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(type, textureCoordReflect, slot); }
 	};
 
 	template<>
@@ -31,13 +32,13 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<Sampler> Sampler::Get(Graphics& gfx, Type type, bool textureCoordReflect)
+	inline std::shared_ptr<Sampler> Sampler::Get(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot)
 	{
-		return Codex::Resolve<Sampler>(gfx, type, textureCoordReflect);
+		return Codex::Resolve<Sampler>(gfx, type, textureCoordReflect, slot);
 	}
 
-	inline std::string Sampler::GenerateRID(Type type, bool textureCoordReflect) noexcept
+	inline std::string Sampler::GenerateRID(Type type, bool textureCoordReflect, UINT slot) noexcept
 	{
-		return "#" + std::string(typeid(Sampler).name()) + "#" + std::to_string(type) + "#" + std::to_string(textureCoordReflect) + "#";
+		return "#" + std::string(typeid(Sampler).name()) + "#" + std::to_string(type) + "#" + std::to_string(textureCoordReflect) + "#" + std::to_string(slot) + "#";
 	}
 }

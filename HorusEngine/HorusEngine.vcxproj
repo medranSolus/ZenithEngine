@@ -289,6 +289,7 @@
     <ClCompile Include="DynamicCBuffer.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="FullscreenPass.cpp" />
+    <ClCompile Include="GlobeVolume.cpp" />
     <ClCompile Include="HDRGammaCorrectionPass.cpp" />
     <ClCompile Include="GeometryShader.cpp" />
     <ClCompile Include="Globe.cpp" />
@@ -308,11 +309,13 @@
     <ClCompile Include="IndexedTriangleList.cpp" />
     <ClCompile Include="InputLayout.cpp" />
     <ClCompile Include="IVisual.cpp" />
+    <ClCompile Include="IVolume.cpp" />
     <ClCompile Include="Job.cpp" />
     <ClCompile Include="JobData.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LambertianClassicPass.cpp" />
     <ClCompile Include="LambertianDepthOptimizedPass.cpp" />
+    <ClCompile Include="LightCombinePass.cpp" />
     <ClCompile Include="LightingPass.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Math.cpp" />
@@ -333,7 +336,7 @@
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
     <ClCompile Include="RenderGraph.cpp" />
-    <ClCompile Include="RenderGraphBlurOutline.cpp" />
+    <ClCompile Include="MainPipelineGraph.cpp" />
     <ClCompile Include="RenderGraphCompileException.cpp" />
     <ClCompile Include="RenderTarget.cpp" />
     <ClCompile Include="RenderTargetEx.cpp" />
@@ -393,6 +396,7 @@
     <None Include="DirectionalLightPB.hlsli" />
     <None Include="HDRGammaPB.hlsli" />
     <None Include="GaussPB.hlsli" />
+    <None Include="LightAmbientPB.hlsli" />
     <None Include="LightUtilsPS.hlsli" />
     <None Include="OffsetVB.hlsli" />
     <None Include="packages.config" />
@@ -447,6 +451,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="HDRGammaPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="LightCombinePS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -723,14 +733,17 @@
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="BaseLight.h" />
+    <ClInclude Include="GlobeVolume.h" />
     <ClInclude Include="HDRGammaCorrectionPass.h" />
     <ClInclude Include="GeometryShader.h" />
     <ClInclude Include="ILight.h" />
     <ClInclude Include="IShape.h" />
+    <ClInclude Include="IVolume.h" />
     <ClInclude Include="JobData.h" />
     <ClInclude Include="IRenderTarget.h" />
     <ClInclude Include="LambertianClassicPass.h" />
     <ClInclude Include="LambertianDepthOptimizedPass.h" />
+    <ClInclude Include="LightCombinePass.h" />
     <ClInclude Include="LightingPass.h" />
     <ClInclude Include="NullGeometryShader.h" />
     <ClInclude Include="RenderChannels.h" />
@@ -740,7 +753,7 @@
     <ClInclude Include="OutlineDrawPass.h" />
     <ClInclude Include="PipelineResources.h" />
     <ClInclude Include="ProjectionData.h" />
-    <ClInclude Include="RenderGraphBlurOutline.h" />
+    <ClInclude Include="MainPipelineGraph.h" />
     <ClInclude Include="RenderPasses.h" />
     <ClInclude Include="RenderPassesBase.h" />
     <ClInclude Include="BaseShape.h" />

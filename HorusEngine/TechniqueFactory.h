@@ -11,6 +11,7 @@ namespace GFX::Pipeline
 	public:
 		TechniqueFactory() = delete;
 
+		static std::shared_ptr<Technique> MakeLighting(RenderGraph& graph);
 		static std::shared_ptr<Technique> MakeWireframe(RenderGraph& graph, std::shared_ptr<Visual::Material> material);
 		static std::shared_ptr<Technique> MakeLambertian(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Visual::Material> material);
 		static std::shared_ptr<Technique> MakeShadowMap(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Visual::Material> material);

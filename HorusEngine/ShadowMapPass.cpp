@@ -31,10 +31,10 @@ namespace GFX::Pipeline::RenderPass
 	}
 
 	ShadowMapPass::ShadowMapPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), QueuePass(name)
+		: QueuePass(name)
 	{
 		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, DEPTH_TEXTURE_SIZE, 7U);
-		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("depthMap", depthCube));
+		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("shadowMap", depthCube));
 
 		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(ShadowMapPass).name(), 1U);
 		viewBuffer = GFX::Resource::ConstBufferExGeometryCache::Get(gfx, typeid(ShadowMapPass).name(), MakeLayoutView(), 0U);
@@ -46,7 +46,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(biasBuffer);
 		AddBind(GFX::Resource::ShadowRasterizer::Get(gfx, 40, 5.0f, 0.1f));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
-		AddBind(GFX::Resource::Blender::Get(gfx, false));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 
 		DirectX::XMStoreFloat4x4(&projection, DirectX::XMMatrixPerspectiveFovLH(M_PI_2, 1.0f, 0.5f, 1000.0f));
 	}
@@ -99,7 +99,7 @@ namespace GFX::Pipeline::RenderPass
 
 	void ShadowMapPass::ShowWindow(Graphics& gfx)
 	{
-		if (ImGui::DragInt("Shadow depth bias", &bias))
+		if (ImGui::DragInt("Shadow bias", &bias))
 			biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 	}
 }

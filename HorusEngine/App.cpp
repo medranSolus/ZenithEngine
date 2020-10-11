@@ -31,7 +31,7 @@ inline void App::ProcessInput()
 inline void App::ShowObjectWindow()
 {
 	static GFX::Probe::ModelProbe probe;
-	if (ImGui::Begin("Object options"))
+	if (ImGui::Begin("Object options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
 		static std::map<std::string, std::pair<Container, size_t>>::iterator currentItem = objects.find("---None---");
 		if (ImGui::BeginCombo("Selected object", currentItem->first.c_str()))
@@ -117,7 +117,7 @@ inline void App::ShowObjectWindow()
 inline void App::ShowOptionsWindow()
 {
 	static GFX::Probe::BaseProbe probe;
-	if (ImGui::Begin("Options"))
+	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		cameras.Accept(window.Gfx(), probe);
@@ -197,12 +197,14 @@ App::App(const std::string& commandLine)
 {
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight" });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight1", 0.85f });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "PointLight2", 3.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "PointLight3", 0.64f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });
 	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f });
-	//AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
+	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), "Wall", 2.0f });
 	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon", 0.15f });
 	//std::mt19937_64 engine(std::random_device{}());

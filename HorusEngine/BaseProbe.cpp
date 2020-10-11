@@ -95,17 +95,12 @@ namespace GFX::Probe
 		{
 			ImGui::Text("Color:");
 			dirty |= ImGui::ColorEdit3(Tag("Light"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(lightColor)),
-				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
-		}
-		if (auto ambientColor = buffer["ambientColor"]; ambientColor.Exists())
-		{
-			dirty |= ImGui::ColorEdit3(Tag("Ambient"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(ambientColor)),
-				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
 		}
 		if (auto shadowColor = buffer["shadowColor"]; shadowColor.Exists())
 		{
 			dirty |= ImGui::ColorEdit3(Tag("Shadow"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(shadowColor)),
-				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+				ImGuiColorEditFlags_Float);
 		}
 		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
 		{

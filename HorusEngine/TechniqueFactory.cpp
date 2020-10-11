@@ -4,6 +4,13 @@ namespace GFX::Pipeline
 {
 	Data::ColorFloat3 TechniqueFactory::outlineColor = { 1.0f, 1.0f, 0.0f };
 
+	std::shared_ptr<Technique> TechniqueFactory::MakeLighting(RenderGraph& graph)
+	{
+		auto technique = std::make_shared<Pipeline::Technique>("Lighting", RenderChannel::Light);
+		technique->AddStep({ graph, "lighting" });
+		return std::move(technique);
+	}
+
 	std::shared_ptr<Technique> TechniqueFactory::MakeWireframe(RenderGraph& graph, std::shared_ptr<Visual::Material> material)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Wireframe", RenderChannel::Main);

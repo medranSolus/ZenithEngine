@@ -26,6 +26,7 @@ namespace GFX::Pipeline::Resource
 		inline void Unbind(Graphics& gfx) noexcept override { UnbindAll(gfx); GetContext(gfx)->PSSetShaderResources(slot, count, nullTexturesArray.get()); }
 
 		void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept override;
+		void Clear(Graphics& gfx, const std::vector<Data::ColorFloat4>& colors) noexcept;
 		Surface ToSurface(Graphics& gfx) const override;
 	};
 }

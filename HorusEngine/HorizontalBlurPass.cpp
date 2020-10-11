@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	HorizontalBlurPass::HorizontalBlurPass(Graphics& gfx, const std::string& name, unsigned int width, unsigned int height)
-		: BindingPass(name), FullscreenPass(gfx, name)
+		: FullscreenPass(gfx, name)
 	{
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("kernel");
 		AddBindableSink<Resource::RenderTarget>("blurTarget");
@@ -16,7 +16,7 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("halfTarget", renderTarget));
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
-		AddBind(GFX::Resource::Blender::Get(gfx, false));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true));
 	}
 

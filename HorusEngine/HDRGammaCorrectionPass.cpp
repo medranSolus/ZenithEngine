@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	HDRGammaCorrectionPass::HDRGammaCorrectionPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), FullscreenPass(gfx, name)
+		: FullscreenPass(gfx, name)
 	{
 		AddBindableSink<Resource::RenderTargetShaderInput>("scene");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
@@ -15,6 +15,6 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "HDRGammaPS"));
-		AddBind(GFX::Resource::Blender::Get(gfx, false));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 	}
 }

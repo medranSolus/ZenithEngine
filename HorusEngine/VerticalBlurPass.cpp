@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	VerticalBlurPass::VerticalBlurPass(Graphics& gfx, const std::string& name)
-		: BindingPass(name), FullscreenPass(gfx, name)
+		: FullscreenPass(gfx, name)
 	{
 		AddBindableSink<Resource::RenderTargetShaderInput>("halfTarget");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("kernel");
@@ -19,7 +19,7 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
-		AddBind(GFX::Resource::Blender::Get(gfx, true));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Normal));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Mask));
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Linear, true));
 	}

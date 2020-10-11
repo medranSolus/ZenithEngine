@@ -20,7 +20,7 @@ namespace GFX::Resource
 		vertexBuffer->Bind(gfx);
 	}
 
-	ConstBufferTransform::ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot) : parent(parent)
+	ConstBufferTransform::ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot) : parent(&parent)
 	{
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstBufferVertex<Data::CBuffer::Transform>>(gfx, "", slot);

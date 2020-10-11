@@ -5,18 +5,22 @@ namespace GFX::Resource
 {
 	class Blender : public IBindable
 	{
-		bool enabled;
+	public:
+		enum Type : uint8_t { None, Light, Normal };
+
+	private:
+		Type type;
 		Microsoft::WRL::ComPtr<ID3D11BlendState> state;
 
 	public:
-		Blender(Graphics& gfx, bool enabled);
+		Blender(Graphics& gfx, Type type);
 		virtual ~Blender() = default;
 
-		static inline std::shared_ptr<Blender> Get(Graphics& gfx, bool enabled) { return Codex::Resolve<Blender>(gfx, enabled); }
-		static inline std::string GenerateRID(bool enabled) noexcept { return "#" + std::string(typeid(Blender).name()) + "#" + std::to_string(enabled) + "#"; }
+		static inline std::shared_ptr<Blender> Get(Graphics& gfx, Type type) { return Codex::Resolve<Blender>(gfx, type); }
+		static inline std::string GenerateRID(Type type) noexcept { return "#" + std::string(typeid(Blender).name()) + "#" + std::to_string(type) + "#"; }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->OMSetBlendState(state.Get(), nullptr, 0xFFFFFFFFU); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(enabled); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(type); }
 	};
 
 	template<>

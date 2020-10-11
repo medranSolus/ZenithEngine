@@ -9,6 +9,8 @@ namespace GFX::Pipeline
 	protected:
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 
+		inline void AddTechnique(Graphics& gfx, std::shared_ptr<Pipeline::Technique> technique) noexcept { techniques.emplace_back(std::move(technique)); }
+
 		void SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept;
 
 	public:

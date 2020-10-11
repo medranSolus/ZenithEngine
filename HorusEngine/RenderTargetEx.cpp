@@ -57,6 +57,16 @@ namespace GFX::Pipeline::Resource
 			GetContext(gfx)->ClearRenderTargetView(view.Get(), reinterpret_cast<const FLOAT*>(&color.col));
 	}
 
+	void RenderTargetEx::Clear(Graphics& gfx, const std::vector<Data::ColorFloat4>& colors) noexcept
+	{
+		size_t size = colors.size() >= targetViews.size() ? targetViews.size() : colors.size();
+		size_t i = 0;
+		for (; i < size; ++i)
+			GetContext(gfx)->ClearRenderTargetView(targetViews.at(i).Get(), reinterpret_cast<const FLOAT*>(&colors.at(i).col));
+		for (; i < targetViews.size(); ++i)
+			GetContext(gfx)->ClearRenderTargetView(targetViews.at(i).Get(), reinterpret_cast<const FLOAT*>(&colors.back().col));
+	}
+
 	Surface RenderTargetEx::ToSurface(Graphics& gfx) const
 	{
 		GFX_ENABLE_ALL(gfx);

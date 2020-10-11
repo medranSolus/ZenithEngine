@@ -6,6 +6,7 @@
 #include "HorizontalBlurPass.h"
 #include "LambertianClassicPass.h"
 #include "LambertianDepthOptimizedPass.h"
+#include "LightCombinePass.h"
 #include "LightingPass.h"
 #include "OutlineDrawBlurPass.h"
 #include "OutlineDrawPass.h"

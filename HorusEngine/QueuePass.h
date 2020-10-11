@@ -4,7 +4,7 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	class QueuePass : public virtual BindingPass
+	class QueuePass : public BindingPass
 	{
 		using BindingPass::BindingPass;
 

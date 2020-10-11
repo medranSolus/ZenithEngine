@@ -1,11 +1,11 @@
-#include "RenderGraphBlurOutline.h"
+#include "MainPipelineGraph.h"
 #include "RenderPasses.h"
 #include "GfxResources.h"
 #include "Math.h"
 
 namespace GFX::Pipeline
 {
-	void RenderGraphBlurOutline::SetKernel() noexcept(!IS_DEBUG)
+	void MainPipelineGraph::SetKernel() noexcept(!IS_DEBUG)
 	{
 		assert(radius <= MAX_RADIUS);
 		auto& buffer = kernel->GetBuffer();
@@ -21,7 +21,7 @@ namespace GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	RenderGraphBlurOutline::RenderGraphBlurOutline(Graphics& gfx, int radius, float sigma, float gamma, float hdrExposure)
+	MainPipelineGraph::MainPipelineGraph(Graphics& gfx, float hdrExposure, int radius, float sigma, float gamma)
 		: RenderGraph(gfx), radius(radius), sigma(sigma), gamma(gamma), hdrExposure(hdrExposure)
 	{
 		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
@@ -64,7 +64,7 @@ namespace GFX::Pipeline
 		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 3U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
-		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\TropicalSunnyDay", ".jpg");
+		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\Space", ".png");
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
 
 		// Setup all passes
@@ -103,16 +103,22 @@ namespace GFX::Pipeline
 		{
 			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
-			pass->SetSinkLinkage("renderTarget", "$.sceneTarget");
 			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::LightCombinePass>(gfx, "combiner");
+			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
+			pass->SetSinkLinkage("lightBuffer", "lighting.lightBuffer");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
+			pass->SetSinkLinkage("renderTarget", "$.sceneTarget");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::SkyboxPass>(gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
-			pass->SetSinkLinkage("renderTarget", "lighting.renderTarget");
+			pass->SetSinkLinkage("renderTarget", "combiner.renderTarget");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
@@ -158,7 +164,7 @@ namespace GFX::Pipeline
 		Finalize();
 	}
 
-	void RenderGraphBlurOutline::BindMainCamera(Camera::ICamera& camera)
+	void MainPipelineGraph::BindMainCamera(Camera::ICamera& camera)
 	{
 		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindCamera(camera);
 		dynamic_cast<RenderPass::LambertianDepthOptimizedPass&>(FindPass("lambertianDepthOptimized")).BindCamera(camera);
@@ -167,14 +173,14 @@ namespace GFX::Pipeline
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
 
-	void RenderGraphBlurOutline::SetKernel(int radius, float sigma) noexcept(!IS_DEBUG)
+	void MainPipelineGraph::SetKernel(int radius, float sigma) noexcept(!IS_DEBUG)
 	{
 		this->sigma = sigma;
 		this->radius = radius;
 		SetKernel();
 	}
 
-	void RenderGraphBlurOutline::ShowWindow(Graphics& gfx)
+	void MainPipelineGraph::ShowWindow(Graphics& gfx)
 	{
 		if (ImGui::DragFloat("Gamma correction", &gamma, 0.1f, 0.1f, 7.9f, "%.1f"))
 		{
@@ -186,10 +192,11 @@ namespace GFX::Pipeline
 			gammaCorrection->GetBuffer()["hdrExposure"] = hdrExposure;
 			kernel->GetBuffer()["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
 		}
+		dynamic_cast<RenderPass::LightCombinePass&>(FindPass("combiner")).ShowWindow(gfx);
+		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).ShowWindow(gfx);
+		ImGui::NewLine();
 		ImGui::Text("Blur Control");
 		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
 			SetKernel();
-		ImGui::NewLine();
-		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).ShowWindow(gfx);
 	}
 }
