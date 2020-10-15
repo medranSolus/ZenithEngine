@@ -169,6 +169,9 @@
     <Filter Include="Source Files\GFX\Light\Volume">
       <UniqueIdentifier>{10cfb8f4-8f52-4e7e-9355-1ea3eb0def73}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\Utils">
+      <UniqueIdentifier>{5628bc00-98b1-4dab-8e0f-631e7d6c1a80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -513,6 +516,12 @@
     <ClCompile Include="MainPipelineGraph.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="SSAOPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="SSAOBlurPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ColorBlendPS.hlsl">
@@ -619,6 +628,12 @@
     </FxCompile>
     <FxCompile Include="LightVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="AmbientOcclusionPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="SSAOBlurPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1330,6 +1345,12 @@
     <ClInclude Include="MainPipelineGraph.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="SSAOPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="SSAOBlurPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1363,9 +1384,6 @@
       <Filter>Header Files\AssImp</Filter>
     </None>
     <None Include="packages.config" />
-    <None Include="UtilsPS.hlsli">
-      <Filter>Shader Files\Pixel Shaders</Filter>
-    </None>
     <None Include="CameraVB.hlsli">
       <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
     </None>
@@ -1408,9 +1426,6 @@
     <None Include="DirectionalLightPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
-    <None Include="LightUtilsPS.hlsli">
-      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
-    </None>
     <None Include="ShadowParallaxPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
@@ -1418,6 +1433,18 @@
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="LightAmbientPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="SSAOKernelPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="UtilsPS.hlsli">
+      <Filter>Shader Files\Pixel Shaders\Utils</Filter>
+    </None>
+    <None Include="LightUtilsPS.hlsli">
+      <Filter>Shader Files\Pixel Shaders\Utils</Filter>
+    </None>
+    <None Include="SSAOOptionsPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>

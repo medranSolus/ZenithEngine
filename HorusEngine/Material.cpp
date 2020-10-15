@@ -8,7 +8,8 @@ namespace GFX::Visual
 	{
 		AddBind(Resource::PixelShader::Get(gfx, "SolidPS"));
 		vertexLayout = std::make_shared<Data::VertexLayout>();
-		auto vertexShader = Resource::VertexShader::Get(gfx, "SolidVS");
+		vertexLayout->Append(VertexAttribute::Normal);
+		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
 		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
@@ -16,8 +17,10 @@ namespace GFX::Visual
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
+		cbufferLayout.Add(DCBElementType::Bool, "isLight");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
+		cbuffer["isLight"] = false;
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 8U);
 	}
 

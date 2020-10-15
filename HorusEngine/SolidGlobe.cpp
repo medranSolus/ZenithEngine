@@ -5,7 +5,7 @@
 namespace GFX::Shape
 {
 	SolidGlobe::SolidGlobe(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, Data::ColorFloat3 color,
-		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length)
+		unsigned int latitudeDensity, unsigned int longitudeDensity, float width, float height, float length, bool lightSource)
 		: IShape(gfx, position, name), sizes(width, height, length)
 	{
 		std::string typeName = Primitive::Sphere::GetNameUVSolid(latitudeDensity, longitudeDensity);
@@ -25,6 +25,7 @@ namespace GFX::Shape
 		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
 		techniques.reserve(3);
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
+		material->GetPixelBuffer().GetBuffer()["isLight"] = lightSource;
 		auto vertexLayout = material->GerVertexLayout();
 		materialBuffer = &material->GetPixelBuffer();
 

@@ -4,6 +4,12 @@ struct LightVectorData
 	float distanceToLight;
 };
 
+// Convert depth value from logarithmic depth space to linear view space
+float GetLinearDepth(const in float depth, uniform float nearClip, uniform float farClip)
+{
+	return nearClip * farClip / (farClip + depth * (nearClip - farClip));
+}
+
 // Reconstruct pixel position from depth buffer
 float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform matrix inverseViewProjection)
 {
@@ -23,19 +29,23 @@ LightVectorData GetLightVectorData(uniform float3 lightPos, const in float3 vert
 }
 
 // Decode normal from modified spherical coordinates
-float3 DecodeNormal(const in float2 packedNormal)
+float3 DecodeNormal(const in float2 codedNormal)
 {
 	/*
 		x = sqrt(1 - z^2) * cos(phi)
 		y = sqrt(1 - z^2) * sin(phi)
 		z = z
 	*/
-	float2 codedNormal = packedNormal * 2.0f - 1.0f;
-	float2 sinCosPhi;
-	sincos(codedNormal.x * 3.14159265f, sinCosPhi.x, sinCosPhi.y);
-	sinCosPhi *= sqrt(1.0f - codedNormal.y * codedNormal.y);
+	if (codedNormal.x > 90.0f)
+		return float3(0.0f, codedNormal.x - 100.0f, codedNormal.y);
+	else
+	{
+		float2 sinCosPhi;
+		sincos(codedNormal.x, sinCosPhi.x, sinCosPhi.y);
+		sinCosPhi *= sqrt(1.0f - codedNormal.y * codedNormal.y);
 
-	return float3(sinCosPhi.y, sinCosPhi.x, codedNormal.y);
+		return float3(sinCosPhi.y, sinCosPhi.x, codedNormal.y);
+	}
 }
 
 float GetAttenuation(uniform float attConst, uniform float attLinear, uniform float attQuad, const in LightVectorData lvd)
@@ -64,10 +74,8 @@ float3 GetSpecular(uniform float3 cameraPos, const in LightVectorData lvd, const
 }
 
 float GetShadowLevel(const in float3 pos, const in float3 normal, const in LightVectorData lvd,
-	uniform float3 lightPos, uniform SamplerState shadowSplr, uniform TextureCube shadowMap)
+	uniform float3 lightPos, uniform SamplerState shadowSplr, uniform TextureCube shadowMap, uniform float mapSize)
 {
-	float size;
-	shadowMap.GetDimensions(size, size);
 	const float3 shadowPos = pos - lightPos;
 	const float slope = dot(normal, lvd.directionToLight);
 	float shadowLength = length(shadowPos) - 0.02f * sqrt(1.0f - slope * slope) / slope;
@@ -82,7 +90,7 @@ float GetShadowLevel(const in float3 pos, const in float3 normal, const in Light
 	};
 	[unroll]
 	for (int i = 0; i < 20; ++i)
-		level += saturate(exp(30.0f * (shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / size).x - shadowLength)));
+		level += saturate(exp(30.0f * (shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / mapSize).x - shadowLength)));
 
 	return level / 20.0f;
 }

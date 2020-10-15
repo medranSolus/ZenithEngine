@@ -22,6 +22,7 @@ namespace GFX::Pipeline
 		std::shared_ptr<Resource::DepthStencilShaderInput> depthOnly;
 		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
 		std::shared_ptr<Resource::RenderTargetShaderInput> sceneTarget;
+		std::shared_ptr<Resource::RenderTargetShaderInput> blurSSAO;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> gammaCorrection;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;

@@ -60,6 +60,11 @@ namespace Math
 		return std::uniform_real_distribution<float>(0.0f, 1.0f)(eng);
 	}
 
+	inline float RandNDC(std::mt19937_64& eng) noexcept
+	{
+		return std::uniform_real_distribution<float>(-1.0f, 1.0f)(eng);
+	}
+
 	inline GFX::Data::ColorFloat4 RandColor(std::mt19937_64& eng) noexcept
 	{
 		return { Rand01(eng), Rand01(eng), Rand01(eng) };
@@ -75,6 +80,12 @@ namespace Math
 	constexpr T Gauss(T x, T sigma) noexcept
 	{
 		return static_cast<T>(M_2_SQRTPI) * exp(static_cast<T>(-0.5) * x * x / sigma) / (sigma * static_cast<T>(M_SQRT2 * 2.0));
+	}
+
+	template<typename T>
+	constexpr T Lerp(T a, T b, T weight) noexcept
+	{
+		return a + weight * (b - a);
 	}
 
 	DirectX::XMFLOAT3 Add(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2) noexcept;

@@ -14,14 +14,15 @@ namespace GFX::Pipeline::RenderPass
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
+		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
 
 		renderTarget = Resource::RenderTargetEx::Get(gfx, 9U, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 
 		AddBind(GFX::Resource::NullGeometryShader::Get(gfx));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Light));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, true, 0U));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true, 1U));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, false, 0U));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, false, 1U));
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_FRONT));
 
 		auto vertexShader = GFX::Resource::VertexShader::Get(gfx, "LightVS");
@@ -45,6 +46,7 @@ namespace GFX::Pipeline::RenderPass
 
 	void LightingPass::Execute(Graphics& gfx)
 	{
+		assert(mainCamera);
 		renderTarget->Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f });
 		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())

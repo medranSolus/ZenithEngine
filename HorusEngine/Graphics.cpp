@@ -11,7 +11,7 @@ namespace GFX
 		swapDesc.OutputWindow = hWnd;
 		swapDesc.BufferDesc.Width = 0; // Use window size
 		swapDesc.BufferDesc.Height = 0;
-		swapDesc.BufferDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		swapDesc.BufferDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapDesc.BufferDesc.RefreshRate.Numerator = 0; // Refresh in fullscreen
 		swapDesc.BufferDesc.RefreshRate.Denominator = 0;
 		swapDesc.BufferDesc.Scaling = DXGI_MODE_SCALING::DXGI_MODE_SCALING_UNSPECIFIED; // Entire window drawing so no scaling needed

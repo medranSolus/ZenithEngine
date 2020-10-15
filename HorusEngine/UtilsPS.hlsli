@@ -2,16 +2,27 @@
 float2 EncodeNormal(const in float3 normal)
 {
 	/*
-		phi = atan(y/x)
+		phi = atan(y/x) (if x=0 then y+100)
 		theta = z
 	*/
-	return float2(atan2(normal.y, normal.x) / 3.14159265f, normal.z) * 0.5f + 0.5f;
+	if (normal.x == 0.0f)
+		return float2(normal.y + 100.0f, normal.z);
+	else
+		return float2(atan2(normal.y, normal.x), normal.z);
 }
 
-// Get tangent space rotation
+// Get tangent space rotation (not normalized)
+float3x3 GetTangentToWorldUNorm(const in float3 tan, const in float3 normal)
+{
+	// Make bitangent again orthogonal to normal (Gramm-Schmidt process)
+	const float3 T = normalize(tan - dot(tan, normal) * normal);
+	return float3x3(T, cross(normal, T), normal);
+}
+
+// Get tangent space rotation (normalized)
 float3x3 GetTangentToWorld(const in float3 bitan, const in float3 normal)
 {
-	// Make bitangent again orthogonal to normal (Gram-Schmidt process)
+	// Make bitangent again orthogonal to normal (Gramm-Schmidt process)
 	const float3 N = normalize(normal);
 	float3 B = normalize(bitan);
 	B = normalize(B - dot(B, N) * N);

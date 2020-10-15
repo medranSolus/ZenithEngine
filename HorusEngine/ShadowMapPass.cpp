@@ -24,6 +24,7 @@ namespace GFX::Pipeline::RenderPass
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
+			layout.Add(DCBElementType::Float, "mapSize");
 			layout.Add(DCBElementType::Float, "bias");
 			initNeeded = false;
 		}
@@ -39,6 +40,7 @@ namespace GFX::Pipeline::RenderPass
 		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(ShadowMapPass).name(), 1U);
 		viewBuffer = GFX::Resource::ConstBufferExGeometryCache::Get(gfx, typeid(ShadowMapPass).name(), MakeLayoutView(), 0U);
 		biasBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(ShadowMapPass).name(), MakeLayoutBias(), 1U);
+		biasBuffer->GetBuffer()["mapSize"] = static_cast<float>(DEPTH_TEXTURE_SIZE);
 		biasBuffer->GetBuffer()["bias"] = static_cast<float>(bias) / DEPTH_TEXTURE_SIZE;
 
 		AddBind(positionBuffer);
@@ -53,6 +55,7 @@ namespace GFX::Pipeline::RenderPass
 
 	void ShadowMapPass::Execute(Graphics& gfx)
 	{
+		assert(mainCamera);
 		assert(shadowSource);
 		depthCube->Unbind(gfx);
 

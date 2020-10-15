@@ -354,6 +354,8 @@
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Square.cpp" />
+    <ClCompile Include="SSAOBlurPass.cpp" />
+    <ClCompile Include="SSAOPass.cpp" />
     <ClCompile Include="Technique.cpp" />
     <ClCompile Include="TechniqueFactory.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -371,6 +373,12 @@
     <ClCompile Include="WireframePass.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="AmbientOcclusionPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="BlurPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -389,6 +397,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="SSAOBlurPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <None Include="BiasPB.hlsli" />
     <None Include="BlurDirectionPB.hlsli" />
     <None Include="CameraPB.hlsli" />
@@ -404,6 +418,8 @@
     <None Include="ShadowParallaxPB.hlsli" />
     <None Include="SolidPB.hlsli" />
     <None Include="SpotLightPB.hlsli" />
+    <None Include="SSAOKernelPB.hlsli" />
+    <None Include="SSAOOptionsPB.hlsli" />
     <None Include="TransformVB.hlsli">
       <FileType>Document</FileType>
     </None>
@@ -862,6 +878,8 @@
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Square.h" />
     <ClInclude Include="DepthStencilState.h" />
+    <ClInclude Include="SSAOBlurPass.h" />
+    <ClInclude Include="SSAOPass.h" />
     <ClInclude Include="Technique.h" />
     <ClInclude Include="TechniqueFactory.h" />
     <ClInclude Include="TechniqueStep.h" />

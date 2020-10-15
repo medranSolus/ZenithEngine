@@ -22,6 +22,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::IRenderTarget>("lightBuffer");
+		AddBindableSink<Resource::IRenderTarget>("ssaoBuffer");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
@@ -31,9 +32,8 @@ namespace GFX::Pipeline::RenderPass
 		ambientBuffer->GetBuffer()["ambientColor"] = std::move(Data::ColorFloat3(0.05f, 0.05f, 0.05f));
 		AddBind(ambientBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "LightCombinePS"));
+		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, false, 1U));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
-		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE, false));
-		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 	}
 
 	void LightCombinePass::ShowWindow(Graphics& gfx)

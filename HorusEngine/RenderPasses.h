@@ -13,5 +13,7 @@
 #include "OutlineGenerationPass.h"
 #include "ShadowMapPass.h"
 #include "SkyboxPass.h"
+#include "SSAOBlurPass.h"
+#include "SSAOPass.h"
 #include "VerticalBlurPass.h"
 #include "WireframePass.h"

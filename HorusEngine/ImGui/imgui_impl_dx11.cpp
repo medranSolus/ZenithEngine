@@ -424,18 +424,14 @@ bool    ImGui_ImplDX11_CreateDeviceObjects()
             float4 col : COLOR0;\
             float2 uv  : TEXCOORD0;\
             };\
-            cbuffer CorrectionBuffer : register(b2)\
-            {\
-            float cb_gamma;\
-            float cb_deGamma;\
-            }\
+            \
             sampler sampler0;\
             Texture2D texture0;\
             \
             float4 main(PS_INPUT input) : SV_Target\
             {\
             float4 out_col = input.col * texture0.Sample(sampler0, input.uv);\
-            return float4(pow(out_col.rgb, float3(cb_gamma, cb_gamma, cb_gamma)), out_col.a);\
+            return out_col;\
             }";
 
         ID3DBlob* pixelShaderBlob;

@@ -9,7 +9,7 @@ namespace GFX::Light::Volume
 
 		const float linear = lightBuffer["atteuationLinear"];
 		const float quad = lightBuffer["attenuationQuad"];
-		return (-linear + sqrtf(linear * linear - 4.0f * quad * (static_cast<float>(lightBuffer["atteuationConst"]) - lightMax * 256.0f / 5.0f))) / (2.0f * quad);
+		return (-linear + sqrtf(linear * linear - 4.0f * quad * (static_cast<float>(lightBuffer["atteuationConst"]) - lightMax * 256.0f))) / (2.0f * quad);
 	}
 
 	IVolume& IVolume::operator=(IVolume&& volume) noexcept

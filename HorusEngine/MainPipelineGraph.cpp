@@ -49,10 +49,14 @@ namespace GFX::Pipeline
 		// Setup blur cbuffers
 		Data::CBuffer::DCBLayout kernelLayout;
 		kernelLayout.Add(DCBElementType::SInteger, "radius");
+		kernelLayout.Add(DCBElementType::UInteger, "width");
+		kernelLayout.Add(DCBElementType::UInteger, "height");
 		kernelLayout.Add(DCBElementType::Float, "intensity");
 		kernelLayout.Add(DCBElementType::Array, "coefficients");
 		kernelLayout["coefficients"].InitArray(DCBElementType::Float, MAX_RADIUS + 1);
 		Data::CBuffer::DynamicCBuffer kernelBuffer(std::move(kernelLayout));
+		kernelBuffer["width"] = gfx.GetWidth();
+		kernelBuffer["height"] = gfx.GetHeight();
 		kernelBuffer["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
 		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 0U);
 		SetKernel();
@@ -61,6 +65,7 @@ namespace GFX::Pipeline
 		Data::CBuffer::DCBLayout directionLayout;
 		directionLayout.Add(DCBElementType::Bool, "vertical");
 		Data::CBuffer::DynamicCBuffer directionBuffer(std::move(directionLayout));
+		directionBuffer["vertical"] = true;
 		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 3U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
@@ -68,6 +73,7 @@ namespace GFX::Pipeline
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
 
 		// Setup all passes
+#pragma region Clear passes
 		{
 			auto pass = std::make_unique<RenderPass::ClearBufferPass>("clearDS");
 			pass->SetSinkLinkage("buffer", "$.depthStencil");
@@ -83,6 +89,8 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("buffer", "$.geometryBuffer");
 			AppendPass(std::move(pass));
 		}
+#pragma endregion
+#pragma region Light and geometry passes
 		{
 			auto pass = std::make_unique<RenderPass::DepthOnlyPass>(gfx, "depthOnly");
 			pass->SetSinkLinkage("depthStencil", "clearDO.buffer");
@@ -104,12 +112,36 @@ namespace GFX::Pipeline
 			auto pass = std::make_unique<RenderPass::LightingPass>(gfx, "lighting");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
+			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::SSAOPass>(gfx, "ssao");
+			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
+			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::SSAOBlurPass>(gfx, "ssaoHalfBlur");
+			pass->SetSinkLinkage("ssaoBuffer", "ssao.ssaoBuffer");
+			pass->SetSinkLinkage("ssaoTarget", "ssao.ssaoScratch");
+			pass->SetSinkLinkage("direction", "$.blurDirection");
+			pass->SetSinkLinkage("ssaoKernel", "ssao.ssaoKernel");
+			AppendPass(std::move(pass));
+		}
+		{
+			auto pass = std::make_unique<RenderPass::SSAOBlurPass>(gfx, "ssaoFullBlur");
+			pass->SetSinkLinkage("ssaoBuffer", "ssaoHalfBlur.ssaoBuffer");
+			pass->SetSinkLinkage("ssaoTarget", "ssaoHalfBlur.ssaoScratch");
+			pass->SetSinkLinkage("direction", "$.blurDirection");
+			pass->SetSinkLinkage("ssaoKernel", "ssao.ssaoKernel");
 			AppendPass(std::move(pass));
 		}
 		{
 			auto pass = std::make_unique<RenderPass::LightCombinePass>(gfx, "combiner");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("lightBuffer", "lighting.lightBuffer");
+			pass->SetSinkLinkage("ssaoBuffer", "ssaoFullBlur.ssaoBuffer");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			pass->SetSinkLinkage("renderTarget", "$.sceneTarget");
 			AppendPass(std::move(pass));
@@ -123,6 +155,8 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}
+#pragma endregion
+#pragma region Post process effects
 		{
 			auto pass = std::make_unique<RenderPass::OutlineGenerationPass>(gfx, "outlineGeneration");
 			pass->SetSinkLinkage("depthStencil", "clearDS.buffer");
@@ -160,6 +194,7 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			AppendPass(std::move(pass));
 		}
+#pragma endregion
 		SetSinkSource("backbuffer", "hdrGamma.renderTarget");
 		Finalize();
 	}
@@ -170,6 +205,7 @@ namespace GFX::Pipeline
 		dynamic_cast<RenderPass::LambertianDepthOptimizedPass&>(FindPass("lambertianDepthOptimized")).BindCamera(camera);
 		dynamic_cast<RenderPass::LambertianClassicPass&>(FindPass("lambertianClassic")).BindCamera(camera);
 		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).BindCamera(camera);
+		dynamic_cast<RenderPass::SSAOPass&>(FindPass("ssao")).BindCamera(camera);
 		dynamic_cast<RenderPass::SkyboxPass&>(FindPass("skybox")).BindCamera(camera);
 	}
 
@@ -194,9 +230,10 @@ namespace GFX::Pipeline
 		}
 		dynamic_cast<RenderPass::LightCombinePass&>(FindPass("combiner")).ShowWindow(gfx);
 		dynamic_cast<RenderPass::LightingPass&>(FindPass("lighting")).ShowWindow(gfx);
+		dynamic_cast<RenderPass::SSAOPass&>(FindPass("ssao")).ShowWindow(gfx);
 		ImGui::NewLine();
 		ImGui::Text("Blur Control");
-		if (ImGui::SliderInt("Radius", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
+		if (ImGui::SliderInt("Radius##Blur", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
 			SetKernel();
 	}
 }

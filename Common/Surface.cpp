@@ -65,10 +65,10 @@ namespace GFX
 		}
 	}
 
-	Surface::Surface(size_t width, size_t height)
+	Surface::Surface(size_t width, size_t height, DXGI_FORMAT format)
 	{
 		DXT_ENABLE_EXCEPT();
-		DXT_THROW_FAILED(scratch.Initialize2D(PIXEL_FORMAT, width, height, 1U, 1U),
+		DXT_THROW_FAILED(scratch.Initialize2D(format, width, height, 1U, 1U),
 			"Creating image " + std::to_string(width) + "x" + std::to_string(height) + ": failed.");
 		image = scratch.GetImage(0, 0, 0);
 	}

@@ -45,7 +45,7 @@ namespace GFX
 
 	public:
 		Surface(const std::string& name);
-		Surface(size_t width, size_t height);
+		Surface(size_t width, size_t height, DXGI_FORMAT format = PIXEL_FORMAT);
 		Surface(Surface&& surface) noexcept = default;
 		Surface(const Surface&) = delete;
 		Surface& operator=(Surface&& surface) noexcept = default;

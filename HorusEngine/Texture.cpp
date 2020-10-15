@@ -1,14 +1,13 @@
 #include "Texture.h"
-#include "Surface.h"
 #include "GfxExceptionMacros.h"
 #include <thread>
 
 namespace GFX::Resource
 {
-	Texture::Texture(Graphics& gfx, const std::string& path, UINT slot, bool alphaEnable) : slot(slot), path(path)
+	Texture::Texture(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot, bool alphaEnable) : slot(slot), path(name)
 	{
 		GFX_ENABLE_ALL(gfx);
-		Surface surface(path);
+
 		std::unique_ptr<std::thread> checkAlpha = nullptr;
 		if (alphaEnable)
 			checkAlpha = std::make_unique<std::thread>([&surface, this]() { alpha = surface.HasAlpha(); });

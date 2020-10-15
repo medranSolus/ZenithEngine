@@ -9,8 +9,11 @@ namespace Camera
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
+			layout.Add(DCBElementType::Matrix, "viewProjection");
 			layout.Add(DCBElementType::Matrix, "inverseViewProjection");
 			layout.Add(DCBElementType::Float3, "cameraPos");
+			layout.Add(DCBElementType::Float, "nearClip");
+			layout.Add(DCBElementType::Float, "farClip");
 			initNeeded = false;
 		}
 		return layout;
@@ -34,8 +37,12 @@ namespace Camera
 
 	void BaseCamera::UpdateBufferPS() noexcept
 	{
+		const DirectX::XMMATRIX viewProjection = GetView() * GetProjection();
+		DirectX::XMStoreFloat4x4(&cameraBuffer->GetBuffer()["viewProjection"], DirectX::XMMatrixTranspose(viewProjection));
 		DirectX::XMStoreFloat4x4(&cameraBuffer->GetBuffer()["inverseViewProjection"],
-			DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, GetView() * GetProjection())));
+			DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, viewProjection)));
+		cameraBuffer->GetBuffer()["nearClip"] = projection.nearClip;
+		cameraBuffer->GetBuffer()["farClip"] = projection.farClip;
 	}
 
 	BaseCamera::BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
