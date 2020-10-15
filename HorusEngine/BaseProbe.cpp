@@ -104,7 +104,7 @@ namespace GFX::Probe
 		}
 		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
+			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, 0.0f, FLT_MAX, "%.3f");
 		}
 		if (auto atteuationConst = buffer["atteuationConst"]; atteuationConst.Exists())
 		{

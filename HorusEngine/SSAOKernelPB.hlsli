@@ -1,4 +1,4 @@
-static const uint CB_KERNEL_SIZE = 64;
+static const uint CB_KERNEL_SIZE = 32;
 
 cbuffer SSAOKernelBuffer : register(b12)
 {

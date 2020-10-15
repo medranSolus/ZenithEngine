@@ -21,16 +21,23 @@ float main(float2 tc : TEXCOORD) : SV_TARGET
 	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr, tc).x, cb_inverseViewProjection);
 	const float2 noise = noiseMap.Sample(splr, tc * cb_tileDimensions).rg;
 
-	const float3x3 TBN = GetTangentToWorldUNorm(float3(noise, 0.0f), normal);
+	const float3x3 TBN = GetTangentToWorldUNorm(normalize(float3(noise, 0.0f)), normal);
 	float occlusion = 0.0f;
+	uint size = cb_kernelSize;
 	[unroll]
-	for (uint i = 0; i < cb_kernelSize; ++i)
+	for (uint i = 0; i < size; ++i)
 	{
-		const float4 samplePos = mul(float4(position + mul(TBN, cb_kernel[i]) * cb_sampleRadius, 1.0f), cb_viewProjection); // From tangent to clip space
+		const float3 sampleRay = mul(TBN, cb_kernel[i]);
+		if (dot(normalize(sampleRay), normal) < 0.15f)
+		{
+			--size;
+			continue;
+		}
+		const float4 samplePos = mul(float4(position + sampleRay * cb_sampleRadius, 1.0f), cb_viewProjection); // From tangent to clip space
 		const float2 offset = samplePos.xy / (samplePos.w * 2.0f) + 0.5f; // Perspective divide and transform to 0-1
-		const float sampleDepth = GetLinearDepth(depthMap.Sample(splr, float2(offset.x, 1.0f - offset.y)).x, cb_nearClip, cb_farClip) - cb_bias;
+		const float sampleDepth = GetLinearDepth(depthMap.Sample(splr, float2(offset.x, 1.0f - offset.y)).x, cb_nearClip, cb_farClip) + cb_bias;
 		const float rangeCheck = smoothstep(0.0f, 1.0f, cb_sampleRadius / abs(sampleDepth - samplePos.z));
-		occlusion += (sampleDepth > samplePos.z ? 1.0f : 0.0f) * rangeCheck;
+		occlusion += (sampleDepth >= samplePos.z ? 0.0f : 1.0f) * rangeCheck;
 	}
-	return occlusion / cb_kernelSize;
+	return pow(1.0f - occlusion / size, cb_ssaoPower);
 }

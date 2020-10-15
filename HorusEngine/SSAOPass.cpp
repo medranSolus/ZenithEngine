@@ -29,6 +29,7 @@ namespace GFX::Pipeline::RenderPass
 			layout.Add(DCBElementType::UInteger, "kernelSize");
 			layout.Add(DCBElementType::Float, "sampleRadius");
 			layout.Add(DCBElementType::Float, "bias");
+			layout.Add(DCBElementType::Float, "ssaoPower");
 			initNeeded = false;
 		}
 		return layout;
@@ -41,7 +42,7 @@ namespace GFX::Pipeline::RenderPass
 		ssaoScratchBuffer = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
 
 		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SSAOPass).name(), MakeLayoutKernel(), 12U);
-		kernelBuffer->GetBuffer()["tileDimensions"] = DirectX::XMFLOAT2(gfx.GetWidth() / 4.0f, gfx.GetHeight() / 4.0f);
+		kernelBuffer->GetBuffer()["tileDimensions"] = DirectX::XMFLOAT2(4.0f * (gfx.GetWidth() / SSAO_NOISE_SIZE), 8.0f * (gfx.GetHeight() / SSAO_NOISE_SIZE));
 		std::mt19937_64 engine(std::random_device{}());
 		for (size_t i = 0; i < SSAO_KERNEL_SIZE; ++i)
 		{
@@ -59,6 +60,7 @@ namespace GFX::Pipeline::RenderPass
 		optionsBuffer->GetBuffer()["kernelSize"] = static_cast<uint32_t>(SSAO_KERNEL_SIZE);
 		optionsBuffer->GetBuffer()["sampleRadius"] = 0.5f;
 		optionsBuffer->GetBuffer()["bias"] = 0.000001f;
+		optionsBuffer->GetBuffer()["ssaoPower"] = 4.0f;
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
@@ -73,7 +75,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true, 1U));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 
-		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 4, DXGI_FORMAT_R32G32_FLOAT);
+		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, DXGI_FORMAT_R32G32_FLOAT);
 		float* buffer = reinterpret_cast<float*>(ssaoNoise.GetBuffer());
 		for (size_t i = 0; i < SSAO_NOISE_SIZE * 2; ++i)
 			buffer[i] = Math::RandNDC(engine);
@@ -92,11 +94,14 @@ namespace GFX::Pipeline::RenderPass
 		uint32_t size = optionsBuffer->GetBufferConst()["kernelSize"];
 		float radius = optionsBuffer->GetBufferConst()["sampleRadius"];
 		float bias = optionsBuffer->GetBufferConst()["bias"];
+		float power = optionsBuffer->GetBufferConst()["ssaoPower"];
 		ImGui::Text("SSAO:");
 		if (ImGui::DragInt("Kernel size", reinterpret_cast<int*>(&size), 1.0f, 1, SSAO_KERNEL_SIZE))
 			optionsBuffer->GetBuffer()["kernelSize"] = size;
 		if (ImGui::DragFloat("Radius##SSAO", &radius, 0.01f, 0.01f, FLT_MAX, "%.2f"))
 			optionsBuffer->GetBuffer()["sampleRadius"] = radius;
+		if (ImGui::DragFloat("Power##SSAO", &power, 0.01f, 0.0f, FLT_MAX, "%.2f"))
+			optionsBuffer->GetBuffer()["ssaoPower"] = power;
 		if (ImGui::DragFloat("Bias##SSAO", &bias, 0.0000001f, 0.0f, 1.0f, "%.7f"))
 			optionsBuffer->GetBuffer()["bias"] = bias;
 	}

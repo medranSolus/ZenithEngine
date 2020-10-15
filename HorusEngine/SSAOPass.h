@@ -7,8 +7,8 @@ namespace GFX::Pipeline::RenderPass
 {
 	class SSAOPass : public Base::FullscreenPass
 	{
-		static constexpr size_t SSAO_KERNEL_SIZE = 64;
-		static constexpr size_t SSAO_NOISE_SIZE = 16;
+		static constexpr size_t SSAO_KERNEL_SIZE = 32;
+		static constexpr size_t SSAO_NOISE_SIZE = 32;
 
 		Camera::ICamera* mainCamera = nullptr;
 		std::shared_ptr<Resource::IRenderTarget> ssaoScratchBuffer;
