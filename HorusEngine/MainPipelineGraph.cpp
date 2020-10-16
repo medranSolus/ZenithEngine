@@ -152,7 +152,6 @@ namespace GFX::Pipeline
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			pass->SetSinkLinkage("renderTarget", "combiner.renderTarget");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
-			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}
 #pragma endregion
@@ -184,7 +183,7 @@ namespace GFX::Pipeline
 		{
 			auto pass = std::make_unique<RenderPass::WireframePass>(gfx, "wireframe");
 			pass->SetSinkLinkage("renderTarget", "verticalBlur.renderTarget");
-			pass->SetSinkLinkage("depthStencil", "verticalBlur.depthStencil");
+			pass->SetSinkLinkage("depthStencil", "skybox.depthStencil");
 			AppendPass(std::move(pass));
 		}
 		{
