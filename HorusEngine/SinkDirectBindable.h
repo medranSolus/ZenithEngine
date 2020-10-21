@@ -28,7 +28,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		auto ptr = std::dynamic_pointer_cast<T>(source.LinkBindable());
 		if (ptr == nullptr)
 			throw RGC_EXCEPT("Binding Sink \"" + GetRegisteredName() + "\" of type {" + typeid(T).name() +
-				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(source.LinkBuffer()).name());
+				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(source.LinkBindable()).name());
 		target = std::move(ptr);
 		linked = true;
 	}

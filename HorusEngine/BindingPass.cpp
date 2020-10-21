@@ -30,7 +30,7 @@ namespace GFX::Pipeline::RenderPass::Base
 			bind->Bind(gfx);
 	}
 
-	void BindingPass::Finalize() const
+	void BindingPass::Finalize()
 	{
 		if (renderTarget == nullptr && depthStencil == nullptr)
 			throw RGC_EXCEPT("BindingPass \"" + GetName() + "\" needs at least one RenderTarget or DepthStencil!");

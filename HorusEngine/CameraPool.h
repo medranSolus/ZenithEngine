@@ -12,6 +12,7 @@ namespace Camera
 		float moveSpeed = 0.1f;
 		float rollSpeed = 0.01;
 		float rotateSpeed = 2.0f;
+		bool cameraChanged = true;
 		std::string active;
 		std::map<std::string, std::unique_ptr<ICamera>> cameras;
 
@@ -21,6 +22,7 @@ namespace Camera
 
 		inline ICamera& GetCamera() noexcept { return *cameras.at(active); }
 
+		constexpr bool CameraChanged() noexcept { bool changed = cameraChanged; cameraChanged = false; return changed; }
 		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
 		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }
 

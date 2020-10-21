@@ -25,7 +25,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		void AddBindableSink(const std::string& name);
 
 		void BindAll(Graphics& gfx);
-		void Finalize() const override;
+		void Finalize() override;
 
 	public:
 		virtual ~BindingPass() = default;

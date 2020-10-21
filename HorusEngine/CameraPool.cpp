@@ -104,6 +104,7 @@ namespace Camera
 		{
 			active = currentItem->first;
 			currentItem->second->Reset();
+			cameraChanged = true;
 		}
 		ImGui::NewLine();
 		const auto& cameraPos = currentItem->second->GetPos();

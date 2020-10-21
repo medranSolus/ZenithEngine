@@ -19,12 +19,14 @@ namespace GFX::Pipeline::RenderPass::Base
 		sources.emplace_back(std::move(source));
 	}
 
-	void BasePass::Finalize() const
+	void BasePass::Finalize()
 	{
 		for (auto& sink : sinks)
 			sink->ValidateLink();
 		for (auto& source : sources)
 			source->ValidateLink();
+		for (auto& innerPass : GetInnerPasses())
+			innerPass->Finalize();
 	}
 
 	void BasePass::SetSinkLinkage(const std::string& registeredName, const std::string& targetName)
@@ -37,15 +39,19 @@ namespace GFX::Pipeline::RenderPass::Base
 		GetSink(registeredName).SetSource(nameChain, source);
 	}
 
-	Sink& BasePass::GetSink(const std::string& registeredName) const
+	Sink& BasePass::GetSink(const std::string& registeredName)
 	{
 		for (auto& sink : sinks)
 			if (sink->GetRegisteredName() == registeredName)
 				return *sink;
+		for (const auto& innerPass : GetInnerPasses())
+			for (auto& sink : innerPass->GetSinks())
+				if (sink->GetRegisteredName() == registeredName)
+					return *sink;
 		throw RGC_EXCEPT("Sink \"" + registeredName + "\" not found in pass: " + GetName());
 	}
 
-	Source& BasePass::GetSource(const std::string& registeredName) const
+	Source& BasePass::GetSource(const std::string& registeredName)
 	{
 		for (auto& source : sources)
 			if (source->GetName() == registeredName)

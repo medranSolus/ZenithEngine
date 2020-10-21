@@ -25,10 +25,11 @@ namespace GFX::Pipeline::RenderPass::Base
 	template<typename T>
 	void SinkDirectBuffer<T>::Bind(Source& source)
 	{
-		auto ptr = std::dynamic_pointer_cast<T>(source.LinkBuffer());
+		auto basePtr = source.LinkBuffer();
+		auto ptr = std::dynamic_pointer_cast<T>(basePtr);
 		if (ptr == nullptr)
 			throw RGC_EXCEPT("Binding Sink \"" + GetRegisteredName() + "\" of type {" + typeid(T).name() +
-				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(source.LinkBuffer()).name());
+				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(basePtr).name());
 		target = std::move(ptr);
 		linked = true;
 	}

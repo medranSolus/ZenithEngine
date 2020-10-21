@@ -17,6 +17,8 @@ namespace GFX::Resource
 
 	public:
 		Sampler(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot = 0U);
+		inline Sampler(Sampler&& sampler) noexcept { *this = std::forward<Sampler&&>(sampler); }
+		Sampler& operator=(Sampler&& sampler) noexcept;
 		virtual ~Sampler() = default;
 
 		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, bool textureCoordReflect, UINT slot = 0U);

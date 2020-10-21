@@ -178,7 +178,8 @@ void App::MakeFrame()
 	ShowObjectWindow();
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
-	renderer.BindMainCamera(cameras.GetCamera());
+	if (cameras.CameraChanged())
+		renderer.BindMainCamera(cameras.GetCamera());
 	cameras.Submit(RenderChannel::Main);
 	for (auto& pointLight : pointLights)
 		pointLight.Submit(RenderChannel::Main | RenderChannel::Light);

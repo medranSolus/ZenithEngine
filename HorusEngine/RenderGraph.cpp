@@ -60,6 +60,8 @@ namespace GFX::Pipeline
 		for (auto& sink : pass.GetSinks())
 		{
 			auto nameChain = sink->GetPassPath();
+			if (nameChain.size() == 0)
+				throw RGC_EXCEPT("Sink \"" + pass.GetName() + "." + sink->GetRegisteredName() + "\" without Source!");
 			const std::string sinkSourcePassName = nameChain.front();
 			bool sinkOrphaned = true;
 			// Global sources
@@ -95,7 +97,7 @@ namespace GFX::Pipeline
 			}
 			// Sink not found any source
 			if (sinkOrphaned)
-				throw RGC_EXCEPT("Sink \"" + sink->GetRegisteredName() + "\" not found its Source \"" + sinkSourcePassName + "." + sink->GetSourceName() + "\"!");
+				throw RGC_EXCEPT("Sink \"" + pass.GetName() + "." + sink->GetRegisteredName() + "\" not found its Source \"" + sinkSourcePassName + "." + sink->GetSourceName() + "\"!");
 		}
 	}
 
@@ -159,6 +161,8 @@ namespace GFX::Pipeline
 		auto& currentPass = *pass;
 		passes.emplace_back(std::move(pass));
 		// Link outputs from other passes to this pass inputs
+		for (auto& innerPass : currentPass.GetInnerPasses())
+			LinkSinks(*innerPass);
 		LinkSinks(currentPass);
 	}
 
