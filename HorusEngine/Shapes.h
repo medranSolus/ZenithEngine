@@ -5,6 +5,7 @@
 #include "CameraIndicator.h"
 #include "Globe.h"
 #include "Model.h"
+#include "SolidCone.h"
 #include "SolidGlobe.h"
 #include "SolidRectangle.h"
 #include "Triangle.h"

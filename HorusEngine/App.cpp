@@ -198,9 +198,10 @@ App::App(const std::string& commandLine)
 {
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, 1.0f, -4.0f), "PointLight1", 0.85f });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "PointLight2", 3.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "PointLight3", 0.64f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-11.5f, 1.0f, -4.0f), "Light bulb", 100 });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "Pumpkin candle", 85, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "Torch", 70, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), "Blue ilumination", 70, 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });

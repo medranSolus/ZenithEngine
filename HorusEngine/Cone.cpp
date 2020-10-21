@@ -29,7 +29,7 @@ namespace GFX::Primitive
 		density *= 3;
 
 		Data::VertexBufferData vertices(GetLayoutSolid(attributes), static_cast<size_t>(density) + 1);
-		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f))); // Non moveable center
+		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f))); // Base of circle
 
 		const float angle = 2.0f * static_cast<float>(M_PI / density);

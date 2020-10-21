@@ -32,7 +32,7 @@ namespace GFX::Resource
 			textureCoordReflect ? D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR : D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateSamplerState(&samplerDesc, &state));
 	}
-	
+
 	Sampler& Sampler::operator=(Sampler&& sampler) noexcept
 	{
 		type = sampler.type;
