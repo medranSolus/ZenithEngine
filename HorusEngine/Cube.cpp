@@ -2,7 +2,7 @@
 
 namespace GFX::Primitive
 {
-	std::string Cube::GetNameSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	std::string Cube::GetNameSolid(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		std::string name = std::string(typeid(Cube).name()) + "S";
 		for (const auto& attrib : attributes)
@@ -10,7 +10,7 @@ namespace GFX::Primitive
 		return std::move(name);
 	}
 
-	std::string Cube::GetName(const std::vector<VertexAttribute>&& attributes) noexcept
+	std::string Cube::GetName(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		std::string name = std::string(typeid(Cube).name()) + "N";
 		for (const auto& attrib : attributes)
@@ -18,7 +18,7 @@ namespace GFX::Primitive
 		return std::move(name);
 	}
 
-	std::shared_ptr<Data::VertexLayout> Cube::GetLayoutSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	std::shared_ptr<Data::VertexLayout> Cube::GetLayoutSolid(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 		for (const auto& attrib : attributes)
@@ -26,7 +26,7 @@ namespace GFX::Primitive
 		return layout;
 	}
 
-	std::shared_ptr<Data::VertexLayout> Cube::GetLayout(const std::vector<VertexAttribute>&& attributes) noexcept
+	std::shared_ptr<Data::VertexLayout> Cube::GetLayout(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>();
 		layout->Append(VertexAttribute::Normal);
@@ -35,10 +35,10 @@ namespace GFX::Primitive
 		return layout;
 	}
 
-	Data::VertexBufferData Cube::MakeSolidVertex(const std::vector<VertexAttribute>&& attributes) noexcept
+	Data::VertexBufferData Cube::MakeSolidVertex(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		constexpr float POINT = 0.5f;
-		Data::VertexBufferData vertices(GetLayoutSolid(std::forward<const std::vector<VertexAttribute>>(attributes)), 8);
+		Data::VertexBufferData vertices(GetLayoutSolid(attributes), 8);
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, -POINT, -POINT)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-POINT, POINT, -POINT)));
@@ -65,11 +65,11 @@ namespace GFX::Primitive
 		};
 	}
 
-	IndexedTriangleList Cube::MakeSolid(const std::vector<VertexAttribute>&& attributes) noexcept
+	IndexedTriangleList Cube::MakeSolid(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		return
 		{
-			std::move(MakeSolidVertex(std::forward<const std::vector<VertexAttribute>>(attributes))),
+			std::move(MakeSolidVertex(attributes)),
 			std::move(MakeSolidIndex())
 		};
 	}
@@ -96,10 +96,10 @@ namespace GFX::Primitive
 		};
 	}
 
-	IndexedTriangleList Cube::Make(const std::vector<VertexAttribute>&& attributes) noexcept
+	IndexedTriangleList Cube::Make(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		constexpr float point = 0.5f;
-		Data::VertexBufferData vertices(GetLayout(std::forward<const std::vector<VertexAttribute>>(attributes)), 24);
+		Data::VertexBufferData vertices(GetLayout(attributes), 24);
 
 		// Front
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, -point)));
