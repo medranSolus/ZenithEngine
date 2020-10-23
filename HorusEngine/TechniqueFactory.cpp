@@ -4,10 +4,10 @@ namespace GFX::Pipeline
 {
 	Data::ColorFloat3 TechniqueFactory::outlineColor = { 1.0f, 1.0f, 0.0f };
 
-	std::shared_ptr<Technique> TechniqueFactory::MakeLighting(RenderGraph& graph)
+	std::shared_ptr<Technique> TechniqueFactory::MakeLighting(RenderGraph& graph, const std::string& passName)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Lighting", RenderChannel::Light);
-		technique->AddStep({ graph, "lighting" });
+		technique->AddStep({ graph, passName });
 		return std::move(technique);
 	}
 
@@ -34,7 +34,10 @@ namespace GFX::Pipeline
 	std::shared_ptr<Technique> TechniqueFactory::MakeShadowMap(Graphics& gfx, RenderGraph& graph, std::shared_ptr<Visual::Material> material)
 	{
 		auto technique = std::make_shared<Pipeline::Technique>("Shadow Map", RenderChannel::Shadow);
-		technique->AddStep({ graph, "lighting.shadowMap", std::make_shared<Visual::ShadowMap>(gfx, material) });
+		auto shadowMap = std::make_shared<Visual::ShadowMap>(gfx, material);
+		technique->AddStep({ graph, "dirLighting.shadowMap", shadowMap });
+		technique->AddStep({ graph, "spotLighting.shadowMap", shadowMap });
+		technique->AddStep({ graph, "pointLighting.shadowMap", std::make_shared<Visual::ShadowMapCube>(gfx, material) });
 		return std::move(technique);
 	}
 

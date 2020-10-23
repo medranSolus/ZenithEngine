@@ -1,6 +1,23 @@
 #include "App.h"
 #include "Math.h"
 
+#define ContainerInvoke(item, function) \
+	switch (item->second.first) \
+	{ \
+	case Container::Model: \
+		models.at(currentItem->second.second).function; \
+		break; \
+	case Container::Shape: \
+		shapes.at(currentItem->second.second)->function; \
+		break; \
+	case Container::PointLight: \
+		pointLights.at(currentItem->second.second).function; \
+		break; \
+	case Container::SpotLight: \
+		spotLights.at(currentItem->second.second).function; \
+		break; \
+	}
+
 inline void App::ProcessInput()
 {
 	cameras.ProcessInput(window);
@@ -41,48 +58,10 @@ inline void App::ShowObjectWindow()
 				bool selected = (currentItem == it);
 				if (ImGui::Selectable(it->first.c_str(), selected))
 				{
-					switch (currentItem->second.first)
-					{
-					case Container::Model:
-					{
-						models.at(currentItem->second.second).DisableOutline();
-						break;
-					}
-					case Container::Shape:
-					{
-						shapes.at(currentItem->second.second)->DisableOutline();
-						break;
-					}
-					case Container::PointLight:
-					{
-						pointLights.at(currentItem->second.second).DisableOutline();
-						break;
-					}
-					default:
-						break;
-					}
+					ContainerInvoke(currentItem, DisableOutline());
 					currentItem = it;
 					probe.ResetNode();
-					switch (currentItem->second.first)
-					{
-					case Container::Model:
-					{
-						models.at(currentItem->second.second).SetOutline();
-						break;
-					}
-					case Container::Shape:
-					{
-						shapes.at(currentItem->second.second)->SetOutline();
-						break;
-					}
-					case Container::PointLight:
-					{
-						pointLights.at(currentItem->second.second).SetOutline();
-						break;
-					}
-					default:
-						break;
-					}
+					ContainerInvoke(currentItem, SetOutline());
 				}
 				if (selected)
 					ImGui::SetItemDefaultFocus();
@@ -90,26 +69,7 @@ inline void App::ShowObjectWindow()
 			ImGui::EndCombo();
 		}
 		ImGui::NewLine();
-		switch (currentItem->second.first)
-		{
-		case Container::Model:
-		{
-			models.at(currentItem->second.second).Accept(window.Gfx(), probe);
-			break;
-		}
-		case Container::Shape:
-		{
-			shapes.at(currentItem->second.second)->Accept(window.Gfx(), probe);
-			break;
-		}
-		case Container::PointLight:
-		{
-			pointLights.at(currentItem->second.second).Accept(window.Gfx(), probe);
-			break;
-		}
-		default:
-			break;
-		}
+		ContainerInvoke(currentItem, Accept(window.Gfx(), probe));
 	}
 	ImGui::End();
 }
@@ -143,6 +103,12 @@ inline void App::AddLight(GFX::Light::PointLight&& pointLight)
 {
 	objects.emplace(pointLight.GetName(), std::make_pair<Container, size_t>(Container::PointLight, pointLights.size()));
 	pointLights.emplace_back(std::forward<GFX::Light::PointLight&&>(pointLight));
+}
+
+inline void App::AddLight(GFX::Light::SpotLight&& spotLight)
+{
+	objects.emplace(spotLight.GetName(), std::make_pair<Container, size_t>(Container::SpotLight, spotLights.size()));
+	spotLights.emplace_back(std::forward<GFX::Light::SpotLight&&>(spotLight));
 }
 
 void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
@@ -181,12 +147,14 @@ void App::MakeFrame()
 	if (cameras.CameraChanged())
 		renderer.BindMainCamera(cameras.GetCamera());
 	cameras.Submit(RenderChannel::Main);
-	for (auto& pointLight : pointLights)
-		pointLight.Submit(RenderChannel::Main | RenderChannel::Light);
-	for (auto& model : models)
-		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& shape : shapes)
 		shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
+	for (auto& model : models)
+		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
+	for (auto& pointLight : pointLights)
+		pointLight.Submit(RenderChannel::Main | RenderChannel::Light);
+	for (auto& spotLight : spotLights)
+		spotLight.Submit(RenderChannel::Main | RenderChannel::Light);
 	renderer.Execute(window.Gfx());
 	renderer.Reset();
 	window.Gfx().EndFrame();
@@ -198,10 +166,14 @@ App::App(const std::string& commandLine)
 {
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-11.5f, 1.0f, -4.0f), "Light bulb", 100 });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), "Light bulb", 50 });
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "Pumpkin candle", 85, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "Torch", 70, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), "Blue ilumination", 70, 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 0.0f, -5.0f), "Flashlight", 50, 20.0f, 40.0f,
+		DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), 2.0f, GFX::Data::ColorFloat3(0.5f, 1.0f, 0.5f) });
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 0.0f, 5.0f), "Cold light", 80, 5.0f, 20.0f,
+		DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), 9.0f, GFX::Data::ColorFloat3(0.5f, 0.5f, 1.0f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });

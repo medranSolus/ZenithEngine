@@ -1,4 +1,4 @@
-cbuffer OffsetBuffer : register(b1)
+cbuffer OffsetBuffer : register(b2)
 {
 	float cb_offset;
 };

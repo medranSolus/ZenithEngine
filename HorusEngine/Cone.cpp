@@ -40,7 +40,7 @@ namespace GFX::Primitive
 				DirectX::XMVector3Transform(base, DirectX::XMMatrixRotationY(angle * i)));
 
 		std::vector<unsigned int> indices;
-		indices.reserve(static_cast<size_t>(density - 2) * 6 + 3);
+		indices.reserve(static_cast<size_t>(density - 1) * 6);
 		for (unsigned int i = 2; i < density; ++i)
 		{
 			// Cone wall

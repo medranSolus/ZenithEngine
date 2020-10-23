@@ -32,7 +32,6 @@ namespace GFX::Pipeline::RenderPass
 		ambientBuffer->GetBuffer()["ambientColor"] = std::move(Data::ColorFloat3(0.05f, 0.05f, 0.05f));
 		AddBind(ambientBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "LightCombinePS"));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, false, 1U));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 	}
 

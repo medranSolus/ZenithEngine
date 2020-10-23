@@ -17,10 +17,8 @@ namespace GFX::Visual
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
-		cbufferLayout.Add(DCBElementType::Bool, "isLight");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
-		cbuffer["isLight"] = false;
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 8U);
 	}
 
@@ -57,7 +55,6 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color3, "specularColor");
 		cbufferLayout.Add(DCBElementType::Float, "specularIntensity");
 		cbufferLayout.Add(DCBElementType::Float, "specularPower");
-		bool hasTexture = false;
 		aiString texFile;
 		std::string shaderCodePS = "PhongPS";
 		std::string shaderCodeVS = "PhongVS";
@@ -67,7 +64,6 @@ namespace GFX::Visual
 		// Get diffuse texture
 		if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			hasTexture = true;
 			diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 0U, true);
 			translucent = diffuseTexture->HasAlpha();
 			shaderCodePS += "Texture";
@@ -80,7 +76,6 @@ namespace GFX::Visual
 		// Get normal map texture
 		if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			hasTexture = true;
 			normalMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1U);
 			shaderCodePS += "Normal";
 			shaderCodeVS += "Normal";
@@ -90,7 +85,6 @@ namespace GFX::Visual
 		// Get parallax map texture
 		if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			hasTexture = true;
 			parallaxMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 3U);
 			shaderCodePS += "Parallax";
 			shaderCodeVS += "Parallax";
@@ -100,7 +94,6 @@ namespace GFX::Visual
 		// Get specular data
 		if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			hasTexture = true;
 			specularMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 2U, true);
 			shaderCodePS += "Specular";
 			vertexLayout->Append(VertexAttribute::Texture2D);
@@ -108,17 +101,12 @@ namespace GFX::Visual
 		}
 
 		// Common elements
-		int twoSided;
-		if (material.Get(AI_MATKEY_TWOSIDED, twoSided) != aiReturn_SUCCESS)
-			twoSided = !translucent;
-		AddBind(Resource::Rasterizer::Get(gfx, twoSided == 1 ? D3D11_CULL_NONE : D3D11_CULL_BACK));
+		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_BACK));
 		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
-		if (hasTexture)
-			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
 
 		// Material elements
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));

@@ -10,7 +10,6 @@ namespace GFX::Visual
 		{
 			shaderType = "Texture";
 			diffuseTexture = material->GetTexture();
-			AddBind(Resource::Sampler::Get(gfx, Resource::Sampler::Type::Anisotropic, false));
 			if (material->IsParallax())
 			{
 				shaderType += "Parallax";
@@ -18,8 +17,7 @@ namespace GFX::Visual
 				parallaxMap = material->GetParallaxMap();
 			}
 		}
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
-		AddBind(GFX::Resource::GeometryShader::Get(gfx, "ShadowGS" + shaderType));
+		AddBind(Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
 		auto vertexShader = Resource::VertexShader::Get(gfx, "ShadowVS" + shaderType);
 		AddBind(Resource::InputLayout::Get(gfx, material->GerVertexLayout(), vertexShader));
 		AddBind(std::move(vertexShader));

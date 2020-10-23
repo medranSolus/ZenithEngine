@@ -72,7 +72,6 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(optionsBuffer);
 		AddBind(kernelBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "AmbientOcclusionPS"));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true, 1U));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 
 		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, DXGI_FORMAT_R32G32_FLOAT);

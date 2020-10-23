@@ -11,6 +11,6 @@ namespace GFX::Shape
 			: BaseShape(gfx), Object(position, name, scale) {}
 		virtual ~IShape() = default;
 
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { Object::Accept(gfx, probe); BaseShape::Accept(gfx, probe); }
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return Object::Accept(gfx, probe) || BaseShape::Accept(gfx, probe); }
 	};
 }

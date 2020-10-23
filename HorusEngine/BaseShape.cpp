@@ -45,9 +45,9 @@ namespace GFX::Shape
 			}
 	}
 
-	void BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		probe.VisitShape(gfx, *this);
-		JobData::Accept(gfx, probe);
+		return JobData::Accept(gfx, probe);
 	}
 }

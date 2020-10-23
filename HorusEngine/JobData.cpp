@@ -15,9 +15,11 @@ namespace GFX::Pipeline
 			technique->Submit(*this, channelFilter);
 	}
 
-	void JobData::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool JobData::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
+		bool change = false;
 		for (auto& technique : techniques)
-			technique->Accept(gfx, probe);
+			change |= technique->Accept(gfx, probe);
+		return change;
 	}
 }

@@ -477,9 +477,6 @@
     <ClCompile Include="ShadowMapPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="LightingPass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="JobData.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
@@ -522,14 +519,41 @@
     <ClCompile Include="SSAOBlurPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="DirectionalLight.cpp">
+      <Filter>Source Files\GFX\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMapCubePass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMapCube.cpp">
+      <Filter>Source Files\GFX\Visual</Filter>
+    </ClCompile>
+    <ClCompile Include="PointLightingPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectionalLightingPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="SpotLightingPass.cpp">
+      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="SpotLight.cpp">
+      <Filter>Source Files\GFX\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="ConeVolume.cpp">
+      <Filter>Source Files\GFX\Light\Volume</Filter>
+    </ClCompile>
+    <ClCompile Include="Cone.cpp">
+      <Filter>Source Files\GFX\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="SolidCone.cpp">
+      <Filter>Source Files\GFX\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="ILight.cpp">
+      <Filter>Source Files\GFX\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ColorBlendPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="ColorBlendVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="PhongPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
@@ -566,9 +590,6 @@
     <FxCompile Include="FullscreenVS.hlsl">
       <Filter>Shader Files\Vertex Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="NegativePS.hlsl">
-      <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
-    </FxCompile>
     <FxCompile Include="FullscreenPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
@@ -581,26 +602,11 @@
     <FxCompile Include="SkyboxPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ShadowVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="PointLightPS.hlsl">
-      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
-    </FxCompile>
     <FxCompile Include="ShadowPS.hlsl">
       <Filter>Shader Files\Pixel Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ShadowVSTexture.hlsl">
-      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
-    </FxCompile>
     <FxCompile Include="ShadowPSTexture.hlsl">
       <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
-    </FxCompile>
-    <FxCompile Include="ShadowGS.hlsl">
-      <Filter>Shader Files\Geometry Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="ShadowGSTexture.hlsl">
-      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
     </FxCompile>
     <FxCompile Include="PhongPSTextureNormalParallax.hlsl">
       <Filter>Shader Files\Pixel Shaders\Phong Extensions</Filter>
@@ -611,14 +617,8 @@
     <FxCompile Include="PhongVSTextureNormalParallax.hlsl">
       <Filter>Shader Files\Vertex Shaders\Phong Extensions</Filter>
     </FxCompile>
-    <FxCompile Include="ShadowGSTextureParallax.hlsl">
-      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
-    </FxCompile>
     <FxCompile Include="ShadowPSTextureParallax.hlsl">
       <Filter>Shader Files\Pixel Shaders\Shadow Extensions</Filter>
-    </FxCompile>
-    <FxCompile Include="ShadowVSTextureParallax.hlsl">
-      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
     </FxCompile>
     <FxCompile Include="HDRGammaPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
@@ -626,14 +626,50 @@
     <FxCompile Include="LightCombinePS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Lights</Filter>
     </FxCompile>
-    <FxCompile Include="LightVS.hlsl">
-      <Filter>Shader Files\Vertex Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="AmbientOcclusionPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
     </FxCompile>
     <FxCompile Include="SSAOBlurPS.hlsl">
       <Filter>Shader Files\Pixel Shaders\Fullscreen Effects</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeGS.hlsl">
+      <Filter>Shader Files\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeGSTexture.hlsl">
+      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeGSTextureParallax.hlsl">
+      <Filter>Shader Files\Geometry Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeVSTexture.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowCubeVSTextureParallax.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="DirectionalLightPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="PointLightPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="SpotLightPS.hlsl">
+      <Filter>Shader Files\Pixel Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="LightVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVS.hlsl">
+      <Filter>Shader Files\Vertex Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTexture.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTextureParallax.hlsl">
+      <Filter>Shader Files\Vertex Shaders\Shadow Extensions</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1294,13 +1330,7 @@
     <ClInclude Include="IRenderTarget.h">
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="BaseLight.h">
-      <Filter>Header Files\GFX\Light</Filter>
-    </ClInclude>
     <ClInclude Include="ShadowMapPass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
-    <ClInclude Include="LightingPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="IRenderable.h">
@@ -1351,6 +1381,39 @@
     <ClInclude Include="SSAOBlurPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="DirectionalLight.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapCubePass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapCube.h">
+      <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="PointLightingPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="SpotLightingPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectionalLightingPass.h">
+      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="SpotLight.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ConeVolume.h">
+      <Filter>Header Files\GFX\Light\Volume</Filter>
+    </ClInclude>
+    <ClInclude Include="Cone.h">
+      <Filter>Header Files\GFX\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="SolidCone.h">
+      <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Lights.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui.natvis" />
@@ -1393,9 +1456,6 @@
     <None Include="TransformVB.hlsli">
       <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
     </None>
-    <None Include="TransformSkyboxVB.hlsli">
-      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
-    </None>
     <None Include="ViewGB.hlsli">
       <Filter>Shader Files\Geometry Shaders\CBuffers</Filter>
     </None>
@@ -1417,15 +1477,6 @@
     <None Include="BlurDirectionPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
-    <None Include="PointLightPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
-    <None Include="SpotLightPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
-    <None Include="DirectionalLightPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
     <None Include="ShadowParallaxPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
@@ -1445,6 +1496,24 @@
       <Filter>Shader Files\Pixel Shaders\Utils</Filter>
     </None>
     <None Include="SSAOOptionsPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="SamplersPS.hlsli">
+      <Filter>Shader Files\Pixel Shaders\Utils</Filter>
+    </None>
+    <None Include="TransformSkyboxVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="ShadowVB.hlsli">
+      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
+    </None>
+    <None Include="PointLightPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="SpotLightPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="DirectionalLightPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>

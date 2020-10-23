@@ -13,7 +13,8 @@ namespace GFX::Visual
 		OutlineMaskOffset(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout);
 		virtual ~OutlineMaskOffset() = default;
 
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return vertexBuffer->Accept(gfx, probe) || pixelBuffer->Accept(gfx, probe); }
+
 		void Bind(Graphics& gfx) override;
 	};
 }

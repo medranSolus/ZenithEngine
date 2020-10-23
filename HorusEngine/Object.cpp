@@ -63,10 +63,14 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
-	void Object::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool Object::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		if (probe.VisitObject(buffer))
+		{
 			UpdateTransformMatrix();
+			return true;
+		}
+		return false;
 	}
 
 	void Object::UpdateTransformMatrix() noexcept

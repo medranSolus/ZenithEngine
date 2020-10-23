@@ -13,7 +13,7 @@ namespace GFX::Visual
 		ShadowMap(Graphics& gfx, std::shared_ptr<Visual::Material> material);
 		virtual ~ShadowMap() = default;
 
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return false; }
 
 		void Bind(Graphics& gfx) override;
 	};

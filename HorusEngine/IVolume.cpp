@@ -9,29 +9,18 @@ namespace GFX::Light::Volume
 
 		const float linear = lightBuffer["atteuationLinear"];
 		const float quad = lightBuffer["attenuationQuad"];
-		return (-linear + sqrtf(linear * linear - 4.0f * quad * (static_cast<float>(lightBuffer["atteuationConst"]) - lightMax * 256.0f))) / (2.0f * quad);
+		return (-linear + sqrtf(linear * linear - 4.0f * quad * (1.0f - lightMax * 256.0f))) / (2.0f * quad);
 	}
 
-	IVolume& IVolume::operator=(IVolume&& volume) noexcept
+	void IVolume::Update(const Data::CBuffer::DynamicCBuffer& lightBuffer) noexcept
 	{
-		transformBuffer = std::move(volume.transformBuffer);
-		transformBuffer->ChangeOwner(*this);
-		indexBuffer = std::move(volume.indexBuffer);
-		vertexBuffer = std::move(volume.vertexBuffer);
-		pixelShader = std::move(volume.pixelShader);
-		return *this;
+		UpdateTransform(GetVolume(lightBuffer), lightBuffer);
 	}
 
-	void IVolume::Bind(Graphics& gfx, const Data::CBuffer::DynamicCBuffer& lightBuffer)
+	void IVolume::Bind(Graphics& gfx)
 	{
-		const float scale = GetVolume(lightBuffer);
-		DirectX::XMStoreFloat4x4(transform.get(),
-			DirectX::XMMatrixScaling(scale, scale, scale) *
-			DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&lightBuffer["lightPos"])));
-
 		transformBuffer->Bind(gfx);
 		indexBuffer->Bind(gfx);
 		vertexBuffer->Bind(gfx);
-		pixelShader->Bind(gfx);
 	}
 }

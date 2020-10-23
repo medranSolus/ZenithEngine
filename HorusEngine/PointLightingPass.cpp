@@ -1,14 +1,13 @@
-#include "LightingPass.h"
+#include "PointLightingPass.h"
 #include "RenderPassesBase.h"
 #include "PipelineResources.h"
 #include "GfxResources.h"
 
 namespace GFX::Pipeline::RenderPass
 {
-	LightingPass::LightingPass(Graphics& gfx, const std::string& name)
-		: QueuePass(name)
+	PointLightingPass::PointLightingPass(Graphics& gfx, const std::string& name, UINT shadowMapSize)
+		: QueuePass(name), shadowMapPass(gfx, "shadowMap", shadowMapSize)
 	{
-		shadowMapPass = std::make_unique<ShadowMapPass>(gfx, "shadowMap");
 		AddBindableSink<GFX::Resource::IBindable>("shadowMap");
 		SetSinkLinkage("shadowMap", name + ".shadowMap.shadowMap");
 
@@ -16,14 +15,13 @@ namespace GFX::Pipeline::RenderPass
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
 
-		renderTarget = Resource::RenderTargetEx::Get(gfx, 9U, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
+		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 
 		AddBind(GFX::Resource::NullGeometryShader::Get(gfx));
+		AddBind(GFX::Resource::PixelShader::Get(gfx, "PointLightPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Light));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Anisotropic, false, 0U));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, false, 1U));
-		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_FRONT));
+		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_FRONT, false));
 
 		auto vertexShader = GFX::Resource::VertexShader::Get(gfx, "LightVS");
 		AddBind(GFX::Resource::InputLayout::Get(gfx, std::make_shared<Data::VertexLayout>(), vertexShader));
@@ -31,28 +29,27 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 	}
 
-	void LightingPass::Reset() noexcept
+	void PointLightingPass::Reset() noexcept
 	{
-		shadowMapPass->Reset();
+		shadowMapPass.Reset();
 		QueuePass::Reset();
 	}
 
-	Base::BasePass& LightingPass::GetInnerPass(std::deque<std::string> nameChain)
+	Base::BasePass& PointLightingPass::GetInnerPass(std::deque<std::string> nameChain)
 	{
-		if (nameChain.size() == 1 && nameChain.front() == shadowMapPass->GetName())
-			return *shadowMapPass;
+		if (nameChain.size() == 1 && nameChain.front() == shadowMapPass.GetName())
+			return shadowMapPass;
 		throw RGC_EXCEPT("Wrong inner pass name: " + nameChain.front());
 	}
 
-	void LightingPass::Execute(Graphics& gfx)
+	void PointLightingPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		renderTarget->Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f });
 		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())
 		{
-			shadowMapPass->BindLight(dynamic_cast<Light::ILight&>(job.GetData()));
-			shadowMapPass->Execute(gfx);
+			shadowMapPass.BindLight(dynamic_cast<Light::ILight&>(job.GetData()));
+			shadowMapPass.Execute(gfx);
 			mainCamera->BindCamera(gfx);
 			BindAll(gfx);
 			job.Execute(gfx);

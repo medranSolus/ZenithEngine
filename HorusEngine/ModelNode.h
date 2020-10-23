@@ -33,8 +33,8 @@ namespace GFX::Shape
 		void SetOutline() noexcept override;
 		void DisableOutline() noexcept override;
 		void Submit(uint64_t channelFilter, const DirectX::FXMMATRIX& higherTransform) noexcept;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-		void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override;
 
 		void SetMesh(Graphics& gfx, bool meshOnly) noexcept;
 	};

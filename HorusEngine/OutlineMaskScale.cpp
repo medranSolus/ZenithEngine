@@ -44,10 +44,10 @@ namespace GFX::Visual
 		UpdateTransform();
 	}
 
-	void OutlineMaskScale::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool OutlineMaskScale::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
 		dirty = probe.VisitObject(buffer);
-		pixelBuffer->Accept(gfx, probe);
+		return dirty || pixelBuffer->Accept(gfx, probe);
 	}
 
 	void OutlineMaskScale::Bind(Graphics& gfx)

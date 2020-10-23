@@ -22,13 +22,13 @@ namespace GFX::Probe
 			node.SetMesh(gfx, meshOnly);
 	}
 
-	void ModelProbe::Visit(Graphics& gfx, Shape::Model& model, Shape::ModelNode& root) noexcept
+	bool ModelProbe::Visit(Graphics& gfx, Shape::Model& model, Shape::ModelNode& root) noexcept
 	{
 		if (selectedNode == nullptr)
 			selectedNode = &root;
 		ImGui::Columns(2);
 		ImGui::BeginChild("##NodeTree", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
-		root.Accept(gfx, *this);
+		bool change = root.Accept(gfx, *this);
 		ImGui::EndChild();
 		ImGui::NextColumn();
 		ImGui::NewLine();
@@ -41,7 +41,8 @@ namespace GFX::Probe
 				model.DisableOutline();
 		}
 		Visit(gfx, *selectedNode);
-		selectedNode->Accept(gfx, static_cast<BaseProbe&>(*this));
+		change |= selectedNode->Accept(gfx, static_cast<BaseProbe&>(*this));
 		ImGui::Columns(1);
+		return change;
 	}
 }

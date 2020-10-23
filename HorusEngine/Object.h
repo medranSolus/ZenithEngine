@@ -23,7 +23,7 @@ namespace GFX
 		void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept override;
 		void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override;
 		void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 
 		virtual void UpdateTransformMatrix() noexcept;
 	};

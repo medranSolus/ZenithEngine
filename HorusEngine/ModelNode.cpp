@@ -39,21 +39,24 @@ namespace GFX::Shape
 			child->Submit(channelFilter, transformMatrix);
 	}
 
-	void ModelNode::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool ModelNode::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		Object::Accept(gfx, probe);
+		bool change = Object::Accept(gfx, probe);
 		for (const auto& mesh : meshes)
-			mesh->Accept(gfx, probe);
+			change |= mesh->Accept(gfx, probe);
+		return change;
 	}
 
-	void ModelNode::Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept
+	bool ModelNode::Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept
 	{
+		bool change = false;
 		if (probe.PushNode(*this))
 		{
 			for (auto& child : children)
-				child->Accept(gfx, probe);
+				change |= child->Accept(gfx, probe);
 			probe.PopNode();
 		}
+		return change;
 	}
 
 	void ModelNode::SetMesh(Graphics& gfx, bool meshOnly) noexcept

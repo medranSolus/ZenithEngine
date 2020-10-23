@@ -45,8 +45,8 @@ namespace GFX::Shape
 		inline void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override { root->UpdatePos(delta); }
 		inline void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override { root->UpdateAngle(deltaAngle); }
 
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { root->Accept(gfx, probe); }
-		inline void Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { probe.Visit(gfx, *this, *root); }
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return root->Accept(gfx, probe); }
+		inline bool Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { return probe.Visit(gfx, *this, *root); }
 
 		void SetOutline() noexcept override;
 		void DisableOutline() noexcept override;

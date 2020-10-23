@@ -94,7 +94,7 @@ namespace Camera
 		gfx.SetProjection(GetProjection());
 	}
 
-	void BaseCamera::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
+	bool BaseCamera::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
 		ImGui::Checkbox("Enable Indicator", &enableIndicator);
 		if (enableIndicator)
@@ -106,6 +106,7 @@ namespace Camera
 		if (projectionUpdate)
 			frustrum->SetParams(gfx, projection);
 		//indicator->Accept(gfx, probe);
+		return projectionUpdate;
 	}
 
 	void BaseCamera::Submit(uint64_t channelFilter) noexcept

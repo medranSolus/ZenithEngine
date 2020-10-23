@@ -2,13 +2,13 @@
 #include "Timer.h"
 #include "Cameras.h"
 #include "Shapes.h"
-#include "PointLight.h"
+#include "Lights.h"
 #include "MainPipelineGraph.h"
 #include <map>
 
 class App
 {
-	enum class Container { None, Model, Shape, PointLight };
+	enum class Container { None, Model, Shape, PointLight, SpotLight };
 
 	static constexpr const char* WINDOW_TITLE = "Horus Engine Alpha";
 	static constexpr float VIEW_DISTANCE = 500.0f;
@@ -20,15 +20,19 @@ class App
 	std::vector<GFX::Shape::Model> models;
 	std::vector<std::shared_ptr<GFX::Shape::IShape>> shapes;
 	std::vector<GFX::Light::PointLight> pointLights;
+	std::vector<GFX::Light::SpotLight> spotLights;
 	std::map<std::string, std::pair<Container, size_t>> objects;
 	std::vector<std::unique_ptr<GFX::Shape::SolidRectangle>> carpetRects;
 
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
 	inline void ShowOptionsWindow();
+
 	inline void AddShape(std::shared_ptr<GFX::Shape::IShape> shape);
 	inline void AddShape(GFX::Shape::Model&& model);
 	inline void AddLight(GFX::Light::PointLight&& pointLight);
+	inline void AddLight(GFX::Light::SpotLight&& spotLight);
+
 	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 	void MakeFrame();
 

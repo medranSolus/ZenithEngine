@@ -27,6 +27,6 @@ namespace GFX::Pipeline
 
 		void SetParentReference(Graphics& gfx, const GfxObject& parent);
 		void Submit(JobData& data, uint64_t channelFilter) noexcept;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

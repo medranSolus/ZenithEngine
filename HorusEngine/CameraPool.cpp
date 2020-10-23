@@ -80,7 +80,7 @@ namespace Camera
 				it->second->Submit(channelFilter);
 	}
 
-	void CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
+	bool CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
 		ImGui::SliderFloat("Move speed", &moveSpeed, 0.001f, MAX_MOVE_SPEED, "%.3f");
 		ImGui::SliderFloat("Roll speed", &rollSpeed, 0.01f, 0.5f, "%.2f");
@@ -109,6 +109,6 @@ namespace Camera
 		ImGui::NewLine();
 		const auto& cameraPos = currentItem->second->GetPos();
 		ImGui::Text("Position: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
-		currentItem->second->Accept(gfx, probe);
+		return currentItem->second->Accept(gfx, probe);
 	}
 }

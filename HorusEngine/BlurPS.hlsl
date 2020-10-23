@@ -1,7 +1,7 @@
+#include "SamplersPS.hlsli"
 #include "GaussPB.hlsli"
 #include "BlurDirectionPB.hlsli"
 
-SamplerState splr : register(s0);
 Texture2D tex : register(t0);
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
@@ -16,7 +16,7 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	float alpha = 0.0f;
 	for (int i = -cb_radius; i <= cb_radius; ++i)
 	{
-		const float4 color = tex.Sample(splr, tc + delta * i);
+		const float4 color = tex.Sample(splr_LR, tc + delta * i);
 		alpha += color.a * cb_coefficients[abs(i)];
 		maxColor = max(maxColor, color.rgb);
 	}

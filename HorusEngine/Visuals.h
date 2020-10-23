@@ -5,3 +5,4 @@
 #include "OutlineMaskOffset.h"
 #include "OutlineMaskScale.h"
 #include "ShadowMap.h"
+#include "ShadowMapCube.h"

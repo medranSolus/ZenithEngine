@@ -37,6 +37,6 @@ namespace GFX::Shape
 		void Bind(Graphics& gfx) override;
 		void SetOutline() noexcept override;
 		void DisableOutline() noexcept override;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

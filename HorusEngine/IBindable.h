@@ -28,7 +28,7 @@ namespace GFX::Resource
 			return T::template GenerateRID(std::forward<Params>(p)...);
 		}
 
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return false; }
 
 		virtual void Bind(Graphics& gfx) = 0;
 		virtual std::string GetRID() const noexcept = 0;

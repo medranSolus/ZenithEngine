@@ -1,11 +1,11 @@
 #include "UtilsPS.hlsli"
+#include "SamplersPS.hlsli"
 #include "BiasPB.hlsli"
 #ifdef _TEX_PAX
 #include "ShadowParallaxPB.hlsli"
 #endif
 
 #ifdef _TEX
-SamplerState splr : register(s0);
 Texture2D tex : register(t0);
 #ifdef _TEX_PAX
 //Texture2D normalMap : register(t1);
@@ -27,11 +27,11 @@ float main(float3 lightToVertex : VECTOR
 #ifdef _TEX
 #ifdef _TEX_PAX
 	const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
-	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr);
+	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AN);
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
 #endif
-	clip(tex.Sample(splr, tc).a - 0.0039f);
+	clip(tex.Sample(splr_AN, tc).a - 0.0039f);
 #endif
 #ifdef _TEX_PAX
 	//const float3 normal = GetMappedNormal(TBN, tc, normalMap, splr).rgb;

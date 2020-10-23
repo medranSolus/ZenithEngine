@@ -21,7 +21,6 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Normal));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Mask));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Linear, true));
 	}
 
 	void VerticalBlurPass::Execute(Graphics& gfx)

@@ -42,7 +42,6 @@ namespace GFX::Shape
 		const float circleScale = height * tanf(static_cast<float>(2.0 * M_PI - FLT_EPSILON) * angle / 361.0f);
 		DirectX::XMStoreFloat4x4(transform.get(),
 			DirectX::XMMatrixScaling(circleScale, height, circleScale) *
-			DirectX::XMMatrixTranslation(0.0f, height * -0.5f, 0.0f) *
 			CreateTransformMatrix());
 	}
 }

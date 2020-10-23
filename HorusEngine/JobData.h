@@ -23,6 +23,6 @@ namespace GFX::Pipeline
 		virtual void Bind(Graphics& gfx) = 0;
 
 		void Submit(uint64_t channelFilter) noexcept override;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

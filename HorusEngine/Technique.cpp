@@ -15,12 +15,14 @@ namespace GFX::Pipeline
 				step.Submit(data);
 	}
 
-	void Technique::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
+	bool Technique::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
+		bool change = false;
 		probe.SetTechnique(this);
 		if (active)
 			for (auto& step : steps)
-				step.Accept(gfx, probe);
+				change |= step.Accept(gfx, probe);
 		probe.ReleaseTechnique();
+		return change;
 	}
 }

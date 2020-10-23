@@ -16,7 +16,6 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Linear, false));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::DepthFirst));
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "SkyboxPS"));
 		AddBind(std::make_shared<GFX::Resource::ConstBufferTransformSkybox>(gfx));

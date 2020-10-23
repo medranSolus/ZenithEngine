@@ -19,7 +19,7 @@ namespace GFX::Visual
 		virtual ~OutlineMaskScale() = default;
 
 		void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) override;
-		void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
+		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 		void Bind(Graphics& gfx) override;
 	};
 }

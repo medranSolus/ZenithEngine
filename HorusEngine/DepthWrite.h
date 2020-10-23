@@ -9,6 +9,6 @@ namespace GFX::Visual
 		DepthWrite(Graphics& gfx, std::shared_ptr<Data::VertexLayout> vertexLayout);
 		virtual ~DepthWrite() = default;
 
-		inline void Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override {}
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return false; }
 	};
 }

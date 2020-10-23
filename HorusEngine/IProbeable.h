@@ -8,7 +8,7 @@ namespace GFX::Probe
 	public:
 		virtual ~IProbeable() = default;
 
-		virtual void Accept(Graphics& gfx, BaseProbe& probe) noexcept = 0;
-		virtual inline void Accept(Graphics& gfx, ModelProbe& probe) noexcept { Accept(gfx, static_cast<BaseProbe&>(probe)); }
+		virtual bool Accept(Graphics& gfx, BaseProbe& probe) noexcept = 0;
+		virtual inline bool Accept(Graphics& gfx, ModelProbe& probe) noexcept { return Accept(gfx, static_cast<BaseProbe&>(probe)); }
 	};
 }

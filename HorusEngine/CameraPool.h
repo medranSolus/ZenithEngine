@@ -29,7 +29,7 @@ namespace Camera
 		void ProcessInput(WinAPI::Window& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
-		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
+		bool Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

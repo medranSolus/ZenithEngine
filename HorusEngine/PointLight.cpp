@@ -1,5 +1,7 @@
 #include "PointLight.h"
+#include "GlobeVolume.h"
 #include "SolidGlobe.h"
+#include "SolidCone.h"
 #include "TechniqueFactory.h"
 
 namespace GFX::Light
@@ -11,59 +13,45 @@ namespace GFX::Light
 		if (initNeeded)
 		{
 			layout.Add(DCBElementType::Color3, "lightColor");
-			layout.Add(DCBElementType::Float, "atteuationConst");
+			layout.Add(DCBElementType::Float, "lightIntensity");
 			layout.Add(DCBElementType::Color3, "shadowColor");
 			layout.Add(DCBElementType::Float, "atteuationLinear");
 			layout.Add(DCBElementType::Float3, "lightPos");
 			layout.Add(DCBElementType::Float, "attenuationQuad");
-			layout.Add(DCBElementType::Float, "lightIntensity");
 			initNeeded = false;
 		}
 		return layout;
 	}
 
-	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name,
-		float intensity, const Data::ColorFloat3& color, float radius)
-		: volume(gfx, 5)
+	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		const std::string& name, size_t range, float intensity, const Data::ColorFloat3& color, float radius)
+		: range(range)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());
-		buffer["atteuationConst"] = 1.0f;
-		buffer["lightColor"] = color;
-		buffer["atteuationLinear"] = 0.045f;
-		buffer["lightPos"] = position;
-		buffer["attenuationQuad"] = 0.0075f;
-		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 		buffer["lightIntensity"] = intensity;
-		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(buffer), 4U);
-		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 4, 4, radius, radius, radius, true);
+		buffer["lightColor"] = color;
+		buffer["lightPos"] = position;
+		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 
-		AddTechnique(gfx, Pipeline::TechniqueFactory::MakeLighting(graph));
+		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(PointLight).name() + name, std::move(buffer), 4U);
+		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 4, 4, radius, radius, radius);
+		volume = std::make_shared<Volume::GlobeVolume>(gfx, 3);
+
+		SetAttenuation(range);
+		volume->Update(lightBuffer->GetBufferConst());
+		AddTechnique(gfx, Pipeline::TechniqueFactory::MakePointLighting(graph));
 	}
 
-	PointLight::PointLight(PointLight&& light) noexcept
-		: BaseLight(std::forward<BaseLight&&>(light)), volume(std::move(light.volume))
+	bool PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		lightBuffer = std::move(light.lightBuffer);
-	}
-
-	PointLight& PointLight::operator=(PointLight&& light) noexcept
-	{
-		this->BaseLight::operator=(std::forward<BaseLight&&>(light));
-		volume = std::move(light.volume);
-		lightBuffer = std::move(light.lightBuffer);
-		return *this;
-	}
-
-	void PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		lightBuffer->Accept(gfx, probe);
-		BaseLight::Accept(gfx, probe);
-	}
-
-	void PointLight::Bind(Graphics& gfx)
-	{
-		lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();
-		lightBuffer->Bind(gfx);
-		volume.Bind(gfx, lightBuffer->GetBufferConst());
+		if (ImGui::DragScalar("Range", ImGuiDataType_::ImGuiDataType_U64, &range, 1.0f))
+			SetAttenuation(range);
+		if (ILight::Accept(gfx, probe))
+		{
+			lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();
+			volume->Update(lightBuffer->GetBufferConst());
+			return true;
+		}
+		return false;
 	}
 }

@@ -17,7 +17,6 @@ namespace GFX::Pipeline::RenderPass
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
-		AddBind(GFX::Resource::Sampler::Get(gfx, GFX::Resource::Sampler::Type::Point, true));
 	}
 
 	void HorizontalBlurPass::Execute(Graphics& gfx)

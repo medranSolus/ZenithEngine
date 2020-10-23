@@ -270,6 +270,8 @@
     <ClCompile Include="CameraPool.cpp" />
     <ClCompile Include="ClearBufferPass.cpp" />
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="Cone.cpp" />
+    <ClCompile Include="ConeVolume.cpp" />
     <ClCompile Include="ConstBufferEx.cpp" />
     <ClCompile Include="ConstBufferExGeometry.cpp" />
     <ClCompile Include="ConstBufferExPixel.cpp" />
@@ -284,6 +286,8 @@
     <ClCompile Include="DepthStencil.cpp" />
     <ClCompile Include="DepthStencilShaderInput.cpp" />
     <ClCompile Include="DepthWrite.cpp" />
+    <ClCompile Include="DirectionalLight.cpp" />
+    <ClCompile Include="DirectionalLightingPass.cpp" />
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="DCBLayoutElement.cpp" />
     <ClCompile Include="DynamicCBuffer.cpp" />
@@ -297,6 +301,7 @@
     <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="HorizontalBlurPass.cpp" />
     <ClCompile Include="IBufferResource.cpp" />
+    <ClCompile Include="ILight.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -316,7 +321,7 @@
     <ClCompile Include="LambertianClassicPass.cpp" />
     <ClCompile Include="LambertianDepthOptimizedPass.cpp" />
     <ClCompile Include="LightCombinePass.cpp" />
-    <ClCompile Include="LightingPass.cpp" />
+    <ClCompile Include="PointLightingPass.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -343,16 +348,21 @@
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
+    <ClCompile Include="ShadowMapCube.cpp" />
+    <ClCompile Include="ShadowMapCubePass.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
     <ClCompile Include="ShadowRasterizer.cpp" />
     <ClCompile Include="Sink.cpp" />
     <ClCompile Include="SkyboxPass.cpp" />
+    <ClCompile Include="SolidCone.cpp" />
     <ClCompile Include="SolidRectangle.cpp" />
     <ClCompile Include="QueuePass.cpp" />
     <ClCompile Include="SolidGlobe.cpp" />
     <ClCompile Include="DepthStencilState.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="SpotLight.cpp" />
+    <ClCompile Include="SpotLightingPass.cpp" />
     <ClCompile Include="Square.cpp" />
     <ClCompile Include="SSAOBlurPass.cpp" />
     <ClCompile Include="SSAOPass.cpp" />
@@ -385,17 +395,41 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="ColorBlendPS.hlsl">
+    <FxCompile Include="DirectionalLightPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="ColorBlendVS.hlsl">
+    <FxCompile Include="PointLightPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="ShadowVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTexture.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="ShadowVSTextureParallax.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="SpotLightPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="SSAOBlurPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -415,27 +449,15 @@
     <None Include="OffsetVB.hlsli" />
     <None Include="packages.config" />
     <None Include="PhongPB.hlsli" />
+    <None Include="PointLightPB.hlsli" />
+    <None Include="SamplersPS.hlsli" />
     <None Include="ShadowParallaxPB.hlsli" />
+    <None Include="ShadowVB.hlsli" />
     <None Include="SolidPB.hlsli" />
     <None Include="SpotLightPB.hlsli" />
     <None Include="SSAOKernelPB.hlsli" />
     <None Include="SSAOOptionsPB.hlsli" />
     <None Include="TransformVB.hlsli">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="PointLightPB.hlsli">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </EntryPointName>
       <FileType>Document</FileType>
     </None>
     <None Include="TransformSkyboxVB.hlsli" />
@@ -484,12 +506,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="NegativePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
     <FxCompile Include="OffsetVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
@@ -526,13 +542,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="PointLightPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="ShadowGS.hlsl">
+    <FxCompile Include="ShadowCubeGS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
@@ -542,7 +552,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="ShadowGSTexture.hlsl">
+    <FxCompile Include="ShadowCubeGSTexture.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
@@ -552,7 +562,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="ShadowGSTextureParallax.hlsl">
+    <FxCompile Include="ShadowCubeGSTextureParallax.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
@@ -580,19 +590,19 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="ShadowVS.hlsl">
+    <FxCompile Include="ShadowCubeVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="ShadowVSTexture.hlsl">
+    <FxCompile Include="ShadowCubeVSTexture.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="ShadowVSTextureParallax.hlsl">
+    <FxCompile Include="ShadowCubeVSTextureParallax.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -744,11 +754,14 @@
     <ClInclude Include="CameraFrustrum.h" />
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
+    <ClInclude Include="Cone.h" />
+    <ClInclude Include="ConeVolume.h" />
     <ClInclude Include="ConstBufferExGeometry.h" />
     <ClInclude Include="ConstBufferTransformSkybox.h" />
     <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
-    <ClInclude Include="BaseLight.h" />
+    <ClInclude Include="DirectionalLight.h" />
+    <ClInclude Include="DirectionalLightingPass.h" />
     <ClInclude Include="GlobeVolume.h" />
     <ClInclude Include="HDRGammaCorrectionPass.h" />
     <ClInclude Include="GeometryShader.h" />
@@ -760,7 +773,8 @@
     <ClInclude Include="LambertianClassicPass.h" />
     <ClInclude Include="LambertianDepthOptimizedPass.h" />
     <ClInclude Include="LightCombinePass.h" />
-    <ClInclude Include="LightingPass.h" />
+    <ClInclude Include="Lights.h" />
+    <ClInclude Include="PointLightingPass.h" />
     <ClInclude Include="NullGeometryShader.h" />
     <ClInclude Include="RenderChannels.h" />
     <ClInclude Include="DepthStencilShaderInput.h" />
@@ -858,6 +872,8 @@
     <ClInclude Include="RenderTargetEx.h" />
     <ClInclude Include="RenderTargetShaderInput.h" />
     <ClInclude Include="ShadowMap.h" />
+    <ClInclude Include="ShadowMapCube.h" />
+    <ClInclude Include="ShadowMapCubePass.h" />
     <ClInclude Include="ShadowMapPass.h" />
     <ClInclude Include="ShadowRasterizer.h" />
     <ClInclude Include="Sink.h" />
@@ -865,6 +881,7 @@
     <ClInclude Include="SinkDirectBindable.h" />
     <ClInclude Include="SinkDirectBuffer.h" />
     <ClInclude Include="SkyboxPass.h" />
+    <ClInclude Include="SolidCone.h" />
     <ClInclude Include="SolidRectangle.h" />
     <ClInclude Include="QueuePass.h" />
     <ClInclude Include="resource.h" />
@@ -876,6 +893,8 @@
     <ClInclude Include="SourceDirectBindable.h" />
     <ClInclude Include="SourceDirectBuffer.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="SpotLight.h" />
+    <ClInclude Include="SpotLightingPass.h" />
     <ClInclude Include="Square.h" />
     <ClInclude Include="DepthStencilState.h" />
     <ClInclude Include="SSAOBlurPass.h" />

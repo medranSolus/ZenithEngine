@@ -13,19 +13,13 @@ namespace GFX::Visual
 		vertexCBbufferLayout.Add(DCBElementType::Float, "offset");
 		Data::CBuffer::DynamicCBuffer vertexCBuffer(std::move(vertexCBbufferLayout));
 		vertexCBuffer["offset"] = 0.11f;
-		vertexBuffer = Resource::ConstBufferExVertexCache::Get(gfx, tag, std::move(vertexCBuffer), 1U);
+		vertexBuffer = Resource::ConstBufferExVertexCache::Get(gfx, tag, std::move(vertexCBuffer), 2U);
 
 		GFX::Data::CBuffer::DCBLayout pixelCBbufferLayout;
 		pixelCBbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer pixelCBuffer(std::move(pixelCBbufferLayout));
 		pixelCBuffer["solidColor"] = std::move(color);
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(pixelCBuffer), 8U);
-	}
-
-	void OutlineMaskOffset::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
-	{
-		vertexBuffer->Accept(gfx, probe);
-		pixelBuffer->Accept(gfx, probe);
 	}
 
 	void OutlineMaskOffset::Bind(Graphics& gfx)

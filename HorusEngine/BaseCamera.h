@@ -59,7 +59,7 @@ namespace Camera
 		void Roll(float delta) noexcept override;
 
 		void BindCamera(GFX::Graphics& gfx) const noexcept override;
-		void Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
+		bool Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
 		void Submit(uint64_t channelFilter) noexcept override;
 	};
 }

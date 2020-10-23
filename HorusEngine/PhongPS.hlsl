@@ -1,8 +1,8 @@
 #include "UtilsPS.hlsli"
+#include "SamplersPS.hlsli"
 #include "PhongPB.hlsli"
 
 #ifdef _TEX
-SamplerState splr : register(s0);
 Texture2D tex : register(t0);
 #ifdef _TEX_NORMAL
 Texture2D normalMap : register(t1);
@@ -37,7 +37,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX_NORMAL
 	const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
 #ifdef _TEX_PAX
-	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr);
+	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AN);
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
 #endif
@@ -45,7 +45,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 
 	PSOut pso;
 #ifdef _TEX
-	pso.color = tex.Sample(splr, tc);
+	pso.color = tex.Sample(splr_AN, tc);
 #else
 	pso.color = cb_materialColor;
 #endif
@@ -53,16 +53,13 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 	pso.color.a = 0.0f;
 
 #ifdef _TEX_NORMAL
-	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr));
+	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AN));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif
-	// Only for double sided objects
-	//if (dot(viewNormal, viewPos) >= 0.0f)
-	//	viewNormal *= -1.0f;
 
 #ifdef _TEX_SPEC
-	const float4 specularTex = spec.Sample(splr, tc);
+	const float4 specularTex = spec.Sample(splr_AN, tc);
 	pso.specular = float4(specularTex.rgb * cb_specularIntensity,
 		cb_useSpecularPowerAlpha ? specularTex.a : cb_specularPower);
 #else

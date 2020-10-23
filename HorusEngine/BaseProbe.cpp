@@ -106,18 +106,27 @@ namespace GFX::Probe
 		{
 			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, 0.0f, FLT_MAX, "%.3f");
 		}
-		if (auto atteuationConst = buffer["atteuationConst"]; atteuationConst.Exists())
+		if (auto direction = buffer["direction"]; direction.Exists())
 		{
-			ImGui::Text("Attenuation:");
-			dirty |= ImGui::DragFloat(Tag("Const"), &atteuationConst, 0.001f, -FLT_MAX, FLT_MAX, "%.3f");
-			if (auto atteuationLinear = buffer["atteuationLinear"]; atteuationLinear.Exists())
+			dirty |= ImGui::DragFloat3(Tag("Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f");
+		}
+		if (auto outerAngle = buffer["outerAngle"]; outerAngle.Exists())
+		{
+			dirty |= ImGui::SliderAngle(Tag("Outer angle"), &outerAngle, 0.0f, 85.0f, "%.2f");
+			if (auto innerAngle = buffer["innerAngle"]; innerAngle.Exists())
 			{
-				dirty |= ImGui::DragFloat(Tag("Linear"), &atteuationLinear, 0.0001f, -FLT_MAX, FLT_MAX, "%.4f");
+				if (static_cast<float>(innerAngle) > static_cast<float>(outerAngle))
+				{
+					innerAngle = static_cast<float>(outerAngle) - 0.5f;
+					buffer["innerAngle"] = innerAngle;
+					dirty = true;
+				}
+				dirty |= ImGui::SliderAngle(Tag("Inner angle"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / M_PI - 0.5f, "%.2f");
 			}
-			if (auto attenuationQuad = buffer["attenuationQuad"]; attenuationQuad.Exists())
-			{
-				dirty |= ImGui::DragFloat(Tag("Quad"), &attenuationQuad, 0.00001f, -FLT_MAX, FLT_MAX, "%.5f");
-			}
+		}
+		if (auto falloff = buffer["falloff"]; falloff.Exists())
+		{
+			dirty |= ImGui::DragFloat(Tag("Falloff"), &falloff, 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
 		}
 		return dirty;
 	}
