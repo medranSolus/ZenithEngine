@@ -1,4 +1,4 @@
-cbuffer CameraBuffer : register(b7)
+cbuffer CameraBuffer : register(b2)
 {
 	matrix cb_viewProjection;
 	matrix cb_inverseViewProjection;

@@ -12,7 +12,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		Camera::ICamera* mainCamera = nullptr;
 		Light::ILight* shadowSource = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
+		std::shared_ptr<GFX::Resource::ConstBufferPixel<DirectX::XMFLOAT4>> positionBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExGeometryCache> viewBuffer;
 		std::shared_ptr<GFX::Resource::TextureDepthCube> depthCube;
 		DirectX::XMFLOAT4X4 projection;

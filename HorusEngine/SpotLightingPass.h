@@ -7,6 +7,9 @@ namespace GFX::Pipeline::RenderPass
 	{
 		ShadowMapPass shadowMapPass;
 		Camera::ICamera* mainCamera = nullptr;
+		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> shadowBuffer;
+
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		SpotLightingPass(Graphics& gfx, const std::string& name);

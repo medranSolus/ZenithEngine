@@ -18,7 +18,6 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 
-		AddBind(GFX::Resource::NullGeometryShader::Get(gfx));
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "DirectionalLightPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Light));
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE));

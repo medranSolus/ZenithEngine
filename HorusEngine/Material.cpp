@@ -19,7 +19,7 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 8U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer));
 	}
 
 	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
@@ -46,7 +46,7 @@ namespace GFX::Visual
 		cbuffer["specularIntensity"] = 0.9f;
 		cbuffer["specularPower"] = 0.409f;
 		cbuffer["materialColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer), 9U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, name, std::move(cbuffer));
 	}
 
 	Material::Material(Graphics& gfx, aiMaterial& material, const std::string& path)
@@ -132,7 +132,7 @@ namespace GFX::Visual
 		if (specularMap != nullptr)
 			cbuffer["useSpecularPowerAlpha"] = specularMap->HasAlpha();
 		// Maybe path needed too, TODO: Check this
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer), 9U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer));
 	}
 
 	void Material::Bind(Graphics& gfx)

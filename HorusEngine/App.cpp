@@ -170,10 +170,12 @@ App::App(const std::string& commandLine)
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "Pumpkin candle", 85, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "Torch", 70, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), "Blue ilumination", 70, 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f) });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 0.0f, -5.0f), "Flashlight", 50, 20.0f, 40.0f,
-		DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), 2.0f, GFX::Data::ColorFloat3(0.5f, 1.0f, 0.5f) });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 0.0f, 5.0f), "Cold light", 80, 5.0f, 20.0f,
-		DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), 9.0f, GFX::Data::ColorFloat3(0.5f, 0.5f, 1.0f) });
+	DirectX::XMFLOAT3 direction = { -0.64f, -1.0f, 0.5f };
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 60.0f, -5.0f), "Space light", 126, 15.0f, 24.5f,
+		Math::NormalizeStore(direction), 8.0f, GFX::Data::ColorFloat3(1.3f, 2.3f, 1.3f) });
+	direction = { -1.0f, 1.0f, -0.7f };
+	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), "Lion flare", 150, 35.0f, 45.0f,
+		Math::NormalizeStore(direction), 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });

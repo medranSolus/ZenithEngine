@@ -1,4 +1,4 @@
-cbuffer DirectionalLightBuffer : register(b6)
+cbuffer DirectionalLightBuffer : register(b0)
 {
 	float3 cb_lightColor;
 	float cb_lightIntensity;

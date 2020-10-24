@@ -20,6 +20,7 @@ namespace GFX::Pipeline
 		float sigma;
 		float gamma;
 		float hdrExposure;
+		float normalOffset;
 
 		std::vector<GFX::Resource::Sampler> samplers;
 		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
@@ -42,7 +43,7 @@ namespace GFX::Pipeline
 		void SetKernel() noexcept(!IS_DEBUG);
 
 	public:
-		MainPipelineGraph(Graphics& gfx, float hdrExposure = 1.5f, int radius = 7, float sigma = 2.6f, float gamma = 2.2f, int bias = 2);
+		MainPipelineGraph(Graphics& gfx, float hdrExposure = 1.5f, int radius = 7, float sigma = 2.6f, float gamma = 2.2f, int bias = 26, float normalOffset = 0.001f);
 		virtual ~MainPipelineGraph() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);

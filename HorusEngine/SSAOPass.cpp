@@ -6,7 +6,7 @@
 
 namespace GFX::Pipeline::RenderPass
 {
-	inline Data::CBuffer::DCBLayout SSAOPass::MakeLayoutKernel() noexcept
+	inline Data::CBuffer::DCBLayout SSAOPass::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
@@ -14,22 +14,11 @@ namespace GFX::Pipeline::RenderPass
 		{
 			layout.Add(DCBElementType::Array, "kernel");
 			layout["kernel"].InitArray(DCBElementType::Float3, SSAO_KERNEL_SIZE);
-			layout.Add(DCBElementType::Float2, "tileDimensions");
-			initNeeded = false;
-		}
-		return layout;
-	}
-
-	inline Data::CBuffer::DCBLayout SSAOPass::MakeLayoutOptions() noexcept
-	{
-		static Data::CBuffer::DCBLayout layout;
-		static bool initNeeded = true;
-		if (initNeeded)
-		{
-			layout.Add(DCBElementType::UInteger, "kernelSize");
-			layout.Add(DCBElementType::Float, "sampleRadius");
 			layout.Add(DCBElementType::Float, "bias");
+			layout.Add(DCBElementType::Float2, "tileDimensions");
+			layout.Add(DCBElementType::Float, "sampleRadius");
 			layout.Add(DCBElementType::Float, "ssaoPower");
+			layout.Add(DCBElementType::UInteger, "kernelSize");
 			initNeeded = false;
 		}
 		return layout;
@@ -41,8 +30,12 @@ namespace GFX::Pipeline::RenderPass
 		renderTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
 		ssaoScratchBuffer = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
 
-		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SSAOPass).name(), MakeLayoutKernel(), 12U);
+		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SSAOPass).name(), MakeLayout(), 13U);
+		kernelBuffer->GetBuffer()["bias"] = bias;
 		kernelBuffer->GetBuffer()["tileDimensions"] = DirectX::XMFLOAT2(4.0f * (gfx.GetWidth() / SSAO_NOISE_SIZE), 8.0f * (gfx.GetHeight() / SSAO_NOISE_SIZE));
+		kernelBuffer->GetBuffer()["sampleRadius"] = radius;
+		kernelBuffer->GetBuffer()["ssaoPower"] = power;
+		kernelBuffer->GetBuffer()["kernelSize"] = size;
 		std::mt19937_64 engine(std::random_device{}());
 		for (size_t i = 0; i < SSAO_KERNEL_SIZE; ++i)
 		{
@@ -56,12 +49,6 @@ namespace GFX::Pipeline::RenderPass
 				DirectX::XMVectorMultiply(DirectX::XMVector3Normalize(sample), DirectX::XMVectorSet(scale, scale, scale, 0.0f)));
 		}
 
-		optionsBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SSAOPass).name(), MakeLayoutOptions(), 13U);
-		optionsBuffer->GetBuffer()["kernelSize"] = static_cast<uint32_t>(SSAO_KERNEL_SIZE);
-		optionsBuffer->GetBuffer()["sampleRadius"] = 0.5f;
-		optionsBuffer->GetBuffer()["bias"] = 0.000001f;
-		optionsBuffer->GetBuffer()["ssaoPower"] = 4.0f;
-
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
 
@@ -69,7 +56,6 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("ssaoScratch", ssaoScratchBuffer));
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("ssaoKernel", kernelBuffer));
 
-		AddBind(optionsBuffer);
 		AddBind(kernelBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "AmbientOcclusionPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
@@ -90,18 +76,14 @@ namespace GFX::Pipeline::RenderPass
 
 	void SSAOPass::ShowWindow(Graphics& gfx)
 	{
-		uint32_t size = optionsBuffer->GetBufferConst()["kernelSize"];
-		float radius = optionsBuffer->GetBufferConst()["sampleRadius"];
-		float bias = optionsBuffer->GetBufferConst()["bias"];
-		float power = optionsBuffer->GetBufferConst()["ssaoPower"];
 		ImGui::Text("SSAO:");
 		if (ImGui::DragInt("Kernel size", reinterpret_cast<int*>(&size), 1.0f, 1, SSAO_KERNEL_SIZE))
-			optionsBuffer->GetBuffer()["kernelSize"] = size;
+			kernelBuffer->GetBuffer()["kernelSize"] = size;
 		if (ImGui::DragFloat("Radius##SSAO", &radius, 0.01f, 0.01f, FLT_MAX, "%.2f"))
-			optionsBuffer->GetBuffer()["sampleRadius"] = radius;
+			kernelBuffer->GetBuffer()["sampleRadius"] = radius;
 		if (ImGui::DragFloat("Power##SSAO", &power, 0.01f, 0.0f, FLT_MAX, "%.2f"))
-			optionsBuffer->GetBuffer()["ssaoPower"] = power;
+			kernelBuffer->GetBuffer()["ssaoPower"] = power;
 		if (ImGui::DragFloat("Bias##SSAO", &bias, 0.0000001f, 0.0f, 1.0f, "%.7f"))
-			optionsBuffer->GetBuffer()["bias"] = bias;
+			kernelBuffer->GetBuffer()["bias"] = bias;
 	}
 }

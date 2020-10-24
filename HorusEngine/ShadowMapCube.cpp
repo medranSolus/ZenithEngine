@@ -1,8 +1,21 @@
 #include "ShadowMapCube.h"
 #include "GfxResources.h"
+#include "Math.h"
 
 namespace GFX::Visual
 {
+	inline GFX::Data::CBuffer::DCBLayout ShadowMapCube::MakeLayout() noexcept
+	{
+		static GFX::Data::CBuffer::DCBLayout layout;
+		static bool initNeeded = true;
+		if (initNeeded)
+		{
+			layout.Add(DCBElementType::Float, "parallaxScale");
+			initNeeded = false;
+		}
+		return layout;
+	}
+
 	ShadowMapCube::ShadowMapCube(Graphics& gfx, std::shared_ptr<Visual::Material> material)
 	{
 		std::string shaderType = "";
@@ -13,8 +26,11 @@ namespace GFX::Visual
 			if (material->IsParallax())
 			{
 				shaderType += "Parallax";
-				//normalMap = material->GetNormalMap();
+				normalMap = material->GetNormalMap();
 				parallaxMap = material->GetParallaxMap();
+				sourcePixelBuffer = material->GetBuffer();
+				parallaxBuffer = Resource::ConstBufferExPixelCache::Get(gfx, sourcePixelBuffer->GetRID() + "_shadowPax", MakeLayout(), 1U);
+				parallaxBuffer->GetBuffer()["parallaxScale"] = static_cast<float>(sourcePixelBuffer->GetBufferConst()["parallaxScale"]);
 			}
 		}
 		AddBind(Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
@@ -27,6 +43,12 @@ namespace GFX::Visual
 	void ShadowMapCube::Bind(Graphics& gfx)
 	{
 		IVisual::Bind(gfx);
+		if (parallaxBuffer)
+		{
+			if (Math::NotEquals(parallaxBuffer->GetBufferConst()["parallaxScale"], sourcePixelBuffer->GetBufferConst()["parallaxScale"]))
+				parallaxBuffer->GetBuffer()["parallaxScale"] = static_cast<float>(sourcePixelBuffer->GetBufferConst()["parallaxScale"]);
+			parallaxBuffer->Bind(gfx);
+		}
 		if (diffuseTexture)
 			diffuseTexture->Bind(gfx);
 		if (normalMap)

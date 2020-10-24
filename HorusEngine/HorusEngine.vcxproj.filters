@@ -1495,16 +1495,10 @@
     <None Include="LightUtilsPS.hlsli">
       <Filter>Shader Files\Pixel Shaders\Utils</Filter>
     </None>
-    <None Include="SSAOOptionsPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
     <None Include="SamplersPS.hlsli">
       <Filter>Shader Files\Pixel Shaders\Utils</Filter>
     </None>
     <None Include="TransformSkyboxVB.hlsli">
-      <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
-    </None>
-    <None Include="ShadowVB.hlsli">
       <Filter>Shader Files\Vertex Shaders\CBuffers</Filter>
     </None>
     <None Include="PointLightPB.hlsli">
@@ -1514,6 +1508,12 @@
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="DirectionalLightPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="ShadowPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="ShadowSpacePB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
   </ItemGroup>

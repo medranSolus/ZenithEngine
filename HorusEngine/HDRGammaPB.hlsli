@@ -1,4 +1,4 @@
-cbuffer HDRCorrectionBuffer : register(b2)
+cbuffer HDRCorrectionBuffer : register(b11)
 {
 	float cb_gamma;
 	float cb_gammaInv;

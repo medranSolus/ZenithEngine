@@ -28,7 +28,7 @@ namespace GFX::Pipeline::RenderPass
 
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 
-		ambientBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(LightCombinePass).name(), MakeLayout(), 11U);
+		ambientBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(LightCombinePass).name(), MakeLayout(), 9U);
 		ambientBuffer->GetBuffer()["ambientColor"] = std::move(Data::ColorFloat3(0.05f, 0.05f, 0.05f));
 		AddBind(ambientBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "LightCombinePS"));

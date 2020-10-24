@@ -3,11 +3,10 @@
 struct GSIn
 {
 	float3 worldPos : POSITION;
-	float3 lightToVertex : VECTOR;
+	float3 worldNormal : NORMAL;
 #ifdef _TEX
 	float2 tc : TEXCOORD;
 #ifdef _TEX_PAX
-	float3 worldNormal : NORMAL;
 	float3 worldBitan : BITANGENT;
 #endif
 #endif
@@ -15,11 +14,11 @@ struct GSIn
 
 struct GSOut
 {
-	float3 lightToVertex : VECTOR;
+	float3 worldPos : POSITION;
+	float3 worldNormal : NORMAL;
 #ifdef _TEX
 	float2 tc : TEXCOORD;
 #ifdef _TEX_PAX
-	float3 worldNormal : NORMAL;
 	float3 worldBitan : BITANGENT;
 	float3 cameraDir : CAMERADIR;
 #endif
@@ -36,11 +35,11 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 		for (uint j = 0; j < 3; ++j)
 		{
 			GSOut element;
-			element.lightToVertex = input[j].lightToVertex;
+			element.worldPos = input[j].worldPos;
+			element.worldNormal = input[j].worldNormal;
 #ifdef _TEX
 			element.tc = input[j].tc;
 #ifdef _TEX_PAX
-			element.worldNormal = input[j].worldNormal;
 			element.worldBitan = input[j].worldBitan;
 			element.cameraDir = cb_cameraPos - input[j].worldPos;
 #endif

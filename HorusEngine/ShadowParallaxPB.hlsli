@@ -1,4 +1,4 @@
-cbuffer ParallaxBuffer : register(b10)
+cbuffer ParallaxBuffer : register(b1)
 {
 	float cb_parallaxScale;
 }

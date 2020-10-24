@@ -452,11 +452,11 @@
     <None Include="PointLightPB.hlsli" />
     <None Include="SamplersPS.hlsli" />
     <None Include="ShadowParallaxPB.hlsli" />
-    <None Include="ShadowVB.hlsli" />
+    <None Include="ShadowPB.hlsli" />
+    <None Include="ShadowSpacePB.hlsli" />
     <None Include="SolidPB.hlsli" />
     <None Include="SpotLightPB.hlsli" />
     <None Include="SSAOKernelPB.hlsli" />
-    <None Include="SSAOOptionsPB.hlsli" />
     <None Include="TransformVB.hlsli">
       <FileType>Document</FileType>
     </None>

@@ -1,4 +1,4 @@
-cbuffer PointLightBuffer : register(b4)
+cbuffer PointLightBuffer : register(b0)
 {
 	float3 cb_lightColor;
 	float cb_lightIntensity;

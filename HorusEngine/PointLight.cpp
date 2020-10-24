@@ -33,7 +33,7 @@ namespace GFX::Light
 		buffer["lightPos"] = position;
 		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 
-		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(PointLight).name() + name, std::move(buffer), 4U);
+		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(PointLight).name() + name, std::move(buffer));
 		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 4, 4, radius, radius, radius);
 		volume = std::make_shared<Volume::GlobeVolume>(gfx, 3);
 

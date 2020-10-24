@@ -70,10 +70,15 @@ namespace Math
 		return { Rand01(eng), Rand01(eng), Rand01(eng) };
 	}
 
-	inline DirectX::XMFLOAT3 Normalize(DirectX::XMFLOAT3 v) noexcept
+	inline DirectX::XMVECTOR Normalize(const DirectX::XMFLOAT3& v) noexcept
+	{
+		return DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&v));
+	}
+
+	inline DirectX::XMFLOAT3& NormalizeStore(DirectX::XMFLOAT3& v) noexcept
 	{
 		DirectX::XMStoreFloat3(&v, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&v)));
-		return std::move(v);
+		return v;
 	}
 
 	template<typename T>
@@ -90,4 +95,7 @@ namespace Math
 
 	DirectX::XMFLOAT3 Add(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2) noexcept;
 	DirectX::XMFLOAT3 AddNormal(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2) noexcept;
+	bool IsNearEqual(const DirectX::XMVECTOR& v1, const DirectX::XMVECTOR& v2) noexcept;
+	DirectX::XMMATRIX GetVectorRotation(const DirectX::XMVECTOR& baseDirection, const DirectX::XMVECTOR& newDirection,
+		bool targetGeometry = false, float geometryOffsetY = 0.0f) noexcept;
 }

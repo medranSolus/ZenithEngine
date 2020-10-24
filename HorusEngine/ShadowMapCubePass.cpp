@@ -28,12 +28,12 @@ namespace GFX::Pipeline::RenderPass
 		depthStencil = depthCube->GetStencil();
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("shadowMap", depthCube));
 
-		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(ShadowMapCubePass).name(), 3U);
+		positionBuffer = GFX::Resource::ConstBufferPixel<DirectX::XMFLOAT4>::Get(gfx, "$shadowMapPass");
 		viewBuffer = GFX::Resource::ConstBufferExGeometryCache::Get(gfx, typeid(ShadowMapCubePass).name(), MakeLayout(), 0U);
 
 		AddBind(positionBuffer);
 		AddBind(viewBuffer);
-		AddBind(GFX::Resource::ShadowRasterizer::Get(gfx, 40, 5.0f, 0.1f));
+		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK, false));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Off));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 

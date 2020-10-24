@@ -10,10 +10,10 @@ Texture2D ssaoMap     : register(t11); // R   - ambient occlusion value
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {
-	const float4 srgb = colorTex.Sample(splr_PN, tc);
+	const float4 srgb = colorTex.Sample(splr_PW, tc);
 	const float3 color = DeleteGammaCorr(srgb.rgb);
-	const float ssao = ssaoMap.Sample(splr_LN, tc).r;
-	const float3 diffuse = ssao * color * (DeleteGammaCorr(cb_ambientLight) + abs(lightingMap.Sample(splr_PN, tc).rgb));
+	const float ssao = ssaoMap.Sample(splr_LW, tc).r;
+	const float3 diffuse = ssao * color * (DeleteGammaCorr(cb_ambientLight) + abs(lightingMap.Sample(splr_PW, tc).rgb));
 
-	return float4(diffuse + specularMap.Sample(splr_PN, tc).rgb, srgb.a);
+	return float4(diffuse + specularMap.Sample(splr_PW, tc).rgb, srgb.a);
 }

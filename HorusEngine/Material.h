@@ -32,6 +32,7 @@ namespace GFX::Visual
 		inline std::shared_ptr<Resource::Texture> GetNormalMap() noexcept { return normalMap; }
 		inline std::shared_ptr<Resource::Texture> GetParallaxMap() noexcept { return parallaxMap; }
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
+		inline std::shared_ptr<Resource::ConstBufferExPixelCache> GetBuffer() noexcept { return pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return pixelBuffer->Accept(gfx, probe); }
 

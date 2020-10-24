@@ -9,9 +9,13 @@ namespace GFX::Pipeline::RenderPass
 {
 	class ShadowMapPass : public Base::QueuePass
 	{
+		int depthBias = 40;
+		float slopeBias = 5.0f;
+		float biasClamp = 0.1f;
+
 		Camera::ICamera* mainCamera = nullptr;
 		Light::ILight* shadowSource = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
+		std::shared_ptr<GFX::Resource::ConstBufferPixel<DirectX::XMFLOAT4>> positionBuffer;
 		DirectX::XMFLOAT4X4 projection;
 
 	public:

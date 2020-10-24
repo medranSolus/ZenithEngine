@@ -35,7 +35,7 @@ namespace GFX::Visual
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
 		Data::CBuffer::DynamicCBuffer cbuffer(std::move(cbufferLayout));
 		cbuffer["solidColor"] = std::move(color);
-		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(cbuffer), 8U);
+		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, tag, std::move(cbuffer));
 	}
 
 	void OutlineMaskScale::SetTransformBuffer(Graphics& gfx, const GfxObject& parent)

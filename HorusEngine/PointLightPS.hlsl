@@ -23,30 +23,30 @@ PSOut main(float3 texPos : TEX_POSITION)
 	PSOut pso;
 
 	const float2 tc = float2(0.5f, -0.5f) * (texPos.xy / texPos.z) + 0.5f;
-	const float3 shadowColor = DeleteGammaCorr(cb_shadowColor);
-	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PN, tc).x, cb_inverseViewProjection);
+	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PW, tc).x, cb_inverseViewProjection);
 
 	float3 directionToLight = cb_lightPos - position;
 	const float lightDistance = length(directionToLight);
 	const float3 lightColor = DeleteGammaCorr(cb_lightColor) * (cb_lightIntensity / GetAttenuation(cb_atteuationLinear, cb_attenuationQuad, lightDistance));
 	directionToLight /= lightDistance;
 
-	const float isSolid = colorTex.Sample(splr_PN, tc).a;
+	const float isSolid = colorTex.Sample(splr_PW, tc).a;
 	[branch]
 	if (isSolid == 0.0f)
 	{
-		const float3 normal = DecodeNormal(normalTex.Sample(splr_PN, tc).rg);
-		// Shadow test (cb_mapSize from BiasPB is bound implicitly from Shadow Mapping Pass since it has to be run always before Lighting Pass)
-		const float shadowLevel = GetShadowLevel(position, normal, directionToLight, cb_lightPos, splr_AN, shadowMap, cb_mapSize);
+		const float3 shadowColor = DeleteGammaCorr(cb_shadowColor);
 
+		// Shadow test (cb_mapSize from BiasPB is bound implicitly from Shadow Mapping Pass since it has to be run always before Lighting Pass)
+		const float shadowLevel = GetShadowLevel(normalize(cb_cameraPos - position), lightDistance, directionToLight, splr_AW, shadowMap, cb_mapSize);
 		if (shadowLevel != 0.0f)
 		{
+			const float3 normal = DecodeNormal(normalTex.Sample(splr_PW, tc).rg);
 			const float3 diffuse = GetDiffuse(lightColor, directionToLight, normal);
 			pso.color = float4(lerp(shadowColor, diffuse, shadowLevel), 0.0f);
 
 			if (shadowLevel > 0.98f)
 			{
-				const float4 specularData = specularTex.Sample(splr_PN, tc);
+				const float4 specularData = specularTex.Sample(splr_PW, tc);
 				pso.specular = float4(GetSpecular(cb_cameraPos, directionToLight, position, normal,
 					pso.color.rgb * specularData.rgb, GetSampledSpecularPower(specularData)), 0.0f);
 			}

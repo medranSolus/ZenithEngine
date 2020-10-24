@@ -38,7 +38,7 @@ namespace GFX::Light
 		buffer["innerAngle"] = static_cast<float>(M_PI - FLT_EPSILON) * innerAngle / 180.0f;
 		buffer["outerAngle"] = static_cast<float>(M_PI - FLT_EPSILON) * outerAngle / 180.0f;
 
-		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(SpotLight).name() + name, std::move(buffer), 5U);
+		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(SpotLight).name() + name, std::move(buffer));
 		mesh = std::make_shared<Shape::SolidCone>(gfx, graph, position, name, buffer["lightColor"], 8, size);
 		volume = std::make_shared<Volume::ConeVolume>(gfx, 8);
 

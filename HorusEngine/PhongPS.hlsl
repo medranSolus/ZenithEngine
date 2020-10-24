@@ -37,7 +37,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX_NORMAL
 	const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
 #ifdef _TEX_PAX
-	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AN);
+	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AW);
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
 #endif
@@ -45,7 +45,7 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 
 	PSOut pso;
 #ifdef _TEX
-	pso.color = tex.Sample(splr_AN, tc);
+	pso.color = tex.Sample(splr_AW, tc);
 #else
 	pso.color = cb_materialColor;
 #endif
@@ -53,13 +53,13 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 	pso.color.a = 0.0f;
 
 #ifdef _TEX_NORMAL
-	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AN));
+	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AW));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif
 
 #ifdef _TEX_SPEC
-	const float4 specularTex = spec.Sample(splr_AN, tc);
+	const float4 specularTex = spec.Sample(splr_AW, tc);
 	pso.specular = float4(specularTex.rgb * cb_specularIntensity,
 		cb_useSpecularPowerAlpha ? specularTex.a : cb_specularPower);
 #else

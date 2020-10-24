@@ -2,7 +2,6 @@
 #include "LightUtilsPS.hlsli"
 #include "SamplersPS.hlsli"
 #include "SSAOKernelPB.hlsli"
-#include "SSAOOptionsPB.hlsli"
 #include "CameraPB.hlsli"
 
 Texture2D normalTex   : register(t5); // RG - normal
@@ -18,7 +17,7 @@ float main(float2 tc : TEXCOORD) : SV_TARGET
 
 	const float3 normal = DecodeNormal(sphericNormal);
 	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PR, tc).x, cb_inverseViewProjection);
-	const float2 noise = noiseMap.Sample(splr_LN, tc * cb_tileDimensions).rg;
+	const float2 noise = noiseMap.Sample(splr_LW, tc * cb_tileDimensions).rg;
 
 	const float3x3 TBN = GetTangentToWorldUNorm(normalize(float3(noise, 0.0f)), normal);
 	float occlusion = 0.0f;

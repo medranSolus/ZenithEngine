@@ -1,4 +1,4 @@
-cbuffer PhongBuffer : register(b9)
+cbuffer PhongBuffer : register(b0)
 {
 	float3 cb_specularColor;
 	float cb_specularIntensity; // The bigger the brighter

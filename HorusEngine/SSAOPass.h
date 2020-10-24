@@ -10,15 +10,16 @@ namespace GFX::Pipeline::RenderPass
 		static constexpr size_t SSAO_KERNEL_SIZE = 32;
 		static constexpr size_t SSAO_NOISE_SIZE = 32;
 
+		float bias = 0.000001f;
+		float radius = 0.5f;
+		float power = 4.0f;
+		uint32_t size = SSAO_KERNEL_SIZE;
+
 		Camera::ICamera* mainCamera = nullptr;
 		std::shared_ptr<Resource::IRenderTarget> ssaoScratchBuffer;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> optionsBuffer;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurBuffer;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> direction;
 
-		static inline Data::CBuffer::DCBLayout MakeLayoutKernel() noexcept;
-		static inline Data::CBuffer::DCBLayout MakeLayoutOptions() noexcept;
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		SSAOPass(Graphics& gfx, const std::string& name);

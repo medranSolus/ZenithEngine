@@ -16,11 +16,13 @@ namespace GFX::Pipeline
 			GFX::Resource::Sampler::Type::Point
 		};
 		UINT slot = 0U;
+		samplers.emplace_back(gfx, GFX::Resource::Sampler::Type::Anisotropic, GFX::Resource::Sampler::CoordType::Border, slot++);
+		samplers.back().Bind(gfx);
 		for (auto& type : types)
 		{
-			samplers.emplace_back(gfx, type, false, slot++);
+			samplers.emplace_back(gfx, type, GFX::Resource::Sampler::CoordType::Wrap, slot++);
 			samplers.back().Bind(gfx);
-			samplers.emplace_back(gfx, type, true, slot++);
+			samplers.emplace_back(gfx, type, GFX::Resource::Sampler::CoordType::Reflect, slot++);
 			samplers.back().Bind(gfx);
 		}
 	}
@@ -41,8 +43,8 @@ namespace GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	MainPipelineGraph::MainPipelineGraph(Graphics& gfx, float hdrExposure, int radius, float sigma, float gamma, int bias)
-		: RenderGraph(gfx), bias(bias), radius(radius), sigma(sigma), gamma(gamma), hdrExposure(hdrExposure)
+	MainPipelineGraph::MainPipelineGraph(Graphics& gfx, float hdrExposure, int radius, float sigma, float gamma, int bias, float normalOffset)
+		: RenderGraph(gfx), bias(bias), radius(radius), sigma(sigma), gamma(gamma), hdrExposure(hdrExposure), normalOffset(normalOffset)
 	{
 		SetupSamplers(gfx);
 
@@ -74,7 +76,7 @@ namespace GFX::Pipeline
 		gammaBuffer["gamma"] = gamma;
 		gammaBuffer["deGamma"] = 1.0f / gamma;
 		gammaBuffer["hdrExposure"] = hdrExposure;
-		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 2U);
+		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 11U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("gammaCorrection", gammaCorrection));
 
 		// Setup blur cbuffers
@@ -89,7 +91,7 @@ namespace GFX::Pipeline
 		kernelBuffer["width"] = gfx.GetWidth();
 		kernelBuffer["height"] = gfx.GetHeight();
 		kernelBuffer["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
-		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 0U);
+		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 12U);
 		SetKernel();
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("kernel", kernel));
 
@@ -97,17 +99,19 @@ namespace GFX::Pipeline
 		directionLayout.Add(DCBElementType::Bool, "vertical");
 		Data::CBuffer::DynamicCBuffer directionBuffer(std::move(directionLayout));
 		directionBuffer["vertical"] = true;
-		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer, 3U);
+		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
 		// Setup shadow map cbuffer
 		Data::CBuffer::DCBLayout biasLayout;
 		biasLayout.Add(DCBElementType::Float, "mapSize");
 		biasLayout.Add(DCBElementType::Float, "bias");
+		biasLayout.Add(DCBElementType::Float, "normalOffset");
 		Data::CBuffer::DynamicCBuffer biasBuffer(std::move(biasLayout));
 		biasBuffer["mapSize"] = static_cast<float>(SHADOW_MAP_SIZE);
 		biasBuffer["bias"] = static_cast<float>(bias) / SHADOW_MAP_SIZE;
-		shadowBias = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$shadowBias", biasBuffer, 1U);
+		biasBuffer["normalOffset"] = normalOffset;
+		shadowBias = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$shadowBias", biasBuffer, 10U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("shadowBias", shadowBias));
 #pragma endregion
 
@@ -299,8 +303,11 @@ namespace GFX::Pipeline
 			gammaCorrection->GetBuffer()["hdrExposure"] = hdrExposure;
 			kernel->GetBuffer()["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
 		}
-		if (ImGui::DragInt("Shadow bias", &bias))
+		ImGui::Text("Shadows:");
+		if (ImGui::DragInt("Depth bias", &bias))
 			shadowBias->GetBuffer()["bias"] = static_cast<float>(bias) / SHADOW_MAP_SIZE;
+		if (ImGui::DragFloat("Normal offset", &normalOffset, 0.001f, 0.0f, 1.0f, "%.3f"))
+			shadowBias->GetBuffer()["normalOffset"] = normalOffset;
 		dynamic_cast<RenderPass::LightCombinePass&>(FindPass("combiner")).ShowWindow(gfx);
 		dynamic_cast<RenderPass::SSAOPass&>(FindPass("ssao")).ShowWindow(gfx);
 		ImGui::Text("Blur Control");

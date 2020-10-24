@@ -1,5 +1,6 @@
 #include "BaseProbe.h"
 #include "BaseShape.h"
+#include "Math.h"
 
 #define Tag(label) MakeTag(label).c_str()
 
@@ -108,16 +109,22 @@ namespace GFX::Probe
 		}
 		if (auto direction = buffer["direction"]; direction.Exists())
 		{
-			dirty |= ImGui::DragFloat3(Tag("Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f");
+			if (ImGui::DragFloat3(Tag("Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f"))
+			{
+				Math::NormalizeStore(direction);
+				dirty = true;
+			}
 		}
 		if (auto outerAngle = buffer["outerAngle"]; outerAngle.Exists())
 		{
-			dirty |= ImGui::SliderAngle(Tag("Outer angle"), &outerAngle, 0.0f, 85.0f, "%.2f");
+			dirty |= ImGui::SliderAngle(Tag("Outer angle"), &outerAngle, 0.0f, 45.0f, "%.2f");
 			if (auto innerAngle = buffer["innerAngle"]; innerAngle.Exists())
 			{
 				if (static_cast<float>(innerAngle) > static_cast<float>(outerAngle))
 				{
-					innerAngle = static_cast<float>(outerAngle) - 0.5f;
+					innerAngle = static_cast<float>(outerAngle);
+					if (static_cast<float>(innerAngle) < 0.0f)
+						innerAngle = 0.0f;
 					buffer["innerAngle"] = innerAngle;
 					dirty = true;
 				}
