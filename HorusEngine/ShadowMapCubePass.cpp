@@ -19,7 +19,7 @@ namespace GFX::Pipeline::RenderPass
 	}
 
 	ShadowMapCubePass::ShadowMapCubePass(Graphics& gfx, const std::string& name, UINT mapSize)
-		: QueuePass(name)
+		: BindingPass(name), QueuePass(name)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowBias");
 

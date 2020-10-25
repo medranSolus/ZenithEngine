@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	ShadowMapPass::ShadowMapPass(Graphics& gfx, const std::string& name, const DirectX::XMMATRIX& projectionMatrix)
-		: QueuePass(name)
+		: BindingPass(name), QueuePass(name)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowBias");
 
@@ -40,7 +40,7 @@ namespace GFX::Pipeline::RenderPass
 		const DirectX::XMVECTOR direction = DirectX::XMLoadFloat3(&shadowSource->GetBuffer()["direction"]);
 		const DirectX::XMVECTOR up = DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f),
 			Math::GetVectorRotation(DirectX::XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f), direction));
-		
+
 		gfx.SetView(DirectX::XMMatrixLookAtLH(position, DirectX::XMVectorAdd(position, direction), up));
 		gfx.SetProjection(DirectX::XMLoadFloat4x4(&projection));
 

@@ -159,7 +159,7 @@ namespace GFX::Pipeline
 #pragma endregion
 #pragma region Light passes
 		{
-			auto pass = MakePass(DirectionalLightingPass, gfx, "dirLighting");
+			auto pass = MakePass(DirectionalLightingPass, gfx, "dirLighting", SHADOW_MAP_SIZE);
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("depth", "lambertianClassic.depth");
 			pass->SetSinkLinkage("lightBuffer", "clearLBuff.buffer");

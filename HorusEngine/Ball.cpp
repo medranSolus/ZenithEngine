@@ -8,7 +8,7 @@ namespace GFX::Shape
 		const std::string& name, Data::ColorFloat4 color, unsigned int density, float radius)
 		: IShape(gfx, position, name, radius)
 	{
-		std::string typeName = Primitive::Sphere::GetNameIco(density);
+		const std::string typeName = Primitive::Sphere::GetNameIco(density);
 		if (Resource::VertexBuffer::NotStored(typeName) && Resource::IndexBuffer::NotStored(typeName))
 		{
 			auto list = Primitive::Sphere::MakeIco(density);

@@ -1,22 +1,57 @@
 #include "App.h"
 #include "Math.h"
 
+#pragma region Containers methods
 #define ContainerInvoke(item, function) \
 	switch (item->second.first) \
 	{ \
-	case Container::Model: \
-		models.at(currentItem->second.second).function; \
-		break; \
-	case Container::Shape: \
-		shapes.at(currentItem->second.second)->function; \
-		break; \
 	case Container::PointLight: \
 		pointLights.at(currentItem->second.second).function; \
 		break; \
 	case Container::SpotLight: \
 		spotLights.at(currentItem->second.second).function; \
 		break; \
+	case Container::DirectionalLight: \
+		directionalLights.at(currentItem->second.second).function; \
+		break; \
+	case Container::Model: \
+		models.at(currentItem->second.second).function; \
+		break; \
+	case Container::Shape: \
+		shapes.at(currentItem->second.second)->function; \
+		break; \
 	}
+
+inline void App::AddLight(GFX::Light::PointLight&& pointLight)
+{
+	objects.emplace(pointLight.GetName(), std::make_pair<Container, size_t>(Container::PointLight, pointLights.size()));
+	pointLights.emplace_back(std::forward<GFX::Light::PointLight&&>(pointLight));
+}
+
+inline void App::AddLight(GFX::Light::SpotLight&& spotLight)
+{
+	objects.emplace(spotLight.GetName(), std::make_pair<Container, size_t>(Container::SpotLight, spotLights.size()));
+	spotLights.emplace_back(std::forward<GFX::Light::SpotLight&&>(spotLight));
+}
+
+inline void App::AddLight(GFX::Light::DirectionalLight&& directionalLight)
+{
+	objects.emplace(directionalLight.GetName(), std::make_pair<Container, size_t>(Container::DirectionalLight, directionalLights.size()));
+	directionalLights.emplace_back(std::forward<GFX::Light::DirectionalLight&&>(directionalLight));
+}
+
+inline void App::AddShape(GFX::Shape::Model&& model)
+{
+	objects.emplace(model.GetName(), std::make_pair<Container, size_t>(Container::Model, models.size()));
+	models.emplace_back(std::forward<GFX::Shape::Model&&>(model));
+}
+
+inline void App::AddShape(std::shared_ptr<GFX::Shape::IShape> shape)
+{
+	objects.emplace(shape->GetName(), std::make_pair<Container, size_t>(Container::Shape, shapes.size()));
+	shapes.emplace_back(shape);
+}
+#pragma endregion
 
 inline void App::ProcessInput()
 {
@@ -87,30 +122,6 @@ inline void App::ShowOptionsWindow()
 	ImGui::End();
 }
 
-inline void App::AddShape(std::shared_ptr<GFX::Shape::IShape> shape)
-{
-	objects.emplace(shape->GetName(), std::make_pair<Container, size_t>(Container::Shape, shapes.size()));
-	shapes.emplace_back(shape);
-}
-
-inline void App::AddShape(GFX::Shape::Model&& model)
-{
-	objects.emplace(model.GetName(), std::make_pair<Container, size_t>(Container::Model, models.size()));
-	models.emplace_back(std::forward<GFX::Shape::Model&&>(model));
-}
-
-inline void App::AddLight(GFX::Light::PointLight&& pointLight)
-{
-	objects.emplace(pointLight.GetName(), std::make_pair<Container, size_t>(Container::PointLight, pointLights.size()));
-	pointLights.emplace_back(std::forward<GFX::Light::PointLight&&>(pointLight));
-}
-
-inline void App::AddLight(GFX::Light::SpotLight&& spotLight)
-{
-	objects.emplace(spotLight.GetName(), std::make_pair<Container, size_t>(Container::SpotLight, spotLights.size()));
-	spotLights.emplace_back(std::forward<GFX::Light::SpotLight&&>(spotLight));
-}
-
 void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
 {
 	std::deque<std::pair<float, float>> coordBuffer;
@@ -147,14 +158,16 @@ void App::MakeFrame()
 	if (cameras.CameraChanged())
 		renderer.BindMainCamera(cameras.GetCamera());
 	cameras.Submit(RenderChannel::Main);
-	for (auto& shape : shapes)
-		shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
-	for (auto& model : models)
-		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& pointLight : pointLights)
 		pointLight.Submit(RenderChannel::Main | RenderChannel::Light);
 	for (auto& spotLight : spotLights)
 		spotLight.Submit(RenderChannel::Main | RenderChannel::Light);
+	for (auto& directionalLight : directionalLights)
+		directionalLight.Submit(RenderChannel::Main | RenderChannel::Light);
+	for (auto& model : models)
+		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
+	for (auto& shape : shapes)
+		shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
 	renderer.Execute(window.Gfx());
 	renderer.Reset();
 	window.Gfx().EndFrame();
@@ -176,6 +189,8 @@ App::App(const std::string& commandLine)
 	direction = { -1.0f, 1.0f, -0.7f };
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), "Lion flare", 150, 35.0f, 45.0f,
 		Math::NormalizeStore(direction), 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f) });
+	direction = { 0.0f, -0.7f, -0.7f };
+	AddLight({ window.Gfx(), renderer, "Moon", Math::NormalizeStore(direction), 0.5f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });

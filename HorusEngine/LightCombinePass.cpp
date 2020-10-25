@@ -18,7 +18,7 @@ namespace GFX::Pipeline::RenderPass
 	}
 
 	LightCombinePass::LightCombinePass(Graphics& gfx, const std::string& name)
-		: FullscreenPass(gfx, name)
+		: BindingPass(name), FullscreenPass(gfx, name)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::IRenderTarget>("lightBuffer");

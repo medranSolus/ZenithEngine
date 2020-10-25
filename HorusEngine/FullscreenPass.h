@@ -3,7 +3,7 @@
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	class FullscreenPass : public BindingPass
+	class FullscreenPass : public virtual BindingPass
 	{
 	public:
 		FullscreenPass(Graphics& gfx, const std::string& name, const std::string& vertexShaderName = "FullscreenVS");

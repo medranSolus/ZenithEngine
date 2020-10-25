@@ -41,8 +41,7 @@ PSOut main(float3 texPos : TEX_POSITION)
 		if (shadowLevel != 0.0f)
 		{
 			const float3 normal = DecodeNormal(normalTex.Sample(splr_PW, tc).rg);
-			const float3 diffuse = GetDiffuse(lightColor, directionToLight, normal);
-			pso.color = float4(lerp(shadowColor, diffuse, shadowLevel), 0.0f);
+			pso.color = float4(lerp(shadowColor, GetDiffuse(lightColor, directionToLight, normal), shadowLevel), 0.0f);
 
 			if (shadowLevel > 0.98f)
 			{

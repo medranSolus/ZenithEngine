@@ -172,6 +172,9 @@
     <Filter Include="Shader Files\Pixel Shaders\Utils">
       <UniqueIdentifier>{5628bc00-98b1-4dab-8e0f-631e7d6c1a80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader Files\Pixel Shaders\CBuffers\Preserved">
+      <UniqueIdentifier>{2c24b29e-299e-4f8c-a909-c05ae5eea7cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -1462,31 +1465,16 @@
     <None Include="SolidPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
-    <None Include="BiasPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
     <None Include="PhongPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="CameraPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
-    <None Include="GaussPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
     <None Include="BlurDirectionPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="ShadowParallaxPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
-    <None Include="HDRGammaPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
-    <None Include="LightAmbientPB.hlsli">
-      <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
-    </None>
-    <None Include="SSAOKernelPB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
     </None>
     <None Include="UtilsPS.hlsli">
@@ -1515,6 +1503,21 @@
     </None>
     <None Include="ShadowSpacePB.hlsli">
       <Filter>Shader Files\Pixel Shaders\CBuffers</Filter>
+    </None>
+    <None Include="BiasPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers\Preserved</Filter>
+    </None>
+    <None Include="GaussPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers\Preserved</Filter>
+    </None>
+    <None Include="HDRGammaPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers\Preserved</Filter>
+    </None>
+    <None Include="LightAmbientPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers\Preserved</Filter>
+    </None>
+    <None Include="SSAOKernelPB.hlsli">
+      <Filter>Shader Files\Pixel Shaders\CBuffers\Preserved</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

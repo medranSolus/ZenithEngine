@@ -1,24 +1,28 @@
 #include "FullscreenPass.h"
 #include "GfxResources.h"
+#include "Primitives.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
-	FullscreenPass::FullscreenPass(Graphics& gfx, const std::string& name, const std::string& vertexShaderName) : BindingPass(name)
+	FullscreenPass::FullscreenPass(Graphics& gfx, const std::string& name, const std::string& vertexShaderName)
+		: BindingPass(name)
 	{
-		// Fullscreen geometry (2 triangles)
-		auto layout = std::make_shared<Data::VertexLayout>(false);
-		layout->Append(VertexAttribute::Position2D);
-		Data::VertexBufferData vBuffer(layout);
-		// NDC rectangle
-		vBuffer.EmplaceBack(DirectX::XMFLOAT2(-1.0f, 1.0f));
-		vBuffer.EmplaceBack(DirectX::XMFLOAT2(1.0f, 1.0f));
-		vBuffer.EmplaceBack(DirectX::XMFLOAT2(-1.0f, -1.0f));
-		vBuffer.EmplaceBack(DirectX::XMFLOAT2(1.0f, -1.0f));
-		AddBind(GFX::Resource::VertexBuffer::Get(gfx, "$Fullscreen", std::move(vBuffer)));
-		AddBind(GFX::Resource::IndexBuffer::Get(gfx, "$Fullscreen", { 0, 1, 2, 1, 3, 2 }));
-		// Other needed bindables
+		const std::string typeName = Primitive::Square::GetNameNDC2D();
+		if (GFX::Resource::VertexBuffer::NotStored(typeName) && GFX::Resource::IndexBuffer::NotStored(typeName))
+		{
+			auto list = Primitive::Square::MakeNDC2D();
+			AddBind(GFX::Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			AddBind(GFX::Resource::IndexBuffer::Get(gfx, typeName, list.indices));
+		}
+		else
+		{
+			Primitive::IndexedTriangleList list;
+			AddBind(GFX::Resource::VertexBuffer::Get(gfx, typeName, list.vertices));
+			AddBind(GFX::Resource::IndexBuffer::Get(gfx, typeName, list.indices));
+		}
+
 		auto shaderVS = GFX::Resource::VertexShader::Get(gfx, vertexShaderName);
-		AddBind(GFX::Resource::InputLayout::Get(gfx, layout, shaderVS));
+		AddBind(GFX::Resource::InputLayout::Get(gfx, Primitive::Square::GetLayoutNDC2D(), shaderVS));
 		AddBind(std::move(shaderVS));
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE));

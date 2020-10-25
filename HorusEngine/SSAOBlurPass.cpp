@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	SSAOBlurPass::SSAOBlurPass(Graphics& gfx, const std::string& name)
-		: FullscreenPass(gfx, name)
+		: BindingPass(name), FullscreenPass(gfx, name)
 	{
 		RegisterSink(Base::SinkDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("direction", direction));
 		RegisterSink(Base::SinkDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("ssaoKernel", kernelBuffer));

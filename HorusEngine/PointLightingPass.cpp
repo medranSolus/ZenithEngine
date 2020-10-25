@@ -6,7 +6,7 @@
 namespace GFX::Pipeline::RenderPass
 {
 	PointLightingPass::PointLightingPass(Graphics& gfx, const std::string& name, UINT shadowMapSize)
-		: QueuePass(name), shadowMapPass(gfx, "shadowMap", shadowMapSize)
+		: BindingPass(name), QueuePass(name), shadowMapPass(gfx, "shadowMap", shadowMapSize)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowMap");
 		SetSinkLinkage("shadowMap", name + ".shadowMap.shadowMap");

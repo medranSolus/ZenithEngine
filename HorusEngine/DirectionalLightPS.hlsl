@@ -4,6 +4,7 @@
 #include "HDRGammaPB.hlsli"
 #include "CameraPB.hlsli"
 #include "BiasPB.hlsli"
+#include "ShadowSpacePB.hlsli"
 
 Texture2D colorTex    : register(t4); // RGB - color, A = 0.0f: solid; 0.5f: light source; 1.0f: normal
 Texture2D normalTex   : register(t5); // RG - normal
@@ -21,25 +22,22 @@ struct PSOut
 PSOut main(float2 tc : TEXCOORD)
 {
 	PSOut pso;
-
 	const float3 lightColor = DeleteGammaCorr(cb_lightColor) * cb_lightIntensity;
-	const float3 shadowColor = DeleteGammaCorr(cb_shadowColor);
-	const float3 directionToLight = normalize(-cb_direction);
-
-	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PW, tc).x, cb_inverseViewProjection);
 
 	const float isSolid = colorTex.Sample(splr_PW, tc).a;
 	[branch]
 	if (isSolid == 0.0f)
 	{
-		const float3 normal = DecodeNormal(normalTex.Sample(splr_PW, tc).rg);
-		// Shadow test (cb_mapSize from BiasPB is bound implicitly from Shadow Mapping Pass since it has to be run always before Lighting Pass)
-		const float shadowLevel = 1.0f;// GetShadowLevel(position, normal, directionToLight, cb_pointLight.lightPos, splr_AN, shadowMap, cb_mapSize);
+		const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PW, tc).x, cb_inverseViewProjection);
+		const float3 shadowColor = DeleteGammaCorr(cb_shadowColor);
 
+		// Shadow test (cb_mapSize from BiasPB is bound implicitly from Shadow Mapping Pass since it has to be run always before Lighting Pass)
+		const float shadowLevel = 1.0f; // GetShadowLevel(normalize(cb_cameraPos - position), lightDistance, directionToLight, GetShadowUV(position), splr_AB, shadowMap, cb_mapSize);
 		if (shadowLevel != 0.0f)
 		{
-			const float3 diffuse = GetDiffuse(lightColor, directionToLight, normal);
-			pso.color = float4(lerp(shadowColor, diffuse, shadowLevel), 0.0f);
+			const float3 normal = DecodeNormal(normalTex.Sample(splr_PW, tc).rg);
+			const float3 directionToLight = -cb_direction;
+			pso.color = float4(lerp(shadowColor, GetDiffuse(lightColor, directionToLight, normal), shadowLevel), 0.0f);
 
 			if (shadowLevel > 0.98f)
 			{
@@ -61,5 +59,6 @@ PSOut main(float2 tc : TEXCOORD)
 		pso.color = float4(lightColor, 0.0f);
 		pso.specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
+
 	return pso;
 }

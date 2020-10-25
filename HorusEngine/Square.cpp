@@ -18,6 +18,13 @@ namespace GFX::Primitive
 		return layout;
 	}
 
+	std::shared_ptr<Data::VertexLayout> Square::GetLayoutNDC2D() noexcept
+	{
+		std::shared_ptr<Data::VertexLayout> layout = std::make_shared<Data::VertexLayout>(false);
+		layout->Append(VertexAttribute::Position2D);
+		return layout;
+	}
+
 	IndexedTriangleList Square::Make(const std::vector<VertexAttribute>& attributes) noexcept
 	{
 		constexpr float point = 0.5f;
@@ -33,6 +40,24 @@ namespace GFX::Primitive
 			std::move(vertices),
 			{
 				0,1,2, 0,2,3,
+			}
+		};
+	}
+
+	IndexedTriangleList Square::MakeNDC2D() noexcept
+	{
+		Data::VertexBufferData vertices(GetLayoutNDC2D(), 4);
+
+		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT2(-1.0f, 1.0f)));
+		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT2(1.0f, 1.0f)));
+		vertices[2].SetByIndex(0, std::move(DirectX::XMFLOAT2(-1.0f, -1.0f)));
+		vertices[3].SetByIndex(0, std::move(DirectX::XMFLOAT2(1.0f, -1.0f)));
+
+		return
+		{
+			std::move(vertices),
+			{
+				0,1,2, 1,3,2
 			}
 		};
 	}

@@ -18,7 +18,7 @@ namespace GFX::Pipeline::RenderPass
 	}
 
 	SpotLightingPass::SpotLightingPass(Graphics& gfx, const std::string& name)
-		: QueuePass(name), shadowMapPass(gfx, "shadowMap", DirectX::XMMatrixPerspectiveFovLH(M_PI_2, 1.0f, 0.01f, 1000.0f))
+		: BindingPass(name), QueuePass(name), shadowMapPass(gfx, "shadowMap", DirectX::XMMatrixPerspectiveFovLH(M_PI_2, 1.0f, 0.01f, 1000.0f))
 	{
 		AddBindableSink<Resource::IRenderTarget>("shadowMap");
 		SetSinkLinkage("shadowMap", name + ".shadowMap.shadowMap");
@@ -30,7 +30,7 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("lightBuffer", renderTarget));
 
-		shadowBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SpotLightingPass).name(), MakeLayout(), 1U);
+		shadowBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(ShadowMapPass).name(), MakeLayout(), 1U);
 		AddBind(shadowBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "SpotLightPS"));
 		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::Light));
