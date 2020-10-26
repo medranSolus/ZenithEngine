@@ -9,6 +9,14 @@ namespace GFX::Pipeline
 			technique->SetParentReference(gfx, parent);
 	}
 
+	std::shared_ptr<Pipeline::Technique> JobData::GetTechnique(const std::string& name) noexcept
+	{
+		for (auto& technique : techniques)
+			if (technique->GetName().find(name) != std::string::npos)
+				return technique;
+		return nullptr;
+	}
+
 	void JobData::Submit(uint64_t channelFilter) noexcept
 	{
 		for (auto& technique : techniques)

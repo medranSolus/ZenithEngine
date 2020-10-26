@@ -3,6 +3,8 @@
 
 namespace GFX::Light
 {
+	DirectX::XMFLOAT3 DirectionalLight::dummyData = { 0.0f,0.0f,0.0f };
+
 	inline Data::CBuffer::DCBLayout DirectionalLight::MakeLayout() noexcept
 	{
 		static Data::CBuffer::DCBLayout layout;

@@ -18,7 +18,8 @@ namespace GFX::Pipeline::RenderPass
 	}
 
 	DirectionalLightingPass::DirectionalLightingPass(Graphics& gfx, const std::string& name, UINT mapSize)
-		: BindingPass(name), QueuePass(name), FullscreenPass(gfx, name), shadowMapPass(gfx, "shadowMap", DirectX::XMMatrixOrthographicLH(mapSize, mapSize, 0.01f, 1000.0f))
+		: BindingPass(name), QueuePass(name), FullscreenPass(gfx, name),
+		shadowMapPass(gfx, "shadowMap", DirectX::XMMatrixOrthographicLH(static_cast<float>(mapSize), static_cast<float>(mapSize), 0.01f, 1000.0f))
 	{
 		AddBindableSink<Resource::IRenderTarget>("shadowMap");
 		SetSinkLinkage("shadowMap", name + ".shadowMap.shadowMap");

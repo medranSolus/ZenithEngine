@@ -7,6 +7,7 @@ namespace GFX::Light
 {
 	class DirectionalLight : public ILight
 	{
+		static DirectX::XMFLOAT3 dummyData;
 		std::string name;
 
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
@@ -23,14 +24,14 @@ namespace GFX::Light
 		inline void SetOutline() noexcept override {}
 		inline void DisableOutline() noexcept override {}
 
-		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return { 0.0f, 0.0f, 0.0f }; }
+		inline const DirectX::XMFLOAT3& GetAngle() const noexcept override { return dummyData; }
 		inline void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override {}
 		inline void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override {}
 
 		inline float GetScale() const noexcept { return 1.0f; }
 		inline void SetScale(float newScale) noexcept {}
 
-		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return { 0.0f, 0.0f, 0.0f }; }
+		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return dummyData; }
 
 		inline const std::string& GetName() const noexcept override { return name; }
 		inline void SetName(const std::string& newName) noexcept override { name = newName; }

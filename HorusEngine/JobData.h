@@ -22,6 +22,7 @@ namespace GFX::Pipeline
 		virtual UINT GetIndexCount() const noexcept = 0;
 		virtual void Bind(Graphics& gfx) = 0;
 
+		std::shared_ptr<Pipeline::Technique> GetTechnique(const std::string& name) noexcept;
 		void Submit(uint64_t channelFilter) noexcept override;
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};

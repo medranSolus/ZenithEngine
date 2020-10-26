@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics.h"
+#include "RenderChannels.h"
 
 namespace GFX::Pipeline
 {
@@ -14,8 +15,9 @@ namespace GFX::Pipeline
 		Job& operator=(const Job&) = default;
 		~Job() = default;
 
-		constexpr JobData& GetData() noexcept { return *data; }
+		constexpr class JobData& GetData() noexcept { return *data; }
+		constexpr const class TechniqueStep& GetStep() const noexcept { return *step; }
 
-		void Execute(Graphics& gfx);
+		void Execute(Graphics& gfx, RenderChannel mode = RenderChannel::All);
 	};
 }

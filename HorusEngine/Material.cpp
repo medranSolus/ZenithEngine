@@ -12,8 +12,6 @@ namespace GFX::Visual
 		auto vertexShader = Resource::VertexShader::Get(gfx, "PhongVS");
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
 		AddBind(std::move(vertexShader));
-		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
-		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 
 		GFX::Data::CBuffer::DCBLayout cbufferLayout;
 		cbufferLayout.Add(DCBElementType::Color3, "solidColor");
@@ -25,8 +23,6 @@ namespace GFX::Visual
 	Material::Material(Graphics& gfx, Data::ColorFloat4 color, const std::string& name)
 	{
 		translucent = Math::NotEquals(color.col.w, 1.0f);
-		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
-		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 		AddBind(Resource::PixelShader::Get(gfx, "PhongPS"));
 
 		vertexLayout = std::make_shared<Data::VertexLayout>();
@@ -101,8 +97,6 @@ namespace GFX::Visual
 		}
 
 		// Common elements
-		AddBind(Resource::Rasterizer::Get(gfx, D3D11_CULL_BACK));
-		AddBind(Resource::Blender::Get(gfx, Resource::Blender::Type::None));
 		AddBind(Resource::PixelShader::Get(gfx, shaderCodePS));
 		auto vertexShader = Resource::VertexShader::Get(gfx, shaderCodeVS);
 		AddBind(Resource::InputLayout::Get(gfx, vertexLayout, vertexShader));
@@ -135,17 +129,30 @@ namespace GFX::Visual
 		pixelBuffer = Resource::ConstBufferExPixelCache::Get(gfx, material.GetName().C_Str(), std::move(cbuffer));
 	}
 
-	void Material::Bind(Graphics& gfx)
+	void Material::SetDepthOnly(Graphics& gfx)
 	{
-		IVisual::Bind(gfx);
-		pixelBuffer->Bind(gfx);
-		if (diffuseTexture)
-			diffuseTexture->Bind(gfx);
-		if (normalMap)
-			normalMap->Bind(gfx);
-		if (parallaxMap)
-			parallaxMap->Bind(gfx);
-		if (specularMap)
-			specularMap->Bind(gfx);
+		depthOnlyInputLayout = Resource::InputLayout::Get(gfx, vertexLayout, Resource::VertexShader::Get(gfx, "SolidVS"));
+	}
+
+	void Material::Bind(Graphics& gfx, RenderChannel mode)
+	{
+		if (mode & RenderChannel::Main)
+		{
+			IVisual::Bind(gfx);
+			pixelBuffer->Bind(gfx);
+			if (diffuseTexture)
+				diffuseTexture->Bind(gfx);
+			if (normalMap)
+				normalMap->Bind(gfx);
+			if (parallaxMap)
+				parallaxMap->Bind(gfx);
+			if (specularMap)
+				specularMap->Bind(gfx);
+		}
+		else if (mode & RenderChannel::Depth)
+		{
+			transformBuffer->Bind(gfx);
+			depthOnlyInputLayout->Bind(gfx);
+		}
 	}
 }

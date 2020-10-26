@@ -25,4 +25,10 @@ namespace GFX::Resource
 		if (!vertexBuffer)
 			vertexBuffer = std::make_unique<ConstBufferVertex<Data::CBuffer::Transform>>(gfx, "", slot);
 	}
+
+	DirectX::XMFLOAT3 ConstBufferTransform::GetPos() const noexcept
+	{
+		const DirectX::XMFLOAT4X4& transform = parent.GetTransform();
+		return { transform._13, transform._23, transform._33 };
+	}
 }

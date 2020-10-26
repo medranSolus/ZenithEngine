@@ -277,12 +277,12 @@
     <ClCompile Include="ConstBufferExPixel.cpp" />
     <ClCompile Include="ConstBufferExVertex.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
+    <ClCompile Include="ConstBufferTransformEx.cpp" />
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="DCBElement.cpp" />
     <ClCompile Include="DCBElementConst.cpp" />
     <ClCompile Include="DCBLayout.cpp" />
     <ClCompile Include="DCBLayoutCodex.cpp" />
-    <ClCompile Include="DepthOnlyPass.cpp" />
     <ClCompile Include="DepthStencil.cpp" />
     <ClCompile Include="DepthStencilShaderInput.cpp" />
     <ClCompile Include="DepthWrite.cpp" />
@@ -758,7 +758,6 @@
     <ClInclude Include="ConeVolume.h" />
     <ClInclude Include="ConstBufferExGeometry.h" />
     <ClInclude Include="ConstBufferTransformSkybox.h" />
-    <ClInclude Include="DepthOnlyPass.h" />
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="DirectionalLightingPass.h" />

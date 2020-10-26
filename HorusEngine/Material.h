@@ -1,6 +1,7 @@
 #pragma once
 #include "IVisual.h"
 #include "Texture.h"
+#include "InputLayout.h"
 #include "ConstBufferExCache.h"
 #include "assimp\scene.h"
 
@@ -9,6 +10,7 @@ namespace GFX::Visual
 	class Material : public IVisual
 	{
 		bool translucent = false;
+		std::shared_ptr<Resource::InputLayout> depthOnlyInputLayout = nullptr;
 		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
 		std::shared_ptr<Resource::Texture> normalMap = nullptr;
 		std::shared_ptr<Resource::Texture> parallaxMap = nullptr;
@@ -35,7 +37,9 @@ namespace GFX::Visual
 		inline std::shared_ptr<Resource::ConstBufferExPixelCache> GetBuffer() noexcept { return pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return pixelBuffer->Accept(gfx, probe); }
+		inline void Bind(Graphics& gfx) override { Bind(gfx, RenderChannel::All); }
 
-		void Bind(Graphics& gfx) override;
+		void SetDepthOnly(Graphics& gfx);
+		void Bind(Graphics& gfx, RenderChannel mode) override;
 	};
 }

@@ -11,6 +11,7 @@ namespace GFX::Pipeline::RenderPass
 		RegisterSource(Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 
 		AddBind(GFX::Resource::NullPixelShader::Get(gfx));
+		AddBind(GFX::Resource::VertexShader::Get(gfx, "SolidVS"));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::Write));
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE));
 	}

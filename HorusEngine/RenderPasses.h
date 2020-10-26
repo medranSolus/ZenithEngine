@@ -1,7 +1,6 @@
 #pragma once
 #include "RenderPassesBase.h"
 #include "ClearBufferPass.h"
-#include "DepthOnlyPass.h"
 #include "DirectionalLightingPass.h"
 #include "HDRGammaCorrectionPass.h"
 #include "HorizontalBlurPass.h"

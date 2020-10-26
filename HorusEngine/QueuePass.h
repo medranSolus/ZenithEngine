@@ -18,7 +18,8 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		inline void Add(Job&& job) noexcept { jobs.emplace_back(std::forward<Job>(job)); }
 		inline void Reset() noexcept override { jobs.clear(); }
+		inline void Execute(Graphics& gfx) override { Execute(gfx, RenderChannel::All); }
 
-		void Execute(Graphics& gfx) override;
+		void Execute(Graphics& gfx, RenderChannel mode);
 	};
 }

@@ -3,10 +3,10 @@
 
 namespace GFX::Pipeline
 {
-	void Job::Execute(Graphics& gfx)
+	void Job::Execute(Graphics& gfx, RenderChannel mode)
 	{
 		data->Bind(gfx);
-		step->Bind(gfx);
+		step->Bind(gfx, mode);
 		gfx.DrawIndexed(data->GetIndexCount());
 	}
 }

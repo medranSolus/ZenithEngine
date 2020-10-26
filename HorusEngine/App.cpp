@@ -190,7 +190,7 @@ App::App(const std::string& commandLine)
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), "Lion flare", 150, 35.0f, 45.0f,
 		Math::NormalizeStore(direction), 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f) });
 	direction = { 0.0f, -0.7f, -0.7f };
-	AddLight({ window.Gfx(), renderer, "Moon", Math::NormalizeStore(direction), 0.5f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f) });
+	AddLight({ window.Gfx(), renderer, "Moon", Math::NormalizeStore(direction), 0.1f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });

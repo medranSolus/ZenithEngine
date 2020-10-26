@@ -25,7 +25,7 @@ namespace GFX::Pipeline
 			technique->AddStep({ graph, "lambertianClassic", material });
 		else
 		{
-			technique->AddStep({ graph, "depthOnly", std::make_shared<Visual::DepthWrite>(gfx, material->GerVertexLayout()) });
+			material->SetDepthOnly(gfx);
 			technique->AddStep({ graph, "lambertianDepthOptimized", material });
 		}
 		return std::move(technique);

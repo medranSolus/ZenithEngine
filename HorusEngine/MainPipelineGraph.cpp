@@ -140,14 +140,9 @@ namespace GFX::Pipeline
 #pragma endregion
 #pragma region Geometry passes
 		{
-			auto pass = MakePass(DepthOnlyPass, gfx, "depthOnly");
-			pass->SetSinkLinkage("depthStencil", "clearDO.buffer");
-			AppendPass(std::move(pass));
-		}
-		{
 			auto pass = MakePass(LambertianDepthOptimizedPass, gfx, "lambertianDepthOptimized");
 			pass->SetSinkLinkage("geometryBuffer", "clearGBuff.buffer");
-			pass->SetSinkLinkage("depthStencil", "depthOnly.depthStencil");
+			pass->SetSinkLinkage("depthStencil", "clearDO.buffer");
 			AppendPass(std::move(pass));
 		}
 		{
@@ -274,7 +269,6 @@ namespace GFX::Pipeline
 
 	void MainPipelineGraph::BindMainCamera(Camera::ICamera& camera)
 	{
-		dynamic_cast<RenderPass::DepthOnlyPass&>(FindPass("depthOnly")).BindCamera(camera);
 		dynamic_cast<RenderPass::LambertianDepthOptimizedPass&>(FindPass("lambertianDepthOptimized")).BindCamera(camera);
 		dynamic_cast<RenderPass::LambertianClassicPass&>(FindPass("lambertianClassic")).BindCamera(camera);
 		dynamic_cast<RenderPass::DirectionalLightingPass&>(FindPass("dirLighting")).BindCamera(camera);

@@ -109,7 +109,8 @@ namespace GFX::Probe
 		}
 		if (auto direction = buffer["direction"]; direction.Exists())
 		{
-			if (ImGui::DragFloat3(Tag("Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f"))
+			ImGui::Text("Direction [X|Y|Z]");
+			if (ImGui::DragFloat3(Tag("##Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f"))
 			{
 				Math::NormalizeStore(direction);
 				dirty = true;
@@ -128,7 +129,7 @@ namespace GFX::Probe
 					buffer["innerAngle"] = innerAngle;
 					dirty = true;
 				}
-				dirty |= ImGui::SliderAngle(Tag("Inner angle"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / M_PI - 0.5f, "%.2f");
+				dirty |= ImGui::SliderAngle(Tag("Inner angle"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / static_cast<float>(M_PI) - 0.5f, "%.2f");
 			}
 		}
 		if (auto falloff = buffer["falloff"]; falloff.Exists())
