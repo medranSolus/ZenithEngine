@@ -2,7 +2,6 @@
 #include "RenderPassesBase.h"
 #include "PipelineResources.h"
 #include "GfxResources.h"
-#include "JobData.h"
 
 namespace GFX::Pipeline::RenderPass
 {
@@ -28,14 +27,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		assert(mainCamera);
 		mainCamera->BindCamera(gfx);
-		// Early front-back sort
-		const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&mainCamera->GetPos());
-		std::sort(GetJobs().begin(), GetJobs().end(), [&cameraPos](const Job& j1, const Job& j2)
-			{
-				const float len1 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&j1.GetStep().GetTransformPos()), cameraPos)));
-				const float len2 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&j2.GetStep().GetTransformPos()), cameraPos)));
-				return len1 < len2;
-			});
+		SortFrontBack(mainCamera->GetPos());
 		// Depth only pass
 		depthOnlyPS->Bind(gfx);
 		depthOnlyVS->Bind(gfx);

@@ -10,8 +10,14 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		std::vector<Job> jobs;
 
+		template<bool ascending>
+		inline void Sort(const DirectX::XMFLOAT3& cameraPos) noexcept;
+
 	protected:
 		constexpr std::vector<Job>& GetJobs() noexcept { return jobs; }
+
+		void SortFrontBack(const DirectX::XMFLOAT3& cameraPos) noexcept;
+		void SortBackFront(const DirectX::XMFLOAT3& cameraPos) noexcept;
 
 	public:
 		virtual ~QueuePass() = default;
