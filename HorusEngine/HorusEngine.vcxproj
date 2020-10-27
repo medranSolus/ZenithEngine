@@ -112,7 +112,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IS_DEBUG=1;WIN32;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
@@ -121,9 +121,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc141-mtd.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\;$(SolutionDir)$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -148,7 +148,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IS_DEBUG=1;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
@@ -157,9 +157,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc141-mtd.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\;$(SolutionDir)$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -187,7 +187,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IS_DEBUG=0;WIN32;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
@@ -200,7 +200,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\;$(SolutionDir)$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -228,7 +228,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <DisableSpecificWarnings>4250</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)AssImp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IS_DEBUG=0;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ConformanceMode>true</ConformanceMode>
@@ -241,7 +241,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>assimp-vc141-mt.lib;Common.lib;D3DCompiler.lib;dxguid.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions> /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\$(PlatformShortName)\;$(SolutionDir)$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /Y /S /D "$(ProjectDir)Data\*" "$(TargetDir)"</Command>
@@ -672,82 +672,82 @@
     <None Include="ViewGB.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\AssImp\include\assimp\aabb.h" />
-    <ClInclude Include="..\AssImp\include\assimp\ai_assert.h" />
-    <ClInclude Include="..\AssImp\include\assimp\anim.h" />
-    <ClInclude Include="..\AssImp\include\assimp\BaseImporter.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Bitmap.h" />
-    <ClInclude Include="..\AssImp\include\assimp\BlobIOSystem.h" />
-    <ClInclude Include="..\AssImp\include\assimp\ByteSwapper.h" />
-    <ClInclude Include="..\AssImp\include\assimp\camera.h" />
-    <ClInclude Include="..\AssImp\include\assimp\cexport.h" />
-    <ClInclude Include="..\AssImp\include\assimp\cfileio.h" />
-    <ClInclude Include="..\AssImp\include\assimp\cimport.h" />
-    <ClInclude Include="..\AssImp\include\assimp\color4.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Compiler\poppack1.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Compiler\pstdint.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Compiler\pushpack1.h" />
-    <ClInclude Include="..\AssImp\include\assimp\config.h" />
-    <ClInclude Include="..\AssImp\include\assimp\CreateAnimMesh.h" />
-    <ClInclude Include="..\AssImp\include\assimp\DefaultIOStream.h" />
-    <ClInclude Include="..\AssImp\include\assimp\DefaultIOSystem.h" />
-    <ClInclude Include="..\AssImp\include\assimp\DefaultLogger.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\Defines.h" />
-    <ClInclude Include="..\AssImp\include\assimp\defs.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Exceptional.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Exporter.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\fast_atof.h" />
-    <ClInclude Include="..\AssImp\include\assimp\GenericProperty.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Hash.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Importer.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\importerdesc.h" />
-    <ClInclude Include="..\AssImp\include\assimp\IOStream.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\IOStreamBuffer.h" />
-    <ClInclude Include="..\AssImp\include\assimp\IOSystem.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\irrXMLWrapper.h" />
-    <ClInclude Include="..\AssImp\include\assimp\light.h" />
-    <ClInclude Include="..\AssImp\include\assimp\LineSplitter.h" />
-    <ClInclude Include="..\AssImp\include\assimp\LogAux.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Logger.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\LogStream.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\Macros.h" />
-    <ClInclude Include="..\AssImp\include\assimp\material.h" />
-    <ClInclude Include="..\AssImp\include\assimp\MathFunctions.h" />
-    <ClInclude Include="..\AssImp\include\assimp\matrix3x3.h" />
-    <ClInclude Include="..\AssImp\include\assimp\matrix4x4.h" />
-    <ClInclude Include="..\AssImp\include\assimp\MemoryIOWrapper.h" />
-    <ClInclude Include="..\AssImp\include\assimp\mesh.h" />
-    <ClInclude Include="..\AssImp\include\assimp\metadata.h" />
-    <ClInclude Include="..\AssImp\include\assimp\NullLogger.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\ParsingUtils.h" />
-    <ClInclude Include="..\AssImp\include\assimp\pbrmaterial.h" />
-    <ClInclude Include="..\AssImp\include\assimp\postprocess.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Profiler.h" />
-    <ClInclude Include="..\AssImp\include\assimp\ProgressHandler.hpp" />
-    <ClInclude Include="..\AssImp\include\assimp\qnan.h" />
-    <ClInclude Include="..\AssImp\include\assimp\quaternion.h" />
-    <ClInclude Include="..\AssImp\include\assimp\RemoveComments.h" />
-    <ClInclude Include="..\AssImp\include\assimp\scene.h" />
-    <ClInclude Include="..\AssImp\include\assimp\SceneCombiner.h" />
-    <ClInclude Include="..\AssImp\include\assimp\SGSpatialSort.h" />
-    <ClInclude Include="..\AssImp\include\assimp\SkeletonMeshBuilder.h" />
-    <ClInclude Include="..\AssImp\include\assimp\SmoothingGroups.h" />
-    <ClInclude Include="..\AssImp\include\assimp\SpatialSort.h" />
-    <ClInclude Include="..\AssImp\include\assimp\StandardShapes.h" />
-    <ClInclude Include="..\AssImp\include\assimp\StreamReader.h" />
-    <ClInclude Include="..\AssImp\include\assimp\StreamWriter.h" />
-    <ClInclude Include="..\AssImp\include\assimp\StringComparison.h" />
-    <ClInclude Include="..\AssImp\include\assimp\StringUtils.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Subdivision.h" />
-    <ClInclude Include="..\AssImp\include\assimp\texture.h" />
-    <ClInclude Include="..\AssImp\include\assimp\TinyFormatter.h" />
-    <ClInclude Include="..\AssImp\include\assimp\types.h" />
-    <ClInclude Include="..\AssImp\include\assimp\vector2.h" />
-    <ClInclude Include="..\AssImp\include\assimp\vector3.h" />
-    <ClInclude Include="..\AssImp\include\assimp\version.h" />
-    <ClInclude Include="..\AssImp\include\assimp\Vertex.h" />
-    <ClInclude Include="..\AssImp\include\assimp\XMLTools.h" />
-    <ClInclude Include="..\AssImp\include\assimp\ZipArchiveIOSystem.h" />
+    <ClInclude Include="..\Assimp\include\assimp\aabb.h" />
+    <ClInclude Include="..\Assimp\include\assimp\ai_assert.h" />
+    <ClInclude Include="..\Assimp\include\assimp\anim.h" />
+    <ClInclude Include="..\Assimp\include\assimp\BaseImporter.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Bitmap.h" />
+    <ClInclude Include="..\Assimp\include\assimp\BlobIOSystem.h" />
+    <ClInclude Include="..\Assimp\include\assimp\ByteSwapper.h" />
+    <ClInclude Include="..\Assimp\include\assimp\camera.h" />
+    <ClInclude Include="..\Assimp\include\assimp\cexport.h" />
+    <ClInclude Include="..\Assimp\include\assimp\cfileio.h" />
+    <ClInclude Include="..\Assimp\include\assimp\cimport.h" />
+    <ClInclude Include="..\Assimp\include\assimp\color4.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Compiler\pstdint.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="..\Assimp\include\assimp\config.h" />
+    <ClInclude Include="..\Assimp\include\assimp\CreateAnimMesh.h" />
+    <ClInclude Include="..\Assimp\include\assimp\DefaultIOStream.h" />
+    <ClInclude Include="..\Assimp\include\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="..\Assimp\include\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\Defines.h" />
+    <ClInclude Include="..\Assimp\include\assimp\defs.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Exceptional.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Exporter.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\fast_atof.h" />
+    <ClInclude Include="..\Assimp\include\assimp\GenericProperty.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Hash.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Importer.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\importerdesc.h" />
+    <ClInclude Include="..\Assimp\include\assimp\IOStream.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\IOStreamBuffer.h" />
+    <ClInclude Include="..\Assimp\include\assimp\IOSystem.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\irrXMLWrapper.h" />
+    <ClInclude Include="..\Assimp\include\assimp\light.h" />
+    <ClInclude Include="..\Assimp\include\assimp\LineSplitter.h" />
+    <ClInclude Include="..\Assimp\include\assimp\LogAux.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Logger.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\LogStream.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\Macros.h" />
+    <ClInclude Include="..\Assimp\include\assimp\material.h" />
+    <ClInclude Include="..\Assimp\include\assimp\MathFunctions.h" />
+    <ClInclude Include="..\Assimp\include\assimp\matrix3x3.h" />
+    <ClInclude Include="..\Assimp\include\assimp\matrix4x4.h" />
+    <ClInclude Include="..\Assimp\include\assimp\MemoryIOWrapper.h" />
+    <ClInclude Include="..\Assimp\include\assimp\mesh.h" />
+    <ClInclude Include="..\Assimp\include\assimp\metadata.h" />
+    <ClInclude Include="..\Assimp\include\assimp\NullLogger.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\ParsingUtils.h" />
+    <ClInclude Include="..\Assimp\include\assimp\pbrmaterial.h" />
+    <ClInclude Include="..\Assimp\include\assimp\postprocess.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Profiler.h" />
+    <ClInclude Include="..\Assimp\include\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="..\Assimp\include\assimp\qnan.h" />
+    <ClInclude Include="..\Assimp\include\assimp\quaternion.h" />
+    <ClInclude Include="..\Assimp\include\assimp\RemoveComments.h" />
+    <ClInclude Include="..\Assimp\include\assimp\scene.h" />
+    <ClInclude Include="..\Assimp\include\assimp\SceneCombiner.h" />
+    <ClInclude Include="..\Assimp\include\assimp\SGSpatialSort.h" />
+    <ClInclude Include="..\Assimp\include\assimp\SkeletonMeshBuilder.h" />
+    <ClInclude Include="..\Assimp\include\assimp\SmoothingGroups.h" />
+    <ClInclude Include="..\Assimp\include\assimp\SpatialSort.h" />
+    <ClInclude Include="..\Assimp\include\assimp\StandardShapes.h" />
+    <ClInclude Include="..\Assimp\include\assimp\StreamReader.h" />
+    <ClInclude Include="..\Assimp\include\assimp\StreamWriter.h" />
+    <ClInclude Include="..\Assimp\include\assimp\StringComparison.h" />
+    <ClInclude Include="..\Assimp\include\assimp\StringUtils.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Subdivision.h" />
+    <ClInclude Include="..\Assimp\include\assimp\texture.h" />
+    <ClInclude Include="..\Assimp\include\assimp\TinyFormatter.h" />
+    <ClInclude Include="..\Assimp\include\assimp\types.h" />
+    <ClInclude Include="..\Assimp\include\assimp\vector2.h" />
+    <ClInclude Include="..\Assimp\include\assimp\vector3.h" />
+    <ClInclude Include="..\Assimp\include\assimp\version.h" />
+    <ClInclude Include="..\Assimp\include\assimp\Vertex.h" />
+    <ClInclude Include="..\Assimp\include\assimp\XMLTools.h" />
+    <ClInclude Include="..\Assimp\include\assimp\ZipArchiveIOSystem.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseCamera.h" />
@@ -924,15 +924,15 @@
     <Natvis Include="imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\AssImp\include\assimp\color4.inl" />
-    <None Include="..\AssImp\include\assimp\config.h.in" />
-    <None Include="..\AssImp\include\assimp\material.inl" />
-    <None Include="..\AssImp\include\assimp\matrix3x3.inl" />
-    <None Include="..\AssImp\include\assimp\matrix4x4.inl" />
-    <None Include="..\AssImp\include\assimp\quaternion.inl" />
-    <None Include="..\AssImp\include\assimp\SmoothingGroups.inl" />
-    <None Include="..\AssImp\include\assimp\vector2.inl" />
-    <None Include="..\AssImp\include\assimp\vector3.inl" />
+    <None Include="..\Assimp\include\assimp\color4.inl" />
+    <None Include="..\Assimp\include\assimp\config.h.in" />
+    <None Include="..\Assimp\include\assimp\material.inl" />
+    <None Include="..\Assimp\include\assimp\matrix3x3.inl" />
+    <None Include="..\Assimp\include\assimp\matrix4x4.inl" />
+    <None Include="..\Assimp\include\assimp\quaternion.inl" />
+    <None Include="..\Assimp\include\assimp\SmoothingGroups.inl" />
+    <None Include="..\Assimp\include\assimp\vector2.inl" />
+    <None Include="..\Assimp\include\assimp\vector3.inl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="HorusEngine.rc" />
