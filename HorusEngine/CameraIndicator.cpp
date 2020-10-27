@@ -13,6 +13,7 @@ namespace GFX::Shape
 		{
 			Data::VertexBufferData vertices(std::make_shared<Data::VertexLayout>(), 8U);
 			constexpr float length = 1.0f, width = 1.0f, height = 0.7f;
+			vertices.SetBox({ height * 2.0f, -height, -width, width, 0.0f, length });
 
 			vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)));
 			vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-width, height, length)));

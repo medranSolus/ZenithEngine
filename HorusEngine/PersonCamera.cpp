@@ -60,7 +60,7 @@ namespace Camera
 			DirectX::XMStoreFloat3(&eyeDirection, DirectX::XMVector3Normalize(vForward));
 			DirectX::XMStoreFloat3(&moveDirection, DirectX::XMVector3Normalize(DirectX::XMVectorSetY(vForward, 0.0f)));
 			indicator->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
-			frustrum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
+			frustum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
 			viewUpdate = true;
 		}
 	}

@@ -4,7 +4,7 @@
 namespace GFX::Resource
 {
 	VertexBuffer::VertexBuffer(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer)
-		: stride(static_cast<UINT>(buffer.GetLayout()->Size())), name(tag)
+		: stride(static_cast<UINT>(buffer.GetLayout()->Size())), name(tag), boundingBox(buffer.GetBox())
 	{
 		GFX_ENABLE_ALL(gfx);
 

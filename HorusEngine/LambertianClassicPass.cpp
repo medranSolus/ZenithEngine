@@ -23,9 +23,10 @@ namespace GFX::Pipeline::RenderPass
 	void LambertianClassicPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		mainCamera->BindCamera(gfx);
+		CullFrustum(*mainCamera);
 		// For transparent surfaces
 		SortBackFront(mainCamera->GetPos());
+		mainCamera->BindCamera(gfx);
 		QueuePass::Execute(gfx);
 	}
 }

@@ -26,8 +26,9 @@ namespace GFX::Pipeline::RenderPass
 	void LambertianDepthOptimizedPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		mainCamera->BindCamera(gfx);
+		CullFrustum(*mainCamera);
 		SortFrontBack(mainCamera->GetPos());
+		mainCamera->BindCamera(gfx);
 		// Depth only pass
 		depthOnlyPS->Bind(gfx);
 		depthOnlyVS->Bind(gfx);

@@ -28,6 +28,31 @@ namespace GFX::Pipeline::RenderPass::Base
 		Sort<false>(cameraPos);
 	}
 
+	void QueuePass::CullFrustum(const Camera::ICamera& camera) noexcept
+	{
+		const DirectX::BoundingFrustum volume = camera.GetFrustum();
+		size_t rejectedIndex = 0, rejectedCount = 0;
+		for (size_t i = 0, size = jobs.size(); i < size; ++i)
+		{
+			if (!jobs.at(i).IsInsideFrustum(volume))
+				++rejectedCount;
+			else
+			{
+				if (rejectedCount)
+				{
+					jobs.erase(jobs.begin() + rejectedIndex, jobs.begin() + rejectedIndex + rejectedCount);
+					i -= rejectedCount;
+					rejectedIndex = i;
+					rejectedCount = 0;
+					size = jobs.size();
+				}
+				++rejectedIndex;
+			}
+		}
+		if (rejectedCount)
+			jobs.erase(jobs.begin() + rejectedIndex, jobs.begin() + rejectedIndex + rejectedCount);
+	}
+
 	void QueuePass::Execute(Graphics& gfx, RenderChannel mode)
 	{
 		BindAll(gfx);

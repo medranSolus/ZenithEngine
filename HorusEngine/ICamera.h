@@ -1,5 +1,6 @@
 #pragma once
 #include "IRenderable.h"
+#include <DirectXCollision.h>
 
 namespace Camera
 {
@@ -21,6 +22,7 @@ namespace Camera
 		virtual const DirectX::XMFLOAT3& GetPos() const noexcept = 0;
 		virtual DirectX::FXMMATRIX GetProjection() const noexcept = 0;
 		virtual DirectX::FXMMATRIX GetView() const noexcept = 0;
+		virtual DirectX::BoundingFrustum GetFrustum() const noexcept = 0;
 
 		virtual void MoveX(float dX) noexcept = 0;
 		virtual void MoveY(float dY) noexcept = 0;

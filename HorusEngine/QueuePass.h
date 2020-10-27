@@ -1,6 +1,7 @@
 #pragma once
 #include "BindingPass.h"
 #include "Job.h"
+#include "ICamera.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
@@ -18,6 +19,7 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		void SortFrontBack(const DirectX::XMFLOAT3& cameraPos) noexcept;
 		void SortBackFront(const DirectX::XMFLOAT3& cameraPos) noexcept;
+		void CullFrustum(const Camera::ICamera& camera) noexcept;
 
 	public:
 		virtual ~QueuePass() = default;

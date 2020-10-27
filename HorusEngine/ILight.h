@@ -22,6 +22,8 @@ namespace GFX::Light
 		virtual ~ILight() = default;
 
 		inline const Data::CBuffer::DynamicCBuffer& GetBuffer() const noexcept { return lightBuffer->GetBufferConst(); }
+
+		inline const Data::BoundingBox& GetBoundingBox() const noexcept override { return Data::BoundingBox::GetEmpty(); }
 		inline UINT GetIndexCount() const noexcept override { return volume->GetIndexCount(); }
 
 		inline void SetOutline() noexcept override { mesh->SetOutline(); }

@@ -21,6 +21,7 @@ namespace GFX::Visual
 
 		inline void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
 		inline DirectX::XMFLOAT3 GetTransformPos() const noexcept { return transformBuffer->GetPos(); }
+		inline DirectX::FXMMATRIX GetTransform() const noexcept { return transformBuffer->GetTransform(); }
 		virtual inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent); }
 		virtual inline void Bind(Graphics& gfx, RenderChannel mode) { Bind(gfx); }
 

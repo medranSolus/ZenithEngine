@@ -65,6 +65,8 @@ namespace GFX::Primitive
 
 		Data::VertexBufferData vertices(GetLayoutUVSolid(attributes),
 			static_cast<size_t>(latitudeDensity - 1) * longitudeDensity + 2);
+		vertices.SetBox({ radius, -radius, -radius, radius, -radius, radius });
+
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -150,6 +152,8 @@ namespace GFX::Primitive
 
 		Data::VertexBufferData vertices(GetLayoutUV(attributes),
 			static_cast<size_t>(latitudeDensity - 1) * longitudeDensity * 4 + 2 * static_cast<size_t>(longitudeDensity));
+		vertices.SetBox({ radius, -radius, -radius, radius, -radius, radius });
+
 		// Sphere vertices without poles
 		for (unsigned int lat = 1, i = 0; lat < latitudeDensity; ++lat)
 		{
@@ -264,6 +268,7 @@ namespace GFX::Primitive
 		const float level = sinf(baseAngle);
 
 		Data::VertexBufferData vertices(GetLayoutIcoSolid(attributes), 12);
+		vertices.SetBox({ 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f });
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f)));
@@ -373,6 +378,8 @@ namespace GFX::Primitive
 		const float level = sinf(baseAngle);
 
 		Data::VertexBufferData vertices(GetLayoutIco(attributes), 60);
+		vertices.SetBox({ 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f });
+
 		// 0
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));

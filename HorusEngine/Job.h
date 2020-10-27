@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics.h"
 #include "RenderChannels.h"
+#include <DirectXCollision.h>
 
 namespace GFX::Pipeline
 {
@@ -18,6 +19,7 @@ namespace GFX::Pipeline
 		constexpr class JobData& GetData() noexcept { return *data; }
 		constexpr const class TechniqueStep& GetStep() const noexcept { return *step; }
 
+		bool IsInsideFrustum(const DirectX::BoundingFrustum& volume) const noexcept;
 		void Execute(Graphics& gfx, RenderChannel mode = RenderChannel::All);
 	};
 }

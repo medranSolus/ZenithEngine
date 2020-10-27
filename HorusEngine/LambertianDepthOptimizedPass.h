@@ -1,6 +1,5 @@
 #pragma once
 #include "QueuePass.h"
-#include "ICamera.h"
 #include "NullPixelShader.h"
 #include "VertexShader.h"
 #include "DepthStencilState.h"

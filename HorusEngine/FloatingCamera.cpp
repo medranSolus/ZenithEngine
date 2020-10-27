@@ -69,7 +69,7 @@ namespace Camera
 				DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&moveDirection),
 					DirectX::XMMatrixRotationRollPitchYaw(moveDirection.z * angleDX, angleDY * projection.screenRatio, moveDirection.x * angleDX * -1.0f))));
 			indicator->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
-			frustrum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
+			frustum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
 			viewUpdate = true;
 		}
 	}

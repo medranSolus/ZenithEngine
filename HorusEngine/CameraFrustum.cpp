@@ -1,14 +1,14 @@
-#include "CameraFrustrum.h"
+#include "CameraFrustum.h"
 #include "Primitives.h"
 #include "TechniqueFactory.h"
 
 namespace GFX::Shape
 {
-	CameraFrustrum::CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+	CameraFrustum::CameraFrustum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 		const std::string& name, Data::ColorFloat3 color, const Camera::ProjectionData& data)
 		: IShape(gfx, position, name)
 	{
-		const std::string typeName = typeid(CameraFrustrum).name();
+		const std::string typeName = typeid(CameraFrustum).name();
 		if (Resource::IndexBuffer::NotStored(typeName))
 		{
 			std::vector<unsigned int> indices =
@@ -35,13 +35,14 @@ namespace GFX::Shape
 		SetTechniques(gfx, std::move(techniques), *this);
 	}
 
-	void CameraFrustrum::SetParams(Graphics& gfx, const Camera::ProjectionData& data)
+	void CameraFrustum::SetParams(Graphics& gfx, const Camera::ProjectionData& data)
 	{
 		Data::VertexBufferData vertices(std::make_shared<Data::VertexLayout>(), 8U);
 		const float zRatio = data.farClip / data.nearClip;
 		const float nearY = data.nearClip * tanf(data.fov / 2.0f);
 		const float nearX = nearY * data.screenRatio;
 		const float farY = nearY * zRatio, farX = nearX * zRatio;
+		vertices.SetBox({ farY, -farY, -farX, farX, data.nearClip, data.farClip });
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-nearX, nearY, data.nearClip)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(nearX, nearY, data.nearClip)));
@@ -52,6 +53,6 @@ namespace GFX::Shape
 		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(farX, -farY, data.farClip)));
 		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(-farX, -farY, data.farClip)));
 
-		SetVertexBuffer(std::make_shared<Resource::VertexBuffer>(gfx, "", vertices));
+		SetVertexBuffer(std::make_shared<Resource::VertexBuffer>(gfx, typeid(CameraFrustum).name() + name, vertices));
 	}
 }

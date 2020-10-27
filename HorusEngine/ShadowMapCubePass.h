@@ -1,6 +1,5 @@
 #pragma once
 #include "QueuePass.h"
-#include "ICamera.h"
 #include "ILight.h"
 #include "ConstBufferVertex.h"
 #include "ConstBufferExCache.h"

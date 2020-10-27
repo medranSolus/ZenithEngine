@@ -1,6 +1,6 @@
 #pragma once
 #include "ICamera.h"
-#include "CameraFrustrum.h"
+#include "CameraFrustum.h"
 #include "CameraIndicator.h"
 
 namespace Camera
@@ -18,9 +18,9 @@ namespace Camera
 		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer = nullptr;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer = nullptr;
 		bool enableIndicator = true;
-		bool enableFrustrum = false;
+		bool enableFrustum = false;
 		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
-		std::shared_ptr<GFX::Shape::CameraFrustrum> frustrum = nullptr;
+		std::shared_ptr<GFX::Shape::CameraFrustum> frustum = nullptr;
 
 		static inline GFX::Data::CBuffer::DCBLayout MakeLayoutPS() noexcept;
 
@@ -38,8 +38,8 @@ namespace Camera
 
 		constexpr void EnableIndicator() noexcept { enableIndicator = true; }
 		constexpr void DisableIndicator() noexcept { enableIndicator = false; }
-		constexpr void EnableFrustrumIndicator() noexcept { enableFrustrum = true; }
-		constexpr void DisableFrustrumIndicator() noexcept { enableFrustrum = false; }
+		constexpr void EnableFrustrumIndicator() noexcept { enableFrustum = true; }
+		constexpr void DisableFrustrumIndicator() noexcept { enableFrustum = false; }
 
 		inline void ResetView() const noexcept override { viewUpdate = true; }
 		inline void ResetProjection() const noexcept override { projectionUpdate = true; }
@@ -55,9 +55,9 @@ namespace Camera
 
 		DirectX::FXMMATRIX GetProjection() const noexcept override;
 		DirectX::FXMMATRIX GetView() const noexcept override;
+		DirectX::BoundingFrustum GetFrustum() const noexcept override;
 
 		void Roll(float delta) noexcept override;
-
 		void BindCamera(GFX::Graphics& gfx) const noexcept override;
 		bool Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
 		void Submit(uint64_t channelFilter) noexcept override;

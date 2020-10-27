@@ -4,12 +4,12 @@
 
 namespace GFX::Shape
 {
-	class CameraFrustrum : public IShape
+	class CameraFrustum : public IShape
 	{
 	public:
-		CameraFrustrum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
+		CameraFrustum(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
 			const std::string& name, Data::ColorFloat3 color, const Camera::ProjectionData& data);
-		virtual ~CameraFrustrum() = default;
+		virtual ~CameraFrustum() = default;
 
 		inline void SetTopologyPlain(Graphics& gfx) noexcept override {}
 

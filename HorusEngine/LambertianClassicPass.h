@@ -1,6 +1,5 @@
 #pragma once
 #include "QueuePass.h"
-#include "ICamera.h"
 
 namespace GFX::Pipeline::RenderPass
 {

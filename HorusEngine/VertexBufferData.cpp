@@ -18,6 +18,23 @@ namespace GFX::Data
 			VertexLayout::Bridge<AttributeFill>(layout->ResolveByIndex(i).GetType(), *this, mesh, i); // TODO: Can be concurrent
 	}
 
+	void VertexBufferData::SetBoundingBox() noexcept(!IS_DEBUG)
+	{
+		const size_t size = Size();
+		DirectX::XMVECTOR min = DirectX::XMLoadFloat3(&boundingBox.GetNegative());
+		DirectX::XMVECTOR max = DirectX::XMLoadFloat3(&boundingBox.GetPositive());
+		for (size_t i = 0; i < size; ++i)
+		{
+			const auto& position = (*this)[i].Get<VertexAttribute::Position3D>();
+			const DirectX::XMVECTOR& pos = DirectX::XMLoadFloat3(&position);
+			min = DirectX::XMVectorMin(min, pos);
+			max = DirectX::XMVectorMax(max, pos);
+		}
+		DirectX::XMStoreFloat3(&boundingBox.GetNegative(), min);
+		DirectX::XMStoreFloat3(&boundingBox.GetPositive(), max);
+		boundingBox.Finalize();
+	}
+
 	void VertexBufferData::Resize(size_t newSize) noexcept(!IS_DEBUG)
 	{
 		const size_t size = Size();

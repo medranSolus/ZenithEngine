@@ -1,7 +1,7 @@
 #pragma once
 #include "Ball.h"
 #include "Box.h"
-#include "CameraFrustrum.h"
+#include "CameraFrustum.h"
 #include "CameraIndicator.h"
 #include "Globe.h"
 #include "Model.h"

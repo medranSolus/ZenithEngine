@@ -263,9 +263,10 @@
     <ClCompile Include="BasicObject.cpp" />
     <ClCompile Include="BindingPass.cpp" />
     <ClCompile Include="Blender.cpp" />
+    <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="BaseProbe.cpp" />
-    <ClCompile Include="CameraFrustrum.cpp" />
+    <ClCompile Include="CameraFrustum.cpp" />
     <ClCompile Include="CameraIndicator.cpp" />
     <ClCompile Include="CameraPool.cpp" />
     <ClCompile Include="ClearBufferPass.cpp" />
@@ -751,7 +752,8 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseCamera.h" />
     <ClInclude Include="BasePass.h" />
-    <ClInclude Include="CameraFrustrum.h" />
+    <ClInclude Include="BoundingBox.h" />
+    <ClInclude Include="CameraFrustum.h" />
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraPool.h" />
     <ClInclude Include="Cone.h" />

@@ -8,6 +8,7 @@ namespace GFX::Resource
 	{
 		UINT stride;
 		std::string name;
+		Data::BoundingBox boundingBox;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	public:
@@ -19,6 +20,7 @@ namespace GFX::Resource
 		template<typename ...Ignore>
 		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
 
+		constexpr const Data::BoundingBox& GetBox() const noexcept { return boundingBox; }
 		inline void Bind(Graphics& gfx) override;
 		inline std::string GetRID() const noexcept override { return GenerateRID(name); }
 	};

@@ -29,6 +29,7 @@ namespace GFX::Primitive
 		density *= 3;
 
 		Data::VertexBufferData vertices(GetLayoutSolid(attributes), static_cast<size_t>(density) + 1);
+		vertices.SetBox({ 1.0f, 0.0f, -1.0f, 1.0f, -1.0f, 1.0f });
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f))); // Base of circle
 

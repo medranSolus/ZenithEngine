@@ -29,6 +29,7 @@ namespace GFX::Primitive
 	{
 		constexpr float point = 0.5f;
 		Data::VertexBufferData vertices(GetLayout(attributes), 4);
+		vertices.SetBox({ point, -point, -point, point, 0.0f, 0.0f });
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, -point, 0.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT3(-point, point, 0.0f)));
@@ -47,6 +48,7 @@ namespace GFX::Primitive
 	IndexedTriangleList Square::MakeNDC2D() noexcept
 	{
 		Data::VertexBufferData vertices(GetLayoutNDC2D(), 4);
+		vertices.SetBox({ 1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f });
 
 		vertices[0].SetByIndex(0, std::move(DirectX::XMFLOAT2(-1.0f, 1.0f)));
 		vertices[1].SetByIndex(0, std::move(DirectX::XMFLOAT2(1.0f, 1.0f)));

@@ -7,9 +7,6 @@ namespace GFX::Resource
 	{
 		DirectX::XMFLOAT4X4 transform;
 
-	protected:
-		inline DirectX::FXMMATRIX GetTransform() const noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransform(); }
-
 	public:
 		inline ConstBufferTransformEx(Graphics& gfx, const GfxObject& parent, UINT slot = 0U)
 			: ConstBufferTransform(gfx, parent, slot)
@@ -19,6 +16,7 @@ namespace GFX::Resource
 		virtual ~ConstBufferTransformEx() = default;
 
 		constexpr void UpdateTransform(const DirectX::XMFLOAT4X4& transformMatrix) noexcept { transform = transformMatrix; }
+		inline DirectX::FXMMATRIX GetTransform() const noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransform(); }
 
 		DirectX::XMFLOAT3 GetPos() const noexcept override;
 	};

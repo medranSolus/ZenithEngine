@@ -30,7 +30,7 @@ namespace GFX::Shape
 
 		constexpr bool IsMesh() const noexcept { return isMesh; }
 		constexpr bool IsOutline() const noexcept { return isOutline; }
-
+		inline const Data::BoundingBox& GetBoundingBox() const noexcept override { return vertexBuffer->GetBox(); }
 		virtual inline void SetTopologyPlain(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); SetMesh(false); }
 		virtual inline void SetTopologyMesh(Graphics& gfx) noexcept { topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST); SetMesh(true); }
 
