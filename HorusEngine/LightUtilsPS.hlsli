@@ -44,14 +44,8 @@ float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight
 	return diffuseColor * max(0.0f, dot(directionToLight, normal));
 }
 
-float GetSampledSpecularPower(const in float4 specularData)
-{
-	// https://gamedev.stackexchange.com/questions/74879/specular-map-what-about-the-specular-reflections-highlight-size
-	return pow(2.0f, specularData.a * 13.0f);
-}
-
-float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, const in float3 pos, const in float3 normal,
-	const in float3 specularColor, const in float specularPower)
+float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, const in float3 pos,
+	const in float3 normal, const in float3 specularColor, const in float specularPower)
 {
 	// Halfway vector between directionToLight and directionToCamera
 	const float3 H = normalize(normalize(cameraPos - pos) + directionToLight);

@@ -43,7 +43,7 @@ PSOut main(float2 tc : TEXCOORD)
 			{
 				const float4 specularData = specularTex.Sample(splr_PW, tc);
 				pso.specular = float4(GetSpecular(cb_cameraPos, directionToLight, position, normal,
-					pso.color.rgb * specularData.rgb, GetSampledSpecularPower(specularData)), 0.0f);
+					pso.color.rgb * specularData.rgb, specularData.a), 0.0f);
 			}
 			else
 				pso.specular = float4(0.0f, 0.0f, 0.0f, 0.0f);

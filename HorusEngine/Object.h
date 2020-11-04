@@ -7,7 +7,7 @@ namespace GFX
 	class Object : public GfxObject, public BasicObject
 	{
 	protected:
-		DirectX::FXMMATRIX CreateTransformMatrix() const noexcept;
+		DirectX::XMMATRIX CreateTransformMatrix() const noexcept;
 
 	public:
 		Object(const DirectX::XMFLOAT3& position) noexcept;
@@ -17,6 +17,8 @@ namespace GFX
 		Object& operator=(const Object&) = default;
 		virtual ~Object() = default;
 
+		virtual inline void UpdateTransformMatrix() noexcept { DirectX::XMStoreFloat4x4(transform.get(), CreateTransformMatrix()); }
+
 		void SetAngle(const DirectX::XMFLOAT3& meshAngle) noexcept override;
 		void SetScale(float newScale) noexcept override;
 		void SetPos(const DirectX::XMFLOAT3& position) noexcept override;
@@ -24,7 +26,5 @@ namespace GFX
 		void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override;
 		void UpdateAngle(const DirectX::XMFLOAT3& deltaAngle) noexcept override;
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
-
-		virtual void UpdateTransformMatrix() noexcept;
 	};
 }

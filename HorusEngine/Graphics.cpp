@@ -18,10 +18,10 @@ namespace GFX
 		swapDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER::DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		swapDesc.SampleDesc.Count = 1; // AntiAliasing
 		swapDesc.SampleDesc.Quality = 0;
-		swapDesc.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_DISCARD;
+		swapDesc.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_FLIP_DISCARD; // http://aka.ms/dxgiflipmodel.
 		swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // Pipeline draws to this buffer
 		swapDesc.Windowed = TRUE;
-		swapDesc.BufferCount = 1; // Double buffering
+		swapDesc.BufferCount = 2; // Triple buffering
 		swapDesc.Flags = 0;
 
 		UINT createFlags = 0;
@@ -51,16 +51,6 @@ namespace GFX
 	unsigned int Graphics::GetHeight() const noexcept
 	{
 		return renderTarget->GetHeight();
-	}
-
-	void Graphics::BindSwapBuffer()
-	{
-		renderTarget->Bind(*this);
-	}
-
-	void Graphics::BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil)
-	{
-		renderTarget->BindTarget(*this, depthStencil);
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)

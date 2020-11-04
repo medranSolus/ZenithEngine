@@ -13,7 +13,7 @@ namespace GFX::Data::CBuffer
 		inline DynamicCBuffer(DCBLayout&& layout) noexcept(!IS_DEBUG)
 			: DynamicCBuffer(DCBLayoutCodex::Resolve(std::forward<DCBLayout&&>(layout))) {}
 		inline DynamicCBuffer(const DCBLayoutFinal& layout) noexcept(!IS_DEBUG)
-			: bytes(root->GetEndOffset()), root(layout.GetRoot()) {}
+			: bytes(layout.GetByteSize()), root(layout.GetRoot()) {}
 		inline DynamicCBuffer(DCBLayoutFinal&& layout)
 			: bytes(layout.GetByteSize()), root(std::move(layout.GetRoot())) {}
 		inline DynamicCBuffer(const DynamicCBuffer& buffer) noexcept

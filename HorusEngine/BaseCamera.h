@@ -12,8 +12,6 @@ namespace Camera
 		mutable DirectX::XMFLOAT4X4 projectionMatrix;
 		ProjectionData projection;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
-		mutable bool viewUpdate = true;
-		mutable bool projectionUpdate = true;
 		bool positionUpdate = true;
 		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer = nullptr;
 		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer = nullptr;
@@ -24,8 +22,8 @@ namespace Camera
 
 		static inline GFX::Data::CBuffer::DCBLayout MakeLayoutPS() noexcept;
 
-		virtual DirectX::FXMMATRIX UpdateView() const noexcept = 0;
-		DirectX::FXMMATRIX UpdateProjection() const noexcept;
+		virtual DirectX::XMMATRIX UpdateView() const noexcept = 0;
+		DirectX::XMMATRIX UpdateProjection() const noexcept;
 		void UpdateBufferVS(GFX::Graphics& gfx) noexcept;
 		void UpdateBufferPS() noexcept;
 
@@ -38,11 +36,8 @@ namespace Camera
 
 		constexpr void EnableIndicator() noexcept { enableIndicator = true; }
 		constexpr void DisableIndicator() noexcept { enableIndicator = false; }
-		constexpr void EnableFrustrumIndicator() noexcept { enableFrustum = true; }
-		constexpr void DisableFrustrumIndicator() noexcept { enableFrustum = false; }
-
-		inline void ResetView() const noexcept override { viewUpdate = true; }
-		inline void ResetProjection() const noexcept override { projectionUpdate = true; }
+		constexpr void EnableFrustumIndicator() noexcept { enableFrustum = true; }
+		constexpr void DisableFrustumIndicator() noexcept { enableFrustum = false; }
 
 		inline void SetPos(const DirectX::XMFLOAT3& pos) noexcept override { cameraBuffer->GetBuffer()["cameraPos"] = pos; positionUpdate = viewUpdate = true; }
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return cameraBuffer->GetBufferConst()["cameraPos"]; }
@@ -53,8 +48,8 @@ namespace Camera
 		inline void BindVS(GFX::Graphics& gfx) override { UpdateBufferVS(gfx); positionBuffer->Bind(gfx); }
 		inline void BindPS(GFX::Graphics& gfx) override { UpdateBufferPS(); cameraBuffer->Bind(gfx); }
 
-		DirectX::FXMMATRIX GetProjection() const noexcept override;
-		DirectX::FXMMATRIX GetView() const noexcept override;
+		DirectX::XMMATRIX GetProjection() const noexcept override;
+		DirectX::XMMATRIX GetView() const noexcept override;
 		DirectX::BoundingFrustum GetFrustum() const noexcept override;
 
 		void Roll(float delta) noexcept override;

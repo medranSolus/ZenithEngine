@@ -15,7 +15,6 @@ namespace GFX
 
 	namespace Pipeline::Resource
 	{
-		class DepthStencil;
 		class RenderTarget;
 	}
 
@@ -42,10 +41,10 @@ namespace GFX
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
 		constexpr GUIManager& Gui() noexcept { return guiManager; }
-		constexpr DirectX::FXMMATRIX GetProjection() const noexcept { return projection; }
-		constexpr void SetProjection(DirectX::XMMATRIX projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
-		constexpr DirectX::FXMMATRIX GetView() const noexcept { return view; }
-		constexpr void SetView(DirectX::XMMATRIX cameraMatrix) noexcept { view = std::move(cameraMatrix); }
+		constexpr const DirectX::XMMATRIX& GetProjection() const noexcept { return projection; }
+		constexpr void SetProjection(DirectX::XMMATRIX&& projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
+		constexpr const DirectX::XMMATRIX& GetView() const noexcept { return view; }
+		constexpr void SetView(DirectX::XMMATRIX&& cameraMatrix) noexcept { view = std::move(cameraMatrix); }
 		constexpr void EnableGUI() noexcept { guiEnabled = true; }
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }
@@ -58,8 +57,6 @@ namespace GFX
 
 		unsigned int GetWidth() const noexcept;
 		unsigned int GetHeight() const noexcept;
-		void BindSwapBuffer();
-		void BindSwapBuffer(Pipeline::Resource::DepthStencil& depthStencil);
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();
@@ -122,5 +119,5 @@ namespace GFX
 			inline const char* GetType() const noexcept override { return "Graphics Removed Exception"; }
 		};
 #pragma endregion
-		};
-	}
+	};
+}

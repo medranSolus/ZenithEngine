@@ -8,7 +8,7 @@ namespace Camera
 		DirectX::XMFLOAT3 moveDirection = { 0.0f, 0.0f, 1.0f };
 		DirectX::XMFLOAT3 eyeDirection = { 0.0f, 0.0f, 1.0f };
 
-		DirectX::FXMMATRIX UpdateView() const noexcept override;
+		DirectX::XMMATRIX UpdateView() const noexcept override;
 
 	public:
 		PersonCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name, float fov,

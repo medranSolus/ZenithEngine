@@ -25,7 +25,7 @@ namespace GFX::Pipeline::RenderPass::Base
 		AddBind(GFX::Resource::InputLayout::Get(gfx, Primitive::Square::GetLayoutNDC2D(), shaderVS));
 		AddBind(std::move(shaderVS));
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE));
+		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_NONE, false));
 	}
 
 	void FullscreenPass::Execute(Graphics& gfx)

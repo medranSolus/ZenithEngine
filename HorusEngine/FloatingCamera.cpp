@@ -3,7 +3,7 @@
 
 namespace Camera
 {
-	DirectX::FXMMATRIX FloatingCamera::UpdateView() const noexcept
+	DirectX::XMMATRIX FloatingCamera::UpdateView() const noexcept
 	{
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&cameraBuffer->GetBufferConst()["cameraPos"]),
 			DirectX::XMLoadFloat3(&moveDirection), DirectX::XMLoadFloat3(&up));

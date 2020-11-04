@@ -44,7 +44,7 @@ namespace GFX::Shape
 		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}
 
-	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, unsigned long long& id)
+	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, uint64_t& id)
 	{
 		std::vector<std::shared_ptr<Mesh>> currentMeshes;
 		currentMeshes.reserve(node.mNumMeshes);

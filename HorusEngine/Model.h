@@ -14,7 +14,7 @@ namespace GFX::Shape
 		bool isOutline = false;
 
 		std::shared_ptr<Mesh> ParseMesh(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& path, aiMesh& mesh);
-		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, unsigned long long& id);
+		std::unique_ptr<ModelNode> ParseNode(const aiNode& node, uint64_t& id);
 
 	public:
 		inline Model(Model&& model) noexcept { *this = std::forward<Model&&>(model); }

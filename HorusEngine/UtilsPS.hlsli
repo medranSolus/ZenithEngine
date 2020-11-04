@@ -11,6 +11,12 @@ float2 EncodeNormal(const in float3 normal)
 		return float2(atan2(normal.y, normal.x), normal.z);
 }
 
+float GetSampledSpecularPower(const in float specularPower)
+{
+	// https://gamedev.stackexchange.com/questions/74879/specular-map-what-about-the-specular-reflections-highlight-size
+	return pow(2.0f, specularPower * 13.0f);
+}
+
 // Get tangent space rotation (not normalized)
 float3x3 GetTangentToWorldUNorm(const in float3 tan, const in float3 normal)
 {

@@ -61,9 +61,9 @@ PSOut main(float3 worldPos : POSITION, float3 worldNormal : NORMAL
 #ifdef _TEX_SPEC
 	const float4 specularTex = spec.Sample(splr_AW, tc);
 	pso.specular = float4(specularTex.rgb * cb_specularIntensity,
-		cb_useSpecularPowerAlpha ? specularTex.a : cb_specularPower);
+		GetSampledSpecularPower(cb_useSpecularPowerAlpha ? specularTex.a : cb_specularPower));
 #else
-	pso.specular = float4(cb_specularColor * cb_specularIntensity, cb_specularPower);
+	pso.specular = float4(cb_specularColor * cb_specularIntensity, GetSampledSpecularPower(cb_specularPower));
 #endif
 	return pso;
 }

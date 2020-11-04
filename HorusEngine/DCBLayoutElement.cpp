@@ -70,15 +70,15 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		case ElementType::Struct:
-			{
-				auto& layoutElements = static_cast<ExtraData::Struct&>(*extraData).layoutElements;
-				assert(layoutElements.size() != 0U);
-				offset = AdvanceToBoundary(offsetIn);
-				size_t offsetNext = *offset;
-				for (auto& member : layoutElements)
-					offsetNext = member.second.Finalize(offsetNext);
-				return offsetNext;
-			}
+		{
+			auto& layoutElements = static_cast<ExtraData::Struct&>(*extraData).layoutElements;
+			assert(layoutElements.size() != 0U);
+			offset = AdvanceToBoundary(offsetIn);
+			size_t offsetNext = *offset;
+			for (auto& member : layoutElements)
+				offsetNext = member.second.Finalize(offsetNext);
+			return offsetNext;
+		}
 		case ElementType::Array:
 		{
 			auto& data = static_cast<ExtraData::Array&>(*extraData);
@@ -111,12 +111,12 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		case ElementType::Struct:
-			{
-				std::string signature = "S{";
-				for (const auto& member : static_cast<ExtraData::Struct&>(*extraData).layoutElements)
-					signature += member.first + ":" + member.second.GetSignature() + ";";
-				return signature + "}";
-			}
+		{
+			std::string signature = "S{";
+			for (const auto& member : static_cast<ExtraData::Struct&>(*extraData).layoutElements)
+				signature += member.first + ":" + member.second.GetSignature() + ";";
+			return signature + "}";
+		}
 		case ElementType::Array:
 		{
 			const auto& data = static_cast<ExtraData::Array&>(*extraData);
@@ -140,14 +140,15 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		case ElementType::Struct:
-			{
-				const auto& data = static_cast<ExtraData::Struct&>(*extraData);
-				return AdvanceToBoundary(data.layoutElements.back().second.GetEndOffset());
-			}
+		{
+			const auto& data = static_cast<ExtraData::Struct&>(*extraData);
+			return AdvanceToBoundary(data.layoutElements.back().second.GetEndOffset());
+		}
 		case ElementType::Array:
 		{
 			const auto& data = static_cast<ExtraData::Array&>(*extraData);
-			return *offset + AdvanceToBoundary(data.layoutElement->GetByteSize()) * data.size;
+			const size_t byteSize = data.layoutElement->GetByteSize();
+			return *offset + AdvanceToBoundary(byteSize) * (data.size - 1) + byteSize;
 		}
 		default:
 		{

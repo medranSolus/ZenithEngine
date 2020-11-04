@@ -5,11 +5,11 @@ namespace GFX
 {
 	class BasicObject : public IObject
 	{
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
+
 	protected:
 		Data::CBuffer::DynamicCBuffer buffer;
 		std::string name = "";
-
-		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
 		inline BasicObject() noexcept : BasicObject({ 0.0f,0.0f,0.0f }, "") {}

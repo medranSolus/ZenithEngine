@@ -2,8 +2,8 @@
 
 namespace GFX::Shape
 {
-	ModelNode::ModelNode(unsigned long long id, const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes,
-		const DirectX::FXMMATRIX& nodeTransform) noexcept
+	ModelNode::ModelNode(uint64_t id, const std::string& name, std::vector<std::shared_ptr<Mesh>>&& nodeMeshes,
+		const DirectX::XMMATRIX& nodeTransform) noexcept
 		: Object(name), id(id), meshes(std::move(nodeMeshes))
 	{
 		DirectX::XMStoreFloat4x4(&baseTransform, nodeTransform);
@@ -28,7 +28,7 @@ namespace GFX::Shape
 			child->DisableOutline();
 	}
 
-	void ModelNode::Submit(uint64_t channelFilter, const DirectX::FXMMATRIX& higherTransform) noexcept
+	void ModelNode::Submit(uint64_t channelFilter, const DirectX::XMMATRIX& higherTransform) noexcept
 	{
 		const DirectX::XMMATRIX transformMatrix = DirectX::XMLoadFloat4x4(transform.get()) *
 			DirectX::XMLoadFloat4x4(&baseTransform) * higherTransform;

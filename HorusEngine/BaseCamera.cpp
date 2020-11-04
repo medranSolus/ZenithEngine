@@ -19,7 +19,7 @@ namespace Camera
 		return layout;
 	}
 
-	DirectX::FXMMATRIX BaseCamera::UpdateProjection() const noexcept
+	DirectX::XMMATRIX BaseCamera::UpdateProjection() const noexcept
 	{
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixPerspectiveFovLH(projection.fov, projection.screenRatio, projection.nearClip, projection.farClip);
 		DirectX::XMStoreFloat4x4(&projectionMatrix, matrix);
@@ -56,7 +56,7 @@ namespace Camera
 		frustum = std::make_shared<GFX::Shape::CameraFrustum>(gfx, graph, position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);
 	}
 
-	DirectX::FXMMATRIX BaseCamera::GetProjection() const noexcept
+	DirectX::XMMATRIX BaseCamera::GetProjection() const noexcept
 	{
 		if (projectionUpdate)
 		{
@@ -67,7 +67,7 @@ namespace Camera
 			return DirectX::XMLoadFloat4x4(&projectionMatrix);
 	}
 
-	DirectX::FXMMATRIX BaseCamera::GetView() const noexcept
+	DirectX::XMMATRIX BaseCamera::GetView() const noexcept
 	{
 		if (viewUpdate)
 		{
@@ -86,27 +86,6 @@ namespace Camera
 			DirectX::XMLoadFloat3(&GetPos()));
 		return volume;
 	}
-
-	//DirectX::BoundingFrustum BaseCamera::GetFrustum() const noexcept
-	//{
-	//	//FrustumVolume volume;
-	//	//volume.origin = DirectX::XMLoadFloat3(&GetPos());
-
-	//	//const float zRatio = projection.farClip / projection.nearClip;
-	//	//const float nearY = projection.nearClip * tanf(projection.fov / 2.0f);
-	//	//const float nearX = nearY * projection.screenRatio;
-	//	//const float farY = nearY * zRatio, farX = nearX * zRatio;
-	//	const DirectX::XMMATRIX transform = DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&indicator->GetAngle())) *
-	//		DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&GetPos()));
-
-	//	//volume.leftDown = DirectX::XMVector3Transform(DirectX::XMVectorSet(-farX, -farY, projection.farClip, 0.0f), transform);
-	//	//volume.leftUp = DirectX::XMVector3Transform(DirectX::XMVectorSet(-farX, farY, projection.farClip, 0.0f), transform);
-	//	//volume.rightUp = DirectX::XMVector3Transform(DirectX::XMVectorSet(farX, farY, projection.farClip, 0.0f), transform);
-	//	//volume.rightDown = DirectX::XMVector3Transform(DirectX::XMVectorSet(farX, -farY, projection.farClip, 0.0f), transform);
-
-	//	//return volume;
-	//	return transform * GetProjection();
-	//}
 
 	void BaseCamera::Roll(float delta) noexcept
 	{

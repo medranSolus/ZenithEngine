@@ -3,7 +3,7 @@
 
 namespace Camera
 {
-	DirectX::FXMMATRIX PersonCamera::UpdateView() const noexcept
+	DirectX::XMMATRIX PersonCamera::UpdateView() const noexcept
 	{
 		DirectX::XMMATRIX matrix = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&cameraBuffer->GetBufferConst()["cameraPos"]),
 			DirectX::XMLoadFloat3(&eyeDirection), DirectX::XMLoadFloat3(&up));

@@ -56,7 +56,7 @@ namespace GFX::Pipeline
 		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
 
-		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4U, { DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM });
+		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4U, { DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
 		lightBuffer = Resource::RenderTargetEx::Get(gfx, 9U, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("lightBuffer", lightBuffer));

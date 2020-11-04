@@ -2,7 +2,7 @@
 
 namespace GFX
 {
-	DirectX::FXMMATRIX Object::CreateTransformMatrix() const noexcept
+	DirectX::XMMATRIX Object::CreateTransformMatrix() const noexcept
 	{
 		float scale = GetScale();
 		return DirectX::XMMatrixScaling(scale, scale, scale) *
@@ -47,8 +47,8 @@ namespace GFX
 
 	void Object::Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept
 	{
-		BasicObject::Update(delta, deltaAngle);
-		UpdateTransformMatrix();
+		BasicObject::UpdatePos(delta);
+		UpdateAngle(deltaAngle);
 	}
 
 	void Object::UpdatePos(const DirectX::XMFLOAT3& delta) noexcept
@@ -71,10 +71,5 @@ namespace GFX
 			return true;
 		}
 		return false;
-	}
-
-	void Object::UpdateTransformMatrix() noexcept
-	{
-		DirectX::XMStoreFloat4x4(transform.get(), CreateTransformMatrix());
 	}
 }

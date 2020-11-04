@@ -8,20 +8,23 @@ namespace Camera
 	{
 		std::string name;
 
+	protected:
+		mutable bool viewUpdate = true;
+		mutable bool projectionUpdate = true;
+
 	public:
 		inline ICamera(const std::string& name) noexcept : name(name) {}
 		virtual ~ICamera() = default;
 
 		constexpr const std::string& GetName() const noexcept { return name; }
-		inline void Reset() const noexcept { ResetView(); ResetProjection(); }
-
-		virtual void ResetView() const noexcept = 0;
-		virtual void ResetProjection() const noexcept = 0;
+		constexpr void Reset() const noexcept { ResetView(); ResetProjection(); }
+		constexpr void ResetView() const noexcept { viewUpdate = true; }
+		constexpr void ResetProjection() const noexcept { projectionUpdate = true; }
 
 		virtual void SetPos(const DirectX::XMFLOAT3& pos) noexcept = 0;
 		virtual const DirectX::XMFLOAT3& GetPos() const noexcept = 0;
-		virtual DirectX::FXMMATRIX GetProjection() const noexcept = 0;
-		virtual DirectX::FXMMATRIX GetView() const noexcept = 0;
+		virtual DirectX::XMMATRIX GetProjection() const noexcept = 0;
+		virtual DirectX::XMMATRIX GetView() const noexcept = 0;
 		virtual DirectX::BoundingFrustum GetFrustum() const noexcept = 0;
 
 		virtual void MoveX(float dX) noexcept = 0;

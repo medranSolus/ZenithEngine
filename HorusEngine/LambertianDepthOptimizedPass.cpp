@@ -36,6 +36,7 @@ namespace GFX::Pipeline::RenderPass
 		QueuePass::Execute(gfx, RenderChannel::Depth);
 		// Normal pass
 		lambertianStencilState->Bind(gfx);
+		mainCamera->BindVS(gfx);
 		for (auto& job : GetJobs())
 			job.Execute(gfx);
 	}
