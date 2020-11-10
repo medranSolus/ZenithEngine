@@ -82,33 +82,58 @@ namespace Camera
 
 	bool CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
-		ImGui::SliderFloat("Move speed", &moveSpeed, 0.001f, MAX_MOVE_SPEED, "%.3f");
-		ImGui::SliderFloat("Roll speed", &rollSpeed, 0.01f, 0.5f, "%.2f");
-		ImGui::SliderFloat("Camera speed", &rotateSpeed, 1.0f, 5.0f, "%.1f");
-		static std::map<std::string, std::unique_ptr<ICamera>>::iterator currentItem = cameras.find(active);
-		if (ImGui::BeginCombo("Active camera", currentItem->first.c_str()))
+		bool change = false;
+		if (ImGui::Begin("Camera control", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 		{
-			for (auto it = cameras.begin(); it != cameras.end(); ++it)
+			ImGui::Text("Active camera: ");
+			ImGui::SameLine();
+			ImGui::TextColored({ 0.4f, 1.0f, 0.6f, 1.0f }, active.c_str());
+			static std::map<std::string, std::unique_ptr<ICamera>>::iterator currentItem = cameras.find(active);
+			if (ImGui::BeginCombo("Selected camera", currentItem->first.c_str()))
 			{
-				bool selected = (currentItem == it);
-				if (ImGui::Selectable(it->first.c_str(), selected))
+				for (auto it = cameras.begin(); it != cameras.end(); ++it)
 				{
-					currentItem = it;
+					bool selected = (currentItem == it);
+					if (ImGui::Selectable(it->first.c_str(), selected))
+					{
+						currentItem = it;
+					}
+					if (selected)
+						ImGui::SetItemDefaultFocus();
 				}
-				if (selected)
-					ImGui::SetItemDefaultFocus();
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
+			ImGui::NewLine();
+
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::Button("Set active") && currentItem->first != active)
+			{
+				active = currentItem->first;
+				currentItem->second->Reset();
+				cameraChanged = true;
+			}
+			ImGui::SameLine();
+			const auto& cameraPos = currentItem->second->GetPos();
+			ImGui::Text("Position: [%.2f, %.2f, %.2f]", cameraPos.x, cameraPos.y, cameraPos.z);
+
+			ImGui::Columns(3, "##camera_options", false);
+			ImGui::Text("Move speed");
+			ImGui::SetNextItemWidth(-1.0f);
+			ImGui::SliderFloat("##move_speed", &moveSpeed, 0.001f, MAX_MOVE_SPEED, "%.3f");
+			ImGui::NextColumn();
+			ImGui::Text("Look speed");
+			ImGui::SetNextItemWidth(-1.0f);
+			ImGui::SliderFloat("##look_speed", &rotateSpeed, 1.0f, 5.0f, "%.1f");
+			ImGui::NextColumn();
+			ImGui::Text("Roll speed");
+			ImGui::SetNextItemWidth(-1.0f);
+			ImGui::SliderFloat("##roll_spedd", &rollSpeed, 0.01f, 0.5f, "%.2f");
+			ImGui::NextColumn();
+
+			change = currentItem->second->Accept(gfx, probe);
+			ImGui::Columns(1);
 		}
-		if (ImGui::Button("Select camera") && currentItem->first != active)
-		{
-			active = currentItem->first;
-			currentItem->second->Reset();
-			cameraChanged = true;
-		}
-		ImGui::NewLine();
-		const auto& cameraPos = currentItem->second->GetPos();
-		ImGui::Text("Position: [%.3f, %.3f, %.3f]", cameraPos.x, cameraPos.y, cameraPos.z);
-		return currentItem->second->Accept(gfx, probe);
+		ImGui::End();
+		return change;
 	}
 }

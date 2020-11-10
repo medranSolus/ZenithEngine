@@ -6,8 +6,8 @@ namespace GFX::Shape
 	{
 		isMesh = mesh;
 		for (auto& technique : techniques)
-			if (technique->GetName().find("Shadow Map") != std::string::npos)
-				isMesh ? technique->Dectivate() : technique->Activate();
+			if (technique.GetName().find("Shadow Map") != std::string::npos)
+				isMesh ? technique.Deactivate() : technique.Activate();
 	}
 
 	BaseShape::BaseShape(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
@@ -25,24 +25,20 @@ namespace GFX::Shape
 
 	void BaseShape::SetOutline() noexcept
 	{
-		for (auto& technique : techniques)
-			if (technique->GetName().find("Outline") != std::string::npos)
-			{
-				technique->Activate();
-				isOutline = true;
-				break;
-			}
+		if (auto technique = GetTechnique("Outline"))
+		{
+			technique->Activate();
+			isOutline = true;
+		}
 	}
 
 	void BaseShape::DisableOutline() noexcept
 	{
-		for (auto& technique : techniques)
-			if (technique->GetName().find("Outline") != std::string::npos)
-			{
-				technique->Dectivate();
-				isOutline = false;
-				break;
-			}
+		if (auto technique = GetTechnique("Outline"))
+		{
+			technique->Deactivate();
+			isOutline = false;
+		}
 	}
 
 	bool BaseShape::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept

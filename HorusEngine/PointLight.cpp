@@ -34,8 +34,8 @@ namespace GFX::Light
 		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(PointLight).name() + name, std::move(buffer));
-		mesh = std::make_shared<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 4, 4, radius, radius, radius);
-		volume = std::make_shared<Volume::GlobeVolume>(gfx, 3);
+		mesh = std::make_unique<Shape::SolidGlobe>(gfx, graph, position, name, buffer["lightColor"], 4, 4, radius, radius, radius);
+		volume = std::make_unique<Volume::GlobeVolume>(gfx, 3);
 
 		SetAttenuation(range);
 		volume->Update(lightBuffer->GetBufferConst());
@@ -44,8 +44,11 @@ namespace GFX::Light
 
 	bool PointLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		if (ImGui::DragScalar("Range", ImGuiDataType_::ImGuiDataType_U64, &range, 1.0f))
+		static const size_t STEP = 1;
+		ImGui::Columns(2, "##point_light", false);
+		if (ImGui::InputScalar("Range", ImGuiDataType_U64, &range, &STEP))
 			SetAttenuation(range);
+		ImGui::NextColumn();
 		if (ILight::Accept(gfx, probe))
 		{
 			lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();

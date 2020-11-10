@@ -10,9 +10,9 @@ namespace GFX::Pipeline::RenderPass
 		static constexpr size_t SSAO_KERNEL_SIZE = 32;
 		static constexpr size_t SSAO_NOISE_SIZE = 32;
 
-		float bias = 0.000001f;
-		float radius = 0.5f;
-		float power = 4.0f;
+		float bias = 0.188f;
+		float radius = 0.86f;
+		float power = 2.77f;
 		uint32_t size = SSAO_KERNEL_SIZE;
 
 		Camera::ICamera* mainCamera = nullptr;

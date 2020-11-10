@@ -21,7 +21,7 @@ namespace GFX::Light
 	}
 
 	DirectionalLight::DirectionalLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name,
-		const DirectX::XMFLOAT3& direction, float intensity, const Data::ColorFloat3& color, float size)
+		const DirectX::XMFLOAT3& direction, float intensity, const Data::ColorFloat3& color)
 		: name(name)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());

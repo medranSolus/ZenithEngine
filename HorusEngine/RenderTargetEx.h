@@ -9,7 +9,7 @@ namespace GFX::Pipeline::Resource
 		std::unique_ptr<ID3D11RenderTargetView* []> targetsArray = nullptr;
 		std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureViews;
 		std::unique_ptr<ID3D11ShaderResourceView* []> texturesArray = nullptr;
-		std::unique_ptr<ID3D11ShaderResourceView* []> nullTexturesArray = nullptr;
+		std::unique_ptr<ID3D11ShaderResourceView* []> nullTexturesArray = nullptr; // Maybe static
 		UINT slot;
 		UINT count;
 

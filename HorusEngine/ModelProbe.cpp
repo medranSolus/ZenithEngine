@@ -26,22 +26,29 @@ namespace GFX::Probe
 	{
 		if (selectedNode == nullptr)
 			selectedNode = &root;
-		ImGui::Columns(2);
-		ImGui::BeginChild("##NodeTree", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
-		bool change = root.Accept(gfx, *this);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::NewLine();
-		bool outline = model.IsOutline();
-		if (ImGui::Checkbox("Model outline", &outline))
+		bool change = model.IsOutline();
+		ImGui::Columns(2, "#model_node_options", false);
+		if (ImGui::Checkbox("Model outline", &change))
 		{
-			if (outline)
+			if (change)
 				model.SetOutline();
 			else
 				model.DisableOutline();
 		}
+		ImGui::NextColumn();
 		Visit(gfx, *selectedNode);
+		ImGui::Columns(1);
+		change = selectedNode->Object::Accept(gfx, static_cast<BaseProbe&>(*this));
+		ImGui::Separator();
+		ImGui::Columns(2);
+		ImGui::BeginChild("##NodeTree", ImVec2(0.0f, 231.5f), false, ImGuiWindowFlags_HorizontalScrollbar);
+		change |= root.Accept(gfx, *this);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		SetCompact();
+		ImGui::NewLine();
 		change |= selectedNode->Accept(gfx, static_cast<BaseProbe&>(*this));
+		SetNormal();
 		ImGui::Columns(1);
 		return change;
 	}

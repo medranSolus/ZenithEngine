@@ -14,7 +14,7 @@ namespace GFX::Light
 
 	public:
 		DirectionalLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name, const DirectX::XMFLOAT3& direction,
-			float intensity = 1.0f, const Data::ColorFloat3& color = { 1.0f, 1.0f, 1.0f }, float size = 1.0f);
+			float intensity = 1.0f, const Data::ColorFloat3& color = { 1.0f, 1.0f, 1.0f });
 		inline DirectionalLight(DirectionalLight&& light) noexcept { *this = std::forward<DirectionalLight&&>(light); }
 		inline DirectionalLight& operator=(DirectionalLight&& light) noexcept { this->ILight::operator=(std::forward<ILight&&>(light)); return *this; }
 		virtual ~DirectionalLight() = default;

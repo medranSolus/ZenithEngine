@@ -9,15 +9,12 @@ namespace GFX::Pipeline::RenderPass::Base
 		static_assert(std::is_base_of_v<GFX::Resource::IBindable, T>, "SinkDirectBindable target type must be a IBindable type!");
 
 		std::shared_ptr<T>& target;
-		bool linked = false;
 
 	public:
 		inline SinkDirectBindable(const std::string& registeredName, std::shared_ptr<T>& bind) : Sink(registeredName), target(bind) {}
 		virtual ~SinkDirectBindable() = default;
 
 		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& bind) { return std::make_unique<SinkDirectBindable>(registeredName, bind); }
-
-		inline void ValidateLink() const override { if (!linked) throw RGC_EXCEPT("Unlinked Sink \"" + GetRegisteredName() + "\"!"); }
 
 		void Bind(Source& source) override;
 	};

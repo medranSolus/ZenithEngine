@@ -207,7 +207,7 @@ namespace GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = MakePass(LightCombinePass, gfx, "combiner");
+			auto pass = MakePass(LightCombinePass, gfx, "lightCombiner");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("lightBuffer", "pointLighting.lightBuffer");
 			pass->SetSinkLinkage("ssaoBuffer", "ssaoFullBlur.ssaoBuffer");
@@ -220,7 +220,7 @@ namespace GFX::Pipeline
 			auto pass = MakePass(SkyboxPass, gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
-			pass->SetSinkLinkage("renderTarget", "combiner.renderTarget");
+			pass->SetSinkLinkage("renderTarget", "lightCombiner.renderTarget");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}
@@ -287,25 +287,72 @@ namespace GFX::Pipeline
 
 	void MainPipelineGraph::ShowWindow(Graphics& gfx)
 	{
-		if (ImGui::DragFloat("Gamma correction", &gamma, 0.1f, 0.1f, 7.9f, "%.1f"))
+		if (ImGui::CollapsingHeader("Outline"))
 		{
-			gammaCorrection->GetBuffer()["gamma"] = gamma;
-			gammaCorrection->GetBuffer()["deGamma"] = 1.0f / gamma;
+			ImGui::Columns(2, "##outline_options", false);
+			ImGui::Text("Blur radius");
+			ImGui::SetNextItemWidth(-1.0f);
+			bool change = ImGui::SliderInt("##blur_radius", &radius, 1, MAX_RADIUS);
+			ImGui::NextColumn();
+			ImGui::Text("Outline range");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (change || ImGui::InputFloat("##blur_sigma", &sigma, 0.1f, 0.0f, "%.1f"))
+			{
+				if (sigma < 0.1f)
+					sigma = 0.1f;
+				else if (sigma > 25.0f)
+					sigma = 25.0f;
+				SetKernel();
+			}
+			ImGui::Columns(1);
 		}
-		if (ImGui::DragFloat("HDR exposure", &hdrExposure, 0.1f, 0.1f, FLT_MAX, "%.1f"))
+		if (ImGui::CollapsingHeader("Display"))
 		{
-			gammaCorrection->GetBuffer()["hdrExposure"] = hdrExposure;
-			kernel->GetBuffer()["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
+			ImGui::Columns(2, "##display_options", false);
+			ImGui::Text("Gamma correction");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##gamma", &gamma, 0.1f, 0.0f, "%.1f"))
+			{
+				if (gamma < 1.0f)
+					gamma = 1.0f;
+				else if (gamma > 10.0f)
+					gamma = 10.0f;
+				gammaCorrection->GetBuffer()["gamma"] = gamma;
+				gammaCorrection->GetBuffer()["deGamma"] = 1.0f / gamma;
+			}
+			ImGui::NextColumn();
+			ImGui::Text("HDR exposure");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##hdr", &hdrExposure, 0.1f, 0.0f, "%.1f"))
+			{
+				if (hdrExposure < 0.1f)
+					hdrExposure = 0.1f;
+				gammaCorrection->GetBuffer()["hdrExposure"] = hdrExposure;
+				kernel->GetBuffer()["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
+			}
+			ImGui::Columns(1);
 		}
-		ImGui::Text("Shadows:");
-		if (ImGui::DragInt("Depth bias", &bias))
-			shadowBias->GetBuffer()["bias"] = static_cast<float>(bias) / SHADOW_MAP_SIZE;
-		if (ImGui::DragFloat("Normal offset", &normalOffset, 0.001f, 0.0f, 1.0f, "%.3f"))
-			shadowBias->GetBuffer()["normalOffset"] = normalOffset;
-		dynamic_cast<RenderPass::LightCombinePass&>(FindPass("combiner")).ShowWindow(gfx);
+		if (ImGui::CollapsingHeader("Shadows"))
+		{
+			ImGui::Columns(2, "##shadow_options", false);
+			ImGui::Text("Depth bias");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputInt("##depth_bias", &bias))
+				shadowBias->GetBuffer()["bias"] = static_cast<float>(bias) / SHADOW_MAP_SIZE;
+			ImGui::NextColumn();
+			ImGui::Text("Normal offset");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##normal_offset", &normalOffset, 0.001f, 0.0f, "%.3f"))
+			{
+				if (normalOffset < 0.0f)
+					normalOffset = 0.0f;
+				else if (normalOffset > 1.0f)
+					normalOffset = 1.0f;
+				shadowBias->GetBuffer()["normalOffset"] = normalOffset;
+			}
+			ImGui::Columns(1);
+			dynamic_cast<RenderPass::LightCombinePass&>(FindPass("lightCombiner")).ShowWindow(gfx);
+		}
 		dynamic_cast<RenderPass::SSAOPass&>(FindPass("ssao")).ShowWindow(gfx);
-		ImGui::Text("Blur Control");
-		if (ImGui::SliderInt("Radius##Blur", &radius, 1, MAX_RADIUS) || ImGui::SliderFloat("Sigma", &sigma, 0.1f, 20.0f, "%.1f"))
-			SetKernel();
 	}
 }

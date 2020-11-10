@@ -8,11 +8,11 @@ namespace GFX::Pipeline
 	class JobData : public virtual IRenderable
 	{
 	protected:
-		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		std::vector<Technique> techniques;
 
-		inline void AddTechnique(Graphics& gfx, std::shared_ptr<Pipeline::Technique> technique) noexcept { techniques.emplace_back(std::move(technique)); }
+		inline void AddTechnique(Graphics& gfx, Technique&& technique) noexcept { techniques.emplace_back(std::forward<Technique&&>(technique)); }
 
-		void SetTechniques(Graphics& gfx, std::vector<std::shared_ptr<Pipeline::Technique>>&& newTechniques, const GfxObject& parent) noexcept;
+		void SetTechniques(Graphics& gfx, std::vector<Technique>&& newTechniques, const GfxObject& parent) noexcept;
 
 	public:
 		JobData() = default;
@@ -24,7 +24,7 @@ namespace GFX::Pipeline
 		virtual UINT GetIndexCount() const noexcept = 0;
 		virtual void Bind(Graphics& gfx) = 0;
 
-		std::shared_ptr<Pipeline::Technique> GetTechnique(const std::string& name) noexcept;
+		Technique* GetTechnique(const std::string& name) noexcept;
 		void Submit(uint64_t channelFilter) noexcept override;
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};

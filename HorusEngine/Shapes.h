@@ -8,4 +8,3 @@
 #include "SolidCone.h"
 #include "SolidGlobe.h"
 #include "SolidRectangle.h"
-#include "Triangle.h"

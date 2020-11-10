@@ -19,6 +19,6 @@ namespace GFX::Visual
 	void OutlineMaskBlur::Bind(Graphics& gfx)
 	{
 		pixelBuffer->Bind(gfx);
-		Effect::Bind(gfx);
+		IVisual::Bind(gfx);
 	}
 }

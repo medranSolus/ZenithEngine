@@ -9,15 +9,12 @@ namespace GFX::Pipeline::RenderPass::Base
 		static_assert(std::is_base_of_v<Resource::IBufferResource, T>, "SinkDirectBuffer target type must be a IBufferResource type!");
 
 		std::shared_ptr<T>& target;
-		bool linked = false;
 
 	public:
 		inline SinkDirectBuffer(const std::string& registeredName, std::shared_ptr<T>& buffer) : Sink(registeredName), target(buffer) {}
 		virtual ~SinkDirectBuffer() = default;
 
 		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& resource) { return std::make_unique<SinkDirectBuffer>(registeredName, resource); }
-
-		inline void ValidateLink() const override { if (!linked) throw RGC_EXCEPT("Unlinked Sink \"" + GetRegisteredName() + "\"!"); }
 
 		void Bind(Source& source) override;
 	};

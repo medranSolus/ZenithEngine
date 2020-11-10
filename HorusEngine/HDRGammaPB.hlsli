@@ -10,7 +10,7 @@ float3 DeleteGammaCorr(const in float3 srgb)
 	return pow(srgb, float3(cb_gamma, cb_gamma, cb_gamma));
 }
 
-float3 AddGammaCorr(const in float3 srgb)
+float3 AddGammaCorr(const in float3 rgb)
 {
-	return pow(srgb, float3(cb_gammaInv, cb_gammaInv, cb_gammaInv));
+	return pow(rgb, float3(cb_gammaInv, cb_gammaInv, cb_gammaInv));
 }

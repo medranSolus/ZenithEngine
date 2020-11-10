@@ -1,12 +1,34 @@
-#include "ShadowMap.h"
+#pragma once
+#include "Material.h"
 #include "GfxResources.h"
 #include "Math.h"
 
 namespace GFX::Visual
 {
-	inline GFX::Data::CBuffer::DCBLayout ShadowMap::MakeLayout() noexcept
+	template<bool cube>
+	class ShadowMapBase : public IVisual
 	{
-		static GFX::Data::CBuffer::DCBLayout layout;
+		std::shared_ptr<Resource::ConstBufferExPixelCache> sourcePixelBuffer = nullptr;
+		std::shared_ptr<Resource::ConstBufferExPixelCache> parallaxBuffer = nullptr;
+		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
+		std::shared_ptr<Resource::Texture> normalMap = nullptr;
+		std::shared_ptr<Resource::Texture> parallaxMap = nullptr;
+
+		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
+
+	public:
+		ShadowMapBase(Graphics& gfx, std::shared_ptr<Material> material);
+		virtual ~ShadowMapBase() = default;
+
+		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return false; }
+
+		void Bind(Graphics& gfx) override;
+	};
+
+	template<bool cube>
+	inline Data::CBuffer::DCBLayout ShadowMapBase<cube>::MakeLayout() noexcept
+	{
+		static Data::CBuffer::DCBLayout layout;
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
@@ -16,7 +38,8 @@ namespace GFX::Visual
 		return layout;
 	}
 
-	ShadowMap::ShadowMap(Graphics& gfx, std::shared_ptr<Visual::Material> material)
+	template<bool cube>
+	ShadowMapBase<cube>::ShadowMapBase(Graphics& gfx, std::shared_ptr<Material> material)
 	{
 		std::string shaderType = "";
 		if (material->IsTexture())
@@ -34,12 +57,20 @@ namespace GFX::Visual
 			}
 		}
 		AddBind(Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
-		auto vertexShader = Resource::VertexShader::Get(gfx, "ShadowVS" + shaderType);
+		std::shared_ptr<Resource::VertexShader> vertexShader;
+		if constexpr (cube)
+		{
+			AddBind(Resource::GeometryShader::Get(gfx, "ShadowCubeGS" + shaderType));
+			vertexShader = Resource::VertexShader::Get(gfx, "ShadowCubeVS" + shaderType);
+		}
+		else
+			vertexShader = Resource::VertexShader::Get(gfx, "ShadowVS" + shaderType);
 		AddBind(Resource::InputLayout::Get(gfx, material->GerVertexLayout(), vertexShader));
 		AddBind(std::move(vertexShader));
 	}
 
-	void ShadowMap::Bind(Graphics& gfx)
+	template<bool cube>
+	void ShadowMapBase<cube>::Bind(Graphics& gfx)
 	{
 		IVisual::Bind(gfx);
 		if (parallaxBuffer)
@@ -55,4 +86,7 @@ namespace GFX::Visual
 		if (parallaxMap)
 			parallaxMap->Bind(gfx);
 	}
+
+	typedef ShadowMapBase<false> ShadowMap;
+	typedef ShadowMapBase<true> ShadowMapCube;
 }

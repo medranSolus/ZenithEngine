@@ -14,42 +14,61 @@ namespace GFX::Probe
 	void BaseProbe::SetTechnique(Pipeline::Technique* currentTechnique) noexcept
 	{
 		technique = currentTechnique;
-		ImGui::TextColored({ 0.4f, 1.0f, 0.6f, 1.0f }, ("--Technique " + technique->GetName() + "--").c_str());
-		ImGui::Checkbox(Tag("Active"), &technique->IsActive());
+		auto& style = ImGui::GetStyle();
+		auto colorMark = style.Colors[ImGuiCol_CheckMark];
+		auto colorText = style.Colors[ImGuiCol_Text];
+		style.Colors[ImGuiCol_CheckMark] = style.Colors[ImGuiCol_Text] = { 0.4f, 1.0f, 0.6f, 1.0f };
+		ImGui::Checkbox(Tag("-- " + technique->GetName() + " --"), &technique->Active());
+		style.Colors[ImGuiCol_CheckMark] = colorMark;
+		style.Colors[ImGuiCol_Text] = colorText;
 	}
 
 	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
+		dirty |= VisitLight(buffer);
 		dirty |= VisitObject(buffer);
 		dirty |= VisitMaterial(buffer);
-		dirty |= VisitLight(buffer);
 		return dirty;
 	}
 
 	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
-		if (auto offset = buffer["offset"]; offset.Exists())
-		{
-			dirty |= ImGui::DragFloat(Tag("Offset"), &offset, 0.001f, 0.001f, FLT_MAX, "%.3f");
-		}
+		//if (auto offset = buffer["offset"]; offset.Exists())
+		//{
+		//	dirty |= ImGui::DragFloat(Tag("Offset"), &offset, 0.001f, 0.001f, FLT_MAX, "%.3f");
+		//}
 		if (auto scale = buffer["scale"]; scale.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Scale"), &scale, 0.01f, 0.01f, FLT_MAX, "%.2f");
+			dirty |= ImGui::InputFloat(Tag("Scale"), &scale, 0.1f, 0.0f, "%.2f");
+			if (static_cast<float>(scale) < 0.01f)
+				scale = 0.01f;
 		}
 		if (auto position = buffer["position"]; position.Exists())
 		{
-			ImGui::Text("Position: [X|Y|Z]");
-			dirty |= ImGui::DragFloat3(Tag("##Position"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(position)), 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::Columns(2, "##mesh_options", false);
+			DirectX::XMFLOAT3& pos = static_cast<DirectX::XMFLOAT3&>(position);
+			ImGui::Text("Position");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::InputFloat(Tag("X##position"), &pos.x, 1.0f, 0.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::InputFloat(Tag("Y##position"), &pos.y, 1.0f, 0.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::InputFloat(Tag("Z##position"), &pos.z, 1.0f, 0.0f, "%.2f");
+			ImGui::NextColumn();
 		}
 		if (auto angle = buffer["angle"]; angle.Exists())
 		{
 			DirectX::XMFLOAT3& rotation = static_cast<DirectX::XMFLOAT3&>(angle);
-			ImGui::Text("Rotation:");
-			dirty |= ImGui::SliderAngle(Tag("X##Rotation"), &rotation.x, 0.0f, 360.0f, "%.2f");
-			dirty |= ImGui::SliderAngle(Tag("Y##Rotation"), &rotation.y, 0.0f, 360.0f, "%.2f");
-			dirty |= ImGui::SliderAngle(Tag("Z##Rotation"), &rotation.z, 0.0f, 360.0f, "%.2f");
+			ImGui::Text("Rotation");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::SliderAngle(Tag("X##rotation"), &rotation.x, 0.0f, 360.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::SliderAngle(Tag("Y##rotation"), &rotation.y, 0.0f, 360.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			dirty |= ImGui::SliderAngle(Tag("Z##rotation"), &rotation.z, 0.0f, 360.0f, "%.2f");
+			ImGui::Columns(1);
 		}
 		return dirty;
 	}
@@ -57,34 +76,66 @@ namespace GFX::Probe
 	bool BaseProbe::VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
+		const ImGuiColorEditFlags colorFlags = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | (compact ? ImGuiColorEditFlags_NoInputs : 0);
 		if (auto color = buffer["solidColor"]; color.Exists())
 		{
-			dirty |= ImGui::ColorEdit3(Tag("Color##Solid"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
+			dirty |= ImGui::ColorEdit3(Tag("Color##solid"),
+				reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), colorFlags);
 		}
 		if (auto color = buffer["materialColor"]; color.Exists())
 		{
 			dirty |= ImGui::ColorEdit4(Tag("Material color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat4&>(color)),
-				ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar);
+				colorFlags | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
 		}
 		if (auto color = buffer["specularColor"]; color.Exists())
 		{
-			dirty |= ImGui::ColorEdit3(Tag("Specular color"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), ImGuiColorEditFlags_Float);
+			dirty |= ImGui::ColorEdit3(Tag("Specular color"),
+				reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(color)), colorFlags);
 		}
+		if (!compact)
+			ImGui::Columns(2, "##probe_specular", false);
 		if (auto intensity = buffer["specularIntensity"]; intensity.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Specular intensity"), &intensity, 0.01f, 0.0f, FLT_MAX, "%.2f");
-		}
-		if (auto useSpecularAlpha = buffer["useSpecularPowerAlpha"]; useSpecularAlpha.Exists())
-		{
-			dirty |= ImGui::Checkbox(Tag("Use map alpha as specular power"), &useSpecularAlpha);
+			if (compact)
+			{
+				ImGui::Text("Specular intensity");
+				ImGui::SetNextItemWidth(-1.0f);
+			}
+			dirty |= ImGui::InputFloat(Tag(compact ? "##spec_int" : "Specular intensity"), &intensity, 0.1f, 0.0f, "%.2f");
+			if (static_cast<float>(intensity) < 0.01f)
+				intensity = 0.01f;
+			if (!compact)
+				ImGui::NextColumn();
 		}
 		if (auto power = buffer["specularPower"]; power.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Specular power"), &power, 0.001f, 0.0f, 1.0f, "%.3f");
+			if (compact)
+			{
+				ImGui::Text("Specular power");
+				ImGui::SetNextItemWidth(-1.0f);
+			}
+			dirty |= ImGui::InputFloat(Tag(compact ? "##spec_pow" : "Specular power"), &power, 0.001f, 0.0f, "%.3f");
+			if (static_cast<float>(power) < 0.001f)
+				power = 0.001f;
+			else if (static_cast<float>(power) > 1.0f)
+				power = 1.0f;
+		}
+		if (!compact)
+			ImGui::Columns(1);
+		if (auto useSpecularAlpha = buffer["useSpecularPowerAlpha"]; useSpecularAlpha.Exists())
+		{
+			dirty |= ImGui::Checkbox(Tag("Use specular map alpha"), &useSpecularAlpha);
 		}
 		if (auto parallax = buffer["parallaxScale"]; parallax.Exists())
 		{
-			dirty |= ImGui::DragFloat(Tag("Bump scaling"), &parallax, 0.01f, 0.0f, FLT_MAX, "%.2f");
+			if (compact)
+			{
+				ImGui::Text("Bump scaling");
+				ImGui::SetNextItemWidth(-1.0f);
+			}
+			dirty |= ImGui::InputFloat(Tag(compact ? "##bump_scale" : "Bump scaling"), &parallax, 0.01f, 0.0f, "%.2f");
+			if (static_cast<float>(parallax) < 0.0f)
+				parallax = 0.0f;
 		}
 		return dirty;
 	}
@@ -92,6 +143,13 @@ namespace GFX::Probe
 	bool BaseProbe::VisitLight(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
 		bool dirty = false;
+		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
+		{
+			dirty |= ImGui::InputFloat(Tag("Intensity"), &lightIntensity, 0.001f, 0.0f, "%.3f");
+			if (static_cast<float>(lightIntensity) < 0.0f)
+				lightIntensity = 0.0f;
+			ImGui::Columns(1);
+		}
 		if (auto lightColor = buffer["lightColor"]; lightColor.Exists())
 		{
 			ImGui::Text("Color:");
@@ -101,16 +159,13 @@ namespace GFX::Probe
 		if (auto shadowColor = buffer["shadowColor"]; shadowColor.Exists())
 		{
 			dirty |= ImGui::ColorEdit3(Tag("Shadow"), reinterpret_cast<float*>(&static_cast<Data::ColorFloat3&>(shadowColor)),
-				ImGuiColorEditFlags_Float);
-		}
-		if (auto lightIntensity = buffer["lightIntensity"]; lightIntensity.Exists())
-		{
-			dirty |= ImGui::DragFloat(Tag("Intensity"), &lightIntensity, 0.001f, 0.0f, FLT_MAX, "%.3f");
+				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
 		}
 		if (auto direction = buffer["direction"]; direction.Exists())
 		{
 			ImGui::Text("Direction [X|Y|Z]");
-			if (ImGui::DragFloat3(Tag("##Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), 0.01f, -1.0f, 1.0f, "%.2f"))
+			ImGui::SetNextItemWidth(-5.0f);
+			if (ImGui::SliderFloat3(Tag("##Direction"), reinterpret_cast<float*>(&static_cast<DirectX::XMFLOAT3&>(direction)), -1.0f, 1.0f, "%.2f"))
 			{
 				Math::NormalizeStore(direction);
 				dirty = true;
@@ -118,7 +173,10 @@ namespace GFX::Probe
 		}
 		if (auto outerAngle = buffer["outerAngle"]; outerAngle.Exists())
 		{
-			dirty |= ImGui::SliderAngle(Tag("Outer angle"), &outerAngle, 0.0f, 45.0f, "%.2f");
+			ImGui::Columns(2, "##probe_spotlight", false);
+			ImGui::Text("Outer angle");
+			ImGui::SetNextItemWidth(-1.0f);
+			dirty |= ImGui::SliderAngle(Tag("##outer"), &outerAngle, 0.0f, 45.0f, "%.2f");
 			if (auto innerAngle = buffer["innerAngle"]; innerAngle.Exists())
 			{
 				if (static_cast<float>(innerAngle) > static_cast<float>(outerAngle))
@@ -129,12 +187,12 @@ namespace GFX::Probe
 					buffer["innerAngle"] = innerAngle;
 					dirty = true;
 				}
-				dirty |= ImGui::SliderAngle(Tag("Inner angle"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / static_cast<float>(M_PI) - 0.5f, "%.2f");
+				ImGui::NextColumn();
+				ImGui::Text("Inner angle");
+				ImGui::SetNextItemWidth(-1.0f);
+				dirty |= ImGui::SliderAngle(Tag("##inner"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / static_cast<float>(M_PI) - 0.5f, "%.2f");
 			}
-		}
-		if (auto falloff = buffer["falloff"]; falloff.Exists())
-		{
-			dirty |= ImGui::DragFloat(Tag("Falloff"), &falloff, 0.01f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::Columns(1);
 		}
 		return dirty;
 	}
@@ -149,22 +207,33 @@ namespace GFX::Probe
 			else
 				shape.SetTopologyPlain(gfx);
 		}
-		bool ouline = shape.IsOutline();
-		ImGui::SameLine(); ;
-		if (ImGui::Checkbox(Tag("Outline"), &ouline))
-		{
-			if (ouline)
-				shape.SetOutline();
-			else
-				shape.DisableOutline();
-		}
 	}
 
 	bool BaseProbe::VisitCamera(Camera::ProjectionData& projection) const noexcept
 	{
-		return ImGui::SliderAngle("FOV", &projection.fov, 1.0f, 179.0f, "%.1f") ||
-			ImGui::DragFloat("Near clip", &projection.nearClip, 0.01f, 0.01f, 10.0f, "%.3f") ||
-			ImGui::DragFloat("Far clip", &projection.farClip, 0.1f, projection.nearClip + 0.01f, 50000.0f, "%.1f") ||
-			ImGui::SliderFloat("Ratio", &projection.screenRatio, 0.1f, 5.0f, "%.2f");
+		ImGui::Text("FOV");
+		ImGui::SetNextItemWidth(-1.0f);
+		bool dirty = ImGui::SliderAngle("##fov", &projection.fov, 1.0f, 179.0f, "%.1f");
+		ImGui::NextColumn();
+		ImGui::Text("Ratio");
+		ImGui::SetNextItemWidth(-1.0f);
+		dirty |= ImGui::SliderFloat("##screen_ratio", &projection.screenRatio, 0.1f, 5.0f, "%.2f");
+		ImGui::Columns(2, "##probe_camera", false);
+		ImGui::Text("Near clip");
+		ImGui::SetNextItemWidth(-1.0f);
+		dirty |= ImGui::InputFloat("##near_clip", &projection.nearClip, 0.01f, 0.0f, "%.3f");
+		if (projection.nearClip < 0.01f)
+			projection.nearClip = 0.01f;
+		else if (projection.nearClip > 10.0f)
+			projection.nearClip = 10.0f;
+		ImGui::NextColumn();
+		ImGui::Text("Far clip");
+		ImGui::SetNextItemWidth(-1.0f);
+		dirty |= ImGui::InputFloat("##far_clip", &projection.farClip, 0.1f, 0.0f, "%.1f");
+		if (projection.farClip < projection.nearClip + 0.01f)
+			projection.farClip = projection.nearClip + 0.01f;
+		else if (projection.farClip > 50000.0f)
+			projection.farClip = 50000.0f;
+		return dirty;
 	}
 }

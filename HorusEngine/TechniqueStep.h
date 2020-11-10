@@ -18,8 +18,7 @@ namespace GFX::Pipeline
 		~TechniqueStep() = default;
 
 		inline DirectX::XMFLOAT3 GetTransformPos() const noexcept { if (data) return data->GetTransformPos(); return { 0.0f,0.0f,0.0f }; }
-		inline DirectX::FXMMATRIX GetTransform() const noexcept { if (data) return data->GetTransform(); return DirectX::XMMatrixIdentity(); }
-		inline void AddData(std::shared_ptr<Visual::IVisual> stepData) noexcept { data = std::move(stepData); }
+		inline DirectX::XMMATRIX GetTransform() const noexcept { if (data) return data->GetTransform(); return DirectX::XMMatrixIdentity(); }
 		inline void Submit(JobData& data) noexcept { pass->Add({ &data, this }); }
 		inline void Bind(Graphics& gfx, RenderChannel mode = RenderChannel::All) { if (data) data->Bind(gfx, mode); }
 		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { if (data) return data->Accept(gfx, probe); return false; }

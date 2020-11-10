@@ -105,12 +105,10 @@ namespace Camera
 
 	bool BaseCamera::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
 	{
-		ImGui::Checkbox("Enable Indicator", &enableIndicator);
+		ImGui::Checkbox("Indicator", &enableIndicator);
 		if (enableIndicator)
-		{
-			ImGui::SameLine();
-			ImGui::Checkbox("Enable Frustum", &enableFrustum);
-		}
+			ImGui::Checkbox("Frustum", &enableFrustum);
+		ImGui::NextColumn();
 		projectionUpdate |= probe.VisitCamera(projection);
 		if (projectionUpdate)
 			frustum->SetParams(gfx, projection);

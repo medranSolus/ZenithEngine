@@ -22,7 +22,7 @@ namespace GFX::Shape
 			SetIndexBuffer(Resource::IndexBuffer::Get(gfx, typeName, list.indices));
 		}
 
-		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		std::vector<Pipeline::Technique> techniques;
 		techniques.reserve(3);
 		auto material = std::make_shared<Visual::Material>(gfx, color, name);
 		auto vertexLayout = material->GerVertexLayout();

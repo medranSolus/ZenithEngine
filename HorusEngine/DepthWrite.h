@@ -1,5 +1,5 @@
 #pragma once
-#include "Effect.h"
+#include "IVisual.h"
 
 namespace GFX::Visual
 {

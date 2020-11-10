@@ -76,14 +76,41 @@ namespace GFX::Pipeline::RenderPass
 
 	void SSAOPass::ShowWindow(Graphics& gfx)
 	{
-		ImGui::Text("SSAO:");
-		if (ImGui::DragInt("Kernel size", reinterpret_cast<int*>(&size), 1.0f, 1, SSAO_KERNEL_SIZE))
-			kernelBuffer->GetBuffer()["kernelSize"] = size;
-		if (ImGui::DragFloat("Radius##SSAO", &radius, 0.01f, 0.01f, FLT_MAX, "%.2f"))
-			kernelBuffer->GetBuffer()["sampleRadius"] = radius;
-		if (ImGui::DragFloat("Power##SSAO", &power, 0.01f, 0.0f, FLT_MAX, "%.2f"))
-			kernelBuffer->GetBuffer()["ssaoPower"] = power;
-		if (ImGui::DragFloat("Bias##SSAO", &bias, 0.0000001f, 0.0f, 1.0f, "%.7f"))
-			kernelBuffer->GetBuffer()["bias"] = bias;
+		if (ImGui::CollapsingHeader("SSAO"))
+		{
+			ImGui::Columns(2, "##ssao_options", false);
+			ImGui::Text("Kernel size");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputInt("##kernel_size", reinterpret_cast<int*>(&size), 1))
+			{
+				if (size < 4)
+					size = 4;
+				else if (size > SSAO_KERNEL_SIZE)
+					size = SSAO_KERNEL_SIZE;
+				kernelBuffer->GetBuffer()["kernelSize"] = size;
+			}
+			ImGui::Text("Power");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##ssao_power", &power, 0.01f, 0.0f, "%.2f"))
+			{
+				if (power < 0.0f)
+					power = 0.0f;
+				kernelBuffer->GetBuffer()["ssaoPower"] = power;
+			}
+			ImGui::NextColumn();
+			ImGui::Text("Radius");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##ssao_radius", &radius, 0.01f, 0.0f, "%.2f"))
+			{
+				if (radius < 0.01f)
+					radius = 0.01f;
+				kernelBuffer->GetBuffer()["sampleRadius"] = radius;
+			}
+			ImGui::Text("Bias");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##ssao_bias", &bias, 0.001f, 0.0f, "%.3f"))
+				kernelBuffer->GetBuffer()["bias"] = bias;
+			ImGui::Columns(1);
+		}
 	}
 }

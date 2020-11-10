@@ -9,7 +9,6 @@ namespace GFX::Pipeline::RenderPass::Base
 		static_assert(std::is_base_of_v<GFX::Resource::IBindable, T>, "SourceDirectBindable target type must be a IBindable type!");
 
 		std::shared_ptr<T>& bind;
-		bool linked = false;
 
 	public:
 		inline SourceDirectBindable(const std::string& name, std::shared_ptr<T>& bind) : Source(name), bind(bind) {}

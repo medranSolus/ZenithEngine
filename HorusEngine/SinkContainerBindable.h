@@ -10,16 +10,11 @@ namespace GFX::Pipeline::RenderPass::Base
 
 		std::vector<std::shared_ptr<GFX::Resource::IBindable>>& container;
 		size_t index;
-		bool linked = false;
 
 	public:
 		inline SinkContainerBindable(const std::string& registeredName, std::vector<std::shared_ptr<GFX::Resource::IBindable>>& binds, size_t index)
 			: Sink(registeredName), container(binds), index(index) {}
 		virtual ~SinkContainerBindable() = default;
-
-		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& bind) { return std::make_unique<SinkContainerBindable>(registeredName, bind); }
-
-		inline void ValidateLink() const override { if (!linked) throw RGC_EXCEPT("Unlinked Sink \"" + GetRegisteredName() + "\"!"); }
 
 		void Bind(Source& source) override;
 	};

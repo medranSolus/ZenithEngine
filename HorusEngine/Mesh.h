@@ -7,7 +7,7 @@ namespace GFX::Shape
 	{
 	public:
 		Mesh(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer,
-			std::shared_ptr<Resource::VertexBuffer> vertexBuffer, std::vector<std::shared_ptr<Pipeline::Technique>>&& techniques);
+			std::shared_ptr<Resource::VertexBuffer> vertexBuffer, std::vector<Pipeline::Technique>&& techniques);
 		virtual ~Mesh() = default;
 	};
 }

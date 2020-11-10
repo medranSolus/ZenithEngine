@@ -348,8 +348,6 @@
     <ClCompile Include="RenderTargetEx.cpp" />
     <ClCompile Include="RenderTargetShaderInput.cpp" />
     <ClCompile Include="Sampler.cpp" />
-    <ClCompile Include="ShadowMap.cpp" />
-    <ClCompile Include="ShadowMapCube.cpp" />
     <ClCompile Include="ShadowMapCubePass.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
     <ClCompile Include="ShadowRasterizer.cpp" />
@@ -373,7 +371,6 @@
     <ClCompile Include="TextureCube.cpp" />
     <ClCompile Include="TextureDepthCube.cpp" />
     <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="VertexBuffer.cpp" />
     <ClCompile Include="VertexBufferData.cpp" />
     <ClCompile Include="VertexLayout.cpp" />
@@ -817,7 +814,6 @@
     <ClInclude Include="DynamicCBuffer.h" />
     <ClInclude Include="DCBLayoutBase.h" />
     <ClInclude Include="DCBLayoutElement.h" />
-    <ClInclude Include="Effect.h" />
     <ClInclude Include="FloatingCamera.h" />
     <ClInclude Include="FullscreenPass.h" />
     <ClInclude Include="GfxExceptionMacros.h" />
@@ -872,8 +868,7 @@
     <ClInclude Include="RenderTarget.h" />
     <ClInclude Include="RenderTargetEx.h" />
     <ClInclude Include="RenderTargetShaderInput.h" />
-    <ClInclude Include="ShadowMap.h" />
-    <ClInclude Include="ShadowMapCube.h" />
+    <ClInclude Include="ShadowMapBase.h" />
     <ClInclude Include="ShadowMapCubePass.h" />
     <ClInclude Include="ShadowMapPass.h" />
     <ClInclude Include="ShadowRasterizer.h" />
@@ -908,7 +903,6 @@
     <ClInclude Include="TextureDepthCube.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Topology.h" />
-    <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VertexBufferData.h" />

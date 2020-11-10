@@ -24,7 +24,7 @@ namespace GFX::Shape
 		SetParams(gfx, data);
 		SetTopology(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-		std::vector<std::shared_ptr<Pipeline::Technique>> techniques;
+		std::vector<Pipeline::Technique> techniques;
 		techniques.reserve(3);
 		auto material = std::make_shared<Visual::Material>(gfx, color, typeName + name);
 		auto dimmedMaterial = std::make_shared<Visual::Material>(gfx, color * 0.75f, typeName + name + "Dim");

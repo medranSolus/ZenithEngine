@@ -23,8 +23,6 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		for (auto& sink : sinks)
 			sink->ValidateLink();
-		for (auto& source : sources)
-			source->ValidateLink();
 		for (auto& innerPass : GetInnerPasses())
 			innerPass->Finalize();
 	}

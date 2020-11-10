@@ -17,6 +17,7 @@ namespace GFX::Probe
 	class BaseProbe
 	{
 		Pipeline::Technique* technique = nullptr;
+		bool compact = false;
 
 		inline std::string MakeTag(const std::string& label) const noexcept;
 
@@ -27,6 +28,8 @@ namespace GFX::Probe
 		virtual ~BaseProbe() = default;
 
 		constexpr void ReleaseTechnique() noexcept { technique = nullptr; }
+		constexpr void SetCompact() noexcept { compact = true; }
+		constexpr void SetNormal() noexcept { compact = false; }
 
 		void SetTechnique(Pipeline::Technique* currentTechnique) noexcept;
 

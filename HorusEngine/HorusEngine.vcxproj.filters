@@ -261,9 +261,6 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Triangle.cpp">
-      <Filter>Source Files\GFX\Shape</Filter>
-    </ClCompile>
     <ClCompile Include="VertexBuffer.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
@@ -447,9 +444,6 @@
     <ClCompile Include="TechniqueFactory.cpp">
       <Filter>Source Files\GFX\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="ShadowMap.cpp">
-      <Filter>Source Files\GFX\Visual</Filter>
-    </ClCompile>
     <ClCompile Include="IBufferResource.cpp">
       <Filter>Source Files\GFX\Pipeline\Resource</Filter>
     </ClCompile>
@@ -521,9 +515,6 @@
     </ClCompile>
     <ClCompile Include="ShadowMapCubePass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
-    <ClCompile Include="ShadowMapCube.cpp">
-      <Filter>Source Files\GFX\Visual</Filter>
     </ClCompile>
     <ClCompile Include="PointLightingPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
@@ -786,9 +777,6 @@
     </ClInclude>
     <ClInclude Include="Vertex.h">
       <Filter>Header Files\GFX\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Triangle.h">
-      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Shapes.h">
       <Filter>Header Files\GFX\Shape</Filter>
@@ -1156,9 +1144,6 @@
     <ClInclude Include="IVisual.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
-    <ClInclude Include="Effect.h">
-      <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
     <ClInclude Include="Visuals.h">
       <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
@@ -1300,9 +1285,6 @@
     <ClInclude Include="TechniqueFactory.h">
       <Filter>Header Files\GFX\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="ShadowMap.h">
-      <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
     <ClInclude Include="ShadowRasterizer.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -1387,9 +1369,6 @@
     <ClInclude Include="ShadowMapCubePass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="ShadowMapCube.h">
-      <Filter>Header Files\GFX\Visual</Filter>
-    </ClInclude>
     <ClInclude Include="PointLightingPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
@@ -1419,6 +1398,9 @@
     </ClInclude>
     <ClInclude Include="BoundingBox.h">
       <Filter>Header Files\GFX\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapBase.h">
+      <Filter>Header Files\GFX\Visual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

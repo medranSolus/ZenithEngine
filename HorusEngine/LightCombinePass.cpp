@@ -38,7 +38,9 @@ namespace GFX::Pipeline::RenderPass
 	void LightCombinePass::ShowWindow(Graphics& gfx)
 	{
 		Data::ColorFloat3 ambient = ambientBuffer->GetBufferConst()["ambientColor"];
-		if (ImGui::ColorEdit3("Ambient color", reinterpret_cast<float*>(&ambient), ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float))
+		ImGui::Text("Ambient color");
+		ImGui::SetNextItemWidth(-5.0f);
+		if (ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&ambient), ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel))
 			ambientBuffer->GetBuffer()["ambientColor"] = ambient;
 	}
 }

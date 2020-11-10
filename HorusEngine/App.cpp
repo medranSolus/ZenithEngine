@@ -83,7 +83,8 @@ inline void App::ProcessInput()
 inline void App::ShowObjectWindow()
 {
 	static GFX::Probe::ModelProbe probe;
-	if (ImGui::Begin("Object options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+	cameras.Accept(window.Gfx(), probe);
+	if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
 		static std::map<std::string, std::pair<Container, size_t>>::iterator currentItem = objects.find("---None---");
 		if (ImGui::BeginCombo("Selected object", currentItem->first.c_str()))
@@ -115,8 +116,6 @@ inline void App::ShowOptionsWindow()
 	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		cameras.Accept(window.Gfx(), probe);
-		ImGui::NewLine();
 		renderer.ShowWindow(window.Gfx());
 	}
 	ImGui::End();
@@ -177,6 +176,11 @@ App::App(const std::string& commandLine)
 	: window(1600, 900, WINDOW_TITLE), renderer(window.Gfx()),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1", 1.047f, 0.01f, VIEW_DISTANCE, 90, 0, DirectX::XMFLOAT3(-8.0f, 0.0f, 0.0f)))
 {
+	auto& style = ImGui::GetStyle();
+	style.WindowRounding = 1;
+	style.WindowBorderSize = 1;
+	style.Colors[ImGuiCol_WindowBg].w = 0.785f;
+
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
 	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), "Light bulb", 50 });

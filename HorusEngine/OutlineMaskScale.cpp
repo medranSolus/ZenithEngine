@@ -55,6 +55,6 @@ namespace GFX::Visual
 		if (dirty)
 			UpdateTransform();
 		pixelBuffer->Bind(gfx);
-		Effect::Bind(gfx);
+		IVisual::Bind(gfx);
 	}
 }

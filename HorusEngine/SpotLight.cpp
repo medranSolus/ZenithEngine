@@ -39,8 +39,8 @@ namespace GFX::Light
 		buffer["outerAngle"] = static_cast<float>(M_PI - FLT_EPSILON) * outerAngle / 180.0f;
 
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(SpotLight).name() + name, std::move(buffer));
-		mesh = std::make_shared<Shape::SolidCone>(gfx, graph, position, name, buffer["lightColor"], 8, size);
-		volume = std::make_shared<Volume::ConeVolume>(gfx, 8);
+		mesh = std::make_unique<Shape::SolidCone>(gfx, graph, position, name, buffer["lightColor"], 8, size);
+		volume = std::make_unique<Volume::ConeVolume>(gfx, 8);
 
 		SetAttenuation(range);
 		volume->Update(lightBuffer->GetBufferConst());
@@ -49,8 +49,11 @@ namespace GFX::Light
 
 	bool SpotLight::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		if (ImGui::DragScalar("Range", ImGuiDataType_::ImGuiDataType_U64, &range, 1.0f))
+		static const size_t STEP = 1;
+		ImGui::Columns(2, "##spot_light", false);
+		if (ImGui::InputScalar("Range", ImGuiDataType_U64, &range, &STEP))
 			SetAttenuation(range);
+		ImGui::NextColumn();
 		if (ILight::Accept(gfx, probe))
 		{
 			lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();

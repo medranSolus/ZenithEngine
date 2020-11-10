@@ -33,7 +33,7 @@ float main(float2 tc : TEXCOORD) : SV_TARGET
 		}
 		const float4 samplePos = mul(float4(position + sampleRay * cb_sampleRadius, 1.0f), cb_viewProjection); // From tangent to clip space
 		const float2 offset = samplePos.xy / (samplePos.w * 2.0f) + 0.5f; // Perspective divide and transform to 0-1
-		const float sampleDepth = GetLinearDepth(depthMap.Sample(splr_PR, float2(offset.x, 1.0f - offset.y)).x, cb_nearClip, cb_farClip) - cb_bias;
+		const float sampleDepth = GetLinearDepth(depthMap.Sample(splr_PR, float2(offset.x, 1.0f - offset.y)).x, cb_nearClip, cb_farClip) + cb_bias;
 		const float rangeCheck = smoothstep(0.0f, 1.0f, cb_sampleRadius / abs(sampleDepth - samplePos.z));
 		occlusion += (sampleDepth >= samplePos.z ? 0.0f : 1.0f) * rangeCheck;
 	}

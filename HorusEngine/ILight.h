@@ -9,9 +9,9 @@ namespace GFX::Light
 	class ILight : public IObject, public Pipeline::JobData
 	{
 	protected:
-		std::shared_ptr<Volume::IVolume> volume = nullptr;
-		mutable std::shared_ptr<Shape::IShape> mesh = nullptr;
-		mutable std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
+		std::unique_ptr<Volume::IVolume> volume = nullptr;
+		std::unique_ptr<Shape::IShape> mesh = nullptr;
+		std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
 
 		void SetAttenuation(size_t range) noexcept;
 

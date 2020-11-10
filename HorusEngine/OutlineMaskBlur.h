@@ -1,10 +1,10 @@
 #pragma once
-#include "Effect.h"
+#include "IVisual.h"
 #include "ConstBufferExCache.h"
 
 namespace GFX::Visual
 {
-	class OutlineMaskBlur : public Effect
+	class OutlineMaskBlur : public IVisual
 	{
 		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
 

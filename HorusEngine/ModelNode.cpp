@@ -41,7 +41,7 @@ namespace GFX::Shape
 
 	bool ModelNode::Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept
 	{
-		bool change = Object::Accept(gfx, probe);
+		bool change = false;
 		for (const auto& mesh : meshes)
 			change |= mesh->Accept(gfx, probe);
 		return change;

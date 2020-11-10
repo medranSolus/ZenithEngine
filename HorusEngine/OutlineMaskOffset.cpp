@@ -26,6 +26,6 @@ namespace GFX::Visual
 	{
 		vertexBuffer->Bind(gfx);
 		pixelBuffer->Bind(gfx);
-		Effect::Bind(gfx);
+		IVisual::Bind(gfx);
 	}
 }
