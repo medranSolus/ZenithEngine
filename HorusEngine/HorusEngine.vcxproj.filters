@@ -195,9 +195,6 @@
     <ClCompile Include="App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BaseCamera.cpp">
-      <Filter>Source Files\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="BaseShape.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
     </ClCompile>
@@ -557,6 +554,9 @@
     </ClCompile>
     <ClCompile Include="DialogWindow.cpp">
       <Filter>Source Files\GFX\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseCamera.cpp">
+      <Filter>Source Files\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1419,6 +1419,9 @@
     </ClInclude>
     <ClInclude Include="ModelParams.h">
       <Filter>Header Files\GFX\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraParams.h">
+      <Filter>Header Files\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

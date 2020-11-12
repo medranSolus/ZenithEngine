@@ -1,6 +1,7 @@
 #pragma once
 #include "ModelParams.h"
 #include "LightParams.h"
+#include "CameraParams.h"
 #include <optional>
 #include <filesystem>
 
@@ -22,10 +23,11 @@ namespace GFX::GUI
 		DialogWindow() = delete;
 		~DialogWindow() = default;
 
-		static std::optional<std::string> FileBrowserButton(const std::string& title, const std::string& startDir);
-		static Result GetModelParams(Shape::ModelParams& params);
-		static Result GetLightParams(Light::LightParams& params);
-		static Result ShowInfo(const std::string& title, const std::string& text);
+		static std::optional<std::string> FileBrowserButton(const std::string& title, const std::string& startDir) noexcept;
+		static Result GetModelParams(Shape::ModelParams& params) noexcept;
+		static Result GetLightParams(Light::LightParams& params) noexcept;
+		static Result GetCameraParams(Camera::CameraParams& params) noexcept;
+		static Result ShowInfo(const std::string& title, const std::string& text) noexcept;
 	};
 }
 

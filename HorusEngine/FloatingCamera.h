@@ -10,8 +10,7 @@ namespace Camera
 		DirectX::XMMATRIX UpdateView() const noexcept override;
 
 	public:
-		FloatingCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name, float fov,
-			float nearClip, float farClip, short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept;
+		FloatingCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const CameraParams& params) noexcept;
 		FloatingCamera(const FloatingCamera&) = default;
 		FloatingCamera& operator=(const FloatingCamera&) = default;
 		virtual ~FloatingCamera() = default;

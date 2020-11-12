@@ -1,4 +1,5 @@
-#include "CameraPool.h"
+#include "Cameras.h"
+#include "DialogWindow.h"
 
 namespace Camera
 {
@@ -80,11 +81,58 @@ namespace Camera
 				it->second->Submit(channelFilter);
 	}
 
-	bool CameraPool::Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept
+	bool CameraPool::Accept(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, GFX::Probe::BaseProbe& probe) noexcept
 	{
+		static bool errorDelete = false;
+		static bool errorAdd = false;
+		static bool add = false;
+		static CameraParams params;
+
 		bool change = false;
 		if (ImGui::Begin("Camera control", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 		{
+			if (ImGui::Button("Add camera"))
+				add = true;
+			if (add)
+			{
+				if (errorAdd)
+				{
+					if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+						"Camera named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
+						errorAdd = false;
+				}
+				else
+				{
+					switch (GFX::GUI::DialogWindow::GetCameraParams(params))
+					{
+					case DialogResult::Accept:
+					{
+						switch (params.type)
+						{
+						case CameraType::Person:
+						{
+							errorAdd = !AddCamera(std::make_unique<PersonCamera>(gfx, graph, params));
+							break;
+						}
+						case CameraType::Floating:
+						{
+							errorAdd = !AddCamera(std::make_unique<FloatingCamera>(gfx, graph, params));
+							break;
+						}
+						}
+						if (errorAdd)
+							break;
+					}
+					case DialogResult::Cancel:
+					{
+						add = false;
+						params.Reset();
+						break;
+					}
+					}
+				}
+			}
+			ImGui::SameLine();
 			ImGui::Text("Active camera: ");
 			ImGui::SameLine();
 			ImGui::TextColored({ 0.4f, 1.0f, 0.6f, 1.0f }, active.c_str());
@@ -112,6 +160,20 @@ namespace Camera
 				currentItem->second->Reset();
 				cameraChanged = true;
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Delete"))
+			{
+				if (DeleteCamera(currentItem->first))
+				{
+					currentItem = cameras.find(active);
+					cameraChanged = true;
+				}
+				else
+					errorDelete = true;
+			}
+			if (errorDelete)
+				if (GFX::GUI::DialogWindow::ShowInfo("Error", "Cannot delete active camera!") == DialogResult::Accept)
+					errorDelete = false;
 			ImGui::SameLine();
 			const auto& cameraPos = currentItem->second->GetPos();
 			ImGui::Text("Position: [%.2f, %.2f, %.2f]", cameraPos.x, cameraPos.y, cameraPos.z);

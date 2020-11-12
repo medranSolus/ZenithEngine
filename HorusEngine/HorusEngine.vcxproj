@@ -753,6 +753,7 @@
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="CameraFrustum.h" />
     <ClInclude Include="CameraIndicator.h" />
+    <ClInclude Include="CameraParams.h" />
     <ClInclude Include="CameraPool.h" />
     <ClInclude Include="Cone.h" />
     <ClInclude Include="ConeVolume.h" />

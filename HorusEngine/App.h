@@ -11,7 +11,6 @@ class App
 	enum class Container { None, PointLight, SpotLight, DirectionalLight, Model, Shape };
 
 	static constexpr const char* WINDOW_TITLE = "Horus Engine Alpha";
-	static constexpr float VIEW_DISTANCE = 500.0f;
 
 	WinAPI::Window window;
 	GFX::Pipeline::MainPipelineGraph renderer;
@@ -32,6 +31,7 @@ class App
 	inline void AddLight(GFX::Light::DirectionalLight&& directionalLight);
 	inline void AddShape(GFX::Shape::Model&& model);
 	inline void AddShape(std::shared_ptr<GFX::Shape::IShape> shape);
+	inline void DeleteObject(std::map<std::string, std::pair<Container, size_t>>::iterator& object) noexcept;
 
 	inline void ProcessInput();
 	inline void ShowObjectWindow();

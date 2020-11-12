@@ -2,6 +2,7 @@
 #include "ICamera.h"
 #include "CameraFrustum.h"
 #include "CameraIndicator.h"
+#include "CameraParams.h"
 
 namespace Camera
 {
@@ -28,8 +29,7 @@ namespace Camera
 		void UpdateBufferPS() noexcept;
 
 	public:
-		BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name,
-			float fov, float nearClip, float farClip, const DirectX::XMFLOAT3& position) noexcept;
+		BaseCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const CameraParams& params) noexcept;
 		BaseCamera(const BaseCamera&) = default;
 		BaseCamera& operator=(const BaseCamera&) = default;
 		virtual ~BaseCamera() = default;

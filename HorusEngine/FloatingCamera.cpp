@@ -11,13 +11,10 @@ namespace Camera
 		return std::move(matrix);
 	}
 
-	FloatingCamera::FloatingCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const std::string& name, float fov,
-		float nearClip, float farClip, short angleHorizontal, short angleVertical, const DirectX::XMFLOAT3& position) noexcept
-		: BaseCamera(gfx, graph, name, fov, nearClip, farClip, position)
+	FloatingCamera::FloatingCamera(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, const CameraParams& params) noexcept
+		: BaseCamera(gfx, graph, params)
 	{
-		constexpr float PI = static_cast<float>(M_PI - FLT_EPSILON);
-		Rotate(PI * static_cast<float>(Math::ClampAngle(angleVertical, 180)) / 361.0f,
-			static_cast<float>(angleHorizontal) * PI / (180.0f * gfx.GetRatio()));
+		Rotate(params.angleVertical, params.angleHorizontal / gfx.GetRatio());
 	}
 
 	void FloatingCamera::MoveX(float dX) noexcept

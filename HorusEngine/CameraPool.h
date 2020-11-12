@@ -1,11 +1,12 @@
 #pragma once
 #include "ICamera.h"
 #include "Window.h"
+#include "RenderGraph.h"
 #include <map>
 
 namespace Camera
 {
-	class CameraPool : public GFX::Pipeline::IRenderable
+	class CameraPool
 	{
 		static constexpr float MAX_MOVE_SPEED = 5.0f;
 
@@ -23,13 +24,13 @@ namespace Camera
 		inline ICamera& GetCamera() noexcept { return *cameras.at(active); }
 
 		constexpr bool CameraChanged() noexcept { bool changed = cameraChanged; cameraChanged = false; return changed; }
-		inline void SetOutline() noexcept override { cameras.at(active)->SetOutline(); }
-		inline void DisableOutline() noexcept override { cameras.at(active)->DisableOutline(); }
+		inline void SetOutline() noexcept { cameras.at(active)->SetOutline(); }
+		inline void DisableOutline() noexcept { cameras.at(active)->DisableOutline(); }
 
 		void ProcessInput(WinAPI::Window& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera> camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
-		bool Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;
-		void Submit(uint64_t channelFilter) noexcept override;
+		bool Accept(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, GFX::Probe::BaseProbe& probe) noexcept;
+		void Submit(uint64_t channelFilter) noexcept;
 	};
 }

@@ -7,19 +7,19 @@
 	switch (item->second.first) \
 	{ \
 	case Container::PointLight: \
-		pointLights.at(currentItem->second.second).function; \
+		pointLights.at(item->second.second).function; \
 		break; \
 	case Container::SpotLight: \
-		spotLights.at(currentItem->second.second).function; \
+		spotLights.at(item->second.second).function; \
 		break; \
 	case Container::DirectionalLight: \
-		directionalLights.at(currentItem->second.second).function; \
+		directionalLights.at(item->second.second).function; \
 		break; \
 	case Container::Model: \
-		models.at(currentItem->second.second).function; \
+		models.at(item->second.second).function; \
 		break; \
 	case Container::Shape: \
-		shapes.at(currentItem->second.second)->function; \
+		shapes.at(item->second.second)->function; \
 		break; \
 	}
 
@@ -51,6 +51,68 @@ inline void App::AddShape(std::shared_ptr<GFX::Shape::IShape> shape)
 {
 	objects.emplace(shape->GetName(), std::make_pair<Container, size_t>(Container::Shape, shapes.size()));
 	shapes.emplace_back(shape);
+}
+
+inline void App::DeleteObject(std::map<std::string, std::pair<Container, size_t>>::iterator& object) noexcept
+{
+	switch (object->second.first)
+	{
+	case Container::PointLight:
+	{
+		if (pointLights.size() > 1)
+		{
+			objects.at(pointLights.back().GetName()) = object->second;
+			pointLights.at(object->second.second) = std::move(pointLights.back());
+		}
+		pointLights.pop_back();
+		break;
+	}
+	case Container::SpotLight:
+	{
+		if (spotLights.size() > 1)
+		{
+			objects.at(spotLights.back().GetName()) = object->second;
+			spotLights.at(object->second.second) = std::move(spotLights.back());
+		}
+		spotLights.pop_back();
+		break;
+	}
+	case Container::DirectionalLight:
+	{
+		if (directionalLights.size() > 1)
+		{
+			objects.at(directionalLights.back().GetName()) = object->second;
+			directionalLights.at(object->second.second) = std::move(directionalLights.back());
+		}
+		directionalLights.pop_back();
+		break;
+	}
+	case Container::Model:
+	{
+		if (models.size() > 1)
+		{
+			objects.at(models.back().GetName()) = object->second;
+			models.at(object->second.second) = std::move(models.back());
+		}
+		models.pop_back();
+		break;
+	}
+	case Container::Shape:
+	{
+		if (shapes.size() > 1)
+		{
+			objects.at(shapes.back()->GetName()) = object->second;
+			shapes.at(object->second.second) = std::move(shapes.back());
+		}
+		shapes.pop_back();
+		break;
+	}
+	}
+	if (object->second.first != Container::None)
+	{
+		objects.erase(object);
+		object = objects.find("---None---");
+	}
 }
 #pragma endregion
 
@@ -84,7 +146,7 @@ inline void App::ProcessInput()
 inline void App::ShowObjectWindow()
 {
 	static GFX::Probe::ModelProbe probe;
-	cameras.Accept(window.Gfx(), probe);
+	cameras.Accept(window.Gfx(), renderer, probe);
 	if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
 		static std::map<std::string, std::pair<Container, size_t>>::iterator currentItem = objects.find("---None---");
@@ -108,6 +170,9 @@ inline void App::ShowObjectWindow()
 		AddModelButton();
 		ImGui::SameLine();
 		AddLightButton();
+		ImGui::SameLine();
+		if (ImGui::Button("Delete current object"))
+			DeleteObject(currentItem);
 		ImGui::NewLine();
 		ContainerInvoke(currentItem, Accept(window.Gfx(), probe));
 	}
@@ -130,7 +195,7 @@ inline void App::AddModelButton()
 	static std::optional<std::string> path = {};
 	static std::optional<std::string> error = {};
 	static bool contains = false;
-	static GFX::ObjectParams params;
+	static GFX::Shape::ModelParams params;
 
 	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Add model", "Models"))
 		path = file;
@@ -314,7 +379,7 @@ void App::MakeFrame()
 
 App::App(const std::string& commandLine)
 	: window(1600, 900, WINDOW_TITLE), renderer(window.Gfx()),
-	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_1", 1.047f, 0.01f, VIEW_DISTANCE, 90, 0, DirectX::XMFLOAT3(-8.0f, 0.0f, 0.0f)))
+	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
 	auto& style = ImGui::GetStyle();
 	style.WindowRounding = 1;
@@ -335,9 +400,7 @@ App::App(const std::string& commandLine)
 		DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), 150, 1.0f, Math::ToRadians(35.0f), Math::ToRadians(45.0f), Math::NormalizeStore(direction) });
 	direction = { 0.0f, -0.7f, -0.7f };
 	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
-	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
-		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
-	GFX::ObjectParams params(DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f);
+	GFX::Shape::ModelParams params(DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f);
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
 	params = { DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f };
 	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });

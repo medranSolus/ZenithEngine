@@ -52,7 +52,7 @@ namespace GFX::GUI
 		return std::move(dirContent);
 	}
 
-	std::optional<std::string> DialogWindow::FileBrowserButton(const std::string& title, const std::string& startDir)
+	std::optional<std::string> DialogWindow::FileBrowserButton(const std::string& title, const std::string& startDir) noexcept
 	{
 		static std::filesystem::directory_entry currentDir;
 		static size_t selected;
@@ -143,7 +143,7 @@ namespace GFX::GUI
 		return {};
 	}
 
-	DialogWindow::Result DialogWindow::GetModelParams(Shape::ModelParams& params)
+	DialogWindow::Result DialogWindow::GetModelParams(Shape::ModelParams& params) noexcept
 	{
 		static constexpr const char* TITLE = "Input model parameters";
 		Result result = Result::None;
@@ -176,7 +176,7 @@ namespace GFX::GUI
 		return result;
 	}
 
-	DialogWindow::Result DialogWindow::GetLightParams(Light::LightParams& params)
+	DialogWindow::Result DialogWindow::GetLightParams(Light::LightParams& params) noexcept
 	{
 		static constexpr const char* TITLE = "Input light parameters";
 		static constexpr const char* TYPES[] = { "Directional light", "Point light", "Spot light" };
@@ -248,7 +248,65 @@ namespace GFX::GUI
 		return result;
 	}
 
-	DialogWindow::Result DialogWindow::ShowInfo(const std::string& title, const std::string& text)
+	DialogWindow::Result DialogWindow::GetCameraParams(Camera::CameraParams& params) noexcept
+	{
+		static constexpr const char* TITLE = "Input camera parameters";
+		static constexpr const char* TYPES[] = { "Person", "Floating" };
+		Result result = Result::None;
+
+		if (!ImGui::IsPopupOpen(TITLE))
+			ImGui::OpenPopup(TITLE);
+		ImGui::SetNextWindowPos({ ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f },
+			ImGuiCond_Appearing, { 0.5f, 0.5f });
+
+		if (ImGui::BeginPopupModal(TITLE, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+		{
+			if (ImGui::BeginCombo("Camera type", TYPES[params.type]))
+			{
+				for (uint8_t i = 0; i <= Camera::CameraType::Floating; ++i)
+				{
+					bool selected = (params.type == i);
+					if (ImGui::Selectable(TYPES[i], selected))
+						params.type = static_cast<Camera::CameraType>(i);
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::InputText("Name", &params.name);
+			ImGui::InputFloat3("Position", reinterpret_cast<float*>(&params.position), "%.2f");
+			ImGui::SliderAngle("FOV", &params.fov, 1.0f, 179.0f, "%.1f");
+			ImGui::InputFloat("Near clip", &params.nearClip, 0.01f, 0.0f, "%.3f");
+			if (params.nearClip < 0.01f)
+				params.nearClip = 0.01f;
+			else if (params.nearClip > 10.0f)
+				params.nearClip = 10.0f;
+			ImGui::InputFloat("Far clip", &params.farClip, 0.1f, 0.0f, "%.1f");
+			if (params.farClip < params.nearClip + 0.01f)
+				params.farClip = params.nearClip + 0.01f;
+			else if (params.farClip > 50000.0f)
+				params.farClip = 50000.0f;
+			ImGui::SliderAngle("Vertical angle", &params.angleVertical, 0.0f, 179.0f, "%.2f");
+			ImGui::SliderAngle("Horizontal angle", &params.angleHorizontal, 0.0f, 359.0f, "%.2f");
+
+			if (ImGui::Button("Accept", { 147.0f, 0.0f }))
+			{
+				result = Result::Accept;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", { 147.0f, 0.0f }))
+			{
+				result = Result::Cancel;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		return result;
+	}
+
+	DialogWindow::Result DialogWindow::ShowInfo(const std::string& title, const std::string& text) noexcept
 	{
 		Result result = Result::None;
 		if (!ImGui::IsPopupOpen(title.c_str()))

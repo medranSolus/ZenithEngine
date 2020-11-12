@@ -6,9 +6,8 @@ namespace Camera
 {
 	class ICamera : public GFX::Pipeline::IRenderable
 	{
-		std::string name;
-
 	protected:
+		std::string name;
 		mutable bool viewUpdate = true;
 		mutable bool projectionUpdate = true;
 
