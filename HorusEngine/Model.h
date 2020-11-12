@@ -1,4 +1,5 @@
 #pragma once
+#include "ModelParams.h"
 #include "ModelNode.h"
 #include "Visuals.h"
 #include "BasicException.h"
@@ -19,8 +20,7 @@ namespace GFX::Shape
 	public:
 		inline Model(Model&& model) noexcept { *this = std::forward<Model&&>(model); }
 
-		Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file,
-			const DirectX::XMFLOAT3& position, const std::string& modelName, float scale = 1.0f);
+		Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const ModelParams& params);
 		Model& operator=(Model&& model) noexcept;
 		Model(const Model&) = delete;
 		Model& operator=(const Model&) = delete;

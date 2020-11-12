@@ -1,4 +1,5 @@
 #include "App.h"
+#include "DialogWindow.h"
 #include "Math.h"
 
 #pragma region Containers methods
@@ -104,6 +105,9 @@ inline void App::ShowObjectWindow()
 			}
 			ImGui::EndCombo();
 		}
+		AddModelButton();
+		ImGui::SameLine();
+		AddLightButton();
 		ImGui::NewLine();
 		ContainerInvoke(currentItem, Accept(window.Gfx(), probe));
 	}
@@ -119,6 +123,142 @@ inline void App::ShowOptionsWindow()
 		renderer.ShowWindow(window.Gfx());
 	}
 	ImGui::End();
+}
+
+inline void App::AddModelButton()
+{
+	static std::optional<std::string> path = {};
+	static std::optional<std::string> error = {};
+	static bool contains = false;
+	static GFX::ObjectParams params;
+
+	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Add model", "Models"))
+		path = file;
+	if (path)
+	{
+		if (contains)
+		{
+			if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+				"Object named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
+				contains = false;
+		}
+		else
+		{
+			switch (GFX::GUI::DialogWindow::GetModelParams(params))
+			{
+			case DialogResult::Accept:
+			{
+				if (objects.contains(params.name))
+				{
+					contains = true;
+					break;
+				}
+				else
+				{
+					try
+					{
+						AddShape({ window.Gfx(), renderer, path.value(), params });
+					}
+					catch (const std::exception& e)
+					{
+						error = e.what();
+					}
+				}
+			}
+			case DialogResult::Cancel:
+			{
+				path = {};
+				contains = false;
+				params.Reset();
+				break;
+			}
+			}
+		}
+	}
+	if (error)
+	{
+		if (GFX::GUI::DialogWindow::ShowInfo("Error",
+			"Error occured during loading model.\n" + error.value()) == DialogResult::Accept)
+			error = {};
+	}
+}
+
+inline void App::AddLightButton()
+{
+	static bool active = false;
+	static std::optional<std::string> error = {};
+	static bool contains = false;
+	static GFX::Light::LightParams params;
+
+	if (ImGui::Button("Add light"))
+		active = true;
+	if (active)
+	{
+		if (contains)
+		{
+			if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+				"Object named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
+				contains = false;
+		}
+		else
+		{
+			switch (GFX::GUI::DialogWindow::GetLightParams(params))
+			{
+			case DialogResult::Accept:
+			{
+				if (objects.contains(params.name))
+				{
+					contains = true;
+					break;
+				}
+				else
+				{
+					try
+					{
+						switch (params.type)
+						{
+						case GFX::Light::LightType::Directional:
+						{
+							AddLight({ window.Gfx(), renderer, params.name, params.intensity,
+								params.color, params.direction });
+							break;
+						}
+						case GFX::Light::LightType::Point:
+						{
+							AddLight({ window.Gfx(), renderer, params.name, params.intensity,
+								params.color, params.position, params.range, params.size });
+							break;
+						}
+						case GFX::Light::LightType::Spot:
+						{
+							AddLight({ window.Gfx(), renderer, params.name, params.intensity,
+								params.color, params.position, params.range, params.size,
+								params.innerAngle, params.outerAngle, params.direction });
+							break;
+						}
+						}
+					}
+					catch (const std::exception& e)
+					{
+						error = e.what();
+					}
+				}
+			}
+			case DialogResult::Cancel:
+			{
+				active = contains = false;
+				params.Reset();
+				break;
+			}
+			}
+		}
+		if (error)
+		{
+			if (GFX::GUI::DialogWindow::ShowInfo("Error",
+				"Error occured during creating light.\n" + error.value()) == DialogResult::Accept)
+				error = {};
+		}
+	}
 }
 
 void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
@@ -183,24 +323,28 @@ App::App(const std::string& commandLine)
 
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), "Light bulb", 50 });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), "Pumpkin candle", 85, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f) });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), "Torch", 70, 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f) });
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), "Blue ilumination", 70, 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f) });
+	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, GFX::Data::ColorFloat3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), 50 });
+	AddLight({ window.Gfx(), renderer, "Pumpkin candle", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f), DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), 85 });
+	AddLight({ window.Gfx(), renderer, "Torch", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f), DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), 70 });
+	AddLight({ window.Gfx(), renderer, "Blue ilumination", 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f), DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), 70 });
 	DirectX::XMFLOAT3 direction = { -0.64f, -1.0f, 0.5f };
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(7.5f, 60.0f, -5.0f), "Space light", 126, 15.0f, 24.5f,
-		Math::NormalizeStore(direction), 8.0f, GFX::Data::ColorFloat3(1.3f, 2.3f, 1.3f) });
+	AddLight({ window.Gfx(), renderer, "Space light", 8.0f, GFX::Data::ColorFloat3(1.3f, 2.3f, 1.3f),
+		DirectX::XMFLOAT3(7.5f, 60.0f, -5.0f), 126, 2.0f, Math::ToRadians(15.0f), Math::ToRadians(24.5f), Math::NormalizeStore(direction) });
 	direction = { -1.0f, 1.0f, -0.7f };
-	AddLight({ window.Gfx(), renderer, DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), "Lion flare", 150, 35.0f, 45.0f,
-		Math::NormalizeStore(direction), 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f) });
+	AddLight({ window.Gfx(), renderer,"Lion flare", 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f),
+		DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), 150, 1.0f, Math::ToRadians(35.0f), Math::ToRadians(45.0f), Math::NormalizeStore(direction) });
 	direction = { 0.0f, -0.7f, -0.7f };
-	AddLight({ window.Gfx(), renderer, "Moon", Math::NormalizeStore(direction), 0.1f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f) });
+	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, "Camera_2",
 		1.047f, 0.01f, VIEW_DISTANCE, 0, 90, DirectX::XMFLOAT3(0.0f, 8.0f, -8.0f)));
-	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f });
-	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f });
-	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f });
-	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), "Wall", 2.0f });
+	GFX::ObjectParams params(DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f);
+	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
+	params = { DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f };
+	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
+	params = { DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f };
+	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
+	params = { DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), "Wall", 2.0f };
+	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon", 0.15f });
 	//std::mt19937_64 engine(std::random_device{}());
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));

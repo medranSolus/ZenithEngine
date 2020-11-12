@@ -36,6 +36,8 @@ class App
 	inline void ProcessInput();
 	inline void ShowObjectWindow();
 	inline void ShowOptionsWindow();
+	inline void AddModelButton();
+	inline void AddLightButton();
 
 	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 	void MakeFrame();

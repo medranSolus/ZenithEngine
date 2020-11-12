@@ -182,15 +182,13 @@ namespace GFX::Probe
 				if (static_cast<float>(innerAngle) > static_cast<float>(outerAngle))
 				{
 					innerAngle = static_cast<float>(outerAngle);
-					if (static_cast<float>(innerAngle) < 0.0f)
-						innerAngle = 0.0f;
 					buffer["innerAngle"] = innerAngle;
 					dirty = true;
 				}
 				ImGui::NextColumn();
 				ImGui::Text("Inner angle");
 				ImGui::SetNextItemWidth(-1.0f);
-				dirty |= ImGui::SliderAngle(Tag("##inner"), &innerAngle, 0.0f, static_cast<float>(outerAngle) * 180.0f / static_cast<float>(M_PI) - 0.5f, "%.2f");
+				dirty |= ImGui::SliderAngle(Tag("##inner"), &innerAngle, 0.0f, Math::ToDegrees(outerAngle), "%.2f");
 			}
 			ImGui::Columns(1);
 		}

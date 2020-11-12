@@ -58,12 +58,6 @@
     <Filter Include="Source Files\GFX\Primitive">
       <UniqueIdentifier>{65d34731-8fd2-497e-81f0-8972031bcd5d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\GFX\ImGui">
-      <UniqueIdentifier>{d6c7ae5d-413f-4612-8c76-b21dae57530e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\GFX\ImGui">
-      <UniqueIdentifier>{b959e9b7-c0ce-4300-a157-daca5c4a5705}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader Files\Pixel Shaders">
       <UniqueIdentifier>{9a40133e-2ef8-43f5-b3db-5dbaf354a4fb}</UniqueIdentifier>
     </Filter>
@@ -175,6 +169,18 @@
     <Filter Include="Header Files\Assimp\Compiler">
       <UniqueIdentifier>{0843bc5a-f1e8-4f84-908f-c0c09593cd25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\GUI">
+      <UniqueIdentifier>{87ed6d78-316a-44a0-81ee-2fb1e51ef46c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\GUI\ImGui">
+      <UniqueIdentifier>{b959e9b7-c0ce-4300-a157-daca5c4a5705}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\GUI">
+      <UniqueIdentifier>{6ec79c0a-8690-422a-885a-cf029d8ce866}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\GUI\ImGui">
+      <UniqueIdentifier>{d6c7ae5d-413f-4612-8c76-b21dae57530e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -215,9 +221,6 @@
     </ClCompile>
     <ClCompile Include="Globe.cpp">
       <Filter>Source Files\GFX\Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="GUIManager.cpp">
-      <Filter>Source Files\GFX</Filter>
     </ClCompile>
     <ClCompile Include="Graphics.cpp">
       <Filter>Source Files\GFX</Filter>
@@ -274,28 +277,28 @@
       <Filter>Source Files\WinAPI</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_demo.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_draw.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_freetype.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_impl_dx11.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_impl_win32.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_stdlib.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui_widgets.cpp">
-      <Filter>Source Files\GFX\ImGui</Filter>
+      <Filter>Source Files\GFX\GUI\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Blender.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
@@ -549,6 +552,12 @@
     <ClCompile Include="BoundingBox.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
+    <ClCompile Include="GUIManager.cpp">
+      <Filter>Source Files\GFX\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogWindow.cpp">
+      <Filter>Source Files\GFX\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PhongPS.hlsl">
@@ -724,9 +733,6 @@
     <ClInclude Include="Graphics.h">
       <Filter>Header Files\GFX</Filter>
     </ClInclude>
-    <ClInclude Include="GUIManager.h">
-      <Filter>Header Files\GFX</Filter>
-    </ClInclude>
     <ClInclude Include="IBindable.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
@@ -812,34 +818,34 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imconfig.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui_freetype.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui_impl_dx11.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui_impl_win32.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui_internal.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imgui_stdlib.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imstb_rectpack.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imstb_textedit.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imstb_truetype.h">
-      <Filter>Header Files\GFX\ImGui</Filter>
+      <Filter>Header Files\GFX\GUI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\Assimp\include\assimp\aabb.h">
       <Filter>Header Files\Assimp</Filter>
@@ -1401,6 +1407,18 @@
     </ClInclude>
     <ClInclude Include="ShadowMapBase.h">
       <Filter>Header Files\GFX\Visual</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIManager.h">
+      <Filter>Header Files\GFX\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogWindow.h">
+      <Filter>Header Files\GFX\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="LightParams.h">
+      <Filter>Header Files\GFX\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelParams.h">
+      <Filter>Header Files\GFX\Shape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

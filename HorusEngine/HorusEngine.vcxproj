@@ -292,6 +292,7 @@
     <ClCompile Include="DXGIDebugInfoManager.cpp" />
     <ClCompile Include="DCBLayoutElement.cpp" />
     <ClCompile Include="DynamicCBuffer.cpp" />
+    <ClCompile Include="DialogWindow.cpp" />
     <ClCompile Include="FloatingCamera.cpp" />
     <ClCompile Include="FullscreenPass.cpp" />
     <ClCompile Include="GlobeVolume.cpp" />
@@ -760,6 +761,7 @@
     <ClInclude Include="DepthWrite.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="DirectionalLightingPass.h" />
+    <ClInclude Include="DialogWindow.h" />
     <ClInclude Include="GlobeVolume.h" />
     <ClInclude Include="HDRGammaCorrectionPass.h" />
     <ClInclude Include="GeometryShader.h" />
@@ -771,7 +773,9 @@
     <ClInclude Include="LambertianClassicPass.h" />
     <ClInclude Include="LambertianDepthOptimizedPass.h" />
     <ClInclude Include="LightCombinePass.h" />
+    <ClInclude Include="LightParams.h" />
     <ClInclude Include="Lights.h" />
+    <ClInclude Include="ModelParams.h" />
     <ClInclude Include="PointLightingPass.h" />
     <ClInclude Include="NullGeometryShader.h" />
     <ClInclude Include="RenderChannels.h" />

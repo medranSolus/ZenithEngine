@@ -60,9 +60,8 @@ namespace GFX::Shape
 		return currentNode;
 	}
 
-	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file,
-		const DirectX::XMFLOAT3& position, const std::string& modelName, float scale)
-		: name(modelName)
+	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const ModelParams& params)
+		: name(params.name)
 	{
 		Assimp::Importer importer;
 		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
@@ -86,8 +85,9 @@ namespace GFX::Shape
 			aiProcess_ValidateDataStructure |
 			//aiProcess_OptimizeGraph | // Use when disabling all scene edition, for almost 2x performance hit
 			aiProcess_OptimizeMeshes);
-		if (!scene)
-			throw ModelException(__LINE__, __FILE__, importer.GetErrorString());
+		std::string error = importer.GetErrorString();
+		if (!scene || error.size())
+			throw ModelException(__LINE__, __FILE__, error);
 
 		meshes.reserve(scene->mNumMeshes);
 		materials.reserve(scene->mNumMaterials);
@@ -107,8 +107,8 @@ namespace GFX::Shape
 			meshes.emplace_back(ParseMesh(gfx, graph, path, *scene->mMeshes[i]));
 		unsigned long long startID = 0ULL;
 		root = ParseNode(*scene->mRootNode, startID);
-		root->SetScale(scale);
-		root->SetPos(position);
+		root->SetScale(params.scale);
+		root->SetPos(params.position);
 		if (flipYZ)
 			root->SetAngle({ M_PI_2, 0.0f, 0.0f });
 	}

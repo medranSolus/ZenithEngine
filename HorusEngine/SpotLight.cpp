@@ -25,8 +25,9 @@ namespace GFX::Light
 		return layout;
 	}
 
-	SpotLight::SpotLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position, const std::string& name, size_t range,
-		float innerAngle, float outerAngle, const DirectX::XMFLOAT3& direction, float intensity, const Data::ColorFloat3& color, float size)
+	SpotLight::SpotLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name, float intensity,
+		const Data::ColorFloat3& color, const DirectX::XMFLOAT3& position, size_t range, float size,
+		float innerAngle, float outerAngle, const DirectX::XMFLOAT3& direction)
 		: range(range)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());
@@ -35,8 +36,8 @@ namespace GFX::Light
 		buffer["lightPos"] = position;
 		buffer["shadowColor"] = std::move(Data::ColorFloat3(0.005f, 0.005f, 0.005f));
 		buffer["direction"] = direction;
-		buffer["innerAngle"] = static_cast<float>(M_PI - FLT_EPSILON) * innerAngle / 180.0f;
-		buffer["outerAngle"] = static_cast<float>(M_PI - FLT_EPSILON) * outerAngle / 180.0f;
+		buffer["innerAngle"] = innerAngle;
+		buffer["outerAngle"] = outerAngle;
 
 		lightBuffer = Resource::ConstBufferExPixelCache::Get(gfx, typeid(SpotLight).name() + name, std::move(buffer));
 		mesh = std::make_unique<Shape::SolidCone>(gfx, graph, position, name, buffer["lightColor"], 8, size);

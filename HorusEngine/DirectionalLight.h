@@ -13,8 +13,8 @@ namespace GFX::Light
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
 	public:
-		DirectionalLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name, const DirectX::XMFLOAT3& direction,
-			float intensity = 1.0f, const Data::ColorFloat3& color = { 1.0f, 1.0f, 1.0f });
+		DirectionalLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name,
+			float intensity, const Data::ColorFloat3& color, const DirectX::XMFLOAT3& direction);
 		inline DirectionalLight(DirectionalLight&& light) noexcept { *this = std::forward<DirectionalLight&&>(light); }
 		inline DirectionalLight& operator=(DirectionalLight&& light) noexcept { this->ILight::operator=(std::forward<ILight&&>(light)); return *this; }
 		virtual ~DirectionalLight() = default;

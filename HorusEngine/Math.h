@@ -6,6 +6,16 @@
 
 namespace Math
 {
+	constexpr float ToRadians(float angle) noexcept
+	{
+		return static_cast<float>(M_PI - FLT_EPSILON) * angle / 180.0f;
+	}
+
+	constexpr float ToDegrees(float angle) noexcept
+	{
+		return angle * 180.0f / static_cast<float>(M_PI + FLT_EPSILON);
+	}
+
 	constexpr short ClampAngle(short angle, short maxAngle = 360) noexcept
 	{
 		if (angle > maxAngle)

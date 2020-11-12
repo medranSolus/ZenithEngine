@@ -23,8 +23,8 @@ namespace GFX::Light
 		return layout;
 	}
 
-	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const DirectX::XMFLOAT3& position,
-		const std::string& name, size_t range, float intensity, const Data::ColorFloat3& color, float radius)
+	PointLight::PointLight(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& name, float intensity,
+		const Data::ColorFloat3& color, const DirectX::XMFLOAT3& position, size_t range, float radius)
 		: range(range)
 	{
 		Data::CBuffer::DynamicCBuffer buffer(MakeLayout());

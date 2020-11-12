@@ -25,7 +25,7 @@ namespace GFX
 #ifdef _DEBUG
 		DXGIDebugInfoManager debugInfoManager;
 #endif
-		GUIManager guiManager;
+		GUI::GUIManager guiManager;
 		bool guiEnabled = true;
 		DirectX::XMMATRIX projection;
 		DirectX::XMMATRIX view;
@@ -40,7 +40,7 @@ namespace GFX
 		Graphics& operator=(const Graphics&) = delete;
 		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
 
-		constexpr GUIManager& Gui() noexcept { return guiManager; }
+		constexpr GUI::GUIManager& Gui() noexcept { return guiManager; }
 		constexpr const DirectX::XMMATRIX& GetProjection() const noexcept { return projection; }
 		constexpr void SetProjection(DirectX::XMMATRIX&& projectionMatrix) noexcept { projection = std::move(projectionMatrix); }
 		constexpr const DirectX::XMMATRIX& GetView() const noexcept { return view; }
