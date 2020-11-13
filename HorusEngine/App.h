@@ -8,7 +8,7 @@
 
 class App
 {
-	enum class Container { None, PointLight, SpotLight, DirectionalLight, Model, Shape };
+	enum class Container : uint8_t { None, PointLight, SpotLight, DirectionalLight, Model, Shape };
 
 	static constexpr const char* WINDOW_TITLE = "Horus Engine Alpha";
 
@@ -22,9 +22,7 @@ class App
 	std::vector<GFX::Light::DirectionalLight> directionalLights;
 	std::vector<GFX::Shape::Model> models;
 	std::vector<std::shared_ptr<GFX::Shape::IShape>> shapes;
-
 	std::map<std::string, std::pair<Container, size_t>> objects;
-	std::vector<std::unique_ptr<GFX::Shape::SolidRectangle>> carpetRects;
 
 	inline void AddLight(GFX::Light::PointLight&& pointLight);
 	inline void AddLight(GFX::Light::SpotLight&& spotLight);
@@ -38,9 +36,8 @@ class App
 	inline void ShowOptionsWindow();
 	inline void AddModelButton();
 	inline void AddLightButton();
-
-	void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
-	void MakeFrame();
+	inline void MakeFrame();
+	//void CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color);
 
 public:
 	App(const std::string& commandLine = "");

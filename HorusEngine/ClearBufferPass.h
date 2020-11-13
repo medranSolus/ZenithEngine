@@ -5,7 +5,7 @@ namespace GFX::Pipeline::RenderPass
 {
 	class ClearBufferPass : public Base::BasePass
 	{
-		std::shared_ptr<Resource::IBufferResource> buffer;
+		GfxResPtr<Resource::IBufferResource> buffer;
 
 	public:
 		ClearBufferPass(const std::string& name);

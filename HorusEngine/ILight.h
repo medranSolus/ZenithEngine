@@ -11,7 +11,7 @@ namespace GFX::Light
 	protected:
 		std::unique_ptr<Volume::IVolume> volume = nullptr;
 		std::unique_ptr<Shape::IShape> mesh = nullptr;
-		std::shared_ptr<Resource::ConstBufferExPixelCache> lightBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferExPixelCache> lightBuffer;
 
 		void SetAttenuation(size_t range) noexcept;
 

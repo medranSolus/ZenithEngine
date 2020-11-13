@@ -18,5 +18,6 @@ namespace GFX::Resource
 		D3D11_SUBRESOURCE_DATA resData = { 0 };
 		resData.pSysMem = buffer.GetData();
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, &resData, &vertexBuffer));
+		SET_DEBUG_NAME_RID(vertexBuffer.Get());
 	}
 }

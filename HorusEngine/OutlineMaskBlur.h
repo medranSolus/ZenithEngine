@@ -6,7 +6,7 @@ namespace GFX::Visual
 {
 	class OutlineMaskBlur : public IVisual
 	{
-		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferExPixelCache> pixelBuffer;
 
 	public:
 		OutlineMaskBlur(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout);

@@ -15,6 +15,9 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
+	DepthStencilShaderInput::DepthStencilShaderInput(Graphics& gfx, UINT slot, Usage usage)
+		: DepthStencilShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, usage) {}
+
 	DepthStencilShaderInput::DepthStencilShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, Usage usage)
 		: DepthStencil(gfx, width, height, true, usage), slot(slot)
 	{
@@ -29,5 +32,7 @@ namespace GFX::Pipeline::Resource
 		textureViewDesc.Texture2D.MipLevels = 1U;
 		textureViewDesc.Texture2D.MostDetailedMip = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(resource.Get(), &textureViewDesc, &textureView));
+		SET_DEBUG_NAME(textureView.Get(), "DSI" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) +
+			"#" + std::to_string(static_cast<bool>(usage)) + "#" + std::to_string(slot));
 	}
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -9,8 +9,8 @@ namespace GFX::Resource
 		constexpr NullGeometryShader(Graphics& gfx) noexcept {}
 		virtual ~NullGeometryShader() = default;
 
-		static inline std::shared_ptr<NullGeometryShader> Get(Graphics& gfx) noexcept { return Codex::Resolve<NullGeometryShader>(gfx); }
-		static inline std::string GenerateRID() noexcept { return "#" + std::string(typeid(NullGeometryShader).name()) + "#"; }
+		static inline GfxResPtr<NullGeometryShader> Get(Graphics& gfx) noexcept { return Codex::Resolve<NullGeometryShader>(gfx); }
+		static inline std::string GenerateRID() noexcept { return "NG"; }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->GSSetShader(nullptr, nullptr, 0U); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(); }

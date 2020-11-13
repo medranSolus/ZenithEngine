@@ -1,23 +1,12 @@
 #pragma once
+#include "RenderTarget.h"
 #include "WinApiException.h"
 #include "DXGIDebugInfoManager.h"
 #include "GUIManager.h"
 #include "ImGui/imgui_impl_dx11.h"
-#include <d3d11.h>
-#include <DirectXMath.h>
 
 namespace GFX
 {
-	namespace Resource
-	{
-		class IBindable;
-	}
-
-	namespace Pipeline::Resource
-	{
-		class RenderTarget;
-	}
-
 	class Graphics
 	{
 		friend class Resource::IBindable;
@@ -32,13 +21,13 @@ namespace GFX
 		Microsoft::WRL::ComPtr<ID3D11Device> device = nullptr; // Resources allocation
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain = nullptr; // Using pipeline: https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-graphics-pipeline
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = nullptr; // Configure pipeline
-		std::shared_ptr<Pipeline::Resource::RenderTarget> renderTarget; // Back buffer from swap chain
+		GfxResPtr<Pipeline::Resource::RenderTarget> renderTarget; // Back buffer from swap chain
 
 	public:
 		Graphics(HWND hWnd, unsigned int width, unsigned int height);
 		Graphics(const Graphics&) = delete;
 		Graphics& operator=(const Graphics&) = delete;
-		inline ~Graphics() { ImGui_ImplDX11_Shutdown(); }
+		~Graphics();
 
 		constexpr GUI::GUIManager& Gui() noexcept { return guiManager; }
 		constexpr const DirectX::XMMATRIX& GetProjection() const noexcept { return projection; }
@@ -49,14 +38,13 @@ namespace GFX
 		constexpr void DisableGUI() noexcept { guiEnabled = false; }
 		constexpr void SwitchGUI() noexcept { guiEnabled = !guiEnabled; }
 		constexpr bool IsGuiEnabled() const noexcept { return guiEnabled; }
+		constexpr unsigned int GetWidth() const noexcept { return renderTarget->GetWidth(); }
+		constexpr unsigned int GetHeight() const noexcept { return renderTarget->GetHeight(); }
+		constexpr float GetRatio() { return static_cast<float>(GetWidth()) / GetHeight(); }
+		inline GfxResPtr<Pipeline::Resource::RenderTarget> GetBackBuffer() noexcept { return renderTarget; }
 #ifdef _DEBUG
 		constexpr DXGIDebugInfoManager& GetInfoManager() { return debugInfoManager; }
 #endif
-		inline float GetRatio() { return static_cast<float>(GetWidth()) / GetHeight(); }
-		inline std::shared_ptr<Pipeline::Resource::RenderTarget> GetBackBuffer() noexcept { return renderTarget; }
-
-		unsigned int GetWidth() const noexcept;
-		unsigned int GetHeight() const noexcept;
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 		void EndFrame();

@@ -8,11 +8,11 @@ namespace GFX::Visual
 	template<bool cube>
 	class ShadowMapBase : public IVisual
 	{
-		std::shared_ptr<Resource::ConstBufferExPixelCache> sourcePixelBuffer = nullptr;
-		std::shared_ptr<Resource::ConstBufferExPixelCache> parallaxBuffer = nullptr;
-		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
-		std::shared_ptr<Resource::Texture> normalMap = nullptr;
-		std::shared_ptr<Resource::Texture> parallaxMap = nullptr;
+		GfxResPtr<Resource::ConstBufferExPixelCache> sourcePixelBuffer;
+		GfxResPtr<Resource::ConstBufferExPixelCache> parallaxBuffer;
+		GfxResPtr<Resource::Texture> diffuseTexture;
+		GfxResPtr<Resource::Texture> normalMap;
+		GfxResPtr<Resource::Texture> parallaxMap;
 
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 
@@ -57,7 +57,7 @@ namespace GFX::Visual
 			}
 		}
 		AddBind(Resource::PixelShader::Get(gfx, "ShadowPS" + shaderType));
-		std::shared_ptr<Resource::VertexShader> vertexShader;
+		GfxResPtr<Resource::VertexShader> vertexShader;
 		if constexpr (cube)
 		{
 			AddBind(Resource::GeometryShader::Get(gfx, "ShadowCubeGS" + shaderType));
@@ -73,17 +73,17 @@ namespace GFX::Visual
 	void ShadowMapBase<cube>::Bind(Graphics& gfx)
 	{
 		IVisual::Bind(gfx);
-		if (parallaxBuffer)
+		if (parallaxBuffer != nullptr)
 		{
 			if (Math::NotEquals(parallaxBuffer->GetBufferConst()["parallaxScale"], sourcePixelBuffer->GetBufferConst()["parallaxScale"]))
 				parallaxBuffer->GetBuffer()["parallaxScale"] = static_cast<float>(sourcePixelBuffer->GetBufferConst()["parallaxScale"]);
 			parallaxBuffer->Bind(gfx);
 		}
-		if (diffuseTexture)
+		if (diffuseTexture != nullptr)
 			diffuseTexture->Bind(gfx);
-		if (normalMap)
+		if (normalMap != nullptr)
 			normalMap->Bind(gfx);
-		if (parallaxMap)
+		if (parallaxMap != nullptr)
 			parallaxMap->Bind(gfx);
 	}
 

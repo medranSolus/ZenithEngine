@@ -77,7 +77,7 @@
 #endif
 
 // Strict use of WinAPI types, errors on unwanted conversion between
-#define STRICT
+#define STRICT 1
 // Allow cmath defines
 #define _USE_MATH_DEFINES
 

@@ -6,7 +6,8 @@ namespace GFX::Resource
 {
 	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> TextureDepthCube::nullShaderResource = nullptr;
 
-	TextureDepthCube::TextureDepthCube(Graphics& gfx, UINT size, UINT slot) : slot(slot), size(size)
+	TextureDepthCube::TextureDepthCube(Graphics& gfx, UINT size, UINT slot)
+		: slot(slot), size(size), stencil(gfx, size)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -31,8 +32,7 @@ namespace GFX::Resource
 		viewDesc.Texture2D.MipLevels = 1;
 		viewDesc.Texture2D.MostDetailedMip = 0;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
-
-		depthBuffer = std::make_shared<Pipeline::Resource::RenderTarget>(gfx, texture, size);
-		stencil = std::make_shared<Pipeline::Resource::DepthStencil>(gfx, size);
+		SET_DEBUG_NAME_RID(textureView.Get());
+		depthBuffer = GfxResPtr<Pipeline::Resource::RenderTarget>(gfx, texture, size);
 	}
 }

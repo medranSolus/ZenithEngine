@@ -327,9 +327,6 @@
     <ClCompile Include="ConstBufferEx.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="ConstBufferExPixel.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="VertexBufferData.cpp">
       <Filter>Source Files\GFX\Data</Filter>
     </ClCompile>
@@ -368,9 +365,6 @@
     </ClCompile>
     <ClCompile Include="OutlineMaskScale.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
-    </ClCompile>
-    <ClCompile Include="ConstBufferExVertex.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
     <ClCompile Include="OutlineMaskOffset.cpp">
       <Filter>Source Files\GFX\Visual</Filter>
@@ -486,9 +480,6 @@
     <ClCompile Include="GeometryShader.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="ConstBufferExGeometry.cpp">
-      <Filter>Source Files\GFX\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="HDRGammaCorrectionPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
@@ -557,6 +548,9 @@
     </ClCompile>
     <ClCompile Include="BaseCamera.cpp">
       <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="IBindable.cpp">
+      <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1422,6 +1416,12 @@
     </ClInclude>
     <ClInclude Include="CameraParams.h">
       <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="GfxResPtr.h">
+      <Filter>Header Files\GFX\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ResPtr.h">
+      <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

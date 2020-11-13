@@ -10,7 +10,7 @@ namespace GFX::Shape
 		DirectX::XMFLOAT4X4 baseTransform;
 		mutable std::shared_ptr<DirectX::XMFLOAT4X4> currentTransform = nullptr;
 		std::vector<std::unique_ptr<ModelNode>> children;
-		std::vector<std::shared_ptr<Mesh>> meshes;
+		std::vector<std::shared_ptr<Mesh>> meshes; // TODO: Change to id
 		bool isMesh = false;
 
 	public:

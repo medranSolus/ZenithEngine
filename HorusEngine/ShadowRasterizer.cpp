@@ -13,5 +13,6 @@ namespace GFX::Resource
 		rasterDesc.SlopeScaledDepthBias = slopeBias; // Bias * level of slope
 		rasterDesc.DepthBiasClamp = biasClamp; // Max slope bias
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRasterizerState(&rasterDesc, &state));
+		SET_DEBUG_NAME(state.Get(), typeid(ShadowRasterizer).name());
 	}
 }

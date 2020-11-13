@@ -8,8 +8,8 @@ namespace GFX::Pipeline
 		std::vector<std::unique_ptr<RenderPass::Base::BasePass>> passes;
 		std::vector<std::unique_ptr<RenderPass::Base::Sink>> globalSinks;
 		std::vector<std::unique_ptr<RenderPass::Base::Source>> globalSources;
-		std::shared_ptr<Resource::RenderTarget> backbuffer;
-		std::shared_ptr<Resource::DepthStencil> depthStencil;
+		GfxResPtr<Resource::RenderTarget> backbuffer;
+		GfxResPtr<Resource::DepthStencil> depthStencil;
 		bool finalized = false;
 
 		void LinkSinks(RenderPass::Base::BasePass& pass);

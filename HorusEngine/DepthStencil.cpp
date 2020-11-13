@@ -1,4 +1,5 @@
 #include "DepthStencil.h"
+#include "Graphics.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Pipeline::Resource
@@ -27,8 +28,11 @@ namespace GFX::Pipeline::Resource
 		}
 	}
 
+	DepthStencil::DepthStencil(Graphics& gfx, Usage usage)
+		: DepthStencil(gfx, gfx.GetWidth(), gfx.GetHeight(), false, usage) {}
+
 	DepthStencil::DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage)
-		: IBufferResource(gfx, width, height)
+		: IBufferResource(gfx, width, height), usage(usage)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -51,10 +55,11 @@ namespace GFX::Pipeline::Resource
 		depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthViewDesc.Texture2D.MipSlice = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencilView));
+		SET_DEBUG_NAME(depthStencilView.Get(), "DS" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" + std::to_string(static_cast<bool>(usage)));
 	}
 
 	DepthStencil::DepthStencil(Graphics& gfx, UINT size)
-		: IBufferResource(gfx, size, size)
+		: IBufferResource(gfx, size, size), usage(usage)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -79,6 +84,7 @@ namespace GFX::Pipeline::Resource
 		depthViewDesc.Texture2DArray.ArraySize = 6U;
 		depthViewDesc.Texture2DArray.FirstArraySlice = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilView(depthTexture.Get(), &depthViewDesc, &depthStencilView));
+		SET_DEBUG_NAME(depthStencilView.Get(), "DS" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" + std::to_string(static_cast<bool>(usage)));
 	}
 
 	Surface DepthStencil::ToSurface(Graphics& gfx, bool linearScale) const
@@ -89,7 +95,7 @@ namespace GFX::Pipeline::Resource
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		depthStencilView->GetResource(&resource);
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-		resource.As(&texture);
+		resource->QueryInterface(IID_PPV_ARGS(&texture));
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		texture->GetDesc(&textureDesc);
 		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;

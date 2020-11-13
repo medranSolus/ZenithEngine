@@ -6,8 +6,8 @@ namespace GFX::Visual
 {
 	class OutlineMaskOffset : public IVisual
 	{
-		std::shared_ptr<Resource::ConstBufferExVertexCache> vertexBuffer = nullptr;
-		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferExVertexCache> vertexBuffer;
+		GfxResPtr<Resource::ConstBufferExPixelCache> pixelBuffer;
 
 	public:
 		OutlineMaskOffset(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout);

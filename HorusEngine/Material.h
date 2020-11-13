@@ -10,12 +10,12 @@ namespace GFX::Visual
 	class Material : public IVisual
 	{
 		bool translucent = false;
-		std::shared_ptr<Resource::InputLayout> depthOnlyInputLayout = nullptr;
-		std::shared_ptr<Resource::Texture> diffuseTexture = nullptr;
-		std::shared_ptr<Resource::Texture> normalMap = nullptr;
-		std::shared_ptr<Resource::Texture> parallaxMap = nullptr;
-		std::shared_ptr<Resource::Texture> specularMap = nullptr;
-		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
+		GfxResPtr<Resource::InputLayout> depthOnlyInputLayout;
+		GfxResPtr<Resource::Texture> diffuseTexture;
+		GfxResPtr<Resource::Texture> normalMap;
+		GfxResPtr<Resource::Texture> parallaxMap;
+		GfxResPtr<Resource::Texture> specularMap;
+		GfxResPtr<Resource::ConstBufferExPixelCache> pixelBuffer;
 		std::shared_ptr<Data::VertexLayout> vertexLayout = nullptr;
 
 	public:
@@ -30,11 +30,11 @@ namespace GFX::Visual
 		inline bool IsTexture() const noexcept { return diffuseTexture != nullptr; }
 		inline bool IsParallax() const noexcept { return parallaxMap != nullptr; }
 
-		inline std::shared_ptr<Resource::Texture> GetTexture() noexcept { return diffuseTexture; }
-		inline std::shared_ptr<Resource::Texture> GetNormalMap() noexcept { return normalMap; }
-		inline std::shared_ptr<Resource::Texture> GetParallaxMap() noexcept { return parallaxMap; }
+		inline GfxResPtr<Resource::Texture> GetTexture() noexcept { return diffuseTexture; }
+		inline GfxResPtr<Resource::Texture> GetNormalMap() noexcept { return normalMap; }
+		inline GfxResPtr<Resource::Texture> GetParallaxMap() noexcept { return parallaxMap; }
 		inline Resource::ConstBufferExPixelCache& GetPixelBuffer() noexcept { return *pixelBuffer; }
-		inline std::shared_ptr<Resource::ConstBufferExPixelCache> GetBuffer() noexcept { return pixelBuffer; }
+		inline GfxResPtr<Resource::ConstBufferExPixelCache> GetBuffer() noexcept { return pixelBuffer; }
 		inline std::shared_ptr<Data::VertexLayout> GerVertexLayout() noexcept { return vertexLayout; }
 		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return pixelBuffer->Accept(gfx, probe); }
 		inline void Bind(Graphics& gfx) override { Bind(gfx, RenderChannel::All); }

@@ -6,7 +6,7 @@ namespace GFX::Pipeline::RenderPass
 {
 	class LightCombinePass : public Base::FullscreenPass
 	{
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> ambientBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> ambientBuffer;
 
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 

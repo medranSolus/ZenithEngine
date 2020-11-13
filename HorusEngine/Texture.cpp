@@ -35,6 +35,7 @@ namespace GFX::Resource
 		viewDesc.Texture2D.MipLevels = -1;
 		viewDesc.Texture2D.MostDetailedMip = 0;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
+		SET_DEBUG_NAME_RID(textureView.Get());
 
 		GetContext(gfx)->GenerateMips(textureView.Get());
 		if (alphaEnable)

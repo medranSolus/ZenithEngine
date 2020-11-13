@@ -8,7 +8,7 @@ namespace GFX::Pipeline::RenderPass
 	{
 		ShadowMapPass shadowMapPass;
 		Camera::ICamera* mainCamera = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> shadowBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> shadowBuffer;
 
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 

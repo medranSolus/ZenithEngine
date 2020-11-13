@@ -17,5 +17,6 @@ namespace GFX::Resource
 		D3D11_SUBRESOURCE_DATA resData = { 0 };
 		resData.pSysMem = indices.data();
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, &resData, &indexBuffer));
+		SET_DEBUG_NAME_RID(indexBuffer.Get());
 	}
 }

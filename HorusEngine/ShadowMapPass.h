@@ -14,7 +14,7 @@ namespace GFX::Pipeline::RenderPass
 
 		Camera::ICamera* mainCamera = nullptr;
 		Light::ILight* shadowSource = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferPixel<DirectX::XMFLOAT4>> positionBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferPixel<DirectX::XMFLOAT4>> positionBuffer;
 		DirectX::XMFLOAT4X4 projection;
 
 	public:

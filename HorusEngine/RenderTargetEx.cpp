@@ -1,4 +1,5 @@
 #include "RenderTargetEx.h"
+#include "Graphics.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Pipeline::Resource
@@ -44,11 +45,19 @@ namespace GFX::Pipeline::Resource
 			targetViewDesc.Format = textureDesc.Format;
 			GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetViews.at(i)));
 			targetsArray[i] = targetViews.at(i).Get();
+			SET_DEBUG_NAME(targetViews.at(i).Get(), "RTE" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" +
+				std::to_string(textureDesc.Format) + "#" + std::to_string(slot) + "#" + std::to_string(count));
 
 			textureViewDesc.Format = textureDesc.Format;
 			GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &textureViewDesc, &textureViews.at(i)));
 			texturesArray[i] = textureViews.at(i).Get();
+			SET_DEBUG_NAME_OWN(textureViews.at(i).Get(), DEBUG_NAME);
 		}
+	}
+
+	GfxResPtr<RenderTargetEx> RenderTargetEx::Get(Graphics& gfx, UINT slot, std::vector<DXGI_FORMAT>&& formats)
+	{
+		return GfxResPtr<Resource::RenderTargetEx>(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, std::forward<std::vector<DXGI_FORMAT>>(formats));
 	}
 
 	void RenderTargetEx::Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept
@@ -75,7 +84,7 @@ namespace GFX::Pipeline::Resource
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		targetViews.at(0)->GetResource(&resource);
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-		resource.As(&texture);
+		resource->QueryInterface(IID_PPV_ARGS(&texture));
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		texture->GetDesc(&textureDesc);
 		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;

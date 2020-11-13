@@ -1,5 +1,5 @@
 #pragma once
-#include "IBindable.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -14,18 +14,18 @@ namespace GFX::Resource
 		ShadowRasterizer(Graphics& gfx, int depthBias, float slopeBias, float biasClamp);
 		virtual ~ShadowRasterizer() = default;
 
-		static inline std::shared_ptr<ShadowRasterizer> Get(Graphics& gfx, int depthBias, float slopeBias, float biasClamp);
+		static inline GfxResPtr<ShadowRasterizer> Get(Graphics& gfx, int depthBias, float slopeBias, float biasClamp);
 
 		constexpr int GetDepthBias() const noexcept { return depthBias; }
 		constexpr float GetSlopeBias() const noexcept { return slopeBias; }
 		constexpr float GetBiasClamp() const noexcept { return biasClamp; }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->RSSetState(state.Get()); }
-		inline std::string GetRID() const noexcept override { return "?"; }
+		inline std::string GetRID() const noexcept override { return IBindable::GetNoCodexRID(); }
 	};
 
-	inline std::shared_ptr<ShadowRasterizer> ShadowRasterizer::Get(Graphics& gfx, int depthBias, float slopeBias, float biasClamp)
+	inline GfxResPtr<ShadowRasterizer> ShadowRasterizer::Get(Graphics& gfx, int depthBias, float slopeBias, float biasClamp)
 	{
-		return std::make_shared<ShadowRasterizer>(gfx, depthBias, slopeBias, biasClamp);
+		return GfxResPtr<ShadowRasterizer>(gfx, depthBias, slopeBias, biasClamp);
 	}
 }

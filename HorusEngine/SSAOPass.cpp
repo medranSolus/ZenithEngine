@@ -27,8 +27,8 @@ namespace GFX::Pipeline::RenderPass
 	SSAOPass::SSAOPass(Graphics& gfx, const std::string& name)
 		: BindingPass(name), FullscreenPass(gfx, name)
 	{
-		renderTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
-		ssaoScratchBuffer = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
+		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
+		ssaoScratchBuffer = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 11U, DXGI_FORMAT_R32_FLOAT);
 
 		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(SSAOPass).name(), MakeLayout(), 13U);
 		kernelBuffer->GetBuffer()["bias"] = bias;

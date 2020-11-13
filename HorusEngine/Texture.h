@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 #include "Surface.h"
 
 namespace GFX::Resource
@@ -17,8 +17,8 @@ namespace GFX::Resource
 		Texture(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot = 0U, bool alphaEnable = false);
 		virtual ~Texture() = default;
 
-		static inline std::shared_ptr<Texture> Get(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);
-		static inline std::shared_ptr<Texture> Get(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot = 0U, bool alphaEnable = false);
+		static inline GfxResPtr<Texture> Get(Graphics& gfx, const std::string& path, UINT slot = 0U, bool alphaEnable = false);
+		static inline GfxResPtr<Texture> Get(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot = 0U, bool alphaEnable = false);
 		static inline std::string GenerateRID(const std::string& path, UINT slot = 0U, bool alphaEnable = false) noexcept;
 		static inline std::string GenerateRID(const Surface& surface, const std::string& name, UINT slot = 0U, bool alphaEnable = false) noexcept;
 
@@ -34,23 +34,23 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<Texture> Texture::Get(Graphics& gfx, const std::string& path, UINT slot, bool alphaEnable)
+	inline GfxResPtr<Texture> Texture::Get(Graphics& gfx, const std::string& path, UINT slot, bool alphaEnable)
 	{
 		return Codex::Resolve<Texture>(gfx, Surface(path), path, slot, alphaEnable);
 	}
 
-	inline std::shared_ptr<Texture> Texture::Get(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot, bool alphaEnable)
+	inline GfxResPtr<Texture> Texture::Get(Graphics& gfx, const Surface& surface, const std::string& name, UINT slot, bool alphaEnable)
 	{
 		return Codex::Resolve<Texture>(gfx, surface, name, slot, alphaEnable);
 	}
 
 	inline std::string Texture::GenerateRID(const std::string& path, UINT slot, bool alphaEnable) noexcept
 	{
-		return "#" + std::string(typeid(Texture).name()) + "#" + path + "#" + std::to_string(slot) + "#";
+		return "TX" + std::to_string(slot) + "#" + path;
 	}
 
 	inline std::string Texture::GenerateRID(const Surface& surface, const std::string& name, UINT slot, bool alphaEnable) noexcept
 	{
-		return "#" + std::string(typeid(Texture).name()) + "#" + name + "#" + std::to_string(slot) + "#";
+		return GenerateRID(name, slot, alphaEnable);
 	}
 }

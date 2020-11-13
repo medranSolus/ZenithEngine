@@ -5,10 +5,9 @@
 
 namespace GFX::Pipeline
 {
-	RenderGraph::RenderGraph(Graphics& gfx) : backbuffer(gfx.GetBackBuffer())
+	RenderGraph::RenderGraph(Graphics& gfx)
+		: backbuffer(gfx.GetBackBuffer()), depthStencil(gfx)
 	{
-		depthStencil = std::make_shared<Resource::DepthStencil>(gfx);
-
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTarget>::Make("backbuffer", backbuffer));
 		AddGlobalSink(RenderPass::Base::SinkDirectBuffer<Resource::RenderTarget>::Make("backbuffer", backbuffer));

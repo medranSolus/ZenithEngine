@@ -140,13 +140,13 @@ namespace GFX::Visual
 		{
 			IVisual::Bind(gfx);
 			pixelBuffer->Bind(gfx);
-			if (diffuseTexture)
+			if (diffuseTexture != nullptr)
 				diffuseTexture->Bind(gfx);
-			if (normalMap)
+			if (normalMap != nullptr)
 				normalMap->Bind(gfx);
-			if (parallaxMap)
+			if (parallaxMap != nullptr)
 				parallaxMap->Bind(gfx);
-			if (specularMap)
+			if (specularMap != nullptr)
 				specularMap->Bind(gfx);
 		}
 		else if (mode & RenderChannel::Depth)

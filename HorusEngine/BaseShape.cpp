@@ -10,10 +10,10 @@ namespace GFX::Shape
 				isMesh ? technique.Deactivate() : technique.Activate();
 	}
 
-	BaseShape::BaseShape(Graphics& gfx, std::shared_ptr<Resource::IndexBuffer> indexBuffer, std::shared_ptr<Resource::VertexBuffer> vertexBuffer)
+	BaseShape::BaseShape(Graphics& gfx, GfxResPtr<Resource::IndexBuffer>&& indexBuffer, GfxResPtr<Resource::VertexBuffer>&& vertexBuffer)
 		: indexBuffer(std::move(indexBuffer)), vertexBuffer(std::move(vertexBuffer))
 	{
-		topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		topology = Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void BaseShape::Bind(Graphics& gfx)

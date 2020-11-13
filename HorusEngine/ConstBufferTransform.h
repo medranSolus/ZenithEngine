@@ -18,10 +18,10 @@ namespace GFX::Resource
 		ConstBufferTransform(Graphics& gfx, const GfxObject& parent, UINT slot = 0U);
 		virtual ~ConstBufferTransform() = default;
 
-		virtual inline DirectX::FXMMATRIX GetTransform() const noexcept { return parent.GetTransformMatrix(); }
+		virtual inline DirectX::XMMATRIX GetTransform() const noexcept { return parent.GetTransformMatrix(); }
 
 		inline void Bind(Graphics& gfx) override { UpdateBind(gfx, GetBufferData(gfx)); }
-		inline std::string GetRID() const noexcept override { return "?"; }
+		inline std::string GetRID() const noexcept override { return IBindable::GetNoCodexRID(); }
 
 		virtual DirectX::XMFLOAT3 GetPos() const noexcept;
 	};

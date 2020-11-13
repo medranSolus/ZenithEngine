@@ -20,7 +20,7 @@ namespace GFX::Visual
 		float scale = buffer["scale"];
 		DirectX::XMFLOAT4X4 scaling;
 		DirectX::XMStoreFloat4x4(&scaling, DirectX::XMMatrixScaling(scale, scale, scale));
-		std::static_pointer_cast<Resource::ConstBufferTransformEx>(transformBuffer)->UpdateTransform(std::move(scaling));
+		transformBuffer.CastStatic<Resource::ConstBufferTransformEx>()->UpdateTransform(std::move(scaling));
 	}
 
 	OutlineMaskScale::OutlineMaskScale(Graphics& gfx, const std::string& tag, Data::ColorFloat3 color, std::shared_ptr<Data::VertexLayout> vertexLayout)
@@ -40,7 +40,7 @@ namespace GFX::Visual
 
 	void OutlineMaskScale::SetTransformBuffer(Graphics& gfx, const GfxObject& parent)
 	{
-		transformBuffer = std::make_shared<Resource::ConstBufferTransformEx>(gfx, parent);
+		transformBuffer = GfxResPtr<Resource::ConstBufferTransformEx>(gfx, parent);
 		UpdateTransform();
 	}
 

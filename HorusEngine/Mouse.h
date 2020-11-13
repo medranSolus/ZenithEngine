@@ -12,7 +12,12 @@ namespace WinAPI
 		class Event
 		{
 		public:
-			enum class Type : char { LeftUp, LeftDown, RightUp, RightDown, WheelUp, WheelDown, WheelForward, WheelBackward, Move, RawMove, Enter, Leave };
+			enum class Type : uint8_t
+			{
+				LeftUp, LeftDown, RightUp, RightDown,
+				WheelUp, WheelDown, WheelForward, WheelBackward,
+				Move, RawMove, Enter, Leave
+			};
 			struct RawInput
 			{
 				int dX;

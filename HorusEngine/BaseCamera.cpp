@@ -51,8 +51,8 @@ namespace Camera
 		positionBuffer = GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>::Get(gfx, typeid(BaseCamera).name() + name, 1U);
 		cameraBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, typeid(BaseCamera).name() + name, MakeLayoutPS(), 2U);
 		cameraBuffer->GetBuffer()["cameraPos"] = params.position;
-		indicator = std::make_shared<GFX::Shape::CameraIndicator>(gfx, graph, params.position, name, DirectX::XMFLOAT3(0.5f, 0.5f, 1.0f));
-		frustum = std::make_shared<GFX::Shape::CameraFrustum>(gfx, graph, params.position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);
+		indicator = std::make_unique<GFX::Shape::CameraIndicator>(gfx, graph, params.position, name, DirectX::XMFLOAT3(0.5f, 0.5f, 1.0f));
+		frustum = std::make_unique<GFX::Shape::CameraFrustum>(gfx, graph, params.position, name, DirectX::XMFLOAT3(1.0f, 0.5f, 0.5f), projection);
 	}
 
 	DirectX::XMMATRIX BaseCamera::GetProjection() const noexcept

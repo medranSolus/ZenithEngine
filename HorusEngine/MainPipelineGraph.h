@@ -23,21 +23,21 @@ namespace GFX::Pipeline
 		float normalOffset;
 
 		std::vector<GFX::Resource::Sampler> samplers;
-		std::shared_ptr<GFX::Resource::TextureCube> skyboxTexture;
+		GfxResPtr<GFX::Resource::TextureCube> skyboxTexture;
 
-		std::shared_ptr<Resource::DepthStencil> shadowMapDepth;
-		std::shared_ptr<Resource::DepthStencilShaderInput> depthOnly;
+		GfxResPtr<Resource::DepthStencil> shadowMapDepth;
+		GfxResPtr<Resource::DepthStencilShaderInput> depthOnly;
 
-		std::shared_ptr<Resource::RenderTargetEx> geometryBuffer;
-		std::shared_ptr<Resource::RenderTargetEx> lightBuffer;
+		GfxResPtr<Resource::RenderTargetEx> geometryBuffer;
+		GfxResPtr<Resource::RenderTargetEx> lightBuffer;
 
-		std::shared_ptr<Resource::RenderTargetShaderInput> shadowMapTarget;
-		std::shared_ptr<Resource::RenderTargetShaderInput> sceneTarget;
+		GfxResPtr<Resource::RenderTargetShaderInput> shadowMapTarget;
+		GfxResPtr<Resource::RenderTargetShaderInput> sceneTarget;
 
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> gammaCorrection;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernel;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> shadowBias;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> gammaCorrection;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> kernel;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> blurDirection;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> shadowBias;
 
 		inline void SetupSamplers(Graphics& gfx);
 		void SetKernel() noexcept(!IS_DEBUG);

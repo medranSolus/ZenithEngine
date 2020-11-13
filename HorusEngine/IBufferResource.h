@@ -5,7 +5,7 @@ namespace GFX::Pipeline::Resource
 {
 	class IBufferResource : public GFX::Resource::IBindable
 	{
-		std::shared_ptr<GFX::Resource::Viewport> viewport = nullptr;
+		GfxResPtr<GFX::Resource::Viewport> viewport;
 
 	protected:
 		static const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> nullShaderResource;
@@ -13,7 +13,7 @@ namespace GFX::Pipeline::Resource
 		inline void BindViewport(Graphics& gfx) { viewport->Bind(gfx); }
 
 	public:
-		inline IBufferResource(std::shared_ptr<GFX::Resource::Viewport> viewport) noexcept : viewport(std::move(viewport)) {}
+		inline IBufferResource(GfxResPtr<GFX::Resource::Viewport>&& viewport) noexcept : viewport(std::move(viewport)) {}
 		inline IBufferResource(Graphics& gfx, unsigned int width, unsigned int height) noexcept
 			: viewport(GFX::Resource::Viewport::Get(gfx, width, height)) {}
 		virtual ~IBufferResource() = default;
@@ -26,6 +26,6 @@ namespace GFX::Pipeline::Resource
 		virtual inline void Unbind(Graphics& gfx) noexcept { UnbindAll(gfx); }
 		virtual void Clear(Graphics& gfx) noexcept = 0;
 		virtual inline void Clear(Graphics& gfx, const Data::ColorFloat4& color) noexcept { Clear(gfx); }
-		inline std::string GetRID() const noexcept override { return "?"; }
+		inline std::string GetRID() const noexcept override { return IBindable::GetNoCodexRID(); }
 	};
 }

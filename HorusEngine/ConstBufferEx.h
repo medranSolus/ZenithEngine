@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {

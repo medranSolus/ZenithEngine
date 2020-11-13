@@ -1,10 +1,14 @@
 #include "RenderTargetShaderInput.h"
+#include "Graphics.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Pipeline::Resource
 {
+	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, UINT slot, DXGI_FORMAT format)
+		: RenderTargetShaderInput(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, format) {}
+
 	RenderTargetShaderInput::RenderTargetShaderInput(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, DXGI_FORMAT format)
-		: RenderTarget(width, height, gfx), slot(slot)
+		: RenderTarget(width, height, format, gfx), slot(slot)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -19,5 +23,6 @@ namespace GFX::Pipeline::Resource
 		textureViewDesc.Texture2D.MipLevels = 1U;
 		textureViewDesc.Texture2D.MostDetailedMip = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &textureViewDesc, &textureView));
+		SET_DEBUG_NAME(textureView.Get(), "RTI" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" + std::to_string(format) + "#" + std::to_string(slot));
 	}
 }

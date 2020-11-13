@@ -8,13 +8,13 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		static_assert(std::is_base_of_v<GFX::Resource::IBindable, T>, "SinkDirectBindable target type must be a IBindable type!");
 
-		std::shared_ptr<T>& target;
+		GfxResPtr<T>& target;
 
 	public:
-		inline SinkDirectBindable(const std::string& registeredName, std::shared_ptr<T>& bind) : Sink(registeredName), target(bind) {}
+		inline SinkDirectBindable(const std::string& registeredName, GfxResPtr<T>& bind) : Sink(registeredName), target(bind) {}
 		virtual ~SinkDirectBindable() = default;
 
-		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, std::shared_ptr<T>& bind) { return std::make_unique<SinkDirectBindable>(registeredName, bind); }
+		inline static std::unique_ptr<Sink> Make(const std::string& registeredName, GfxResPtr<T>& bind) { return std::make_unique<SinkDirectBindable>(registeredName, bind); }
 
 		void Bind(Source& source) override;
 	};
@@ -22,7 +22,7 @@ namespace GFX::Pipeline::RenderPass::Base
 	template<typename T>
 	void SinkDirectBindable<T>::Bind(Source& source)
 	{
-		auto ptr = std::dynamic_pointer_cast<T>(source.LinkBindable());
+		auto ptr = source.LinkBindable().CastDynamic<T>();
 		if (ptr == nullptr)
 			throw RGC_EXCEPT("Binding Sink \"" + GetRegisteredName() + "\" of type {" + typeid(T).name() +
 				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(source.LinkBindable()).name());

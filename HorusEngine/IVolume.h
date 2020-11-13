@@ -7,17 +7,17 @@ namespace GFX::Light::Volume
 {
 	class IVolume : public GfxObject
 	{
-		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferTransform> transformBuffer;
 
 		static float GetVolume(const Data::CBuffer::DynamicCBuffer& lightBuffer);
 
 	protected:
-		std::shared_ptr<Resource::IndexBuffer> indexBuffer = nullptr;
-		std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr;
+		GfxResPtr<Resource::IndexBuffer> indexBuffer;
+		GfxResPtr<Resource::VertexBuffer> vertexBuffer;
 
 		virtual void UpdateTransform(float volume, const Data::CBuffer::DynamicCBuffer& lightBuffer) noexcept = 0;
 
-		inline IVolume(Graphics& gfx) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, *this); }
+		inline IVolume(Graphics& gfx) : transformBuffer(gfx, *this) {}
 
 	public:
 		virtual ~IVolume() = default;

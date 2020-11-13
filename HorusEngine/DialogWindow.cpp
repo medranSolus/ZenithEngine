@@ -153,13 +153,32 @@ namespace GFX::GUI
 		ImGui::SetNextWindowPos({ ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f },
 			ImGuiCond_Appearing, { 0.5f, 0.5f });
 
-		if (ImGui::BeginPopupModal(TITLE, nullptr, ImGuiWindowFlags_NoResize))
+		if (ImGui::BeginPopupModal(TITLE, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 		{
 			ImGui::InputText("Name", &params.name);
 			ImGui::InputFloat("Scale", &params.scale, 0.1f, 0.0f, "%.2f");
 			if (params.scale < 0.01f)
 				params.scale = 0.01f;
-			ImGui::InputFloat3("Position", reinterpret_cast<float*>(&params.position), "%.2f");
+
+			ImGui::Columns(2, "##params_position", false);
+			ImGui::Text("Position");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::InputFloat("X##pos", &params.position.x, 1.0f, 0.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::InputFloat("Y##pos", &params.position.y, 1.0f, 0.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::InputFloat("Z##pos", &params.position.z, 1.0f, 0.0f, "%.2f");
+			ImGui::NextColumn();
+
+			ImGui::Text("Rotation");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::SliderAngle("X##rot", &params.rotation.x, 0.0f, 360.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::SliderAngle("Y##rot", &params.rotation.y, 0.0f, 360.0f, "%.2f");
+			ImGui::SetNextItemWidth(-15.0f);
+			ImGui::SliderAngle("Z##rot", &params.rotation.z, 0.0f, 360.0f, "%.2f");
+			ImGui::Columns(1);
+
 			if (ImGui::Button("Accept", { 135.0f, 0.0f }))
 			{
 				result = Result::Accept;

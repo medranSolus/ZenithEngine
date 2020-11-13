@@ -17,7 +17,7 @@ namespace GFX::Pipeline::Resource
 		RenderTargetEx(Graphics& gfx, unsigned int width, unsigned int height, UINT slot, std::vector<DXGI_FORMAT>&& formats);
 		virtual ~RenderTargetEx() = default;
 
-		static inline std::shared_ptr<RenderTargetEx> Get(Graphics& gfx, UINT slot, std::vector<DXGI_FORMAT>&& formats) { return std::make_shared<Resource::RenderTargetEx>(gfx, gfx.GetWidth(), gfx.GetHeight(), slot, std::forward<std::vector<DXGI_FORMAT>>(formats)); }
+		static GfxResPtr<RenderTargetEx> Get(Graphics& gfx, UINT slot, std::vector<DXGI_FORMAT>&& formats);
 
 		inline void BindTarget(Graphics& gfx) override { GetContext(gfx)->OMSetRenderTargets(count, targetsArray.get(), nullptr); BindViewport(gfx); }
 		inline void BindTarget(Graphics& gfx, DepthStencil& depthStencil) override { GetContext(gfx)->OMSetRenderTargets(count, targetsArray.get(), depthStencil.depthStencilView.Get()); BindViewport(gfx); }

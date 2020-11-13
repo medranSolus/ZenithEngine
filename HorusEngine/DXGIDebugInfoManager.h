@@ -14,12 +14,13 @@ namespace GFX
 	{
 		uint64_t offset = 0U;
 		Microsoft::WRL::ComPtr<IDXGIInfoQueue> infoQueue = nullptr;
+		Microsoft::WRL::ComPtr<IDXGIDebug> debug = nullptr;
 
 	public:
 		DXGIDebugInfoManager();
 		DXGIDebugInfoManager(const DXGIDebugInfoManager&) = delete;
 		DXGIDebugInfoManager& operator=(const DXGIDebugInfoManager&) = delete;
-		~DXGIDebugInfoManager() = default;
+		inline ~DXGIDebugInfoManager() { debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_IGNORE_INTERNAL); }
 
 		inline void BeginRecord() noexcept { offset = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL); }
 

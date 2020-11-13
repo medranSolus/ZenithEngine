@@ -53,6 +53,6 @@ namespace GFX::Shape
 		vertices[6].SetByIndex(0, std::move(DirectX::XMFLOAT3(farX, -farY, data.farClip)));
 		vertices[7].SetByIndex(0, std::move(DirectX::XMFLOAT3(-farX, -farY, data.farClip)));
 
-		SetVertexBuffer(std::make_shared<Resource::VertexBuffer>(gfx, typeid(CameraFrustum).name() + name, vertices));
+		SetVertexBuffer(GfxResPtr<Resource::VertexBuffer>(gfx, typeid(CameraFrustum).name() + name, vertices));
 	}
 }

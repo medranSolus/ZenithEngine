@@ -51,9 +51,9 @@ namespace GFX::Pipeline
 		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\Space", ".png");
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
 
-		shadowMapDepth = std::make_shared<Resource::DepthStencil>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, Resource::DepthStencil::Usage::DepthOnly);
+		shadowMapDepth = GfxResPtr<Resource::DepthStencil>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencil>::Make("shadowMapDepth", shadowMapDepth));
-		depthOnly = std::make_shared<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
+		depthOnly = GfxResPtr<Resource::DepthStencilShaderInput>(gfx, 8U, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
 
 		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4U, { DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
@@ -61,9 +61,9 @@ namespace GFX::Pipeline
 		lightBuffer = Resource::RenderTargetEx::Get(gfx, 9U, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("lightBuffer", lightBuffer));
 
-		shadowMapTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 7U, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT);
+		shadowMapTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 7U, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("shadowMapTarget", shadowMapTarget));
-		sceneTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, 0U, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT);
+		sceneTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 0U, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("sceneTarget", sceneTarget));
 
 #pragma region CBuffers setup
@@ -76,7 +76,7 @@ namespace GFX::Pipeline
 		gammaBuffer["gamma"] = gamma;
 		gammaBuffer["deGamma"] = 1.0f / gamma;
 		gammaBuffer["hdrExposure"] = hdrExposure;
-		gammaCorrection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 11U);
+		gammaCorrection = GfxResPtr<GFX::Resource::ConstBufferExPixelCache>(gfx, "$gammaBuffer", gammaBuffer, 11U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("gammaCorrection", gammaCorrection));
 
 		// Setup blur cbuffers
@@ -91,7 +91,7 @@ namespace GFX::Pipeline
 		kernelBuffer["width"] = gfx.GetWidth();
 		kernelBuffer["height"] = gfx.GetHeight();
 		kernelBuffer["intensity"] = hdrExposure < 1.0f ? 1.0f / hdrExposure : 1.0f;
-		kernel = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 12U);
+		kernel = GfxResPtr<GFX::Resource::ConstBufferExPixelCache>(gfx, "$kernelBuffer", kernelBuffer, 12U);
 		SetKernel();
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("kernel", kernel));
 
@@ -99,7 +99,7 @@ namespace GFX::Pipeline
 		directionLayout.Add(DCBElementType::Bool, "vertical");
 		Data::CBuffer::DynamicCBuffer directionBuffer(std::move(directionLayout));
 		directionBuffer["vertical"] = true;
-		blurDirection = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer);
+		blurDirection = GfxResPtr<GFX::Resource::ConstBufferExPixelCache>(gfx, "$blurDirection", directionBuffer);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("blurDirection", blurDirection));
 
 		// Setup shadow map cbuffer
@@ -111,7 +111,7 @@ namespace GFX::Pipeline
 		biasBuffer["mapSize"] = static_cast<float>(SHADOW_MAP_SIZE);
 		biasBuffer["bias"] = static_cast<float>(bias) / SHADOW_MAP_SIZE;
 		biasBuffer["normalOffset"] = normalOffset;
-		shadowBias = std::make_shared<GFX::Resource::ConstBufferExPixelCache>(gfx, "$shadowBias", biasBuffer, 10U);
+		shadowBias = GfxResPtr<GFX::Resource::ConstBufferExPixelCache>(gfx, "$shadowBias", biasBuffer, 10U);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("shadowBias", shadowBias));
 #pragma endregion
 

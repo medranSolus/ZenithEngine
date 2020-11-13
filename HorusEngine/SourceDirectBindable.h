@@ -8,14 +8,14 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		static_assert(std::is_base_of_v<GFX::Resource::IBindable, T>, "SourceDirectBindable target type must be a IBindable type!");
 
-		std::shared_ptr<T>& bind;
+		GfxResPtr<T>& bind;
 
 	public:
-		inline SourceDirectBindable(const std::string& name, std::shared_ptr<T>& bind) : Source(name), bind(bind) {}
+		inline SourceDirectBindable(const std::string& name, GfxResPtr<T>& bind) : Source(name), bind(bind) {}
 		virtual ~SourceDirectBindable() = default;
 
-		static inline std::unique_ptr<Source> Make(const std::string& name, std::shared_ptr<T>& bind) { return std::make_unique<SourceDirectBindable>(name, bind); }
+		static inline std::unique_ptr<Source> Make(const std::string& name, GfxResPtr<T>& bind) { return std::make_unique<SourceDirectBindable>(name, bind); }
 
-		inline std::shared_ptr<GFX::Resource::IBindable> LinkBindable() override { return bind; }
+		inline GfxResPtr<GFX::Resource::IBindable> LinkBindable() override { return bind.CastStatic<GFX::Resource::IBindable>(); }
 	};
 }

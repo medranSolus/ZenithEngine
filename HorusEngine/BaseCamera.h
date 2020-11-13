@@ -14,12 +14,12 @@ namespace Camera
 		ProjectionData projection;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
 		bool positionUpdate = true;
-		std::shared_ptr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer = nullptr;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer = nullptr;
+		GfxResPtr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer;
 		bool enableIndicator = true;
 		bool enableFrustum = false;
-		std::shared_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
-		std::shared_ptr<GFX::Shape::CameraFrustum> frustum = nullptr;
+		std::unique_ptr<GFX::Shape::CameraIndicator> indicator = nullptr;
+		std::unique_ptr<GFX::Shape::CameraFrustum> frustum = nullptr;
 
 		static inline GFX::Data::CBuffer::DCBLayout MakeLayoutPS() noexcept;
 

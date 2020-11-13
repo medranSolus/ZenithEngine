@@ -1,15 +1,19 @@
 #pragma once
-#include "Graphics.h"
 #include "DynamicCBuffer.h"
 #include "ProjectionData.h"
 
-namespace GFX::Pipeline
+namespace GFX
 {
-	class Technique;
-}
-namespace GFX::Shape
-{
-	class BaseShape;
+	class Graphics;
+
+	namespace Pipeline
+	{
+		class Technique;
+	}
+	namespace Shape
+	{
+		class BaseShape;
+	}
 }
 
 namespace GFX::Probe

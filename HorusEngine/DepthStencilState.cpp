@@ -49,5 +49,6 @@ namespace GFX::Resource
 		}
 		}
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateDepthStencilState(&desc, &state));
+		SET_DEBUG_NAME_RID(state.Get());
 	}
 }

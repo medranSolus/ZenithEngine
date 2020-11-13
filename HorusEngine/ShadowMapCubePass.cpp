@@ -1,6 +1,7 @@
 #include "ShadowMapCubePass.h"
 #include "RenderPassesBase.h"
 #include "GfxResources.h"
+#include "Math.h"
 
 namespace GFX::Pipeline::RenderPass
 {

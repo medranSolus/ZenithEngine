@@ -10,7 +10,7 @@ namespace GFX::GUI
 	class DialogWindow
 	{
 	public:
-		enum class Result { Accept, Cancel, None };
+		enum class Result : uint8_t { Accept, Cancel, None };
 
 	private:
 		static std::vector<std::string> drives;

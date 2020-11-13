@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -16,8 +16,8 @@ namespace GFX::Resource
 		Blender(Graphics& gfx, Type type);
 		virtual ~Blender() = default;
 
-		static inline std::shared_ptr<Blender> Get(Graphics& gfx, Type type) { return Codex::Resolve<Blender>(gfx, type); }
-		static inline std::string GenerateRID(Type type) noexcept { return "#" + std::string(typeid(Blender).name()) + "#" + std::to_string(type) + "#"; }
+		static inline ResPtr<Blender> Get(Graphics& gfx, Type type) { return Codex::Resolve<Blender>(gfx, type); }
+		static inline std::string GenerateRID(Type type) noexcept { return "B" + std::to_string(type); }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->OMSetBlendState(state.Get(), nullptr, 0xFFFFFFFFU); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(type); }

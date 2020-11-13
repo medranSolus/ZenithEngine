@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -14,9 +14,9 @@ namespace GFX::Resource
 		virtual ~IndexBuffer() = default;
 
 		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<IndexBuffer>(tag); }
-		static inline std::shared_ptr<IndexBuffer> Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
+		static inline GfxResPtr<IndexBuffer> Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices);
 		template<typename ...Ignore>
-		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
+		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept { return "IB#" + tag; }
 
 		constexpr unsigned int GetCount() const noexcept { return count; }
 
@@ -30,14 +30,8 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<IndexBuffer> IndexBuffer::Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices)
+	inline GfxResPtr<IndexBuffer> IndexBuffer::Get(Graphics& gfx, const std::string& tag, const std::vector<unsigned int>& indices)
 	{
 		return Codex::Resolve<IndexBuffer>(gfx, tag, indices);
-	}
-
-	template<typename ...Ignore>
-	inline std::string IndexBuffer::GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept
-	{
-		return "#" + std::string(typeid(IndexBuffer).name()) + "#" + tag + "#";
 	}
 }

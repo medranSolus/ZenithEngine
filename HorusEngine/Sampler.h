@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -7,8 +7,8 @@ namespace GFX::Resource
 	class Sampler : public IBindable
 	{
 	public:
-		enum Type : unsigned char { Point, Linear, Anisotropic };
-		enum CoordType : unsigned char { Wrap, Reflect, Border };
+		enum Type : uint8_t { Point, Linear, Anisotropic };
+		enum CoordType : uint8_t { Wrap, Reflect, Border };
 
 	private:
 		Type type;
@@ -22,7 +22,7 @@ namespace GFX::Resource
 		Sampler& operator=(Sampler&& sampler) noexcept;
 		virtual ~Sampler() = default;
 
-		static inline std::shared_ptr<Sampler> Get(Graphics& gfx, Type type, CoordType coordType, UINT slot = 0U);
+		static inline GfxResPtr<Sampler> Get(Graphics& gfx, Type type, CoordType coordType, UINT slot = 0U);
 		static inline std::string GenerateRID(Type type, CoordType coordType, UINT slot = 0U) noexcept;
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetSamplers(slot, 1U, state.GetAddressOf()); }
@@ -35,13 +35,13 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<Sampler> Sampler::Get(Graphics& gfx, Type type, CoordType coordType, UINT slot)
+	inline GfxResPtr<Sampler> Sampler::Get(Graphics& gfx, Type type, CoordType coordType, UINT slot)
 	{
 		return Codex::Resolve<Sampler>(gfx, type, coordType, slot);
 	}
 
 	inline std::string Sampler::GenerateRID(Type type, CoordType coordType, UINT slot) noexcept
 	{
-		return "#" + std::string(typeid(Sampler).name()) + "#" + std::to_string(type) + "#" + std::to_string(coordType) + "#" + std::to_string(slot) + "#";
+		return "S" + std::to_string(type) + "#" + std::to_string(coordType) + "#" + std::to_string(slot);
 	}
 }

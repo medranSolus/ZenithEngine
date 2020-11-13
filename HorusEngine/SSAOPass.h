@@ -16,8 +16,8 @@ namespace GFX::Pipeline::RenderPass
 		uint32_t size = SSAO_KERNEL_SIZE;
 
 		Camera::ICamera* mainCamera = nullptr;
-		std::shared_ptr<Resource::IRenderTarget> ssaoScratchBuffer;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
+		GfxResPtr<Resource::IRenderTarget> ssaoScratchBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
 
 		static inline Data::CBuffer::DCBLayout MakeLayout() noexcept;
 

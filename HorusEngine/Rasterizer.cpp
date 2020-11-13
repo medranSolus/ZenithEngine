@@ -3,7 +3,8 @@
 
 namespace GFX::Resource
 {
-	Rasterizer::Rasterizer(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable) : culling(culling), depthEnable(depthEnable)
+	Rasterizer::Rasterizer(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable)
+		: culling(culling), depthEnable(depthEnable)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -11,5 +12,6 @@ namespace GFX::Resource
 		rasterDesc.CullMode = culling;
 		rasterDesc.DepthClipEnable = depthEnable;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateRasterizerState(&rasterDesc, &state));
+		SET_DEBUG_NAME_RID(state.Get());
 	}
 }

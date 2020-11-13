@@ -1,22 +1,22 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
 	class PixelShader : public IBindable
 	{
-		std::string path;
+		std::string name;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 
 	public:
-		PixelShader(Graphics& gfx, const std::string& path);
+		PixelShader(Graphics& gfx, const std::string& name);
 		virtual ~PixelShader() = default;
 
-		static inline std::shared_ptr<PixelShader> Get(Graphics& gfx, const std::string& path) { return Codex::Resolve<PixelShader>(gfx, path); }
-		static inline std::string GenerateRID(const std::string& path) noexcept { return "#" + std::string(typeid(PixelShader).name()) + "#" + path + "#"; }
+		static inline GfxResPtr<PixelShader> Get(Graphics& gfx, const std::string& name) { return Codex::Resolve<PixelShader>(gfx, name); }
+		static inline std::string GenerateRID(const std::string& name) noexcept { return "P" + name; }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0U); }
-		inline std::string GetRID() const noexcept override { return GenerateRID(path); }
+		inline std::string GetRID() const noexcept override { return GenerateRID(name); }
 	};
 
 	template<>

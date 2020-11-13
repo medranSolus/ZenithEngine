@@ -4,7 +4,8 @@
 
 namespace GFX::Resource
 {
-	TextureCube::TextureCube(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot) : slot(slot), path(path), ext(ext)
+	TextureCube::TextureCube(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot)
+		: slot(slot), path(path), ext(ext)
 	{
 		GFX_ENABLE_ALL(gfx);
 
@@ -46,5 +47,6 @@ namespace GFX::Resource
 		viewDesc.Texture2D.MipLevels = 1;
 		viewDesc.Texture2D.MostDetailedMip = 0;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateShaderResourceView(texture.Get(), &viewDesc, &textureView));
+		SET_DEBUG_NAME_RID(textureView.Get());
 	}
 }

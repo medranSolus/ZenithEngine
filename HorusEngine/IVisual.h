@@ -7,10 +7,10 @@ namespace GFX::Visual
 {
 	class IVisual : public Probe::IProbeable
 	{
-		std::vector<std::shared_ptr<Resource::IBindable>> binds;
+		std::vector<GfxResPtr<Resource::IBindable>> binds;
 
 	protected:
-		std::shared_ptr<Resource::ConstBufferTransform> transformBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferTransform> transformBuffer;
 
 		IVisual() = default;
 		IVisual(const IVisual&) = default;
@@ -19,16 +19,16 @@ namespace GFX::Visual
 	public:
 		virtual ~IVisual() = default;
 
-		inline void AddBind(std::shared_ptr<Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
+		inline void AddBind(GfxResPtr<Resource::IBindable>&& bind) noexcept { binds.emplace_back(std::forward<GfxResPtr<Resource::IBindable>&&>(bind)); }
 		inline DirectX::XMFLOAT3 GetTransformPos() const noexcept { return transformBuffer->GetPos(); }
 		inline DirectX::XMMATRIX GetTransform() const noexcept { return transformBuffer->GetTransform(); }
-		virtual inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = std::make_shared<Resource::ConstBufferTransform>(gfx, parent); }
+		virtual inline void SetTransformBuffer(Graphics& gfx, const GfxObject& parent) { transformBuffer = GfxResPtr<Resource::ConstBufferTransform>(gfx, parent); }
 		virtual inline void Bind(Graphics& gfx, RenderChannel mode) { Bind(gfx); }
 
 		template<typename R>
 		R* GetResource() noexcept;
 		template<typename R>
-		void SetResource(std::shared_ptr<R> resource) noexcept;
+		void SetResource(GfxResPtr<R>&& resource) noexcept;
 
 		virtual void Bind(Graphics& gfx);
 	};
@@ -43,13 +43,13 @@ namespace GFX::Visual
 	}
 
 	template<typename R>
-	void IVisual::SetResource(std::shared_ptr<R> resource) noexcept
+	void IVisual::SetResource(GfxResPtr<R>&& resource) noexcept
 	{
 		for (size_t i = 0; i < binds.size(); ++i)
 		{
-			if (dynamic_cast<R*>(binds.at(i).get()) != nullptr)
+			if (binds.at(i).CastDynamic<R>() != nullptr)
 			{
-				binds.at(i) = resource;
+				binds.at(i) = std::move(resource);
 				return;
 			}
 		}

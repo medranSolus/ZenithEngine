@@ -326,32 +326,6 @@ inline void App::AddLightButton()
 	}
 }
 
-void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
-{
-	std::deque<std::pair<float, float>> coordBuffer;
-	coordBuffer.emplace_back(x, y);
-	for (unsigned int d = 0; d < depth; ++d)
-	{
-		width /= 3.0f;
-		for (size_t i = 0, size = coordBuffer.size(); i < size; ++i)
-		{
-			std::pair<float, float> current = coordBuffer.front();
-			coordBuffer.pop_front();
-			coordBuffer.emplace_back(current.first - width, current.second - width);
-			coordBuffer.emplace_back(current.first - width, current.second);
-			coordBuffer.emplace_back(current.first - width, current.second + width);
-			coordBuffer.emplace_back(current.first, current.second + width);
-			coordBuffer.emplace_back(current.first + width, current.second + width);
-			coordBuffer.emplace_back(current.first + width, current.second);
-			coordBuffer.emplace_back(current.first + width, current.second - width);
-			coordBuffer.emplace_back(current.first, current.second - width);
-		}
-	}
-	for (auto& coord : coordBuffer)
-		carpetRects.push_back(std::make_unique<GFX::Shape::SolidRectangle>(window.Gfx(), renderer,
-			DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", color, width, width));
-}
-
 void App::MakeFrame()
 {
 	window.Gfx().BeginFrame();
@@ -385,7 +359,8 @@ App::App(const std::string& commandLine)
 	style.WindowRounding = 1;
 	style.WindowBorderSize = 1;
 	style.Colors[ImGuiCol_WindowBg].w = 0.785f;
-
+	// https://seanmiddleditch.com/direct3d-11-debug-api-tricks/
+	// https://www.gamedev.net/forums/topic/664906-cannot-get-rid-of-live-objects-d3d11/
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
 	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, GFX::Data::ColorFloat3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), 50 });
@@ -398,17 +373,21 @@ App::App(const std::string& commandLine)
 	direction = { -1.0f, 1.0f, -0.7f };
 	AddLight({ window.Gfx(), renderer,"Lion flare", 9.0f, GFX::Data::ColorFloat3(0.8f, 0.0f, 0.8f),
 		DirectX::XMFLOAT3(-61.0f, -6.0f, 5.0f), 150, 1.0f, Math::ToRadians(35.0f), Math::ToRadians(45.0f), Math::NormalizeStore(direction) });
+	direction = { -0.6f, 0.75f, 0.3f };
+	AddLight({ window.Gfx(), renderer,"Dragon flame", 3.0f, GFX::Data::ColorFloat3(0.04f, 0.0f, 0.52f),
+		DirectX::XMFLOAT3(-35.0f, -8.0f, 2.0f), 175, 0.5f, Math::ToRadians(27.0f), Math::ToRadians(43.0f), Math::NormalizeStore(direction) });
 	direction = { 0.0f, -0.7f, -0.7f };
 	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, GFX::Data::ColorFloat3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
-	GFX::Shape::ModelParams params(DirectX::XMFLOAT3(0.0f, -8.0f, 0.0f), "Sponza", 0.045f);
+	GFX::Shape::ModelParams params({ 0.0f, -8.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, "Sponza", 0.045f);
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
-	params = { DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), "Nanosuit", 0.70f };
+	params = { DirectX::XMFLOAT3(0.0f, -8.2f, 6.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), "Nanosuit", 0.70f };
 	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
-	params = { DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), "Jack O'Lantern", 13.00f };
+	params = { DirectX::XMFLOAT3(13.5f, -8.2f, -5.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), "Jack O'Lantern", 13.00f };
 	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
-	params = { DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), "Wall", 2.0f };
+	params = { DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), "Wall", 2.0f };
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
-	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), "Black Dragon", 0.15f });
+	params = { DirectX::XMFLOAT3(-39.0f, -8.1f, 2.0f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
+	AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
 	//std::mt19937_64 engine(std::random_device{}());
 	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));
 	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -2.0f, 3.0f), "Sting Sword", 0.5f));
@@ -431,3 +410,29 @@ size_t App::Run()
 		MakeFrame();
 	}
 }
+
+//void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
+//{
+//	std::deque<std::pair<float, float>> coordBuffer;
+//	coordBuffer.emplace_back(x, y);
+//	for (unsigned int d = 0; d < depth; ++d)
+//	{
+//		width /= 3.0f;
+//		for (size_t i = 0, size = coordBuffer.size(); i < size; ++i)
+//		{
+//			std::pair<float, float> current = coordBuffer.front();
+//			coordBuffer.pop_front();
+//			coordBuffer.emplace_back(current.first - width, current.second - width);
+//			coordBuffer.emplace_back(current.first - width, current.second);
+//			coordBuffer.emplace_back(current.first - width, current.second + width);
+//			coordBuffer.emplace_back(current.first, current.second + width);
+//			coordBuffer.emplace_back(current.first + width, current.second + width);
+//			coordBuffer.emplace_back(current.first + width, current.second);
+//			coordBuffer.emplace_back(current.first + width, current.second - width);
+//			coordBuffer.emplace_back(current.first, current.second - width);
+//		}
+//	}
+//	for (auto& coord : coordBuffer)
+//		carpetRects.push_back(std::make_unique<GFX::Shape::SolidRectangle>(window.Gfx(), renderer,
+//			DirectX::XMFLOAT3(coord.first, coord.second, 1.0f), "", color, width, width));
+//}

@@ -37,20 +37,21 @@ namespace GFX
 			createFlags, nullptr, 0, D3D11_SDK_VERSION, &swapDesc, &swapChain, &device, features, &context));
 
 		Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
-		GFX_THROW_FAILED(swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer)); // Get texture subresource (back buffer)
-		renderTarget = std::make_shared<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer); // Create view to back buffer allowing writing data
+		GFX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer))); // Get texture subresource (back buffer)
+		renderTarget = GfxResPtr<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer, swapDesc.BufferDesc.Format); // Create view to back buffer allowing writing data
 
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
 
-	unsigned int Graphics::GetWidth() const noexcept
+	Graphics::~Graphics()
 	{
-		return renderTarget->GetWidth();
-	}
-
-	unsigned int Graphics::GetHeight() const noexcept
-	{
-		return renderTarget->GetHeight();
+		ImGui_ImplDX11_Shutdown();
+#ifdef _DEBUG
+		Microsoft::WRL::ComPtr<ID3D11Debug> debug;
+		device->QueryInterface(IID_PPV_ARGS(&debug));
+		if (debug != nullptr)
+			debug->ReportLiveDeviceObjects(D3D11_RLDO_IGNORE_INTERNAL);
+#endif
 	}
 
 	void Graphics::DrawIndexed(UINT count) noexcept(!IS_DEBUG)

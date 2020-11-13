@@ -1,6 +1,7 @@
 #include "DXGIDebugInfoManager.h"
 #include "WinApiExceptionMacros.h"
 #include "GfxExceptionMacros.h"
+#include <combaseapi.h>
 
 namespace GFX
 {
@@ -17,7 +18,8 @@ namespace GFX
 		if (dxgiGetDebugInterface == nullptr)
 			throw WIN_EXCEPT_LAST();
 
-		GFX_THROW_FAILED_NOINFO(dxgiGetDebugInterface(__uuidof(IDXGIInfoQueue), &infoQueue));
+		GFX_THROW_FAILED_NOINFO(dxgiGetDebugInterface(IID_PPV_ARGS(&infoQueue)));
+		GFX_THROW_FAILED_NOINFO(dxgiGetDebugInterface(IID_PPV_ARGS(&debug)));
 	}
 
 	std::vector<std::string> DXGIDebugInfoManager::GetMessages() const

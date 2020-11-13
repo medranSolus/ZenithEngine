@@ -48,6 +48,7 @@ namespace GFX::Resource
 		}
 		}
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateSamplerState(&samplerDesc, &state));
+		SET_DEBUG_NAME_RID(state.Get());
 	}
 
 	Sampler& Sampler::operator=(Sampler&& sampler) noexcept

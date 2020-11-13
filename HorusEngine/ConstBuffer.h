@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 #include "GfxExceptionMacros.h"
 
 namespace GFX::Resource
@@ -37,6 +37,7 @@ namespace GFX::Resource
 		D3D11_SUBRESOURCE_DATA resData = {};
 		resData.pSysMem = &values;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, &resData, &constantBuffer));
+		SET_DEBUG_NAME(constantBuffer.Get(), "CB" + std::string(typeid(T).name()) + std::to_string(slot) + "#" + tag);
 	}
 
 	template<typename T>
@@ -52,6 +53,7 @@ namespace GFX::Resource
 		bufferDesc.MiscFlags = 0U;
 		bufferDesc.StructureByteStride = 0U;
 		GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&bufferDesc, nullptr, &constantBuffer));
+		SET_DEBUG_NAME(constantBuffer.Get(), "CB" + std::string(typeid(T).name()) + std::to_string(slot) + "#" + tag);
 	}
 
 	template<typename T>

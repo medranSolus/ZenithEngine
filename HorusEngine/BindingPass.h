@@ -8,15 +8,15 @@ namespace GFX::Pipeline::RenderPass::Base
 	{
 		using BasePass::BasePass;
 
-		std::vector<std::shared_ptr<GFX::Resource::IBindable>> binds;
+		std::vector<GfxResPtr<GFX::Resource::IBindable>> binds;
 
 		void BindResources(Graphics& gfx);
 
 	protected:
-		std::shared_ptr<Resource::IRenderTarget> renderTarget;
-		std::shared_ptr<Resource::DepthStencil> depthStencil;
+		GfxResPtr<Resource::IRenderTarget> renderTarget;
+		GfxResPtr<Resource::DepthStencil> depthStencil;
 
-		inline void AddBind(std::shared_ptr<GFX::Resource::IBindable> bind) noexcept { binds.emplace_back(std::move(bind)); }
+		inline void AddBind(GfxResPtr<GFX::Resource::IBindable>&& bind) noexcept { binds.emplace_back(std::forward<GfxResPtr<GFX::Resource::IBindable>&&>(bind)); }
 
 		template<typename T>
 		void AddBindableSink(const std::string& name);

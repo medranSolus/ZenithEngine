@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -13,7 +13,7 @@ namespace GFX::Resource
 		constexpr Viewport(Graphics& gfx, unsigned int width, unsigned int height) noexcept;
 		virtual ~Viewport() = default;
 
-		static inline std::shared_ptr<Viewport> Get(Graphics& gfx, unsigned int width, unsigned int height) { return Codex::Resolve<Viewport>(gfx, width, height); }
+		static inline GfxResPtr<Viewport> Get(Graphics& gfx, unsigned int width, unsigned int height) { return Codex::Resolve<Viewport>(gfx, width, height); }
 		static inline std::string GenerateRID(unsigned int width, unsigned int height) noexcept;
 
 		constexpr unsigned int GetWidth() const noexcept { return width; }
@@ -42,6 +42,6 @@ namespace GFX::Resource
 
 	inline std::string Viewport::GenerateRID(unsigned int width, unsigned int height) noexcept
 	{
-		return "#" + std::string(typeid(Viewport).name()) + "#" + std::to_string(width) + "#" + std::to_string(height) + "#";
+		return "V" + std::to_string(width) + "#" + std::to_string(height);
 	}
 }

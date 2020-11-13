@@ -11,9 +11,10 @@ namespace GFX::Pipeline::Resource
 		friend class RenderTargetEx;
 
 	public:
-		enum class Usage { DepthStencil, DepthOnly };
+		enum class Usage : bool { DepthStencil, DepthOnly };
 
 	protected:
+		Usage usage;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
 
 		DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, bool shaderResource, Usage usage = Usage::DepthStencil);
@@ -22,8 +23,7 @@ namespace GFX::Pipeline::Resource
 		static constexpr DXGI_FORMAT UsageTyped(Usage usage) noexcept;
 
 	public:
-		inline DepthStencil(Graphics& gfx, Usage usage = Usage::DepthStencil)
-			: DepthStencil(gfx, gfx.GetWidth(), gfx.GetHeight(), false, usage) {}
+		DepthStencil(Graphics& gfx, Usage usage = Usage::DepthStencil);
 		inline DepthStencil(Graphics& gfx, unsigned int width, unsigned int height, Usage usage = Usage::DepthStencil)
 			: DepthStencil(gfx, width, height, false, usage) {}
 		DepthStencil(Graphics& gfx, UINT size);

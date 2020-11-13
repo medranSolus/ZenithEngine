@@ -1,0 +1,46 @@
+#pragma once
+#include "IBindable.h"
+
+namespace GFX::Resource
+{
+	template<typename R>
+	class ResPtr final
+	{
+		static_assert(std::is_base_of_v<IBindable, R>, "ResPtr target type must be a IBindable type!");
+
+		size_t* count = nullptr;
+		R* ptr = nullptr;
+
+	public:
+		ResPtr() = default;
+		// This should be private, but no idea how to perform cast and access this ctor... BIG TODO: Find a way
+		constexpr ResPtr(size_t* count, R* ptr) noexcept : count(count), ptr(ptr) { ++(*count); }
+		template<typename ...Params>
+		ResPtr(Params&& ...p) noexcept;
+		constexpr ResPtr(ResPtr& rp) noexcept { *this = rp; }
+		constexpr ResPtr(const ResPtr& rp) noexcept { *this = rp; }
+		constexpr ResPtr(ResPtr&& rp) noexcept { *this = std::forward<ResPtr&&>(rp); }
+		~ResPtr() noexcept;
+
+		// TODO: Change all static casts into implicit ones
+		template<typename T>
+		constexpr ResPtr<T> CastStatic() const noexcept { return { count, static_cast<T*>(ptr) }; }
+		template<typename T>
+		constexpr operator ResPtr<T>() const noexcept { return CastStatic<T>(); }
+		template<typename T>
+		constexpr ResPtr<T> CastDynamic() const noexcept { return { count, dynamic_cast<T*>(ptr) }; }
+
+		constexpr R& operator*() { return *ptr; }
+		constexpr const R& operator*() const { return *ptr; }
+		constexpr R* operator->() { return ptr; }
+		constexpr const R* operator->() const { return ptr; }
+
+		constexpr bool operator==(const void* p) const noexcept { return ptr == p; }
+		constexpr bool operator!=(const void* p) const noexcept { return ptr != p; }
+		constexpr bool operator==(std::nullptr_t p) const noexcept { return ptr == p; }
+		constexpr bool operator!=(std::nullptr_t p) const noexcept { return ptr != p; }
+
+		constexpr ResPtr& operator=(const ResPtr& rp) noexcept;
+		constexpr ResPtr& operator=(ResPtr&& rp) noexcept;
+	};
+}

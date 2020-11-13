@@ -274,9 +274,6 @@
     <ClCompile Include="Cone.cpp" />
     <ClCompile Include="ConeVolume.cpp" />
     <ClCompile Include="ConstBufferEx.cpp" />
-    <ClCompile Include="ConstBufferExGeometry.cpp" />
-    <ClCompile Include="ConstBufferExPixel.cpp" />
-    <ClCompile Include="ConstBufferExVertex.cpp" />
     <ClCompile Include="ConstBufferTransform.cpp" />
     <ClCompile Include="ConstBufferTransformEx.cpp" />
     <ClCompile Include="Cube.cpp" />
@@ -302,6 +299,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="HorizontalBlurPass.cpp" />
+    <ClCompile Include="IBindable.cpp" />
     <ClCompile Include="IBufferResource.cpp" />
     <ClCompile Include="ILight.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
@@ -755,6 +753,7 @@
     <ClInclude Include="CameraIndicator.h" />
     <ClInclude Include="CameraParams.h" />
     <ClInclude Include="CameraPool.h" />
+    <ClInclude Include="GfxResPtr.h" />
     <ClInclude Include="Cone.h" />
     <ClInclude Include="ConeVolume.h" />
     <ClInclude Include="ConstBufferExGeometry.h" />
@@ -873,6 +872,7 @@
     <ClInclude Include="RenderTarget.h" />
     <ClInclude Include="RenderTargetEx.h" />
     <ClInclude Include="RenderTargetShaderInput.h" />
+    <ClInclude Include="ResPtr.h" />
     <ClInclude Include="ShadowMapBase.h" />
     <ClInclude Include="ShadowMapCubePass.h" />
     <ClInclude Include="ShadowMapPass.h" />

@@ -15,8 +15,8 @@ namespace GFX::Resource
 	public:
 		virtual ~ConstBufferPixel() = default;
 
-		static inline std::shared_ptr<ConstBufferPixel> Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
-		static inline std::shared_ptr<ConstBufferPixel> Get(Graphics& gfx, const std::string& tag, UINT slot = 0U);
+		static inline GfxResPtr<ConstBufferPixel> Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot = 0U);
+		static inline GfxResPtr<ConstBufferPixel> Get(Graphics& gfx, const std::string& tag, UINT slot = 0U);
 
 		static inline std::string GenerateRID(const std::string& tag, const T& values, UINT slot = 0U) noexcept { return GenerateRID(tag, slot); }
 		static inline std::string GenerateRID(const std::string& tag, UINT slot = 0U) noexcept;
@@ -32,13 +32,13 @@ namespace GFX::Resource
 	};
 
 	template<typename T>
-	inline std::shared_ptr<ConstBufferPixel<T>> ConstBufferPixel<T>::Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot)
+	inline GfxResPtr<ConstBufferPixel<T>> ConstBufferPixel<T>::Get(Graphics& gfx, const std::string& tag, const T& values, UINT slot)
 	{
 		return Codex::Resolve<ConstBufferPixel<T>>(gfx, tag, values, slot);
 	}
 
 	template<typename T>
-	inline std::shared_ptr<ConstBufferPixel<T>> ConstBufferPixel<T>::Get(Graphics& gfx, const std::string& tag, UINT slot)
+	inline GfxResPtr<ConstBufferPixel<T>> ConstBufferPixel<T>::Get(Graphics& gfx, const std::string& tag, UINT slot)
 	{
 		return Codex::Resolve<ConstBufferPixel<T>>(gfx, tag, slot);
 	}
@@ -46,6 +46,6 @@ namespace GFX::Resource
 	template<typename T>
 	inline std::string ConstBufferPixel<T>::GenerateRID(const std::string& tag, UINT slot) noexcept
 	{
-		return "#" + std::string(typeid(ConstBufferPixel<T>).name()) + "#" + tag + "#" + std::to_string(slot) + "#";
+		return "CP" + std::string(typeid(T).name()) + std::to_string(slot) + "#" + tag;
 	}
 }

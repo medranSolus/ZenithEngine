@@ -18,7 +18,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBind(GFX::Resource::Rasterizer::Get(gfx, D3D11_CULL_MODE::D3D11_CULL_BACK));
 		AddBind(GFX::Resource::DepthStencilState::Get(gfx, GFX::Resource::DepthStencilState::StencilMode::DepthFirst));
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "SkyboxPS"));
-		AddBind(std::make_shared<GFX::Resource::ConstBufferTransformSkybox>(gfx));
+		AddBind(GfxResPtr<GFX::Resource::ConstBufferTransformSkybox>(gfx));
 		AddBind(GFX::Resource::Topology::Get(gfx, D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
 		const std::string vertexBufferTag = Primitive::Cube::GetNameSkyboxVertexBuffer();

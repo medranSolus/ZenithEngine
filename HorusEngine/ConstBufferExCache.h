@@ -22,16 +22,16 @@ namespace GFX::Resource
 
 	public:
 		ConstBufferExCache(Graphics& gfx, const std::string& tag,
-			const Data::CBuffer::DCBLayoutFinal& layout, UINT slot = 0U)
-			: T(gfx, tag, *layout.GetRoot(), slot, nullptr), buffer(layout) {}
+			const Data::CBuffer::DCBLayoutFinal& layout, UINT slot = 0U);
+
 		ConstBufferExCache(Graphics& gfx, const std::string& tag,
-			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U)
-			: T(gfx, tag, buffer.GetRootElement(), slot, &buffer), buffer(buffer) {}
+			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U);
+
 		virtual ~ConstBufferExCache() = default;
 
-		static inline std::shared_ptr<ConstBufferExCache> Get(Graphics& gfx, const std::string& tag,
+		static inline GfxResPtr<ConstBufferExCache> Get(Graphics& gfx, const std::string& tag,
 			const Data::CBuffer::DCBLayoutFinal& layout, UINT slot = 0U);
-		static inline std::shared_ptr<ConstBufferExCache> Get(Graphics& gfx, const std::string& tag,
+		static inline GfxResPtr<ConstBufferExCache> Get(Graphics& gfx, const std::string& tag,
 			const Data::CBuffer::DynamicCBuffer& buffer, UINT slot = 0U);
 
 		static inline std::string GenerateRID(const std::string& tag,
@@ -57,18 +57,40 @@ namespace GFX::Resource
 	inline std::string ConstBufferExCache<T>::GenerateRID(const std::string& tag,
 		const Data::CBuffer::DCBLayoutElement& root, UINT slot) noexcept
 	{
-		return "#" + std::string(typeid(ConstBufferExCache<T>).name()) + "#" + tag + "#" + std::to_string(slot) + "#" + root.GetSignature() + "#";
+		return "C" + T::GenerateRID(tag, root, slot);
 	}
 
 	template<typename T>
-	inline std::shared_ptr<ConstBufferExCache<T>> ConstBufferExCache<T>::Get(Graphics& gfx, const std::string& tag,
+	inline ConstBufferExCache<T>::ConstBufferExCache(Graphics& gfx, const std::string& tag,
+		const Data::CBuffer::DCBLayoutFinal& layout, UINT slot)
+		: T(gfx, tag, *layout.GetRoot(), slot, nullptr, false), buffer(layout)
+	{
+#ifdef _DEBUG
+		GFX_ENABLE_ALL(gfx);
+		SET_DEBUG_NAME_RID(constantBuffer.Get());
+#endif
+	}
+
+	template<typename T>
+	inline ConstBufferExCache<T>::ConstBufferExCache(Graphics& gfx, const std::string& tag,
+		const Data::CBuffer::DynamicCBuffer& buffer, UINT slot)
+		: T(gfx, tag, buffer.GetRootElement(), slot, &buffer, false), buffer(buffer)
+	{
+#ifdef _DEBUG
+		GFX_ENABLE_ALL(gfx);
+		SET_DEBUG_NAME_RID(constantBuffer.Get());
+#endif
+	}
+
+	template<typename T>
+	inline GfxResPtr<ConstBufferExCache<T>> ConstBufferExCache<T>::Get(Graphics& gfx, const std::string& tag,
 		const Data::CBuffer::DCBLayoutFinal& layout, UINT slot)
 	{
 		return Codex::Resolve<ConstBufferExCache<T>>(gfx, tag, layout, slot);
 	}
 
 	template<typename T>
-	inline std::shared_ptr<ConstBufferExCache<T>> ConstBufferExCache<T>::Get(Graphics& gfx, const std::string& tag,
+	inline GfxResPtr<ConstBufferExCache<T>> ConstBufferExCache<T>::Get(Graphics& gfx, const std::string& tag,
 		const Data::CBuffer::DynamicCBuffer& buffer, UINT slot)
 	{
 		return Codex::Resolve<ConstBufferExCache<T>>(gfx, tag, buffer, slot);

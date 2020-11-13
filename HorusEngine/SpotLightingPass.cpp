@@ -2,6 +2,7 @@
 #include "RenderPassesBase.h"
 #include "PipelineResources.h"
 #include "GfxResources.h"
+#include "Math.h"
 
 namespace GFX::Pipeline::RenderPass
 {

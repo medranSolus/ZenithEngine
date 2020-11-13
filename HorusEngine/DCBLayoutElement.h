@@ -20,7 +20,7 @@
 
 namespace GFX::Data::CBuffer
 {
-	enum class ElementType
+	enum class ElementType : uint8_t
 	{
 #define X(el) el,
 		LEAF_ELEMENT_TYPES
@@ -49,21 +49,21 @@ namespace GFX::Data::CBuffer
 	{
 		using DataType = bool;
 		static constexpr size_t hlslSize = 4U;
-		static constexpr const char* code = "BL";
+		static constexpr const char* code = "B";
 		static constexpr bool valid = true;
 	};
 	template<> struct Map<ElementType::SInteger>
 	{
 		using DataType = int32_t;
 		static constexpr size_t hlslSize = sizeof(DataType);
-		static constexpr const char* code = "S1";
+		static constexpr const char* code = "S";
 		static constexpr bool valid = true;
 	};
 	template<> struct Map<ElementType::UInteger>
 	{
 		using DataType = uint32_t;
 		static constexpr size_t hlslSize = sizeof(DataType);
-		static constexpr const char* code = "U1";
+		static constexpr const char* code = "U";
 		static constexpr bool valid = true;
 	};
 	template<> struct Map<ElementType::Float>
@@ -112,7 +112,7 @@ namespace GFX::Data::CBuffer
 	{
 		using DataType = DirectX::XMFLOAT4X4;
 		static constexpr size_t hlslSize = sizeof(DataType);
-		static constexpr const char* code = "M4";
+		static constexpr const char* code = "M";
 		static constexpr bool valid = true;
 	};
 
@@ -132,7 +132,7 @@ namespace GFX::Data::CBuffer
 #undef X
 #pragma endregion
 
-	class DCBLayoutElement
+		class DCBLayoutElement
 	{
 		friend class DCBLayout;
 		friend struct ExtraData;
@@ -199,10 +199,10 @@ namespace GFX::Data::CBuffer
 			LEAF_ELEMENT_TYPES
 #undef X
 		default:
-		{
-			assert("Tried to get offset of non-leaf element" && false);
-			return 0U;
-		}
+			{
+				assert("Tried to get offset of non-leaf element" && false);
+				return 0U;
+			}
 		}
 	}
 }

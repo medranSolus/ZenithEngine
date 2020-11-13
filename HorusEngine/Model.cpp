@@ -29,7 +29,7 @@ namespace GFX::Shape
 		auto vertexLayout = material->GerVertexLayout();
 		meshID += vertexLayout->GetLayoutCode();
 
-		std::shared_ptr<Resource::VertexBuffer> vertexBuffer = nullptr;
+		GfxResPtr<Resource::VertexBuffer> vertexBuffer;
 		if (Resource::VertexBuffer::NotStored(meshID))
 			vertexBuffer = Resource::VertexBuffer::Get(gfx, meshID, { vertexLayout, mesh });
 		else
@@ -110,7 +110,13 @@ namespace GFX::Shape
 		root->SetScale(params.scale);
 		root->SetPos(params.position);
 		if (flipYZ)
-			root->SetAngle({ M_PI_2, 0.0f, 0.0f });
+		{
+			DirectX::XMFLOAT3 rot = params.rotation;
+			rot.x += M_PI_2;
+			root->SetAngle(rot);
+		}
+		else
+			root->SetAngle(params.rotation);
 	}
 
 	Model& Model::operator=(Model&& model) noexcept

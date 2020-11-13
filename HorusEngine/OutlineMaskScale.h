@@ -6,7 +6,7 @@ namespace GFX::Visual
 {
 	class OutlineMaskScale : public IVisual
 	{
-		std::shared_ptr<Resource::ConstBufferExPixelCache> pixelBuffer = nullptr;
+		GfxResPtr<Resource::ConstBufferExPixelCache> pixelBuffer;
 		Data::CBuffer::DynamicCBuffer buffer;
 		bool dirty = false;
 

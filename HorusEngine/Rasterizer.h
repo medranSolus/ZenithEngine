@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 
 namespace GFX::Resource
 {
@@ -13,7 +13,7 @@ namespace GFX::Resource
 		Rasterizer(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable = true);
 		virtual ~Rasterizer() = default;
 
-		static inline std::shared_ptr<Rasterizer> Get(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable = true) { return Codex::Resolve<Rasterizer>(gfx, culling, depthEnable); }
+		static inline GfxResPtr<Rasterizer> Get(Graphics& gfx, D3D11_CULL_MODE culling, bool depthEnable = true) { return Codex::Resolve<Rasterizer>(gfx, culling, depthEnable); }
 		static inline std::string GenerateRID(D3D11_CULL_MODE culling, bool depthEnable = true) noexcept;
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->RSSetState(state.Get()); }
@@ -28,6 +28,6 @@ namespace GFX::Resource
 
 	inline std::string Rasterizer::GenerateRID(D3D11_CULL_MODE culling, bool depthEnable) noexcept
 	{
-		return "#" + std::string(typeid(Rasterizer).name()) + "#" + std::to_string(culling) + "#" + std::to_string(depthEnable) + "#";
+		return "R" + std::to_string(depthEnable) + "#" + std::to_string(culling);
 	}
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Codex.h"
+#include "GfxResPtr.h"
 #include "VertexBufferData.h"
 
 namespace GFX::Resource
@@ -16,9 +16,9 @@ namespace GFX::Resource
 		virtual ~VertexBuffer() = default;
 
 		static inline bool NotStored(const std::string& tag) noexcept { return Codex::NotStored<VertexBuffer>(tag); }
-		static inline std::shared_ptr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
+		static inline GfxResPtr<VertexBuffer> Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer);
 		template<typename ...Ignore>
-		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept;
+		static inline std::string GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept { return "VB#" + tag; }
 
 		constexpr const Data::BoundingBox& GetBox() const noexcept { return boundingBox; }
 		inline void Bind(Graphics& gfx) override;
@@ -31,15 +31,9 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<VertexBuffer> VertexBuffer::Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer)
+	inline GfxResPtr<VertexBuffer> VertexBuffer::Get(Graphics& gfx, const std::string& tag, const Data::VertexBufferData& buffer)
 	{
 		return Codex::Resolve<VertexBuffer>(gfx, tag, buffer);
-	}
-
-	template<typename ...Ignore>
-	inline std::string VertexBuffer::GenerateRID(const std::string& tag, Ignore&& ...ignore) noexcept
-	{
-		return "#" + std::string(typeid(VertexBuffer).name()) + "#" + tag + "#";
 	}
 
 	inline void VertexBuffer::Bind(Graphics& gfx)

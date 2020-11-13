@@ -16,7 +16,7 @@ namespace GFX::Resource
 		virtual ~ConstBufferTransformEx() = default;
 
 		constexpr void UpdateTransform(const DirectX::XMFLOAT4X4& transformMatrix) noexcept { transform = transformMatrix; }
-		inline DirectX::FXMMATRIX GetTransform() const noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransform(); }
+		inline DirectX::XMMATRIX GetTransform() const noexcept override { return DirectX::XMLoadFloat4x4(&transform) * ConstBufferTransform::GetTransform(); }
 
 		DirectX::XMFLOAT3 GetPos() const noexcept override;
 	};

@@ -29,7 +29,7 @@ namespace GFX::Data
 	class VertexLayout
 	{
 	public:
-		enum class ElementType : unsigned char
+		enum class ElementType : uint8_t
 		{
 #define X(el) el,
 			VERTEX_LAYOUT_ELEMENTS

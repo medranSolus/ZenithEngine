@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseProbe.h"
+#include "ImGui\imgui.h"
 
 namespace GFX::Shape
 {

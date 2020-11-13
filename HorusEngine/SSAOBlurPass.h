@@ -6,9 +6,9 @@ namespace GFX::Pipeline::RenderPass
 {
 	class SSAOBlurPass : public Base::FullscreenPass
 	{
-		std::shared_ptr<Resource::IRenderTarget> ssaoScratchBuffer;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> direction;
-		std::shared_ptr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
+		GfxResPtr<Resource::IRenderTarget> ssaoScratchBuffer;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> direction;
+		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
 
 	public:
 		SSAOBlurPass(Graphics& gfx, const std::string& name);

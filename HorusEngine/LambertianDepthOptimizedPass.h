@@ -9,10 +9,10 @@ namespace GFX::Pipeline::RenderPass
 	class LambertianDepthOptimizedPass : public Base::QueuePass
 	{
 		Camera::ICamera* mainCamera = nullptr;
-		std::shared_ptr<GFX::Resource::NullPixelShader> depthOnlyPS = nullptr;
-		std::shared_ptr<GFX::Resource::VertexShader> depthOnlyVS = nullptr;
-		std::shared_ptr<GFX::Resource::DepthStencilState> depthOnlyStencilState = nullptr;
-		std::shared_ptr<GFX::Resource::DepthStencilState> lambertianStencilState = nullptr;
+		GfxResPtr<GFX::Resource::NullPixelShader> depthOnlyPS;
+		GfxResPtr<GFX::Resource::VertexShader> depthOnlyVS;
+		GfxResPtr<GFX::Resource::DepthStencilState> depthOnlyStencilState;
+		GfxResPtr<GFX::Resource::DepthStencilState> lambertianStencilState;
 
 	public:
 		LambertianDepthOptimizedPass(Graphics& gfx, const std::string& name);

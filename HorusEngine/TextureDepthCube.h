@@ -1,11 +1,5 @@
 #pragma once
-#include "Codex.h"
-
-namespace GFX::Pipeline::Resource
-{
-	class IRenderTarget;
-	class DepthStencil;
-}
+#include "IRenderTarget.h"
 
 namespace GFX::Resource
 {
@@ -16,18 +10,18 @@ namespace GFX::Resource
 		UINT slot;
 		UINT size;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
-		std::shared_ptr<Pipeline::Resource::IRenderTarget> depthBuffer;
-		std::shared_ptr<Pipeline::Resource::DepthStencil> stencil;
+		GfxResPtr<Pipeline::Resource::IRenderTarget> depthBuffer;
+		GfxResPtr<Pipeline::Resource::DepthStencil> stencil;
 
 	public:
 		TextureDepthCube(Graphics& gfx, UINT size, UINT slot = 0U);
 		virtual ~TextureDepthCube() = default;
 
-		static inline std::shared_ptr<TextureDepthCube> Get(Graphics& gfx, UINT size, UINT slot = 0U);
+		static inline GfxResPtr<TextureDepthCube> Get(Graphics& gfx, UINT size, UINT slot = 0U);
 		static inline std::string GenerateRID(UINT size, UINT slot = 0U) noexcept;
 
-		inline std::shared_ptr<Pipeline::Resource::IRenderTarget> GetBuffer() noexcept { return depthBuffer; }
-		inline std::shared_ptr<Pipeline::Resource::DepthStencil> GetStencil() noexcept { return stencil; }
+		inline GfxResPtr<Pipeline::Resource::IRenderTarget> GetBuffer() const noexcept { return depthBuffer; }
+		inline GfxResPtr<Pipeline::Resource::DepthStencil> GetStencil() const noexcept { return stencil; }
 		inline void Unbind(Graphics& gfx) noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1U, nullShaderResource.GetAddressOf()); }
 
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
@@ -40,13 +34,13 @@ namespace GFX::Resource
 		static constexpr bool generate{ true };
 	};
 
-	inline std::shared_ptr<TextureDepthCube> TextureDepthCube::Get(Graphics& gfx, UINT size, UINT slot)
+	inline GfxResPtr<TextureDepthCube> TextureDepthCube::Get(Graphics& gfx, UINT size, UINT slot)
 	{
 		return Codex::Resolve<TextureDepthCube>(gfx, size, slot);
 	}
 
 	inline std::string TextureDepthCube::GenerateRID(UINT size, UINT slot) noexcept
 	{
-		return "#" + std::string(typeid(TextureDepthCube).name()) + "#" + std::to_string(size) + "#" + std::to_string(slot) + "#";
+		return "TD" + std::to_string(slot) + "#" + std::to_string(size);
 	}
 }

@@ -12,7 +12,7 @@ namespace GFX::Pipeline::RenderPass
 		AddBindableSink<Resource::RenderTarget>("blurTarget");
 		RegisterSink(Base::SinkDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("direction", direction));
 
-		renderTarget = std::make_shared<Resource::RenderTargetShaderInput>(gfx, width, height, 0U);
+		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, width, height, 0U);
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("halfTarget", renderTarget));
 
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "BlurPS"));
