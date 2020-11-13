@@ -1,5 +1,5 @@
 #include "QueuePass.h"
-#include "TechniqueStep.h"
+#include "JobData.h"
 
 namespace GFX::Pipeline::RenderPass::Base
 {
@@ -55,8 +55,14 @@ namespace GFX::Pipeline::RenderPass::Base
 
 	void QueuePass::Execute(Graphics& gfx, RenderChannel mode)
 	{
+		DRAW_TAG_START(gfx, GetName());
 		BindAll(gfx);
 		for (auto& job : jobs)
+		{
+			DRAW_TAG_START(gfx, job.GetData().GetName());
 			job.Execute(gfx, mode);
+			DRAW_TAG_END(gfx);
+		}
+		DRAW_TAG_END(gfx);
 	}
 }

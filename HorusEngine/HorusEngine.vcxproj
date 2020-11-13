@@ -331,7 +331,6 @@
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OutlineDrawBlurPass.cpp" />
-    <ClCompile Include="OutlineDrawPass.cpp" />
     <ClCompile Include="OutlineMaskBlur.cpp" />
     <ClCompile Include="OutlineMaskOffset.cpp" />
     <ClCompile Include="OutlineMaskScale.cpp" />
@@ -782,7 +781,6 @@
     <ClInclude Include="DepthStencilShaderInput.h" />
     <ClInclude Include="HorizontalBlurPass.h" />
     <ClInclude Include="OutlineDrawBlurPass.h" />
-    <ClInclude Include="OutlineDrawPass.h" />
     <ClInclude Include="PipelineResources.h" />
     <ClInclude Include="ProjectionData.h" />
     <ClInclude Include="MainPipelineGraph.h" />

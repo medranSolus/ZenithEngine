@@ -53,8 +53,10 @@ namespace GFX::Pipeline::RenderPass
 	void SkyboxPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
+		DRAW_TAG_START(gfx, GetName());
 		mainCamera->BindCamera(gfx);
 		BindAll(gfx);
 		gfx.DrawIndexed(indexCount);
+		DRAW_TAG_END(gfx);
 	}
 }

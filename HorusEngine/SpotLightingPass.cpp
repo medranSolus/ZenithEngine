@@ -59,15 +59,19 @@ namespace GFX::Pipeline::RenderPass
 	void SpotLightingPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
+		DRAW_TAG_START(gfx, GetName());
 		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())
 		{
+			DRAW_TAG_START(gfx, job.GetData().GetName());
 			shadowMapPass.BindLight(dynamic_cast<Light::ILight&>(job.GetData()));
 			shadowMapPass.Execute(gfx);
 			DirectX::XMStoreFloat4x4(&shadowBuffer->GetBuffer()["shadowViewProjection"], DirectX::XMMatrixTranspose(gfx.GetView() * gfx.GetProjection()));
 			mainCamera->BindCamera(gfx);
 			BindAll(gfx);
 			job.Execute(gfx);
+			DRAW_TAG_END(gfx);
 		}
+		DRAW_TAG_END(gfx);
 	}
 }

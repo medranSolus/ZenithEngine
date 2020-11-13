@@ -6,7 +6,7 @@
 
 namespace GFX::Light
 {
-	class ILight : public IObject, public Pipeline::JobData
+	class ILight : public IObject, public virtual Pipeline::JobData
 	{
 	protected:
 		std::unique_ptr<Volume::IVolume> volume = nullptr;

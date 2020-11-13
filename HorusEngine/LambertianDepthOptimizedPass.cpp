@@ -2,6 +2,7 @@
 #include "RenderPassesBase.h"
 #include "PipelineResources.h"
 #include "GfxResources.h"
+#include "JobData.h"
 
 namespace GFX::Pipeline::RenderPass
 {
@@ -35,9 +36,15 @@ namespace GFX::Pipeline::RenderPass
 		depthOnlyStencilState->Bind(gfx);
 		QueuePass::Execute(gfx, RenderChannel::Depth);
 		// Normal pass
+		DRAW_TAG_START(gfx, GetName() + "_final");
 		lambertianStencilState->Bind(gfx);
 		mainCamera->BindVS(gfx);
 		for (auto& job : GetJobs())
+		{
+			DRAW_TAG_START(gfx, job.GetData().GetName());
 			job.Execute(gfx);
+			DRAW_TAG_END(gfx);
+		}
+		DRAW_TAG_END(gfx);
 	}
 }

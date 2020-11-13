@@ -39,7 +39,9 @@ namespace GFX
 		Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer))); // Get texture subresource (back buffer)
 		renderTarget = GfxResPtr<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer, swapDesc.BufferDesc.Format); // Create view to back buffer allowing writing data
-
+#ifdef _DEBUG
+		GFX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
+#endif
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
 	}
 
@@ -64,7 +66,13 @@ namespace GFX
 		if (guiEnabled)
 		{
 			ImGui::Render(); // Create data to render
+#ifdef _DEBUG
+			PushDrawTag("ImGui");
+#endif
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Pass it to DirectX
+#ifdef _DEBUG
+			PopDrawTag();
+#endif
 		}
 		HRESULT result;
 		GFX_SET_DEBUG_WATCH();

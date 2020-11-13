@@ -20,6 +20,7 @@ namespace GFX::Pipeline
 		inline JobData& operator=(JobData&& data) noexcept { techniques = std::move(data.techniques); return *this; }
 		virtual ~JobData() = default;
 
+		virtual const std::string& GetName() const noexcept = 0;
 		virtual const Data::BoundingBox& GetBoundingBox() const noexcept = 0;
 		virtual UINT GetIndexCount() const noexcept = 0;
 		virtual void Bind(Graphics& gfx) = 0;

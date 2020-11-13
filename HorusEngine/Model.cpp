@@ -41,7 +41,7 @@ namespace GFX::Shape
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeLambertian(gfx, graph, std::move(material)));
 		techniques.emplace_back(Pipeline::TechniqueFactory::MakeOutlineBlur(gfx, graph, meshID, std::move(vertexLayout)));
 
-		return std::make_shared<Mesh>(gfx, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
+		return std::make_shared<Mesh>(gfx, *name, std::move(indexBuffer), std::move(vertexBuffer), std::move(techniques));
 	}
 
 	std::unique_ptr<ModelNode> Model::ParseNode(const aiNode& node, uint64_t& id)
@@ -61,7 +61,7 @@ namespace GFX::Shape
 	}
 
 	Model::Model(Graphics& gfx, Pipeline::RenderGraph& graph, const std::string& file, const ModelParams& params)
-		: name(params.name)
+		: name(std::make_unique<std::string>(params.name))
 	{
 		Assimp::Importer importer;
 		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);

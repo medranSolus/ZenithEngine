@@ -408,9 +408,6 @@
     <ClCompile Include="OutlineGenerationPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="OutlineDrawPass.cpp">
-      <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="OutlineDrawBlurPass.cpp">
       <Filter>Source Files\GFX\Pipeline\RenderPass</Filter>
     </ClCompile>
@@ -1244,9 +1241,6 @@
       <Filter>Header Files\GFX\Pipeline\Resource</Filter>
     </ClInclude>
     <ClInclude Include="OutlineGenerationPass.h">
-      <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
-    </ClInclude>
-    <ClInclude Include="OutlineDrawPass.h">
       <Filter>Header Files\GFX\Pipeline\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="OutlineDrawBlurPass.h">

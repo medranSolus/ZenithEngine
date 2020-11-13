@@ -8,7 +8,7 @@ namespace GFX::Shape
 {
 	class Model : public IObject
 	{
-		std::string name = "";
+		std::unique_ptr<std::string> name = nullptr;
 		std::unique_ptr<ModelNode> root = nullptr;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		std::vector<std::shared_ptr<Visual::Material>> materials; // TODO: Place inside codex
@@ -38,8 +38,8 @@ namespace GFX::Shape
 		inline const DirectX::XMFLOAT3& GetPos() const noexcept override { return root->GetPos(); }
 		inline void SetPos(const DirectX::XMFLOAT3& position) noexcept override { root->SetPos(position); }
 
-		inline const std::string& GetName() const noexcept override { return name; }
-		inline void SetName(const std::string& newName) noexcept override { name = newName; }
+		inline const std::string& GetName() const noexcept override { return *name; }
+		inline void SetName(const std::string& newName) noexcept override { *name = newName; }
 
 		inline void Update(const DirectX::XMFLOAT3& delta, const DirectX::XMFLOAT3& deltaAngle) noexcept override { root->Update(delta, deltaAngle); }
 		inline void UpdatePos(const DirectX::XMFLOAT3& delta) noexcept override { root->UpdatePos(delta); }

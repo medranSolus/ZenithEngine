@@ -8,7 +8,6 @@
 #include "LambertianDepthOptimizedPass.h"
 #include "LightCombinePass.h"
 #include "OutlineDrawBlurPass.h"
-#include "OutlineDrawPass.h"
 #include "OutlineGenerationPass.h"
 #include "PointLightingPass.h"
 #include "ShadowMapCubePass.h"

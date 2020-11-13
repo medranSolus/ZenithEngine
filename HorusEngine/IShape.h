@@ -11,6 +11,7 @@ namespace GFX::Shape
 			: BaseShape(gfx), Object(position, name, scale) {}
 		virtual ~IShape() = default;
 
+		inline const std::string& GetName() const noexcept { return name; }
 		inline bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return Object::Accept(gfx, probe) || BaseShape::Accept(gfx, probe); }
 	};
 }

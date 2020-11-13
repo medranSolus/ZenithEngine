@@ -3,7 +3,9 @@
 #include "WinApiException.h"
 #include "DXGIDebugInfoManager.h"
 #include "GUIManager.h"
+#include "Utils.h"
 #include "ImGui/imgui_impl_dx11.h"
+#include <d3d11_1.h>
 
 namespace GFX
 {
@@ -12,6 +14,7 @@ namespace GFX
 		friend class Resource::IBindable;
 
 #ifdef _DEBUG
+		Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation> tagManager = nullptr;
 		DXGIDebugInfoManager debugInfoManager;
 #endif
 		GUI::GUIManager guiManager;
@@ -43,7 +46,9 @@ namespace GFX
 		constexpr float GetRatio() { return static_cast<float>(GetWidth()) / GetHeight(); }
 		inline GfxResPtr<Pipeline::Resource::RenderTarget> GetBackBuffer() noexcept { return renderTarget; }
 #ifdef _DEBUG
-		constexpr DXGIDebugInfoManager& GetInfoManager() { return debugInfoManager; }
+		constexpr DXGIDebugInfoManager& GetInfoManager() noexcept { return debugInfoManager; }
+		inline void PushDrawTag(const std::string& tag) { tagManager->BeginEvent(Utils::ToUtf8(tag).c_str()); }
+		inline void PopDrawTag() { tagManager->EndEvent(); }
 #endif
 
 		void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
@@ -109,3 +114,11 @@ namespace GFX
 #pragma endregion
 	};
 }
+
+#ifdef _DEBUG
+#define DRAW_TAG_START(gfx, tag) gfx.PushDrawTag(tag)
+#define DRAW_TAG_END(gfx) gfx.PopDrawTag();
+#else
+#define DRAW_TAG_START(gfx, tag)
+#define DRAW_TAG_END(gfx)
+#endif

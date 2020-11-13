@@ -4,7 +4,7 @@
 
 namespace GFX::Shape
 {
-	class BaseShape : public Pipeline::JobData
+	class BaseShape : public virtual Pipeline::JobData
 	{
 		GfxResPtr<Resource::IndexBuffer> indexBuffer;
 		GfxResPtr<Resource::VertexBuffer> vertexBuffer;

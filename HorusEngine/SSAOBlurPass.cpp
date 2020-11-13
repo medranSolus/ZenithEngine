@@ -22,11 +22,13 @@ namespace GFX::Pipeline::RenderPass
 
 	void SSAOBlurPass::Execute(Graphics& gfx)
 	{
+		DRAW_TAG_START(gfx, GetName());
 		direction->GetBuffer()["vertical"] = !direction->GetBufferConst()["vertical"];
 		direction->Bind(gfx);
 		kernelBuffer->Bind(gfx);
 		BindAll(gfx);
 		ssaoScratchBuffer->Bind(gfx);
 		gfx.DrawIndexed(6U);
+		DRAW_TAG_END(gfx);
 	}
 }

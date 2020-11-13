@@ -45,14 +45,18 @@ namespace GFX::Pipeline::RenderPass
 	void PointLightingPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
+		DRAW_TAG_START(gfx, GetName());
 		mainCamera->BindPS(gfx);
 		for (auto& job : GetJobs())
 		{
+			DRAW_TAG_START(gfx, job.GetData().GetName());
 			shadowMapPass.BindLight(dynamic_cast<Light::ILight&>(job.GetData()));
 			shadowMapPass.Execute(gfx);
 			mainCamera->BindCamera(gfx);
 			BindAll(gfx);
 			job.Execute(gfx);
+			DRAW_TAG_END(gfx);
 		}
+		DRAW_TAG_END(gfx);
 	}
 }

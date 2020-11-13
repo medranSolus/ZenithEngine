@@ -30,7 +30,9 @@ namespace GFX::Pipeline::RenderPass::Base
 
 	void FullscreenPass::Execute(Graphics& gfx)
 	{
+		DRAW_TAG_START(gfx, GetName());
 		BindAll(gfx);
 		gfx.DrawIndexed(6U);
+		DRAW_TAG_END(gfx);
 	}
 }
