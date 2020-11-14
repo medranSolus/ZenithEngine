@@ -41,9 +41,9 @@ namespace GFX::Probe
 		//}
 		if (auto scale = buffer["scale"]; scale.Exists())
 		{
-			dirty |= ImGui::InputFloat(Tag("Scale"), &scale, 0.1f, 0.0f, "%.2f");
-			if (static_cast<float>(scale) < 0.01f)
-				scale = 0.01f;
+			dirty |= ImGui::InputFloat(Tag("Scale"), &scale, 0.01f, 0.0f, "%.3f");
+			if (static_cast<float>(scale) < 0.001f)
+				scale = 0.001f;
 		}
 		if (auto position = buffer["position"]; position.Exists())
 		{
@@ -51,11 +51,11 @@ namespace GFX::Probe
 			DirectX::XMFLOAT3& pos = static_cast<DirectX::XMFLOAT3&>(position);
 			ImGui::Text("Position");
 			ImGui::SetNextItemWidth(-15.0f);
-			dirty |= ImGui::InputFloat(Tag("X##position"), &pos.x, 1.0f, 0.0f, "%.2f");
+			dirty |= ImGui::InputFloat(Tag("X##position"), &pos.x, 0.1f, 0.0f, "%.2f");
 			ImGui::SetNextItemWidth(-15.0f);
-			dirty |= ImGui::InputFloat(Tag("Y##position"), &pos.y, 1.0f, 0.0f, "%.2f");
+			dirty |= ImGui::InputFloat(Tag("Y##position"), &pos.y, 0.1f, 0.0f, "%.2f");
 			ImGui::SetNextItemWidth(-15.0f);
-			dirty |= ImGui::InputFloat(Tag("Z##position"), &pos.z, 1.0f, 0.0f, "%.2f");
+			dirty |= ImGui::InputFloat(Tag("Z##position"), &pos.z, 0.1f, 0.0f, "%.2f");
 			ImGui::NextColumn();
 		}
 		if (auto angle = buffer["angle"]; angle.Exists())

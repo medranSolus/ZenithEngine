@@ -156,18 +156,18 @@ namespace GFX::GUI
 		if (ImGui::BeginPopupModal(TITLE, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 		{
 			ImGui::InputText("Name", &params.name);
-			ImGui::InputFloat("Scale", &params.scale, 0.1f, 0.0f, "%.2f");
-			if (params.scale < 0.01f)
-				params.scale = 0.01f;
+			ImGui::InputFloat("Scale", &params.scale, 0.01f, 0.0f, "%.3f");
+			if (params.scale < 0.001f)
+				params.scale = 0.001f;
 
 			ImGui::Columns(2, "##params_position", false);
 			ImGui::Text("Position");
 			ImGui::SetNextItemWidth(-15.0f);
-			ImGui::InputFloat("X##pos", &params.position.x, 1.0f, 0.0f, "%.2f");
+			ImGui::InputFloat("X##pos", &params.position.x, 0.1f, 0.0f, "%.2f");
 			ImGui::SetNextItemWidth(-15.0f);
-			ImGui::InputFloat("Y##pos", &params.position.y, 1.0f, 0.0f, "%.2f");
+			ImGui::InputFloat("Y##pos", &params.position.y, 0.1f, 0.0f, "%.2f");
 			ImGui::SetNextItemWidth(-15.0f);
-			ImGui::InputFloat("Z##pos", &params.position.z, 1.0f, 0.0f, "%.2f");
+			ImGui::InputFloat("Z##pos", &params.position.z, 0.1f, 0.0f, "%.2f");
 			ImGui::NextColumn();
 
 			ImGui::Text("Rotation");
@@ -237,9 +237,9 @@ namespace GFX::GUI
 				ImGui::InputFloat3("Position", reinterpret_cast<float*>(&params.position), "%.2f");
 				static const size_t STEP = 1;
 				ImGui::InputScalar("Range", ImGuiDataType_U64, &params.range, &STEP);
-				ImGui::InputFloat("Indicator size", &params.size, 0.1f, 0.0f, "%.2f");
-				if (params.size < 0.01f)
-					params.size = 0.01f;
+				ImGui::InputFloat("Indicator size", &params.size, 0.01f, 0.0f, "%.3f");
+				if (params.size < 0.001f)
+					params.size = 0.001f;
 				if (params.type == Light::LightType::Spot)
 				{
 					if (ImGui::SliderAngle("Outer angle", &params.outerAngle, 0.0f, 45.0f, "%.2f"))

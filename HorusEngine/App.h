@@ -15,7 +15,7 @@ class App
 	WinAPI::Window window;
 	GFX::Pipeline::MainPipelineGraph renderer;
 	Camera::CameraPool cameras;
-	Timer timer;
+	bool run = true;
 
 	std::vector<GFX::Light::PointLight> pointLights;
 	std::vector<GFX::Light::SpotLight> spotLights;

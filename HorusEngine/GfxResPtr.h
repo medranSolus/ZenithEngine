@@ -5,12 +5,12 @@ namespace GFX::Resource
 {
 	template<typename R>
 	template<typename ...Params>
-	ResPtr<R>::ResPtr(Params && ...p) noexcept
+	ResPtr<R>::ResPtr(Params && ...p)
 	{
-		uint8_t* memory = new uint8_t[sizeof(size_t) + sizeof(R)];
-		count = (size_t*)memory;
+		uint8_t* memory = static_cast<uint8_t*>(::operator new(sizeof(R) + sizeof(uint64_t), ALIGNMENT));
+		ptr = new(memory) R(std::forward<Params>(p)...);
+		count = (uint64_t*)(memory + sizeof(R));
 		*count = 1U;
-		ptr = new(memory + sizeof(size_t)) R(std::forward<Params>(p)...);
 	}
 
 	template<typename R>
@@ -23,8 +23,8 @@ namespace GFX::Resource
 			case 0U:
 			{
 				ptr->~R();
-				uint8_t* memory = (uint8_t*)count;
-				delete[] memory;
+				uint8_t* memory = (uint8_t*)ptr;
+				::operator delete(memory, ALIGNMENT);
 				break;
 			}
 			case 1U:

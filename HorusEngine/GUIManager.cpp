@@ -11,6 +11,10 @@ namespace GFX::GUI
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
+		auto& style = ImGui::GetStyle();
+		style.WindowRounding = 1;
+		style.WindowBorderSize = 1;
+		style.Colors[ImGuiCol_WindowBg].w = 0.785f;
 	}
 
 	void GUIManager::SetFont(const std::string& font, float size)

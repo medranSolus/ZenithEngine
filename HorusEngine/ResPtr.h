@@ -7,16 +7,17 @@ namespace GFX::Resource
 	class ResPtr final
 	{
 		static_assert(std::is_base_of_v<IBindable, R>, "ResPtr target type must be a IBindable type!");
+		static constexpr std::align_val_t ALIGNMENT = static_cast<std::align_val_t>(16U);
 
-		size_t* count = nullptr;
+		uint64_t* count = nullptr;
 		R* ptr = nullptr;
 
 	public:
 		ResPtr() = default;
 		// This should be private, but no idea how to perform cast and access this ctor... BIG TODO: Find a way
-		constexpr ResPtr(size_t* count, R* ptr) noexcept : count(count), ptr(ptr) { ++(*count); }
+		constexpr ResPtr(uint64_t* count, R* ptr) noexcept : count(count), ptr(ptr) { ++(*count); }
 		template<typename ...Params>
-		ResPtr(Params&& ...p) noexcept;
+		ResPtr(Params&& ...p);
 		constexpr ResPtr(ResPtr& rp) noexcept { *this = rp; }
 		constexpr ResPtr(const ResPtr& rp) noexcept { *this = rp; }
 		constexpr ResPtr(ResPtr&& rp) noexcept { *this = std::forward<ResPtr&&>(rp); }

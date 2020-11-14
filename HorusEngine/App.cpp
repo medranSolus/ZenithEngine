@@ -184,6 +184,9 @@ inline void App::ShowOptionsWindow()
 	static GFX::Probe::BaseProbe probe;
 	if (ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 	{
+		if (ImGui::Button("Exit"))
+			run = false;
+		ImGui::SameLine();
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		renderer.ShowWindow(window.Gfx());
 	}
@@ -353,17 +356,13 @@ void App::MakeFrame()
 
 App::App(const std::string& commandLine)
 	: window(1600, 900, WINDOW_TITLE), renderer(window.Gfx()),
-	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer, Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
+	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
+		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
-	auto& style = ImGui::GetStyle();
-	style.WindowRounding = 1;
-	style.WindowBorderSize = 1;
-	style.Colors[ImGuiCol_WindowBg].w = 0.785f;
-	// https://seanmiddleditch.com/direct3d-11-debug-api-tricks/
-	// https://www.gamedev.net/forums/topic/664906-cannot-get-rid-of-live-objects-d3d11/
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
-	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, GFX::Data::ColorFloat3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-20.0f, 1.0f, -4.0f), 50 });
+	// Sample Scene
+	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, GFX::Data::ColorFloat3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-20.0f, 2.0f, -4.0f), 50 });
 	AddLight({ window.Gfx(), renderer, "Pumpkin candle", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f), DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), 85 });
 	AddLight({ window.Gfx(), renderer, "Torch", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f), DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), 70 });
 	AddLight({ window.Gfx(), renderer, "Blue ilumination", 10.0f, GFX::Data::ColorFloat3(0.0f, 0.46f, 1.0f), DirectX::XMFLOAT3(43.0f, 27.0f, 1.8f), 70 });
@@ -388,27 +387,19 @@ App::App(const std::string& commandLine)
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 	params = { DirectX::XMFLOAT3(-39.0f, -8.1f, 2.0f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
 	AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
-	//std::mt19937_64 engine(std::random_device{}());
-	//AddShape(std::make_shared<GFX::Shape::Box>(window.Gfx(), RandPosition(-10.0f, 10.0f, engine), "Box", std::move(RandColor(engine)), Rand(5.0f, 30.0f, engine)));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", DirectX::XMFLOAT3(0.0f, -2.0f, 3.0f), "Sting Sword", 0.5f));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/brick_wall/brick_wall.obj", DirectX::XMFLOAT3(0.0f, 4.0f, 10.0f), "Wall"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/nano_hierarchy.gltf", DirectX::XMFLOAT3(6.0f, 5.0f, -15.0f), "Nanosuit_old"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/boxy.gltf", DirectX::XMFLOAT3(8.0f, 5.0f, -15.0f), "Boxes"));
-	//AddShape(std::make_shared<GFX::Shape::Model>(window.Gfx(), "Models/bot/bot.obj", DirectX::XMFLOAT3(-8.0f, -5.0f, -15.0f), "Bot"));
-	//AddShape(std::make_unique<GFX::Shape::SolidRectangle>(window.Gfx(), DirectX::XMFLOAT3(-5.0f, 0.0f, 5.7f), "GetRect", 1.0f, 1.0f));
-	//AddShape(std::make_unique<GFX::Shape::Triangle>(window.Gfx(), DirectX::XMFLOAT3(4.2f, -0.1f, 1.0f), "Tri", 3.1f, 1.5f, 2.5f));
-	//AddShape(std::make_unique<GFX::Shape::Globe>(window.Gfx(), DirectX::XMFLOAT3(0.0f, -2.0f, 8.0f), "Globe", std::move(RandColor(engine)), 25, 25, 3.0f, 3.0f, 3.0f));
-	//AddShape(std::make_shared<GFX::Shape::Ball>(window.Gfx(), renderer, DirectX::XMFLOAT3(0.0f, -3.0f, 0.0f), "Ball", std::move(Math::RandColor(engine)), 3, 1.0f));
+	params = { DirectX::XMFLOAT3(-20.0f, 0.0f, -6.0f), DirectX::XMFLOAT3(Math::ToRadians(35.0f), Math::ToRadians(270.0f), Math::ToRadians(110.0f)), "Sting Sword", 0.2f };
+	AddShape({ window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", params });
 }
 
 size_t App::Run()
 {
-	while (true)
+	while (run)
 	{
 		if (const auto status = WinAPI::Window::ProcessMessage())
 			return status.value();
 		MakeFrame();
 	}
+	return 0U;
 }
 
 //void App::CreateCarpet(unsigned int depth, float x, float y, float width, GFX::Data::ColorFloat3 color)
