@@ -73,6 +73,24 @@ namespace GFX
 		image = scratch.GetImage(0, 0, 0);
 	}
 
+	bool Surface::IsImage(const std::string& ext) noexcept
+	{
+		return ext == ".png" ||
+			ext == ".jpg" ||
+			ext == ".jpeg" ||
+			ext == ".bmp" ||
+			ext == ".tif" ||
+			ext == ".tiff" ||
+			ext == ".ico" ||
+			ext == ".gif" ||
+			ext == ".hdp" ||
+			ext == ".jxr" ||
+			ext == ".wdp" ||
+			ext == ".dds" ||
+			ext == ".hdr" ||
+			ext == ".tga";
+	}
+
 	void Surface::Save(const std::string& filename) const
 	{
 		DXT_ENABLE_EXCEPT();

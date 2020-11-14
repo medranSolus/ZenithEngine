@@ -48,6 +48,7 @@ namespace GFX::Pipeline
 
 		void BindMainCamera(Camera::ICamera& camera);
 		void SetKernel(int radius, float sigma) noexcept(!IS_DEBUG);
+		std::optional<std::string> ChangeSkybox(Graphics& gfx, const std::string& path);
 		void ShowWindow(Graphics& gfx);
 	};
 }

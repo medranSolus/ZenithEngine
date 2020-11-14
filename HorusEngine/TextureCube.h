@@ -10,13 +10,16 @@ namespace GFX::Resource
 		std::string ext;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
 
+		void SetTexture(Graphics& gfx, const std::string& dir, const std::string& fileExt);
+
 	public:
-		TextureCube(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot = 0U);
+		inline TextureCube(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot = 0U) : slot(slot) { SetTexture(gfx, path, ext); }
 		virtual ~TextureCube() = default;
 
 		static inline GfxResPtr<TextureCube> Get(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot = 0U);
 		static inline std::string GenerateRID(const std::string& path, const std::string& ext, UINT slot = 0U) noexcept;
 
+		inline void ChangeFile(Graphics& gfx, const std::string& path, const std::string& ext) { SetTexture(gfx, path, ext); }
 		inline void Bind(Graphics& gfx) override { GetContext(gfx)->PSSetShaderResources(slot, 1U, textureView.GetAddressOf()); }
 		inline std::string GetRID() const noexcept override { return GenerateRID(path, ext, slot); }
 	};

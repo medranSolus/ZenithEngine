@@ -4,19 +4,20 @@
 
 namespace GFX::Resource
 {
-	TextureCube::TextureCube(Graphics& gfx, const std::string& path, const std::string& ext, UINT slot)
-		: slot(slot), path(path), ext(ext)
+	void TextureCube::SetTexture(Graphics& gfx, const std::string& dir, const std::string& fileExt)
 	{
 		GFX_ENABLE_ALL(gfx);
 
 		std::vector<Surface> surfaces;
 		surfaces.reserve(6);
-		surfaces.emplace_back(path + "\\px" + ext); // Right
-		surfaces.emplace_back(path + "\\nx" + ext); // Left
-		surfaces.emplace_back(path + "\\py" + ext); // Up
-		surfaces.emplace_back(path + "\\ny" + ext); // Down
-		surfaces.emplace_back(path + "\\pz" + ext); // Front
-		surfaces.emplace_back(path + "\\nz" + ext); // Back
+		surfaces.emplace_back(dir + "\\px" + fileExt); // Right
+		surfaces.emplace_back(dir + "\\nx" + fileExt); // Left
+		surfaces.emplace_back(dir + "\\py" + fileExt); // Up
+		surfaces.emplace_back(dir + "\\ny" + fileExt); // Down
+		surfaces.emplace_back(dir + "\\pz" + fileExt); // Front
+		surfaces.emplace_back(dir + "\\nz" + fileExt); // Back
+		path = dir;
+		ext = fileExt;
 
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.Width = static_cast<UINT>(surfaces.at(0).GetWidth());

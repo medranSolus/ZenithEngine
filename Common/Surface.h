@@ -65,6 +65,8 @@ namespace GFX
 		constexpr void PutPixel(size_t x, size_t y, Pixel c) noexcept(!IS_DEBUG);
 		constexpr Pixel GetPixel(size_t x, size_t y) const noexcept(!IS_DEBUG);
 
+		static bool IsImage(const std::string& ext) noexcept;
+
 		void Save(const std::string& filename) const;
 
 #pragma region Exception

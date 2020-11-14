@@ -1,6 +1,7 @@
 #include "MainPipelineGraph.h"
 #include "RenderPasses.h"
 #include "GfxResources.h"
+#include "DialogWindow.h"
 #include "Math.h"
 
 #define MakePass(pass, ...) std::make_unique<RenderPass::pass>(__VA_ARGS__)
@@ -283,6 +284,18 @@ namespace GFX::Pipeline
 		this->sigma = sigma;
 		this->radius = radius;
 		SetKernel();
+	}
+
+	std::optional<std::string> MainPipelineGraph::ChangeSkybox(Graphics& gfx, const std::string& path)
+	{
+		auto files = GUI::DialogWindow::GetDirContent(std::filesystem::directory_entry(path), GUI::DialogWindow::FileType::Image);
+		if (files.size() == 6)
+		{
+			skyboxTexture->ChangeFile(gfx, path, files.front().path().extension().string());
+			return {};
+		}
+		else
+			return "Incorrect skybox format, 6 textures inside directory required with names:\nnx px ny py nz pz\nand same extension to form proper skybox!";
 	}
 
 	void MainPipelineGraph::ShowWindow(Graphics& gfx)

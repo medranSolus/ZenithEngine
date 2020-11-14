@@ -171,8 +171,10 @@ inline void App::ShowObjectWindow()
 		ImGui::SameLine();
 		AddLightButton();
 		ImGui::SameLine();
-		if (ImGui::Button("Delete current object"))
+		if (ImGui::Button("Delete object"))
 			DeleteObject(currentItem);
+		ImGui::SameLine();
+		ChangeBackgroundButton();
 		ImGui::NewLine();
 		ContainerInvoke(currentItem, Accept(window.Gfx(), probe));
 	}
@@ -247,6 +249,33 @@ inline void App::AddModelButton()
 	{
 		if (GFX::GUI::DialogWindow::ShowInfo("Error",
 			"Error occured during loading model.\n" + error.value()) == DialogResult::Accept)
+			error = {};
+	}
+}
+
+inline void App::ChangeBackgroundButton()
+{
+	static std::optional<std::string> path = {};
+	static std::optional<std::string> error = {};
+
+	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Change skybox", "Skybox"))
+		path = file;
+	if (path)
+	{
+		try
+		{
+			error = renderer.ChangeSkybox(window.Gfx(), path.value());
+		}
+		catch (const std::exception& e)
+		{
+			error = e.what();
+		}
+		path = {};
+	}
+	if (error)
+	{
+		if (GFX::GUI::DialogWindow::ShowInfo("Error",
+			"Error occured during loading skybox.\n" + error.value()) == DialogResult::Accept)
 			error = {};
 	}
 }
@@ -389,6 +418,8 @@ App::App(const std::string& commandLine)
 	AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
 	params = { DirectX::XMFLOAT3(-20.0f, 0.0f, -6.0f), DirectX::XMFLOAT3(Math::ToRadians(35.0f), Math::ToRadians(270.0f), Math::ToRadians(110.0f)), "Sting Sword", 0.2f };
 	AddShape({ window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", params });
+	params = { DirectX::XMFLOAT3(41.6f, 18.5f, 8.5f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(87.1f), Math::ToRadians(301.0f)), "TIE", 3.6f };
+	AddShape({ window.Gfx(), renderer, "Models/tie/tie.obj", params });
 }
 
 size_t App::Run()

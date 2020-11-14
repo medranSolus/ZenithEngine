@@ -2,6 +2,7 @@
 #include "Math.h"
 #include "WinApi.h"
 #include "Utils.h"
+#include "Surface.h"
 #include "ImGui\imgui.h"
 #include "ImGui\imgui_stdlib.h"
 #include <algorithm>
@@ -23,36 +24,48 @@ namespace GFX::GUI
 		}
 	}
 
-	bool DialogWindow::IsCorrectExtention(const std::filesystem::directory_entry& entry) noexcept
+	bool DialogWindow::IsCorrectExtention(const std::filesystem::directory_entry& entry, FileType searchType) noexcept
 	{
-		if (entry.is_directory())
+		if (searchType != FileType::Image && entry.is_directory())
 			return true;
-		const std::string ext = entry.path().extension().string();
-		return ext == ".fbx" ||
-			ext == ".3ds" ||
-			ext == ".obj";
+		if (searchType != FileType::Directory)
+		{
+			const std::string ext = entry.path().extension().string();
+			switch (searchType)
+			{
+			case FileType::Model:
+				return ext == ".fbx" ||
+					ext == ".3ds" ||
+					ext == ".obj";
+			case FileType::Image:
+				return Surface::IsImage(ext);
+			}
+		}
+		return false;
 	}
 
-	std::vector<std::filesystem::directory_entry> DialogWindow::GetDirContent(const std::filesystem::directory_entry& entry) noexcept
+	std::vector<std::filesystem::directory_entry> DialogWindow::GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType) noexcept
 	{
 		std::vector<std::filesystem::directory_entry> dirContent;
 		for (const auto& entry : std::filesystem::directory_iterator(entry, std::filesystem::directory_options::skip_permission_denied))
-			if (IsCorrectExtention(entry))
+			if (IsCorrectExtention(entry, searchType))
 				dirContent.emplace_back(entry);
-		std::sort(dirContent.begin(), dirContent.end(), [](const std::filesystem::directory_entry& e1, const std::filesystem::directory_entry& e2)
+		std::sort(dirContent.begin(), dirContent.end(), [&searchType](const std::filesystem::directory_entry& e1, const std::filesystem::directory_entry& e2)
 			{
 				// Ascending
-				if (e1.is_directory() && !e2.is_directory())
-					return true;
-				else if (!e1.is_directory() && e2.is_directory())
-					return false;
-				else
-					return e1.path().filename() < e2.path().filename();
+				if (searchType != FileType::Directory)
+				{
+					if (e1.is_directory() && !e2.is_directory())
+						return true;
+					else if (!e1.is_directory() && e2.is_directory())
+						return false;
+				}
+				return e1.path().filename() < e2.path().filename();
 			});
 		return std::move(dirContent);
 	}
 
-	std::optional<std::string> DialogWindow::FileBrowserButton(const std::string& title, const std::string& startDir) noexcept
+	std::optional<std::string> DialogWindow::FileBrowserButton(const std::string& title, const std::string& startDir, FileType searchType) noexcept
 	{
 		static std::filesystem::directory_entry currentDir;
 		static size_t selected;
@@ -73,7 +86,7 @@ namespace GFX::GUI
 		{
 			if (!currentDir.exists())
 				currentDir = std::move(std::filesystem::directory_entry(std::filesystem::current_path()));
-			std::vector<std::filesystem::directory_entry> dirContent = std::move(GetDirContent(currentDir));
+			std::vector<std::filesystem::directory_entry> dirContent = std::move(GetDirContent(currentDir, searchType));
 
 			if (ImGui::Button(" ^ "))
 			{
@@ -109,6 +122,7 @@ namespace GFX::GUI
 			{
 				if (ImGui::Selectable(Utils::ToAscii(dirContent.at(i).path().filename().wstring()).c_str(), selected == i, ImGuiSelectableFlags_AllowDoubleClick))
 				{
+					selected = i;
 					if (ImGui::IsMouseDoubleClicked(0))
 					{
 						if (dirContent.at(i).is_directory())
@@ -116,8 +130,6 @@ namespace GFX::GUI
 							currentDir = std::move(dirContent.at(i));
 							selected = -1;
 						}
-						else
-							selected = i;
 					}
 				}
 			}
@@ -334,8 +346,9 @@ namespace GFX::GUI
 			ImGuiCond_Appearing, { 0.5f, 0.5f });
 		if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 		{
-			ImGui::SetNextItemWidth(100.0f);
-			ImGui::Text(text.c_str());
+			ImGui::PushTextWrapPos(250.0f);
+			ImGui::TextWrapped(text.c_str());
+			ImGui::PopTextWrapPos();
 			if (ImGui::Button("OK", { -1.0f, 0.0f }))
 			{
 				result = Result::Accept;
