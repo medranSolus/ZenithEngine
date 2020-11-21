@@ -144,7 +144,9 @@ namespace Camera
 					bool selected = (currentItem == it);
 					if (ImGui::Selectable(it->first.c_str(), selected))
 					{
+						currentItem->second->DisableOutline();
 						currentItem = it;
+						currentItem->second->SetOutline();
 					}
 					if (selected)
 						ImGui::SetItemDefaultFocus();

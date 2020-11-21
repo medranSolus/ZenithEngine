@@ -147,7 +147,7 @@ inline void App::ShowObjectWindow()
 {
 	static GFX::Probe::ModelProbe probe;
 	cameras.Accept(window.Gfx(), renderer, probe);
-	if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+	if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 	{
 		static std::map<std::string, std::pair<Container, size_t>>::iterator currentItem = objects.find("---None---");
 		if (ImGui::BeginCombo("Selected object", currentItem->first.c_str()))
@@ -391,6 +391,8 @@ App::App(const std::string& commandLine)
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair<Container, size_t>(Container::None, 0));
 	// Sample Scene
+	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
+		Camera::CameraParams({ 0.0f, 40.0f, -4.0f }, "Camera", 0.0f, Math::ToRadians(45.0f), 1.047f, 2.0f, 15.0f)));
 	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, GFX::Data::ColorFloat3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-20.0f, 2.0f, -4.0f), 50 });
 	AddLight({ window.Gfx(), renderer, "Pumpkin candle", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.96f, 0.27f), DirectX::XMFLOAT3(14.0f, -6.3f, -5.0f), 85 });
 	AddLight({ window.Gfx(), renderer, "Torch", 5.0f, GFX::Data::ColorFloat3(1.0f, 0.0f, 0.2f), DirectX::XMFLOAT3(21.95f, -1.9f, 9.9f), 70 });
