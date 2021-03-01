@@ -258,7 +258,7 @@ inline void App::ChangeBackgroundButton()
 	static std::optional<std::string> path = {};
 	static std::optional<std::string> error = {};
 
-	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Change skybox", "Skybox"))
+	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Change skybox", "Skybox", GFX::GUI::DialogWindow::FileType::Directory))
 		path = file;
 	if (path)
 	{

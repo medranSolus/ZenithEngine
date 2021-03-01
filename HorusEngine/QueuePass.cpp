@@ -9,8 +9,10 @@ namespace GFX::Pipeline::RenderPass::Base
 		const DirectX::XMVECTOR pos = DirectX::XMLoadFloat3(&cameraPos);
 		std::sort(GetJobs().begin(), GetJobs().end(), [&pos](const Job& j1, const Job& j2)
 			{
-				const float len1 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&j1.GetStep().GetTransformPos()), pos)));
-				const float len2 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&j2.GetStep().GetTransformPos()), pos)));
+				const auto pos1 = j1.GetStep().GetTransformPos();
+				const auto pos2 = j2.GetStep().GetTransformPos();
+				const float len1 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&pos1), pos)));
+				const float len2 = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&pos2), pos)));
 				if constexpr (ascending)
 					return len1 < len2;
 				else

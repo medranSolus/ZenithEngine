@@ -122,7 +122,8 @@ namespace GFX::GUI
 			{
 				if (ImGui::Selectable(Utils::ToAscii(dirContent.at(i).path().filename().wstring()).c_str(), selected == i, ImGuiSelectableFlags_AllowDoubleClick))
 				{
-					selected = i;
+					if ((searchType == FileType::Directory) == dirContent.at(i).is_directory())
+						selected = i;
 					if (ImGui::IsMouseDoubleClicked(0))
 					{
 						if (dirContent.at(i).is_directory())
@@ -140,7 +141,7 @@ namespace GFX::GUI
 				ImGui::Text(Utils::ToAscii(dirContent.at(selected).path().filename().wstring()).c_str());
 			ImGui::EndChild();
 			ImGui::SameLine();
-			if (ImGui::Button("Select", { 0.0f, 30.0f }))
+			if (ImGui::Button("Select", { 0.0f, 30.0f }) && selected != -1)
 			{
 				selectFile = Utils::ToAscii(dirContent.at(selected).path().wstring());
 				ImGui::CloseCurrentPopup();
