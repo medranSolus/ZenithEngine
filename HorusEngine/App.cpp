@@ -416,12 +416,12 @@ App::App(const std::string& commandLine)
 	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
 	params = { DirectX::XMFLOAT3(-5.0f, -2.0f, 7.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), "Wall", 2.0f };
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
-	params = { DirectX::XMFLOAT3(-39.0f, -8.1f, 2.0f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
-	AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
-	params = { DirectX::XMFLOAT3(-20.0f, 0.0f, -6.0f), DirectX::XMFLOAT3(Math::ToRadians(35.0f), Math::ToRadians(270.0f), Math::ToRadians(110.0f)), "Sting Sword", 0.2f };
-	AddShape({ window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", params });
-	params = { DirectX::XMFLOAT3(41.6f, 18.5f, 8.5f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(87.1f), Math::ToRadians(301.0f)), "TIE", 3.6f };
-	AddShape({ window.Gfx(), renderer, "Models/tie/tie.obj", params });
+	//params = { DirectX::XMFLOAT3(-39.0f, -8.1f, 2.0f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
+	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
+	//params = { DirectX::XMFLOAT3(-20.0f, 0.0f, -6.0f), DirectX::XMFLOAT3(Math::ToRadians(35.0f), Math::ToRadians(270.0f), Math::ToRadians(110.0f)), "Sting Sword", 0.2f };
+	//AddShape({ window.Gfx(), renderer, "Models/Sting_Sword/Sting_Sword.obj", params });
+	//params = { DirectX::XMFLOAT3(41.6f, 18.5f, 8.5f), DirectX::XMFLOAT3(0.0f, Math::ToRadians(87.1f), Math::ToRadians(301.0f)), "TIE", 3.6f };
+	//AddShape({ window.Gfx(), renderer, "Models/tie/tie.obj", params });
 }
 
 size_t App::Run()

@@ -52,10 +52,13 @@ namespace Camera
 			angleDY = 0.0f;
 		if (angleDX || angleDY)
 		{
-			DirectX::XMVECTOR vForward = DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&eyeDirection),
-				DirectX::XMMatrixRotationRollPitchYaw(moveDirection.z * angleDX, angleDY * projection.screenRatio, moveDirection.x * angleDX * -1.0f));
-			DirectX::XMStoreFloat3(&eyeDirection, DirectX::XMVector3Normalize(vForward));
-			DirectX::XMStoreFloat3(&moveDirection, DirectX::XMVector3Normalize(DirectX::XMVectorSetY(vForward, 0.0f)));
+			const DirectX::XMVECTOR upV = DirectX::XMLoadFloat3(&up);
+			const DirectX::XMVECTOR eyeV = DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&eyeDirection),
+				DirectX::XMQuaternionMultiply(DirectX::XMQuaternionRotationNormal(upV, angleDY * projection.screenRatio),
+					DirectX::XMQuaternionRotationNormal(DirectX::XMVector3Cross(upV, DirectX::XMLoadFloat3(&moveDirection)), angleDX)));
+			DirectX::XMStoreFloat3(&eyeDirection, DirectX::XMVector3Normalize(eyeV));
+			DirectX::XMStoreFloat3(&moveDirection, DirectX::XMVector3Normalize(DirectX::XMVectorSetY(eyeV, 0.0f)));
+
 			indicator->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
 			frustum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
 			viewUpdate = true;
