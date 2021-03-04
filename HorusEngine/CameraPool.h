@@ -12,7 +12,7 @@ namespace Camera
 
 		float moveSpeed = 0.1f;
 		float rollSpeed = 0.01;
-		float rotateSpeed = 2.0f;
+		float rotateSpeed = 1.5f;
 		bool cameraChanged = true;
 		std::string active;
 		std::map<std::string, std::unique_ptr<ICamera>> cameras;

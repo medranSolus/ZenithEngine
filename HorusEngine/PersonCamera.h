@@ -5,7 +5,6 @@ namespace Camera
 {
 	class PersonCamera : public BaseCamera
 	{
-		DirectX::XMFLOAT3 moveDirection = { 0.0f, 0.0f, 1.0f };
 		DirectX::XMFLOAT3 eyeDirection = { 0.0f, 0.0f, 1.0f };
 
 		DirectX::XMMATRIX UpdateView() const noexcept override;
@@ -18,7 +17,6 @@ namespace Camera
 
 		void MoveX(float dX) noexcept override;
 		inline void MoveY(float dY) noexcept override { static_cast<DirectX::XMFLOAT3&>(cameraBuffer->GetBuffer()["cameraPos"]).y += dY; viewUpdate = true; }
-		void MoveZ(float dZ) noexcept override;
 
 		void Rotate(float angleDX, float angleDY) noexcept override;
 	};

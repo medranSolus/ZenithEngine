@@ -86,11 +86,20 @@ namespace Camera
 		return volume;
 	}
 
+	void BaseCamera::MoveZ(float dZ) noexcept
+	{
+		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
+		DirectX::XMStoreFloat3(&position,
+			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
+				DirectX::XMVectorScale(DirectX::XMLoadFloat3(&moveDirection), dZ)));
+		viewUpdate = true;
+	}
+
 	void BaseCamera::Roll(float delta) noexcept
 	{
 		DirectX::XMStoreFloat3(&up,
-			DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&up),
-				DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, delta)));
+			DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up),
+				DirectX::XMQuaternionRotationNormal(DirectX::XMLoadFloat3(&moveDirection), delta)));
 		indicator->UpdateAngle({ 0.0f, 0.0f, delta });
 		frustum->UpdateAngle({ 0.0f, 0.0f, delta });
 		viewUpdate = true;

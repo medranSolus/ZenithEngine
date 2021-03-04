@@ -261,7 +261,7 @@
     <ClCompile Include="BasePass.cpp" />
     <ClCompile Include="BaseShape.cpp" />
     <ClCompile Include="BasicObject.cpp" />
-    <ClCompile Include="Bench.cpp" />
+    <ClCompile Include="Perf.cpp" />
     <ClCompile Include="BindingPass.cpp" />
     <ClCompile Include="Blender.cpp" />
     <ClCompile Include="BoundingBox.cpp" />
@@ -776,7 +776,7 @@
     <ClInclude Include="LightParams.h" />
     <ClInclude Include="Lights.h" />
     <ClInclude Include="ModelParams.h" />
-    <ClInclude Include="Bench.h" />
+    <ClInclude Include="Perf.h" />
     <ClInclude Include="PointLightingPass.h" />
     <ClInclude Include="NullGeometryShader.h" />
     <ClInclude Include="RenderChannels.h" />

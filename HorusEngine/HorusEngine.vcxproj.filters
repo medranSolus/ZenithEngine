@@ -549,7 +549,7 @@
     <ClCompile Include="IBindable.cpp">
       <Filter>Source Files\GFX\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Bench.cpp">
+    <ClCompile Include="Perf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1420,7 +1420,7 @@
     <ClInclude Include="ResPtr.h">
       <Filter>Header Files\GFX\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Bench.h">
+    <ClInclude Include="Perf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

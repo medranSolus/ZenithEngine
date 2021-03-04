@@ -1,11 +1,11 @@
-#include "Bench.h"
+#include "Perf.h"
 #include <fstream>
 #include <intrin.h>
 #pragma intrinsic(__rdtsc, __faststorefence)
 
-void Bench::Save()
+void Perf::Save()
 {
-	std::ofstream fout(logFile, std::ios_base::app);
+	std::ofstream fout(LOG_FILE, std::ios_base::app);
 	if (!fout.good())
 		return;
 	for (auto& x : data)
@@ -13,7 +13,7 @@ void Bench::Save()
 	fout.close();
 }
 
-Bench::~Bench()
+Perf::~Perf()
 {
 	if (data.size() > 0)
 	{
@@ -24,7 +24,7 @@ Bench::~Bench()
 	}
 }
 
-void Bench::Start(const std::string& sectionTag) noexcept
+void Perf::Start(const std::string& sectionTag) noexcept
 {
 	data.emplace(sectionTag, std::make_pair(0ULL, 0ULL));
 	lastTag = sectionTag;
@@ -36,7 +36,7 @@ void Bench::Start(const std::string& sectionTag) noexcept
 	stamp = __rdtsc();
 }
 
-void Bench::Stop()
+void Perf::Stop()
 {
 	const uint64_t end = __rdtsc();
 #ifndef WIN32

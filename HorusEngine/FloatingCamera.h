@@ -5,8 +5,6 @@ namespace Camera
 {
 	class FloatingCamera : public BaseCamera
 	{
-		DirectX::XMFLOAT3 moveDirection = { 0.0f, 0.0f, 1.0f };
-
 		DirectX::XMMATRIX UpdateView() const noexcept override;
 
 	public:
@@ -17,7 +15,6 @@ namespace Camera
 
 		void MoveX(float dX) noexcept override;
 		void MoveY(float dY) noexcept override;
-		void MoveZ(float dZ) noexcept override;
 
 		void Rotate(float angleDX, float angleDY) noexcept override;
 	};

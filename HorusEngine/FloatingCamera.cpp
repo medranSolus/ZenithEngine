@@ -20,11 +20,10 @@ namespace Camera
 	void FloatingCamera::MoveX(float dX) noexcept
 	{
 		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
-		float y = position.y;
 		DirectX::XMStoreFloat3(&position,
 			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
-				DirectX::XMVectorScale(DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&moveDirection), DirectX::XMMatrixRotationY(M_PI_2)), dX)));
-		position.y = y;
+				DirectX::XMVectorScale(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&up),
+					DirectX::XMLoadFloat3(&moveDirection)), dX)));
 		viewUpdate = true;
 	}
 
@@ -37,37 +36,37 @@ namespace Camera
 		viewUpdate = true;
 	}
 
-	void FloatingCamera::MoveZ(float dZ) noexcept
-	{
-		DirectX::XMFLOAT3& position = cameraBuffer->GetBuffer()["cameraPos"];
-		DirectX::XMStoreFloat3(&position,
-			DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&position),
-				DirectX::XMVectorScale(DirectX::XMLoadFloat3(&moveDirection), dZ)));
-		viewUpdate = true;
-	}
-
 	void FloatingCamera::Rotate(float angleDX, float angleDY) noexcept
 	{
-		constexpr float MOVE_EPSILON = 0.001f - FLT_EPSILON;
+		angleDY *= projection.screenRatio;
 		if (abs(angleDX) < MOVE_EPSILON)
 			angleDX = 0.0f;
-		else
-		{
-			constexpr float FLIP_EPSILON = 16.0f * FLT_EPSILON;
-			const float angle = DirectX::XMVectorGetX(DirectX::XMVector3AngleBetweenNormals(DirectX::XMLoadFloat3(&up), DirectX::XMLoadFloat3(&moveDirection))) + angleDX;
-			if (angle <= FLIP_EPSILON || angle >= M_PI - FLIP_EPSILON)
-				angleDX = 0.0f;
-		}
 		if (abs(angleDY) < MOVE_EPSILON)
-			angleDY = 0.0f;
-		if (angleDX || angleDY)
 		{
-			DirectX::XMStoreFloat3(&moveDirection,
-				DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&moveDirection),
-					DirectX::XMMatrixRotationRollPitchYaw(moveDirection.z * angleDX, angleDY * projection.screenRatio, moveDirection.x * angleDX * -1.0f))));
-			indicator->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
-			frustum->UpdateAngle({ angleDX, angleDY * projection.screenRatio, 0.0f });
-			viewUpdate = true;
+			angleDY = 0.0f;
+			if (angleDX == 0.0f)
+				return;
 		}
+
+		const DirectX::XMVECTOR upV = DirectX::XMLoadFloat3(&up);
+		const DirectX::XMVECTOR moveDirV = DirectX::XMLoadFloat3(&moveDirection);
+		DirectX::XMVECTOR rotor = {};
+		if (angleDX)
+		{
+			rotor = DirectX::XMQuaternionRotationNormal(DirectX::XMVector3Cross(upV, moveDirV), angleDX);
+			DirectX::XMStoreFloat3(&up,
+				DirectX::XMVector3Normalize(DirectX::XMVector3Rotate(upV, rotor)));
+		}
+		if (angleDY)
+		{
+			const DirectX::XMVECTOR rotorY = DirectX::XMQuaternionRotationNormal(upV, angleDY);
+			rotor = angleDX != 0.0f ? DirectX::XMQuaternionMultiply(rotor, rotorY) : rotorY;
+		}
+		DirectX::XMStoreFloat3(&moveDirection,
+			DirectX::XMVector3Normalize(DirectX::XMVector3Rotate(moveDirV, rotor)));
+
+		indicator->UpdateAngle({ angleDX, angleDY, 0.0f });
+		frustum->UpdateAngle({ angleDX, angleDY, 0.0f });
+		viewUpdate = true;
 	}
 }

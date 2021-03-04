@@ -9,10 +9,14 @@ namespace Camera
 	class BaseCamera : public ICamera
 	{
 	protected:
+		static constexpr float MOVE_EPSILON = 0.000001f - FLT_EPSILON;
+		static constexpr float FLIP_EPSILON = 16.0f * FLT_EPSILON;
+
 		mutable DirectX::XMFLOAT4X4 viewMatrix;
 		mutable DirectX::XMFLOAT4X4 projectionMatrix;
 		ProjectionData projection;
 		DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
+		DirectX::XMFLOAT3 moveDirection = { 0.0f, 0.0f, 1.0f };
 		bool positionUpdate = true;
 		GfxResPtr<GFX::Resource::ConstBufferVertex<DirectX::XMFLOAT4>> positionBuffer;
 		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> cameraBuffer;
@@ -52,6 +56,7 @@ namespace Camera
 		DirectX::XMMATRIX GetView() const noexcept override;
 		DirectX::BoundingFrustum GetFrustum() const noexcept override;
 
+		void MoveZ(float dZ) noexcept override;
 		void Roll(float delta) noexcept override;
 		void BindCamera(GFX::Graphics& gfx) const noexcept override;
 		bool Accept(GFX::Graphics& gfx, GFX::Probe::BaseProbe& probe) noexcept override;

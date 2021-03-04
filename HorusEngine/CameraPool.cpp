@@ -50,9 +50,9 @@ namespace Camera
 			camera.MoveY(moveSpeed);
 		if (window.Keyboard().IsKeyDown('C'))
 			camera.MoveY(-moveSpeed);
-		if (window.Keyboard().IsKeyDown(VK_LEFT))
+		if (window.Keyboard().IsKeyDown('Q'))
 			camera.Roll(rollSpeed);
-		if (window.Keyboard().IsKeyDown(VK_RIGHT))
+		if (window.Keyboard().IsKeyDown('E'))
 			camera.Roll(-rollSpeed);
 	}
 
