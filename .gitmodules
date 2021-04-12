@@ -1,0 +1,9 @@
+[submodule "External/FreeType"]
+	path = External/FreeType
+	url = https://gitlab.freedesktop.org/freetype/freetype
+[submodule "External/DirectXMath"]
+	path = External/DirectXMath
+	url = https://github.com/microsoft/DirectXMath
+[submodule "External/DirectXTex"]
+	path = External/DirectXTex
+	url = https://github.com/microsoft/DirectXTex
