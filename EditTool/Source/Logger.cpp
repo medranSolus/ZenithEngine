@@ -7,6 +7,7 @@ bool Logger::firstUse = true;
 void Logger::Log(Level type, const std::string& log, bool noFile)
 {
 	std::string banner;
+	bool error = false;
 	switch (type)
 	{
 	case Logger::Level::Info:
@@ -22,6 +23,7 @@ void Logger::Log(Level type, const std::string& log, bool noFile)
 	case Logger::Level::Error:
 	{
 		banner = "[ERROR] ";
+		error = true;
 		break;
 	}
 	}
@@ -37,8 +39,8 @@ void Logger::Log(Level type, const std::string& log, bool noFile)
 			fout.open("log.txt", std::ofstream::app);
 		if (!fout.good())
 		{
-			std::cout << "[ERROR] Cannot open log file! Inner log:\n\t";
-			return;
+			std::cerr << "[ERROR] Cannot open log file! Inner log:\n\t";
+			error = true;
 		}
 		else
 		{
@@ -46,5 +48,5 @@ void Logger::Log(Level type, const std::string& log, bool noFile)
 			fout.close();
 		}
 	}
-	std::cout << banner << log << std::endl;
+	(error ? std::cerr : std::cout) << banner << log << std::endl;
 }

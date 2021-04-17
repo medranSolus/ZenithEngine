@@ -1,21 +1,20 @@
 #pragma once
 #include "Exception/WinApiException.h"
 #include "Pixel.h"
-#include <memory>
 #include <functional>
 #include <utility>
 #include <vector>
 
-namespace External
+// To be changed into multiplatform library
+namespace DirectX
 {
-	// To be changed into multiplatform library
-	#include "DirectXTex.h"
+	typedef Vector XMVECTOR;
 }
+#include "DirectXTex.h"
 namespace Tex
 {
-	using namespace External::DirectX;
+	using namespace DirectX;
 }
-using External::DXGI_FORMAT;
 
 namespace Data
 {

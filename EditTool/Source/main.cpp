@@ -1,6 +1,6 @@
 #include "ScriptProcess.h"
-#define _USE_WINDOWS_DEFINES
-#include "WinApiExceptionMacros.h"
+#include "Exception/WinApiException.h"
+#include <combaseapi.h>
 
 int main(int argc, char* argv[])
 {
