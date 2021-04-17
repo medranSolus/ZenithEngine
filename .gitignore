@@ -1,8 +1,8 @@
 # Build results
-Bin
+Bin/
 
 # CMake generation data
-CMakeOut/
+Build/
 
 # Visual Studio cache/options directory
 .vs/

@@ -1,8 +1,8 @@
-#include "BasicException.h"
+#include "Exception/BasicException.h"
 
 namespace Exception
 {
-	const char* BasicException::what() const throw()
+	const char* BasicException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << "[Exception] " << GetType()

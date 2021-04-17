@@ -1,4 +1,4 @@
-#include "WinApiException.h"
+#include "Exception/WinApiException.h"
 
 namespace Exception
 {
@@ -19,8 +19,8 @@ namespace Exception
 	{
 		std::ostringstream stream;
 		stream << BasicException::what()
-			<< "\n[Message] " << GetErrorString()
-			<< "\n[Code] 0x" << std::hex << result << std::dec;
+			<< "\n[Code] 0x" << std::hex << result << std::dec
+			<< "\n[Message] " << GetErrorString();
 		whatBuffer = stream.str();
 		return whatBuffer.c_str();
 	}

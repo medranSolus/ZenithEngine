@@ -1,11 +1,12 @@
 #pragma once
 
-// Define target system to Windows 10 https://docs.microsoft.com/pl-pl/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
+// Define target system to Windows 10
+// https://docs.microsoft.com/pl-pl/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
 #define _WIN32_WINNT 0x0A00
 #include <sdkddkver.h>
 
-/* Exclude unused WinAPI stuff
- * https://stackoverflow.com/questions/1394910/how-to-tame-the-windows-headers-useful-defines */
+// Exclude unused WinAPI stuff
+// https://stackoverflow.com/questions/1394910/how-to-tame-the-windows-headers-useful-defines
 
 #ifndef _USE_WINDOWS_DEFINES
  // Cryptography, DDE, RPC, Shell, and Windows Sockets

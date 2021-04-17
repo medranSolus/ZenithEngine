@@ -1,7 +1,5 @@
 #include "Utils.h"
-#include <sstream>
 #include <iomanip>
-#include <boost\algorithm\string.hpp>
 
 namespace Utils
 {
@@ -15,10 +13,16 @@ namespace Utils
 		return output;
 	}
 
-	std::deque<std::string> SplitString(const std::string& input, const std::string& delimeter)
+	std::deque<std::string> SplitString(const std::string& input, const std::string& delimiter)
 	{
+		size_t pos = 0, offset = 0, step = delimiter.size();
 		std::deque<std::string> output;
-		boost::split(output, input, boost::is_any_of(delimeter));
+		while ((pos = input.find(delimiter, offset)) != std::string::npos)
+		{
+			output.emplace_back(input.substr(offset, pos - offset));
+			offset = pos + step;
+		}
+		output.emplace_back(input.substr(offset, input.size() - offset));
 		return output;
 	}
 }
