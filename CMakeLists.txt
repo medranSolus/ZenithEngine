@@ -7,6 +7,7 @@ set(PROJECT_NAME "Horus Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
 # Project options
+option(HE_BIN_DIR "Output directory for project data (shaders, resources, executables)" "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 option(HE_MODEL_LOADING "Enable model loading module of engine" ON)
 option(HE_BUILD_TOOL "Enable building of command line utility tool" ON)
 
@@ -40,7 +41,6 @@ set(DXTEX_TARGET "${DXTEX_LIB}")
 set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
 set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/HorusEngine")
 set(TOOL_DIR "${PROJECT_SOURCE_DIR}/EditTool")
-set(BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 set(BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}")
 set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
@@ -50,6 +50,7 @@ set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
+set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -62,7 +63,7 @@ set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
-set(IMGUI_INC_DIR "${EXTERNAL_DIR}/ImGui")
+set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(JSON_INC_DIR ${EXTERNAL_DIR})
 
 
@@ -98,7 +99,7 @@ set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAG
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS}")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /5.0 /E main /Ges /Zpc")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc")
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Od /Zi")
 endif()
@@ -107,7 +108,7 @@ endif()
 ############## SUBPROJECTS ##############
 
 add_subdirectory(${COMMON_DIR})
-#add_subdirectory(${ENGINE_DIR})
+add_subdirectory(${ENGINE_DIR})
 if(HE_BUILD_TOOL)
 	add_subdirectory(${TOOL_DIR})
 endif()
