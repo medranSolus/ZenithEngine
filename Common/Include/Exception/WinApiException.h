@@ -11,15 +11,17 @@ namespace Exception
 	public:
 		WinApiException(U32 line, const char* file, HRESULT hResult) noexcept
 			: BasicException(line, file), result(hResult) {}
+		WinApiException(WinApiException&&) = default;
 		WinApiException(const WinApiException&) = default;
-		constexpr WinApiException& operator=(const WinApiException&) = default;
+		WinApiException& operator=(WinApiException&&) = default;
+		WinApiException& operator=(const WinApiException&) = default;
 		virtual ~WinApiException() = default;
 
 		static std::string TranslateErrorCode(HRESULT code) noexcept;
 
 		constexpr HRESULT GetErrorCode() const noexcept { return result; }
+		constexpr const char* GetType() const noexcept override { return "WinAPI Exception"; }
 		std::string GetErrorString() const noexcept { return TranslateErrorCode(result); }
-		const char* GetType() const noexcept override { return "WinAPI Exception"; }
 
 		const char* what() const noexcept override;
 	};

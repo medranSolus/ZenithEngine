@@ -6,11 +6,9 @@
 #include <vector>
 
 // To be changed into multiplatform library
-namespace DirectX
-{
-	typedef Vector XMVECTOR;
-}
+#define XMVECTOR Vector
 #include "DirectXTex.h"
+#undef XMVECTOR
 namespace Tex
 {
 	using namespace DirectX;
@@ -20,7 +18,7 @@ namespace Data
 {
 	class Surface final
 	{
-		static constexpr DXGI_FORMAT PIXEL_FORMAT = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		static constexpr DXGI_FORMAT PIXEL_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		Tex::ScratchImage scratch;
 		const Tex::Image* image;
@@ -28,10 +26,10 @@ namespace Data
 	public:
 		Surface(const std::string& name);
 		Surface(U64 width, U64 height, DXGI_FORMAT format = PIXEL_FORMAT);
-		Surface(const Surface&) = delete;
 		Surface(Surface&&) = default;
-		Surface& operator=(const Surface&) = delete;
+		Surface(const Surface&) = delete;
 		Surface& operator=(Surface&&) = default;
+		Surface& operator=(const Surface&) = delete;
 		~Surface() = default;
 
 		static bool IsImage(const std::string& ext) noexcept;
@@ -44,9 +42,11 @@ namespace Data
 		constexpr void PutPixel(U64 x, U64 y, const Pixel& c) noexcept;
 		constexpr Pixel GetPixel(U64 x, U64 y) const noexcept;
 
+		// NOTE: reinterpret_cast is removed from here for allowing constexpr evaluation
+		constexpr Pixel* GetBuffer() noexcept { return (Pixel*)(image->pixels); }
+		constexpr const Pixel* GetBuffer() const noexcept { return (const Pixel*)(image->pixels); }
+
 		bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
-		Pixel* GetBuffer() noexcept { return reinterpret_cast<Pixel*>(image->pixels); }
-		const Pixel* GetBuffer() const noexcept { return reinterpret_cast<const Pixel*>(image->pixels); }
 		void Clear(const Pixel& color) noexcept { memset(GetBuffer(), color, GetSize() * sizeof(Pixel)); }
 
 		void Save(const std::string& filename) const;

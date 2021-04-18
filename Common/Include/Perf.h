@@ -15,6 +15,10 @@ class Perf
 
 public:
 	Perf() = default;
+	Perf(Perf&&) = default;
+	Perf(const Perf&) = default;
+	Perf& operator=(Perf&&) = default;
+	Perf& operator=(const Perf&) = default;
 	~Perf();
 
 	void Start(const std::string& sectionTag) noexcept;

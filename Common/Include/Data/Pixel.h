@@ -15,10 +15,10 @@ namespace Data
 		Pixel() = default;
 		constexpr Pixel(U32 rgba) noexcept;
 		constexpr Pixel(U8 r, U8 g, U8 b, U8 a = 255) noexcept : Red(r), Green(g), Blue(b), Alpha(a) {}
-		constexpr Pixel(const Pixel& c) noexcept { operator=(c); }
-		constexpr Pixel& operator=(const Pixel& c) noexcept;
 		Pixel(Pixel&&) = default;
+		Pixel(const Pixel&) = default;
 		Pixel& operator=(Pixel&&) = default;
+		Pixel& operator=(const Pixel&) = default;
 		~Pixel() = default;
 
 		constexpr operator U32() const noexcept { return Red | (Green << 8) | (Blue << 16) | (Alpha << 24); }
@@ -38,15 +38,6 @@ namespace Data
 #pragma region Functions
 	constexpr Pixel::Pixel(U32 rgba) noexcept
 		: Red(rgba & 0xFF), Green((rgba >> 8) & 0xFF), Blue((rgba >> 16) & 0xFF), Alpha(rgba >> 24) {}
-
-	constexpr Pixel& Pixel::operator=(const Pixel& c) noexcept
-	{
-		Red = c.Red;
-		Green = c.Green;
-		Blue = c.Blue;
-		Alpha = c.Alpha;
-		return *this;
-	}
 
 	constexpr Pixel Pixel::operator-() const noexcept
 	{

@@ -1,5 +1,6 @@
 #pragma once
 #include "Types.h"
+#include <utility>
 
 namespace Data
 {
@@ -11,11 +12,12 @@ namespace Data
 
 		ColorF3() = default;
 		constexpr ColorF3(float r, float g, float b) noexcept : RGB(r, g, b) {}
+		constexpr ColorF3(Float3&& rgb) noexcept : RGB(std::move(rgb)) {}
 		constexpr ColorF3(const Float3& rgb) noexcept : RGB(rgb) {}
-		constexpr ColorF3(const ColorF3& c) noexcept : RGB(c.RGB) {}
-		constexpr ColorF3& operator=(const ColorF3& c) noexcept { RGB = c.RGB; return *this; }
 		ColorF3(ColorF3&&) = default;
+		ColorF3(const ColorF3&) = default;
 		ColorF3& operator=(ColorF3&&) = default;
+		ColorF3& operator=(const ColorF3&) = default;
 		~ColorF3() = default;
 
 		constexpr operator Float3() const noexcept { return RGB; }

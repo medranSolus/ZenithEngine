@@ -5,15 +5,15 @@ class Logger
 {
 	enum class Level { Info, Warning, Error };
 
-	static bool firstUse;
+	static inline bool firstUse = true;
 
 	static void Log(Level type, const std::string& log, bool noFile = false);
 
 public:
 	Logger() = delete;
 
-	static inline void InfoNoFile(const std::string& info) { Log(Level::Info, info, true); }
-	static inline void Info(const std::string& info) { Log(Level::Info, info); }
-	static inline void Warning(const std::string& warning) { Log(Level::Warning, warning); }
-	static inline void Error(const std::string& error) { Log(Level::Error, error); }
+	static void InfoNoFile(const std::string& info) { Log(Level::Info, info, true); }
+	static void Info(const std::string& info) { Log(Level::Info, info); }
+	static void Warning(const std::string& warning) { Log(Level::Warning, warning); }
+	static void Error(const std::string& error) { Log(Level::Error, error); }
 };

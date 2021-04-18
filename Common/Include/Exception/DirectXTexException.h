@@ -7,11 +7,16 @@ namespace Exception
 	class DirectXTexException : public ImageException, public WinApiException
 	{
 	public:
-		DirectXTexException(U32 line, const char* file, HRESULT hResult, std::string note) noexcept
-			: BasicException(line, file), ImageException(line, file, note), WinApiException(line, file, hResult) {}
+		DirectXTexException(U32 line, const char* file, HRESULT hResult, std::string&& note) noexcept
+			: BasicException(line, file), ImageException(line, file, std::forward<std::string>(note)),
+			WinApiException(line, file, hResult) {}
+		DirectXTexException(DirectXTexException&&) = default;
+		DirectXTexException(const DirectXTexException&) = default;
+		DirectXTexException& operator=(DirectXTexException&&) = default;
+		DirectXTexException& operator=(const DirectXTexException&&) = default;
 		virtual ~DirectXTexException() = default;
 
-		const char* GetType() const noexcept override { return "DirectXTex Exception"; }
+		constexpr const char* GetType() const noexcept override { return "DirectXTex Exception"; }
 
 		const char* what() const noexcept override;
 	};

@@ -16,13 +16,15 @@ namespace Exception
 
 	public:
 		BasicException(U32 line, const char* file) noexcept : line(line), file(file) {}
+		BasicException(BasicException&&) = default;
 		BasicException(const BasicException&) = default;
+		BasicException& operator=(BasicException&&) = default;
 		BasicException& operator=(const BasicException&) = default;
 		virtual ~BasicException() = default;
 
 		constexpr U32 GetLine() const noexcept { return line; }
 		constexpr const std::string& GetFile() const noexcept { return file; }
-		virtual const char* GetType() const noexcept { return "Basic Exception"; }
+		virtual constexpr const char* GetType() const noexcept { return "Basic Exception"; }
 
 		virtual const char* what() const noexcept;
 	};

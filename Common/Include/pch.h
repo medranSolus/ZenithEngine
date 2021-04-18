@@ -3,29 +3,57 @@
 * Precompiled headers listed here don't have to be included into .cpp files as they are added via buildsystem.
 * Note that they must still be included into header files that require them!
 *
-* Before when adding new header specify all it's includes recursively in appearing order with following style.
+* Before adding new header specify all it's includes recursively in appearing order with following style.
 * Also changes to than files should be considered with updating include lists.
 * When in following includes appear same header it's content don't have to be listed.
+* All listed headers should have global directory specyfication.
+*
+* REMINDER: After changing that list check other project's PCH to avoid include duplication!
 */
 
 /*
-***** DirectXMath.h
-***** intrin.h
-***** cassert
-***** cfloat
-***** cstdint
-***** cstddef
 ***** cmath
+***** cstddef
+***** cstdint
+***** cfloat
+***** cassert
+***** intrin.h
+***** DirectXMath.h
 *** Types.h
 * Data/ColorF4.h
+* utility
 * random
 */
 #include "MathExt.h"
 
 /*
 * Types.h (defined by MathExt.h)
+* utility
 */
 #include "Data/ColorF3.h"
+
+/*
+***** Types.h (defined by MathExt.h)
+***** exception
+***** string
+*** Exception/BasicException.h
+*** WinAPI/WinAPI.h
+* Exception/WinApiException.h
+*** Types.h (defined by MathExt.h)
+* Data/Pixel.h
+* functional
+* utility
+* vector
+* DirectXTex.h
+*/
+#include "Data/Surface.h"
+
+/*
+*** Exception/BasicException.h (defined by Data/Surface.h)
+* Exception/ImageException.h
+* Exception/WinApiException.h (defined by Data/Surface.h)
+*/
+#include "Exception/DirectXTexException.h"
 
 /*
 * Types.h (defined by MathExt.h)
@@ -46,5 +74,4 @@
 // Standard headers, remove if appears above
 #include <algorithm>
 #include <sstream>
-#include <memory>
-#include <utility>
+#include <filesystem>

@@ -2,8 +2,6 @@
 #include <iostream>
 #include <fstream>
 
-bool Logger::firstUse = true;
-
 void Logger::Log(Level type, const std::string& log, bool noFile)
 {
 	std::string banner;

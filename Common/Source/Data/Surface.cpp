@@ -1,6 +1,5 @@
 #include "Data/Surface.h"
 #include "Exception/DirectXTexException.h"
-#include <filesystem>
 
 namespace Data
 {
