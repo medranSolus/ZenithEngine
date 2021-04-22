@@ -28,10 +28,10 @@ macro(add_shader_commands SHADER_TYPE)
     string(TOLOWER "${SHADER_TYPE}_5_0" ${SHADER_TYPE}_TYPE_FLAG)
     foreach(SD IN LISTS ${SHADER_TYPE}_SRC_LIST)
         get_filename_component(SD_NAME ${SD} NAME_WE)
-        set(SD_OUT "${CSO_DIR}${SD_NAME}.cso")
+        set(SD_OUT "${CSO_DIR}/${SD_NAME}.cso")
         list(APPEND SHADERS ${SD_OUT})
         add_custom_command(OUTPUT ${SD_OUT}
-            COMMAND "${FXC}" "${SHADER_FLAGS} /T ${${SHADER_TYPE}_TYPE_FLAG} /I ${${SHADER_TYPE}_DIR} /Fo" "${SD_OUT}" "${SD}"
+            COMMAND "${FXC}" ${SHADER_FLAGS} /T "${${SHADER_TYPE}_TYPE_FLAG}" /I "${${SHADER_TYPE}_DIR}" /Fo "${SD_OUT}" "${SD}"
             MAIN_DEPENDENCY "${SD}"
             DEPENDS "${${SHADER_TYPE}_INC_LIST}")
     endforeach()
@@ -63,9 +63,13 @@ add_custom_target(${COPY_TARGET} DEPENDS ${DATA_OUT_LIST} VERBATIM)
 
 ########## RESOURCE EMBEDDING ###########
 
-#set(RES_NS RC)
-#include(${EXTERNAL_DIR}/CMakeRC.cmake)
-#cmrc_add_resource_library(rcRes ALIAS ${RES_NS} resource/icon.ico)
+set(RES_DIR "${ENGINE_DIR}/Resource")
+set(RES_BIN_DIR "${BUILD_DIR}/Resource")
+set(RES_HDR "${RES_BIN_DIR}/resource.h")
+set(RES_FILES "${RES_DIR}/resource.rc" "${RES_HDR}")
+file(WRITE "${RES_HDR}"
+        "#pragma once\n"
+        "#define ICON_PATH \"${RES_DIR}/icon.ico\"\n")
 
 
 ############# ENGINE RULES ##############
@@ -80,7 +84,7 @@ file(GLOB_RECURSE SRC_LIST
     "${IMGUI_INC_DIR}/*.h")
 
 # Target setup
-add_executable(${ENGINE_TARGET} WIN32 ${SRC_LIST})
+add_executable(${ENGINE_TARGET} WIN32 ${SRC_LIST} ${RES_FILES})
 set_target_properties(${ENGINE_TARGET} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${HE_BIN_DIR}
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${HE_BIN_DIR}
@@ -88,8 +92,8 @@ set_target_properties(${ENGINE_TARGET} PROPERTIES
 
 target_compile_features(${ENGINE_TARGET} PRIVATE ${HE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PRIVATE ${ENGINE_INC_DIR} ${IMGUI_INC_DIR})
+    PRIVATE ${ENGINE_INC_DIR} ${RES_BIN_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
 target_precompile_headers(${ENGINE_TARGET} PRIVATE ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PRIVATE D3DCompiler dxguid d3d11 freetype ${COMMON_TARGET})
+    PRIVATE D3DCompiler dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})
 add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${COPY_TARGET})

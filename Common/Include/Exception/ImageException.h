@@ -13,7 +13,7 @@ namespace Exception
 		ImageException(ImageException&&) = default;
 		ImageException(const ImageException&) = default;
 		ImageException& operator=(ImageException&&) = default;
-		ImageException& operator=(const ImageException&&) = default;
+		ImageException& operator=(const ImageException&) = default;
 		virtual ~ImageException() = default;
 
 		constexpr const std::string& GetImageInfo() const noexcept { return info; }

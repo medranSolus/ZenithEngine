@@ -2,11 +2,15 @@
 
 DirectX 11 graphics engine.
 
-**IDE:** Visual Studio 2019
+Before contributing read [coding guidelines](doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting.
 
-**Code style and formatting:** Provided by VS extension [CodeMaid](http://www.codemaid.net/)
+Working with project from command prompt is described [here](doc/CMakeCLI.md).
 
 **External libraries:**
-  - [Dear ImGui 1.78](https://github.com/ocornut/imgui)
-  - [AssImp 5.0.0](https://github.com/assimp/assimp) ([**Notes**](https://github.com/medranSolus/HorusEngine/blob/master/AssImpInfo.md) about provided DLLs and build guide)
-  - [JSON for modern C++ 3.7.3](https://github.com/nlohmann/json)
+  - [FXC shader compiler 10.0.19041.685](https://docs.microsoft.com/en-us/windows/win32/direct3dtools/fxc)
+  - [JSON for modern C++ 3.9.1](https://github.com/nlohmann/json)
+  - [Dear ImGui 1.82](https://github.com/ocornut/imgui)
+  - [FreeType](https://gitlab.freedesktop.org/freetype/freetype)
+  - [DirectXMath](https://github.com/microsoft/DirectXMath)
+  - [DirectXTex](https://github.com/microsoft/DirectXTex)
+  - [Assimp](https://github.com/assimp/assimp)

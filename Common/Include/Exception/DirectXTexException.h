@@ -13,7 +13,7 @@ namespace Exception
 		DirectXTexException(DirectXTexException&&) = default;
 		DirectXTexException(const DirectXTexException&) = default;
 		DirectXTexException& operator=(DirectXTexException&&) = default;
-		DirectXTexException& operator=(const DirectXTexException&&) = default;
+		DirectXTexException& operator=(const DirectXTexException&) = default;
 		virtual ~DirectXTexException() = default;
 
 		constexpr const char* GetType() const noexcept override { return "DirectXTex Exception"; }

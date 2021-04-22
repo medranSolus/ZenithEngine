@@ -1,11 +1,11 @@
 #include "TextureEdit.h"
-#include "Data/Surface.h"
+#include "GFX/Surface.h"
 #include "Logger.h"
 
 void TextureEdit::NoAlpha(const std::string& source, const std::string& destination)
 {
-	Data::Surface surface(source);
-	Data::Pixel* buffer = surface.GetBuffer();
+	GFX::Surface surface(source);
+	Pixel* buffer = surface.GetBuffer();
 	for (U64 i = 0; i < surface.GetSize(); ++i)
 		buffer[i].Alpha = 255;
 	surface.Save(destination);
@@ -18,8 +18,8 @@ void TextureEdit::NoAlpha(const std::string& source, const std::string& destinat
 
 void TextureEdit::FlipY(const std::string& source, const std::string& destination)
 {
-	Data::Surface surface(source);
-	Data::Pixel* buffer = surface.GetBuffer();
+	GFX::Surface surface(source);
+	Pixel* buffer = surface.GetBuffer();
 	for (U64 i = 0; i < surface.GetSize(); ++i)
 		buffer[i].Green = 255 - buffer[i].Green;
 	surface.Save(destination);

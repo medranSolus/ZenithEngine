@@ -1,5 +1,5 @@
 #pragma once
-#include "Data/ColorF4.h"
+#include "ColorF4.h"
 #include <random>
 
 namespace Math
@@ -73,7 +73,7 @@ namespace Math
 		return std::uniform_real_distribution<float>(-1.0f, 1.0f)(eng);
 	}
 
-	inline Data::ColorF4 RandColor(std::mt19937_64& eng) noexcept
+	inline ColorF4 RandColor(std::mt19937_64& eng) noexcept
 	{
 		return { Rand01(eng), Rand01(eng), Rand01(eng) };
 	}

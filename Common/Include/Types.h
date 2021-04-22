@@ -11,6 +11,7 @@
 namespace External
 {
 	#include "DirectXMath.h"
+	#include "DirectXCollision.h"
 }
 namespace Math
 {

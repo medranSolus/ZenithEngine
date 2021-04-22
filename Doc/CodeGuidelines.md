@@ -1,0 +1,45 @@
+# Code Guidelines
+
+To unify code style, here are rules followed by this project:
+  - Each namespace should have it's own directory in *include* and *source* if *.cpp* files are present. Only exception for single-file utility namespace.
+  - Nested namespaces should have it's equivalent in directory structure.
+  - Before including headers in *.cpp* files check if it's already present in `include/pch.h` since headers there are automatically added to every source file.
+  - *Name convetions:*
+    - **PascalCase:**
+      - Namespaces
+      - Classes
+      - Structs
+      - Enums
+      - Methods
+      - Typedefs
+    - **camelCase:**
+      - Function variables and parameters
+      - Class fields
+    - **ALL_CAPS:**
+      - Macros
+      - Constexpr variables
+  - References and pointers should be formatted without space, `SomeType* ptr;`, `OtherType& ref;`
+  - Avoid short names, let every function describe itself but don't make them too long.
+  - Don't use build in types, prefer usage of typedefs in **Types.h**, for ex. instead of `int` use `U32`, etc.
+  - Use `constexpr` whereever possible.
+  - Instead of global variables in namespace, prefer utility classes with static methods.
+  - If function does not throw mark it as `noexcept` or `noexcept(!IS_DEBUG)` if only contains debug exceptions.
+  - *Classes and interfaces:*
+    - Every class should have explicit:
+      - Destructor declaration, even if it's only `~SomeType() = default`. It helps not forgetting about virtual destructors.
+      - Declaration of copy constructor and copy assignment operator, even if they are marked as default (or delete).
+      - Declaration of move constructor and move assignment operator, even if they are marked as default (or delete).
+      - Default (or delete) constructor declaration if no user specified one is present.
+      - Order of said methods:
+        - Default constructor (if present)
+        - User defined constructors (if present)
+        - Copy constructor
+        - Move constructor
+        - Copy assignment operator
+        - Move assignment operator
+        - Destructor
+      - If it's utility class with deleted constructor other said methods and destructor are not required.
+    - Interfaces should be named like `ISomeInterface` if possible.
+    - Every interface should have explicit default virtual destructor.
+  - While using `{}` place braces in new lines.
+  - `switch()` should have its cases in same tabulation, and every case should have following `{}` with `break;` inside of them.

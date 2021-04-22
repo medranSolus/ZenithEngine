@@ -7,7 +7,8 @@ set(PROJECT_NAME "Horus Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
 # Project options
-option(HE_BIN_DIR "Output directory for project data (shaders, resources, executables)" "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}")
+set(HE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
+	"Output directory for project data (shaders, resources, executables)")
 option(HE_MODEL_LOADING "Enable model loading module of engine" ON)
 option(HE_BUILD_TOOL "Enable building of command line utility tool" ON)
 
@@ -21,15 +22,18 @@ set(COMMON_TARGET "Common")
 set(ENGINE_TARGET "Horus")
 
 # External libraries
+set(ZLIB_LIB "zlibstatic")
 set(ASSIMP_LIB "assimp")
 set(DXTEX_LIB "DirectXTex")
 set(FTYPE_LIB "freetype")
 
 # Inject debug suffix if library use it
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+	set(ZLIB_TARGET "${ZLIB_LIB}d")
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mtd")
 	set(FTYPE_TARGET "${FTYPE_LIB}d")
 else()
+	set(ZLIB_TARGET "${ZLIB_LIB}")
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
 	set(FTYPE_TARGET "${FTYPE_LIB}")
 endif()
@@ -59,6 +63,7 @@ set(COMMON_INC_DIR "${COMMON_DIR}/Include")
 set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 
 # External
+set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
@@ -80,13 +85,11 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /w34265 /wd4250 /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
-	set(LINKER_FLAGS "/LTCG:STATUS /INCREMENTAL:NO /OPT:ICF /OPT:REF")
 else()
 	# GCC asumed although they should work on Clang too
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -W4265 -Wno-4250 -pedantic -ffast-math")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
-	set(COMPILER_REL_CXX_FLAGS "-O3 -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
-	set(LINKER_FLAGS "-flto")
+	set(COMPILER_REL_CXX_FLAGS "-O3 -flto -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
 endif()
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
@@ -99,9 +102,9 @@ set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAG
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS}")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc")
+set(SHADER_FLAGS /nologo /E main /Ges /Zpc)
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-	set(SHADER_FLAGS "${SHADER_FLAGS} /Od /Zi")
+	set(SHADER_FLAGS ${SHADER_FLAGS} /Od /Zi)
 endif()
 
 
@@ -124,25 +127,34 @@ else()
 	set(LIB_PREFIX "lib")
 endif()
 
+# Macro for setting external projects build variables
+#	PROJECT = prefix of all project variables
+#	ADD_BIN_DIR = different path for library file
+#	ADD_PDB_DIR = different path for MSVC debug symbols
+macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR)
+	set(${PROJECT}_OUT_LIB_NAME "${LIB_PREFIX}${${PROJECT}_TARGET}${LIB_EXT}")
+	set(${PROJECT}_OUT_LIB "${EXTERNAL_BIN_DIR}/${${PROJECT}_OUT_LIB_NAME}")
+
+	set(${PROJECT}_CP_CMD "${CMAKE_COMMAND}" -E rename
+		"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${${PROJECT}_OUT_LIB_NAME}"
+		"${${PROJECT}_OUT_LIB}")
+
+	if(MSVC AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
+		set(${PROJECT}_CP_CMD "${${PROJECT}_CP_CMD}" &&
+			"${CMAKE_COMMAND}" -E rename
+				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR}CMakeFiles/${${PROJECT}_LIB}.dir/${${PROJECT}_LIB}.pdb"
+				"${EXTERNAL_BIN_DIR}/${${PROJECT}_LIB}.pdb")
+	endif()
+endmacro()
+
 # Macro for loading external projects
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
 #	ADD_PDB_DIR = different path for MSVC debug symbols
 macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
-	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${PROJECT}")
-	set(${PROJECT}_OUT_LIB_NAME "${LIB_PREFIX}${${PROJECT}_TARGET}${LIB_EXT}")
-	set(${PROJECT}_OUT_LIB "${EXTERNAL_BIN_DIR}/${${PROJECT}_OUT_LIB_NAME}")
+	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${PROJECT}/")
+	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
-		set(${PROJECT}_INST_CMD "${CMAKE_COMMAND}" -E rename
-			"${${PROJECT}_BUILD_DIR}/${ADD_BIN_DIR}${${PROJECT}_OUT_LIB_NAME}"
-			"${${PROJECT}_OUT_LIB}")
-
-		if(MSVC AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
-			set(${PROJECT}_INST_CMD "${${PROJECT}_INST_CMD}" &&
-				"${CMAKE_COMMAND}" -E rename
-					"${${PROJECT}_BUILD_DIR}/${ADD_PDB_DIR}CMakeFiles/${${PROJECT}_LIB}.dir/${${PROJECT}_LIB}.pdb"
-					"${EXTERNAL_BIN_DIR}/${${PROJECT}_LIB}.pdb")
-		endif()
 		ExternalProject_Add(${${PROJECT}_TARGET}
 			SOURCE_DIR ${${PROJECT}_DIR}
 			BINARY_DIR ${${PROJECT}_BUILD_DIR}
@@ -150,9 +162,26 @@ macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
 			INSTALL_DIR ${EXTERNAL_BIN_DIR}
 			CMAKE_CACHE_ARGS "${${PROJECT}_CACHE_ARGS}"
 				"-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-			INSTALL_COMMAND "${${PROJECT}_INST_CMD}")
+			INSTALL_COMMAND "${${PROJECT}_CP_CMD}")
 	elseif(EXISTS ${${PROJECT}_BUILD_DIR})
 		file(REMOVE_RECURSE ${${PROJECT}_BUILD_DIR})
+	endif()
+endmacro()
+
+# Macro for copying external projects inner libraries
+#	MAIN_PROJECT = prefix of a project containing libraries
+#	PROJECT = prefix of all project variables
+#	ADD_BIN_DIR = different path for library file
+#	ADD_PDB_DIR = different path for MSVC debug symbols
+#	ADD_BUILD_DIR = path to build directory inside MAIN_PROJECT
+macro(copy_inner_lib MAIN_PROJECT PROJECT ADD_BIN_DIR ADD_PDB_DIR ADD_BUILD_DIR)
+	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${MAIN_PROJECT}/${ADD_BUILD_DIR}")
+	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}" "${ADD_BUILD_DIR}")
+	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
+		ExternalProject_Add_Step(${${MAIN_PROJECT}_TARGET} copy${PROJECT}
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${${PROJECT}_CP_CMD}")
 	endif()
 endmacro()
 
@@ -165,9 +194,19 @@ if(${HE_MODEL_LOADING})
 		"-DASSIMP_BUILD_ASSIMP_VIEW:BOOL=OFF"
 		"-DINJECT_DEBUG_POSTFIX:BOOL=OFF"
 		"-DASSIMP_INSTALL:BOOL=OFF"
+		"-DASSIMP_BUILD_ZLIB :BOOL=ON"
 		"-DASSIMP_INSTALL_PDB:BOOL=OFF"
 		"-DASSIMP_NO_EXPORT:BOOL=OFF")
 	add_external_project(ASSIMP "lib/" "code/")
+	copy_inner_lib(ASSIMP ZLIB "" "" "contrib/zlib/")
+	if(NOT EXISTS "${ASSIMP_OUT_LIB}")
+		ExternalProject_Add_Step(${ASSIMP_TARGET} headerConfig
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${CMAKE_COMMAND}" -E copy_directory
+			"${ASSIMP_BUILD_DIR}/include"
+			"${EXTERNAL_BIN_DIR}")
+	endif()
 endif()
 
  # DirectXTex

@@ -27,12 +27,8 @@
 #define OEMRESOURCE
 // Atom Manager routines
 #define NOATOM
-// Clipboard routines
-#define NOCLIPBOARD
 // Screen colors
 #define NOCOLOR
-// Control and Dialog routines
-#define NOCTLMGR
 // DrawText() and DT_*
 #define NODRAWTEXT
 // GMEM_*, LMEM_*, GHND, LHND, associated routine
@@ -75,6 +71,13 @@
 #define NOKERNEL
 // Min/Max macros
 #define NOMINMAX
+
+// Used by ImGui:
+//
+// Control and Dialog routines
+// #define NOCTLMGR
+// Clipboard routines
+// #define NOCLIPBOARD
 #endif
 
 // Strict use of WinAPI types, errors on unwanted conversion between

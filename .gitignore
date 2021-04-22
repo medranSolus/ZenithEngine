@@ -4,6 +4,9 @@ Bin/
 # CMake generation data
 Build/
 
+# Visual Studio temp file after opening .rc files
+*.aps
+
 # Visual Studio cache/options directory
 .vs/
 

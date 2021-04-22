@@ -20,7 +20,7 @@
 ***** intrin.h
 ***** DirectXMath.h
 *** Types.h
-* Data/ColorF4.h
+* ColorF4.h
 * utility
 * random
 */
@@ -30,7 +30,7 @@
 * Types.h (defined by MathExt.h)
 * utility
 */
-#include "Data/ColorF3.h"
+#include "ColorF3.h"
 
 /*
 ***** Types.h (defined by MathExt.h)
@@ -40,18 +40,18 @@
 *** WinAPI/WinAPI.h
 * Exception/WinApiException.h
 *** Types.h (defined by MathExt.h)
-* Data/Pixel.h
+* Pixel.h
 * functional
 * utility
 * vector
 * DirectXTex.h
 */
-#include "Data/Surface.h"
+#include "GFX/Surface.h"
 
 /*
-*** Exception/BasicException.h (defined by Data/Surface.h)
+*** Exception/BasicException.h (defined by GFX/Surface.h)
 * Exception/ImageException.h
-* Exception/WinApiException.h (defined by Data/Surface.h)
+* Exception/WinApiException.h (defined by GFX/Surface.h)
 */
 #include "Exception/DirectXTexException.h"
 
