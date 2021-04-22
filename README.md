@@ -2,9 +2,9 @@
 
 DirectX 11 graphics engine.
 
-Before contributing read [coding guidelines](doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting.
+Before contributing read [coding guidelines](Doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting.
 
-Working with project from command prompt is described [here](doc/CMakeCLI.md).
+Working with project from command prompt is described [here](Doc/CMakeCLI.md).
 
 **External libraries:**
   - [FXC shader compiler 10.0.19041.685](https://docs.microsoft.com/en-us/windows/win32/direct3dtools/fxc)
