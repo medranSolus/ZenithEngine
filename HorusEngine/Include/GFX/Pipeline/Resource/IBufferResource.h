@@ -17,6 +17,8 @@ namespace GFX::Pipeline::Resource
 		IBufferResource(GfxResPtr<GFX::Resource::Viewport>&& viewport) noexcept : viewport(std::move(viewport)) {}
 		IBufferResource(Graphics& gfx, U32 width, U32 height) noexcept
 			: viewport(GFX::Resource::Viewport::Get(gfx, width, height)) {}
+		IBufferResource(IBufferResource&&) = default;
+		IBufferResource& operator=(IBufferResource&&) = default;
 		virtual ~IBufferResource() = default;
 
 		static void UnbindAll(Graphics& gfx) { GetContext(gfx)->OMSetRenderTargets(0, nullptr, nullptr); }

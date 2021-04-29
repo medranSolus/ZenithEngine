@@ -1,5 +1,5 @@
 #include "Camera/Cameras.h"
-#include "GFX/GUI/DialogWindow.h"
+#include "GUI/DialogWindow.h"
 
 namespace Camera
 {
@@ -97,13 +97,13 @@ namespace Camera
 			{
 				if (errorAdd)
 				{
-					if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+					if (GUI::DialogWindow::ShowInfo("Name already present!",
 						"Camera named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
 						errorAdd = false;
 				}
 				else
 				{
-					switch (GFX::GUI::DialogWindow::GetCameraParams(params))
+					switch (GUI::DialogWindow::GetCameraParams(params))
 					{
 					case DialogResult::Accept:
 					{
@@ -174,7 +174,7 @@ namespace Camera
 					errorDelete = true;
 			}
 			if (errorDelete)
-				if (GFX::GUI::DialogWindow::ShowInfo("Error", "Cannot delete active camera!") == DialogResult::Accept)
+				if (GUI::DialogWindow::ShowInfo("Error", "Cannot delete active camera!") == DialogResult::Accept)
 					errorDelete = false;
 			ImGui::SameLine();
 			const auto& cameraPos = currentItem->second->GetPos();

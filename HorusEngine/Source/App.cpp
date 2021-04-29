@@ -1,5 +1,5 @@
 #include "App.h"
-#include "GFX/GUI/DialogWindow.h"
+#include "GUI/DialogWindow.h"
 
 #pragma region Containers methods
 #define ContainerInvoke(item, function) \
@@ -201,19 +201,19 @@ void App::AddModelButton()
 	static bool contains = false;
 	static GFX::Shape::ModelParams params;
 
-	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Add model", "Models"))
+	if (const auto file = GUI::DialogWindow::FileBrowserButton("Add model", "Models"))
 		path = file;
 	if (path)
 	{
 		if (contains)
 		{
-			if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+			if (GUI::DialogWindow::ShowInfo("Name already present!",
 				"Object named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
 				contains = false;
 		}
 		else
 		{
-			switch (GFX::GUI::DialogWindow::GetModelParams(params))
+			switch (GUI::DialogWindow::GetModelParams(params))
 			{
 			case DialogResult::Accept:
 			{
@@ -246,7 +246,7 @@ void App::AddModelButton()
 	}
 	if (error)
 	{
-		if (GFX::GUI::DialogWindow::ShowInfo("Error",
+		if (GUI::DialogWindow::ShowInfo("Error",
 			"Error occured during loading model.\n" + error.value()) == DialogResult::Accept)
 			error = {};
 	}
@@ -257,7 +257,7 @@ void App::ChangeBackgroundButton()
 	static std::optional<std::string> path = {};
 	static std::optional<std::string> error = {};
 
-	if (const auto file = GFX::GUI::DialogWindow::FileBrowserButton("Change skybox", "Skybox", GFX::GUI::DialogWindow::FileType::Directory))
+	if (const auto file = GUI::DialogWindow::FileBrowserButton("Change skybox", "Skybox", GUI::DialogWindow::FileType::Directory))
 		path = file;
 	if (path)
 	{
@@ -273,7 +273,7 @@ void App::ChangeBackgroundButton()
 	}
 	if (error)
 	{
-		if (GFX::GUI::DialogWindow::ShowInfo("Error",
+		if (GUI::DialogWindow::ShowInfo("Error",
 			"Error occured during loading skybox.\n" + error.value()) == DialogResult::Accept)
 			error = {};
 	}
@@ -292,13 +292,13 @@ void App::AddLightButton()
 	{
 		if (contains)
 		{
-			if (GFX::GUI::DialogWindow::ShowInfo("Name already present!",
+			if (GUI::DialogWindow::ShowInfo("Name already present!",
 				"Object named \"" + params.name + "\" already exists, enter other unique name.") == DialogResult::Accept)
 				contains = false;
 		}
 		else
 		{
-			switch (GFX::GUI::DialogWindow::GetLightParams(params))
+			switch (GUI::DialogWindow::GetLightParams(params))
 			{
 			case DialogResult::Accept:
 			{
@@ -350,7 +350,7 @@ void App::AddLightButton()
 		}
 		if (error)
 		{
-			if (GFX::GUI::DialogWindow::ShowInfo("Error",
+			if (GUI::DialogWindow::ShowInfo("Error",
 				"Error occured during creating light.\n" + error.value()) == DialogResult::Accept)
 				error = {};
 		}
@@ -382,7 +382,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: window(1600, 900, WINDOW_TITLE), renderer(window.Gfx()),
+	: window(WINDOW_TITLE), renderer(window.Gfx()),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
@@ -407,11 +407,11 @@ App::App(const std::string& commandLine)
 	direction = { 0.0f, -0.7f, -0.7f };
 	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, ColorF3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
 	GFX::Shape::ModelParams params({ 0.0f, -8.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, "Sponza", 0.045f);
-	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
+	//AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
 	params = { Float3(0.0f, -8.2f, 6.0f), Float3(0.0f, 0.0f, 0.0f), "Nanosuit", 0.70f };
-	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
+	//AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
 	params = { Float3(13.5f, -8.2f, -5.0f), Float3(0.0f, 0.0f, 0.0f), "Jack O'Lantern", 13.00f };
-	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
+	//AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
 	params = { Float3(-5.0f, -2.0f, 7.0f), Float3(0.0f, 0.0f, 0.0f), "Wall", 2.0f };
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 	//params = { Float3(-39.0f, -8.1f, 2.0f), Float3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
@@ -424,10 +424,12 @@ App::App(const std::string& commandLine)
 
 int App::Run()
 {
+	std::pair<bool, int> status;
 	while (run)
 	{
-		if (const auto status = WinAPI::Window::ProcessMessage())
-			return status.value();
+		status = WinAPI::Window::ProcessMessage();
+		if (status.first)
+			return status.second;
 		ProcessInput();
 		MakeFrame();
 	}

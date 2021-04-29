@@ -1,7 +1,7 @@
 #include "GFX/Pipeline/MainPipelineGraph.h"
 #include "GFX/Pipeline/RenderPass/RenderPasses.h"
 #include "GFX/Resource/GfxResources.h"
-#include "GFX/GUI/DialogWindow.h"
+#include "GUI/DialogWindow.h"
 
 #define MakePass(pass, ...) std::make_unique<RenderPass::pass>(__VA_ARGS__)
 

@@ -10,6 +10,8 @@ namespace GFX
 	{
 		friend class Resource::IBindable;
 
+		static constexpr DXGI_FORMAT BACKBUFFER_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
+
 #ifdef _MODE_DEBUG
 		Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation> tagManager = nullptr;
 		DXGIDebugInfoManager debugInfoManager;
@@ -22,9 +24,10 @@ namespace GFX
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain = nullptr; // Using pipeline: https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-graphics-pipeline
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = nullptr; // Configure pipeline
 		GfxResPtr<Pipeline::Resource::RenderTarget> renderTarget; // Back buffer from swap chain
+		bool fullscreen = false;
 
 	public:
-		Graphics(HWND hWnd, U32 width, U32 height);
+		Graphics() = default;
 		Graphics(const Graphics&) = delete;
 		Graphics& operator=(const Graphics&) = delete;
 		~Graphics();
@@ -45,15 +48,20 @@ namespace GFX
 		constexpr float GetRatio() { return static_cast<float>(GetWidth()) / GetHeight(); }
 
 		GfxResPtr<Pipeline::Resource::RenderTarget> GetBackBuffer() noexcept { return renderTarget; }
+		void ToggleFullscreen() { fullscreen ? SetWindowed() : SetFullscreen(); }
 #ifdef _MODE_DEBUG
 		constexpr DXGIDebugInfoManager& GetInfoManager() noexcept { return debugInfoManager; }
 		void PushDrawTag(const std::string& tag) { tagManager->BeginEvent(Utils::ToUtf8(tag).c_str()); }
 		void PopDrawTag() { tagManager->EndEvent(); }
 #endif
 
+		void Init(HWND hWnd, U32 width, U32 height);
 		void DrawIndexed(U32 count) noexcept(_NO_DEBUG);
 		void EndFrame();
 		void BeginFrame() noexcept;
+		void Resize(U32 width, U32 height);
+		void SetFullscreen();
+		void SetWindowed();
 	};
 }
 

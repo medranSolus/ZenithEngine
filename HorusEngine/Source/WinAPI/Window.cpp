@@ -14,7 +14,7 @@ namespace WinAPI
 		wndClass.cbWndExtra = 0;
 		wndClass.hInstance = hInstance;
 		wndClass.cbSize = sizeof(wndClass);
-		wndClass.hbrBackground = nullptr;
+		wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW);
 		wndClass.hCursor = nullptr;
 		wndClass.lpszMenuName = nullptr;
 		wndClass.style = CS_OWNDC;
@@ -58,6 +58,25 @@ namespace WinAPI
 			PostQuitMessage(0);
 			return 0;
 		}
+		case WM_SIZE:
+		{
+			if (wParam != SIZE_MINIMIZED)
+			{
+				const U32 width = LOWORD(lParam);
+				const U32 height = HIWORD(lParam);
+				ImGui::GetIO().DisplaySize =
+				{
+					static_cast<float>(width),
+					static_cast<float>(height)
+				};
+				try
+				{
+					graphics.Resize(width, height);
+				}
+				catch (...) {}
+			}
+			break;
+		}
 		case WM_ACTIVATE:
 		{
 			if (!cursorEnabled)
@@ -82,7 +101,23 @@ namespace WinAPI
 			if (ImGui::GetIO().WantCaptureKeyboard)
 				break;
 			if (!(lParam & 0x40000000) || keyboard.IsAutorepeat())
-				keyboard.OnKeyDown(static_cast<U8>(wParam));
+			{
+				if ((KF_ALTDOWN & HIWORD(lParam)) && wParam == VK_RETURN)
+				{
+					ImGui::GetIO().DisplaySize =
+					{
+						static_cast<float>(graphics.GetWidth()),
+						static_cast<float>(graphics.GetHeight())
+					};
+					try
+					{
+						graphics.ToggleFullscreen();
+					}
+					catch (...) {}
+				}
+				else
+					keyboard.OnKeyDown(static_cast<U8>(wParam));
+			}
 			break;
 		}
 		case WM_KEYUP:
@@ -151,7 +186,8 @@ namespace WinAPI
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
 			// Allow window to capture mouse input when left/righ/middle button are pressed when escaping client area
-			if (point.x >= 0 && static_cast<U32>(point.x) < wndWidth && point.y >= 0 && static_cast<U32>(point.y) < wndHeight)
+			if (point.x >= 0 && static_cast<U32>(point.x) < graphics.GetWidth()
+				&& point.y >= 0 && static_cast<U32>(point.y) < graphics.GetHeight())
 			{
 				mouse.OnMouseMove(point.x, point.y);
 				if (!mouse.IsInWindow())
@@ -202,24 +238,55 @@ namespace WinAPI
 		ClipCursor(&rect);
 	}
 
-	Window::Window(U32 width, U32 height, const char* name) : wndWidth(width), wndHeight(height)
+	Window::Window(const char* name, U32 width, U32 height)
 	{
 		constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		constexpr DWORD WIN_STYLE_EX = 0;
-		// Adjust window client area to match specified size
-		RECT area = { 0 };
-		area.right = wndWidth + area.left;
-		area.bottom = wndHeight + area.top;
-		if (AdjustWindowRectEx(&area, WIN_STYLE, FALSE, WIN_STYLE_EX) == 0)
-			throw WIN_EXCEPT_LAST();
-		hWnd = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
-			CW_USEDEFAULT, CW_USEDEFAULT, area.right - area.left, area.bottom - area.top,
-			nullptr, nullptr, wndClass.GetInstance(), this);
 
+		RECT area = { 0 };
+		if (width == 0 || height == 0)
+		{
+			area.right = GetSystemMetrics(SM_CXMAXIMIZED);
+			area.bottom = GetSystemMetrics(SM_CYMAXIMIZED);
+			area.left = -GetSystemMetrics(SM_CXPADDEDBORDER) * 2;
+		}
+		else
+		{
+			// Adjust window client area to match specified size
+			area.right = width;
+			area.bottom = height;
+			if (AdjustWindowRectEx(&area, WIN_STYLE, FALSE, WIN_STYLE_EX) == 0)
+				throw WIN_EXCEPT_LAST();
+			area.right -= area.left;
+			area.bottom -= area.top;
+
+			// Adjust window position to desktop window
+			RECT desktop = { 0 };
+			if (GetClientRect(GetDesktopWindow(), &desktop) == 0)
+				throw WIN_EXCEPT_LAST();
+			area.left = (desktop.right - area.right) / 2;
+			area.top = (desktop.bottom - area.bottom) / 2;
+		}
+
+		hWnd = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
+			area.left, area.top, area.right, area.bottom,
+			nullptr, nullptr, wndClass.GetInstance(), this);
 		if (hWnd == nullptr)
 			throw WIN_EXCEPT_LAST();
-		ShowWindow(hWnd, SW_SHOW);
-		graphics = std::make_unique<GFX::Graphics>(hWnd, width, height);
+
+		if (width == 0 || height == 0)
+		{
+			ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+			// Get maximized client area
+			if (GetClientRect(hWnd, &area) == 0)
+				throw WIN_EXCEPT_LAST();
+			width = area.right;
+			height = area.bottom;
+		}
+		else
+			ShowWindow(hWnd, SW_SHOW);
+
+		graphics.Init(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);
 
 		RAWINPUTDEVICE rid;
@@ -237,17 +304,17 @@ namespace WinAPI
 		DestroyWindow(hWnd);
 	}
 
-	std::optional<int> Window::ProcessMessage() noexcept
+	std::pair<bool, int> Window::ProcessMessage() noexcept
 	{
 		MSG msg;
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
-				return static_cast<int>(msg.wParam);
+				return { true, static_cast<int>(msg.wParam) };
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		return {};
+		return { false, 0 };
 	}
 
 	void Window::SetTitle(const std::string& title)

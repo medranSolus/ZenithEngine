@@ -22,7 +22,9 @@ namespace GFX::Resource
 
 	public:
 		IBindable() = default;
+		IBindable(IBindable&&) = default;
 		IBindable(const IBindable&) = delete;
+		IBindable& operator=(IBindable&&) = default;
 		IBindable& operator=(const IBindable&) = delete;
 		virtual ~IBindable() = default;
 

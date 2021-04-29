@@ -5,7 +5,7 @@
 #include <optional>
 #include <filesystem>
 
-namespace GFX::GUI
+namespace GUI
 {
 	class DialogWindow
 	{
@@ -24,11 +24,11 @@ namespace GFX::GUI
 
 		static std::vector<std::filesystem::directory_entry> GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType) noexcept;
 		static std::optional<std::string> FileBrowserButton(const std::string& title, const std::string& startDir, FileType searchType = FileType::Model) noexcept;
-		static Result GetModelParams(Shape::ModelParams& params) noexcept;
-		static Result GetLightParams(Light::LightParams& params) noexcept;
+		static Result GetModelParams(GFX::Shape::ModelParams& params) noexcept;
+		static Result GetLightParams(GFX::Light::LightParams& params) noexcept;
 		static Result GetCameraParams(Camera::CameraParams& params) noexcept;
 		static Result ShowInfo(const std::string& title, const std::string& text) noexcept;
 	};
 }
 
-typedef GFX::GUI::DialogWindow::Result DialogResult;
+typedef GUI::DialogWindow::Result DialogResult;

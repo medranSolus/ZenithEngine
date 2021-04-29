@@ -22,8 +22,11 @@ namespace GFX::Pipeline::Resource
 		RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, U32 size);
 		RenderTarget(Graphics& gfx, U32 width, U32 height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
 		RenderTarget(Graphics& gfx, U32 width, U32 height, Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer, DXGI_FORMAT format);
+		RenderTarget(RenderTarget&&) = default;
+		RenderTarget& operator=(RenderTarget&&) = default;
 		virtual ~RenderTarget() = default;
 
+		void Release() noexcept { targetView = nullptr; }
 		void BindTarget(Graphics& gfx) const override { GetContext(gfx)->OMSetRenderTargets(1, targetView.GetAddressOf(), nullptr); BindViewport(gfx); }
 
 #ifdef _MODE_DEBUG

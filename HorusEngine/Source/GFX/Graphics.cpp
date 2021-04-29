@@ -5,14 +5,27 @@
 
 namespace GFX
 {
-	Graphics::Graphics(HWND hWnd, U32 width, U32 height)
+	Graphics::~Graphics()
+	{
+		if (fullscreen)
+			swapChain->SetFullscreenState(FALSE, nullptr);
+		ImGui_ImplDX11_Shutdown();
+#ifdef _MODE_DEBUG
+		Microsoft::WRL::ComPtr<ID3D11Debug> debug;
+		device->QueryInterface(IID_PPV_ARGS(&debug));
+		if (debug != nullptr)
+			debug->ReportLiveDeviceObjects(D3D11_RLDO_IGNORE_INTERNAL);
+#endif
+	}
+
+	void Graphics::Init(HWND hWnd, U32 width, U32 height)
 	{
 		GFX_ENABLE_NOINFO();
 		DXGI_SWAP_CHAIN_DESC swapDesc = { 0 };
 		swapDesc.OutputWindow = hWnd;
-		swapDesc.BufferDesc.Width = 0; // Use window size
-		swapDesc.BufferDesc.Height = 0;
-		swapDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapDesc.BufferDesc.Width = width; // Use window size
+		swapDesc.BufferDesc.Height = height;
+		swapDesc.BufferDesc.Format = BACKBUFFER_FORMAT;
 		swapDesc.BufferDesc.RefreshRate.Numerator = 0; // Refresh in fullscreen
 		swapDesc.BufferDesc.RefreshRate.Denominator = 0;
 		swapDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // Entire window drawing so no scaling needed
@@ -23,7 +36,9 @@ namespace GFX
 		swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // Pipeline draws to this buffer
 		swapDesc.Windowed = TRUE;
 		swapDesc.BufferCount = 2; // Triple buffering
-		swapDesc.Flags = 0;
+		swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+		// This needed and resize buffers for fullscreen:
+		// https://forums.codeguru.com/showthread.php?500867-RESOLVED-How-do-I-remove-the-window-border-to-get-fullscreen
 
 		UINT createFlags = 0;
 #ifdef _MODE_DEBUG
@@ -39,22 +54,24 @@ namespace GFX
 
 		Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		GFX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer))); // Get texture subresource (back buffer)
-		renderTarget = GfxResPtr<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer, swapDesc.BufferDesc.Format); // Create view to back buffer allowing writing data
+		renderTarget = GfxResPtr<Pipeline::Resource::RenderTarget>(*this, width, height, backBuffer, BACKBUFFER_FORMAT); // Create view to back buffer allowing writing data
 #ifdef _MODE_DEBUG
 		GFX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
 #endif
 		ImGui_ImplDX11_Init(device.Get(), context.Get());
-	}
 
-	Graphics::~Graphics()
-	{
-		ImGui_ImplDX11_Shutdown();
-#ifdef _MODE_DEBUG
-		Microsoft::WRL::ComPtr<ID3D11Debug> debug;
-		device->QueryInterface(IID_PPV_ARGS(&debug));
-		if (debug != nullptr)
-			debug->ReportLiveDeviceObjects(D3D11_RLDO_IGNORE_INTERNAL);
-#endif
+		// Don't use OS ALT+ENTER handling
+		// First, retrieve the underlying DXGI Device from the D3D Device
+		Microsoft::WRL::ComPtr<IDXGIDevice1> dxgiDevice;
+		GFX_THROW_FAILED(device.As(&dxgiDevice));
+		// Identify the physical adapter (GPU or card) this device is running on.
+		Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
+		GFX_THROW_FAILED(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
+		// And obtain the factory object that created it.
+		Microsoft::WRL::ComPtr<IDXGIFactory1> dxgiFactory;
+		GFX_THROW_FAILED(dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory)));
+		// Disable OS handling
+		GFX_THROW_FAILED(dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
 	}
 
 	void Graphics::DrawIndexed(U32 count) noexcept(_NO_DEBUG)
@@ -94,5 +111,37 @@ namespace GFX
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 		}
+	}
+
+	void Graphics::Resize(U32 width, U32 height)
+	{
+		if (renderTarget != nullptr)
+		{
+			GFX_ENABLE_NOINFO();
+			// Delete backbuffer
+			renderTarget->Release();
+
+			GFX_THROW_FAILED(swapChain->ResizeBuffers(0, width, height,
+				BACKBUFFER_FORMAT, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+
+			// Recreate backbuffer
+			Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer = nullptr;
+			GFX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
+			(*renderTarget) = { *this, width, height, backBuffer, BACKBUFFER_FORMAT };
+		}
+	}
+
+	void Graphics::SetFullscreen()
+	{
+		fullscreen = true;
+		swapChain->SetFullscreenState(TRUE, nullptr);
+		Resize(GetWidth(), GetHeight());
+	}
+
+	void Graphics::SetWindowed()
+	{
+		fullscreen = false;
+		swapChain->SetFullscreenState(FALSE, nullptr);
+		Resize(GetWidth(), GetHeight());
 	}
 }

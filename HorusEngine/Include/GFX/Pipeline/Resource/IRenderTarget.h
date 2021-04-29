@@ -8,6 +8,8 @@ namespace GFX::Pipeline::Resource
 		using IBufferResource::IBufferResource;
 
 	public:
+		IRenderTarget(IRenderTarget&&) = default;
+		IRenderTarget& operator=(IRenderTarget&&) = default;
 		virtual ~IRenderTarget() = default;
 
 		void Clear(Graphics& gfx) override { Clear(gfx, { 0.0f, 0.0f, 0.0f, 0.0f }); }

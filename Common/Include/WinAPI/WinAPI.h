@@ -13,8 +13,6 @@
 #define WIN32_LEAN_AND_MEAN
 // CC_*, LC_*, PC_*, CP_*, TC_*, RC_
 #define NOGDICAPMASKS
-// SM_*
-#define NOSYSMETRICS
 // MF_*
 #define NOMENUS
 // IDI_*
@@ -27,8 +25,6 @@
 #define OEMRESOURCE
 // Atom Manager routines
 #define NOATOM
-// Screen colors
-#define NOCOLOR
 // DrawText() and DT_*
 #define NODRAWTEXT
 // GMEM_*, LMEM_*, GHND, LHND, associated routine
@@ -71,6 +67,13 @@
 #define NOKERNEL
 // Min/Max macros
 #define NOMINMAX
+
+// Used for display manipulation:
+//
+// Screen colors
+// #define NOCOLOR
+// SM_*
+// #define NOSYSMETRICS
 
 // Used by ImGui:
 //

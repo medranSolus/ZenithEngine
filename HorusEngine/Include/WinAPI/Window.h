@@ -26,14 +26,12 @@ namespace WinAPI
 
 		static inline WindowClass wndClass;
 
-		U32 wndWidth;
-		U32 wndHeight;
-		bool cursorEnabled = true;
-		HWND hWnd;
 		Keyboard keyboard;
 		Mouse mouse;
+		GFX::Graphics graphics;
 		std::vector<U8> rawBuffer;
-		std::unique_ptr<GFX::Graphics> graphics = nullptr;
+		bool cursorEnabled = true;
+		HWND hWnd;
 
 		void ShowCursor() noexcept { while (::ShowCursor(TRUE) < 0); }
 		void HideCursor() noexcept { while (::ShowCursor(FALSE) >= 0); }
@@ -46,7 +44,7 @@ namespace WinAPI
 		void TrapCursor() noexcept;
 
 	public:
-		Window(U32 width, U32 height, const char* name);
+		Window(const char* name, U32 width = 0, U32 height = 0);
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
 		~Window();
@@ -54,10 +52,10 @@ namespace WinAPI
 		constexpr Keyboard& Keyboard() noexcept { return keyboard; }
 		constexpr Mouse& Mouse() noexcept { return mouse; }
 		constexpr bool IsCursorEnabled() const noexcept { return cursorEnabled; }
-		GFX::Graphics& Gfx() noexcept { return *graphics; }
+		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
 		void SwitchCursor() noexcept { cursorEnabled ? DisableCursor() : EnableCursor(); }
 
-		static std::optional<int> ProcessMessage() noexcept;
+		static std::pair<bool, int> ProcessMessage() noexcept;
 
 		void SetTitle(const std::string& title);
 		void EnableCursor() noexcept;

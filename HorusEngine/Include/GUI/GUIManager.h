@@ -2,7 +2,7 @@
 #include "imgui.h"
 #include <string>
 
-namespace GFX::GUI
+namespace GUI
 {
 	class GUIManager
 	{

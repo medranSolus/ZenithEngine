@@ -1,3 +1,6 @@
+[submodule "External/Assimp"]
+	path = External/Assimp
+	url = https://github.com/assimp/assimp
 [submodule "External/FreeType"]
 	path = External/FreeType
 	url = https://gitlab.freedesktop.org/freetype/freetype

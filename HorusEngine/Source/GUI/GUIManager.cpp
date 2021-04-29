@@ -1,7 +1,7 @@
-#include "GFX/GUI/GUIManager.h"
+#include "GUI/GUIManager.h"
 #include <filesystem>
 
-namespace GFX::GUI
+namespace GUI
 {
 	GUIManager::GUIManager()
 	{

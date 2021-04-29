@@ -1,10 +1,10 @@
-#include "GFX/GUI/DialogWindow.h"
+#include "GUI/DialogWindow.h"
 #include "WinAPI/WinApi.h"
 #include "GFX/Surface.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 
-namespace GFX::GUI
+namespace GUI
 {
 	void DialogWindow::SetupDrives() noexcept
 	{
@@ -33,7 +33,7 @@ namespace GFX::GUI
 					ext == ".3ds" ||
 					ext == ".obj";
 			case FileType::Image:
-				return Surface::IsImage(ext);
+				return GFX::Surface::IsImage(ext);
 			}
 		}
 		return false;
@@ -152,7 +152,7 @@ namespace GFX::GUI
 		return {};
 	}
 
-	DialogWindow::Result DialogWindow::GetModelParams(Shape::ModelParams& params) noexcept
+	DialogWindow::Result DialogWindow::GetModelParams(GFX::Shape::ModelParams& params) noexcept
 	{
 		static constexpr const char* TITLE = "Input model parameters";
 		Result result = Result::None;
@@ -204,7 +204,7 @@ namespace GFX::GUI
 		return result;
 	}
 
-	DialogWindow::Result DialogWindow::GetLightParams(Light::LightParams& params) noexcept
+	DialogWindow::Result DialogWindow::GetLightParams(GFX::Light::LightParams& params) noexcept
 	{
 		static constexpr const char* TITLE = "Input light parameters";
 		static constexpr const char* TYPES[] = { "Directional light", "Point light", "Spot light" };
@@ -219,11 +219,11 @@ namespace GFX::GUI
 		{
 			if (ImGui::BeginCombo("Light type", TYPES[params.type]))
 			{
-				for (U8 i = 0; i <= Light::LightType::Spot; ++i)
+				for (U8 i = 0; i <= GFX::Light::LightType::Spot; ++i)
 				{
 					bool selected = (params.type == i);
 					if (ImGui::Selectable(TYPES[i], selected))
-						params.type = static_cast<Light::LightType>(i);
+						params.type = static_cast<GFX::Light::LightType>(i);
 					if (selected)
 						ImGui::SetItemDefaultFocus();
 				}
@@ -236,12 +236,12 @@ namespace GFX::GUI
 			if (params.intensity < 0.0f)
 				params.intensity = 0.0f;
 
-			if (params.type == Light::LightType::Directional || params.type == Light::LightType::Spot)
+			if (params.type == GFX::Light::LightType::Directional || params.type == GFX::Light::LightType::Spot)
 			{
 				if (ImGui::SliderFloat3("Direction", reinterpret_cast<float*>(&params.direction), -1.0f, 1.0f, "%.2f"))
 					Math::NormalizeStore(params.direction);
 			}
-			if (params.type == Light::LightType::Point || params.type == Light::LightType::Spot)
+			if (params.type == GFX::Light::LightType::Point || params.type == GFX::Light::LightType::Spot)
 			{
 				ImGui::InputFloat3("Position", reinterpret_cast<float*>(&params.position), "%.2f");
 				static const U64 STEP = 1;
@@ -249,7 +249,7 @@ namespace GFX::GUI
 				ImGui::InputFloat("Indicator size", &params.size, 0.01f, 0.0f, "%.3f");
 				if (params.size < 0.001f)
 					params.size = 0.001f;
-				if (params.type == Light::LightType::Spot)
+				if (params.type == GFX::Light::LightType::Spot)
 				{
 					if (ImGui::SliderAngle("Outer angle", &params.outerAngle, 0.0f, 45.0f, "%.2f"))
 					{
