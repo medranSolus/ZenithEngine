@@ -2,6 +2,37 @@
 
 namespace Math
 {
+	Float3 GetEulerAngles(const Float4& rotor) noexcept
+	{
+		constexpr float SINGULARITY = 0.4999f;
+		Float3 euler;
+		euler.x = rotor.w * rotor.x + rotor.y * rotor.z;
+
+		if (euler.x > SINGULARITY) // South pole
+		{
+			euler.x = M_PI_2;
+			euler.y = 2.0f * atan2(rotor.y, rotor.w);
+			euler.z = 0.0f;
+		}
+		else if (euler.x < -SINGULARITY) // North pole
+		{
+			euler.x = -M_PI_2;
+			euler.y = -2.0f * atan2(rotor.y, rotor.w);
+			euler.z = 0.0f;
+		}
+		else
+		{
+			euler.x = asin(2.0f * euler.x);
+
+			const float qx2 = rotor.x * rotor.x;
+			euler.y = atan2(2.0f * (rotor.w * rotor.y - rotor.x * rotor.z),
+				1 - 2.0f * (qx2 + rotor.y * rotor.y));
+			euler.z = atan2(2.0f * (rotor.w * rotor.z - rotor.x * rotor.y),
+				1 - 2.0f * (qx2 + rotor.z * rotor.z));
+		}
+		return euler;
+	}
+
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept
 	{
 		Float3 out;

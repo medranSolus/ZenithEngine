@@ -31,9 +31,10 @@ namespace GFX::Light
 		void SetOutline() noexcept override { mesh->SetOutline(); }
 		void DisableOutline() noexcept override { mesh->DisableOutline(); }
 
-		constexpr const Float3& GetAngle() const noexcept override { return mesh->GetAngle(); }
-		constexpr void SetAngle(const Float3& meshAngle) noexcept override { mesh->SetAngle(meshAngle); }
-		void UpdateAngle(const Float3& deltaAngle) noexcept override { mesh->UpdateAngle(deltaAngle); }
+		constexpr const Float4& GetAngle() const noexcept override { return mesh->GetAngle(); }
+		constexpr void SetAngle(const Vector& rotor) noexcept override { mesh->SetAngle(rotor); }
+		constexpr void SetAngle(const Float4& rotor) noexcept override { mesh->SetAngle(rotor); }
+		void UpdateAngle(const Vector& rotor) noexcept override { mesh->UpdateAngle(rotor); }
 
 		constexpr float GetScale() const noexcept { return mesh->GetScale(); }
 		constexpr void SetScale(float newScale) noexcept { mesh->SetScale(newScale); }
@@ -46,7 +47,7 @@ namespace GFX::Light
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return lightBuffer->Accept(gfx, probe) || mesh->Accept(gfx, probe); }
 		void Submit(U64 channelFilter) const noexcept override { mesh->Submit(channelFilter); JobData::Submit(channelFilter); }
 
-		void Update(const Float3& delta, const Float3& deltaAngle) noexcept override;
+		void Update(const Float3& delta, const Vector& rotor) noexcept override;
 		void UpdatePos(const Float3& delta) noexcept override;
 		void SetPos(const Float3& position) noexcept override;
 

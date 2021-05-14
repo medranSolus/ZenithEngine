@@ -9,9 +9,9 @@ namespace GFX::Light
 		buffer["attenuationQuad"] = 75.0f / (range * range);
 	}
 
-	void ILight::Update(const Float3& delta, const Float3& deltaAngle) noexcept
+	void ILight::Update(const Float3& delta, const Vector& rotor) noexcept
 	{
-		mesh->Update(delta, deltaAngle);
+		mesh->Update(delta, rotor);
 		lightBuffer->GetBuffer()["lightPos"] = mesh->GetPos();
 		volume->Update(lightBuffer->GetBufferConst());
 	}

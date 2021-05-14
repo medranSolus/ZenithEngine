@@ -8,9 +8,9 @@ namespace GFX
 		static bool initNeeded = true;
 		if (initNeeded)
 		{
+			layout.Add(DCBElementType::Float4, "rotation");
 			layout.Add(DCBElementType::Float3, "position");
 			layout.Add(DCBElementType::Float, "scale");
-			layout.Add(DCBElementType::Float3, "angle");
 			initNeeded = false;
 		}
 		return layout;
@@ -20,7 +20,7 @@ namespace GFX
 		: buffer(MakeLayout()), name(std::move(name))
 	{
 		buffer["position"] = position;
-		buffer["angle"] = Float3(0.0f, 0.0f, 0.0f);
+		buffer["rotation"] = Float4(0.0f, 0.0f, 0.0f, 1.0f);
 		buffer["scale"] = scale;
 	}
 
@@ -30,10 +30,9 @@ namespace GFX
 			Math::XMVectorAdd(Math::XMLoadFloat3(&buffer["position"]), Math::XMLoadFloat3(&delta)));
 	}
 
-	void BasicObject::UpdateAngle(const Float3& deltaAngle) noexcept
+	void BasicObject::UpdateAngle(const Vector& rotor) noexcept
 	{
-		Math::XMStoreFloat3(&buffer["angle"],
-			Math::XMVectorModAngles(Math::XMVectorAdd(Math::XMLoadFloat3(&buffer["angle"]),
-				Math::XMLoadFloat3(&deltaAngle))));
+		Float4& rotation = buffer["rotation"];
+		Math::XMStoreFloat4(&rotation, Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor));
 	}
 }

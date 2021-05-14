@@ -1,4 +1,4 @@
-# Horus Engine
+# Zenith Engine
 
 DirectX 11 graphics engine.
 

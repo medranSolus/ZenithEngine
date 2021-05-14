@@ -10,7 +10,7 @@ class App final
 {
 	enum class Container : U8 { None, PointLight, SpotLight, DirectionalLight, Model, Shape };
 
-	static constexpr const char* WINDOW_TITLE = "Horus Engine v0.1";
+	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.2";
 
 	WinAPI::Window window;
 	GFX::Pipeline::MainPipelineGraph renderer;

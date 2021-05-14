@@ -158,7 +158,7 @@ void App::ShowObjectWindow()
 				{
 					ContainerInvoke(currentItem, DisableOutline());
 					currentItem = it;
-					probe.ResetNode();
+					probe.Reset();
 					ContainerInvoke(currentItem, SetOutline());
 				}
 				if (selected)
@@ -382,7 +382,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: window(WINDOW_TITLE), renderer(window.Gfx()),
+	: window(WINDOW_TITLE, 1600, 900), renderer(window.Gfx()),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
@@ -406,13 +406,13 @@ App::App(const std::string& commandLine)
 		Float3(-35.0f, -8.0f, 2.0f), 175, 0.5f, Math::ToRadians(27.0f), Math::ToRadians(43.0f), Math::NormalizeStore(direction) });
 	direction = { 0.0f, -0.7f, -0.7f };
 	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, ColorF3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
-	GFX::Shape::ModelParams params({ 0.0f, -8.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, "Sponza", 0.045f);
+	GFX::Shape::ModelParams params({ 0.0f, -8.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }, "Sponza", 0.045f);
 	//AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
-	params = { Float3(0.0f, -8.2f, 6.0f), Float3(0.0f, 0.0f, 0.0f), "Nanosuit", 0.70f };
+	params = { Float3(0.0f, -8.2f, 6.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Nanosuit", 0.70f };
 	//AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
-	params = { Float3(13.5f, -8.2f, -5.0f), Float3(0.0f, 0.0f, 0.0f), "Jack O'Lantern", 13.00f };
-	//AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
-	params = { Float3(-5.0f, -2.0f, 7.0f), Float3(0.0f, 0.0f, 0.0f), "Wall", 2.0f };
+	params = { Float3(13.5f, -8.2f, -5.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Jack O'Lantern", 13.00f };
+	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
+	params = { Float3(-5.0f, -2.0f, 7.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Wall", 2.0f };
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 	//params = { Float3(-39.0f, -8.1f, 2.0f), Float3(0.0f, Math::ToRadians(290.0f), 0.0f), "Black Dragon", 0.15f };
 	//AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });

@@ -38,10 +38,10 @@ Switch ($command)
     }
     "run"
     {
-        if (Test-Path -Path "$bin_dir/Horus.exe" -PathType Leaf)
+        if (Test-Path -Path "$bin_dir/zenith.exe" -PathType Leaf)
         {
             cd "$bin_dir"
-            Start-Process -NoNewWindow "./Horus.exe"
+            Start-Process -NoNewWindow "./zenith.exe"
             cd ../..
         }
         else

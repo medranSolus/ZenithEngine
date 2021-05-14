@@ -63,9 +63,8 @@
 #include "Perf.h"
 
 /*
+* Types.h (defined by MathExt.h)
 * string
-* locale
-* codecvt
 * vector
 * deque
 */

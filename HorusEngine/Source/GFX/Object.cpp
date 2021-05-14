@@ -6,7 +6,7 @@ namespace GFX
 	{
 		float scale = GetScale();
 		return Math::XMMatrixScaling(scale, scale, scale) *
-			Math::XMMatrixRotationRollPitchYawFromVector(Math::XMLoadFloat3(&GetAngle())) *
+			Math::XMMatrixRotationQuaternion(Math::XMLoadFloat4(&GetAngle())) *
 			Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&GetPos()));
 	}
 
@@ -27,9 +27,15 @@ namespace GFX
 			Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&position)));
 	}
 
-	void Object::SetAngle(const Float3& meshAngle) noexcept
+	void Object::SetAngle(const Vector& rotor) noexcept
 	{
-		BasicObject::SetAngle(meshAngle);
+		BasicObject::SetAngle(rotor);
+		UpdateTransformMatrix();
+	}
+
+	void Object::SetAngle(const Float4& rotor) noexcept
+	{
+		BasicObject::SetAngle(rotor);
 		UpdateTransformMatrix();
 	}
 
@@ -45,10 +51,10 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
-	void Object::Update(const Float3& delta, const Float3& deltaAngle) noexcept
+	void Object::Update(const Float3& delta, const Vector& rotor) noexcept
 	{
 		BasicObject::UpdatePos(delta);
-		UpdateAngle(deltaAngle);
+		UpdateAngle(rotor);
 	}
 
 	void Object::UpdatePos(const Float3& delta) noexcept
@@ -57,9 +63,9 @@ namespace GFX
 		UpdateTransformMatrix();
 	}
 
-	void Object::UpdateAngle(const Float3& deltaAngle) noexcept
+	void Object::UpdateAngle(const Vector& rotor) noexcept
 	{
-		BasicObject::UpdateAngle(deltaAngle);
+		BasicObject::UpdateAngle(rotor);
 		UpdateTransformMatrix();
 	}
 

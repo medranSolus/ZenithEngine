@@ -21,12 +21,13 @@ namespace GFX
 
 		virtual void UpdateTransformMatrix() noexcept { Math::XMStoreFloat4x4(transform.get(), CreateTransformMatrix()); }
 
-		void SetAngle(const Float3& meshAngle) noexcept override;
+		void SetAngle(const Vector& rotor) noexcept override;
+		void SetAngle(const Float4& rotor) noexcept override;
 		void SetScale(float newScale) noexcept override;
 		void SetPos(const Float3& position) noexcept override;
-		void Update(const Float3& delta, const Float3& deltaAngle) noexcept override;
+		void Update(const Float3& delta, const Vector& rotor) noexcept override;
 		void UpdatePos(const Float3& delta) noexcept override;
-		void UpdateAngle(const Float3& deltaAngle) noexcept override;
+		void UpdateAngle(const Vector& rotor) noexcept override;
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override;
 	};
 }

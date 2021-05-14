@@ -27,8 +27,9 @@ namespace GFX::Shape
 		constexpr bool IsOutline() const noexcept { return isOutline; }
 		constexpr void Submit(U64 channelFilter) const noexcept override { root->Submit(channelFilter); }
 
-		constexpr const Float3& GetAngle() const noexcept override { return root->GetAngle(); }
-		constexpr void SetAngle(const Float3& meshAngle) noexcept override { root->SetAngle(meshAngle); }
+		constexpr const Float4& GetAngle() const noexcept override { return root->GetAngle(); }
+		constexpr void SetAngle(const Vector& rotor) noexcept override { root->SetAngle(rotor); }
+		constexpr void SetAngle(const Float4& rotor) noexcept override { root->SetAngle(rotor); }
 
 		constexpr float GetScale() const noexcept { return root->GetScale(); }
 		constexpr void SetScale(float newScale) noexcept { root->SetScale(newScale); }
@@ -39,9 +40,9 @@ namespace GFX::Shape
 		const std::string& GetName() const noexcept override { return *name; }
 		void SetName(const std::string& newName) noexcept override { *name = newName; }
 
-		constexpr void Update(const Float3& delta, const Float3& deltaAngle) noexcept override { root->Update(delta, deltaAngle); }
+		constexpr void Update(const Float3& delta, const Vector& rotor) noexcept override { root->Update(delta, rotor); }
 		constexpr void UpdatePos(const Float3& delta) noexcept override { root->UpdatePos(delta); }
-		constexpr void UpdateAngle(const Float3& deltaAngle) noexcept override { root->UpdateAngle(deltaAngle); }
+		constexpr void UpdateAngle(const Vector& rotor) noexcept override { root->UpdateAngle(rotor); }
 
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return root->Accept(gfx, probe); }
 		bool Accept(Graphics& gfx, Probe::ModelProbe& probe) noexcept override { return probe.Visit(gfx, *this, *root); }

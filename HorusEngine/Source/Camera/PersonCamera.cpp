@@ -63,7 +63,7 @@ namespace Camera
 		if (angleDY)
 		{
 			const Vector rotorY = Math::XMQuaternionRotationNormal(upV, angleDY);
-			rotor = angleDX != 0.0f ? Math::XMQuaternionMultiply(rotor, rotorY) : rotorY;
+			rotor = angleDX != 0.0f ? Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(rotor, rotorY)) : rotorY;
 		}
 
 		// Unknown rotation when UP is strongly tilted, TODO: Perform some tests
@@ -71,8 +71,8 @@ namespace Camera
 		Math::XMStoreFloat3(&eyeDirection, Math::XMVector3Normalize(eyeV));
 		Math::XMStoreFloat3(&moveDirection, Math::XMVector3Normalize(Math::XMVectorSetY(eyeV, 0.0f)));
 
-		indicator->UpdateAngle({ angleDX, angleDY, 0.0f });
-		frustum->UpdateAngle({ angleDX, angleDY, 0.0f });
+		indicator->UpdateAngle(rotor);
+		frustum->UpdateAngle(rotor);
 		viewUpdate = true;
 	}
 }

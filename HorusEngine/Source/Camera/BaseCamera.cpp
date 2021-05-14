@@ -83,7 +83,7 @@ namespace Camera
 	{
 		Math::BoundingFrustum volume = GetProjection();
 		volume.Transform(volume, 1.0f,
-			Math::XMQuaternionRotationRollPitchYawFromVector(Math::XMLoadFloat3(&indicator->GetAngle())),
+			Math::XMLoadFloat4(&indicator->GetAngle()),
 			Math::XMLoadFloat3(&GetPos()));
 		return volume;
 	}
@@ -99,11 +99,10 @@ namespace Camera
 
 	void BaseCamera::Roll(float delta) noexcept
 	{
-		Math::XMStoreFloat3(&up,
-			Math::XMVector3Rotate(Math::XMLoadFloat3(&up),
-				Math::XMQuaternionRotationNormal(Math::XMLoadFloat3(&moveDirection), delta)));
-		indicator->UpdateAngle({ 0.0f, 0.0f, delta });
-		frustum->UpdateAngle({ 0.0f, 0.0f, delta });
+		const Vector rotor = Math::XMQuaternionRotationNormal(Math::XMLoadFloat3(&moveDirection), delta);
+		Math::XMStoreFloat3(&up, Math::XMVector3Rotate(Math::XMLoadFloat3(&up), rotor));
+		indicator->UpdateAngle(rotor);
+		frustum->UpdateAngle(rotor);
 		viewUpdate = true;
 	}
 

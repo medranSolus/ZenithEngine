@@ -190,6 +190,8 @@ namespace GUI
 
 			if (ImGui::Button("Accept", { 135.0f, 0.0f }))
 			{
+				Math::XMStoreFloat4(&params.rotation,
+					Math::XMQuaternionRotationRollPitchYaw(params.rotation.x, params.rotation.y, params.rotation.z));
 				result = Result::Accept;
 				ImGui::CloseCurrentPopup();
 			}

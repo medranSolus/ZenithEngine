@@ -58,13 +58,13 @@ namespace Camera
 		if (angleDY)
 		{
 			const Vector rotorY = Math::XMQuaternionRotationNormal(upV, angleDY);
-			rotor = angleDX != 0.0f ? Math::XMQuaternionMultiply(rotor, rotorY) : rotorY;
+			rotor = angleDX != 0.0f ? Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(rotor, rotorY)) : rotorY;
 		}
 		Math::XMStoreFloat3(&moveDirection,
 			Math::XMVector3Normalize(Math::XMVector3Rotate(moveDirV, rotor)));
 
-		indicator->UpdateAngle({ angleDX, angleDY, 0.0f });
-		frustum->UpdateAngle({ angleDX, angleDY, 0.0f });
+		indicator->UpdateAngle(rotor);
+		frustum->UpdateAngle(rotor);
 		viewUpdate = true;
 	}
 }

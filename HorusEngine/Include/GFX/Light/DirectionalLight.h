@@ -7,7 +7,7 @@ namespace GFX::Light
 {
 	class DirectionalLight : public ILight
 	{
-		static inline Float3 dummyData = { 0.0f,0.0f,0.0f };
+		static inline Float4 dummyData = { 0.0f, 0.0f, 0.0f, 1.0f };
 		std::string name;
 
 		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
@@ -24,19 +24,20 @@ namespace GFX::Light
 		constexpr void SetOutline() noexcept override {}
 		constexpr void DisableOutline() noexcept override {}
 
-		constexpr const Float3& GetAngle() const noexcept override { return dummyData; }
-		constexpr void SetAngle(const Float3& meshAngle) noexcept override {}
-		constexpr void UpdateAngle(const Float3& deltaAngle) noexcept override {}
+		constexpr const Float4& GetAngle() const noexcept override { return dummyData; }
+		constexpr void SetAngle(const Vector& rotor) noexcept override {}
+		constexpr void SetAngle(const Float4& rotor) noexcept override {}
+		constexpr void UpdateAngle(const Vector& rotor) noexcept override {}
 
 		constexpr float GetScale() const noexcept { return 1.0f; }
 		constexpr void SetScale(float newScale) noexcept {}
 
-		constexpr const Float3& GetPos() const noexcept override { return dummyData; }
+		constexpr const Float3& GetPos() const noexcept override { return (Float3&)(dummyData); }
 
 		constexpr const std::string& GetName() const noexcept override { return name; }
 		void SetName(const std::string& newName) noexcept override { name = newName; }
 
-		constexpr void Update(const Float3& delta, const Float3& deltaAngle) noexcept override {}
+		constexpr void Update(const Float3& delta, const Vector& rotor) noexcept override {}
 		constexpr void UpdatePos(const Float3& delta) noexcept override {}
 		constexpr void SetPos(const Float3& position) noexcept override {}
 

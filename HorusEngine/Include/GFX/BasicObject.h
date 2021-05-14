@@ -25,8 +25,9 @@ namespace GFX
 		constexpr const std::string& GetName() const noexcept override { return name; }
 		void SetName(const std::string& newName) noexcept override { name = newName; }
 
-		const Float3& GetAngle() const noexcept override { return buffer["angle"]; }
-		void SetAngle(const Float3& meshAngle) noexcept override { buffer["angle"] = meshAngle; }
+		const Float4& GetAngle() const noexcept override { return buffer["rotation"]; }
+		void SetAngle(const Vector& rotor) noexcept override { ASSERT_QTRN_UNIT_V(rotor); Math::XMStoreFloat4(&buffer["rotation"], rotor); }
+		void SetAngle(const Float4& rotor) noexcept override { ASSERT_QTRN_UNIT(rotor); buffer["rotation"] = rotor; }
 
 		float GetScale() const noexcept override { return buffer["scale"]; }
 		void SetScale(float newScale) noexcept override { buffer["scale"] = newScale; }
@@ -36,6 +37,6 @@ namespace GFX
 
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return probe.VisitObject(buffer); }
 		void UpdatePos(const Float3& delta) noexcept override;
-		void UpdateAngle(const Float3& deltaAngle) noexcept override;
+		void UpdateAngle(const Vector& rotor) noexcept override;
 	};
 }

@@ -9,7 +9,7 @@ namespace WinAPI
 	{
 		class WindowClass final
 		{
-			static constexpr const char* WND_CLASS_NAME = "horusEngineWindow";
+			static constexpr const char* WND_CLASS_NAME = "ZE_WND";
 
 			HINSTANCE hInstance;
 

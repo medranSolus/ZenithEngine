@@ -113,9 +113,8 @@ namespace GFX::Shape
 		root->SetPos(params.position);
 		if (flipYZ)
 		{
-			Float3 rot = params.rotation;
-			rot.x += M_PI_2;
-			root->SetAngle(rot);
+			root->SetAngle(Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&params.rotation),
+				Math::XMQuaternionRotationNormal({ 1.0f, 0.0f, 0.0f, 0.0f }, M_PI_2))));
 		}
 		else
 			root->SetAngle(params.rotation);

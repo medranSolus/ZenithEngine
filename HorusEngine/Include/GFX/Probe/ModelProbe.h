@@ -22,7 +22,7 @@ namespace GFX::Probe
 		ModelProbe& operator=(const ModelProbe&) = default;
 		virtual ~ModelProbe() = default;
 
-		constexpr void ResetNode() noexcept { selectedNode = nullptr; }
+		constexpr void Reset() noexcept override { selectedNode = nullptr; BaseProbe::Reset(); }
 		void PopNode() const noexcept { ImGui::TreePop(); }
 
 		bool PushNode(Shape::ModelNode& node) noexcept;

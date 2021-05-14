@@ -14,6 +14,16 @@ namespace Math
 		return angle * 180.0f / static_cast<float>(M_PI + FLT_EPSILON);
 	}
 
+	constexpr Float3 ToRadians(Float3 angles) noexcept
+	{
+		return { ToRadians(angles.x), ToRadians(angles.y), ToRadians(angles.z) };
+	}
+
+	constexpr Float3 ToDegrees(Float3 angles) noexcept
+	{
+		return { ToDegrees(angles.x), ToDegrees(angles.y), ToDegrees(angles.z) };
+	}
+
 	constexpr short ClampAngle(U16 angle, U16 maxAngle = 360) noexcept
 	{
 		if (angle > maxAngle)
@@ -101,6 +111,13 @@ namespace Math
 		return a + weight * (b - a);
 	}
 
+	template<typename T>
+	constexpr T Clamp(T val, T down, T up) noexcept
+	{
+		return val < down ? down : (val > up ? up : val);
+	}
+
+	Float3 GetEulerAngles(const Float4& rotor) noexcept;
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept;
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept;
 	bool IsNearEqual(const Vector& v1, const Vector& v2) noexcept;

@@ -10,8 +10,11 @@ namespace GFX::Probe
 			ImGuiTreeNodeFlags_OpenOnArrow |
 			(node.HasChildren() ? 0 : ImGuiTreeNodeFlags_Leaf) |
 			(node.GetID() == selectedID ? ImGuiTreeNodeFlags_Selected : 0), node.GetName().c_str());
-		if (ImGui::IsItemClicked())
+		if (ImGui::IsItemClicked() && selectedNode != &node)
+		{
 			selectedNode = &node;
+			BaseProbe::Reset();
+		}
 		return expanded;
 	}
 

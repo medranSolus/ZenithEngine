@@ -22,7 +22,7 @@ namespace GFX::Probe
 		style.Colors[ImGuiCol_Text] = colorText;
 	}
 
-	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
+	bool BaseProbe::Visit(Data::CBuffer::DynamicCBuffer& buffer) noexcept
 	{
 		bool dirty = false;
 		dirty |= VisitLight(buffer);
@@ -31,9 +31,11 @@ namespace GFX::Probe
 		return dirty;
 	}
 
-	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
+	bool BaseProbe::VisitObject(Data::CBuffer::DynamicCBuffer& buffer) noexcept
 	{
 		constexpr float SLIDER_WIDTH = -15.0f;
+		constexpr float HALF_SLIDER_WIDTH = -80.0f;
+		constexpr float INPUT_WIDTH = -HALF_SLIDER_WIDTH;
 		bool dirty = false;
 		//if (auto offset = buffer["offset"]; offset.Exists())
 		//{
@@ -58,25 +60,58 @@ namespace GFX::Probe
 			dirty |= ImGui::InputFloat(Tag("Z##position"), &pos.z, 0.1f, 0.0f, "%.2f");
 			ImGui::NextColumn();
 		}
-		if (auto angle = buffer["angle"]; angle.Exists())
+		if (auto rotor = buffer["rotation"]; rotor.Exists())
 		{
-			Float3& rotation = static_cast<Float3&>(angle);
+			Float3 rotation = Math::ToDegrees(Math::GetEulerAngles(rotor));
 			ImGui::Text("Rotation");
-			ImGui::SetNextItemWidth(SLIDER_WIDTH);
-			dirty |= ImGui::SliderAngle(Tag("X##rotation"), &rotation.x, 0.0f, 360.0f, "%.2f");
-			ImGui::SetNextItemWidth(SLIDER_WIDTH);
-			dirty |= ImGui::SliderAngle(Tag("Y##rotation"), &rotation.y, 0.0f, 360.0f, "%.2f");
-			ImGui::SetNextItemWidth(SLIDER_WIDTH);
-			dirty |= ImGui::SliderAngle(Tag("Z##rotation"), &rotation.z, 0.0f, 360.0f, "%.2f");
+			ImGui::Text("-");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(HALF_SLIDER_WIDTH);
+			ImGui::SliderInt(Tag("+ X##rot"), &rotationX, -ROTATION_MAX_SPEED, ROTATION_MAX_SPEED, "", ImGuiSliderFlags_NoInput);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(INPUT_WIDTH);
+			bool angleSet = ImGui::InputFloat(Tag("##angle_x"), &rotation.x, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+			ImGui::Text("-");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(HALF_SLIDER_WIDTH);
+			ImGui::SliderInt(Tag("+ Y##rot"), &rotationY, -ROTATION_MAX_SPEED, ROTATION_MAX_SPEED, "", ImGuiSliderFlags_NoInput);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(INPUT_WIDTH);
+			angleSet |= ImGui::InputFloat(Tag("##angle_y"), &rotation.y, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+			ImGui::Text("-");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(HALF_SLIDER_WIDTH);
+			ImGui::SliderInt(Tag("+ Z##rot"), &rotationZ, -ROTATION_MAX_SPEED, ROTATION_MAX_SPEED, "", ImGuiSliderFlags_NoInput);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(INPUT_WIDTH);
+			angleSet |= ImGui::InputFloat(Tag("##angle_z"), &rotation.z, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 			ImGui::Columns(1);
+			if (angleSet)
+			{
+				rotationX = rotationY = rotationZ = 0;
+				rotation = Math::ToRadians(rotation);
+				Math::XMStoreFloat4(&rotor,
+					Math::XMQuaternionRotationRollPitchYawFromVector(Math::XMLoadFloat3(&rotation)));
+				dirty = true;
+			}
+			else if (rotationX || rotationY || rotationZ)
+			{
+				Math::XMStoreFloat4(&rotor,
+					Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotor),
+						Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(rotationX / 2.0f),
+							Math::ToRadians(rotationY / 2.0f), Math::ToRadians(rotationZ / 2.0f)))));
+				dirty = true;
+			}
 		}
 		return dirty;
 	}
 
 	bool BaseProbe::VisitMaterial(Data::CBuffer::DynamicCBuffer& buffer) const noexcept
 	{
+		const ImGuiColorEditFlags colorFlags = ImGuiColorEditFlags_HDR
+			| ImGuiColorEditFlags_Float | (compact ? ImGuiColorEditFlags_NoInputs : 0);
 		bool dirty = false;
-		const ImGuiColorEditFlags colorFlags = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | (compact ? ImGuiColorEditFlags_NoInputs : 0);
+
 		if (auto color = buffer["solidColor"]; color.Exists())
 		{
 			dirty |= ImGui::ColorEdit3(Tag("Color##solid"),
@@ -189,7 +224,7 @@ namespace GFX::Probe
 				ImGui::NextColumn();
 				ImGui::Text("Inner angle");
 				ImGui::SetNextItemWidth(-1.0f);
-				dirty |= ImGui::SliderAngle(Tag("##inner"), &innerAngle, 0.0f, Math::ToDegrees(outerAngle), "%.2f");
+				dirty |= ImGui::SliderAngle(Tag("##inner"), &innerAngle, 0.0f, Math::ToDegrees(static_cast<float>(outerAngle)), "%.2f");
 			}
 			ImGui::Columns(1);
 		}

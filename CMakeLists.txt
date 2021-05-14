@@ -3,7 +3,7 @@ include(ExternalProject)
 
 ######### PROJECT CONFIGURATION #########
 
-set(PROJECT_NAME "Horus Engine")
+set(PROJECT_NAME "Zenith Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
 # Project options
@@ -15,11 +15,11 @@ option(HE_BUILD_TOOL "Enable building of command line utility tool" ON)
 
 ################ TARGETS ################
 
-set(TOOL_TARGET "HEdit")
+set(TOOL_TARGET "ZEdit")
 
 # Libraries
-set(COMMON_TARGET "Common")
-set(ENGINE_TARGET "Horus")
+set(COMMON_TARGET "common")
+set(ENGINE_TARGET "zenith")
 
 # External libraries
 set(ZLIB_LIB "zlibstatic")
