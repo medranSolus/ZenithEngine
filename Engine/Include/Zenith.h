@@ -1,11 +1,12 @@
 /* 
  * Copyright (C) 2021 Marek Machliñski - All Rights Reserved.
  * 
- * This file is part of Zenith Engine project which is released under dual license.
- * For full license details see file README.md or go to https://github.com/medranSolus/ZenithEngine.
+ * This file is part of Zenith Engine project which is released under dual-license.
+ * For more license details see file README.md or go to https://github.com/medranSolus/ZenithEngine.
  * 
  * Every class used in engine belongs to ZE namespace.
  */
+
 
  /*
  * Common types used by engine (note that this are the only types not under ZE namespace)

@@ -1,9 +1,9 @@
 # Code Guidelines
 
 To unify code style, here are rules followed by this project:
-  - Each namespace should have it's own directory in *include* and *source* if *.cpp* files are present. Only exception for single-file utility namespace.
+  - Each namespace should have it's own directory in *Include* and *Source* if *.cpp* files are present. Only exception for single-file utility namespace.
   - Nested namespaces should have it's equivalent in directory structure.
-  - Before including headers in *.cpp* files check if it's already present in `include/pch.h` since headers there are automatically added to every source file.
+  - Before including headers in *.cpp* files check if it's already present in `Include/pch.h` since headers there are automatically added to every source file.
   - *Name convetions:*
     - **PascalCase:**
       - Namespaces
@@ -18,12 +18,14 @@ To unify code style, here are rules followed by this project:
     - **ALL_CAPS:**
       - Macros
       - Constexpr variables
+    - Macros defined in header files in *Common* and *Engine* projects should be preceeded with **ZE_**.
+    - All switch macros disabling parts of code should be preceeded with **_ZE_**.
   - References and pointers should be formatted without space, `SomeType* ptr;`, `OtherType& ref;`
   - Avoid short names, let every function describe itself but don't make them too long.
-  - Don't use build in types, prefer usage of typedefs in **Types.h**, for ex. instead of `int` use `U32`, etc.
+  - Don't use build in types, prefer usage of typedefs in **Types.h**, for ex. instead of `int` use `S32`, etc.
   - Use `constexpr` whereever possible.
   - Instead of global variables in namespace, prefer utility classes with static methods.
-  - If function does not throw mark it as `noexcept` or `noexcept(!IS_DEBUG)` if only contains debug exceptions.
+  - If function does not throw mark it as `noexcept` or `noexcept(ZE_NO_DEBUG)` if only contains debug exceptions.
   - *Classes and interfaces:*
     - Every class should have explicit:
       - Destructor declaration, even if it's only `~SomeType() = default`. It helps not forgetting about virtual destructors.
@@ -39,6 +41,39 @@ To unify code style, here are rules followed by this project:
         - Move assignment operator
         - Destructor
       - If it's utility class with deleted constructor other said methods and destructor are not required.
+      - If it's interface class without variables then only destructor suficies.
+    - Order of class content declaration:
+      - `private` friend classes declarations
+      - `public` definitions of nested enums and classes
+      - `protected` definitions of nested enums and classes
+      - `private`
+        - Nested enums and classes
+        - `static constexpr` members
+        - `static` data members
+        - Normal data members
+        - Methods
+        - Constructor as defined before
+      - `protected` definitions with same order as `private` section
+      - `public` definitions with same order as `private` section
+    - If some methods have to be defined in header file they should follow after class declaration inside `#pragma region Functions` block.
+    - Order of methods:
+      - `static constexpr` templated fully defined methods
+      - `static` templated inline defined methods
+      - `static constexpr` fully defined methods
+      - `static` inline defined methods
+      - `static constexpr` templated methods defined later
+      - `static` templated methods defined later
+      - `static constexpr` methods defined later
+      - `static` methods defined later
+      - `constexpr` templated fully defined methods
+      - Templated inline defined methods
+      - `constexpr` fully defined methods
+      - Inline defined methods
+      - `constexpr` templated methods defined later
+      - Templated methods defined later
+      - `constexpr` methods defined later
+      - Methods defined later
+    - Every class that can be inherited from should have virtual destructor, exception only for class without base class and marked as `final`.
     - Interfaces should be named like `ISomeInterface` if possible.
     - Every interface should have explicit default virtual destructor.
   - While using `{}` place braces in new lines.
