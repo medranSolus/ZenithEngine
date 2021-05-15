@@ -1,6 +1,6 @@
 #include "Exception/BasicException.h"
 
-namespace Exception
+namespace ZE::Exception
 {
 	const char* BasicException::what() const noexcept
 	{

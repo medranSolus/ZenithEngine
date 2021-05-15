@@ -1,6 +1,6 @@
 #include "Exception/DirectXTexException.h"
 
-namespace Exception
+namespace ZE::Exception
 {
 	const char* DirectXTexException::what() const noexcept
 	{

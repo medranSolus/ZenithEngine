@@ -9,12 +9,12 @@
 #define XMVECTOR Vector
 #include "DirectXTex.h"
 #undef XMVECTOR
-namespace Tex
+namespace ZE::Tex
 {
 	using namespace DirectX;
 }
 
-namespace GFX
+namespace ZE::GFX
 {
 	class Surface final
 	{

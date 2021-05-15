@@ -1,7 +1,7 @@
 #pragma once
 #include "BasicException.h"
 
-namespace Exception
+namespace ZE::Exception
 {
 	class ImageException : public virtual BasicException
 	{
@@ -23,4 +23,4 @@ namespace Exception
 	};
 }
 
-#define IMG_EXCEPT(info) Exception::ImageException(__LINE__, __FILE__, info)
+#define ZE_IMG_EXCEPT(info) ZE::Exception::ImageException(__LINE__, __FILE__, info)

@@ -2,7 +2,7 @@
 #include "ImageException.h"
 #include "WinApiException.h"
 
-namespace Exception
+namespace ZE::Exception
 {
 	class DirectXTexException : public ImageException, public WinApiException
 	{
@@ -23,8 +23,8 @@ namespace Exception
 }
 
 // Enables useage of DXT_ macros in current scope
-#define DXT_ENABLE_EXCEPT() HRESULT __hResult
+#define ZE_DXT_ENABLE_EXCEPT() HRESULT __hResult
 // Before using needs call to DXT_ENABLE_EXCEPT()
-#define DXT_EXCEPT(info) Exception::DirectXTexException(__LINE__, __FILE__, __hResult, info)
+#define ZE_DXT_EXCEPT(info) ZE::Exception::DirectXTexException(__LINE__, __FILE__, __hResult, info)
 // Before using needs call to DXT_ENABLE_EXCEPT()
-#define	DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw DXT_EXCEPT(info)
+#define	ZE_DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw ZE_DXT_EXCEPT(info)

@@ -4,7 +4,7 @@
 #include <vector>
 #include <deque>
 
-namespace Utils
+namespace ZE::Utils
 {
 	inline std::wstring ToUtf8(const std::string& s) noexcept
 	{

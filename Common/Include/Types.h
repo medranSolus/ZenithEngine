@@ -8,12 +8,12 @@
 #include <intrin.h>
 #pragma intrinsic(__rdtsc, __faststorefence)
 
-namespace External
+namespace ZE::External
 {
-	#include "DirectXMath.h"
-	#include "DirectXCollision.h"
+#include "DirectXMath.h"
+#include "DirectXCollision.h"
 }
-namespace Math
+namespace ZE::Math
 {
 	using namespace External::DirectX;
 }
@@ -31,16 +31,16 @@ namespace Math
 #pragma endregion
 
 #pragma region Vector types
-	typedef External::DirectX::XMFLOAT2 Float2;
-	typedef External::DirectX::XMFLOAT3 Float3;
-	typedef External::DirectX::XMFLOAT4 Float4;
+	typedef ZE::External::DirectX::XMFLOAT2 Float2;
+	typedef ZE::External::DirectX::XMFLOAT3 Float3;
+	typedef ZE::External::DirectX::XMFLOAT4 Float4;
 	// SSE 4D Vector
-	typedef External::DirectX::XMVECTOR Vector;
+	typedef ZE::External::DirectX::XMVECTOR Vector;
 #pragma endregion
 
 #pragma region Matrix types
-	typedef External::DirectX::XMFLOAT3X3 Float3x3;
-	typedef External::DirectX::XMFLOAT4X4 Float4x4;
+	typedef ZE::External::DirectX::XMFLOAT3X3 Float3x3;
+	typedef ZE::External::DirectX::XMFLOAT4X4 Float4x4;
 	// SSE 4x4 Matrix
-	typedef External::DirectX::XMMATRIX Matrix;
+	typedef ZE::External::DirectX::XMMATRIX Matrix;
 #pragma endregion

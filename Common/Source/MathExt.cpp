@@ -1,6 +1,6 @@
 #include "MathExt.h"
 
-namespace Math
+namespace ZE::Math
 {
 	Float3 GetEulerAngles(const Float4& rotor) noexcept
 	{

@@ -1,6 +1,6 @@
 #include "Exception/ImageException.h"
 
-namespace Exception
+namespace ZE::Exception
 {
 	const char* ImageException::what() const noexcept
 	{

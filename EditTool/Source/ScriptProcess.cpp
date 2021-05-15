@@ -8,7 +8,7 @@ ScriptProcess::OutCode ScriptProcess::GetSrcDest(std::string& source, std::strin
 	params.pop_front();
 	if (params.size() == 0 || params.front().at(0) == '-')
 	{
-		Logger::Error("No files in input!");
+		ZE::Logger::Error("No files in input!");
 		return OutCode::NotEnoughParams;
 	}
 	source = params.front();
@@ -43,7 +43,7 @@ ScriptProcess::OutCode ScriptProcess::ProcessJsonCommand(const json::json& comma
 	}
 	else
 	{
-		Logger::Error("Unknown JSON command! Command: " + commandName);
+		ZE::Logger::Error("Unknown JSON command! Command: " + commandName);
 		return OutCode::InvalidJsonCommand;
 	}
 	return OutCode::Good;
@@ -55,7 +55,7 @@ ScriptProcess::OutCode ScriptProcess::ProcessJson(const std::string& jsonFile)
 	if (!fin.good())
 	{
 		fin.close();
-		Logger::Error("Cannot open file: " + jsonFile);
+		ZE::Logger::Error("Cannot open file: " + jsonFile);
 		return OutCode::CannotOpenFile;
 	}
 	json::json jsonArray;
@@ -85,7 +85,7 @@ int ScriptProcess::Run(std::deque<std::string>& params)
 			params.pop_front();
 			if (params.size() == 0)
 			{
-				Logger::Error("No JSON files in input!");
+				ZE::Logger::Error("No JSON files in input!");
 				return OutCode::NotEnoughParams;
 			}
 			size_t i = 0;
@@ -96,7 +96,7 @@ int ScriptProcess::Run(std::deque<std::string>& params)
 				OutCode code = ProcessJson(params.at(i));
 				if (code != OutCode::Good)
 				{
-					Logger::Error("Error processing JSON!");
+					ZE::Logger::Error("Error processing JSON!");
 					return code;
 				}
 			}
@@ -120,7 +120,7 @@ int ScriptProcess::Run(std::deque<std::string>& params)
 		}
 		else
 		{
-			Logger::Error("Invalid option!");
+			ZE::Logger::Error("Invalid option!");
 			return OutCode::WrongOption;
 		}
 	}

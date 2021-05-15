@@ -3,7 +3,7 @@
 #include <exception>
 #include <string>
 
-namespace Exception
+namespace ZE::Exception
 {
 	// Basic exception type, recomended virtual inheritance as every exception need to be derived from this class
 	class BasicException : public std::exception

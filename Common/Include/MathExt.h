@@ -2,7 +2,7 @@
 #include "ColorF4.h"
 #include <random>
 
-namespace Math
+namespace ZE::Math
 {
 	constexpr float ToRadians(float angle) noexcept
 	{

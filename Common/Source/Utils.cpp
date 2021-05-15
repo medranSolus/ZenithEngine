@@ -1,7 +1,7 @@
 #include "Utils.h"
 #include <iomanip>
 
-namespace Utils
+namespace ZE::Utils
 {
 	std::string ToAscii(const std::wstring& s) noexcept
 	{
