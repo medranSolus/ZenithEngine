@@ -7,10 +7,10 @@ set(PROJECT_NAME "Zenith Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
 # Project options
-set(HE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
+set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
-option(HE_MODEL_LOADING "Enable model loading module of engine" ON)
-option(HE_BUILD_TOOL "Enable building of command line utility tool" ON)
+option(ZE_MODEL_LOADING "Enable model loading module of engine" ON)
+option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 
 
 ################ TARGETS ################
@@ -43,7 +43,7 @@ set(DXTEX_TARGET "${DXTEX_LIB}")
 ########### MAIN DIRECTORIES ############
 
 set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
-set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/HorusEngine")
+set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/Engine")
 set(TOOL_DIR "${PROJECT_SOURCE_DIR}/EditTool")
 set(BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}")
 set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
@@ -74,7 +74,7 @@ set(JSON_INC_DIR ${EXTERNAL_DIR})
 
 ######### COMPILE CONFIGURATION #########
 
-set(HE_CXX_STD cxx_std_20)
+set(ZE_CXX_STD cxx_std_20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(${EXTERNAL_BIN_DIR})
@@ -95,9 +95,8 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 
 # General flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_NO_DEBUG=0 -D_MODE_DEBUG")
-set(COMPILER_REL_CXX_FLAGS "${COMPILER_REL_CXX_FLAGS} -D_NO_DEBUG=1")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
+set(COMPILER_REL_CXX_FLAGS "${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=1")
 set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS}")
 
@@ -112,7 +111,7 @@ endif()
 
 add_subdirectory(${COMMON_DIR})
 add_subdirectory(${ENGINE_DIR})
-if(HE_BUILD_TOOL)
+if(ZE_BUILD_TOOL)
 	add_subdirectory(${TOOL_DIR})
 endif()
 
@@ -186,7 +185,7 @@ macro(copy_inner_lib MAIN_PROJECT PROJECT ADD_BIN_DIR ADD_PDB_DIR ADD_BUILD_DIR)
 endmacro()
 
 # Assimp
-if(${HE_MODEL_LOADING})
+if(${ZE_MODEL_LOADING})
 	# No exports set
 	set(ASSIMP_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
 		"-DASSIMP_BUILD_ASSIMP_TOOLS:BOOL=OFF"

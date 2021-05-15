@@ -56,6 +56,11 @@
 #include "Exception/DirectXTexException.h"
 
 /*
+* string
+*/
+#include "Logger.h"
+
+/*
 * Types.h (defined by MathExt.h)
 * string
 * map
