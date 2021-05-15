@@ -44,12 +44,13 @@ namespace ZE::GFX::Pipeline
 			buffer["coefficients"][i] = static_cast<float>(buffer["coefficients"][i]) / sum;
 	}
 
-	MainPipelineGraph::MainPipelineGraph(Graphics& gfx, float hdrExposure, S32 radius, float sigma, float gamma, S32 bias, float normalOffset)
+	MainPipelineGraph::MainPipelineGraph(Graphics& gfx, const std::string& skyboxDir, const std::string& skyboxExt,
+		float hdrExposure, S32 radius, float sigma, float gamma, S32 bias, float normalOffset)
 		: RenderGraph(gfx), bias(bias), radius(radius), sigma(sigma), gamma(gamma), hdrExposure(hdrExposure), normalOffset(normalOffset)
 	{
 		SetupSamplers(gfx);
 
-		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, "Skybox\\Space", ".png");
+		skyboxTexture = GFX::Resource::TextureCube::Get(gfx, skyboxDir, skyboxExt);
 		AddGlobalSource(RenderPass::Base::SourceDirectBindable<GFX::Resource::TextureCube>::Make("skyboxTexture", skyboxTexture));
 
 		shadowMapDepth = GfxResPtr<Resource::DepthStencil>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, Resource::DepthStencil::Usage::DepthOnly);

@@ -44,35 +44,20 @@ add_shader_commands(PS)
 add_custom_target(${SHADER_TARGET} ALL DEPENDS ${SHADERS} VERBATIM)
 
 
-########### POST BUILD RULES ############
-
-set(COPY_TARGET "DataCopy")
-set(DATA_DIR "Data")
-file(GLOB_RECURSE DATA_LIST RELATIVE "${ENGINE_DIR}" "${DATA_DIR}/*")
-
-foreach(FILE IN LISTS DATA_LIST)
-    string(REPLACE ${DATA_DIR} ${ZE_BIN_DIR} FILE_OUT ${FILE})
-    list(APPEND DATA_OUT_LIST ${FILE_OUT})
-    add_custom_command(OUTPUT ${FILE_OUT} POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy "${FILE}" "${FILE_OUT}"
-        MAIN_DEPENDENCY "${FILE}"
-        WORKING_DIRECTORY "${ENGINE_DIR}")
-endforeach()
-add_custom_target(${COPY_TARGET} DEPENDS ${DATA_OUT_LIST} VERBATIM)
-
-
 ########## RESOURCE EMBEDDING ###########
 
-set(RES_DIR "${ENGINE_DIR}/Resource")
 set(RES_BIN_DIR "${BUILD_DIR}/Resource")
 set(RES_HDR "${RES_BIN_DIR}/resource.h")
-set(RES_FILES "${RES_DIR}/resource.rc" "${RES_HDR}")
+set(RES_FILES "${ZE_RES_DIR}/resource.rc" "${RES_HDR}")
 file(WRITE "${RES_HDR}"
         "#pragma once\n"
-        "#define ZE_ICON_PATH \"${RES_DIR}/icon.ico\"\n")
+        "#define ZE_ICON_PATH \"${ZE_RES_DIR}/icon.ico\"\n")
 
 
 ############# ENGINE RULES ##############
+
+# Post build data copy
+copy_runtime_data(ENGINE "Data/Runtime")
 
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
@@ -84,16 +69,12 @@ file(GLOB_RECURSE SRC_LIST
     "${IMGUI_INC_DIR}/*.h")
 
 # Target setup
-add_executable(${ENGINE_TARGET} WIN32 ${SRC_LIST} ${RES_FILES})
-set_target_properties(${ENGINE_TARGET} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${ZE_BIN_DIR}
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${ZE_BIN_DIR}
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${ZE_BIN_DIR})
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${RES_FILES})
 
-target_compile_features(${ENGINE_TARGET} PRIVATE ${ZE_CXX_STD})
+target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PRIVATE ${ENGINE_INC_DIR} ${RES_BIN_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
-target_precompile_headers(${ENGINE_TARGET} PRIVATE ${PCH})
+    PUBLIC ${ENGINE_INC_DIR} ${RES_BIN_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
+target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PRIVATE D3DCompiler dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})
-add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${COPY_TARGET})
+    PUBLIC D3DCompiler dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})
+add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET})

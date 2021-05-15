@@ -44,8 +44,8 @@ namespace ZE::GFX::Pipeline
 		void SetKernel() noexcept;
 
 	public:
-		MainPipelineGraph(Graphics& gfx, float hdrExposure = 1.5f, S32 radius = 7,
-			float sigma = 2.6f, float gamma = 2.2f, S32 bias = 26, float normalOffset = 0.001f);
+		MainPipelineGraph(Graphics& gfx, const std::string& skyboxDir = "Skybox/Default", const std::string& skyboxExt = ".jpg",
+			float hdrExposure = 1.5f, S32 radius = 7, float sigma = 2.6f, float gamma = 2.2f, S32 bias = 26, float normalOffset = 0.001f);
 		virtual ~MainPipelineGraph() = default;
 
 		void BindMainCamera(Camera::ICamera& camera);

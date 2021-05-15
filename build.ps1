@@ -22,7 +22,7 @@ Switch ($mode.ToLower())
     {
         Write-Output "`nNot specified correct build mode! Syntax:"
         Write-Output "    build.ps1`n        <MODE: R|Release; Ri|ReleaseInfo; D|Debug>"
-        Write-Output "        [<COMMAND: gen - generate build system; run - run application; (default - build application)>]`n"
+        Write-Output "        [<COMMAND: gen - generate build system; run - run tech demo; (default - build project)>]`n"
         exit -1
     }
 }
@@ -38,10 +38,10 @@ Switch ($command)
     }
     "run"
     {
-        if (Test-Path -Path "$bin_dir/zenith.exe" -PathType Leaf)
+        if (Test-Path -Path "$bin_dir/ZenithDemo.exe" -PathType Leaf)
         {
             cd "$bin_dir"
-            Start-Process -NoNewWindow "./zenith.exe"
+            Start-Process -NoNewWindow "./ZenithDemo.exe"
             cd ../..
         }
         else

@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.19)
-include(ExternalProject)
 
 ######### PROJECT CONFIGURATION #########
 
@@ -9,13 +8,24 @@ project(${PROJECT_NAME} VERSION 0.2)
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
+set(ZE_RES_DIR "${PROJECT_SOURCE_DIR}/Engine/Data" CACHE STRING
+	"Directory containing embeddable icon file. To set custom icon
+	you need to provide same set of file present in current directory")
 option(ZE_MODEL_LOADING "Enable model loading module of engine" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
+option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
+
+# CMake modules
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
+include(ExternalProject)
+include(External)
+include(PostBuild)
 
 
 ################ TARGETS ################
 
 set(TOOL_TARGET "ZEdit")
+set(DEMO_TARGET "ZenithDemo")
 
 # Libraries
 set(COMMON_TARGET "common")
@@ -45,6 +55,7 @@ set(DXTEX_TARGET "${DXTEX_LIB}")
 set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
 set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/Engine")
 set(TOOL_DIR "${PROJECT_SOURCE_DIR}/EditTool")
+set(DEMO_DIR "${PROJECT_SOURCE_DIR}/Demo")
 set(BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}")
 set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
@@ -114,6 +125,9 @@ add_subdirectory(${ENGINE_DIR})
 if(ZE_BUILD_TOOL)
 	add_subdirectory(${TOOL_DIR})
 endif()
+if(ZE_BUILD_DEMO)
+	add_subdirectory(${DEMO_DIR})
+endif()
 
 
 ########### EXTERNAL PROJECTS ###########
@@ -125,64 +139,6 @@ else()
 	set(LIB_EXT ".a")
 	set(LIB_PREFIX "lib")
 endif()
-
-# Macro for setting external projects build variables
-#	PROJECT = prefix of all project variables
-#	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
-macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR)
-	set(${PROJECT}_OUT_LIB_NAME "${LIB_PREFIX}${${PROJECT}_TARGET}${LIB_EXT}")
-	set(${PROJECT}_OUT_LIB "${EXTERNAL_BIN_DIR}/${${PROJECT}_OUT_LIB_NAME}")
-
-	set(${PROJECT}_CP_CMD "${CMAKE_COMMAND}" -E rename
-		"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${${PROJECT}_OUT_LIB_NAME}"
-		"${${PROJECT}_OUT_LIB}")
-
-	if(MSVC AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
-		set(${PROJECT}_CP_CMD "${${PROJECT}_CP_CMD}" &&
-			"${CMAKE_COMMAND}" -E rename
-				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR}CMakeFiles/${${PROJECT}_LIB}.dir/${${PROJECT}_LIB}.pdb"
-				"${EXTERNAL_BIN_DIR}/${${PROJECT}_LIB}.pdb")
-	endif()
-endmacro()
-
-# Macro for loading external projects
-#	PROJECT = prefix of all project variables
-#	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
-macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
-	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${PROJECT}/")
-	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
-	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
-		ExternalProject_Add(${${PROJECT}_TARGET}
-			SOURCE_DIR ${${PROJECT}_DIR}
-			BINARY_DIR ${${PROJECT}_BUILD_DIR}
-			STAMP_DIR ${${PROJECT}_BUILD_DIR}
-			INSTALL_DIR ${EXTERNAL_BIN_DIR}
-			CMAKE_CACHE_ARGS "${${PROJECT}_CACHE_ARGS}"
-				"-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-			INSTALL_COMMAND "${${PROJECT}_CP_CMD}")
-	elseif(EXISTS ${${PROJECT}_BUILD_DIR})
-		file(REMOVE_RECURSE ${${PROJECT}_BUILD_DIR})
-	endif()
-endmacro()
-
-# Macro for copying external projects inner libraries
-#	MAIN_PROJECT = prefix of a project containing libraries
-#	PROJECT = prefix of all project variables
-#	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
-#	ADD_BUILD_DIR = path to build directory inside MAIN_PROJECT
-macro(copy_inner_lib MAIN_PROJECT PROJECT ADD_BIN_DIR ADD_PDB_DIR ADD_BUILD_DIR)
-	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${MAIN_PROJECT}/${ADD_BUILD_DIR}")
-	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}" "${ADD_BUILD_DIR}")
-	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
-		ExternalProject_Add_Step(${${MAIN_PROJECT}_TARGET} copy${PROJECT}
-			DEPENDEES install
-			LOG OFF
-			COMMAND "${${PROJECT}_CP_CMD}")
-	endif()
-endmacro()
 
 # Assimp
 if(${ZE_MODEL_LOADING})
