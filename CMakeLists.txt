@@ -14,6 +14,7 @@ set(ZE_RES_DIR "${PROJECT_SOURCE_DIR}/Engine/Data" CACHE STRING
 option(ZE_MODEL_LOADING "Enable model loading module of engine" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
+option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 
 # CMake modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")

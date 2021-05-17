@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/RenderPass/Base/QueuePass.h"
 #include "GFX/Light/ILight.h"
-#include "GFX/Resource/ConstBufferVertex.h"
+#include "GFX/Resource/ConstBuffer.h"
 #include "GFX/Resource/ConstBufferExCache.h"
 #include "GFX/Resource/TextureDepthCube.h"
 

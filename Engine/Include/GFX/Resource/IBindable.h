@@ -14,6 +14,8 @@ namespace ZE::GFX::Resource
 		static constexpr bool GENERATE_ID{ false };
 	};
 
+	enum class ShaderType : U8 { Vertex, Geometry, Pixel };
+
 	class IBindable : public Probe::IProbeable
 	{
 	protected:

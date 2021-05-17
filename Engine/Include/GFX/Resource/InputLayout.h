@@ -1,5 +1,5 @@
 #pragma once
-#include "VertexShader.h"
+#include "Shader.h"
 #include "GFX/Data/VertexLayout.h"
 
 namespace ZE::GFX::Resource

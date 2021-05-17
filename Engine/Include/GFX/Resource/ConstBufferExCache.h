@@ -1,7 +1,5 @@
 #pragma once
-#include "ConstBufferExGeometry.h"
-#include "ConstBufferExPixel.h"
-#include "ConstBufferExVertex.h"
+#include "ConstBufferEx.h"
 #include "GfxDebugName.h"
 #include "GFX/Graphics.h"
 
@@ -10,11 +8,11 @@ namespace ZE::GFX::Resource
 	template<typename T>
 	class ConstBufferExCache : public T
 	{
-		using ConstBufferEx::GetContext;
-		using ConstBufferEx::constantBuffer;
-		using ConstBufferEx::rootLayout;
-		using ConstBufferEx::name;
-		using ConstBufferEx::slot;
+		using T::GetContext;
+		using T::constantBuffer;
+		using T::rootLayout;
+		using T::name;
+		using T::slot;
 
 		mutable bool dirty = false;
 		Data::CBuffer::DynamicCBuffer buffer;
@@ -118,7 +116,7 @@ namespace ZE::GFX::Resource
 	{
 		if (dirty)
 		{
-			ConstBufferEx::Update(gfx, buffer);
+			T::Update(gfx, buffer);
 			dirty = false;
 		}
 		T::Bind(gfx);

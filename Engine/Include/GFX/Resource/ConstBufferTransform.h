@@ -1,5 +1,5 @@
 #pragma once
-#include "ConstBufferVertex.h"
+#include "ConstBuffer.h"
 #include "GFX/Data/CBuffer/CBuffers.h"
 #include "GFX/GfxObject.h"
 

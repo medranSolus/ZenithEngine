@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/RenderPass/Base/QueuePass.h"
-#include "GFX/Resource/NullPixelShader.h"
-#include "GFX/Resource/VertexShader.h"
+#include "GFX/Resource/Shader.h"
+#include "GFX/Resource/NullShader.h"
 #include "GFX/Resource/DepthStencilState.h"
 
 namespace ZE::GFX::Pipeline::RenderPass

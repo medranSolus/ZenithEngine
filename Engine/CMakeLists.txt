@@ -57,7 +57,9 @@ file(WRITE "${RES_HDR}"
 ############# ENGINE RULES ##############
 
 # Post build data copy
-copy_runtime_data(ENGINE "Data/Runtime")
+if(NOT ZE_NO_DATA)
+    copy_runtime_data(ENGINE "Data/Runtime")
+endif()
 
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
