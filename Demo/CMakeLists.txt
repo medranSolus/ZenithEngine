@@ -1,7 +1,13 @@
 ﻿cmake_minimum_required(VERSION 3.19)
 
+# Resource embedding
+if(WIN32)
+    enable_language(RC)
+    set(RES_FILE "Data/resource.rc")
+endif()
+
 # Post build data copy
-copy_runtime_data(DEMO "Data")
+copy_runtime_data(DEMO "Data/Runtime")
 
 # Target files
 set(INC_DIR "${DEMO_DIR}/Include")
@@ -11,7 +17,7 @@ file(GLOB_RECURSE SRC_LIST
     "${INC_DIR}/*.h")
 
 # Target setup
-add_executable(${DEMO_TARGET} WIN32 ${SRC_LIST} ${RES_FILES})
+add_executable(${DEMO_TARGET} WIN32 ${SRC_LIST} ${RES_FILE})
 set_target_properties(${DEMO_TARGET} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${ZE_BIN_DIR}
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${ZE_BIN_DIR}

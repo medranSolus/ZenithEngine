@@ -8,9 +8,9 @@ project(${PROJECT_NAME} VERSION 0.2)
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
-set(ZE_RES_DIR "${PROJECT_SOURCE_DIR}/Engine/Data" CACHE STRING
-	"Directory containing embeddable icon file. To set custom icon
-	you need to provide same set of file present in current directory")
+set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
+	should be set with icon ID from your .rc file")
+
 option(ZE_MODEL_LOADING "Enable model loading module of engine" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)

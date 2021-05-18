@@ -44,21 +44,11 @@ add_shader_commands(PS)
 add_custom_target(${SHADER_TARGET} ALL DEPENDS ${SHADERS} VERBATIM)
 
 
-########## RESOURCE EMBEDDING ###########
-
-set(RES_BIN_DIR "${BUILD_DIR}/Resource")
-set(RES_HDR "${RES_BIN_DIR}/resource.h")
-set(RES_FILES "${ZE_RES_DIR}/resource.rc" "${RES_HDR}")
-file(WRITE "${RES_HDR}"
-        "#pragma once\n"
-        "#define ZE_ICON_PATH \"${ZE_RES_DIR}/icon.ico\"\n")
-
-
 ############# ENGINE RULES ##############
 
 # Post build data copy
 if(NOT ZE_NO_DATA)
-    copy_runtime_data(ENGINE "Data/Runtime")
+    copy_runtime_data(ENGINE "Data")
 endif()
 
 # Target files
@@ -71,7 +61,7 @@ file(GLOB_RECURSE SRC_LIST
     "${IMGUI_INC_DIR}/*.h")
 
 # Target setup
-add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${RES_FILES})
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
@@ -80,3 +70,8 @@ target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
     PUBLIC D3DCompiler dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})
 add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET})
+
+# Icon definition
+if(WIN32)
+    target_compile_definitions(${ENGINE_TARGET} PUBLIC -DZE_APPICON=${ZE_ICON_ID})
+endif()

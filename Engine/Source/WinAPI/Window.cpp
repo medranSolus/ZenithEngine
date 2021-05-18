@@ -1,7 +1,6 @@
 #include "WinAPI/Window.h"
 #include "Exception/WinApiException.h"
 #include "imgui_impl_win32.h"
-#include "resource.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -20,8 +19,8 @@ namespace ZE::WinAPI
 		wndClass.style = CS_OWNDC;
 		wndClass.lpszClassName = WND_CLASS_NAME;
 		wndClass.lpfnWndProc = HandleMsgSetup;
-		wndClass.hIcon = static_cast<HICON>(LoadImage(hInstance, ZE_ICON_PATH, IMAGE_ICON, 128, 128, LR_LOADFROMFILE));
-		wndClass.hIconSm = static_cast<HICON>(LoadImage(hInstance, ZE_ICON_PATH, IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
+		wndClass.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
+		wndClass.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
 		RegisterClassEx(&wndClass);
 	}
 
