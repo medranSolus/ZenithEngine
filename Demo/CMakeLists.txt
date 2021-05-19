@@ -3,7 +3,9 @@
 # Resource embedding
 if(WIN32)
     enable_language(RC)
-    set(RES_FILE "Data/resource.rc")
+    set(RES_FILE "${BUILD_DIR}/resource.rc")
+    file(WRITE ${RES_FILE}
+            "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Data/icon.ico\"")
 endif()
 
 # Post build data copy
