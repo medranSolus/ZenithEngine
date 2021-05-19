@@ -24,6 +24,10 @@ namespace ZE::GFX::Resource
 		{
 			static constexpr const char* TYPE_PREFIX = "P";
 		};
+		template<> struct Desc<ShaderType::Compute>
+		{
+			static constexpr const char* TYPE_PREFIX = "C";
+		};
 #pragma endregion
 
 	protected:
@@ -125,6 +129,8 @@ namespace ZE::GFX::Resource
 			GetContext(gfx)->GSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
 		else if constexpr (T == ShaderType::Pixel)
 			GetContext(gfx)->PSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
+		else if constexpr (T == ShaderType::Compute)
+			GetContext(gfx)->CSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
 		else
 			static_assert(false, "Not all ConstBufferEx have defined Bind function!");
 	}
@@ -133,4 +139,5 @@ namespace ZE::GFX::Resource
 	typedef ConstBufferEx<ShaderType::Vertex> ConstBufferExVertex;
 	typedef ConstBufferEx<ShaderType::Geometry> ConstBufferExGeometry;
 	typedef ConstBufferEx<ShaderType::Pixel> ConstBufferExPixel;
+	typedef ConstBufferEx<ShaderType::Compute> ConstBufferExCompute;
 }

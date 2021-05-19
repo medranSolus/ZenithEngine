@@ -45,6 +45,8 @@ namespace ZE::GFX::Resource
 			GetContext(gfx)->GSSetShader(nullptr, nullptr, 0);
 		else if constexpr (T == ShaderType::Pixel)
 			GetContext(gfx)->PSSetShader(nullptr, nullptr, 0);
+		else if constexpr (T == ShaderType::Compute)
+			GetContext(gfx)->CSSetShader(nullptr, nullptr, 0);
 		else
 			static_assert(false, "Not all null shaders have defined Bind function!");
 	}
@@ -52,4 +54,5 @@ namespace ZE::GFX::Resource
 
 	typedef NullShader<ShaderType::Geometry> NullGeometryShader;
 	typedef NullShader<ShaderType::Pixel> NullPixelShader;
+	typedef NullShader<ShaderType::Compute> NullComputeShader;
 }

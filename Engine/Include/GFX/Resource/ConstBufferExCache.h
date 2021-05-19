@@ -123,7 +123,8 @@ namespace ZE::GFX::Resource
 	}
 #pragma endregion
 
+	typedef ConstBufferExCache<ConstBufferExVertex> ConstBufferExVertexCache;
 	typedef ConstBufferExCache<ConstBufferExGeometry> ConstBufferExGeometryCache;
 	typedef ConstBufferExCache<ConstBufferExPixel> ConstBufferExPixelCache;
-	typedef ConstBufferExCache<ConstBufferExVertex> ConstBufferExVertexCache;
+	typedef ConstBufferExCache<ConstBufferExCompute> ConstBufferExComputeCache;
 }

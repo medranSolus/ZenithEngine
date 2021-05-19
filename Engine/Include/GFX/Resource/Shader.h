@@ -28,6 +28,11 @@ namespace ZE::GFX::Resource
 			using ApiShaderType = ID3D11PixelShader;
 			static constexpr const char* TYPE_PREFIX = "P#";
 		};
+		template<> struct Desc<ShaderType::Compute>
+		{
+			using ApiShaderType = ID3D11ComputeShader;
+			static constexpr const char* TYPE_PREFIX = "C#";
+		};
 #pragma endregion
 
 		std::string name;
@@ -76,6 +81,11 @@ namespace ZE::GFX::Resource
 			ZE_GFX_THROW_FAILED(GetDevice(gfx)->CreatePixelShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &shader));
 		}
+		else if constexpr (T == ShaderType::Compute)
+		{
+			ZE_GFX_THROW_FAILED(GetDevice(gfx)->CreateComputeShader(bytecode->GetBufferPointer(),
+				bytecode->GetBufferSize(), nullptr, &shader));
+		}
 		else
 			static_assert(false, "Not all shaders have defined constructor!");
 
@@ -91,6 +101,8 @@ namespace ZE::GFX::Resource
 			GetContext(gfx)->GSSetShader(shader.Get(), nullptr, 0);
 		else if constexpr (T == ShaderType::Pixel)
 			GetContext(gfx)->PSSetShader(shader.Get(), nullptr, 0);
+		else if constexpr (T == ShaderType::Compute)
+			GetContext(gfx)->CSSetShader(shader.Get(), nullptr, 0);
 		else
 			static_assert(false, "Not all shaders have defined Bind function!");
 	}
@@ -99,4 +111,5 @@ namespace ZE::GFX::Resource
 	typedef Shader<ShaderType::Vertex> VertexShader;
 	typedef Shader<ShaderType::Geometry> GeometryShader;
 	typedef Shader<ShaderType::Pixel> PixelShader;
+	typedef Shader<ShaderType::Compute> ComputeShader;
 }

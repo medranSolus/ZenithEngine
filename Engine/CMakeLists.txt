@@ -6,25 +6,14 @@ set(SHADER_TARGET "Shaders")
 set(SHADER_DIR "${ENGINE_DIR}/Shader")
 set(FXC "${EXTERNAL_DIR}/fxc.exe")
 set(CSO_DIR "${ZE_BIN_DIR}/Shaders")
-
-# Vertex shader files
-set(VS_DIR "${SHADER_DIR}/VertexShader")
-file(GLOB_RECURSE VS_SRC_LIST "${VS_DIR}/*.hlsl")
-file(GLOB_RECURSE VS_INC_LIST "${VS_DIR}/*.hlsli")
-
-# Geometry shader files
-set(GS_DIR "${SHADER_DIR}/GeometryShader")
-file(GLOB_RECURSE GS_SRC_LIST "${GS_DIR}/*.hlsl")
-file(GLOB_RECURSE GS_INC_LIST "${GS_DIR}/*.hlsli")
-
-# Pixel shader files
-set(PS_DIR "${SHADER_DIR}/PixelShader")
-file(GLOB_RECURSE PS_SRC_LIST "${PS_DIR}/*.hlsl")
-file(GLOB_RECURSE PS_INC_LIST "${PS_DIR}/*.hlsli")
  
 # Shader compilation macro
-#   SHADER_TYPE = prefix type of shader (VS, GS, PS)
+#   SHADER_TYPE = prefix type of shader (VS, GS, PS, CS)
 macro(add_shader_commands SHADER_TYPE)
+    set(${SHADER_TYPE}_DIR "${SHADER_DIR}/${SHADER_TYPE}")
+    file(GLOB_RECURSE ${SHADER_TYPE}_SRC_LIST "${${SHADER_TYPE}_DIR}/*.hlsl")
+    file(GLOB_RECURSE ${SHADER_TYPE}_INC_LIST "${${SHADER_TYPE}_DIR}/*.hlsli")
+
     string(TOLOWER "${SHADER_TYPE}_5_0" ${SHADER_TYPE}_TYPE_FLAG)
     foreach(SD IN LISTS ${SHADER_TYPE}_SRC_LIST)
         get_filename_component(SD_NAME ${SD} NAME_WE)
@@ -41,6 +30,7 @@ endmacro()
 add_shader_commands(VS)
 add_shader_commands(GS)
 add_shader_commands(PS)
+add_shader_commands(CS)
 add_custom_target(${SHADER_TARGET} ALL DEPENDS ${SHADERS} VERBATIM)
 
 
