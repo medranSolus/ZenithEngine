@@ -75,6 +75,7 @@ set(COMMON_INC_DIR "${COMMON_DIR}/Include")
 set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 
 # External
+set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
