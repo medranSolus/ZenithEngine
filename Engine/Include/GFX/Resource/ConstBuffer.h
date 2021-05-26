@@ -3,33 +3,13 @@
 #include "GfxDebugName.h"
 #include "GFX/Graphics.h"
 
+#define ZE_BIND_CBUF(SetMethod) GetContext(gfx)->SetMethod(slot, 1, constantBuffer.GetAddressOf());
+
 namespace ZE::GFX::Resource
 {
 	template<ShaderType S, typename T>
 	class ConstBuffer : public IBindable
 	{
-		template<ShaderType>
-		struct Desc {};
-
-#pragma region Descriptor Info
-		template<> struct Desc<ShaderType::Vertex>
-		{
-			static constexpr const char* TYPE_PREFIX = "V";
-		};
-		template<> struct Desc<ShaderType::Geometry>
-		{
-			static constexpr const char* TYPE_PREFIX = "G";
-		};
-		template<> struct Desc<ShaderType::Pixel>
-		{
-			static constexpr const char* TYPE_PREFIX = "P";
-		};
-		template<> struct Desc<ShaderType::Compute>
-		{
-			static constexpr const char* TYPE_PREFIX = "C";
-		};
-#pragma endregion
-
 		U32 slot;
 		std::string name;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
@@ -46,6 +26,10 @@ namespace ZE::GFX::Resource
 		static GfxResPtr<ConstBuffer> Get(Graphics& gfx, const std::string& tag, U32 slot = 0);
 
 		constexpr U32 GetSlot() const noexcept { return slot; }
+		void BindVS(Graphics& gfx) const { ZE_BIND_CBUF(VSSetConstantBuffers); }
+		void BindGS(Graphics& gfx) const { ZE_BIND_CBUF(GSSetConstantBuffers); }
+		void BindPS(Graphics& gfx) const { ZE_BIND_CBUF(PSSetConstantBuffers); }
+		void BindCS(Graphics& gfx) const { ZE_BIND_CBUF(CSSetConstantBuffers); }
 
 		void Update(Graphics& gfx, const T& values);
 		void Bind(Graphics& gfx) const override;
@@ -95,7 +79,7 @@ namespace ZE::GFX::Resource
 	template<ShaderType S, typename T>
 	std::string ConstBuffer<S, T>::GenerateRID(const std::string& tag, U32 slot) noexcept
 	{
-		return "C" + std::to_string(slot) + Desc<S>::TYPE_PREFIX + std::to_string(sizeof(T)) + "#" + tag;
+		return "C" + std::to_string(slot) + std::to_string(S) + std::to_string(sizeof(T)) + "#" + tag;
 	}
 
 	template<ShaderType S, typename T>
@@ -124,13 +108,13 @@ namespace ZE::GFX::Resource
 	void ConstBuffer<S, T>::Bind(Graphics& gfx) const
 	{
 		if constexpr (S == ShaderType::Vertex)
-			GetContext(gfx)->VSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
+			BindVS(gfx);
 		else if constexpr (S == ShaderType::Geometry)
-			GetContext(gfx)->GSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
+			BindGS(gfx);
 		else if constexpr (S == ShaderType::Pixel)
-			GetContext(gfx)->PSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
+			BindPS(gfx);
 		else if constexpr (S == ShaderType::Compute)
-			GetContext(gfx)->CSSetConstantBuffers(slot, 1, constantBuffer.GetAddressOf());
+			BindCS(gfx);
 		else
 			static_assert(false, "Not all ConstBuffers have defined Bind function!");
 	}
@@ -145,3 +129,5 @@ namespace ZE::GFX::Resource
 	template<typename T>
 	using ConstBufferCompute = ConstBuffer<ShaderType::Compute, T>;
 }
+
+#undef ZE_BIND_CBUF

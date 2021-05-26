@@ -60,7 +60,7 @@ namespace ZE::GFX::Pipeline::Resource
 		: DepthStencil(gfx, gfx.GetWidth(), gfx.GetHeight(), false, usage) {}
 
 	DepthStencil::DepthStencil(Graphics& gfx, U32 size)
-		: IBufferResource(gfx, size, size), usage(usage)
+		: IBufferResource(gfx, size, size), usage(Usage::DepthOnly)
 	{
 		ZE_GFX_ENABLE_ALL(gfx);
 

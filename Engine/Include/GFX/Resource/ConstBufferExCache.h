@@ -3,6 +3,14 @@
 #include "GfxDebugName.h"
 #include "GFX/Graphics.h"
 
+#define ZE_UPDATE_BIND(BindMethod) \
+	if (dirty) \
+	{ \
+		T::Update(gfx, buffer); \
+		dirty = false; \
+	} \
+	T::BindMethod(gfx);
+
 namespace ZE::GFX::Resource
 {
 	template<typename T>
@@ -44,7 +52,11 @@ namespace ZE::GFX::Resource
 		std::string GetRID() const noexcept override { return GenerateRID(name, buffer, slot); }
 		bool Accept(Graphics& gfx, Probe::BaseProbe& probe) noexcept override { return dirty |= probe.Visit(buffer); }
 
-		void Bind(Graphics& gfx) const override;
+		void BindVS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindVS); }
+		void BindGS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindGS); }
+		void BindPS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindPS); }
+		void BindCS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindCS); }
+		void Bind(Graphics& gfx) const override { ZE_UPDATE_BIND(Bind); }
 	};
 
 	template<typename T>
@@ -110,17 +122,6 @@ namespace ZE::GFX::Resource
 	{
 		return Codex::Resolve<ConstBufferExCache<T>>(gfx, tag, buffer, slot);
 	}
-
-	template<typename T>
-	void ConstBufferExCache<T>::Bind(Graphics& gfx) const
-	{
-		if (dirty)
-		{
-			T::Update(gfx, buffer);
-			dirty = false;
-		}
-		T::Bind(gfx);
-	}
 #pragma endregion
 
 	typedef ConstBufferExCache<ConstBufferExVertex> ConstBufferExVertexCache;
@@ -128,3 +129,5 @@ namespace ZE::GFX::Resource
 	typedef ConstBufferExCache<ConstBufferExPixel> ConstBufferExPixelCache;
 	typedef ConstBufferExCache<ConstBufferExCompute> ConstBufferExComputeCache;
 }
+
+#undef ZE_UPDATE_BIND

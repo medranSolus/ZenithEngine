@@ -1,37 +1,18 @@
 ﻿cmake_minimum_required(VERSION 3.19)
+include(ShaderBuild)
+include(PostBuild)
 
 ############# SHADER RULES ##############
 
 set(SHADER_TARGET "Shaders")
-set(SHADER_DIR "${ENGINE_DIR}/Shader")
-set(FXC "${EXTERNAL_DIR}/fxc.exe")
-set(CSO_DIR "${ZE_BIN_DIR}/Shaders")
- 
-# Shader compilation macro
-#   SHADER_TYPE = prefix type of shader (VS, GS, PS, CS)
-macro(add_shader_commands SHADER_TYPE)
-    set(${SHADER_TYPE}_DIR "${SHADER_DIR}/${SHADER_TYPE}")
-    file(GLOB_RECURSE ${SHADER_TYPE}_SRC_LIST "${${SHADER_TYPE}_DIR}/*.hlsl")
-    file(GLOB_RECURSE ${SHADER_TYPE}_INC_LIST "${${SHADER_TYPE}_DIR}/*.hlsli")
-
-    string(TOLOWER "${SHADER_TYPE}_5_0" ${SHADER_TYPE}_TYPE_FLAG)
-    foreach(SD IN LISTS ${SHADER_TYPE}_SRC_LIST)
-        get_filename_component(SD_NAME ${SD} NAME_WE)
-        set(SD_OUT "${CSO_DIR}/${SD_NAME}.cso")
-        list(APPEND SHADERS ${SD_OUT})
-        add_custom_command(OUTPUT ${SD_OUT}
-            COMMAND "${FXC}" ${SHADER_FLAGS} /T "${${SHADER_TYPE}_TYPE_FLAG}" /I "${${SHADER_TYPE}_DIR}" /Fo "${SD_OUT}" "${SD}"
-            MAIN_DEPENDENCY "${SD}"
-            DEPENDS "${${SHADER_TYPE}_INC_LIST}")
-    endforeach()
-endmacro()
+setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} "${EXTERNAL_DIR}/fxc.exe" ${SHADER_FLAGS})
 
 # Shader compilation
-add_shader_commands(VS)
-add_shader_commands(GS)
-add_shader_commands(PS)
-add_shader_commands(CS)
-add_custom_target(${SHADER_TARGET} ALL DEPENDS ${SHADERS} VERBATIM)
+add_shader_type(VS)
+add_shader_type(GS)
+add_shader_type(PS)
+add_shader_type(CS)
+add_shader_target(${SHADER_TARGET})
 
 
 ############# ENGINE RULES ##############

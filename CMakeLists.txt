@@ -8,6 +8,8 @@ project(${PROJECT_NAME} VERSION 0.2)
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
+set(ZE_BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}" CACHE STRING
+	"Output directory for build files")
 set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
 
@@ -20,7 +22,6 @@ option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
 include(External)
-include(PostBuild)
 
 
 ################ TARGETS ################
@@ -57,7 +58,6 @@ set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
 set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/Engine")
 set(TOOL_DIR "${PROJECT_SOURCE_DIR}/EditTool")
 set(DEMO_DIR "${PROJECT_SOURCE_DIR}/Demo")
-set(BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}")
 set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 
@@ -75,7 +75,6 @@ set(COMMON_INC_DIR "${COMMON_DIR}/Include")
 set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 
 # External
-set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")

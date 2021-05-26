@@ -24,8 +24,9 @@ endmacro()
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
 #	ADD_PDB_DIR = different path for MSVC debug symbols
+# Set ${PROJECT}_CACHE_ARGS variable to pass options for project
 macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
-	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${PROJECT}/")
+	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${PROJECT}/")
 	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
 		ExternalProject_Add(${${PROJECT}_TARGET}
@@ -48,7 +49,7 @@ endmacro()
 #	ADD_PDB_DIR = different path for MSVC debug symbols
 #	ADD_BUILD_DIR = path to build directory inside MAIN_PROJECT
 macro(copy_inner_lib MAIN_PROJECT PROJECT ADD_BIN_DIR ADD_PDB_DIR ADD_BUILD_DIR)
-	set(${PROJECT}_BUILD_DIR "${BUILD_DIR}/${MAIN_PROJECT}/${ADD_BUILD_DIR}")
+	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${MAIN_PROJECT}/${ADD_BUILD_DIR}")
 	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}" "${ADD_BUILD_DIR}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
 		ExternalProject_Add_Step(${${MAIN_PROJECT}_TARGET} copy${PROJECT}

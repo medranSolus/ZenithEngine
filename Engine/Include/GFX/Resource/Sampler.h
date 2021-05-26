@@ -27,6 +27,7 @@ namespace ZE::GFX::Resource
 		static std::string GenerateRID(Type type, CoordType coordType, U32 slot = 0) noexcept;
 		static GfxResPtr<Sampler> Get(Graphics& gfx, Type type, CoordType coordType, U32 slot = 0);
 
+		void BindCompute(Graphics& gfx) const { GetContext(gfx)->CSSetSamplers(slot, 1, state.GetAddressOf()); }
 		void Bind(Graphics& gfx) const override { GetContext(gfx)->PSSetSamplers(slot, 1, state.GetAddressOf()); }
 		std::string GetRID() const noexcept override { return GenerateRID(type, coordType, slot); }
 	};
