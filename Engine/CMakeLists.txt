@@ -32,11 +32,11 @@ file(GLOB_RECURSE SRC_LIST
     "${IMGUI_INC_DIR}/*.h")
 
 # Target setup
-add_library(${ENGINE_TARGET} STATIC ${SRC_LIST})
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${ZE_API_HEADER})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PUBLIC ${ENGINE_INC_DIR} ${RES_BIN_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
+    PUBLIC ${ENGINE_INC_DIR} ${ZE_API_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
     PUBLIC D3DCompiler dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})

@@ -26,6 +26,13 @@ To unify code style, here are rules followed by this project:
   - Use `constexpr` whereever possible.
   - Instead of global variables in namespace, prefer utility classes with static methods.
   - If function does not throw mark it as `noexcept` or `noexcept(ZE_NO_DEBUG)` if only contains debug exceptions.
+  - *Order of include files:*
+    - Project headers
+    - External project headers
+    - Standard headers
+    - C library standard headers (preceeded with **c**)
+    - System headers and other ending with **.h**
+  - In source file first included header must be the same as source file name (or other header that included this file, in this case including said header can be ommitted).
   - *Classes and interfaces:*
     - Every class should have explicit:
       - Destructor declaration, even if it's only `~SomeType() = default`. It helps not forgetting about virtual destructors.

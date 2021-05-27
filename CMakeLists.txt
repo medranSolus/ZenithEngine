@@ -5,6 +5,12 @@ cmake_minimum_required(VERSION 3.19)
 set(PROJECT_NAME "Zenith Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
+# Using engine
+#
+# In order to avoid setting up all include directories add this CMake file as subdirectory.
+set(ZE_API_DIR "${PROJECT_SOURCE_DIR}/Engine/API")
+set(ZE_API_HEADER "${ZE_API_DIR}/Zenith.h")
+
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
