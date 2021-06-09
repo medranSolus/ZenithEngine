@@ -15,7 +15,7 @@ macro(setup_shader BIN_DIR SHADER_DIR FXC FLAGS)
     set(SD_CSO_DIR "${BIN_DIR}/Shaders")
     set(SD_DIR "${SHADER_DIR}/Shader")
     set(SD_FXC ${FXC})
-    set(SD_FLAGS ${FLAGS})
+    separate_arguments(SD_FLAGS WINDOWS_COMMAND "${FLAGS}")
 endmacro()
  
 # Creates commands for shader compilation
@@ -31,9 +31,9 @@ macro(add_shader_type SD_TYPE)
         set(SD_OUT "${SD_CSO_DIR}/${SD_NAME}.cso")
         list(APPEND SD_LIST ${SD_OUT})
         add_custom_command(OUTPUT ${SD_OUT}
-            COMMAND "${SD_FXC}" ${SD_FLAGS} /T "${${SD_TYPE}_TYPE_FLAG}" /I "${${SD_TYPE}_DIR}" /Fo "${SD_OUT}" "${SD}"
+            COMMAND "${SD_FXC}" ${SD_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /Fo "${SD_OUT}" "${SD}"
             MAIN_DEPENDENCY "${SD}"
-            DEPENDS "${${SD_TYPE}_INC_LIST}")
+            DEPENDS "${${SD_TYPE}_INC_LIST}" VERBATIM)
     endforeach()
 endmacro()
 

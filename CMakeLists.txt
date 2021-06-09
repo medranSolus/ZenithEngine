@@ -28,6 +28,13 @@ option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
 include(External)
+include(CheckTypeSize)
+
+# Architecture check, only x64
+check_type_size(void* SIZEOF_VOID_PTR)
+if(NOT ${SIZEOF_VOID_PTR} STREQUAL "8")
+    message(FATAL_ERROR "Unsupported architecture!")
+endif()
 
 
 ################ TARGETS ################
@@ -97,17 +104,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(${EXTERNAL_BIN_DIR})
 
-# Compiler specific lags (remove 4250 later when ECS system created)
+# Compiler specific flags (remove 4250 later when ECS system created)
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /w34265 /wd4250 /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
-else()
+elseif(GNU OR Clang)
 	# GCC asumed although they should work on Clang too
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -W4265 -Wno-4250 -pedantic -ffast-math")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -pedantic -ffast-math")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 	set(COMPILER_REL_CXX_FLAGS "-O3 -flto -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
+else()
+	message(FATAL_ERROR "Using unsupported compiler!")
 endif()
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
@@ -119,9 +128,9 @@ set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAG
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS}")
 
 # Shader flags
-set(SHADER_FLAGS /nologo /E main /Ges /Zpc)
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc")
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-	set(SHADER_FLAGS ${SHADER_FLAGS} /Od /Zi)
+	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi /Od")
 endif()
 
 

@@ -33,7 +33,7 @@ Switch ($command)
 {
     "gen"
     {
-        cmake -S . -B "$obj_dir" -D CMAKE_BUILD_TYPE=$build_type
+        cmake -S . -B "$obj_dir" -D CMAKE_BUILD_TYPE=$build_type -G Ninja
         break
     }
     "run"

@@ -33,6 +33,6 @@ namespace ZE::GFX
 	void BasicObject::UpdateAngle(const Vector& rotor) noexcept
 	{
 		Float4& rotation = buffer["rotation"];
-		Math::XMStoreFloat4(&rotation, Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor));
+		Math::XMStoreFloat4(&rotation, Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor)));
 	}
 }
