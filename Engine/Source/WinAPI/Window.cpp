@@ -242,19 +242,24 @@ namespace ZE::WinAPI
 		constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		constexpr DWORD WIN_STYLE_EX = 0;
 
+		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == FALSE)
+			throw ZE_WIN_EXCEPT_LAST();
+		// Initial DPI since no possible way to know window DPI
+		dpi = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
+
 		RECT area = { 0 };
 		if (width == 0 || height == 0)
 		{
-			area.right = GetSystemMetrics(SM_CXMAXIMIZED);
-			area.bottom = GetSystemMetrics(SM_CYMAXIMIZED);
-			area.left = -GetSystemMetrics(SM_CXPADDEDBORDER) * 2;
+			area.right = GetSystemMetricsForDpi(SM_CXMAXIMIZED, dpi);
+			area.bottom = GetSystemMetricsForDpi(SM_CYMAXIMIZED, dpi);
+			area.left = -GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) * 2;
 		}
 		else
 		{
 			// Adjust window client area to match specified size
 			area.right = width;
 			area.bottom = height;
-			if (AdjustWindowRectEx(&area, WIN_STYLE, FALSE, WIN_STYLE_EX) == 0)
+			if (AdjustWindowRectExForDpi(&area, WIN_STYLE, FALSE, WIN_STYLE_EX, dpi) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
 			area.right -= area.left;
 			area.bottom -= area.top;
@@ -284,6 +289,8 @@ namespace ZE::WinAPI
 		}
 		else
 			ShowWindow(hWnd, SW_SHOW);
+		// Update DPI to proper window DPI (should be same as previous but not sure)
+		dpi = GetDpiForWindow(hWnd);
 
 		graphics.Init(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);
