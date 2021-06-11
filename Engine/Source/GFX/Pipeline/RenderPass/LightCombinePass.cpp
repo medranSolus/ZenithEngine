@@ -18,24 +18,20 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	LightCombinePass::LightCombinePass(Graphics& gfx, std::string&& name)
-		: ComputePass(gfx, std::forward<std::string>(name), "LightCombineCS")
+		: RenderPass(std::forward<std::string>(name)), FullscreenPass(gfx, std::forward<std::string>(name))
 	{
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::IRenderTarget>("lightBuffer");
 		AddBindableSink<Resource::IRenderTarget>("ssaoBuffer");
-		AddBindableSink<GFX::Resource::ConstBufferExComputeCache>("gammaCorrection");
-		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("sceneTarget", computeTarget));
+		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");
+		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("sceneTarget", renderTarget));
 
-		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("sceneTarget", computeTarget));
+		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("sceneTarget", renderTarget));
 
-		ambientBuffer = GFX::Resource::ConstBufferExComputeCache::Get(gfx, "$L", MakeLayout(), 13);
+		ambientBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, "$L", MakeLayout(), 13);
 		ambientBuffer->GetBuffer()["ambientColor"] = ColorF3(0.05f, 0.05f, 0.05f);
 		AddBind(ambientBuffer);
-	}
-
-	void LightCombinePass::Execute(Graphics& gfx)
-	{
-		ComputeFrame(gfx, 32, 32);
+		AddBind(GFX::Resource::PixelShader::Get(gfx, "LightCombinePS"));
 	}
 
 	void LightCombinePass::ShowWindow(Graphics& gfx)
