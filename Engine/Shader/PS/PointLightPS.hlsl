@@ -1,9 +1,9 @@
-#include "Utils/LightUtilsPS.hlsli"
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/PointLightPB.hlsli"
-#include "CBuffer/HDRGammaPB.hlsli"
-#include "CBuffer/CameraPB.hlsli"
-#include "CBuffer/BiasPB.hlsli"
+#include "Utils/LightUtils.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/PointLight.hlsli"
+#include "CBuffer/Camera.hlsli"
+#include "CBuffer/Bias.hlsli"
+#include "HDRGammaCB.hlsli"
 
 Texture2D colorTex    : register(t4); // RGB - color, A = 0.0f: solid; 0.5f: light source; 1.0f: normal
 Texture2D normalTex   : register(t5); // RG - normal

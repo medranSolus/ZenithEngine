@@ -1,6 +1,6 @@
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/GaussPB.hlsli"
-#include "CBuffer/BlurDirectionPB.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/Gauss.hlsli"
+#include "CBuffer/BlurDirection.hlsli"
 
 Texture2D tex : register(t0);
 

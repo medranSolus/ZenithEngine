@@ -1,4 +1,4 @@
-#include "CBuffer/TransformVB.hlsli"
+#include "CBuffer/Transform.hlsli"
 
 float4 main(float3 pos : POSITION) : SV_POSITION
 {

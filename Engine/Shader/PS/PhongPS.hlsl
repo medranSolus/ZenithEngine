@@ -1,6 +1,6 @@
-#include "Utils/UtilsPS.hlsli"
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/PhongPB.hlsli"
+#include "Utils/Utils.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/Phong.hlsli"
 
 #ifdef _TEX
 Texture2D tex : register(t0);

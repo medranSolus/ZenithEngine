@@ -1,4 +1,4 @@
-#include "CBuffer/ViewGB.hlsli"
+#include "CBuffer/View.hlsli"
 
 struct GSIn
 {

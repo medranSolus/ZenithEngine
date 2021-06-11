@@ -1,6 +1,6 @@
-#include "CBuffer/TransformVB.hlsli"
+#include "CBuffer/Transform.hlsli"
 #ifdef _TEX_PAX
-#include "CBuffer/CameraVB.hlsli"
+#include "CBuffer/Camera.hlsli"
 #endif
 
 struct VSOut

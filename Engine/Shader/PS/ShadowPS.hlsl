@@ -1,9 +1,9 @@
-#include "Utils/UtilsPS.hlsli"
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/BiasPB.hlsli"
-#include "CBuffer/ShadowPB.hlsli"
+#include "Utils/Utils.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/Bias.hlsli"
+#include "CBuffer/Shadow.hlsli"
 #ifdef _TEX_PAX
-#include "CBuffer/ShadowParallaxPB.hlsli"
+#include "CBuffer/ShadowParallax.hlsli"
 #endif
 
 #ifdef _TEX

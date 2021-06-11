@@ -1,6 +1,6 @@
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/BlurDirectionPB.hlsli"
-#include "CBuffer/SSAOKernelPB.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/BlurDirection.hlsli"
+#include "CBuffer/SSAOKernel.hlsli"
 
 Texture2D ssaoMap : register(t11);
 

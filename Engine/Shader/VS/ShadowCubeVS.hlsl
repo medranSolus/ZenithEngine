@@ -1,4 +1,4 @@
-#include "CBuffer/TransformVB.hlsli"
+#include "CBuffer/Transform.hlsli"
 
 struct VSOut
 {

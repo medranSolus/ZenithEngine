@@ -1,4 +1,4 @@
-#include "CBuffer/SolidPB.hlsli"
+#include "CBuffer/Solid.hlsli"
 
 float4 main() : SV_TARGET
 {

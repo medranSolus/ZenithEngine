@@ -1,4 +1,4 @@
-#include "CBuffer/TransformSkyboxVB.hlsli"
+#include "CBuffer/TransformSkybox.hlsli"
 
 struct VSOut
 {

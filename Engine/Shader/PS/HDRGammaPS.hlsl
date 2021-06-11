@@ -1,5 +1,5 @@
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/HDRGammaPB.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "HDRGammaCB.hlsli"
 
 Texture2D tex : register(t0);
 

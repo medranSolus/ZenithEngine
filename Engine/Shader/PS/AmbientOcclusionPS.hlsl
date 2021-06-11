@@ -1,8 +1,8 @@
-#include "Utils/UtilsPS.hlsli"
-#include "Utils/LightUtilsPS.hlsli"
-#include "Utils/SamplersPS.hlsli"
-#include "CBuffer/SSAOKernelPB.hlsli"
-#include "CBuffer/CameraPB.hlsli"
+#include "Utils/Utils.hlsli"
+#include "Utils/LightUtils.hlsli"
+#include "Utils/Samplers.hlsli"
+#include "CBuffer/SSAOKernel.hlsli"
+#include "CBuffer/Camera.hlsli"
 
 Texture2D normalTex   : register(t5); // RG - normal
 

@@ -4,7 +4,7 @@ Before using provided tool you must allow running user scripts by **Powershell**
 
 Project is based upon **Ninja** generator and requires its binary to be accessible inside `PATH`. If you have Visual Studio installed on your machine, simply append `PATH` with value:
 `%VS`**<VERSION>**`INSTALLDIR%\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja`, where <VERSION> corresponds to installed Visual Studio, ex. for VS 2019 simply use **2019** in its place.
-Also make sure that CMake can access compiler of your choice.
+Also make sure that CMake can access compiler of your choice, to use 'cl.exe' from Visual Studio just use **x64 Native Tools Command Prompt**.
 
 Project contains following configurations needed by provided script (case insensitive):
   - **Debug** - pass `D` or `Debug`,
