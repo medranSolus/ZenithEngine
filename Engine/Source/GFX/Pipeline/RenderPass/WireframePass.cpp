@@ -5,7 +5,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	WireframePass::WireframePass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
 	{
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("renderTarget", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));

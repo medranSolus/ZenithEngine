@@ -46,6 +46,11 @@ namespace ZE::GFX::Resource
 		static std::string GenerateRID(const std::string& tag,
 			const Data::CBuffer::DynamicCBuffer& buffer, U32 slot = 0) noexcept;
 
+		template<ShaderType S>
+		constexpr operator ConstBufferExCache<ConstBufferEx<S>>& () noexcept { return *static_cast<ConstBufferExCache<ConstBufferEx<S>>*>(static_cast<void*>(this)); }
+		template<ShaderType S>
+		constexpr operator const ConstBufferExCache<ConstBufferEx<S>>& () const noexcept { return *static_cast<const ConstBufferExCache<ConstBufferEx<S>>*>(static_cast<const void*>(this)); }
+
 		constexpr Data::CBuffer::DynamicCBuffer& GetBuffer() noexcept { dirty = true; return buffer; }
 		constexpr const Data::CBuffer::DynamicCBuffer& GetBufferConst() const noexcept { return buffer; }
 
@@ -55,7 +60,7 @@ namespace ZE::GFX::Resource
 		void BindVS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindVS); }
 		void BindGS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindGS); }
 		void BindPS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindPS); }
-		void BindCS(Graphics& gfx) const override { ZE_UPDATE_BIND(BindCS); }
+		void BindCompute(Graphics& gfx) const override { ZE_UPDATE_BIND(BindCompute); }
 		void Bind(Graphics& gfx) const override { ZE_UPDATE_BIND(Bind); }
 	};
 

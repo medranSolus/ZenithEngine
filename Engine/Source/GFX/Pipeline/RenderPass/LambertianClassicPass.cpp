@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	LambertianClassicPass::LambertianClassicPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
 	{
 		RegisterSink(Base::SinkDirectBuffer<Resource::IRenderTarget>::Make("geometryBuffer", renderTarget));
 		RegisterSink(Base::SinkDirectBuffer<Resource::DepthStencil>::Make("depthStencil", depthStencil));

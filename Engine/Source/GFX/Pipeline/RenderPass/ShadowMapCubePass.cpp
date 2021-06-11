@@ -19,11 +19,11 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	ShadowMapCubePass::ShadowMapCubePass(Graphics& gfx, std::string&& name, U32 mapSize)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowBias");
 
-		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, mapSize, 7);
+		depthCube = GFX::Resource::TextureDepthCube::Get(gfx, mapSize, 0);
 		renderTarget = depthCube->GetBuffer();
 		depthStencil = depthCube->GetStencil();
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::TextureDepthCube>::Make("shadowMap", depthCube));

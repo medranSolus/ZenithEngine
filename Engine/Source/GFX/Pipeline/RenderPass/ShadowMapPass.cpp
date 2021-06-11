@@ -5,7 +5,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	ShadowMapPass::ShadowMapPass(Graphics& gfx, std::string&& name, const Matrix& projectionMatrix)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowBias");
 

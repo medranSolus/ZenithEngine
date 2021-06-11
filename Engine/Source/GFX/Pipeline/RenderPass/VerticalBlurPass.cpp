@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	VerticalBlurPass::VerticalBlurPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)),
 		FullscreenPass(gfx, std::forward<std::string>(name))
 	{
 		AddBindableSink<Resource::RenderTargetShaderInput>("halfTarget");

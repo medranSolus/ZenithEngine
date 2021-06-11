@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	SSAOBlurPass::SSAOBlurPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)),
 		FullscreenPass(gfx, std::forward<std::string>(name))
 	{
 		RegisterSink(Base::SinkDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("direction", direction));
@@ -30,6 +30,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		BindAll(gfx);
 		ssaoScratchBuffer->Bind(gfx);
 		gfx.DrawIndexed(6);
+		ssaoScratchBuffer->Unbind(gfx);
 		ZE_DRAW_TAG_END(gfx);
 	}
 }

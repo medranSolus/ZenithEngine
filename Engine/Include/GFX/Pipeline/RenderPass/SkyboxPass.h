@@ -1,10 +1,10 @@
 #pragma once
-#include "GFX/Pipeline/RenderPass/Base/BindingPass.h"
+#include "GFX/Pipeline/RenderPass/Base/RenderPass.h"
 #include "Camera/ICamera.h"
 
 namespace ZE::GFX::Pipeline::RenderPass
 {
-	class SkyboxPass : public Base::BindingPass
+	class SkyboxPass : public Base::RenderPass
 	{
 		U32 indexCount;
 		Camera::ICamera* mainCamera = nullptr;

@@ -23,7 +23,7 @@ namespace ZE::GFX::Resource
 		~ResPtr();
 
 		template<typename T>
-		constexpr ResPtr<T> CastStatic() const noexcept { return { count, static_cast<T*>(ptr) }; }
+		constexpr ResPtr<T> CastStatic() const noexcept { return { count, &static_cast<T&>(*ptr) }; }
 		template<typename T>
 		constexpr operator ResPtr<T>() const noexcept { return CastStatic<T>(); }
 		template<typename T>

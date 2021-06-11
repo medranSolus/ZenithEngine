@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	PointLightingPass::PointLightingPass(Graphics& gfx, std::string&& name, U32 shadowMapSize)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
 		shadowMapPass(gfx, "shadowMap", shadowMapSize)
 	{
 		AddBindableSink<GFX::Resource::IBindable>("shadowMap");

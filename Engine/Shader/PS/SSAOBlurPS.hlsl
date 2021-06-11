@@ -1,8 +1,7 @@
 #include "Utils/Samplers.hlsli"
 #include "CBuffer/BlurDirection.hlsli"
 #include "CBuffer/SSAOKernel.hlsli"
-
-Texture2D ssaoMap : register(t11);
+#include "SSAOMap.hlsli"
 
 float main(float2 tc : TEXCOORD) : SV_TARGET
 {
@@ -16,6 +15,6 @@ float main(float2 tc : TEXCOORD) : SV_TARGET
 	float result = 0.0f;
 	[unroll]
 	for (int i = -RANGE; i < RANGE; ++i)
-		result += ssaoMap.Sample(splr_LR, tc + delta * i).r;
+		result += tx_ssao.Sample(splr_LR, tc + delta * i).r;
 	return result / (RANGE * 2);
 }

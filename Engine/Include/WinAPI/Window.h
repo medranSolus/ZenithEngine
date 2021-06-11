@@ -32,7 +32,6 @@ namespace ZE::WinAPI
 		std::vector<U8> rawBuffer;
 		bool cursorEnabled = true;
 		HWND hWnd;
-		UINT dpi;
 
 		void ShowCursor() noexcept { while (::ShowCursor(TRUE) < 0); }
 		void HideCursor() noexcept { while (::ShowCursor(FALSE) >= 0); }

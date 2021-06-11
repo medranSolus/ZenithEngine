@@ -1,8 +1,10 @@
 #pragma once
 #include "BasePass.h"
 #include "BindingPass.h"
+#include "ComputePass.h"
 #include "FullscreenPass.h"
 #include "QueuePass.h"
+#include "RenderPass.h"
 #include "SinkContainerBindable.h"
 #include "SinkDirectBindable.h"
 #include "SinkDirectBuffer.h"

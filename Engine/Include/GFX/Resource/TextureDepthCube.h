@@ -25,6 +25,7 @@ namespace ZE::GFX::Resource
 		void Unbind(Graphics& gfx) const noexcept { GetContext(gfx)->PSSetShaderResources(slot, 1, nullShaderResource.GetAddressOf()); }
 
 		void Bind(Graphics& gfx) const override { GetContext(gfx)->PSSetShaderResources(slot, 1, textureView.GetAddressOf()); }
+		void BindCompute(Graphics& gfx) const override { GetContext(gfx)->CSSetShaderResources(slot, 1, textureView.GetAddressOf()); }
 		std::string GetRID() const noexcept override { return GenerateRID(size, slot); }
 	};
 

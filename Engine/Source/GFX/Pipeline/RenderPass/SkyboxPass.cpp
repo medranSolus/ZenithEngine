@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	SkyboxPass::SkyboxPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name))
 	{
 		AddBindableSink<GFX::Resource::TextureCube>("skyboxTexture");
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("gammaCorrection");

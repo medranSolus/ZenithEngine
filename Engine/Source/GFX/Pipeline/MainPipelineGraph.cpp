@@ -55,17 +55,17 @@ namespace ZE::GFX::Pipeline
 
 		shadowMapDepth = GfxResPtr<Resource::DepthStencil>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencil>::Make("shadowMapDepth", shadowMapDepth));
-		depthOnly = GfxResPtr<Resource::DepthStencilShaderInput>(gfx, 8, Resource::DepthStencil::Usage::DepthOnly);
+		depthOnly = GfxResPtr<Resource::DepthStencilShaderInput>(gfx, 26, Resource::DepthStencil::Usage::DepthOnly);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::DepthStencilShaderInput>::Make("depthOnly", depthOnly));
 
-		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 4, { DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
+		geometryBuffer = Resource::RenderTargetEx::Get(gfx, 29, { DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("geometryBuffer", geometryBuffer));
-		lightBuffer = Resource::RenderTargetEx::Get(gfx, 9, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
+		lightBuffer = Resource::RenderTargetEx::Get(gfx, 27, { DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT });
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetEx>::Make("lightBuffer", lightBuffer));
 
-		shadowMapTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 7U, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT);
+		shadowMapTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 0, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("shadowMapTarget", shadowMapTarget));
-		sceneTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 0, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT);
+		sceneTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 0, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT, 0);
 		AddGlobalSource(RenderPass::Base::SourceDirectBuffer<Resource::RenderTargetShaderInput>::Make("sceneTarget", sceneTarget));
 
 #pragma region CBuffers setup
@@ -214,7 +214,7 @@ namespace ZE::GFX::Pipeline
 			pass->SetSinkLinkage("lightBuffer", "pointLighting.lightBuffer");
 			pass->SetSinkLinkage("ssaoBuffer", "ssaoFullBlur.ssaoBuffer");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
-			pass->SetSinkLinkage("renderTarget", "$.sceneTarget");
+			pass->SetSinkLinkage("sceneTarget", "$.sceneTarget");
 			AppendPass(std::move(pass));
 		}
 #pragma endregion
@@ -222,7 +222,7 @@ namespace ZE::GFX::Pipeline
 			auto pass = MAKE_PASS(SkyboxPass, gfx, "skybox");
 			pass->SetSinkLinkage("skyboxTexture", "$.skyboxTexture");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
-			pass->SetSinkLinkage("renderTarget", "lightCombiner.renderTarget");
+			pass->SetSinkLinkage("renderTarget", "lightCombiner.sceneTarget");
 			pass->SetSinkLinkage("depthStencil", "lambertianClassic.depthStencil");
 			AppendPass(std::move(pass));
 		}

@@ -8,6 +8,7 @@ namespace ZE::GFX::Pipeline::Resource
 		: IRenderTarget(gfx, width, height), slot(slot), count(static_cast<U32>(formats.size()))
 	{
 		assert(count < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT);
+		assert(slot < D3D11_PS_INPUT_REGISTER_COUNT);
 		ZE_GFX_ENABLE_ALL(gfx);
 
 		D3D11_TEXTURE2D_DESC textureDesc;
@@ -70,6 +71,13 @@ namespace ZE::GFX::Pipeline::Resource
 	{
 		GetContext(gfx)->OMSetRenderTargets(count, targetsArray.get(), depthStencil.depthStencilView.Get());
 		BindViewport(gfx);
+	}
+
+	void RenderTargetEx::Unbind(Graphics& gfx) const
+	{
+		IRenderTarget::Unbind(gfx);
+		GetContext(gfx)->PSSetShaderResources(slot, count, nullTexturesArray.get());
+		GetContext(gfx)->CSSetShaderResources(slot, count, nullTexturesArray.get());
 	}
 
 	void RenderTargetEx::Clear(Graphics& gfx, const ColorF4& color)

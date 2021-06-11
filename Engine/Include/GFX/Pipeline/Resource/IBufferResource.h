@@ -21,12 +21,10 @@ namespace ZE::GFX::Pipeline::Resource
 		IBufferResource& operator=(IBufferResource&&) = default;
 		virtual ~IBufferResource() = default;
 
-		static void UnbindAll(Graphics& gfx) { GetContext(gfx)->OMSetRenderTargets(0, nullptr, nullptr); }
-
 		constexpr U32 GetWidth() const noexcept { return viewport.GetWidth(); }
 		constexpr U32 GetHeight() const noexcept { return viewport.GetHeight(); }
 
-		virtual void Unbind(Graphics& gfx) const { UnbindAll(gfx); }
+		virtual void Unbind(Graphics& gfx) const { GetContext(gfx)->OMSetRenderTargets(0, nullptr, nullptr); }
 		virtual void Clear(Graphics& gfx, const ColorF4& color) { Clear(gfx); }
 		virtual void Clear(Graphics& gfx) = 0;
 

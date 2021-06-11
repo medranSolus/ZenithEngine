@@ -3,15 +3,15 @@
 #include "CBuffer/Phong.hlsli"
 
 #ifdef _TEX
-Texture2D tex : register(t0);
+Texture2D tex : register(t32);
 #ifdef _TEX_NORMAL
-Texture2D normalMap : register(t1);
+Texture2D normalMap : register(t33);
 #ifdef _TEX_PAX
-Texture2D parallax : register(t3);
+Texture2D parallax : register(t35);
 #endif
 #endif
 #ifdef _TEX_SPEC
-Texture2D spec : register(t2);
+Texture2D spec : register(t34);
 #endif
 #endif
 

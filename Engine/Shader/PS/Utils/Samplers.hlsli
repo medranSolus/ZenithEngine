@@ -1,4 +1,4 @@
-/*	Sampler definitions for different types declared in code
+/*	Sampler definitions for different types declared in code.
 
 	Possible type categories:
 	{

@@ -17,6 +17,7 @@ namespace ZE::GFX::Pipeline::Resource
 
 		virtual void BindTarget(Graphics& gfx) const = 0;
 		virtual void BindTarget(Graphics& gfx, DepthStencil& depthStencil) const = 0;
+		virtual void BindComputeTarget(Graphics& gfx) const { throw ZE_RGC_EXCEPT("Attempting to bind wrong type of buffer to compute pass!"); }
 		void Bind(Graphics& gfx) const override { BindTarget(gfx); }
 	};
 }

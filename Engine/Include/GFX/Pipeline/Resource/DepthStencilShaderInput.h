@@ -18,6 +18,8 @@ namespace ZE::GFX::Pipeline::Resource
 		constexpr U32 GetSlot() const noexcept { return slot; }
 
 		void Bind(Graphics& gfx) const override { GetContext(gfx)->PSSetShaderResources(slot, 1, textureView.GetAddressOf()); }
-		void Unbind(Graphics& gfx) const override { GetContext(gfx)->PSSetShaderResources(slot, 1, nullShaderResource.GetAddressOf()); }
+		void BindCompute(Graphics& gfx) const override { GetContext(gfx)->CSSetShaderResources(slot, 1, textureView.GetAddressOf()); }
+
+		void Unbind(Graphics& gfx) const override;
 	};
 }

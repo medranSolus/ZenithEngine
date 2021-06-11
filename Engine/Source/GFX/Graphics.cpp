@@ -79,6 +79,13 @@ namespace ZE::GFX
 		ZE_GFX_THROW_FAILED_INFO(context->DrawIndexed(count, 0, 0));
 	}
 
+	void Graphics::ComputeFrame(U32 threadsX, U32 threadsY) noexcept
+	{
+		assert(threadsX != 0 && threadsY != 0);
+		context->Dispatch(GetWidth() / threadsX + static_cast<bool>(GetWidth() % threadsX),
+			GetHeight() / threadsY + static_cast<bool>(GetHeight() % threadsY), 1);
+	}
+
 	void Graphics::EndFrame()
 	{
 		if (guiEnabled)

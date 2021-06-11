@@ -6,6 +6,7 @@ namespace ZE::GFX::Resource
 {
 	void TextureCube::SetTexture(Graphics& gfx, const std::string& dir, const std::string& fileExt)
 	{
+		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
 		ZE_GFX_ENABLE_ALL(gfx);
 
 		std::vector<Surface> surfaces;

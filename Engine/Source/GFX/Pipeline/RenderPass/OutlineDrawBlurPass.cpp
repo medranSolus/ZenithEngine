@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	OutlineDrawBlurPass::OutlineDrawBlurPass(Graphics& gfx, std::string&& name, U32 width, U32 height)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name))
 	{
 		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, width, height, 0);
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("blurTarget", renderTarget));

@@ -7,6 +7,7 @@ namespace ZE::GFX::Resource
 {
 	Texture::Texture(Graphics& gfx, const Surface& surface, const std::string& name, U32 slot, bool alphaEnable) : slot(slot), path(name)
 	{
+		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
 		ZE_GFX_ENABLE_ALL(gfx);
 
 		std::unique_ptr<std::thread> checkAlpha = nullptr;

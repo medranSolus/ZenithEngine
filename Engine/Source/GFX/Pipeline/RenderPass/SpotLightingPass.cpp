@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	SpotLightingPass::SpotLightingPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
 		shadowMapPass(gfx, "shadowMap",
 			Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f))
 	{

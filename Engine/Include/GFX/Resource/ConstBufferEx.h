@@ -27,11 +27,16 @@ namespace ZE::GFX::Resource
 		static GfxResPtr<ConstBufferEx> Get(Graphics& gfx, const std::string& tag, const Data::CBuffer::DCBLayoutElement& root,
 			U32 slot = 0, const Data::CBuffer::DynamicCBuffer* buffer = nullptr);
 
+		template<ShaderType S>
+		constexpr operator ConstBufferEx<S>& () noexcept { return *static_cast<ConstBufferEx<S>*>(static_cast<void*>(this)); }
+		template<ShaderType S>
+		constexpr operator const ConstBufferEx<S>& () const noexcept { return *static_cast<const ConstBufferEx<S>*>(static_cast<void*>(this)); }
+
 		std::string GetRID() const noexcept override { return GenerateRID(name, rootLayout, slot); }
 		virtual void BindVS(Graphics& gfx) const { ZE_BIND_CBUF(VSSetConstantBuffers); }
 		virtual void BindGS(Graphics& gfx) const { ZE_BIND_CBUF(GSSetConstantBuffers); }
 		virtual void BindPS(Graphics& gfx) const { ZE_BIND_CBUF(PSSetConstantBuffers); }
-		virtual void BindCS(Graphics& gfx) const { ZE_BIND_CBUF(CSSetConstantBuffers); }
+		void BindCompute(Graphics& gfx) const override { ZE_BIND_CBUF(CSSetConstantBuffers); }
 
 		void Update(Graphics& gfx, const Data::CBuffer::DynamicCBuffer& buffer) const;
 		void Bind(Graphics& gfx) const override;
@@ -82,7 +87,7 @@ namespace ZE::GFX::Resource
 		const Data::CBuffer::DCBLayoutElement& root, U32 slot,
 		const Data::CBuffer::DynamicCBuffer* buffer) noexcept
 	{
-		return "E" + std::to_string(slot) + std::to_string(T) + std::to_string(root.GetByteSize()) + "#" + tag;
+		return "E" + std::to_string(slot) + "#" + std::to_string(root.GetByteSize()) + "#" + tag;
 	}
 
 	template<ShaderType T>
@@ -114,7 +119,7 @@ namespace ZE::GFX::Resource
 		else if constexpr (T == ShaderType::Pixel)
 			BindPS(gfx);
 		else if constexpr (T == ShaderType::Compute)
-			BindCS(gfx);
+			BindCompute(gfx);
 		else
 			static_assert(false, "Not all ConstBufferEx have defined Bind function!");
 	}

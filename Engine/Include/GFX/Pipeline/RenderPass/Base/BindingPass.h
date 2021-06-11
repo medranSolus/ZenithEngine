@@ -11,14 +11,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 		void BindResources(Graphics& gfx);
 
 	protected:
-		GfxResPtr<Resource::IRenderTarget> renderTarget;
-		GfxResPtr<Resource::DepthStencil> depthStencil;
-
 		template<typename T>
 		void AddBindableSink(std::string&& name);
 
 		void AddBind(GfxResPtr<GFX::Resource::IBindable>&& bind) noexcept;
-		void BindAll(Graphics& gfx);
+		void BindRenderAll(Graphics& gfx);
+		void BindComputeAll(Graphics& gfx);
 
 		using BasePass::BasePass;
 
@@ -28,8 +26,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 		BindingPass& operator=(BindingPass&&) = default;
 		BindingPass& operator=(const BindingPass&) = default;
 		virtual ~BindingPass() = default;
-
-		void Finalize() override;
 	};
 
 #pragma region Functions

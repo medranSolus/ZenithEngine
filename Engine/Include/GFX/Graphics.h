@@ -55,9 +55,12 @@ namespace ZE::GFX
 		void PushDrawTag(const std::string& tag) { tagManager->BeginEvent(Utils::ToUtf8(tag).c_str()); }
 		void PopDrawTag() { tagManager->EndEvent(); }
 #endif
+		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
+		void Compute(U32 groupX, U32 groupY, U32 groupZ) noexcept { context->Dispatch(groupX, groupY, groupZ); }
 
 		void Init(HWND hWnd, U32 width, U32 height);
 		void DrawIndexed(U32 count) noexcept(ZE_NO_DEBUG);
+		void ComputeFrame(U32 threadsX, U32 threadsY) noexcept;
 		void EndFrame();
 		void BeginFrame() noexcept;
 		void Resize(U32 width, U32 height);

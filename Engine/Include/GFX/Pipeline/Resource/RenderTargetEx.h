@@ -20,10 +20,11 @@ namespace ZE::GFX::Pipeline::Resource
 		static GfxResPtr<RenderTargetEx> Get(Graphics& gfx, U32 slot, std::vector<DXGI_FORMAT>&& formats);
 
 		void Bind(Graphics& gfx) const override { GetContext(gfx)->PSSetShaderResources(slot, count, texturesArray.get()); }
-		void Unbind(Graphics& gfx) const override { UnbindAll(gfx); GetContext(gfx)->PSSetShaderResources(slot, count, nullTexturesArray.get()); }
+		void BindCompute(Graphics& gfx) const override { GetContext(gfx)->CSSetShaderResources(slot, count, texturesArray.get()); }
 
 		void BindTarget(Graphics& gfx) const override;
 		void BindTarget(Graphics& gfx, DepthStencil& depthStencil) const override;
+		void Unbind(Graphics& gfx) const override;
 
 		void Clear(Graphics& gfx, const ColorF4& color) override;
 		void Clear(Graphics& gfx, const std::vector<ColorF4>& colors);

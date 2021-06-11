@@ -51,6 +51,7 @@ namespace ZE::GFX::Resource
 		std::string GetRID() const noexcept override { return GenerateRID(name); }
 
 		void Bind(Graphics& gfx) const override;
+		void BindCompute(Graphics& gfx) const override;
 	};
 
 	template<ShaderType T>
@@ -102,9 +103,18 @@ namespace ZE::GFX::Resource
 		else if constexpr (T == ShaderType::Pixel)
 			GetContext(gfx)->PSSetShader(shader.Get(), nullptr, 0);
 		else if constexpr (T == ShaderType::Compute)
-			GetContext(gfx)->CSSetShader(shader.Get(), nullptr, 0);
+			BindCompute(gfx);
 		else
 			static_assert(false, "Not all shaders have defined Bind function!");
+	}
+
+	template<ShaderType T>
+	void Shader<T>::BindCompute(Graphics& gfx) const
+	{
+		if constexpr (T == ShaderType::Compute)
+			GetContext(gfx)->CSSetShader(shader.Get(), nullptr, 0);
+		else
+			IBindable::BindCompute(gfx);
 	}
 #pragma endregion
 

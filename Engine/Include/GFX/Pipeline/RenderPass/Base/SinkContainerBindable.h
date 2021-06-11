@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 	template<typename T>
 	constexpr void SinkContainerBindable<T>::Bind(Source& source)
 	{
-		auto ptr = source.LinkBindable().CastDynamic<T>();
+		auto ptr = source.LinkBindable().CastStatic<T>();
 		if (ptr == nullptr)
 			throw ZE_RGC_EXCEPT("Binding Sink \"" + GetRegisteredName() + "\" of type {" + typeid(T).name() +
 				"} to Source \"" + GetPassPathString() + "." + GetSourceName() + "\" of incompatible type {" + typeid(source.LinkBindable()).name());

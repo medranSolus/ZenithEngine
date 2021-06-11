@@ -1,11 +1,11 @@
 #pragma once
-#include "BindingPass.h"
+#include "RenderPass.h"
 #include "GFX/Pipeline/Job.h"
 #include "Camera/ICamera.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Base
 {
-	class QueuePass : public virtual BindingPass
+	class QueuePass : public virtual RenderPass
 	{
 		std::vector<Job> jobs;
 
@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 		void SortBackFront(const Float3& cameraPos) noexcept;
 		void CullFrustum(const Camera::ICamera& camera) noexcept;
 
-		using BindingPass::BindingPass;
+		using RenderPass::RenderPass;
 
 	public:
 		QueuePass(QueuePass&&) = default;

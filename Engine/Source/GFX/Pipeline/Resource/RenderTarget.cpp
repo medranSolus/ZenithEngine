@@ -4,20 +4,19 @@
 
 namespace ZE::GFX::Pipeline::Resource
 {
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> RenderTarget::CreateTexture(Graphics& gfx, U32 width, U32 height,
-		D3D11_TEXTURE2D_DESC& textureDesc, DXGI_FORMAT format)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> RenderTarget::CreateTexture(Graphics& gfx, D3D11_TEXTURE2D_DESC& textureDesc)
 	{
 		ZE_GFX_ENABLE_ALL(gfx);
 
-		textureDesc.Width = static_cast<UINT>(width);
-		textureDesc.Height = static_cast<UINT>(height);
+		textureDesc.Width = static_cast<UINT>(GetWidth());
+		textureDesc.Height = static_cast<UINT>(GetHeight());
 		textureDesc.ArraySize = 1;
-		textureDesc.MipLevels = 1U;
+		textureDesc.MipLevels = 1;
 		textureDesc.Format = format;
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET | (slotUAV != UINT_MAX ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		textureDesc.CPUAccessFlags = 0;
 		textureDesc.MiscFlags = 0;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = nullptr;
@@ -37,10 +36,19 @@ namespace ZE::GFX::Pipeline::Resource
 		targetViewDesc.Texture2D = D3D11_TEX2D_RTV{ 0 };
 		ZE_GFX_THROW_FAILED(GetDevice(gfx)->CreateRenderTargetView(texture.Get(), &targetViewDesc, &targetView));
 		ZE_GFX_SET_RID(targetView.Get());
+		if (slotUAV != UINT_MAX)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+			uavDesc.Format = textureDesc.Format;
+			uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+			uavDesc.Texture2D = D3D11_TEX2D_UAV{ 0 };
+			ZE_GFX_THROW_FAILED(GetDevice(gfx)->CreateUnorderedAccessView(texture.Get(), &uavDesc, &uav));
+			ZE_GFX_SET_ID_EX(uav);
+		}
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, DXGI_FORMAT format)
-		: RenderTarget(gfx, gfx.GetWidth(), gfx.GetHeight(), format) {}
+	RenderTarget::RenderTarget(Graphics& gfx, DXGI_FORMAT format, U32 slot)
+		: RenderTarget(gfx, gfx.GetWidth(), gfx.GetHeight(), format, slot) {}
 
 	RenderTarget::RenderTarget(Graphics& gfx, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, U32 size)
 		: IRenderTarget(gfx, size, size), format(DXGI_FORMAT_R32_FLOAT)
@@ -57,12 +65,13 @@ namespace ZE::GFX::Pipeline::Resource
 		ZE_GFX_SET_RID(targetView.Get());
 	}
 
-	RenderTarget::RenderTarget(Graphics& gfx, U32 width, U32 height, DXGI_FORMAT format)
-		: IRenderTarget(gfx, width, height), format(format)
+	RenderTarget::RenderTarget(Graphics& gfx, U32 width, U32 height, DXGI_FORMAT format, U32 slot)
+		: IRenderTarget(gfx, width, height), format(format), slotUAV(slot)
 	{
+		assert(slotUAV == UINT_MAX || slotUAV < D3D11_PS_CS_UAV_REGISTER_COUNT);
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.BindFlags = 0;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, width, height, textureDesc, format);
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture = CreateTexture(gfx, textureDesc);
 		InitializeTargetView(gfx, textureDesc, texture);
 	}
 
@@ -77,7 +86,8 @@ namespace ZE::GFX::Pipeline::Resource
 #ifdef _ZE_MODE_DEBUG
 	std::string RenderTarget::GetRID() const noexcept
 	{
-		return "RT" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" + std::to_string(format);
+		return "RT" + std::to_string(GetWidth()) + "x" + std::to_string(GetHeight()) + "#" + std::to_string(format) + "#" +
+			(slotUAV == UINT_MAX ? "-" : std::to_string(slotUAV));
 	}
 #endif
 

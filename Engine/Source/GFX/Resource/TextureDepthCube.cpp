@@ -10,6 +10,7 @@ namespace ZE::GFX::Resource
 	TextureDepthCube::TextureDepthCube(Graphics& gfx, U32 size, U32 slot)
 		: slot(slot), size(size), stencil(gfx, size)
 	{
+		assert(slot < D3D11_PS_INPUT_REGISTER_COUNT);
 		ZE_GFX_ENABLE_ALL(gfx);
 
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };

@@ -1,9 +1,9 @@
 #pragma once
-#include "BindingPass.h"
+#include "RenderPass.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Base
 {
-	class FullscreenPass : public virtual BindingPass
+	class FullscreenPass : public virtual RenderPass
 	{
 	public:
 		FullscreenPass(Graphics& gfx, std::string&& name, const std::string& vertexShaderName = "FullscreenVS");

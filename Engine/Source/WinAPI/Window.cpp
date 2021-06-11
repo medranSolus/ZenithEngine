@@ -57,6 +57,11 @@ namespace ZE::WinAPI
 			PostQuitMessage(0);
 			return 0;
 		}
+		case WM_NCCREATE:
+		{
+			assert(EnableNonClientDpiScaling(hWnd) != 0);
+			break;
+		}
 		case WM_SIZE:
 		{
 			if (wParam != SIZE_MINIMIZED)
@@ -245,7 +250,7 @@ namespace ZE::WinAPI
 		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == FALSE)
 			throw ZE_WIN_EXCEPT_LAST();
 		// Initial DPI since no possible way to know window DPI
-		dpi = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
+		const UINT dpi = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
 
 		RECT area = { 0 };
 		if (width == 0 || height == 0)
@@ -289,8 +294,6 @@ namespace ZE::WinAPI
 		}
 		else
 			ShowWindow(hWnd, SW_SHOW);
-		// Update DPI to proper window DPI (should be same as previous but not sure)
-		dpi = GetDpiForWindow(hWnd);
 
 		graphics.Init(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);

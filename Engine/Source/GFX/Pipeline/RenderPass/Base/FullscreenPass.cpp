@@ -5,7 +5,7 @@
 namespace ZE::GFX::Pipeline::RenderPass::Base
 {
 	FullscreenPass::FullscreenPass(Graphics& gfx, std::string&& name, const std::string& vertexShaderName)
-		: BindingPass(std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name))
 	{
 		const std::string typeName = Primitive::Square::GetNameNDC2D();
 		if (GFX::Resource::VertexBuffer::NotStored(typeName) && GFX::Resource::IndexBuffer::NotStored(typeName))

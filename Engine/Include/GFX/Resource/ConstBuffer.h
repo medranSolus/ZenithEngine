@@ -25,11 +25,16 @@ namespace ZE::GFX::Resource
 		static GfxResPtr<ConstBuffer> Get(Graphics& gfx, const std::string& tag, const T& values, U32 slot = 0);
 		static GfxResPtr<ConstBuffer> Get(Graphics& gfx, const std::string& tag, U32 slot = 0);
 
+		template<ShaderType SD>
+		constexpr operator ConstBuffer<SD, T>& () noexcept { return *static_cast<ConstBuffer<SD, T>*>(static_cast<void*>(this)); }
+		template<ShaderType SD>
+		constexpr operator const ConstBuffer<SD, T>& () const noexcept { return *static_cast<const ConstBuffer<SD, T>*>(static_cast<void*>(this)); }
+
 		constexpr U32 GetSlot() const noexcept { return slot; }
 		void BindVS(Graphics& gfx) const { ZE_BIND_CBUF(VSSetConstantBuffers); }
 		void BindGS(Graphics& gfx) const { ZE_BIND_CBUF(GSSetConstantBuffers); }
 		void BindPS(Graphics& gfx) const { ZE_BIND_CBUF(PSSetConstantBuffers); }
-		void BindCS(Graphics& gfx) const { ZE_BIND_CBUF(CSSetConstantBuffers); }
+		void BindCompute(Graphics& gfx) const override { ZE_BIND_CBUF(CSSetConstantBuffers); }
 
 		void Update(Graphics& gfx, const T& values);
 		void Bind(Graphics& gfx) const override;
@@ -79,7 +84,7 @@ namespace ZE::GFX::Resource
 	template<ShaderType S, typename T>
 	std::string ConstBuffer<S, T>::GenerateRID(const std::string& tag, U32 slot) noexcept
 	{
-		return "C" + std::to_string(slot) + std::to_string(S) + std::to_string(sizeof(T)) + "#" + tag;
+		return "C" + std::to_string(slot) + "#" + std::to_string(sizeof(T)) + "#" + tag;
 	}
 
 	template<ShaderType S, typename T>
@@ -114,7 +119,7 @@ namespace ZE::GFX::Resource
 		else if constexpr (S == ShaderType::Pixel)
 			BindPS(gfx);
 		else if constexpr (S == ShaderType::Compute)
-			BindCS(gfx);
+			BindCompute(gfx);
 		else
 			static_assert(false, "Not all ConstBuffers have defined Bind function!");
 	}

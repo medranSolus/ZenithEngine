@@ -24,11 +24,11 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	SSAOPass::SSAOPass(Graphics& gfx, std::string&& name)
-		: BindingPass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)),
 		FullscreenPass(gfx, std::forward<std::string>(name))
 	{
-		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 11, DXGI_FORMAT_R32_FLOAT);
-		ssaoScratchBuffer = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 11, DXGI_FORMAT_R32_FLOAT);
+		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT);
+		ssaoScratchBuffer = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT);
 
 		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, "$SSAO", MakeLayout(), 13);
 		kernelBuffer->GetBuffer()["bias"] = bias;
@@ -64,7 +64,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		float* buffer = reinterpret_cast<float*>(ssaoNoise.GetBuffer());
 		for (U32 i = 0; i < SSAO_NOISE_SIZE * 2; ++i)
 			buffer[i] = Math::RandNDC(engine);
-		AddBind(GFX::Resource::Texture::Get(gfx, ssaoNoise, "ssaoNoise", 12));
+		AddBind(GFX::Resource::Texture::Get(gfx, ssaoNoise, "ssaoNoise", 24));
 	}
 
 	void SSAOPass::Execute(Graphics& gfx)

@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	DirectionalLightingPass::DirectionalLightingPass(Graphics& gfx, std::string&& name, U32 mapSize)
-		: BindingPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
+		: RenderPass(std::forward<std::string>(name)), QueuePass(std::forward<std::string>(name)),
 		FullscreenPass(gfx, std::forward<std::string>(name)), shadowMapPass(gfx, "shadowMap",
 			Math::XMMatrixOrthographicLH(static_cast<float>(mapSize), static_cast<float>(mapSize), 0.01f, 1000.0f))
 	{

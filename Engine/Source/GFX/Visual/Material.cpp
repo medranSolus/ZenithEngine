@@ -60,7 +60,7 @@ namespace ZE::GFX::Visual
 		// Get diffuse texture
 		if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 0, true);
+			diffuseTexture = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 32, true);
 			translucent = diffuseTexture->HasAlpha();
 			shaderCodePS += "Texture";
 			shaderCodeVS += "Texture";
@@ -72,7 +72,7 @@ namespace ZE::GFX::Visual
 		// Get normal map texture
 		if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			normalMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 1);
+			normalMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 33);
 			shaderCodePS += "Normal";
 			shaderCodeVS += "Normal";
 			vertexLayout->Append(VertexAttribute::Texture2D).Append(VertexAttribute::Bitangent);
@@ -81,7 +81,7 @@ namespace ZE::GFX::Visual
 		// Get parallax map texture
 		if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			parallaxMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 3);
+			parallaxMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 35);
 			shaderCodePS += "Parallax";
 			shaderCodeVS += "Parallax";
 			cbufferLayout.Add(DCBElementType::Float, "parallaxScale");
@@ -90,7 +90,7 @@ namespace ZE::GFX::Visual
 		// Get specular data
 		if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 		{
-			specularMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 2, true);
+			specularMap = Resource::Texture::Get(gfx, path + std::string(texFile.C_Str()), 34, true);
 			shaderCodePS += "Specular";
 			vertexLayout->Append(VertexAttribute::Texture2D);
 			cbufferLayout.Add(DCBElementType::Bool, "useSpecularPowerAlpha");

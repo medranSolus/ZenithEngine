@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Probe/IProbeable.h"
+#include "Exception/RenderGraphCompileException.h"
 #include "WinAPI/WinAPI.h"
 #pragma warning(disable:4265)
 #include <wrl.h>
@@ -39,6 +40,7 @@ namespace ZE::GFX::Resource
 		static constexpr std::string GenerateRID(Params&& ...p) noexcept;
 
 		virtual void Bind(Graphics& gfx) const = 0;
+		virtual void BindCompute(Graphics& gfx) const { throw ZE_RGC_EXCEPT("Attempting to bind wrong type of resource to compute pass!"); }
 	};
 
 #pragma region Functions

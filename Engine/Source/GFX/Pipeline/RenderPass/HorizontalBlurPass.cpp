@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass
 {
 	HorizontalBlurPass::HorizontalBlurPass(Graphics& gfx, std::string&& name, U32 width, U32 height)
-		: BindingPass(std::forward<std::string>(name)), FullscreenPass(gfx, std::forward<std::string>(name))
+		: RenderPass(std::forward<std::string>(name)), FullscreenPass(gfx, std::forward<std::string>(name))
 	{
 		AddBindableSink<GFX::Resource::ConstBufferExPixelCache>("kernel");
 		AddBindableSink<Resource::RenderTarget>("blurTarget");
