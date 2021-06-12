@@ -52,6 +52,7 @@ jobs:
           # queries: ./path/to/local/query, your-org/your-repo/queries@main
       - name: Build project
         run: |
+         git submodule update --init
          .\build.ps1 R gen
          .\build.ps1 R build
       - name: Perform CodeQL Analysis
