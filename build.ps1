@@ -30,6 +30,13 @@ Switch ($command)
         Display-Info
         exit 0
     }
+    default
+    {
+        if (!$mode)
+        {
+            $mode=$command
+        }
+    }
 }
 
 $build_type
@@ -67,9 +74,9 @@ Switch ($command)
         $args=""
         if ($mode -eq "CI")
         {
-            $args="-D ZE_CI_JOB=ON"
+            $args="-DZE_CI_JOB=ON"
         }
-        cmake -S . -B "$obj_dir" -D CMAKE_BUILD_TYPE=$build_type -G Ninja $args
+        cmake $args -D CMAKE_BUILD_TYPE=$build_type -G Ninja -S . -B "$obj_dir"
         break
     }
     "run"

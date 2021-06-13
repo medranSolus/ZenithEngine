@@ -25,6 +25,12 @@ option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
 
+if(ZE_CI_JOB)
+	message(USED!)
+else()
+	message(NOT USED!)
+endif()
+
 # CMake modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)

@@ -18,7 +18,7 @@ add_shader_target(${SHADER_TARGET})
 ############# ENGINE RULES ##############
 
 # Post build data copy
-if(NOT ZE_NO_DATA OR NOT ZE_CI_JOB)
+if(NOT (ZE_NO_DATA OR ZE_CI_JOB))
     copy_runtime_data(ENGINE "Data")
 endif()
 

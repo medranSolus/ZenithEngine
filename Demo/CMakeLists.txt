@@ -31,4 +31,6 @@ set_target_properties(${DEMO_TARGET} PROPERTIES
 target_compile_features(${DEMO_TARGET} PRIVATE ${ZE_CXX_STD})
 target_include_directories(${DEMO_TARGET} PRIVATE ${INC_DIR})
 target_link_libraries(${DEMO_TARGET} PRIVATE ${ENGINE_TARGET})
-add_dependencies(${DEMO_TARGET} ${DEMO_COPY_TARGET})
+if(NOT ZE_CI_JOB)
+    add_dependencies(${DEMO_TARGET} ${DEMO_COPY_TARGET})
+endif()
