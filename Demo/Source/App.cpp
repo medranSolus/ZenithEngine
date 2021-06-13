@@ -396,7 +396,7 @@ App::App(const std::string& commandLine)
 	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 
 	// Sample Scene
-#indef _ZE_MODE_DEBUG
+#ifndef _ZE_MODE_DEBUG
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ 0.0f, 40.0f, -4.0f }, "Camera", 0.0f, Math::ToRadians(45.0f), 1.047f, 2.0f, 15.0f)));
 	AddLight({ window.Gfx(), renderer, "Pumpkin candle", 5.0f, ColorF3(1.0f, 0.96f, 0.27f), Float3(14.0f, -6.3f, -5.0f), 85 });
