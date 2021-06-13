@@ -2,6 +2,7 @@
 #include "GFX/Pipeline/RenderPass/Base/RenderPassesBase.h"
 #include "GFX/Pipeline/Resource/PipelineResources.h"
 #include "GFX/Resource/GfxResources.h"
+#include "GFX/GPerf.h"
 
 namespace ZE::GFX::Pipeline::RenderPass
 {
@@ -69,7 +70,9 @@ namespace ZE::GFX::Pipeline::RenderPass
 	{
 		assert(mainCamera);
 		mainCamera->BindCS(gfx);
+		ZE_GPERF_START(gfx, "SSAO CS");
 		ComputeFrame(gfx, 32, 32);
+		ZE_GPERF_STOP(gfx);
 	}
 
 	void SSAOPass::ShowWindow(Graphics& gfx)

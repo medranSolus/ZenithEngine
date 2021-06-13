@@ -12,5 +12,5 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	const float ssao = tx_ssao.Sample(splr_LW, tc).r;
 	const float3 diffuse = ssao * color * (DeleteGammaCorr(cb_ambientLight) + abs(tx_lighting.Sample(splr_PW, tc).rgb));
 
-	return float4(ssao, ssao, ssao, srgb.a);// float4(diffuse + tx_specular.Sample(splr_PW, tc).rgb, srgb.a);
+	return float4(diffuse + tx_specular.Sample(splr_PW, tc).rgb, srgb.a);
 }
