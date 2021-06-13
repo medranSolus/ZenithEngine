@@ -1,9 +1,41 @@
-param($mode, $command) 
-$build_type
+param($command, $mode)
 
+function Display-Info
+{
+    Write-Output "`n>Zenith Engine CLI build tool syntax:"
+    Write-Output "    build.ps1"
+    Write-Output "        <COMMAND: (default - build project)"
+    Write-Output "            help - display tool syntax (MODE not required)"
+    Write-Output "            init - initialize submodules (MODE not required)"
+    Write-Output "            up - update submodules (MODE not required)"
+    Write-Output "            gen - generate build system"
+    Write-Output "            run - run tech demo>"
+    Write-Output "        <MODE: R|Release; Ri|ReleaseInfo; D|Debug; CI|Static analysis setup>`n"
+}
+
+Switch ($command)
+{
+    "init"
+    {
+        git submodule update --init
+        exit 0
+    }
+    "up"
+    {
+        git submodule update --remote --merge
+        exit 0
+    }
+    "help"
+    {
+        Display-Info
+        exit 0
+    }
+}
+
+$build_type
 Switch ($mode.ToLower())
 {
-    {($_ -eq "r") -or ($_ -eq "release")}
+    {($_ -eq "r") -or ($_ -eq "release") -or ($_ -eq "ci")}
     {
         $build_type="Release"
         break
@@ -20,9 +52,8 @@ Switch ($mode.ToLower())
     }
     default
     {
-        Write-Output "`nNot specified correct build mode! Syntax:"
-        Write-Output "    build.ps1`n        <MODE: R|Release; Ri|ReleaseInfo; D|Debug>"
-        Write-Output "        [<COMMAND: gen - generate build system; run - run tech demo; (default - build project)>]`n"
+        Write-Output "`nNot specified correct build mode!"
+        Display-Info
         exit -1
     }
 }
@@ -33,7 +64,12 @@ Switch ($command)
 {
     "gen"
     {
-        cmake -S . -B "$obj_dir" -D CMAKE_BUILD_TYPE=$build_type -G Ninja
+        $args=""
+        if ($mode -eq "CI")
+        {
+            $args="-D ZE_CI_JOB=ON"
+        }
+        cmake -S . -B "$obj_dir" -D CMAKE_BUILD_TYPE=$build_type -G Ninja $args
         break
     }
     "run"

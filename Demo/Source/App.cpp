@@ -382,16 +382,23 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: window(WINDOW_TITLE, 1600, 900), renderer(window.Gfx(), "Skybox/Space", ".png"),
+	: window(WINDOW_TITLE, 1600, 896), renderer(window.Gfx(), "Skybox/Space", ".png"),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair(Container::None, 0));
+	// Debug scene
+	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, ColorF3(1.0f, 1.0f, 1.0f), Float3(-20.0f, 2.0f, -4.0f), 50 });
+	GFX::Shape::ModelParams params({ 0.0f, -8.2f, 6.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }, "Nanosuit", 0.70f);
+	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
+	params = { Float3(-5.0f, -2.0f, 7.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Wall", 2.0f };
+	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
+
 	// Sample Scene
+#indef _ZE_MODE_DEBUG
 	cameras.AddCamera(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ 0.0f, 40.0f, -4.0f }, "Camera", 0.0f, Math::ToRadians(45.0f), 1.047f, 2.0f, 15.0f)));
-	AddLight({ window.Gfx(), renderer, "Light bulb", 1.0f, ColorF3(1.0f, 1.0f, 1.0f), Float3(-20.0f, 2.0f, -4.0f), 50 });
 	AddLight({ window.Gfx(), renderer, "Pumpkin candle", 5.0f, ColorF3(1.0f, 0.96f, 0.27f), Float3(14.0f, -6.3f, -5.0f), 85 });
 	AddLight({ window.Gfx(), renderer, "Torch", 5.0f, ColorF3(1.0f, 0.0f, 0.2f), Float3(21.95f, -1.9f, 9.9f), 70 });
 	AddLight({ window.Gfx(), renderer, "Blue ilumination", 10.0f, ColorF3(0.0f, 0.46f, 1.0f), Float3(43.0f, 27.0f, 1.8f), 70 });
@@ -406,14 +413,10 @@ App::App(const std::string& commandLine)
 		Float3(-35.0f, -8.0f, 2.0f), 175, 0.5f, Math::ToRadians(27.0f), Math::ToRadians(43.0f), Math::NormalizeStore(direction) });
 	direction = { 0.0f, -0.7f, -0.7f };
 	AddLight({ window.Gfx(), renderer, "Moon", 0.1f, ColorF3(0.7608f, 0.7725f, 0.8f), Math::NormalizeStore(direction) });
-	GFX::Shape::ModelParams params({ 0.0f, -8.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }, "Sponza", 0.045f);
+	params = { Float3(0.0f, -8.0f, 0.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Sponza", 0.045f };
 	AddShape({ window.Gfx(), renderer, "Models/Sponza/sponza.obj", params });
-	params = { Float3(0.0f, -8.2f, 6.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Nanosuit", 0.70f };
-	AddShape({ window.Gfx(), renderer, "Models/nanosuit/nanosuit.obj", params });
 	params = { Float3(13.5f, -8.2f, -5.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Jack O'Lantern", 13.00f };
 	AddShape({ window.Gfx(), renderer, "Models/Jack/Jack_O_Lantern.3ds", params });
-	params = { Float3(-5.0f, -2.0f, 7.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Wall", 2.0f };
-	AddShape({ window.Gfx(), renderer, "Models/bricks/brick_wall.obj", params });
 	params = { Float3(-39.0f, -8.1f, 2.0f), Float4(0.0f, 0.0f, 0.0f, 1.0f), "Black Dragon", 0.15f };
 	Math::XMStoreFloat4(&params.rotation, Math::XMQuaternionRotationRollPitchYaw(0.0f, Math::ToRadians(290.0f), 0.0f));
 	AddShape({ window.Gfx(), renderer, "Models/Black Dragon/Dragon 2.5.fbx", params });
@@ -425,6 +428,7 @@ App::App(const std::string& commandLine)
 	Math::XMStoreFloat4(&params.rotation,
 		Math::XMQuaternionRotationRollPitchYaw(0.0f, Math::ToRadians(87.1f), Math::ToRadians(301.0f)));
 	AddShape({ window.Gfx(), renderer, "Models/tie/tie.obj", params });
+#endif
 }
 
 int App::Run()

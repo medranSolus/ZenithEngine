@@ -10,7 +10,9 @@ if(WIN32)
 endif()
 
 # Post build data copy
-copy_runtime_data(DEMO "Data/Runtime")
+if(NOT ZE_CI_JOB)
+    copy_runtime_data(DEMO "Data/Runtime")
+endif()
 
 # Target files
 set(INC_DIR "${DEMO_DIR}/Include")

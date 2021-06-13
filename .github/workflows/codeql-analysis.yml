@@ -1,17 +1,29 @@
 name: "CodeQL"
 
+paths:
+- '**/Include'
+- '**/Source'
+paths-ignore:
+- 'External'
+- '**/Data'
+
 on:
   push:
     branches: [ master, dev ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master, dev ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.json'
+      - '**/Data/*'
   schedule:
     - cron: '42 0 * * 1'
 
 jobs:
   analyze:
-    name: Analyze
+    name: CodeQL Analysis
     runs-on: windows-latest
     permissions:
       actions: read
@@ -33,9 +45,9 @@ jobs:
       # 📚 https://git.io/JvXDl
       - name: Install Ninja
         run: choco install ninja
-      - name: Install VS2019 game workload
+      - name: Install VS2019 gamedev extensions
         run: choco install visualstudio2019-workload-nativegame
-      - name: Use VS dev enviroment
+      - name: Setup VS dev enviroment
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch }}
@@ -52,8 +64,8 @@ jobs:
           # queries: ./path/to/local/query, your-org/your-repo/queries@main
       - name: Build project
         run: |
-         git submodule update --init
-         .\build.ps1 R gen
-         .\build.ps1 R build
+         .\build.ps1 init
+         .\build.ps1 gen CI
+         .\build.ps1 CI
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
