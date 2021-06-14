@@ -5,7 +5,7 @@
 
 namespace ZE
 {
-	class Perf
+	class Perf final
 	{
 		static constexpr const char* LOG_FILE = "perf_log.txt";
 
@@ -15,19 +15,21 @@ namespace ZE
 
 		void Save();
 
-	public:
 		Perf() = default;
+
+	public:
 		Perf(Perf&&) = default;
 		Perf(const Perf&) = default;
 		Perf& operator=(Perf&&) = default;
 		Perf& operator=(const Perf&) = default;
 		~Perf();
 
+		static Perf& Get() noexcept { static Perf perf; return perf; }
+
 		void Start(const std::string& sectionTag) noexcept;
 		void Stop() noexcept;
 	};
 }
 
-#define ZE_PERF_SET() static Perf __perf
-#define ZE_PERF_START(sectionTag) __perf.Start(sectionTag)
-#define ZE_PERF_STOP() __perf.Stop()
+#define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
+#define ZE_PERF_STOP() ZE::Perf::Get().Stop()

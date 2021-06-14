@@ -9,6 +9,7 @@ namespace ZE::GFX
 	class Graphics
 	{
 		friend class Resource::IBindable;
+		friend class GPerf;
 
 		static constexpr DXGI_FORMAT BACKBUFFER_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 

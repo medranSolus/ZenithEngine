@@ -84,6 +84,9 @@
 */
 #include "Camera/Cameras.h"
 
+// GPU profilling tool
+#include "GFX/GPerf.h"
+
 // Graphics data used in processing
 #include "GFX/Data/DataTypes.h"
 
