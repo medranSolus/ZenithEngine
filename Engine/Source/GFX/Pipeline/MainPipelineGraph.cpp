@@ -196,26 +196,10 @@ namespace ZE::GFX::Pipeline
 			AppendPass(std::move(pass));
 		}
 		{
-			auto pass = MAKE_PASS(SSAOBlurPass, gfx, "ssaoHalfBlur");
-			pass->SetSinkLinkage("ssaoBuffer", "ssao.ssaoBuffer");
-			pass->SetSinkLinkage("ssaoTarget", "ssao.ssaoScratch");
-			pass->SetSinkLinkage("direction", "$.blurDirection");
-			pass->SetSinkLinkage("ssaoKernel", "ssao.ssaoKernel");
-			AppendPass(std::move(pass));
-		}
-		{
-			auto pass = MAKE_PASS(SSAOBlurPass, gfx, "ssaoFullBlur");
-			pass->SetSinkLinkage("ssaoBuffer", "ssaoHalfBlur.ssaoBuffer");
-			pass->SetSinkLinkage("ssaoTarget", "ssaoHalfBlur.ssaoScratch");
-			pass->SetSinkLinkage("direction", "$.blurDirection");
-			pass->SetSinkLinkage("ssaoKernel", "ssao.ssaoKernel");
-			AppendPass(std::move(pass));
-		}
-		{
 			auto pass = MAKE_PASS(LightCombinePass, gfx, "lightCombiner");
 			pass->SetSinkLinkage("geometryBuffer", "lambertianClassic.geometryBuffer");
 			pass->SetSinkLinkage("lightBuffer", "pointLighting.lightBuffer");
-			pass->SetSinkLinkage("ssaoBuffer", "ssaoFullBlur.ssaoBuffer");
+			pass->SetSinkLinkage("ssaoBuffer", "ssao.ssaoBuffer");
 			pass->SetSinkLinkage("gammaCorrection", "$.gammaCorrection");
 			pass->SetSinkLinkage("sceneTarget", "$.sceneTarget");
 			AppendPass(std::move(pass));

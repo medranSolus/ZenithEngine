@@ -32,6 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		ambientBuffer->GetBuffer()["ambientColor"] = ColorF3(0.05f, 0.05f, 0.05f);
 		AddBind(ambientBuffer);
 		AddBind(GFX::Resource::PixelShader::Get(gfx, "LightCombinePS"));
+		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 	}
 
 	void LightCombinePass::ShowWindow(Graphics& gfx)

@@ -16,7 +16,6 @@ namespace ZE::GFX::Pipeline::RenderPass
 		U32 size = SSAO_KERNEL_SIZE;
 
 		Camera::ICamera* mainCamera = nullptr;
-		GfxResPtr<Resource::IRenderTarget> ssaoScratchBuffer;
 		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
 
 		static Data::CBuffer::DCBLayout MakeLayout() noexcept;

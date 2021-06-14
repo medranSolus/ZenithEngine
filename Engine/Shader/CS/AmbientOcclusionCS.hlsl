@@ -22,9 +22,10 @@ float GetLinearDepth(const in float depth, uniform float nearClip, uniform float
 RWTexture2D<float> ssaoMap : register(u0);
 Texture2D<float2> noiseMap : register(t24); // RG - random vector
 
-groupshared float groupSsao[32][32];
+static const uint2 THREAD_COUNT = uint2(32, 32);
+groupshared float groupSsao[THREAD_COUNT.x][THREAD_COUNT.y];
 
-[numthreads(32, 32, 1)]
+[numthreads(THREAD_COUNT.x, THREAD_COUNT.y, 1)]
 void main(uint3 dispatchId : SV_DispatchThreadID, uint3 threadId : SV_GroupThreadID)
 {
 	const float2 sphericNormal = tx_normal[dispatchId.xy];
@@ -60,16 +61,38 @@ void main(uint3 dispatchId : SV_DispatchThreadID, uint3 threadId : SV_GroupThrea
 	ssaoMap[dispatchId.xy] = ssaoVal;
 	AllMemoryBarrierWithGroupSync();
 
-	//float2 delta;
-	//if (cb_vertical)
-	//	delta = float2(0.0f, 0.125f / cb_noiseTileDimensions.y);
-	//else
-	//	delta = float2(0.25f / cb_noiseTileDimensions.x, 0.0f);
+	static const int BEGIN = -3;
+	static const uint LAST = 3;
+	int s = BEGIN;
+	uint u = 1;
+	uint count = 0;
 
-	//static const int RANGE = 3;
-	//float result = 0.0f;
-	//[unroll]
-	//for (int i = -RANGE; i < RANGE; ++i)
-	//	result += tx_ssao.Sample(splr_LR, tc + delta * i).r;
-	//return result / (RANGE * 2);
+	// Vertical blur
+	[unroll]
+	for (; s < 0; ++s)
+		ssaoVal += (groupSsao[threadId.x][abs((int)threadId.y + s)] - ssaoVal) / ++count;
+	[unroll]
+	for (; u <= LAST; ++u)
+	{
+		uint offset = threadId.y + u;
+		if (offset >= THREAD_COUNT.y)
+			offset = threadId.y - u;
+		ssaoVal += (groupSsao[threadId.x][offset] - ssaoVal) / ++count;
+	}
+	groupSsao[threadId.x][threadId.y] = ssaoVal;
+	AllMemoryBarrierWithGroupSync();
+
+	// Horizontal blur
+	[unroll]
+	for (s = BEGIN; s < 0; ++s)
+		ssaoVal += (groupSsao[abs((int)threadId.x + s)][threadId.y] - ssaoVal) / ++count;
+	[unroll]
+	for (u = 1; u <= LAST; ++u)
+	{
+		uint offset = threadId.x + u;
+		if (offset > THREAD_COUNT.x)
+			offset = threadId.x - u;
+		ssaoVal += (groupSsao[offset][threadId.y] - ssaoVal) / ++count;
+	}
+	ssaoMap[dispatchId.xy] = ssaoVal;
 }

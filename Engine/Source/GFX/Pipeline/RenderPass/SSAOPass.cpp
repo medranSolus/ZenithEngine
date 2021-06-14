@@ -29,7 +29,6 @@ namespace ZE::GFX::Pipeline::RenderPass
 		: ComputePass(gfx, std::forward<std::string>(name), "AmbientOcclusionCS")
 	{
 		computeTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT, 0);
-		ssaoScratchBuffer = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT);
 
 		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, "$SSAO", MakeLayout(), 13);
 		kernelBuffer->GetBuffer()["bias"] = bias;
@@ -54,10 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
-
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("ssaoBuffer", computeTarget));
-		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("ssaoScratch", ssaoScratchBuffer));
-		RegisterSource(Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("ssaoKernel", kernelBuffer));
 
 		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, DXGI_FORMAT_R32G32_FLOAT);
 		float* buffer = reinterpret_cast<float*>(ssaoNoise.GetBuffer());
