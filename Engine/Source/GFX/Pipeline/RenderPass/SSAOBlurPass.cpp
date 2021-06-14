@@ -27,10 +27,10 @@ namespace ZE::GFX::Pipeline::RenderPass
 		direction->GetBuffer()["vertical"] = !direction->GetBufferConst()["vertical"];
 		direction->Bind(gfx);
 		kernelBuffer->Bind(gfx);
+		ssaoScratchBuffer->Unbind(gfx);
 		BindAll(gfx);
 		ssaoScratchBuffer->Bind(gfx);
 		gfx.DrawIndexed(6);
-		ssaoScratchBuffer->Unbind(gfx);
 		ZE_DRAW_TAG_END(gfx);
 	}
 }

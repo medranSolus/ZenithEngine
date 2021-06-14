@@ -36,6 +36,12 @@ namespace ZE::Math
 	typedef ZE::External::DirectX::XMFLOAT4 Float4;
 	// SSE 4D Vector
 	typedef ZE::External::DirectX::XMVECTOR Vector;
+	struct UInt2 { U32 x, y; };
+	struct UInt3 { U32 x, y, z; };
+	struct UInt4 { U32 x, y, z, w; };
+	struct SInt2 { S32 x, y; };
+	struct SInt3 { S32 x, y, z; };
+	struct SInt4 { S32 x, y, z, w; };
 #pragma endregion
 
 #pragma region Matrix types

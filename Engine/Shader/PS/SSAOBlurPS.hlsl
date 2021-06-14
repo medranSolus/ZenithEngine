@@ -1,15 +1,15 @@
-#include "Utils/Samplers.hlsli"
+#include "Samplers.hlsli"
 #include "CBuffer/BlurDirection.hlsli"
-#include "CBuffer/SSAOKernel.hlsli"
+#include "../CS/CBuffer/SSAOKernel.hlsli"
 #include "SSAOMap.hlsli"
 
 float main(float2 tc : TEXCOORD) : SV_TARGET
 {
 	float2 delta;
 	if (cb_vertical)
-		delta = float2(0.0f, 0.125f / cb_tileDimensions.y);
+		delta = float2(0.0f, 0.125f / cb_noiseTileDimensions.y);
 	else
-		delta = float2(0.25f / cb_tileDimensions.x, 0.0f);
+		delta = float2(0.25f / cb_noiseTileDimensions.x, 0.0f);
 
 	static const int RANGE = 3;
 	float result = 0.0f;

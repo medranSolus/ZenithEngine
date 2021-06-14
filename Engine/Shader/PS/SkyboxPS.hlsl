@@ -1,4 +1,4 @@
-#include "Utils/Samplers.hlsli"
+#include "Samplers.hlsli"
 #include "HDRGammaCB.hlsli"
 
 TextureCube box : register(t0);

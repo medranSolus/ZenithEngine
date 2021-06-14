@@ -33,7 +33,7 @@ namespace ZE::GFX::Pipeline::Resource
 		void BindCompute(Graphics& gfx) const override { BindComputeTarget(gfx); }
 		void BindTarget(Graphics& gfx) const override { GetContext(gfx)->OMSetRenderTargets(1, targetView.GetAddressOf(), nullptr); BindViewport(gfx); }
 		void BindComputeTarget(Graphics& gfx) const override { GetContext(gfx)->CSSetUnorderedAccessViews(slotUAV, 1, uav.GetAddressOf(), nullptr); }
-		void Unbind(Graphics& gfx) const override { IRenderTarget::Unbind(gfx); if (uav) GetContext(gfx)->CSSetUnorderedAccessViews(slotUAV, 1, nullUAV.GetAddressOf(), nullptr); }
+		void Unbind(Graphics& gfx) const override { IRenderTarget::Unbind(gfx); if (slotUAV != UINT_MAX) GetContext(gfx)->CSSetUnorderedAccessViews(slotUAV, 1, nullUAV.GetAddressOf(), nullptr); }
 
 #ifdef _ZE_MODE_DEBUG
 		std::string GetRID() const noexcept override;

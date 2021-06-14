@@ -7,8 +7,14 @@
 // Define your X() macro for various behavior in code.
 #define ZE_LEAF_ELEMENT_TYPES \
 	X(Bool) \
-	X(SInt) \
 	X(UInt) \
+	X(UInt2) \
+	X(UInt3) \
+	X(UInt4) \
+	X(SInt) \
+	X(SInt2) \
+	X(SInt3) \
+	X(SInt4) \
 	X(Float) \
 	X(Float2) \
 	X(Float3) \
@@ -52,6 +58,34 @@ namespace ZE::GFX::Data::CBuffer
 		static constexpr const char* CODE = "B";
 		static constexpr bool VALID = true;
 	};
+	template<> struct Map<ElementType::UInt>
+	{
+		using DataType = U32;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "U";
+		static constexpr bool VALID = true;
+	};
+	template<> struct Map<ElementType::UInt2>
+	{
+		using DataType = UInt2;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "U2";
+		static constexpr bool VALID = true;
+	};
+	template<> struct Map<ElementType::UInt3>
+	{
+		using DataType = UInt3;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "U3";
+		static constexpr bool VALID = true;
+	};
+	template<> struct Map<ElementType::UInt4>
+	{
+		using DataType = UInt4;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "U4";
+		static constexpr bool VALID = true;
+	};
 	template<> struct Map<ElementType::SInt>
 	{
 		using DataType = S32;
@@ -59,11 +93,25 @@ namespace ZE::GFX::Data::CBuffer
 		static constexpr const char* CODE = "S";
 		static constexpr bool VALID = true;
 	};
-	template<> struct Map<ElementType::UInt>
+	template<> struct Map<ElementType::SInt2>
 	{
-		using DataType = U32;
+		using DataType = SInt2;
 		static constexpr U64 GPU_SIZE = sizeof(DataType);
-		static constexpr const char* CODE = "U";
+		static constexpr const char* CODE = "S2";
+		static constexpr bool VALID = true;
+	};
+	template<> struct Map<ElementType::SInt3>
+	{
+		using DataType = SInt3;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "S3";
+		static constexpr bool VALID = true;
+	};
+	template<> struct Map<ElementType::SInt4>
+	{
+		using DataType = SInt4;
+		static constexpr U64 GPU_SIZE = sizeof(DataType);
+		static constexpr const char* CODE = "S4";
 		static constexpr bool VALID = true;
 	};
 	template<> struct Map<ElementType::Float>

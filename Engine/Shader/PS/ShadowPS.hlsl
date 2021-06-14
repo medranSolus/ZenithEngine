@@ -1,5 +1,5 @@
+#include "Samplers.hlsli"
 #include "Utils/Utils.hlsli"
-#include "Utils/Samplers.hlsli"
 #include "CBuffer/Bias.hlsli"
 #include "CBuffer/Shadow.hlsli"
 #ifdef _TEX_PAX

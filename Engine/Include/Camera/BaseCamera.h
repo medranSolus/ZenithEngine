@@ -54,6 +54,7 @@ namespace ZE::Camera
 
 		void BindVS(GFX::Graphics& gfx) override { UpdateBufferVS(gfx); positionBuffer->Bind(gfx); }
 		void BindPS(GFX::Graphics& gfx) override { UpdateBufferPS(); cameraBuffer->Bind(gfx); }
+		void BindCS(GFX::Graphics& gfx) override { UpdateBufferPS(); cameraBuffer->BindCompute(gfx); }
 
 		Matrix GetProjection() const noexcept override;
 		Matrix GetView() const noexcept override;

@@ -1,28 +1,9 @@
-// Encode normal into modified spherical coordinates
-float2 EncodeNormal(const in float3 normal)
-{
-	/*
-		phi = atan(y/x) (if x=0 then y+100)
-		theta = z
-	*/
-	if (normal.x == 0.0f)
-		return float2(normal.y + 100.0f, normal.z);
-	else
-		return float2(atan2(normal.y, normal.x), normal.z);
-}
+#include "CommonUtils.hlsli"
 
 float GetSampledSpecularPower(const in float specularPower)
 {
 	// https://gamedev.stackexchange.com/questions/74879/specular-map-what-about-the-specular-reflections-highlight-size
 	return pow(2.0f, specularPower * 13.0f);
-}
-
-// Get tangent space rotation (not normalized)
-float3x3 GetTangentToWorldUNorm(const in float3 tan, const in float3 normal)
-{
-	// Make bitangent again orthogonal to normal (Gramm-Schmidt process)
-	const float3 T = normalize(tan - dot(tan, normal) * normal);
-	return float3x3(T, cross(normal, T), normal);
 }
 
 // Get tangent space rotation (normalized)

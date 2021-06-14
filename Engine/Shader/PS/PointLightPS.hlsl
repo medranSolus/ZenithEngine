@@ -1,8 +1,9 @@
+#include "CommonUtils.hlsli"
+#include "Samplers.hlsli"
 #include "Utils/LightUtils.hlsli"
-#include "Utils/Samplers.hlsli"
 #include "CBuffer/PointLight.hlsli"
-#include "CBuffer/Camera.hlsli"
 #include "CBuffer/Bias.hlsli"
+#include "CameraCB.hlsli"
 #include "HDRGammaCB.hlsli"
 #include "GBuffer.hlsli"
 #define _LIGHT_PS

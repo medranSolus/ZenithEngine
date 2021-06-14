@@ -10,7 +10,7 @@ file(GLOB_RECURSE SRC_LIST
 if(ZE_CI_JOB)
     set(BUILD_EXCLUDE FALSE)
 else()
-    set(BUILD_EXCLUDE FALSE)
+    set(BUILD_EXCLUDE TRUE)
 endif()
 
 # Target setup

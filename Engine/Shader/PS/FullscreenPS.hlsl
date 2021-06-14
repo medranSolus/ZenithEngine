@@ -1,4 +1,4 @@
-#include "Utils/Samplers.hlsli"
+#include "Samplers.hlsli"
 
 Texture2D tex : register(t0);
 

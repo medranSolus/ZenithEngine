@@ -4,7 +4,8 @@ cbuffer SSAOKernelBuffer : register(b13)
 {
 	float3 cb_kernel[CB_KERNEL_SIZE];
 	float cb_bias;
-	float2 cb_tileDimensions;
+	uint2 cb_noiseTileDimensions;
+	uint2 cb_frameBounds;
 	float cb_sampleRadius;
 	float cb_ssaoPower;
 	uint cb_kernelSize;

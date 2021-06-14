@@ -19,12 +19,15 @@ namespace ZE::GFX::Pipeline
 		samplers.reserve(sizeof(TYPES) + 1);
 		samplers.emplace_back(gfx, GFX::Resource::Sampler::Type::Anisotropic, GFX::Resource::Sampler::CoordType::Border, slot++);
 		samplers.back().Bind(gfx);
+		samplers.back().BindCompute(gfx);
 		for (auto& type : TYPES)
 		{
 			samplers.emplace_back(gfx, type, GFX::Resource::Sampler::CoordType::Wrap, slot++);
 			samplers.back().Bind(gfx);
+			samplers.back().BindCompute(gfx);
 			samplers.emplace_back(gfx, type, GFX::Resource::Sampler::CoordType::Reflect, slot++);
 			samplers.back().Bind(gfx);
+			samplers.back().BindCompute(gfx);
 		}
 	}
 

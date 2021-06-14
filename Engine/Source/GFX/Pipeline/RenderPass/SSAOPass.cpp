@@ -14,7 +14,8 @@ namespace ZE::GFX::Pipeline::RenderPass
 			layout.Add(DCBElementType::Array, "kernel");
 			layout["kernel"].InitArray(DCBElementType::Float3, SSAO_KERNEL_SIZE);
 			layout.Add(DCBElementType::Float, "bias");
-			layout.Add(DCBElementType::Float2, "tileDimensions");
+			layout.Add(DCBElementType::UInt2, "noiseTileDimensions");
+			layout.Add(DCBElementType::UInt2, "frameBounds");
 			layout.Add(DCBElementType::Float, "sampleRadius");
 			layout.Add(DCBElementType::Float, "ssaoPower");
 			layout.Add(DCBElementType::UInt, "kernelSize");
@@ -24,17 +25,17 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	SSAOPass::SSAOPass(Graphics& gfx, std::string&& name)
-		: RenderPass(std::forward<std::string>(name)),
-		FullscreenPass(gfx, std::forward<std::string>(name))
+		: ComputePass(gfx, std::forward<std::string>(name), "AmbientOcclusionCS")
 	{
-		renderTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT);
+		computeTarget = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT, 0);
 		ssaoScratchBuffer = GfxResPtr<Resource::RenderTargetShaderInput>(gfx, 25, DXGI_FORMAT_R32_FLOAT);
 
 		kernelBuffer = GFX::Resource::ConstBufferExPixelCache::Get(gfx, "$SSAO", MakeLayout(), 13);
 		kernelBuffer->GetBuffer()["bias"] = bias;
-		kernelBuffer->GetBuffer()["tileDimensions"] = Float2(4.0f * (gfx.GetWidth() / SSAO_NOISE_SIZE), 8.0f * (gfx.GetHeight() / SSAO_NOISE_SIZE));
+		kernelBuffer->GetBuffer()["noiseTileDimensions"] = UInt2(4 * (gfx.GetWidth() / SSAO_NOISE_SIZE), 8 * (gfx.GetHeight() / SSAO_NOISE_SIZE));
 		kernelBuffer->GetBuffer()["sampleRadius"] = radius;
 		kernelBuffer->GetBuffer()["ssaoPower"] = power;
+		kernelBuffer->GetBuffer()["frameBounds"] = UInt2(gfx.GetWidth() - 1, gfx.GetHeight() - 1);
 		kernelBuffer->GetBuffer()["kernelSize"] = size;
 		std::mt19937_64 engine(std::random_device{}());
 		for (U32 i = 0; i < SSAO_KERNEL_SIZE; ++i)
@@ -48,17 +49,14 @@ namespace ZE::GFX::Pipeline::RenderPass
 			Math::XMStoreFloat3(&kernelBuffer->GetBuffer()["kernel"][i],
 				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
 		}
+		AddBind(kernelBuffer);
 
 		AddBindableSink<GFX::Resource::IBindable>("geometryBuffer");
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
 
-		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("ssaoBuffer", renderTarget));
+		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("ssaoBuffer", computeTarget));
 		RegisterSource(Base::SourceDirectBuffer<Resource::IRenderTarget>::Make("ssaoScratch", ssaoScratchBuffer));
 		RegisterSource(Base::SourceDirectBindable<GFX::Resource::ConstBufferExPixelCache>::Make("ssaoKernel", kernelBuffer));
-
-		AddBind(kernelBuffer);
-		AddBind(GFX::Resource::PixelShader::Get(gfx, "AmbientOcclusionPS"));
-		AddBind(GFX::Resource::Blender::Get(gfx, GFX::Resource::Blender::Type::None));
 
 		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, DXGI_FORMAT_R32G32_FLOAT);
 		float* buffer = reinterpret_cast<float*>(ssaoNoise.GetBuffer());
@@ -70,8 +68,8 @@ namespace ZE::GFX::Pipeline::RenderPass
 	void SSAOPass::Execute(Graphics& gfx)
 	{
 		assert(mainCamera);
-		mainCamera->BindPS(gfx);
-		FullscreenPass::Execute(gfx);
+		mainCamera->BindCS(gfx);
+		ComputeFrame(gfx, 32, 32);
 	}
 
 	void SSAOPass::ShowWindow(Graphics& gfx)

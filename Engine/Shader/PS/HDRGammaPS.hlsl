@@ -1,4 +1,4 @@
-#include "Utils/Samplers.hlsli"
+#include "Samplers.hlsli"
 #include "HDRGammaCB.hlsli"
 
 Texture2D frame : register(t0);
