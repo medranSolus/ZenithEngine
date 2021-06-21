@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/RenderPass/Base/ComputePass.h"
 #include "GFX/Resource/ConstBufferExCache.h"
+#include "GFX/Resource/Shader.h"
 #include "Camera/ICamera.h"
 
 namespace ZE::GFX::Pipeline::RenderPass
@@ -17,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 		Camera::ICamera* mainCamera = nullptr;
 		GfxResPtr<GFX::Resource::ConstBufferExPixelCache> kernelBuffer;
+		GfxResPtr<GFX::Resource::ComputeShader> blurShader;
 
 		static Data::CBuffer::DCBLayout MakeLayout() noexcept;
 

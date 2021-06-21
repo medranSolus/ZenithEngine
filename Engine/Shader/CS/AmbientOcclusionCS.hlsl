@@ -22,11 +22,8 @@ float GetLinearDepth(const in float depth, uniform float nearClip, uniform float
 RWTexture2D<float> ssaoMap : register(u0);
 Texture2D<float2> noiseMap : register(t24); // RG - random vector
 
-static const uint2 THREAD_COUNT = uint2(32, 32);
-groupshared float groupSsao[THREAD_COUNT.x][THREAD_COUNT.y];
-
-[numthreads(THREAD_COUNT.x, THREAD_COUNT.y, 1)]
-void main(uint3 dispatchId : SV_DispatchThreadID, uint3 threadId : SV_GroupThreadID)
+[numthreads(32, 32, 1)]
+void main(uint3 dispatchId : SV_DispatchThreadID)
 {
 	const float2 sphericNormal = tx_normal[dispatchId.xy];
 	float ssaoVal;
@@ -56,43 +53,6 @@ void main(uint3 dispatchId : SV_DispatchThreadID, uint3 threadId : SV_GroupThrea
 			}
 		}
 		ssaoVal = pow(1.0f - occlusion, cb_ssaoPower);
-	}
-	groupSsao[threadId.x][threadId.y] = ssaoVal;
-	ssaoMap[dispatchId.xy] = ssaoVal;
-	AllMemoryBarrierWithGroupSync();
-
-	static const int BEGIN = -3;
-	static const uint LAST = 3;
-	int s = BEGIN;
-	uint u = 1;
-	uint count = 0;
-
-	// Vertical blur
-	[unroll]
-	for (; s < 0; ++s)
-		ssaoVal += (groupSsao[threadId.x][abs((int)threadId.y + s)] - ssaoVal) / ++count;
-	[unroll]
-	for (; u <= LAST; ++u)
-	{
-		uint offset = threadId.y + u;
-		if (offset >= THREAD_COUNT.y)
-			offset = threadId.y - u;
-		ssaoVal += (groupSsao[threadId.x][offset] - ssaoVal) / ++count;
-	}
-	groupSsao[threadId.x][threadId.y] = ssaoVal;
-	AllMemoryBarrierWithGroupSync();
-
-	// Horizontal blur
-	[unroll]
-	for (s = BEGIN; s < 0; ++s)
-		ssaoVal += (groupSsao[abs((int)threadId.x + s)][threadId.y] - ssaoVal) / ++count;
-	[unroll]
-	for (u = 1; u <= LAST; ++u)
-	{
-		uint offset = threadId.x + u;
-		if (offset > THREAD_COUNT.x)
-			offset = threadId.x - u;
-		ssaoVal += (groupSsao[offset][threadId.y] - ssaoVal) / ++count;
 	}
 	ssaoMap[dispatchId.xy] = ssaoVal;
 }

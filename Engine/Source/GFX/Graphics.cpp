@@ -46,8 +46,7 @@ namespace ZE::GFX
 #endif
 		D3D_FEATURE_LEVEL features[]
 		{
-			D3D_FEATURE_LEVEL_11_1,
-			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_11_1
 		};
 		ZE_GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
 			createFlags, nullptr, 0, D3D11_SDK_VERSION, &swapDesc, &swapChain, &device, features, &context));
