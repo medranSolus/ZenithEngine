@@ -14,7 +14,6 @@
 #include "ShadowMapPass.h"
 #include "SkyboxPass.h"
 #include "SpotLightingPass.h"
-#include "SSAOBlurPass.h"
 #include "SSAOPass.h"
 #include "VerticalBlurPass.h"
 #include "WireframePass.h"
