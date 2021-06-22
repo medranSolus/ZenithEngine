@@ -6,14 +6,18 @@ Project is based upon **Ninja** generator and requires its binary to be accessib
 `%VS`**<VERSION>**`INSTALLDIR%\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja`, where <VERSION> corresponds to installed Visual Studio, ex. for VS 2019 simply use **2019** in its place.
 Also make sure that CMake can access compiler of your choice, to use 'cl.exe' from Visual Studio just use **x64 Native Tools Command Prompt**.
 
-Project contains following configurations needed by provided script (case insensitive):
+Script by default bulds the project, but supports also following commands:
+  - `help` - displaying tool syntax,
+  - `init` - initializing external submodules,
+  - `up` - updating external submodules,
+  - `gen` - generation of CMake build system,
+  - `run` - running builded technological demo.
+
+Project contains following configurations needed by `gen`, `run` and default command (case insensitive):
   - **Debug** - pass `D` or `Debug`,
   - **Release with debug info** - pass `Ri` or `ReleaseInfo`,
-  - **Release** - pass `R` or `Release`.
-
-Script by default bulds the project, but supports also following commands:
-  - `gen` - generation of CMake build system,
-  - `run` - running builded application.
+  - **Release** - pass `R` or `Release`,
+  - **CI tools** - pass `CI` to configure only for CI jobs, same as **Release** but without engine data.
 
 Tool syntax:
-`build.ps1 <CONFIGURATION> <COMMAND>`
+`build.ps1 <COMMAND> <CONFIGURATION>`

@@ -10,7 +10,7 @@ function Display-Info
     Write-Output "            up - update submodules (MODE not required)"
     Write-Output "            gen - generate build system"
     Write-Output "            run - run tech demo>"
-    Write-Output "        <MODE: R|Release; Ri|ReleaseInfo; D|Debug; CI|Static analysis setup>`n"
+    Write-Output "        <MODE: R|Release; Ri|ReleaseInfo; D|Debug; CI (Static analysis setup)>`n"
 }
 
 Switch ($command)

@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Marek Machliñski - All Rights Reserved.
  * 
  * This file is part of Zenith Engine project which is released under dual-license.
- * For more license details see file README.md or go to https://github.com/medranSolus/ZenithEngine.
+ * For more license details see file README.md and directory Doc/License or go to https://github.com/medranSolus/ZenithEngine.
  * 
  * Every class used in engine belongs to ZE namespace.
  */

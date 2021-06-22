@@ -14,3 +14,12 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
   - [DirectXMath](https://github.com/microsoft/DirectXMath)
   - [DirectXTex](https://github.com/microsoft/DirectXTex)
   - [Assimp](https://github.com/assimp/assimp)
+
+## License
+
+Zenith Engine project is divided into 4 distinct parts, each with license on it's own.
+Details about each subproject's license can be found in [Doc/License](Doc/License) directory:
+  - `Engine` - [Engine.md](Doc/License/Engine.md), main engine static library.
+  - `Demo` - [Demo.md](Doc/License/Demo.md), technological demo.
+  - `EditTool` - [EditTool.md](Doc/License/EditTool.md), CLI utility tool.
+  - `Common` - unlicensed, usage outside of projects stated above is prohibited.
