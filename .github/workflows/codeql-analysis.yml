@@ -5,19 +5,11 @@ on:
     branches: [ master, dev ]
     paths-ignore:
       - '**/*.md'
-      - '**/*.txt'
-      - '**/*.json'
-      - 'External/*'
-      - '**/Data/*'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master, dev ]
     paths-ignore:
       - '**/*.md'
-      - '**/*.txt'
-      - '**/*.json'
-      - 'External/*'
-      - '**/Data/*'
   schedule:
     - cron: '42 0 * * 1'
 
@@ -58,7 +50,7 @@ jobs:
         uses: github/codeql-action/init@v1
         with:
           languages: ${{ matrix.language }}
-          config-file: codeql-config.yml
+          config-file: ./.github/codeql/config.yml
       - name: Build project
         run: |
          .\build.ps1 init
