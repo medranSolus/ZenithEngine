@@ -1,6 +1,6 @@
-#include "Exception/DirectXTexException.h"
+#include "Platform/WinAPI/DirectXTexException.h"
 
-namespace ZE::Exception
+namespace ZE::WinAPI
 {
 	const char* DirectXTexException::what() const noexcept
 	{

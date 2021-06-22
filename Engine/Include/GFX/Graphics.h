@@ -1,5 +1,4 @@
 #pragma once
-#include "Exception/WinApiException.h"
 #include "Pipeline/Resource/RenderTarget.h"
 #include "DXGIDebugInfoManager.h"
 #include "GUI/GUIManager.h"

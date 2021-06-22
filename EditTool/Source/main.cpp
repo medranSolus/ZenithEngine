@@ -1,5 +1,5 @@
 #include "ScriptProcess.h"
-#include "Exception/WinApiException.h"
+#include "Platform/WinAPI/WinApiException.h"
 #include <combaseapi.h>
 
 int main(int argc, char* argv[])

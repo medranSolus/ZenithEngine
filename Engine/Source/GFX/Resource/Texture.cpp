@@ -17,7 +17,7 @@ namespace ZE::GFX::Resource
 		D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 		textureDesc.Width = static_cast<UINT>(surface.GetWidth());
 		textureDesc.Height = static_cast<UINT>(surface.GetHeight());
-		textureDesc.Format = surface.GetFormat();
+		textureDesc.Format = API::GetDXFormat(surface.GetFormat());
 		textureDesc.MipLevels = 0;
 		textureDesc.ArraySize = 1;
 		textureDesc.SampleDesc.Count = 1;

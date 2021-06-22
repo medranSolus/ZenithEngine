@@ -4,11 +4,20 @@
 #include <deque>
 #include <optional>
 
-namespace ZE::WinAPI
+namespace ZE::Window
 {
+#if _ZE_PLATFORM == _ZE_PLATFORM_WINDOWS
+	namespace WinAPI
+	{
+		class WindowWinAPI;
+	}
+#else
+#error Missing platform specyfic window forward declaration for Keyboard!
+#endif
+
 	class Keyboard final
 	{
-		friend class Window;
+		friend class WinAPI::WindowWinAPI;
 
 	public:
 		class Event final
@@ -53,7 +62,9 @@ namespace ZE::WinAPI
 
 	public:
 		Keyboard() = default;
+		Keyboard(Keyboard&&) = delete;
 		Keyboard(const Keyboard&) = delete;
+		Keyboard& operator=(Keyboard&&) = delete;
 		Keyboard& operator=(const Keyboard&) = delete;
 		~Keyboard() = default;
 

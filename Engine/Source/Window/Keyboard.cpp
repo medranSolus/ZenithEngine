@@ -1,6 +1,6 @@
-#include "WinAPI/Keyboard.h"
+#include "Window/Keyboard.h"
 
-namespace ZE::WinAPI
+namespace ZE::Window
 {
 	template<typename T>
 	void Keyboard::TrimBuffer(std::deque<T>& buffer) noexcept

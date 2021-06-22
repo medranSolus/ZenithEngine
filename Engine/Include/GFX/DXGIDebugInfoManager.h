@@ -1,5 +1,5 @@
 #pragma once
-#include "WinAPI/WinAPI.h"
+#include "Platform/WinAPI/WinAPI.h"
 #include "Types.h"
 #pragma warning(disable:4265)
 #include <wrl.h>

@@ -1,5 +1,5 @@
 #include "GFX/DXGIDebugInfoManager.h"
-#include "Exception/WinApiException.h"
+#include "Platform/WinAPI/WinApiException.h"
 #include "Exception/GfxExceptionMacros.h"
 #include <combaseapi.h>
 

@@ -3,7 +3,7 @@
 
 namespace ZE::Camera
 {
-	void CameraPool::ProcessInput(WinAPI::Window& window) noexcept
+	void CameraPool::ProcessInput(Window::MainWindow& window) noexcept
 	{
 		auto& camera = GetCamera();
 		while (window.Mouse().IsInput())
@@ -16,19 +16,19 @@ namespace ZE::Camera
 						rotateSpeed * static_cast<float>(value.GetDX()) / window.Gfx().GetWidth());
 				switch (value.GetType())
 				{
-				case WinAPI::Mouse::Event::Type::WheelForward:
+				case Window::Mouse::Event::Type::WheelForward:
 				{
 					if (!window.IsCursorEnabled() && moveSpeed <= MAX_MOVE_SPEED - 0.01f - FLT_EPSILON)
 						moveSpeed += 0.01f;
 					break;
 				}
-				case WinAPI::Mouse::Event::Type::WheelBackward:
+				case Window::Mouse::Event::Type::WheelBackward:
 				{
 					if (!window.IsCursorEnabled() && moveSpeed >= 0.012f + FLT_EPSILON)
 						moveSpeed -= 0.01f;
 					break;
 				}
-				case WinAPI::Mouse::Event::Type::RawMove:
+				case Window::Mouse::Event::Type::RawMove:
 				{
 					if (!window.IsCursorEnabled())
 						camera.Rotate(rotateSpeed * static_cast<float>(value.GetDY()) / window.Gfx().GetHeight(),

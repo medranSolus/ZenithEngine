@@ -21,16 +21,16 @@ namespace ZE
 		~ColorF4() = default;
 
 		constexpr operator Float4() const noexcept { return RGBA; }
-		bool operator==(const ColorF4& c) const { return Math::XMVector4Equal(Math::XMLoadFloat4(&c.RGBA), Math::XMLoadFloat4(&RGBA)); }
-		bool operator!=(const ColorF4& c) const { return Math::XMVector4NotEqual(Math::XMLoadFloat4(&c.RGBA), Math::XMLoadFloat4(&RGBA)); }
+		bool operator==(const ColorF4& c) const noexcept { return Math::XMVector4Equal(Math::XMLoadFloat4(&c.RGBA), Math::XMLoadFloat4(&RGBA)); }
+		bool operator!=(const ColorF4& c) const noexcept { return Math::XMVector4NotEqual(Math::XMLoadFloat4(&c.RGBA), Math::XMLoadFloat4(&RGBA)); }
 		ColorF4 operator-() const { return *this * -1.0f; }
 
 		ColorF4& operator-=(const ColorF4& c) noexcept { return *this = *this - c; }
 		ColorF4& operator+=(const ColorF4& c) noexcept { return *this = *this + c; }
 		ColorF4& operator*=(float x) noexcept { return *this = *this * x; }
 
-		ColorF4 operator-(const ColorF4& c) const;
-		ColorF4 operator+(const ColorF4& c) const;
-		ColorF4 operator*(float x) const;
+		ColorF4 operator-(const ColorF4& c) const noexcept;
+		ColorF4 operator+(const ColorF4& c) const noexcept;
+		ColorF4 operator*(float x) const noexcept;
 	};
 }

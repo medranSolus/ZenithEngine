@@ -1,31 +1,22 @@
 #pragma once
-#include "Exception/WinApiException.h"
 #include "Pixel.h"
+#include "API.h"
 #include <functional>
 #include <utility>
 #include <vector>
-
-// To be changed into multiplatform library
-#define XMVECTOR Vector
-#include "DirectXTex.h"
-#undef XMVECTOR
-namespace ZE::Tex
-{
-	using namespace DirectX;
-}
 
 namespace ZE::GFX
 {
 	class Surface final
 	{
-		static constexpr DXGI_FORMAT PIXEL_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
+		static constexpr PixelFormat PIXEL_FORMAT = PixelFormat::R8G8B8A8_UNorm;
 
 		Tex::ScratchImage scratch;
 		const Tex::Image* image;
 
 	public:
 		Surface(const std::string& name);
-		Surface(U64 width, U64 height, DXGI_FORMAT format = PIXEL_FORMAT);
+		Surface(U64 width, U64 height, PixelFormat format = PIXEL_FORMAT);
 		Surface(Surface&&) = default;
 		Surface(const Surface&) = delete;
 		Surface& operator=(Surface&&) = default;
@@ -34,7 +25,7 @@ namespace ZE::GFX
 
 		static bool IsImage(const std::string& ext) noexcept;
 
-		constexpr DXGI_FORMAT GetFormat() const noexcept { return image->format; }
+		constexpr PixelFormat GetFormat() const noexcept { return API::GetFormatFromDX(image->format); }
 		constexpr U64 GetWidth() const noexcept { return image->width; }
 		constexpr U64 GetHeight() const noexcept { return image->height; }
 		constexpr U64 GetRowByteSize() const noexcept { return image->rowPitch; }

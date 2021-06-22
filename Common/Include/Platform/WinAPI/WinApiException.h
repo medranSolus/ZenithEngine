@@ -1,10 +1,10 @@
 #pragma once
-#include "BasicException.h"
-#include "WinAPI/WinAPI.h"
+#include "Exception/BasicException.h"
+#include "WinAPI.h"
 
-namespace ZE::Exception
+namespace ZE::WinAPI
 {
-	class WinApiException : public virtual BasicException
+	class WinApiException : public virtual Exception::BasicException
 	{
 		HRESULT result;
 
@@ -27,7 +27,7 @@ namespace ZE::Exception
 	};
 }
 
-#define	ZE_WIN_EXCEPT(code) ZE::Exception::WinApiException(__LINE__, __FILE__, code)
+#define	ZE_WIN_EXCEPT(code) ZE::WinAPI::WinApiException(__LINE__, __FILE__, code)
 #define	ZE_WIN_EXCEPT_LAST() ZE_WIN_EXCEPT(GetLastError())
 
 // Enables useage of WND_THROW_FAILED macro in current scope

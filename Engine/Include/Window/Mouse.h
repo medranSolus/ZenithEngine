@@ -3,11 +3,20 @@
 #include <deque>
 #include <optional>
 
-namespace ZE::WinAPI
+namespace ZE::Window
 {
+#if _ZE_PLATFORM == _ZE_PLATFORM_WINDOWS
+	namespace WinAPI
+	{
+		class WindowWinAPI;
+	}
+#else
+#error Missing platform specyfic window forward declaration for Mouse!
+#endif
+
 	class Mouse final
 	{
-		friend class Window;
+		friend class WinAPI::WindowWinAPI;
 
 	public:
 		class Event final
@@ -58,6 +67,8 @@ namespace ZE::WinAPI
 
 	private:
 		static constexpr size_t BUFFER_SIZE = 256;
+		// Rotation for high precision mouse wheels https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
+		static constexpr S32 WHEEL_TRESHOLD = 120;
 
 		S32 x = 0;
 		S32 y = 0;
@@ -85,7 +96,9 @@ namespace ZE::WinAPI
 
 	public:
 		Mouse() = default;
+		Mouse(Mouse&&) = delete;
 		Mouse(const Mouse&) = delete;
+		Mouse& operator=(Mouse&&) = delete;
 		Mouse& operator=(const Mouse&) = delete;
 		~Mouse() = default;
 

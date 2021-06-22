@@ -1,12 +1,12 @@
-#include "WinAPI/Window.h"
-#include "Exception/WinApiException.h"
+#include "Window/Platform/WindowWinAPI.h"
+#include "Platform/WinAPI/WinApiException.h"
 #include "imgui_impl_win32.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace ZE::WinAPI
+namespace ZE::Window::WinAPI
 {
-	Window::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
+	WindowWinAPI::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
 	{
 		WNDCLASSEX wndClass = { 0 };
 		wndClass.cbClsExtra = 0;
@@ -24,29 +24,29 @@ namespace ZE::WinAPI
 		RegisterClassEx(&wndClass);
 	}
 
-	LRESULT WINAPI Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	LRESULT WINAPI WindowWinAPI::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		// Reroute WNDPROC to normal function and save pointer to Window object on WinAPI side to retrieve
 		if (msg == WM_NCCREATE)
 		{
 			const CREATESTRUCTW* const create = reinterpret_cast<CREATESTRUCTW*>(lParam);
 			// Passed to CreateWindowEX
-			Window* const wnd = static_cast<Window*>(create->lpCreateParams);
+			WindowWinAPI* const wnd = static_cast<WindowWinAPI*>(create->lpCreateParams);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
-			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgStub));
+			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&WindowWinAPI::HandleMsgStub));
 			return wnd->HandleMsg(hWnd, msg, wParam, lParam);
 		}
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
-	LRESULT WINAPI Window::HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	LRESULT WINAPI WindowWinAPI::HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		// Get saved Window object
-		Window* wnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		WindowWinAPI* wnd = reinterpret_cast<WindowWinAPI*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 		return wnd->HandleMsg(hWnd, msg, wParam, lParam);
 	}
 
-	LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	LRESULT WindowWinAPI::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
 			return true;
@@ -234,7 +234,7 @@ namespace ZE::WinAPI
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
-	void Window::TrapCursor() noexcept
+	void WindowWinAPI::TrapCursor() noexcept
 	{
 		RECT rect;
 		GetClientRect(hWnd, &rect);
@@ -242,7 +242,8 @@ namespace ZE::WinAPI
 		ClipCursor(&rect);
 	}
 
-	Window::Window(const char* name, U32 width, U32 height)
+	WindowWinAPI::WindowWinAPI(const char* name, U32 width, U32 height)
+		: BaseWindow(name, width, height)
 	{
 		constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		constexpr DWORD WIN_STYLE_EX = 0;
@@ -307,13 +308,13 @@ namespace ZE::WinAPI
 			throw ZE_WIN_EXCEPT_LAST();
 	}
 
-	Window::~Window()
+	WindowWinAPI::~WindowWinAPI()
 	{
 		ImGui_ImplWin32_Shutdown();
 		DestroyWindow(hWnd);
 	}
 
-	std::pair<bool, int> Window::ProcessMessage() noexcept
+	std::pair<bool, int> WindowWinAPI::ProcessMessage() noexcept
 	{
 		MSG msg;
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -326,31 +327,9 @@ namespace ZE::WinAPI
 		return { false, 0 };
 	}
 
-	void Window::SetTitle(const std::string& title)
+	void WindowWinAPI::SetTitle(const std::string& title)
 	{
 		if (SetWindowText(hWnd, title.c_str()) == 0)
 			throw ZE_WIN_EXCEPT_LAST();
-	}
-
-	void Window::EnableCursor() noexcept
-	{
-		if (!cursorEnabled)
-		{
-			cursorEnabled = true;
-			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-			ShowCursor();
-			FreeCursor();
-		}
-	}
-
-	void Window::DisableCursor() noexcept
-	{
-		if (cursorEnabled)
-		{
-			cursorEnabled = false;
-			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
-			HideCursor();
-			TrapCursor();
-		}
 	}
 }

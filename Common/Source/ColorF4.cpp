@@ -2,7 +2,7 @@
 
 namespace ZE
 {
-	ColorF4 ColorF4::operator-(const ColorF4& c) const
+	ColorF4 ColorF4::operator-(const ColorF4& c) const noexcept
 	{
 		ColorF4 nc;
 		Math::XMStoreFloat4(&nc.RGBA,
@@ -10,7 +10,7 @@ namespace ZE
 		return nc;
 	}
 
-	ColorF4 ColorF4::operator+(const ColorF4& c) const
+	ColorF4 ColorF4::operator+(const ColorF4& c) const noexcept
 	{
 		ColorF4 nc;
 		Math::XMStoreFloat4(&nc.RGBA,
@@ -18,7 +18,7 @@ namespace ZE
 		return nc;
 	}
 
-	ColorF4 ColorF4::operator*(float x) const
+	ColorF4 ColorF4::operator*(float x) const noexcept
 	{
 		ColorF4 nc(x, x, x, x);
 		Math::XMStoreFloat4(&nc.RGBA,

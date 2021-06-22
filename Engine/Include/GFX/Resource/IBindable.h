@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Probe/IProbeable.h"
 #include "Exception/RenderGraphCompileException.h"
-#include "WinAPI/WinAPI.h"
+#include "Platform/WinAPI/WinAPI.h"
 #pragma warning(disable:4265)
 #include <wrl.h>
 #pragma warning(default:4265)

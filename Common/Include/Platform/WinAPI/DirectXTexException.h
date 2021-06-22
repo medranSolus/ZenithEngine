@@ -1,10 +1,10 @@
 #pragma once
-#include "ImageException.h"
+#include "Exception/ImageException.h"
 #include "WinApiException.h"
 
-namespace ZE::Exception
+namespace ZE::WinAPI
 {
-	class DirectXTexException : public ImageException, public WinApiException
+	class DirectXTexException : public Exception::ImageException, public WinApiException
 	{
 	public:
 		DirectXTexException(U32 line, const char* file, HRESULT hResult, std::string&& note) noexcept
@@ -25,6 +25,6 @@ namespace ZE::Exception
 // Enables useage of DXT_ macros in current scope
 #define ZE_DXT_ENABLE_EXCEPT() HRESULT __hResult
 // Before using needs call to DXT_ENABLE_EXCEPT()
-#define ZE_DXT_EXCEPT(info) ZE::Exception::DirectXTexException(__LINE__, __FILE__, __hResult, info)
+#define ZE_DXT_EXCEPT(info) ZE::WinAPI::DirectXTexException(__LINE__, __FILE__, __hResult, info)
 // Before using needs call to DXT_ENABLE_EXCEPT()
 #define	ZE_DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw ZE_DXT_EXCEPT(info)

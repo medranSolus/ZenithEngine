@@ -1,6 +1,6 @@
 #pragma once
 #include "ICamera.h"
-#include "WinAPI/Window.h"
+#include "Window/MainWindow.h"
 #include "GFX/Pipeline/RenderGraph.h"
 #include <unordered_map>
 
@@ -31,7 +31,7 @@ namespace ZE::Camera
 		void SetOutline() noexcept { cameras.at(active)->SetOutline(); }
 		void DisableOutline() noexcept { cameras.at(active)->DisableOutline(); }
 
-		void ProcessInput(WinAPI::Window& window) noexcept;
+		void ProcessInput(Window::MainWindow& window) noexcept;
 		bool AddCamera(std::unique_ptr<ICamera>&& camera) noexcept;
 		bool DeleteCamera(const std::string& name) noexcept;
 		bool Accept(GFX::Graphics& gfx, GFX::Pipeline::RenderGraph& graph, GFX::Probe::BaseProbe& probe) noexcept;

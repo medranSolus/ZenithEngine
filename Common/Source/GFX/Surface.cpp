@@ -1,25 +1,25 @@
 #include "GFX/Surface.h"
-#include "Exception/DirectXTexException.h"
+#include "Platform/WinAPI/DirectXTexException.h"
 
 namespace ZE::GFX
 {
 	Surface::Surface(const std::string& name)
 	{
+		constexpr DXGI_FORMAT API_PIXEL_FORMAT = API::GetDXFormat(PIXEL_FORMAT);
 		ZE_DXT_ENABLE_EXCEPT();
 		const std::filesystem::path path(name);
 		std::string ext = path.extension().string();
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return std::tolower(c); });
-
 		if (ext == ".dds")
 		{
 			ZE_DXT_THROW_FAILED(Tex::LoadFromDDSFile(Utils::ToUtf8(name).c_str(), Tex::DDS_FLAGS::DDS_FLAGS_FORCE_RGB, nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 
-			if (image->format != PIXEL_FORMAT)
+			if (image->format != API_PIXEL_FORMAT)
 			{
 				Tex::ScratchImage decompressed;
-				ZE_DXT_THROW_FAILED(Tex::Decompress(*image, PIXEL_FORMAT, decompressed),
+				ZE_DXT_THROW_FAILED(Tex::Decompress(*image, API_PIXEL_FORMAT, decompressed),
 					"Decompressing image \"" + name + "\": failed.");
 				scratch = std::move(decompressed);
 				image = scratch.GetImage(0, 0, 0);
@@ -46,10 +46,10 @@ namespace ZE::GFX
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 
-			if (image->format != PIXEL_FORMAT)
+			if (image->format != API_PIXEL_FORMAT)
 			{
 				Tex::ScratchImage converted;
-				ZE_DXT_THROW_FAILED(Tex::Convert(*image, PIXEL_FORMAT,
+				ZE_DXT_THROW_FAILED(Tex::Convert(*image, API_PIXEL_FORMAT,
 					Tex::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, Tex::TEX_THRESHOLD_DEFAULT, converted),
 					"Converting image \"" + name + "\": failed.");
 				scratch = std::move(converted);
@@ -58,10 +58,10 @@ namespace ZE::GFX
 		}
 	}
 
-	Surface::Surface(U64 width, U64 height, DXGI_FORMAT format)
+	Surface::Surface(U64 width, U64 height, PixelFormat format)
 	{
 		ZE_DXT_ENABLE_EXCEPT();
-		ZE_DXT_THROW_FAILED(scratch.Initialize2D(format, width, height, 1U, 1U),
+		ZE_DXT_THROW_FAILED(scratch.Initialize2D(API::GetDXFormat(format), width, height, 1U, 1U),
 			"Creating image " + std::to_string(width) + "x" + std::to_string(height) + ": failed.");
 		image = scratch.GetImage(0, 0, 0);
 	}

@@ -1,7 +1,6 @@
-#include "WinAPI/Mouse.h"
-#include "WinAPI/WinAPI.h"
+#include "Window/Mouse.h"
 
-namespace ZE::WinAPI
+namespace ZE::Window
 {
 	void Mouse::TrimBuffer() noexcept
 	{
@@ -81,16 +80,15 @@ namespace ZE::WinAPI
 
 	void Mouse::OnWheelRotation(S32 rotation) noexcept
 	{
-		// Rotation for high precision mouse wheels https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
 		wheelRotation += rotation;
-		while (wheelRotation >= WHEEL_DELTA)
+		while (wheelRotation >= WHEEL_TRESHOLD)
 		{
-			wheelRotation -= WHEEL_DELTA;
+			wheelRotation -= WHEEL_TRESHOLD;
 			OnWheelForward();
 		}
-		while (wheelRotation <= -WHEEL_DELTA)
+		while (wheelRotation <= -WHEEL_TRESHOLD)
 		{
-			wheelRotation += WHEEL_DELTA;
+			wheelRotation += WHEEL_TRESHOLD;
 			OnWheelBackward();
 		}
 	}

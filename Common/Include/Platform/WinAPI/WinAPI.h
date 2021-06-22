@@ -66,7 +66,9 @@
 // All KERNEL defines and routines
 #define NOKERNEL
 // Min/Max macros
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 
 // Used for display manipulation:
 //

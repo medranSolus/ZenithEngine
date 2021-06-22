@@ -9,7 +9,7 @@ class App final
 
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.2";
 
-	WinAPI::Window window;
+	Window::MainWindow window;
 	GFX::Pipeline::MainPipelineGraph renderer;
 	Camera::CameraPool cameras;
 	bool run = true;

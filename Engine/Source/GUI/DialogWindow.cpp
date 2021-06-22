@@ -1,5 +1,5 @@
 #include "GUI/DialogWindow.h"
-#include "WinAPI/WinApi.h"
+#include "Platform/WinAPI/WinApi.h"
 #include "GFX/Surface.h"
 #include "imgui.h"
 #include "imgui_stdlib.h"

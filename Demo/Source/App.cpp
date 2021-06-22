@@ -436,7 +436,7 @@ int App::Run()
 	std::pair<bool, int> status;
 	while (run)
 	{
-		status = WinAPI::Window::ProcessMessage();
+		status = window.ProcessMessage();
 		if (status.first)
 			return status.second;
 		ProcessInput();

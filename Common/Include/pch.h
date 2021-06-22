@@ -33,14 +33,11 @@
 #include "ColorF3.h"
 
 /*
-***** Types.h (defined by MathExt.h)
-***** exception
-***** string
-*** Exception/BasicException.h
-*** WinAPI/WinAPI.h
-* Exception/WinApiException.h
 *** Types.h (defined by MathExt.h)
 * Pixel.h
+***** Types.h (defined by MathExt.h)
+*** PixelFormat.h
+* API.h
 * functional
 * utility
 * vector
@@ -49,11 +46,12 @@
 #include "GFX/Surface.h"
 
 /*
-*** Exception/BasicException.h (defined by GFX/Surface.h)
-* Exception/ImageException.h
-* Exception/WinApiException.h (defined by GFX/Surface.h)
+*** Types.h (defined by MathExt.h)
+*** exception
+*** string
+* Exception/BasicException.h
 */
-#include "Exception/DirectXTexException.h"
+#include "Exception/ImageException.h"
 
 /*
 * string

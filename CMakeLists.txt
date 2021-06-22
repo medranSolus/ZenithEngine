@@ -105,6 +105,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(${EXTERNAL_BIN_DIR})
 
+# Platform specific flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS=0 -D_ZE_PLATFORM_LINUX=1")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM=_ZE_PLATFORM_WINDOWS -DNOMINMAX")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM=_ZE_PLATFORM_LINUX")
+else()
+	message(FATAL_ERROR "Building for unsupported platform!")
+endif()
+
 # Compiler specific flags (remove 4250 later when ECS system created)
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang

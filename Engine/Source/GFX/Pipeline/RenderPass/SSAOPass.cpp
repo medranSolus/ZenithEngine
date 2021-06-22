@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		AddBindableSink<Resource::DepthStencilShaderInput>("depth");
 		RegisterSource(Base::SourceDirectBindable<Resource::IRenderTarget>::Make("ssaoBuffer", computeTarget));
 
-		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, DXGI_FORMAT_R32G32_FLOAT);
+		Surface ssaoNoise(SSAO_NOISE_SIZE / 4, SSAO_NOISE_SIZE / 8, PixelFormat::R32G32_Float);
 		float* buffer = reinterpret_cast<float*>(ssaoNoise.GetBuffer());
 		for (U32 i = 0; i < SSAO_NOISE_SIZE * 2; ++i)
 			buffer[i] = Math::RandNDC(engine);

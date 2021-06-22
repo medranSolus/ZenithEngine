@@ -66,11 +66,11 @@
 /*
 * Window management classes
 * 
-* Window	- Main window
-* Mouse		- Accessing mouse events
-* Keyboard	- Accessing keyboard events
+* MainWindow	- Main window
+* Mouse			- Accessing mouse events
+* Keyboard		- Accessing keyboard events
 */
-#include "WinAPI/Window.h"
+#include "Window/MainWindow.h"
 
 // Displaying ImGui dialog windows
 #include "GUI/DialogWindow.h"

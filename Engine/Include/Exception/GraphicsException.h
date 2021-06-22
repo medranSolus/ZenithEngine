@@ -1,11 +1,11 @@
 #pragma once
-#include "Exception/WinApiException.h"
+#include "Platform/WinAPI/WinApiException.h"
 #include "GfxDebugException.h"
 
 namespace ZE::Exception
 {
 #ifdef _ZE_MODE_DEBUG
-	class GraphicsException : public WinApiException, public GfxDebugException
+	class GraphicsException : public WinAPI::WinApiException, public GfxDebugException
 	{
 	public:
 		GraphicsException(U32 line, const char* file, HRESULT hResult,
@@ -13,7 +13,7 @@ namespace ZE::Exception
 			: BasicException(line, file), WinApiException(line, file, hResult),
 			GfxDebugException(line, file, std::forward<std::vector<std::string>>(info)) {}
 #else
-	class GraphicsException : public WinApiException
+	class GraphicsException : public WinAPI::WinApiException
 	{
 	public:
 		GraphicsException(U32 line, const char* file, HRESULT hResult) noexcept
