@@ -1,7 +1,8 @@
 #pragma once
 #include "Keyboard.h"
 #include "Mouse.h"
-#include "GFX/Graphics.h"
+#include "imgui.h"
+#include <bitset>
 
 namespace ZE::Window
 {
@@ -10,33 +11,40 @@ namespace ZE::Window
 	protected:
 		Keyboard keyboard;
 		Mouse mouse;
-		GFX::Graphics graphics;
-		bool cursorEnabled = true;
+		// 0: cursor, 1: fullscreen
+		std::bitset<2> flags;
 
-		virtual void ShowCursor() noexcept = 0;
-		virtual void HideCursor() noexcept = 0;
-		virtual void FreeCursor() noexcept = 0;
-		virtual void TrapCursor() noexcept = 0;
+		virtual void ShowCursor() const noexcept = 0;
+		virtual void HideCursor() const noexcept = 0;
+		virtual void FreeCursor() const noexcept = 0;
+		virtual void TrapCursor() const noexcept = 0;
+		virtual void EnterFullscreen() noexcept = 0;
+		virtual void LeaveFullscreen() noexcept = 0;
 
 	public:
-		BaseWindow(const char* name, U32 width = 0, U32 height = 0) noexcept {}
+		BaseWindow(const char* name, U32 width = 0, U32 height = 0) noexcept;
 		BaseWindow(BaseWindow&&) = delete;
 		BaseWindow(const BaseWindow&) = delete;
 		BaseWindow& operator=(BaseWindow&&) = delete;
 		BaseWindow& operator=(const BaseWindow&) = delete;
-		virtual ~BaseWindow() = default;
+		virtual ~BaseWindow() { ImGui::DestroyContext(); }
 
 		constexpr Keyboard& Keyboard() noexcept { return keyboard; }
 		constexpr Mouse& Mouse() noexcept { return mouse; }
-		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
-		constexpr bool IsCursorEnabled() const noexcept { return cursorEnabled; }
-		void SwitchCursor() noexcept { cursorEnabled ? DisableCursor() : EnableCursor(); }
+		constexpr bool IsCursorEnabled() const noexcept { return flags[0]; }
+		constexpr bool IsFullscreen() const noexcept { return flags[1]; }
+		void SwitchCursor() noexcept { IsCursorEnabled() ? DisableCursor() : EnableCursor(); }
 
 		void EnableCursor() noexcept;
 		void DisableCursor() noexcept;
+		void SwitchFullscreen() noexcept;
+		void SetGuiFont(const std::string& font, float size) const;
 
+		virtual U32 GetWidth() const noexcept = 0;
+		virtual U32 GetHeight() const noexcept = 0;
 		virtual std::pair<bool, int> ProcessMessage() noexcept = 0;
 		virtual void SetTitle(const std::string& title) = 0;
+		virtual void NewGuiFrame() const noexcept = 0;
 	};
 }
 

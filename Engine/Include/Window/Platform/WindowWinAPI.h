@@ -25,10 +25,12 @@ namespace ZE::Window::WinAPI
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
 
+		static constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		static inline WindowClass wndClass;
 
-		std::vector<U8> rawBuffer;
 		HWND hWnd;
+		RECT windowRect;
+		std::vector<U8> rawBuffer;
 
 		static LRESULT WINAPI HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 		static LRESULT WINAPI HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
@@ -36,17 +38,24 @@ namespace ZE::Window::WinAPI
 		LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	protected:
-		void ShowCursor() noexcept override { while (::ShowCursor(TRUE) < 0); }
-		void HideCursor() noexcept override { while (::ShowCursor(FALSE) >= 0); }
-		void FreeCursor() noexcept override { ClipCursor(nullptr); }
+		void ShowCursor() const noexcept override { while (::ShowCursor(TRUE) < 0); }
+		void HideCursor() const noexcept override { while (::ShowCursor(FALSE) >= 0); }
+		void FreeCursor() const noexcept override { ClipCursor(nullptr); }
 
-		void TrapCursor() noexcept override;
+		void TrapCursor() const noexcept override;
+		void EnterFullscreen() noexcept override;
+		void LeaveFullscreen() noexcept override;
 
 	public:
 		WindowWinAPI(const char* name, U32 width = 0, U32 height = 0);
 		~WindowWinAPI();
 
+		constexpr HWND GetHandle() const noexcept { return hWnd; }
+		constexpr U32 GetWidth() const noexcept override { return windowRect.right; }
+		constexpr U32 GetHeight() const noexcept override { return windowRect.bottom; }
+
 		std::pair<bool, int> ProcessMessage() noexcept override;
 		void SetTitle(const std::string& title) override;
+		void NewGuiFrame() const noexcept override;
 	};
 }

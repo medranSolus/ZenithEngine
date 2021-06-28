@@ -49,7 +49,7 @@ namespace ZE::Window::WinAPI
 	LRESULT WindowWinAPI::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-			return true;
+			return 0;
 		switch (msg)
 		{
 		case WM_CLOSE:
@@ -57,33 +57,18 @@ namespace ZE::Window::WinAPI
 			PostQuitMessage(0);
 			return 0;
 		}
+		// The default window procedure will play a system notification sound 
+		// when pressing the Alt+Enter if this message is not handled.
+		case WM_SYSCHAR:
+			return 0;
 		case WM_NCCREATE:
 		{
 			assert(EnableNonClientDpiScaling(hWnd) != 0);
 			break;
 		}
-		case WM_SIZE:
-		{
-			if (wParam != SIZE_MINIMIZED)
-			{
-				const U32 width = LOWORD(lParam);
-				const U32 height = HIWORD(lParam);
-				ImGui::GetIO().DisplaySize =
-				{
-					static_cast<float>(width),
-					static_cast<float>(height)
-				};
-				try
-				{
-					graphics.Resize(width, height);
-				}
-				catch (...) {}
-			}
-			break;
-		}
 		case WM_ACTIVATE:
 		{
-			if (!cursorEnabled)
+			if (!IsCursorEnabled())
 			{
 				if (wParam & WA_ACTIVE)
 					TrapCursor();
@@ -107,18 +92,7 @@ namespace ZE::Window::WinAPI
 			if (!(lParam & 0x40000000) || keyboard.IsAutorepeat())
 			{
 				if ((KF_ALTDOWN & HIWORD(lParam)) && wParam == VK_RETURN)
-				{
-					ImGui::GetIO().DisplaySize =
-					{
-						static_cast<float>(graphics.GetWidth()),
-						static_cast<float>(graphics.GetHeight())
-					};
-					try
-					{
-						graphics.ToggleFullscreen();
-					}
-					catch (...) {}
-				}
+					SwitchFullscreen();
 				else
 					keyboard.OnKeyDown(static_cast<U8>(wParam));
 			}
@@ -142,7 +116,7 @@ namespace ZE::Window::WinAPI
 		case WM_LBUTTONDOWN:
 		{
 			SetForegroundWindow(hWnd);
-			if (!cursorEnabled)
+			if (!IsCursorEnabled())
 			{
 				HideCursor();
 				TrapCursor();
@@ -190,8 +164,8 @@ namespace ZE::Window::WinAPI
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
 			// Allow window to capture mouse input when left/righ/middle button are pressed when escaping client area
-			if (point.x >= 0 && static_cast<U32>(point.x) < graphics.GetWidth()
-				&& point.y >= 0 && static_cast<U32>(point.y) < graphics.GetHeight())
+			if (point.x >= 0 && static_cast<U32>(point.x) < GetWidth()
+				&& point.y >= 0 && static_cast<U32>(point.y) < GetHeight())
 			{
 				mouse.OnMouseMove(point.x, point.y);
 				if (!mouse.IsInWindow())
@@ -217,10 +191,12 @@ namespace ZE::Window::WinAPI
 		case WM_INPUT:
 		{
 			UINT inputSize = 0;
-			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &inputSize, sizeof(RAWINPUTHEADER)) == -1)
+			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+				nullptr, &inputSize, sizeof(RAWINPUTHEADER)) == -1)
 				break;
 			rawBuffer.resize(inputSize);
-			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER)) != inputSize)
+			if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+				rawBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER)) != inputSize)
 				break;
 
 			const RAWINPUT& input = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
@@ -234,7 +210,7 @@ namespace ZE::Window::WinAPI
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
-	void WindowWinAPI::TrapCursor() noexcept
+	void WindowWinAPI::TrapCursor() const noexcept
 	{
 		RECT rect;
 		GetClientRect(hWnd, &rect);
@@ -242,10 +218,45 @@ namespace ZE::Window::WinAPI
 		ClipCursor(&rect);
 	}
 
+	void WindowWinAPI::EnterFullscreen() noexcept
+	{
+		// Set the window style to a borderless window so the client area fills the entire screen.
+		constexpr UINT BORDERLESS_STYLE = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
+		SetWindowLong(hWnd, GWL_STYLE, BORDERLESS_STYLE);
+
+		// Query the nearest display device for the window.
+		// This is required to set the fullscreen dimensions of the window
+		// when using a multi-monitor setup.
+		HMONITOR monitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+		MONITORINFOEX monitorInfo = {};
+		monitorInfo.cbSize = sizeof(MONITORINFOEX);
+		GetMonitorInfo(monitor, &monitorInfo);
+
+		// Get the settings for the primary display. These settings are used
+		// to determine the correct position and size to position the window.
+		DEVMODE devMode = {};
+		devMode.dmSize = sizeof(DEVMODE);
+		EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+
+		SetWindowPos(hWnd, HWND_TOPMOST, devMode.dmPosition.x, devMode.dmPosition.y,
+			devMode.dmPosition.x + devMode.dmPelsWidth, devMode.dmPosition.y + devMode.dmPelsHeight,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+		ShowWindow(hWnd, SW_MAXIMIZE);
+	}
+
+	void WindowWinAPI::LeaveFullscreen() noexcept
+	{
+		// Restore all the window decorators.
+		SetWindowLong(hWnd, GWL_STYLE, WIN_STYLE);
+
+		SetWindowPos(hWnd, HWND_NOTOPMOST, windowRect.left, windowRect.top,
+			GetWidth(), GetHeight(), SWP_FRAMECHANGED | SWP_NOACTIVATE);
+		ShowWindow(hWnd, SW_NORMAL);
+	}
+
 	WindowWinAPI::WindowWinAPI(const char* name, U32 width, U32 height)
 		: BaseWindow(name, width, height)
 	{
-		constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		constexpr DWORD WIN_STYLE_EX = 0;
 
 		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == FALSE)
@@ -253,33 +264,35 @@ namespace ZE::Window::WinAPI
 		// Initial DPI since no possible way to know window DPI
 		const UINT dpi = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
 
-		RECT area = { 0 };
 		if (width == 0 || height == 0)
 		{
-			area.right = GetSystemMetricsForDpi(SM_CXMAXIMIZED, dpi);
-			area.bottom = GetSystemMetricsForDpi(SM_CYMAXIMIZED, dpi);
-			area.left = -GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) * 2;
+			windowRect.top = 0;
+			windowRect.bottom = GetSystemMetricsForDpi(SM_CYMAXIMIZED, dpi);
+			windowRect.right = GetSystemMetricsForDpi(SM_CXMAXIMIZED, dpi);
+			windowRect.left = -GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) * 2;
 		}
 		else
 		{
 			// Adjust window client area to match specified size
-			area.right = width;
-			area.bottom = height;
-			if (AdjustWindowRectExForDpi(&area, WIN_STYLE, FALSE, WIN_STYLE_EX, dpi) == 0)
+			windowRect.left = 0;
+			windowRect.top = 0;
+			windowRect.right = width;
+			windowRect.bottom = height;
+			if (AdjustWindowRectExForDpi(&windowRect, WIN_STYLE, FALSE, WIN_STYLE_EX, dpi) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
-			area.right -= area.left;
-			area.bottom -= area.top;
+			windowRect.right -= windowRect.left;
+			windowRect.bottom -= windowRect.top;
 
 			// Adjust window position to desktop window
 			RECT desktop = { 0 };
 			if (GetClientRect(GetDesktopWindow(), &desktop) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
-			area.left = (desktop.right - area.right) / 2;
-			area.top = (desktop.bottom - area.bottom) / 2;
+			windowRect.left = (desktop.right - windowRect.right) / 2;
+			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
 		}
 
 		hWnd = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
-			area.left, area.top, area.right, area.bottom,
+			windowRect.left, windowRect.top, GetWidth(), GetHeight(),
 			nullptr, nullptr, wndClass.GetInstance(), this);
 		if (hWnd == nullptr)
 			throw ZE_WIN_EXCEPT_LAST();
@@ -288,15 +301,11 @@ namespace ZE::Window::WinAPI
 		{
 			ShowWindow(hWnd, SW_SHOWMAXIMIZED);
 			// Get maximized client area
-			if (GetClientRect(hWnd, &area) == 0)
+			if (GetClientRect(hWnd, &windowRect) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
-			width = area.right;
-			height = area.bottom;
 		}
 		else
 			ShowWindow(hWnd, SW_SHOW);
-
-		graphics.Init(hWnd, width, height);
 		ImGui_ImplWin32_Init(hWnd);
 
 		RAWINPUTDEVICE rid;
@@ -331,5 +340,10 @@ namespace ZE::Window::WinAPI
 	{
 		if (SetWindowText(hWnd, title.c_str()) == 0)
 			throw ZE_WIN_EXCEPT_LAST();
+	}
+
+	void WindowWinAPI::NewGuiFrame() const noexcept
+	{
+		ImGui_ImplWin32_NewFrame();
 	}
 }

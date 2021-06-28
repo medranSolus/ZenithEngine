@@ -5,12 +5,6 @@ cmake_minimum_required(VERSION 3.19)
 set(PROJECT_NAME "Zenith Engine")
 project(${PROJECT_NAME} VERSION 0.2)
 
-# Using engine
-#
-# In order to avoid setting up all include directories add this CMake file as subdirectory.
-set(ZE_API_DIR "${PROJECT_SOURCE_DIR}/Engine/API")
-set(ZE_API_HEADER "${ZE_API_DIR}/Zenith.h")
-
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for project data (shaders, resources, executables)")
@@ -24,6 +18,13 @@ option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
+
+# Using engine
+#
+# In order to avoid setting up all include directories add this CMake file as subdirectory.
+set(ZE_API_DIR "${PROJECT_SOURCE_DIR}/Engine/API")
+set(ZE_API_HEADER "${ZE_API_DIR}/Zenith.h")
+set(ZE_BUILD_INC_DIR "${ZE_BUILD_DIR}/Include") # Directory containing generated headers
 
 # CMake modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
@@ -118,6 +119,7 @@ endif()
 # Compiler specific flags (remove 4250 later when ECS system created)
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
+	# Move to C++/WinRT with /ZW /EHsc when /ZW can be used with /std:c++latest
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /w34265 /wd4250 /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
