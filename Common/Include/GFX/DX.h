@@ -1,3 +1,4 @@
+#pragma once
 #include "PixelFormat.h"
 
 // To be changed into multiplatform library
@@ -9,9 +10,9 @@ namespace ZE::Tex
 	using namespace DirectX;
 }
 
-namespace ZE::GFX::API
+namespace ZE::GFX::API::DX
 {
-	constexpr DXGI_FORMAT GetFormatDX(PixelFormat format) noexcept;
+	constexpr DXGI_FORMAT GetDXFormat(PixelFormat format) noexcept;
 	constexpr PixelFormat GetFormatFromDX(DXGI_FORMAT format) noexcept;
 
 #pragma region Functions

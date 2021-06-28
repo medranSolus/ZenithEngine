@@ -25,6 +25,6 @@ namespace ZE::WinAPI
 // Enables useage of DXT_ macros in current scope
 #define ZE_DXT_ENABLE_EXCEPT() HRESULT __hResult
 // Before using needs call to DXT_ENABLE_EXCEPT()
-#define ZE_DXT_EXCEPT(info) ZE::WinAPI::DirectXTexException(__LINE__, __FILE__, __hResult, info)
+#define ZE_DXT_EXCEPT(info) ZE::WinAPI::DirectXTexException(__LINE__, __FILENAME__, __hResult, info)
 // Before using needs call to DXT_ENABLE_EXCEPT()
 #define	ZE_DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw ZE_DXT_EXCEPT(info)

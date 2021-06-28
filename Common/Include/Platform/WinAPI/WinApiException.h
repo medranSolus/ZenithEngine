@@ -27,10 +27,12 @@ namespace ZE::WinAPI
 	};
 }
 
-#define	ZE_WIN_EXCEPT(code) ZE::WinAPI::WinApiException(__LINE__, __FILE__, code)
+#define	ZE_WIN_EXCEPT(code) ZE::WinAPI::WinApiException(__LINE__, __FILENAME__, code)
 #define	ZE_WIN_EXCEPT_LAST() ZE_WIN_EXCEPT(GetLastError())
 
+// Variable holding result of last Windows call
+#define ZE_WIN_EXCEPT_RESULT __hResult
 // Enables useage of WND_THROW_FAILED macro in current scope
-#define ZE_WIN_ENABLE_EXCEPT() HRESULT __hResult
+#define ZE_WIN_ENABLE_EXCEPT() HRESULT ZE_WIN_EXCEPT_RESULT
 // Before using needs call to WND_ENABLE_EXCEPT()
-#define	ZE_WIN_THROW_FAILED(call) if( FAILED(__hResult = (call))) throw ZE_WIN_EXCEPT(__hResult)
+#define	ZE_WIN_THROW_FAILED(call) if( FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_WIN_EXCEPT(ZE_WIN_EXCEPT_RESULT)

@@ -37,7 +37,7 @@
 * Pixel.h
 ***** Types.h (defined by MathExt.h)
 *** PixelFormat.h
-* API.h
+* GFX/DX.h
 * functional
 * utility
 * vector

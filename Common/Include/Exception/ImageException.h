@@ -23,4 +23,4 @@ namespace ZE::Exception
 	};
 }
 
-#define ZE_IMG_EXCEPT(info) ZE::Exception::ImageException(__LINE__, __FILE__, info)
+#define ZE_IMG_EXCEPT(info) ZE::Exception::ImageException(__LINE__, __FILENAME__, info)
