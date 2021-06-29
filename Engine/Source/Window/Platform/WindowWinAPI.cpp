@@ -221,8 +221,7 @@ namespace ZE::Window::WinAPI
 	void WindowWinAPI::EnterFullscreen() noexcept
 	{
 		// Set the window style to a borderless window so the client area fills the entire screen.
-		constexpr UINT BORDERLESS_STYLE = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
-		SetWindowLong(hWnd, GWL_STYLE, BORDERLESS_STYLE);
+		SetWindowLong(hWnd, GWL_STYLE, WS_POPUP);
 
 		// Query the nearest display device for the window.
 		// This is required to set the fullscreen dimensions of the window
@@ -238,7 +237,7 @@ namespace ZE::Window::WinAPI
 		devMode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
 
-		SetWindowPos(hWnd, HWND_TOPMOST, devMode.dmPosition.x, devMode.dmPosition.y,
+		SetWindowPos(hWnd, HWND_TOP, devMode.dmPosition.x, devMode.dmPosition.y,
 			devMode.dmPosition.x + devMode.dmPelsWidth, devMode.dmPosition.y + devMode.dmPelsHeight,
 			SWP_FRAMECHANGED | SWP_NOACTIVATE);
 		ShowWindow(hWnd, SW_MAXIMIZE);
