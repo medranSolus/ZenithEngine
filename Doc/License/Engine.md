@@ -10,7 +10,7 @@ we distribute it under two mutually exclusive licenses.
 
 This means that **you** must choose **one** of the two licenses described below,
 then obey all its terms and conditions when using Zenith Engine in any of your projects or products.
-  - For closed source or propietary software contact author for detailed license agreements.
+  - For closed source or proprietary software contact author for detailed license agreements.
   - For open-source programs `The GNU General Public License version 3`, found below.
 
 ---
