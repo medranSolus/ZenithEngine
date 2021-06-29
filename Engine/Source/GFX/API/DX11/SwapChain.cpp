@@ -48,15 +48,14 @@ namespace ZE::GFX::API::DX11
 		ZE_GFX_THROW_FAILED(factory->MakeWindowAssociation(window.GetHandle(), DXGI_MWA_NO_ALT_ENTER));
 	}
 
-	void SwapChain::Present(GFX::Device& device) const
+	void SwapChain::Present(GFX::Device& dev) const
 	{
-		Device& dev = (Device&)(device);
-		ZE_GFX_ENABLE(dev);
+		ZE_GFX_ENABLE(((Device&)dev));
 		ZE_GFX_SET_DEBUG_WATCH();
 		if (FAILED(ZE_WIN_EXCEPT_RESULT = swapChain->Present(0, presentFlags)))
 		{
 			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
-				throw ZE_GFX_EXCEPT(dev.GetDevice()->GetDeviceRemovedReason());
+				throw ZE_GFX_EXCEPT(((Device&)dev).GetDevice()->GetDeviceRemovedReason());
 			else
 				throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
 		}

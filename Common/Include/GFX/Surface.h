@@ -34,8 +34,8 @@ namespace ZE::GFX
 		constexpr Pixel GetPixel(U64 x, U64 y) const noexcept;
 
 		// NOTE: reinterpret_cast is removed from here for allowing constexpr evaluation
-		constexpr Pixel* GetBuffer() noexcept { return (Pixel*)(image->pixels); }
-		constexpr const Pixel* GetBuffer() const noexcept { return (const Pixel*)(image->pixels); }
+		constexpr Pixel* GetBuffer() noexcept { return (Pixel*)image->pixels; }
+		constexpr const Pixel* GetBuffer() const noexcept { return (const Pixel*)image->pixels; }
 
 		bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
 		void Clear(const Pixel& color) noexcept { memset(GetBuffer(), color, GetSize() * sizeof(Pixel)); }

@@ -12,6 +12,6 @@ namespace ZE::GFX
 	public:
 		virtual ~SwapChain() = default;
 
-		virtual void Present(Device& device) const = 0;
+		virtual void Present(Device& dev) const = 0;
 	};
 }

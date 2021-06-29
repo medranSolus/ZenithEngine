@@ -16,7 +16,7 @@ namespace ZE::GFX
 		// pair.first = (time - pair.first) / ++pair.second
 		std::unordered_map<std::string, std::pair<long double, U64>> data;
 		std::string lastTag = "";
-		
+
 		virtual const char* GetApiString() const noexcept = 0;
 		virtual void StartImpl() noexcept = 0;
 		virtual void StopImpl() noexcept = 0;

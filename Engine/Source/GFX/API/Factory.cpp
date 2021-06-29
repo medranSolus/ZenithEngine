@@ -4,14 +4,14 @@
 
 namespace ZE::GFX::API
 {
-	void Factory::InitGui(const Device& dev, const Context& ctx) const noexcept
+	void Factory::InitGui(const Device& dev, const MainContext& ctx) const noexcept
 	{
 		switch (currentApi)
 		{
 		case ZE::GFX::API::Backend::DX11:
 		{
-			ImGui_ImplDX11_Init(((const DX11::Device&)(dev)).GetDevice(),
-				((const DX11::Context&)(ctx)).GetContext());
+			ImGui_ImplDX11_Init(((const DX11::Device&)dev).GetDevice(),
+				((const DX11::MainContext&)(ctx)).GetContext());
 			break;
 		}
 		case ZE::GFX::API::Backend::DX12:
@@ -93,21 +93,21 @@ namespace ZE::GFX::API
 		}
 	}
 
-	Context* Factory::MakeContext(Device& dev, bool deffered)
+	CommandList* Factory::MakeCommandList() const
 	{
 		switch (currentApi)
 		{
 		case ZE::GFX::API::Backend::DX11:
-			return new DX11::Context((DX11::Device&)(dev), deffered);
+			return new DX11::CommandList();
 		case ZE::GFX::API::Backend::DX12:
-			assert("No support for Context under DirectX12!" && false);
+			assert("No support for CommandList under DirectX12!" && false);
 		case ZE::GFX::API::Backend::Vulkan:
-			assert("No support for Context under Vulkan!" && false);
+			assert("No support for CommandList under Vulkan!" && false);
 		}
 		return nullptr;
 	}
 
-	Device* Factory::MakeDevice()
+	Device* Factory::MakeDevice() const
 	{
 		switch (currentApi)
 		{
@@ -121,12 +121,12 @@ namespace ZE::GFX::API
 		return nullptr;
 	}
 
-	GPerf* Factory::MakeGpuPerf(Device& dev)
+	GPerf* Factory::MakeGpuPerf(Device& dev) const
 	{
 		switch (currentApi)
 		{
 		case ZE::GFX::API::Backend::DX11:
-			return new DX11::GPerf((DX11::Device&)(dev));
+			return new DX11::GPerf((DX11::Device&)dev);
 		case ZE::GFX::API::Backend::DX12:
 			assert("No support for GPerf under DirectX12!" && false);
 		case ZE::GFX::API::Backend::Vulkan:
@@ -135,12 +135,40 @@ namespace ZE::GFX::API
 		return nullptr;
 	}
 
-	SwapChain* Factory::MakeSwapChain(const Window::MainWindow& window, Device& dev)
+	DeferredContext* Factory::MakeDeferredContext(Device& dev) const
 	{
 		switch (currentApi)
 		{
 		case ZE::GFX::API::Backend::DX11:
-			return new DX11::SwapChain(window, (DX11::Device&)(dev));
+			return new DX11::DeferredContext((DX11::Device&)dev);
+		case ZE::GFX::API::Backend::DX12:
+			assert("No support for DeferredContext under DirectX12!" && false);
+		case ZE::GFX::API::Backend::Vulkan:
+			assert("No support for DeferredContext under Vulkan!" && false);
+		}
+		return nullptr;
+	}
+
+	MainContext* Factory::MakeMainContext(Device& dev) const
+	{
+		switch (currentApi)
+		{
+		case ZE::GFX::API::Backend::DX11:
+			return new DX11::MainContext((DX11::Device&)dev);
+		case ZE::GFX::API::Backend::DX12:
+			assert("No support for MainContext under DirectX12!" && false);
+		case ZE::GFX::API::Backend::Vulkan:
+			assert("No support for MainContext under Vulkan!" && false);
+		}
+		return nullptr;
+	}
+
+	SwapChain* Factory::MakeSwapChain(const Window::MainWindow& window, Device& dev) const
+	{
+		switch (currentApi)
+		{
+		case ZE::GFX::API::Backend::DX11:
+			return new DX11::SwapChain(window, (DX11::Device&)dev);
 		case ZE::GFX::API::Backend::DX12:
 			assert("No support for SwapChain under DirectX12!" && false);
 		case ZE::GFX::API::Backend::Vulkan:

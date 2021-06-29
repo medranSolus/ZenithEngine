@@ -15,6 +15,6 @@ namespace ZE::GFX::API::DX11
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, Device& dev);
 		virtual ~SwapChain() = default;
 
-		void Present(GFX::Device& device) const override;
+		void Present(GFX::Device& dev) const override;
 	};
 }

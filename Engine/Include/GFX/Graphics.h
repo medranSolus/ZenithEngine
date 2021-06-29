@@ -6,7 +6,7 @@ namespace ZE::GFX
 	class Graphics final
 	{
 		Device* device = nullptr;
-		Context* mainCtx = nullptr;
+		MainContext* mainCtx = nullptr;
 		SwapChain* swapChain = nullptr;
 		bool guiEnabled = true;
 
@@ -19,7 +19,7 @@ namespace ZE::GFX
 		~Graphics();
 
 		constexpr Device& GetDevice() noexcept { return *device; }
-		constexpr Context& GetMainContext() noexcept { return *mainCtx; }
+		constexpr MainContext& GetMainContext() noexcept { return *mainCtx; }
 
 		void Init(const Window::MainWindow& window);
 		void Present() const;

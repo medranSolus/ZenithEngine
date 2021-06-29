@@ -1,9 +1,11 @@
 #pragma once
 #include "Backend.h"
 #include "Window/MainWindow.h"
-#include "GFX/Context.h"
+#include "GFX/CommandList.h"
+#include "GFX/DeferredContext.h"
 #include "GFX/Device.h"
 #include "GFX/GPerf.h"
+#include "GFX/MainContext.h"
 #include "GFX/SwapChain.h"
 
 namespace ZE
@@ -19,7 +21,7 @@ namespace ZE::GFX::API
 
 		Backend currentApi;
 
-		void InitGui(const Device& dev, const Context& ctx) const noexcept;
+		void InitGui(const Device& dev, const MainContext& ctx) const noexcept;
 		void DisableGui() const noexcept;
 		void StartGuiFrame() const noexcept;
 		void EndGuiFrame() const noexcept;
@@ -34,9 +36,11 @@ namespace ZE::GFX::API
 
 		//constexpr void ChangeBackend(Backend type) noexcept { currentApi = type; }
 
-		Context* MakeContext(Device& dev, bool deffered);
-		Device* MakeDevice();
-		GPerf* MakeGpuPerf(Device& dev);
-		SwapChain* MakeSwapChain(const Window::MainWindow& window, Device& dev);
+		[[nodiscard]] CommandList* MakeCommandList() const;
+		[[nodiscard]] Device* MakeDevice() const;
+		[[nodiscard]] GPerf* MakeGpuPerf(Device& dev) const;
+		[[nodiscard]] DeferredContext* MakeDeferredContext(Device& dev) const;
+		[[nodiscard]] MainContext* MakeMainContext(Device& dev) const;
+		[[nodiscard]] SwapChain* MakeSwapChain(const Window::MainWindow& window, Device& dev) const;
 	};
 }

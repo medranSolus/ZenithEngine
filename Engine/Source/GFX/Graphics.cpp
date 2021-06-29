@@ -12,7 +12,7 @@ namespace ZE::GFX
 	void Graphics::Init(const Window::MainWindow& window)
 	{
 		device = Settings::GetGfxApi().MakeDevice();
-		mainCtx = Settings::GetGfxApi().MakeContext(*device, false);
+		mainCtx = Settings::GetGfxApi().MakeMainContext(*device);
 		swapChain = Settings::GetGfxApi().MakeSwapChain(window, *device);
 	}
 

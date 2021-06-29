@@ -57,7 +57,7 @@ namespace ZE::Window::WinAPI
 			PostQuitMessage(0);
 			return 0;
 		}
-		// The default window procedure will play a system notification sound 
+		// The default window procedure will play a system notification sound
 		// when pressing the Alt+Enter if this message is not handled.
 		case WM_SYSCHAR:
 			return 0;
