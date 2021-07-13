@@ -1,11 +1,10 @@
 #pragma once
-#include "GFX/Device.h"
 #include "GFX/API/DX/DebugInfoManager.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11
 {
-	class Device : public GFX::Device
+	class Device final
 	{
 #ifdef _ZE_MODE_DEBUG
 		DX::DebugInfoManager debugManager;
@@ -14,7 +13,11 @@ namespace ZE::GFX::API::DX11
 
 	public:
 		Device();
-		virtual ~Device();
+		Device(Device&&) = delete;
+		Device(const Device&) = delete;
+		Device& operator=(Device&&) = delete;
+		Device& operator=(const Device&) = delete;
+		~Device();
 
 #ifdef _ZE_MODE_DEBUG
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }

@@ -253,8 +253,13 @@ namespace ZE::Window::WinAPI
 		ShowWindow(hWnd, SW_NORMAL);
 	}
 
-	WindowWinAPI::WindowWinAPI(const char* name, U32 width, U32 height)
-		: BaseWindow(name, width, height)
+	WindowWinAPI::~WindowWinAPI()
+	{
+		ImGui_ImplWin32_Shutdown();
+		DestroyWindow(hWnd);
+	}
+
+	void WindowWinAPI::Init(const char* name, U32 width, U32 height)
 	{
 		constexpr DWORD WIN_STYLE_EX = 0;
 
@@ -314,12 +319,6 @@ namespace ZE::Window::WinAPI
 		rid.hwndTarget = nullptr;
 		if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
 			throw ZE_WIN_EXCEPT_LAST();
-	}
-
-	WindowWinAPI::~WindowWinAPI()
-	{
-		ImGui_ImplWin32_Shutdown();
-		DestroyWindow(hWnd);
 	}
 
 	std::pair<bool, int> WindowWinAPI::ProcessMessage() noexcept

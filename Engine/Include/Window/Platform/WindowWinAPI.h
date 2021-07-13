@@ -47,13 +47,14 @@ namespace ZE::Window::WinAPI
 		void LeaveFullscreen() noexcept override;
 
 	public:
-		WindowWinAPI(const char* name, U32 width = 0, U32 height = 0);
-		~WindowWinAPI();
+		WindowWinAPI() = default;
+		virtual ~WindowWinAPI();
 
 		constexpr HWND GetHandle() const noexcept { return hWnd; }
 		constexpr U32 GetWidth() const noexcept override { return windowRect.right; }
 		constexpr U32 GetHeight() const noexcept override { return windowRect.bottom; }
 
+		void Init(const char* name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;
 		void SetTitle(const std::string& title) override;
 		void NewGuiFrame() const noexcept override;

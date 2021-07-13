@@ -29,12 +29,12 @@ void App::ProcessInput()
 void App::MakeFrame()
 {
 	engine.BeginFrame();
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 	engine.EndFrame();
 }
 
 App::App(const std::string& commandLine)
-	: engine(WINDOW_TITLE, GFX::API::Backend::DX11, 1600, 896)
+	: engine(WINDOW_TITLE, GfxApiType::DX11, 1600, 896)
 {
 }
 

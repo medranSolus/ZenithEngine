@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/API/Factory.h"
+#include "GFX/API/ApiType.h"
 
 namespace ZE
 {
@@ -8,9 +8,9 @@ namespace ZE
 	{
 		static inline Settings* instance = nullptr;
 
-		GFX::API::Factory backendFactory;
+		GfxApiType gfxApi;
 
-		Settings(GFX::API::Backend type) : backendFactory(type) {}
+		Settings(GfxApiType type) noexcept : gfxApi(type) {}
 
 	public:
 		Settings(Settings&&) = delete;
@@ -19,7 +19,7 @@ namespace ZE
 		Settings& operator=(const Settings&) = delete;
 		~Settings() = default;
 
-		static constexpr GFX::API::Factory& GetGfxApi() noexcept { assert(instance); return instance->backendFactory; }
-		static void Init(GFX::API::Backend type) { assert(!instance); instance = new Settings(type); }
+		static constexpr GfxApiType GetGfxApi() noexcept { assert(instance); return instance->gfxApi; }
+		static void Init(GfxApiType type) noexcept { assert(!instance); instance = new Settings(type); }
 	};
 }

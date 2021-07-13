@@ -3,23 +3,6 @@
 
 namespace ZE::Window
 {
-	BaseWindow::BaseWindow(const char* name, U32 width, U32 height) noexcept
-	{
-		flags[0] = true;
-		flags[1] = false;
-
-		if (!std::filesystem::exists("imgui.ini") && std::filesystem::exists("imgui_default.ini"))
-			std::filesystem::copy_file("imgui_default.ini", "imgui.ini");
-
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGui::StyleColorsDark();
-		auto& style = ImGui::GetStyle();
-		style.WindowRounding = 1;
-		style.WindowBorderSize = 1;
-		style.Colors[ImGuiCol_WindowBg].w = 0.785f;
-	}
-
 	void BaseWindow::EnableCursor() noexcept
 	{
 		if (!IsCursorEnabled())
@@ -54,13 +37,5 @@ namespace ZE::Window
 			flags[1] = true;
 			EnterFullscreen();
 		}
-	}
-
-	void BaseWindow::SetGuiFont(const std::string& font, float size) const
-	{
-		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
-		if (atlas->Fonts.size())
-			atlas->Clear();
-		atlas->AddFontFromFileTTF(font.c_str(), size);
 	}
 }

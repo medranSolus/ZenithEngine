@@ -2,36 +2,24 @@
 
 namespace ZE
 {
-	Engine::Engine(const char* windowName, GFX::API::Backend gfxApi, U32 width, U32 height)
-		: window(windowName, width, height)
+	Engine::Engine(const char* windowName, GfxApiType gfxApi, U32 width, U32 height)
 	{
 		Settings::Init(gfxApi);
+		window.Init(windowName, width, height);
 		graphics.Init(window);
-		Settings::GetGfxApi().InitGui(graphics.GetDevice(), graphics.GetMainContext());
-	}
-
-	Engine::~Engine()
-	{
-		Settings::GetGfxApi().DisableGui();
+		gui.Init(graphics.GetDevice(), graphics.GetMainContext());
 	}
 
 	void Engine::BeginFrame() const
 	{
 		if (IsGuiActive())
-		{
-			Settings::GetGfxApi().StartGuiFrame();
-			window.NewGuiFrame();
-			ImGui::NewFrame();
-		}
+			gui.StartFrame(window);
 	}
 
-	void Engine::EndFrame() const
+	void Engine::EndFrame()
 	{
 		if (IsGuiActive())
-		{
-			ImGui::Render();
-			Settings::GetGfxApi().EndGuiFrame();
-		}
+			gui.EndFrame();
 		graphics.Present();
 	}
 }

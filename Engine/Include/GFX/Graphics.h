@@ -1,13 +1,15 @@
 #pragma once
-#include "Settings.h"
+#include "Context.h"
+#include "Device.h"
+#include "SwapChain.h"
 
 namespace ZE::GFX
 {
 	class Graphics final
 	{
-		Device* device = nullptr;
-		MainContext* mainCtx = nullptr;
-		SwapChain* swapChain = nullptr;
+		Device device;
+		Context mainCtx;
+		SwapChain swapChain;
 		bool guiEnabled = true;
 
 	public:
@@ -16,12 +18,12 @@ namespace ZE::GFX
 		Graphics(const Graphics&) = delete;
 		Graphics& operator=(Graphics&&) = delete;
 		Graphics& operator=(const Graphics&) = delete;
-		~Graphics();
+		~Graphics() = default;
 
-		constexpr Device& GetDevice() noexcept { return *device; }
-		constexpr MainContext& GetMainContext() noexcept { return *mainCtx; }
+		constexpr Device& GetDevice() noexcept { return device; }
+		constexpr Context& GetMainContext() noexcept { return mainCtx; }
+		void Present() { swapChain.Present(device); }
 
 		void Init(const Window::MainWindow& window);
-		void Present() const;
 	};
 }

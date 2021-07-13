@@ -17,13 +17,13 @@ namespace ZE::GFX::API::DX11
 		dev.GetDevice()->GetImmediateContext(&ctx); // TODO Support deffered ctx
 	}
 
-	void GPerf::StartImpl() noexcept
+	void GPerf::Start() noexcept
 	{
 		ctx->Begin(disjoint.Get());
 		ctx->End(begin.Get());
 	}
 
-	void GPerf::StopImpl() noexcept
+	long double GPerf::Stop() noexcept
 	{
 		ctx->End(end.Get());
 		ctx->End(disjoint.Get());
@@ -37,7 +37,8 @@ namespace ZE::GFX::API::DX11
 			while (ctx->GetData(end.Get(), &ticksEnd, sizeof(U64), 0) != S_OK);
 
 			const long double megaFrequency = static_cast<long double>(dataDisjoint.Frequency) / 1000000.0L;
-			data.at(lastTag).first += ((ticksEnd - ticksBegin) / megaFrequency - data.at(lastTag).first) / ++data.at(lastTag).second;
+			return (ticksEnd - ticksBegin) / megaFrequency;
 		}
+		return 0.0L;
 	}
 }

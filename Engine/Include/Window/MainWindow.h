@@ -22,12 +22,12 @@ namespace ZE::Window
 		virtual void LeaveFullscreen() noexcept = 0;
 
 	public:
-		BaseWindow(const char* name, U32 width = 0, U32 height = 0) noexcept;
+		BaseWindow() noexcept { flags[0] = true; flags[1] = false; }
 		BaseWindow(BaseWindow&&) = delete;
 		BaseWindow(const BaseWindow&) = delete;
 		BaseWindow& operator=(BaseWindow&&) = delete;
 		BaseWindow& operator=(const BaseWindow&) = delete;
-		virtual ~BaseWindow() { ImGui::DestroyContext(); }
+		virtual ~BaseWindow() = default;
 
 		constexpr Keyboard& Keyboard() noexcept { return keyboard; }
 		constexpr Mouse& Mouse() noexcept { return mouse; }
@@ -42,6 +42,7 @@ namespace ZE::Window
 
 		virtual U32 GetWidth() const noexcept = 0;
 		virtual U32 GetHeight() const noexcept = 0;
+		virtual void Init(const char* name, U32 width = 0, U32 height = 0) = 0;
 		virtual std::pair<bool, int> ProcessMessage() noexcept = 0;
 		virtual void SetTitle(const std::string& title) = 0;
 		virtual void NewGuiFrame() const noexcept = 0;
