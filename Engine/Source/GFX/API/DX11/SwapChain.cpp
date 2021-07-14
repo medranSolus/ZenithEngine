@@ -3,13 +3,13 @@
 
 namespace ZE::GFX::API::DX11
 {
-	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, Device& dev)
+	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev);
+		ZE_GFX_ENABLE(dev.Get().dx11);
 
 		// Retrieve factory used to create device
 		DX::ComPtr<IDXGIDevice4> dxgiDevice = nullptr;
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
 		DX::ComPtr<IDXGIAdapter> adapter = nullptr;
 		ZE_GFX_THROW_FAILED(dxgiDevice->GetAdapter(&adapter));
 		DX::ComPtr<IDXGIFactory7> factory = nullptr;
@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX11
 		swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // Pipeline draws to this buffer
 		swapDesc.BufferCount = 2; // [2;16]
 		swapDesc.Scaling = DXGI_SCALING_STRETCH;
-		swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //http://aka.ms/dxgiflipmodel
 		swapDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 		swapDesc.Flags = 0;
 
@@ -40,7 +40,7 @@ namespace ZE::GFX::API::DX11
 		}
 
 		DX::ComPtr<IDXGISwapChain1> tempChain = nullptr;
-		ZE_GFX_THROW_FAILED(factory->CreateSwapChainForHwnd(dev.GetDevice(),
+		ZE_GFX_THROW_FAILED(factory->CreateSwapChainForHwnd(dev.Get().dx11.GetDevice(),
 			window.GetHandle(), &swapDesc, nullptr, nullptr, &tempChain));
 		ZE_GFX_THROW_FAILED(tempChain->QueryInterface(IID_PPV_ARGS(&swapChain)));
 

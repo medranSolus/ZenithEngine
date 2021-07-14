@@ -11,10 +11,8 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11Query> begin;
 		DX::ComPtr<ID3D11Query> end;
 
-		GPerf(Device& dev);
-
 	public:
-		GPerf(GFX::Device& dev) : GPerf(dev.Get().dx11) {}
+		GPerf(GFX::Device& dev);
 		GPerf(GPerf&&) = default;
 		GPerf(const GPerf&) = default;
 		GPerf& operator=(GPerf&&) = default;

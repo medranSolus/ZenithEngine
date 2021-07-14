@@ -3,18 +3,18 @@
 
 namespace ZE::GFX::API::DX11
 {
-	GPerf::GPerf(Device& dev)
+	GPerf::GPerf(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev);
+		ZE_GFX_ENABLE(dev.Get().dx11);
 
 		D3D11_QUERY_DESC desc;
 		desc.MiscFlags = 0;
 		desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateQuery(&desc, &disjoint));
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery(&desc, &disjoint));
 		desc.Query = D3D11_QUERY_TIMESTAMP;
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateQuery(&desc, &begin));
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateQuery(&desc, &end));
-		dev.GetDevice()->GetImmediateContext(&ctx); // TODO Support deffered ctx
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery(&desc, &begin));
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery(&desc, &end));
+		dev.Get().dx11.GetDevice()->GetImmediateContext(&ctx); // TODO Support deffered ctx
 	}
 
 	void GPerf::Start() noexcept

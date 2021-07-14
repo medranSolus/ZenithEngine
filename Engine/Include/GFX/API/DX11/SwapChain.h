@@ -10,10 +10,8 @@ namespace ZE::GFX::API::DX11
 		UINT presentFlags = 0;
 		DX::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 
-		SwapChain(const Window::WinAPI::WindowWinAPI& window, Device& dev);
-
 	public:
-		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev) : SwapChain(window, dev.Get().dx11) {}
+		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
 		SwapChain(SwapChain&&) = delete;
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(SwapChain&&) = delete;

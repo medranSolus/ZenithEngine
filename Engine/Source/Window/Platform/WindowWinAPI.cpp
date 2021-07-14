@@ -61,11 +61,6 @@ namespace ZE::Window::WinAPI
 		// when pressing the Alt+Enter if this message is not handled.
 		case WM_SYSCHAR:
 			return 0;
-		case WM_NCCREATE:
-		{
-			assert(EnableNonClientDpiScaling(hWnd) != 0);
-			break;
-		}
 		case WM_ACTIVATE:
 		{
 			if (!IsCursorEnabled())
@@ -263,10 +258,10 @@ namespace ZE::Window::WinAPI
 	{
 		constexpr DWORD WIN_STYLE_EX = 0;
 
-		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == FALSE)
+		if (SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL)
 			throw ZE_WIN_EXCEPT_LAST();
 		// Initial DPI since no possible way to know window DPI
-		const UINT dpi = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
+		const UINT dpi = GetDpiForSystem();
 
 		if (width == 0 || height == 0)
 		{

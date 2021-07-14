@@ -77,3 +77,25 @@ namespace ZE::GFX::API::DX
 // Checks HRESULT returned via function and throws on error
 #define	ZE_GFX_THROW_FAILED(call) ZE_GFX_SET_DEBUG_WATCH(); if(FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT)
 #pragma endregion
+
+#pragma region Debug name macros
+// Variable name holding debug name
+#define ZE_GFX_DEBUG_ID __debugID
+
+#ifdef _ZE_MODE_DEBUG
+// Enables useage of ZE_GFX_SET_ID macros in current scope
+#define ZE_GFX_ENABLE_ID(device) ZE_GFX_ENABLE(device); std::string ZE_GFX_DEBUG_ID
+
+// Before using needs call to ZE_GFX_ENABLE_ID()
+// Sets debug name for GPU object with given id
+#define ZE_GFX_SET_ID(child, id) ZE_GFX_DEBUG_ID = id; ZE_GFX_THROW_FAILED(child.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(ZE_GFX_DEBUG_ID.size()), ZE_GFX_DEBUG_ID.c_str()))
+
+#else
+// Enables useage of ZE_GFX_SET_ID macros in current scope
+#define ZE_GFX_ENABLE_ID(device) ZE_GFX_ENABLE(device)
+
+// Before using needs call to ZE_GFX_ENABLE_ID()
+// Sets debug name for GPU object with given id
+#define ZE_GFX_SET_ID(child, id)
+#endif
+#pragma endregion
