@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX11
 {
 	class CommandList final
 	{
-		DX::ComPtr<ID3D11CommandList> commands = nullptr;
+		DX::ComPtr<ID3D11CommandList> commands;
 
 	public:
 		CommandList() = default;

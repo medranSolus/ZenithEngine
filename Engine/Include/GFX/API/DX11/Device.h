@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX11
 #ifdef _ZE_MODE_DEBUG
 		DX::DebugInfoManager debugManager;
 #endif
-		DX::ComPtr<ID3D11Device5> device = nullptr;
+		DX::ComPtr<ID3D11Device5> device;
 
 	public:
 		Device();

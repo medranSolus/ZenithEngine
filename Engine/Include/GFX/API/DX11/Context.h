@@ -7,9 +7,9 @@ namespace ZE::GFX::API::DX11
 {
 	class Context final
 	{
-		DX::ComPtr<ID3D11DeviceContext4> context = nullptr;
+		DX::ComPtr<ID3D11DeviceContext4> context;
 #ifdef _ZE_MODE_DEBUG
-		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager = nullptr;
+		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
 #endif
 
 	public:

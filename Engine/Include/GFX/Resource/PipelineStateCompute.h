@@ -1,10 +1,9 @@
 #pragma once
 #include "GFX/API/DX11/Resource/PipelineStateCompute.h"
-#include "GFX/Context.h"
 
 namespace ZE::GFX::Resource
 {
-	// GPU state for draw call
+	// GPU state for compute call
 	class PipelineStateCompute final
 	{
 		ZE_API_BACKEND(PipelineStateCompute, DX11, DX11, DX11, DX11) backend;

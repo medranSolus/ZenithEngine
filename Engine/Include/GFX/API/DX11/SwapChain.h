@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX11
 	class SwapChain final
 	{
 		UINT presentFlags = 0;
-		DX::ComPtr<IDXGISwapChain4> swapChain = nullptr;
+		DX::ComPtr<IDXGISwapChain4> swapChain;
 
 	public:
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
