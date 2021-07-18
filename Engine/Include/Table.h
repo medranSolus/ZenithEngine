@@ -9,6 +9,7 @@ namespace ZE
 	template<typename T>
 	concept TableIndex = std::is_unsigned_v<T>;
 
+	// Structure holding table sizes
 	template<TableIndex I>
 	struct TableInfo
 	{
@@ -155,7 +156,7 @@ namespace ZE
 		info.Size = newSize;
 		return data;
 	}
-	
+
 	template<typename T, TableIndex I, U64 ChunkSize, U8 AlignmentPower>
 	constexpr T* Table::Append(TableInfo<I>& info, T* data, T&& element) noexcept
 	{

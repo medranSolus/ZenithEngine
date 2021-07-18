@@ -29,8 +29,7 @@ foreach(I RANGE 1 ${LAST_SHADER_SLOT})
     file(APPEND ${SLOT_GEN} "#define ZE_GEN_SLOTS${I}(X) ZE_GEN_SLOTS${PREV_SLOT}(X) ##X##${PREV_SLOT} = ${PREV_SLOT},\n")
 endforeach()
 file(APPEND ${SLOT_GEN}
-    "#define ZE_MAX_SLOTS ${SHADER_SLOT_COUNT}\n"
-    "#define ZE_GEN_SLOTS(COUNT, X) ZE_GEN_SLOTS##COUNT(X) Count = COUNT")
+    "#define ZE_GEN_SLOTS(X) ZE_GEN_SLOTS${LAST_SHADER_SLOT}(X) Count = ${SHADER_SLOT_COUNT}")
 
 # Post build data copy
 if(NOT (ZE_NO_DATA OR ZE_CI_JOB))
@@ -48,11 +47,11 @@ file(GLOB_RECURSE SRC_LIST
     "${IMGUI_INC_DIR}/*.h")
 
 # Target setup
-add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${ZE_API_HEADER} "Include/GFX/API/DX11/D3D11.h")
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${ZE_API_HEADER})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PUBLIC ${ENGINE_INC_DIR} ${BUILD_CONFINGS_INC_DIR} ${ZE_API_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
+    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
     PUBLIC D3DCompiler dxgi dxguid d3d11 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})

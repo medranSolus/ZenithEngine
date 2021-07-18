@@ -5,10 +5,10 @@
 namespace ZE::GFX
 {
 	// Bind slots used by shaders
-	enum class ShaderSlot : U32
+	enum ShaderSlot : U32
 	{
 		Normal,
 		Specular,
-		ZE_GEN_SLOTS(ZE_MAX_SLOTS, Slot_)
+		ZE_GEN_SLOTS(Slot_)
 	};
 }
