@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/API/DX11/Device.h"
+#include "GFX/API/DX12/Device.h"
 #include "GFX/API/Backend.h"
 
 namespace ZE::GFX
@@ -7,7 +8,7 @@ namespace ZE::GFX
 	// Resource allocation
 	class Device final
 	{
-		ZE_API_BACKEND(Device, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(Device, DX11, DX12, DX11, DX11) backend;
 
 	public:
 		Device() = default;
@@ -19,6 +20,6 @@ namespace ZE::GFX
 
 		constexpr void Init() { backend.Init(); }
 		constexpr void SwitchApi(GfxApiType nextApi) { backend.Switch(nextApi); }
-		constexpr ZE_API_BACKEND(Device, DX11, DX11, DX11, DX11)& Get() noexcept { return backend; }
+		constexpr ZE_API_BACKEND(Device, DX11, DX12, DX11, DX11)& Get() noexcept { return backend; }
 	};
 }

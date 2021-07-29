@@ -3,7 +3,6 @@
 #include "GFX/API/DX/DXGI.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include <d3d11_4.h>
-#include <d3dcompiler.h>
 
 namespace ZE::GFX::API::DX11
 {

@@ -185,7 +185,7 @@ namespace ZE::GFX::API
 		}
 		case ApiType::DX12:
 		{
-			dx11.~D12();
+			dx12.~D12();
 			break;
 		}
 		case ApiType::OpenGL:
@@ -204,11 +204,11 @@ namespace ZE::GFX::API
 }
 
 // Wrapper for proper graphics API implementations for all current APIs
-#define ZE_API_BACKEND(type, api1, api2, api3, api4) ZE::GFX::API::Backend< \
-	ZE::GFX::API::##api1##::##type##, \
-	ZE::GFX::API::##api2##::##type##, \
-	ZE::GFX::API::##api3##::##type##, \
-	ZE::GFX::API::##api4##::##type##>
+#define ZE_API_BACKEND(type, apiDX11, apiDX12, apiGL, apiVK) ZE::GFX::API::Backend< \
+	ZE::GFX::API::##apiDX11##::##type##, \
+	ZE::GFX::API::##apiDX12##::##type##, \
+	ZE::GFX::API::##apiGL##::##type##, \
+	ZE::GFX::API::##apiVK##::##type##>
 
 // Extended wrapper for calling methods on currently active API implementation
 #define ZE_API_BACKEND_CALL_EX(variable, ret, function, ...) \

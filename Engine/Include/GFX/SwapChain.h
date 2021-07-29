@@ -1,5 +1,6 @@
 #pragma once
 #include "API/DX11/SwapChain.h"
+#include "API/DX12/SwapChain.h"
 #include "Device.h"
 
 namespace ZE::GFX
@@ -7,7 +8,7 @@ namespace ZE::GFX
 	// Managing backbuffers
 	class SwapChain final
 	{
-		ZE_API_BACKEND(SwapChain, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(SwapChain, DX11, DX12, DX11, DX11) backend;
 
 	public:
 		SwapChain() = default;

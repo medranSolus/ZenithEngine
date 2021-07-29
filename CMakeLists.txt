@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.19)
 ######### PROJECT CONFIGURATION #########
 
 set(PROJECT_NAME "Zenith Engine")
-project(${PROJECT_NAME} VERSION 0.2)
+project(${PROJECT_NAME} VERSION 0.3)
 
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING

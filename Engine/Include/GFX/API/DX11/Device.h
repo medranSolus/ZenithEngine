@@ -1,5 +1,4 @@
 #pragma once
-#include "GFX/API/DX/DebugInfoManager.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11
