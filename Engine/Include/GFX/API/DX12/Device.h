@@ -21,9 +21,9 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		Device();
-		Device(Device&&) = delete;
+		Device(Device&&) = default;
 		Device(const Device&) = delete;
-		Device& operator=(Device&&) = delete;
+		Device& operator=(Device&&) = default;
 		Device& operator=(const Device&) = delete;
 		~Device();
 

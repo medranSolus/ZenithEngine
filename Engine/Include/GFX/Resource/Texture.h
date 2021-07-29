@@ -6,19 +6,19 @@ namespace ZE::GFX::Resource
 	// Texture data for shaders
 	class Texture final
 	{
-		ZE_API_BACKEND(Texture, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(Texture) backend;
 
 	public:
 		constexpr Texture(Device& dev, Context& ctx, const Surface& surface) { backend.Init(dev, ctx, surface); }
-		Texture(Texture&&) = delete;
+		Texture(Texture&&) = default;
 		Texture(const Texture&) = delete;
-		Texture& operator=(Texture&&) = delete;
+		Texture& operator=(Texture&&) = default;
 		Texture& operator=(const Texture&) = delete;
 		~Texture() = default;
 
-		constexpr ZE_API_BACKEND(Texture, DX11, DX11, DX11, DX11)& Get() noexcept { return backend; }
-		void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
-		void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
+		constexpr ZE_API_BACKEND(Texture)& Get() noexcept { return backend; }
+		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
+		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
 
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 	};

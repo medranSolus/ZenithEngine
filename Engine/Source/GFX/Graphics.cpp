@@ -5,7 +5,7 @@ namespace ZE::GFX
 	void Graphics::Init(const Window::MainWindow& window)
 	{
 		device.Init();
-		mainCtx.Init(device, true);
+		mainCtx.Init(device);
 		swapChain.Init(window, device);
 	}
 }

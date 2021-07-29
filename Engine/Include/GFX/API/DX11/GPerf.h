@@ -14,9 +14,9 @@ namespace ZE::GFX::API::DX11
 	public:
 		GPerf(GFX::Device& dev);
 		GPerf(GPerf&&) = default;
-		GPerf(const GPerf&) = default;
+		GPerf(const GPerf&) = delete;
 		GPerf& operator=(GPerf&&) = default;
-		GPerf& operator=(const GPerf&) = default;
+		GPerf& operator=(const GPerf&) = delete;
 		~GPerf() = default;
 
 		static constexpr const char* GetApiString() noexcept { return "DX11"; }

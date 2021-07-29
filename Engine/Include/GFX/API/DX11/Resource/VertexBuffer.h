@@ -12,9 +12,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
-		VertexBuffer(VertexBuffer&&) = delete;
+		VertexBuffer(VertexBuffer&&) = default;
 		VertexBuffer(const VertexBuffer&) = delete;
-		VertexBuffer& operator=(VertexBuffer&&) = delete;
+		VertexBuffer& operator=(VertexBuffer&&) = default;
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		~VertexBuffer() = default;
 

@@ -6,19 +6,19 @@ namespace ZE::GFX::Resource
 	// Cubic texture data for shaders
 	class TextureCube final
 	{
-		ZE_API_BACKEND(TextureCube, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(TextureCube) backend;
 
 	public:
 		constexpr TextureCube(Device& dev, const std::string& dir, const std::string& ext);
-		TextureCube(TextureCube&&) = delete;
+		TextureCube(TextureCube&&) = default;
 		TextureCube(const TextureCube&) = delete;
-		TextureCube& operator=(TextureCube&&) = delete;
+		TextureCube& operator=(TextureCube&&) = default;
 		TextureCube& operator=(const TextureCube&) = delete;
 		~TextureCube() = default;
 
-		constexpr ZE_API_BACKEND(TextureCube, DX11, DX11, DX11, DX11)& Get() noexcept { return backend; }
-		void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
-		void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
+		constexpr ZE_API_BACKEND(TextureCube)& Get() noexcept { return backend; }
+		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
+		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
 
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 	};

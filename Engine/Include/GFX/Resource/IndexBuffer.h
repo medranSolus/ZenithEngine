@@ -6,20 +6,20 @@ namespace ZE::GFX::Resource
 	// Buffer holding indices into VertexBuffer
 	class IndexBuffer final
 	{
-		ZE_API_BACKEND(IndexBuffer, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(IndexBuffer) backend;
 		U32 count;
 
 	public:
 		constexpr IndexBuffer(Device& dev, U32 count, U32* indices) : count(count) { backend.Init(dev, count, indices); }
-		IndexBuffer(IndexBuffer&&) = delete;
+		IndexBuffer(IndexBuffer&&) = default;
 		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator=(IndexBuffer&&) = delete;
+		IndexBuffer& operator=(IndexBuffer&&) = default;
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		~IndexBuffer() = default;
 
-		constexpr ZE_API_BACKEND(IndexBuffer, DX11, DX11, DX11, DX11)& Get() noexcept { return backend; }
+		constexpr ZE_API_BACKEND(IndexBuffer)& Get() noexcept { return backend; }
 		constexpr U32 GetCount() const noexcept { return count; }
-		void Bind(Context& ctx) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, ctx); }
+		constexpr void Bind(Context& ctx) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, ctx); }
 
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 	};

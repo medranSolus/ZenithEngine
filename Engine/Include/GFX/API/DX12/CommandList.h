@@ -1,11 +1,12 @@
 #pragma once
-#include "D3D11.h"
+#include "D3D12.h"
 
-namespace ZE::GFX::API::DX11
+namespace ZE::GFX::API::DX12
 {
 	class CommandList final
 	{
-		DX::ComPtr<ID3D11CommandList> commands;
+		DX::ComPtr<ID3D12GraphicsCommandList5> commands;
+		DX::ComPtr<ID3D12CommandAllocator> allocator;
 
 	public:
 		CommandList() = default;
@@ -15,6 +16,6 @@ namespace ZE::GFX::API::DX11
 		CommandList& operator=(const CommandList&) = delete;
 		~CommandList() = default;
 
-		ID3D11CommandList** GetList() noexcept { return commands.GetAddressOf(); }
+		ID3D12GraphicsCommandList5* GetList() noexcept { return commands.Get(); }
 	};
 }

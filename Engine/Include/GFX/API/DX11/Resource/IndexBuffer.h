@@ -10,9 +10,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		IndexBuffer(GFX::Device& dev, U32 count, U32* indices);
-		IndexBuffer(IndexBuffer&&) = delete;
+		IndexBuffer(IndexBuffer&&) = default;
 		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator=(IndexBuffer&&) = delete;
+		IndexBuffer& operator=(IndexBuffer&&) = default;
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		~IndexBuffer() = default;
 

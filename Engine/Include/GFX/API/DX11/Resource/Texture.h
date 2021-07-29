@@ -12,9 +12,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		Texture(GFX::Device& dev, GFX::Context& ctx, const Surface& surface);
-		Texture(Texture&&) = delete;
+		Texture(Texture&&) = default;
 		Texture(const Texture&) = delete;
-		Texture& operator=(Texture&&) = delete;
+		Texture& operator=(Texture&&) = default;
 		Texture& operator=(const Texture&) = delete;
 		~Texture() = default;
 

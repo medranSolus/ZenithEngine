@@ -13,7 +13,7 @@ namespace ZE::GFX
 	protected:
 		static inline GPerf* instance = nullptr;
 
-		ZE_API_BACKEND(GPerf, DX11, DX11, DX11, DX11) backend;
+		ZE_API_BACKEND(GPerf) backend;
 		// Average micro seconds must be computed each time Stop is called using:
 		// pair.first = (time - pair.first) / ++pair.second
 		std::unordered_map<std::string, std::pair<long double, U64>> data;
@@ -25,9 +25,9 @@ namespace ZE::GFX
 
 	public:
 		GPerf(GPerf&&) = default;
-		GPerf(const GPerf&) = default;
+		GPerf(const GPerf&) = delete;
 		GPerf& operator=(GPerf&&) = default;
-		GPerf& operator=(const GPerf&) = default;
+		GPerf& operator=(const GPerf&) = delete;
 		~GPerf() { if (data.size()) Save(); }
 
 		static constexpr void Init(Device& dev) { assert(!instance); instance = new GPerf(dev); }

@@ -12,9 +12,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		CBuffer(GFX::Device& dev, U8* values, U32 bytes, bool dynamic);
-		CBuffer(CBuffer&&) = delete;
+		CBuffer(CBuffer&&) = default;
 		CBuffer(const CBuffer&) = delete;
-		CBuffer& operator=(CBuffer&&) = delete;
+		CBuffer& operator=(CBuffer&&) = default;
 		CBuffer& operator=(const CBuffer&) = delete;
 		~CBuffer() = default;
 

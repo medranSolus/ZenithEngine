@@ -18,9 +18,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc);
-		PipelineStateGfx(PipelineStateGfx&&) = delete;
+		PipelineStateGfx(PipelineStateGfx&&) = default;
 		PipelineStateGfx(const PipelineStateGfx&) = delete;
-		PipelineStateGfx& operator=(PipelineStateGfx&&) = delete;
+		PipelineStateGfx& operator=(PipelineStateGfx&&) = default;
 		PipelineStateGfx& operator=(const PipelineStateGfx&) = delete;
 		~PipelineStateGfx() = default;
 

@@ -22,7 +22,7 @@ namespace ZE::GFX
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr Context& GetMainContext() noexcept { return mainCtx; }
-		void Present() { swapChain.Present(device); }
+		constexpr void Present() { swapChain.Present(device); }
 
 		void Init(const Window::MainWindow& window);
 	};

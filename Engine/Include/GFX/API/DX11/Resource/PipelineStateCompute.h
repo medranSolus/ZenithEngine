@@ -10,9 +10,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		PipelineStateCompute(GFX::Device& dev, const std::wstring& nameCS);
-		PipelineStateCompute(PipelineStateCompute&&) = delete;
+		PipelineStateCompute(PipelineStateCompute&&) = default;
 		PipelineStateCompute(const PipelineStateCompute&) = delete;
-		PipelineStateCompute& operator=(PipelineStateCompute&&) = delete;
+		PipelineStateCompute& operator=(PipelineStateCompute&&) = default;
 		PipelineStateCompute& operator=(const PipelineStateCompute&) = delete;
 		~PipelineStateCompute() = default;
 

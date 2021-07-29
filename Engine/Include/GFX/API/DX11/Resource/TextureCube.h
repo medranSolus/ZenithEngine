@@ -12,9 +12,9 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		TextureCube(GFX::Device& dev, const std::array<Surface, 6>& surfaces);
-		TextureCube(TextureCube&&) = delete;
+		TextureCube(TextureCube&&) = default;
 		TextureCube(const TextureCube&) = delete;
-		TextureCube& operator=(TextureCube&&) = delete;
+		TextureCube& operator=(TextureCube&&) = default;
 		TextureCube& operator=(const TextureCube&) = delete;
 		~TextureCube() = default;
 
