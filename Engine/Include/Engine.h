@@ -9,7 +9,7 @@ namespace ZE
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Graphics graphics;
-		bool guiEnabled = true;
+		bool guiEnabled = false;
 
 	public:
 		Engine(const char* windowName, GfxApiType gfxApi, U32 width = 0, U32 height = 0);

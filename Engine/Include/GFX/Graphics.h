@@ -1,5 +1,5 @@
 #pragma once
-#include "Context.h"
+#include "CommandList.h"
 #include "Device.h"
 #include "SwapChain.h"
 
@@ -8,7 +8,7 @@ namespace ZE::GFX
 	class Graphics final
 	{
 		Device device;
-		Context mainCtx;
+		CommandList mainList;
 		SwapChain swapChain;
 		bool guiEnabled = true;
 
@@ -21,7 +21,7 @@ namespace ZE::GFX
 		~Graphics() = default;
 
 		constexpr Device& GetDevice() noexcept { return device; }
-		constexpr Context& GetMainContext() noexcept { return mainCtx; }
+		constexpr CommandList& GetMainList() noexcept { return mainList; }
 		constexpr void Present() { swapChain.Present(device); }
 
 		void Init(const Window::MainWindow& window);

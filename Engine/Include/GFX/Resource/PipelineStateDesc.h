@@ -20,5 +20,8 @@ namespace ZE::GFX::Resource
 		CullMode Culling;
 		bool DepthEnable;
 		TopologyType Topology;
+		U8 RenderTargetsCount;
+		PixelFormat FormatsRT[8];
+		PixelFormat FormatDS;
 	};
 }

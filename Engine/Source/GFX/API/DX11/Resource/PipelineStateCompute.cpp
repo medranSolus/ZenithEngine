@@ -13,9 +13,4 @@ namespace ZE::GFX::API::DX11::Resource
 			bytecode->GetBufferSize(), nullptr, &shader));
 		ZE_GFX_SET_ID(shader, "CS");
 	}
-
-	void PipelineStateCompute::Bind(GFX::Context& ctx) const noexcept
-	{
-		ctx.Get().dx11.GetContext()->CSSetShader(shader.Get(), nullptr, 0);
-	}
 }

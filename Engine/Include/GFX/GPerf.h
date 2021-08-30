@@ -1,6 +1,6 @@
 #pragma once
 #include "API/DX11/GPerf.h"
-#include "Device.h"
+#include "API/DX12/GPerf.h"
 #include <unordered_map>
 
 namespace ZE::GFX
@@ -17,7 +17,7 @@ namespace ZE::GFX
 		// Average micro seconds must be computed each time Stop is called using:
 		// pair.first = (time - pair.first) / ++pair.second
 		std::unordered_map<std::string, std::pair<long double, U64>> data;
-		std::string lastTag = "";
+		std::vector<std::string> lastTags;
 
 		void Save();
 
@@ -34,10 +34,13 @@ namespace ZE::GFX
 		static constexpr void SwitchApi(API::ApiType nextApi, Device& dev) { Get().backend.Switch(nextApi, dev); }
 		static constexpr GPerf& Get() { assert(instance); return *instance; }
 
-		void Start(const std::string& sectionTag) noexcept;
-		void Stop() noexcept;
+		constexpr void Stop(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Stop, cl); }
+
+		void Start(CommandList& cl, const std::string& sectionTag) noexcept;
+		void Collect(Device& dev) noexcept;
 	};
 }
 
-#define ZE_GPERF_START(sectionTag) ZE::GFX::GPerf::Get().Start(sectionTag)
-#define ZE_GPERF_STOP() ZE::GFX::GPerf::Get().Stop()
+#define ZE_GPERF_START(cl, sectionTag) ZE::GFX::GPerf::Get().Start(cl, sectionTag)
+#define ZE_GPERF_STOP(cl) ZE::GFX::GPerf::Get().Stop(cl)
+#define ZE_GPERF_COLLECT(dev) ZE::GFX::GPerf::Get().Collect(dev)

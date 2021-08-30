@@ -1,6 +1,6 @@
 #pragma once
 #include "Window/MainWindow.h"
-#include "GFX/Context.h"
+#include "GFX/Device.h"
 #include "imgui.h"
 #include <string>
 
@@ -16,7 +16,7 @@ namespace ZE::GUI
 		Manager& operator=(const Manager&) = delete;
 		~Manager() { Disable(); ImGui::DestroyContext(); }
 
-		void Init(GFX::Device& dev, GFX::Context& ctx) const noexcept;
+		void Init(GFX::Device& dev) const noexcept;
 		void Disable() const noexcept;
 		void StartFrame(const Window::MainWindow& window) const noexcept;
 		void EndFrame() const noexcept;

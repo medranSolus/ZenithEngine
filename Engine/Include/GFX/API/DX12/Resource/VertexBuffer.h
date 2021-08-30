@@ -1,15 +1,12 @@
 #pragma once
 #include "GFX/CommandList.h"
 #include "GFX/VertexData.h"
-#include "D3D11.h"
+#include "D3D12.h"
 
-namespace ZE::GFX::API::DX11::Resource
+namespace ZE::GFX::API::DX12::Resource
 {
 	class VertexBuffer final
 	{
-		UINT byteStride;
-		DX::ComPtr<ID3D11Buffer> buffer;
-
 	public:
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		VertexBuffer(VertexBuffer&&) = default;
@@ -18,7 +15,7 @@ namespace ZE::GFX::API::DX11::Resource
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		~VertexBuffer() = default;
 
-		void Bind(GFX::CommandList& cl) const noexcept;
-		VertexData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
+		void Bind(GFX::CommandList& ctx) const noexcept;
+		VertexData GetData(GFX::Device& dev, GFX::CommandList& ctx) const;
 	};
 }

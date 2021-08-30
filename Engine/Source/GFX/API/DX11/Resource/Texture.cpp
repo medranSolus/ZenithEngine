@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	Texture::Texture(GFX::Device& dev, GFX::Context& ctx, const Surface& surface)
+	Texture::Texture(GFX::Device& dev, GFX::CommandList& cl, const Surface& surface)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
@@ -35,23 +35,23 @@ namespace ZE::GFX::API::DX11::Resource
 		viewDesc.Texture2D.MostDetailedMip = 0;
 
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateShaderResourceView(texture.Get(), &viewDesc, &srv));
-		ctx.Get().dx11.GetContext()->GenerateMips(srv.Get());
+		cl.Get().dx11.GetContext()->GenerateMips(srv.Get());
 		ZE_GFX_SET_ID(srv, "Texture");
 	}
 
-	void Texture::BindPS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void Texture::BindPS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->PSSetShaderResources(slot, 1, srv.GetAddressOf());
+		cl.Get().dx11.GetContext()->PSSetShaderResources(slot, 1, srv.GetAddressOf());
 	}
 
-	void Texture::BindCS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void Texture::BindCS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->CSSetShaderResources(slot, 1, srv.GetAddressOf());
+		cl.Get().dx11.GetContext()->CSSetShaderResources(slot, 1, srv.GetAddressOf());
 	}
 
-	Surface Texture::GetData(GFX::Device& dev, GFX::Context& ctx) const
+	Surface Texture::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
 		return { 1, 1 };
 	}

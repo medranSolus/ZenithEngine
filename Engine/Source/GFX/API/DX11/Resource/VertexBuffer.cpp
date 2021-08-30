@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 	VertexBuffer::VertexBuffer(GFX::Device& dev, const VertexData& data)
 		: byteStride(data.VertexSize)
 	{
-		assert(data.Vertices);
+		assert(data.Vertices != nullptr && data.BufferSize != 0 && data.VertexSize != 0);
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
@@ -26,13 +26,13 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(buffer, "VertexBuffer");
 	}
 
-	void VertexBuffer::Bind(GFX::Context& ctx) const noexcept
+	void VertexBuffer::Bind(GFX::CommandList& cl) const noexcept
 	{
 		const UINT offset = 0;
-		ctx.Get().dx11.GetContext()->IASetVertexBuffers(0, 1, buffer.GetAddressOf(), &byteStride, &offset);
+		cl.Get().dx11.GetContext()->IASetVertexBuffers(0, 1, buffer.GetAddressOf(), &byteStride, &offset);
 	}
 
-	VertexData VertexBuffer::GetData(GFX::Device& dev, GFX::Context& ctx) const
+	VertexData VertexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
 		return {};
 	}

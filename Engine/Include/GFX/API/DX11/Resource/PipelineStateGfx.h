@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Context.h"
+#include "GFX/Device.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Resource
@@ -24,6 +24,8 @@ namespace ZE::GFX::API::DX11::Resource
 		PipelineStateGfx& operator=(const PipelineStateGfx&) = delete;
 		~PipelineStateGfx() = default;
 
-		void Bind(GFX::Context& ctx) const noexcept;
+		// Gfx API Internal
+
+		void Bind(ID3D11DeviceContext4* ctx) const noexcept;
 	};
 }

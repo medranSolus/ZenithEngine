@@ -122,17 +122,16 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(rasterState, "Raster");
 	}
 
-	void PipelineStateGfx::Bind(GFX::Context& ctx) const noexcept
+	void PipelineStateGfx::Bind(ID3D11DeviceContext4* ctx) const noexcept
 	{
-		auto context = ctx.Get().dx11.GetContext();
-		context->IASetInputLayout(inputLayout.Get());
-		context->VSSetShader(vertexShader.Get(), nullptr, 0);
-		context->DSSetShader(domainShader.Get(), nullptr, 0);
-		context->HSSetShader(hullShader.Get(), nullptr, 0);
-		context->GSSetShader(geometryShader.Get(), nullptr, 0);
-		context->PSSetShader(pixelShader.Get(), nullptr, 0);
-		context->OMSetBlendState(blendState.Get(), nullptr, 0xFFFFFFFF);
-		context->OMSetDepthStencilState(depthStencilState.Get(), 0xFF);
-		context->RSSetState(rasterState.Get());
+		ctx->IASetInputLayout(inputLayout.Get());
+		ctx->VSSetShader(vertexShader.Get(), nullptr, 0);
+		ctx->DSSetShader(domainShader.Get(), nullptr, 0);
+		ctx->HSSetShader(hullShader.Get(), nullptr, 0);
+		ctx->GSSetShader(geometryShader.Get(), nullptr, 0);
+		ctx->PSSetShader(pixelShader.Get(), nullptr, 0);
+		ctx->OMSetBlendState(blendState.Get(), nullptr, 0xFFFFFFFF);
+		ctx->OMSetDepthStencilState(depthStencilState.Get(), 0xFF);
+		ctx->RSSetState(rasterState.Get());
 	}
 }

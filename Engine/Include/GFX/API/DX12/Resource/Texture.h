@@ -2,14 +2,12 @@
 #include "GFX/CommandList.h"
 #include "GFX/Surface.h"
 #include "GFX/ShaderSlot.h"
-#include "D3D11.h"
+#include "D3D12.h"
 
-namespace ZE::GFX::API::DX11::Resource
+namespace ZE::GFX::API::DX12::Resource
 {
 	class Texture final
 	{
-		DX::ComPtr<ID3D11ShaderResourceView> srv;
-
 	public:
 		Texture(GFX::Device& dev, GFX::CommandList& cl, const Surface& surface);
 		Texture(Texture&&) = default;

@@ -1,8 +1,32 @@
 #include "GFX/API/DX12/Device.h"
 #include "GFX/API/DX/GraphicsException.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::DX12
 {
+	void Device::Wait(ID3D12Fence1* fence, U64 val)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+
+		if (fence->GetCompletedValue() < val)
+		{
+			HANDLE fenceEvent;
+			fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			assert(fenceEvent && "Cannot create fence event!");
+
+			ZE_GFX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
+			if (WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0)
+				throw ZE_WIN_EXCEPT_LAST();
+		}
+	}
+
+	void Device::Execute(ID3D12CommandQueue* queue, GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	{
+		assert(cl.Get().dx12.GetList() != nullptr);
+		ID3D12CommandList* lists[] = { cl.Get().dx12.GetList() };
+		ZE_GFX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
+	}
+
 	Device::Device()
 	{
 		ZE_WIN_ENABLE_EXCEPT();
@@ -28,7 +52,6 @@ namespace ZE::GFX::API::DX12
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
 		// Suppress non important messages
 		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
@@ -40,7 +63,7 @@ namespace ZE::GFX::API::DX12
 			D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE
 		};
 
-		D3D12_INFO_QUEUE_FILTER filter;
+		D3D12_INFO_QUEUE_FILTER filter = { 0 };
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
 		filter.DenyList.NumIDs = 2;

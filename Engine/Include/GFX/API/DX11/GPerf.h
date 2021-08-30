@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11
@@ -21,7 +21,8 @@ namespace ZE::GFX::API::DX11
 
 		static constexpr const char* GetApiString() noexcept { return "DX11"; }
 
-		void Start() noexcept;
-		long double Stop() noexcept;
+		void Start(GFX::CommandList& cl) noexcept;
+		void Stop(GFX::CommandList& cl) const noexcept;
+		long double GetData(GFX::Device& dev) noexcept;
 	};
 }

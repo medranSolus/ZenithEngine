@@ -31,39 +31,54 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(buffer, "CBuffer");
 	}
 
-	void CBuffer::BindVS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::Update(GFX::CommandList& cl, U8* values, U64 bytes) const
 	{
-		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		cl.Get().dx11.GetContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
 	}
 
-	void CBuffer::BindDS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::UpdateDynamic(GFX::Device& dev, GFX::CommandList& cl, U8* values, U64 bytes) const
 	{
-		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->DSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		ZE_GFX_ENABLE(dev.Get().dx11);
+
+		D3D11_MAPPED_SUBRESOURCE subres;
+		ZE_GFX_THROW_FAILED(cl.Get().dx11.GetContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
+		memcpy(subres.pData, values, bytes);
+		cl.Get().dx11.GetContext()->Unmap(buffer.Get(), 0);
 	}
 
-	void CBuffer::BindHS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::BindVS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->HSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		cl.Get().dx11.GetContext()->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
 	}
 
-	void CBuffer::BindGS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::BindDS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		cl.Get().dx11.GetContext()->DSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
 	}
 
-	void CBuffer::BindPS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::BindHS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		cl.Get().dx11.GetContext()->HSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
 	}
 
-	void CBuffer::BindCS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void CBuffer::BindGS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->CSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		cl.Get().dx11.GetContext()->GSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+	}
+
+	void CBuffer::BindPS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
+	{
+		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
+		cl.Get().dx11.GetContext()->PSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+	}
+
+	void CBuffer::BindCS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
+	{
+		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
+		cl.Get().dx11.GetContext()->CSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
 	}
 }

@@ -1,12 +1,12 @@
 #pragma once
 #include "GFX/Device.h"
-#include "D3D11.h"
+#include "D3D12.h"
 
-namespace ZE::GFX::API::DX11::Resource
+namespace ZE::GFX::API::DX12::Resource
 {
 	class PipelineStateCompute final
 	{
-		DX::ComPtr<ID3D11ComputeShader> shader;
+		DX::ComPtr<ID3D12PipelineState> state;
 
 	public:
 		PipelineStateCompute(GFX::Device& dev, const std::wstring& nameCS);
@@ -18,6 +18,6 @@ namespace ZE::GFX::API::DX11::Resource
 
 		// Gfx API Internal
 
-		void Bind(ID3D11DeviceContext4* ctx) const noexcept { ctx->CSSetShader(shader.Get(), nullptr, 0); }
+		ID3D12PipelineState* GetState() const noexcept { return state.Get(); }
 	};
 }

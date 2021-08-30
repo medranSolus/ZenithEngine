@@ -5,13 +5,12 @@ namespace ZE::GFX::API::DX12
 {
 	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-
-		// Retrieve factory used to create device
-		DX::ComPtr<IDXGIDevice4> dxgiDevice = nullptr;
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
-
-		presentFlags = DX::CreateSwapChain(std::move(dxgiDevice), dev.Get().dx12.GetMainQueue(), window.GetHandle(), swapChain
+		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(
+#ifdef _ZE_MODE_DEBUG
+			dev.Get().dx12.GetInfoManager()
+#endif
+		);
+		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), swapChain
 #ifdef _ZE_MODE_DEBUG
 			, dev.Get().dx12.GetInfoManager()
 #endif

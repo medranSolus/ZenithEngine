@@ -6,13 +6,13 @@
 
 namespace ZE::GFX::API::DX11
 {
-	constexpr D3D11_CULL_MODE GetCulling(Resource::CullMode mode) noexcept
+	constexpr D3D11_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept
 	{
 		switch (mode)
 		{
-		case Resource::CullMode::Front:
+		case GFX::Resource::CullMode::Front:
 			return D3D11_CULL_FRONT;
-		case Resource::CullMode::Back:
+		case GFX::Resource::CullMode::Back:
 			return D3D11_CULL_BACK;
 		}
 		return D3D11_CULL_NONE;

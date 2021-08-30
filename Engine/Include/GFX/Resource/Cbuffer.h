@@ -16,16 +16,17 @@ namespace ZE::GFX::Resource
 		CBuffer& operator=(const CBuffer&) = delete;
 		~CBuffer() = default;
 
-		template<bool IsDynamic>
-		constexpr void Update(GFX::Device& dev, GFX::Context& ctx, U8* values, U64 bytes) const { ZE_API_BACKEND_CALL(backend, Update<IsDynamic>, dev, ctx, values, bytes); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx, U8* values, U64 bytes) { backend.Switch(nextApi, dev, values, bytes); }
 		constexpr ZE_API_BACKEND(CBuffer)& Get() noexcept { return backend; }
 
-		constexpr void BindVS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindVS, ctx, slot); }
-		constexpr void BindDS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindDS, ctx, slot); }
-		constexpr void BindHS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindHS, ctx, slot); }
-		constexpr void BindGS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindGS, ctx, slot); }
-		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
-		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
+		constexpr void Update(CommanList& cl, U8* values, U64 bytes) const { ZE_API_BACKEND_CALL(backend, Update, cl, values, bytes); }
+		constexpr void UpdateDynamic(Device& dev, CommandList& cl, U8* values, U64 bytes) const { ZE_API_BACKEND_CALL(backend, UpdateDynamic, dev, cl, values, bytes); }
+
+		constexpr void BindVS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindVS, cl, slot); }
+		constexpr void BindDS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindDS, cl, slot); }
+		constexpr void BindHS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindHS, cl, slot); }
+		constexpr void BindGS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindGS, cl, slot); }
+		constexpr void BindPS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, cl, slot); }
+		constexpr void BindCS(CommanList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, cl, slot); }
 	};
 }

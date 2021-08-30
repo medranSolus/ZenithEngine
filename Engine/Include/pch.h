@@ -13,6 +13,7 @@
 */
 /* STD HEADERS:
 *** algorithm
+*** atomic
 *** cassert
 *** cfloat
 *** cmath

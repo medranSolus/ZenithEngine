@@ -2,14 +2,12 @@
 #include "GFX/API/DX/GraphicsException.h"
 #include "GFX/CommandList.h"
 #include "GFX/ShaderSlot.h"
-#include "D3D11.h"
+#include "D3D12.h"
 
-namespace ZE::GFX::API::DX11::Resource
+namespace ZE::GFX::API::DX12::Resource
 {
 	class CBuffer final
 	{
-		DX::ComPtr<ID3D11Buffer> buffer;
-
 	public:
 		CBuffer(GFX::Device& dev, U8* values, U32 bytes, bool dynamic);
 		CBuffer(CBuffer&&) = default;

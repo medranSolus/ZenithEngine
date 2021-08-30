@@ -19,20 +19,26 @@ namespace ZE::GFX
 		fout.close();
 	}
 
-	void GPerf::Start(const std::string& sectionTag) noexcept
+	void GPerf::Start(CommandList& cl, const std::string& sectionTag) noexcept
 	{
 		if (data.find(sectionTag) == data.end())
 			data.emplace(sectionTag, std::make_pair(0.0L, 0ULL));
-		lastTag = sectionTag;
-		ZE_API_BACKEND_CALL(backend, Start);
+		lastTags.push_back(sectionTag);
+		ZE_API_BACKEND_CALL(backend, Start, cl);
 	}
 
-	void GPerf::Stop() noexcept
+	void GPerf::Collect(Device& dev) noexcept
 	{
-		long double time;
-		ZE_API_BACKEND_CALL_RET(backend, time, Stop);
-		if (time != 0.0L)
-			data.at(lastTag).first += (time - data.at(lastTag).first) / ++data.at(lastTag).second;
-		lastTag = "";
+		for (auto it = lastTags.rbegin(); it != lastTags.rend(); ++it)
+		{
+			long double time = 0.0L;
+			ZE_API_BACKEND_CALL_RET(backend, time, GetData, dev);
+			if (time != 0.0L)
+			{
+				auto& dataPoint = data.at(*it);
+				dataPoint.first += (time - dataPoint.first) / ++dataPoint.second;
+			}
+		}
+		lastTags.clear();
 	}
 }

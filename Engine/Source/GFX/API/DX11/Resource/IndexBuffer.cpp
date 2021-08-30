@@ -24,12 +24,12 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(buffer, "IndexBuffer");
 	}
 
-	void IndexBuffer::Bind(GFX::Context& ctx) const noexcept
+	void IndexBuffer::Bind(GFX::CommandList& cl) const noexcept
 	{
-		ctx.Get().dx11.GetContext()->IASetIndexBuffer(buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+		cl.Get().dx11.GetContext()->IASetIndexBuffer(buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	}
 
-	U32* IndexBuffer::GetData(GFX::Device& dev, GFX::Context& ctx) const
+	U32* IndexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
 		return nullptr;
 	}

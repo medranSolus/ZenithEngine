@@ -7,7 +7,7 @@ namespace ZE
 		Settings::Init(gfxApi);
 		window.Init(windowName, width, height);
 		graphics.Init(window);
-		gui.Init(graphics.GetDevice(), graphics.GetMainContext());
+		gui.Init(graphics.GetDevice());
 	}
 
 	void Engine::BeginFrame() const
@@ -20,6 +20,6 @@ namespace ZE
 	{
 		if (IsGuiActive())
 			gui.EndFrame();
-		graphics.Present();
+		//graphics.Present();
 	}
 }

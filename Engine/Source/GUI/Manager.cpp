@@ -18,14 +18,18 @@ namespace ZE::GUI
 		style.Colors[ImGuiCol_WindowBg].w = 0.785f;
 	}
 
-	void Manager::Init(GFX::Device& dev, GFX::Context& ctx) const noexcept
+	void Manager::Init(GFX::Device& dev) const noexcept
 	{
 		switch (Settings::GetGfxApi())
 		{
 		case GfxApiType::DX11:
 		{
-			ImGui_ImplDX11_Init(dev.Get().dx11.GetDevice(), ctx.Get().dx11.GetContext());
+			ImGui_ImplDX11_Init(dev.Get().dx11.GetDevice(), dev.Get().dx11.GetMainContext());
 			break;
+		}
+		case GfxApiType::DX12:
+		{
+			return;
 		}
 		default:
 		{
@@ -44,6 +48,10 @@ namespace ZE::GUI
 			ImGui_ImplDX11_Shutdown();
 			break;
 		}
+		case GfxApiType::DX12:
+		{
+			return;
+		}
 		default:
 		{
 			assert("GUI not supported under current API!" && false);
@@ -60,6 +68,10 @@ namespace ZE::GUI
 		{
 			ImGui_ImplDX11_NewFrame();
 			break;
+		}
+		case GfxApiType::DX12:
+		{
+			return;
 		}
 		default:
 		{
@@ -80,6 +92,10 @@ namespace ZE::GUI
 		{
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 			break;
+		}
+		case GfxApiType::DX12:
+		{
+			return;
 		}
 		default:
 		{

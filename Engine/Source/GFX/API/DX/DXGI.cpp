@@ -1,9 +1,10 @@
 #include "GFX/API/DX/DXGI.h"
 #include "GFX/API/DX/GraphicsException.h"
+#include "Settings.h"
 
 namespace ZE::GFX::API::DX
 {
-	ComPtr<IDXGIAdapter4> CreateAdapter(
+	ComPtr<IDXGIFactory7> CreateFactory(
 #ifdef _ZE_MODE_DEBUG
 		DebugInfoManager& debugManager
 #endif
@@ -17,6 +18,22 @@ namespace ZE::GFX::API::DX
 		ComPtr<IDXGIFactory7> factory = nullptr;
 		ZE_GFX_THROW_FAILED(oldFactory->QueryInterface(IID_PPV_ARGS(&factory)));
 
+		return factory;
+	}
+
+	ComPtr<IDXGIAdapter4> CreateAdapter(
+#ifdef _ZE_MODE_DEBUG
+		DebugInfoManager& debugManager
+#endif
+	)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+
+		ComPtr<IDXGIFactory7> factory = CreateFactory(
+#ifdef _ZE_MODE_DEBUG
+			debugManager
+#endif
+		);
 		ComPtr<IDXGIAdapter4> adapter = nullptr;
 		for (UINT i = 0; true; ++i)
 		{
@@ -30,7 +47,7 @@ namespace ZE::GFX::API::DX
 		return adapter;
 	}
 
-	UINT CreateSwapChain(ComPtr<IDXGIDevice4> dxgiDevice, IUnknown* device, HWND window, ComPtr<IDXGISwapChain4>& swapChain
+	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device, HWND window, ComPtr<IDXGISwapChain4>& swapChain
 #ifdef _ZE_MODE_DEBUG
 		, DebugInfoManager& debugManager
 #endif
@@ -38,15 +55,10 @@ namespace ZE::GFX::API::DX
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		DX::ComPtr<IDXGIAdapter> adapter = nullptr;
-		ZE_GFX_THROW_FAILED(dxgiDevice->GetAdapter(&adapter));
-		DX::ComPtr<IDXGIFactory7> factory = nullptr;
-		ZE_GFX_THROW_FAILED(adapter->GetParent(IID_PPV_ARGS(&factory)));
-
 		DXGI_SWAP_CHAIN_DESC1 swapDesc;
 		swapDesc.Width = 0; // Use window sizes
 		swapDesc.Height = 0;
-		swapDesc.Format = DX::GetDXFormat(PixelFormat::R8G8B8A8_UNorm);
+		swapDesc.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
 		swapDesc.Stereo = FALSE;
 		swapDesc.SampleDesc.Count = 1; // Used only in bitblt swap model
 		swapDesc.SampleDesc.Quality = 0;

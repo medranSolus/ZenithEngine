@@ -14,27 +14,30 @@ namespace ZE::GFX::API::DX11
 		desc.Query = D3D11_QUERY_TIMESTAMP;
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery(&desc, &begin));
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery(&desc, &end));
-		dev.Get().dx11.GetDevice()->GetImmediateContext(&ctx); // TODO Support deffered ctx
 	}
 
-	void GPerf::Start() noexcept
+	void GPerf::Start(GFX::CommandList& cl) noexcept
 	{
-		ctx->Begin(disjoint.Get());
-		ctx->End(begin.Get());
+		cl.Get().dx11.GetContext()->Begin(disjoint.Get());
+		cl.Get().dx11.GetContext()->End(begin.Get());
 	}
 
-	long double GPerf::Stop() noexcept
+	void GPerf::Stop(GFX::CommandList& cl) const noexcept
 	{
-		ctx->End(end.Get());
-		ctx->End(disjoint.Get());
+		cl.Get().dx11.GetContext()->End(end.Get());
+		cl.Get().dx11.GetContext()->End(disjoint.Get());
+	}
+
+	long double GPerf::GetData(GFX::Device& dev) noexcept
+	{
 		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT dataDisjoint;
-		while (ctx->GetData(disjoint.Get(), &dataDisjoint, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0) != S_OK);
+		while (dev.Get().dx11.GetMainContext()->GetData(disjoint.Get(), &dataDisjoint, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0) != S_OK);
 
 		if (!dataDisjoint.Disjoint)
 		{
 			U64 ticksBegin, ticksEnd;
-			while (ctx->GetData(begin.Get(), &ticksBegin, sizeof(U64), 0) != S_OK);
-			while (ctx->GetData(end.Get(), &ticksEnd, sizeof(U64), 0) != S_OK);
+			while (dev.Get().dx11.GetMainContext()->GetData(begin.Get(), &ticksBegin, sizeof(U64), 0) != S_OK);
+			while (dev.Get().dx11.GetMainContext()->GetData(end.Get(), &ticksEnd, sizeof(U64), 0) != S_OK);
 
 			const long double megaFrequency = static_cast<long double>(dataDisjoint.Frequency) / 1000000.0L;
 			return (ticksEnd - ticksBegin) / megaFrequency;

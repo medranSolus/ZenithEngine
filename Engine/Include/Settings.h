@@ -6,6 +6,7 @@ namespace ZE
 	// Global engine settings
 	class Settings final
 	{
+		static constexpr PixelFormat BACKBUFFER_FORMAT = PixelFormat::R8G8B8A8_UNorm;
 		static inline Settings* instance = nullptr;
 
 		GfxApiType gfxApi;
@@ -19,6 +20,7 @@ namespace ZE
 		Settings& operator=(const Settings&) = delete;
 		~Settings() = default;
 
+		static constexpr PixelFormat GetBackbufferFormat() noexcept { return BACKBUFFER_FORMAT; }
 		static constexpr GfxApiType GetGfxApi() noexcept { assert(instance); return instance->gfxApi; }
 		static void Init(GfxApiType type) noexcept { assert(!instance); instance = new Settings(type); }
 	};

@@ -39,19 +39,19 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(srv, "TextureCube");
 	}
 
-	void TextureCube::BindPS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void TextureCube::BindPS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->PSSetShaderResources(slot, 1, srv.GetAddressOf());
+		cl.Get().dx11.GetContext()->PSSetShaderResources(slot, 1, srv.GetAddressOf());
 	}
 
-	void TextureCube::BindCS(GFX::Context& ctx, ShaderSlot slot) const noexcept
+	void TextureCube::BindCS(GFX::CommandList& cl, ShaderSlot slot) const noexcept
 	{
 		assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		ctx.Get().dx11.GetContext()->CSSetShaderResources(slot, 1, srv.GetAddressOf());
+		cl.Get().dx11.GetContext()->CSSetShaderResources(slot, 1, srv.GetAddressOf());
 	}
 
-	std::array<Surface, 6> TextureCube::GetData(GFX::Device& dev, GFX::Context& ctx) const
+	std::array<Surface, 6> TextureCube::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
 		return
 		{

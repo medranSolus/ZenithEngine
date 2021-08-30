@@ -29,7 +29,7 @@ void App::ProcessInput()
 void App::MakeFrame()
 {
 	engine.BeginFrame();
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	engine.EndFrame();
 }
 
