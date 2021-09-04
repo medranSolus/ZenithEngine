@@ -70,7 +70,7 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.StreamOutput = { 0 };
 
 		// Blend state and blending sample mask (?)
-		stateDesc.SampleMask = 0;
+		stateDesc.SampleMask = 0xFFFFFFFF;
 		stateDesc.BlendState.AlphaToCoverageEnable = FALSE;
 		stateDesc.BlendState.IndependentBlendEnable = FALSE;
 		auto& blendTarget = stateDesc.BlendState.RenderTarget[0];

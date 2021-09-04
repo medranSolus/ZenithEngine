@@ -27,8 +27,9 @@ namespace ZE::GFX::API::DX11
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd() const noexcept { tagManager->EndEvent(); }
 #endif
-		void Reset(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { commands = nullptr; pso.Get().dx11.Bind(context.Get()); }
-		void Reset(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { commands = nullptr; pso.Get().dx11.Bind(context.Get()); }
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { pso.Get().dx11.Bind(context.Get()); }
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { pso.Get().dx11.Bind(context.Get()); }
+		void Reset(GFX::Device& dev) { commands = nullptr; }
 
 		void Close(GFX::Device& dev);
 		void DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG);

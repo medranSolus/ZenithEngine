@@ -13,7 +13,7 @@ namespace ZE::GFX::API::DX12
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager; // Maybe use PIX instead?
 #endif
 
-		void Reset(Device& dev, ID3D12PipelineState* state);
+		void Open(Device& dev, ID3D12PipelineState* state);
 
 	public:
 		CommandList(GFX::Device& dev);
@@ -28,10 +28,11 @@ namespace ZE::GFX::API::DX12
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd() const noexcept { tagManager->EndEvent(); }
 #endif
-		void Reset(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { Reset(dev.Get().dx12, pso.Get().dx12.GetState()); }
-		void Reset(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { Reset(dev.Get().dx12, pso.Get().dx12.GetState()); }
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { Open(dev.Get().dx12, pso.Get().dx12.GetState()); }
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { Open(dev.Get().dx12, pso.Get().dx12.GetState()); }
 
 		void Close(GFX::Device& dev);
+		void Reset(GFX::Device& dev);
 		void DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
 

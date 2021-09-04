@@ -31,8 +31,11 @@ namespace ZE::GFX::API::DX11
 
 	void CommandList::Close(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx11);
-		ZE_GFX_THROW_FAILED(context->FinishCommandList(FALSE, &commands));
+		if (context->GetType() == D3D11_DEVICE_CONTEXT_DEFERRED)
+		{
+			ZE_GFX_ENABLE(dev.Get().dx11);
+			ZE_GFX_THROW_FAILED(context->FinishCommandList(FALSE, &commands));
+		}
 	}
 
 	void CommandList::DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG)

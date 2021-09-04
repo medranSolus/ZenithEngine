@@ -6,8 +6,10 @@ namespace ZE::GFX::API::DX11
 {
 	void Device::Execute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
 	{
-		assert(cl.Get().dx11.GetList() != nullptr);
-		ZE_GFX_THROW_FAILED_INFO(context->ExecuteCommandList(cl.Get().dx11.GetList(), FALSE));
+		if (cl.Get().dx11.GetList() != nullptr)
+		{
+			ZE_GFX_THROW_FAILED_INFO(context->ExecuteCommandList(cl.Get().dx11.GetList(), FALSE));
+		}
 	}
 
 	Device::Device()
