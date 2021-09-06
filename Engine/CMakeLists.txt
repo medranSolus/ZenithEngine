@@ -42,12 +42,29 @@ set(PCH "${ENGINE_INC_DIR}/pch.h")
 file(GLOB_RECURSE SRC_LIST
     "${SRC_DIR}/*.cpp"
     "${ENGINE_INC_DIR}/*.h"
-    "${ZE_BUILD_INC_DIR}/*.h"
+    "${ZE_BUILD_INC_DIR}/*.h")
+
+file(GLOB IMGUI_SRC_LIST
     "${IMGUI_DIR}/*.cpp"
-    "${IMGUI_INC_DIR}/*.h")
+    "${IMGUI_INC_DIR}/*.h"
+    "${IMGUI_DIR}/misc/cpp/*.cpp"
+    "${IMGUI_INC_DIR}/misc/cpp/*.h"
+    "${IMGUI_DIR}/misc/freetype/*.cpp"
+    "${IMGUI_INC_DIR}/misc/freetype/*.h")
+if(WIN32)
+    file(GLOB IMGUI_BACKEND_LIST
+        "${IMGUI_DIR}/backends/*win32.cpp"
+        "${IMGUI_DIR}/backends/*win32.h"
+        "${IMGUI_DIR}/backends/*dx11.cpp"
+        "${IMGUI_DIR}/backends/*dx11.h"
+        "${IMGUI_DIR}/backends/*dx12.cpp"
+        "${IMGUI_DIR}/backends/*dx12.h")
+else()
+	message(FATAL_ERROR "Building ImGui for unsupported platform!")
+endif()
 
 # Target setup
-add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${ZE_API_HEADER})
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${IMGUI_BACKEND_LIST} ${ZE_API_HEADER})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
