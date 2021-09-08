@@ -35,4 +35,4 @@ namespace ZE::WinAPI
 // Enables useage of WND_THROW_FAILED macro in current scope
 #define ZE_WIN_ENABLE_EXCEPT() HRESULT ZE_WIN_EXCEPT_RESULT
 // Before using needs call to WND_ENABLE_EXCEPT()
-#define	ZE_WIN_THROW_FAILED(call) if( FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_WIN_EXCEPT(ZE_WIN_EXCEPT_RESULT)
+#define	ZE_WIN_THROW_FAILED(call) if(FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_WIN_EXCEPT(ZE_WIN_EXCEPT_RESULT)
