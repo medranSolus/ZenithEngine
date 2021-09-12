@@ -25,15 +25,15 @@ namespace ZE::GFX::API::DX12
 		AllocatorTier1& operator=(const AllocatorTier1&) = delete;
 		virtual ~AllocatorTier1() = default;
 
-		ResourceInfo AllocBuffer(Device& dev, U32 bytes, D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, BUF_HEAP_SIZE>(dev, buffers, bytes, desc, BUF_FLAG); }
+		ResourceInfo AllocBuffer(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, BUF_HEAP_SIZE>(dev, buffers, bytes, desc, BUF_FLAG); }
 		// Buffers that can be written fast into from CPU
-		ResourceInfo AllocDynamicBuffer(Device& dev, U32 bytes, D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, DBUF_HEAP_SIZE>(dev, dynamicBuffers, bytes, desc, DBUF_FLAG); }
+		ResourceInfo AllocDynamicBuffer(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, DBUF_HEAP_SIZE>(dev, dynamicBuffers, bytes, desc, DBUF_FLAG); }
 		// Only small textures (smaller than 64KB)
-		ResourceInfo AllocTexture_4KB(Device& dev, U32 bytes, D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<SMALL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
+		ResourceInfo AllocTexture_4KB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<SMALL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
 		// only normal textures and small multisampled textures (smaller than 4MB)
-		ResourceInfo AllocTexture_64KB(Device& dev, U32 bytes, D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<NORMAL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
+		ResourceInfo AllocTexture_64KB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<NORMAL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
 		// Only multisampled textures
-		ResourceInfo AllocTexture_4MB(Device& dev, U32 bytes, D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<HUGE_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
+		ResourceInfo AllocTexture_4MB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<HUGE_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
 
 		void RemoveBuffer(U32 id, U32 size) { Remove<NORMAL_CHUNK, BUF_HEAP_SIZE>(buffers, id, size); }
 		void RemoveDynamicBuffer(U32 id, U32 size) { Remove<NORMAL_CHUNK, DBUF_HEAP_SIZE>(dynamicBuffers, id, size); }

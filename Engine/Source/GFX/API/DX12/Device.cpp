@@ -20,10 +20,10 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	void Device::Execute(ID3D12CommandQueue* queue, GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG)
 	{
-		assert(cl.Get().dx12.GetList() != nullptr);
-		ID3D12CommandList* lists[] = { cl.Get().dx12.GetList() };
+		assert(cl.GetList() != nullptr);
+		ID3D12CommandList* lists[] = { cl.GetList() };
 		ZE_GFX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
@@ -102,6 +102,10 @@ namespace ZE::GFX::API::DX12
 			new(&allocator.Tier2) AllocatorTier2(*this);
 			allocTier = AllocTier::Tier2;
 		}
+
+		copyList.Init(*this, CommandType::Copy);
+		copyResInfo.Size = 0;
+		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
 	Device::~Device()
@@ -119,7 +123,36 @@ namespace ZE::GFX::API::DX12
 #endif
 	}
 
-	ResourceInfo Device::CreateBuffer(U32 size)
+	void Device::FinishUpload()
+	{
+		if (copyResList)
+		{
+			ZE_WIN_ENABLE_EXCEPT();
+
+			ZE_GFX_THROW_FAILED(copyQueue->Signal(copyFence.Get(), ++copyFenceVal));
+			WaitCopy();
+			Table::Clear(copyResInfo.Size, copyResList);
+			copyResInfo.Size = 0;
+			copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
+		}
+	}
+
+	void Device::ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	{
+		Execute(mainQueue.Get(), cl.Get().dx12);
+	}
+
+	void Device::ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	{
+		Execute(computeQueue.Get(), cl.Get().dx12);
+	}
+
+	void Device::ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	{
+		Execute(copyQueue.Get(), cl.Get().dx12);
+	}
+
+	D3D12_RESOURCE_DESC Device::GetBufferDesc(U64 size)
 	{
 		D3D12_RESOURCE_DESC desc;
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -133,11 +166,15 @@ namespace ZE::GFX::API::DX12
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		return desc;
+	}
 
+	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC& desc)
+	{
 		if (allocTier == AllocTier::Tier1)
-			return allocator.Tier1.AllocBuffer(*this, size, desc);
+			return allocator.Tier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
 		else
-			return allocator.Tier2.Alloc_64KB(*this, size, desc);
+			return allocator.Tier2.Alloc_64KB(*this, static_cast<U32>(desc.Width), desc);
 	}
 
 	ResourceInfo Device::CreateTexture(U32 width, U32 height, DXGI_FORMAT format)
@@ -173,23 +210,36 @@ namespace ZE::GFX::API::DX12
 			return allocator.Tier2.Alloc_4KB(*this, static_cast<U32>(info.SizeInBytes), desc);
 	}
 
-	void Device::FreeBuffer(const ResourceInfo& info) noexcept
+	void Device::FreeBuffer(ResourceInfo& info) noexcept
 	{
 		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();
 		U32 size = static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes);
+		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
 			allocator.Tier1.RemoveBuffer(info.ID, size);
 		else
 			allocator.Tier2.Remove(info.ID, size);
 	}
 
-	void Device::FreeTexture(const ResourceInfo& info) noexcept
+	void Device::FreeTexture(ResourceInfo& info) noexcept
 	{
 		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();
 		U32 size = static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes);
+		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
 			allocator.Tier1.RemoveTexture(info.ID, size);
 		else
 			allocator.Tier2.Remove(info.ID, size);
+	}
+
+	void Device::CopyResource(ID3D12Resource* dest, DX::ComPtr<ID3D12Resource>&& source) noexcept
+	{
+		copyList.Open(*this);
+		copyList.GetList()->CopyResource(dest, source.Get());
+		copyList.Close(*this);
+		Execute(copyQueue.Get(), copyList);
+		if (copyResList == nullptr)
+			copyResList = Table::Create<DX::ComPtr<ID3D12Resource>>(COPY_LIST_GROW_SIZE);
+		Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, std::move(source));
 	}
 }

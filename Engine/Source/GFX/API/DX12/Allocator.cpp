@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::DX12
 {
-	Allocator::BufferInfo::BufferInfo(U64 heapSize) noexcept
+	Allocator::BufferInfo::BufferInfo(U32 heapSize) noexcept
 	{
 		FreeInfo.Size = 1;
 		FreeInfo.Allocated = FREE_LIST_CHUNKS_GROW;
@@ -44,13 +44,14 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	DX::ComPtr<ID3D12Resource> Allocator::Alloc(Device& dev, D3D12_RESOURCE_DESC& desc, ID3D12Heap* heap, U64 offset)
+	DX::ComPtr<ID3D12Resource> Allocator::Alloc(Device& dev, const D3D12_RESOURCE_DESC& desc,
+		ID3D12Heap* heap, U64 offset, HeapFlags flags)
 	{
 		ZE_GFX_ENABLE(dev);
 
 		DX::ComPtr<ID3D12Resource> res;
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource(heap, offset, &desc,
-			D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&res)));
+			flags & HeapFlags::Dynamic ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}
 

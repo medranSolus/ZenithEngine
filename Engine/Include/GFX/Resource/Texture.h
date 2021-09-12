@@ -17,10 +17,12 @@ namespace ZE::GFX::Resource
 		~Texture() = default;
 
 		constexpr ZE_API_BACKEND(Texture)& Get() noexcept { return backend; }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
+
+		// Main Gfx API
+
 		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
 		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
-
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 	};
 
 #pragma region Functions

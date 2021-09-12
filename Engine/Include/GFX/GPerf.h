@@ -32,6 +32,9 @@ namespace ZE::GFX
 
 		static constexpr void Init(Device& dev) { assert(!instance); instance = new GPerf(dev); }
 		static constexpr void SwitchApi(API::ApiType nextApi, Device& dev) { Get().backend.Switch(nextApi, dev); }
+
+		// Main Gfx API
+
 		static constexpr GPerf& Get() { assert(instance); return *instance; }
 
 		constexpr void Stop(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Stop, cl); }

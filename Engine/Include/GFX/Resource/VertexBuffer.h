@@ -17,9 +17,11 @@ namespace ZE::GFX::Resource
 		~VertexBuffer() = default;
 
 		constexpr ZE_API_BACKEND(IndexBuffer)& Get() noexcept { return backend; }
-		constexpr void Bind(Context& ctx) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, ctx); }
-
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
+
+		// Main Gfx API
+
+		constexpr void Bind(Context& ctx) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, ctx); }
 	};
 
 #pragma region Functions

@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX12
 			TableInfo<U16> HeapsInfo;
 			DX::ComPtr<ID3D12Heap>* Heaps;
 
-			BufferInfo(U64 heapSize) noexcept;
+			BufferInfo(U32 heapSize) noexcept;
 			BufferInfo(BufferInfo&&) = delete;
 			BufferInfo(const BufferInfo&) = delete;
 			BufferInfo& operator=(BufferInfo&&) = delete;
@@ -62,7 +62,8 @@ namespace ZE::GFX::API::DX12
 		// Sort list of free regions
 		static void Sort(BufferInfo& bufferInfo, U32 element);
 		// Create resource inside heap at given local offset
-		static DX::ComPtr<ID3D12Resource> Alloc(Device& dev, D3D12_RESOURCE_DESC& desc, ID3D12Heap* heap, U64 offset);
+		static DX::ComPtr<ID3D12Resource> Alloc(Device& dev, const D3D12_RESOURCE_DESC& desc,
+			ID3D12Heap* heap, U64 offset, HeapFlags flags);
 
 	protected:
 		static constexpr U64 SMALL_CHUNK = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT; // 4 KB
@@ -71,10 +72,12 @@ namespace ZE::GFX::API::DX12
 
 		// Find and allocate smallest memory region in heap at given boundary (assuming boundary bigger than smallest chunk)
 		template<U64 BOUNDARY, U64 HEAP_SIZE>
-		static ResourceInfo AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags);
+		static ResourceInfo AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo,
+			U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags);
 		// Find and allocate smallest memory region in heap at minimal boundary (given chunk size is smallest possible)
 		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
-		static ResourceInfo AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags);
+		static ResourceInfo AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo,
+			U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags);
 		// Remove allocated memory and return it to free pool merging whenever possible with nerby free regions (given chunk size is smallest possible)
 		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 		static void Remove(BufferInfo& bufferInfo, U32 id, U32 size);
@@ -95,15 +98,16 @@ namespace ZE::GFX::API::DX12
 	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 	void Allocator::AddHeap(Device& dev, BufferInfo& bufferInfo, HeapFlags flags)
 	{
-		bufferInfo.FreeList = Table::Append<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo,
-			bufferInfo.FreeList, MemInfo(GetGlobalHeapIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.HeapsInfo.Size), HEAP_SIZE));
-		bufferInfo.Heaps = Table::Append<HEAP_CHUNKS_GROW>(bufferInfo.HeapsInfo, bufferInfo.Heaps);
+		Table::Append<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList,
+			MemInfo(GetGlobalHeapIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.HeapsInfo.Size), HEAP_SIZE));
+		Table::Append<HEAP_CHUNKS_GROW>(bufferInfo.HeapsInfo, bufferInfo.Heaps);
 
 		CreateHeap(dev, &bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1], flags, HEAP_SIZE);
 	}
 
 	template<U64 BOUNDARY, U64 HEAP_SIZE>
-	ResourceInfo Allocator::AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags)
+	ResourceInfo Allocator::AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo,
+		U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
 		assert(bytes < HEAP_SIZE);
 		constexpr U32 SMALL_CHUNKS_IN_BOUNDARY = BOUNDARY / SMALL_CHUNK;
@@ -116,7 +120,7 @@ namespace ZE::GFX::API::DX12
 			index = bufferInfo.FreeList[0].Index;
 			bufferInfo.FreeList[0].Index += chunks;
 			bufferInfo.FreeList[0].Size -= chunks * SMALL_CHUNK;
-			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0), index };
+			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0, flags), index };
 		}
 		U32 i = 0;
 		for (; i < bufferInfo.FreeInfo.Size; ++i)
@@ -143,8 +147,8 @@ namespace ZE::GFX::API::DX12
 						// Region split in 2 so another entry in free list required
 						bufferInfo.FreeList[i].Size = unalignedChunks * SMALL_CHUNK;
 						Sort(bufferInfo, i);
-						bufferInfo.FreeList = Table::Insert<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo,
-							bufferInfo.FreeList, i, MemInfo(index + chunks, remainingChunks * SMALL_CHUNK));
+						Table::Insert<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList,
+							i, MemInfo(index + chunks, remainingChunks * SMALL_CHUNK));
 						Sort(bufferInfo, i);
 					}
 					break;
@@ -154,7 +158,7 @@ namespace ZE::GFX::API::DX12
 					index = bufferInfo.FreeList[i].Index + unalignedChunks;
 					// Ideal fit, whole region consumed
 					if (unalignedChunks == 0)
-						bufferInfo.FreeList = Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
+						Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
 					else
 					{
 						// Allocate end of region only
@@ -172,13 +176,15 @@ namespace ZE::GFX::API::DX12
 			index = bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Index;
 			bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Index += chunks;
 			bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Size -= chunks * SMALL_CHUNK;
-			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0), index };
+			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0, flags), index };
 		}
-		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<SMALL_CHUNK, HEAP_SIZE>(index)].Get(), GetLocalOffset<SMALL_CHUNK, HEAP_SIZE>(index)), index };
+		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<SMALL_CHUNK, HEAP_SIZE>(index)].Get(),
+			GetLocalOffset<SMALL_CHUNK, HEAP_SIZE>(index), flags), index };
 	}
 
 	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
-	ResourceInfo Allocator::AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags)
+	ResourceInfo Allocator::AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo,
+		U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
 		assert(bytes < HEAP_SIZE);
 
@@ -190,7 +196,7 @@ namespace ZE::GFX::API::DX12
 			index = bufferInfo.FreeList[0].Index;
 			bufferInfo.FreeList[0].Index += chunks;
 			bufferInfo.FreeList[0].Size -= chunks * MIN_CHUNK;
-			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0), index };
+			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0, flags), index };
 		}
 		for (U32 i = 0; i < bufferInfo.FreeInfo.Size; ++i)
 		{
@@ -209,13 +215,14 @@ namespace ZE::GFX::API::DX12
 			{
 				// Ideal fit, whole region occupied
 				index = bufferInfo.FreeList[i].Index;
-				bufferInfo.FreeList = Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
+				Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
 				break;
 			}
 			// Because we iterate over smalles possible alignmet we shoud never reach end of this list. Sanity check for peace of mind
 			assert(bufferInfo.FreeInfo.Size - 1 != i && "Should always find lowest possible chunk if there are free elements!");
 		}
-		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(index)].Get(), GetLocalOffset<MIN_CHUNK, HEAP_SIZE>(index)), index };
+		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(index)].Get(),
+			GetLocalOffset<MIN_CHUNK, HEAP_SIZE>(index), flags), index };
 	}
 
 	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
@@ -266,7 +273,7 @@ namespace ZE::GFX::API::DX12
 						{
 							// Expand free region and remove absorbed one
 							bufferInfo.FreeList[size].Size += bufferInfo.FreeList[i].Size;
-							bufferInfo.FreeList = Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
+							Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, i);
 							return Sort(bufferInfo, size);
 						}
 					}
@@ -290,7 +297,7 @@ namespace ZE::GFX::API::DX12
 						{
 							// Expand free region and remove absorbed one
 							bufferInfo.FreeList[i].Size += bufferInfo.FreeList[size].Size;
-							bufferInfo.FreeList = Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, size);
+							Table::Remove<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, size);
 							return Sort(bufferInfo, i);
 						}
 					}
@@ -302,7 +309,7 @@ namespace ZE::GFX::API::DX12
 		else
 		{
 			// No nearby region found so create new one
-			bufferInfo.FreeList = Table::Append<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, MemInfo(id, size));
+			Table::Append<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo, bufferInfo.FreeList, MemInfo(id, size));
 			Sort(bufferInfo, bufferInfo.FreeInfo.Size - 1);
 		}
 	}

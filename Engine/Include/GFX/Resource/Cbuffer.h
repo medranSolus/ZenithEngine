@@ -19,6 +19,8 @@ namespace ZE::GFX::Resource
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx, U8* values, U64 bytes) { backend.Switch(nextApi, dev, values, bytes); }
 		constexpr ZE_API_BACKEND(CBuffer)& Get() noexcept { return backend; }
 
+		// Main Gfx API
+
 		constexpr void Update(CommanList& cl, U8* values, U64 bytes) const { ZE_API_BACKEND_CALL(backend, Update, cl, values, bytes); }
 		constexpr void UpdateDynamic(Device& dev, CommandList& cl, U8* values, U64 bytes) const { ZE_API_BACKEND_CALL(backend, UpdateDynamic, dev, cl, values, bytes); }
 

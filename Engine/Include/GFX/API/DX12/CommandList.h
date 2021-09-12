@@ -1,10 +1,19 @@
 #pragma once
-#include "GFX/Resource/PipelineStateCompute.h"
-#include "GFX/Resource/PipelineStateGfx.h"
 #include "D3D12.h"
 
+namespace ZE::GFX
+{
+	class Device;
+	namespace Resource
+	{
+		class PipelineStateCompute;
+		class PipelineStateGfx;
+	}
+}
 namespace ZE::GFX::API::DX12
 {
+	class Device;
+
 	class CommandList final
 	{
 		DX::ComPtr<ID3D12GraphicsCommandList5> commands;
@@ -16,8 +25,9 @@ namespace ZE::GFX::API::DX12
 		void Open(Device& dev, ID3D12PipelineState* state);
 
 	public:
-		CommandList(GFX::Device& dev);
+		CommandList() = default;
 		CommandList(GFX::Device& dev, CommandType type);
+		CommandList(GFX::Device& dev);
 		CommandList(CommandList&&) = default;
 		CommandList(const CommandList&) = delete;
 		CommandList& operator=(CommandList&&) = default;
@@ -28,8 +38,12 @@ namespace ZE::GFX::API::DX12
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd() const noexcept { tagManager->EndEvent(); }
 #endif
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { Open(dev.Get().dx12, pso.Get().dx12.GetState()); }
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { Open(dev.Get().dx12, pso.Get().dx12.GetState()); }
+
+		void Open(GFX::Device& dev);
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
+		void SetState(GFX::Resource::PipelineStateCompute& pso);
+		void SetState(GFX::Resource::PipelineStateGfx& pso);
 
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);
@@ -39,5 +53,9 @@ namespace ZE::GFX::API::DX12
 		// Gfx API Internal
 
 		ID3D12GraphicsCommandList5* GetList() noexcept { return commands.Get(); }
+
+		void Init(Device& dev, CommandType type);
+		void Open(Device& dev);
+		void Close(Device& dev);
 	};
 }

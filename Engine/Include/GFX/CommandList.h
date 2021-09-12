@@ -23,12 +23,18 @@ namespace ZE::GFX
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandType type) { backend.Switch(nextApi, dev, type); }
 		constexpr ZE_API_BACKEND(CommandList)& Get() noexcept { return backend; }
 
+		// Main Gfx API
+
 #ifdef _ZE_MODE_DEBUG
 		constexpr void TagBegin(const wchar_t* tag) const noexcept { ZE_API_BACKEND_CALL(backend, TagBegin, tag); }
 		constexpr void TagEnd() const noexcept { ZE_API_BACKEND_CALL(backend, TagEnd); }
 #endif
+		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(backend, Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(backend, Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(backend, Open, dev, pso); }
+		constexpr void SetState(Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(backend, SetState, pso); }
+		constexpr void SetState(Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(backend, SetState, pso); }
+
 		constexpr void Close(Device& dev) { ZE_API_BACKEND_CALL(backend, Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_API_BACKEND_CALL(backend, Reset, dev); }
 

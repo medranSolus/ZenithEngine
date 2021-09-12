@@ -28,6 +28,7 @@ namespace ZE::GFX::API::DX11
 		constexpr void WaitMain() {}
 		constexpr void WaitCompute() {}
 		constexpr void WaitCopy() {}
+		constexpr void FinishUpload();
 
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }
 		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }

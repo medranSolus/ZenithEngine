@@ -2,6 +2,7 @@
 #include "D3D12.h"
 #include "AllocatorTier1.h"
 #include "AllocatorTier2.h"
+#include "CommandList.h"
 
 namespace ZE::GFX
 {
@@ -25,6 +26,8 @@ namespace ZE::GFX::API::DX12
 			~AllocVer() {}
 		};
 
+		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
+
 #ifdef _ZE_MODE_DEBUG
 		DX::DebugInfoManager debugManager;
 #endif
@@ -43,8 +46,12 @@ namespace ZE::GFX::API::DX12
 		AllocVer allocator;
 		AllocTier allocTier;
 
+		CommandList copyList;
+		TableInfo<U16> copyResInfo;
+		DX::ComPtr<ID3D12Resource>* copyResList = nullptr;
+
 		void Wait(ID3D12Fence1* fence, U64 val);
-		void Execute(ID3D12CommandQueue* queue, GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
 		Device();
@@ -58,9 +65,10 @@ namespace ZE::GFX::API::DX12
 		void WaitCompute() { Wait(computeFence.Get(), computeFenceVal); }
 		void WaitCopy() { Wait(copyFence.Get(), copyFenceVal); }
 
-		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(mainQueue.Get(), cl); }
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(computeQueue.Get(), cl); }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(copyQueue.Get(), cl); }
+		void FinishUpload();
+		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 		// Gfx API Internal
 
@@ -72,9 +80,12 @@ namespace ZE::GFX::API::DX12
 		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 
-		ResourceInfo CreateBuffer(U32 size);
+		D3D12_RESOURCE_DESC GetBufferDesc(U64 size);
+		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc);
 		ResourceInfo CreateTexture(U32 width, U32 height, DXGI_FORMAT format);
-		void FreeBuffer(const ResourceInfo& info) noexcept;
-		void FreeTexture(const ResourceInfo& info) noexcept;
+		void FreeBuffer(ResourceInfo& info) noexcept;
+		void FreeTexture(ResourceInfo& info) noexcept;
+
+		void CopyResource(ID3D12Resource* dest, DX::ComPtr<ID3D12Resource>&& source) noexcept;
 	};
 }

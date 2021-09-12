@@ -16,6 +16,8 @@ namespace ZE::GFX::API::DX11::Resource
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		~IndexBuffer() = default;
 
+		void Free(GFX::Device& dev) noexcept { buffer = nullptr; }
+
 		void Bind(GFX::CommandList& cl) const noexcept;
 		U32* GetData(GFX::Device& dev, GFX::CommandList& cl) const;
 	};

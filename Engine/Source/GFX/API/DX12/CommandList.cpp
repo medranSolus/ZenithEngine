@@ -1,5 +1,8 @@
 #include "GFX/API/DX12/CommandList.h"
 #include "GFX/API/DX/GraphicsException.h"
+#include "GFX/Resource/PipelineStateCompute.h"
+#include "GFX/Resource/PipelineStateGfx.h"
+#include "GFX/Device.h"
 
 namespace ZE::GFX::API::DX12
 {
@@ -7,6 +10,11 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_GFX_ENABLE(dev);
 		ZE_GFX_THROW_FAILED(commands->Reset(allocator.Get(), state));
+	}
+
+	CommandList::CommandList(GFX::Device& dev, CommandType type)
+	{
+		Init(dev.Get().dx12, type);
 	}
 
 	CommandList::CommandList(GFX::Device& dev)
@@ -17,18 +25,34 @@ namespace ZE::GFX::API::DX12
 			D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
 	}
 
-	CommandList::CommandList(GFX::Device& dev, CommandType type)
+	void CommandList::Open(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommandList1(0,
-			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+		Open(dev.Get().dx12, nullptr);
+	}
+
+	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
+	{
+		Open(dev.Get().dx12, pso.Get().dx12.GetState());
+	}
+
+	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
+	{
+		Open(dev.Get().dx12, pso.Get().dx12.GetState());
+	}
+
+	void CommandList::SetState(GFX::Resource::PipelineStateCompute& pso)
+	{
+		commands->SetPipelineState(pso.Get().dx12.GetState());
+	}
+
+	void CommandList::SetState(GFX::Resource::PipelineStateGfx& pso)
+	{
+		commands->SetPipelineState(pso.Get().dx12.GetState());
 	}
 
 	void CommandList::Close(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED(commands->Close());
+		Close(dev.Get().dx12);
 	}
 
 	void CommandList::Reset(GFX::Device& dev)
@@ -47,5 +71,24 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
 		ZE_GFX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
+	}
+
+	void CommandList::Init(Device& dev, CommandType type)
+	{
+		ZE_GFX_ENABLE(dev);
+		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
+		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
+			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+	}
+
+	void CommandList::Open(Device& dev)
+	{
+		Open(dev, nullptr);
+	}
+
+	void CommandList::Close(Device& dev)
+	{
+		ZE_GFX_ENABLE(dev);
+		ZE_GFX_THROW_FAILED(commands->Close());
 	}
 }
