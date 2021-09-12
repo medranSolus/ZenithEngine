@@ -94,12 +94,12 @@ namespace ZE::GFX::API::DX12
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
 		if (options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1)
 		{
-			new(&allocator.Tier1) AllocatorTier1(*this, ALLOC_INIT_FREE_LIST_SIZE);
+			new(&allocator.Tier1) AllocatorTier1(*this);
 			allocTier = AllocTier::Tier1;
 		}
 		else
 		{
-			new(&allocator.Tier2) AllocatorTier2(*this, ALLOC_INIT_FREE_LIST_SIZE);
+			new(&allocator.Tier2) AllocatorTier2(*this);
 			allocTier = AllocTier::Tier2;
 		}
 	}

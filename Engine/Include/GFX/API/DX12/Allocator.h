@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX12
 	class Allocator
 	{
 	protected:
+		enum HeapFlags : U8 { Dynamic = 1, AllowBuffers = 2, AllowTextures = 4 };
 		struct MemInfo
 		{
 			U32 Index;
@@ -24,7 +25,7 @@ namespace ZE::GFX::API::DX12
 			TableInfo<U16> HeapsInfo;
 			DX::ComPtr<ID3D12Heap>* Heaps;
 
-			BufferInfo(U32 freeListInitSize) noexcept;
+			BufferInfo(U64 heapSize) noexcept;
 			BufferInfo(BufferInfo&&) = delete;
 			BufferInfo(const BufferInfo&) = delete;
 			BufferInfo& operator=(BufferInfo&&) = delete;
@@ -33,7 +34,6 @@ namespace ZE::GFX::API::DX12
 		};
 
 	private:
-		static constexpr U64 HEAP_SIZE = 256 << 20; // 256 MB
 		static constexpr U16 HEAP_CHUNKS_GROW = 4;
 		static constexpr U32 FREE_LIST_CHUNKS_GROW = 100;
 
@@ -45,19 +45,19 @@ namespace ZE::GFX::API::DX12
 		template<U64 MIN_CHUNK>
 		static constexpr U64 GetGlobalOffset(U32 index) { return index * MIN_CHUNK; }
 		// Get index of first chunk located inside heap
-		template<U64 MIN_CHUNK>
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 		static constexpr U32 GetGlobalHeapIndex(U16 heap) { return heap * HEAP_SIZE / MIN_CHUNK; }
 		// Get index of heap where located is resource
-		template<U64 MIN_CHUNK>
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 		static constexpr U16 GetHeapFromIndex(U32 globalIndex) { return static_cast<U16>(GetGlobalOffset<MIN_CHUNK>(globalIndex) / HEAP_SIZE); }
 		// Get resource offset within single heap
-		template<U64 MIN_CHUNK>
-		static constexpr U64 GetLocalOffset(U32 index) { return GetGlobalOffset<MIN_CHUNK>(index) - HEAP_SIZE * GetHeapFromIndex<MIN_CHUNK>(index); }
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
+		static constexpr U64 GetLocalOffset(U32 index) { return GetGlobalOffset<MIN_CHUNK>(index) - HEAP_SIZE * GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(index); }
 #pragma endregion
 
 		// Creates new heap and adds new free region for it
-		template<U64 MIN_CHUNK>
-		static void AddHeap(Device& dev, BufferInfo& bufferInfo, D3D12_HEAP_FLAGS flags);
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
+		static void AddHeap(Device& dev, BufferInfo& bufferInfo, HeapFlags flags);
 
 		// Sort list of free regions
 		static void Sort(BufferInfo& bufferInfo, U32 element);
@@ -70,16 +70,16 @@ namespace ZE::GFX::API::DX12
 		static constexpr U64 HUGE_CHUNK = D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT; // 4 MB
 
 		// Find and allocate smallest memory region in heap at given boundary (assuming boundary bigger than smallest chunk)
-		template<U64 BOUNDARY>
-		static ResourceInfo AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, D3D12_HEAP_FLAGS flags);
+		template<U64 BOUNDARY, U64 HEAP_SIZE>
+		static ResourceInfo AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags);
 		// Find and allocate smallest memory region in heap at minimal boundary (given chunk size is smallest possible)
-		template<U64 MIN_CHUNK>
-		static ResourceInfo AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, D3D12_HEAP_FLAGS flags);
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
+		static ResourceInfo AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags);
 		// Remove allocated memory and return it to free pool merging whenever possible with nerby free regions (given chunk size is smallest possible)
-		template<U64 MIN_CHUNK>
+		template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 		static void Remove(BufferInfo& bufferInfo, U32 id, U32 size);
 
-		static void CreateHeap(Device& dev, ID3D12Heap** heap, D3D12_HEAP_FLAGS flags);
+		static void CreateHeap(Device& dev, ID3D12Heap** heap, HeapFlags flags, U64 heapSize);
 
 		Allocator() = default;
 
@@ -92,18 +92,18 @@ namespace ZE::GFX::API::DX12
 	};
 
 #pragma region Functions
-	template<U64 MIN_CHUNK>
-	void Allocator::AddHeap(Device& dev, BufferInfo& bufferInfo, D3D12_HEAP_FLAGS flags)
+	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
+	void Allocator::AddHeap(Device& dev, BufferInfo& bufferInfo, HeapFlags flags)
 	{
 		bufferInfo.FreeList = Table::Append<FREE_LIST_CHUNKS_GROW>(bufferInfo.FreeInfo,
-			bufferInfo.FreeList, MemInfo(GetGlobalHeapIndex<MIN_CHUNK>(bufferInfo.HeapsInfo.Size), HEAP_SIZE));
+			bufferInfo.FreeList, MemInfo(GetGlobalHeapIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.HeapsInfo.Size), HEAP_SIZE));
 		bufferInfo.Heaps = Table::Append<HEAP_CHUNKS_GROW>(bufferInfo.HeapsInfo, bufferInfo.Heaps);
 
-		CreateHeap(dev, &bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1], flags);
+		CreateHeap(dev, &bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1], flags, HEAP_SIZE);
 	}
 
-	template<U64 BOUNDARY>
-	ResourceInfo Allocator::AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, D3D12_HEAP_FLAGS flags)
+	template<U64 BOUNDARY, U64 HEAP_SIZE>
+	ResourceInfo Allocator::AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
 		assert(bytes < HEAP_SIZE);
 		constexpr U32 SMALL_CHUNKS_IN_BOUNDARY = BOUNDARY / SMALL_CHUNK;
@@ -112,7 +112,7 @@ namespace ZE::GFX::API::DX12
 		if (bufferInfo.FreeInfo.Size == 0)
 		{
 			// No more free space so allocate within new heap
-			AddHeap<SMALL_CHUNK>(dev, bufferInfo, flags);
+			AddHeap<SMALL_CHUNK, HEAP_SIZE>(dev, bufferInfo, flags);
 			index = bufferInfo.FreeList[0].Index;
 			bufferInfo.FreeList[0].Index += chunks;
 			bufferInfo.FreeList[0].Size -= chunks * SMALL_CHUNK;
@@ -168,17 +168,17 @@ namespace ZE::GFX::API::DX12
 		if (i == bufferInfo.FreeInfo.Size)
 		{
 			// Not found any small enough place so new heap is needed anyway
-			AddHeap<SMALL_CHUNK>(dev, bufferInfo, flags);
+			AddHeap<SMALL_CHUNK, HEAP_SIZE>(dev, bufferInfo, flags);
 			index = bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Index;
 			bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Index += chunks;
 			bufferInfo.FreeList[bufferInfo.FreeInfo.Size - 1].Size -= chunks * SMALL_CHUNK;
 			return { Alloc(dev, desc, bufferInfo.Heaps[bufferInfo.HeapsInfo.Size - 1].Get(), 0), index };
 		}
-		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<SMALL_CHUNK>(index)].Get(), GetLocalOffset<SMALL_CHUNK>(index)), index };
+		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<SMALL_CHUNK, HEAP_SIZE>(index)].Get(), GetLocalOffset<SMALL_CHUNK, HEAP_SIZE>(index)), index };
 	}
 
-	template<U64 MIN_CHUNK>
-	ResourceInfo Allocator::AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, D3D12_HEAP_FLAGS flags)
+	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
+	ResourceInfo Allocator::AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo, U32 bytes, D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
 		assert(bytes < HEAP_SIZE);
 
@@ -186,7 +186,7 @@ namespace ZE::GFX::API::DX12
 		if (bufferInfo.FreeInfo.Size == 0)
 		{
 			// No more free space so allocate within new heap
-			AddHeap<MIN_CHUNK>(dev, bufferInfo, flags);
+			AddHeap<MIN_CHUNK, HEAP_SIZE>(dev, bufferInfo, flags);
 			index = bufferInfo.FreeList[0].Index;
 			bufferInfo.FreeList[0].Index += chunks;
 			bufferInfo.FreeList[0].Size -= chunks * MIN_CHUNK;
@@ -215,13 +215,13 @@ namespace ZE::GFX::API::DX12
 			// Because we iterate over smalles possible alignmet we shoud never reach end of this list. Sanity check for peace of mind
 			assert(bufferInfo.FreeInfo.Size - 1 != i && "Should always find lowest possible chunk if there are free elements!");
 		}
-		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<MIN_CHUNK>(index)].Get(), GetLocalOffset<MIN_CHUNK>(index)), index };
+		return { Alloc(dev, desc, bufferInfo.Heaps[GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(index)].Get(), GetLocalOffset<MIN_CHUNK, HEAP_SIZE>(index)), index };
 	}
 
-	template<U64 MIN_CHUNK>
+	template<U64 MIN_CHUNK, U64 HEAP_SIZE>
 	void Allocator::Remove(BufferInfo& bufferInfo, U32 id, U32 size)
 	{
-		U16 heap = GetHeapFromIndex<MIN_CHUNK>(id);
+		U16 heap = GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(id);
 		U32 chunks = GetGlobalIndex<MIN_CHUNK>(size);
 		bool leftJoin = false, rightJoin = false;
 
@@ -229,7 +229,7 @@ namespace ZE::GFX::API::DX12
 		for (U32 i = 0; i < bufferInfo.FreeInfo.Size; ++i)
 		{
 			// Only regions within single heap must count
-			if (heap == GetHeapFromIndex<MIN_CHUNK>(bufferInfo.FreeList[i].Index))
+			if (heap == GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.FreeList[i].Index))
 			{
 				// Check if region on the left (first) or right (second) can be connected
 				if (bufferInfo.FreeList[i].Index + GetGlobalIndex<MIN_CHUNK>(bufferInfo.FreeList[i].Size) == id)
@@ -260,7 +260,7 @@ namespace ZE::GFX::API::DX12
 				// When joined left side of region check if no more neighbours on the right side
 				for (; i < limit; ++i)
 				{
-					if (heap == GetHeapFromIndex<MIN_CHUNK>(bufferInfo.FreeList[i].Index))
+					if (heap == GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.FreeList[i].Index))
 					{
 						if (id + chunks == bufferInfo.FreeList[i].Index)
 						{
@@ -284,7 +284,7 @@ namespace ZE::GFX::API::DX12
 				// When joined right side of region check if no more neighbours on the left side
 				for (; i < limit; ++i)
 				{
-					if (heap == GetHeapFromIndex<MIN_CHUNK>(bufferInfo.FreeList[i].Index))
+					if (heap == GetHeapFromIndex<MIN_CHUNK, HEAP_SIZE>(bufferInfo.FreeList[i].Index))
 					{
 						if (bufferInfo.FreeList[i].Index + GetGlobalIndex<MIN_CHUNK>(bufferInfo.FreeList[i].Size) == id)
 						{

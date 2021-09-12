@@ -25,8 +25,6 @@ namespace ZE::GFX::API::DX12
 			~AllocVer() {}
 		};
 
-		static constexpr U32 ALLOC_INIT_FREE_LIST_SIZE = 100;
-
 #ifdef _ZE_MODE_DEBUG
 		DX::DebugInfoManager debugManager;
 #endif
