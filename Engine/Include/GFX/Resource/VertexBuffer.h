@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/API/DX11/Resource/VertexBuffer.h"
+#include "GFX/API/DX12/Resource/VertexBuffer.h"
 
 namespace ZE::GFX::Resource
 {
@@ -21,7 +22,8 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-		constexpr void Bind(Context& ctx) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, ctx); }
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(backend, Free, dev); }
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, cl); }
 	};
 
 #pragma region Functions

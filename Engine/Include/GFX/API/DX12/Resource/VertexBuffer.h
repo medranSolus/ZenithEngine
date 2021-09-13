@@ -7,6 +7,9 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	class VertexBuffer final
 	{
+		D3D12_VERTEX_BUFFER_VIEW view;
+		ResourceInfo info;
+
 	public:
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		VertexBuffer(VertexBuffer&&) = default;
@@ -15,7 +18,9 @@ namespace ZE::GFX::API::DX12::Resource
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		~VertexBuffer() = default;
 
-		void Bind(GFX::CommandList& ctx) const noexcept;
+		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info, view.SizeInBytes); }
+		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->IASetVertexBuffers(0, 1, &view); }
+
 		VertexData GetData(GFX::Device& dev, GFX::CommandList& ctx) const;
 	};
 }

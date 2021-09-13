@@ -131,6 +131,7 @@ namespace ZE::GFX::API::DX12
 
 			ZE_GFX_THROW_FAILED(copyQueue->Signal(copyFence.Get(), ++copyFenceVal));
 			WaitCopy();
+			copyList.Reset(*this);
 			Table::Clear(copyResInfo.Size, copyResList);
 			copyResInfo.Size = 0;
 			copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
@@ -152,7 +153,7 @@ namespace ZE::GFX::API::DX12
 		Execute(copyQueue.Get(), cl.Get().dx12);
 	}
 
-	D3D12_RESOURCE_DESC Device::GetBufferDesc(U64 size)
+	D3D12_RESOURCE_DESC Device::GetBufferDesc(U32 size)
 	{
 		D3D12_RESOURCE_DESC desc;
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -213,7 +214,11 @@ namespace ZE::GFX::API::DX12
 	void Device::FreeBuffer(ResourceInfo& info) noexcept
 	{
 		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();
-		U32 size = static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes);
+		FreeBuffer(info, static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes));
+	}
+
+	void Device::FreeBuffer(ResourceInfo& info, U32 size) noexcept
+	{
 		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
 			allocator.Tier1.RemoveBuffer(info.ID, size);
@@ -232,14 +237,36 @@ namespace ZE::GFX::API::DX12
 			allocator.Tier2.Remove(info.ID, size);
 	}
 
-	void Device::CopyResource(ID3D12Resource* dest, DX::ComPtr<ID3D12Resource>&& source) noexcept
+	void Device::CopyResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size)
 	{
+		ZE_WIN_ENABLE_EXCEPT();
+
+		// Create upload heap and temporary resource
+		D3D12_HEAP_PROPERTIES tempHeap;
+		tempHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
+		tempHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		tempHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		tempHeap.CreationNodeMask = 0;
+		tempHeap.VisibleNodeMask = 0;
+		DX::ComPtr<ID3D12Resource> uploadRes;
+		ZE_GFX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
+			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadRes)));
+
+		// Map and copy data into upload buffer
+		D3D12_RANGE range = { 0 };
+		void* uploadBuffer = nullptr;
+		ZE_GFX_THROW_FAILED(uploadRes->Map(0, &range, &uploadBuffer));
+		memcpy(uploadBuffer, data, size);
+		uploadRes->Unmap(0, nullptr);
+
+		// Perform copy and save upload resource till FinishUpload is called
 		copyList.Open(*this);
-		copyList.GetList()->CopyResource(dest, source.Get());
+		copyList.GetList()->CopyResource(dest, uploadRes.Get());
 		copyList.Close(*this);
 		Execute(copyQueue.Get(), copyList);
 		if (copyResList == nullptr)
 			copyResList = Table::Create<DX::ComPtr<ID3D12Resource>>(COPY_LIST_GROW_SIZE);
-		Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, std::move(source));
+		Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, std::move(uploadRes));
 	}
 }

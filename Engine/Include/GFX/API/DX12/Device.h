@@ -80,12 +80,14 @@ namespace ZE::GFX::API::DX12
 		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 
-		D3D12_RESOURCE_DESC GetBufferDesc(U64 size);
+		D3D12_RESOURCE_DESC GetBufferDesc(U32 size);
 		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc);
 		ResourceInfo CreateTexture(U32 width, U32 height, DXGI_FORMAT format);
+
 		void FreeBuffer(ResourceInfo& info) noexcept;
+		void FreeBuffer(ResourceInfo& info, U32 size) noexcept;
 		void FreeTexture(ResourceInfo& info) noexcept;
 
-		void CopyResource(ID3D12Resource* dest, DX::ComPtr<ID3D12Resource>&& source) noexcept;
+		void CopyResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size);
 	};
 }

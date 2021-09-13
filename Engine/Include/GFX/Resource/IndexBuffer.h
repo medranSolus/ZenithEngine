@@ -8,10 +8,9 @@ namespace ZE::GFX::Resource
 	class IndexBuffer final
 	{
 		ZE_API_BACKEND(Resource::IndexBuffer) backend;
-		U32 count;
 
 	public:
-		constexpr IndexBuffer(Device& dev, U32 count, U32* indices) : count(count) { backend.Init(dev, count, indices); }
+		constexpr IndexBuffer(Device& dev, const IndexData& data) { backend.Init(dev, data); }
 		IndexBuffer(IndexBuffer&&) = default;
 		IndexBuffer(const IndexBuffer&) = delete;
 		IndexBuffer& operator=(IndexBuffer&&) = default;
@@ -23,7 +22,7 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-		constexpr U32 GetCount() const noexcept { return count; }
+		constexpr U32 GetCount() const noexcept { U32 count = 0; ZE_API_BACKEND_CALL_RET(backend, count, GetCount); return count; }
 		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(backend, Free, dev); }
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, cl); }
 	};
@@ -31,9 +30,9 @@ namespace ZE::GFX::Resource
 #pragma region Functions
 	constexpr void IndexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
 	{
-		U32* indices = nullptr;
-		ZE_API_BACKEND_CALL_RET(backend, indices, GetData, dev, cl);
-		backend.Switch(nextApi, dev, count, indices);
+		IndexData data;
+		ZE_API_BACKEND_CALL_RET(backend, data, GetData, dev, cl);
+		backend.Switch(nextApi, dev, data);
 	}
 #pragma endregion
 }

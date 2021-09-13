@@ -57,5 +57,6 @@ namespace ZE::GFX::API::DX12
 		void Init(Device& dev, CommandType type);
 		void Open(Device& dev);
 		void Close(Device& dev);
+		void Reset(Device& dev);
 	};
 }

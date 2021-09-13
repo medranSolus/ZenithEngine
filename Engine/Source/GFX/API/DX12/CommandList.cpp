@@ -57,8 +57,7 @@ namespace ZE::GFX::API::DX12
 
 	void CommandList::Reset(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED(allocator->Reset());
+		Reset(dev.Get().dx12);
 	}
 
 	void CommandList::DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG)
@@ -90,5 +89,11 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_GFX_ENABLE(dev);
 		ZE_GFX_THROW_FAILED(commands->Close());
+	}
+
+	void CommandList::Reset(Device& dev)
+	{
+		ZE_GFX_ENABLE(dev);
+		ZE_GFX_THROW_FAILED(allocator->Reset());
 	}
 }

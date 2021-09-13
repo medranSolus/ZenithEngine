@@ -3,8 +3,9 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	IndexBuffer::IndexBuffer(GFX::Device& dev, U32 count, U32* indices)
+	IndexBuffer::IndexBuffer(GFX::Device& dev, const IndexData& data) : count(data.Count)
 	{
+		assert(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0);
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
@@ -16,7 +17,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.StructureByteStride = sizeof(U32);
 
 		D3D11_SUBRESOURCE_DATA resData;
-		resData.pSysMem = indices;
+		resData.pSysMem = data.Indices;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
@@ -29,8 +30,8 @@ namespace ZE::GFX::API::DX11::Resource
 		cl.Get().dx11.GetContext()->IASetIndexBuffer(buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	}
 
-	U32* IndexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const
+	IndexData IndexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		return nullptr;
+		return { 0, nullptr };
 	}
 }
