@@ -9,6 +9,7 @@ namespace ZE
 		graphics.Init(window);
 		gui.Init(graphics.GetDevice());
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
+		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
 	}
 
 	void Engine::BeginFrame() const

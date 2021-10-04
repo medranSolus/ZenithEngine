@@ -19,10 +19,13 @@ namespace ZE::GFX::API::DX12
 
 	CommandList::CommandList(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommandList1(0,
-			D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+		Init(dev.Get().dx12, CommandType::All);
+	}
+
+	CommandList::~CommandList()
+	{
+		if (barriers != nullptr)
+			Table::Clear(barriersInfo.Size == 0 ? barriersInfo.Allocated : barriersInfo.Size, barriers);
 	}
 
 	void CommandList::Open(GFX::Device& dev)
@@ -72,12 +75,21 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
 	}
 
+	void CommandList::FinishBarriers() noexcept
+	{
+		if (barriersInfo.Size != 0)
+			commands->ResourceBarrier(barriersInfo.Size, barriers);
+	}
+
 	void CommandList::Init(Device& dev, CommandType type)
 	{
 		ZE_GFX_ENABLE(dev);
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+		barriersInfo.Size = 0;
+		barriersInfo.Allocated = BARRIER_LIST_GROW_SIZE;
+		barriers = Table::Create<D3D12_RESOURCE_BARRIER>(BARRIER_LIST_GROW_SIZE);
 	}
 
 	void CommandList::Open(Device& dev)
@@ -95,5 +107,39 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_GFX_ENABLE(dev);
 		ZE_GFX_THROW_FAILED(allocator->Reset());
+		Table::Resize(barriersInfo, barriers, BARRIER_LIST_GROW_SIZE);
+		barriersInfo.Size = 0;
+	}
+
+	void CommandList::AddBarrierTransition(ID3D12Resource* resource, GFX::Resource::State before,
+		GFX::Resource::State after, GFX::Resource::BarrierType type) noexcept
+	{
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = GetTransitionType(type);
+		barrier.Transition.pResource = resource;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = GetResourceState(before);
+		barrier.Transition.StateAfter = GetResourceState(after);
+		Table::Append<BARRIER_LIST_GROW_SIZE>(barriersInfo, barriers, std::move(barrier));
+	}
+
+	void CommandList::AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Resource::BarrierType type) noexcept
+	{
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+		barrier.Flags = GetTransitionType(type);
+		barrier.Aliasing.pResourceBefore = before;
+		barrier.Aliasing.pResourceAfter = after;
+		Table::Append<BARRIER_LIST_GROW_SIZE>(barriersInfo, barriers, std::move(barrier));
+	}
+
+	void CommandList::AddBarrierUAV(ID3D12Resource* resource, GFX::Resource::BarrierType type) noexcept
+	{
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+		barrier.Flags = GetTransitionType(type);
+		barrier.UAV.pResource = resource;
+		Table::Append<BARRIER_LIST_GROW_SIZE>(barriersInfo, barriers, std::move(barrier));
 	}
 }

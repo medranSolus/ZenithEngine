@@ -1,7 +1,9 @@
 #pragma once
 // Headers needed for DirectX 12
 #include "GFX/API/DX/DXGI.h"
+#include "GFX/Resource/BarrierType.h"
 #include "GFX/Resource/PipelineStateDesc.h"
+#include "GFX/Resource/State.h"
 #include "GFX/Resource/Topology.h"
 #include "GFX/CommandType.h"
 #include <d3d12.h>
@@ -9,6 +11,8 @@
 namespace ZE::GFX::API::DX12
 {
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(CommandType type) noexcept;
+	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Resource::BarrierType type) noexcept;
+	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept;
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept;
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
 
@@ -25,6 +29,77 @@ namespace ZE::GFX::API::DX12
 			return D3D12_COMMAND_LIST_TYPE_COPY;
 		}
 		return D3D12_COMMAND_LIST_TYPE_DIRECT;
+	}
+
+	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Resource::BarrierType type) noexcept
+	{
+		switch (type)
+		{
+		case GFX::Resource::BarrierType::Begin:
+			return D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+		case GFX::Resource::BarrierType::End:
+			return D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+		}
+		return D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	}
+
+	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept
+	{
+		switch (state)
+		{
+		case GFX::Resource::State::GenericRead:
+			return D3D12_RESOURCE_STATE_GENERIC_READ;
+		case GFX::Resource::State::Present:
+			return D3D12_RESOURCE_STATE_PRESENT;
+		case GFX::Resource::State::VertexBuffer:
+		case GFX::Resource::State::ConstantBuffer:
+			return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		case GFX::Resource::State::IndexBuffer:
+			return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+		case GFX::Resource::State::ShaderResourceNonPS:
+			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		case GFX::Resource::State::ShaderResourcePS:
+			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		case GFX::Resource::State::DepthRead:
+			return D3D12_RESOURCE_STATE_DEPTH_READ;
+		case GFX::Resource::State::RenderTarget:
+			return D3D12_RESOURCE_STATE_RENDER_TARGET;
+		case GFX::Resource::State::UnorderedAccess:
+			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		case GFX::Resource::State::DepthWrite:
+			return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		case GFX::Resource::State::CopyDestination:
+			return D3D12_RESOURCE_STATE_COPY_DEST;
+		case GFX::Resource::State::CopySource:
+			return D3D12_RESOURCE_STATE_COPY_SOURCE;
+		case GFX::Resource::State::ResolveDestination:
+			return D3D12_RESOURCE_STATE_RESOLVE_DEST;
+		case GFX::Resource::State::ResolveSource:
+			return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+		case GFX::Resource::State::StreamOut:
+			return D3D12_RESOURCE_STATE_STREAM_OUT;
+		case GFX::Resource::State::Indirect:
+			return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+		case GFX::Resource::State::Predication:
+			return D3D12_RESOURCE_STATE_PREDICATION;
+		case GFX::Resource::State::AccelerationStructureRT:
+			return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+		case GFX::Resource::State::ShadingRateSource:
+			return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
+		case GFX::Resource::State::VideoDecodeRead:
+			return D3D12_RESOURCE_STATE_VIDEO_DECODE_READ;
+		case GFX::Resource::State::VideoDecodeWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+		case GFX::Resource::State::VideoProcessRead:
+			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
+		case GFX::Resource::State::VideoProcessWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
+		case GFX::Resource::State::VideoEncodeRead:
+			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ;
+		case GFX::Resource::State::VideoEncodeWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
+		}
+		return D3D12_RESOURCE_STATE_COMMON;
 	}
 
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept

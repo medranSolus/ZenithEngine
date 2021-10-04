@@ -114,6 +114,8 @@ namespace ZE::GFX::API::DX12
 			allocator.Tier1.~AllocatorTier1();
 		else
 			allocator.Tier2.~AllocatorTier2();
+		if (copyResList != nullptr)
+			Table::Clear(copyResInfo.Size, copyResList);
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12DebugDevice> debug;
@@ -125,7 +127,7 @@ namespace ZE::GFX::API::DX12
 
 	void Device::FinishUpload()
 	{
-		if (copyResList)
+		if (copyResList != nullptr)
 		{
 			ZE_WIN_ENABLE_EXCEPT();
 
@@ -237,7 +239,7 @@ namespace ZE::GFX::API::DX12
 			allocator.Tier2.Remove(info.ID, size);
 	}
 
-	void Device::CopyResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size)
+	void Device::UploadResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 

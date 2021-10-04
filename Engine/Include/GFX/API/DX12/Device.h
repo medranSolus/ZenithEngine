@@ -88,6 +88,6 @@ namespace ZE::GFX::API::DX12
 		void FreeBuffer(ResourceInfo& info, U32 size) noexcept;
 		void FreeTexture(ResourceInfo& info) noexcept;
 
-		void CopyResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size);
+		void UploadResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size);
 	};
 }

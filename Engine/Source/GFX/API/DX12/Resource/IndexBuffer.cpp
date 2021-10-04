@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX12::Resource
 		view.BufferLocation = info.Resource->GetGPUVirtualAddress();
 		ZE_GFX_SET_ID(info.Resource, "IndexBuffer");
 
-		dev.Get().dx12.CopyResource(info.Resource.Get(), desc, data.Indices, view.SizeInBytes);
+		dev.Get().dx12.UploadResource(info.Resource.Get(), desc, data.Indices, view.SizeInBytes);
 	}
 
 	IndexData IndexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const
