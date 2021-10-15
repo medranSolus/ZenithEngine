@@ -12,7 +12,10 @@ namespace ZE::GFX::API::DX12
 {
 	class Device final
 	{
+	public:
 		enum class AllocTier : bool { Tier1, Tier2 };
+
+	private:
 		union AllocVer
 		{
 			AllocatorTier1 Tier1;
@@ -50,7 +53,9 @@ namespace ZE::GFX::API::DX12
 		TableInfo<U16> copyResInfo;
 		DX::ComPtr<ID3D12Resource>* copyResList = nullptr;
 
-		void Wait(ID3D12Fence1* fence, U64 val);
+		void WaitCPU(ID3D12Fence1* fence, U64 val);
+		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
+		U64 SetFence(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
 		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
@@ -61,9 +66,27 @@ namespace ZE::GFX::API::DX12
 		Device& operator=(const Device&) = delete;
 		~Device();
 
-		void WaitMain() { Wait(mainFence.Get(), mainFenceVal); }
-		void WaitCompute() { Wait(computeFence.Get(), computeFenceVal); }
-		void WaitCopy() { Wait(copyFence.Get(), copyFenceVal); }
+		U64 GetMainFence() const noexcept { return mainFenceVal; }
+		U64 GetComputeFence() const noexcept { return computeFenceVal; }
+		U64 GetCopyFence() const noexcept { return copyFenceVal; }
+
+		void WaitMain(U64 val) { WaitCPU(mainFence.Get(), val); }
+		void WaitCompute(U64 val) { WaitCPU(computeFence.Get(), val); }
+		void WaitCopy(U64 val) { WaitCPU(copyFence.Get(), val); }
+
+		void WaitMainFromCompute(U64 val) { WaitGPU(computeFence.Get(), mainQueue.Get(), val); }
+		void WaitMainFromCopy(U64 val) { WaitGPU(copyFence.Get(), mainQueue.Get(), val); }
+		void WaitComputeFromMain(U64 val) { WaitGPU(mainFence.Get(), computeQueue.Get(), val); }
+		void WaitComputeFromCopy(U64 val) { WaitGPU(copyFence.Get(), computeQueue.Get(), val); }
+		void WaitCopyFromMain(U64 val) { WaitGPU(mainFence.Get(), copyQueue.Get(), val); }
+		void WaitCopyFromCompute(U64 val) { WaitGPU(computeFence.Get(), copyQueue.Get(), val); }
+
+		U64 SetMainFenceFromCompute() { return SetFence(mainFence.Get(), computeQueue.Get(), mainFenceVal); }
+		U64 SetMainFenceFromCopy() { return SetFence(mainFence.Get(), copyQueue.Get(), mainFenceVal); }
+		U64 SetComputeFenceFromMain() { return SetFence(computeFence.Get(), mainQueue.Get(), computeFenceVal); }
+		U64 SetComputeFenceFromCopy() { return SetFence(computeFence.Get(), copyQueue.Get(), computeFenceVal); }
+		U64 SetCopyFenceFromMain() { return SetFence(copyFence.Get(), mainQueue.Get(), copyFenceVal); }
+		U64 SetCopyFenceFromCompute() { return SetFence(copyFence.Get(), computeQueue.Get(), copyFenceVal); }
 
 		void FinishUpload();
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
@@ -75,6 +98,8 @@ namespace ZE::GFX::API::DX12
 #ifdef _ZE_MODE_DEBUG
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
+		constexpr AllocTier GetCurrentAllocTier() const noexcept { return allocTier; }
+
 		ID3D12Device8* GetDevice() const noexcept { return device.Get(); }
 		ID3D12CommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }

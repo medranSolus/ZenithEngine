@@ -25,9 +25,28 @@ namespace ZE::GFX::API::DX11
 		Device& operator=(const Device&) = delete;
 		~Device();
 
-		constexpr void WaitMain() {}
-		constexpr void WaitCompute() {}
-		constexpr void WaitCopy() {}
+		constexpr U64 GetMainFence() const noexcept { return 0; }
+		constexpr U64 GetComputeFence() const noexcept { return 0; }
+		constexpr U64 GetCopyFence() const noexcept { return 0; }
+
+		constexpr void WaitMain(U64 val) {}
+		constexpr void WaitCompute(U64 val) {}
+		constexpr void WaitCopy(U64 val) {}
+
+		constexpr void WaitMainFromCompute(U64 val) {}
+		constexpr void WaitMainFromCopy(U64 val) {}
+		constexpr void WaitComputeFromMain(U64 val) {}
+		constexpr void WaitComputeFromCopy(U64 val) {}
+		constexpr void WaitCopyFromMain(U64 val) {}
+		constexpr void WaitCopyFromCompute(U64 val) {}
+
+		constexpr U64 SetMainFenceFromCompute() { return 0; }
+		constexpr U64 SetMainFenceFromCopy() { return 0; }
+		constexpr U64 SetComputeFenceFromMain() { return 0; }
+		constexpr U64 SetComputeFenceFromCopy() { return 0; }
+		constexpr U64 SetCopyFenceFromMain() { return 0; }
+		constexpr U64 SetCopyFenceFromCompute() { return 0; }
+
 		constexpr void FinishUpload();
 
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }

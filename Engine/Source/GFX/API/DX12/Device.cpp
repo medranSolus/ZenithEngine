@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::DX12
 {
-	void Device::Wait(ID3D12Fence1* fence, U64 val)
+	void Device::WaitCPU(ID3D12Fence1* fence, U64 val)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
@@ -18,6 +18,20 @@ namespace ZE::GFX::API::DX12
 			if (WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0)
 				throw ZE_WIN_EXCEPT_LAST();
 		}
+	}
+
+	void Device::WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+		ZE_GFX_THROW_FAILED(queue->Wait(fence, val));
+	}
+
+	U64 Device::SetFence(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+		U64 val = ++fenceVal;
+		ZE_GFX_THROW_FAILED(queue->Signal(fence, val));
+		return val;
 	}
 
 	void Device::Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG)
@@ -131,8 +145,9 @@ namespace ZE::GFX::API::DX12
 		{
 			ZE_WIN_ENABLE_EXCEPT();
 
-			ZE_GFX_THROW_FAILED(copyQueue->Signal(copyFence.Get(), ++copyFenceVal));
-			WaitCopy();
+			U64 fenceVal = ++copyFenceVal;
+			ZE_GFX_THROW_FAILED(copyQueue->Signal(copyFence.Get(), fenceVal));
+			WaitCopy(fenceVal);
 			copyList.Reset(*this);
 			Table::Clear(copyResInfo.Size, copyResList);
 			copyResInfo.Size = 0;
@@ -182,7 +197,8 @@ namespace ZE::GFX::API::DX12
 
 	ResourceInfo Device::CreateTexture(U32 width, U32 height, DXGI_FORMAT format)
 	{
-		assert(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		assert(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
+			&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 
 		D3D12_RESOURCE_DESC desc;
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
