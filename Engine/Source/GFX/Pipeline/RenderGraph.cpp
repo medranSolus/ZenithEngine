@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderGraph.h"
 #include "Exception/RenderGraphCompileException.h"
+#include "Utils.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -56,7 +57,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Finalize(const std::vector<RenderNode>& nodes)
+	void RenderGraph::Finalize(std::vector<RenderNode>& nodes, Resource::FrameBufferDesc& frameBufferDesc)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -64,7 +65,11 @@ namespace ZE::GFX::Pipeline
 		std::vector<std::vector<U64>> depList(nodes.size());
 		for (U64 i = 0; i < nodes.size(); ++i)
 		{
-			for (const auto& out : nodes.at(i).GetOutputs())
+			auto& currentNode = nodes.at(i);
+			if (std::find_if(nodes.begin(), nodes.begin() + i, [&currentNode](const RenderNode& n) { return n.GetName() == currentNode.GetName(); }) != nodes.end()
+				&& std::find_if(nodes.begin() + i + 1, nodes.end(), [&currentNode](const RenderNode& n) { return n.GetName() == currentNode.GetName(); }) != nodes.end())
+				throw ZE_RGC_EXCEPT("Render graph already contains node of name [" + currentNode.GetName() + "]!");
+			for (const auto& out : currentNode.GetOutputs())
 			{
 				for (U64 j = 0; j < nodes.size(); ++j)
 				{
@@ -76,7 +81,7 @@ namespace ZE::GFX::Pipeline
 						if (std::find(depList.at(j).begin(), depList.at(j).end(), i) == depList.at(j).end())
 						{
 							depList.at(j).emplace_back(i);
-							if (nodes.at(j).GetPassType() != nodes.at(i).GetPassType())
+							if (nodes.at(j).GetPassType() != currentNode.GetPassType())
 								syncList.at(j).emplace_back(i);
 						}
 					}
@@ -158,6 +163,10 @@ namespace ZE::GFX::Pipeline
 		// Sort passes into dependency level groups of execution
 		passes = new std::pair<PassDesc*, U64>[++levelCount];
 		passes[0].first = new PassDesc[nodes.size()];
+		passes[0].first[0].Data = new PassData[nodes.size()];
+		for (U64 i = 1; i < nodes.size(); ++i)
+			passes[0].first[i].Data = passes[0].first[i - 1].Data + 1;
+		std::vector<U64> passLocation(nodes.size(), 0);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			if (i != 0)
@@ -167,12 +176,13 @@ namespace ZE::GFX::Pipeline
 			{
 				if (dependencyLevels.at(j) == i)
 				{
+					passLocation.at(j) = passes[i].second;
 					auto& pass = passes[i].first[passes[i].second++];
 					auto& node = nodes.at(j);
 					bool requiredFence1 = false, requiredFence2 = false;
 					for (U64 dep : syncList.at(j))
 					{
-						auto& depPass = passes[0].first[dep];
+						auto& depPass = passes[dependencyLevels.at(dep)].first[passLocation.at(dep)];
 						assert(depPass.DependentsCount < 255);
 						depPass.ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPass.ExitSyncs, sizeof(ExitSync) * ++depPass.DependentsCount));
 						auto& exitSync = depPass.ExitSyncs[depPass.DependentsCount - 1];
@@ -284,7 +294,7 @@ namespace ZE::GFX::Pipeline
 					}
 
 					pass.Execute = node.GetExecuteCallback();
-					pass.Data = node.GetExecuteData();
+					pass.Data->OptData = node.GetExecuteData();
 				}
 			}
 		}
@@ -314,9 +324,11 @@ namespace ZE::GFX::Pipeline
 				}
 				}
 			}
-			switch (nodes.at(i).GetPassType())
+			switch (pass.EnterSync)
 			{
-			case QueueType::Main:
+			case SyncType::MainToAll:
+			case SyncType::MainToCompute:
+			case SyncType::MainToCopy:
 			{
 				if (requiredFence1 && requiredFence2)
 					pass.AllExitSyncs = SyncType::MainToAll;
@@ -326,7 +338,9 @@ namespace ZE::GFX::Pipeline
 					pass.AllExitSyncs = SyncType::MainToCopy;
 				break;
 			}
-			case QueueType::Compute:
+			case SyncType::ComputeToAll:
+			case SyncType::ComputeToMain:
+			case SyncType::ComputeToCopy:
 			{
 				if (requiredFence1 && requiredFence2)
 					pass.AllExitSyncs = SyncType::ComputeToAll;
@@ -336,7 +350,9 @@ namespace ZE::GFX::Pipeline
 					pass.AllExitSyncs = SyncType::ComputeToCopy;
 				break;
 			}
-			case QueueType::Copy:
+			case SyncType::CopyToAll:
+			case SyncType::CopyToMain:
+			case SyncType::CopyToCompute:
 			{
 				if (requiredFence1 && requiredFence2)
 					pass.AllExitSyncs = SyncType::CopyToAll;
@@ -348,10 +364,84 @@ namespace ZE::GFX::Pipeline
 			}
 			}
 		}
-	}
 
-	RenderGraph::RenderGraph()
-	{
+		// Compute resource lifetimes based on dependency levels
+		for (U64 i = 0; i < nodes.size(); ++i)
+		{
+			U64 depLevel = dependencyLevels.at(i);
+			auto& node = nodes.at(i);
+			// Check all inputs by resources connected to them from dependent nodes
+			for (U64 j = 0; const auto & input : node.GetInputs())
+			{
+				auto splitInput = Utils::SplitString(input, ".");
+				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
+					{
+						return n.GetName() == splitInput.front();
+					});
+				if (it == nodes.end())
+					throw ZE_RGC_EXCEPT("Cannot find source node [" + splitInput.front() + "] for pass [" + node.GetName() + "]!");
+				for (U64 k = 0; k < it->GetOutputs().size();)
+				{
+					if (it->GetOutputs().at(k) == input)
+					{
+						auto& resName = it->GetOutputResources().at(k);
+						for (U64 l = 0; l < frameBufferDesc.ResourceNames.size(); ++l)
+						{
+							if (frameBufferDesc.ResourceNames.at(l) == resName)
+							{
+								Resource::State currentState = node.GetInputeState(j);
+								auto& states = frameBufferDesc.ResourceLifetimes.at(l).States[depLevel];
+								if (std::find_if(states.begin(), states.end(), [&currentState, &node](const auto& s)
+									{ return s.first == currentState && s.second == node.GetPassType(); }) == states.end())
+									states.emplace_back(currentState, node.GetPassType());
+								goto finish_finding_input_dependency_resource;
+							}
+						}
+						throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "]!");
+					}
+					else if (++k == it->GetOutputs().size())
+						throw ZE_RGC_EXCEPT("Cannot find source for input [" + input + "]!");
+				}
+			finish_finding_input_dependency_resource:
+				++j;
+			}
+			// Check all output resources
+			for (U64 j = 0; const auto & outRes : node.GetOutputResources())
+			{
+				if (outRes == BACKBUFFER_NAME)
+				{
+					// TODO something with swapchain...
+				}
+				else
+				{
+					for (U64 k = 0; k < frameBufferDesc.ResourceNames.size();)
+					{
+						if (frameBufferDesc.ResourceNames.at(k) == outRes)
+						{
+							auto& lifetime = frameBufferDesc.ResourceLifetimes.at(k);
+							if (lifetime.StartDepLevel > depLevel)
+								lifetime.StartDepLevel = depLevel;
+							Resource::State currentState = node.GetOutputState(j);
+							auto& states = lifetime.States[depLevel];
+							if (std::find_if(states.begin(), states.end(), [&currentState, &node](const auto& s)
+								{ return s.first == currentState && s.second == node.GetPassType(); }) == states.end())
+								states.emplace_back(currentState, node.GetPassType());
+							break;
+						}
+						else if (++k == frameBufferDesc.ResourceNames.size())
+							throw ZE_RGC_EXCEPT("Cannot find resource [" + outRes + "] for output + [" + node.GetOutputs().at(j) + "]!");
+					}
+				}
+				++j;
+			}
+			// Check temporary inner resources
+			for (auto& innerBuffer : node.GetInnerBuffers())
+			{
+				std::string resName = innerBuffer.Name;
+				frameBufferDesc.AddResource(std::move(resName), std::move(innerBuffer.Info), depLevel);
+				frameBufferDesc.ResourceLifetimes.back().States[depLevel].emplace_back(innerBuffer.InitState, node.GetPassType());
+			}
+		}
 	}
 
 	RenderGraph::~RenderGraph()
@@ -362,14 +452,22 @@ namespace ZE::GFX::Pipeline
 			for (U64 j = 0; j < level.second; ++j)
 			{
 				auto& pass = level.first[j];
-				if (pass.Data)
-					delete pass.Data;
+				if (pass.Data->OptData)
+					delete pass.Data->OptData;
 				if (pass.ExitSyncs)
 					free(pass.ExitSyncs);
 			}
 		}
-		delete[] passes[0].first;
-		delete[] passes;
+		if (passes)
+		{
+			if (passes[0].first)
+			{
+				if (passes[0].first[0].Data)
+					delete[] passes[0].first[0].Data;
+				delete[] passes[0].first;
+			}
+			delete[] passes;
+		}
 	}
 
 	void RenderGraph::Execute(Device& dev)
@@ -419,9 +517,7 @@ namespace ZE::GFX::Pipeline
 					break;
 				}
 				}
-				pass.Enter();
 				pass.Execute(pass.Data);
-				pass.Exit();
 				U64 fence1 = 0;
 				U64 fence2 = 0;
 				switch (pass.AllExitSyncs)

@@ -1,6 +1,7 @@
 #pragma once
 #include "GUI/Manager.h"
 #include "GFX/Graphics.h"
+#include "GFX/Pipeline/RendererPBR.h"
 
 namespace ZE
 {
@@ -9,6 +10,7 @@ namespace ZE
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Graphics graphics;
+		GFX::Pipeline::RendererPBR renderer;
 		bool guiEnabled = false;
 
 	public:

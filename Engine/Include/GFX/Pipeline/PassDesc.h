@@ -14,6 +14,12 @@ namespace ZE::GFX::Pipeline
 		UA64* NextPassFence;
 	};
 
+	struct PassData
+	{
+		// Optional data used by RenderPass
+		void* OptData = nullptr;
+	};
+
 	// Descriptor containing params for executing RenderPass
 	struct PassDesc
 	{
@@ -21,14 +27,8 @@ namespace ZE::GFX::Pipeline
 		SyncType EnterSync = SyncType::None;
 		UA64 EnterFence1 = 0;
 		UA64 EnterFence2 = 0;
-		// Pre-execute operations independent of render pass, ex. state transitions and sync points
-		void (*Enter)() = nullptr;
-		// RenderPass dependent execution
 		PassExecuteCallback Execute = nullptr;
-		// Optional data used by RenderPass
-		void* Data = nullptr;
-		// Post-execute operations independent of render pass, ex. state transitions
-		void (*Exit)() = nullptr;
+		PassData* Data = nullptr;
 		// Syncs required for dependent RenderPasses
 		SyncType AllExitSyncs = SyncType::None;
 		U8 DependentsCount = 0;

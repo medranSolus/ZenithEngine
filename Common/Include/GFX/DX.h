@@ -65,7 +65,7 @@ namespace ZE::GFX::API::DX
 		case PixelFormat::R8G8_SNorm:					return DXGI_FORMAT_R8G8_SNORM;
 		case PixelFormat::R32_Typeless:					return DXGI_FORMAT_R32_TYPELESS;
 		case PixelFormat::R32_Float:					return DXGI_FORMAT_R32_FLOAT;
-		case PixelFormat::D32_Float:					return DXGI_FORMAT_D32_FLOAT;
+		case PixelFormat::R32_Depth:					return DXGI_FORMAT_D32_FLOAT;
 		case PixelFormat::R32_UInt:						return DXGI_FORMAT_R32_UINT;
 		case PixelFormat::R32_SInt:						return DXGI_FORMAT_R32_SINT;
 		case PixelFormat::R16_Typeless:					return DXGI_FORMAT_R16_TYPELESS;
@@ -104,7 +104,7 @@ namespace ZE::GFX::API::DX
 		case PixelFormat::BC7_UNorm_SRGB:				return DXGI_FORMAT_BC7_UNORM_SRGB;
 		case PixelFormat::R24G8_Typeless:				return DXGI_FORMAT_R24G8_TYPELESS;
 		case PixelFormat::R24_UNorm_X8_Typeless:		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-		case PixelFormat::D24_UNorm_S8_UInt:			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case PixelFormat::R24_Depth_S8_UInt:			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::X24_Typeless_G8_UInt:			return DXGI_FORMAT_X24_TYPELESS_G8_UINT;
 		case PixelFormat::D32_Float_S8X24_UInt:			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case PixelFormat::R32_Float_X8X24_Typeless:		return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
@@ -151,7 +151,7 @@ namespace ZE::GFX::API::DX
 		case DXGI_FORMAT_SAMPLER_FEEDBACK_MIN_MIP_OPAQUE:
 		case DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE:
 		case DXGI_FORMAT_FORCE_UINT:
-			assert("ZE::GFX::API::GetFormatFromDX - Trying to convert unsupported format!" && false);
+			assert(false && "Trying to convert unsupported format!");
 		case DXGI_FORMAT_UNKNOWN:						return PixelFormat::Unknown;
 		case DXGI_FORMAT_R32G32B32A32_TYPELESS:			return PixelFormat::R32G32B32A32_Typeless;
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:			return PixelFormat::R32G32B32A32_Float;
@@ -192,12 +192,12 @@ namespace ZE::GFX::API::DX
 		case DXGI_FORMAT_R16G16_SNORM:					return PixelFormat::R16G16_SNorm;
 		case DXGI_FORMAT_R16G16_SINT:					return PixelFormat::R16G16_SInt;
 		case DXGI_FORMAT_R32_TYPELESS:					return PixelFormat::R32_Typeless;
-		case DXGI_FORMAT_D32_FLOAT:						return PixelFormat::D32_Float;
+		case DXGI_FORMAT_D32_FLOAT:						return PixelFormat::R32_Depth;
 		case DXGI_FORMAT_R32_FLOAT:						return PixelFormat::R32_Float;
 		case DXGI_FORMAT_R32_UINT:						return PixelFormat::R32_UInt;
 		case DXGI_FORMAT_R32_SINT:						return PixelFormat::R32_SInt;
 		case DXGI_FORMAT_R24G8_TYPELESS:				return PixelFormat::R24G8_Typeless;
-		case DXGI_FORMAT_D24_UNORM_S8_UINT:				return PixelFormat::D24_UNorm_S8_UInt;
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:				return PixelFormat::R24_Depth_S8_UInt;
 		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:			return PixelFormat::R24_UNorm_X8_Typeless;
 		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:			return PixelFormat::X24_Typeless_G8_UInt;
 		case DXGI_FORMAT_R8G8_TYPELESS:					return PixelFormat::R8G8_Typeless;

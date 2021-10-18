@@ -1,10 +1,11 @@
 #pragma once
 #include "RenderNode.h"
+#include "GFX/Resource/FrameBuffer.h"
 #include <bitset>
 
 namespace ZE::GFX::Pipeline
 {
-	class RenderGraph final
+	class RenderGraph
 	{
 		U64 levelCount = 0;
 		std::pair<PassDesc*, U64>* passes = nullptr;
@@ -14,16 +15,18 @@ namespace ZE::GFX::Pipeline
 		static void CullIndirectDependecies(U64 currentNode, U64 checkNode, U64 minDepLevel, std::vector<std::vector<U64>>& syncList,
 			const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept;
 
-	public:
-		void Finalize(const std::vector<RenderNode>& nodes);
+	protected:
+		static constexpr const char* BACKBUFFER_NAME = "$backbuffer";
+
+		void Finalize(std::vector<RenderNode>& nodes, Resource::FrameBufferDesc& frameBufferDesc);
 
 	public:
-		RenderGraph();
+		RenderGraph() = default;
 		RenderGraph(RenderGraph&&) = delete;
 		RenderGraph(const RenderGraph&) = delete;
 		RenderGraph& operator=(RenderGraph&&) = delete;
 		RenderGraph& operator=(const RenderGraph&) = delete;
-		~RenderGraph();
+		virtual ~RenderGraph();
 
 		void Execute(Device& dev);
 	};

@@ -18,6 +18,7 @@ namespace ZE::GFX::Resource
 		IndexBuffer,
 		ShaderResourceNonPS,
 		ShaderResourcePS,
+		ShaderResourceAll,
 		DepthRead,
 
 		RenderTarget,

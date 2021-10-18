@@ -56,8 +56,9 @@ namespace ZE
 		R8G8_SNorm,
 		// 32 bit component
 		R32_Typeless,
+		DepthOnly = 42, // Alias name for R32_Typeless used in Depth Stencil
 		R32_Float,
-		D32_Float, // Depth
+		R32_Depth,
 		R32_UInt,
 		R32_SInt,
 		// 16 bit component
@@ -105,8 +106,9 @@ namespace ZE
 		BC7_UNorm_SRGB,
 		// Depth-stencil
 		R24G8_Typeless,
+		DepthStencil = 81, // Alias name for R24G8_Typeless used in Depth Stencil
 		R24_UNorm_X8_Typeless,
-		D24_UNorm_S8_UInt,
+		R24_Depth_S8_UInt,
 		X24_Typeless_G8_UInt,
 		// Depth only
 		D32_Float_S8X24_UInt,
