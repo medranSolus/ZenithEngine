@@ -3,6 +3,7 @@
 
 namespace ZE::GFX::API::DX
 {
+	// Standard exception for DirectX Graphics Infrastructure based APIs
 	class GraphicsException : public WinAPI::WinApiException
 	{
 #ifdef _ZE_MODE_DEBUG

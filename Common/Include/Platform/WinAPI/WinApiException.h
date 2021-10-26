@@ -4,6 +4,7 @@
 
 namespace ZE::WinAPI
 {
+	// Exception thrown related to Windows based errors
 	class WinApiException : public virtual Exception::BasicException
 	{
 		HRESULT result;

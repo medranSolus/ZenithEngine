@@ -4,8 +4,10 @@
 
 namespace ZE::Window::WinAPI
 {
+	// Window implementation for Windows
 	class WindowWinAPI : public BaseWindow
 	{
+		// Window class register
 		class WindowClass final
 		{
 			static constexpr const char* WND_CLASS_NAME = "ZE_WND";

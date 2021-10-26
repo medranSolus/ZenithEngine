@@ -3,6 +3,7 @@
 
 namespace ZE
 {
+	// Supported pixel formats of images and textures
 	enum class PixelFormat : U8
 	{
 		Unknown,

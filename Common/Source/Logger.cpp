@@ -1,6 +1,5 @@
 #include "Logger.h"
 #include <iostream>
-#include <fstream>
 
 namespace ZE
 {

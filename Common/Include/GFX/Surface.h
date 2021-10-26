@@ -7,6 +7,7 @@
 
 namespace ZE::GFX
 {
+	// Texture raw data
 	class Surface final
 	{
 		static constexpr PixelFormat PIXEL_FORMAT = PixelFormat::R8G8B8A8_UNorm;

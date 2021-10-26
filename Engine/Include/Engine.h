@@ -5,6 +5,7 @@
 
 namespace ZE
 {
+	// Main Zenith Engine component containing all rendering logic
 	class Engine final
 	{
 		GUI::Manager gui;

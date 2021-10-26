@@ -3,7 +3,8 @@
 
 namespace ZE
 {
-	class Logger
+	// Static logger service
+	class Logger final
 	{
 		enum class Level { Info, Warning, Error };
 

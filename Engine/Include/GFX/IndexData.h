@@ -3,6 +3,7 @@
 
 namespace ZE::GFX
 {
+	// Data for index buffer
 	struct IndexData
 	{
 		U32 Count;

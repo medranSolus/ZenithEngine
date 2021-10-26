@@ -3,6 +3,7 @@
 
 namespace ZE::Exception
 {
+	// Exception thrown while processing images
 	class ImageException : public virtual BasicException
 	{
 		std::string info;

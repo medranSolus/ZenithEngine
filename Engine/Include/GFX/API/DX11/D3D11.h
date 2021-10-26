@@ -6,6 +6,7 @@
 
 namespace ZE::GFX::API::DX11
 {
+	// Get DirectX 11 version of culling modes
 	constexpr D3D11_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept
 	{
 		switch (mode)

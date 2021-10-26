@@ -1,10 +1,11 @@
 #pragma once
 #include "GFX/QueueType.h"
-#include "GFX/Resource/FrameBufferDesc.h"
+#include "GFX/Pipeline/FrameBufferDesc.h"
 #include "PassDesc.h"
 
 namespace ZE::GFX::Pipeline
 {
+	// Description of single render pass in RenderGraph
 	class RenderNode final
 	{
 	public:
@@ -12,7 +13,7 @@ namespace ZE::GFX::Pipeline
 		{
 			std::string Name;
 			Resource::State InitState;
-			Resource::FrameResourceDesc Info;
+			FrameResourceDesc Info;
 		};
 
 	private:
@@ -49,11 +50,11 @@ namespace ZE::GFX::Pipeline
 		constexpr const std::vector<std::string>& GetOutputs() const noexcept { return outputNames; }
 		constexpr const std::vector<std::string>& GetOutputResources() const noexcept { return outputResourceNames; }
 		constexpr Resource::State GetOutputState(U64 i) const noexcept { return outputStates.at(i); }
-		constexpr Resource::State GetInputeState(U64 i) const noexcept { return inputStates.at(i); }
+		constexpr Resource::State GetInputState(U64 i) const noexcept { return inputStates.at(i); }
 		bool ContainsInput(const std::string& name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
 
 		void AddInput(std::string&& name, Resource::State state);
-		void AddInnerBuffer(std::string&& name, Resource::State initState, Resource::FrameResourceDesc&& desc);
+		void AddInnerBuffer(std::string&& name, Resource::State initState, FrameResourceDesc&& desc);
 		void AddOutput(std::string&& name, Resource::State state, const std::string& resourceName);
 	};
 }

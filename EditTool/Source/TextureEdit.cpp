@@ -1,6 +1,4 @@
 #include "TextureEdit.h"
-#include "GFX/Surface.h"
-#include "Logger.h"
 
 void TextureEdit::NoAlpha(const std::string& source, const std::string& destination)
 {

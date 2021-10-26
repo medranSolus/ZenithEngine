@@ -6,6 +6,7 @@
 
 namespace ZE::Window
 {
+	// Platform agnostic window logic
 	class BaseWindow
 	{
 	protected:
@@ -49,10 +50,11 @@ namespace ZE::Window
 	};
 }
 
-#if _ZE_PLATFORM == _ZE_PLATFORM_WINDOWS
+#ifdef _ZE_PLATFORM_WINDOWS
 #include "Platform/WindowWinAPI.h"
 namespace ZE::Window
 {
+	// Application window for Windows
 	typedef WinAPI::WindowWinAPI MainWindow;
 }
 #else

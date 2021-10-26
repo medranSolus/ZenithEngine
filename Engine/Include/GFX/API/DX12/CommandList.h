@@ -66,8 +66,8 @@ namespace ZE::GFX::API::DX12
 		void Reset(Device& dev);
 
 		void AddBarrierTransition(ID3D12Resource* resource, GFX::Resource::State before,
-			GFX::Resource::State after, GFX::Resource::BarrierType type) noexcept;
-		void AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Resource::BarrierType type) noexcept;
-		void AddBarrierUAV(ID3D12Resource* resource, GFX::Resource::BarrierType type) noexcept;
+			GFX::Resource::State after, GFX::Pipeline::BarrierType type) noexcept;
+		void AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Pipeline::BarrierType type) noexcept;
+		void AddBarrierUAV(ID3D12Resource* resource, GFX::Pipeline::BarrierType type) noexcept;
 	};
 }

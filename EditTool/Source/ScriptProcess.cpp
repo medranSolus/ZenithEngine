@@ -1,7 +1,5 @@
 #include "ScriptProcess.h"
 #include "TextureEdit.h"
-#include "Logger.h"
-#include <fstream>
 
 ScriptProcess::OutCode ScriptProcess::GetSrcDest(std::string& source, std::string& destination, std::deque<std::string>& params) noexcept
 {

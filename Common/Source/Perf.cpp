@@ -1,5 +1,4 @@
 #include "Perf.h"
-#include <fstream>
 
 namespace ZE
 {

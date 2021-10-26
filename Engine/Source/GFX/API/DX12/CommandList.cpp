@@ -112,7 +112,7 @@ namespace ZE::GFX::API::DX12
 	}
 
 	void CommandList::AddBarrierTransition(ID3D12Resource* resource, GFX::Resource::State before,
-		GFX::Resource::State after, GFX::Resource::BarrierType type) noexcept
+		GFX::Resource::State after, GFX::Pipeline::BarrierType type) noexcept
 	{
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -124,7 +124,7 @@ namespace ZE::GFX::API::DX12
 		Table::Append<BARRIER_LIST_GROW_SIZE>(barriersInfo, barriers, std::move(barrier));
 	}
 
-	void CommandList::AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Resource::BarrierType type) noexcept
+	void CommandList::AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Pipeline::BarrierType type) noexcept
 	{
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
@@ -134,7 +134,7 @@ namespace ZE::GFX::API::DX12
 		Table::Append<BARRIER_LIST_GROW_SIZE>(barriersInfo, barriers, std::move(barrier));
 	}
 
-	void CommandList::AddBarrierUAV(ID3D12Resource* resource, GFX::Resource::BarrierType type) noexcept
+	void CommandList::AddBarrierUAV(ID3D12Resource* resource, GFX::Pipeline::BarrierType type) noexcept
 	{
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;

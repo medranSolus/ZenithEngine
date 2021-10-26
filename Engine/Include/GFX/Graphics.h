@@ -5,12 +5,12 @@
 
 namespace ZE::GFX
 {
+	// Main interactions with GPU rendering objects
 	class Graphics final
 	{
 		Device device;
 		CommandList mainList;
 		SwapChain swapChain;
-		bool guiEnabled = true;
 
 	public:
 		Graphics() = default;

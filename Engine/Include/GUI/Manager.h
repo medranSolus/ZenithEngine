@@ -6,6 +6,7 @@
 
 namespace ZE::GUI
 {
+	// Interacting with GUI subsystem
 	class Manager final
 	{
 	public:

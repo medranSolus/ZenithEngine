@@ -1,7 +1,7 @@
 #pragma once
 // Headers needed for DirectX 12
 #include "GFX/API/DX/DXGI.h"
-#include "GFX/Resource/BarrierType.h"
+#include "GFX/Pipeline/BarrierType.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/State.h"
 #include "GFX/Resource/Topology.h"
@@ -10,10 +10,15 @@
 
 namespace ZE::GFX::API::DX12
 {
+	// Get DirectX 12 version of command list types
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(CommandType type) noexcept;
-	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Resource::BarrierType type) noexcept;
+	// Get DirectX 12 version of possible barrier types
+	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept;
+	// Get DirectX 12 version of resource states
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept;
+	// Get DirectX 12 version of primitive topology types
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept;
+	// Get DirectX 12 version of culling modes
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
 
 #pragma region Functions
@@ -31,13 +36,13 @@ namespace ZE::GFX::API::DX12
 		return D3D12_COMMAND_LIST_TYPE_DIRECT;
 	}
 
-	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Resource::BarrierType type) noexcept
+	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept
 	{
 		switch (type)
 		{
-		case GFX::Resource::BarrierType::Begin:
+		case GFX::Pipeline::BarrierType::Begin:
 			return D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-		case GFX::Resource::BarrierType::End:
+		case GFX::Pipeline::BarrierType::End:
 			return D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 		}
 		return D3D12_RESOURCE_BARRIER_FLAG_NONE;

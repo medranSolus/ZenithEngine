@@ -5,6 +5,7 @@
 
 namespace ZE
 {
+	// CPU performance measurement tool
 	class Perf final
 	{
 		static constexpr const char* LOG_FILE = "perf_log.txt";

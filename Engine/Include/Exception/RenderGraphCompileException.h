@@ -3,6 +3,7 @@
 
 namespace ZE::Exception
 {
+	// Exception thrown while creating render graph
 	class RenderGraphCompileException : public virtual BasicException
 	{
 		std::string message;

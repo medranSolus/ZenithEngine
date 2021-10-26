@@ -15,8 +15,8 @@ namespace ZE::GFX::Pipeline
 
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
-		Resource::FrameBufferDesc frameBufferDesc;
-		frameBufferDesc.Reserve(8);
+		FrameBufferDesc frameBufferDesc;
+		frameBufferDesc.Init(8, BACKBUFFER_NAME, width, height);
 		frameBufferDesc.AddResource(GBUFF_NAME,
 			{
 				width, height, 1,
@@ -141,7 +141,7 @@ namespace ZE::GFX::Pipeline
 		{
 			GFX::Pipeline::RenderNode node("hdrGamma", GFX::QueueType::Main, nullptr);
 			node.AddInput("wireframe.RT", Resource::State::ShaderResourcePS);
-			node.AddOutput("RT", Resource::State::Present, BACKBUFFER_NAME);
+			node.AddOutput("RT", Resource::State::RenderTarget, BACKBUFFER_NAME);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion

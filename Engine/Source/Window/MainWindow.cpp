@@ -1,5 +1,4 @@
 #include "Window/MainWindow.h"
-#include <filesystem>
 
 namespace ZE::Window
 {

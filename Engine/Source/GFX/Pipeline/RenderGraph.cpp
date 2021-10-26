@@ -1,6 +1,5 @@
 #include "GFX/Pipeline/RenderGraph.h"
 #include "Exception/RenderGraphCompileException.h"
-#include "Utils.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -57,7 +56,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Finalize(std::vector<RenderNode>& nodes, Resource::FrameBufferDesc& frameBufferDesc)
+	void RenderGraph::Finalize(std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -389,11 +388,28 @@ namespace ZE::GFX::Pipeline
 						{
 							if (frameBufferDesc.ResourceNames.at(l) == resName)
 							{
-								Resource::State currentState = node.GetInputeState(j);
-								auto& states = frameBufferDesc.ResourceLifetimes.at(l).States[depLevel];
-								if (std::find_if(states.begin(), states.end(), [&currentState, &node](const auto& s)
-									{ return s.first == currentState && s.second == node.GetPassType(); }) == states.end())
-									states.emplace_back(currentState, node.GetPassType());
+								Resource::State currentState = node.GetInputState(j);
+								auto& lifetime = frameBufferDesc.ResourceLifetimes.at(l);
+								if (lifetime.contains(depLevel))
+								{
+									Resource::State presentState = lifetime.at(depLevel);
+									if (presentState != currentState)
+									{
+										if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
+											|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
+										{
+											lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
+										}
+										else if (presentState != Resource::State::ShaderResourceAll
+											|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
+										{
+											throw ZE_RGC_EXCEPT("Resource [" + resName + "] cannot be at same dependency level [" +
+												std::to_string(depLevel) + "] in 2 disjunctive states!");
+										}
+									}
+								}
+								else
+									lifetime[depLevel] = currentState;
 								goto finish_finding_input_dependency_resource;
 							}
 						}
@@ -408,29 +424,36 @@ namespace ZE::GFX::Pipeline
 			// Check all output resources
 			for (U64 j = 0; const auto & outRes : node.GetOutputResources())
 			{
-				if (outRes == BACKBUFFER_NAME)
+				for (U64 k = 0; k < frameBufferDesc.ResourceNames.size();)
 				{
-					// TODO something with swapchain...
-				}
-				else
-				{
-					for (U64 k = 0; k < frameBufferDesc.ResourceNames.size();)
+					if (frameBufferDesc.ResourceNames.at(k) == outRes)
 					{
-						if (frameBufferDesc.ResourceNames.at(k) == outRes)
+						Resource::State currentState = node.GetOutputState(j);
+						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(k);
+						if (lifetime.contains(depLevel))
 						{
-							auto& lifetime = frameBufferDesc.ResourceLifetimes.at(k);
-							if (lifetime.StartDepLevel > depLevel)
-								lifetime.StartDepLevel = depLevel;
-							Resource::State currentState = node.GetOutputState(j);
-							auto& states = lifetime.States[depLevel];
-							if (std::find_if(states.begin(), states.end(), [&currentState, &node](const auto& s)
-								{ return s.first == currentState && s.second == node.GetPassType(); }) == states.end())
-								states.emplace_back(currentState, node.GetPassType());
-							break;
+							Resource::State presentState = lifetime.at(depLevel);
+							if (presentState != currentState)
+							{
+								if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
+									|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
+								{
+									lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
+								}
+								else if (presentState != Resource::State::ShaderResourceAll
+									|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
+								{
+									throw ZE_RGC_EXCEPT("Resource [" + outRes + "] cannot be at same dependency level [" +
+										std::to_string(depLevel) + "] in 2 disjunctive states!");
+								}
+							}
 						}
-						else if (++k == frameBufferDesc.ResourceNames.size())
-							throw ZE_RGC_EXCEPT("Cannot find resource [" + outRes + "] for output + [" + node.GetOutputs().at(j) + "]!");
+						else
+							lifetime[depLevel] = currentState;
+						break;
 					}
+					else if (++k == frameBufferDesc.ResourceNames.size())
+						throw ZE_RGC_EXCEPT("Cannot find resource [" + outRes + "] for output + [" + node.GetOutputs().at(j) + "]!");
 				}
 				++j;
 			}
@@ -438,10 +461,13 @@ namespace ZE::GFX::Pipeline
 			for (auto& innerBuffer : node.GetInnerBuffers())
 			{
 				std::string resName = innerBuffer.Name;
-				frameBufferDesc.AddResource(std::move(resName), std::move(innerBuffer.Info), depLevel);
-				frameBufferDesc.ResourceLifetimes.back().States[depLevel].emplace_back(innerBuffer.InitState, node.GetPassType());
+				frameBufferDesc.AddResource(std::move(resName), std::move(innerBuffer.Info));
+				frameBufferDesc.ResourceLifetimes.back()[depLevel] = innerBuffer.InitState;
 			}
 		}
+
+		frameBufferDesc.TransitionLevelsCount = 2 * levelCount;
+		frameBuffer.Init(frameBufferDesc);
 	}
 
 	RenderGraph::~RenderGraph()

@@ -1,10 +1,11 @@
 #pragma once
+#include "GFX/Pipeline/FrameBuffer.h"
 #include "RenderNode.h"
-#include "GFX/Resource/FrameBuffer.h"
 #include <bitset>
 
 namespace ZE::GFX::Pipeline
 {
+	// Building and managing structure of render passes
 	class RenderGraph
 	{
 		U64 levelCount = 0;
@@ -18,7 +19,9 @@ namespace ZE::GFX::Pipeline
 	protected:
 		static constexpr const char* BACKBUFFER_NAME = "$backbuffer";
 
-		void Finalize(std::vector<RenderNode>& nodes, Resource::FrameBufferDesc& frameBufferDesc);
+		FrameBuffer frameBuffer;
+
+		void Finalize(std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc);
 
 	public:
 		RenderGraph() = default;

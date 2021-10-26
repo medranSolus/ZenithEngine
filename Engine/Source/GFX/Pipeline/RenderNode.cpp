@@ -11,12 +11,12 @@ namespace ZE::GFX::Pipeline
 		inputStates.emplace_back(state);
 	}
 
-	void RenderNode::AddInnerBuffer(std::string&& name, Resource::State initState, Resource::FrameResourceDesc&& desc)
+	void RenderNode::AddInnerBuffer(std::string&& name, Resource::State initState, FrameResourceDesc&& desc)
 	{
 		std::string bufferName = passName + "_" + std::forward<std::string>(name);
 		if (std::find(inputNames.begin(), inputNames.end(), bufferName) != inputNames.end())
 			throw ZE_RGC_EXCEPT("Pass [" + passName + "] already contains inner buffer [" + name + "]!");
-		innerBuffers.emplace_back(std::move(bufferName), initState, std::forward<Resource::FrameResourceDesc>(desc));
+		innerBuffers.emplace_back(std::move(bufferName), initState, std::forward<FrameResourceDesc>(desc));
 	}
 
 	void RenderNode::AddOutput(std::string&& name, Resource::State state, const std::string& resourceName)

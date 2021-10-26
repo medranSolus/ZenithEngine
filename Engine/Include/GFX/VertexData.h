@@ -3,6 +3,7 @@
 
 namespace ZE::GFX
 {
+	// Data for vertex buffer
 	struct VertexData
 	{
 		U32 BufferSize;

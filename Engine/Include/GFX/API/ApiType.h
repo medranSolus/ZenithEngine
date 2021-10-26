@@ -8,5 +8,6 @@ namespace ZE::GFX::API
 }
 namespace ZE
 {
+	// Possible supported graphics APIs
 	typedef GFX::API::ApiType GfxApiType;
 }

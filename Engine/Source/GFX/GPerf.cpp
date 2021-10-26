@@ -1,5 +1,4 @@
 #include "GFX/GPerf.h"
-#include <fstream>
 
 namespace ZE::GFX
 {

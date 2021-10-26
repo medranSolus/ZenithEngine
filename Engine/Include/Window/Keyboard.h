@@ -6,7 +6,7 @@
 
 namespace ZE::Window
 {
-#if _ZE_PLATFORM == _ZE_PLATFORM_WINDOWS
+#ifdef _ZE_PLATFORM_WINDOWS
 	namespace WinAPI
 	{
 		class WindowWinAPI;
@@ -15,6 +15,7 @@ namespace ZE::Window
 #error Missing platform specyfic window forward declaration for Keyboard!
 #endif
 
+	// Keyboard events controller
 	class Keyboard final
 	{
 		friend class WinAPI::WindowWinAPI;

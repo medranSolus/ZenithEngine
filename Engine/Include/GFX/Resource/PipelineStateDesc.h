@@ -4,10 +4,14 @@
 
 namespace ZE::GFX::Resource
 {
+	// Logical blending modes
 	enum class BlendType : U8 { None, Light, Normal };
+	// Possible operations on stencil buffer
 	enum class StencilMode : U8 { Off, Write, Mask, DepthOff, Reverse, DepthFirst };
+	// GPU primitive culling
 	enum class CullMode : U8 { None, Front, Back };
 
+	// Creation descriptor for GPU state for draw calls
 	struct PipelineStateDesc
 	{
 		std::wstring VS;

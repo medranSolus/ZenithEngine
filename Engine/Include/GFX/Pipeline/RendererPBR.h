@@ -3,6 +3,7 @@
 
 namespace ZE::GFX::Pipeline
 {
+	// Physically Based Renderer
 	class RendererPBR : public RenderGraph
 	{
 	public:

@@ -1,7 +1,7 @@
 #pragma once
 #include "Types.h"
 
-namespace ZE::GFX::Resource
+namespace ZE::GFX::Pipeline
 {
 	// Type of performed resource barrier
 	enum class BarrierType : U8

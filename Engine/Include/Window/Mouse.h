@@ -5,7 +5,7 @@
 
 namespace ZE::Window
 {
-#if _ZE_PLATFORM == _ZE_PLATFORM_WINDOWS
+#ifdef _ZE_PLATFORM_WINDOWS
 	namespace WinAPI
 	{
 		class WindowWinAPI;
@@ -14,6 +14,7 @@ namespace ZE::Window
 #error Missing platform specyfic window forward declaration for Mouse!
 #endif
 
+	// Keyboard events controller
 	class Mouse final
 	{
 		friend class WinAPI::WindowWinAPI;

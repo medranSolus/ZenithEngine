@@ -3,6 +3,7 @@
 
 namespace ZE::GFX::Resource
 {
+	// Primitive topology described by index data
 	enum class TopologyType : U8
 	{
 		Undefined,
@@ -12,6 +13,7 @@ namespace ZE::GFX::Resource
 		ControlPoint
 	};
 
+	// Possible logical index data ordering in memory
 	enum class TopologyOrder : U8
 	{
 		Undefined,

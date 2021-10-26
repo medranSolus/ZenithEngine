@@ -14,6 +14,7 @@ namespace ZE::GFX::Pipeline
 		UA64* NextPassFence;
 	};
 
+	// Data needed for executing RenderPass
 	struct PassData
 	{
 		// Optional data used by RenderPass

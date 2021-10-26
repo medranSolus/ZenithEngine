@@ -3,6 +3,7 @@
 
 namespace ZE
 {
+	// Simple timer for time measurement
 	class Timer final
 	{
 		std::chrono::steady_clock::time_point lastMark;

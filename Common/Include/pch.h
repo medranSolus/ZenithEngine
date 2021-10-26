@@ -12,47 +12,19 @@
 */
 
 /*
-***** atomic
-***** cmath
-***** cstddef
-***** cstdint
-***** cfloat
-***** cassert
-***** intrin.h
-***** DirectXMath.h
-*** Types.h
-* ColorF4.h
-* utility
-* random
-*/
-#include "MathExt.h"
-
-/*
-* Types.h (defined by MathExt.h)
+*** atomic
+*** cmath
+*** cstddef
+*** cstdint
+*** cfloat
+*** cassert
+*** intrin.h
+*** DirectXMath.h
+*** DirectXCollision.h
+* Types.h
 * utility
 */
 #include "ColorF3.h"
-
-/*
-*** Types.h (defined by MathExt.h)
-* Pixel.h
-***** Types.h (defined by MathExt.h)
-*** PixelFormat.h
-* GFX/DX.h
-* functional
-* utility
-* vector
-* DirectXTex.h
-*/
-#include "GFX/Surface.h"
-
-/*
-*** Types.h (defined by MathExt.h)
-*** exception
-*** string
-* Exception/BasicException.h
-*/
-#include "Exception/ImageException.h"
 
 /*
 * string
@@ -60,21 +32,66 @@
 #include "Logger.h"
 
 /*
-* Types.h (defined by MathExt.h)
+*** Types.h (defined by ColorF3.h)
+*** utility
+* ColorF4.h
+* random
+*/
+#include "MathExt.h"
+
+/*
+* Types.h (defined by ColorF3.h)
 * string
 * map
 */
 #include "Perf.h"
 
 /*
-* Types.h (defined by MathExt.h)
+* Types.h (defined by ColorF3.h)
 * string
 * vector
 * deque
 */
 #include "Utils.h"
 
+/*
+*** Types.h (defined by ColorF3.h)
+*** exception
+*** string
+* Exception/BasicException.h
+*/
+#include "Exception/ImageException.h"
+
+/*
+*** Types.h (defined by ColorF3.h)
+* Pixel.h
+***** Types.h (defined by ColorF3.h)
+*** PixelFormat.h
+*** DirectXTex.h
+* GFX/DX.h
+* functional
+* utility
+* vector
+*/
+#include "GFX/Surface.h"
+
+
 // Standard headers, remove if appears above
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
+#include <fstream>
+
+
+// Platform specific headers
+#ifdef _ZE_PLATFORM_WINDOWS
+/*
+* Exception/ImageException.h (defined by platform agnostic headers)
+*** Exception/BasicException.h (defined by Exception/ImageException.h)
+***** sdkddkver.h
+***** Windows.h
+*** Platform/WinAPI/WinAPI.h
+* Platform/WinAPI/WinApiException.h
+*/
+#include "Platform/WinAPI/DirectXTexException.h"
+#endif
