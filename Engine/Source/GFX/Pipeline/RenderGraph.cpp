@@ -56,7 +56,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Finalize(std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc)
+	void RenderGraph::Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -466,8 +466,8 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 
-		frameBufferDesc.TransitionLevelsCount = 2 * levelCount;
-		frameBuffer.Init(frameBufferDesc);
+		frameBufferDesc.ComputeTransitions(levelCount);
+		frameBuffer.Init(dev, swapChain, frameBufferDesc);
 	}
 
 	RenderGraph::~RenderGraph()

@@ -1,5 +1,5 @@
 #pragma once
-#include "PixelFormat.h"
+#include "FrameResourceFormat.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -9,6 +9,6 @@ namespace ZE::GFX::Pipeline
 		U32 Width;
 		U32 Height;
 		U16 ArraySize;
-		std::vector<PixelFormat> Formats;
+		std::vector<FrameResourceFormat> Formats;
 	};
 }

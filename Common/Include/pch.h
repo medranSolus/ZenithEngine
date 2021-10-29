@@ -48,6 +48,8 @@
 
 /*
 * Types.h (defined by ColorF3.h)
+*** Types.h (defined by ColorF3.h)
+* PixelFormat.h
 * string
 * vector
 * deque
@@ -65,8 +67,7 @@
 /*
 *** Types.h (defined by ColorF3.h)
 * Pixel.h
-***** Types.h (defined by ColorF3.h)
-*** PixelFormat.h
+*** PixelFormat.h (defined by Utils.h)
 *** DirectXTex.h
 * GFX/DX.h
 * functional
@@ -75,15 +76,17 @@
 */
 #include "GFX/Surface.h"
 
-
-// Standard headers, remove if appears above
+/*
+* Standard headers, remove if appears above
+*/
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
 #include <fstream>
 
-
-// Platform specific headers
+/*
+* Platform specific headers
+*/
 #ifdef _ZE_PLATFORM_WINDOWS
 /*
 * Exception/ImageException.h (defined by platform agnostic headers)

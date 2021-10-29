@@ -1,13 +1,13 @@
 #pragma once
-#include "FrameBufferDesc.h"
-#include "TransitionDesc.h"
+#include "GFX/API/DX11/Pipeline/FrameBuffer.h"
+#include "GFX/API/DX12/Pipeline/FrameBuffer.h"
 
 namespace ZE::GFX::Pipeline
 {
 	// Managing all writeable buffers used during single frame
 	class FrameBuffer final
 	{
-		static std::vector<std::vector<TransitionDesc>> GetTransitionsPerLevel(FrameBufferDesc& desc) noexcept;
+		ZE_API_BACKEND(Pipeline::FrameBuffer) backend;
 
 	public:
 		FrameBuffer() = default;
@@ -17,6 +17,8 @@ namespace ZE::GFX::Pipeline
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 		~FrameBuffer() = default;
 
-		void Init(FrameBufferDesc& desc) { GetTransitionsPerLevel(desc); }
+		constexpr void Init(Device& dev, SwapChain& swapChain, FrameBufferDesc& desc) { backend.Init(dev, swapChain, desc); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, SwapChain& swapChain) { /*backend.Switch(nextApi, dev, swapChain);*/ }
+		constexpr ZE_API_BACKEND(Pipeline::FrameBuffer)& Get() noexcept { return backend; }
 	};
 }

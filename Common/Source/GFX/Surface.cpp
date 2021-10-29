@@ -124,7 +124,8 @@ namespace ZE::GFX
 				codedID = Tex::WICCodecs::WIC_CODEC_GIF;
 			else if (ext == ".hdp" || ext == ".jxr" || ext == ".wdp")
 				codedID = Tex::WICCodecs::WIC_CODEC_WMP;
-			throw ZE_IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
+			else
+				throw ZE_IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
 
 			ZE_DXT_THROW_FAILED(Tex::SaveToWICFile(*image, Tex::WIC_FLAGS::WIC_FLAGS_NONE, Tex::GetWICCodec(codedID), Utils::ToUtf8(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
