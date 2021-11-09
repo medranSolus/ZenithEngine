@@ -1,12 +1,12 @@
-#include "Exception/ImageException.h"
+#include "Exception/GenericException.h"
 
 namespace ZE::Exception
 {
-	const char* ImageException::what() const noexcept
+	const char* GenericException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << BasicException::what()
-			<< "\n[Image Info] " << GetImageInfo();
+			<< "\n[Info] " << GetInfo();
 		whatBuffer = stream.str();
 		return whatBuffer.c_str();
 	}

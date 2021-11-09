@@ -26,7 +26,7 @@ namespace ZE::Utils
 		{
 		case ZE::PixelFormat::R32_Typeless:
 		case ZE::PixelFormat::R32_Depth:
-		case ZE::PixelFormat::D16_UNorm:
+		case ZE::PixelFormat::R16_Depth:
 		case ZE::PixelFormat::R24G8_Typeless:
 		case ZE::PixelFormat::R24_UNorm_X8_Typeless:
 		case ZE::PixelFormat::R24_Depth_S8_UInt:

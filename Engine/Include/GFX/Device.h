@@ -18,9 +18,9 @@ namespace ZE::GFX
 		Device& operator=(const Device&) = delete;
 		~Device() = default;
 
-		constexpr void Init() { backend.Init(); }
-		constexpr void SwitchApi(GfxApiType nextApi) { backend.Switch(nextApi); }
+		constexpr void Init(U32 descriptorCount, U32 scratchDescriptorCount) { backend.Init(descriptorCount, scratchDescriptorCount); }
 		constexpr ZE_API_BACKEND(Device)& Get() noexcept { return backend; }
+		constexpr void SwitchApi(GfxApiType nextApi);
 
 		// Main Gfx API
 
@@ -67,4 +67,13 @@ namespace ZE::GFX
 		constexpr void ExecuteCompute(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, ExecuteCompute, cl); }
 		constexpr void ExecuteCopy(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, ExecuteCopy, cl); }
 	};
+
+#pragma region Functions
+	constexpr void Device::SwitchApi(GfxApiType nextApi)
+	{
+		std::pair<U32, U32> data;
+		ZE_API_BACKEND_CALL_RET(backend, data, GetData);
+		backend.Switch(nextApi, data.first, data.second);
+	}
+#pragma endregion
 }

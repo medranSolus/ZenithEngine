@@ -17,25 +17,28 @@ namespace ZE::GFX::Pipeline
 		const U32 outlineBuffHeight = height / 2;
 		FrameBufferDesc frameBufferDesc;
 		frameBufferDesc.Init(8, BACKBUFFER_NAME, width, height);
+		frameBufferDesc.AddResource(GBUFF_DEPTH_NAME,
+			{ width, height, 1, FrameResourceFlags::None, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
 		frameBufferDesc.AddResource(GBUFF_NAME,
 			{
-				width, height, 1,
+				width, height, 1, FrameResourceFlags::None,
 				{ { PixelFormat::R8G8B8A8_UNorm, ColorF4() }, { PixelFormat::R32G32_Float, ColorF4() }, { PixelFormat::R16G16B16A16_Float, ColorF4() } }
 			});
-		frameBufferDesc.AddResource(GBUFF_DEPTH_NAME,
-			{ width, height, 1, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
 		frameBufferDesc.AddResource(LBUFF_NAME,
-			{ width, height, 1, { { PixelFormat::R16G16B16A16_Float, ColorF4() }, { PixelFormat::R16G16B16A16_Float, ColorF4() } } });
+			{
+				width, height, 1, FrameResourceFlags::None,
+				{ { PixelFormat::R16G16B16A16_Float, ColorF4() }, { PixelFormat::R16G16B16A16_Float, ColorF4() } }
+			});
 		frameBufferDesc.AddResource(SCENE_BUFF_NAME,
-			{ width, height, 1, { { PixelFormat::R16G16B16A16_Float, ColorF4() } } });
+			{ width, height, 1, FrameResourceFlags::None, { { PixelFormat::R16G16B16A16_Float, ColorF4() } } });
 		frameBufferDesc.AddResource(SSAO_BUFF_NAME,
-			{ width, height, 1, { { PixelFormat::R32_Float, ColorF4() } } });
+			{ width, height, 1, FrameResourceFlags::None, { { PixelFormat::R32_Float, ColorF4() } } });
 		frameBufferDesc.AddResource(OUTLINE_BUFF_NAME,
-			{ outlineBuffWidth, outlineBuffHeight, 1, { { Settings::GetBackbufferFormat(), ColorF4() } } });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, { { Settings::GetBackbufferFormat(), ColorF4() } } });
 		frameBufferDesc.AddResource(OUTLINE_BLUR_BUFF_NAME,
-			{ outlineBuffWidth, outlineBuffHeight, 1, { { Settings::GetBackbufferFormat(), ColorF4() } } });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, { { Settings::GetBackbufferFormat(), ColorF4() } } });
 		frameBufferDesc.AddResource(OUTLINE_BUFF_DEPTH_NAME,
-			{ width, height, 1, { { PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 } } });
+			{ width, height, 1, FrameResourceFlags::None, { { PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 } } });
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
 #pragma region Geometry
@@ -59,8 +62,8 @@ namespace ZE::GFX::Pipeline
 			GFX::Pipeline::RenderNode node("dirLight", GFX::QueueType::Main, nullptr);
 			node.AddInput("lambertianClassic.DS", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertianClassic.GB", Resource::State::ShaderResourcePS);
-			//node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget, { shadowMapSize, shadowMapSize, 1, { PixelFormat::R32_Float } });
-			//node.AddInnerBuffer("shadowMapDepth", { shadowMapSize, shadowMapSize, 1, { PixelFormat::DepthOnly } });
+			//node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget, { shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, { PixelFormat::R32_Float } });
+			//node.AddInnerBuffer("shadowMapDepth", Resource::State::DepthWrite, { shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, { PixelFormat::DepthOnly } });
 			node.AddOutput("LB", Resource::State::RenderTarget, LBUFF_NAME);
 			nodes.emplace_back(std::move(node));
 		}
@@ -69,8 +72,10 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertianClassic.DS", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertianClassic.GB", Resource::State::ShaderResourcePS);
 			node.AddInput("dirLight.LB", Resource::State::RenderTarget);
-			node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget, { shadowMapSize, shadowMapSize, 1, { { PixelFormat::R32_Float, ColorF4() } } });
-			node.AddInnerBuffer("shadowMapDepth", Resource::State::DepthWrite, { shadowMapSize, shadowMapSize, 1, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
+			node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget,
+				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, { { PixelFormat::R32_Float, ColorF4() } } });
+			node.AddInnerBuffer("shadowMapDepth", Resource::State::DepthWrite,
+				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
 			node.AddOutput("LB", Resource::State::RenderTarget, LBUFF_NAME);
 			nodes.emplace_back(std::move(node));
 		}
@@ -79,8 +84,10 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertianClassic.DS", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertianClassic.GB", Resource::State::ShaderResourcePS);
 			node.AddInput("spotLight.LB", Resource::State::RenderTarget);
-			node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget, { shadowMapSize, shadowMapSize, 6, { { PixelFormat::R32_Float, ColorF4() } } });
-			node.AddInnerBuffer("shadowMapDepth", Resource::State::DepthWrite, { shadowMapSize, shadowMapSize, 6, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
+			node.AddInnerBuffer("shadowMap", Resource::State::RenderTarget,
+				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::Cube, { { PixelFormat::R32_Float, ColorF4() } } });
+			node.AddInnerBuffer("shadowMapDepth", Resource::State::DepthWrite,
+				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::Cube, { { PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 } } });
 			node.AddOutput("LB", Resource::State::RenderTarget, LBUFF_NAME);
 			nodes.emplace_back(std::move(node));
 		}

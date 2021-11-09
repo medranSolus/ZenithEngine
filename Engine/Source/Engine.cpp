@@ -2,13 +2,13 @@
 
 namespace ZE
 {
-	Engine::Engine(const char* windowName, GfxApiType gfxApi, U32 width, U32 height)
+	Engine::Engine(const EngineParams& params)
 	{
-		Settings::Init(gfxApi);
-		window.Init(windowName, width, height);
-		graphics.Init(window);
+		Settings::Init(params.GraphicsAPI);
+		window.Init(params.WindowName, params.Width, params.Height);
+		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount);
 		gui.Init(graphics.GetDevice());
-		renderer.Init(graphics.GetDevice(), graphics.GetSwapChain(), width, height);
+		renderer.Init(graphics.GetDevice(), graphics.GetSwapChain(), params.Width, params.Height);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
 	}

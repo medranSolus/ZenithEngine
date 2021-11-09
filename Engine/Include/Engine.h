@@ -1,4 +1,5 @@
 #pragma once
+#include "EngineParams.h"
 #include "GUI/Manager.h"
 #include "GFX/Graphics.h"
 #include "GFX/Pipeline/RendererPBR.h"
@@ -15,7 +16,7 @@ namespace ZE
 		bool guiEnabled = false;
 
 	public:
-		Engine(const char* windowName, GfxApiType gfxApi, U32 width = 0, U32 height = 0);
+		Engine(const EngineParams& params);
 		Engine(Engine&&) = delete;
 		Engine(const Engine&) = delete;
 		Engine& operator=(Engine&&) = delete;

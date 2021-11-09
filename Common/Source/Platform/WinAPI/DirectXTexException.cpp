@@ -6,7 +6,7 @@ namespace ZE::WinAPI
 	{
 		std::ostringstream stream;
 		stream << WinApiException::what()
-			<< "\n[Image Info] " << GetImageInfo();
+			<< "\n[Info] " << GetInfo();
 		whatBuffer = stream.str();
 		return whatBuffer.c_str();
 	}

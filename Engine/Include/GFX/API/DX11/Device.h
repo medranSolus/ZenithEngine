@@ -15,10 +15,13 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11Device5> device;
 		DX::ComPtr<ID3D11DeviceContext4> context;
 
+		U32 descriptorCount;
+		U32 scratchDescriptorCount;
+
 		void Execute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
-		Device();
+		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		Device(Device&&) = default;
 		Device(const Device&) = delete;
 		Device& operator=(Device&&) = default;
@@ -47,6 +50,7 @@ namespace ZE::GFX::API::DX11
 		constexpr U64 SetCopyFenceFromMain() { return 0; }
 		constexpr U64 SetCopyFenceFromCompute() { return 0; }
 
+		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, scratchDescriptorCount }; }
 		constexpr void FinishUpload();
 
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }

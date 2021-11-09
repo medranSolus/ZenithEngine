@@ -1,15 +1,15 @@
 #pragma once
-#include "Exception/ImageException.h"
+#include "Exception/GenericException.h"
 #include "WinApiException.h"
 
 namespace ZE::WinAPI
 {
 	// Exception thrown with DirectXTex specific error while processing images
-	class DirectXTexException : public Exception::ImageException, public WinApiException
+	class DirectXTexException : public Exception::GenericException, public WinApiException
 	{
 	public:
 		DirectXTexException(U32 line, const char* file, HRESULT hResult, std::string&& note) noexcept
-			: BasicException(line, file), ImageException(line, file, std::forward<std::string>(note)),
+			: BasicException(line, file), GenericException(line, file, std::forward<std::string>(note)),
 			WinApiException(line, file, hResult) {}
 		DirectXTexException(DirectXTexException&&) = default;
 		DirectXTexException(const DirectXTexException&) = default;

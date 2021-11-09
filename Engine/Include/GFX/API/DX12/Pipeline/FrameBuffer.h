@@ -8,11 +8,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 	class FrameBuffer final
 	{
 		DX::ComPtr<ID3D12Resource>* resources;
-		// RTV/DSV | SRV
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE>* resourceViews;
+		D3D12_CPU_DESCRIPTOR_HANDLE* rtvDsv;
+		D3D12_CPU_DESCRIPTOR_HANDLE* srv;
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>* uav;
 		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
 		DX::ComPtr<ID3D12DescriptorHeap> dsvDescHeap;
-		DX::ComPtr<ID3D12DescriptorHeap> uavSrvDescHeap;
 		DX::ComPtr<ID3D12Heap> mainHeap;
 		DX::ComPtr<ID3D12Heap> uavHeap = nullptr;
 

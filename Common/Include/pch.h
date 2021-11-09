@@ -62,7 +62,7 @@
 *** string
 * Exception/BasicException.h
 */
-#include "Exception/ImageException.h"
+#include "Exception/GenericException.h"
 
 /*
 *** Types.h (defined by ColorF3.h)
@@ -89,7 +89,7 @@
 */
 #ifdef _ZE_PLATFORM_WINDOWS
 /*
-* Exception/ImageException.h (defined by platform agnostic headers)
+* Exception/GenericException.h (defined by platform agnostic headers)
 *** Exception/BasicException.h (defined by Exception/ImageException.h)
 ***** sdkddkver.h
 ***** Windows.h

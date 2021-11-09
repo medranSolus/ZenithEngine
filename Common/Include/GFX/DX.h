@@ -14,6 +14,7 @@ namespace ZE::GFX::API::DX
 {
 	constexpr DXGI_FORMAT GetDXFormat(PixelFormat format) noexcept;
 	constexpr PixelFormat GetFormatFromDX(DXGI_FORMAT format) noexcept;
+	constexpr DXGI_FORMAT ConvertFromDepthStencilFormat(DXGI_FORMAT format) noexcept;
 
 #pragma region Functions
 	constexpr DXGI_FORMAT GetDXFormat(PixelFormat format) noexcept
@@ -74,7 +75,7 @@ namespace ZE::GFX::API::DX
 		case PixelFormat::R16_SInt:						return DXGI_FORMAT_R16_SINT;
 		case PixelFormat::R16_UNorm:					return DXGI_FORMAT_R16_UNORM;
 		case PixelFormat::R16_SNorm:					return DXGI_FORMAT_R16_SNORM;
-		case PixelFormat::D16_UNorm:					return DXGI_FORMAT_D16_UNORM;
+		case PixelFormat::R16_Depth:					return DXGI_FORMAT_D16_UNORM;
 		case PixelFormat::R8_Typeless:					return DXGI_FORMAT_R8_TYPELESS;
 		case PixelFormat::R8_UInt:						return DXGI_FORMAT_R8_UINT;
 		case PixelFormat::R8_SInt:						return DXGI_FORMAT_R8_SINT;
@@ -207,7 +208,7 @@ namespace ZE::GFX::API::DX
 		case DXGI_FORMAT_R8G8_SINT:						return PixelFormat::R8G8_SInt;
 		case DXGI_FORMAT_R16_TYPELESS:					return PixelFormat::R16_Typeless;
 		case DXGI_FORMAT_R16_FLOAT:						return PixelFormat::R16_Float;
-		case DXGI_FORMAT_D16_UNORM:						return PixelFormat::D16_UNorm;
+		case DXGI_FORMAT_D16_UNORM:						return PixelFormat::R16_Depth;
 		case DXGI_FORMAT_R16_UNORM:						return PixelFormat::R16_UNorm;
 		case DXGI_FORMAT_R16_UINT:						return PixelFormat::R16_UInt;
 		case DXGI_FORMAT_R16_SNORM:						return PixelFormat::R16_SNorm;
@@ -253,6 +254,22 @@ namespace ZE::GFX::API::DX
 		case DXGI_FORMAT_BC7_UNORM:						return PixelFormat::BC7_UNorm;
 		case DXGI_FORMAT_BC7_UNORM_SRGB:				return PixelFormat::BC7_UNorm_SRGB;
 		case DXGI_FORMAT_B4G4R4A4_UNORM:				return PixelFormat::B4G4R4A4_UNorm;
+		}
+	}
+
+	constexpr DXGI_FORMAT ConvertFromDepthStencilFormat(DXGI_FORMAT format) noexcept
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		case DXGI_FORMAT_D32_FLOAT:
+			return DXGI_FORMAT_R32_FLOAT;
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:
+			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		case DXGI_FORMAT_D16_UNORM:
+			return DXGI_FORMAT_R16_UNORM;
+		default:
+			return format;
 		}
 	}
 #pragma endregion

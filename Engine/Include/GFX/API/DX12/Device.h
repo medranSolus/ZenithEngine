@@ -53,18 +53,26 @@ namespace ZE::GFX::API::DX12
 		TableInfo<U16> copyResInfo;
 		DX::ComPtr<ID3D12Resource>* copyResList = nullptr;
 
+		U32 dynamicDescStart = 0;
+		U32 scratchDescStart;
+		U32 descriptorCount;
+		U32 descriptorSize;
+		DX::ComPtr<ID3D12DescriptorHeap> descHeap;
+
 		void WaitCPU(ID3D12Fence1* fence, U64 val);
 		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
 		U64 SetFence(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
 		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
-		Device();
+		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		Device(Device&&) = default;
 		Device(const Device&) = delete;
 		Device& operator=(Device&&) = default;
 		Device& operator=(const Device&) = delete;
 		~Device();
+
+		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -113,6 +121,7 @@ namespace ZE::GFX::API::DX12
 		void FreeBuffer(ResourceInfo& info, U32 size) noexcept;
 		void FreeTexture(ResourceInfo& info) noexcept;
 
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> AddStaticDescs(U32 count) noexcept;
 		void UploadResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size);
 	};
 }

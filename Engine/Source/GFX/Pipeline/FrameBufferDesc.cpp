@@ -10,7 +10,11 @@ namespace ZE::GFX::Pipeline
 		ResourceNames.reserve(resourceCount);
 		ResourceInfo.reserve(resourceCount);
 		ResourceLifetimes.reserve(resourceCount);
-		AddResource(backbufferName, { backbufferWidth, backbufferHeight, 1, { { Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 1.0f) } } });
+		AddResource(backbufferName,
+			{
+				backbufferWidth, backbufferHeight, 1, FrameResourceFlags::None,
+				{ { Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 1.0f) } }
+			});
 	}
 
 	void FrameBufferDesc::AddResource(std::string&& name, FrameResourceDesc&& info)

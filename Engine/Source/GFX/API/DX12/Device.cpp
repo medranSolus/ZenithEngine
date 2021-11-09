@@ -41,9 +41,11 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
-	Device::Device()
+	Device::Device(U32 descriptorCount, U32 scratchDescriptorCount)
+		: descriptorCount(descriptorCount), scratchDescStart(descriptorCount - scratchDescriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
+		assert(descriptorCount > scratchDescriptorCount && "Descriptor count has to be greater than scratch descriptor count!");
 
 #ifdef _ZE_MODE_DEBUG
 		// Enable Debug Layer before calling any DirectX commands
@@ -120,6 +122,14 @@ namespace ZE::GFX::API::DX12
 		copyList.Init(*this, CommandType::Copy);
 		copyResInfo.Size = 0;
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
+
+		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc;
+		descHeapDesc.NodeMask = 0;
+		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		descHeapDesc.NumDescriptors = descriptorCount;
+		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
+		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	Device::~Device()
@@ -253,6 +263,17 @@ namespace ZE::GFX::API::DX12
 			allocator.Tier1.RemoveTexture(info.ID, size);
 		else
 			allocator.Tier2.Remove(info.ID, size);
+	}
+
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept
+	{
+		assert(dynamicDescStart + count < scratchDescStart && "Prepared too small range for static descriptors, increase pool size!");
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> rangeStart;
+		U64 offest = static_cast<U64>(dynamicDescStart) * descriptorSize;
+		rangeStart.first.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;
+		rangeStart.second.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
+		dynamicDescStart += count;
+		return rangeStart;
 	}
 
 	void Device::UploadResource(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc, void* data, U64 size)

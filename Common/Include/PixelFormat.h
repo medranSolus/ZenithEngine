@@ -69,7 +69,8 @@ namespace ZE
 		R16_SInt,
 		R16_UNorm,
 		R16_SNorm,
-		D16_UNorm, // Depth
+		R16_Depth,
+		DepthOnlySmall = 53, // Alias name for R32_Depth used in Depth Stencil
 		// 8 bit component
 		R8_Typeless,
 		R8_UInt,

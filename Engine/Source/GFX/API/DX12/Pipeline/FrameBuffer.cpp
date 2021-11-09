@@ -13,8 +13,13 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U64 LastLevel;
 		D3D12_RESOURCE_DESC Desc;
 		D3D12_CLEAR_VALUE ClearVal;
-		bool IsRT;
-		bool IsDS;
+		std::bitset<5> Flags;
+
+		constexpr bool IsRTV() const noexcept { return Flags[0]; }
+		constexpr bool IsDSV() const noexcept { return Flags[1]; }
+		constexpr bool IsSRV() const noexcept { return Flags[2]; }
+		constexpr bool IsUAV() const noexcept { return Flags[3]; }
+		constexpr bool IsCube() const noexcept { return Flags[4]; }
 	};
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
@@ -106,9 +111,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 		auto device = dev.Get().dx12.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
-		U32 dsvCount = 0;
 		U32 rtvCount = 0;
-		U32 uavSrvCount = 0;
+		U32 dsvCount = 0;
+		U32 srvUavCount = 0;
 
 #pragma region Resources and heaps allocation
 		// Get sizes in chunks for resources and their descriptors
@@ -127,7 +132,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			resDesc.DepthOrArraySize = res.ArraySize;
 			resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-			bool isRT = false, isDS = false, isUA_SR = false;
+			bool isRT = false, isDS = false, isUA = false, isSR = res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV;
 			const auto& lifetime = desc.ResourceLifetimes.at(i);
 			for (const auto& state : lifetime)
 			{
@@ -147,12 +152,16 @@ namespace ZE::GFX::API::DX12::Pipeline
 					break;
 				}
 				case GFX::Resource::State::UnorderedAccess:
+				{
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+					isUA = true;
+					break;
+				}
 				case GFX::Resource::State::ShaderResourcePS:
 				case GFX::Resource::State::ShaderResourceNonPS:
 				case GFX::Resource::State::ShaderResourceAll:
 				{
-					isUA_SR = true;
+					isSR = true;
 					break;
 				}
 				}
@@ -172,13 +181,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 				U64 size = device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes;
 				size = size / D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
 					+ static_cast<bool>(size % D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
-				resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, isRT, isDS);
+				resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc,
+					static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
 				if (isRT)
 					++rtvCount;
-				if (isDS)
+				else if (isDS)
 					++dsvCount;
-				if (isUA_SR)
-					++uavSrvCount;
+				if (isSR || isUA)
+					++srvUavCount;
 			}
 		}
 
@@ -207,14 +217,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 				[](const auto& r1, const auto& r2) -> bool
 				{
-					if ((r1.IsRT || r1.IsDS) == (r2.IsRT || r2.IsDS))
+					if ((r1.IsRTV() || r1.IsDSV()) == (r2.IsRTV() || r2.IsDSV()))
 						return r1.Chunks > r2.Chunks;
-					return r1.IsRT || r1.IsDS;
+					return r1.IsRTV() || r1.IsDSV();
 				});
 			U32 maxChunksUAV = 0;
 			for (const auto& res : resourcesInfo)
 			{
-				if (res.IsRT || res.IsDS)
+				if (res.IsRTV() || res.IsDSV())
 					maxChunks += res.Chunks;
 				else
 					maxChunksUAV += res.Chunks;
@@ -244,7 +254,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 						&res.Desc, GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second),
-						res.IsRT || res.IsDS ? &res.ClearVal : nullptr, IID_PPV_ARGS(&resources[i])));
+						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&resources[i])));
 				}
 			}
 		}
@@ -297,21 +307,21 @@ namespace ZE::GFX::API::DX12::Pipeline
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 		descHeapDesc.NumDescriptors = dsvCount;
 		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
-		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		descHeapDesc.NumDescriptors = uavSrvCount;
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&uavSrvDescHeap)));
 
 		// Get sizes of descriptors
-		resourceViews = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE>[invalidID];
+		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
+		srv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
+		uav = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[invalidID];
 		U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
+		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount);
 		// Create demanded views for each resource
 		for (U64 i = 0; const auto & res : resourcesInfo)
 		{
-			if (res.IsRT)
+			if (res.IsRTV())
 			{
 				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 				rtvDesc.Format = res.Desc.Format;
@@ -329,11 +339,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 					rtvDesc.Texture2D.MipSlice = 0;
 					rtvDesc.Texture2D.PlaneSlice = 0;
 				}
-				device->CreateRenderTargetView(resources[i].Get(), &rtvDesc, rtvHandle);
-				resourceViews[i].first = rtvHandle;
+				ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Get(), &rtvDesc, rtvHandle));
+				rtvDsv[i] = rtvHandle;
 				rtvHandle.ptr += rtvDescSize;
 			}
-			else if (res.IsDS)
+			else if (res.IsDSV())
 			{
 				D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 				dsvDesc.Format = res.Desc.Format;
@@ -350,10 +360,86 @@ namespace ZE::GFX::API::DX12::Pipeline
 					dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 					dsvDesc.Texture2D.MipSlice = 0;
 				}
-				device->CreateDepthStencilView(resources[i].Get(), &dsvDesc, dsvHandle);
-				resourceViews[i].first = dsvHandle;
+				ZE_GFX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Get(), &dsvDesc, dsvHandle));
+				rtvDsv[i] = dsvHandle;
 				dsvHandle.ptr += dsvDescSize;
 			}
+			else
+				rtvDsv[i].ptr = -1;
+			if (res.IsSRV())
+			{
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+				srvDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				if (res.IsCube())
+				{
+					if (res.Desc.DepthOrArraySize > 1)
+					{
+						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+						srvDesc.TextureCubeArray.MostDetailedMip = 0;
+						srvDesc.TextureCubeArray.MipLevels = res.Desc.MipLevels;
+						srvDesc.TextureCubeArray.First2DArrayFace = 0;
+						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize;
+						srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+					}
+					else
+					{
+						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+						srvDesc.TextureCube.MostDetailedMip = 0;
+						srvDesc.TextureCube.MipLevels = res.Desc.MipLevels;
+						srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+					}
+				}
+				else if (res.Desc.DepthOrArraySize > 1)
+				{
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+					srvDesc.Texture2DArray.MostDetailedMip = 0;
+					srvDesc.Texture2DArray.MipLevels = res.Desc.MipLevels;
+					srvDesc.Texture2DArray.FirstArraySlice = 0;
+					srvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
+					srvDesc.Texture2DArray.PlaneSlice = 0;
+					srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+				}
+				else
+				{
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+					srvDesc.Texture2D.MostDetailedMip = 0;
+					srvDesc.Texture2D.MipLevels = res.Desc.MipLevels;
+					srvDesc.Texture2D.PlaneSlice = 0;
+					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+				}
+				ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Get(), &srvDesc, srvUavHandle.first));
+				srv[i] = srvUavHandle.first;
+				srvUavHandle.first.ptr += srvUavDescSize;
+				srvUavHandle.second.ptr += srvUavDescSize;
+			}
+			else
+				srv[i].ptr = -1;
+			if (res.IsUAV())
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+				uavDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
+				if (res.Desc.DepthOrArraySize > 1)
+				{
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+					uavDesc.Texture2DArray.MipSlice = 0;
+					uavDesc.Texture2DArray.FirstArraySlice = 0;
+					uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
+					uavDesc.Texture2DArray.PlaneSlice = 0;
+				}
+				else
+				{
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+					uavDesc.Texture2D.MipSlice = 0;
+					uavDesc.Texture2D.PlaneSlice = 0;
+				}
+				ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Get(), nullptr, &uavDesc, srvUavHandle.first));
+				uav[i] = srvUavHandle;
+				srvUavHandle.first.ptr += srvUavDescSize;
+				srvUavHandle.second.ptr += srvUavDescSize;
+			}
+			else
+				srv[i].ptr = -1;
 			++i;
 		}
 	}
@@ -362,7 +448,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		if (resources)
 			delete[] resources;
-		if (resourceViews)
-			delete[] resourceViews;
+		if (rtvDsv)
+			delete[] rtvDsv;
+		if (srv)
+			delete[] srv;
+		if (uav)
+			delete[] uav;
 	}
 }

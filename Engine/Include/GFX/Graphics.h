@@ -25,6 +25,6 @@ namespace ZE::GFX
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
 		constexpr void Present() { swapChain.Present(device); }
 
-		void Init(const Window::MainWindow& window);
+		void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
 	};
 }
