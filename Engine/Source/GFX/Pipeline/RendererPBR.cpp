@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RendererPBR::Init(Device& dev, SwapChain& swapChain, U32 width, U32 height, U32 shadowMapSize)
+	void RendererPBR::Init(Device& dev, SwapChain& swapChain, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
 	{
 		constexpr const char* GBUFF_NAME = "geometryBuffer";
 		constexpr const char* GBUFF_DEPTH_NAME = "geometryBufferDepth";
@@ -152,6 +152,6 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-		Finalize(dev, swapChain, nodes, frameBufferDesc);
+		Finalize(dev, swapChain, nodes, frameBufferDesc, minimizePassDistances);
 	}
 }

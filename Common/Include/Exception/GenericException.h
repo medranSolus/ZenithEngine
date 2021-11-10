@@ -29,3 +29,5 @@ namespace ZE::Exception
 #define ZE_IMG_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Image Exception")
 // Exception thrown when passed incorrect params
 #define ZE_ARG_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Wrong Argument Exception")
+// Exception thrown while creating render graph
+#define ZE_RGC_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Render Graph Compile Exception")

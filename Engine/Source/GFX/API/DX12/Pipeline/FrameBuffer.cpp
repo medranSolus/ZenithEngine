@@ -1,6 +1,5 @@
 #include "GFX/API/DX12/Pipeline/FrameBuffer.h"
 #include "GFX/API/DX/GraphicsException.h"
-#include "Exception/RenderGraphCompileException.h"
 
 namespace ZE::GFX::API::DX12::Pipeline
 {
@@ -115,7 +114,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U32 dsvCount = 0;
 		U32 srvUavCount = 0;
 
-#pragma region Resources and heaps allocation
 		// Get sizes in chunks for resources and their descriptors
 		D3D12_RESOURCE_DESC resDesc;
 		resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -295,7 +293,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 				&res.Desc, GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second),
 				&res.ClearVal, IID_PPV_ARGS(&resources[i])));
 		}
-#pragma endregion
 
 		// Create descriptor heaps
 		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc;

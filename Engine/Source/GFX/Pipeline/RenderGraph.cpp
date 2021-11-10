@@ -1,5 +1,4 @@
 #include "GFX/Pipeline/RenderGraph.h"
-#include "Exception/RenderGraphCompileException.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -56,7 +55,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc)
+	void RenderGraph::Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -112,6 +111,30 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 		ordered.clear();
+
+		// Minimize distances between nodes when possible
+		if (minimizeDistances)
+		{
+			for (auto& list : graphList)
+				list.clear();
+			U64 i = 0;
+			for (const auto& deps : depList)
+			{
+				U64 currentLevel = dependencyLevels.at(i++);
+				for (U64 dep : deps)
+					graphList.at(dep).emplace_back(currentLevel);
+			}
+			i = 0;
+			for (auto& list : graphList)
+			{
+				if (list.size() > 0)
+				{
+					std::sort(list.begin(), list.end());
+					dependencyLevels.at(i) = list.front() - 1;
+				}
+				++i;
+			}
+		}
 		graphList.clear();
 
 		// Cull redundant syncs with other nodes on same GPU engines

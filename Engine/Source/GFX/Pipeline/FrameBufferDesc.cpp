@@ -1,5 +1,4 @@
 #include "GFX/Pipeline/FrameBufferDesc.h"
-#include "Exception/RenderGraphCompileException.h"
 #include "Settings.h"
 
 namespace ZE::GFX::Pipeline

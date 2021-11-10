@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline
 
 		FrameBuffer frameBuffer;
 
-		void Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc);
+		void Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances);
 
 	public:
 		RenderGraph() = default;

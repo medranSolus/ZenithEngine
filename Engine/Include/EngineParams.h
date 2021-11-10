@@ -19,5 +19,13 @@ namespace ZE
 		// higher number means less possible materials but more objects can be rendered.
 		// Have to be smaller than GraphicsDescriptorPoolSize!
 		U32 ScratchDescriptorCount;
+		// When computing render graph for passes minimize distances between dependant passes.
+		// Disables kicking off work earlier, trying to run pass as late as possible.
+		//
+		// WARNING: may result in higher or lower memory reservation for frame in some cases
+		//   but can sometimes lowerage GPU consumption if most of heavy work is done early, measure it for specific use case.
+		bool MinimizeRenderPassDistances;
+		// Dimensions of used shadow maps
+		U32 ShadowMapSize;
 	};
 }
