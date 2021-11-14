@@ -1,6 +1,6 @@
 # Zenith Engine
 
-DirectX 11 graphics engine.
+3D graphics engine.
 
 Before contributing read [coding guidelines](Doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting.
 
