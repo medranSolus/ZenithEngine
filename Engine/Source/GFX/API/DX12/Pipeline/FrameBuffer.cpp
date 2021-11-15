@@ -22,7 +22,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 	};
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
-	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory)
+	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
+		U64 invalidID, const std::vector<U64>& memory, U64 heapSize)
 	{
 		// Otherwise wider format should be used
 		assert(invalidID <= UINT32_MAX);
@@ -41,7 +42,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					print.PutPixel(level * pixelsPerLevel + p, chunk, pixel);
 			}
 		}
-		print.Save("memory_print_" + memID + ".png");
+		print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "bytes.png");
 	}
 #endif
 
@@ -66,7 +67,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return static_cast<U64>(lastChunk + 1) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	}
 
-	U32 FrameBuffer::AllocResource(U64 id, U32 chunks, U64 startLevel, U64 lastLevel, U32 maxChunks, U64 levelCount, U64 invalidID, std::vector<U64>& memory)
+	U32 FrameBuffer::AllocResource(U64 id, U32 chunks, U64 startLevel, U64 lastLevel,
+		U32 maxChunks, U64 levelCount, U64 invalidID, std::vector<U64>& memory)
 	{
 		U32 foundOffset = 0;
 		// Search through whole memory
@@ -103,8 +105,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return foundOffset;
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::SwapChain& swapChain,
-		GFX::Pipeline::FrameBufferDesc& desc)
+	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::SwapChain& swapChain, GFX::Pipeline::FrameBufferDesc& desc)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
@@ -238,14 +239,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 					auto& res = resourcesInfo.at(i);
 					res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
 				}
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
-				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory);
-#endif
+
 				// Find final size for UAV only heap and create it with resources
 				heapDesc.SizeInBytes = FindHeapSize(maxChunksUAV, levelCount, invalidID, memory);
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
 				ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
+#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
+#endif
 				for (U64 i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
 					auto& res = resourcesInfo.at(i);
@@ -276,15 +278,16 @@ namespace ZE::GFX::API::DX12::Pipeline
 			auto& res = resourcesInfo.at(i);
 			res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
 		}
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
-		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory);
-#endif
 
 		// Find final size for heap and create it with resources
 		heapDesc.SizeInBytes = FindHeapSize(maxChunks, levelCount, invalidID, memory);
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
 		ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
+#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
+#endif
+
 		for (U64 i = 0; i < rt_dsCount; ++i)
 		{
 			auto& res = resourcesInfo.at(i);
@@ -443,6 +446,12 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 	FrameBuffer::~FrameBuffer()
 	{
+		if (barriers)
+		{
+			if (barriers[0])
+				delete[] barriers[0];
+			delete[] barriers;
+		}
 		if (resources)
 			delete[] resources;
 		if (rtvDsv)

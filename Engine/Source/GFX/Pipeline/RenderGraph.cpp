@@ -2,6 +2,143 @@
 
 namespace ZE::GFX::Pipeline
 {
+	void RenderGraph::BeforeSync(Device& dev, const PassSyncDesc& syncInfo)
+	{
+		// Insert waits into correnct GPU engines
+		switch (syncInfo.EnterSync)
+		{
+		case SyncType::MainToAll:
+			dev.WaitMainFromCopy(syncInfo.EnterFence2);
+		case SyncType::MainToCompute:
+		{
+			dev.WaitMainFromCompute(syncInfo.EnterFence1);
+			break;
+		}
+		case SyncType::MainToCopy:
+		{
+			dev.WaitMainFromCopy(syncInfo.EnterFence2);
+			break;
+		}
+		case SyncType::ComputeToAll:
+			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
+		case SyncType::ComputeToMain:
+		{
+			dev.WaitComputeFromMain(syncInfo.EnterFence1);
+			break;
+		}
+		case SyncType::ComputeToCopy:
+		{
+			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
+			break;
+		}
+		case SyncType::CopyToAll:
+			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
+		case SyncType::CopyToMain:
+		{
+			dev.WaitCopyFromMain(syncInfo.EnterFence1);
+			break;
+		}
+		case SyncType::CopyToCompute:
+		{
+			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
+			break;
+		}
+		}
+	}
+
+	void RenderGraph::AfterSync(Device& dev, PassSyncDesc& syncInfo)
+	{
+		// Set fences for correct GPU engines
+		U64 fence1 = 0;
+		U64 fence2 = 0;
+		switch (syncInfo.AllExitSyncs)
+		{
+		case SyncType::MainToAll:
+			fence2 = dev.SetCopyFenceFromMain();
+		case SyncType::MainToCompute:
+		{
+			fence1 = dev.SetComputeFenceFromMain();
+			break;
+		}
+		case SyncType::MainToCopy:
+		{
+			fence2 = dev.SetCopyFenceFromMain();
+			break;
+		}
+		case SyncType::ComputeToAll:
+			fence2 = dev.SetCopyFenceFromCompute();
+		case SyncType::ComputeToMain:
+		{
+			fence1 = dev.SetMainFenceFromCompute();
+			break;
+		}
+		case SyncType::ComputeToCopy:
+		{
+			fence2 = dev.SetCopyFenceFromCompute();
+			break;
+		}
+		case SyncType::CopyToAll:
+			fence2 = dev.SetComputeFenceFromCopy();
+		case SyncType::CopyToMain:
+		{
+			fence1 = dev.SetMainFenceFromCopy();
+			break;
+		}
+		case SyncType::CopyToCompute:
+		{
+			fence2 = dev.SetComputeFenceFromCopy();
+			break;
+		}
+		}
+
+		// Update fence values for all passes that depends on current pass
+		assert(syncInfo.DependentsCount <= 255);
+		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
+		{
+			U64 nextFence = 0;
+			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
+			switch (exitSyncInfo.Type)
+			{
+			case SyncType::MainToCompute:
+			{
+				nextFence = fence1;
+				break;
+			}
+			case SyncType::MainToCopy:
+			{
+				nextFence = fence2;
+				break;
+			}
+			case SyncType::ComputeToMain:
+			{
+				nextFence = fence1;
+				break;
+			}
+			case SyncType::ComputeToCopy:
+			{
+				nextFence = fence2;
+				break;
+			}
+			case SyncType::CopyToMain:
+			{
+				nextFence = fence1;
+				break;
+			}
+			case SyncType::CopyToCompute:
+			{
+				nextFence = fence2;
+				break;
+			}
+			}
+			U64 currentFence = *exitSyncInfo.NextPassFence;
+			// Atomicitly check if current stored fence value is highest
+			// if no then store new value (or try if other thread also tries to store)
+			while (currentFence < nextFence)
+				if (exitSyncInfo.NextPassFence->compare_exchange_weak(currentFence, nextFence, std::memory_order::relaxed))
+					break;
+		}
+	}
+
 	void RenderGraph::SortNodes(U64 currentNode, U64& orderedCount, const std::vector<std::vector<U64>>& graphList,
 		std::vector<U64>& nodes, std::vector<std::bitset<2>>& visited)
 	{
@@ -55,12 +192,20 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
+	void RenderGraph::ExecuteThread(Device& dev, PassDesc& pass)
+	{
+		BeforeSync(dev, pass.Syncs);
+		pass.Execute(pass.Data);
+		AfterSync(dev, pass.Syncs);
+	}
+
 	void RenderGraph::Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
 		std::vector<std::vector<U64>> syncList(nodes.size());
 		std::vector<std::vector<U64>> depList(nodes.size());
+		U32 staticCount = 0;
 		for (U64 i = 0; i < nodes.size(); ++i)
 		{
 			auto& currentNode = nodes.at(i);
@@ -85,6 +230,8 @@ namespace ZE::GFX::Pipeline
 					}
 				}
 			}
+			if (currentNode.IsStatic())
+				++staticCount;
 		}
 
 		// Sort nodes in topological order
@@ -184,30 +331,58 @@ namespace ZE::GFX::Pipeline
 
 		// Sort passes into dependency level groups of execution
 		passes = new std::pair<PassDesc*, U64>[++levelCount];
-		passes[0].first = new PassDesc[nodes.size()];
-		passes[0].first[0].Data = new PassData[nodes.size()];
-		for (U64 i = 1; i < nodes.size(); ++i)
-			passes[0].first[i].Data = passes[0].first[i - 1].Data + 1;
-		std::vector<U64> passLocation(nodes.size(), 0);
+		U64 normalCount = nodes.size() - staticCount;
+		passes[0].first = new PassDesc[normalCount];
+		staticPasses = new PassDescStatic[levelCount];
+		staticPasses[0].Commands = new CommandList[staticCount];
+		staticCount = 0;
+		std::vector<std::pair<U64, bool>> passLocation(nodes.size(), { 0, false });
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			if (i != 0)
+			{
 				passes[i].first = passes[i - 1].first + passes[i - 1].second;
+				staticPasses[i].Commands = staticPasses[i - 1].Commands + staticPasses[i - 1].CommandsCount;
+			}
 			passes[i].second = 0;
 			for (U64 j = 0; j < nodes.size(); ++j)
 			{
 				if (dependencyLevels.at(j) == i)
 				{
-					passLocation.at(j) = passes[i].second;
-					auto& pass = passes[i].first[passes[i].second++];
 					auto& node = nodes.at(j);
+					PassSyncDesc* passSync;
+					if (node.IsStatic())
+					{
+						auto& pass = staticPasses[i];
+						passSync = &pass.Syncs;
+						passLocation.at(j) = { i, true };
+						pass.Commands[pass.CommandsCount++] = node.GetStaticExecuteData();
+						if (pass.CommandsCount > staticCount)
+							staticCount = pass.CommandsCount;
+					}
+					else
+					{
+						auto& pass = passes[i].first[passes[i].second];
+						passSync = &pass.Syncs;
+						pass.Execute = node.GetExecuteCallback();
+						pass.Data.OptData = node.GetExecuteData();
+						passLocation.at(j).first = passes[i].second++;
+						if (passes[i].second > workersCount)
+							workersCount = passes[i].second;
+					}
+
+					// Go through dependent passes and append current pass to their syncs
 					bool requiredFence1 = false, requiredFence2 = false;
 					for (U64 dep : syncList.at(j))
 					{
-						auto& depPass = passes[dependencyLevels.at(dep)].first[passLocation.at(dep)];
-						assert(depPass.DependentsCount < 255);
-						depPass.ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPass.ExitSyncs, sizeof(ExitSync) * ++depPass.DependentsCount));
-						auto& exitSync = depPass.ExitSyncs[depPass.DependentsCount - 1];
+						PassSyncDesc* depPassSync;
+						if (passLocation.at(dep).second)
+							depPassSync = &staticPasses[passLocation.at(dep).first].Syncs;
+						else
+							depPassSync = &passes[dependencyLevels.at(dep)].first[passLocation.at(dep).first].Syncs;
+						assert(depPassSync->DependentsCount <= 255);
+						depPassSync->ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPassSync->ExitSyncs, sizeof(ExitSync) * ++depPassSync->DependentsCount));
+						auto& exitSync = depPassSync->ExitSyncs[depPassSync->DependentsCount - 1];
 						switch (node.GetPassType())
 						{
 						case QueueType::Main:
@@ -220,14 +395,14 @@ namespace ZE::GFX::Pipeline
 							{
 								requiredFence1 = true;
 								exitSync.Type = SyncType::ComputeToMain;
-								exitSync.NextPassFence = &pass.EnterFence1;
+								exitSync.NextPassFence = &passSync->EnterFence1;
 								break;
 							}
 							case QueueType::Copy:
 							{
 								requiredFence2 = true;
 								exitSync.Type = SyncType::CopyToMain;
-								exitSync.NextPassFence = &pass.EnterFence2;
+								exitSync.NextPassFence = &passSync->EnterFence2;
 								break;
 							}
 							}
@@ -241,7 +416,7 @@ namespace ZE::GFX::Pipeline
 							{
 								requiredFence1 = true;
 								exitSync.Type = SyncType::MainToCompute;
-								exitSync.NextPassFence = &pass.EnterFence1;
+								exitSync.NextPassFence = &passSync->EnterFence1;
 								break;
 							}
 							case QueueType::Compute:
@@ -250,7 +425,7 @@ namespace ZE::GFX::Pipeline
 							{
 								requiredFence2 = true;
 								exitSync.Type = SyncType::CopyToCompute;
-								exitSync.NextPassFence = &pass.EnterFence2;
+								exitSync.NextPassFence = &passSync->EnterFence2;
 								break;
 							}
 							}
@@ -264,14 +439,14 @@ namespace ZE::GFX::Pipeline
 							{
 								requiredFence1 = true;
 								exitSync.Type = SyncType::MainToCopy;
-								exitSync.NextPassFence = &pass.EnterFence1;
+								exitSync.NextPassFence = &passSync->EnterFence1;
 								break;
 							}
 							case QueueType::Compute:
 							{
 								requiredFence2 = true;
 								exitSync.Type = SyncType::ComputeToCopy;
-								exitSync.NextPassFence = &pass.EnterFence2;
+								exitSync.NextPassFence = &passSync->EnterFence2;
 								break;
 							}
 							case QueueType::Copy:
@@ -286,48 +461,49 @@ namespace ZE::GFX::Pipeline
 					case QueueType::Main:
 					{
 						if (requiredFence1 && requiredFence2)
-							pass.EnterSync = SyncType::MainToAll;
+							passSync->EnterSync = SyncType::MainToAll;
 						else if (requiredFence1)
-							pass.EnterSync = SyncType::MainToCompute;
+							passSync->EnterSync = SyncType::MainToCompute;
 						else if (requiredFence2)
-							pass.EnterSync = SyncType::MainToCopy;
+							passSync->EnterSync = SyncType::MainToCopy;
 						break;
 					}
 					case QueueType::Compute:
 					{
 						if (requiredFence1 && requiredFence2)
-							pass.EnterSync = SyncType::ComputeToAll;
+							passSync->EnterSync = SyncType::ComputeToAll;
 						else if (requiredFence1)
-							pass.EnterSync = SyncType::ComputeToMain;
+							passSync->EnterSync = SyncType::ComputeToMain;
 						else if (requiredFence2)
-							pass.EnterSync = SyncType::ComputeToCopy;
+							passSync->EnterSync = SyncType::ComputeToCopy;
 						break;
 					}
 					case QueueType::Copy:
 					{
 						if (requiredFence1 && requiredFence2)
-							pass.EnterSync = SyncType::CopyToAll;
+							passSync->EnterSync = SyncType::CopyToAll;
 						else if (requiredFence1)
-							pass.EnterSync = SyncType::CopyToMain;
+							passSync->EnterSync = SyncType::CopyToMain;
 						else if (requiredFence2)
-							pass.EnterSync = SyncType::CopyToCompute;
+							passSync->EnterSync = SyncType::CopyToCompute;
 						break;
 					}
 					}
-
-					pass.Execute = node.GetExecuteCallback();
-					pass.Data->OptData = node.GetExecuteData();
 				}
 			}
 		}
 		for (U64 i = 0; i < nodes.size(); ++i)
 		{
-			auto& pass = passes[0].first[i];
-			assert(pass.DependentsCount <= 255);
+			PassSyncDesc* passSync;
+			if (nodes.at(i).IsStatic())
+				passSync = &staticPasses[passLocation.at(i).first].Syncs;
+			else
+				passSync = &passes[0].first[i].Syncs;
+			assert(passSync->DependentsCount <= 255);
 			bool requiredFence1 = false, requiredFence2 = false;
-			for (U8 i = 0; i < pass.DependentsCount; ++i)
+			for (U8 i = 0; i < passSync->DependentsCount; ++i)
 			{
-				ExitSync syncInfo = pass.ExitSyncs[i];
+				ExitSync syncInfo = passSync->ExitSyncs[i];
 				switch (syncInfo.Type)
 				{
 				case SyncType::MainToCompute:
@@ -346,18 +522,18 @@ namespace ZE::GFX::Pipeline
 				}
 				}
 			}
-			switch (pass.EnterSync)
+			switch (passSync->EnterSync)
 			{
 			case SyncType::MainToAll:
 			case SyncType::MainToCompute:
 			case SyncType::MainToCopy:
 			{
 				if (requiredFence1 && requiredFence2)
-					pass.AllExitSyncs = SyncType::MainToAll;
+					passSync->AllExitSyncs = SyncType::MainToAll;
 				else if (requiredFence1)
-					pass.AllExitSyncs = SyncType::MainToCompute;
+					passSync->AllExitSyncs = SyncType::MainToCompute;
 				else if (requiredFence2)
-					pass.AllExitSyncs = SyncType::MainToCopy;
+					passSync->AllExitSyncs = SyncType::MainToCopy;
 				break;
 			}
 			case SyncType::ComputeToAll:
@@ -365,11 +541,11 @@ namespace ZE::GFX::Pipeline
 			case SyncType::ComputeToCopy:
 			{
 				if (requiredFence1 && requiredFence2)
-					pass.AllExitSyncs = SyncType::ComputeToAll;
+					passSync->AllExitSyncs = SyncType::ComputeToAll;
 				else if (requiredFence1)
-					pass.AllExitSyncs = SyncType::ComputeToMain;
+					passSync->AllExitSyncs = SyncType::ComputeToMain;
 				else if (requiredFence2)
-					pass.AllExitSyncs = SyncType::ComputeToCopy;
+					passSync->AllExitSyncs = SyncType::ComputeToCopy;
 				break;
 			}
 			case SyncType::CopyToAll:
@@ -377,15 +553,19 @@ namespace ZE::GFX::Pipeline
 			case SyncType::CopyToCompute:
 			{
 				if (requiredFence1 && requiredFence2)
-					pass.AllExitSyncs = SyncType::CopyToAll;
+					passSync->AllExitSyncs = SyncType::CopyToAll;
 				else if (requiredFence1)
-					pass.AllExitSyncs = SyncType::CopyToMain;
+					passSync->AllExitSyncs = SyncType::CopyToMain;
 				else if (requiredFence2)
-					pass.AllExitSyncs = SyncType::CopyToCompute;
+					passSync->AllExitSyncs = SyncType::CopyToCompute;
 				break;
 			}
 			}
 		}
+		passLocation.clear();
+
+		dev.SetCommandBufferSize(staticCount);
+		workerThreads = new std::thread[--workersCount];
 
 		// Compute resource lifetimes based on dependency levels
 		for (U64 i = 0; i < nodes.size(); ++i)
@@ -501,21 +681,27 @@ namespace ZE::GFX::Pipeline
 			for (U64 j = 0; j < level.second; ++j)
 			{
 				auto& pass = level.first[j];
-				if (pass.Data->OptData)
-					delete pass.Data->OptData;
-				if (pass.ExitSyncs)
-					free(pass.ExitSyncs);
+				if (pass.Data.OptData)
+					delete pass.Data.OptData;
+				if (pass.Syncs.ExitSyncs)
+					free(pass.Syncs.ExitSyncs);
 			}
+			if (staticPasses[i].Syncs.ExitSyncs)
+				free(staticPasses[i].Syncs.ExitSyncs);
 		}
+		if (workerThreads)
+			delete[] workerThreads;
 		if (passes)
 		{
 			if (passes[0].first)
-			{
-				if (passes[0].first[0].Data)
-					delete[] passes[0].first[0].Data;
 				delete[] passes[0].first;
-			}
 			delete[] passes;
+		}
+		if (staticPasses)
+		{
+			if (staticPasses[0].Commands)
+				delete[] staticPasses[0].Commands;
+			delete[] staticPasses;
 		}
 	}
 
@@ -524,136 +710,17 @@ namespace ZE::GFX::Pipeline
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			auto& level = passes[i];
-			for (U64 j = 0; j < level.second; ++j)
+			for (U64 j = 1; j < level.second; ++j)
+				workerThreads[j - 1] = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(level.first[j]) };
+			if (staticPasses[i].CommandsCount)
 			{
-				auto& pass = level.first[j];
-				switch (pass.EnterSync)
-				{
-				case SyncType::MainToAll:
-					dev.WaitMainFromCopy(pass.EnterFence2);
-				case SyncType::MainToCompute:
-				{
-					dev.WaitMainFromCompute(pass.EnterFence1);
-					break;
-				}
-				case SyncType::MainToCopy:
-				{
-					dev.WaitMainFromCopy(pass.EnterFence2);
-					break;
-				}
-				case SyncType::ComputeToAll:
-					dev.WaitComputeFromCopy(pass.EnterFence2);
-				case SyncType::ComputeToMain:
-				{
-					dev.WaitComputeFromMain(pass.EnterFence1);
-					break;
-				}
-				case SyncType::ComputeToCopy:
-				{
-					dev.WaitComputeFromCopy(pass.EnterFence2);
-					break;
-				}
-				case SyncType::CopyToAll:
-					dev.WaitCopyFromCompute(pass.EnterFence2);
-				case SyncType::CopyToMain:
-				{
-					dev.WaitCopyFromMain(pass.EnterFence1);
-					break;
-				}
-				case SyncType::CopyToCompute:
-				{
-					dev.WaitCopyFromCompute(pass.EnterFence2);
-					break;
-				}
-				}
-				pass.Execute(pass.Data);
-				U64 fence1 = 0;
-				U64 fence2 = 0;
-				switch (pass.AllExitSyncs)
-				{
-				case SyncType::MainToAll:
-					fence2 = dev.SetCopyFenceFromMain();
-				case SyncType::MainToCompute:
-				{
-					fence1 = dev.SetComputeFenceFromMain();
-					break;
-				}
-				case SyncType::MainToCopy:
-				{
-					fence2 = dev.SetCopyFenceFromMain();
-					break;
-				}
-				case SyncType::ComputeToAll:
-					fence2 = dev.SetCopyFenceFromCompute();
-				case SyncType::ComputeToMain:
-				{
-					fence1 = dev.SetMainFenceFromCompute();
-					break;
-				}
-				case SyncType::ComputeToCopy:
-				{
-					fence2 = dev.SetCopyFenceFromCompute();
-					break;
-				}
-				case SyncType::CopyToAll:
-					fence2 = dev.SetComputeFenceFromCopy();
-				case SyncType::CopyToMain:
-				{
-					fence1 = dev.SetMainFenceFromCopy();
-					break;
-				}
-				case SyncType::CopyToCompute:
-				{
-					fence2 = dev.SetComputeFenceFromCopy();
-					break;
-				}
-				}
-				assert(pass.DependentsCount <= 255);
-				for (U8 i = 0; i < pass.DependentsCount; ++i)
-				{
-					U64 nextFence = 0;
-					ExitSync syncInfo = pass.ExitSyncs[i];
-					switch (syncInfo.Type)
-					{
-					case SyncType::MainToCompute:
-					{
-						nextFence = fence1;
-						break;
-					}
-					case SyncType::MainToCopy:
-					{
-						nextFence = fence2;
-						break;
-					}
-					case SyncType::ComputeToMain:
-					{
-						nextFence = fence1;
-						break;
-					}
-					case SyncType::ComputeToCopy:
-					{
-						nextFence = fence2;
-						break;
-					}
-					case SyncType::CopyToMain:
-					{
-						nextFence = fence1;
-						break;
-					}
-					case SyncType::CopyToCompute:
-					{
-						nextFence = fence2;
-						break;
-					}
-					}
-					U64 currentFence = *syncInfo.NextPassFence;
-					// Atomicitly check if current stored fence value is highest
-					// if no then store new value (or try if other thread also tries to store)
-					while (currentFence < nextFence)
-						if (syncInfo.NextPassFence->compare_exchange_weak(currentFence, nextFence, std::memory_order::relaxed))
-							break;
-				}
+				BeforeSync(dev, staticPasses[i].Syncs);
+				dev.Execute(staticPasses[i].Commands, staticPasses[i].CommandsCount);
+				AfterSync(dev, staticPasses[i].Syncs);
 			}
+			ExecuteThread(dev, level.first[0]);
+			for (U64 j = 1; j < level.second; ++j)
+				workerThreads[j - 1].join();
 		}
 	}
 }

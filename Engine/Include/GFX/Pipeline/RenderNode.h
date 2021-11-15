@@ -21,6 +21,7 @@ namespace ZE::GFX::Pipeline
 		QueueType passType;
 		PassExecuteCallback passExecute;
 		void* executeData;
+		bool isStatic;
 		// Input info
 		std::vector<std::string> inputNames;
 		std::vector<Resource::State> inputStates;
@@ -32,8 +33,8 @@ namespace ZE::GFX::Pipeline
 		std::vector<std::string> outputResourceNames;
 
 	public:
-		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute, void* executeData = nullptr) noexcept
-			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute), executeData(executeData) {}
+		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute, void* executeData = nullptr, bool isStatic = false) noexcept
+			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute), executeData(executeData), isStatic(isStatic) {}
 		RenderNode(RenderNode&&) = default;
 		RenderNode(const RenderNode&) = default;
 		RenderNode& operator=(RenderNode&&) = default;
@@ -44,6 +45,7 @@ namespace ZE::GFX::Pipeline
 		constexpr const QueueType GetPassType() const noexcept { return passType; }
 		constexpr PassExecuteCallback GetExecuteCallback() const noexcept { return passExecute; }
 		constexpr void* GetExecuteData() const noexcept { return executeData; }
+		constexpr bool IsStatic() const noexcept { return isStatic; }
 
 		constexpr const std::vector<std::string>& GetInputs() const noexcept { return inputNames; }
 		constexpr std::vector<InnerBuffer>& GetInnerBuffers() noexcept { return innerBuffers; }
@@ -51,6 +53,7 @@ namespace ZE::GFX::Pipeline
 		constexpr const std::vector<std::string>& GetOutputResources() const noexcept { return outputResourceNames; }
 		constexpr Resource::State GetOutputState(U64 i) const noexcept { return outputStates.at(i); }
 		constexpr Resource::State GetInputState(U64 i) const noexcept { return inputStates.at(i); }
+		CommandList GetStaticExecuteData() noexcept { return std::move(*reinterpret_cast<CommandList*>(executeData)); }
 		bool ContainsInput(const std::string& name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
 
 		void AddInput(std::string&& name, Resource::State state);

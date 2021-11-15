@@ -134,6 +134,8 @@ namespace ZE::GFX::API::DX12
 
 	Device::~Device()
 	{
+		if (commandLists)
+			delete[] commandLists;
 		if (allocTier == AllocTier::Tier1)
 			allocator.Tier1.~AllocatorTier1();
 		else
@@ -162,6 +164,63 @@ namespace ZE::GFX::API::DX12
 			Table::Clear(copyResInfo.Size, copyResList);
 			copyResInfo.Size = 0;
 			copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
+		}
+	}
+
+	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)
+	{
+		if (count == 1)
+		{
+			switch (cls->Get().dx12.GetType())
+			{
+			case D3D12_COMMAND_LIST_TYPE_DIRECT:
+				return ExecuteMain(*cls);
+			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+				return ExecuteCompute(*cls);
+			case D3D12_COMMAND_LIST_TYPE_COPY:
+				return ExecuteCopy(*cls);
+			default:
+				assert(false && "Incorrect type of command list!!!");
+			}
+		}
+		U32 mainCount = 0, computeCount = 0, copyCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			switch (cls[i].Get().dx12.GetType())
+			{
+			case D3D12_COMMAND_LIST_TYPE_DIRECT:
+			{
+				assert(cls[i].Get().dx12.GetList() != nullptr);
+				commandLists[mainCount++] = cls[i].Get().dx12.GetList();
+				break;
+			}
+			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+			{
+				assert(cls[i].Get().dx12.GetList() != nullptr);
+				commandLists[count + computeCount++] = cls[i].Get().dx12.GetList();
+				break;
+			}
+			case D3D12_COMMAND_LIST_TYPE_COPY:
+			{
+				assert(cls[i].Get().dx12.GetList() != nullptr);
+				commandLists[2 * count + copyCount++] = cls[i].Get().dx12.GetList();
+				break;
+			}
+			default:
+				assert(false && "Incorrect type of command list!!!");
+			}
+		}
+		if (mainCount)
+		{
+			ZE_GFX_THROW_FAILED_INFO(mainQueue->ExecuteCommandLists(mainCount, commandLists));
+		}
+		if (computeCount)
+		{
+			ZE_GFX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists + count));
+		}
+		if (copyCount)
+		{
+			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists + 2 * count));
 		}
 	}
 

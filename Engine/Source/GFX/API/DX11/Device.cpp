@@ -62,4 +62,10 @@ namespace ZE::GFX::API::DX11
 			debug->ReportLiveDeviceObjects(D3D11_RLDO_IGNORE_INTERNAL);
 #endif
 	}
+
+	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)
+	{
+		for (U32 i = 0; i < count; ++i)
+			Execute(cls[i]);
+	}
 }

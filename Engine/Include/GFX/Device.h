@@ -61,8 +61,11 @@ namespace ZE::GFX
 		// Set fence for copy queue from compute queue
 		constexpr U64 SetCopyFenceFromCompute() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFenceFromCompute); return val; }
 
+		// Set max size of command lists to execute in single call to Execute()
+		constexpr void SetCommandBufferSize(U32 count) noexcept { ZE_API_BACKEND_CALL(backend, SetCommandBufferSize, count); }
 		constexpr void FinishUpload() { ZE_API_BACKEND_CALL(backend, FinishUpload); }
 
+		constexpr void Execute(CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, Execute, cls, count); }
 		constexpr void ExecuteMain(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, ExecuteMain, cl); }
 		constexpr void ExecuteCompute(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, ExecuteCompute, cl); }
 		constexpr void ExecuteCopy(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, ExecuteCopy, cl); }
@@ -72,8 +75,11 @@ namespace ZE::GFX
 	constexpr void Device::SwitchApi(GfxApiType nextApi)
 	{
 		std::pair<U32, U32> data;
+		U32 commandCount;
 		ZE_API_BACKEND_CALL_RET(backend, data, GetData);
+		ZE_API_BACKEND_CALL_RET(backend, commandCount, GetCommandBufferSize);
 		backend.Switch(nextApi, data.first, data.second);
+		SetCommandBufferSize(commandCount);
 	}
 #pragma endregion
 }

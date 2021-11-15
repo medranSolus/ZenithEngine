@@ -2,6 +2,7 @@
 #include "GFX/Pipeline/FrameBuffer.h"
 #include "RenderNode.h"
 #include <bitset>
+#include <thread>
 
 namespace ZE::GFX::Pipeline
 {
@@ -9,12 +10,19 @@ namespace ZE::GFX::Pipeline
 	class RenderGraph
 	{
 		U64 levelCount = 0;
+		U64 workersCount = 0;
+		std::thread* workerThreads = nullptr;
 		std::pair<PassDesc*, U64>* passes = nullptr;
+		PassDescStatic* staticPasses = nullptr;
 
+		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);
+		static void AfterSync(Device& dev, PassSyncDesc& syncInfo);
 		static void SortNodes(U64 currentNode, U64& orderedCount, const std::vector<std::vector<U64>>& graphList,
 			std::vector<U64>& nodes, std::vector<std::bitset<2>>& visited);
 		static void CullIndirectDependecies(U64 currentNode, U64 checkNode, U64 minDepLevel, std::vector<std::vector<U64>>& syncList,
 			const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept;
+
+		void ExecuteThread(Device& dev, PassDesc& pass);
 
 	protected:
 		static constexpr const char* BACKBUFFER_NAME = "$backbuffer";
