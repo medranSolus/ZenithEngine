@@ -45,6 +45,7 @@ namespace ZE::GFX::API::DX12
 		: descriptorCount(descriptorCount), scratchDescStart(descriptorCount - scratchDescriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
+		std::string ZE_GFX_DEBUG_ID;
 		assert(descriptorCount > scratchDescriptorCount && "Descriptor count has to be greater than scratch descriptor count!");
 
 #ifdef _ZE_MODE_DEBUG
@@ -96,15 +97,21 @@ namespace ZE::GFX::API::DX12
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&mainQueue)));
+		ZE_GFX_SET_ID(mainQueue, "direct_queue");
 		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mainFence)));
+		ZE_GFX_SET_ID(mainFence, "direct_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
 		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&computeQueue)));
+		ZE_GFX_SET_ID(computeQueue, "compute_queue");
 		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&computeFence)));
+		ZE_GFX_SET_ID(computeFence, "computev");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
 		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&copyQueue)));
+		ZE_GFX_SET_ID(copyQueue, "copy_queue");
 		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
+		ZE_GFX_SET_ID(copyFence, "copy_fence");
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));

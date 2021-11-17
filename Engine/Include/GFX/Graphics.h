@@ -8,9 +8,9 @@ namespace ZE::GFX
 	// Main interactions with GPU rendering objects
 	class Graphics final
 	{
-		Device device;
-		CommandList mainList;
 		SwapChain swapChain;
+		CommandList mainList;
+		Device device;
 
 	public:
 		Graphics() = default;
@@ -23,8 +23,17 @@ namespace ZE::GFX
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList; }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
-		constexpr void Present() { swapChain.Present(device); }
+		constexpr void Present();
 
 		void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
 	};
+
+#pragma region Functions
+	constexpr void Graphics::Present()
+	{
+		device.WaitMain(device.SetMainFence());
+		swapChain.Present(device);
+		mainList.Reset(device);
+	}
+#pragma endregion
 }

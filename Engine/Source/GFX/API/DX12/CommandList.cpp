@@ -83,10 +83,38 @@ namespace ZE::GFX::API::DX12
 
 	void CommandList::Init(Device& dev, CommandType type)
 	{
-		ZE_GFX_ENABLE(dev);
+		ZE_GFX_ENABLE_ID(dev);
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+		switch (type)
+		{
+		default:
+		case ZE::GFX::CommandType::All:
+		{
+			ZE_GFX_SET_ID(allocator, "direct_allocator");
+			ZE_GFX_SET_ID(commands, "direct_command");
+			break;
+		}
+		case ZE::GFX::CommandType::Bundle:
+		{
+			ZE_GFX_SET_ID(allocator, "bundle_allocator");
+			ZE_GFX_SET_ID(commands, "bundle_command");
+			break;
+		}
+		case ZE::GFX::CommandType::Compute:
+		{
+			ZE_GFX_SET_ID(allocator, "compute_allocator");
+			ZE_GFX_SET_ID(commands, "compute_command");
+			break;
+		}
+		case ZE::GFX::CommandType::Copy:
+		{
+			ZE_GFX_SET_ID(allocator, "copy_allocator");
+			ZE_GFX_SET_ID(commands, "copy_command");
+			break;
+		}
+		}
 		barriersInfo.Size = 0;
 		barriersInfo.Allocated = BARRIER_LIST_GROW_SIZE;
 		barriers = Table::Create<D3D12_RESOURCE_BARRIER>(BARRIER_LIST_GROW_SIZE);

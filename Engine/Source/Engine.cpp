@@ -23,9 +23,9 @@ namespace ZE
 
 	void Engine::EndFrame()
 	{
-		//renderer.Execute(graphics.GetDevice(), graphics.GetMainList());
+		renderer.Execute(graphics.GetDevice(), graphics.GetMainList());
 		if (IsGuiActive())
 			gui.EndFrame(graphics.GetMainList());
-		//graphics.Present();
+		graphics.Present();
 	}
 }

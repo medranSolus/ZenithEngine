@@ -16,7 +16,7 @@ namespace ZE::GFX
 		Device(const Device&) = delete;
 		Device& operator=(Device&&) = default;
 		Device& operator=(const Device&) = delete;
-		~Device() = default;
+		~Device() { WaitMain(SetMainFence()); }
 
 		constexpr void Init(U32 descriptorCount, U32 scratchDescriptorCount) { backend.Init(descriptorCount, scratchDescriptorCount); }
 		constexpr ZE_API_BACKEND(Device)& Get() noexcept { return backend; }

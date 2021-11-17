@@ -64,24 +64,4 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 	}
-
-	bool FrameBufferDesc::AddWrappingTransition(U64 rid, bool splitBarrier) noexcept
-	{
-		assert(rid < ResourceLifetimes.size() && rid != 0);
-		auto& res = ResourceLifetimes.at(rid);
-		if (res.size() > 1)
-		{
-			Resource::State firstState = res.begin()->second;
-			Resource::State lastState = res.rbegin()->second;
-			if (firstState != lastState)
-			{
-				if (splitBarrier)
-					TransitionsPerLevel.at(2 * res.begin()->first).emplace_back(rid, BarrierType::End, lastState, firstState);
-				TransitionsPerLevel.at(2 * res.rbegin()->first + 1).emplace_back(rid,
-					splitBarrier ? BarrierType::Begin : BarrierType::Immediate, lastState, firstState);
-				return true;
-			}
-		}
-		return false;
-	}
 }

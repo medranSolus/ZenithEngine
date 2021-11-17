@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		~FrameBuffer() = default;
 
 		constexpr void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) {}
-		constexpr void InitTransitions(GFX::CommandList& cl) const noexcept {}
+		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const {}
 		constexpr void EntryTransitions(U64 level, GFX::CommandList& cl) const noexcept {}
 		constexpr void ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept {}
 	};

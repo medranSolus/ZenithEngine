@@ -194,9 +194,9 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::ExecuteThread(Device& dev, PassDesc& pass)
 	{
-		BeforeSync(dev, pass.Syncs);
-		pass.Execute(pass.Data);
-		AfterSync(dev, pass.Syncs);
+		//BeforeSync(dev, pass.Syncs);
+		//pass.Execute(pass.Data);
+		//AfterSync(dev, pass.Syncs);
 	}
 
 	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
@@ -707,9 +707,10 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::Execute(Device& dev, CommandList& mainList)
 	{
-		frameBuffer.InitTransitions(mainList);
+		frameBuffer.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
+			mainList.Open(dev);
 			frameBuffer.EntryTransitions(i, mainList);
 			auto& staticLevel = staticPasses[i];
 			if (staticLevel.CommandsCount)
@@ -729,8 +730,9 @@ namespace ZE::GFX::Pipeline
 				for (U64 j = 0; j < workersDispatch; ++j)
 					workerThreads[j].join();
 			}
-			frameBuffer.EntryTransitions(i, mainList);
-			// Cannot have same overlapping resources in same call, must be seperate ExecuteCmdList, before usage also must be discard etc
+			frameBuffer.ExitTransitions(i, mainList);
+			mainList.Close(dev);
+			dev.ExecuteMain(mainList);
 		}
 	}
 }

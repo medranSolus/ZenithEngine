@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline
 		// Main Gfx API
 
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) { ZE_API_BACKEND_CALL(backend, SwapBackbuffer, dev, swapChain); }
-		constexpr void InitTransitions(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, InitTransitions, cl); }
+		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, InitTransitions, dev, cl); }
 		constexpr void EntryTransitions(U64 level, CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, EntryTransitions, level, cl); }
 		constexpr void ExitTransitions(U64 level, CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, ExitTransitions, level, cl); }
 	};

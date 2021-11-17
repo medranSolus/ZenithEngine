@@ -17,6 +17,5 @@ namespace ZE::GFX::Pipeline
 		void Init(U64 resourceCount, const char* backbufferName, U32 backbufferWidth, U32 backbufferHeight);
 		void AddResource(std::string&& name, FrameResourceDesc&& info);
 		void ComputeWorkflowTransitions(U64 dependencyLevels) noexcept;
-		bool AddWrappingTransition(U64 rid, bool splitBarrier) noexcept;
 	};
 }

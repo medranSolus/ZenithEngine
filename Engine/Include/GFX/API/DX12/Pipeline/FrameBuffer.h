@@ -12,8 +12,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		std::pair<U32, D3D12_RESOURCE_BARRIER*>* barriers = nullptr;
 		U64 backbufferBarriersLocationsCount = 0;
 		U64* backbufferBarriersLocations = nullptr;
-		U64 aliasingResourcesCount = 0;
-		U64* aliasingResources = nullptr;
+		std::pair<U64, U64*>* aliasingResources = nullptr;
 		U64* rids = nullptr;
 		DX::ComPtr<ID3D12Resource>* resources = nullptr;
 		D3D12_CPU_DESCRIPTOR_HANDLE* rtvDsv = nullptr;
@@ -43,7 +42,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		~FrameBuffer();
 
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain);
-		void InitTransitions(GFX::CommandList& cl) const noexcept;
+		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
 		void EntryTransitions(U64 level, GFX::CommandList& cl) const noexcept;
 		void ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept;
 	};

@@ -65,6 +65,8 @@ namespace ZE::GFX::API::DX12
 			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 		case GFX::Resource::State::ShaderResourcePS:
 			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		case GFX::Resource::State::ShaderResourceAll:
+			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		case GFX::Resource::State::DepthRead:
 			return D3D12_RESOURCE_STATE_DEPTH_READ;
 		case GFX::Resource::State::RenderTarget:
