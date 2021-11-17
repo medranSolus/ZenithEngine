@@ -29,4 +29,12 @@ namespace ZE::GFX::API::DX12
 				throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
 		}
 	}
+
+	DX::ComPtr<ID3D12Resource> SwapChain::GetCurrentBackbuffer(GFX::Device& dev) const
+	{
+		ZE_GFX_ENABLE(dev.Get().dx12);
+		DX::ComPtr<ID3D12Resource> buffer;
+		ZE_GFX_THROW_FAILED(swapChain->GetBuffer(swapChain->GetCurrentBackBufferIndex(), IID_PPV_ARGS(&buffer)));
+		return buffer;
+	}
 }

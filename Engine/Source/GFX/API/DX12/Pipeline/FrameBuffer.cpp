@@ -12,13 +12,16 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U64 LastLevel;
 		D3D12_RESOURCE_DESC Desc;
 		D3D12_CLEAR_VALUE ClearVal;
-		std::bitset<5> Flags;
+		DX::ComPtr<ID3D12Resource> Resource;
+		std::bitset<6> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
 		constexpr bool IsDSV() const noexcept { return Flags[1]; }
 		constexpr bool IsSRV() const noexcept { return Flags[2]; }
 		constexpr bool IsUAV() const noexcept { return Flags[3]; }
 		constexpr bool IsCube() const noexcept { return Flags[4]; }
+		constexpr bool IsAliasing() const noexcept { return Flags[5]; }
+		void SetAliasing() noexcept { Flags[5] = true; }
 	};
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
@@ -67,6 +70,25 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return static_cast<U64>(lastChunk + 1) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	}
 
+	bool FrameBuffer::CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
+		U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory) noexcept
+	{
+		// Check all chunks of resource
+		chunks += offset;
+		for (; offset < chunks; ++offset)
+		{
+			// Time before usage of resource
+			for (U64 time = 0; time < startLevel; ++time)
+				if (memory.at(offset * levelCount + time) != invalidID)
+					return true;
+			// Time after usage of resource
+			for (++lastLevel; lastLevel < levelCount; ++lastLevel)
+				if (memory.at(offset * levelCount + lastLevel) != invalidID)
+					return true;
+		}
+		return false;
+	}
+
 	U32 FrameBuffer::AllocResource(U64 id, U32 chunks, U64 startLevel, U64 lastLevel,
 		U32 maxChunks, U64 levelCount, U64 invalidID, std::vector<U64>& memory)
 	{
@@ -105,12 +127,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return foundOffset;
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::SwapChain& swapChain, GFX::Pipeline::FrameBufferDesc& desc)
+	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
 		auto device = dev.Get().dx12.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
+		std::vector<U64> gpuResourcesPerUniqueResource(desc.ResourceInfo.size());
+		gpuResourcesPerUniqueResource.front() = 1;
 		U32 rtvCount = 0;
 		U32 dsvCount = 0;
 		U32 srvUavCount = 0;
@@ -165,6 +189,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 				}
 			}
+			gpuResourcesPerUniqueResource.at(i) = res.Formats.size();
 			for (auto& format : res.Formats)
 			{
 				resDesc.Format = DX::GetDXFormat(format.Format);
@@ -180,7 +205,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				U64 size = device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes;
 				size = size / D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
 					+ static_cast<bool>(size % D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
-				resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc,
+				resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
 					static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
 				if (isRT)
 					++rtvCount;
@@ -194,7 +219,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 		// Prepare data for allocating resources and heaps
 		const U64 levelCount = desc.TransitionsPerLevel.size() / 2;
 		const U64 invalidID = resourcesInfo.size();
-		resources = new DX::ComPtr<ID3D12Resource>[invalidID];
 		U64 rt_dsCount;
 		U32 maxChunks = 0;
 		std::vector<U64> memory;
@@ -207,6 +231,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
+		std::vector<bool> notWrapped(desc.ResourceInfo.size() - 1, true);
+		std::vector<D3D12_RESOURCE_BARRIER> startingTransitions;
 
 		// Handle resource types (Non RT/DS) depending on present tier level
 		if (dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1)
@@ -240,6 +266,23 @@ namespace ZE::GFX::API::DX12::Pipeline
 					res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
 				}
 
+				// Insert wrapping barriers
+				for (U64 i = rt_dsCount; i < resourcesInfo.size(); ++i)
+				{
+					auto& res = resourcesInfo.at(i);
+					if (notWrapped.at(res.RID - 1))
+					{
+						notWrapped.at(res.RID - 1) = false;
+						bool isAliasing = CheckResourceAliasing(res.Offset, res.Chunks,
+							res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
+						if (desc.AddWrappingTransition(res.RID, isAliasing) && isAliasing)
+						{
+							res.SetAliasing();
+							++aliasingResourcesCount;
+						}
+					}
+				}
+
 				// Find final size for UAV only heap and create it with resources
 				heapDesc.SizeInBytes = FindHeapSize(maxChunksUAV, levelCount, invalidID, memory);
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
@@ -251,10 +294,22 @@ namespace ZE::GFX::API::DX12::Pipeline
 				for (U64 i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
 					auto& res = resourcesInfo.at(i);
+					auto state = res.IsAliasing() ? desc.ResourceLifetimes.at(res.RID).rbegin()->second : desc.ResourceLifetimes.at(res.RID).begin()->second;
 					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-						&res.Desc, GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second),
-						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&resources[i])));
+						&res.Desc, GetResourceState(state),
+						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
+					if (res.IsAliasing())
+					{
+						D3D12_RESOURCE_BARRIER barrier;
+						barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+						barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+						barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+						barrier.Transition.StateBefore = GetResourceState(state);
+						barrier.Transition.StateAfter = GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second);
+						barrier.Transition.pResource = res.Resource.Get();
+						startingTransitions.emplace_back(barrier);
+					}
 				}
 			}
 		}
@@ -279,6 +334,24 @@ namespace ZE::GFX::API::DX12::Pipeline
 			res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
 		}
 
+		// Insert wrapping barriers
+		for (U64 i = 0; i < rt_dsCount; ++i)
+		{
+			auto& res = resourcesInfo.at(i);
+			if (notWrapped.at(res.RID - 1))
+			{
+				notWrapped.at(res.RID - 1) = false;
+				bool isAliasing = CheckResourceAliasing(res.Offset, res.Chunks,
+					res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
+				if (desc.AddWrappingTransition(res.RID, isAliasing) && isAliasing)
+				{
+					res.SetAliasing();
+					++aliasingResourcesCount;
+				}
+			}
+		}
+		notWrapped.clear();
+
 		// Find final size for heap and create it with resources
 		heapDesc.SizeInBytes = FindHeapSize(maxChunks, levelCount, invalidID, memory);
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
@@ -287,14 +360,56 @@ namespace ZE::GFX::API::DX12::Pipeline
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
-
 		for (U64 i = 0; i < rt_dsCount; ++i)
 		{
 			auto& res = resourcesInfo.at(i);
+			auto state = res.IsAliasing() ? desc.ResourceLifetimes.at(res.RID).rbegin()->second : desc.ResourceLifetimes.at(res.RID).begin()->second;
 			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
-				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-				&res.Desc, GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second),
-				&res.ClearVal, IID_PPV_ARGS(&resources[i])));
+				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+				&res.Desc, GetResourceState(state),
+				&res.ClearVal, IID_PPV_ARGS(&res.Resource)));
+			if (res.IsAliasing())
+			{
+				D3D12_RESOURCE_BARRIER barrier;
+				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrier.Transition.StateBefore = GetResourceState(state);
+				barrier.Transition.StateAfter = GetResourceState(desc.ResourceLifetimes.at(res.RID).begin()->second);
+				barrier.Transition.pResource = res.Resource.Get();
+				startingTransitions.emplace_back(barrier);
+			}
+		}
+
+		// Perform initial transitions for wrapping consistency
+		U64 transitionFence = 0;
+		if (startingTransitions.size() > 0)
+		{
+			mainList.Get().dx12.Open(dev);
+			mainList.Get().dx12.GetList()->ResourceBarrier(static_cast<U32>(startingTransitions.size()), startingTransitions.data());
+			mainList.Get().dx12.Close(dev);
+			dev.Get().dx12.ExecuteMain(mainList);
+			transitionFence = dev.Get().dx12.SetMainFence();
+		}
+
+		// Sort resources for increasing RID
+		std::sort(resourcesInfo.begin(), resourcesInfo.end(),
+			[](const auto& r1, const auto& r2) -> bool
+			{
+				return r1.RID < r2.RID;
+			});
+		aliasingResources = new U64[aliasingResourcesCount];
+		rids = new U64[invalidID];
+		resources = new DX::ComPtr<ID3D12Resource>[invalidID];
+		std::vector<U64> resourceLastLocation(desc.ResourceNames.size() - 1, 0);
+		for (U64 i = 0, aliasing = 0; const auto & res : resourcesInfo)
+		{
+			resourceLastLocation.at(res.RID - 1) = i;
+			if (res.IsAliasing())
+				aliasingResources[aliasing++] = i;
+			rids[i] = res.RID;
+			resources[i] = std::move(res.Resource);
+			++i;
 		}
 
 		// Create descriptor heaps
@@ -312,9 +427,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
 		srv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
 		uav = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[invalidID];
-		U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-		U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		const U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		const U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount);
@@ -439,19 +554,106 @@ namespace ZE::GFX::API::DX12::Pipeline
 				srvUavHandle.second.ptr += srvUavDescSize;
 			}
 			else
-				srv[i].ptr = -1;
+				uav[i].first.ptr = uav[i].second.ptr = -1;
 			++i;
+		}
+
+		// Find number of barriers and prepare aux structures
+		barriers = new std::pair<U32, D3D12_RESOURCE_BARRIER*>[levelCount];
+		U64 barrierCount = 0;
+		for (const auto& level : desc.TransitionsPerLevel)
+		{
+			for (const auto& transition : level)
+			{
+				barrierCount += gpuResourcesPerUniqueResource.at(transition.RID);
+				if (transition.RID == 0)
+					++backbufferBarriersLocationsCount;
+			}
+		}
+		backbufferBarriersLocations = new U64[backbufferBarriersLocationsCount];
+		backbufferBarriersLocations[0] = 0;
+		initBarriers.second = new D3D12_RESOURCE_BARRIER[barrierCount];
+		initBarriers.first = 0;
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		// Compute barriers before first render passes
+		for (const auto& transition : desc.TransitionsPerLevel.front())
+		{
+			barrier.Flags = GetTransitionType(transition.Barrier);
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
+			barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
+			if (transition.RID == 0)
+			{
+				barrier.Transition.pResource = nullptr;
+				initBarriers.second[initBarriers.first++] = barrier;
+			}
+			else
+			{
+				const U64 lastLocation = resourceLastLocation.at(transition.RID - 1);
+				const U64 resourceCount = gpuResourcesPerUniqueResource.at(transition.RID);
+				for (U64 j = 0; j < resourceCount; ++j)
+				{
+					barrier.Transition.pResource = resources[lastLocation - j].Get();
+					initBarriers.second[initBarriers.first++] = barrier;
+				}
+			}
+		}
+		// Compute normal barriers between passes
+		barriers[0].second = initBarriers.second + initBarriers.first;
+		U64 backbufferBarrierIndex = 1;
+		for (U64 i = 1; i < desc.TransitionsPerLevel.size(); ++i)
+		{
+			const U64 index = i / 2 - (i % 2 == 0);
+			if (index != 0)
+				barriers[index].second = barriers[index - 1].second + barriers[index - 1].first;
+			barriers[index].first = 0;
+			for (const auto& transition : desc.TransitionsPerLevel.at(i))
+			{
+				barrier.Flags = GetTransitionType(transition.Barrier);
+				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
+				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
+				if (transition.RID == 0)
+				{
+					backbufferBarriersLocations[backbufferBarrierIndex++] = index;
+					barrier.Transition.pResource = nullptr;
+					barriers[index].second[barriers[index].first++] = barrier;
+				}
+				else
+				{
+					const U64 lastLocation = resourceLastLocation.at(transition.RID - 1);
+					const U64 resourceCount = gpuResourcesPerUniqueResource.at(transition.RID);
+					for (U64 j = 0; j < resourceCount; ++j)
+					{
+						barrier.Transition.pResource = resources[lastLocation - j].Get();
+						barriers[index].second[barriers[index].first++] = barrier;
+					}
+				}
+			}
+		}
+
+		// Finish initial transitions
+		if (startingTransitions.size() > 0)
+		{
+			dev.Get().dx12.WaitMain(transitionFence);
+			mainList.Get().dx12.Reset(dev);
+			startingTransitions.clear();
 		}
 	}
 
 	FrameBuffer::~FrameBuffer()
 	{
+		if (initBarriers.second)
+			delete[] initBarriers.second;
 		if (barriers)
-		{
-			if (barriers[0])
-				delete[] barriers[0];
 			delete[] barriers;
-		}
+		if (backbufferBarriersLocations)
+			delete[] backbufferBarriersLocations;
+		if (aliasingResources)
+			delete[] aliasingResources;
+		if (rids)
+			delete[] rids;
 		if (resources)
 			delete[] resources;
 		if (rtvDsv)
@@ -460,5 +662,34 @@ namespace ZE::GFX::API::DX12::Pipeline
 			delete[] srv;
 		if (uav)
 			delete[] uav;
+	}
+
+	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)
+	{
+		DX::ComPtr<ID3D12Resource> buffer = swapChain.Get().dx12.GetCurrentBackbuffer(dev);
+		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
+			barriers[backbufferBarriersLocations[i]].second->Transition.pResource = buffer.Get();
+	}
+
+	void FrameBuffer::InitTransitions(GFX::CommandList& cl) const noexcept
+	{
+		// Perform wrapping barriers
+		if (initBarriers.first > 0)
+			cl.Get().dx12.GetList()->ResourceBarrier(initBarriers.first, initBarriers.second);
+	}
+
+	void FrameBuffer::EntryTransitions(U64 level, GFX::CommandList& cl) const noexcept
+	{
+		// Perform discard operations for aliasing resources
+		for (U64 i = 0; i < aliasingResourcesCount; ++i)
+			cl.Get().dx12.GetList()->DiscardResource(resources[aliasingResources[i]].Get(), nullptr);
+	}
+
+	void FrameBuffer::ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept
+	{
+		// Perform normal transitions and reseting resources to initial state for aliasing
+		auto& barrier = barriers[level];
+		if (barrier.first > 0)
+			cl.Get().dx12.GetList()->ResourceBarrier(barrier.first, barrier.second);
 	}
 }

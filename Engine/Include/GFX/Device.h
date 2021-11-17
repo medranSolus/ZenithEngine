@@ -35,6 +35,13 @@ namespace ZE::GFX
 		// CPU side wait for copy queue
 		constexpr void WaitCopy(U64 val) { ZE_API_BACKEND_CALL(backend, WaitCopy, val); }
 
+		// Set fence for main queue from CPU
+		constexpr U64 SetMainFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFence); return val; }
+		// Set fence for compute queue from CPU
+		constexpr U64 SetComputeFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFence); return val; }
+		// Set fence for copy queue from CPU
+		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFence); return val; }
+
 		// GPU side wait for main queue till compute queue will reach fence value
 		constexpr void WaitMainFromCompute(U64 val) { ZE_API_BACKEND_CALL(backend, WaitMainFromCompute, val); }
 		// GPU side wait for main queue till copy queue will reach fence value

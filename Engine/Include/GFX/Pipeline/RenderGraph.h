@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline
 
 		FrameBuffer frameBuffer;
 
-		void Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances);
+		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances);
 
 	public:
 		RenderGraph() = default;
@@ -39,6 +39,8 @@ namespace ZE::GFX::Pipeline
 		RenderGraph& operator=(const RenderGraph&) = delete;
 		virtual ~RenderGraph();
 
-		void Execute(Device& dev);
+		void StartFrame(Device& dev, SwapChain& swapChain) { frameBuffer.SwapBackbuffer(dev, swapChain); }
+
+		void Execute(Device& dev, CommandList& mainList);
 	};
 }

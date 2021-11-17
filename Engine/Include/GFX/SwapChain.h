@@ -20,6 +20,7 @@ namespace ZE::GFX
 
 		constexpr void Init(const Window::MainWindow& window, Device& dev) { backend.Init(window, dev); }
 		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev) { backend.Switch(nextApi, window, dev); }
+		constexpr ZE_API_BACKEND(SwapChain)& Get() noexcept { return backend; }
 
 		// Main Gfx API
 

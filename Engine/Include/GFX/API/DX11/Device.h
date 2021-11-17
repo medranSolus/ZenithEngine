@@ -39,6 +39,10 @@ namespace ZE::GFX::API::DX11
 		constexpr void WaitCompute(U64 val) {}
 		constexpr void WaitCopy(U64 val) {}
 
+		constexpr U64 SetMainFence() { return 0; }
+		constexpr U64 SetComputeFence() { return 0; }
+		constexpr U64 SetCopyFence() { return 0; }
+
 		constexpr void WaitMainFromCompute(U64 val) {}
 		constexpr void WaitMainFromCopy(U64 val) {}
 		constexpr void WaitComputeFromMain(U64 val) {}

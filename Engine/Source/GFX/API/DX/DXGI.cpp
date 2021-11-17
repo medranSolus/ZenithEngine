@@ -63,7 +63,7 @@ namespace ZE::GFX::API::DX
 		swapDesc.SampleDesc.Count = 1; // Used only in bitblt swap model
 		swapDesc.SampleDesc.Quality = 0;
 		swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // Pipeline draws to this buffer
-		swapDesc.BufferCount = 2; // [2;16]
+		swapDesc.BufferCount = Settings::GetBackbufferCount(); // [2;16]
 		swapDesc.Scaling = DXGI_SCALING_STRETCH;
 		swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //http://aka.ms/dxgiflipmodel
 		swapDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;

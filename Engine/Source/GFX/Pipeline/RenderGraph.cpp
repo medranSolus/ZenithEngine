@@ -199,7 +199,7 @@ namespace ZE::GFX::Pipeline
 		AfterSync(dev, pass.Syncs);
 	}
 
-	void RenderGraph::Finalize(Device& dev, SwapChain& swapChain, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
+	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -669,8 +669,8 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 
-		frameBufferDesc.ComputeTransitions(levelCount);
-		frameBuffer.Init(dev, swapChain, frameBufferDesc);
+		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
+		frameBuffer.Init(dev, mainList, frameBufferDesc);
 	}
 
 	RenderGraph::~RenderGraph()
@@ -705,22 +705,32 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Execute(Device& dev)
+	void RenderGraph::Execute(Device& dev, CommandList& mainList)
 	{
+		frameBuffer.InitTransitions(mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
-			auto& level = passes[i];
-			for (U64 j = 1; j < level.second; ++j)
-				workerThreads[j - 1] = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(level.first[j]) };
-			if (staticPasses[i].CommandsCount)
+			frameBuffer.EntryTransitions(i, mainList);
+			auto& staticLevel = staticPasses[i];
+			if (staticLevel.CommandsCount)
 			{
-				BeforeSync(dev, staticPasses[i].Syncs);
-				dev.Execute(staticPasses[i].Commands, staticPasses[i].CommandsCount);
-				AfterSync(dev, staticPasses[i].Syncs);
+				BeforeSync(dev, staticLevel.Syncs);
+				dev.Execute(staticLevel.Commands, staticLevel.CommandsCount);
+				AfterSync(dev, staticLevel.Syncs);
 			}
-			ExecuteThread(dev, level.first[0]);
-			for (U64 j = 1; j < level.second; ++j)
-				workerThreads[j - 1].join();
+			auto& level = passes[i];
+			if (level.second)
+			{
+				U64 workersDispatch = level.second - 1;
+				assert(workersCount >= workersDispatch);
+				for (U64 j = 0; j < workersDispatch; ++j)
+					workerThreads[j] = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(level.first[j]) };
+				ExecuteThread(dev, level.first[workersDispatch]);
+				for (U64 j = 0; j < workersDispatch; ++j)
+					workerThreads[j].join();
+			}
+			frameBuffer.EntryTransitions(i, mainList);
+			// Cannot have same overlapping resources in same call, must be seperate ExecuteCmdList, before usage also must be discard etc
 		}
 	}
 }

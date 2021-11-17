@@ -19,5 +19,9 @@ namespace ZE::GFX::API::DX12
 		~SwapChain() = default;
 
 		void Present(GFX::Device& dev) const;
+
+		// Gfx API Internal
+
+		DX::ComPtr<ID3D12Resource> GetCurrentBackbuffer(GFX::Device& dev) const;
 	};
 }

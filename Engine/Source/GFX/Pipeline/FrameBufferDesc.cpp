@@ -25,9 +25,20 @@ namespace ZE::GFX::Pipeline
 		ResourceLifetimes.emplace_back(std::map<U64, Resource::State>({}));
 	}
 
-	void FrameBufferDesc::ComputeTransitions(U64 dependencyLevels) noexcept
+	void FrameBufferDesc::ComputeWorkflowTransitions(U64 dependencyLevels) noexcept
 	{
+		// Backbuffer states wrapping
+		auto& backbuffer = ResourceLifetimes.front();
 		TransitionsPerLevel.resize(dependencyLevels * 2);
+		if (backbuffer.begin()->first != 0)
+		{
+			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::State::Present, backbuffer.begin()->second);
+			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::State::Present, backbuffer.begin()->second);
+		}
+		else
+			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::State::Present, backbuffer.begin()->second);
+		TransitionsPerLevel.back().emplace_back(0, BarrierType::Immediate, backbuffer.rbegin()->second, Resource::State::Present);
+
 		// Cull same states between dependency levels and compute types of barriers per resource
 		for (U64 i = 0; i < ResourceLifetimes.size(); ++i)
 		{
@@ -52,30 +63,25 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 		}
-		// Normal resource state wrapping between frames
-		for (U64 i = 1; i < ResourceLifetimes.size(); ++i)
+	}
+
+	bool FrameBufferDesc::AddWrappingTransition(U64 rid, bool splitBarrier) noexcept
+	{
+		assert(rid < ResourceLifetimes.size() && rid != 0);
+		auto& res = ResourceLifetimes.at(rid);
+		if (res.size() > 1)
 		{
-			auto& res = ResourceLifetimes.at(i);
-			if (res.size() > 1)
+			Resource::State firstState = res.begin()->second;
+			Resource::State lastState = res.rbegin()->second;
+			if (firstState != lastState)
 			{
-				Resource::State firstState = res.begin()->second;
-				Resource::State lastState = res.rbegin()->second;
-				if (firstState != lastState)
-				{
-					TransitionsPerLevel.at(2 * res.begin()->first).emplace_back(i, BarrierType::End, lastState, firstState);
-					TransitionsPerLevel.at(2 * res.rbegin()->first + 1).emplace_back(i, BarrierType::Begin, lastState, firstState);
-				}
+				if (splitBarrier)
+					TransitionsPerLevel.at(2 * res.begin()->first).emplace_back(rid, BarrierType::End, lastState, firstState);
+				TransitionsPerLevel.at(2 * res.rbegin()->first + 1).emplace_back(rid,
+					splitBarrier ? BarrierType::Begin : BarrierType::Immediate, lastState, firstState);
+				return true;
 			}
 		}
-		// Backbuffer states wrapping
-		auto& backbuffer = ResourceLifetimes.front();
-		if (backbuffer.begin()->first != 0)
-		{
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::State::Present, backbuffer.begin()->second);
-			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::State::Present, backbuffer.begin()->second);
-		}
-		else
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::State::Present, backbuffer.begin()->second);
-		TransitionsPerLevel.back().emplace_back(0, BarrierType::Immediate, backbuffer.rbegin()->second, Resource::State::Present);
+		return false;
 	}
 }

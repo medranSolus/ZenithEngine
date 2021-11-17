@@ -29,6 +29,9 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
+			/*ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Settings::GetBackbufferCount(),
+				GFX::API::DX::GetDXFormat(Settings::GetBackbufferFormat()),
+				nullptr, D3D12_CPU_DESCRIPTOR_HANDLE(0), D3D12_GPU_DESCRIPTOR_HANDLE(0));*/
 			return;
 		}
 		default:
@@ -50,6 +53,7 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
+			//ImGui_ImplDX12_Shutdown();
 			return;
 		}
 		default:
@@ -71,6 +75,7 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
+			ImGui_ImplDX12_NewFrame();
 			return;
 		}
 		default:
@@ -83,7 +88,7 @@ namespace ZE::GUI
 		ImGui::NewFrame();
 	}
 
-	void Manager::EndFrame() const noexcept
+	void Manager::EndFrame(GFX::CommandList& mainList) const noexcept
 	{
 		ImGui::Render();
 		switch (Settings::GetGfxApi())
@@ -95,6 +100,7 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mainList.Get().dx12.GetList());
 			return;
 		}
 		default:

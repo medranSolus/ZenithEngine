@@ -1,6 +1,6 @@
 #pragma once
 #include "Window/MainWindow.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 #include "imgui.h"
 #include <string>
 
@@ -20,7 +20,7 @@ namespace ZE::GUI
 		void Init(GFX::Device& dev) const noexcept;
 		void Disable() const noexcept;
 		void StartFrame(const Window::MainWindow& window) const noexcept;
-		void EndFrame() const noexcept;
+		void EndFrame(GFX::CommandList& mainList) const noexcept;
 
 		void SetFont(const std::string& font, float size) const;
 	};

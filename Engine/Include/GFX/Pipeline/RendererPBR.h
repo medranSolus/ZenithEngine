@@ -14,6 +14,6 @@ namespace ZE::GFX::Pipeline
 		RendererPBR& operator=(const RendererPBR&) = delete;
 		virtual ~RendererPBR() = default;
 
-		void Init(Device& dev, SwapChain& swapChain, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
+		void Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
 	};
 }

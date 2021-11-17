@@ -8,6 +8,8 @@ namespace ZE
 	{
 		const char* WindowName;
 		GfxApiType GraphicsAPI;
+		// Number of backbuffers to create for swap chain, must be in range [2:16]
+		U32 BackbufferCount;
 		// Width of client area, specify as 0 in either of dimensions to use current max resolution
 		U32 Width;
 		// Height of client area, specify as 0 in either of dimensions to use current max resolution

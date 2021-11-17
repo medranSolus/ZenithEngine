@@ -87,6 +87,10 @@ namespace ZE::GFX::API::DX12
 		void WaitCompute(U64 val) { WaitCPU(computeFence.Get(), val); }
 		void WaitCopy(U64 val) { WaitCPU(copyFence.Get(), val); }
 
+		U64 SetMainFence() { return SetFence(mainFence.Get(), mainQueue.Get(), mainFenceVal); }
+		U64 SetComputeFence() { return SetFence(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
+		U64 SetCopyFence() { return SetFence(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
+
 		void WaitMainFromCompute(U64 val) { WaitGPU(computeFence.Get(), mainQueue.Get(), val); }
 		void WaitMainFromCopy(U64 val) { WaitGPU(copyFence.Get(), mainQueue.Get(), val); }
 		void WaitComputeFromMain(U64 val) { WaitGPU(mainFence.Get(), computeQueue.Get(), val); }
