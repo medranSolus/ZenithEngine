@@ -127,14 +127,26 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return foundOffset;
 	}
 
+	void FrameBuffer::InitResource(CommandList& cl, U64 rid) const noexcept
+	{
+		// Perform discard operations for aliasing resources
+		assert(rid != 0 && "Backbuffer do not need discarding it's contents! (Or at least it shouldn't with FLIP_DISCARD... TODO: Check this)");
+		auto location = resourceLocations[rid - 1];
+		for (U64 i = 0; i < location.second; ++i)
+		{
+			location.first += i;
+			if (aliasingResources[location.first])
+				cl.GetList()->DiscardResource(resources[location.first].Get(), nullptr);
+		}
+	}
+
 	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
 		auto device = dev.Get().dx12.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
-		std::vector<U64> gpuResourcesPerUniqueResource(desc.ResourceInfo.size());
-		gpuResourcesPerUniqueResource.front() = 1;
+		resourceLocations = new std::pair<U64, U64>[desc.ResourceInfo.size() - 1];
 		U32 rtvCount = 0;
 		U32 dsvCount = 0;
 		U32 srvUavCount = 0;
@@ -189,7 +201,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 				}
 			}
-			gpuResourcesPerUniqueResource.at(i) = res.Formats.size();
+			resourceLocations[i - 1].second = res.Formats.size();
 			for (auto& format : res.Formats)
 			{
 				resDesc.Format = DX::GetDXFormat(format.Format);
@@ -365,7 +377,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			D3D12_RESOURCE_STATES firstState = GetResourceState(lifetime.begin()->second);
 			D3D12_RESOURCE_STATES lastState = GetResourceState(lifetime.rbegin()->second);
 			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
-				resourcesInfo.at(i).Offset* D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, res.IsAliasing() ? firstState : lastState,
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 			ZE_GFX_SET_ID(res.Resource, desc.ResourceNames.at(res.RID));
@@ -417,38 +429,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 			{
 				return r1.RID < r2.RID;
 			});
-		rids = new U64[invalidID];
+		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new DX::ComPtr<ID3D12Resource>[invalidID];
-		std::vector<U64> resourceLastLocation(desc.ResourceNames.size() - 1, 0);
-		std::vector<std::pair<U64, U64>> aliasingInfo;
-		for (U64 i = 0; const auto & res : resourcesInfo)
+		for (U64 i = resourcesInfo.size(); i != 0;)
 		{
-			resourceLastLocation.at(res.RID - 1) = i;
-			if (res.IsAliasing() && (res.IsRTV() || res.IsDSV()))
-				aliasingInfo.emplace_back(i, desc.ResourceLifetimes.at(res.RID).begin()->first);
-			rids[i] = res.RID;
+			const auto& res = resourcesInfo.at(--i);
+			resourceLocations[res.RID - 1].first = i;
+			aliasingResources[i] = res.IsAliasing();
 			resources[i] = std::move(res.Resource);
-			++i;
-		}
-		std::sort(aliasingInfo.begin(), aliasingInfo.end(),
-			[](const auto& a1, const auto& a2) -> bool
-			{
-				return a1.second < a2.second;
-			});
-		aliasingResources = new std::pair<U64, U64*>[levelCount];
-		aliasingResources->second = new U64[aliasingInfo.size()];
-		for (U64 i = 1; i < levelCount; ++i)
-			aliasingResources[i] = { 0, nullptr };
-		U64 lastLevel = 0;
-		for (const auto& info : aliasingInfo)
-		{
-			auto& level = aliasingResources[info.second];
-			if (lastLevel != info.second)
-			{
-				level.second = aliasingResources[lastLevel].second + aliasingResources[lastLevel].first;
-				lastLevel = info.second;
-			}
-			level.second[level.first++] = info.first;
 		}
 
 		// Create descriptor heaps
@@ -578,14 +566,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 					uavDesc.Texture2DArray.MipSlice = 0;
 					uavDesc.Texture2DArray.FirstArraySlice = 0;
-uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
-uavDesc.Texture2DArray.PlaneSlice = 0;
+					uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
+					uavDesc.Texture2DArray.PlaneSlice = 0;
 				}
 				else
 				{
-				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-				uavDesc.Texture2D.MipSlice = 0;
-				uavDesc.Texture2D.PlaneSlice = 0;
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+					uavDesc.Texture2D.MipSlice = 0;
+					uavDesc.Texture2D.PlaneSlice = 0;
 				}
 				ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Get(), nullptr, &uavDesc, srvUavHandle.first));
 				uav[i] = srvUavHandle;
@@ -593,7 +581,7 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 				srvUavHandle.second.ptr += srvUavDescSize;
 			}
 			else
-			uav[i].first.ptr = uav[i].second.ptr = -1;
+				uav[i].first.ptr = uav[i].second.ptr = -1;
 			++i;
 		}
 
@@ -604,9 +592,13 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 		{
 			for (const auto& transition : level)
 			{
-				barrierCount += gpuResourcesPerUniqueResource.at(transition.RID);
 				if (transition.RID == 0)
+				{
 					++backbufferBarriersLocationsCount;
+					++barrierCount;
+				}
+				else
+					barrierCount += resourceLocations[transition.RID - 1].second;
 			}
 		}
 		backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
@@ -630,11 +622,10 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 			}
 			else
 			{
-				const U64 lastLocation = resourceLastLocation.at(transition.RID - 1);
-				const U64 resourceCount = gpuResourcesPerUniqueResource.at(transition.RID);
-				for (U64 j = 0; j < resourceCount; ++j)
+				const auto& location = resourceLocations[transition.RID - 1];
+				for (U64 j = 0; j < location.second; ++j)
 				{
-					barrier.Transition.pResource = resources[lastLocation - j].Get();
+					barrier.Transition.pResource = resources[location.first + j].Get();
 					initBarriers.second[initBarriers.first++] = barrier;
 				}
 			}
@@ -673,11 +664,10 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 				}
 				else
 				{
-					const U64 lastLocation = resourceLastLocation.at(transition.RID - 1);
-					const U64 resourceCount = gpuResourcesPerUniqueResource.at(transition.RID);
-					for (U64 j = 0; j < resourceCount; ++j)
+					const auto& location = resourceLocations[transition.RID - 1];
+					for (U64 j = 0; j < location.second; ++j)
 					{
-						barrier.Transition.pResource = resources[lastLocation - j].Get();
+						barrier.Transition.pResource = resources[location.first + j].Get();
 						barriers[index].second[barriers[index].first++] = barrier;
 					}
 				}
@@ -707,13 +697,9 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 		if (backbufferBarriersLocations)
 			delete[] backbufferBarriersLocations;
 		if (aliasingResources)
-		{
-			if (aliasingResources->second)
-				delete[] aliasingResources->second;
 			delete[] aliasingResources;
-		}
-		if (rids)
-			delete[] rids;
+		if (resourceLocations)
+			delete[] resourceLocations;
 		if (resources)
 			delete[] resources;
 		if (rtvDsv)
@@ -724,9 +710,41 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 			delete[] uav;
 	}
 
+	void FrameBuffer::ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		if (rid == 0)
+		{
+			ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(backbufferRtvSrv.first,
+				reinterpret_cast<const float*>(&color), 0, nullptr));
+		}
+		else
+		{
+			const auto& location = resourceLocations[rid - 1];
+			for (U64 i = 0; i < location.second; ++i)
+			{
+				ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsv[location.first + i],
+					reinterpret_cast<const float*>(&color), 0, nullptr));
+			}
+		}
+	}
+
+	void FrameBuffer::ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const
+	{
+		assert(rid != 0 && "Cannot use backbuffer as depth stencil!");
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		const auto& location = resourceLocations[rid - 1];
+		for (U64 i = 0; i < location.second; ++i)
+		{
+			ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[location.first + i],
+				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr));
+		}
+	}
+
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)
 	{
-		DX::ComPtr<ID3D12Resource> buffer = swapChain.Get().dx12.GetCurrentBackbuffer(dev);
+		DX::ComPtr<ID3D12Resource> buffer;
+		backbufferRtvSrv = swapChain.Get().dx12.GetCurrentBackbuffer(dev, buffer);
 		initBarriers.second->Transition.pResource = buffer.Get();
 		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
 			barriers[backbufferBarriersLocations[i]].second->Transition.pResource = buffer.Get();
@@ -739,14 +757,6 @@ uavDesc.Texture2DArray.PlaneSlice = 0;
 		cl.Get().dx12.GetList()->ResourceBarrier(initBarriers.first, initBarriers.second);
 		cl.Get().dx12.Close(dev);
 		dev.Get().dx12.ExecuteMain(cl);
-	}
-
-	void FrameBuffer::EntryTransitions(U64 level, GFX::CommandList& cl) const noexcept
-	{
-		// Perform discard operations for aliasing resources
-		const auto& aliasingLevel = aliasingResources[level];
-		for (U64 i = 0, count = aliasingLevel.first; i < count; ++i)
-			cl.Get().dx12.GetList()->DiscardResource(resources[aliasingLevel.second[i]].Get(), nullptr);
 	}
 
 	void FrameBuffer::ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept

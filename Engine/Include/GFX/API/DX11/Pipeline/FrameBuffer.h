@@ -16,9 +16,14 @@ namespace ZE::GFX::API::DX11::Pipeline
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 		~FrameBuffer() = default;
 
+		void InitRTV(GFX::CommandList& cl, U64 rid) const noexcept {}
+		void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept {}
+
+		void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const {}
+		void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const {}
+
 		constexpr void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) {}
 		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const {}
-		constexpr void EntryTransitions(U64 level, GFX::CommandList& cl) const noexcept {}
 		constexpr void ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept {}
 	};
 }

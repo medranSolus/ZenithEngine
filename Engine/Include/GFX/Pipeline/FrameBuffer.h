@@ -23,9 +23,18 @@ namespace ZE::GFX::Pipeline
 
 		// Main Gfx API
 
+		// Render target before first use must be initialized or cleared (except backbuffer)
+		constexpr void InitRTV(GFX::CommandList& cl, U64 rid) const noexcept { ZE_API_BACKEND_CALL(backend, InitRTV, cl, rid); }
+		// Depth stencil before first use must be initialized or cleared
+		constexpr void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { ZE_API_BACKEND_CALL(backend, InitDSV, cl, rid); }
+
+		// Render target before first use must be initialized or cleared (except backbuffer)
+		constexpr void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const { ZE_API_BACKEND_CALL(backend, ClearRTV, dev, cl, rid, color); }
+		// Depth stencil before first use must be initialized or cleared
+		constexpr void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const { ZE_API_BACKEND_CALL(backend, ClearDSV, dev, cl, rid, depth, stencil); }
+
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) { ZE_API_BACKEND_CALL(backend, SwapBackbuffer, dev, swapChain); }
 		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, InitTransitions, dev, cl); }
-		constexpr void EntryTransitions(U64 level, CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, EntryTransitions, level, cl); }
 		constexpr void ExitTransitions(U64 level, CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, ExitTransitions, level, cl); }
 	};
 }

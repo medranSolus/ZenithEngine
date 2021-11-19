@@ -711,7 +711,6 @@ namespace ZE::GFX::Pipeline
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			mainList.Open(dev);
-			frameBuffer.EntryTransitions(i, mainList);
 			auto& staticLevel = staticPasses[i];
 			if (staticLevel.CommandsCount)
 			{
