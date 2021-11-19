@@ -6,8 +6,12 @@ namespace ZE::GFX::API::DX12
 {
 	class GPerf final
 	{
+		DX::ComPtr<ID3D12QueryHeap> queryHeap;
+		DX::ComPtr<ID3D12Resource> data;
+		D3D12_COMMAND_LIST_TYPE listType = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
 	public:
-		GPerf(GFX::Device& dev) {}
+		GPerf(GFX::Device& dev);
 		GPerf(GPerf&&) = default;
 		GPerf(const GPerf&) = delete;
 		GPerf& operator=(GPerf&&) = default;
@@ -16,8 +20,8 @@ namespace ZE::GFX::API::DX12
 
 		static constexpr const char* GetApiString() noexcept { return "DX12"; }
 
-		void Start(GFX::CommandList& cl) noexcept {}
-		void Stop(GFX::CommandList& cl) const noexcept {}
-		long double GetData(GFX::Device& dev) noexcept { return 0.0L; }
+		void Start(GFX::CommandList& cl) noexcept;
+		void Stop(GFX::CommandList& cl) const noexcept;
+		long double GetData(GFX::Device& dev) noexcept;
 	};
 }

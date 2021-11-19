@@ -6,7 +6,6 @@ namespace ZE::GFX::API::DX11
 {
 	class GPerf final
 	{
-		DX::ComPtr<ID3D11DeviceContext> ctx;
 		DX::ComPtr<ID3D11Query> disjoint;
 		DX::ComPtr<ID3D11Query> begin;
 		DX::ComPtr<ID3D11Query> end;
