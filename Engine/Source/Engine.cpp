@@ -25,7 +25,9 @@ namespace ZE
 	{
 		renderer.Execute(graphics.GetDevice(), graphics.GetMainList());
 		if (IsGuiActive())
-			gui.EndFrame(graphics.GetMainList());
+			gui.EndFrame(graphics);
+		else
+			graphics.GetSwapChain().PrepareBackbuffer(graphics.GetDevice(), graphics.GetMainList());
 		graphics.Present();
 	}
 }

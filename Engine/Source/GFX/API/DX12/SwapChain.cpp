@@ -54,6 +54,12 @@ namespace ZE::GFX::API::DX12
 			rtvHandle.ptr += rtvDescSize;
 			srvHandle.ptr += srvDescSize;
 		}
+
+		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		presentBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		presentBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		presentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		presentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	}
 
 	SwapChain::~SwapChain()
@@ -75,11 +81,20 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> SwapChain::GetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer) const
+	void SwapChain::PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const
+	{
+		cl.Get().dx12.Open(dev.Get().dx12);
+		cl.Get().dx12.GetList()->ResourceBarrier(1, &presentBarrier);
+		cl.Get().dx12.Close(dev.Get().dx12);
+		dev.Get().dx12.ExecuteMain(cl);
+	}
+
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
 	{
 		ZE_GFX_ENABLE(dev.Get().dx12);
 		U32 current = swapChain->GetCurrentBackBufferIndex();
 		ZE_GFX_THROW_FAILED(swapChain->GetBuffer(current, IID_PPV_ARGS(&buffer)));
+		presentBarrier.Transition.pResource = buffer.Get();
 		return rtvSrv[current];
 	}
 }

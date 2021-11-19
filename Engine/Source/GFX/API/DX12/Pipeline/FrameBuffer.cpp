@@ -744,7 +744,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)
 	{
 		DX::ComPtr<ID3D12Resource> buffer;
-		backbufferRtvSrv = swapChain.Get().dx12.GetCurrentBackbuffer(dev, buffer);
+		backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, buffer);
 		initBarriers.second->Transition.pResource = buffer.Get();
 		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
 			barriers[backbufferBarriersLocations[i]].second->Transition.pResource = buffer.Get();

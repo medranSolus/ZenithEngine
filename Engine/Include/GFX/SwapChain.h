@@ -25,5 +25,6 @@ namespace ZE::GFX
 		// Main Gfx API
 
 		constexpr void Present(Device& dev) const { ZE_API_BACKEND_CALL(backend, Present, dev); }
+		constexpr void PrepareBackbuffer(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, PrepareBackbuffer, dev, cl); }
 	};
 }

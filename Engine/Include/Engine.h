@@ -13,7 +13,7 @@ namespace ZE
 		Window::MainWindow window;
 		GFX::Graphics graphics;
 		GFX::Pipeline::RendererPBR renderer;
-		bool guiEnabled = false;
+		bool guiEnabled = true;
 
 	public:
 		Engine(const EngineParams& params);

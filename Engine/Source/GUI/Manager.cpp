@@ -29,9 +29,10 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
-			/*ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Settings::GetBackbufferCount(),
+			auto handles = dev.Get().dx12.AddStaticDescs(1);
+			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Settings::GetBackbufferCount(),
 				GFX::API::DX::GetDXFormat(Settings::GetBackbufferFormat()),
-				nullptr, D3D12_CPU_DESCRIPTOR_HANDLE(0), D3D12_GPU_DESCRIPTOR_HANDLE(0));*/
+				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
 			return;
 		}
 		default:
@@ -53,7 +54,7 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
-			//ImGui_ImplDX12_Shutdown();
+			ImGui_ImplDX12_Shutdown();
 			return;
 		}
 		default:
@@ -76,7 +77,7 @@ namespace ZE::GUI
 		case GfxApiType::DX12:
 		{
 			ImGui_ImplDX12_NewFrame();
-			return;
+			break;
 		}
 		default:
 		{
@@ -88,7 +89,7 @@ namespace ZE::GUI
 		ImGui::NewFrame();
 	}
 
-	void Manager::EndFrame(GFX::CommandList& mainList) const noexcept
+	void Manager::EndFrame(GFX::Graphics& gfx) const noexcept
 	{
 		ImGui::Render();
 		switch (Settings::GetGfxApi())
@@ -100,7 +101,16 @@ namespace ZE::GUI
 		}
 		case GfxApiType::DX12:
 		{
+			auto& mainList = gfx.GetMainList();
+			auto& dev = gfx.GetDevice().Get().dx12;
+			auto& swapChain = gfx.GetSwapChain().Get().dx12;
+			mainList.Get().dx12.Open(dev);
+			D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
+			mainList.Get().dx12.GetList()->OMSetRenderTargets(1, &rtv, true, nullptr);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mainList.Get().dx12.GetList());
+			mainList.Get().dx12.GetList()->ResourceBarrier(1, &swapChain.GetPresentBarrier());
+			mainList.Get().dx12.Close(gfx.GetDevice());
+			dev.ExecuteMain(mainList);
 			return;
 		}
 		default:

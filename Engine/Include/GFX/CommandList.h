@@ -41,7 +41,5 @@ namespace ZE::GFX
 		constexpr void DrawIndexed(Device& dev, U32 count) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, DrawIndexed, dev, count); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(backend, Compute, dev, groupX, groupY, groupZ); }
-		// Finish all resource state barriers
-		constexpr void FinishBarriers() noexcept { ZE_API_BACKEND_CALL(backend, FinishBarriers); }
 	};
 }

@@ -18,6 +18,8 @@ namespace ZE::GFX::API::DX11
 		SwapChain& operator=(const SwapChain&) = delete;
 		~SwapChain() = default;
 
+		constexpr void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const {}
+
 		void Present(GFX::Device& dev) const;
 	};
 }

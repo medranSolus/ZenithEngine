@@ -122,6 +122,7 @@ namespace ZE::GFX::API::DX12
 		ID3D12CommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
+		ID3D12DescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
 
 		D3D12_RESOURCE_DESC GetBufferDesc(U32 size);
 		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc);

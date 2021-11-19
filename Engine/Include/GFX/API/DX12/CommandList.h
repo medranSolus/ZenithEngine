@@ -17,15 +17,11 @@ namespace ZE::GFX::API::DX12
 
 	class CommandList final
 	{
-		static constexpr U32 BARRIER_LIST_GROW_SIZE = 3;
-
 		DX::ComPtr<ID3D12GraphicsCommandList5> commands;
 		DX::ComPtr<ID3D12CommandAllocator> allocator;
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager; // Maybe use PIX instead?
 #endif
-		TableInfo<U32> barriersInfo;
-		D3D12_RESOURCE_BARRIER* barriers = nullptr;
 
 		void Open(Device& dev, ID3D12PipelineState* state);
 
@@ -37,7 +33,7 @@ namespace ZE::GFX::API::DX12
 		CommandList(const CommandList&) = delete;
 		CommandList& operator=(CommandList&&) = default;
 		CommandList& operator=(const CommandList&) = delete;
-		~CommandList();
+		~CommandList() = default;
 
 #ifdef _ZE_MODE_DEBUG
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
@@ -54,7 +50,6 @@ namespace ZE::GFX::API::DX12
 		void Reset(GFX::Device& dev);
 		void DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
-		void FinishBarriers() noexcept;
 
 		// Gfx API Internal
 
@@ -65,10 +60,5 @@ namespace ZE::GFX::API::DX12
 		void Open(Device& dev);
 		void Close(Device& dev);
 		void Reset(Device& dev);
-
-		void AddBarrierTransition(ID3D12Resource* resource, GFX::Resource::State before,
-			GFX::Resource::State after, GFX::Pipeline::BarrierType type) noexcept;
-		void AddBarrierAliasing(ID3D12Resource* before, ID3D12Resource* after, GFX::Pipeline::BarrierType type) noexcept;
-		void AddBarrierUAV(ID3D12Resource* resource, GFX::Pipeline::BarrierType type) noexcept;
 	};
 }

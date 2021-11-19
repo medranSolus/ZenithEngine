@@ -37,7 +37,6 @@ namespace ZE::GFX::Pipeline
 		}
 		else
 			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::State::Present, backbuffer.begin()->second);
-		TransitionsPerLevel.back().emplace_back(0, BarrierType::Immediate, backbuffer.rbegin()->second, Resource::State::Present);
 
 		// Cull same states between dependency levels and compute types of barriers per resource
 		for (U64 i = 0; i < ResourceLifetimes.size(); ++i)

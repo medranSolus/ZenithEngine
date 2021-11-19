@@ -24,7 +24,6 @@ namespace ZE::GFX::API::DX11
 		~CommandList() = default;
 
 		constexpr void Open(GFX::Device& dev) {}
-		constexpr void FinishBarriers() noexcept {}
 
 #ifdef _ZE_MODE_DEBUG
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
