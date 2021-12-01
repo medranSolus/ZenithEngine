@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline
 		~FrameBuffer() = default;
 
 		constexpr void Init(Device& dev, CommandList& mainList, FrameBufferDesc& desc) { backend.Init(dev, mainList, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, SwapChain& swapChain) { /*backend.Switch(nextApi, dev, swapChain);*/ }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& mainList) { /*backend.Switch(nextApi, dev, mainList);*/ }
 		constexpr ZE_API_BACKEND(Pipeline::FrameBuffer)& Get() noexcept { return backend; }
 
 		// Main Gfx API

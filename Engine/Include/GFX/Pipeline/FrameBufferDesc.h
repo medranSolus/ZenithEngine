@@ -9,13 +9,12 @@ namespace ZE::GFX::Pipeline
 	// FrameBuffer creation data
 	struct FrameBufferDesc
 	{
-		std::vector<std::string> ResourceNames;
 		std::vector<FrameResourceDesc> ResourceInfo;
 		std::vector<std::map<U64, Resource::State>> ResourceLifetimes;
 		std::vector<std::vector<TransitionDesc>> TransitionsPerLevel;
 
-		void Init(U64 resourceCount, const char* backbufferName, U32 backbufferWidth, U32 backbufferHeight);
-		void AddResource(std::string&& name, FrameResourceDesc&& info);
+		void Init(U64 resourceCount, U32 backbufferWidth, U32 backbufferHeight);
+		U64 AddResource(FrameResourceDesc&& info) noexcept;
 		void ComputeWorkflowTransitions(U64 dependencyLevels) noexcept;
 	};
 }

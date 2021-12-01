@@ -299,7 +299,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-					ZE_GFX_SET_ID(res.Resource, desc.ResourceNames.at(res.RID));
+					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.RID));
 					if (lastState != firstState)
 					{
 						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
@@ -375,7 +375,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_GFX_SET_ID(res.Resource, desc.ResourceNames.at(res.RID));
+			ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.RID));
 			if (lastState != firstState)
 			{
 				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;

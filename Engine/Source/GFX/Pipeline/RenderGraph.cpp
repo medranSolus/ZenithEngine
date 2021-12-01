@@ -329,19 +329,116 @@ namespace ZE::GFX::Pipeline
 		}
 		depList.clear();
 
+		// Compute resource lifetimes based on dependency levels
+		for (U64 i = 0; i < nodes.size(); ++i)
+		{
+			U64 depLevel = dependencyLevels.at(i);
+			auto& node = nodes.at(i);
+			// Check all inputs by resources connected to them from dependent nodes
+			for (U64 j = 0; const auto & input : node.GetInputs())
+			{
+				auto splitInput = Utils::SplitString(input, ".");
+				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
+					{
+						return n.GetName() == splitInput.front();
+					});
+				if (it == nodes.end())
+					throw ZE_RGC_EXCEPT("Cannot find source node [" + splitInput.front() + "] for pass [" + node.GetName() + "]!");
+
+				for (U64 k = 0; k < it->GetOutputs().size();)
+				{
+					if (it->GetOutputs().at(k) == input)
+					{
+						const U64 rid = it->GetOutputResources().at(k);
+						if (rid >= frameBufferDesc.ResourceInfo.size())
+							throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "], RID out of range [" + std::to_string(rid) + "]!");
+
+						node.AddInputResource(rid);
+						Resource::State currentState = node.GetInputState(j);
+						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+						if (lifetime.contains(depLevel))
+						{
+							Resource::State presentState = lifetime.at(depLevel);
+							if (presentState != currentState)
+							{
+								if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
+									|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
+								{
+									lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
+								}
+								else if (presentState != Resource::State::ShaderResourceAll
+									|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
+								{
+									throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
+										std::to_string(depLevel) + "] in 2 disjunctive states!");
+								}
+							}
+						}
+						else
+							lifetime[depLevel] = currentState;
+						break;
+					}
+					else if (++k == it->GetOutputs().size())
+						throw ZE_RGC_EXCEPT("Cannot find source for input [" + input + "]!");
+				}
+				++j;
+			}
+			// Check all output resources
+			for (U64 j = 0; const U64 rid : node.GetOutputResources())
+			{
+				if (rid >= frameBufferDesc.ResourceInfo.size())
+					throw ZE_RGC_EXCEPT("RID out of range [" + std::to_string(rid) + "] for output + [" + node.GetOutputs().at(j) + "]!");
+
+				Resource::State currentState = node.GetOutputState(j);
+				auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+				if (lifetime.contains(depLevel))
+				{
+					Resource::State presentState = lifetime.at(depLevel);
+					if (presentState != currentState)
+					{
+						if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
+							|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
+						{
+							lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
+						}
+						else if (presentState != Resource::State::ShaderResourceAll
+							|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
+						{
+							throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
+								std::to_string(depLevel) + "] in 2 disjunctive states!");
+						}
+					}
+				}
+				else
+					lifetime[depLevel] = currentState;
+				++j;
+			}
+			// Check temporary inner resources
+			for (auto& innerBuffer : node.GetInnerBuffers())
+			{
+				node.AddInnerBufferResource(frameBufferDesc.AddResource(std::move(innerBuffer.Info)));
+				frameBufferDesc.ResourceLifetimes.back()[depLevel] = innerBuffer.InitState;
+			}
+		}
+
 		// Sort passes into dependency level groups of execution
 		passes = new std::pair<PassDesc*, U64>[++levelCount];
+		passesCleaners = new PassCleanCallback * [levelCount];
 		U64 normalCount = nodes.size() - staticCount;
 		passes[0].first = new PassDesc[normalCount];
+		passesCleaners[0] = new PassCleanCallback[normalCount];
 		staticPasses = new PassDescStatic[levelCount];
 		staticPasses[0].Commands = new CommandList[staticCount];
 		staticCount = 0;
-		std::vector<std::pair<U64, bool>> passLocation(nodes.size(), { 0, false });
+		// Static | Level | Location
+		std::vector<std::pair<bool, std::pair<U64, U64>>> passLocation(nodes.size(), { false, { 0, 0 } });
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			if (i != 0)
 			{
-				passes[i].first = passes[i - 1].first + passes[i - 1].second;
+				U64 prevCount = passes[i - 1].second;
+				passes[i].first = passes[i - 1].first + prevCount;
+				passesCleaners[i] = passesCleaners[i - 1] + prevCount;
 				staticPasses[i].Commands = staticPasses[i - 1].Commands + staticPasses[i - 1].CommandsCount;
 			}
 			passes[i].second = 0;
@@ -355,8 +452,8 @@ namespace ZE::GFX::Pipeline
 					{
 						auto& pass = staticPasses[i];
 						passSync = &pass.Syncs;
-						passLocation.at(j) = { i, true };
-						pass.Commands[pass.CommandsCount++] = node.GetStaticExecuteData();
+						pass.Commands[pass.CommandsCount] = node.GetStaticExecuteData();
+						passLocation.at(j) = { true, { i, pass.CommandsCount++ } };
 						if (pass.CommandsCount > staticCount)
 							staticCount = pass.CommandsCount;
 					}
@@ -365,8 +462,12 @@ namespace ZE::GFX::Pipeline
 						auto& pass = passes[i].first[passes[i].second];
 						passSync = &pass.Syncs;
 						pass.Execute = node.GetExecuteCallback();
+						pass.Data.Buffers = node.GetNodeRIDs();
 						pass.Data.OptData = node.GetExecuteData();
-						passLocation.at(j).first = passes[i].second++;
+						passesCleaners[i][passes[i].second] = node.GetCleanCallback();
+						assert((pass.Data.OptData != nullptr) == (node.GetCleanCallback() != nullptr)
+							&& "Optional data and cleaning function must be both provided or neither of them!");
+						passLocation.at(j).second = { i, passes[i].second++ };
 						if (passes[i].second > workersCount)
 							workersCount = passes[i].second;
 					}
@@ -376,10 +477,10 @@ namespace ZE::GFX::Pipeline
 					for (U64 dep : syncList.at(j))
 					{
 						PassSyncDesc* depPassSync;
-						if (passLocation.at(dep).second)
-							depPassSync = &staticPasses[passLocation.at(dep).first].Syncs;
+						if (passLocation.at(dep).first)
+							depPassSync = &staticPasses[passLocation.at(dep).second.first].Syncs;
 						else
-							depPassSync = &passes[dependencyLevels.at(dep)].first[passLocation.at(dep).first].Syncs;
+							depPassSync = &passes[passLocation.at(dep).second.first].first[passLocation.at(dep).second.second].Syncs;
 						assert(depPassSync->DependentsCount <= 255);
 						depPassSync->ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPassSync->ExitSyncs, sizeof(ExitSync) * ++depPassSync->DependentsCount));
 						auto& exitSync = depPassSync->ExitSyncs[depPassSync->DependentsCount - 1];
@@ -562,140 +663,62 @@ namespace ZE::GFX::Pipeline
 			}
 			}
 		}
-		passLocation.clear();
 
 		dev.SetCommandBufferSize(staticCount);
 		workerThreads = new std::thread[--workersCount];
 
-		// Compute resource lifetimes based on dependency levels
-		for (U64 i = 0; i < nodes.size(); ++i)
-		{
-			U64 depLevel = dependencyLevels.at(i);
-			auto& node = nodes.at(i);
-			// Check all inputs by resources connected to them from dependent nodes
-			for (U64 j = 0; const auto & input : node.GetInputs())
-			{
-				auto splitInput = Utils::SplitString(input, ".");
-				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
-					{
-						return n.GetName() == splitInput.front();
-					});
-				if (it == nodes.end())
-					throw ZE_RGC_EXCEPT("Cannot find source node [" + splitInput.front() + "] for pass [" + node.GetName() + "]!");
-				for (U64 k = 0; k < it->GetOutputs().size();)
-				{
-					if (it->GetOutputs().at(k) == input)
-					{
-						auto& resName = it->GetOutputResources().at(k);
-						for (U64 l = 0; l < frameBufferDesc.ResourceNames.size(); ++l)
-						{
-							if (frameBufferDesc.ResourceNames.at(l) == resName)
-							{
-								Resource::State currentState = node.GetInputState(j);
-								auto& lifetime = frameBufferDesc.ResourceLifetimes.at(l);
-								if (lifetime.contains(depLevel))
-								{
-									Resource::State presentState = lifetime.at(depLevel);
-									if (presentState != currentState)
-									{
-										if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
-											|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
-										{
-											lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
-										}
-										else if (presentState != Resource::State::ShaderResourceAll
-											|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
-										{
-											throw ZE_RGC_EXCEPT("Resource [" + resName + "] cannot be at same dependency level [" +
-												std::to_string(depLevel) + "] in 2 disjunctive states!");
-										}
-									}
-								}
-								else
-									lifetime[depLevel] = currentState;
-								goto finish_finding_input_dependency_resource;
-							}
-						}
-						throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "]!");
-					}
-					else if (++k == it->GetOutputs().size())
-						throw ZE_RGC_EXCEPT("Cannot find source for input [" + input + "]!");
-				}
-			finish_finding_input_dependency_resource:
-				++j;
-			}
-			// Check all output resources
-			for (U64 j = 0; const auto & outRes : node.GetOutputResources())
-			{
-				for (U64 k = 0; k < frameBufferDesc.ResourceNames.size();)
-				{
-					if (frameBufferDesc.ResourceNames.at(k) == outRes)
-					{
-						Resource::State currentState = node.GetOutputState(j);
-						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(k);
-						if (lifetime.contains(depLevel))
-						{
-							Resource::State presentState = lifetime.at(depLevel);
-							if (presentState != currentState)
-							{
-								if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
-									|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
-								{
-									lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
-								}
-								else if (presentState != Resource::State::ShaderResourceAll
-									|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
-								{
-									throw ZE_RGC_EXCEPT("Resource [" + outRes + "] cannot be at same dependency level [" +
-										std::to_string(depLevel) + "] in 2 disjunctive states!");
-								}
-							}
-						}
-						else
-							lifetime[depLevel] = currentState;
-						break;
-					}
-					else if (++k == frameBufferDesc.ResourceNames.size())
-						throw ZE_RGC_EXCEPT("Cannot find resource [" + outRes + "] for output + [" + node.GetOutputs().at(j) + "]!");
-				}
-				++j;
-			}
-			// Check temporary inner resources
-			for (auto& innerBuffer : node.GetInnerBuffers())
-			{
-				std::string resName = innerBuffer.Name;
-				frameBufferDesc.AddResource(std::move(resName), std::move(innerBuffer.Info));
-				frameBufferDesc.ResourceLifetimes.back()[depLevel] = innerBuffer.InitState;
-			}
-		}
-
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
 		frameBuffer.Init(dev, mainList, frameBufferDesc);
+
+		// Compute static passes
+		for (U64 i = 0; const auto & node : nodes)
+		{
+			const auto& location = passLocation.at(i);
+			if (location.first)
+			{
+				PassDescStatic& level = staticPasses[location.second.first];
+				PassData staticPassData;
+				staticPassData.Buffers = node.GetNodeRIDs();
+				// Optional data is not supported for static RenderPass
+				staticPassData.OptData = nullptr;
+				CommandList& cl = level.Commands[location.second.second];
+				cl.Open(dev);
+				node.GetExecuteCallback()(cl, staticPassData);
+				cl.Close(dev);
+				delete[] staticPassData.Buffers;
+			}
+			++i;
+		}
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-		for (U64 i = 0; i < levelCount; ++i)
-		{
-			auto& level = passes[i];
-			for (U64 j = 0; j < level.second; ++j)
-			{
-				auto& pass = level.first[j];
-				if (pass.Data.OptData)
-					delete pass.Data.OptData;
-				if (pass.Syncs.ExitSyncs)
-					free(pass.Syncs.ExitSyncs);
-			}
-			if (staticPasses[i].Syncs.ExitSyncs)
-				free(staticPasses[i].Syncs.ExitSyncs);
-		}
 		if (workerThreads)
 			delete[] workerThreads;
 		if (passes)
 		{
+			for (U64 i = 0; i < levelCount; ++i)
+			{
+				auto& level = passes[i];
+				for (U64 j = 0; j < level.second; ++j)
+				{
+					auto& pass = level.first[j];
+					if (pass.Data.Buffers)
+						delete[] pass.Data.Buffers;
+					if (pass.Data.OptData)
+						passesCleaners[i][j](pass.Data.OptData);
+					if (pass.Syncs.ExitSyncs)
+						free(pass.Syncs.ExitSyncs);
+				}
+				if (staticPasses[i].Syncs.ExitSyncs)
+					free(staticPasses[i].Syncs.ExitSyncs);
+			}
 			if (passes[0].first)
 				delete[] passes[0].first;
 			delete[] passes;
+			if (passesCleaners[0])
+				delete[] passesCleaners[0];
+			delete[] passesCleaners;
 		}
 		if (staticPasses)
 		{

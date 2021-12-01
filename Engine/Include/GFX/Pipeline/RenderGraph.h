@@ -14,6 +14,7 @@ namespace ZE::GFX::Pipeline
 		std::thread* workerThreads = nullptr;
 		std::pair<PassDesc*, U64>* passes = nullptr;
 		PassDescStatic* staticPasses = nullptr;
+		PassCleanCallback** passesCleaners = nullptr;
 
 		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);
 		static void AfterSync(Device& dev, PassSyncDesc& syncInfo);
@@ -25,7 +26,7 @@ namespace ZE::GFX::Pipeline
 		void ExecuteThread(Device& dev, PassDesc& pass);
 
 	protected:
-		static constexpr const char* BACKBUFFER_NAME = "$backbuffer";
+		static constexpr U64 BACKBUFFER_RID = 0;
 
 		FrameBuffer frameBuffer;
 

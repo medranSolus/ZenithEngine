@@ -27,12 +27,17 @@ namespace ZE::GFX::Pipeline
 	// Data needed for executing RenderPass
 	struct PassData
 	{
+		// Resources used by RenderPass, appear in order they've been added during RenderNode construction,
+		// in respect to their usage (first input, then inner, lastly output resources)
+		const U64* Buffers = nullptr;
 		// Optional data used by RenderPass
 		void* OptData = nullptr;
 	};
 
 	// Callback for pass execution
-	typedef void (*PassExecuteCallback)(PassData&);
+	typedef void (*PassExecuteCallback)(CommandList&, PassData&);
+	// Callback for cleaning optional pass data
+	typedef void (*PassCleanCallback)(void*);
 
 	// Descriptor containing params for executing RenderPass
 	struct PassDesc

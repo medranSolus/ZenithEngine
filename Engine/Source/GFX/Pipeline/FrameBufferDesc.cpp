@@ -3,25 +3,23 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void FrameBufferDesc::Init(U64 resourceCount, const char* backbufferName, U32 backbufferWidth, U32 backbufferHeight)
+	void FrameBufferDesc::Init(U64 resourceCount, U32 backbufferWidth, U32 backbufferHeight)
 	{
-		ResourceNames.reserve(++resourceCount);
-		ResourceInfo.reserve(resourceCount);
+		ResourceInfo.reserve(++resourceCount);
 		ResourceLifetimes.reserve(resourceCount);
-		AddResource(backbufferName,
+		AddResource(
 			{
 				backbufferWidth, backbufferHeight, 1, FrameResourceFlags::None,
 				Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 1.0f)
 			});
 	}
 
-	void FrameBufferDesc::AddResource(std::string&& name, FrameResourceDesc&& info)
+	U64 FrameBufferDesc::AddResource(FrameResourceDesc&& info) noexcept
 	{
-		if (std::find(ResourceNames.begin(), ResourceNames.end(), name) != ResourceNames.end())
-			throw ZE_RGC_EXCEPT("Frame Buffer already contains resource [" + name + "]!");
-		ResourceNames.emplace_back(std::forward<std::string>(name));
+		U64 id = ResourceInfo.size();
 		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
 		ResourceLifetimes.emplace_back(std::map<U64, Resource::State>({}));
+		return id;
 	}
 
 	void FrameBufferDesc::ComputeWorkflowTransitions(U64 dependencyLevels) noexcept

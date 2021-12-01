@@ -10,22 +10,32 @@ namespace ZE::GFX::Pipeline
 		inputStates.emplace_back(state);
 	}
 
-	void RenderNode::AddInnerBuffer(std::string&& name, Resource::State initState, FrameResourceDesc&& desc)
+	void RenderNode::AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept
 	{
-		std::string bufferName = passName + "_" + std::forward<std::string>(name);
-		if (std::find(inputNames.begin(), inputNames.end(), bufferName) != inputNames.end())
-			throw ZE_RGC_EXCEPT("Pass [" + passName + "] already contains inner buffer [" + name + "]!");
 		desc.Flags |= FrameResourceFlags::ForceSRV;
-		innerBuffers.emplace_back(std::move(bufferName), initState, std::forward<FrameResourceDesc>(desc));
+		innerBuffers.emplace_back(initState, std::forward<FrameResourceDesc>(desc));
 	}
 
-	void RenderNode::AddOutput(std::string&& name, Resource::State state, const std::string& resourceName)
+	void RenderNode::AddOutput(std::string&& name, Resource::State state, U64 rid)
 	{
 		std::string outputName = passName + "." + std::forward<std::string>(name);
 		if (std::find(inputNames.begin(), inputNames.end(), outputName) != inputNames.end())
 			throw ZE_RGC_EXCEPT("Pass [" + passName + "] already contains output [" + name + "]!");
 		outputNames.emplace_back(std::move(outputName));
 		outputStates.emplace_back(state);
-		outputResourceNames.emplace_back(resourceName);
+		outputRIDs.emplace_back(rid);
+	}
+
+	U64* RenderNode::GetNodeRIDs() const noexcept
+	{
+		U64* rids = new U64[inputRIDs.size() + innerRIDs.size() + outputRIDs.size()];
+		U64 i = 0;
+		for (U64 rid : inputRIDs)
+			rids[i++] = rid;
+		for (U64 rid : innerRIDs)
+			rids[i++] = rid;
+		for (U64 rid : outputRIDs)
+			rids[i++] = rid;
+		return rids;
 	}
 }
