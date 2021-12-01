@@ -293,32 +293,33 @@ namespace ZE::GFX::API::DX12::Pipeline
 				{
 					auto& res = resourcesInfo.at(i);
 					const auto& lifetime = desc.ResourceLifetimes.at(res.RID);
-					D3D12_RESOURCE_STATES firstState = GetResourceState(lifetime.begin()->second);
-					D3D12_RESOURCE_STATES lastState = GetResourceState(lifetime.rbegin()->second);
+					GFX::Resource::State firstState = lifetime.begin()->second;
+					GFX::Resource::State lastState = lifetime.rbegin()->second;
 					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-						&res.Desc, res.IsAliasing() ? firstState : lastState,
+						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 					ZE_GFX_SET_ID(res.Resource, desc.ResourceNames.at(res.RID));
 					if (lastState != firstState)
 					{
-						D3D12_RESOURCE_BARRIER barrier;
-						barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-						barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-						barrier.Transition.StateBefore = lastState;
-						barrier.Transition.StateAfter = firstState;
-						barrier.Transition.pResource = res.Resource.Get();
-						U64 lastLevel = lifetime.rbegin()->first;
+						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
 						if (res.IsAliasing())
 						{
-							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-							wrappingTransitions.emplace_back(lastLevel, barrier);
+							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+								GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
 						}
 						else
 						{
+							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+								GFX::Pipeline::BarrierType::Begin, lastState, firstState);
+							D3D12_RESOURCE_BARRIER barrier;
+							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+							barrier.Transition.StateBefore = GetResourceState(lastState);
+							barrier.Transition.StateAfter = GetResourceState(firstState);
+							barrier.Transition.pResource = res.Resource.Get();
 							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
 							startingTransitions.emplace_back(barrier);
-							wrappingTransitions.emplace_back(lastLevel, barrier);
 							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 							wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
 						}
@@ -368,32 +369,33 @@ namespace ZE::GFX::API::DX12::Pipeline
 		{
 			auto& res = resourcesInfo.at(i);
 			const auto& lifetime = desc.ResourceLifetimes.at(res.RID);
-			D3D12_RESOURCE_STATES firstState = GetResourceState(lifetime.begin()->second);
-			D3D12_RESOURCE_STATES lastState = GetResourceState(lifetime.rbegin()->second);
+			GFX::Resource::State firstState = lifetime.begin()->second;
+			GFX::Resource::State lastState = lifetime.rbegin()->second;
 			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
 				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-				&res.Desc, res.IsAliasing() ? firstState : lastState,
+				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 			ZE_GFX_SET_ID(res.Resource, desc.ResourceNames.at(res.RID));
 			if (lastState != firstState)
 			{
-				D3D12_RESOURCE_BARRIER barrier;
-				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-				barrier.Transition.StateBefore = lastState;
-				barrier.Transition.StateAfter = firstState;
-				barrier.Transition.pResource = res.Resource.Get();
-				U64 lastLevel = lifetime.rbegin()->first;
+				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
 				if (res.IsAliasing())
 				{
-					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-					wrappingTransitions.emplace_back(lastLevel, barrier);
+					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+						GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
 				}
 				else
 				{
+					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+						GFX::Pipeline::BarrierType::Begin, lastState, firstState);
+					D3D12_RESOURCE_BARRIER barrier;
+					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+					barrier.Transition.StateBefore = GetResourceState(lastState);
+					barrier.Transition.StateAfter = GetResourceState(firstState);
+					barrier.Transition.pResource = res.Resource.Get();
 					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
 					startingTransitions.emplace_back(barrier);
-					wrappingTransitions.emplace_back(lastLevel, barrier);
 					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 					wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
 				}
@@ -626,13 +628,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		};
 		computeBarriers(initBarriers, 0, 0);
 		for (auto& wrap : wrappingTransitions)
-			if (wrap.second.Flags == D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
-				--wrap.first;
-		std::sort(wrappingTransitions.begin(), wrappingTransitions.end(),
-			[](const auto& t1, const auto& t2) -> bool
-			{
-				return t1.first > t2.first;
-			});
+			--wrap.first;
 		barriers[0].second = initBarriers.second + initBarriers.first;
 		barriers[0].first = 0;
 		// Compute normal barriers between passes
