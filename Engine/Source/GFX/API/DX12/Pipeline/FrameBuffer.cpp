@@ -131,13 +131,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		// Perform discard operations for aliasing resources
 		assert(rid != 0 && "Backbuffer do not need discarding it's contents! (Or at least it shouldn't with FLIP_DISCARD... TODO: Check this)");
-		auto location = resourceLocations[rid - 1];
-		for (U64 i = 0; i < location.second; ++i)
-		{
-			location.first += i;
-			if (aliasingResources[location.first])
-				cl.GetList()->DiscardResource(resources[location.first].Get(), nullptr);
-		}
+		if (aliasingResources[--rid])
+			cl.GetList()->DiscardResource(resources[rid].Get(), nullptr);
 	}
 
 	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
@@ -146,7 +141,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 		auto device = dev.Get().dx12.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
-		resourceLocations = new std::pair<U64, U64>[desc.ResourceInfo.size() - 1];
+		resourcesInfo.reserve(desc.ResourceInfo.size() - 1);
 		U32 rtvCount = 0;
 		U32 dsvCount = 0;
 		U32 srvUavCount = 0;
@@ -201,31 +196,30 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 				}
 			}
-			resourceLocations[i - 1].second = res.Formats.size();
-			for (auto& format : res.Formats)
+
+			resDesc.Format = DX::GetDXFormat(res.Format);
+			D3D12_CLEAR_VALUE clearDesc;
+			clearDesc.Format = resDesc.Format;
+			if (Utils::IsDepthStencilFormat(res.Format))
 			{
-				resDesc.Format = DX::GetDXFormat(format.Format);
-				D3D12_CLEAR_VALUE clearDesc;
-				clearDesc.Format = resDesc.Format;
-				if (Utils::IsDepthStencilFormat(format.Format))
-				{
-					clearDesc.DepthStencil.Depth = format.ClearDepth;
-					clearDesc.DepthStencil.Stencil = format.ClearStencil;
-				}
-				else
-					*reinterpret_cast<ColorF4*>(clearDesc.Color) = format.ClearColor;
-				U64 size = device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes;
-				size = size / D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
-					+ static_cast<bool>(size % D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
-				resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
-					static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
-				if (isRT)
-					++rtvCount;
-				else if (isDS)
-					++dsvCount;
-				if (isSR || isUA)
-					++srvUavCount;
+				clearDesc.DepthStencil.Depth = res.ClearDepth;
+				clearDesc.DepthStencil.Stencil = res.ClearStencil;
 			}
+			else
+				*reinterpret_cast<ColorF4*>(clearDesc.Color) = res.ClearColor;
+
+			U64 size = device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes;
+			size = size / D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
+				+ static_cast<bool>(size % D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
+				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
+
+			if (isRT)
+				++rtvCount;
+			else if (isDS)
+				++dsvCount;
+			if (isSR || isUA)
+				++srvUavCount;
 		}
 
 		// Prepare data for allocating resources and heaps
@@ -431,12 +425,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 			});
 		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new DX::ComPtr<ID3D12Resource>[invalidID];
-		for (U64 i = resourcesInfo.size(); i != 0;)
+		for (U64 i = 0; auto & res : resourcesInfo)
 		{
-			const auto& res = resourcesInfo.at(--i);
-			resourceLocations[res.RID - 1].first = i;
 			aliasingResources[i] = res.IsAliasing();
 			resources[i] = std::move(res.Resource);
+			++i;
 		}
 
 		// Create descriptor heaps
@@ -591,15 +584,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 		for (const auto& level : desc.TransitionsPerLevel)
 		{
 			for (const auto& transition : level)
-			{
 				if (transition.RID == 0)
-				{
 					++backbufferBarriersLocationsCount;
-					++barrierCount;
-				}
-				else
-					barrierCount += resourceLocations[transition.RID - 1].second;
-			}
+			barrierCount += level.size();
 		}
 		backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
 		backbufferBarriersLocations[0] = 0;
@@ -609,39 +596,46 @@ namespace ZE::GFX::API::DX12::Pipeline
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		// Compute barriers before first render passes
-		for (const auto& transition : desc.TransitionsPerLevel.front())
+		U64 backbufferBarrierIndex = 0;
+		auto computeBarriers = [&](std::pair<U32, D3D12_RESOURCE_BARRIER*>& barriers, const U64 level, const U64 barrierIndex)
 		{
-			barrier.Flags = GetTransitionType(transition.Barrier);
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
-			barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
-			if (transition.RID == 0)
+			for (const auto& transition : desc.TransitionsPerLevel.at(level))
 			{
-				barrier.Transition.pResource = nullptr;
-				initBarriers.second[initBarriers.first++] = barrier;
-			}
-			else
-			{
-				const auto& location = resourceLocations[transition.RID - 1];
-				for (U64 j = 0; j < location.second; ++j)
+				barrier.Flags = GetTransitionType(transition.Barrier);
+				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
+				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
+				if (transition.RID == 0)
 				{
-					barrier.Transition.pResource = resources[location.first + j].Get();
-					initBarriers.second[initBarriers.first++] = barrier;
+					if (level != 0)
+						backbufferBarriersLocations[backbufferBarrierIndex++] = barrierIndex;
+					barrier.Transition.pResource = nullptr;
+					barriers.second[barriers.first++] = barrier;
+				}
+				else
+				{
+					barrier.Transition.pResource = resources[transition.RID - 1].Get();
+					barriers.second[barriers.first++] = barrier;
 				}
 			}
-		}
-		while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == 0)
-		{
-			initBarriers.second[initBarriers.first++] = wrappingTransitions.back().second;
-			wrappingTransitions.pop_back();
-		}
+			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
+			{
+				barriers.second[barriers.first++] = wrappingTransitions.back().second;
+				wrappingTransitions.pop_back();
+			}
+		};
+		computeBarriers(initBarriers, 0, 0);
 		for (auto& wrap : wrappingTransitions)
 			if (wrap.second.Flags == D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
 				--wrap.first;
+		std::sort(wrappingTransitions.begin(), wrappingTransitions.end(),
+			[](const auto& t1, const auto& t2) -> bool
+			{
+				return t1.first > t2.first;
+			});
 		barriers[0].second = initBarriers.second + initBarriers.first;
 		barriers[0].first = 0;
 		// Compute normal barriers between passes
-		U64 backbufferBarrierIndex = 0;
 		for (U64 i = 1; i < desc.TransitionsPerLevel.size(); ++i)
 		{
 			const U64 index = i / 2 - (i % 2 == 0);
@@ -650,33 +644,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				barriers[index].second = barriers[index - 1].second + barriers[index - 1].first;
 				barriers[index].first = 0;
 			}
-			for (const auto& transition : desc.TransitionsPerLevel.at(i))
-			{
-				barrier.Flags = GetTransitionType(transition.Barrier);
-				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
-				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
-				if (transition.RID == 0)
-				{
-					backbufferBarriersLocations[backbufferBarrierIndex++] = index;
-					barrier.Transition.pResource = nullptr;
-					barriers[index].second[barriers[index].first++] = barrier;
-				}
-				else
-				{
-					const auto& location = resourceLocations[transition.RID - 1];
-					for (U64 j = 0; j < location.second; ++j)
-					{
-						barrier.Transition.pResource = resources[location.first + j].Get();
-						barriers[index].second[barriers[index].first++] = barrier;
-					}
-				}
-			}
-			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == index)
-			{
-				barriers[index].second[barriers[index].first++] = wrappingTransitions.back().second;
-				wrappingTransitions.pop_back();
-			}
+			computeBarriers(barriers[index], i, index);
 		}
 
 		// Finish initial transitions
@@ -698,8 +666,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 			delete[] backbufferBarriersLocations;
 		if (aliasingResources)
 			delete[] aliasingResources;
-		if (resourceLocations)
-			delete[] resourceLocations;
 		if (resources)
 			delete[] resources;
 		if (rtvDsv)
@@ -713,32 +679,17 @@ namespace ZE::GFX::API::DX12::Pipeline
 	void FrameBuffer::ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		if (rid == 0)
-		{
-			ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(backbufferRtvSrv.first,
-				reinterpret_cast<const float*>(&color), 0, nullptr));
-		}
-		else
-		{
-			const auto& location = resourceLocations[rid - 1];
-			for (U64 i = 0; i < location.second; ++i)
-			{
-				ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsv[location.first + i],
-					reinterpret_cast<const float*>(&color), 0, nullptr));
-			}
-		}
+		const D3D12_CPU_DESCRIPTOR_HANDLE handle = rid == 0 ? backbufferRtvSrv.first : rtvDsv[rid - 1];
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(handle,
+			reinterpret_cast<const float*>(&color), 0, nullptr));
 	}
 
 	void FrameBuffer::ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const
 	{
 		assert(rid != 0 && "Cannot use backbuffer as depth stencil!");
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		const auto& location = resourceLocations[rid - 1];
-		for (U64 i = 0; i < location.second; ++i)
-		{
-			ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[location.first + i],
-				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr));
-		}
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[rid - 1],
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr));
 	}
 
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)

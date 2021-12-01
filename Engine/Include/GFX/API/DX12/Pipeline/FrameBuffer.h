@@ -14,7 +14,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U64 backbufferBarriersLocationsCount = 0;
 		U64* backbufferBarriersLocations = nullptr;
 		bool* aliasingResources = nullptr;
-		std::pair<U64, U64>* resourceLocations = nullptr;
 		DX::ComPtr<ID3D12Resource>* resources = nullptr;
 
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> backbufferRtvSrv;
