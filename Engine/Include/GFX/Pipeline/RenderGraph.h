@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 	{
 		U64 levelCount = 0;
 		U64 workersCount = 0;
-		std::thread* workerThreads = nullptr;
+		std::pair<std::thread, CommandList>* workerThreads = nullptr;
 		std::pair<PassDesc*, U64>* passes = nullptr;
 		PassDescStatic* staticPasses = nullptr;
 		PassCleanCallback** passesCleaners = nullptr;
@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline
 		static void CullIndirectDependecies(U64 currentNode, U64 checkNode, U64 minDepLevel, std::vector<std::vector<U64>>& syncList,
 			const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept;
 
-		void ExecuteThread(Device& dev, PassDesc& pass);
+		void ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass);
 
 	protected:
 		static constexpr U64 BACKBUFFER_RID = 0;

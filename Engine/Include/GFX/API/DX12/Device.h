@@ -64,7 +64,8 @@ namespace ZE::GFX::API::DX12
 
 		void WaitCPU(ID3D12Fence1* fence, U64 val);
 		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
-		U64 SetFence(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
+		U64 SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal);
+		U64 SetFenceGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
 		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
@@ -77,7 +78,7 @@ namespace ZE::GFX::API::DX12
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList * [3 * count]; commandListsCount = count; }
+		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[3 * count]; commandListsCount = count; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -87,9 +88,9 @@ namespace ZE::GFX::API::DX12
 		void WaitCompute(U64 val) { WaitCPU(computeFence.Get(), val); }
 		void WaitCopy(U64 val) { WaitCPU(copyFence.Get(), val); }
 
-		U64 SetMainFence() { return SetFence(mainFence.Get(), mainQueue.Get(), mainFenceVal); }
-		U64 SetComputeFence() { return SetFence(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
-		U64 SetCopyFence() { return SetFence(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
+		U64 SetMainFenceCPU() { return SetFenceCPU(mainFence.Get(), mainFenceVal); }
+		U64 SetComputeFenceCPU() { return SetFenceCPU(computeFence.Get(), computeFenceVal); }
+		U64 SetCopyFenceCPU() { return SetFenceCPU(copyFence.Get(), copyFenceVal); }
 
 		void WaitMainFromCompute(U64 val) { WaitGPU(computeFence.Get(), mainQueue.Get(), val); }
 		void WaitMainFromCopy(U64 val) { WaitGPU(copyFence.Get(), mainQueue.Get(), val); }
@@ -98,12 +99,9 @@ namespace ZE::GFX::API::DX12
 		void WaitCopyFromMain(U64 val) { WaitGPU(mainFence.Get(), copyQueue.Get(), val); }
 		void WaitCopyFromCompute(U64 val) { WaitGPU(computeFence.Get(), copyQueue.Get(), val); }
 
-		U64 SetMainFenceFromCompute() { return SetFence(mainFence.Get(), computeQueue.Get(), mainFenceVal); }
-		U64 SetMainFenceFromCopy() { return SetFence(mainFence.Get(), copyQueue.Get(), mainFenceVal); }
-		U64 SetComputeFenceFromMain() { return SetFence(computeFence.Get(), mainQueue.Get(), computeFenceVal); }
-		U64 SetComputeFenceFromCopy() { return SetFence(computeFence.Get(), copyQueue.Get(), computeFenceVal); }
-		U64 SetCopyFenceFromMain() { return SetFence(copyFence.Get(), mainQueue.Get(), copyFenceVal); }
-		U64 SetCopyFenceFromCompute() { return SetFence(copyFence.Get(), computeQueue.Get(), copyFenceVal); }
+		U64 SetMainFence() { return SetFenceGPU(mainFence.Get(), mainQueue.Get(), mainFenceVal); }
+		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
+		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
 		void FinishUpload();
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);

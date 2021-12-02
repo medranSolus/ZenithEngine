@@ -49,44 +49,28 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::AfterSync(Device& dev, PassSyncDesc& syncInfo)
 	{
 		// Set fences for correct GPU engines
-		U64 fence1 = 0;
-		U64 fence2 = 0;
+		U64 nextFence = 0;
 		switch (syncInfo.AllExitSyncs)
 		{
 		case SyncType::MainToAll:
-			fence2 = dev.SetCopyFenceFromMain();
 		case SyncType::MainToCompute:
-		{
-			fence1 = dev.SetComputeFenceFromMain();
-			break;
-		}
 		case SyncType::MainToCopy:
 		{
-			fence2 = dev.SetCopyFenceFromMain();
+			nextFence = dev.SetMainFence();
 			break;
 		}
 		case SyncType::ComputeToAll:
-			fence2 = dev.SetCopyFenceFromCompute();
 		case SyncType::ComputeToMain:
-		{
-			fence1 = dev.SetMainFenceFromCompute();
-			break;
-		}
 		case SyncType::ComputeToCopy:
 		{
-			fence2 = dev.SetCopyFenceFromCompute();
+			nextFence = dev.SetComputeFence();
 			break;
 		}
 		case SyncType::CopyToAll:
-			fence2 = dev.SetComputeFenceFromCopy();
 		case SyncType::CopyToMain:
-		{
-			fence1 = dev.SetMainFenceFromCopy();
-			break;
-		}
 		case SyncType::CopyToCompute:
 		{
-			fence2 = dev.SetComputeFenceFromCopy();
+			nextFence = dev.SetCopyFence();
 			break;
 		}
 		}
@@ -95,41 +79,7 @@ namespace ZE::GFX::Pipeline
 		assert(syncInfo.DependentsCount <= 255);
 		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
 		{
-			U64 nextFence = 0;
 			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
-			switch (exitSyncInfo.Type)
-			{
-			case SyncType::MainToCompute:
-			{
-				nextFence = fence1;
-				break;
-			}
-			case SyncType::MainToCopy:
-			{
-				nextFence = fence2;
-				break;
-			}
-			case SyncType::ComputeToMain:
-			{
-				nextFence = fence1;
-				break;
-			}
-			case SyncType::ComputeToCopy:
-			{
-				nextFence = fence2;
-				break;
-			}
-			case SyncType::CopyToMain:
-			{
-				nextFence = fence1;
-				break;
-			}
-			case SyncType::CopyToCompute:
-			{
-				nextFence = fence2;
-				break;
-			}
-			}
 			U64 currentFence = *exitSyncInfo.NextPassFence;
 			// Atomicitly check if current stored fence value is highest
 			// if no then store new value (or try if other thread also tries to store)
@@ -192,11 +142,14 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::ExecuteThread(Device& dev, PassDesc& pass)
+	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
 	{
-		//BeforeSync(dev, pass.Syncs);
-		//pass.Execute(pass.Data);
-		//AfterSync(dev, pass.Syncs);
+		BeforeSync(dev, pass.Syncs);
+		cl.Open(dev);
+		//pass.Execute(cl, pass.Data);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
+		AfterSync(dev, pass.Syncs);
 	}
 
 	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
@@ -665,7 +618,9 @@ namespace ZE::GFX::Pipeline
 		}
 
 		dev.SetCommandBufferSize(staticCount);
-		workerThreads = new std::thread[--workersCount];
+		workerThreads = new std::pair<std::thread, CommandList>[--workersCount];
+		for (U64 i = 0; i < workersCount; ++i)
+			workerThreads[i].second.Init(dev);
 
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
 		frameBuffer.Init(dev, mainList, frameBufferDesc);
@@ -730,10 +685,11 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::Execute(Device& dev, CommandList& mainList)
 	{
+		for (U64 i = 0; i < workersCount; ++i)
+			workerThreads[i].second.Reset(dev);
 		frameBuffer.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
-			mainList.Open(dev);
 			auto& staticLevel = staticPasses[i];
 			if (staticLevel.CommandsCount)
 			{
@@ -747,14 +703,12 @@ namespace ZE::GFX::Pipeline
 				U64 workersDispatch = level.second - 1;
 				assert(workersCount >= workersDispatch);
 				for (U64 j = 0; j < workersDispatch; ++j)
-					workerThreads[j] = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(level.first[j]) };
-				ExecuteThread(dev, level.first[workersDispatch]);
+					workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second), std::ref(level.first[j]) };
+				ExecuteThread(dev, mainList, level.first[workersDispatch]);
 				for (U64 j = 0; j < workersDispatch; ++j)
-					workerThreads[j].join();
+					workerThreads[j].first.join();
 			}
-			frameBuffer.ExitTransitions(i, mainList);
-			mainList.Close(dev);
-			dev.ExecuteMain(mainList);
+			frameBuffer.ExitTransitions(dev, mainList, i);
 		}
 	}
 }

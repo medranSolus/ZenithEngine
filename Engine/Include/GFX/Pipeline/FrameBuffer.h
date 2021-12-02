@@ -35,6 +35,6 @@ namespace ZE::GFX::Pipeline
 
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) { ZE_API_BACKEND_CALL(backend, SwapBackbuffer, dev, swapChain); }
 		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, InitTransitions, dev, cl); }
-		constexpr void ExitTransitions(U64 level, CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, ExitTransitions, level, cl); }
+		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const noexcept { ZE_API_BACKEND_CALL(backend, ExitTransitions, dev, cl, level); }
 	};
 }

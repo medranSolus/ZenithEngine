@@ -19,7 +19,7 @@ namespace ZE::GFX
 		CommandList& operator=(const CommandList&) = delete;
 		~CommandList() = default;
 
-		constexpr void Init(Device& dev) { backend.Init(dev); }
+		constexpr void Init(Device& dev, CommandType type = CommandType::All) { backend.Init(dev); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandType type) { backend.Switch(nextApi, dev, type); }
 		constexpr ZE_API_BACKEND(CommandList)& Get() noexcept { return backend; }
 

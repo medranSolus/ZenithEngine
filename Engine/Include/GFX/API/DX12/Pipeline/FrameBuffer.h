@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/FrameBufferDesc.h"
+#include "GFX/Pipeline/SyncType.h"
 #include "GFX/CommandList.h"
 #include "GFX/SwapChain.h"
 #include "D3D12.h"
@@ -8,8 +9,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 {
 	class FrameBuffer final
 	{
-		std::pair<U32, D3D12_RESOURCE_BARRIER*> initBarriers;
-		std::pair<U32, D3D12_RESOURCE_BARRIER*>* barriers = nullptr;
+		struct TransitionPoint
+		{
+			U32 BarrierCount = 0;
+			D3D12_RESOURCE_BARRIER* Barriers = nullptr;
+			GFX::Pipeline::SyncType AfterSync = GFX::Pipeline::SyncType::None;
+		};
+
+		TransitionPoint initTransitions;
+		TransitionPoint* transitions = nullptr;
 
 		U64 backbufferBarriersLocationsCount = 0;
 		U64* backbufferBarriersLocations = nullptr;
@@ -54,6 +62,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain);
 		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
-		void ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept;
+		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
 	};
 }

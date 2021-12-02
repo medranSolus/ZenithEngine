@@ -39,9 +39,9 @@ namespace ZE::GFX::API::DX11
 		constexpr void WaitCompute(U64 val) {}
 		constexpr void WaitCopy(U64 val) {}
 
-		constexpr U64 SetMainFence() { return 0; }
-		constexpr U64 SetComputeFence() { return 0; }
-		constexpr U64 SetCopyFence() { return 0; }
+		constexpr U64 SetMainFenceCPU() { return 0; }
+		constexpr U64 SetComputeFenceCPU() { return 0; }
+		constexpr U64 SetCopyFenceCPU() { return 0; }
 
 		constexpr void WaitMainFromCompute(U64 val) {}
 		constexpr void WaitMainFromCopy(U64 val) {}
@@ -50,12 +50,9 @@ namespace ZE::GFX::API::DX11
 		constexpr void WaitCopyFromMain(U64 val) {}
 		constexpr void WaitCopyFromCompute(U64 val) {}
 
-		constexpr U64 SetMainFenceFromCompute() { return 0; }
-		constexpr U64 SetMainFenceFromCopy() { return 0; }
-		constexpr U64 SetComputeFenceFromMain() { return 0; }
-		constexpr U64 SetComputeFenceFromCopy() { return 0; }
-		constexpr U64 SetCopyFenceFromMain() { return 0; }
-		constexpr U64 SetCopyFenceFromCompute() { return 0; }
+		constexpr U64 SetMainFence() { return 0; }
+		constexpr U64 SetComputeFence() { return 0; }
+		constexpr U64 SetCopyFence() { return 0; }
 
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void SetCommandBufferSize(U32 count) noexcept { commandListsCount = count; }

@@ -36,11 +36,11 @@ namespace ZE::GFX
 		constexpr void WaitCopy(U64 val) { ZE_API_BACKEND_CALL(backend, WaitCopy, val); }
 
 		// Set fence for main queue from CPU
-		constexpr U64 SetMainFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFence); return val; }
+		constexpr U64 SetMainFenceCPU() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFenceCPU); return val; }
 		// Set fence for compute queue from CPU
-		constexpr U64 SetComputeFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFence); return val; }
+		constexpr U64 SetComputeFenceCPU() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFenceCPU); return val; }
 		// Set fence for copy queue from CPU
-		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFence); return val; }
+		constexpr U64 SetCopyFenceCPU() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFenceCPU); return val; }
 
 		// GPU side wait for main queue till compute queue will reach fence value
 		constexpr void WaitMainFromCompute(U64 val) { ZE_API_BACKEND_CALL(backend, WaitMainFromCompute, val); }
@@ -55,18 +55,12 @@ namespace ZE::GFX
 		// GPU side wait for copy queue till compute queue will reach fence value
 		constexpr void WaitCopyFromCompute(U64 val) { ZE_API_BACKEND_CALL(backend, WaitCopyFromCompute, val); }
 
-		// Set fence for main queue from compute queue
-		constexpr U64 SetMainFenceFromCompute() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFenceFromCompute); return val; }
-		// Set fence for main queue from copy queue
-		constexpr U64 SetMainFenceFromCopy() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFenceFromCopy); return val; }
-		// Set fence for compute queue from main queue
-		constexpr U64 SetComputeFenceFromMain() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFenceFromMain); return val; }
-		// Set fence for compute queue from copy queue
-		constexpr U64 SetComputeFenceFromCopy() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFenceFromCopy); return val; }
-		// Set fence for copy queue from main queue
-		constexpr U64 SetCopyFenceFromMain() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFenceFromMain); return val; }
-		// Set fence for copy queue from compute queue
-		constexpr U64 SetCopyFenceFromCompute() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFenceFromCompute); return val; }
+		// GPU side signal from main queue for it's fence
+		constexpr U64 SetMainFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetMainFence); return val; }
+		// GPU side signal from compute queue for it's fence
+		constexpr U64 SetComputeFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetComputeFence); return val; }
+		// GPU side signal from copy queue for it's fence
+		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(backend, val, SetCopyFence); return val; }
 
 		// Set max size of command lists to execute in single call to Execute()
 		constexpr void SetCommandBufferSize(U32 count) noexcept { ZE_API_BACKEND_CALL(backend, SetCommandBufferSize, count); }

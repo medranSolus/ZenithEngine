@@ -24,6 +24,6 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 		constexpr void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) {}
 		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const {}
-		constexpr void ExitTransitions(U64 level, GFX::CommandList& cl) const noexcept {}
+		constexpr void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept {}
 	};
 }

@@ -26,7 +26,15 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED(queue->Wait(fence, val));
 	}
 
-	U64 Device::SetFence(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal)
+	U64 Device::SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+		U64 val = ++fenceVal;
+		ZE_GFX_THROW_FAILED(fence->Signal(val));
+		return val;
+	}
+
+	U64 Device::SetFenceGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
