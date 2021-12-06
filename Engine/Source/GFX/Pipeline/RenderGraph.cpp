@@ -683,10 +683,17 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::Execute(Device& dev, CommandList& mainList)
+	void RenderGraph::Execute(Graphics& gfx)
 	{
+		Device& dev = gfx.GetDevice();
+		CommandList& mainList = gfx.GetMainList();
+
+		dev.WaitMain(dev.GetMainFence());
+		frameBuffer.SwapBackbuffer(dev, gfx.GetSwapChain());
+		mainList.Reset(dev);
 		for (U64 i = 0; i < workersCount; ++i)
 			workerThreads[i].second.Reset(dev);
+
 		frameBuffer.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{

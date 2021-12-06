@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/FrameBuffer.h"
+#include "GFX/Graphics.h"
 #include "RenderNode.h"
 #include <bitset>
 #include <thread>
@@ -40,8 +41,6 @@ namespace ZE::GFX::Pipeline
 		RenderGraph& operator=(const RenderGraph&) = delete;
 		virtual ~RenderGraph();
 
-		void StartFrame(Device& dev, SwapChain& swapChain) { frameBuffer.SwapBackbuffer(dev, swapChain); }
-
-		void Execute(Device& dev, CommandList& mainList);
+		void Execute(Graphics& gfx);
 	};
 }

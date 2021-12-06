@@ -1,7 +1,6 @@
 #pragma once
 #include "EngineParams.h"
 #include "GUI/Manager.h"
-#include "GFX/Graphics.h"
 #include "GFX/Pipeline/RendererPBR.h"
 
 namespace ZE

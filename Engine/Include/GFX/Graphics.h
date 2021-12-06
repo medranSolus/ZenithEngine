@@ -31,9 +31,8 @@ namespace ZE::GFX
 #pragma region Functions
 	constexpr void Graphics::Present()
 	{
-		device.WaitMain(device.SetMainFence());
+		device.SetMainFence();
 		swapChain.Present(device);
-		mainList.Reset(device);
 	}
 #pragma endregion
 }

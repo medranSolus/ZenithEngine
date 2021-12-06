@@ -23,6 +23,7 @@ Switch ($command)
     "up"
     {
         git submodule update --remote --merge
+        Get-ChildItem External/Bin -Recurse | Remove-Item
         exit 0
     }
     "help"

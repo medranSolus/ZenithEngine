@@ -20,12 +20,11 @@ namespace ZE
 	{
 		if (IsGuiActive())
 			gui.StartFrame(window);
-		renderer.StartFrame(graphics.GetDevice(), graphics.GetSwapChain());
 	}
 
 	void Engine::EndFrame()
 	{
-		renderer.Execute(graphics.GetDevice(), graphics.GetMainList());
+		renderer.Execute(graphics);
 		if (IsGuiActive())
 			gui.EndFrame(graphics);
 		else
