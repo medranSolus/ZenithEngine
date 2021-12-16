@@ -19,10 +19,7 @@ namespace ZE
 		Perf() = default;
 
 	public:
-		Perf(Perf&&) = default;
-		Perf(const Perf&) = default;
-		Perf& operator=(Perf&&) = default;
-		Perf& operator=(const Perf&) = default;
+		ZE_CLASS_DEFAULT(Perf);
 		~Perf();
 
 		static Perf& Get() noexcept { static Perf perf; return perf; }

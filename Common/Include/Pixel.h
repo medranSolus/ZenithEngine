@@ -15,10 +15,7 @@ namespace ZE
 		Pixel() = default;
 		constexpr Pixel(U32 rgba) noexcept;
 		constexpr Pixel(U8 r, U8 g, U8 b, U8 a = 255) noexcept : Red(r), Green(g), Blue(b), Alpha(a) {}
-		Pixel(Pixel&&) = default;
-		Pixel(const Pixel&) = default;
-		Pixel& operator=(Pixel&&) = default;
-		Pixel& operator=(const Pixel&) = default;
+		ZE_CLASS_DEFAULT(Pixel);
 		~Pixel() = default;
 
 		constexpr U32 GetValue() const noexcept { return Red | (Green << 8) | (Blue << 16) | (Alpha << 24); }

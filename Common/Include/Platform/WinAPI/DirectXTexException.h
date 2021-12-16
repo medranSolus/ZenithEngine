@@ -11,10 +11,7 @@ namespace ZE::WinAPI
 		DirectXTexException(U32 line, const char* file, HRESULT hResult, std::string&& note) noexcept
 			: BasicException(line, file), GenericException(line, file, std::forward<std::string>(note)),
 			WinApiException(line, file, hResult) {}
-		DirectXTexException(DirectXTexException&&) = default;
-		DirectXTexException(const DirectXTexException&) = default;
-		DirectXTexException& operator=(DirectXTexException&&) = default;
-		DirectXTexException& operator=(const DirectXTexException&) = default;
+		ZE_CLASS_DEFAULT(DirectXTexException);
 		virtual ~DirectXTexException() = default;
 
 		constexpr const char* GetType() const noexcept override { return "DirectXTex Exception"; }

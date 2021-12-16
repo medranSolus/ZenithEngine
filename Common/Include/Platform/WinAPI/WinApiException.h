@@ -12,10 +12,7 @@ namespace ZE::WinAPI
 	public:
 		WinApiException(U32 line, const char* file, HRESULT hResult) noexcept
 			: BasicException(line, file), result(hResult) {}
-		WinApiException(WinApiException&&) = default;
-		WinApiException(const WinApiException&) = default;
-		WinApiException& operator=(WinApiException&&) = default;
-		WinApiException& operator=(const WinApiException&) = default;
+		ZE_CLASS_DEFAULT(WinApiException);
 		virtual ~WinApiException() = default;
 
 		static std::string TranslateErrorCode(HRESULT code) noexcept;

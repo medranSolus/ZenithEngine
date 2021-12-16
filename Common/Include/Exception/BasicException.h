@@ -16,10 +16,7 @@ namespace ZE::Exception
 
 	public:
 		BasicException(U32 line, const char* file) noexcept : line(line), file(file) {}
-		BasicException(BasicException&&) = default;
-		BasicException(const BasicException&) = default;
-		BasicException& operator=(BasicException&&) = default;
-		BasicException& operator=(const BasicException&) = default;
+		ZE_CLASS_DEFAULT(BasicException);
 		virtual ~BasicException() = default;
 
 		// Extract filename from filepath to hide full path in exceptions

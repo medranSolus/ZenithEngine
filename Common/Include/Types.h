@@ -1,11 +1,11 @@
 #pragma once
 #define _USE_MATH_DEFINES
+#include "Macros.h"
 #include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cfloat>
-#include <cassert>
 #include <intrin.h>
 #pragma intrinsic(__rdtsc, __faststorefence)
 

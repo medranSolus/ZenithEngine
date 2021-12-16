@@ -12,10 +12,7 @@ namespace ZE::Exception
 	public:
 		GenericException(U32 line, const char* file, std::string&& note, const char* type = nullptr) noexcept
 			: BasicException(line, file), type(type), info(std::move(note)) {}
-		GenericException(GenericException&&) = default;
-		GenericException(const GenericException&) = default;
-		GenericException& operator=(GenericException&&) = default;
-		GenericException& operator=(const GenericException&) = default;
+		ZE_CLASS_DEFAULT(GenericException);
 		virtual ~GenericException() = default;
 
 		constexpr const std::string& GetInfo() const noexcept { return info; }

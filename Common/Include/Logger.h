@@ -1,4 +1,5 @@
 #pragma once
+#include "Types.h"
 #include <string>
 
 namespace ZE
@@ -6,7 +7,7 @@ namespace ZE
 	// Static logger service
 	class Logger final
 	{
-		enum class Level { Info, Warning, Error };
+		enum class Level : U8 { Info, Warning, Error };
 
 		static inline bool firstUse = true;
 

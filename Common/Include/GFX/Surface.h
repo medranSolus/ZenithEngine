@@ -18,10 +18,7 @@ namespace ZE::GFX
 	public:
 		Surface(const std::string& name);
 		Surface(U64 width, U64 height, PixelFormat format = PIXEL_FORMAT);
-		Surface(Surface&&) = default;
-		Surface(const Surface&) = delete;
-		Surface& operator=(Surface&&) = default;
-		Surface& operator=(const Surface&) = delete;
+		ZE_CLASS_MOVE(Surface);
 		~Surface() = default;
 
 		static bool IsImage(const std::string& ext) noexcept;
