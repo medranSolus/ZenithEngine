@@ -12,10 +12,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		IndexBuffer(GFX::Device& dev, const IndexData& data);
-		IndexBuffer(IndexBuffer&&) = default;
-		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator=(IndexBuffer&&) = default;
-		IndexBuffer& operator=(const IndexBuffer&) = delete;
+		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;
 
 		constexpr U32 GetCount() const noexcept { return count; }

@@ -15,10 +15,7 @@ namespace ZE
 		Settings(GfxApiType type, U32 backBufferCount) noexcept : gfxApi(type), backBufferCount(backBufferCount) { assert(backBufferCount > 1 && backBufferCount < 17); }
 
 	public:
-		Settings(Settings&&) = delete;
-		Settings(const Settings&) = delete;
-		Settings& operator=(Settings&&) = delete;
-		Settings& operator=(const Settings&) = delete;
+		ZE_CLASS_DELETE(Settings);
 		~Settings() = default;
 
 		static constexpr PixelFormat GetBackbufferFormat() noexcept { return BACKBUFFER_FORMAT; }

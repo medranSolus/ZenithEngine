@@ -8,12 +8,9 @@ namespace ZE::GFX::Pipeline
 	{
 	public:
 		RendererPBR() = default;
-		RendererPBR(RendererPBR&&) = delete;
-		RendererPBR(const RendererPBR&) = delete;
-		RendererPBR& operator=(RendererPBR&&) = delete;
-		RendererPBR& operator=(const RendererPBR&) = delete;
+		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
-		void Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
+		Resource::DataBinding* Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
 	};
 }

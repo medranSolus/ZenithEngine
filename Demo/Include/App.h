@@ -20,10 +20,7 @@ class App final
 
 public:
 	App(const std::string& commandLine = "");
-	App(App&&) = delete;
-	App(const App&) = delete;
-	App& operator=(App&&) = delete;
-	App& operator=(const App&) = delete;
+	ZE_CLASS_DELETE(App);
 	~App() = default;
 
 	int Run();

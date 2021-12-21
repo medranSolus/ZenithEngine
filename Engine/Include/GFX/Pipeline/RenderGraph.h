@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/FrameBuffer.h"
+#include "GFX/Resource/DataBinding.h"
 #include "GFX/Graphics.h"
 #include "RenderNode.h"
 #include <bitset>
@@ -31,14 +32,12 @@ namespace ZE::GFX::Pipeline
 
 		FrameBuffer frameBuffer;
 
-		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances);
+		Resource::DataBinding* Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc,
+			std::map<U32, Resource::DataBindingDesc>& dataBindings, const Resource::DataBindingDesc& rendererBindings, bool minimizeDistances);
 
 	public:
 		RenderGraph() = default;
-		RenderGraph(RenderGraph&&) = delete;
-		RenderGraph(const RenderGraph&) = delete;
-		RenderGraph& operator=(RenderGraph&&) = delete;
-		RenderGraph& operator=(const RenderGraph&) = delete;
+		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph();
 
 		void Execute(Graphics& gfx);

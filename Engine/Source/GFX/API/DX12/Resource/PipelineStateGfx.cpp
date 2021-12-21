@@ -3,67 +3,62 @@
 
 namespace ZE::GFX::API::DX12::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc)
+	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc;
-		stateDesc.pRootSignature = nullptr; // TODO: Change later
+		stateDesc.pRootSignature = binding.Get().dx12.GetSignature();
 
-		// Vertex Shader always present
-		DX::ComPtr<ID3DBlob> bytecodeVS;
-		ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.VS + L".cso").c_str(), &bytecodeVS));
-		stateDesc.VS.pShaderBytecode = bytecodeVS->GetBufferPointer();
-		stateDesc.VS.BytecodeLength = bytecodeVS->GetBufferSize();
+		assert(desc.VS && "Vertex Shader is always required!");
+		ID3DBlob* bytecode = desc.VS->Get().dx12.GetBytecode();
+		stateDesc.VS.pShaderBytecode = bytecode->GetBufferPointer();
+		stateDesc.VS.BytecodeLength = bytecode->GetBufferSize();
 
 		// Optional shaders
-		DX::ComPtr<ID3DBlob> bytecodePS;
-		if (desc.PS.empty())
+		if (desc.DS)
 		{
-			stateDesc.PS.pShaderBytecode = nullptr;
-			stateDesc.PS.BytecodeLength = 0;
+			bytecode = desc.DS->Get().dx12.GetBytecode();
+			stateDesc.DS.pShaderBytecode = bytecode->GetBufferPointer();
+			stateDesc.DS.BytecodeLength = bytecode->GetBufferSize();
 		}
 		else
-		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.PS + L".cso").c_str(), &bytecodePS));
-			stateDesc.PS.pShaderBytecode = bytecodePS->GetBufferPointer();
-			stateDesc.PS.BytecodeLength = bytecodePS->GetBufferSize();
-		}
-		DX::ComPtr<ID3DBlob> bytecodeDS;
-		if (desc.DS.empty())
 		{
 			stateDesc.DS.pShaderBytecode = nullptr;
 			stateDesc.DS.BytecodeLength = 0;
 		}
-		else
+		if (desc.HS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.DS + L".cso").c_str(), &bytecodeDS));
-			stateDesc.DS.pShaderBytecode = bytecodeDS->GetBufferPointer();
-			stateDesc.DS.BytecodeLength = bytecodeDS->GetBufferSize();
+			bytecode = desc.HS->Get().dx12.GetBytecode();
+			stateDesc.HS.pShaderBytecode = bytecode->GetBufferPointer();
+			stateDesc.HS.BytecodeLength = bytecode->GetBufferSize();
 		}
-		DX::ComPtr<ID3DBlob> bytecodeHS;
-		if (desc.HS.empty())
+		else
 		{
 			stateDesc.HS.pShaderBytecode = nullptr;
 			stateDesc.HS.BytecodeLength = 0;
 		}
-		else
+		if (desc.GS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.HS + L".cso").c_str(), &bytecodeHS));
-			stateDesc.HS.pShaderBytecode = bytecodeHS->GetBufferPointer();
-			stateDesc.HS.BytecodeLength = bytecodeHS->GetBufferSize();
+			bytecode = desc.GS->Get().dx12.GetBytecode();
+			stateDesc.GS.pShaderBytecode = bytecode->GetBufferPointer();
+			stateDesc.GS.BytecodeLength = bytecode->GetBufferSize();
 		}
-		DX::ComPtr<ID3DBlob> bytecodeGS;
-		if (desc.GS.empty())
+		else
 		{
 			stateDesc.GS.pShaderBytecode = nullptr;
 			stateDesc.GS.BytecodeLength = 0;
 		}
+		if (desc.PS)
+		{
+			bytecode = desc.PS->Get().dx12.GetBytecode();
+			stateDesc.PS.pShaderBytecode = bytecode->GetBufferPointer();
+			stateDesc.PS.BytecodeLength = bytecode->GetBufferSize();
+		}
 		else
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.GS + L".cso").c_str(), &bytecodeGS));
-			stateDesc.GS.pShaderBytecode = bytecodeGS->GetBufferPointer();
-			stateDesc.GS.BytecodeLength = bytecodeGS->GetBufferSize();
+			stateDesc.PS.pShaderBytecode = nullptr;
+			stateDesc.PS.BytecodeLength = 0;
 		}
 
 		// Stream Output stage
@@ -76,6 +71,13 @@ namespace ZE::GFX::API::DX12::Resource
 		auto& blendTarget = stateDesc.BlendState.RenderTarget[0];
 		switch (desc.Blender)
 		{
+		case GFX::Resource::BlendType::None:
+		{
+			blendTarget.BlendEnable = FALSE;
+			blendTarget.LogicOpEnable = FALSE;
+			blendTarget.RenderTargetWriteMask = 0;
+			break;
+		}
 		case GFX::Resource::BlendType::Light:
 		{
 			blendTarget.BlendEnable = TRUE;
@@ -84,26 +86,43 @@ namespace ZE::GFX::API::DX12::Resource
 			blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_GREEN | D3D12_COLOR_WRITE_ENABLE_BLUE;
 			break;
 		}
-		case GFX::Resource::BlendType::None:
+		case GFX::Resource::BlendType::Normal:
 		{
 			blendTarget.BlendEnable = TRUE;
 			blendTarget.SrcBlend = D3D12_BLEND_SRC_ALPHA; // Maybe ONE
 			blendTarget.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 			break;
 		}
 		}
 
 		// Rasterizer state
+		stateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		stateDesc.RasterizerState.CullMode = GetCulling(desc.Culling);
-		stateDesc.RasterizerState.DepthClipEnable = desc.DepthEnable;
+		stateDesc.RasterizerState.FrontCounterClockwise = FALSE;
+		stateDesc.RasterizerState.DepthBias = 0;
+		stateDesc.RasterizerState.DepthBiasClamp = 0.0f;
+		stateDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;
+		stateDesc.RasterizerState.DepthClipEnable = desc.DepthClipEnable;
+		stateDesc.RasterizerState.MultisampleEnable = FALSE;
+		stateDesc.RasterizerState.AntialiasedLineEnable = FALSE;
+		stateDesc.RasterizerState.ForcedSampleCount = 0;
+		stateDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
 		// Depth-Stencil state
 		switch (desc.Stencil)
 		{
+		case GFX::Resource::StencilMode::Off:
+		{
+			stateDesc.DepthStencilState.DepthEnable = TRUE;
+			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+			stateDesc.DepthStencilState.StencilEnable = FALSE;
+			break;
+		}
 		case GFX::Resource::StencilMode::Write:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
-			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
 			stateDesc.DepthStencilState.StencilWriteMask = 0xFF;
 			stateDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
@@ -113,7 +132,6 @@ namespace ZE::GFX::API::DX12::Resource
 		case GFX::Resource::StencilMode::Mask:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
-			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
 			stateDesc.DepthStencilState.StencilReadMask = 0xFF;
 			stateDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NOT_EQUAL;
@@ -123,21 +141,28 @@ namespace ZE::GFX::API::DX12::Resource
 		case GFX::Resource::StencilMode::DepthOff:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
-			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		case GFX::Resource::StencilMode::Reverse:
 		{
+			stateDesc.DepthStencilState.DepthEnable = TRUE;
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		case GFX::Resource::StencilMode::DepthFirst:
 		{
+			stateDesc.DepthStencilState.DepthEnable = TRUE;
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		}
+
+		stateDesc.InputLayout.pInputElementDescs = nullptr;
+		stateDesc.InputLayout.NumElements = 0;
 
 		// Input Layout description
 		//std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc = vertexLayout->GetLayout();
@@ -166,6 +191,6 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.CachedPSO.CachedBlobSizeInBytes = 0;
 		stateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
+		//ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
 	}
 }

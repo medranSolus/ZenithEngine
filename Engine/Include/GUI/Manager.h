@@ -11,10 +11,7 @@ namespace ZE::GUI
 	{
 	public:
 		Manager();
-		Manager(Manager&&) = delete;
-		Manager(const Manager&) = delete;
-		Manager& operator=(Manager&&) = delete;
-		Manager& operator=(const Manager&) = delete;
+		ZE_CLASS_DELETE(Manager);
 		~Manager() { Disable(); ImGui::DestroyContext(); }
 
 		void Init(GFX::Device& dev) const noexcept;

@@ -7,17 +7,14 @@ namespace ZE::GFX::Resource
 	// GPU state for compute call
 	class PipelineStateCompute final
 	{
-		ZE_API_BACKEND(Resource::PipelineStateCompute) backend;
+		ZE_API_BACKEND(Resource::PipelineStateCompute);
 
 	public:
-		constexpr PipelineStateCompute(Device& dev, const std::wstring& nameCS) { backend.Init(dev, nameCS); }
-		PipelineStateCompute(PipelineStateCompute&&) = default;
-		PipelineStateCompute(const PipelineStateCompute&) = delete;
-		PipelineStateCompute& operator=(PipelineStateCompute&&) = default;
-		PipelineStateCompute& operator=(const PipelineStateCompute&) = delete;
+		constexpr PipelineStateCompute(Device& dev, Shader& shader, const DataBinding& binding) { ZE_API_BACKEND_VAR.Init(dev, shader, binding); }
+		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;
 
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const std::wstring& nameCS) { backend.Switch(nextApi, dev, nameCS); }
-		constexpr ZE_API_BACKEND(Resource::PipelineStateCompute)& Get() noexcept { return backend; }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Shader& shader, const DataBinding& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, shader, binding); }
+		ZE_API_BACKEND_GET(Resource::PipelineStateCompute);
 	};
 }

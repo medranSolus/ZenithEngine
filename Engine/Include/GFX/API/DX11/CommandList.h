@@ -17,10 +17,7 @@ namespace ZE::GFX::API::DX11
 	public:
 		CommandList(GFX::Device& dev);
 		CommandList(GFX::Device& dev, CommandType type);
-		CommandList(CommandList&&) = default;
-		CommandList(const CommandList&) = delete;
-		CommandList& operator=(CommandList&&) = default;
-		CommandList& operator=(const CommandList&) = delete;
+		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
 		constexpr void Open(GFX::Device& dev) {}

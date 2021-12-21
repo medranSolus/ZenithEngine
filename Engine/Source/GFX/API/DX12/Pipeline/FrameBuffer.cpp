@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 {
 	struct ResourceInfo
 	{
-		U64 RID;
+		RID Handle;
 		U32 Offset;
 		U32 Chunks;
 		U64 StartLevel;
@@ -26,7 +26,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
-		U64 invalidID, const std::vector<U64>& memory, U64 heapSize)
+		RID invalidID, const std::vector<RID>& memory, U64 heapSize)
 	{
 		// Otherwise wider format should be used
 		assert(invalidID <= UINT32_MAX);
@@ -49,7 +49,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 #endif
 
-	U64 FrameBuffer::FindHeapSize(U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory) noexcept
+	U64 FrameBuffer::FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
 	{
 		U32 lastChunk = 0;
 		for (U32 chunk = 0; chunk < maxChunks; ++chunk)
@@ -71,7 +71,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 
 	bool FrameBuffer::CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
-		U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory) noexcept
+		U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
 	{
 		// Check all chunks of resource
 		chunks += offset;
@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 
 	U32 FrameBuffer::AllocResource(U64 id, U32 chunks, U64 startLevel, U64 lastLevel,
-		U32 maxChunks, U64 levelCount, U64 invalidID, std::vector<U64>& memory)
+		U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory)
 	{
 		U32 foundOffset = 0;
 		// Search through whole memory
@@ -127,7 +127,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return foundOffset;
 	}
 
-	void FrameBuffer::InitResource(CommandList& cl, U64 rid) const noexcept
+	void FrameBuffer::InitResource(CommandList& cl, RID rid) const noexcept
 	{
 		// Perform discard operations for aliasing resources
 		assert(rid != 0 && "Backbuffer do not need discarding it's contents! (Or at least it shouldn't with FLIP_DISCARD... TODO: Check this)");
@@ -292,25 +292,25 @@ namespace ZE::GFX::API::DX12::Pipeline
 				for (U64 i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
 					auto& res = resourcesInfo.at(i);
-					const auto& lifetime = desc.ResourceLifetimes.at(res.RID);
+					const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
 					GFX::Resource::State firstState = lifetime.begin()->second;
 					GFX::Resource::State lastState = lifetime.rbegin()->second;
 					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.RID));
+					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
 					if (lastState != firstState)
 					{
 						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
 						if (res.IsAliasing())
 						{
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 								GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
 						}
 						else
 						{
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 								GFX::Pipeline::BarrierType::Begin, lastState, firstState);
 							D3D12_RESOURCE_BARRIER barrier;
 							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -368,25 +368,25 @@ namespace ZE::GFX::API::DX12::Pipeline
 		for (U64 i = 0; i < rt_dsCount; ++i)
 		{
 			auto& res = resourcesInfo.at(i);
-			const auto& lifetime = desc.ResourceLifetimes.at(res.RID);
+			const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
 			GFX::Resource::State firstState = lifetime.begin()->second;
 			GFX::Resource::State lastState = lifetime.rbegin()->second;
 			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
 				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.RID));
+			ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
 			if (lastState != firstState)
 			{
 				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
 				if (res.IsAliasing())
 				{
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 						GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
 				}
 				else
 				{
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.RID,
+					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 						GFX::Pipeline::BarrierType::Begin, lastState, firstState);
 					D3D12_RESOURCE_BARRIER barrier;
 					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -423,7 +423,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 			[](const auto& r1, const auto& r2) -> bool
 			{
-				return r1.RID < r2.RID;
+				return r1.Handle < r2.Handle;
 			});
 		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new DX::ComPtr<ID3D12Resource>[invalidID];
@@ -707,7 +707,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			delete[] uav;
 	}
 
-	void FrameBuffer::ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const
+	void FrameBuffer::ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle = rid == 0 ? backbufferRtvSrv.first : rtvDsv[rid - 1];
@@ -715,7 +715,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			reinterpret_cast<const float*>(&color), 0, nullptr));
 	}
 
-	void FrameBuffer::ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const
+	void FrameBuffer::ClearDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid, float depth, U8 stencil) const
 	{
 		assert(rid != 0 && "Cannot use backbuffer as depth stencil!");
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);

@@ -7,32 +7,29 @@ namespace ZE::GFX::Resource
 	// Buffer holding indices into VertexBuffer
 	class IndexBuffer final
 	{
-		ZE_API_BACKEND(Resource::IndexBuffer) backend;
+		ZE_API_BACKEND(Resource::IndexBuffer);
 
 	public:
-		constexpr IndexBuffer(Device& dev, const IndexData& data) { backend.Init(dev, data); }
-		IndexBuffer(IndexBuffer&&) = default;
-		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator=(IndexBuffer&&) = default;
-		IndexBuffer& operator=(const IndexBuffer&) = delete;
+		constexpr IndexBuffer(Device& dev, const IndexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;
 
-		constexpr ZE_API_BACKEND(Resource::IndexBuffer)& Get() noexcept { return backend; }
+		ZE_API_BACKEND_GET(Resource::IndexBuffer);
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
 
 		// Main Gfx API
 
-		constexpr U32 GetCount() const noexcept { U32 count = 0; ZE_API_BACKEND_CALL_RET(backend, count, GetCount); return count; }
-		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(backend, Free, dev); }
-		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, cl); }
+		constexpr U32 GetCount() const noexcept { U32 count = 0; ZE_API_BACKEND_CALL_RET(count, GetCount); return count; }
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
 	};
 
 #pragma region Functions
 	constexpr void IndexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
 	{
 		IndexData data;
-		ZE_API_BACKEND_CALL_RET(backend, data, GetData, dev, cl);
-		backend.Switch(nextApi, dev, data);
+		ZE_API_BACKEND_CALL_RET(data, GetData, dev, cl);
+		ZE_API_BACKEND_VAR.Switch(nextApi, dev, data);
 	}
 #pragma endregion
 }

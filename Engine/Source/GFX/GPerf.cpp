@@ -10,7 +10,7 @@ namespace ZE::GFX
 		for (auto& x : data)
 		{
 			const char* apiString = nullptr;
-			ZE_API_BACKEND_CALL_RET(backend, apiString, GetApiString);
+			ZE_API_BACKEND_CALL_RET(apiString, GetApiString);
 			fout << '[' << x.first << "] <" << apiString << "> Avg micro seconds: "
 				<< x.second.first << ", tests: " << x.second.second << std::endl;
 		}
@@ -23,13 +23,13 @@ namespace ZE::GFX
 		if (data.find(sectionTag) == data.end())
 			data.emplace(sectionTag, std::make_pair(0.0L, 0ULL));
 		lastTag = sectionTag;
-		ZE_API_BACKEND_CALL(backend, Start, cl);
+		ZE_API_BACKEND_CALL(Start, cl);
 	}
 
 	void GPerf::Collect(Device& dev) noexcept
 	{
 		long double time = 0.0L;
-		ZE_API_BACKEND_CALL_RET(backend, time, GetData, dev);
+		ZE_API_BACKEND_CALL_RET(time, GetData, dev);
 		if (time != 0.0L)
 		{
 			auto& dataPoint = data.at(lastTag);

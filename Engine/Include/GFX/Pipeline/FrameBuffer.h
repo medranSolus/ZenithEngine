@@ -7,34 +7,31 @@ namespace ZE::GFX::Pipeline
 	// Managing all writeable buffers used during single frame
 	class FrameBuffer final
 	{
-		ZE_API_BACKEND(Pipeline::FrameBuffer) backend;
+		ZE_API_BACKEND(Pipeline::FrameBuffer);
 
 	public:
 		FrameBuffer() = default;
-		FrameBuffer(FrameBuffer&&) = delete;
-		FrameBuffer(const FrameBuffer&) = delete;
-		FrameBuffer& operator=(FrameBuffer&&) = delete;
-		FrameBuffer& operator=(const FrameBuffer&) = delete;
+		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		constexpr void Init(Device& dev, CommandList& mainList, FrameBufferDesc& desc) { backend.Init(dev, mainList, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& mainList) { /*backend.Switch(nextApi, dev, mainList);*/ }
-		constexpr ZE_API_BACKEND(Pipeline::FrameBuffer)& Get() noexcept { return backend; }
+		constexpr void Init(Device& dev, CommandList& mainList, FrameBufferDesc& desc) { ZE_API_BACKEND_VAR.Init(dev, mainList, desc); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& mainList) { /*ZE_API_BACKEND_VAR.Switch(nextApi, dev, mainList);*/ }
+		ZE_API_BACKEND_GET(Pipeline::FrameBuffer);
 
 		// Main Gfx API
 
 		// Render target before first use must be initialized or cleared (except backbuffer)
-		constexpr void InitRTV(GFX::CommandList& cl, U64 rid) const noexcept { ZE_API_BACKEND_CALL(backend, InitRTV, cl, rid); }
+		constexpr void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitRTV, cl, rid); }
 		// Depth stencil before first use must be initialized or cleared
-		constexpr void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { ZE_API_BACKEND_CALL(backend, InitDSV, cl, rid); }
+		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitDSV, cl, rid); }
 
 		// Render target before first use must be initialized or cleared (except backbuffer)
-		constexpr void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const { ZE_API_BACKEND_CALL(backend, ClearRTV, dev, cl, rid, color); }
+		constexpr void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const { ZE_API_BACKEND_CALL(ClearRTV, dev, cl, rid, color); }
 		// Depth stencil before first use must be initialized or cleared
-		constexpr void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const { ZE_API_BACKEND_CALL(backend, ClearDSV, dev, cl, rid, depth, stencil); }
+		constexpr void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid, float depth, U8 stencil) const { ZE_API_BACKEND_CALL(ClearDSV, dev, cl, rid, depth, stencil); }
 
-		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) { ZE_API_BACKEND_CALL(backend, SwapBackbuffer, dev, swapChain); }
-		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, InitTransitions, dev, cl); }
-		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const noexcept { ZE_API_BACKEND_CALL(backend, ExitTransitions, dev, cl, level); }
+		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) { ZE_API_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
+		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(InitTransitions, dev, cl); }
+		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const noexcept { ZE_API_BACKEND_CALL(ExitTransitions, dev, cl, level); }
 	};
 }

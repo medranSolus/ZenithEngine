@@ -8,23 +8,20 @@ namespace ZE::GFX
 	// Managing backbuffers
 	class SwapChain final
 	{
-		ZE_API_BACKEND(SwapChain) backend;
+		ZE_API_BACKEND(SwapChain);
 
 	public:
 		SwapChain() = default;
-		SwapChain(SwapChain&&) = default;
-		SwapChain(const SwapChain&) = delete;
-		SwapChain& operator=(SwapChain&&) = default;
-		SwapChain& operator=(const SwapChain&) = delete;
+		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
-		constexpr void Init(const Window::MainWindow& window, Device& dev) { backend.Init(window, dev); }
-		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev) { backend.Switch(nextApi, window, dev); }
-		constexpr ZE_API_BACKEND(SwapChain)& Get() noexcept { return backend; }
+		constexpr void Init(const Window::MainWindow& window, Device& dev) { ZE_API_BACKEND_VAR.Init(window, dev); }
+		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev) { ZE_API_BACKEND_VAR.Switch(nextApi, window, dev); }
+		ZE_API_BACKEND_GET(SwapChain);
 
 		// Main Gfx API
 
-		constexpr void Present(Device& dev) const { ZE_API_BACKEND_CALL(backend, Present, dev); }
-		constexpr void PrepareBackbuffer(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(backend, PrepareBackbuffer, dev, cl); }
+		constexpr void Present(Device& dev) const { ZE_API_BACKEND_CALL(Present, dev); }
+		constexpr void PrepareBackbuffer(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(PrepareBackbuffer, dev, cl); }
 	};
 }

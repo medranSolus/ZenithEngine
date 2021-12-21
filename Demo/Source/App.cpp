@@ -34,7 +34,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 1600, 896, 10000, 8000, false, 1024 })
+	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000, false, 1024 })
 {
 }
 

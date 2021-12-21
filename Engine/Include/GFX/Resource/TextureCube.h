@@ -6,23 +6,20 @@ namespace ZE::GFX::Resource
 	// Cubic texture data for shaders
 	class TextureCube final
 	{
-		ZE_API_BACKEND(TextureCube) backend;
+		ZE_API_BACKEND(TextureCube);
 
 	public:
 		constexpr TextureCube(Device& dev, const std::string& dir, const std::string& ext);
-		TextureCube(TextureCube&&) = default;
-		TextureCube(const TextureCube&) = delete;
-		TextureCube& operator=(TextureCube&&) = default;
-		TextureCube& operator=(const TextureCube&) = delete;
+		ZE_CLASS_MOVE(TextureCube);
 		~TextureCube() = default;
 
-		constexpr ZE_API_BACKEND(TextureCube)& Get() noexcept { return backend; }
+		ZE_API_BACKEND_GET(TextureCube);
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 
 		// Main Gfx API
 
-		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindPS, ctx, slot); }
-		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(backend, BindCS, ctx, slot); }
+		constexpr void BindPS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindPS, ctx, slot); }
+		constexpr void BindCS(Context& ctx, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindCS, ctx, slot); }
 	};
 
 #pragma region Functions
@@ -37,14 +34,14 @@ namespace ZE::GFX::Resource
 			dir + "/pz" + ext, // Front
 			dir + "/nz" + ext  // Back
 		}
-		backend.Init(dev, surfaces);
+		ZE_API_BACKEND_VAR.Init(dev, surfaces);
 	}
 
 	constexpr void TextureCube::SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx)
 	{
 		std::array<Surface, 6> surfaces;
-		ZE_API_BACKEND_CALL_RET(backend, surfaces, GetData, dev, ctx);
-		backend.Switch(nextApi, dev, surfaces);
+		ZE_API_BACKEND_CALL_RET(surfaces, GetData, dev, ctx);
+		ZE_API_BACKEND_VAR.Switch(nextApi, dev, surfaces);
 	}
 #pragma endregion
 }

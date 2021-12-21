@@ -10,10 +10,7 @@ namespace ZE
 
 	public:
 		Timer() noexcept : lastMark(std::chrono::steady_clock::now()) {}
-		Timer(Timer&&) = default;
-		Timer(const Timer&) = default;
-		Timer& operator=(Timer&&) = default;
-		Timer& operator=(const Timer&) = default;
+		ZE_CLASS_DEFAULT(Timer);
 		~Timer() = default;
 
 		float Peek() const noexcept { return std::chrono::duration<float>(std::chrono::steady_clock::now() - lastMark).count(); }

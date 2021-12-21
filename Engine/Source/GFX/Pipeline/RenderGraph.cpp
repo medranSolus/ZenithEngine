@@ -152,7 +152,8 @@ namespace ZE::GFX::Pipeline
 		AfterSync(dev, pass.Syncs);
 	}
 
-	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc, bool minimizeDistances)
+	Resource::DataBinding* RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc,
+		std::map<U32, Resource::DataBindingDesc>& dataBindings, const Resource::DataBindingDesc& rendererBindings, bool minimizeDistances)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -644,6 +645,19 @@ namespace ZE::GFX::Pipeline
 			}
 			++i;
 		}
+		passLocation.clear();
+
+		// Move every material binding into final table returned to the engine
+		Resource::DataBinding* materialDataBindings = new Resource::DataBinding[dataBindings.size()];
+		for (auto& binding : dataBindings)
+		{
+			binding.second.Ranges.insert(binding.second.Ranges.end(), rendererBindings.Ranges.begin(), rendererBindings.Ranges.end());
+			binding.second.Samplers.insert(binding.second.Samplers.end(), rendererBindings.Samplers.begin(), rendererBindings.Samplers.end());
+			materialDataBindings[binding.second.Location].Init(dev, binding.second);
+		}
+		dataBindings.clear();
+
+		return materialDataBindings;
 	}
 
 	RenderGraph::~RenderGraph()

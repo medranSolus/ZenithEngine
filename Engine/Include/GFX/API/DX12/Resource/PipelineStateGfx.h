@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Device.h"
+#include "GFX/Resource/DataBinding.h"
 #include "D3D12.h"
 
 namespace ZE::GFX::API::DX12::Resource
@@ -9,11 +9,8 @@ namespace ZE::GFX::API::DX12::Resource
 		DX::ComPtr<ID3D12PipelineState> state;
 
 	public:
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc);
-		PipelineStateGfx(PipelineStateGfx&&) = default;
-		PipelineStateGfx(const PipelineStateGfx&) = delete;
-		PipelineStateGfx& operator=(PipelineStateGfx&&) = default;
-		PipelineStateGfx& operator=(const PipelineStateGfx&) = delete;
+		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding);
+		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
 		// Gfx API Internal

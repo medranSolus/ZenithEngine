@@ -16,10 +16,7 @@ namespace ZE::Window::WinAPI
 
 		public:
 			WindowClass() noexcept;
-			WindowClass(WindowClass&&) = delete;
-			WindowClass(const WindowClass&) = delete;
-			WindowClass& operator=(WindowClass&&) = delete;
-			WindowClass& operator=(const WindowClass&) = delete;
+			ZE_CLASS_DELETE(WindowClass);
 			~WindowClass() { UnregisterClass(WND_CLASS_NAME, hInstance); }
 
 			static constexpr const char* GetName() noexcept { return WND_CLASS_NAME; }
@@ -50,6 +47,7 @@ namespace ZE::Window::WinAPI
 
 	public:
 		WindowWinAPI() = default;
+		ZE_CLASS_DELETE(WindowWinAPI);
 		virtual ~WindowWinAPI();
 
 		constexpr HWND GetHandle() const noexcept { return hWnd; }

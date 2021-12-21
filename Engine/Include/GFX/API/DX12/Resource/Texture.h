@@ -10,10 +10,7 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 	public:
 		Texture(GFX::Device& dev, GFX::CommandList& cl, const Surface& surface);
-		Texture(Texture&&) = default;
-		Texture(const Texture&) = delete;
-		Texture& operator=(Texture&&) = default;
-		Texture& operator=(const Texture&) = delete;
+		ZE_CLASS_MOVE(Texture);
 		~Texture() = default;
 
 		void BindPS(GFX::CommandList& cl, ShaderSlot slot) const noexcept;

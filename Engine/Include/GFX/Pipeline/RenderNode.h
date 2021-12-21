@@ -37,10 +37,7 @@ namespace ZE::GFX::Pipeline
 			PassCleanCallback passClean = nullptr, void* executeData = nullptr, bool isStatic = false) noexcept
 			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute),
 			passClean(passClean), executeData(executeData), isStatic(isStatic) {}
-		RenderNode(RenderNode&&) = default;
-		RenderNode(const RenderNode&) = default;
-		RenderNode& operator=(RenderNode&&) = default;
-		RenderNode& operator=(const RenderNode&) = default;
+		ZE_CLASS_DEFAULT(RenderNode);
 		~RenderNode() = default;
 
 		constexpr const std::string& GetName() const noexcept { return passName; }
@@ -57,7 +54,6 @@ namespace ZE::GFX::Pipeline
 		constexpr Resource::State GetInputState(U64 i) const noexcept { return inputStates.at(i); }
 		constexpr Resource::State GetOutputState(U64 i) const noexcept { return outputStates.at(i); }
 
-		CommandList GetStaticExecuteData() noexcept { return std::move(*reinterpret_cast<CommandList*>(executeData)); }
 		bool ContainsInput(const std::string& name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
 		void AddInputResource(U64 rid) noexcept { inputRIDs.emplace_back(rid); }
 		void AddInnerBufferResource(U64 rid) noexcept { innerRIDs.emplace_back(rid); }
@@ -65,6 +61,7 @@ namespace ZE::GFX::Pipeline
 		void AddInput(std::string&& name, Resource::State state);
 		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
 		void AddOutput(std::string&& name, Resource::State state, U64 rid);
+		CommandList GetStaticExecuteData() noexcept;
 		U64* GetNodeRIDs() const noexcept;
 	};
 }

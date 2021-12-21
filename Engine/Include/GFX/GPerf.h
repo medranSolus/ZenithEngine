@@ -10,7 +10,7 @@ namespace ZE::GFX
 	{
 		static constexpr const char* LOG_FILE = "gpu_perf_log.txt";
 
-		ZE_API_BACKEND(GPerf) backend;
+		ZE_API_BACKEND(GPerf);
 		// Average micro seconds must be computed each time Stop is called using:
 		// pair.first = (time - pair.first) / ++pair.second
 		std::unordered_map<std::string, std::pair<long double, U64>> data;
@@ -18,22 +18,19 @@ namespace ZE::GFX
 
 		void Save();
 
-		GPerf(Device& dev) { backend.Init(dev); }
+		GPerf(Device& dev) { ZE_API_BACKEND_VAR.Init(dev); }
 
 	public:
-		GPerf(GPerf&&) = default;
-		GPerf(const GPerf&) = delete;
-		GPerf& operator=(GPerf&&) = default;
-		GPerf& operator=(const GPerf&) = delete;
+		ZE_CLASS_MOVE(GPerf);
 		~GPerf() { if (data.size()) Save(); }
 
-		static constexpr void SwitchApi(API::ApiType nextApi, Device& dev) { Get(dev).backend.Switch(nextApi, dev); }
+		static constexpr void SwitchApi(API::ApiType nextApi, Device& dev) { Get(dev).ZE_API_BACKEND_VAR.Switch(nextApi, dev); }
 
 		// Main Gfx API
 
 		static GPerf& Get(Device& dev) { static GPerf perf(dev); return perf; }
 
-		constexpr void Stop(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Stop, cl); }
+		constexpr void Stop(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Stop, cl); }
 
 		void Start(CommandList& cl, const std::string& sectionTag) noexcept;
 		void Collect(Device& dev) noexcept;

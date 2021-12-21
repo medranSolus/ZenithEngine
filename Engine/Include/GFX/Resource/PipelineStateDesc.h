@@ -1,4 +1,5 @@
 #pragma once
+#include "Shader.h"
 #include "Topology.h"
 #include <string>
 
@@ -14,18 +15,21 @@ namespace ZE::GFX::Resource
 	// Creation descriptor for GPU state for draw calls
 	struct PipelineStateDesc
 	{
-		std::wstring VS;
-		std::wstring DS;
-		std::wstring HS;
-		std::wstring GS;
-		std::wstring PS;
-		BlendType Blender;
-		StencilMode Stencil;
-		CullMode Culling;
-		bool DepthEnable;
+		Shader* VS;
+		Shader* DS = nullptr;
+		Shader* HS = nullptr;
+		Shader* GS = nullptr;
+		Shader* PS = nullptr;
+		BlendType Blender = BlendType::None;
+		StencilMode Stencil = StencilMode::Off;
+		CullMode Culling = CullMode::Back;
+		bool DepthClipEnable = true;
 		TopologyType Topology;
-		U8 RenderTargetsCount;
+		U8 RenderTargetsCount = 0;
 		PixelFormat FormatsRT[8];
-		PixelFormat FormatDS;
+		PixelFormat FormatDS = PixelFormat::Unknown;
+
+		static void SetShader(Shader*& shader, const wchar_t* name,
+			std::unordered_map<std::wstring, Resource::Shader>& shaders) noexcept;
 	};
 }

@@ -203,12 +203,22 @@ namespace ZE::GFX::API
 #pragma endregion
 }
 
-// Wrapper for proper graphics API implementations for all current APIs
-#define ZE_API_BACKEND(type) ZE::GFX::API::Backend< \
+// Type for proper graphics API implementations for all current APIs
+#define ZE_API_BACKEND_TYPE(type) ZE::GFX::API::Backend< \
 	ZE::GFX::API::DX11::##type##, \
 	ZE::GFX::API::DX12::##type##, \
 	ZE::GFX::API::DX11::##type##, \
 	ZE::GFX::API::DX11::##type##>
+
+// Name of backend variable
+#define ZE_API_BACKEND_VAR backend
+// Wrapper adding backend implementation variable
+#define ZE_API_BACKEND(type) ZE_API_BACKEND_TYPE(type) ZE_API_BACKEND_VAR
+
+// Adds ability to access underlying graphics backend implementation via Get() method
+#define ZE_API_BACKEND_GET(type) \
+	constexpr ZE_API_BACKEND_TYPE(type)& Get() noexcept { return ZE_API_BACKEND_VAR; } \
+	constexpr const ZE_API_BACKEND_TYPE(type)& Get() const noexcept { return ZE_API_BACKEND_VAR; }
 
 // Extended wrapper for calling methods on currently active API implementation
 #define ZE_API_BACKEND_CALL_EX(variable, ret, function, ...) \
@@ -234,8 +244,9 @@ namespace ZE::GFX::API
 		##ret## ##variable##.vk.##function##(__VA_ARGS__); \
 		break; \
 	} \
-	} \
+	}
+
 // Wrapper for calling methods on currently active API implementation
-#define ZE_API_BACKEND_CALL(variable, function, ...) ZE_API_BACKEND_CALL_EX(variable, , function, __VA_ARGS__)
+#define ZE_API_BACKEND_CALL(function, ...) ZE_API_BACKEND_CALL_EX(ZE_API_BACKEND_VAR, , function, __VA_ARGS__)
 // Wrapper for calling methods on currently active API implementation and getting return value
-#define ZE_API_BACKEND_CALL_RET(variable, returnVariable, function, ...) ZE_API_BACKEND_CALL_EX(variable, returnVariable=, function, __VA_ARGS__)
+#define ZE_API_BACKEND_CALL_RET(returnVariable, function, ...) ZE_API_BACKEND_CALL_EX(ZE_API_BACKEND_VAR, returnVariable=, function, __VA_ARGS__)

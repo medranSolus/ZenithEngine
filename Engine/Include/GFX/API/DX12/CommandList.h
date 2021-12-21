@@ -29,10 +29,7 @@ namespace ZE::GFX::API::DX12
 		CommandList() = default;
 		CommandList(GFX::Device& dev, CommandType type);
 		CommandList(GFX::Device& dev);
-		CommandList(CommandList&&) = default;
-		CommandList(const CommandList&) = delete;
-		CommandList& operator=(CommandList&&) = default;
-		CommandList& operator=(const CommandList&) = delete;
+		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
 #ifdef _ZE_MODE_DEBUG

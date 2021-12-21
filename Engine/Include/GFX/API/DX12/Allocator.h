@@ -17,19 +17,15 @@ namespace ZE::GFX::API::DX12
 			U32 Index;
 			U32 Size;
 		};
-		class BufferInfo final
+		struct BufferInfo
 		{
-		public:
 			TableInfo<U32> FreeInfo;
 			MemInfo* FreeList;
 			TableInfo<U16> HeapsInfo;
 			DX::ComPtr<ID3D12Heap>* Heaps;
 
 			BufferInfo(U32 heapSize) noexcept;
-			BufferInfo(BufferInfo&&) = delete;
-			BufferInfo(const BufferInfo&) = delete;
-			BufferInfo& operator=(BufferInfo&&) = delete;
-			BufferInfo& operator=(const BufferInfo&) = delete;
+			ZE_CLASS_DELETE(BufferInfo);
 			~BufferInfo();
 		};
 
@@ -87,10 +83,7 @@ namespace ZE::GFX::API::DX12
 		Allocator() = default;
 
 	public:
-		Allocator(Allocator&&) = delete;
-		Allocator(const Allocator&) = delete;
-		Allocator& operator=(Allocator&&) = delete;
-		Allocator& operator=(const Allocator&) = delete;
+		ZE_CLASS_DELETE(Allocator);
 		virtual ~Allocator() = default;
 	};
 

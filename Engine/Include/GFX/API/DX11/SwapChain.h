@@ -12,10 +12,7 @@ namespace ZE::GFX::API::DX11
 
 	public:
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
-		SwapChain(SwapChain&&) = default;
-		SwapChain(const SwapChain&) = delete;
-		SwapChain& operator=(SwapChain&&) = default;
-		SwapChain& operator=(const SwapChain&) = delete;
+		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
 		constexpr void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const {}

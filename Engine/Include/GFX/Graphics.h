@@ -14,10 +14,7 @@ namespace ZE::GFX
 
 	public:
 		Graphics() = default;
-		Graphics(Graphics&&) = delete;
-		Graphics(const Graphics&) = delete;
-		Graphics& operator=(Graphics&&) = delete;
-		Graphics& operator=(const Graphics&) = delete;
+		ZE_CLASS_DELETE(Graphics);
 		~Graphics() = default;
 
 		constexpr Device& GetDevice() noexcept { return device; }

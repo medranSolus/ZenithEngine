@@ -19,10 +19,7 @@ namespace ZE::GFX::API::DX
 		GraphicsException(U32 line, const char* file, HRESULT hResult) noexcept
 			: BasicException(line, file), WinApiException(line, file, hResult) {}
 #endif
-		GraphicsException(GraphicsException&&) = default;
-		GraphicsException(const GraphicsException&) = default;
-		GraphicsException& operator=(GraphicsException&&) = default;
-		GraphicsException& operator=(const GraphicsException&) = default;
+		ZE_CLASS_DEFAULT(GraphicsException);
 		virtual ~GraphicsException() = default;
 
 		constexpr const char* GetType() const noexcept override { return "Graphics Exception"; }

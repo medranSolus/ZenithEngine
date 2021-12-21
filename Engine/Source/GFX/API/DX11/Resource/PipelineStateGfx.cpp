@@ -3,13 +3,13 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc)
+	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 		auto device = dev.Get().dx11.GetDevice();
-		DX::ComPtr<ID3DBlob> bytecode;
 
-		ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.VS + L".cso").c_str(), &bytecode));
+		assert(desc.VS && "Vertex Shader is always required!");
+		ID3DBlob* bytecode = desc.VS->Get().dx11.GetBytecode();
 		ZE_GFX_THROW_FAILED(device->CreateVertexShader(bytecode->GetBufferPointer(),
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
 		ZE_GFX_SET_ID(vertexShader, "VS");
@@ -19,30 +19,30 @@ namespace ZE::GFX::API::DX11::Resource
 		//	bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
 		//ZE_GFX_SET_ID(inputLayout, "Layout");
 
-		if (!desc.DS.empty())
+		if (desc.DS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.DS + L".cso").c_str(), &bytecode));
+			bytecode = desc.DS->Get().dx11.GetBytecode();
 			ZE_GFX_THROW_FAILED(device->CreateDomainShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &domainShader));
 			ZE_GFX_SET_ID(domainShader, "DS");
 		}
-		if (!desc.HS.empty())
+		if (desc.HS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.HS + L".cso").c_str(), &bytecode));
+			bytecode = desc.HS->Get().dx11.GetBytecode();
 			ZE_GFX_THROW_FAILED(device->CreateHullShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &hullShader));
 			ZE_GFX_SET_ID(hullShader, "HS");
 		}
-		if (!desc.GS.empty())
+		if (desc.GS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.GS + L".cso").c_str(), &bytecode));
+			bytecode = desc.GS->Get().dx11.GetBytecode();
 			ZE_GFX_THROW_FAILED(device->CreateGeometryShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &geometryShader));
 			ZE_GFX_SET_ID(geometryShader, "GS");
 		}
-		if (!desc.PS.empty())
+		if (desc.PS)
 		{
-			ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + desc.PS + L".cso").c_str(), &bytecode));
+			bytecode = desc.PS->Get().dx11.GetBytecode();
 			ZE_GFX_THROW_FAILED(device->CreatePixelShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &pixelShader));
 			ZE_GFX_SET_ID(pixelShader, "PS");
@@ -117,7 +117,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 		D3D11_RASTERIZER_DESC rasterDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT{});
 		rasterDesc.CullMode = GetCulling(desc.Culling);
-		rasterDesc.DepthClipEnable = desc.DepthEnable;
+		rasterDesc.DepthClipEnable = desc.DepthClipEnable;
 		ZE_GFX_THROW_FAILED(device->CreateRasterizerState(&rasterDesc, &rasterState));
 		ZE_GFX_SET_ID(rasterState, "Raster");
 	}

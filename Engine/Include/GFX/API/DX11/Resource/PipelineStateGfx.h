@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Device.h"
+#include "GFX/Resource/DataBinding.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Resource
@@ -17,11 +17,8 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11RasterizerState> rasterState;
 
 	public:
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc);
-		PipelineStateGfx(PipelineStateGfx&&) = default;
-		PipelineStateGfx(const PipelineStateGfx&) = delete;
-		PipelineStateGfx& operator=(PipelineStateGfx&&) = default;
-		PipelineStateGfx& operator=(const PipelineStateGfx&) = delete;
+		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding);
+		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
 		// Gfx API Internal

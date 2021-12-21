@@ -10,10 +10,7 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 	public:
 		TextureCube(GFX::Device& dev, const std::array<Surface, 6>& surfaces);
-		TextureCube(TextureCube&&) = default;
-		TextureCube(const TextureCube&) = delete;
-		TextureCube& operator=(TextureCube&&) = default;
-		TextureCube& operator=(const TextureCube&) = delete;
+		ZE_CLASS_MOVE(TextureCube);
 		~TextureCube() = default;
 
 		void BindPS(GFX::CommandList& cl, ShaderSlot slot) const noexcept;

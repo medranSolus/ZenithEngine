@@ -125,12 +125,12 @@ namespace ZE::GFX::API::DX12
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
 		if (options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1)
 		{
-			new(&allocator.Tier1) AllocatorTier1(*this);
+			new(&allocTier1) AllocatorTier1(*this);
 			allocTier = AllocTier::Tier1;
 		}
 		else
 		{
-			new(&allocator.Tier2) AllocatorTier2(*this);
+			new(&allocTier2) AllocatorTier2(*this);
 			allocTier = AllocTier::Tier2;
 		}
 
@@ -152,9 +152,9 @@ namespace ZE::GFX::API::DX12
 		if (commandLists)
 			delete[] commandLists;
 		if (allocTier == AllocTier::Tier1)
-			allocator.Tier1.~AllocatorTier1();
+			allocTier1.~AllocatorTier1();
 		else
-			allocator.Tier2.~AllocatorTier2();
+			allocTier2.~AllocatorTier2();
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
 
@@ -235,7 +235,7 @@ namespace ZE::GFX::API::DX12
 		}
 		if (copyCount)
 		{
-			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists + 2 * count));
+			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists + 2 * static_cast<U64>(count)));
 		}
 	}
 
@@ -274,9 +274,9 @@ namespace ZE::GFX::API::DX12
 	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC& desc)
 	{
 		if (allocTier == AllocTier::Tier1)
-			return allocator.Tier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
+			return allocTier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
 		else
-			return allocator.Tier2.Alloc_64KB(*this, static_cast<U32>(desc.Width), desc);
+			return allocTier2.Alloc_64KB(*this, static_cast<U32>(desc.Width), desc);
 	}
 
 	ResourceInfo Device::CreateTexture(U32 width, U32 height, DXGI_FORMAT format)
@@ -303,14 +303,14 @@ namespace ZE::GFX::API::DX12
 			desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 			info = device->GetResourceAllocationInfo(0, 1, &desc);
 			if (allocTier == AllocTier::Tier1)
-				return allocator.Tier1.AllocTexture_64KB(*this, static_cast<U32>(info.SizeInBytes), desc);
+				return allocTier1.AllocTexture_64KB(*this, static_cast<U32>(info.SizeInBytes), desc);
 			else
-				return allocator.Tier2.Alloc_64KB(*this, static_cast<U32>(info.SizeInBytes), desc);
+				return allocTier2.Alloc_64KB(*this, static_cast<U32>(info.SizeInBytes), desc);
 		}
 		else if (allocTier == AllocTier::Tier1)
-			return allocator.Tier1.AllocTexture_4KB(*this, static_cast<U32>(info.SizeInBytes), desc);
+			return allocTier1.AllocTexture_4KB(*this, static_cast<U32>(info.SizeInBytes), desc);
 		else
-			return allocator.Tier2.Alloc_4KB(*this, static_cast<U32>(info.SizeInBytes), desc);
+			return allocTier2.Alloc_4KB(*this, static_cast<U32>(info.SizeInBytes), desc);
 	}
 
 	void Device::FreeBuffer(ResourceInfo& info) noexcept
@@ -323,9 +323,9 @@ namespace ZE::GFX::API::DX12
 	{
 		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
-			allocator.Tier1.RemoveBuffer(info.ID, size);
+			allocTier1.RemoveBuffer(info.ID, size);
 		else
-			allocator.Tier2.Remove(info.ID, size);
+			allocTier2.Remove(info.ID, size);
 	}
 
 	void Device::FreeTexture(ResourceInfo& info) noexcept
@@ -334,9 +334,9 @@ namespace ZE::GFX::API::DX12
 		U32 size = static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes);
 		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
-			allocator.Tier1.RemoveTexture(info.ID, size);
+			allocTier1.RemoveTexture(info.ID, size);
 		else
-			allocator.Tier2.Remove(info.ID, size);
+			allocTier2.Remove(info.ID, size);
 	}
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept

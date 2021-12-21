@@ -24,10 +24,7 @@ namespace ZE::Window
 
 	public:
 		BaseWindow() noexcept { flags[0] = true; flags[1] = false; }
-		BaseWindow(BaseWindow&&) = delete;
-		BaseWindow(const BaseWindow&) = delete;
-		BaseWindow& operator=(BaseWindow&&) = delete;
-		BaseWindow& operator=(const BaseWindow&) = delete;
+		ZE_CLASS_DELETE(BaseWindow);
 		virtual ~BaseWindow() = default;
 
 		constexpr Keyboard& Keyboard() noexcept { return keyboard; }

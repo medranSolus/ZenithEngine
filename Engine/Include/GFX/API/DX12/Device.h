@@ -16,19 +16,6 @@ namespace ZE::GFX::API::DX12
 		enum class AllocTier : bool { Tier1, Tier2 };
 
 	private:
-		union AllocVer
-		{
-			AllocatorTier1 Tier1;
-			AllocatorTier2 Tier2;
-
-			constexpr AllocVer() {}
-			AllocVer(AllocVer&&) = delete;
-			AllocVer(const AllocVer&) = delete;
-			AllocVer& operator=(AllocVer&&) = delete;
-			AllocVer& operator=(const AllocVer&) = delete;
-			~AllocVer() {}
-		};
-
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
 
 #ifdef _ZE_MODE_DEBUG
@@ -49,8 +36,12 @@ namespace ZE::GFX::API::DX12
 		UA64 copyFenceVal = 0;
 		DX::ComPtr<ID3D12Fence1> copyFence;
 
-		AllocVer allocator;
 		AllocTier allocTier;
+		union
+		{
+			AllocatorTier1 allocTier1;
+			AllocatorTier2 allocTier2;
+		};
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -70,15 +61,12 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
-		Device(Device&&) = default;
-		Device(const Device&) = delete;
-		Device& operator=(Device&&) = default;
-		Device& operator=(const Device&) = delete;
+		ZE_CLASS_DELETE(Device);
 		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[3 * count]; commandListsCount = count; }
+		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList * [3 * static_cast<U64>(count)]; commandListsCount = count; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

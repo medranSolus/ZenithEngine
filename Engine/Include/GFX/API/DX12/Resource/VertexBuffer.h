@@ -12,10 +12,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 	public:
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
-		VertexBuffer(VertexBuffer&&) = default;
-		VertexBuffer(const VertexBuffer&) = delete;
-		VertexBuffer& operator=(VertexBuffer&&) = default;
-		VertexBuffer& operator=(const VertexBuffer&) = delete;
+		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;
 
 		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info, view.SizeInBytes); }

@@ -3,14 +3,12 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	PipelineStateCompute::PipelineStateCompute(GFX::Device& dev, const std::wstring& nameCS)
+	PipelineStateCompute::PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Resource::DataBinding& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
-		DX::ComPtr<ID3DBlob> bytecode;
 
-		ZE_GFX_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + nameCS + L".cso").c_str(), &bytecode));
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateComputeShader(bytecode->GetBufferPointer(),
-			bytecode->GetBufferSize(), nullptr, &shader));
-		ZE_GFX_SET_ID(shader, "CS");
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateComputeShader(shader.Get().dx11.GetBytecode()->GetBufferPointer(),
+			shader.Get().dx11.GetBytecode()->GetBufferSize(), nullptr, &computeShader));
+		ZE_GFX_SET_ID(computeShader, "CS");
 	}
 }

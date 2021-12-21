@@ -5,22 +5,20 @@
 
 namespace ZE
 {
-	// Main Zenith Engine component containing all rendering logic
+	// Main Zenith Engine component containing all the rendering logic
 	class Engine final
 	{
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Graphics graphics;
 		GFX::Pipeline::RendererPBR renderer;
+		GFX::Resource::DataBinding* dataBindings;
 		bool guiEnabled = true;
 
 	public:
 		Engine(const EngineParams& params);
-		Engine(Engine&&) = delete;
-		Engine(const Engine&) = delete;
-		Engine& operator=(Engine&&) = delete;
-		Engine& operator=(const Engine&) = delete;
-		~Engine() = default;
+		ZE_CLASS_DELETE(Engine);
+		~Engine();
 
 		constexpr bool IsGuiActive() const noexcept { return guiEnabled; }
 		constexpr void ToggleGui() noexcept { guiEnabled = !guiEnabled; }

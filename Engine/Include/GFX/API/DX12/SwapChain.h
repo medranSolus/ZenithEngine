@@ -15,10 +15,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
-		SwapChain(SwapChain&&) = default;
-		SwapChain(const SwapChain&) = delete;
-		SwapChain& operator=(SwapChain&&) = default;
-		SwapChain& operator=(const SwapChain&) = delete;
+		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();
 
 		void Present(GFX::Device& dev) const;

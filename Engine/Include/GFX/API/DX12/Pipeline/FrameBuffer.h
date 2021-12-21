@@ -36,29 +36,26 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
-			U64 invalidID, const std::vector<U64>& memory, U64 heapSize);
+			RID invalidID, const std::vector<RID>& memory, U64 heapSize);
 #endif
-		static U64 FindHeapSize(U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory) noexcept;
+		static U64 FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept;
 		static bool CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
-			U32 maxChunks, U64 levelCount, U64 invalidID, const std::vector<U64>& memory) noexcept;
-		static U32 AllocResource(U64 id, U32 chunks, U64 startLevel, U64 lastLevel,
-			U32 maxChunks, U64 levelCount, U64 invalidID, std::vector<U64>& memory);
+			U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept;
+		static U32 AllocResource(RID id, U32 chunks, U64 startLevel, U64 lastLevel,
+			U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory);
 
-		void InitResource(CommandList& cl, U64 rid) const noexcept;
+		void InitResource(CommandList& cl, RID rid) const noexcept;
 
 	public:
 		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc);
-		FrameBuffer(FrameBuffer&&) = default;
-		FrameBuffer(const FrameBuffer&) = delete;
-		FrameBuffer& operator=(FrameBuffer&&) = default;
-		FrameBuffer& operator=(const FrameBuffer&) = delete;
+		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
-		void InitRTV(GFX::CommandList& cl, U64 rid) const noexcept { InitResource(cl.Get().dx12, rid); }
+		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 
-		void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, const ColorF4 color) const;
-		void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, U64 rid, float depth, U8 stencil) const;
+		void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const;
+		void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid, float depth, U8 stencil) const;
 
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain);
 		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;

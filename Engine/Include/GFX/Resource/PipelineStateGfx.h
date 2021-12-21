@@ -7,17 +7,14 @@ namespace ZE::GFX::Resource
 	// GPU state for draw call
 	class PipelineStateGfx final
 	{
-		ZE_API_BACKEND(Resource::PipelineStateGfx) backend;
+		ZE_API_BACKEND(Resource::PipelineStateGfx);
 
 	public:
-		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc) { backend.Init(dev, desc); }
-		PipelineStateGfx(PipelineStateGfx&&) = default;
-		PipelineStateGfx(const PipelineStateGfx&) = delete;
-		PipelineStateGfx& operator=(PipelineStateGfx&&) = default;
-		PipelineStateGfx& operator=(const PipelineStateGfx&) = delete;
+		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const DataBinding& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
+		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc) { backend.Switch(nextApi, dev, desc); }
-		constexpr ZE_API_BACKEND(Resource::PipelineStateGfx)& Get() noexcept { return backend; }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, DataBinding& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
+		ZE_API_BACKEND_GET(Resource::PipelineStateGfx);
 	};
 }

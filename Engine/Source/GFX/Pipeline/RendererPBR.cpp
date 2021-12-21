@@ -1,15 +1,20 @@
 #include "GFX/Pipeline/RendererPBR.h"
+#include "GFX/Pipeline/RenderPasses.h"
+
+#define ZE_MAKE_NODE(name, queueType, passNamespace) RenderNode node(name, queueType, RenderPass::##passNamespace##::Execute)
+#define ZE_MAKE_NODE_STATIC(name, queueType, passNamespace, ...) RenderNode node(name, queueType, nullptr, nullptr, RenderPass::##passNamespace##::Execute(__VA_ARGS__), true)
+#define ZE_MAKE_NODE_DATA(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
 
 namespace ZE::GFX::Pipeline
 {
-	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
+	Resource::DataBinding* RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
 	{
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
 		FrameBufferDesc frameBufferDesc;
-		frameBufferDesc.Init(8, width, height);
+		frameBufferDesc.Init(11, width, height);
 
- #pragma region Framebuffer definition
+#pragma region Framebuffer definition
 		const U64 gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const U64 gbuffNormal = frameBufferDesc.AddResource(
@@ -35,6 +40,24 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
+		std::map<U32, Resource::DataBindingDesc> dataBindings;
+		std::unordered_map<std::wstring, Resource::Shader> shaders;
+		Resource::DataBindingDesc rendererBindings;
+#pragma region Renderer bindings
+		rendererBindings.AddSampler(
+			{
+				Resource::SamplerType::Point,
+				{
+					Resource::TextureAddressMode::Edge,
+					Resource::TextureAddressMode::Edge,
+					Resource::TextureAddressMode::Edge
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 0
+			});
+#pragma endregion
+
 #pragma region Geometry
 		{
 			GFX::Pipeline::RenderNode node("lambertianDepth", GFX::QueueType::Main, nullptr);
@@ -112,7 +135,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("lightCombine", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, shaders, dataBindings, frameBufferDesc.ResourceInfo.at(rawScene).Format);
 			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::State::ShaderResourcePS);
@@ -166,6 +189,6 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-		Finalize(dev, mainList, nodes, frameBufferDesc, minimizePassDistances);
+		return Finalize(dev, mainList, nodes, frameBufferDesc, dataBindings, rendererBindings, minimizePassDistances);
 	}
 }

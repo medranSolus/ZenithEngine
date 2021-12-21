@@ -7,31 +7,28 @@ namespace ZE::GFX::Resource
 	// Buffer holding vertex data
 	class VertexBuffer final
 	{
-		ZE_API_BACKEND(VertexBuffer) backend;
+		ZE_API_BACKEND(VertexBuffer);
 
 	public:
-		constexpr VertexBuffer(Device& dev, const VertexData& data) { backend.Init(dev, data); }
-		VertexBuffer(VertexBuffer&&) = default;
-		VertexBuffer(const VertexBuffer&) = delete;
-		VertexBuffer& operator=(VertexBuffer&&) = default;
-		VertexBuffer& operator=(const VertexBuffer&) = delete;
+		constexpr VertexBuffer(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;
 
-		constexpr ZE_API_BACKEND(IndexBuffer)& Get() noexcept { return backend; }
+		ZE_API_BACKEND_GET(IndexBuffer);
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
 
 		// Main Gfx API
 
-		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(backend, Free, dev); }
-		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(backend, Bind, cl); }
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
 	};
 
 #pragma region Functions
 	constexpr void VertexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx)
 	{
 		VertexData data;
-		ZE_API_BACKEND_CALL_RET(backend, data, GetData, dev, ctx);
-		backend.Switch(nextApi, dev, data);
+		ZE_API_BACKEND_CALL_RET(data, GetData, dev, ctx);
+		ZE_API_BACKEND_VAR.Switch(nextApi, dev, data);
 	}
 #pragma endregion
 }

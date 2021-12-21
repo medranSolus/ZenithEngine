@@ -2,6 +2,7 @@
 #include "GFX/Resource/State.h"
 #include "GFX/QueueType.h"
 #include "FrameResourceDesc.h"
+#include "ResourceID.h"
 #include "TransitionDesc.h"
 
 namespace ZE::GFX::Pipeline

@@ -15,10 +15,7 @@ namespace ZE::GFX::API::DX
 
 	public:
 		DebugInfoManager();
-		DebugInfoManager(DebugInfoManager&&) = default;
-		DebugInfoManager(const DebugInfoManager&) = delete;
-		DebugInfoManager& operator=(DebugInfoManager&&) = default;
-		DebugInfoManager& operator=(const DebugInfoManager&) = delete;
+		ZE_CLASS_MOVE(DebugInfoManager);
 		~DebugInfoManager() { debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_IGNORE_INTERNAL); }
 
 		void BeginRecord() noexcept { offset = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL); }

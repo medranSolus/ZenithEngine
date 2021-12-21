@@ -23,10 +23,7 @@ namespace ZE::GFX::API::DX11
 
 	public:
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
-		Device(Device&&) = default;
-		Device(const Device&) = delete;
-		Device& operator=(Device&&) = default;
-		Device& operator=(const Device&) = delete;
+		ZE_CLASS_DELETE(Device);
 		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, scratchDescriptorCount }; }

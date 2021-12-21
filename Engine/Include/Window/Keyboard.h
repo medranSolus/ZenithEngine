@@ -32,10 +32,7 @@ namespace ZE::Window
 
 		public:
 			constexpr Event(Type type, U8 code) noexcept : type(type), code(code) {}
-			Event(Event&&) = default;
-			Event(const Event&) = default;
-			Event& operator=(Event&&) = default;
-			Event& operator=(const Event&) = default;
+			ZE_CLASS_DEFAULT(Event);
 			~Event() = default;
 
 			constexpr bool IsDown() const noexcept { return type == Type::Down; }
@@ -63,10 +60,7 @@ namespace ZE::Window
 
 	public:
 		Keyboard() = default;
-		Keyboard(Keyboard&&) = delete;
-		Keyboard(const Keyboard&) = delete;
-		Keyboard& operator=(Keyboard&&) = delete;
-		Keyboard& operator=(const Keyboard&) = delete;
+		ZE_CLASS_DELETE(Keyboard);
 		~Keyboard() = default;
 
 		constexpr bool IsAutorepeat() const noexcept { return autorepeatEnabled; }

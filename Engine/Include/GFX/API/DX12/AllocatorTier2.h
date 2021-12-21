@@ -16,10 +16,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		AllocatorTier2(Device& dev);
-		AllocatorTier2(AllocatorTier2&&) = delete;
-		AllocatorTier2(const AllocatorTier2&) = delete;
-		AllocatorTier2& operator=(AllocatorTier2&&) = delete;
-		AllocatorTier2& operator=(const AllocatorTier2&) = delete;
+		ZE_CLASS_DELETE(AllocatorTier2);
 		virtual ~AllocatorTier2() = default;
 
 		// Only small textures (smaller than 64KB)

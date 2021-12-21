@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/CommandList.h"
+#include "ResourceID.h"
 #include "SyncType.h"
 
 namespace ZE::GFX::Pipeline
@@ -29,7 +30,7 @@ namespace ZE::GFX::Pipeline
 	{
 		// Resources used by RenderPass, appear in order they've been added during RenderNode construction,
 		// in respect to their usage (first input, then inner, lastly output resources)
-		const U64* Buffers = nullptr;
+		const RID* Buffers = nullptr;
 		// Optional data used by RenderPass
 		void* OptData = nullptr;
 	};

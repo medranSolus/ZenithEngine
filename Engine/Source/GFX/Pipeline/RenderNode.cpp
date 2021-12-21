@@ -26,6 +26,15 @@ namespace ZE::GFX::Pipeline
 		outputRIDs.emplace_back(rid);
 	}
 
+	CommandList RenderNode::GetStaticExecuteData() noexcept
+	{
+		assert(!isStatic && "Cannot get static execute data for non-static pass!");
+		assert(executeData && "Execute data cannot be empty for static pass!");
+		CommandList cl = std::move(*reinterpret_cast<CommandList*>(executeData));
+		delete reinterpret_cast<CommandList*>(executeData);
+		return cl;
+	}
+
 	U64* RenderNode::GetNodeRIDs() const noexcept
 	{
 		U64* rids = new U64[inputRIDs.size() + innerRIDs.size() + outputRIDs.size()];

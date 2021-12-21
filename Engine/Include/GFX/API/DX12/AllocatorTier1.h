@@ -19,10 +19,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		AllocatorTier1(Device& dev);
-		AllocatorTier1(AllocatorTier1&&) = delete;
-		AllocatorTier1(const AllocatorTier1&) = delete;
-		AllocatorTier1& operator=(AllocatorTier1&&) = delete;
-		AllocatorTier1& operator=(const AllocatorTier1&) = delete;
+		ZE_CLASS_DELETE(AllocatorTier1);
 		virtual ~AllocatorTier1() = default;
 
 		ResourceInfo AllocBuffer(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, BUF_HEAP_SIZE>(dev, buffers, bytes, desc, BUF_FLAG); }

@@ -49,10 +49,7 @@ namespace ZE::Window
 				: type(type), x(x), y(y), delta({ x - mouse.x, y - mouse.y }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			constexpr Event(Type type, const Mouse& mouse, RawInput delta) noexcept
 				: type(type), x(mouse.x), y(mouse.y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
-			Event(Event&&) = default;
-			Event(const Event&) = default;
-			Event& operator=(Event&&) = default;
-			Event& operator=(const Event&) = default;
+			ZE_CLASS_DEFAULT(Event);
 			~Event() = default;
 
 			constexpr Type GetType() const noexcept { return type; }
@@ -97,10 +94,7 @@ namespace ZE::Window
 
 	public:
 		Mouse() = default;
-		Mouse(Mouse&&) = delete;
-		Mouse(const Mouse&) = delete;
-		Mouse& operator=(Mouse&&) = delete;
-		Mouse& operator=(const Mouse&) = delete;
+		ZE_CLASS_DELETE(Mouse);
 		~Mouse() = default;
 
 		constexpr std::pair<S32, S32> GetPosition() const noexcept { return { x, y }; }
