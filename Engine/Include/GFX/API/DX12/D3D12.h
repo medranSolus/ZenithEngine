@@ -6,7 +6,6 @@
 #include "GFX/Resource/SamplerDesc.h"
 #include "GFX/Resource/ShaderType.h"
 #include "GFX/Resource/State.h"
-#include "GFX/Resource/Topology.h"
 #include "GFX/CommandType.h"
 #include <d3d12.h>
 #include <bitset>

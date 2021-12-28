@@ -446,8 +446,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
 
 		// Get sizes of descriptors
-		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
-		srv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
+		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID + 1];
+		srv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID + 1];
 		uav = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[invalidID];
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -477,7 +477,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					rtvDesc.Texture2D.PlaneSlice = 0;
 				}
 				ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Get(), &rtvDesc, rtvHandle));
-				rtvDsv[i] = rtvHandle;
+				rtvDsv[i + 1] = rtvHandle;
 				rtvHandle.ptr += rtvDescSize;
 			}
 			else if (res.IsDSV())
@@ -498,11 +498,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 					dsvDesc.Texture2D.MipSlice = 0;
 				}
 				ZE_GFX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Get(), &dsvDesc, dsvHandle));
-				rtvDsv[i] = dsvHandle;
+				rtvDsv[i + 1] = dsvHandle;
 				dsvHandle.ptr += dsvDescSize;
 			}
 			else
-				rtvDsv[i].ptr = -1;
+				rtvDsv[i + 1].ptr = -1;
 			if (res.IsSRV())
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -546,12 +546,12 @@ namespace ZE::GFX::API::DX12::Pipeline
 					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 				}
 				ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Get(), &srvDesc, srvUavHandle.first));
-				srv[i] = srvUavHandle.first;
+				srv[i + 1] = srvUavHandle.first;
 				srvUavHandle.first.ptr += srvUavDescSize;
 				srvUavHandle.second.ptr += srvUavDescSize;
 			}
 			else
-				srv[i].ptr = -1;
+				srv[i + 1].ptr = -1;
 			if (res.IsUAV())
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
@@ -707,26 +707,47 @@ namespace ZE::GFX::API::DX12::Pipeline
 			delete[] uav;
 	}
 
+	void FrameBuffer::SetRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rid, TRUE, nullptr));
+	}
+
+	void FrameBuffer::SetDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const
+	{
+		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, TRUE, rtvDsv + rid));
+	}
+
+	void FrameBuffer::SetOutput(GFX::Device& dev, GFX::CommandList& cl, RID rtv, RID dsv) const
+	{
+		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rtv, TRUE, rtvDsv + dsv));
+	}
+
 	void FrameBuffer::ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		const D3D12_CPU_DESCRIPTOR_HANDLE handle = rid == 0 ? backbufferRtvSrv.first : rtvDsv[rid - 1];
-		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(handle,
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsv[rid],
 			reinterpret_cast<const float*>(&color), 0, nullptr));
 	}
 
 	void FrameBuffer::ClearDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid, float depth, U8 stencil) const
 	{
-		assert(rid != 0 && "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[rid - 1],
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[rid],
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr));
 	}
 
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)
 	{
 		DX::ComPtr<ID3D12Resource> buffer;
-		backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, buffer);
+		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, buffer);
+		rtvDsv[0] = backbufferRtvSrv.first;
+		srv[0] = backbufferRtvSrv.second;
 		initTransitions.Barriers->Transition.pResource = buffer.Get();
 		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
 			transitions[backbufferBarriersLocations[i]].Barriers->Transition.pResource = buffer.Get();

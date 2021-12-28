@@ -24,7 +24,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 		bool* aliasingResources = nullptr;
 		DX::ComPtr<ID3D12Resource>* resources = nullptr;
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> backbufferRtvSrv;
 		D3D12_CPU_DESCRIPTOR_HANDLE* rtvDsv = nullptr;
 		D3D12_CPU_DESCRIPTOR_HANDLE* srv = nullptr;
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>* uav = nullptr;
@@ -54,6 +53,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 
+		void SetRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const;
+		void SetDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const;
+		void SetOutput(GFX::Device& dev, GFX::CommandList& cl, RID rtv, RID dsv) const;
+
+		template<U32 RTVCount>
+		void SetRTV(GFX::Device& dev, GFX::CommandList& cl, const RID* rid) const;
+		template<U32 RTVCount>
+		void SetOutput(GFX::Device& dev, GFX::CommandList& cl, const RID* rtv, RID dsv) const;
+
 		void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const;
 		void ClearDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid, float depth, U8 stencil) const;
 
@@ -61,4 +69,31 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
 		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
 	};
+
+#pragma region Functions
+	template<U32 RTVCount>
+	void FrameBuffer::SetRTV(GFX::Device& dev, GFX::CommandList& cl, const RID* rid) const
+	{
+		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetRTV() should be only used for multiple render targets!");
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
+		for (U32 i = 0; i < RTVCount; ++i)
+			handles[i] = rtvDsv[rid[i]];
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, nullptr));
+	}
+
+	template<U32 RTVCount>
+	void FrameBuffer::SetOutput(GFX::Device& dev, GFX::CommandList& cl, const RID* rtv, RID dsv) const
+	{
+		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetOutput() should be only used for multiple render targets!");
+		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
+		for (U32 i = 0; i < RTVCount; ++i)
+			handles[i] = rtvDsv[rtv[i]];
+		ZE_GFX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, rtvDsv + dsv));
+	}
+#pragma endregion
 }

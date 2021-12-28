@@ -3,6 +3,7 @@
 #include "GFX/Surface.h"
 #include "GFX/ShaderSlot.h"
 #include "D3D12.h"
+#include <array>
 
 namespace ZE::GFX::API::DX12::Resource
 {

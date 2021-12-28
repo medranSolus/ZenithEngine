@@ -25,6 +25,15 @@ namespace ZE::GFX::Pipeline
 		// Depth stencil before first use must be initialized or cleared
 		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitDSV, cl, rid); }
 
+		constexpr void SetRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetRTV, dev, cl, rid); }
+		constexpr void SetDSV(GFX::Device& dev, GFX::CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetDSV, dev, cl, rid); }
+		constexpr void SetOutput(GFX::Device& dev, GFX::CommandList& cl, RID rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput, dev, cl, rtv, dsv); }
+
+		template<U32 RTVCount>
+		constexpr void SetRTV(GFX::Device& dev, GFX::CommandList& cl, const RID* rid) const { ZE_API_BACKEND_CALL(SetRTV<RTVCount>, dev, cl, rid); }
+		template<U32 RTVCount>
+		constexpr void SetOutput(GFX::Device& dev, GFX::CommandList& cl, const RID* rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput<RTVCount>, dev, cl, rtv, dsv); }
+
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void ClearRTV(GFX::Device& dev, GFX::CommandList& cl, RID rid, const ColorF4 color) const { ZE_API_BACKEND_CALL(ClearRTV, dev, cl, rid, color); }
 		// Depth stencil before first use must be initialized or cleared

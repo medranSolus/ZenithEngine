@@ -3,6 +3,7 @@
 #include "GFX/Surface.h"
 #include "GFX/ShaderSlot.h"
 #include "D3D11.h"
+#include <array>
 
 namespace ZE::GFX::API::DX11::Resource
 {
