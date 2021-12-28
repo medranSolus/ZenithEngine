@@ -29,13 +29,18 @@ namespace ZE::GFX
 		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
+
 		constexpr void SetState(Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(SetState, pso); }
 		constexpr void SetState(Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(SetState, pso); }
+		constexpr void SetBindingsCompute(const Material::Schema& schema) { ZE_API_BACKEND_CALL(SetBindingsCompute, schema); }
+		constexpr void SetBindingsGfx(const Material::Schema& schema) { ZE_API_BACKEND_CALL(SetBindingsGfx, schema); }
 
 		constexpr void Close(Device& dev) { ZE_API_BACKEND_CALL(Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_API_BACKEND_CALL(Reset, dev); }
 
-		constexpr void DrawIndexed(Device& dev, U32 count) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(DrawIndexed, dev, count); }
+		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Draw, dev, vertexCount); }
+		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(DrawIndexed, dev, indexCount); }
+		constexpr void DrawFullscreen(Device& dev) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 	};

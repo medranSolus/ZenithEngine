@@ -7,7 +7,7 @@
 
 namespace ZE::GFX::Pipeline
 {
-	Resource::DataBinding* RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
+	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
 	{
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
@@ -40,13 +40,11 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
-		std::map<U32, Resource::DataBindingDesc> dataBindings;
-		std::unordered_map<std::wstring, Resource::Shader> shaders;
-		Resource::DataBindingDesc rendererBindings;
+		RendererBuildData buildData = { materialFactory };
 #pragma region Renderer bindings
-		rendererBindings.AddSampler(
+		buildData.RendererSlots.AddSampler(
 			{
-				Resource::SamplerType::Point,
+				Resource::SamplerType::Anisotropic,
 				{
 					Resource::TextureAddressMode::Edge,
 					Resource::TextureAddressMode::Edge,
@@ -55,6 +53,80 @@ namespace ZE::GFX::Pipeline
 				0.0f, 4, Resource::CompareMethod::Never,
 				Resource::TextureEdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 0
+			});
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Anisotropic,
+				{
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 1
+			});
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Anisotropic,
+				{
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 2
+			});
+
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Linear,
+				{
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 3
+			});
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Linear,
+				{
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 4
+			});
+
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Point,
+				{
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat,
+					Resource::TextureAddressMode::Repeat
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 5
+			});
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Point,
+				{
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror,
+					Resource::TextureAddressMode::Mirror
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::TextureEdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 6
 			});
 #pragma endregion
 
@@ -135,7 +207,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, shaders, dataBindings, frameBufferDesc.ResourceInfo.at(rawScene).Format);
+			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.ResourceInfo.at(rawScene).Format);
 			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::State::ShaderResourcePS);
@@ -189,6 +261,6 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-		return Finalize(dev, mainList, nodes, frameBufferDesc, dataBindings, rendererBindings, minimizePassDistances);
+		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, minimizePassDistances);
 	}
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Resource/DataBinding.h"
+#include "GFX/Material/Schema.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Resource
@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11ComputeShader> computeShader;
 
 	public:
-		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Resource::DataBinding& binding);
+		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Material::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;
 

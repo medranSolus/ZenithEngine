@@ -1,7 +1,6 @@
 #pragma once
-#include "GFX/Pipeline/FrameBuffer.h"
-#include "GFX/Resource/DataBinding.h"
 #include "GFX/Graphics.h"
+#include "RendererBuildData.h"
 #include "RenderNode.h"
 #include <bitset>
 #include <thread>
@@ -17,6 +16,7 @@ namespace ZE::GFX::Pipeline
 		std::pair<PassDesc*, U64>* passes = nullptr;
 		PassDescStatic* staticPasses = nullptr;
 		PassCleanCallback** passesCleaners = nullptr;
+		Resource::PipelineStateGfx* sharedStates = nullptr;
 
 		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);
 		static void AfterSync(Device& dev, PassSyncDesc& syncInfo);
@@ -31,9 +31,10 @@ namespace ZE::GFX::Pipeline
 		static constexpr U64 BACKBUFFER_RID = 0;
 
 		FrameBuffer frameBuffer;
+		Material::Factory materialFactory;
 
-		Resource::DataBinding* Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc,
-			std::map<U32, Resource::DataBindingDesc>& dataBindings, const Resource::DataBindingDesc& rendererBindings, bool minimizeDistances);
+		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
+			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);
 
 	public:
 		RenderGraph() = default;

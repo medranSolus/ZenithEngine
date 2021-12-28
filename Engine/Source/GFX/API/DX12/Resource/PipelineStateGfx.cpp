@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX12::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding)
+	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Material::Schema& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
@@ -97,27 +97,40 @@ namespace ZE::GFX::API::DX12::Resource
 		}
 
 		// Rasterizer state
-		stateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		stateDesc.RasterizerState.FillMode = desc.IsWireFrame() ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
 		stateDesc.RasterizerState.CullMode = GetCulling(desc.Culling);
 		stateDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		stateDesc.RasterizerState.DepthBias = 0;
 		stateDesc.RasterizerState.DepthBiasClamp = 0.0f;
 		stateDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;
-		stateDesc.RasterizerState.DepthClipEnable = desc.DepthClipEnable;
+		stateDesc.RasterizerState.DepthClipEnable = desc.IsDepthClip();
 		stateDesc.RasterizerState.MultisampleEnable = FALSE;
 		stateDesc.RasterizerState.AntialiasedLineEnable = FALSE;
 		stateDesc.RasterizerState.ForcedSampleCount = 0;
 		stateDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-		// Depth-Stencil state
+		// Depth-Stencil state defaults
+		stateDesc.DepthStencilState.DepthEnable = TRUE;
+		stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		stateDesc.DepthStencilState.StencilEnable = FALSE;
+		stateDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+		stateDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+		stateDesc.DepthStencilState.FrontFace.StencilFailOp =
+			stateDesc.DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		stateDesc.DepthStencilState.FrontFace.StencilDepthFailOp =
+			stateDesc.DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		stateDesc.DepthStencilState.FrontFace.StencilPassOp =
+			stateDesc.DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		stateDesc.DepthStencilState.FrontFace.StencilFunc =
+			stateDesc.DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+		// Proper definitions
 		switch (desc.Stencil)
 		{
 		case GFX::Resource::StencilMode::Off:
 		{
-			stateDesc.DepthStencilState.DepthEnable = TRUE;
 			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		case GFX::Resource::StencilMode::Write:
@@ -141,22 +154,17 @@ namespace ZE::GFX::API::DX12::Resource
 		case GFX::Resource::StencilMode::DepthOff:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
-			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		case GFX::Resource::StencilMode::Reverse:
 		{
-			stateDesc.DepthStencilState.DepthEnable = TRUE;
+			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
-			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		case GFX::Resource::StencilMode::DepthFirst:
 		{
-			stateDesc.DepthStencilState.DepthEnable = TRUE;
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-			stateDesc.DepthStencilState.StencilEnable = FALSE;
 			break;
 		}
 		}
@@ -175,11 +183,14 @@ namespace ZE::GFX::API::DX12::Resource
 
 		// Topology type
 		stateDesc.PrimitiveTopologyType = GetTopologyType(desc.Topology);
+		topology = DX::GetTopology(desc.Topology, desc.Ordering);
 
 		// Output description
-		assert(desc.RenderTargetsCount < 8);
+		assert(desc.RenderTargetsCount < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
 		for (stateDesc.NumRenderTargets = 0; stateDesc.NumRenderTargets < desc.RenderTargetsCount; ++stateDesc.NumRenderTargets)
 			stateDesc.RTVFormats[stateDesc.NumRenderTargets] = DX::GetDXFormat(desc.FormatsRT[stateDesc.NumRenderTargets]);
+		for (U8 i = stateDesc.NumRenderTargets; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+			stateDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
 		stateDesc.DSVFormat = DX::GetDXFormat(desc.FormatDS);
 
 		// Multisampling
@@ -191,6 +202,7 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.CachedPSO.CachedBlobSizeInBytes = 0;
 		stateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		//ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
+		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
+		ZE_GFX_SET_ID(state, "PSO_" + desc.DebugName);
 	}
 }

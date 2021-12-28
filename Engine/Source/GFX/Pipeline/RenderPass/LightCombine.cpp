@@ -2,34 +2,45 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
-	Data* Setup(Device& dev, std::unordered_map<std::wstring, Resource::Shader>& shaders,
-		std::map<U32, Resource::DataBindingDesc>& bindings, PixelFormat outputFormat)
+	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat)
 	{
+		Data* passData = new Data;
+
+		Material::SchemaDesc desc;
+		desc.AddRange({ 1, 13, Resource::ShaderType::Pixel, MaterialFlags::CBV });
+		desc.AddRange({ 1, 25, Resource::ShaderType::Pixel, MaterialFlags::SRV | MaterialFlags::Material });
+		desc.AddRange({ 5, 27, Resource::ShaderType::Pixel, MaterialFlags::SRV | MaterialFlags::MaterialAppend });
+		desc.AddRange({ 1, 11, Resource::ShaderType::Pixel, MaterialFlags::CBV });
+		desc.Append(buildData.RendererSlots);
+		passData->BindingIndex = buildData.MaterialFactory.AddDataBinding(dev, desc);
+
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", shaders);
-		psoDesc.SetShader(psoDesc.PS, L"LightCombinePS", shaders);
+		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
+		psoDesc.SetShader(psoDesc.PS, L"LightCombinePS", buildData.ShaderCache);
+		psoDesc.Stencil = Resource::StencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::None;
-		psoDesc.Topology = Resource::TopologyType::Triangle;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;
+		ZE_PSO_SET_NAME(psoDesc, "LightCombine");
+		passData->State.Init(dev, psoDesc, buildData.MaterialFactory.GetSchema(passData->BindingIndex));
 
-		auto bind = bindings.find(Resource::BindingDefaultID::LightCombine);
-		if (bind == bindings.end())
-		{
-			Resource::DataBindingDesc desc;
-			desc.Location = static_cast<U32>(bindings.size());
-			desc.AddRange({ 1, 13, Resource::ShaderType::Pixel, Resource::BindingRangeFlags::CBV });
-			desc.AddRange({ 1, 25, Resource::ShaderType::Pixel, Resource::BindingRangeFlags::SRV });
-			desc.AddRange({ 1, 27, Resource::ShaderType::Pixel, Resource::BindingRangeFlags::SRV });
-			desc.AddRange({ 1, 11, Resource::ShaderType::Pixel, Resource::BindingRangeFlags::CBV });
-			bind = bindings.emplace(Resource::BindingDefaultID::LightCombine, desc).first;
-		}
-		return new Data{ /*{ dev, psoDesc, bind->second }*/ };
+		return passData;
 	}
 
-	void Execute(CommandList& cl, PassData& passData)
+	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *reinterpret_cast<const Resources*>(passData.Buffers);
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
+		const Material::Schema& bind = renderData.Bindins.GetSchema(data.BindingIndex);
+		renderData.CL.Open(renderData.Dev);
+		renderData.Buffers.InitRTV(renderData.CL, ids.RenderTarget);
+
+		renderData.CL.SetState(data.State);
+		renderData.CL.SetBindingsGfx(bind);
+		renderData.Buffers.SetRTV(renderData.Dev, renderData.CL, ids.RenderTarget);
+		renderData.CL.DrawFullscreen(renderData.Dev);
+
+		renderData.CL.Close(renderData.Dev);
+		renderData.Dev.ExecuteMain(renderData.CL);
 	}
 }

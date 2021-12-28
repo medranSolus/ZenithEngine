@@ -1,5 +1,6 @@
 #include "GFX/API/DX12/CommandList.h"
 #include "GFX/API/DX/GraphicsException.h"
+#include "GFX/Material/Schema.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"
@@ -47,6 +48,17 @@ namespace ZE::GFX::API::DX12
 	void CommandList::SetState(GFX::Resource::PipelineStateGfx& pso)
 	{
 		commands->SetPipelineState(pso.Get().dx12.GetState());
+		commands->IASetPrimitiveTopology(pso.Get().dx12.GetTopology());
+	}
+
+	void CommandList::SetBindingsCompute(const GFX::Material::Schema& schema)
+	{
+		commands->SetComputeRootSignature(schema.Get().dx12.GetSignature());
+	}
+
+	void CommandList::SetBindingsGfx(const GFX::Material::Schema& schema)
+	{
+		commands->SetGraphicsRootSignature(schema.Get().dx12.GetSignature());
 	}
 
 	void CommandList::Close(GFX::Device& dev)
@@ -59,10 +71,24 @@ namespace ZE::GFX::API::DX12
 		Reset(dev.Get().dx12);
 	}
 
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG)
+	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG)
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(count, 1, 0, 0, 0));
+		ZE_GFX_THROW_FAILED_INFO(commands->DrawInstanced(vertexCount, 1, 0, 0));
+	}
+
+	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG)
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_GFX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(indexCount, 1, 0, 0, 0));
+	}
+
+	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG)
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_GFX_THROW_FAILED_INFO(commands->IASetVertexBuffers(0, 0, nullptr));
+		ZE_GFX_THROW_FAILED_INFO(commands->IASetIndexBuffer(nullptr));
+		ZE_GFX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
 	}
 
 	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG)

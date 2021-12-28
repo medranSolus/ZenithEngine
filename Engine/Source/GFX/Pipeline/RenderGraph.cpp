@@ -145,15 +145,16 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
 	{
 		BeforeSync(dev, pass.Syncs);
-		cl.Open(dev);
-		//pass.Execute(cl, pass.Data);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
+		if (pass.Execute)
+		{
+			RendererExecuteData data{ dev, cl, frameBuffer, materialFactory,sharedStates };
+			pass.Execute(data, pass.Data);
+		}
 		AfterSync(dev, pass.Syncs);
 	}
 
-	Resource::DataBinding* RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes, FrameBufferDesc& frameBufferDesc,
-		std::map<U32, Resource::DataBindingDesc>& dataBindings, const Resource::DataBindingDesc& rendererBindings, bool minimizeDistances)
+	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
+		FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances)
 	{
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -626,6 +627,14 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
 		frameBuffer.Init(dev, mainList, frameBufferDesc);
 
+		// Create shared gfx states
+		if (buildData.PipelineStates.size())
+		{
+			sharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
+			for (U64 i = 0; const auto& state : buildData.PipelineStates)
+				sharedStates[i++].Init(dev, state.second.second.first, materialFactory.GetSchema(state.second.first));
+		}
+
 		// Compute static passes
 		for (U64 i = 0; const auto & node : nodes)
 		{
@@ -637,27 +646,15 @@ namespace ZE::GFX::Pipeline
 				staticPassData.Buffers = node.GetNodeRIDs();
 				// Optional data is not supported for static RenderPass
 				staticPassData.OptData = nullptr;
-				CommandList& cl = level.Commands[location.second.second];
-				cl.Open(dev);
-				node.GetExecuteCallback()(cl, staticPassData);
-				cl.Close(dev);
+				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, materialFactory,sharedStates };
+				executeData.CL.Open(dev);
+				node.GetExecuteCallback()(executeData, staticPassData);
+				executeData.CL.Close(dev);
 				delete[] staticPassData.Buffers;
 			}
 			++i;
 		}
 		passLocation.clear();
-
-		// Move every material binding into final table returned to the engine
-		Resource::DataBinding* materialDataBindings = new Resource::DataBinding[dataBindings.size()];
-		for (auto& binding : dataBindings)
-		{
-			binding.second.Ranges.insert(binding.second.Ranges.end(), rendererBindings.Ranges.begin(), rendererBindings.Ranges.end());
-			binding.second.Samplers.insert(binding.second.Samplers.end(), rendererBindings.Samplers.begin(), rendererBindings.Samplers.end());
-			materialDataBindings[binding.second.Location].Init(dev, binding.second);
-		}
-		dataBindings.clear();
-
-		return materialDataBindings;
 	}
 
 	RenderGraph::~RenderGraph()
@@ -695,6 +692,8 @@ namespace ZE::GFX::Pipeline
 				delete[] staticPasses[0].Commands;
 			delete[] staticPasses;
 		}
+		if (sharedStates)
+			delete[] sharedStates;
 	}
 
 	void RenderGraph::Execute(Graphics& gfx)

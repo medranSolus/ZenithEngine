@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Material/Schema.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/CommandType.h"
@@ -21,6 +22,8 @@ namespace ZE::GFX::API::DX11
 		~CommandList() = default;
 
 		constexpr void Open(GFX::Device& dev) {}
+		constexpr void SetBindingsCompute(const GFX::Material::Schema& schema) {}
+		constexpr void SetBindingsGfx(const GFX::Material::Schema& schema) {}
 
 #ifdef _ZE_MODE_DEBUG
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
@@ -33,7 +36,9 @@ namespace ZE::GFX::API::DX11
 		void Reset(GFX::Device& dev) { commands = nullptr; }
 
 		void Close(GFX::Device& dev);
-		void DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG);
+		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG);
+		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG);
+		void DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
 
 		// Gfx API Internal

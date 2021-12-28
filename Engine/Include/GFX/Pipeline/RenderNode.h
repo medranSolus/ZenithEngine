@@ -1,6 +1,5 @@
 #pragma once
 #include "GFX/QueueType.h"
-#include "GFX/Pipeline/FrameBufferDesc.h"
 #include "PassDesc.h"
 
 namespace ZE::GFX::Pipeline

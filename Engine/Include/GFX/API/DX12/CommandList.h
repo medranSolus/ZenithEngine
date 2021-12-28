@@ -5,6 +5,10 @@
 namespace ZE::GFX
 {
 	class Device;
+	namespace Material
+	{
+		class Schema;
+	}
 	namespace Resource
 	{
 		class PipelineStateCompute;
@@ -42,10 +46,14 @@ namespace ZE::GFX::API::DX12
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
 		void SetState(GFX::Resource::PipelineStateCompute& pso);
 		void SetState(GFX::Resource::PipelineStateGfx& pso);
+		void SetBindingsCompute(const GFX::Material::Schema& schema);
+		void SetBindingsGfx(const GFX::Material::Schema& schema);
 
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);
-		void DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG);
+		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG);
+		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG);
+		void DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
 
 		// Gfx API Internal

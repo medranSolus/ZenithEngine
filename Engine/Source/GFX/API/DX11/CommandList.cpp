@@ -38,10 +38,24 @@ namespace ZE::GFX::API::DX11
 		}
 	}
 
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 count) const noexcept(ZE_NO_DEBUG)
+	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG)
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx11);
-		ZE_GFX_THROW_FAILED_INFO(context->DrawIndexed(count, 0, 0));
+		ZE_GFX_THROW_FAILED_INFO(context->Draw(vertexCount, 0));
+	}
+
+	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG)
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx11);
+		ZE_GFX_THROW_FAILED_INFO(context->DrawIndexed(indexCount, 0, 0));
+	}
+
+	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG)
+	{
+		ZE_GFX_ENABLE_INFO(dev.Get().dx11);
+		ZE_GFX_THROW_FAILED_INFO(context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr));
+		ZE_GFX_THROW_FAILED_INFO(context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0));
+		ZE_GFX_THROW_FAILED_INFO(context->Draw(3, 0));
 	}
 
 	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG)

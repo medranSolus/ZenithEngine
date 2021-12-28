@@ -8,7 +8,7 @@ namespace ZE
 		window.Init(params.WindowName, params.Width, params.Height);
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount);
 		gui.Init(graphics.GetDevice());
-		dataBindings = renderer.Init(graphics.GetDevice(), graphics.GetMainList(),
+		renderer.Init(graphics.GetDevice(), graphics.GetMainList(),
 			window.GetWidth(), window.GetHeight(), params.MinimizeRenderPassDistances, params.ShadowMapSize);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
@@ -18,8 +18,6 @@ namespace ZE
 
 	Engine::~Engine()
 	{
-		if (dataBindings)
-			delete[] dataBindings;
 	}
 
 	void Engine::BeginFrame()

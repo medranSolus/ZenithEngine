@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Resource/DataBinding.h"
+#include "GFX/Pipeline/RendererBuildData.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
@@ -15,12 +15,12 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 	struct Data
 	{
-		//Resource::PipelineStateGfx PSO;
+		U32 BindingIndex;
+		Resource::PipelineStateGfx State;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
 
-	Data* Setup(Device& dev, std::unordered_map<std::wstring, Resource::Shader>& shaders,
-		std::map<U32, Resource::DataBindingDesc>& bindings, PixelFormat outputFormat);
-	void Execute(CommandList& cl, PassData& passData);
+	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
+	void Execute(RendererExecuteData& renderData, PassData& passData);
 }

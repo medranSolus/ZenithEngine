@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "RendererExecuteData.h"
 #include "ResourceID.h"
 #include "SyncType.h"
 
@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline
 	};
 
 	// Callback for pass execution
-	typedef void (*PassExecuteCallback)(CommandList&, PassData&);
+	typedef void (*PassExecuteCallback)(RendererExecuteData&, PassData&);
 	// Callback for cleaning optional pass data
 	typedef void (*PassCleanCallback)(void*);
 

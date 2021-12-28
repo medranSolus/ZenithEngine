@@ -10,11 +10,13 @@ namespace ZE::GFX::Resource
 		ZE_API_BACKEND(Resource::PipelineStateGfx);
 
 	public:
-		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const DataBinding& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
+		PipelineStateGfx() = default;
+		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, DataBinding& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
+		constexpr void Init(Device& dev, const PipelineStateDesc& desc, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, Material::Schema& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
 		ZE_API_BACKEND_GET(Resource::PipelineStateGfx);
 	};
 }

@@ -1,11 +1,12 @@
 #pragma once
-#include "GFX/Resource/DataBinding.h"
+#include "GFX/Material/Schema.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {
 	class PipelineStateGfx final
 	{
+		D3D_PRIMITIVE_TOPOLOGY topology;
 		DX::ComPtr<ID3D11InputLayout> inputLayout;
 		DX::ComPtr<ID3D11VertexShader> vertexShader;
 		DX::ComPtr<ID3D11DomainShader> domainShader;
@@ -17,7 +18,7 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11RasterizerState> rasterState;
 
 	public:
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Resource::DataBinding& binding);
+		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Material::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
