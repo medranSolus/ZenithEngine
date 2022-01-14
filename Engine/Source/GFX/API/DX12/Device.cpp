@@ -178,10 +178,9 @@ namespace ZE::GFX::API::DX12
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
 		ZE_WIN_ENABLE_EXCEPT();
 
-		D3D12_RESOURCE_BARRIER* barriers = nullptr;
 		if (copyResInfo.Size)
 		{
-			barriers = new D3D12_RESOURCE_BARRIER[copyResInfo.Size];
+			D3D12_RESOURCE_BARRIER* barriers = new D3D12_RESOURCE_BARRIER[copyResInfo.Size];
 			for (U16 i = 0; i < copyResInfo.Size; ++i)
 			{
 				auto& barrier = barriers[i];
@@ -194,6 +193,7 @@ namespace ZE::GFX::API::DX12
 				barrier.Transition.pResource = copyInfo.Destination;
 			}
 			copyList.GetList()->ResourceBarrier(copyResInfo.Size, barriers);
+			delete[] barriers;
 		}
 		copyList.Close(*this);
 		Execute(mainQueue.Get(), copyList);
@@ -202,8 +202,6 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
 		WaitMain(fenceVal);
 		copyList.Reset(*this);
-		if (barriers)
-			delete[] barriers;
 
 		Table::Clear(copyResInfo.Size, copyResList);
 		copyResInfo.Size = 0;
@@ -331,10 +329,17 @@ namespace ZE::GFX::API::DX12
 		return { desc, static_cast<U32>(info.SizeInBytes) };
 	}
 
-	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC& desc)
+	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC& desc, bool dynamic)
 	{
 		if (allocTier == AllocTier::Tier1)
-			return allocTier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
+		{
+			if (dynamic)
+				return allocTier1.AllocDynamicBuffer(*this, static_cast<U32>(desc.Width), desc);
+			else
+				return allocTier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
+		}
+		else if (dynamic)
+			return allocTier2.AllocDynamicBuffer(*this, static_cast<U32>(desc.Width), desc);
 		else
 			return allocTier2.Alloc_64KB(*this, static_cast<U32>(desc.Width), desc);
 	}

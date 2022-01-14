@@ -1,5 +1,4 @@
 #include "Engine.h"
-#include "GFX/Material.h"
 
 namespace ZE
 {

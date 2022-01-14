@@ -8,7 +8,6 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 {
 	class Pack final
 	{
-		D3D12_GPU_DESCRIPTOR_HANDLE startHandle;
 		U32 count;
 		DescriptorInfo descInfo;
 		ResourceInfo* resources = nullptr;

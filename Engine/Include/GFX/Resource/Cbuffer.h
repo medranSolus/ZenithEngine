@@ -21,14 +21,8 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-		constexpr void Update(CommandList& cl, const U8* values, U32 bytes) const { ZE_API_BACKEND_CALL(Update, cl, values, bytes); }
-		constexpr void UpdateDynamic(Device& dev, CommandList& cl, const U8* values, U32 bytes) const { ZE_API_BACKEND_CALL(UpdateDynamic, dev, cl, values, bytes); }
-
-		constexpr void BindVS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindVS, cl, slot); }
-		constexpr void BindDS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindDS, cl, slot); }
-		constexpr void BindHS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindHS, cl, slot); }
-		constexpr void BindGS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindGS, cl, slot); }
-		constexpr void BindPS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindPS, cl, slot); }
-		constexpr void BindCS(CommandList& cl, ShaderSlot slot) const noexcept { ZE_API_BACKEND_CALL(BindCS, cl, slot); }
+		// Requires call to Device::StartUpload() if created buffer is no dynamic
+		constexpr void Update(Device& dev, CommandList& cl, const U8* values, U32 bytes) const { ZE_API_BACKEND_CALL(Update, dev, cl, values, bytes); }
+		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_API_BACKEND_CALL(Bind, cl, bindCtx); }
 	};
 }

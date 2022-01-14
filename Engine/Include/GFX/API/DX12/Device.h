@@ -122,7 +122,7 @@ namespace ZE::GFX::API::DX12
 		std::pair<D3D12_RESOURCE_DESC, U32> GetTextureDesc(U32 width, U32 height, U16 count,
 			DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept;
 
-		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc);
+		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc, bool dynamic);
 		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC, U32>& desc);
 		DX::ComPtr<ID3D12Resource> CreateTextureUploadBuffer(U64 size);
 

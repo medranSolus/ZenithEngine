@@ -56,6 +56,10 @@ namespace ZE::GFX::API::DX12::Binding
 			else if (!(entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend))
 				signatureDesc.Desc_1_1.NumParameters += entry.Count;
 		}
+#ifdef _ZE_MODE_DEBUG
+		count = signatureDesc.Desc_1_1.NumParameters;
+#endif
+		bindings = new BindType[signatureDesc.Desc_1_1.NumParameters];
 		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[signatureDesc.Desc_1_1.NumParameters];
 		signatureDesc.Desc_1_1.pParameters = parameters;
 
@@ -69,6 +73,9 @@ namespace ZE::GFX::API::DX12::Binding
 			{
 				ZE_ASSERT(i > 0 && parameters[i - 1].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
 					"New ranges for table must be specified directly after that table! Preceding range must also have BufferPackAppend or BufferPack flag!");
+				ZE_ASSERT(entry.StartSlot + entry.Count < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
+					"Too much shader slots!");
+
 				tables.back().second.second = reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(realloc(tables.back().second.second,
 					++tables.back().second.first * sizeof(D3D12_DESCRIPTOR_RANGE1)));
 
@@ -93,16 +100,21 @@ namespace ZE::GFX::API::DX12::Binding
 				parameter.ShaderVisibility = GetShaderVisibility(entry.Shader, &shaderPresence);
 				if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 				{
+					ZE_ASSERT(entry.StartSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 					parameter.Constants.ShaderRegister = entry.StartSlot;
 					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 					parameter.Constants.Num32BitValues = entry.Count / sizeof(U32) + static_cast<bool>(entry.Count % sizeof(U32));
-					++i;
+					bindings[i++] = BindType::Constant;
 				}
 				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				{
+					ZE_ASSERT(entry.StartSlot + entry.Count < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
+						"Too much shader slots!");
+
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-					tables.emplace_back(i++, std::make_pair(1, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
+					tables.emplace_back(i, std::make_pair(1, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
+					bindings[i++] = BindType::Table;
 
 					auto& range = tables.back().second.second[0];
 					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
@@ -121,22 +133,35 @@ namespace ZE::GFX::API::DX12::Binding
 				}
 				else
 				{
+					ZE_ASSERT(entry.StartSlot + entry.Count < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
+						"Too much shader slots!");
+
+					BindType type;
 					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
+					{
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+						type = BindType::SRV;
+					}
 					else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
+					{
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+						type = BindType::UAV;
+					}
 					else
+					{
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+						type = BindType::CBV;
+					}
 					parameter.Descriptor.ShaderRegister = entry.StartSlot;
 					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 					parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
-					++i;
-					for (U32 j = 1; j < entry.Count;)
+					bindings[i++] = type;
+					for (U32 j = 1; j < entry.Count; ++j)
 					{
-						auto& nextParameter = parameters[i++];
+						auto& nextParameter = parameters[i];
+						bindings[i++] = type;
 						nextParameter.ShaderVisibility = parameter.ShaderVisibility;
 						nextParameter.ParameterType = parameter.ParameterType;
-						++j;
 						nextParameter.Descriptor.ShaderRegister = parameter.Descriptor.ShaderRegister + j;
 						nextParameter.Descriptor.RegisterSpace = parameter.Descriptor.RegisterSpace;
 						nextParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
@@ -159,13 +184,14 @@ namespace ZE::GFX::API::DX12::Binding
 		if (shaderPresence[5])
 		{
 			ZE_ASSERT(!shaderPresence[0] && !shaderPresence[1] && !shaderPresence[2] && !shaderPresence[3] && !shaderPresence[4],
-				"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the DataBindingDesc!");
+				"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the SchemaDesc!");
 			signatureDesc.Desc_1_1.Flags |=
 				D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+			isCompute = true;
 		}
 		else
 		{
@@ -179,6 +205,7 @@ namespace ZE::GFX::API::DX12::Binding
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 			if (!shaderPresence[4])
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+			isCompute = false;
 		}
 		if (!(desc.Options & GFX::Binding::SchemaOption::NoVertexBuffer) || shaderPresence[5])
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -205,5 +232,11 @@ namespace ZE::GFX::API::DX12::Binding
 			free(table.second.second);
 		delete[] parameters;
 		delete[] staticSamplers;
+	}
+
+	Schema::~Schema()
+	{
+		if (bindings)
+			delete[] bindings;
 	}
 }

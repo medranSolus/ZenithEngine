@@ -200,7 +200,14 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
-		assert(0 < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
+		ZE_ASSERT(bindCtx.BindingSchema.Get().dx12.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
+			"Bind slot is not a descriptor table! Wrong root signature or order of bindings!");
+
+		auto* list = cl.Get().dx12.GetList();
+		if (bindCtx.BindingSchema.Get().dx12.IsCompute())
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
+		else
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
 	}
 
 	std::vector<std::vector<Surface>> Pack::GetData(GFX::Device& dev) const
