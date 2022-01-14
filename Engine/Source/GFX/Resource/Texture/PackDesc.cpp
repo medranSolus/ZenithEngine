@@ -1,8 +1,8 @@
-#include "GFX/Resource/TexturePackDesc.h"
+#include "GFX/Resource/Texture/PackDesc.h"
 
-namespace ZE::GFX::Resource
+namespace ZE::GFX::Resource::Texture
 {
-	void TexturePackDesc::Init(const TextureSchema& schema) noexcept
+	void PackDesc::Init(const Schema& schema) noexcept
 	{
 		Textures.resize(schema.Location.size());
 
@@ -12,18 +12,18 @@ namespace ZE::GFX::Resource
 			auto& tex = Textures.at(lookup.second);
 			tex.Type = info.first;
 			tex.Usage = info.second;
-			ZE_ASSERT(tex.Usage != TextureUsage::Invalid, "Texture usage not initialized!");
+			ZE_ASSERT(tex.Usage != Usage::Invalid, "Texture usage not initialized!");
 		}
 	}
 
-	void TexturePackDesc::AddTexture(const TextureSchema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept
+	void PackDesc::AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept
 	{
 		ZE_ASSERT(schema.Location.contains(name), "Specified texture not present in current schema!");
 
 		Textures.at(schema.Location.at(name)).Surfaces = std::forward<std::vector<Surface>>(surfaces);
 	}
 
-	void TexturePackDesc::AddTexture(TextureType type, TextureUsage usage, std::vector<Surface>&& surfaces) noexcept
+	void PackDesc::AddTexture(Type type, Usage usage, std::vector<Surface>&& surfaces) noexcept
 	{
 		Textures.emplace_back(type, usage, std::forward<std::vector<Surface>>(surfaces));
 	}

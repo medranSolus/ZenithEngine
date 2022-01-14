@@ -1,6 +1,6 @@
 #pragma once
 #include "Resource/Cbuffer.h"
-#include "Resource/TexturePack.h"
+#include "Resource/Texture/Pack.h"
 
 namespace ZE::GFX
 {
@@ -10,11 +10,11 @@ namespace ZE::GFX
 	{
 		T data;
 		Resource::CBuffer buffer;
-		Resource::TexturePack textures;
+		Resource::Texture::Pack textures;
 
 	public:
 		Material() = default;
-		Material(Device& dev, T&& data, const Resource::TexturePackDesc& desc) { Init(dev, std::forward<T>(data), desc); }
+		Material(Device& dev, T&& data, const Resource::Texture::PackDesc& desc) { Init(dev, std::forward<T>(data), desc); }
 		ZE_CLASS_MOVE(Material);
 		~Material() = default;
 
@@ -23,12 +23,12 @@ namespace ZE::GFX
 		constexpr T& GetData() noexcept { return data; }
 		void UpdateData(CommandList& cl) const { buffer.Update(cl, &data, sizeof(T)); }
 
-		void Init(Device& dev, T&& initData, const Resource::TexturePackDesc& desc);
+		void Init(Device& dev, T&& initData, const Resource::Texture::PackDesc& desc);
 	};
 
 #pragma region Functions
 	template<typename T, const char* TextureSchemaName>
-	void Material<T, TextureSchemaName>::Init(Device& dev, T&& initData, const Resource::TexturePackDesc& desc)
+	void Material<T, TextureSchemaName>::Init(Device& dev, T&& initData, const Resource::Texture::PackDesc& desc)
 	{
 		data = std::forward<T>(initData);
 		buffer.Init(dev, reinterpret_cast<U8*>(&data), sizeof(T), false);

@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
-		void Init(Device& dev, CommandList& mainList, Resource::TextureLibrary& texLib,
+		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
 	};
 }

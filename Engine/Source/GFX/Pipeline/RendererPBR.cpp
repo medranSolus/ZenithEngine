@@ -7,7 +7,7 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::TextureLibrary& texLib,
+	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 		U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
 	{
 		const U32 outlineBuffWidth = width / 2;
@@ -47,36 +47,36 @@ namespace ZE::GFX::Pipeline
 			{
 				Resource::SamplerType::Anisotropic,
 				{
-					Resource::TextureAddressMode::Edge,
-					Resource::TextureAddressMode::Edge,
-					Resource::TextureAddressMode::Edge
+					Resource::Texture::AddressMode::Edge,
+					Resource::Texture::AddressMode::Edge,
+					Resource::Texture::AddressMode::Edge
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 0
 			});
 		buildData.RendererSlots.AddSampler(
 			{
 				Resource::SamplerType::Anisotropic,
 				{
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 1
 			});
 		buildData.RendererSlots.AddSampler(
 			{
 				Resource::SamplerType::Anisotropic,
 				{
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 2
 			});
 
@@ -84,24 +84,24 @@ namespace ZE::GFX::Pipeline
 			{
 				Resource::SamplerType::Linear,
 				{
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 3
 			});
 		buildData.RendererSlots.AddSampler(
 			{
 				Resource::SamplerType::Linear,
 				{
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 4
 			});
 
@@ -109,24 +109,24 @@ namespace ZE::GFX::Pipeline
 			{
 				Resource::SamplerType::Point,
 				{
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat,
-					Resource::TextureAddressMode::Repeat
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat,
+					Resource::Texture::AddressMode::Repeat
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 5
 			});
 		buildData.RendererSlots.AddSampler(
 			{
 				Resource::SamplerType::Point,
 				{
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror,
-					Resource::TextureAddressMode::Mirror
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror,
+					Resource::Texture::AddressMode::Mirror
 				},
 				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::TextureEdgeColor::TransparentBlack,
+				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 6
 			});
 #pragma endregion

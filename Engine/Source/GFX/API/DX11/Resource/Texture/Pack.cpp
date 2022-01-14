@@ -1,9 +1,9 @@
-#include "GFX/API/DX11/Resource/TexturePack.h"
+#include "GFX/API/DX11/Resource/Texture/Pack.h"
 #include "GFX/API/DX/GraphicsException.h"
 
-namespace ZE::GFX::API::DX11::Resource
+namespace ZE::GFX::API::DX11::Resource::Texture
 {
-	TexturePack::TexturePack(GFX::Device& dev, const GFX::Resource::TexturePackDesc& desc)
+	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
 		auto& device = dev.Get().dx11;
@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX11::Resource
 		{
 			if (tex.Surfaces.size() == 0)
 				srvs[i] = nullptr;
-			else if (tex.Type == GFX::Resource::TextureType::Tex3D)
+			else if (tex.Type == GFX::Resource::Texture::Type::Tex3D)
 			{
 				D3D11_TEXTURE3D_DESC texDesc;
 				texDesc.Width = static_cast<U32>(tex.Surfaces.front().GetWidth());
@@ -68,7 +68,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 				srvDesc.Format = texDesc.Format;
-				if (tex.Type == GFX::Resource::TextureType::Cube)
+				if (tex.Type == GFX::Resource::Texture::Type::Cube)
 				{
 					ZE_ASSERT(texDesc.ArraySize == 6, "Cube texture should contain 6 surfaces!");
 					texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
@@ -79,7 +79,7 @@ namespace ZE::GFX::API::DX11::Resource
 				else
 				{
 					texDesc.MiscFlags = 0;
-					if (tex.Type == GFX::Resource::TextureType::Tex2D)
+					if (tex.Type == GFX::Resource::Texture::Type::Tex2D)
 					{
 						ZE_ASSERT(texDesc.ArraySize == 1, "Single texture cannot hold multiple surfaces!");
 						srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -107,7 +107,7 @@ namespace ZE::GFX::API::DX11::Resource
 					data[j].SysMemPitch = static_cast<U32>(surface.GetRowByteSize());
 					data[j].SysMemSlicePitch = 0;
 				}
-				Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+				DX::ComPtr<ID3D11Texture2D> texture;
 				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateTexture2D(&texDesc, data, &texture));
 				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, &srvs[i]));
 				ZE_GFX_SET_ID(srvs[i], "Texture_" + std::to_string(i));
@@ -117,17 +117,17 @@ namespace ZE::GFX::API::DX11::Resource
 		}
 	}
 
-	TexturePack::~TexturePack()
+	Pack::~Pack()
 	{
 		if (srvs)
 			delete[] srvs;
 	}
 
-	void TexturePack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
+	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
 	}
 
-	std::vector<std::vector<Surface>> TexturePack::GetData(GFX::Device& dev) const
+	std::vector<std::vector<Surface>> Pack::GetData(GFX::Device& dev) const
 	{
 		std::vector<std::vector<Surface>> vec;
 		vec.emplace_back(std::vector<Surface>());

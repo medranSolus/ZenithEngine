@@ -1,9 +1,9 @@
-#include "GFX/API/DX12/Resource/TexturePack.h"
+#include "GFX/API/DX12/Resource/Texture/Pack.h"
 #include "GFX/API/DX/GraphicsException.h"
 
-namespace ZE::GFX::API::DX12::Resource
+namespace ZE::GFX::API::DX12::Resource::Texture
 {
-	TexturePack::TexturePack(GFX::Device& dev, const GFX::Resource::TexturePackDesc& desc)
+	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
 		auto& device = dev.Get().dx12;
@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX12::Resource
 			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			switch (tex.Type)
 			{
-			case GFX::Resource::TextureType::Tex2D:
+			case GFX::Resource::Texture::Type::Tex2D:
 			{
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 				srv.Texture2D.MostDetailedMip = 0;
@@ -33,7 +33,7 @@ namespace ZE::GFX::API::DX12::Resource
 				srv.Texture2D.ResourceMinLODClamp = 0.0f;
 				break;
 			}
-			case GFX::Resource::TextureType::Tex3D:
+			case GFX::Resource::Texture::Type::Tex3D:
 			{
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 				srv.Texture3D.MostDetailedMip = 0;
@@ -41,7 +41,7 @@ namespace ZE::GFX::API::DX12::Resource
 				srv.Texture3D.ResourceMinLODClamp = 0.0f;
 				break;
 			}
-			case GFX::Resource::TextureType::Cube:
+			case GFX::Resource::Texture::Type::Cube:
 			{
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 				srv.TextureCube.MostDetailedMip = 0;
@@ -49,7 +49,7 @@ namespace ZE::GFX::API::DX12::Resource
 				srv.TextureCube.ResourceMinLODClamp = 0.0f;
 				break;
 			}
-			case GFX::Resource::TextureType::Array:
+			case GFX::Resource::Texture::Type::Array:
 			{
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 				srv.Texture2DArray.MostDetailedMip = 0;
@@ -70,11 +70,11 @@ namespace ZE::GFX::API::DX12::Resource
 				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
 				auto texDesc = device.GetTextureDesc(static_cast<U32>(tex.Surfaces.front().GetWidth()),
 					static_cast<U32>(tex.Surfaces.front().GetHeight()), surfaces,
-					srv.Format, tex.Type == GFX::Resource::TextureType::Tex3D);
+					srv.Format, tex.Type);
 
 				switch (tex.Type)
 				{
-				case GFX::Resource::TextureType::Tex2D:
+				case GFX::Resource::Texture::Type::Tex2D:
 				{
 					ZE_ASSERT(texDesc.first.DepthOrArraySize == 1, "Single texture cannot hold multiple surfaces!");
 					srv.Texture2D.MipLevels = texDesc.first.MipLevels;
@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX12::Resource
 					copyInfo.back().first = startSurface.GetSliceByteSize();
 					break;
 				}
-				case GFX::Resource::TextureType::Tex3D:
+				case GFX::Resource::Texture::Type::Tex3D:
 				{
 					srv.Texture3D.MipLevels = texDesc.first.MipLevels;
 
@@ -105,7 +105,7 @@ namespace ZE::GFX::API::DX12::Resource
 					copyInfo.back().first = startSurface.GetSliceByteSize() * texDesc.first.DepthOrArraySize;
 					break;
 				}
-				case GFX::Resource::TextureType::Cube:
+				case GFX::Resource::Texture::Type::Cube:
 				{
 					ZE_ASSERT(texDesc.first.DepthOrArraySize == 6, "Cube texture should contain 6 surfaces!");
 					srv.TextureCube.MipLevels = texDesc.first.MipLevels;
@@ -115,7 +115,7 @@ namespace ZE::GFX::API::DX12::Resource
 						copyInfo.back().second.data(), nullptr, nullptr, &copyInfo.back().first);
 					break;
 				}
-				case GFX::Resource::TextureType::Array:
+				case GFX::Resource::Texture::Type::Array:
 				{
 					srv.Texture2DArray.MipLevels = texDesc.first.MipLevels;
 					srv.Texture2DArray.ArraySize = texDesc.first.DepthOrArraySize;
@@ -174,11 +174,11 @@ namespace ZE::GFX::API::DX12::Resource
 				copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
 				copySource.PlacedFootprint.Footprint = region.Footprint;
 
-				ZE_ASSERT(tex.Usage != GFX::Resource::TextureUsage::Invalid, "Texture usage no initialized!");
+				ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
 				D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
-				if (tex.Usage & GFX::Resource::TextureUsage::PixelShader)
+				if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
 					endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-				if (tex.Usage & GFX::Resource::TextureUsage::NonPixelShader)
+				if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
 					endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 
 				device.UploadTexture(copyDest, copySource, endState);
@@ -192,18 +192,18 @@ namespace ZE::GFX::API::DX12::Resource
 		uploadRes->Unmap(0, nullptr);
 	}
 
-	TexturePack::~TexturePack()
+	Pack::~Pack()
 	{
 		if (resources)
 			delete[] resources;
 	}
 
-	void TexturePack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
+	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
 		assert(0 < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
 	}
 
-	std::vector<std::vector<Surface>> TexturePack::GetData(GFX::Device& dev) const
+	std::vector<std::vector<Surface>> Pack::GetData(GFX::Device& dev) const
 	{
 		std::vector<std::vector<Surface>> vec;
 		vec.emplace_back(std::vector<Surface>());

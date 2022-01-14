@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/Shader.h"
-#include "GFX/Resource/TextureLibrary.h"
+#include "GFX/Resource/Texture/Library.h"
 #include "GFX/Binding/Library.h"
 
 namespace ZE::GFX::Pipeline
@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline
 		// Allows creation of materials and data bindings. Always save only index as Schema address may change during setup
 		Binding::Library& BindingLib;
 		// Holds descriptions for TexturePack's internal structure to be used later during their creation and accesses
-		Resource::TextureLibrary& TextureLib;
+		Resource::Texture::Library& TextureLib;
 		// If pass require global renderer data in shaders just simply append this SchemaDesc
 		Binding::SchemaDesc RendererSlots;
 		std::unordered_map<std::wstring, Resource::Shader> ShaderCache;

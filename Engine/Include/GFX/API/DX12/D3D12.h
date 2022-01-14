@@ -27,9 +27,9 @@ namespace ZE::GFX::API::DX12
 	// Get shader visibility from shader type
 	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderType type, std::bitset<6>* presence = nullptr) noexcept;
 	// Get DirectX 12 version of static border color for static sampler
-	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::TextureEdgeColor color) noexcept;
+	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept;
 	// Get DirectX 12 version of texture addressing mode
-	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::TextureAddressMode mode) noexcept;
+	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept;
 	// Get DirectX 12 version of primitive topology types
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept;
 	// Get DirectX 12 version of possible barrier types
@@ -306,29 +306,29 @@ namespace ZE::GFX::API::DX12
 		return D3D12_SHADER_VISIBILITY_ALL;
 	}
 
-	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::TextureEdgeColor color) noexcept
+	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept
 	{
 		switch (color)
 		{
-		case GFX::Resource::TextureEdgeColor::SolidBlack:
+		case GFX::Resource::Texture::EdgeColor::SolidBlack:
 			return D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-		case GFX::Resource::TextureEdgeColor::SolidWhite:
+		case GFX::Resource::Texture::EdgeColor::SolidWhite:
 			return D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
 		}
 		return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	}
 
-	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::TextureAddressMode mode) noexcept
+	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept
 	{
 		switch (mode)
 		{
-		case GFX::Resource::TextureAddressMode::Mirror:
+		case GFX::Resource::Texture::AddressMode::Mirror:
 			return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-		case GFX::Resource::TextureAddressMode::Edge:
+		case GFX::Resource::Texture::AddressMode::Edge:
 			return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		case GFX::Resource::TextureAddressMode::BorderColor:
+		case GFX::Resource::Texture::AddressMode::BorderColor:
 			return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		case GFX::Resource::TextureAddressMode::MirrorOnce:
+		case GFX::Resource::Texture::AddressMode::MirrorOnce:
 			return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
 		}
 		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;

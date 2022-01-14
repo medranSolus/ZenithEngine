@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/Texture/Type.h"
 #include "GFX/CommandList.h"
 #include "D3D12.h"
 #include "AllocatorTier1.h"
@@ -118,7 +119,8 @@ namespace ZE::GFX::API::DX12
 		ID3D12DescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
 
 		D3D12_RESOURCE_DESC GetBufferDesc(U64 size) const noexcept;
-		std::pair<D3D12_RESOURCE_DESC, U32> GetTextureDesc(U32 width, U32 height, U16 count, DXGI_FORMAT format, bool is3D) const noexcept;
+		std::pair<D3D12_RESOURCE_DESC, U32> GetTextureDesc(U32 width, U32 height, U16 count,
+			DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept;
 
 		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc);
 		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC, U32>& desc);

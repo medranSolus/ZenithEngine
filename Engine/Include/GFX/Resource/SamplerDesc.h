@@ -1,6 +1,6 @@
 #pragma once
 #include "SamplerType.h"
-#include "TextureAddressMode.h"
+#include "Texture/AddressMode.h"
 
 namespace ZE::GFX::Resource
 {
@@ -14,15 +14,15 @@ namespace ZE::GFX::Resource
 		U8 Type;
 		struct
 		{
-			TextureAddressMode U;
-			TextureAddressMode V;
-			TextureAddressMode W;
+			Texture::AddressMode U;
+			Texture::AddressMode V;
+			Texture::AddressMode W;
 		} Address;
 		float MipLevelBias;
 		// Used when Type is SamplerType::Anisotropic, must be in [1; 16] range
 		U8 MaxAnisotropy;
 		CompareMethod Comparison;
-		TextureEdgeColor EdgeColor;
+		Texture::EdgeColor EdgeColor;
 		// Must be less or equal to MaxLOD
 		float MinLOD;
 		// Must be greater or equal to MinLOD. For no limit set to FLT_MAX

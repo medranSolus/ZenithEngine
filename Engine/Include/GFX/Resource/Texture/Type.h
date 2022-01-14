@@ -1,9 +1,9 @@
 #pragma once
 
-namespace ZE::GFX::Resource
+namespace ZE::GFX::Resource::Texture
 {
 	// Type of single texture
-	enum class TextureType : U8
+	enum class Type : U8
 	{
 		Tex2D,
 		Tex3D,
