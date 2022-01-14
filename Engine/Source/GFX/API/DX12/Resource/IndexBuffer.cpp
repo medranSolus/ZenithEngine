@@ -5,7 +5,8 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	IndexBuffer::IndexBuffer(GFX::Device& dev, const IndexData& data)
 	{
-		assert(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0);
+		ZE_ASSERT(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0,
+			"Indices cannot be empty and they have to be multiple of 3!");
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
 		view.SizeInBytes = data.Count * sizeof(U32);
@@ -15,7 +16,8 @@ namespace ZE::GFX::API::DX12::Resource
 		view.BufferLocation = info.Resource->GetGPUVirtualAddress();
 		ZE_GFX_SET_ID(info.Resource, "IndexBuffer");
 
-		dev.Get().dx12.UploadResource(info.Resource.Get(), desc, data.Indices, view.SizeInBytes);
+		dev.Get().dx12.UploadBuffer(info.Resource.Get(), desc, data.Indices,
+			view.SizeInBytes, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 	}
 
 	IndexData IndexBuffer::GetData(GFX::Device& dev, GFX::CommandList& cl) const

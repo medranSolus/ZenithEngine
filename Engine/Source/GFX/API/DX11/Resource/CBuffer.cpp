@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, U8* values, U32 bytes, bool dynamic)
+	CBuffer::CBuffer(GFX::Device& dev, const U8* values, U32 bytes, bool dynamic)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
@@ -31,12 +31,12 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(buffer, "CBuffer");
 	}
 
-	void CBuffer::Update(GFX::CommandList& cl, U8* values, U64 bytes) const
+	void CBuffer::Update(GFX::CommandList& cl, const U8* values, U32 bytes) const
 	{
 		cl.Get().dx11.GetContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
 	}
 
-	void CBuffer::UpdateDynamic(GFX::Device& dev, GFX::CommandList& cl, U8* values, U64 bytes) const
+	void CBuffer::UpdateDynamic(GFX::Device& dev, GFX::CommandList& cl, const U8* values, U32 bytes) const
 	{
 		ZE_GFX_ENABLE(dev.Get().dx11);
 

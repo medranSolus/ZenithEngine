@@ -53,7 +53,8 @@ namespace ZE::GFX::API::DX11
 
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void SetCommandBufferSize(U32 count) noexcept { commandListsCount = count; }
-		constexpr void FinishUpload();
+		constexpr void StartUpload() {}
+		constexpr void FinishUpload() {}
 
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }
 		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }

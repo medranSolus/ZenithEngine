@@ -12,6 +12,7 @@ namespace ZE
 		Window::MainWindow window;
 		GFX::Graphics graphics;
 		GFX::Pipeline::RendererPBR renderer;
+		GFX::Resource::TextureLibrary textureLib;
 		bool guiEnabled = true;
 
 	public:
