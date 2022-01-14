@@ -5,10 +5,6 @@
 namespace ZE::GFX
 {
 	class Device;
-	namespace Material
-	{
-		class Schema;
-	}
 	namespace Resource
 	{
 		class PipelineStateCompute;
@@ -44,10 +40,6 @@ namespace ZE::GFX::API::DX12
 		void Open(GFX::Device& dev);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
-		void SetState(GFX::Resource::PipelineStateCompute& pso);
-		void SetState(GFX::Resource::PipelineStateGfx& pso);
-		void SetBindingsCompute(const GFX::Material::Schema& schema);
-		void SetBindingsGfx(const GFX::Material::Schema& schema);
 
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);

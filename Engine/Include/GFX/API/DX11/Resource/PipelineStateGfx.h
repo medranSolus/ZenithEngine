@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Material/Schema.h"
+#include "GFX/Binding/Schema.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Resource
@@ -18,9 +18,11 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11RasterizerState> rasterState;
 
 	public:
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Material::Schema& binding);
+		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
+
+		void Bind(GFX::CommandList& cl) const noexcept { Bind(cl.Get().dx11.GetContext()); }
 
 		// Gfx API Internal
 

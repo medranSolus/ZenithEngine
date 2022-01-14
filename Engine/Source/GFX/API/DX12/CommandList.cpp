@@ -1,6 +1,6 @@
 #include "GFX/API/DX12/CommandList.h"
 #include "GFX/API/DX/GraphicsException.h"
-#include "GFX/Material/Schema.h"
+#include "GFX/Binding/Schema.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"
@@ -38,27 +38,7 @@ namespace ZE::GFX::API::DX12
 	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
 	{
 		Open(dev.Get().dx12, pso.Get().dx12.GetState());
-	}
-
-	void CommandList::SetState(GFX::Resource::PipelineStateCompute& pso)
-	{
-		commands->SetPipelineState(pso.Get().dx12.GetState());
-	}
-
-	void CommandList::SetState(GFX::Resource::PipelineStateGfx& pso)
-	{
-		commands->SetPipelineState(pso.Get().dx12.GetState());
 		commands->IASetPrimitiveTopology(pso.Get().dx12.GetTopology());
-	}
-
-	void CommandList::SetBindingsCompute(const GFX::Material::Schema& schema)
-	{
-		commands->SetComputeRootSignature(schema.Get().dx12.GetSignature());
-	}
-
-	void CommandList::SetBindingsGfx(const GFX::Material::Schema& schema)
-	{
-		commands->SetGraphicsRootSignature(schema.Get().dx12.GetSignature());
 	}
 
 	void CommandList::Close(GFX::Device& dev)

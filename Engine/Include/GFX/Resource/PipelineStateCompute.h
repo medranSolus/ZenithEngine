@@ -11,12 +11,16 @@ namespace ZE::GFX::Resource
 
 	public:
 		PipelineStateCompute() = default;
-		constexpr PipelineStateCompute(Device& dev, Shader& shader, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, shader, binding); }
+		constexpr PipelineStateCompute(Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, shader, binding); }
 		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;
 
-		constexpr void Init(Device& dev, Shader& shader, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, shader, binding); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Shader& shader, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, shader, binding); }
+		constexpr void Init(Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, shader, binding); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, shader, binding); }
 		ZE_API_BACKEND_GET(Resource::PipelineStateCompute);
+
+		// Main Gfx API
+
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
 	};
 }

@@ -76,7 +76,6 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Update fence values for all passes that depends on current pass
-		assert(syncInfo.DependentsCount <= 255);
 		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
 		{
 			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
@@ -147,7 +146,7 @@ namespace ZE::GFX::Pipeline
 		BeforeSync(dev, pass.Syncs);
 		if (pass.Execute)
 		{
-			RendererExecuteData data{ dev, cl, frameBuffer, materialFactory,sharedStates };
+			RendererExecuteData data{ dev, cl, frameBuffer, bindings, sharedStates };
 			pass.Execute(data, pass.Data);
 		}
 		AfterSync(dev, pass.Syncs);
@@ -420,8 +419,8 @@ namespace ZE::GFX::Pipeline
 						pass.Data.Buffers = node.GetNodeRIDs();
 						pass.Data.OptData = node.GetExecuteData();
 						passesCleaners[i][passes[i].second] = node.GetCleanCallback();
-						assert((pass.Data.OptData != nullptr) == (node.GetCleanCallback() != nullptr)
-							&& "Optional data and cleaning function must be both provided or neither of them!");
+						ZE_ASSERT((pass.Data.OptData != nullptr) == (node.GetCleanCallback() != nullptr),
+							"Optional data and cleaning function must be both provided or neither of them!");
 						passLocation.at(j).second = { i, passes[i].second++ };
 						if (passes[i].second > workersCount)
 							workersCount = passes[i].second;
@@ -436,7 +435,7 @@ namespace ZE::GFX::Pipeline
 							depPassSync = &staticPasses[passLocation.at(dep).second.first].Syncs;
 						else
 							depPassSync = &passes[passLocation.at(dep).second.first].first[passLocation.at(dep).second.second].Syncs;
-						assert(depPassSync->DependentsCount <= 255);
+						ZE_ASSERT(depPassSync->DependentsCount < 255, "Need to change used data type!");
 						depPassSync->ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPassSync->ExitSyncs, sizeof(ExitSync) * ++depPassSync->DependentsCount));
 						auto& exitSync = depPassSync->ExitSyncs[depPassSync->DependentsCount - 1];
 						switch (node.GetPassType())
@@ -631,12 +630,12 @@ namespace ZE::GFX::Pipeline
 		if (buildData.PipelineStates.size())
 		{
 			sharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
-			for (U64 i = 0; const auto& state : buildData.PipelineStates)
-				sharedStates[i++].Init(dev, state.second.second.first, materialFactory.GetSchema(state.second.first));
+			for (U64 i = 0; const auto & state : buildData.PipelineStates)
+				sharedStates[i++].Init(dev, state.second.second.first, bindings.GetSchema(state.second.first));
 		}
 
 		// Compute static passes
-		for (U64 i = 0; const auto & node : nodes)
+		for (U64 i = 0; const auto& node : nodes)
 		{
 			const auto& location = passLocation.at(i);
 			if (location.first)
@@ -646,7 +645,7 @@ namespace ZE::GFX::Pipeline
 				staticPassData.Buffers = node.GetNodeRIDs();
 				// Optional data is not supported for static RenderPass
 				staticPassData.OptData = nullptr;
-				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, materialFactory,sharedStates };
+				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, bindings, sharedStates };
 				executeData.CL.Open(dev);
 				node.GetExecuteCallback()(executeData, staticPassData);
 				executeData.CL.Close(dev);
@@ -721,7 +720,7 @@ namespace ZE::GFX::Pipeline
 			if (level.second)
 			{
 				U64 workersDispatch = level.second - 1;
-				assert(workersCount >= workersDispatch);
+				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
 				for (U64 j = 0; j < workersDispatch; ++j)
 					workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second), std::ref(level.first[j]) };
 				ExecuteThread(dev, mainList, level.first[workersDispatch]);

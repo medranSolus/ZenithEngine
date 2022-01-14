@@ -11,12 +11,16 @@ namespace ZE::GFX::Resource
 
 	public:
 		PipelineStateGfx() = default;
-		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
+		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const Binding::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
-		constexpr void Init(Device& dev, const PipelineStateDesc& desc, const Material::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, Material::Schema& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
+		constexpr void Init(Device& dev, const PipelineStateDesc& desc, const Binding::Schema& binding) { ZE_API_BACKEND_VAR.Init(dev, desc, binding); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, Binding::Schema& binding) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
 		ZE_API_BACKEND_GET(Resource::PipelineStateGfx);
+
+		// Main Gfx API
+
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
 	};
 }

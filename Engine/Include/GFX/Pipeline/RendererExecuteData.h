@@ -1,6 +1,6 @@
 #pragma once
-#include "GFX/Material/Factory.h"
-#include "GFX/CommandList.h"
+#include "GFX/Binding/Library.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 #include "FrameBuffer.h"
 
 namespace ZE::GFX::Pipeline
@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 		Device& Dev;
 		CommandList& CL;
 		FrameBuffer& Buffers;
-		Material::Factory& Bindins;
+		Binding::Library& Bindings;
 		Resource::PipelineStateGfx* GraphicsPSO;
 	};
 }

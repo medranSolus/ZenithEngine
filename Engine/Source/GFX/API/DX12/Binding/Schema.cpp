@@ -1,10 +1,10 @@
-#include "GFX/API/DX12/Material/Schema.h"
+#include "GFX/API/DX12/Binding/Schema.h"
 #include "GFX/API/DX/GraphicsException.h"
 #include <sstream>
 
-namespace ZE::GFX::API::DX12::Material
+namespace ZE::GFX::API::DX12::Binding
 {
-	Schema::Schema(GFX::Device& dev, const GFX::Material::SchemaDesc& desc)
+	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
 	{
 		ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!");
 		ZE_GFX_ENABLE(dev.Get().dx12);
@@ -37,23 +37,23 @@ namespace ZE::GFX::API::DX12::Material
 		signatureDesc.Desc_1_1.NumParameters = 0;
 		for (const auto& entry : desc.Ranges)
 		{
-			ZE_ASSERT(((entry.Flags & MaterialFlags::Constant) == 0 || (entry.Flags & MaterialFlags::Material) == 0)
-				&& ((entry.Flags & MaterialFlags::Constant) == 0 || (entry.Flags & MaterialFlags::MaterialAppend) == 0)
-				&& ((entry.Flags & MaterialFlags::Material) == 0 || (entry.Flags & MaterialFlags::MaterialAppend) == 0),
-				"Single range should only have one of the flags: Constant, Material or MaterialAppend!");
-			ZE_ASSERT((entry.Flags & MaterialFlags::Constant) == 0
-				|| (entry.Flags & (MaterialFlags::SRV | MaterialFlags::UAV | MaterialFlags::CBV)) == 0,
-				"Flags SRV, UAV, CBV or Samplers cannot be specified with flag Constant!");
-			ZE_ASSERT(((entry.Flags & MaterialFlags::SRV) != 0)
-				!= ((entry.Flags & MaterialFlags::UAV) != 0)
-				!= ((entry.Flags & MaterialFlags::CBV) != 0),
-				"Single range should only have one of the flags: SRV, UAV, CBV or Samplers!");
-			ZE_ASSERT(entry.Count != 0, "Count should be at least 1!");
+			ZE_ASSERT(((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPack) == 0)
+				&& ((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0)
+				&& ((entry.Flags & GFX::Binding::RangeFlag::BufferPack) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0),
+				"Single range should only have one of the flags: Constant, BufferPack or BufferPackAppends!");
+			ZE_ASSERT((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0
+				|| (entry.Flags & (GFX::Binding::RangeFlag::SRV | GFX::Binding::RangeFlag::UAV | GFX::Binding::RangeFlag::CBV)) == 0,
+				"Flags SRV, UAV or CBV cannot be specified with flag Constant!");
+			ZE_ASSERT(((entry.Flags & GFX::Binding::RangeFlag::SRV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::UAV) == 0)
+				&& ((entry.Flags & GFX::Binding::RangeFlag::SRV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::CBV) == 0)
+				&& ((entry.Flags & GFX::Binding::RangeFlag::UAV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::CBV) == 0),
+				"Single range should only have one of the flags: SRV, UAV or CBV!");
+			ZE_ASSERT(entry.Count != 0, "There should be at least 1 resource!");
 
-			if (entry.Flags & MaterialFlags::Constant
-				|| entry.Flags & MaterialFlags::Material)
+			if (entry.Flags & GFX::Binding::RangeFlag::Constant
+				|| entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				++signatureDesc.Desc_1_1.NumParameters;
-			else if (!(entry.Flags & MaterialFlags::MaterialAppend))
+			else if (!(entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend))
 				signatureDesc.Desc_1_1.NumParameters += entry.Count;
 		}
 		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[signatureDesc.Desc_1_1.NumParameters];
@@ -63,26 +63,27 @@ namespace ZE::GFX::API::DX12::Material
 		std::vector<std::pair<U32, std::pair<U32, D3D12_DESCRIPTOR_RANGE1*>>> tables;
 		std::bitset<6> shaderPresence(0);
 		// Fill signature parameters
-		for (U32 i = 0; const auto & entry : desc.Ranges)
+		for (U32 i = 0; const auto& entry : desc.Ranges)
 		{
-			if (entry.Flags & MaterialFlags::MaterialAppend)
+			if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
 			{
 				ZE_ASSERT(i > 0 && parameters[i - 1].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
-					"New ranges for table must be specified directly after that table! Preceeding range must also have MaterialAppend or Material flag!");
+					"New ranges for table must be specified directly after that table! Preceding range must also have BufferPackAppend or BufferPack flag!");
 				tables.back().second.second = reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(realloc(tables.back().second.second,
 					++tables.back().second.first * sizeof(D3D12_DESCRIPTOR_RANGE1)));
 
 				auto& range = tables.back().second.second[tables.back().second.first - 1];
-				if (entry.Flags & MaterialFlags::SRV)
+				if (entry.Flags & GFX::Binding::RangeFlag::SRV)
 					range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-				else if (entry.Flags & MaterialFlags::UAV)
+				else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
 					range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 				else
 					range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 				range.NumDescriptors = entry.Count;
-				range.BaseShaderRegister = entry.SlotStart;
+				range.BaseShaderRegister = entry.StartSlot;
 				range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
-				// When descriptors are set in descriptor heap they won't change until draw finishes and when data is entering pipeline it is already static
+				// When descriptors are set in descriptor heap they won't change until draw finishes
+				// and when data is entering pipeline it is already static
 				range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
 				range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 			}
@@ -90,42 +91,43 @@ namespace ZE::GFX::API::DX12::Material
 			{
 				auto& parameter = parameters[i];
 				parameter.ShaderVisibility = GetShaderVisibility(entry.Shader, &shaderPresence);
-				if (entry.Flags & MaterialFlags::Constant)
+				if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 				{
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-					parameter.Constants.ShaderRegister = entry.SlotStart;
+					parameter.Constants.ShaderRegister = entry.StartSlot;
 					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 					parameter.Constants.Num32BitValues = entry.Count / sizeof(U32) + static_cast<bool>(entry.Count % sizeof(U32));
 					++i;
 				}
-				else if (entry.Flags & MaterialFlags::Material)
+				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				{
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 					tables.emplace_back(i++, std::make_pair(1, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
 
 					auto& range = tables.back().second.second[0];
-					if (entry.Flags & MaterialFlags::SRV)
+					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
 						range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-					else if (entry.Flags & MaterialFlags::UAV)
+					else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
 						range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 					else
 						range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 					range.NumDescriptors = entry.Count;
-					range.BaseShaderRegister = entry.SlotStart;
+					range.BaseShaderRegister = entry.StartSlot;
 					range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
-					// When descriptors are set in descriptor heap they won't change until draw finishes and when data is entering pipeline it is already static
+					// When descriptors are set in descriptor heap they won't change until draw finishes
+					// and when data is entering pipeline it is already static
 					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
 					range.OffsetInDescriptorsFromTableStart = 0;
 				}
 				else
 				{
-					if (entry.Flags & MaterialFlags::SRV)
+					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-					else if (entry.Flags & MaterialFlags::UAV)
+					else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
 					else
 						parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-					parameter.Descriptor.ShaderRegister = entry.SlotStart;
+					parameter.Descriptor.ShaderRegister = entry.StartSlot;
 					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 					parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 					++i;
@@ -178,9 +180,9 @@ namespace ZE::GFX::API::DX12::Material
 			if (!shaderPresence[4])
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 		}
-		if (!(desc.Options & MaterialOptions::NoVertexBuffer) || shaderPresence[5])
+		if (!(desc.Options & GFX::Binding::SchemaOption::NoVertexBuffer) || shaderPresence[5])
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-		if (desc.Options & MaterialOptions::AllowStreamOutput)
+		if (desc.Options & GFX::Binding::SchemaOption::AllowStreamOutput)
 		{
 			ZE_ASSERT(!shaderPresence[5], "Stream output is not accessible in Compute Shader!");
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;

@@ -1,5 +1,7 @@
 #include "GFX/API/DX11/CommandList.h"
 #include "GFX/API/DX/GraphicsException.h"
+#include "GFX/Resource/PipelineStateCompute.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::API::DX11
 {
@@ -27,6 +29,16 @@ namespace ZE::GFX::API::DX11
 #ifdef _ZE_MODE_DEBUG
 		ZE_GFX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
 #endif
+	}
+
+	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
+	{
+		pso.Get().dx11.Bind(context.Get());
+	}
+
+	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
+	{
+		pso.Get().dx11.Bind(context.Get());
 	}
 
 	void CommandList::Close(GFX::Device& dev)

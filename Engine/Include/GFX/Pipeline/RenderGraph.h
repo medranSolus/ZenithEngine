@@ -31,7 +31,7 @@ namespace ZE::GFX::Pipeline
 		static constexpr U64 BACKBUFFER_RID = 0;
 
 		FrameBuffer frameBuffer;
-		Material::Factory materialFactory;
+		Binding::Library bindings;
 
 		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);

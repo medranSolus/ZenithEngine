@@ -7,7 +7,8 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
+	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::TextureLibrary& texLib,
+		U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
 	{
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
@@ -15,32 +16,32 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.Init(11, width, height);
 
 #pragma region Framebuffer definition
-		const U64 gbuffColor = frameBufferDesc.AddResource(
+		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
-		const U64 gbuffNormal = frameBufferDesc.AddResource(
+		const RID gbuffNormal = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32G32_Float, ColorF4() });
-		const U64 gbuffSpecular = frameBufferDesc.AddResource(
+		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const U64 gbuffDepth = frameBufferDesc.AddResource(
+		const RID gbuffDepth = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
-		const U64 lightbuffColor = frameBufferDesc.AddResource(
+		const RID lightbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const U64 lightbuffSpecular = frameBufferDesc.AddResource(
+		const RID lightbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const U64 rawScene = frameBufferDesc.AddResource(
+		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const U64 ssao = frameBufferDesc.AddResource(
+		const RID ssao = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
-		const U64 outline = frameBufferDesc.AddResource(
+		const RID outline = frameBufferDesc.AddResource(
 			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
-		const U64 outlineBlur = frameBufferDesc.AddResource(
+		const RID outlineBlur = frameBufferDesc.AddResource(
 			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
-		const U64 outlineDepth = frameBufferDesc.AddResource(
+		const RID outlineDepth = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
-		RendererBuildData buildData = { materialFactory };
+		RendererBuildData buildData = { bindings, texLib };
 #pragma region Renderer bindings
 		buildData.RendererSlots.AddSampler(
 			{
@@ -207,7 +208,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.ResourceInfo.at(rawScene).Format);
+			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
 			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::State::ShaderResourcePS);

@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX12::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Material::Schema& binding)
+	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx12);
 
@@ -204,5 +204,11 @@ namespace ZE::GFX::API::DX12::Resource
 
 		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
 		ZE_GFX_SET_ID(state, "PSO_" + desc.DebugName);
+	}
+
+	void PipelineStateGfx::Bind(GFX::CommandList& cl) const noexcept
+	{
+		cl.Get().dx12.GetList()->SetPipelineState(GetState());
+		cl.Get().dx12.GetList()->IASetPrimitiveTopology(topology);
 	}
 }

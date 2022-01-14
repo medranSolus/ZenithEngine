@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Material::Schema& binding)
+	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 		auto device = dev.Get().dx11.GetDevice();

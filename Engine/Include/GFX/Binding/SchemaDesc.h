@@ -1,12 +1,13 @@
 #pragma once
 #include "GFX/Resource/SamplerDesc.h"
 #include "GFX/Resource/ShaderType.h"
-#include "BindingRange.h"
+#include "Range.h"
 
-namespace ZE::GFX::Material
+namespace ZE::GFX::Binding
 {
+	typedef U8 SchemaOptions;
 	// Options to create shader signature with
-	enum BindingOptions : U8
+	enum SchemaOption : SchemaOptions
 	{
 		NoVertexBuffer = 1,
 		AllowStreamOutput = 2
@@ -15,11 +16,11 @@ namespace ZE::GFX::Material
 	// Descriptor for creation of Schema
 	struct SchemaDesc
 	{
-		U8 Options = 0;
-		std::vector<BindingRange> Ranges;
+		SchemaOptions Options = 0;
+		std::vector<Range> Ranges;
 		std::vector<Resource::SamplerDesc> Samplers;
 
-		void AddRange(BindingRange&& range) noexcept { Ranges.emplace_back(std::forward<BindingRange>(range)); }
+		void AddRange(Range&& range) noexcept { Ranges.emplace_back(std::forward<Range>(range)); }
 		void AddSampler(Resource::SamplerDesc&& sampler) noexcept { Samplers.emplace_back(std::forward<Resource::SamplerDesc>(sampler)); }
 		void Append(const SchemaDesc& binding) noexcept
 		{
@@ -27,9 +28,4 @@ namespace ZE::GFX::Material
 			Samplers.insert(Samplers.end(), binding.Samplers.begin(), binding.Samplers.end());
 		}
 	};
-}
-namespace ZE
-{
-	// Options to create shader signature with
-	typedef GFX::Material::BindingOptions MaterialOptions;
 }

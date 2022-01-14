@@ -30,11 +30,6 @@ namespace ZE::GFX
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
 
-		constexpr void SetState(Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(SetState, pso); }
-		constexpr void SetState(Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(SetState, pso); }
-		constexpr void SetBindingsCompute(const Material::Schema& schema) { ZE_API_BACKEND_CALL(SetBindingsCompute, schema); }
-		constexpr void SetBindingsGfx(const Material::Schema& schema) { ZE_API_BACKEND_CALL(SetBindingsGfx, schema); }
-
 		constexpr void Close(Device& dev) { ZE_API_BACKEND_CALL(Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_API_BACKEND_CALL(Reset, dev); }
 

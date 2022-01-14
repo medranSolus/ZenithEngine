@@ -1,10 +1,16 @@
 #pragma once
-#include "GFX/Material/Schema.h"
-#include "GFX/Resource/PipelineStateCompute.h"
-#include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/CommandType.h"
 #include "D3D11.h"
 
+namespace ZE::GFX
+{
+	class Device;
+	namespace Resource
+	{
+		class PipelineStateCompute;
+		class PipelineStateGfx;
+	}
+}
 namespace ZE::GFX::API::DX11
 {
 	class CommandList final
@@ -22,20 +28,17 @@ namespace ZE::GFX::API::DX11
 		~CommandList() = default;
 
 		constexpr void Open(GFX::Device& dev) {}
-		constexpr void SetBindingsCompute(const GFX::Material::Schema& schema) {}
-		constexpr void SetBindingsGfx(const GFX::Material::Schema& schema) {}
 
 #ifdef _ZE_MODE_DEBUG
 		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd() const noexcept { tagManager->EndEvent(); }
 #endif
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) { SetState(pso); }
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) { SetState(pso); }
-		void SetState(GFX::Resource::PipelineStateCompute& pso) { pso.Get().dx11.Bind(context.Get()); }
-		void SetState(GFX::Resource::PipelineStateGfx& pso) { pso.Get().dx11.Bind(context.Get()); }
 		void Reset(GFX::Device& dev) { commands = nullptr; }
 
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
+		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
 		void Close(GFX::Device& dev);
+
 		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG);
 		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG);
 		void DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG);

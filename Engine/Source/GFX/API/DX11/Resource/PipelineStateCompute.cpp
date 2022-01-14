@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	PipelineStateCompute::PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Material::Schema& binding)
+	PipelineStateCompute::PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
