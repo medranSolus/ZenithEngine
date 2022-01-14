@@ -16,7 +16,7 @@ namespace ZE::GFX::Pipeline
 		innerBuffers.emplace_back(initState, std::forward<FrameResourceDesc>(desc));
 	}
 
-	void RenderNode::AddOutput(std::string&& name, Resource::State state, U64 rid)
+	void RenderNode::AddOutput(std::string&& name, Resource::State state, RID rid)
 	{
 		std::string outputName = passName + "." + std::forward<std::string>(name);
 		if (std::find(inputNames.begin(), inputNames.end(), outputName) != inputNames.end())
@@ -35,15 +35,15 @@ namespace ZE::GFX::Pipeline
 		return cl;
 	}
 
-	U64* RenderNode::GetNodeRIDs() const noexcept
+	RID* RenderNode::GetNodeRIDs() const noexcept
 	{
-		U64* rids = new U64[inputRIDs.size() + innerRIDs.size() + outputRIDs.size()];
-		U64 i = 0;
-		for (U64 rid : inputRIDs)
+		RID* rids = new RID[inputRIDs.size() + innerRIDs.size() + outputRIDs.size()];
+		RID i = 0;
+		for (RID rid : inputRIDs)
 			rids[i++] = rid;
-		for (U64 rid : innerRIDs)
+		for (RID rid : innerRIDs)
 			rids[i++] = rid;
-		for (U64 rid : outputRIDs)
+		for (RID rid : outputRIDs)
 			rids[i++] = rid;
 		return rids;
 	}

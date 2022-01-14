@@ -22,14 +22,14 @@ namespace ZE::GFX::Pipeline
 		// Input info
 		std::vector<std::string> inputNames;
 		std::vector<Resource::State> inputStates;
-		std::vector<U64> inputRIDs;
+		std::vector<RID> inputRIDs;
 		// Inner buffer info
 		std::vector<InnerBuffer> innerBuffers;
-		std::vector<U64> innerRIDs;
+		std::vector<RID> innerRIDs;
 		// Output info
 		std::vector<std::string> outputNames;
 		std::vector<Resource::State> outputStates;
-		std::vector<U64> outputRIDs;
+		std::vector<RID> outputRIDs;
 
 	public:
 		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute,
@@ -49,18 +49,18 @@ namespace ZE::GFX::Pipeline
 		constexpr const std::vector<std::string>& GetInputs() const noexcept { return inputNames; }
 		constexpr std::vector<InnerBuffer>& GetInnerBuffers() noexcept { return innerBuffers; }
 		constexpr const std::vector<std::string>& GetOutputs() const noexcept { return outputNames; }
-		constexpr const std::vector<U64>& GetOutputResources() const noexcept { return outputRIDs; }
-		constexpr Resource::State GetInputState(U64 i) const noexcept { return inputStates.at(i); }
-		constexpr Resource::State GetOutputState(U64 i) const noexcept { return outputStates.at(i); }
+		constexpr const std::vector<RID>& GetOutputResources() const noexcept { return outputRIDs; }
+		constexpr Resource::State GetInputState(RID i) const noexcept { return inputStates.at(i); }
+		constexpr Resource::State GetOutputState(RID i) const noexcept { return outputStates.at(i); }
 
 		bool ContainsInput(const std::string& name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
-		void AddInputResource(U64 rid) noexcept { inputRIDs.emplace_back(rid); }
-		void AddInnerBufferResource(U64 rid) noexcept { innerRIDs.emplace_back(rid); }
+		void AddInputResource(RID rid) noexcept { inputRIDs.emplace_back(rid); }
+		void AddInnerBufferResource(RID rid) noexcept { innerRIDs.emplace_back(rid); }
 
 		void AddInput(std::string&& name, Resource::State state);
 		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
-		void AddOutput(std::string&& name, Resource::State state, U64 rid);
+		void AddOutput(std::string&& name, Resource::State state, RID rid);
 		CommandList GetStaticExecuteData() noexcept;
-		U64* GetNodeRIDs() const noexcept;
+		RID* GetNodeRIDs() const noexcept;
 	};
 }

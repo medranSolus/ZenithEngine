@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "GFX/Device.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11

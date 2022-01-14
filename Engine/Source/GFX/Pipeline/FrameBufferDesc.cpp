@@ -14,11 +14,11 @@ namespace ZE::GFX::Pipeline
 			});
 	}
 
-	U64 FrameBufferDesc::AddResource(FrameResourceDesc&& info) noexcept
+	RID FrameBufferDesc::AddResource(FrameResourceDesc&& info) noexcept
 	{
-		U64 id = ResourceInfo.size();
+		RID id = ResourceInfo.size();
 		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
-		ResourceLifetimes.emplace_back(std::map<U64, Resource::State>({}));
+		ResourceLifetimes.emplace_back(std::map<RID, Resource::State>({}));
 		return id;
 	}
 

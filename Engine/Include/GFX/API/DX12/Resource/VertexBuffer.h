@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "GFX/Device.h"
 #include "GFX/VertexData.h"
 #include "D3D12.h"
 

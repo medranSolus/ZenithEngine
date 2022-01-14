@@ -20,6 +20,7 @@ Switch ($command)
     {
         Get-ChildItem Bin -Recurse | Remove-Item -Recurse
         Get-ChildItem Build -Recurse | Remove-Item -Recurse
+        exit 0
     }
     "init"
     {

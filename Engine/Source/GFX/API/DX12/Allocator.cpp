@@ -51,7 +51,7 @@ namespace ZE::GFX::API::DX12
 
 		DX::ComPtr<ID3D12Resource> res;
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource(heap, offset, &desc,
-			flags & HeapFlags::Dynamic ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&res)));
+			flags & HeapFlags::Dynamic ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}
 

@@ -27,7 +27,7 @@ namespace ZE::GFX::API::DX12
 		ResourceInfo AllocDynamicBuffer(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<NORMAL_CHUNK, DBUF_HEAP_SIZE>(dev, dynamicBuffers, bytes, desc, DBUF_FLAG); }
 		// Only small textures (smaller than 64KB)
 		ResourceInfo AllocTexture_4KB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignMinimalChunks<SMALL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
-		// only normal textures and small multisampled textures (smaller than 4MB)
+		// Only normal textures and small multisampled textures (smaller than 4MB)
 		ResourceInfo AllocTexture_64KB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<NORMAL_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }
 		// Only multisampled textures
 		ResourceInfo AllocTexture_4MB(Device& dev, U32 bytes, const D3D12_RESOURCE_DESC& desc) { return AllocAlignBigChunks<HUGE_CHUNK, TEX_HEAP_SIZE>(dev, textures, bytes, desc, TEX_FLAG); }

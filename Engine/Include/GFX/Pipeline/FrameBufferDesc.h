@@ -11,11 +11,13 @@ namespace ZE::GFX::Pipeline
 	struct FrameBufferDesc
 	{
 		std::vector<FrameResourceDesc> ResourceInfo;
-		std::vector<std::map<U64, Resource::State>> ResourceLifetimes;
+		std::vector<std::map<RID, Resource::State>> ResourceLifetimes;
 		std::vector<std::vector<TransitionDesc>> TransitionsPerLevel;
 
+		PixelFormat GetFormat(RID id) const noexcept { return ResourceInfo.at(id).Format; }
+
 		void Init(U64 resourceCount, U32 backbufferWidth, U32 backbufferHeight);
-		U64 AddResource(FrameResourceDesc&& info) noexcept;
+		RID AddResource(FrameResourceDesc&& info) noexcept;
 		void ComputeWorkflowTransitions(U64 dependencyLevels) noexcept;
 	};
 }
