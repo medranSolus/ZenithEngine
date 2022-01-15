@@ -70,7 +70,7 @@ namespace ZE
 		R16_UNorm,
 		R16_SNorm,
 		R16_Depth,
-		DepthOnlySmall = 53, // Alias name for R32_Depth used in Depth Stencil
+		DepthOnlySmall = 53, // Alias name for R16_Depth used in Depth Stencil
 		// 8 bit component
 		R8_Typeless,
 		R8_UInt,
@@ -110,10 +110,10 @@ namespace ZE
 		R24G8_Typeless,
 		R24_UNorm_X8_Typeless,
 		R24_Depth_S8_UInt,
-		DepthStencil = 83, // Alias name for R24_Depth_S8_UInt used in Depth Stencil
 		X24_Typeless_G8_UInt,
 		// Depth only
-		D32_Float_S8X24_UInt,
+		R32_Depth_S8X24_UInt,
+		DepthStencil = 85, // Alias name for R32_Depth_S8X24_UInt used in Depth Stencil
 		R32_Float_X8X24_Typeless,
 		X32_Typeless_G8X24_UInt,
 		//Special

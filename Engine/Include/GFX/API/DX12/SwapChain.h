@@ -10,7 +10,7 @@ namespace ZE::GFX::API::DX12
 		UINT presentFlags = 0;
 		DX::ComPtr<IDXGISwapChain4> swapChain;
 		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE>* rtvSrv = nullptr;
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>* rtvSrv = nullptr;
 		D3D12_RESOURCE_BARRIER presentBarrier;
 
 	public:
@@ -26,6 +26,6 @@ namespace ZE::GFX::API::DX12
 		constexpr const D3D12_RESOURCE_BARRIER& GetPresentBarrier() const noexcept { return presentBarrier; }
 		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[swapChain->GetCurrentBackBufferIndex()].first; }
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer);
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer);
 	};
 }

@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		renderData.Bindings.GetSchema(data.BindingIndex).SetGraphics(renderData.CL);
 		renderData.Buffers.InitRTV(renderData.CL, ids.RenderTarget);
 
-		renderData.Buffers.SetRTV(renderData.Dev, renderData.CL, ids.RenderTarget);
+		renderData.Buffers.SetRTV(renderData.CL, ids.RenderTarget);
 		renderData.CL.DrawFullscreen(renderData.Dev);
 
 		renderData.CL.Close(renderData.Dev);

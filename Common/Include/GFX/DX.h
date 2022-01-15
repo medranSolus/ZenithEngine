@@ -107,7 +107,7 @@ namespace ZE::GFX::API::DX
 		case PixelFormat::R24_UNorm_X8_Typeless:		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		case PixelFormat::R24_Depth_S8_UInt:			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::X24_Typeless_G8_UInt:			return DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-		case PixelFormat::D32_Float_S8X24_UInt:			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		case PixelFormat::R32_Depth_S8X24_UInt:			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case PixelFormat::R32_Float_X8X24_Typeless:		return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 		case PixelFormat::X32_Typeless_G8X24_UInt:		return DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
 		case PixelFormat::R10G10B10A2_Typeless:			return DXGI_FORMAT_R10G10B10A2_TYPELESS;
@@ -173,7 +173,7 @@ namespace ZE::GFX::API::DX
 		case DXGI_FORMAT_R32G32_UINT:					return PixelFormat::R32G32_UInt;
 		case DXGI_FORMAT_R32G32_SINT:					return PixelFormat::R32G32_SInt;
 		case DXGI_FORMAT_R32G8X24_TYPELESS:				return PixelFormat::R32G8X24_Typeless;
-		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:			return PixelFormat::D32_Float_S8X24_UInt;
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:			return PixelFormat::R32_Depth_S8X24_UInt;
 		case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:		return PixelFormat::R32_Float_X8X24_Typeless;
 		case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:		return PixelFormat::X32_Typeless_G8X24_UInt;
 		case DXGI_FORMAT_R10G10B10A2_TYPELESS:			return PixelFormat::R10G10B10A2_Typeless;

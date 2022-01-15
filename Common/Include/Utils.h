@@ -31,7 +31,7 @@ namespace ZE::Utils
 		case ZE::PixelFormat::R24_UNorm_X8_Typeless:
 		case ZE::PixelFormat::R24_Depth_S8_UInt:
 		case ZE::PixelFormat::X24_Typeless_G8_UInt:
-		case ZE::PixelFormat::D32_Float_S8X24_UInt:
+		case ZE::PixelFormat::R32_Depth_S8X24_UInt:
 		case ZE::PixelFormat::R32_Float_X8X24_Typeless:
 		case ZE::PixelFormat::X32_Typeless_G8X24_UInt:
 			return true;

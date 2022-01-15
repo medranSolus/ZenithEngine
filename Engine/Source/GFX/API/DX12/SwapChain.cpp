@@ -24,12 +24,12 @@ namespace ZE::GFX::API::DX12
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = Settings::GetBackbufferCount();
 		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
-		rtvSrv = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE>[descHeapDesc.NumDescriptors];
+		rtvSrv = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[descHeapDesc.NumDescriptors];
 
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 srvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-		D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = dev.Get().dx12.AddStaticDescs(descHeapDesc.NumDescriptors).first;
+		auto srvHandle = dev.Get().dx12.AddStaticDescs(descHeapDesc.NumDescriptors);
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 		rtvDesc.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
@@ -49,10 +49,11 @@ namespace ZE::GFX::API::DX12
 			DX::ComPtr<ID3D12Resource> buffer;
 			ZE_GFX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
-			ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle));
-			rtvSrv[i] = { rtvHandle, srvHandle };
+			ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
+			rtvSrv[i] = { rtvHandle, srvHandle.second };
 			rtvHandle.ptr += rtvDescSize;
-			srvHandle.ptr += srvDescSize;
+			srvHandle.first.ptr += srvDescSize;
+			srvHandle.second.ptr += srvDescSize;
 		}
 
 		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -89,7 +90,7 @@ namespace ZE::GFX::API::DX12
 		dev.Get().dx12.ExecuteMain(cl);
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
 	{
 		ZE_GFX_ENABLE(dev.Get().dx12);
 		U32 current = swapChain->GetCurrentBackBufferIndex();
