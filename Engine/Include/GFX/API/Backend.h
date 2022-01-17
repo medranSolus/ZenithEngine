@@ -12,7 +12,7 @@ namespace ZE::GFX::API
 		GL gl;
 		VK vk;
 
-		constexpr Backend() noexcept {}
+		constexpr Backend() noexcept { Init(); }
 		constexpr Backend(Backend&& b) noexcept;
 		constexpr Backend(const Backend& b) noexcept;
 		constexpr Backend& operator=(Backend&& b) noexcept;

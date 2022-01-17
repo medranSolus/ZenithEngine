@@ -9,9 +9,10 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	class Pack final
 	{
 		U32 count = 0;
-		DX::ComPtr<ID3D11ShaderResourceView>* srvs = nullptr;
+		Ptr<DX::ComPtr<ID3D11ShaderResourceView>> srvs;
 
 	public:
+		Pack() = default;
 		Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();

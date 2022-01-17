@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX12::Resource
 		ResourceInfo info;
 
 	public:
+		VertexBuffer() = default;
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;

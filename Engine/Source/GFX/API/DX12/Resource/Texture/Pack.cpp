@@ -195,7 +195,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 	Pack::~Pack()
 	{
 		if (resources)
-			delete[] resources;
+			resources.DeleteArray();
 	}
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept

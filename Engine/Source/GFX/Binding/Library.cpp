@@ -5,17 +5,21 @@ namespace ZE::GFX::Binding
 	Library::~Library()
 	{
 		if (schemas)
-			delete[] schemas;
+			schemas.DeleteArray();
 	}
 
 	U32 Library::AddDataBinding(Device& dev, const SchemaDesc& desc)
 	{
 		Schema* newSchemas = new Schema[schemaCount + 1];
-		for (U32 i = 0; i < schemaCount; ++i)
-			newSchemas[i] = std::move(schemas[i]);
-		newSchemas[schemaCount].Init(dev, desc);
-		delete[] schemas;
-		schemas = newSchemas;
+		if (schemaCount > 0)
+		{
+			for (U32 i = 0; i < schemaCount; ++i)
+				newSchemas[i] = std::move(schemas[i]);
+			schemas.DeleteArray(newSchemas);
+		}
+		else
+			schemas = newSchemas;
+		schemas[schemaCount].Init(dev, desc);
 		return schemaCount++;
 	}
 }

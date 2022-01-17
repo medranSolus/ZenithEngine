@@ -18,6 +18,7 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11RasterizerState> rasterState;
 
 	public:
+		PipelineStateGfx() = default;
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;

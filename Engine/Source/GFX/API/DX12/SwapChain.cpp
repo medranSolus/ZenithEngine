@@ -66,7 +66,7 @@ namespace ZE::GFX::API::DX12
 	SwapChain::~SwapChain()
 	{
 		if (rtvSrv)
-			delete[] rtvSrv;
+			rtvSrv.DeleteArray();
 	}
 
 	void SwapChain::Present(GFX::Device& dev) const

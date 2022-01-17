@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::API::DX12::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, const U8* values, U32 bytes, bool dynamic)
+	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic)
 	{
 		ZE_ASSERT(values != nullptr && bytes != 0, "Empty buffer!");
 		auto& device = dev.Get().dx12;
@@ -22,7 +22,7 @@ namespace ZE::GFX::API::DX12::Resource
 		}
 	}
 
-	void CBuffer::Update(GFX::Device& dev, GFX::CommandList& cl, const U8* values, U32 bytes) const
+	void CBuffer::Update(GFX::Device& dev, GFX::CommandList& cl, const void* values, U32 bytes) const
 	{
 		if (buffer)
 			memcpy(buffer, values, bytes);

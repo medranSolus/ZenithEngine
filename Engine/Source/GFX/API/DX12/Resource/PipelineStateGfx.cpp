@@ -64,18 +64,26 @@ namespace ZE::GFX::API::DX12::Resource
 		// Stream Output stage
 		stateDesc.StreamOutput = { 0 };
 
-		// Blend state and blending sample mask (?)
+		// Blend state and blending sample mask
 		stateDesc.SampleMask = 0xFFFFFFFF;
 		stateDesc.BlendState.AlphaToCoverageEnable = FALSE;
 		stateDesc.BlendState.IndependentBlendEnable = FALSE;
 		auto& blendTarget = stateDesc.BlendState.RenderTarget[0];
+		// Default blend state
+		blendTarget.LogicOpEnable = FALSE;
+		blendTarget.SrcBlend = D3D12_BLEND_ONE;
+		blendTarget.DestBlend = D3D12_BLEND_ZERO;
+		blendTarget.BlendOp = D3D12_BLEND_OP_ADD;
+		blendTarget.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blendTarget.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blendTarget.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blendTarget.LogicOp = D3D12_LOGIC_OP_NOOP;
+		blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		switch (desc.Blender)
 		{
 		case GFX::Resource::BlendType::None:
 		{
 			blendTarget.BlendEnable = FALSE;
-			blendTarget.LogicOpEnable = FALSE;
-			blendTarget.RenderTargetWriteMask = 0;
 			break;
 		}
 		case GFX::Resource::BlendType::Light:
@@ -91,7 +99,6 @@ namespace ZE::GFX::API::DX12::Resource
 			blendTarget.BlendEnable = TRUE;
 			blendTarget.SrcBlend = D3D12_BLEND_SRC_ALPHA; // Maybe ONE
 			blendTarget.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-			blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 			break;
 		}
 		}

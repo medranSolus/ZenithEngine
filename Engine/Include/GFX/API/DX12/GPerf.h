@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX12
 		D3D12_COMMAND_LIST_TYPE listType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	public:
+		GPerf() = default;
 		GPerf(GFX::Device& dev);
 		ZE_CLASS_MOVE(GPerf);
 		~GPerf() = default;

@@ -22,6 +22,7 @@ namespace ZE::GFX::API::DX11
 #endif
 
 	public:
+		CommandList() = default;
 		CommandList(GFX::Device& dev);
 		CommandList(GFX::Device& dev, CommandType type);
 		ZE_CLASS_MOVE(CommandList);

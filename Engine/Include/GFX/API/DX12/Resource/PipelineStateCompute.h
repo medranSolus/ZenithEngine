@@ -9,6 +9,7 @@ namespace ZE::GFX::API::DX12::Resource
 		DX::ComPtr<ID3D12PipelineState> state;
 
 	public:
+		PipelineStateCompute() = default;
 		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;

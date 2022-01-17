@@ -13,8 +13,8 @@ namespace ZE
 	template<TableIndex I>
 	struct TableInfo
 	{
-		I Size;
-		I Allocated;
+		I Size = 0;
+		I Allocated = 0;
 	};
 
 	// Utility class for managing operations on tables
@@ -23,9 +23,9 @@ namespace ZE
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
 		static constexpr T* Alloc(I count) noexcept;
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
-		static constexpr T* IncrementAlloc(T* data, I oldSize, I newSize) noexcept;
+		static constexpr T* IncrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept;
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
-		static constexpr T* DecrementAlloc(T* data, I newSize) noexcept;
+		static constexpr T* DecrementAlloc(Ptr<T> data, I newSize) noexcept;
 
 	public:
 		Table() = delete;
@@ -35,45 +35,45 @@ namespace ZE
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
 		static constexpr T* Create(I size, const T& initData) noexcept;
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
-		static constexpr T* Create(I size, T* sourceData) noexcept;
+		static constexpr T* Create(I size, Ptr<T> sourceData) noexcept;
 
 		template<typename T, TableIndex I>
-		static constexpr void Clear(I size, T*& data) noexcept;
+		static constexpr void Clear(I size, Ptr<T>& data) noexcept;
 
 		// Standard resize operation for single-column table
 		template<TableIndex I, typename T, U8 AlignmentPower = 0>
-		static constexpr void Resize(TableInfo<I>& info, T*& data, I newSize) noexcept;
+		static constexpr void Resize(TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept;
 		// Begins resize operation on multi-column tables. Call this on each column
 		template<TableIndex I, typename T, U8 AlignmentPower = 0>
-		static constexpr void ResizeBegin(const TableInfo<I>& info, T*& data, I newSize) noexcept;
+		static constexpr void ResizeBegin(const TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept;
 		// Finishes resize operation on multi-column tables. Call this once after every column in a table is resized
 		template<TableIndex I>
 		static constexpr void ResizeEnd(TableInfo<I>& info, I newSize) noexcept;
 
 		// Standard insert operation for single-column table
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0, typename ...P>
-		static constexpr void Insert(TableInfo<I>& info, T*& data, I index, P&&... params) noexcept;
+		static constexpr void Insert(TableInfo<I>& info, Ptr<T>& data, I index, P&&... params) noexcept;
 
 		// Standard append operation for single-column table
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0, typename ...P>
-		static constexpr void Append(TableInfo<I>& info, T*& data, P&&... params) noexcept;
+		static constexpr void Append(TableInfo<I>& info, Ptr<T>& data, P&&... params) noexcept;
 		// Begins append operation on multi-column tables. Call this on each column
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0, typename ...P>
-		static constexpr void AppendBegin(const TableInfo<I>& info, T*& data, P&&... params) noexcept;
+		static constexpr void AppendBegin(const TableInfo<I>& info, Ptr<T>& data, P&&... params) noexcept;
 		// Finishes append operation on multi-column tables. Call this once after every column in a new row is added
 		template<U64 ChunkSize, TableIndex I>
 		static constexpr void AppendEnd(TableInfo<I>& info) noexcept;
 
 		// Standard remove element operation for single-column table
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0>
-		static constexpr void Remove(TableInfo<I>& info, T*& data, I element) noexcept;
+		static constexpr void Remove(TableInfo<I>& info, Ptr<T>& data, I element) noexcept;
 
 		// Standard pop back operation for single-column table
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0>
-		static constexpr void PopBack(TableInfo<I>& info, T*& data) noexcept;
+		static constexpr void PopBack(TableInfo<I>& info, Ptr<T>& data) noexcept;
 		// Begins pop back operation on multi-column tables. Call this on each column
 		template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower = 0>
-		static constexpr void PopBackBegin(const TableInfo<I>& info, T*& data) noexcept;
+		static constexpr void PopBackBegin(const TableInfo<I>& info, Ptr<T>& data) noexcept;
 		// Finishes pop back operation on multi-column tables. Call this once after every column in an old row is deleted
 		template<U64 ChunkSize, TableIndex I>
 		static constexpr void PopBackEnd(TableInfo<I>& info) noexcept;
@@ -92,7 +92,7 @@ namespace ZE
 	}
 
 	template<typename T, TableIndex I, U8 AlignmentPower>
-	constexpr T* Table::IncrementAlloc(T* data, I oldSize, I newSize) noexcept
+	constexpr T* Table::IncrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept
 	{
 		assert(data && newSize > oldSize);
 		if constexpr (AlignmentPower == 0)
@@ -107,12 +107,12 @@ namespace ZE
 	}
 
 	template<typename T, TableIndex I, U8 AlignmentPower>
-	constexpr T* Table::DecrementAlloc(T* data, I newSize) noexcept
+	constexpr T* Table::DecrementAlloc(Ptr<T> data, I newSize) noexcept
 	{
 		T* ptr = reinterpret_cast<T*>(realloc(data, sizeof(T) * newSize));
 		// Check if realloc returns same region of memory,
 		// if no then handling for alingned mem would be needed
-		assert(ptr == data);
+		ZE_ASSERT(ptr == static_cast<T*>(data), "Realloc moved memory!");
 		return ptr;
 	}
 
@@ -136,7 +136,7 @@ namespace ZE
 	}
 
 	template<typename T, TableIndex I, U8 AlignmentPower>
-	constexpr T* Table::Create(I size, T* sourceData) noexcept
+	constexpr T* Table::Create(I size, Ptr<T> sourceData) noexcept
 	{
 		assert(sourceData);
 		T* data = Alloc<T>(size);
@@ -149,7 +149,7 @@ namespace ZE
 	}
 
 	template<typename T, TableIndex I>
-	constexpr void Table::Clear(I size, T*& data) noexcept
+	constexpr void Table::Clear(I size, Ptr<T>& data) noexcept
 	{
 		assert(size && data);
 		if constexpr (!std::is_trivially_destructible_v<T>)
@@ -160,7 +160,7 @@ namespace ZE
 	}
 
 	template<TableIndex I, typename T, U8 AlignmentPower>
-	constexpr void Table::Resize(TableInfo<I>& info, T*& data, I newSize) noexcept
+	constexpr void Table::Resize(TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept
 	{
 		assert(data && info.Size != newSize && newSize != 0);
 		if (info.Size > newSize)
@@ -186,7 +186,7 @@ namespace ZE
 	}
 
 	template<TableIndex I, typename T, U8 AlignmentPower>
-	constexpr void Table::ResizeBegin(const TableInfo<I>& info, T*& data, I newSize) noexcept
+	constexpr void Table::ResizeBegin(const TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept
 	{
 		assert(data && info.Size != newSize && newSize != 0);
 		if (info.Size > newSize)
@@ -214,7 +214,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower, typename ...P>
-	constexpr void Table::Insert(TableInfo<I>& info, T*& data, I index, P&&... params) noexcept
+	constexpr void Table::Insert(TableInfo<I>& info, Ptr<T>& data, I index, P&&... params) noexcept
 	{
 		if (info.Size == info.Allocated)
 		{
@@ -227,7 +227,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower, typename ...P>
-	constexpr void Table::Append(TableInfo<I>& info, T*& data, P&&... params) noexcept
+	constexpr void Table::Append(TableInfo<I>& info, Ptr<T>& data, P&&... params) noexcept
 	{
 		if (info.Size == info.Allocated)
 		{
@@ -239,7 +239,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower, typename ...P>
-	constexpr void Table::AppendBegin(const TableInfo<I>& info, T*& data, P&&... params) noexcept
+	constexpr void Table::AppendBegin(const TableInfo<I>& info, Ptr<T>& data, P&&... params) noexcept
 	{
 		if (info.Size == info.Allocated)
 			data = IncrementAlloc(data, info.Size, info.Allocated + ChunkSize);
@@ -255,7 +255,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower>
-	constexpr void Table::Remove(TableInfo<I>& info, T*& data, I element) noexcept
+	constexpr void Table::Remove(TableInfo<I>& info, Ptr<T>& data, I element) noexcept
 	{
 		assert(element < info.Size);
 		if constexpr (!std::is_trivially_destructible_v<T>)
@@ -270,7 +270,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower>
-	constexpr void Table::PopBack(TableInfo<I>& info, T*& data) noexcept
+	constexpr void Table::PopBack(TableInfo<I>& info, Ptr<T>& data) noexcept
 	{
 		assert(info.Size != 0);
 		--info.Size;
@@ -284,7 +284,7 @@ namespace ZE
 	}
 
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower>
-	constexpr void Table::PopBackBegin(const TableInfo<I>& info, T*& data) noexcept
+	constexpr void Table::PopBackBegin(const TableInfo<I>& info, Ptr<T>& data) noexcept
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[info.Size - 1].~T();

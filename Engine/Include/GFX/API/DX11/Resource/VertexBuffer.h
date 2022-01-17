@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX11::Resource
 		DX::ComPtr<ID3D11Buffer> buffer;
 
 	public:
+		VertexBuffer() = default;
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;

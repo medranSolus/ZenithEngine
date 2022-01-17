@@ -1,6 +1,6 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include "Macros.h"
+#include "Ptr.h"
 #include <atomic>
 #include <cmath>
 #include <cstddef>

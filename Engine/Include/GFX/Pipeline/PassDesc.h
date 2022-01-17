@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline
 		// Syncs required for dependent RenderPasses
 		SyncType AllExitSyncs = SyncType::None;
 		U8 DependentsCount = 0;
-		ExitSync* ExitSyncs = nullptr;
+		Ptr<ExitSync> ExitSyncs;
 	};
 
 	// Data needed for executing RenderPass
@@ -30,7 +30,7 @@ namespace ZE::GFX::Pipeline
 	{
 		// Resources used by RenderPass, appear in order they've been added during RenderNode construction,
 		// in respect to their usage (first input, then inner, lastly output resources)
-		const RID* Buffers = nullptr;
+		Ptr<const RID> Buffers = nullptr;
 		// Optional data used by RenderPass
 		void* OptData = nullptr;
 	};
@@ -53,6 +53,6 @@ namespace ZE::GFX::Pipeline
 	{
 		PassSyncDesc Syncs;
 		U32 CommandsCount = 0;
-		CommandList* Commands = nullptr;
+		Ptr<CommandList> Commands;
 	};
 }

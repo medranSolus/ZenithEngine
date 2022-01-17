@@ -22,6 +22,7 @@ namespace ZE::GFX::API::DX11
 		void Execute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
+		Device() = default;
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();

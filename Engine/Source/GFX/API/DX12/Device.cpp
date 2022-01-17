@@ -150,7 +150,7 @@ namespace ZE::GFX::API::DX12
 	Device::~Device()
 	{
 		if (commandLists)
-			delete[] commandLists;
+			commandLists.DeleteArray();
 		if (allocTier == AllocTier::Tier1)
 			allocTier1.~AllocatorTier1();
 		else

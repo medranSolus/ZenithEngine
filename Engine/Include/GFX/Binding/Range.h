@@ -14,6 +14,10 @@ namespace ZE::GFX::Binding
 		BufferPack = 2,
 		// Appends new range to the previous buffer pack. Must follow directly after range with same or 'BufferPack' flag
 		BufferPackAppend = 8,
+		// When data is not changing during execution of the pipeline it can be marked as static for internal driver optimizations.
+		// Should only be used with ranges not belonging to resources created by pipeline! Automatically set when flags 'Constant' or 'CBV' are set.
+		// Warning: Schema does not perform checks on this flag as it's impossible to determine if current range is using FrameBuffer data!
+		StaticData = 16,
 		// Mark range as Shader Resource View range. Cannot be used with Constant flag set.
 		// When not using raw or structured texture this flag have to be used only inside buffer pack
 		SRV = 32,

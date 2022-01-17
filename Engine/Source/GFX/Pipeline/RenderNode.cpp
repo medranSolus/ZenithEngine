@@ -28,8 +28,9 @@ namespace ZE::GFX::Pipeline
 
 	CommandList RenderNode::GetStaticExecuteData() noexcept
 	{
-		assert(!isStatic && "Cannot get static execute data for non-static pass!");
-		assert(executeData && "Execute data cannot be empty for static pass!");
+		ZE_ASSERT(!isStatic, "Cannot get static execute data for non-static pass!");
+		ZE_ASSERT(executeData, "Execute data cannot be empty for static pass!");
+
 		CommandList cl = std::move(*reinterpret_cast<CommandList*>(executeData));
 		delete reinterpret_cast<CommandList*>(executeData);
 		return cl;

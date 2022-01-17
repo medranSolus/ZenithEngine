@@ -11,11 +11,12 @@ namespace ZE::GFX::API::DX11::Resource
 		void* bufferData = nullptr;
 
 	public:
-		CBuffer(GFX::Device& dev, const U8* values, U32 bytes, bool dynamic);
+		CBuffer() = default;
+		CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic);
 		ZE_CLASS_MOVE(CBuffer);
 		~CBuffer() = default;
 
-		void Update(GFX::Device& dev, GFX::CommandList& cl, const U8* values, U32 bytes) const;
+		void Update(GFX::Device& dev, GFX::CommandList& cl, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 	};
 }

@@ -20,9 +20,9 @@ namespace ZE::GFX::API::DX12
 		struct BufferInfo
 		{
 			TableInfo<U32> FreeInfo;
-			MemInfo* FreeList;
+			Ptr<MemInfo> FreeList;
 			TableInfo<U16> HeapsInfo;
-			DX::ComPtr<ID3D12Heap>* Heaps;
+			Ptr<DX::ComPtr<ID3D12Heap>> Heaps;
 
 			BufferInfo(U32 heapSize) noexcept;
 			ZE_CLASS_DELETE(BufferInfo);

@@ -7,6 +7,7 @@ namespace ZE::GFX::API::DX11::Binding
 	class Schema final
 	{
 	public:
+		Schema() = default;
 		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) {}
 		ZE_CLASS_MOVE(Schema);
 		~Schema() = default;

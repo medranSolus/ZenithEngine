@@ -7,7 +7,7 @@ namespace ZE::GFX::Binding
 	class Library final
 	{
 		U32 schemaCount = 0;
-		Schema* schemas = nullptr;
+		Ptr<Schema> schemas;
 
 	public:
 		Library() = default;

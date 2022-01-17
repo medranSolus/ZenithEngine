@@ -376,8 +376,8 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Sort passes into dependency level groups of execution
-		passes = new std::pair<PassDesc*, U64>[++levelCount];
-		passesCleaners = new PassCleanCallback * [levelCount];
+		passes = new std::pair<Ptr<PassDesc>, U64>[++levelCount];
+		passesCleaners = new Ptr<PassCleanCallback>[levelCount];
 		U64 normalCount = nodes.size() - staticCount;
 		passes[0].first = new PassDesc[normalCount];
 		passesCleaners[0] = new PassCleanCallback[normalCount];
@@ -649,7 +649,7 @@ namespace ZE::GFX::Pipeline
 				executeData.CL.Open(dev);
 				node.GetExecuteCallback()(executeData, staticPassData);
 				executeData.CL.Close(dev);
-				delete[] staticPassData.Buffers;
+				staticPassData.Buffers.DeleteArray();
 			}
 			++i;
 		}
@@ -659,7 +659,7 @@ namespace ZE::GFX::Pipeline
 	RenderGraph::~RenderGraph()
 	{
 		if (workerThreads)
-			delete[] workerThreads;
+			workerThreads.DeleteArray();
 		if (passes)
 		{
 			for (U64 i = 0; i < levelCount; ++i)
@@ -669,30 +669,30 @@ namespace ZE::GFX::Pipeline
 				{
 					auto& pass = level.first[j];
 					if (pass.Data.Buffers)
-						delete[] pass.Data.Buffers;
+						pass.Data.Buffers.DeleteArray();
 					if (pass.Data.OptData)
 						passesCleaners[i][j](pass.Data.OptData);
 					if (pass.Syncs.ExitSyncs)
-						free(pass.Syncs.ExitSyncs);
+						pass.Syncs.ExitSyncs.Free();
 				}
 				if (staticPasses[i].Syncs.ExitSyncs)
-					free(staticPasses[i].Syncs.ExitSyncs);
+					staticPasses[i].Syncs.ExitSyncs.Free();
 			}
 			if (passes[0].first)
-				delete[] passes[0].first;
-			delete[] passes;
+				passes[0].first.DeleteArray();
+			passes.DeleteArray();
 			if (passesCleaners[0])
-				delete[] passesCleaners[0];
-			delete[] passesCleaners;
+				passesCleaners[0].DeleteArray();
+			passesCleaners.DeleteArray();
 		}
 		if (staticPasses)
 		{
 			if (staticPasses[0].Commands)
-				delete[] staticPasses[0].Commands;
-			delete[] staticPasses;
+				staticPasses[0].Commands.DeleteArray();
+			staticPasses.DeleteArray();
 		}
 		if (sharedStates)
-			delete[] sharedStates;
+			sharedStates.DeleteArray();
 	}
 
 	void RenderGraph::Execute(Graphics& gfx)

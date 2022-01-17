@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11Query> end;
 
 	public:
+		GPerf() = default;
 		GPerf(GFX::Device& dev);
 		ZE_CLASS_MOVE(GPerf);
 		~GPerf() = default;

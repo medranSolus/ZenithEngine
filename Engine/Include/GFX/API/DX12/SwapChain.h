@@ -10,10 +10,11 @@ namespace ZE::GFX::API::DX12
 		UINT presentFlags = 0;
 		DX::ComPtr<IDXGISwapChain4> swapChain;
 		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>* rtvSrv = nullptr;
+		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> rtvSrv;
 		D3D12_RESOURCE_BARRIER presentBarrier;
 
 	public:
+		SwapChain() = default;
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();

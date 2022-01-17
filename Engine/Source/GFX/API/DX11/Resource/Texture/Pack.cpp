@@ -120,7 +120,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	Pack::~Pack()
 	{
 		if (srvs)
-			delete[] srvs;
+			srvs.DeleteArray();
 	}
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept

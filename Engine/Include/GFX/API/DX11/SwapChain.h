@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<IDXGISwapChain4> swapChain;
 
 	public:
+		SwapChain() = default;
 		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;

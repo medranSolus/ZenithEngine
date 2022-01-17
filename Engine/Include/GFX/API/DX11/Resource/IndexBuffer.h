@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX11::Resource
 		U32 count;
 
 	public:
+		IndexBuffer() = default;
 		IndexBuffer(GFX::Device& dev, const IndexData& data);
 		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;

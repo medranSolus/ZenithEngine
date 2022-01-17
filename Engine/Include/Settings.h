@@ -23,5 +23,6 @@ namespace ZE
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(instance, "Not initialized!"); return instance->backBufferCount; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(instance, "Not initialized!"); return instance->gfxApi; }
 		static void Init(GfxApiType type, U32 backBufferCount) noexcept { ZE_ASSERT(!instance, "Already initialized!"); instance = new Settings(type, backBufferCount); }
+		static void Destroy() noexcept { ZE_ASSERT(instance, "Not initialized!"); delete instance; }
 	};
 }

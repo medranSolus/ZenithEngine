@@ -15,6 +15,7 @@ namespace ZE::GFX::API::DX12
 		BufferInfo buffers;
 
 	public:
+		AllocatorTier2() = default;
 		AllocatorTier2(Device& dev);
 		ZE_CLASS_DELETE(AllocatorTier2);
 		virtual ~AllocatorTier2() = default;

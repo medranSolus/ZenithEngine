@@ -9,6 +9,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 	class FrameBuffer final
 	{
 	public:
+		FrameBuffer() = default;
 		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList,
 			const GFX::Pipeline::FrameBufferDesc& desc);
 		ZE_CLASS_DELETE(FrameBuffer);

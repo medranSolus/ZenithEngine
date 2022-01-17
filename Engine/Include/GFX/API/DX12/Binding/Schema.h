@@ -14,13 +14,14 @@ namespace ZE::GFX::API::DX12::Binding
 
 	private:
 		bool isCompute;
-		BindType* bindings = nullptr;
+		Ptr<BindType> bindings;
 		DX::ComPtr<ID3D12RootSignature> signature;
 #ifdef _ZE_MODE_DEBUG
 		U32 count;
 #endif
 
 	public:
+		Schema() = default;
 		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc);
 		ZE_CLASS_MOVE(Schema);
 		~Schema();

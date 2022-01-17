@@ -10,9 +10,10 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 	{
 		U32 count;
 		DescriptorInfo descInfo;
-		ResourceInfo* resources = nullptr;
+		Ptr<ResourceInfo> resources;
 
 	public:
+		Pack() = default;
 		Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();

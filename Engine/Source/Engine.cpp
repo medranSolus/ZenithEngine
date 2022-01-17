@@ -2,9 +2,8 @@
 
 namespace ZE
 {
-	Engine::Engine(const EngineParams& params)
+	Engine::Engine(const EngineParams& params) : StartupConfig(params)
 	{
-		Settings::Init(params.GraphicsAPI, params.BackbufferCount);
 		window.Init(params.WindowName, params.Width, params.Height);
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount);
 		gui.Init(graphics.GetDevice());

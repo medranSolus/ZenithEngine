@@ -1,12 +1,12 @@
 #pragma once
-#include "EngineParams.h"
+#include "StartupConfig.h"
 #include "GUI/Manager.h"
 #include "GFX/Pipeline/RendererPBR.h"
 
 namespace ZE
 {
 	// Main Zenith Engine component containing all the rendering logic
-	class Engine final
+	class Engine final : public StartupConfig
 	{
 		GUI::Manager gui;
 		Window::MainWindow window;
@@ -18,7 +18,7 @@ namespace ZE
 	public:
 		Engine(const EngineParams& params);
 		ZE_CLASS_DELETE(Engine);
-		~Engine();
+		virtual ~Engine();
 
 		constexpr bool IsGuiActive() const noexcept { return guiEnabled; }
 		constexpr void ToggleGui() noexcept { guiEnabled = !guiEnabled; }

@@ -12,11 +12,11 @@ namespace ZE::GFX::Pipeline
 	{
 		U64 levelCount = 0;
 		U64 workersCount = 0;
-		std::pair<std::thread, CommandList>* workerThreads = nullptr;
-		std::pair<PassDesc*, U64>* passes = nullptr;
-		PassDescStatic* staticPasses = nullptr;
-		PassCleanCallback** passesCleaners = nullptr;
-		Resource::PipelineStateGfx* sharedStates = nullptr;
+		Ptr<std::pair<std::thread, CommandList>> workerThreads;
+		Ptr<std::pair<Ptr<PassDesc>, U64>> passes;
+		Ptr<PassDescStatic> staticPasses;
+		Ptr<Ptr<PassCleanCallback>> passesCleaners;
+		Ptr<Resource::PipelineStateGfx> sharedStates;
 
 		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);
 		static void AfterSync(Device& dev, PassSyncDesc& syncInfo);

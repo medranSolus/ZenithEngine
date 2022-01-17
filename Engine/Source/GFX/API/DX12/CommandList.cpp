@@ -66,8 +66,9 @@ namespace ZE::GFX::API::DX12
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG)
 	{
 		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(commands->IASetVertexBuffers(0, 0, nullptr));
-		ZE_GFX_THROW_FAILED_INFO(commands->IASetIndexBuffer(nullptr));
+
+		commands->IASetVertexBuffers(0, 0, nullptr);
+		commands->IASetIndexBuffer(nullptr);
 		ZE_GFX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
 	}
 

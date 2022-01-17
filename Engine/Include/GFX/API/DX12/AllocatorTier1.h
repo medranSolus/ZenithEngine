@@ -18,6 +18,7 @@ namespace ZE::GFX::API::DX12
 		BufferInfo textures;
 
 	public:
+		AllocatorTier1() = default;
 		AllocatorTier1(Device& dev);
 		ZE_CLASS_DELETE(AllocatorTier1);
 		virtual ~AllocatorTier1() = default;

@@ -29,7 +29,7 @@ namespace ZE::Window::WinAPI
 
 		HWND hWnd;
 		RECT windowRect;
-		std::vector<U8> rawBuffer;
+		std::vector<U8> rawBuffer; // TODO: Replace with Table<>
 
 		static LRESULT WINAPI HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 		static LRESULT WINAPI HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;

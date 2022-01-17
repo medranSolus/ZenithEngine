@@ -13,7 +13,7 @@ namespace ZE::GFX
 		static constexpr PixelFormat PIXEL_FORMAT = PixelFormat::R8G8B8A8_UNorm;
 
 		Tex::ScratchImage scratch;
-		const Tex::Image* image;
+		Ptr<const Tex::Image> image;
 
 	public:
 		Surface(const std::string& name);

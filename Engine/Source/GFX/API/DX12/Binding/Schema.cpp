@@ -91,7 +91,10 @@ namespace ZE::GFX::API::DX12::Binding
 				range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 				// When descriptors are set in descriptor heap they won't change until draw finishes
 				// and when data is entering pipeline it is already static
-				range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+				if (entry.Flags & GFX::Binding::RangeFlag::StaticData)
+					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+				else
+					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 				range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 			}
 			else
@@ -128,7 +131,10 @@ namespace ZE::GFX::API::DX12::Binding
 					range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
 					// When descriptors are set in descriptor heap they won't change until draw finishes
 					// and when data is entering pipeline it is already static
-					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+					if (entry.Flags & GFX::Binding::RangeFlag::StaticData)
+						range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+					else
+						range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 					range.OffsetInDescriptorsFromTableStart = 0;
 				}
 				else
@@ -154,7 +160,11 @@ namespace ZE::GFX::API::DX12::Binding
 					}
 					parameter.Descriptor.ShaderRegister = entry.StartSlot;
 					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
-					parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
+					if (entry.Flags & GFX::Binding::RangeFlag::StaticData || entry.Flags & GFX::Binding::RangeFlag::CBV)
+						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
+					else
+						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+
 					bindings[i++] = type;
 					for (U32 j = 1; j < entry.Count; ++j)
 					{
@@ -237,6 +247,6 @@ namespace ZE::GFX::API::DX12::Binding
 	Schema::~Schema()
 	{
 		if (bindings)
-			delete[] bindings;
+			bindings.DeleteArray();
 	}
 }

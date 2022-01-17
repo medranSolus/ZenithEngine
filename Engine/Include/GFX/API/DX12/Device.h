@@ -32,7 +32,7 @@ namespace ZE::GFX::API::DX12
 		DX::ComPtr<ID3D12CommandQueue> copyQueue;
 
 		U32 commandListsCount = 0;
-		ID3D12CommandList** commandLists = nullptr;
+		Ptr<ID3D12CommandList*> commandLists = nullptr;
 
 		UA64 mainFenceVal = 0;
 		DX::ComPtr<ID3D12Fence1> mainFence;
@@ -50,7 +50,7 @@ namespace ZE::GFX::API::DX12
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
-		UploadInfo* copyResList = nullptr;
+		Ptr<UploadInfo> copyResList = nullptr;
 
 		U32 dynamicDescStart = 0;
 		U32 dynamicDescCount = 0;
@@ -66,13 +66,14 @@ namespace ZE::GFX::API::DX12
 		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
+		constexpr Device() noexcept {}
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList * [3 * static_cast<U64>(count)]; commandListsCount = count; }
+		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[3 * static_cast<U64>(count)]; commandListsCount = count; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

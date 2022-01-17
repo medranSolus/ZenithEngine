@@ -10,6 +10,7 @@ namespace ZE::GFX::API::DX12::Resource
 		D3D_PRIMITIVE_TOPOLOGY topology;
 
 	public:
+		PipelineStateGfx() = default;
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
