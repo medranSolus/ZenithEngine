@@ -13,21 +13,27 @@ namespace ZE::GFX::API::DX12::Pipeline
 		struct TransitionPoint
 		{
 			U32 BarrierCount = 0;
-			D3D12_RESOURCE_BARRIER* Barriers = nullptr;
+			Ptr<D3D12_RESOURCE_BARRIER> Barriers;
 			GFX::Pipeline::SyncType AfterSync = GFX::Pipeline::SyncType::None;
+		};
+		struct BufferData
+		{
+			DX::ComPtr<ID3D12Resource> Resource;
+			U32 Width;
+			U32 Height;
 		};
 
 		TransitionPoint initTransitions;
-		TransitionPoint* transitions = nullptr;
+		Ptr<TransitionPoint> transitions;
 
 		U64 backbufferBarriersLocationsCount = 0;
-		U64* backbufferBarriersLocations = nullptr;
-		bool* aliasingResources = nullptr;
-		DX::ComPtr<ID3D12Resource>* resources = nullptr;
+		Ptr<U64> backbufferBarriersLocations;
+		Ptr<bool> aliasingResources;
+		Ptr<BufferData> resources;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE* rtvDsv = nullptr;
-		D3D12_GPU_DESCRIPTOR_HANDLE* srv = nullptr;
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>* uav = nullptr;
+		Ptr<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDsv;
+		Ptr<D3D12_GPU_DESCRIPTOR_HANDLE> srv;
+		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> uav;
 
 		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
 		DX::ComPtr<ID3D12DescriptorHeap> dsvDescHeap;
@@ -46,8 +52,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 			U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory);
 
 		void InitResource(CommandList& cl, RID rid) const noexcept;
+		void SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept;
+		void SetViewport(CommandList& cl, RID rid) const noexcept;
 
 	public:
+		FrameBuffer() = default;
 		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc);
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
@@ -84,11 +93,17 @@ namespace ZE::GFX::API::DX12::Pipeline
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetRTV() should be only used for multiple render targets!");
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
+		D3D12_VIEWPORT vieports[RTVCount];
+		D3D12_RECT scissorRects[RTVCount];
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
-			handles[i] = rtvDsv[rid[i]];
+			RID id = rid[i];
+			handles[i] = rtvDsv[id];
 			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
+			SetupViewport(vieports[i], scissorRects[i], id);
 		}
+		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
+		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
 		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, nullptr);
 	}
 
@@ -100,11 +115,17 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_ASSERT(rtvDsv[dsv].ptr != -1, "Current resource is not suitable for being depth stencil!");
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
+		D3D12_VIEWPORT vieports[RTVCount];
+		D3D12_RECT scissorRects[RTVCount];
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
-			handles[i] = rtvDsv[rtv[i]];
+			RID id = rtv[i];
+			handles[i] = rtvDsv[id];
 			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
+			SetupViewport(vieports[i], scissorRects[i], id);
 		}
+		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
+		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
 		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, rtvDsv + dsv);
 	}
 #pragma endregion

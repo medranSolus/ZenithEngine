@@ -25,6 +25,7 @@ namespace ZE::GFX::Pipeline
 		// Depth stencil before first use must be initialized or cleared
 		constexpr void InitDSV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitDSV, cl, rid); }
 
+		// Maybe add also ability to set scale and offset for viewport if needed
 		constexpr void SetRTV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetRTV, cl, rid); }
 		constexpr void SetDSV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetDSV, cl, rid); }
 		constexpr void SetOutput(CommandList& cl, RID rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput, cl, rtv, dsv); }

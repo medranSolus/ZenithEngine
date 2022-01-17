@@ -256,7 +256,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("hdrGamma", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::GetBackbufferFormat());
 			node.AddInput("wireframe.RT", Resource::State::ShaderResourcePS);
 			node.AddOutput("RT", Resource::State::RenderTarget, BACKBUFFER_RID);
 			nodes.emplace_back(std::move(node));
