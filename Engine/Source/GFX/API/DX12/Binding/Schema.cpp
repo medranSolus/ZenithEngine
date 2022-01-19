@@ -65,7 +65,7 @@ namespace ZE::GFX::API::DX12::Binding
 
 		// Location | Size | Desc
 		std::vector<std::pair<U32, std::pair<U32, D3D12_DESCRIPTOR_RANGE1*>>> tables;
-		std::bitset<6> shaderPresence(0);
+		ShaderPresenceMask shaderPresence(0);
 		// Fill signature parameters
 		for (U32 i = 0; const auto& entry : desc.Ranges)
 		{
@@ -88,7 +88,7 @@ namespace ZE::GFX::API::DX12::Binding
 					range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 				range.NumDescriptors = entry.Count;
 				range.BaseShaderRegister = entry.StartSlot;
-				range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
+				range.RegisterSpace = GetRegisterSpaceForShader(entry.Shaders);
 				// When descriptors are set in descriptor heap they won't change until draw finishes
 				// and when data is entering pipeline it is already static
 				if (entry.Flags & GFX::Binding::RangeFlag::StaticData)
@@ -100,13 +100,13 @@ namespace ZE::GFX::API::DX12::Binding
 			else
 			{
 				auto& parameter = parameters[i];
-				parameter.ShaderVisibility = GetShaderVisibility(entry.Shader, &shaderPresence);
+				parameter.ShaderVisibility = GetShaderVisibility(entry.Shaders, &shaderPresence);
 				if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 				{
 					ZE_ASSERT(entry.StartSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 					parameter.Constants.ShaderRegister = entry.StartSlot;
-					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
+					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Shaders);
 					parameter.Constants.Num32BitValues = entry.Count / sizeof(U32) + static_cast<bool>(entry.Count % sizeof(U32));
 					bindings[i++] = BindType::Constant;
 				}
@@ -128,7 +128,7 @@ namespace ZE::GFX::API::DX12::Binding
 						range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 					range.NumDescriptors = entry.Count;
 					range.BaseShaderRegister = entry.StartSlot;
-					range.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
+					range.RegisterSpace = GetRegisterSpaceForShader(entry.Shaders);
 					// When descriptors are set in descriptor heap they won't change until draw finishes
 					// and when data is entering pipeline it is already static
 					if (entry.Flags & GFX::Binding::RangeFlag::StaticData)
@@ -159,7 +159,7 @@ namespace ZE::GFX::API::DX12::Binding
 						type = BindType::CBV;
 					}
 					parameter.Descriptor.ShaderRegister = entry.StartSlot;
-					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Shader);
+					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Shaders);
 					if (entry.Flags & GFX::Binding::RangeFlag::StaticData || entry.Flags & GFX::Binding::RangeFlag::CBV)
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 					else

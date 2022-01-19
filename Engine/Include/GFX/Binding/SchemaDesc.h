@@ -22,10 +22,7 @@ namespace ZE::GFX::Binding
 
 		void AddRange(Range&& range) noexcept { Ranges.emplace_back(std::forward<Range>(range)); }
 		void AddSampler(Resource::SamplerDesc&& sampler) noexcept { Samplers.emplace_back(std::forward<Resource::SamplerDesc>(sampler)); }
-		void Append(const SchemaDesc& binding) noexcept
-		{
-			Ranges.insert(Ranges.end(), binding.Ranges.begin(), binding.Ranges.end());
-			Samplers.insert(Samplers.end(), binding.Samplers.begin(), binding.Samplers.end());
-		}
+
+		void Append(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept;
 	};
 }

@@ -137,59 +137,62 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle);
 		}
 
-		// Create one big committed buffer and copy data into it
-		DX::ComPtr<ID3D12Resource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
-		ZE_GFX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
-		D3D12_TEXTURE_COPY_LOCATION copySource;
-		copySource.pResource = uploadRes.Get();
-		copySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		U64 bufferOffset = 0;
-
-		D3D12_RANGE range = { 0 };
-		U8* uploadBuffer;
-		ZE_GFX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
-		// Copy all regions upload heap
-		for (U32 i = 0; const auto& info : copyInfo)
+		if (uploadRegionSize)
 		{
-			auto& tex = desc.Textures.at(i);
-			U64 depthSlice = info.first / info.second.size();
-			D3D12_TEXTURE_COPY_LOCATION copyDest;
-			copyDest.pResource = resources[i].Resource.Get();
-			copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-			copyDest.SubresourceIndex = 0;
+			// Create one big committed buffer and copy data into it
+			DX::ComPtr<ID3D12Resource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
+			ZE_GFX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
+			D3D12_TEXTURE_COPY_LOCATION copySource;
+			copySource.pResource = uploadRes.Get();
+			copySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+			U64 bufferOffset = 0;
 
-			// Memcpy according to resource structure
-			for (U16 j = 0; const auto& region : info.second)
+			D3D12_RANGE range = { 0 };
+			U8* uploadBuffer;
+			ZE_GFX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
+			// Copy all regions upload heap
+			for (U32 i = 0; const auto& info : copyInfo)
 			{
-				for (U32 z = 0; z < region.Footprint.Depth; ++z)
+				auto& tex = desc.Textures.at(i);
+				U64 depthSlice = info.first / info.second.size();
+				D3D12_TEXTURE_COPY_LOCATION copyDest;
+				copyDest.pResource = resources[i].Resource.Get();
+				copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				copyDest.SubresourceIndex = 0;
+
+				// Memcpy according to resource structure
+				for (U16 j = 0; const auto& region : info.second)
 				{
-					U8* dest = uploadBuffer + z * depthSlice + region.Offset;
-					const U8* src = reinterpret_cast<const U8*>(tex.Surfaces.at(static_cast<U64>(j) + z).GetBuffer());
-					for (U32 y = 0; y < region.Footprint.Height; ++y)
+					for (U32 z = 0; z < region.Footprint.Depth; ++z)
 					{
-						U64 rowOffset = static_cast<U64>(y) * region.Footprint.RowPitch;
-						memcpy(dest + rowOffset, src + rowOffset, region.Footprint.RowPitch);
+						U8* dest = uploadBuffer + z * depthSlice + region.Offset;
+						const U8* src = reinterpret_cast<const U8*>(tex.Surfaces.at(static_cast<U64>(j) + z).GetBuffer());
+						for (U32 y = 0; y < region.Footprint.Height; ++y)
+						{
+							U64 rowOffset = static_cast<U64>(y) * region.Footprint.RowPitch;
+							memcpy(dest + rowOffset, src + rowOffset, region.Footprint.RowPitch);
+						}
 					}
+					copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
+					copySource.PlacedFootprint.Footprint = region.Footprint;
+
+					ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
+					D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
+					if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
+						endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+					if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
+						endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+
+					device.UploadTexture(copyDest, copySource, endState);
+					++copyDest.SubresourceIndex;
+					++j;
 				}
-				copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
-				copySource.PlacedFootprint.Footprint = region.Footprint;
-
-				ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
-				D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
-				if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
-					endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-				if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
-					endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-
-				device.UploadTexture(copyDest, copySource, endState);
-				++copyDest.SubresourceIndex;
-				++j;
+				bufferOffset += info.first;
+				uploadBuffer += info.first;
+				++i;
 			}
-			bufferOffset += info.first;
-			uploadBuffer += info.first;
-			++i;
+			uploadRes->Unmap(0, nullptr);
 		}
-		uploadRes->Unmap(0, nullptr);
 	}
 
 	Pack::~Pack()

@@ -7,13 +7,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		Data* passData = new Data;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 13, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
 		desc.AddRange({ 1, 25, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 5, 27, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPackAppend });
 		desc.AddRange({ 1, 11, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
-		desc.Append(buildData.RendererSlots);
+		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
+		return passData;
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"LightCombinePS", buildData.ShaderCache);
@@ -29,6 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
+		return;
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 

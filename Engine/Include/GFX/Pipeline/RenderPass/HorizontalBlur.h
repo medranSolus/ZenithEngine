@@ -3,11 +3,11 @@
 #include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/Resource/CBuffer.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
+namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
 	struct Resources
 	{
-		RID Scene;
+		RID Outline;
 		RID RenderTarget;
 	};
 
@@ -15,10 +15,11 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
+		Resource::CBuffer Direction;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
+	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT);
 	void Execute(RendererExecuteData& renderData, PassData& passData);
 }

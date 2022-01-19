@@ -40,9 +40,23 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
+		settingsData.CameraPos = { 0.0, 0.0f, 0.0f };
+		settingsData.FarClip = 1000.0f;
+		settingsData.NearClip = 0.001f;
+		settingsData.HDRExposure = 1.0f;
+		settingsData.Gamma = 2.2f;
+		settingsData.GammaInverse = 1.0f / 2.2f;
+		settingsData.ViewProjection = Math::XMMatrixIdentity();
+		settingsData.ViewProjectionInverse = Math::XMMatrixIdentity();
+		dev.StartUpload();
+		settingsBuffer.Init(dev, &settingsData, sizeof(PBRData), false);
+		dev.FinishUpload();
+
 		std::vector<GFX::Pipeline::RenderNode> nodes;
 		RendererBuildData buildData = { bindings, texLib };
 #pragma region Renderer bindings
+		buildData.RendererSlots.AddRange({ 1, 13, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+
 		buildData.RendererSlots.AddSampler(
 			{
 				Resource::SamplerType::Anisotropic,
@@ -219,27 +233,27 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Geometry effects
 		{
-			GFX::Pipeline::RenderNode node("outlineDraw", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData, frameBufferDesc.GetFormat(outlineBlur), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddOutput("RT", Resource::State::RenderTarget, outline);
 			node.AddOutput("DS", Resource::State::DepthWrite, outlineDepth);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("horizontalBlur", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("horizontalBlur", QueueType::Main, HorizontalBlur, dev, buildData, frameBufferDesc.GetFormat(outlineBlur));
 			node.AddInput("outlineDraw.RT", Resource::State::ShaderResourcePS);
 			node.AddOutput("RT", Resource::State::RenderTarget, outlineBlur);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("verticalBlur", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddInput("horizontalBlur.RT", Resource::State::ShaderResourcePS);
-			node.AddInput("outlineDraw.DS", Resource::State::DepthRead);
 			node.AddInput("skybox.RT", Resource::State::RenderTarget);
+			node.AddInput("outlineDraw.DS", Resource::State::DepthRead);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("wireframe", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("wireframe", QueueType::Main, Wireframe, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
 			node.AddInput("verticalBlur.RT", Resource::State::RenderTarget);
 			node.AddInput("skybox.DS", Resource::State::DepthWrite);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
@@ -248,7 +262,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Post processing
 		{
-			GFX::Pipeline::RenderNode node("skybox", GFX::QueueType::Main, nullptr);
+			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
 			node.AddInput("lightCombine.RT", Resource::State::RenderTarget);
 			node.AddInput("lambertianClassic.DS", Resource::State::DepthRead);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);

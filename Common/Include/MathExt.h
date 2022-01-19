@@ -99,6 +99,13 @@ namespace ZE::Math
 		return v;
 	}
 
+	// Not to be used with floats
+	template<typename T>
+	constexpr bool IsPower2(T x) noexcept
+	{
+		return x && !(x & (x - 1));
+	}
+
 	template<typename T>
 	constexpr T Gauss(T x, T sigma) noexcept
 	{

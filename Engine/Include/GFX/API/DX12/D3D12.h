@@ -12,6 +12,8 @@
 
 namespace ZE::GFX::API::DX12
 {
+	typedef std::bitset<6> ShaderPresenceMask;
+
 	// Get DirectX 12 version of command list types
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(CommandType type) noexcept;
 	// Get DirectX 12 version of comparison function
@@ -21,11 +23,11 @@ namespace ZE::GFX::API::DX12
 	// Get DirectX 12 version of filter type
 	constexpr D3D12_FILTER GetFilterType(U8 samplerType) noexcept;
 	// Get register space for given shader type
-	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderType type) noexcept;
+	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderTypes type) noexcept;
 	// Get DirectX 12 version of resource states
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept;
 	// Get shader visibility from shader type
-	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderType type, std::bitset<6>* presence = nullptr) noexcept;
+	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, ShaderPresenceMask* presence = nullptr) noexcept;
 	// Get DirectX 12 version of static border color for static sampler
 	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept;
 	// Get DirectX 12 version of texture addressing mode
@@ -189,18 +191,23 @@ namespace ZE::GFX::API::DX12
 		return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // 001
 	}
 
-	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderType type) noexcept
+	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderTypes type) noexcept
 	{
-		switch (type)
+		ZE_ASSERT(type, "Empty shader type!");
+		return 0;
+		if (Math::IsPower2(type))
 		{
-		case GFX::Resource::ShaderType::Vertex:
-			return 1;
-		case GFX::Resource::ShaderType::Domain:
-			return 3;
-		case GFX::Resource::ShaderType::Hull:
-			return 4;
-		case GFX::Resource::ShaderType::Geometry:
-			return 2;
+			switch (type)
+			{
+			case GFX::Resource::ShaderType::Vertex:
+				return 1;
+			case GFX::Resource::ShaderType::Domain:
+				return 3;
+			case GFX::Resource::ShaderType::Hull:
+				return 4;
+			case GFX::Resource::ShaderType::Geometry:
+				return 2;
+			}
 		}
 		return 0;
 	}
@@ -266,44 +273,53 @@ namespace ZE::GFX::API::DX12
 		return D3D12_RESOURCE_STATE_COMMON;
 	}
 
-	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderType type, std::bitset<6>* presence) noexcept
+	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, ShaderPresenceMask* presence) noexcept
 	{
-		switch (type)
+		if (type & GFX::Resource::ShaderType::Compute)
 		{
-		case GFX::Resource::ShaderType::Vertex:
+			if (presence)
+				(*presence)[5] = true;
+			return D3D12_SHADER_VISIBILITY_ALL;
+		}
+		if (type == GFX::Resource::ShaderType::AllGfx)
+		{
+			if (presence)
+				*presence = GFX::Resource::ShaderType::AllGfx;
+			return D3D12_SHADER_VISIBILITY_ALL;
+		}
+
+		D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
+		if (type & GFX::Resource::ShaderType::Vertex)
 		{
 			if (presence)
 				(*presence)[0] = true;
-			return D3D12_SHADER_VISIBILITY_VERTEX;
+			visibility = static_cast<D3D12_SHADER_VISIBILITY>(visibility | D3D12_SHADER_VISIBILITY_VERTEX);
 		}
-		case GFX::Resource::ShaderType::Domain:
+		if (type & GFX::Resource::ShaderType::Domain)
 		{
 			if (presence)
 				(*presence)[1] = true;
-			return D3D12_SHADER_VISIBILITY_DOMAIN;
+			visibility = static_cast<D3D12_SHADER_VISIBILITY>(visibility | D3D12_SHADER_VISIBILITY_DOMAIN);
 		}
-		case GFX::Resource::ShaderType::Hull:
+		if (type & GFX::Resource::ShaderType::Hull)
 		{
 			if (presence)
 				(*presence)[2] = true;
-			return D3D12_SHADER_VISIBILITY_HULL;
+			visibility = static_cast<D3D12_SHADER_VISIBILITY>(visibility | D3D12_SHADER_VISIBILITY_HULL);
 		}
-		case GFX::Resource::ShaderType::Geometry:
+		if (type & GFX::Resource::ShaderType::Geometry)
 		{
 			if (presence)
 				(*presence)[3] = true;
-			return D3D12_SHADER_VISIBILITY_GEOMETRY;
+			visibility = static_cast<D3D12_SHADER_VISIBILITY>(visibility | D3D12_SHADER_VISIBILITY_GEOMETRY);
 		}
-		case GFX::Resource::ShaderType::Pixel:
+		if (type & GFX::Resource::ShaderType::Pixel)
 		{
 			if (presence)
 				(*presence)[4] = true;
-			return D3D12_SHADER_VISIBILITY_PIXEL;
+			visibility = static_cast<D3D12_SHADER_VISIBILITY>(visibility | D3D12_SHADER_VISIBILITY_PIXEL);
 		}
-		}
-		if (presence)
-			(*presence)[5] = true;
-		return D3D12_SHADER_VISIBILITY_ALL;
+		return visibility;
 	}
 
 	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept

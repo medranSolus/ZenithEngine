@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/CBuffer.h"
 #include "GFX/Graphics.h"
 #include "RendererBuildData.h"
 #include "RenderNode.h"
@@ -32,6 +33,7 @@ namespace ZE::GFX::Pipeline
 
 		FrameBuffer frameBuffer;
 		Binding::Library bindings;
+		Resource::CBuffer settingsBuffer;
 
 		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);

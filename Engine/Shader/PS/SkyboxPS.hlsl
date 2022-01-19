@@ -1,5 +1,5 @@
 #include "Samplers.hlsli"
-#include "HDRGammaCB.hlsli"
+#include "PBRDataCB.hlsli"
 
 TextureCube box : register(t0);
 

@@ -66,7 +66,7 @@ namespace ZE::GFX::API::DX12
 		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
 
 	public:
-		constexpr Device() noexcept {}
+		Device() noexcept {}
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();

@@ -146,7 +146,7 @@ namespace ZE::GFX::Pipeline
 		BeforeSync(dev, pass.Syncs);
 		if (pass.Execute)
 		{
-			RendererExecuteData data{ dev, cl, frameBuffer, bindings, sharedStates };
+			RendererExecuteData data{ dev, cl, frameBuffer, bindings, settingsBuffer, sharedStates };
 			pass.Execute(data, pass.Data);
 		}
 		AfterSync(dev, pass.Syncs);
@@ -645,7 +645,7 @@ namespace ZE::GFX::Pipeline
 				staticPassData.Buffers = node.GetNodeRIDs();
 				// Optional data is not supported for static RenderPass
 				staticPassData.OptData = nullptr;
-				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, bindings, sharedStates };
+				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, bindings, settingsBuffer, sharedStates };
 				executeData.CL.Open(dev);
 				node.GetExecuteCallback()(executeData, staticPassData);
 				executeData.CL.Close(dev);
