@@ -1,4 +1,5 @@
 #pragma once
+#include "Data/Scene.h"
 #include "Engine.h"
 #include <map>
 using namespace ZE;
@@ -8,6 +9,7 @@ class App final
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.3";
 
 	Engine engine;
+	Data::Scene scene;
 	bool run = true;
 
 	void ProcessInput();
