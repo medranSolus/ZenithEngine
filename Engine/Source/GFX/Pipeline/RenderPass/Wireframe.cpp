@@ -14,7 +14,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		dev.FinishUpload();
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
+		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 

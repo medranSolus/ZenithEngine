@@ -106,6 +106,12 @@ namespace ZE::Math
 		return x && !(x & (x - 1));
 	}
 
+	template <typename T>
+	constexpr T DivideRoundUp(T x, T y)
+	{
+		return (x + y - static_cast<T>(1)) / y;
+	}
+
 	template<typename T>
 	constexpr T Gauss(T x, T sigma) noexcept
 	{

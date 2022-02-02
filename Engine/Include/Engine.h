@@ -25,6 +25,7 @@ namespace ZE
 
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
+		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }
 
 		void BeginFrame();
 		void EndFrame();

@@ -164,7 +164,7 @@ namespace ZE
 	template<TableIndex I, typename T, U8 AlignmentPower>
 	constexpr void Table::Resize(TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept
 	{
-		ZE_ASSERT(sourceData, "Data empty!");
+		ZE_ASSERT(data, "Data empty!");
 		ZE_ASSERT(newSize != 0, "Cannot resize to empty table!");
 		ZE_ASSERT(info.Size != newSize, "No need to change size to same one!");
 
