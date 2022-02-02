@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX11::Resource
 		~IndexBuffer() = default;
 
 		constexpr U32 GetCount() const noexcept { return count; }
-		void Free(GFX::Device& dev) noexcept { buffer = nullptr; }
+		void Free(GFX::Device& dev) noexcept { count = 0; buffer = nullptr; }
 
 		void Bind(GFX::CommandList& cl) const noexcept;
 		IndexData GetData(GFX::Device& dev, GFX::CommandList& cl) const;

@@ -203,11 +203,12 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
-		ZE_ASSERT(bindCtx.BindingSchema.Get().dx12.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
+		const auto& schema = bindCtx.BindingSchema.Get().dx12;
+		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
 			"Bind slot is not a descriptor table! Wrong root signature or order of bindings!");
 
 		auto* list = cl.Get().dx12.GetList();
-		if (bindCtx.BindingSchema.Get().dx12.IsCompute())
+		if (schema.IsCompute())
 			list->SetComputeRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
 		else
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, descInfo.GPU);

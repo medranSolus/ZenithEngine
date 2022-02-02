@@ -56,9 +56,7 @@ namespace ZE::GFX::API::DX12::Binding
 			else if (!(entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend))
 				signatureDesc.Desc_1_1.NumParameters += entry.Count;
 		}
-#ifdef _ZE_MODE_DEBUG
 		count = signatureDesc.Desc_1_1.NumParameters;
-#endif
 		bindings = new BindType[signatureDesc.Desc_1_1.NumParameters];
 		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[signatureDesc.Desc_1_1.NumParameters];
 		signatureDesc.Desc_1_1.pParameters = parameters;
@@ -168,8 +166,8 @@ namespace ZE::GFX::API::DX12::Binding
 					bindings[i++] = type;
 					for (U32 j = 1; j < entry.Count; ++j)
 					{
-						auto& nextParameter = parameters[i];
-						bindings[i++] = type;
+						bindings[i] = type;
+						auto& nextParameter = parameters[i++];
 						nextParameter.ShaderVisibility = parameter.ShaderVisibility;
 						nextParameter.ParameterType = parameter.ParameterType;
 						nextParameter.Descriptor.ShaderRegister = parameter.Descriptor.ShaderRegister + j;

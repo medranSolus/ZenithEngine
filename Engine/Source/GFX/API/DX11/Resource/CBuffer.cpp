@@ -51,4 +51,14 @@ namespace ZE::GFX::API::DX11::Resource
 		//assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
 		//cl.Get().dx11.GetContext()->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
 	}
+
+	void CBuffer::Free(GFX::Device& dev) noexcept
+	{
+		if (bufferData)
+		{
+			bufferData = nullptr;
+			dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
+		}
+		buffer = nullptr;
+	}
 }

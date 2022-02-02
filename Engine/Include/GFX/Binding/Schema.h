@@ -7,9 +7,6 @@ namespace ZE::GFX::Binding
 	// Resource bindings used in shaders
 	class Schema final
 	{
-		// There should be 'renderer' bindings, that are appended to the signature,
-		// and also there should be a way to just call DataBinding.Bind(Material) to set all the needed stuff.
-		// But at the same time we should also set all the renderer stuff, so we need to access renderer data too...
 		ZE_API_BACKEND(Binding::Schema);
 
 	public:
@@ -24,6 +21,8 @@ namespace ZE::GFX::Binding
 
 		// Main Gfx API
 
+		// Get binding index from with offset from the end (0=last, 1=last-1, etc.)
+		constexpr U32 GetIndexFromEnd(U32 offsetFromEnd) const noexcept { U32 offset = 0; ZE_API_BACKEND_CALL_RET(offset, GetIndexFromEnd, offsetFromEnd); return offset; }
 		constexpr void SetCompute(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(SetCompute, cl); }
 		constexpr void SetGraphics(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(SetGraphics, cl); }
 	};

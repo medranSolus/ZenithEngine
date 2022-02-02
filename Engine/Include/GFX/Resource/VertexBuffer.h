@@ -7,27 +7,28 @@ namespace ZE::GFX::Resource
 	// Buffer holding vertex data
 	class VertexBuffer final
 	{
-		ZE_API_BACKEND(VertexBuffer);
+		ZE_API_BACKEND(Resource::VertexBuffer);
 
 	public:
 		constexpr VertexBuffer(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
 		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;
 
-		ZE_API_BACKEND_GET(IndexBuffer);
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx);
+		ZE_API_BACKEND_GET(Resource::VertexBuffer);
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
 
 		// Main Gfx API
 
-		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
+		// Before destroying buffer you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 	};
 
 #pragma region Functions
-	constexpr void VertexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, Context& ctx)
+	constexpr void VertexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
 	{
 		VertexData data;
-		ZE_API_BACKEND_CALL_RET(data, GetData, dev, ctx);
+		ZE_API_BACKEND_CALL_RET(data, GetData, dev, cl);
 		ZE_API_BACKEND_VAR.Switch(nextApi, dev, data);
 	}
 #pragma endregion

@@ -767,7 +767,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const
 	{
-		auto& schema = bindCtx.BindingSchema.Get().dx12;
+		const auto& schema = bindCtx.BindingSchema.Get().dx12;
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::SRV
 			|| schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
 			"Bind slot is not a shader resource or table! Wrong root signature or order of bindings!");
@@ -789,7 +789,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const
 	{
-		auto& schema = bindCtx.BindingSchema.Get().dx12;
+		const auto& schema = bindCtx.BindingSchema.Get().dx12;
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::UAV
 			|| schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,

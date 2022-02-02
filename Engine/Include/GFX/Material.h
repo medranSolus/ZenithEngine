@@ -21,6 +21,9 @@ namespace ZE::GFX
 		static constexpr const char* GetTextureSchemaName() noexcept { return TextureSchemaName; }
 
 		constexpr T& GetData() noexcept { return data; }
+		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
+		constexpr void BindTextures(CommandList& cl, Binding::Context& bindCtx) const noexcept { textures.Bind(cl, bindCtx); }
+
 		void UpdateData(CommandList& cl) const { buffer.Update(cl, &data, sizeof(T)); }
 
 		void Init(Device& dev, T&& initData, const Resource::Texture::PackDesc& desc);

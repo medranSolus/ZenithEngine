@@ -8,5 +8,9 @@ namespace ZE::GFX::Binding
 	{
 		const Schema& BindingSchema;
 		U32 Count = 0;
+
+		// Set current binding slot from the end of range by some offset (0=last, 1=last-1, etc.)
+		constexpr void SetFromEnd(U32 offset) noexcept { Count = BindingSchema.GetIndexFromEnd(offset); }
+		constexpr void Reset() noexcept { Count = 0; }
 	};
 }
