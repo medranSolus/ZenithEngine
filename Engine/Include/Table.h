@@ -94,7 +94,9 @@ namespace ZE
 	template<typename T, TableIndex I, U8 AlignmentPower>
 	constexpr T* Table::IncrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept
 	{
-		assert(data && newSize > oldSize);
+		ZE_ASSERT(data, "Data empty!");
+		ZE_ASSERT(newSize > oldSize, "Function not made for decrementation!");
+
 		if constexpr (AlignmentPower == 0)
 			return reinterpret_cast<T*>(realloc(data, sizeof(T) * newSize));
 		else
@@ -138,7 +140,7 @@ namespace ZE
 	template<typename T, TableIndex I, U8 AlignmentPower>
 	constexpr T* Table::Create(I size, Ptr<T> sourceData) noexcept
 	{
-		assert(sourceData);
+		ZE_ASSERT(sourceData, "Data empty!");
 		T* data = Alloc<T>(size);
 		if constexpr (std::is_trivial_v<T>)
 			memcpy(data, sourceData, sizeof(T) * size);
@@ -151,7 +153,7 @@ namespace ZE
 	template<typename T, TableIndex I>
 	constexpr void Table::Clear(I size, Ptr<T>& data) noexcept
 	{
-		assert(size && data);
+		ZE_ASSERT(data, "Data empty!");
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			for (I i = 0; i < size; ++i)
 				data[i].~T();
@@ -162,7 +164,10 @@ namespace ZE
 	template<TableIndex I, typename T, U8 AlignmentPower>
 	constexpr void Table::Resize(TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept
 	{
-		assert(data && info.Size != newSize && newSize != 0);
+		ZE_ASSERT(sourceData, "Data empty!");
+		ZE_ASSERT(newSize != 0, "Cannot resize to empty table!");
+		ZE_ASSERT(info.Size != newSize, "No need to change size to same one!");
+
 		if (info.Size > newSize)
 		{
 			data = DecrementAlloc(data, newSize);
@@ -188,7 +193,10 @@ namespace ZE
 	template<TableIndex I, typename T, U8 AlignmentPower>
 	constexpr void Table::ResizeBegin(const TableInfo<I>& info, Ptr<T>& data, I newSize) noexcept
 	{
-		assert(data && info.Size != newSize && newSize != 0);
+		ZE_ASSERT(data, "Data empty!");
+		ZE_ASSERT(newSize != 0, "Cannot resize to empty table!");
+		ZE_ASSERT(info.Size != newSize, "No need to change size to same one!");
+
 		if (info.Size > newSize)
 		{
 			data = DecrementAlloc(data, newSize);
@@ -257,7 +265,8 @@ namespace ZE
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower>
 	constexpr void Table::Remove(TableInfo<I>& info, Ptr<T>& data, I element) noexcept
 	{
-		assert(element < info.Size);
+		ZE_ASSERT(element < info.Size, "Element out of range!");
+
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[element].~T();
 		memcpy(data + element, data + element + 1, sizeof(T) * (info.Size - (element + 1)));
@@ -272,7 +281,8 @@ namespace ZE
 	template<U64 ChunkSize, TableIndex I, typename T, U8 AlignmentPower>
 	constexpr void Table::PopBack(TableInfo<I>& info, Ptr<T>& data) noexcept
 	{
-		assert(info.Size != 0);
+		ZE_ASSERT(info.Size != 0, "Empty table!");
+
 		--info.Size;
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[info.Size].~T();
