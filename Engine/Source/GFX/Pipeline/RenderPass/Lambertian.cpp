@@ -16,17 +16,22 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
+		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
+		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
+		psoDesc.FormatDS = formatDS;
+		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
+		passData->StateDepth.Init(dev, psoDesc, schema);
+
 		psoDesc.SetShader(psoDesc.VS, L"PhongVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"PhongPS", buildData.ShaderCache);
-		psoDesc.Culling = Resource::CullMode::None;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 		psoDesc.RenderTargetsCount = 3;
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
-		psoDesc.FormatDS = formatDS;
 		ZE_PSO_SET_NAME(psoDesc, "Lambertian");
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		passData->StateNormal.Init(dev, psoDesc, schema);
 
 		passData->TransformBuffers.emplace_back(dev, nullptr, SINGLE_BUFFER_SIZE, true);
 
@@ -59,21 +64,19 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
-			const auto& materials = data.World.ActiveScene->Materials;
 			const auto& geometries = data.World.ActiveScene->Geometries;
-			U64 currentMaterialIndex = UINT64_MAX;
 			Float3 cameraPos = { 0.0, 0.0f, 0.0f };
 
+			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
 			for (U64 i = 0, j = 0; i < data.World.MeshesInfo.Size;)
 			{
-				renderData.CL.Open(renderData.Dev, data.State);
+				renderData.CL.Open(renderData.Dev, data.StateDepth);
 				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetOutput<3>(renderData.CL, &ids.Color, ids.DepthStencil);
+				renderData.Buffers.SetDSV(renderData.CL, ids.DepthStencil);
 
-				auto& cbuffer = data.TransformBuffers.at(j);
 				ctx.SetFromEnd(1);
-				renderData.EngineData.Bind(renderData.CL, ctx);
+				auto& cbuffer = data.TransformBuffers.at(j);
 				cbuffer.Bind(renderData.CL, ctx);
 				ctx.Reset();
 
@@ -94,7 +97,40 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);
+					ctx.Reset();
 
+					const auto& geometry = geometries[info.GeometryIndex];
+					geometry.Vertices.Bind(renderData.CL);
+					geometry.Indices.Bind(renderData.CL);
+
+					renderData.CL.Draw(renderData.Dev, geometry.Indices.GetCount());
+				}
+
+				renderData.CL.Close(renderData.Dev);
+				renderData.Dev.ExecuteMain(renderData.CL);
+			}
+
+			const auto& materials = data.World.ActiveScene->Materials;
+			U64 currentMaterialIndex = UINT64_MAX;
+			// Normal pass
+			for (U64 i = 0, j = 0; i < data.World.MeshesInfo.Size;)
+			{
+				renderData.CL.Open(renderData.Dev, data.StateNormal);
+				ctx.BindingSchema.SetGraphics(renderData.CL);
+				renderData.Buffers.SetOutput<3>(renderData.CL, &ids.Color, ids.DepthStencil);
+
+				ctx.SetFromEnd(1);
+				data.TransformBuffers.at(j).Bind(renderData.CL, ctx);
+				renderData.EngineData.Bind(renderData.CL, ctx);
+				ctx.Reset();
+
+				// Compute single batch
+				for (U32 k = 0; k < SINGLE_BUFFER_SIZE / sizeof(TransformCBuffer) && i < data.World.MeshesInfo.Size; ++k, ++i)
+				{
+					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
+					meshBatchId.Bind(renderData.CL, ctx);
+
+					const auto& info = data.World.Meshes[i];
 					if (currentMaterialIndex != info.MaterialIndex)
 					{
 						currentMaterialIndex = info.MaterialIndex;

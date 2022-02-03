@@ -20,7 +20,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	{
 		WorldInfo& World;
 		U32 BindingIndex;
-		Resource::PipelineStateGfx State;
+		Resource::PipelineStateGfx StateDepth;
+		Resource::PipelineStateGfx StateNormal;
 		std::vector<Resource::CBuffer> TransformBuffers;
 	};
 

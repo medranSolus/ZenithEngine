@@ -133,14 +133,14 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
 		// Proper definitions
-		switch (desc.Stencil)
+		switch (desc.DepthStencil)
 		{
-		case GFX::Resource::StencilMode::Off:
+		case GFX::Resource::DepthStencilMode::StencilOff:
 		{
 			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 			break;
 		}
-		case GFX::Resource::StencilMode::Write:
+		case GFX::Resource::DepthStencilMode::StencilWrite:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
@@ -149,7 +149,7 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
 			break;
 		}
-		case GFX::Resource::StencilMode::Mask:
+		case GFX::Resource::DepthStencilMode::StencilMask:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
@@ -158,18 +158,18 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
 			break;
 		}
-		case GFX::Resource::StencilMode::DepthOff:
+		case GFX::Resource::DepthStencilMode::DepthOff:
 		{
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
 			break;
 		}
-		case GFX::Resource::StencilMode::Reverse:
+		case GFX::Resource::DepthStencilMode::DepthReverse:
 		{
 			stateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
 			break;
 		}
-		case GFX::Resource::StencilMode::DepthFirst:
+		case GFX::Resource::DepthStencilMode::DepthBefore:
 		{
 			stateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 			break;

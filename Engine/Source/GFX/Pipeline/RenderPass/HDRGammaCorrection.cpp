@@ -14,7 +14,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"HDRGammaPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::DepthOff;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;

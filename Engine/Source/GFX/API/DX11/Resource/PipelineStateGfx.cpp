@@ -73,9 +73,9 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_GFX_SET_ID(blendState, "Blender_" + desc.DebugName);
 
 		D3D11_DEPTH_STENCIL_DESC stencilDesc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT{});
-		switch (desc.Stencil)
+		switch (desc.DepthStencil)
 		{
-		case GFX::Resource::StencilMode::Write:
+		case GFX::Resource::DepthStencilMode::StencilWrite:
 		{
 			stencilDesc.DepthEnable = FALSE;
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -85,7 +85,7 @@ namespace ZE::GFX::API::DX11::Resource
 			stencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
 			break;
 		}
-		case GFX::Resource::StencilMode::Mask:
+		case GFX::Resource::DepthStencilMode::StencilMask:
 		{
 			stencilDesc.DepthEnable = FALSE;
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -95,18 +95,18 @@ namespace ZE::GFX::API::DX11::Resource
 			stencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 			break;
 		}
-		case GFX::Resource::StencilMode::DepthOff:
+		case GFX::Resource::DepthStencilMode::DepthOff:
 		{
 			stencilDesc.DepthEnable = FALSE;
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 			break;
 		}
-		case GFX::Resource::StencilMode::Reverse:
+		case GFX::Resource::DepthStencilMode::DepthReverse:
 		{
 			stencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 			break;
 		}
-		case GFX::Resource::StencilMode::DepthFirst:
+		case GFX::Resource::DepthStencilMode::DepthBefore:
 		{
 			stencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;

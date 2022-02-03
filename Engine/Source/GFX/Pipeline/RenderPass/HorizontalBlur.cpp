@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"BlurPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::DepthOff;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;

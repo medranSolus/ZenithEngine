@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"SkyboxVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"SkyboxPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::DepthFirst;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;

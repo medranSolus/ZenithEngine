@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"SolidVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"SolidPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::Write;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;

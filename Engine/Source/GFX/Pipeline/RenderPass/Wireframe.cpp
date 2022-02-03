@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"SolidVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"SolidPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::Reverse;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthReverse;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;

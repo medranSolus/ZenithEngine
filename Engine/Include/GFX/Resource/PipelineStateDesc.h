@@ -7,8 +7,8 @@ namespace ZE::GFX::Resource
 {
 	// Logical blending modes
 	enum class BlendType : U8 { None, Light, Normal };
-	// Possible operations on stencil buffer
-	enum class StencilMode : U8 { Off, Write, Mask, DepthOff, Reverse, DepthFirst };
+	// Possible operations on depth-stencil buffer
+	enum class DepthStencilMode : U8 { StencilOff, StencilWrite, StencilMask, DepthOff, DepthReverse, DepthBefore };
 	// GPU primitive culling
 	enum class CullMode : U8 { None, Front, Back };
 
@@ -22,7 +22,7 @@ namespace ZE::GFX::Resource
 		Shader* GS = nullptr;
 		Shader* PS = nullptr;
 		BlendType Blender = BlendType::None;
-		StencilMode Stencil = StencilMode::Off;
+		DepthStencilMode DepthStencil = DepthStencilMode::StencilOff;
 		CullMode Culling = CullMode::Back;
 		TopologyType Topology = TopologyType::Triangle;
 		TopologyOrder Ordering = TopologyOrder::List;

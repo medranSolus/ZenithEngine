@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"BlurPS", buildData.ShaderCache);
-		psoDesc.Stencil = Resource::StencilMode::Mask;
+		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilMask;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.Blender = Resource::BlendType::Normal;
 		psoDesc.RenderTargetsCount = 1;
