@@ -16,7 +16,7 @@ namespace ZE::GFX::Resource
 	struct PipelineStateDesc
 	{
 		// Vertex shader is always required
-		Shader* VS;
+		Shader* VS = nullptr;
 		Shader* DS = nullptr;
 		Shader* HS = nullptr;
 		Shader* GS = nullptr;

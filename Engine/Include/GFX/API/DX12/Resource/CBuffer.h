@@ -19,7 +19,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 		constexpr void* GetRegion() const noexcept { ZE_ASSERT(buffer, "CBuffer is not dynamic!"); return buffer; }
 
-		void Update(GFX::Device& dev, GFX::CommandList& cl, const void* values, U32 bytes) const;
+		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 		void Free(GFX::Device& dev) noexcept;
 	};

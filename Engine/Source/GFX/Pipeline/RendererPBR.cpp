@@ -46,7 +46,6 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
-		settingsData.CameraPos = { 0.0, 0.0f, 0.0f };
 		settingsData.FarClip = 1000.0f;
 		settingsData.NearClip = 0.001f;
 		settingsData.HDRExposure = 1.0f;
@@ -279,11 +278,24 @@ namespace ZE::GFX::Pipeline
 		worldData.Meshes = Table::Create<MeshInfo>(MESH_LIST_GROW_SIZE);
 	}
 
+	void RendererPBR::SetCurrentCamera(Device& dev, Data::EID camera)
+	{
+		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(camera), "Camera not present in the scene!");
+
+		worldData.CurrnetCamera = camera;
+
+		auto& cameraData = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.at(camera)];
+		// TODO: Set camera data
+		dev.StartUpload();
+		settingsBuffer.Update(dev, &settingsData, sizeof(PBRData));
+		dev.FinishUpload();
+	}
+
 	void RendererPBR::UpdateWorldData() noexcept
 	{
 		ZE_ASSERT(worldData.ActiveScene, "No active scene set!");
-		//ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera),
-		//	"Current camera not present!");
+		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera),
+			"Current camera not present!");
 
 		U64 modelCount = worldData.ActiveScene->ModelInfo.Size;
 		const Data::EID* modelEntities = worldData.ActiveScene->ModelEntities;

@@ -2,6 +2,31 @@
 
 namespace ZE::Data
 {
+	EID Scene::CreateEntity() noexcept
+	{
+		Entity entity = {};
+		EID id = EntityInfo.Size;
+		while (EntityPositions.contains(id))
+			++id;
+		EntityPositions.emplace(id, EntityInfo.Size);
+		if (Entities == nullptr)
+			Entities = Table::Create(1U, Entity(id));
+		else
+			Table::Append<1>(EntityInfo, Entities, id);
+		return id;
+	}
+
+	void Scene::AddCamera(EID entity, const Camera& camera) noexcept
+	{
+		ZE_ASSERT(!CameraPositions.contains(entity), "Entity already contains Camera component!");
+
+		CameraPositions.emplace(entity, CameraInfo.Size);
+		if (Cameras == nullptr)
+			Cameras = Table::Create(1U, camera);
+		else
+			Table::Append<1>(CameraInfo, Cameras, camera);
+	}
+
 	void Scene::UpdateTransforms() noexcept
 	{
 		ZE_ASSERT(EntityInfo.Size == 0 || Entities[EntityInfo.Size - 1].ParentID == Data::Entity::INVALID_ID,

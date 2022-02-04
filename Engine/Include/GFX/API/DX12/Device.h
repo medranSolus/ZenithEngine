@@ -132,6 +132,9 @@ namespace ZE::GFX::API::DX12
 		void UploadTexture(const D3D12_TEXTURE_COPY_LOCATION& dest,
 			const D3D12_TEXTURE_COPY_LOCATION& source, D3D12_RESOURCE_STATES finalState);
 
+		void UpdateBuffer(ID3D12Resource* res, const void* data,
+			U64 size, D3D12_RESOURCE_STATES currentState);
+
 		void FreeBuffer(ResourceInfo& info) noexcept;
 		void FreeBuffer(ResourceInfo& info, U32 size) noexcept;
 		void FreeTexture(ResourceInfo& info) noexcept;

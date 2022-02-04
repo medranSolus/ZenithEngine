@@ -38,6 +38,9 @@ App::App(const std::string& commandLine)
 	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000, false, 1024 })
 {
 	engine.Reneder().SetActiveScene(scene);
+	Data::EID camera = scene.CreateEntity();
+	scene.AddCamera(camera, { { 0.0f, 0.0f, 0.0f } });
+	engine.Reneder().SetCurrentCamera(engine.Gfx().GetDevice(), camera);
 }
 
 int App::Run()

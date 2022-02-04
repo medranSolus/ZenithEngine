@@ -1,4 +1,6 @@
 // Macros for specifying constant buffers
+#ifndef CBUFFER_HLSLI
+#define CBUFFER_HLSLI
 
 // API agnostic macro for CBuffer
 #ifdef _DX11
@@ -26,3 +28,5 @@
 #else
 #error Wrong type of shader used!
 #endif
+
+#endif // CBUFFER_HLSLI

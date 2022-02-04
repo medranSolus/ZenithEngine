@@ -2,14 +2,14 @@
 
 struct PBRData
 {
-	float3 CameraPos;
+	matrix ViewProjection;
+	matrix ViewProjectionInverse;
 	float NearClip;
 	float FarClip;
 	float Gamma;
 	float GammaInverse;
 	float HDRExposure;
-	matrix ViewProjection;
-	matrix ViewProjectionInverse;
+
 	struct
 	{
 		// Must not exceed coefficients size

@@ -420,6 +420,21 @@ namespace ZE::GFX::API::DX12
 			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, dest.pResource, source.pResource));
 	}
 
+	void Device::UpdateBuffer(ID3D12Resource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
+	{
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = res;
+		barrier.Transition.Subresource = 0;
+		barrier.Transition.StateBefore = currentState;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+
+		copyList.GetList()->ResourceBarrier(1, &barrier);
+		D3D12_RESOURCE_DESC desc = GetBufferDesc(size);
+		UploadBuffer(res, desc, data, size, currentState);
+	}
+
 	void Device::FreeBuffer(ResourceInfo& info) noexcept
 	{
 		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();

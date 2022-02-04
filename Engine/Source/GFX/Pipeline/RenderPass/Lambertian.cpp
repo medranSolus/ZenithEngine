@@ -65,7 +65,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
 			const auto& geometries = data.World.ActiveScene->Geometries;
-			Float3 cameraPos = { 0.0, 0.0f, 0.0f };
+			Float3 cameraPos = data.World.ActiveScene->Cameras[data.World.ActiveScene->CameraPositions.at(data.World.CurrnetCamera)].Position;
 
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)

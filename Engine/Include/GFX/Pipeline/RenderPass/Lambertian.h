@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	struct TransformCBuffer
 	{
 		Float3 CameraPos;
-		float padding;
+		float _Padding;
 		ModelTransform Transforms[511];
 	};
 

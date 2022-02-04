@@ -16,12 +16,12 @@ namespace ZE::Data
 	// Main structure holding info about all the components in the scene
 	struct Scene
 	{
-		// Ordering by non-decreasing parent, root entities at the end. Same ordering for Transform component.
-		// If child entity have Transform then all parents should have said component too
 		TableInfo<EID> EntityInfo;
 		Ptr<Entity> Entities;
 		LocationLookup<EID> EntityPositions;
 
+		// Ordering by non-decreasing parent, root entities at the end.
+		// If child entity have Transform then all parents should have said component too
 		TableInfo<EID> TransformInfo;
 		Ptr<EID> TransformEntities;
 		Ptr<Transform> TransformsLocal;
@@ -50,6 +50,8 @@ namespace ZE::Data
 		Entity GetEntity(EID id) const noexcept { ZE_ASSERT(id != Entity::INVALID_ID, "Invalid ID!"); return Entities[EntityPositions.at(id)]; }
 
 		// Maybe move out of Scene as independent functions
+		EID CreateEntity() noexcept;
+		void AddCamera(EID entity, const Camera& camera) noexcept;
 		void UpdateTransforms() noexcept;
 	};
 }

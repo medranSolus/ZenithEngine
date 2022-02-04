@@ -25,10 +25,9 @@ VSOut main(/*float3 pos : POSITION,
 	vso.worldNormal = mul(normal, (float3x3) cb_transform.Transforms[cb_transformIndex].M);
 
 	vso.tc = tc;
-	vso.worldBitan = mul(bitangent, (float3x3) cb_transform.Transforms[cb_transformIndex].M);
+	vso.worldBitan = mul(bitangent, (float3x3)cb_transform.Transforms[cb_transformIndex].M);
 
-	vso.cameraDir = cb_transform.CameraPos - vso.worldPos;
-	vso.cameraDir.y *= -1.0f;
+	vso.cameraDir = (cb_transform.CameraPos - vso.worldPos) * -1.0f;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex].MVP);
 
 	return vso;

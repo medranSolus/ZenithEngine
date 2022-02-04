@@ -7,14 +7,13 @@ namespace ZE::GFX::Pipeline
 	// Global constant buffer data used by RendererPBR
 	struct PBRData
 	{
-		Float3 CameraPos;
+		Matrix ViewProjection;
+		Matrix ViewProjectionInverse;
 		float NearClip;
 		float FarClip;
 		float Gamma;
 		float GammaInverse;
 		float HDRExposure;
-		Matrix ViewProjection;
-		Matrix ViewProjectionInverse;
 		// Add gauss blur kernel
 	};
 
@@ -32,10 +31,10 @@ namespace ZE::GFX::Pipeline
 		~RendererPBR();
 
 		constexpr void SetActiveScene(const Data::Scene& scene) noexcept { worldData.ActiveScene = &scene; }
-		constexpr void SetCurrentCamera(Data::EID camera) noexcept { worldData.CurrnetCamera = camera; }
 
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize);
+		void SetCurrentCamera(Device& dev, Data::EID camera);
 		void UpdateWorldData() noexcept;
 	};
 }

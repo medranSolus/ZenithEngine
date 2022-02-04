@@ -38,12 +38,12 @@ namespace ZE::GFX::API::DX11::Resource
 		}
 	}
 
-	void CBuffer::Update(GFX::Device& dev, GFX::CommandList& cl, const void* values, U32 bytes) const
+	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
 	{
 		if (bufferData)
 			memcpy(bufferData, values, bytes);
 		else
-			cl.Get().dx11.GetContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
+			dev.Get().dx11.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
 	}
 
 	void CBuffer::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
