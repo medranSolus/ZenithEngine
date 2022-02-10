@@ -20,6 +20,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
+		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
+		psoDesc.InputLayout.emplace_back(Resource::InputParam::Normal);
+		psoDesc.InputLayout.emplace_back(Resource::InputParam::TexCoord);
+		psoDesc.InputLayout.emplace_back(Resource::InputParam::Bitangent);
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		passData->StateDepth.Init(dev, psoDesc, schema);
 

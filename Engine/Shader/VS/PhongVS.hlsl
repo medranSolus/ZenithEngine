@@ -10,16 +10,11 @@ struct VSOut
 	float4 pos : SV_POSITION;
 };
 
-VSOut main(/*float3 pos : POSITION,
+VSOut main(float3 pos : POSITION,
 	float3 normal : NORMAL,
 	float2 tc : TEXCOORD,
-	float3 bitangent : BITANGENT*/)
+	float3 bitangent : BITANGENT)
 {
-	float3 pos = 0.0f;
-	float3 normal = 0.0f;
-	float2 tc = 0.0f;
-	float3 bitangent = 0.0f;
-
 	VSOut vso;
 	vso.worldPos = (float3)mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex].M);
 	vso.worldNormal = mul(normal, (float3x3) cb_transform.Transforms[cb_transformIndex].M);

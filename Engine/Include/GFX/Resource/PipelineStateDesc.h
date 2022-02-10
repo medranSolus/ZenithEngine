@@ -1,4 +1,5 @@
 #pragma once
+#include "InputParam.h"
 #include "Shader.h"
 #include "Topology.h"
 #include <bitset>
@@ -29,6 +30,7 @@ namespace ZE::GFX::Resource
 		U8 RenderTargetsCount = 0;
 		PixelFormat FormatsRT[8];
 		PixelFormat FormatDS = PixelFormat::Unknown;
+		std::vector<InputParam> InputLayout;
 		// Wireframe | DepthClip
 		std::bitset<2> Flags = 1;
 #if _ZE_MODE_DEBUG

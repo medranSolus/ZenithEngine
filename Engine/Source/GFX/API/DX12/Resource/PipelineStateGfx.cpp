@@ -176,14 +176,27 @@ namespace ZE::GFX::API::DX12::Resource
 		}
 		}
 
-		stateDesc.InputLayout.pInputElementDescs = nullptr;
-		stateDesc.InputLayout.NumElements = 0;
-
-		// Input Layout description
-		//std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc = vertexLayout->GetLayout();
-		//ZE_GFX_THROW_FAILED(device->CreateInputLayout(layoutDesc.data(), static_cast<UINT>(layoutDesc.size()),
-		//	bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
-		//ZE_GFX_SET_ID(inputLayout, "Layout");
+		// Input Layout
+		stateDesc.InputLayout.NumElements = static_cast<U32>(desc.InputLayout.size());
+		if (stateDesc.InputLayout.NumElements)
+		{
+			D3D12_INPUT_ELEMENT_DESC* elements = new D3D12_INPUT_ELEMENT_DESC[stateDesc.InputLayout.NumElements];
+			stateDesc.InputLayout.pInputElementDescs = elements;
+			for (U32 i = 0; i < stateDesc.InputLayout.NumElements; ++i)
+			{
+				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
+				auto& element = elements[i];
+				element.SemanticName = GFX::Resource::GetInputSemantic(paramType);
+				element.SemanticIndex = 0;
+				element.Format = DX::GetDXFormat(GFX::Resource::GetInputFormat(paramType));
+				element.InputSlot = 0;
+				element.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+				element.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				element.InstanceDataStepRate = 0;
+			}
+		}
+		else
+			stateDesc.InputLayout.pInputElementDescs = nullptr;
 
 		// Cut value in strip topology indicating hole between vertices
 		stateDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
@@ -211,6 +224,9 @@ namespace ZE::GFX::API::DX12::Resource
 
 		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
 		ZE_GFX_SET_ID(state, "PSO_" + desc.DebugName);
+
+		if (stateDesc.InputLayout.pInputElementDescs)
+			delete[] stateDesc.InputLayout.pInputElementDescs;
 	}
 
 	void PipelineStateGfx::Bind(GFX::CommandList& cl) const noexcept
