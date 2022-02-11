@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 		const RID lightbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID lightbuffSpecular = frameBufferDesc.AddResource(
@@ -46,13 +46,38 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
-		settingsData.FarClip = 1000.0f;
-		settingsData.NearClip = 0.001f;
-		settingsData.HDRExposure = 1.0f;
-		settingsData.Gamma = 2.2f;
-		settingsData.GammaInverse = 1.0f / 2.2f;
 		settingsData.ViewProjection = Math::XMMatrixIdentity();
 		settingsData.ViewProjectionInverse = Math::XMMatrixIdentity();
+		settingsData.NearClip = 0.001f;
+		settingsData.FarClip = 1000.0f;
+		settingsData.Gamma = 2.2f;
+		settingsData.GammaInverse = 1.0f / 2.2f;
+		settingsData.FrameDimmensions = { width, height };
+		settingsData.HDRExposure = 1.0f;
+		settingsData.SSAO.Bias = 0.188f;
+		settingsData.SSAO.NoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
+		settingsData.SSAO.SampleRadius = 0.69f;
+		settingsData.SSAO.Power = 2.77f;
+		settingsData.SSAO.KernelSize = PBRData::SSAO_KERNEL_MAX_SIZE;
+		settingsData.Blur.Radius = 0;
+		settingsData.Blur.Width = outlineBuffWidth;
+		settingsData.Blur.Height = outlineBuffHeight;
+		//settingsData.Blur.Coefficients = 0.0f;
+		settingsData.Blur.Intensity = 1.0f;
+
+		std::mt19937_64 engine(std::random_device{}());
+		for (U32 i = 0; i < PBRData::SSAO_KERNEL_MAX_SIZE; ++i)
+		{
+			const Vector sample = Math::XMVectorSet(Math::RandNDC(engine),
+				Math::RandNDC(engine), Math::Rand01(engine), 0.0f);
+
+			float scale = static_cast<float>(i) / PBRData::SSAO_KERNEL_MAX_SIZE;
+			scale = Math::Lerp(0.1f, 1.0f, scale * scale);
+
+			Math::XMStoreFloat4(&settingsData.SSAO.Kernel[i],
+				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
+		}
+
 		dev.StartUpload();
 		settingsBuffer.Init(dev, &settingsData, sizeof(PBRData), false);
 		dev.FinishUpload();
@@ -60,7 +85,7 @@ namespace ZE::GFX::Pipeline
 		std::vector<GFX::Pipeline::RenderNode> nodes;
 		RendererBuildData buildData = { bindings, texLib };
 #pragma region Renderer bindings
-		buildData.RendererSlots.AddRange({ 1, 13, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+		buildData.RendererSlots.AddRange({ 1, 13, Resource::ShaderType::Pixel | Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
 
 		buildData.RendererSlots.AddSampler(
 			{
@@ -210,7 +235,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("ssao", GFX::QueueType::Compute, nullptr);
+			ZE_MAKE_NODE_DATA("ssao", QueueType::Compute, SSAO, dev, buildData);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourceNonPS);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourceNonPS);
 			node.AddOutput("SB", Resource::State::UnorderedAccess, ssao);

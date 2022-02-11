@@ -7,14 +7,37 @@ namespace ZE::GFX::Pipeline
 	// Global constant buffer data used by RendererPBR
 	struct PBRData
 	{
+		static constexpr U32 SSAO_KERNEL_MAX_SIZE = 32;
+
 		Matrix ViewProjection;
 		Matrix ViewProjectionInverse;
 		float NearClip;
 		float FarClip;
 		float Gamma;
 		float GammaInverse;
+		UInt2 FrameDimmensions;
 		float HDRExposure;
-		// Add gauss blur kernel
+
+		struct
+		{
+			float Bias;
+			UInt2 NoiseDimmensions;
+			float SampleRadius;
+			float Power;
+			Float4 Kernel[SSAO_KERNEL_MAX_SIZE];
+			U32 KernelSize;
+		} SSAO;
+
+		struct
+		{
+			// Must not exceed coefficients size
+			S32 Radius;
+			U32 Width;
+			U32 Height;
+			// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
+			Float4 Coefficients[8];
+			float Intensity;
+		} Blur;
 	};
 
 	// Physically Based Renderer
