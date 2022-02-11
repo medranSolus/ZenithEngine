@@ -106,6 +106,22 @@ namespace ZE::Math
 		return x && !(x & (x - 1));
 	}
 
+	// Not to be used with floats
+	template<typename T>
+	constexpr T AlignUp(T val, T alignment) noexcept
+	{
+		ZE_ASSERT(IsPower2(alignment), "Incorrect alignment!");
+		return (val + alignment - 1) & ~(alignment - 1);
+	}
+
+	// Not to be used with floats
+	template<typename T>
+	constexpr T AlignDown(T val, T alignment) noexcept
+	{
+		ZE_ASSERT(IsPower2(alignment), "Incorrect alignment!");
+		return val & ~(alignment - 1);
+	}
+
 	template <typename T>
 	constexpr T DivideRoundUp(T x, T y)
 	{

@@ -12,8 +12,13 @@ namespace ZE::GFX::Binding
 		else
 		{
 			for (const auto& range : binding.Ranges)
+			{
 				if (range.Shaders & useShaders)
+				{
 					Ranges.emplace_back(range);
+					Ranges.back().Shaders &= useShaders;
+				}
+			}
 		}
 		Samplers.reserve(Samplers.size() + binding.Samplers.size());
 		Samplers.insert(Samplers.end(), binding.Samplers.begin(), binding.Samplers.end());

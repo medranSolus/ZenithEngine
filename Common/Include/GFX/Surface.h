@@ -27,6 +27,7 @@ namespace ZE::GFX
 		constexpr U64 GetWidth() const noexcept { return image->width; }
 		constexpr U64 GetHeight() const noexcept { return image->height; }
 		constexpr U64 GetRowByteSize() const noexcept { return image->rowPitch; }
+		constexpr U64 GetPixelSize() const noexcept { return GetRowByteSize() / GetWidth(); }
 		constexpr U64 GetSliceByteSize() const noexcept { return image->slicePitch; }
 		constexpr U64 GetSize() const noexcept { return GetWidth() * GetHeight(); }
 		constexpr void PutPixel(U64 x, U64 y, const Pixel& c) noexcept;

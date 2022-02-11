@@ -463,6 +463,7 @@ namespace ZE::GFX::API::DX12
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept
 	{
+		ZE_ASSERT(dynamicDescCount == 0, "Cannot add dynamic descs before all static ones are created!");
 		ZE_ASSERT(dynamicDescStart + count < scratchDescStart,
 			"Prepared too small range for static descriptors, increase pool size!");
 
@@ -481,6 +482,10 @@ namespace ZE::GFX::API::DX12
 
 		DescriptorInfo rangeStart;
 		rangeStart.ID = dynamicDescStart + dynamicDescCount;
+		ZE_ASSERT(rangeStart.ID != 0,
+			"Invalid location for normal descs! Resources created before RenderGraph finalization \
+			should always be created with PackOption::StaticCreation!");
+
 		U64 offest = static_cast<U64>(rangeStart.ID) * descriptorSize;
 		rangeStart.GPU.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
 		rangeStart.CPU.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;

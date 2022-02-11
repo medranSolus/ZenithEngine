@@ -38,13 +38,21 @@ namespace ZE::GFX::Pipeline
 
 	RID* RenderNode::GetNodeRIDs() const noexcept
 	{
-		RID* rids = new RID[inputRIDs.size() + innerRIDs.size() + outputRIDs.size()];
+		std::vector<RID> out = outputRIDs;
+		for (RID rid : inputRIDs)
+		{
+			auto it = std::find(out.begin(), out.end(), rid);
+			if (it != out.end())
+				out.erase(it);
+		}
+
+		RID* rids = new RID[inputRIDs.size() + innerRIDs.size() + out.size()];
 		RID i = 0;
 		for (RID rid : inputRIDs)
 			rids[i++] = rid;
 		for (RID rid : innerRIDs)
 			rids[i++] = rid;
-		for (RID rid : outputRIDs)
+		for (RID rid : out)
 			rids[i++] = rid;
 		return rids;
 	}

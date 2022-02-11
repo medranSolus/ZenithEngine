@@ -12,9 +12,17 @@ namespace ZE::GFX::Resource::Texture
 		std::vector<Surface> Surfaces;
 	};
 
+	typedef U8 PackOptions;
+	enum PackOption : PackOptions
+	{
+		// Textures are created as static pipeline resources during engine initializaion
+		StaticCreation = 1
+	};
+
 	// Describes set of textures to create pack with
 	struct PackDesc
 	{
+		PackOptions Options = 0;
 		std::vector<Desc> Textures;
 
 		void Init(const Schema& schema) noexcept;

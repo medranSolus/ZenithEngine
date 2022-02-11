@@ -646,9 +646,7 @@ namespace ZE::GFX::Pipeline
 				// Optional data is not supported for static RenderPass
 				staticPassData.OptData = nullptr;
 				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, bindings, settingsBuffer, sharedStates };
-				executeData.CL.Open(dev);
 				node.GetExecuteCallback()(executeData, staticPassData);
-				executeData.CL.Close(dev);
 				staticPassData.Buffers.DeleteArray();
 			}
 			++i;

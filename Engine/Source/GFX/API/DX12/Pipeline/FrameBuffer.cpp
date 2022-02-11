@@ -401,7 +401,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
+			ZE_GFX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
 			if (lastState != firstState)
 			{
 				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
@@ -620,6 +620,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 
 		// Find number of barriers and prepare aux structures
+		transitionSyncs = new GFX::Pipeline::SyncType[levelCount];
 		transitions = new TransitionPoint[levelCount];
 		U64 barrierCount = 0;
 		for (const auto& level : desc.TransitionsPerLevel)
@@ -675,12 +676,35 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 
 		// Check what kind of transition sync is needed
-		auto computeBarrierSyncs = [](TransitionPoint& transitions)
+		auto computeBarrierSyncs = [](TransitionPoint& transitions, GFX::Pipeline::SyncType* syncBefore)
 		{
+			bool copyBefore = false, computeBefore = false;
 			bool copyAfter = false, computeAfter = false;
 			for (U32 i = 0; i < transitions.BarrierCount; ++i)
 			{
-				switch (transitions.Barriers[i].Transition.StateAfter)
+				auto& transition = transitions.Barriers[i].Transition;
+				if (syncBefore)
+				{
+					switch (transition.StateBefore)
+					{
+					case D3D12_RESOURCE_STATE_GENERIC_READ:
+						computeBefore = true;
+					case D3D12_RESOURCE_STATE_COMMON:
+					{
+						copyBefore = true;
+						break;
+					}
+					case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
+					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+					{
+						computeBefore = true;
+						break;
+					}
+					}
+				}
+
+				switch (transition.StateAfter)
 				{
 				case D3D12_RESOURCE_STATE_GENERIC_READ:
 					computeAfter = true;
@@ -698,6 +722,18 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 				}
 			}
+			if (syncBefore)
+			{
+				if (copyBefore && computeBefore)
+					*syncBefore = GFX::Pipeline::SyncType::MainToAll;
+				else if (copyBefore)
+					*syncBefore = GFX::Pipeline::SyncType::MainToCopy;
+				else if (computeBefore)
+					*syncBefore = GFX::Pipeline::SyncType::MainToCompute;
+				else
+					*syncBefore = GFX::Pipeline::SyncType::None;
+			}
+
 			if (copyAfter && computeAfter)
 				transitions.AfterSync = GFX::Pipeline::SyncType::MainToAll;
 			else if (copyAfter)
@@ -705,9 +741,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 			else if (computeAfter)
 				transitions.AfterSync = GFX::Pipeline::SyncType::MainToCompute;
 		};
-		computeBarrierSyncs(initTransitions);
+		computeBarrierSyncs(initTransitions, nullptr);
 		for (U64 i = 0; i < levelCount; ++i)
-			computeBarrierSyncs(transitions[i]);
+			computeBarrierSyncs(transitions[i], transitionSyncs + i);
 
 		// Finish initial transitions
 		if (startingTransitions.size() > 0)
@@ -722,6 +758,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		if (initTransitions.Barriers)
 			initTransitions.Barriers.DeleteArray();
+		if (transitionSyncs)
+			transitionSyncs.DeleteArray();
 		if (transitions)
 			transitions.DeleteArray();
 		if (backbufferBarriersLocations)
@@ -794,7 +832,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::UAV
 			|| schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
 			"Bind slot is not a unnordered access or table! Wrong root signature or order of bindings!");
-		ZE_ASSERT(uav[rid].second.ptr != -1, "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(uav[rid - 1].second.ptr != -1, "Current resource is not suitable for being unnordered access!");
 
 		auto* list = cl.Get().dx12.GetList();
 		if (schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::UAV)
@@ -805,9 +843,21 @@ namespace ZE::GFX::API::DX12::Pipeline
 				list->SetGraphicsRootUnorderedAccessView(bindCtx.Count++, resources[rid].Resource->GetGPUVirtualAddress());
 		}
 		else if (schema.IsCompute())
-			list->SetComputeRootDescriptorTable(bindCtx.Count++, uav[rid].second);
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, uav[rid - 1].second);
 		else
-			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uav[rid].second);
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uav[rid - 1].second);
+	}
+
+	void FrameBuffer::BarrierUAV(GFX::CommandList& cl, RID rid) const
+	{
+		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
+		ZE_ASSERT(uav[rid - 1].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.UAV.pResource = resources[rid].Resource.Get();
+		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
 	}
 
 	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const
@@ -829,8 +879,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const
 	{
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
-		auto& desc = uav[rid];
+		ZE_ASSERT(uav[rid - 1].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
+		auto& desc = uav[rid - 1];
 		cl.Get().dx12.GetList()->ClearUnorderedAccessViewFloat(desc.second, desc.first,
 			resources[rid].Resource.Get(), reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
@@ -838,8 +888,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const
 	{
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
-		auto& desc = uav[rid];
+		ZE_ASSERT(uav[rid - 1].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
+		auto& desc = uav[rid - 1];
 		cl.Get().dx12.GetList()->ClearUnorderedAccessViewUint(desc.second, desc.first,
 			resources[rid].Resource.Get(), reinterpret_cast<const U32*>(colors), 0, nullptr);
 	}
@@ -893,6 +943,24 @@ namespace ZE::GFX::API::DX12::Pipeline
 		if (transition.BarrierCount > 0)
 		{
 			auto& device = dev.Get().dx12;
+			
+			// Insert waits if barrier adresses other engines
+			switch (transitionSyncs[level])
+			{
+			case GFX::Pipeline::SyncType::MainToAll:
+				device.WaitMainFromCopy(device.SetCopyFence());
+			case GFX::Pipeline::SyncType::MainToCompute:
+			{
+				device.WaitMainFromCompute(device.SetComputeFence());
+				break;
+			}
+			case GFX::Pipeline::SyncType::MainToCopy:
+			{
+				device.WaitMainFromCopy(device.SetCopyFence());
+				break;
+			}
+			}
+
 			cl.Get().dx12.Open(device);
 			cl.Get().dx12.GetList()->ResourceBarrier(transition.BarrierCount, transition.Barriers);
 			cl.Get().dx12.Close(device);

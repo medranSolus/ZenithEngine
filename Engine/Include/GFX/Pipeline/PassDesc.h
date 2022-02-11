@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline
 	struct PassData
 	{
 		// Resources used by RenderPass, appear in order they've been added during RenderNode construction,
-		// in respect to their usage (first input, then inner, lastly output resources)
+		// in respect to their usage: first input, then inner, lastly output resources (without already present input resources)
 		Ptr<const RID> Buffers = nullptr;
 		// Optional data used by RenderPass
 		void* OptData = nullptr;

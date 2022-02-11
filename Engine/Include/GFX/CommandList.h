@@ -16,7 +16,7 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
-		constexpr void Init(Device& dev, CommandType type = CommandType::All) { ZE_API_BACKEND_VAR.Init(dev); }
+		constexpr void Init(Device& dev, CommandType type = CommandType::All) { ZE_API_BACKEND_VAR.Init(dev, type); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandType type) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, type); }
 		ZE_API_BACKEND_GET(CommandList);
 

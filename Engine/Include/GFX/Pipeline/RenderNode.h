@@ -61,6 +61,7 @@ namespace ZE::GFX::Pipeline
 		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
 		void AddOutput(std::string&& name, Resource::State state, RID rid);
 		CommandList GetStaticExecuteData() noexcept;
+		// Order: input, inner, output (without already present RIDs from inputs)
 		RID* GetNodeRIDs() const noexcept;
 	};
 }

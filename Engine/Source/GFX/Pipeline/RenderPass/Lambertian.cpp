@@ -44,7 +44,19 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
+		Resources ids = *passData.Buffers.CastConst<Resources>();
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
+
+		// Clearing data on first usage
+		renderData.CL.Open(renderData.Dev);
+
+		renderData.Buffers.ClearDSV(renderData.CL, ids.DepthStencil, 1.0f, 0);
+		renderData.Buffers.ClearRTV(renderData.CL, ids.Color, ColorF4());
+		renderData.Buffers.ClearRTV(renderData.CL, ids.Normal, ColorF4());
+		renderData.Buffers.ClearRTV(renderData.CL, ids.Specular, ColorF4());
+
+		renderData.CL.Close(renderData.Dev);
+		renderData.Dev.ExecuteMain(renderData.CL);
 
 		if (data.World.MeshesInfo.Size)
 		{
@@ -64,7 +76,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					data.TransformBuffers.at(i).Init(renderData.Dev, nullptr, SINGLE_BUFFER_SIZE, true);
 			}
 
-			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			const auto& transforms = data.World.ActiveScene->TransformsGlobal;

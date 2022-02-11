@@ -10,6 +10,7 @@ namespace ZE::GFX::Pipeline
 	struct RendererExecuteData
 	{
 		Device& Dev;
+		// Graphics command list
 		CommandList& CL;
 		FrameBuffer& Buffers;
 		Binding::Library& Bindings;

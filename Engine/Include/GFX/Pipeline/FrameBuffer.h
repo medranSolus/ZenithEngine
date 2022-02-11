@@ -44,6 +44,9 @@ namespace ZE::GFX::Pipeline
 		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
 
+		// Perfomr barrier between 2 usages of resource as UAV
+		constexpr void BarrierUAV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(BarrierUAV, cl, rid); }
+
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void ClearRTV(CommandList& cl, RID rid, const ColorF4& color) const { ZE_API_BACKEND_CALL(ClearRTV, cl, rid, color); }
 		// Depth stencil before first use must be initialized or cleared

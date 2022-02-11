@@ -20,6 +20,7 @@ namespace ZE::GFX::Binding
 		std::vector<Range> Ranges;
 		std::vector<Resource::SamplerDesc> Samplers;
 
+		void Clear() noexcept { Options = 0; Ranges.clear(); Samplers.clear(); }
 		void AddRange(Range&& range) noexcept { Ranges.emplace_back(std::forward<Range>(range)); }
 		void AddSampler(Resource::SamplerDesc&& sampler) noexcept { Samplers.emplace_back(std::forward<Resource::SamplerDesc>(sampler)); }
 
