@@ -44,7 +44,12 @@ namespace ZE::GFX::Pipeline
 				for (auto first = res.begin(), next = ++res.begin(); next != res.end();)
 				{
 					if (first->second == next->second)
-						next = res.erase(next);
+					{
+						if (next != --res.end())
+							next = res.erase(next);
+						else
+							break;
+					}
 					else
 					{
 						if (next->first - first->first > 1)

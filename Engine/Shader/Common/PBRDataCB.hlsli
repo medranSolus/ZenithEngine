@@ -12,30 +12,32 @@ struct PBRData
 	float Gamma;
 	float GammaInverse;
 
-	uint2 FrameDimmensions;
+	float3 AmbientLight;
 	float HDRExposure;
+
+	uint2 FrameDimmensions;
 	struct
 	{
-		float Bias;
-
 		uint2 NoiseDimmensions;
+
+		float Bias;
 		float SampleRadius;
 		float Power;
+		uint KernelSize;
 
 		float3 Kernel[SSAO_KERNEL_MAX_SIZE];
-
-		uint KernelSize;
 	} SSAO;
+
 	struct
 	{
 		// Must not exceed coefficients size
 		int Radius;
 		uint Width;
 		uint Height;
+		float Intensity;
 
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		float Coefficients[8];
-		float Intensity;
 	} Blur;
 };
 CBUFFER_GLOBAL(pbrData, PBRData, 13);

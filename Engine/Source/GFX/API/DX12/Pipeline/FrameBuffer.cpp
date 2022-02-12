@@ -28,7 +28,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
 		RID invalidID, const std::vector<RID>& memory, U64 heapSize)
 	{
-		U64 pixelsPerLevel = maxChunks / levelCount;
+		const U64 pixelsPerLevel = maxChunks / levelCount;
+		U64 separatorPixels = pixelsPerLevel / 20;
+		if (separatorPixels < 2)
+			separatorPixels = 2;
+		const U64 chunkPixels = pixelsPerLevel - separatorPixels;
 		Surface print(levelCount * pixelsPerLevel, maxChunks);
 		for (U32 chunk = 0; chunk < maxChunks; ++chunk)
 		{
@@ -39,8 +43,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 					static_cast<U8>(val >> (8 * ((val + 1) % 3))),
 					static_cast<U8>(val >> (8 * ((val + 2) % 3))),
 					static_cast<U8>(val >> 24) ^ 0xFF);
-				for (U64 p = 0; p < pixelsPerLevel; ++p)
+				for (U64 p = 0; p < chunkPixels; ++p)
 					print.PutPixel(level * pixelsPerLevel + p, chunk, pixel);
+				for (U64 p = 0; p < separatorPixels; ++p)
+					print.PutPixel(level * pixelsPerLevel + p + chunkPixels, chunk, { 255, 255, 255, 255 });
 			}
 		}
 		print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "bytes.png");
@@ -490,7 +496,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = uavDescHeap->GetCPUDescriptorHandleForHeapStart();
-		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount);
+		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount + uavCount);
 		// Create demanded views for each resource
 		for (U64 i = 1; const auto& res : resourcesInfo)
 		{
@@ -539,6 +545,34 @@ namespace ZE::GFX::API::DX12::Pipeline
 			}
 			else
 				rtvDsv[i].ptr = -1;
+			if (res.IsUAV())
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+				uavDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
+				if (res.Desc.DepthOrArraySize > 1)
+				{
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+					uavDesc.Texture2DArray.MipSlice = 0;
+					uavDesc.Texture2DArray.FirstArraySlice = 0;
+					uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
+					uavDesc.Texture2DArray.PlaneSlice = 0;
+				}
+				else
+				{
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+					uavDesc.Texture2D.MipSlice = 0;
+					uavDesc.Texture2D.PlaneSlice = 0;
+				}
+				ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
+				device->CopyDescriptorsSimple(1, srvUavHandle.first, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				uav[i - 1].first = uavHandle;
+				uav[i - 1].second = srvUavHandle.second;
+				uavHandle.ptr += srvUavDescSize;
+				srvUavHandle.first.ptr += srvUavDescSize;
+				srvUavHandle.second.ptr += srvUavDescSize;
+			}
+			else
+				uav[i - 1].first.ptr = uav[i - 1].second.ptr = -1;
 			if (res.IsSRV())
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -588,34 +622,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 			}
 			else
 				srv[i].ptr = -1;
-			if (res.IsUAV())
-			{
-				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
-				uavDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
-				if (res.Desc.DepthOrArraySize > 1)
-				{
-					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-					uavDesc.Texture2DArray.MipSlice = 0;
-					uavDesc.Texture2DArray.FirstArraySlice = 0;
-					uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
-					uavDesc.Texture2DArray.PlaneSlice = 0;
-				}
-				else
-				{
-					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-					uavDesc.Texture2D.MipSlice = 0;
-					uavDesc.Texture2D.PlaneSlice = 0;
-				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
-				device->CopyDescriptorsSimple(1, srvUavHandle.first, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				uav[i - 1].first = uavHandle;
-				uav[i - 1].second = srvUavHandle.second;
-				uavHandle.ptr += srvUavDescSize;
-				srvUavHandle.first.ptr += srvUavDescSize;
-				srvUavHandle.second.ptr += srvUavDescSize;
-			}
-			else
-				uav[i - 1].first.ptr = uav[i - 1].second.ptr = -1;
 			++i;
 		}
 
@@ -637,6 +643,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		initTransitions.BarrierCount = 0;
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		// Compute barriers before first render passes
 		U64 backbufferBarrierIndex = 0;
 		auto computeBarriers = [&](TransitionPoint& transitions, const U64 level, const U64 barrierIndex)
@@ -644,13 +651,13 @@ namespace ZE::GFX::API::DX12::Pipeline
 			for (const auto& transition : desc.TransitionsPerLevel.at(level))
 			{
 				barrier.Flags = GetTransitionType(transition.Barrier);
-				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
 				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
+				barrier.Transition.pResource = resources[transition.RID].Resource.Get();
+
+				transitions.Barriers[transitions.BarrierCount++] = barrier;
 				if (transition.RID == 0 && level != 0)
 					backbufferBarriersLocations[backbufferBarrierIndex++] = barrierIndex;
-				barrier.Transition.pResource = resources[transition.RID].Resource.Get();
-				transitions.Barriers[transitions.BarrierCount++] = barrier;
 			}
 			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
 			{
@@ -943,7 +950,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		if (transition.BarrierCount > 0)
 		{
 			auto& device = dev.Get().dx12;
-			
+
 			// Insert waits if barrier adresses other engines
 			switch (transitionSyncs[level])
 			{

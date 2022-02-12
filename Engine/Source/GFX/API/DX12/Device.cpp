@@ -59,7 +59,7 @@ namespace ZE::GFX::API::DX12
 #ifdef _ZE_MODE_DEBUG
 		// Enable Debug Layer before calling any DirectX commands
 		DX::ComPtr<ID3D12Debug> debugInterface;
-		ZE_GFX_THROW_FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
+		ZE_GFX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
 #endif
 
@@ -68,11 +68,11 @@ namespace ZE::GFX::API::DX12
 			debugManager
 #endif
 		);
-		ZE_GFX_THROW_FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
+		ZE_GFX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)));
+		ZE_GFX_THROW_FAILED_NOINFO(device->QueryInterface(IID_PPV_ARGS(&infoQueue)));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);

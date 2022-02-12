@@ -37,11 +37,17 @@ namespace ZE::GFX::Pipeline
 
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.
-		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent
+		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent.
+		// UAV resources are only adjacent in situation of following resources, ex:
+		// 1: SRV, 2: UAV/SRV, 3: SRV
+		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
 		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetSRV, cl, bindCtx, rid); }
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.
-		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent
+		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent.
+		// UAV resources are only adjacent in situation of following resources, ex:
+		// 1: SRV, 2: UAV/SRV, 3: SRV
+		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
 
 		// Perfomr barrier between 2 usages of resource as UAV

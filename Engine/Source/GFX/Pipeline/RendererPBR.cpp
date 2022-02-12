@@ -22,6 +22,8 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.Init(11, width, height);
 
 #pragma region Framebuffer definition
+		const RID ssao = frameBufferDesc.AddResource(
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
@@ -36,8 +38,6 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const RID ssao = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
 		const RID outline = frameBufferDesc.AddResource(
 			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
 		const RID outlineBlur = frameBufferDesc.AddResource(
@@ -52,18 +52,19 @@ namespace ZE::GFX::Pipeline
 		settingsData.FarClip = 1000.0f;
 		settingsData.Gamma = 2.2f;
 		settingsData.GammaInverse = 1.0f / 2.2f;
-		settingsData.FrameDimmensions = { width, height };
+		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
 		settingsData.HDRExposure = 1.0f;
-		settingsData.SSAO.Bias = 0.188f;
+		settingsData.FrameDimmensions = { width, height };
 		settingsData.SSAO.NoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
+		settingsData.SSAO.Bias = 0.188f;
 		settingsData.SSAO.SampleRadius = 0.69f;
 		settingsData.SSAO.Power = 2.77f;
 		settingsData.SSAO.KernelSize = PBRData::SSAO_KERNEL_MAX_SIZE;
 		settingsData.Blur.Radius = 0;
 		settingsData.Blur.Width = outlineBuffWidth;
 		settingsData.Blur.Height = outlineBuffHeight;
-		//settingsData.Blur.Coefficients = 0.0f;
 		settingsData.Blur.Intensity = 1.0f;
+		//settingsData.Blur.Coefficients = 0.0f;
 
 		std::mt19937_64 engine(std::random_device{}());
 		for (U32 i = 0; i < PBRData::SSAO_KERNEL_MAX_SIZE; ++i)
@@ -244,9 +245,9 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
 			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
+			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}

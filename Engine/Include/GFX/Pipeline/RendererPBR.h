@@ -15,17 +15,18 @@ namespace ZE::GFX::Pipeline
 		float FarClip;
 		float Gamma;
 		float GammaInverse;
-		UInt2 FrameDimmensions;
+		Float3 AmbientLight;
 		float HDRExposure;
+		UInt2 FrameDimmensions;
 
 		struct
 		{
-			float Bias;
 			UInt2 NoiseDimmensions;
+			float Bias;
 			float SampleRadius;
 			float Power;
-			Float4 Kernel[SSAO_KERNEL_MAX_SIZE];
 			U32 KernelSize;
+			Float4 Kernel[SSAO_KERNEL_MAX_SIZE];
 		} SSAO;
 
 		struct
@@ -34,9 +35,9 @@ namespace ZE::GFX::Pipeline
 			S32 Radius;
 			U32 Width;
 			U32 Height;
+			float Intensity;
 			// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 			Float4 Coefficients[8];
-			float Intensity;
 		} Blur;
 	};
 

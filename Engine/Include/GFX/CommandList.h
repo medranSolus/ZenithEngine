@@ -40,3 +40,11 @@ namespace ZE::GFX
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 	};
 }
+
+#ifdef _ZE_MODE_DEBUG
+#define ZE_DRAW_TAG_BEGIN(cl, tag) cl.TagBegin(tag)
+#define ZE_DRAW_TAG_END(cl) cl.TagEnd()
+#else
+#define ZE_DRAW_TAG_BEGIN(cl, tag)
+#define ZE_DRAW_TAG_END(cl)
+#endif

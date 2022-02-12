@@ -35,6 +35,10 @@ namespace ZE::GFX::API::DX
 // Name of variable holding reference to DebugManager
 #define ZE_GFX_EXCEPT_MANAGER debugManager
 
+// Before using needs call to ZE_GFX_ENABLE()
+// Checks HRESULT returned via function and throws on error
+#define	ZE_GFX_THROW_FAILED_NOINFO(call) if(FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT)
+
 #ifdef _ZE_MODE_DEBUG
 // Enables useage of ZE_GFX_*_INFO macros in current scope
 #define ZE_GFX_ENABLE_INFO(device) auto& ZE_GFX_EXCEPT_MANAGER = device.GetInfoManager()
@@ -73,7 +77,7 @@ namespace ZE::GFX::API::DX
 
 // Before using needs call to ZE_GFX_ENABLE()
 // Checks HRESULT returned via function and throws on error
-#define	ZE_GFX_THROW_FAILED(call) ZE_GFX_SET_DEBUG_WATCH(); if(FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT)
+#define	ZE_GFX_THROW_FAILED(call) ZE_GFX_SET_DEBUG_WATCH(); ZE_GFX_THROW_FAILED_NOINFO(call)
 #pragma endregion
 
 #pragma region Debug name macros
