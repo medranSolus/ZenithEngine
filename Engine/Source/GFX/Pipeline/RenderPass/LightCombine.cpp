@@ -7,13 +7,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		Data* passData = new Data;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 25, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 5, 27, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPackAppend });
-		desc.AddRange({ 1, 11, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+		desc.AddRange({ 2, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 2, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		return passData;
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"LightCombinePS", buildData.ShaderCache);
@@ -29,13 +27,17 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
-		return;
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 
-		renderData.CL.Open(renderData.Dev, data.State);
-		renderData.Bindings.GetSchema(data.BindingIndex).SetGraphics(renderData.CL);
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
+		renderData.CL.Open(renderData.Dev, data.State);
+		ctx.BindingSchema.SetGraphics(renderData.CL);
+
+		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.SSAO);
+		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.LightColor);
+		renderData.EngineData.Bind(renderData.CL, ctx);
 		renderData.Buffers.SetRTV(renderData.CL, ids.RenderTarget);
 		renderData.CL.DrawFullscreen(renderData.Dev);
 

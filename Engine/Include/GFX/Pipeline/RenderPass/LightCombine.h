@@ -7,9 +7,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	struct Resources
 	{
 		RID SSAO;
+		RID GBufferColor;
 		RID LightColor;
 		RID LightSpecular;
-		RID GBufferColor;
 		RID RenderTarget;
 	};
 
