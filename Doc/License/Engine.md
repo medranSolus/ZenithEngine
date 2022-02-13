@@ -698,6 +698,7 @@ Public License instead of this License.  But first, please read
 ### [WinPixEventRuntime](../../External/WinPixEventRuntime/license.txt)
 <details>
   <summary>MICROSOFT SOFTWARE LICENSE TERMS</summary>
+  
   ```
   MICROSOFT SOFTWARE LICENSE TERMS
 
@@ -783,6 +784,7 @@ Public License instead of this License.  But first, please read
 ### [WinPixEventRuntime Third Party Notices](../../External/WinPixEventRuntime/ThirdPartyNotices.txt)
 <details>
   <summary>THIRD-PARTY SOFTWARE NOTICES AND INFORMATION</summary>
+  
   ```
   THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
   
