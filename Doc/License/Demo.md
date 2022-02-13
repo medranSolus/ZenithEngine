@@ -694,6 +694,7 @@ if you don't want your files to appear in the repository.
 ### [WinPixEventRuntime](../../External/WinPixEventRuntime/license.txt)
 <details>
   <summary>MICROSOFT SOFTWARE LICENSE TERMS</summary>
+  
   ```
   MICROSOFT SOFTWARE LICENSE TERMS
 
@@ -779,6 +780,7 @@ if you don't want your files to appear in the repository.
 ### [WinPixEventRuntime Third Party Notices](../../External/WinPixEventRuntime/ThirdPartyNotices.txt)
 <details>
   <summary>THIRD-PARTY SOFTWARE NOTICES AND INFORMATION</summary>
+  
   ```
   THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
   
