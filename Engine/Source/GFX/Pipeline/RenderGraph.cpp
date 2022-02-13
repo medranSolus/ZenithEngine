@@ -707,6 +707,7 @@ namespace ZE::GFX::Pipeline
 		frameBuffer.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
+			ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
 			auto& staticLevel = staticPasses[i];
 			if (staticLevel.CommandsCount)
 			{
@@ -726,6 +727,7 @@ namespace ZE::GFX::Pipeline
 					workerThreads[j].first.join();
 			}
 			frameBuffer.ExitTransitions(dev, mainList, i);
+			ZE_DRAW_TAG_END_MAIN(dev);
 		}
 	}
 }

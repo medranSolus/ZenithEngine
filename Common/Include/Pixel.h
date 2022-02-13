@@ -18,8 +18,9 @@ namespace ZE
 		ZE_CLASS_DEFAULT(Pixel);
 		~Pixel() = default;
 
-		constexpr U32 GetValue() const noexcept { return Red | (Green << 8) | (Blue << 16) | (Alpha << 24); }
-		constexpr operator U32() const noexcept { return GetValue(); }
+		constexpr U32 GetRGBA() const noexcept { return Red | (Green << 8) | (Blue << 16) | (Alpha << 24); }
+		constexpr U32 GetBGRA() const noexcept { return Blue | (Green << 8) | (Red << 16) | (Alpha << 24); }
+		constexpr operator U32() const noexcept { return GetRGBA(); }
 
 		constexpr bool operator==(const Pixel& c) const noexcept { return static_cast<const U32&>(*this) == static_cast<const U32&>(c); }
 		constexpr bool operator!=(const Pixel& c) const noexcept { return !(*this == c); }
@@ -32,6 +33,15 @@ namespace ZE
 		constexpr Pixel operator-() const noexcept;
 		constexpr Pixel operator+(const Pixel& c) const noexcept;
 		constexpr Pixel operator*(float x) const noexcept;
+	};
+
+	// Typical pixel values
+	enum PixelVal : U32
+	{
+		White = 0xFFFFFFFF,
+		Gray = 0xFF808080,
+		Black = 0xFF000000,
+		Cobalt = 0xFFC22000
 	};
 
 #pragma region Functions

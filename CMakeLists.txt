@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.20)
 
 ######### PROJECT CONFIGURATION #########
 
@@ -40,38 +40,6 @@ if(NOT ${SIZEOF_VOID_PTR} STREQUAL "8")
 endif()
 
 
-################ TARGETS ################
-
-set(TOOL_TARGET "ZEdit")
-set(DEMO_TARGET "ZenithDemo")
-
-# Libraries
-set(COMMON_TARGET "common")
-set(ENGINE_TARGET "zenith")
-
-# External libraries
-set(ZLIB_LIB "zlibstatic")
-set(ASSIMP_LIB "assimp")
-set(DXTEX_LIB "DirectXTex")
-set(FTYPE_LIB "freetype")
-
-# Inject debug suffix if library use it
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-	if(${ZE_MODEL_LOADING})
-		set(ZLIB_TARGET "${ZLIB_LIB}d")
-		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mtd")
-	endif()
-	set(FTYPE_TARGET "${FTYPE_LIB}d")
-else()
-	if(${ZE_MODEL_LOADING})
-		set(ZLIB_TARGET "${ZLIB_LIB}")
-		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
-	endif()
-	set(FTYPE_TARGET "${FTYPE_LIB}")
-endif()
-set(DXTEX_TARGET "${DXTEX_LIB}")
-
-
 ########### MAIN DIRECTORIES ############
 
 set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
@@ -84,8 +52,9 @@ set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 # External
 set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
-set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
+set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
+set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 
 
@@ -98,10 +67,50 @@ set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
-set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
+set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
+set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
+
+
+################ TARGETS ################
+
+set(TOOL_TARGET "ZEdit")
+set(DEMO_TARGET "ZenithDemo")
+
+# Libraries
+set(COMMON_TARGET "common")
+set(ENGINE_TARGET "zenith")
+
+# External libraries
+set(ZLIB_LIB "zlibstatic")
+set(ASSIMP_LIB "assimp")
+set(FTYPE_LIB "freetype")
+set(DXTEX_LIB "DirectXTex")
+set(PIX_LIB "WinPixEventRuntime")
+
+# Inject debug suffix if library use it
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+	if(${ZE_MODEL_LOADING})
+		set(ZLIB_TARGET "${ZLIB_LIB}d")
+		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mtd")
+	endif()
+	set(FTYPE_TARGET "${FTYPE_LIB}d")
+	if(WIN32)
+		set(PIX_TARGET "${PIX_DIR}/bin/x64/WinPixEventRuntime.lib")
+	else()
+		set(PIX_TARGET "")
+	endif()
+else()
+	if(${ZE_MODEL_LOADING})
+		set(ZLIB_TARGET "${ZLIB_LIB}")
+		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
+	endif()
+	set(FTYPE_TARGET "${FTYPE_LIB}")
+	set(PIX_TARGET "")
+endif()
+set(DXTEX_TARGET "${DXTEX_LIB}")
 
 
 ######### COMPILE CONFIGURATION #########
@@ -114,6 +123,7 @@ link_directories(${EXTERNAL_BIN_DIR})
 # Platform specific flags
 if(WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS -DNOMINMAX")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DUSE_PIX")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_LINUX")
 	message(FATAL_ERROR "Building for unsupported platform!")
@@ -202,12 +212,6 @@ if(${ZE_MODEL_LOADING})
 	endif()
 endif()
 
- # DirectXTex
-set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
-	"-DBUILD_DX11:BOOL=OFF"
-	"-DBUILD_DX12:BOOL=OFF")
-add_external_project(DXTEX "bin/CMake/" "")
-
 # FreeType
 set(FTYPE_CACHE_ARGS "-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB:BOOL=ON"
 	"-DCMAKE_DISABLE_FIND_PACKAGE_BZip2:BOOL=ON"
@@ -215,3 +219,9 @@ set(FTYPE_CACHE_ARGS "-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB:BOOL=ON"
 	"-DCMAKE_DISABLE_FIND_PACKAGE_HarfBuzz:BOOL=ON"
 	"-DCMAKE_DISABLE_FIND_PACKAGE_BrotliDec:BOOL=ON")
 add_external_project(FTYPE "" "")
+
+ # DirectXTex
+set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
+	"-DBUILD_DX11:BOOL=OFF"
+	"-DBUILD_DX12:BOOL=OFF")
+add_external_project(DXTEX "bin/CMake/" "")

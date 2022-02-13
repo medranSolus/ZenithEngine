@@ -6,6 +6,9 @@
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
 	constexpr U32 SINGLE_BUFFER_SIZE = 64 * 1024;
+	// After changin content of the transform buffer, set size of transform array in
+	// Engine/Shader/VS/CB/Transform.hlsli
+	constexpr U32 TRANSFORM_COUNT = 511;
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
 
 	struct Resources
@@ -31,13 +34,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Matrix ModelViewProjection;
 	};
 
-	// After changin content of the transform buffer, set size of transform array in
-	// Engine/Shader/VS/CB/Transform.hlsli to SINGLE_BUFFER_SIZE / sizeof(TransformCBuffer)
 	struct TransformCBuffer
 	{
 		Float3 CameraPos;
 		float _Padding;
-		ModelTransform Transforms[511];
+		ModelTransform Transforms[TRANSFORM_COUNT];
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }

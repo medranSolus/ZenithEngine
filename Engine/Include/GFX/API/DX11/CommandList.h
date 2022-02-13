@@ -31,7 +31,7 @@ namespace ZE::GFX::API::DX11
 		constexpr void Open(GFX::Device& dev) {}
 
 #ifdef _ZE_MODE_DEBUG
-		void TagBegin(const wchar_t* tag) const noexcept { tagManager->BeginEvent(tag); }
+		void TagBegin(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd() const noexcept { tagManager->EndEvent(); }
 #endif
 		void Reset(GFX::Device& dev) { commands = nullptr; }

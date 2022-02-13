@@ -84,6 +84,8 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
 		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+
+#ifdef _ZE_MODE_DEBUG
 		switch (type)
 		{
 		default:
@@ -112,6 +114,7 @@ namespace ZE::GFX::API::DX12
 			break;
 		}
 		}
+#endif
 	}
 
 	void CommandList::Open(Device& dev)

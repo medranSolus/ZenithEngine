@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.19)
+﻿cmake_minimum_required(VERSION 3.20)
 include(ShaderBuild)
 include(PostBuild)
 
@@ -33,7 +33,12 @@ file(APPEND ${SLOT_GEN}
 
 # Post build data copy
 if(NOT (ZE_NO_DATA OR ZE_CI_JOB))
-    copy_runtime_data(ENGINE "Data")
+    copy_runtime_data(ENGINE "Data" "" "")
+endif()
+
+# DirectX 12 debug library
+if(WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll")
 endif()
 
 # Target files
@@ -73,11 +78,11 @@ add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${IMGUI_BACKEN
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${EXT_INC_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR})
+    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${EXT_INC_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR} ${PIX_INC_DIR})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET})
-add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET})
+    PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET} ${PIX_TARGET})
+add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
 
 # Icon definition
 if(WIN32)

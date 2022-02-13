@@ -14,6 +14,9 @@ namespace ZE::GFX::API::DX11
 #endif
 		DX::ComPtr<ID3D11Device5> device;
 		DX::ComPtr<ID3D11DeviceContext4> context;
+#ifdef _ZE_MODE_DEBUG
+		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
+#endif
 
 		U32 commandListsCount = 0;
 		U32 descriptorCount;
@@ -51,6 +54,16 @@ namespace ZE::GFX::API::DX11
 		constexpr U64 SetMainFence() { return 0; }
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
+
+#ifdef _ZE_MODE_DEBUG
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
+
+		void TagEndMain() const noexcept { tagManager->EndEvent(); }
+		void TagEndCompute() const noexcept { tagManager->EndEvent(); }
+		void TagEndCopy() const noexcept { tagManager->EndEvent(); }
+#endif
 
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void SetCommandBufferSize(U32 count) noexcept { commandListsCount = count; }

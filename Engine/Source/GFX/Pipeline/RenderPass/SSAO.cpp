@@ -52,6 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		data.CL.Reset(renderData.Dev);
 		data.CL.Open(renderData.Dev, data.StateSSAO);
 
+		ZE_DRAW_TAG_BEGIN(data.CL, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
 		Binding::Context ctxSSAO{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
 		ctxSSAO.BindingSchema.SetCompute(data.CL);
 		renderData.Buffers.SetUAV(data.CL, ctxSSAO, ids.SSAO);
@@ -68,6 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetUAV(data.CL, ctxBlur, ids.SSAO);
 		renderData.EngineData.Bind(data.CL, ctxBlur);
 		data.CL.Compute(renderData.Dev, 8, 8, 1);
+		ZE_DRAW_TAG_END(data.CL);
 
 		data.CL.Close(renderData.Dev);
 		renderData.Dev.ExecuteCompute(data.CL);

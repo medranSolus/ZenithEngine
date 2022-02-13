@@ -96,7 +96,9 @@ namespace ZE::GUI
 		{
 		case GfxApiType::DX11:
 		{
+			ZE_DRAW_TAG_BEGIN(gfx.GetMainList().Get().dx11, L"ImGui", PixelVal::Cobalt);
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			ZE_DRAW_TAG_END(gfx.GetMainList().Get().dx11);
 			break;
 		}
 		case GfxApiType::DX12:
@@ -105,10 +107,14 @@ namespace ZE::GUI
 			auto& dev = gfx.GetDevice().Get().dx12;
 			auto& swapChain = gfx.GetSwapChain().Get().dx12;
 			mainList.Get().dx12.Open(dev);
+			ZE_DRAW_TAG_BEGIN(mainList.Get().dx12, L"ImGui", PixelVal::Cobalt);
+
 			D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
 			mainList.Get().dx12.GetList()->OMSetRenderTargets(1, &rtv, true, nullptr);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mainList.Get().dx12.GetList());
 			mainList.Get().dx12.GetList()->ResourceBarrier(1, &swapChain.GetPresentBarrier());
+
+			ZE_DRAW_TAG_END(mainList.Get().dx12);
 			mainList.Get().dx12.Close(gfx.GetDevice());
 			dev.ExecuteMain(mainList);
 			return;

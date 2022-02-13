@@ -51,6 +51,9 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		device->GetImmediateContext3(&tempCtx);
 		ZE_GFX_THROW_FAILED(tempCtx->QueryInterface(IID_PPV_ARGS(&context)));
+#ifdef _ZE_MODE_DEBUG
+		ZE_GFX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
+#endif
 	}
 
 	Device::~Device()

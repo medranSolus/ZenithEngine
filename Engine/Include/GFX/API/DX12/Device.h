@@ -98,6 +98,16 @@ namespace ZE::GFX::API::DX12
 		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
+#ifdef _ZE_MODE_DEBUG
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(copyQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
+
+		void TagEndMain() const noexcept { PIXEndEvent(mainQueue.Get()); }
+		void TagEndCompute() const noexcept { PIXEndEvent(computeQueue.Get()); }
+		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
+#endif
+
 		void StartUpload();
 		void FinishUpload();
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);

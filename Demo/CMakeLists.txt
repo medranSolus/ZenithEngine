@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.19)
+﻿cmake_minimum_required(VERSION 3.20)
 include(PostBuild)
 
 # Resource embedding
@@ -11,7 +11,7 @@ endif()
 
 # Post build data copy
 if(NOT ZE_CI_JOB)
-    copy_runtime_data(DEMO "Data/Runtime")
+    copy_runtime_data(DEMO "Data/Runtime" "" "")
 endif()
 
 # Target files

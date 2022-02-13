@@ -59,6 +59,16 @@ namespace ZE::GFX
 		// GPU side signal from copy queue for it's fence
 		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(val, SetCopyFence); return val; }
 
+#ifdef _ZE_MODE_DEBUG
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); }
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); }
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); }
+
+		void TagEndMain() const noexcept { ZE_API_BACKEND_CALL(TagEndMain); }
+		void TagEndCompute() const noexcept { ZE_API_BACKEND_CALL(TagEndCompute); }
+		void TagEndCopy() const noexcept { ZE_API_BACKEND_CALL(TagEndCopy); }
+#endif
+
 		// Set max size of command lists to execute in single call to Execute()
 		constexpr void SetCommandBufferSize(U32 count) noexcept { ZE_API_BACKEND_CALL(SetCommandBufferSize, count); }
 		// Start sequence after which new resources can be created/updated and uploaded to GPU
@@ -84,3 +94,21 @@ namespace ZE::GFX
 	}
 #pragma endregion
 }
+
+#ifdef _ZE_MODE_DEBUG
+#define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color) dev.TagBeginMain(tag, color)
+#define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color) dev.TagBeginCompute(tag, color)
+#define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color) dev.TagBeginCopy(tag, color)
+
+#define ZE_DRAW_TAG_END_MAIN(dev) dev.TagEndMain()
+#define ZE_DRAW_TAG_END_COMPUTE(dev) dev.TagEndCompute()
+#define ZE_DRAW_TAG_END_COPY(dev) dev.TagEndCopy()
+#else
+#define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color)
+#define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color)
+#define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color)
+
+#define ZE_DRAW_TAG_END_MAIN(dev)
+#define ZE_DRAW_TAG_END_COMPUTE(dev)
+#define ZE_DRAW_TAG_END_COPY(dev)
+#endif

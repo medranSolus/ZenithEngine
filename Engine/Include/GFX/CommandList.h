@@ -23,7 +23,7 @@ namespace ZE::GFX
 		// Main Gfx API
 
 #ifdef _ZE_MODE_DEBUG
-		constexpr void TagBegin(const wchar_t* tag) const noexcept { ZE_API_BACKEND_CALL(TagBegin, tag); }
+		constexpr void TagBegin(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBegin, tag, color); }
 		constexpr void TagEnd() const noexcept { ZE_API_BACKEND_CALL(TagEnd); }
 #endif
 		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
@@ -42,9 +42,9 @@ namespace ZE::GFX
 }
 
 #ifdef _ZE_MODE_DEBUG
-#define ZE_DRAW_TAG_BEGIN(cl, tag) cl.TagBegin(tag)
+#define ZE_DRAW_TAG_BEGIN(cl, tag, color) cl.TagBegin(tag, color)
 #define ZE_DRAW_TAG_END(cl) cl.TagEnd()
 #else
-#define ZE_DRAW_TAG_BEGIN(cl, tag)
+#define ZE_DRAW_TAG_BEGIN(cl, tag, color)
 #define ZE_DRAW_TAG_END(cl)
 #endif

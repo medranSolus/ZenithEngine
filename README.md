@@ -8,6 +8,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
 
 **External libraries:**
   - [FXC shader compiler 10.0.19041.685](https://docs.microsoft.com/en-us/windows/win32/direct3dtools/fxc)
+  - [WinPixEventRuntime 1.0.220124001](https://www.nuget.org/packages/WinPixEventRuntime)
   - [JSON for modern C++ 3.10.4](https://github.com/nlohmann/json)
   - [stb_sprintf 1.10](https://github.com/nothings/stb/blob/master/stb_sprintf.h)
   - [Dear ImGui](https://github.com/ocornut/imgui)
