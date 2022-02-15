@@ -50,6 +50,7 @@ namespace ZE::GFX::API::DX12
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
+		U16 copyOffset = 0;
 		Ptr<UploadInfo> copyResList = nullptr;
 
 		U32 dynamicDescStart = 0;
@@ -73,7 +74,7 @@ namespace ZE::GFX::API::DX12
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[3 * static_cast<U64>(count)]; commandListsCount = count; }
+		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[static_cast<U64>(count) * 3]; commandListsCount = count; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -108,8 +109,9 @@ namespace ZE::GFX::API::DX12
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
 
+		void BeginUploadRegion();
 		void StartUpload();
-		void FinishUpload();
+		void EndUploadRegion();
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
 		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);

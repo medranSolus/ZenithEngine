@@ -10,12 +10,14 @@ namespace ZE::GFX::Resource
 		ZE_API_BACKEND(Resource::VertexBuffer);
 
 	public:
+		VertexBuffer() = default;
 		constexpr VertexBuffer(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
 		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;
 
-		ZE_API_BACKEND_GET(Resource::VertexBuffer);
+		constexpr void Init(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
+		ZE_API_BACKEND_GET(Resource::VertexBuffer);
 
 		// Main Gfx API
 

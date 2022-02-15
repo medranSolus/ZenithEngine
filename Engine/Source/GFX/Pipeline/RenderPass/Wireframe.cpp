@@ -9,9 +9,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		// Find a way to feed data to the pass
 
 		Float3 solidColor = { 1.0f, 1.0f, 0.0f };
-		dev.StartUpload();
 		passData->Color.Init(dev, &solidColor, sizeof(Float3), false);
-		dev.FinishUpload();
+		dev.StartUpload();
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });

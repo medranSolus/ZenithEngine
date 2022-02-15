@@ -72,9 +72,11 @@ namespace ZE::GFX
 		// Set max size of command lists to execute in single call to Execute()
 		constexpr void SetCommandBufferSize(U32 count) noexcept { ZE_API_BACKEND_CALL(SetCommandBufferSize, count); }
 		// Start sequence after which new resources can be created/updated and uploaded to GPU
+		constexpr void BeginUploadRegion() { ZE_API_BACKEND_CALL(BeginUploadRegion); }
+		// Send current resources to GPU resources to GPU
 		constexpr void StartUpload() { ZE_API_BACKEND_CALL(StartUpload); }
-		// Finish previous sequence and send resources to GPU
-		constexpr void FinishUpload() { ZE_API_BACKEND_CALL(FinishUpload); }
+		// Flushes all the upload data to GPU
+		constexpr void EndUploadRegion() { ZE_API_BACKEND_CALL(EndUploadRegion); }
 
 		constexpr void Execute(CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Execute, cls, count); }
 		constexpr void ExecuteMain(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }

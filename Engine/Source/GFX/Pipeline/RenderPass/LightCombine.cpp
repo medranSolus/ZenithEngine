@@ -36,6 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ZE_DRAW_TAG_BEGIN(renderData.CL, L"LightCombine", Pixel(0xFF, 0xFF, 0x9F));
 		ctx.BindingSchema.SetGraphics(renderData.CL);
 
+		renderData.Buffers.InitRTV(renderData.CL, ids.RenderTarget);
 		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.SSAO);
 		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.LightColor);
 		renderData.EngineData.Bind(renderData.CL, ctx);

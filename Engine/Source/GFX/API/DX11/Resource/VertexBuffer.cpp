@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 	VertexBuffer::VertexBuffer(GFX::Device& dev, const VertexData& data)
 		: byteStride(data.VertexSize)
 	{
-		assert(data.Vertices != nullptr && data.BufferSize != 0 && data.VertexSize != 0);
+		assert(data.Vertices != nullptr && data.Count != 0 && data.VertexSize != 0);
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = data.BufferSize;
+		bufferDesc.ByteWidth = data.Count * data.VertexSize;
 		bufferDesc.StructureByteStride = byteStride;
 
 		D3D11_SUBRESOURCE_DATA resData;

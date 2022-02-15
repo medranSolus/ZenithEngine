@@ -6,8 +6,8 @@ namespace ZE::GFX
 	// Data for vertex buffer
 	struct VertexData
 	{
-		U32 BufferSize;
+		U32 Count;
 		U32 VertexSize;
-		U8* Vertices;
+		const void* Vertices;
 	};
 }

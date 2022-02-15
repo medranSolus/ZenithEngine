@@ -5,6 +5,10 @@ namespace ZE::GFX::Pipeline
 	// Options to start RendererPBR with
 	struct ParamsPBR
 	{
+		// Path to location of skybox textures
+		std::string SkyboxPath;
+		// Extensions of skybox textures
+		std::string SkyboxExt;
 		// When computing render graph for passes minimize distances between dependant passes.
 		// Disables kicking off work earlier, trying to run pass as late as possible.
 		//

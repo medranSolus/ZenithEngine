@@ -7,9 +7,8 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		Data* passData = new Data;
 
 		bool direction = false;
-		dev.StartUpload();
 		passData->Direction.Init(dev, &direction, sizeof(bool), false);
-		dev.FinishUpload();
+		dev.StartUpload();
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method

@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline
 		buildData.RendererSlots.AddRange(
 			{
 				1, 13,
-				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
+				Resource::ShaderType::Vertex | Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
 				Binding::RangeFlag::CBV
 			});
 
@@ -146,10 +146,15 @@ namespace ZE::GFX::Pipeline
 		RendererBuildData buildData = { bindings, texLib };
 		SetupRenderSlots(buildData);
 
-		settingsData.ViewProjection = Math::XMMatrixIdentity();
-		settingsData.ViewProjectionInverse = Math::XMMatrixIdentity();
 		settingsData.NearClip = 0.001f;
 		settingsData.FarClip = 1000.0f;
+		settingsData.ViewProjection =
+			Math::XMMatrixLookToLH(Math::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
+				Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), Math::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)) *
+			Math::XMMatrixPerspectiveFovLH(1.047f,
+				static_cast<float>(width) / height, settingsData.NearClip, settingsData.FarClip);
+		settingsData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, settingsData.ViewProjection));
+		settingsData.ViewProjection = Math::XMMatrixTranspose(settingsData.ViewProjection);
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
@@ -158,9 +163,9 @@ namespace ZE::GFX::Pipeline
 		SetupSsaoData(width, height);
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
 
-		dev.StartUpload();
+		dev.BeginUploadRegion();
 		settingsBuffer.Init(dev, &settingsData, sizeof(DataPBR), false);
-		dev.FinishUpload();
+		dev.StartUpload();
 
 #pragma region Geometry
 		{
@@ -269,7 +274,9 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Post processing
 		{
-			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
+			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData,
+				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
+				params.SkyboxPath, params.SkyboxExt);
 			node.AddInput("lightCombine.RT", Resource::State::RenderTarget);
 			node.AddInput("lambertian.DS", Resource::State::DepthRead);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
@@ -288,6 +295,7 @@ namespace ZE::GFX::Pipeline
 		worldData.MeshesInfo.Size = 0;
 		worldData.MeshesInfo.Allocated = MESH_LIST_GROW_SIZE;
 		worldData.Meshes = Table::Create<MeshInfo>(MESH_LIST_GROW_SIZE);
+		dev.EndUploadRegion();
 	}
 
 	void RendererPBR::SetCurrentCamera(Device& dev, Data::EID camera)
@@ -298,9 +306,10 @@ namespace ZE::GFX::Pipeline
 
 		auto& cameraData = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.at(camera)];
 		// TODO: Set camera data
-		dev.StartUpload();
+		dev.BeginUploadRegion();
 		settingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
-		dev.FinishUpload();
+		dev.StartUpload();
+		dev.EndUploadRegion();
 	}
 
 	void RendererPBR::UpdateWorldData() noexcept

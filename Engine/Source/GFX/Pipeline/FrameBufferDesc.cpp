@@ -46,7 +46,16 @@ namespace ZE::GFX::Pipeline
 					if (first->second == next->second)
 					{
 						if (next != --res.end())
-							next = res.erase(next);
+						{
+							auto after = next;
+							if ((++after)->second == next->second)
+								next = res.erase(next);
+							else
+							{
+								first = next;
+								next = after;
+							}
+						}
 						else
 							break;
 					}

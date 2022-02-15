@@ -7,9 +7,8 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		Data* passData = new Data;
 
 		bool direction = true;
-		dev.StartUpload();
 		passData->Direction.Init(dev, &direction, sizeof(bool), false);
-		dev.FinishUpload();
+		dev.StartUpload();
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method

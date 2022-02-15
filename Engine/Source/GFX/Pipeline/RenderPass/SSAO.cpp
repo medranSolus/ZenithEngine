@@ -35,11 +35,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		for (U32 i = 0; i < NOISE_SIZE * 2; ++i)
 			buffer[i] = Math::RandNDC(engine);
 
-		dev.StartUpload();
 		noiseDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		noiseDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
 		passData->Noise.Init(dev, noiseDesc);
-		dev.FinishUpload();
+		dev.StartUpload();
 
 		return passData;
 	}

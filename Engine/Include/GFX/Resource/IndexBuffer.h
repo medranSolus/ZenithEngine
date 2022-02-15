@@ -10,12 +10,14 @@ namespace ZE::GFX::Resource
 		ZE_API_BACKEND(Resource::IndexBuffer);
 
 	public:
+		IndexBuffer() = default;
 		constexpr IndexBuffer(Device& dev, const IndexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
 		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;
 
-		ZE_API_BACKEND_GET(Resource::IndexBuffer);
+		constexpr void Init(Device& dev, const IndexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
+		ZE_API_BACKEND_GET(Resource::IndexBuffer);
 
 		// Main Gfx API
 

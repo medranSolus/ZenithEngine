@@ -135,7 +135,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		// Perform discard operations for aliasing resources
 		ZE_ASSERT(rid != 0, "Backbuffer do not need discarding it's contents! (Or at least it shouldn't with FLIP_DISCARD... TODO: Check this)");
-		if (aliasingResources[--rid])
+		if (aliasingResources[rid - 1])
 			cl.GetList()->DiscardResource(resources[rid].Resource.Get(), nullptr);
 	}
 
@@ -659,7 +659,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 				transitions.Barriers[transitions.BarrierCount++] = barrier;
 				if (transition.RID == 0 && level != 0)
+				{
 					backbufferBarriersLocations[backbufferBarrierIndex++] = barrierIndex;
+					if (transitions.BarrierCount != 1)
+					{
+						ZE_ASSERT(transitions.Barriers[0].Transition.pResource != nullptr, "Backbuffer barrier already at top of the list!");
+						transitions.Barriers[transitions.BarrierCount - 1] = transitions.Barriers[0];
+						transitions.Barriers[0] = barrier;
+					}
+				}
 			}
 			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
 			{

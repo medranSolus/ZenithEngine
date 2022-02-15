@@ -166,25 +166,25 @@ namespace ZE::GFX::API::DX12
 #endif
 	}
 
-	void Device::StartUpload()
+	void Device::BeginUploadRegion()
 	{
 		ZE_ASSERT(copyResList == nullptr, "Finish previous upload first!");
 		copyList.Open(*this);
 		copyResList = Table::Create<UploadInfo>(COPY_LIST_GROW_SIZE);
 	}
 
-	void Device::FinishUpload()
+	void Device::StartUpload()
 	{
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
-		ZE_WIN_ENABLE_EXCEPT();
 
-		if (copyResInfo.Size)
+		U16 size = copyResInfo.Size - copyOffset;
+		if (size)
 		{
-			D3D12_RESOURCE_BARRIER* barriers = new D3D12_RESOURCE_BARRIER[copyResInfo.Size];
-			for (U16 i = 0; i < copyResInfo.Size; ++i)
+			D3D12_RESOURCE_BARRIER* barriers = new D3D12_RESOURCE_BARRIER[size];
+			for (U16 i = 0; i < size; ++i)
 			{
 				auto& barrier = barriers[i];
-				auto& copyInfo = copyResList[i];
+				auto& copyInfo = copyResList[copyOffset + i];
 				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -192,20 +192,33 @@ namespace ZE::GFX::API::DX12
 				barrier.Transition.StateAfter = copyInfo.FinalState;
 				barrier.Transition.pResource = copyInfo.Destination;
 			}
-			copyList.GetList()->ResourceBarrier(copyResInfo.Size, barriers);
+			copyOffset = copyResInfo.Size;
+			copyList.GetList()->ResourceBarrier(size, barriers);
 			delete[] barriers;
+
+			copyList.Close(*this);
+			Execute(mainQueue.Get(), copyList);
+			copyList.Open(*this);
 		}
-		copyList.Close(*this);
-		Execute(mainQueue.Get(), copyList);
+	}
 
-		U64 fenceVal = ++mainFenceVal;
-		ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
-		WaitMain(fenceVal);
-		copyList.Reset(*this);
+	void Device::EndUploadRegion()
+	{
+		if (copyResList)
+		{
+			ZE_WIN_ENABLE_EXCEPT();
 
-		Table::Clear(copyResInfo.Size, copyResList);
-		copyResInfo.Size = 0;
-		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
+			copyList.Close(*this);
+			U64 fenceVal = ++mainFenceVal;
+			ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
+			WaitMain(fenceVal);
+			copyList.Reset(*this);
+
+			Table::Clear(copyResInfo.Size, copyResList);
+			copyOffset = 0;
+			copyResInfo.Size = 0;
+			copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
+		}
 	}
 
 	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)

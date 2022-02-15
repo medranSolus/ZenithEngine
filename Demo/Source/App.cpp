@@ -35,7 +35,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000 })
+	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000, "Skybox/Space", ".png" })
 {
 	engine.Reneder().SetActiveScene(scene);
 	Data::EID camera = scene.CreateEntity();
