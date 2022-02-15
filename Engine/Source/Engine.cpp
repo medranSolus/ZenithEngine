@@ -8,7 +8,7 @@ namespace ZE
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount);
 		gui.Init(graphics.GetDevice());
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), textureLib,
-			window.GetWidth(), window.GetHeight(), params.MinimizeRenderPassDistances, params.ShadowMapSize);
+			window.GetWidth(), window.GetHeight(), params.Renderer);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
 		// Reverse depth: https://www.gamedev.net/forums/topic/693404-reverse-depth-buffer/

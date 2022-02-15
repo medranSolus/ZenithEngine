@@ -7,6 +7,102 @@
 
 namespace ZE::GFX::Pipeline
 {
+	void RendererPBR::SetupRenderSlots(RendererBuildData& buildData) noexcept
+	{
+		buildData.RendererSlots.AddRange(
+			{
+				1, 13,
+				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
+				Binding::RangeFlag::CBV
+			});
+
+		constexpr Resource::Texture::AddressMode ADDRESS_MODES[]
+		{
+			Resource::Texture::AddressMode::Repeat,
+			Resource::Texture::AddressMode::Mirror
+		};
+		constexpr Resource::SamplerType TYPES[]
+		{
+			Resource::SamplerType::Anisotropic,
+			Resource::SamplerType::Linear,
+			Resource::SamplerType::Point
+		};
+
+		buildData.RendererSlots.Samplers.reserve(sizeof(TYPES) * sizeof(ADDRESS_MODES) + 1);
+		buildData.RendererSlots.AddSampler(
+			{
+				Resource::SamplerType::Anisotropic,
+				{
+					Resource::Texture::AddressMode::Edge,
+					Resource::Texture::AddressMode::Edge,
+					Resource::Texture::AddressMode::Edge
+				},
+				0.0f, 4, Resource::CompareMethod::Never,
+				Resource::Texture::EdgeColor::TransparentBlack,
+				0.0f, FLT_MAX, 0
+			});
+
+		U32 slot = 1;
+		for (U8 type = 0; type < sizeof(TYPES); ++type)
+		{
+			for (U8 address = 0; address < sizeof(ADDRESS_MODES); ++address)
+			{
+				buildData.RendererSlots.AddSampler(
+					{
+						TYPES[type],
+						{
+							ADDRESS_MODES[address],
+							ADDRESS_MODES[address],
+							ADDRESS_MODES[address]
+						},
+						0.0f, 4, Resource::CompareMethod::Never,
+						Resource::Texture::EdgeColor::TransparentBlack,
+						0.0f, FLT_MAX, slot++
+					});
+			}
+		}
+	}
+
+	constexpr void RendererPBR::SetupBlurData(U32 width, U32 height, float sigma) noexcept
+	{
+		settingsData.Blur.Radius = DataPBR::BLUR_KERNEL_RADIUS;
+		settingsData.Blur.Width = width;
+		settingsData.Blur.Height = height;
+		settingsData.Blur.Intensity = settingsData.HDRExposure < 1.0f ? 1.0f / settingsData.HDRExposure : 1.0f;
+
+		float sum = 0.0f;
+		for (S32 i = 0; i <= settingsData.Blur.Radius; ++i)
+		{
+			const float g = Math::Gauss(static_cast<float>(i), sigma);
+			sum += g;
+			settingsData.Blur.Coefficients[i].x = g;
+		}
+		for (S32 i = 0; i <= settingsData.Blur.Radius; ++i)
+			settingsData.Blur.Coefficients[i].x /= sum;
+	}
+
+	void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
+	{
+		settingsData.SSAO.NoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
+		settingsData.SSAO.Bias = 0.188f;
+		settingsData.SSAO.SampleRadius = 0.69f;
+		settingsData.SSAO.Power = 2.77f;
+		settingsData.SSAO.KernelSize = DataPBR::SSAO_KERNEL_MAX_SIZE;
+
+		std::mt19937_64 engine(std::random_device{}());
+		for (U32 i = 0; i < DataPBR::SSAO_KERNEL_MAX_SIZE; ++i)
+		{
+			const Vector sample = Math::XMVectorSet(Math::RandNDC(engine),
+				Math::RandNDC(engine), Math::Rand01(engine), 0.0f);
+
+			float scale = static_cast<float>(i) / DataPBR::SSAO_KERNEL_MAX_SIZE;
+			scale = Math::Lerp(0.1f, 1.0f, scale * scale);
+
+			Math::XMStoreFloat4(&settingsData.SSAO.Kernel[i],
+				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
+		}
+	}
+
 	RendererPBR::~RendererPBR()
 	{
 		if (worldData.Meshes)
@@ -14,7 +110,7 @@ namespace ZE::GFX::Pipeline
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
-		U32 width, U32 height, bool minimizePassDistances, U32 shadowMapSize)
+		U32 width, U32 height, const ParamsPBR& params)
 	{
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
@@ -46,135 +142,25 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
+		std::vector<GFX::Pipeline::RenderNode> nodes;
+		RendererBuildData buildData = { bindings, texLib };
+		SetupRenderSlots(buildData);
+
 		settingsData.ViewProjection = Math::XMMatrixIdentity();
 		settingsData.ViewProjectionInverse = Math::XMMatrixIdentity();
 		settingsData.NearClip = 0.001f;
 		settingsData.FarClip = 1000.0f;
-		settingsData.Gamma = 2.2f;
-		settingsData.GammaInverse = 1.0f / 2.2f;
+		settingsData.Gamma = params.Gamma;
+		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
-		settingsData.HDRExposure = 1.0f;
+		settingsData.HDRExposure = params.HDRExposure;
 		settingsData.FrameDimmensions = { width, height };
-		settingsData.SSAO.NoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
-		settingsData.SSAO.Bias = 0.188f;
-		settingsData.SSAO.SampleRadius = 0.69f;
-		settingsData.SSAO.Power = 2.77f;
-		settingsData.SSAO.KernelSize = PBRData::SSAO_KERNEL_MAX_SIZE;
-		settingsData.Blur.Radius = 0;
-		settingsData.Blur.Width = outlineBuffWidth;
-		settingsData.Blur.Height = outlineBuffHeight;
-		settingsData.Blur.Intensity = 1.0f;
-		//settingsData.Blur.Coefficients = 0.0f;
-
-		std::mt19937_64 engine(std::random_device{}());
-		for (U32 i = 0; i < PBRData::SSAO_KERNEL_MAX_SIZE; ++i)
-		{
-			const Vector sample = Math::XMVectorSet(Math::RandNDC(engine),
-				Math::RandNDC(engine), Math::Rand01(engine), 0.0f);
-
-			float scale = static_cast<float>(i) / PBRData::SSAO_KERNEL_MAX_SIZE;
-			scale = Math::Lerp(0.1f, 1.0f, scale * scale);
-
-			Math::XMStoreFloat4(&settingsData.SSAO.Kernel[i],
-				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
-		}
+		SetupSsaoData(width, height);
+		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
 
 		dev.StartUpload();
-		settingsBuffer.Init(dev, &settingsData, sizeof(PBRData), false);
+		settingsBuffer.Init(dev, &settingsData, sizeof(DataPBR), false);
 		dev.FinishUpload();
-
-		std::vector<GFX::Pipeline::RenderNode> nodes;
-		RendererBuildData buildData = { bindings, texLib };
-#pragma region Renderer bindings
-		buildData.RendererSlots.AddRange({ 1, 13, Resource::ShaderType::Pixel | Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
-
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Anisotropic,
-				{
-					Resource::Texture::AddressMode::Edge,
-					Resource::Texture::AddressMode::Edge,
-					Resource::Texture::AddressMode::Edge
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 0
-			});
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Anisotropic,
-				{
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 1
-			});
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Anisotropic,
-				{
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 2
-			});
-
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Linear,
-				{
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 3
-			});
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Linear,
-				{
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 4
-			});
-
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Point,
-				{
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat,
-					Resource::Texture::AddressMode::Repeat
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 5
-			});
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Point,
-				{
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror,
-					Resource::Texture::AddressMode::Mirror
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 6
-			});
-#pragma endregion
 
 #pragma region Geometry
 		{
@@ -196,9 +182,9 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
 			//node.AddInnerBuffer(Resource::State::RenderTarget,
-			//	{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+			//	{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
 			//node.AddInnerBuffer(Resource::State::DepthWrite,
-			//	{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+			//	{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -212,9 +198,9 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("dirLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("dirLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
-				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -228,9 +214,9 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("spotLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("spotLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
-				{ shadowMapSize, shadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -297,7 +283,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, minimizePassDistances);
+		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
 
 		worldData.MeshesInfo.Size = 0;
 		worldData.MeshesInfo.Allocated = MESH_LIST_GROW_SIZE;
@@ -313,7 +299,7 @@ namespace ZE::GFX::Pipeline
 		auto& cameraData = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.at(camera)];
 		// TODO: Set camera data
 		dev.StartUpload();
-		settingsBuffer.Update(dev, &settingsData, sizeof(PBRData));
+		settingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
 		dev.FinishUpload();
 	}
 
