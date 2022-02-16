@@ -422,8 +422,10 @@ namespace ZE::GFX::Pipeline
 						ZE_ASSERT((pass.Data.OptData != nullptr) == (node.GetCleanCallback() != nullptr),
 							"Optional data and cleaning function must be both provided or neither of them!");
 						passLocation.at(j).second = { i, passes[i].second++ };
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 						if (passes[i].second > workersCount)
 							workersCount = passes[i].second;
+#endif
 					}
 
 					// Go through dependent passes and append current pass to their syncs
@@ -619,9 +621,11 @@ namespace ZE::GFX::Pipeline
 		}
 
 		dev.SetCommandBufferSize(staticCount);
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		workerThreads = new std::pair<std::thread, CommandList>[--workersCount];
 		for (U64 i = 0; i < workersCount; ++i)
 			workerThreads[i].second.Init(dev);
+#endif
 
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
 		frameBuffer.Init(dev, mainList, frameBufferDesc);
@@ -656,8 +660,10 @@ namespace ZE::GFX::Pipeline
 
 	RenderGraph::~RenderGraph()
 	{
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		if (workerThreads)
 			workerThreads.DeleteArray();
+#endif
 		if (passes)
 		{
 			for (U64 i = 0; i < levelCount; ++i)
@@ -701,8 +707,10 @@ namespace ZE::GFX::Pipeline
 		dev.WaitMain(dev.GetMainFence());
 		frameBuffer.SwapBackbuffer(dev, gfx.GetSwapChain());
 		mainList.Reset(dev);
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		for (U64 i = 0; i < workersCount; ++i)
 			workerThreads[i].second.Reset(dev);
+#endif
 
 		frameBuffer.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
@@ -718,6 +726,7 @@ namespace ZE::GFX::Pipeline
 			auto& level = passes[i];
 			if (level.second)
 			{
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 				U64 workersDispatch = level.second - 1;
 				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
 				for (U64 j = 0; j < workersDispatch; ++j)
@@ -725,6 +734,10 @@ namespace ZE::GFX::Pipeline
 				ExecuteThread(dev, mainList, level.first[workersDispatch]);
 				for (U64 j = 0; j < workersDispatch; ++j)
 					workerThreads[j].first.join();
+#else
+				for (U64 j = 0; j < level.second; ++j)
+					ExecuteThread(dev, mainList, level.first[j]);
+#endif
 			}
 			frameBuffer.ExitTransitions(dev, mainList, i);
 			ZE_DRAW_TAG_END_MAIN(dev);

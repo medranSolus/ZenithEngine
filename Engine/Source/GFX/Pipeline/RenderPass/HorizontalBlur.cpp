@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/HorizontalBlur.h"
+#include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
@@ -6,12 +7,8 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 	{
 		Data* passData = new Data;
 
-		bool direction = false;
-		passData->Direction.Init(dev, &direction, sizeof(bool), false);
-		dev.StartUpload();
-
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
@@ -38,14 +35,18 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		renderData.CL.Open(renderData.Dev, data.State);
+		ZE_DRAW_TAG_BEGIN(renderData.CL, L"Outline Horizontal Blur", Pixel(0xF3, 0xEA, 0xAF));
 		ctx.BindingSchema.SetGraphics(renderData.CL);
+		renderData.Buffers.InitRTV(renderData.CL, ids.RenderTarget);
 
-		data.Direction.Bind(renderData.CL, ctx);
+		Resource::Constant<U32> direction(renderData.Dev, false);
+		direction.Bind(renderData.CL, ctx);
 		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.Outline);
 		renderData.EngineData.Bind(renderData.CL, ctx);
 		renderData.Buffers.SetRTV(renderData.CL, ids.RenderTarget);
-		renderData.CL.Draw(renderData.Dev, 0);
+		renderData.CL.DrawFullscreen(renderData.Dev);
 
+		ZE_DRAW_TAG_END(renderData.CL);
 		renderData.CL.Close(renderData.Dev);
 		renderData.Dev.ExecuteMain(renderData.CL);
 	}

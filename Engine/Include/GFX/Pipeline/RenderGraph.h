@@ -12,8 +12,10 @@ namespace ZE::GFX::Pipeline
 	class RenderGraph
 	{
 		U64 levelCount = 0;
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		U64 workersCount = 0;
 		Ptr<std::pair<std::thread, CommandList>> workerThreads;
+#endif
 		Ptr<std::pair<Ptr<PassDesc>, U64>> passes;
 		Ptr<PassDescStatic> staticPasses;
 		Ptr<Ptr<PassCleanCallback>> passesCleaners;

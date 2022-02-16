@@ -154,8 +154,8 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
 			stateDesc.DepthStencilState.StencilReadMask = 0xFF;
+			stateDesc.DepthStencilState.StencilWriteMask = 0;
 			stateDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NOT_EQUAL;
-			stateDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
 			break;
 		}
 		case GFX::Resource::DepthStencilMode::DepthOff:

@@ -15,7 +15,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		Binding::SchemaDesc desc;
 		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
 		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method
+		desc.AddRange({ sizeof(Float3), 2, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
@@ -26,6 +26,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		psoDesc.FormatDS = formatDS;
+		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
 		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 

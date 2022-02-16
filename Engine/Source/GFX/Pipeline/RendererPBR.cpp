@@ -139,7 +139,7 @@ namespace ZE::GFX::Pipeline
 		const RID outlineBlur = frameBufferDesc.AddResource(
 			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
 		const RID outlineDepth = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
@@ -245,7 +245,8 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Geometry effects
 		{
-			ZE_MAKE_NODE_DATA("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData, frameBufferDesc.GetFormat(outlineBlur), frameBufferDesc.GetFormat(outlineDepth));
+			ZE_MAKE_NODE_DATA("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData, worldData,
+				frameBufferDesc.GetFormat(outline), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddOutput("RT", Resource::State::RenderTarget, outline);
 			node.AddOutput("DS", Resource::State::DepthWrite, outlineDepth);
 			nodes.emplace_back(std::move(node));

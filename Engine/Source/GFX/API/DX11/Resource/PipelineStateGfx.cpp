@@ -91,6 +91,7 @@ namespace ZE::GFX::API::DX11::Resource
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 			stencilDesc.StencilEnable = TRUE;
 			stencilDesc.StencilReadMask = 0xFF;
+			stencilDesc.StencilWriteMask = 0;
 			stencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
 			stencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 			break;

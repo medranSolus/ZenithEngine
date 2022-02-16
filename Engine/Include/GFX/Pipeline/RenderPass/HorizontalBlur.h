@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/CBuffer.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
@@ -15,7 +14,6 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		Resource::CBuffer Direction;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }

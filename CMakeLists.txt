@@ -15,6 +15,7 @@ set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
+option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
@@ -154,6 +155,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/G
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
 if(ZE_DEBUG_FRAME_MEMORY_PRINT)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_MEMORY_PRINT")
+endif()
+if(ZE_RENDERER_SINGLE_THREAD)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_RENDER_GRAPH_SINGLE_THREAD")
 endif()
 set(COMPILER_REL_CXX_FLAGS "${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=1")
 set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAGS}")

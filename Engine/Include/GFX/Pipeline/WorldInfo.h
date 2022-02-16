@@ -11,5 +11,11 @@ namespace ZE::GFX::Pipeline
 
 		TableInfo<U64> MeshesInfo;
 		Ptr<MeshInfo> Meshes;
+
+		TableInfo<U64> OutlinesInfo;
+		Ptr<MeshInfo> Outlines;
+
+		TableInfo<U64> WireframesInfo;
+		Ptr<MeshInfo> Wireframes;
 	};
 }

@@ -1,3 +1,3 @@
 #include "CBuffer.hlsli"
 
-CBUFFER(solidColor, float3, 0);
+CBUFFER(solidColor, float3, 2);

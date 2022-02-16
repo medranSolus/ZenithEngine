@@ -16,7 +16,6 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		Resource::CBuffer Direction;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }

@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/VerticalBlur.h"
+#include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 {
@@ -6,12 +7,8 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 	{
 		Data* passData = new Data;
 
-		bool direction = true;
-		passData->Direction.Init(dev, &direction, sizeof(bool), false);
-		dev.StartUpload();
-
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Can be Constant, implement that, maybe flag and new update method
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
@@ -33,21 +30,23 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 
 	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
-		return;
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		renderData.CL.Open(renderData.Dev, data.State);
+		ZE_DRAW_TAG_BEGIN(renderData.CL, L"Outline Vertical Blur", Pixel(0xFD, 0xEF, 0xB2));
 		ctx.BindingSchema.SetGraphics(renderData.CL);
 
-		data.Direction.Bind(renderData.CL, ctx);
+		Resource::Constant<U32> direction(renderData.Dev, true);
+		direction.Bind(renderData.CL, ctx);
 		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.OutlineBlur);
 		renderData.EngineData.Bind(renderData.CL, ctx);
 		renderData.Buffers.SetOutput(renderData.CL, ids.RenderTarget, ids.DepthStencil);
-		renderData.CL.Draw(renderData.Dev, 0);
+		renderData.CL.DrawFullscreen(renderData.Dev);
 
+		ZE_DRAW_TAG_END(renderData.CL);
 		renderData.CL.Close(renderData.Dev);
 		renderData.Dev.ExecuteMain(renderData.CL);
 	}
