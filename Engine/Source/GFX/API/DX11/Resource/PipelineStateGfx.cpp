@@ -15,10 +15,27 @@ namespace ZE::GFX::API::DX11::Resource
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
 		ZE_GFX_SET_ID(vertexShader, desc.VS->Get().dx11.GetName() + "_" + desc.DebugName);
 
-		//std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc = vertexLayout->GetLayout();
-		//ZE_GFX_THROW_FAILED(device->CreateInputLayout(layoutDesc.data(), static_cast<UINT>(layoutDesc.size()),
-		//	bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
-		//ZE_GFX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
+		if (desc.InputLayout.size())
+		{
+			D3D11_INPUT_ELEMENT_DESC* elements = new D3D11_INPUT_ELEMENT_DESC[desc.InputLayout.size()];
+			for (U32 i = 0; i < desc.InputLayout.size(); ++i)
+			{
+				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
+				auto& element = elements[i];
+				element.SemanticName = GFX::Resource::GetInputSemantic(paramType);
+				element.SemanticIndex = 0;
+				element.Format = DX::GetDXFormat(GFX::Resource::GetInputFormat(paramType));
+				element.InputSlot = 0;
+				element.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+				element.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				element.InstanceDataStepRate = 0;
+			}
+
+			ZE_GFX_THROW_FAILED(device->CreateInputLayout(elements, static_cast<UINT>(desc.InputLayout.size()),
+				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
+			ZE_GFX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
+			delete[] elements;
+		}
 
 		if (desc.DS)
 		{

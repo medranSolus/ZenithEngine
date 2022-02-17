@@ -116,8 +116,8 @@ set(DXTEX_TARGET "${DXTEX_LIB}")
 
 ######### COMPILE CONFIGURATION #########
 
-set(ZE_CXX_STD cxx_std_20)
-set(CMAKE_CXX_STANDARD 20)
+set(ZE_CXX_STD cxx_std_23)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(${EXTERNAL_BIN_DIR})
 
