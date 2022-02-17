@@ -68,7 +68,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
 			const auto& geometries = data.World.ActiveScene->Geometries;
-			Float3 cameraPos = data.World.ActiveScene->Cameras[data.World.ActiveScene->CameraPositions.at(data.World.CurrnetCamera)].Position;
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
 			for (U64 i = 0, j = 0; i < data.World.OutlinesInfo.Size; ++j)
@@ -87,7 +86,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				buffer->CameraPos = cameraPos;
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.OutlinesInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));

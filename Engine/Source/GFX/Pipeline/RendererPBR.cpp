@@ -266,7 +266,8 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("wireframe", QueueType::Main, Wireframe, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
+			ZE_MAKE_NODE_DATA("wireframe", QueueType::Main, Wireframe, dev, buildData, worldData,
+				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
 			node.AddInput("verticalBlur.RT", Resource::State::RenderTarget);
 			node.AddInput("skybox.DS", Resource::State::DepthWrite);
 			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
