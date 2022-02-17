@@ -8,17 +8,17 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {
 	float2 delta;
 	if (cb_vertical)
-		delta = float2(0.0f, 1.0f / cb_pbrData.Blur.Height);
+		delta = float2(0.0f, 1.0f / cb_pbrData.BlurHeight);
 	else
-		delta = float2(1.0f / cb_pbrData.Blur.Width, 0.0f);
+		delta = float2(1.0f / cb_pbrData.BlurWidth, 0.0f);
 
 	float3 maxColor = 0.0f;
 	float alpha = 0.0f;
-	for (int i = -cb_pbrData.Blur.Radius; i <= cb_pbrData.Blur.Radius; ++i)
+	for (int i = -cb_pbrData.BlurRadius; i <= cb_pbrData.BlurRadius; ++i)
 	{
 		const float4 color = tex.Sample(splr_LR, tc + delta * i);
-		alpha += color.a * cb_pbrData.Blur.Coefficients[abs(i)];
+		alpha += color.a * cb_pbrData.BlurCoefficients[abs(i)];
 		maxColor = max(maxColor, color.rgb);
 	}
-	return float4(maxColor * cb_pbrData.Blur.Intensity, alpha);
+	return float4(maxColor * cb_pbrData.BlurIntensity, alpha);
 }

@@ -1,6 +1,7 @@
 #include "CBuffer.hlsli"
 
 static const uint SSAO_KERNEL_MAX_SIZE = 32;
+static const uint BLUR_KERNEL_MAX_SIZE = 8;
 
 struct PBRData
 {
@@ -16,29 +17,22 @@ struct PBRData
 	float HDRExposure;
 
 	uint2 FrameDimmensions;
-	struct
-	{
-		uint2 NoiseDimmensions;
+	uint2 SsaoNoiseDimmensions;
 
-		float Bias;
-		float SampleRadius;
-		float Power;
-		uint KernelSize;
+	float SsaoBias;
+	float SsaoSampleRadius;
+	float SsaoPower;
+	uint SsaoKernelSize;
 
-		float3 Kernel[SSAO_KERNEL_MAX_SIZE];
-	} SSAO;
+	// Must not exceed coefficients size
+	int BlurRadius;
+	uint BlurWidth;
+	uint BlurHeight;
+	float BlurIntensity;
 
-	struct
-	{
-		// Must not exceed coefficients size
-		int Radius;
-		uint Width;
-		uint Height;
-		float Intensity;
-
-		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
-		float Coefficients[8];
-	} Blur;
+	float3 SsaoKernel[SSAO_KERNEL_MAX_SIZE];
+	// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
+	float BlurCoefficients[BLUR_KERNEL_MAX_SIZE];
 };
 CBUFFER_GLOBAL(pbrData, PBRData, 13);
 

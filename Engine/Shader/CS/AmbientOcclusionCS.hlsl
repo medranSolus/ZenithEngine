@@ -25,30 +25,30 @@ void main(uint3 dispatchId : SV_DispatchThreadID)
 		const float3 normal = DecodeNormal(sphericNormal);
 		const float2 texCoord = dispatchId.xy / (float2)(cb_pbrData.FrameDimmensions - 1);
 		const float3 position = GetWorldPosition(texCoord, depthMap[dispatchId.xy], cb_pbrData.ViewProjectionInverse);
-		const float2 noise = noiseMap.SampleLevel(splr_LW, texCoord * cb_pbrData.SSAO.NoiseDimmensions, 0);
+		const float2 noise = noiseMap.SampleLevel(splr_LW, texCoord * cb_pbrData.SsaoNoiseDimmensions, 0);
 
 		const float3x3 TBN = GetTangentToWorldUNorm(normalize(float3(noise, 0.0f)), normal);
 		float occlusion = 0.0f;
 		uint size = 0;
 		[unroll(SSAO_KERNEL_MAX_SIZE)]
-		for (uint i = 0; i < cb_pbrData.SSAO.KernelSize; ++i)
+		for (uint i = 0; i < cb_pbrData.SsaoKernelSize; ++i)
 		{
-			const float3 sampleRay = mul(cb_pbrData.SSAO.Kernel[i], TBN);
+			const float3 sampleRay = mul(cb_pbrData.SsaoKernel[i], TBN);
 
 			if (dot(normalize(sampleRay), normal) >= 0.15f)
 			{
 				// From tangent to clip space
-				const float4 samplePos = mul(float4(position + sampleRay * cb_pbrData.SSAO.SampleRadius, 1.0f), cb_pbrData.ViewProjection);
+				const float4 samplePos = mul(float4(position + sampleRay * cb_pbrData.SsaoSampleRadius, 1.0f), cb_pbrData.ViewProjection);
 				// Perspective divide and transform to 0-1
 				const float2 offset = samplePos.xy / (samplePos.w * 2.0f) + 0.5f;
 
-				const float sampleDepth = GetLinearDepth(depthMap.SampleLevel(splr_PR, float2(offset.x, 1.0f - offset.y), 0)) + cb_pbrData.SSAO.Bias;
-				const float rangeCheck = smoothstep(0.0f, 1.0f, cb_pbrData.SSAO.SampleRadius / abs(sampleDepth - samplePos.z));
+				const float sampleDepth = GetLinearDepth(depthMap.SampleLevel(splr_PR, float2(offset.x, 1.0f - offset.y), 0)) + cb_pbrData.SsaoBias;
+				const float rangeCheck = smoothstep(0.0f, 1.0f, cb_pbrData.SsaoSampleRadius / abs(sampleDepth - samplePos.z));
 
 				occlusion += ((sampleDepth >= samplePos.z ? 0.0f : 1.0f) * rangeCheck - occlusion) / ++size;
 			}
 		}
-		ssaoVal = pow(1.0f - occlusion, cb_pbrData.SSAO.Power);
+		ssaoVal = pow(1.0f - occlusion, cb_pbrData.SsaoPower);
 	}
 	ssaoMap[dispatchId.xy] = ssaoVal;
 }

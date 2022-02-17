@@ -28,7 +28,6 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 
 	void Execute(RendererExecuteData& renderData, PassData& passData)
 	{
-		return;
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 

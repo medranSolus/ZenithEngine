@@ -65,29 +65,29 @@ namespace ZE::GFX::Pipeline
 
 	constexpr void RendererPBR::SetupBlurData(U32 width, U32 height, float sigma) noexcept
 	{
-		settingsData.Blur.Radius = DataPBR::BLUR_KERNEL_RADIUS;
-		settingsData.Blur.Width = width;
-		settingsData.Blur.Height = height;
-		settingsData.Blur.Intensity = settingsData.HDRExposure < 1.0f ? 1.0f / settingsData.HDRExposure : 1.0f;
+		settingsData.BlurRadius = DataPBR::BLUR_KERNEL_RADIUS;
+		settingsData.BlurWidth = width;
+		settingsData.BlurHeight = height;
+		settingsData.BlurIntensity = settingsData.HDRExposure < 1.0f ? 1.0f / settingsData.HDRExposure : 1.0f;
 
 		float sum = 0.0f;
-		for (S32 i = 0; i <= settingsData.Blur.Radius; ++i)
+		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
 		{
 			const float g = Math::Gauss(static_cast<float>(i), sigma);
 			sum += g;
-			settingsData.Blur.Coefficients[i].x = g;
+			settingsData.BlurCoefficients[i].x = g;
 		}
-		for (S32 i = 0; i <= settingsData.Blur.Radius; ++i)
-			settingsData.Blur.Coefficients[i].x /= sum;
+		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
+			settingsData.BlurCoefficients[i].x /= sum;
 	}
 
 	void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
 	{
-		settingsData.SSAO.NoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
-		settingsData.SSAO.Bias = 0.188f;
-		settingsData.SSAO.SampleRadius = 0.69f;
-		settingsData.SSAO.Power = 2.77f;
-		settingsData.SSAO.KernelSize = DataPBR::SSAO_KERNEL_MAX_SIZE;
+		settingsData.SsaoNoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
+		settingsData.SsaoBias = 0.188f;
+		settingsData.SsaoSampleRadius = 0.69f;
+		settingsData.SsaoPower = 2.77f;
+		settingsData.SsaoKernelSize = DataPBR::SSAO_KERNEL_MAX_SIZE;
 
 		std::mt19937_64 engine(std::random_device{}());
 		for (U32 i = 0; i < DataPBR::SSAO_KERNEL_MAX_SIZE; ++i)
@@ -98,7 +98,7 @@ namespace ZE::GFX::Pipeline
 			float scale = static_cast<float>(i) / DataPBR::SSAO_KERNEL_MAX_SIZE;
 			scale = Math::Lerp(0.1f, 1.0f, scale * scale);
 
-			Math::XMStoreFloat4(&settingsData.SSAO.Kernel[i],
+			Math::XMStoreFloat4(&settingsData.SsaoKernel[i],
 				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
 		}
 	}
