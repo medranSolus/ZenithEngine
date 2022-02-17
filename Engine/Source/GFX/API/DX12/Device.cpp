@@ -1,5 +1,5 @@
 #include "GFX/API/DX12/Device.h"
-#include "GFX/API/DX/GraphicsException.h"
+#include "GFX/API/DX12/DREDRecovery.h"
 #include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::DX12
@@ -61,6 +61,9 @@ namespace ZE::GFX::API::DX12
 		DX::ComPtr<ID3D12Debug> debugInterface;
 		ZE_GFX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
+
+		// Enable device removed recovery
+		DREDRecovery::Enable(debugManager);
 #endif
 
 		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(

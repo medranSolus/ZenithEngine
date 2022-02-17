@@ -1,5 +1,5 @@
 #include "GFX/API/DX12/SwapChain.h"
-#include "GFX/API/DX/GraphicsException.h"
+#include "GFX/API/DX12/DREDRecovery.h"
 
 namespace ZE::GFX::API::DX12
 {
@@ -76,7 +76,29 @@ namespace ZE::GFX::API::DX12
 		if (FAILED(ZE_WIN_EXCEPT_RESULT = swapChain->Present(0, presentFlags)))
 		{
 			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
+			{
+#ifdef _ZE_MODE_DEBUG
+				DREDRecovery::Data dredData;
+				DREDRecovery::GetDeviceRemovedData(dev.Get().dx12, dredData);
+
+				std::string error = "";
+				if (dredData.AutoBreadcrumbs.size())
+					error = "[AUTO BREADCRUMBS]\n" + dredData.AutoBreadcrumbs;
+
+				if (dredData.ExistingAllocations.size())
+					error += "\n[EXISTING ALLOCATIONS]\n" + dredData.ExistingAllocations;
+
+				if (dredData.FreedAllocations.size())
+					error += "\n[FREED ALLOCATIONS]\n" + dredData.FreedAllocations;
+
+				if (dredData.PageFaultAddress != 0)
+					error += "\n[PAGE FAULT ADDRESS]\n" + std::to_string(dredData.PageFaultAddress);
+
+				if (error.size())
+					Logger::Error(error);
+#endif
 				throw ZE_GFX_EXCEPT(dev.Get().dx12.GetDevice()->GetDeviceRemovedReason());
+			}
 			else
 				throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
 		}
