@@ -2,10 +2,10 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS,
-		const std::string& cubemapPath, const std::string& cubemapExt)
+	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer,
+		PixelFormat formatRT, PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt)
 	{
-		Data* passData = new Data;
+		Data* passData = new Data{ worldDataBuffer };
 
 		// Create skybox Cube/Dome and use it's vertex and index buffers
 
@@ -81,6 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		renderData.Buffers.SetOutput(renderData.CL, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(renderData.CL, ctx);
 		renderData.EngineData.Bind(renderData.CL, ctx);
+		data.WorldDataBuffer.Bind(renderData.CL, ctx);
 		data.VertexBuffer.Bind(renderData.CL);
 		data.IndexBuffer.Bind(renderData.CL);
 		renderData.CL.DrawIndexed(renderData.Dev, data.IndexBuffer.GetCount());

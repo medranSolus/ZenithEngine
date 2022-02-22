@@ -14,10 +14,8 @@ namespace ZE::GFX
 	{
 		// After changin content of the transform buffer, set size of transform array in
 		// Engine/Shader/VS/CB/Transform.hlsli
-		static constexpr U32 TRANSFORM_COUNT = 511;
+		static constexpr U32 TRANSFORM_COUNT = 512;
 
-		Float3 CameraPos;
-		float _Padding;
 		ModelTransform Transforms[TRANSFORM_COUNT];
 	};
 }

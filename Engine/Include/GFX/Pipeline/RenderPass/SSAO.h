@@ -19,6 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	struct Data
 	{
+		Resource::CBuffer& WorldDataBuffer;
 		CommandList CL;
 		U32 BindingIndexSSAO;
 		U32 BindingIndexBlur;
@@ -29,6 +30,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData);
+	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer);
 	void Execute(RendererExecuteData& renderData, PassData& passData);
 }

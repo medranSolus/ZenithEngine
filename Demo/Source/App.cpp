@@ -30,7 +30,7 @@ void App::MakeFrame()
 {
 	engine.BeginFrame();
 	ImGui::ShowDemoWindow();
-	engine.Reneder().UpdateWorldData();
+	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice());
 	engine.EndFrame();
 }
 

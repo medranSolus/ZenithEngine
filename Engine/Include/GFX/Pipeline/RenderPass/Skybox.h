@@ -15,6 +15,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 	struct Data
 	{
+		Resource::CBuffer& WorldDataBuffer;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 		Resource::Texture::Pack SkyTexture;
@@ -24,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS,
-		const std::string& cubemapPath, const std::string& cubemapExt);
+	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer,
+		PixelFormat formatRT, PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt);
 	void Execute(RendererExecuteData& renderData, PassData& passData);
 }

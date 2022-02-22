@@ -8,9 +8,8 @@ struct ModelTransform
 
 struct TransformArray
 {
-	float3 CameraPos;
 	// Size according to 64KB / sizeof(ModelTransform)
-	ModelTransform Transforms[511];
+	ModelTransform Transforms[512];
 };
 
 CBUFFER(transformIndex, uint, 0);

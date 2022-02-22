@@ -5,9 +5,6 @@ static const uint BLUR_KERNEL_MAX_SIZE = 8;
 
 struct PBRData
 {
-	matrix ViewProjection;
-	matrix ViewProjectionInverse;
-
 	float NearClip;
 	float FarClip;
 	float Gamma;

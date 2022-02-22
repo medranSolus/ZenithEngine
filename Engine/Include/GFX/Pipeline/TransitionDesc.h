@@ -7,7 +7,7 @@ namespace ZE::GFX::Pipeline
 	// Descriptor containing params for performing resource transition
 	struct TransitionDesc
 	{
-		U64 RID;
+		RID RID;
 		BarrierType Barrier;
 		Resource::State BeforeState;
 		Resource::State AfterState;

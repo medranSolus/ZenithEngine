@@ -12,7 +12,13 @@ namespace ZE::GFX::Pipeline
 		buildData.RendererSlots.AddRange(
 			{
 				1, 13,
-				Resource::ShaderType::Vertex | Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
+				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
+				Binding::RangeFlag::CBV
+			});
+		buildData.RendererSlots.AddRange(
+			{
+				1, 12,
+				Resource::ShaderType::Vertex | Resource::ShaderType::Compute,
 				Binding::RangeFlag::CBV
 			});
 
@@ -106,7 +112,11 @@ namespace ZE::GFX::Pipeline
 	RendererPBR::~RendererPBR()
 	{
 		if (worldData.Meshes)
-			Table::Clear(worldData.MeshesInfo.Size, worldData.Meshes);
+			Table::Clear(worldData.MeshesInfo, worldData.Meshes);
+		if (worldData.Outlines)
+			Table::Clear(worldData.OutlinesInfo, worldData.Outlines);
+		if (worldData.Wireframes)
+			Table::Clear(worldData.WireframesInfo, worldData.Wireframes);
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
@@ -148,13 +158,6 @@ namespace ZE::GFX::Pipeline
 
 		settingsData.NearClip = 0.001f;
 		settingsData.FarClip = 1000.0f;
-		settingsData.ViewProjection =
-			Math::XMMatrixLookToLH(Math::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-				Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), Math::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)) *
-			Math::XMMatrixPerspectiveFovLH(1.047f,
-				static_cast<float>(width) / height, settingsData.NearClip, settingsData.FarClip);
-		settingsData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, settingsData.ViewProjection));
-		settingsData.ViewProjection = Math::XMMatrixTranspose(settingsData.ViewProjection);
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
@@ -227,7 +230,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("ssao", QueueType::Compute, SSAO, dev, buildData);
+			ZE_MAKE_NODE_DATA("ssao", QueueType::Compute, SSAO, dev, buildData, worldData.DynamicDataBuffer);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourceNonPS);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourceNonPS);
 			node.AddOutput("SB", Resource::State::UnorderedAccess, ssao);
@@ -276,7 +279,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Post processing
 		{
-			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData,
+			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData, worldData.DynamicDataBuffer,
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
 				params.SkyboxPath, params.SkyboxExt);
 			node.AddInput("lightCombine.RT", Resource::State::RenderTarget);
@@ -296,7 +299,12 @@ namespace ZE::GFX::Pipeline
 
 		worldData.MeshesInfo.Size = 0;
 		worldData.MeshesInfo.Allocated = MESH_LIST_GROW_SIZE;
-		worldData.Meshes = Table::Create<MeshInfo>(MESH_LIST_GROW_SIZE);
+		worldData.Meshes = Table::Create<MeshInfo>(worldData.MeshesInfo);
+		worldData.OutlinesInfo = worldData.MeshesInfo;
+		worldData.Outlines = Table::Create<MeshInfo>(worldData.OutlinesInfo);
+		worldData.WireframesInfo = worldData.MeshesInfo;
+		worldData.Wireframes = Table::Create<MeshInfo>(worldData.WireframesInfo);
+		worldData.DynamicDataBuffer.Init(dev, nullptr, sizeof(DynamicWorldData), true);
 		dev.EndUploadRegion();
 	}
 
@@ -314,11 +322,23 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateWorldData() noexcept
+	void RendererPBR::UpdateWorldData(Device& dev) noexcept
 	{
 		ZE_ASSERT(worldData.ActiveScene, "No active scene set!");
 		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera),
 			"Current camera not present!");
+
+		// Setup shader world data
+		DynamicWorldData data;
+		data.ViewProjection =
+			Math::XMMatrixLookToLH(Math::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
+				Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), Math::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)) *
+			Math::XMMatrixPerspectiveFovLH(1.047f,
+				static_cast<float>(settingsData.FrameDimmensions.x) / settingsData.FrameDimmensions.y, settingsData.NearClip, settingsData.FarClip);
+		data.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, data.ViewProjection));
+		data.ViewProjection = Math::XMMatrixTranspose(data.ViewProjection);
+		data.CameraPos = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera)].Position;
+		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(DynamicWorldData));
 
 		U64 modelCount = worldData.ActiveScene->ModelInfo.Size;
 		const Data::EID* modelEntities = worldData.ActiveScene->ModelEntities;
@@ -327,31 +347,31 @@ namespace ZE::GFX::Pipeline
 		const Data::Mesh* meshes = worldData.ActiveScene->Meshes;
 
 		// TODO: Add some culling
-		U64 meshCount = 0;
-		for (U64 i = 0; i < modelCount; ++i)
-		{
-			ZE_ASSERT(transformPositions.contains(modelEntities[i]), "Entity not containing required Transform component!");
-			meshCount += models[i].MeshCount;
-		}
-
-		if (meshCount > worldData.MeshesInfo.Size + MESH_LIST_GROW_SIZE || worldData.MeshesInfo.Size > meshCount + MESH_LIST_GROW_SIZE)
-			Table::Resize(worldData.MeshesInfo, worldData.Meshes, meshCount);
-		else
-			worldData.MeshesInfo.Size = meshCount;
-
 		for (U64 i = 0, j = 0; i < modelCount; ++i)
 		{
+			ZE_ASSERT(transformPositions.contains(modelEntities[i]), "Entity not containing required Transform component!");
+
 			Data::Model model = models[i];
 			U64 transformIndex = transformPositions.at(modelEntities[i]);
 
 			for (U64 k = 0; k < model.MeshCount; ++j, ++k)
 			{
-				MeshInfo& info = worldData.Meshes[j];
 				Data::Mesh mesh = meshes[model.MeshIDs[k]];
 
-				info.GeometryIndex = mesh.GeometryIndex;
-				info.MaterialIndex = mesh.MaterialIndex;
-				info.TransformIndex = transformIndex;
+				MeshInfo info
+				{
+					mesh.GeometryIndex,
+					mesh.MaterialIndex,
+					transformIndex
+				};
+
+				if (mesh.Flags & Data::MeshFlag::Outline)
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.OutlinesInfo, worldData.Outlines, info);
+
+				if (mesh.Flags & Data::MeshFlag::Wireframe)
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.WireframesInfo, worldData.Wireframes, info);
+				else
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.MeshesInfo, worldData.Meshes, info);
 			}
 		}
 	}

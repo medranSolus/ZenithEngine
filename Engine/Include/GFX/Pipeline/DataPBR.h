@@ -8,8 +8,6 @@ namespace ZE::GFX::Pipeline
 		static constexpr U32 SSAO_KERNEL_MAX_SIZE = 32;
 		static constexpr S32 BLUR_KERNEL_RADIUS = 7;
 
-		Matrix ViewProjection;
-		Matrix ViewProjectionInverse;
 		float NearClip;
 		float FarClip;
 		float Gamma;

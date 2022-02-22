@@ -1,4 +1,5 @@
 #include "CB/Transform.hlsli"
+#include "WorldDataCB.hlsli"
 
 struct VSOut
 {
@@ -22,7 +23,7 @@ VSOut main(float3 pos : POSITION,
 	vso.tc = tc;
 	vso.worldBitan = mul(bitangent, (float3x3)cb_transform.Transforms[cb_transformIndex].M);
 
-	vso.cameraDir = (cb_transform.CameraPos - vso.worldPos) * -1.0f;
+	vso.cameraDir = (cb_worldData.CameraPos - vso.worldPos) * -1.0f;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex].MVP);
 
 	return vso;

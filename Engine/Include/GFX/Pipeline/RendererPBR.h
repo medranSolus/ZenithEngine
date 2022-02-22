@@ -29,6 +29,6 @@ namespace ZE::GFX::Pipeline
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
 		void SetCurrentCamera(Device& dev, Data::EID camera);
-		void UpdateWorldData() noexcept;
+		void UpdateWorldData(Device& dev) noexcept;
 	};
 }

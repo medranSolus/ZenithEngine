@@ -1,6 +1,7 @@
 #include "CommonUtils.hlsli"
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
+#include "WorldDataCB.hlsli"
 
 // Get tangent space rotation (not normalized)
 float3x3 GetTangentToWorldUNorm(const in float3 tan, const in float3 normal)
@@ -24,7 +25,7 @@ void main(uint3 dispatchId : SV_DispatchThreadID)
 	{
 		const float3 normal = DecodeNormal(sphericNormal);
 		const float2 texCoord = dispatchId.xy / (float2)(cb_pbrData.FrameDimmensions - 1);
-		const float3 position = GetWorldPosition(texCoord, depthMap[dispatchId.xy], cb_pbrData.ViewProjectionInverse);
+		const float3 position = GetWorldPosition(texCoord, depthMap[dispatchId.xy], cb_worldData.ViewProjectionInverse);
 		const float2 noise = noiseMap.SampleLevel(splr_LW, texCoord * cb_pbrData.SsaoNoiseDimmensions, 0);
 
 		const float3x3 TBN = GetTangentToWorldUNorm(normalize(float3(noise, 0.0f)), normal);
@@ -38,7 +39,7 @@ void main(uint3 dispatchId : SV_DispatchThreadID)
 			if (dot(normalize(sampleRay), normal) >= 0.15f)
 			{
 				// From tangent to clip space
-				const float4 samplePos = mul(float4(position + sampleRay * cb_pbrData.SsaoSampleRadius, 1.0f), cb_pbrData.ViewProjection);
+				const float4 samplePos = mul(float4(position + sampleRay * cb_pbrData.SsaoSampleRadius, 1.0f), cb_worldData.ViewProjection);
 				// Perspective divide and transform to 0-1
 				const float2 offset = samplePos.xy / (samplePos.w * 2.0f) + 0.5f;
 

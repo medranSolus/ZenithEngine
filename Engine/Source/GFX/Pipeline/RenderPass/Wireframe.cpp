@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/Wireframe.h"
+#include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
@@ -37,20 +38,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		if (data.World.WireframesInfo.Size)
 		{
 			// Resize temporary buffer for transform data
-			U64 buffCount = Math::DivideRoundUp(data.World.WireframesInfo.Size * sizeof(ModelTransform), sizeof(TransformBuffer)) / sizeof(TransformBuffer);
-			if (buffCount < data.TransformBuffers.size())
-			{
-				for (U64 i = buffCount; i < data.TransformBuffers.size(); ++i)
-					data.TransformBuffers.at(i).Free(renderData.Dev);
-				data.TransformBuffers.resize(buffCount);
-			}
-			else if (buffCount > data.TransformBuffers.size())
-			{
-				U64 i = data.TransformBuffers.size();
-				data.TransformBuffers.resize(buffCount);
-				for (; i < buffCount; ++i)
-					data.TransformBuffers.at(i).Init(renderData.Dev, nullptr, sizeof(TransformBuffer), true);
-			}
+			Utils::ResizeTransformBuffers(renderData.Dev, data.TransformBuffers, data.World.WireframesInfo.Size);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -80,13 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 					const auto& info = data.World.Wireframes[i];
 
-					const auto& transform = transforms[info.TransformIndex];
-					Matrix matrix = Math::XMMatrixScalingFromVector(Math::XMLoadFloat3(&transform.Scale)) *
-						Math::XMMatrixRotationQuaternion(Math::XMLoadFloat4(&transform.Rotation)) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position));
-
-					buffer->Transforms[k].Model = Math::XMMatrixTranspose(matrix);
-					buffer->Transforms[k].ModelViewProjection = Math::XMMatrixTranspose(matrix * Math::XMMatrixIdentity() * Math::XMMatrixIdentity());
+					Utils::SetupTransformData(transforms[info.TransformIndex], buffer->Transforms[k], data.World.DynamicData.ViewProjection);
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);

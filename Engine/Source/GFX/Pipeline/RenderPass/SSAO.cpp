@@ -2,9 +2,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData)
+	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer)
 	{
-		Data* passData = new Data;
+		Data* passData = new Data{ worldDataBuffer };
 		passData->CL.Init(dev, CommandType::Compute);
 
 		Binding::SchemaDesc desc;
@@ -59,6 +59,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Depth);
 		data.Noise.Bind(data.CL, ctxSSAO);
 		renderData.EngineData.Bind(data.CL, ctxSSAO);
+		data.WorldDataBuffer.Bind(data.CL, ctxSSAO);
 		data.CL.Compute(renderData.Dev, 64, 32, 1); // Need to decouple from screen dimmensions
 		renderData.Buffers.BarrierUAV(data.CL, ids.SSAO);
 

@@ -33,12 +33,16 @@ namespace ZE
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
 		static constexpr T* Create(I size) noexcept;
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
+		static constexpr T* Create(const TableInfo<I>& info) noexcept;
+		template<typename T, TableIndex I, U8 AlignmentPower = 0>
 		static constexpr T* Create(I size, const T& initData) noexcept;
 		template<typename T, TableIndex I, U8 AlignmentPower = 0>
 		static constexpr T* Create(I size, Ptr<T> sourceData) noexcept;
 
 		template<typename T, TableIndex I>
 		static constexpr void Clear(I size, Ptr<T>& data) noexcept;
+		template<typename T, TableIndex I>
+		static constexpr void Clear(TableInfo<I>& info, Ptr<T>& data) noexcept;
 
 		// Standard resize operation for single-column table
 		template<TableIndex I, typename T, U8 AlignmentPower = 0>
@@ -129,6 +133,16 @@ namespace ZE
 	}
 
 	template<typename T, TableIndex I, U8 AlignmentPower>
+	constexpr T* Table::Create(const TableInfo<I>& info) noexcept
+	{
+		T* data = Alloc<T>(info.Allocated);
+		if constexpr (!std::is_integral_v<T>)
+			for (I i = 0; i < info.Size; ++i)
+				new(data + i) T;
+		return data;
+	}
+
+	template<typename T, TableIndex I, U8 AlignmentPower>
 	constexpr T* Table::Create(I size, const T& initData) noexcept
 	{
 		T* data = Alloc<T>(size);
@@ -159,6 +173,12 @@ namespace ZE
 				data[i].~T();
 		free(data);
 		data = nullptr;
+	}
+
+	template<typename T, TableIndex I>
+	constexpr void Table::Clear(TableInfo<I>& info, Ptr<T>& data) noexcept
+	{
+		Clear(info.Size, data);
 	}
 
 	template<TableIndex I, typename T, U8 AlignmentPower>

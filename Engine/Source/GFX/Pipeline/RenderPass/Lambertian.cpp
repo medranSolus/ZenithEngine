@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/Lambertian.h"
+#include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
@@ -13,7 +14,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
 		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
@@ -63,26 +64,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		if (data.World.MeshesInfo.Size)
 		{
 			// Resize temporary buffer for transform data
-			U64 buffCount = Math::DivideRoundUp(data.World.MeshesInfo.Size * sizeof(ModelTransform), sizeof(TransformBuffer)) / sizeof(TransformBuffer);
-			if (buffCount + BUFFER_SHRINK_STEP < data.TransformBuffers.size())
-			{
-				for (U64 i = buffCount; i < data.TransformBuffers.size(); ++i)
-					data.TransformBuffers.at(i).Free(renderData.Dev);
-				data.TransformBuffers.resize(buffCount);
-			}
-			else if (buffCount > data.TransformBuffers.size())
-			{
-				U64 i = data.TransformBuffers.size();
-				data.TransformBuffers.resize(buffCount);
-				for (; i < buffCount; ++i)
-					data.TransformBuffers.at(i).Init(renderData.Dev, nullptr, sizeof(TransformBuffer), true);
-			}
+			Utils::ResizeTransformBuffers<BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.World.MeshesInfo.Size);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
 			const auto& geometries = data.World.ActiveScene->Geometries;
-			Float3 cameraPos = data.World.ActiveScene->Cameras[data.World.ActiveScene->CameraPositions.at(data.World.CurrnetCamera)].Position;
 
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
@@ -100,19 +87,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				buffer->CameraPos = cameraPos;
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.MeshesInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
 					const auto& info = data.World.Meshes[i];
 
-					const auto& transform = transforms[info.TransformIndex];
-					Matrix matrix = Math::XMMatrixScalingFromVector(Math::XMLoadFloat3(&transform.Scale)) *
-						Math::XMMatrixRotationQuaternion(Math::XMLoadFloat4(&transform.Rotation)) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position));
-
-					buffer->Transforms[k].Model = Math::XMMatrixTranspose(matrix);
-					buffer->Transforms[k].ModelViewProjection = Math::XMMatrixTranspose(matrix * Math::XMMatrixIdentity() * Math::XMMatrixIdentity());
+					Utils::SetupTransformData(transforms[info.TransformIndex], buffer->Transforms[k], data.World.DynamicData.ViewProjection);
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);
@@ -144,6 +124,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ctx.SetFromEnd(1);
 				data.TransformBuffers.at(j).Bind(renderData.CL, ctx);
 				renderData.EngineData.Bind(renderData.CL, ctx);
+				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
 				ctx.Reset();
 
 				// Compute single batch
