@@ -2,9 +2,11 @@
 #include "Camera.h"
 #include "Entity.h"
 #include "Geometry.h"
+#include "LightBuffer.h"
 #include "MaterialPBR.h"
 #include "Mesh.h"
 #include "Model.h"
+#include "PointLight.h"
 #include "Transform.h"
 
 namespace ZE::Data
@@ -46,6 +48,11 @@ namespace ZE::Data
 		TableInfo<EID> CameraInfo;
 		Ptr<Camera> Cameras;
 		LocationLookup<EID> CameraPositions;
+
+		TableInfo<EID> PointLightInfo;
+		Ptr<EID> PointLightEntities;
+		Ptr<PointLight> PointLights;
+		Ptr<LightBuffer> PointLightBuffers;
 
 		Entity GetEntity(EID id) const noexcept { ZE_ASSERT(id != Entity::INVALID_ID, "Invalid ID!"); return Entities[EntityPositions.at(id)]; }
 

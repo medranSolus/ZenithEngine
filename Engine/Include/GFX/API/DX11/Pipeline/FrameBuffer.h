@@ -23,9 +23,9 @@ namespace ZE::GFX::API::DX11::Pipeline
 		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const {}
 
 		template<U32 RTVCount>
-		void SetRTV(GFX::CommandList& cl, const RID* rid) const {}
+		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const {}
 		template<U32 RTVCount>
-		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv) const {}
+		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const {}
 
 		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const {}
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const {}

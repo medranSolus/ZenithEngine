@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, WorldInfo& worldData, PixelFormat formatDS,
+	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData, PixelFormat formatDS,
 		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular)
 	{
 		Data* passData = new Data{ worldData };
@@ -14,6 +14,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
 		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
+		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -38,7 +39,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PSO_SET_NAME(psoDesc, "Lambertian");
 		passData->StateNormal.Init(dev, psoDesc, schema);
 
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true);
 
 		return passData;
 	}
@@ -61,10 +62,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		renderData.CL.Close(renderData.Dev);
 		renderData.Dev.ExecuteMain(renderData.CL);
 
-		if (data.World.MeshesInfo.Size)
+		if (data.World.MeshInfo.Size)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.World.MeshesInfo.Size);
+			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.World.MeshInfo.Size);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
@@ -73,7 +74,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.MeshesInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < data.World.MeshInfo.Size; ++j)
 			{
 				renderData.CL.Open(renderData.Dev, data.StateDepth);
 				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Lambertian Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
@@ -86,13 +87,15 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ctx.Reset();
 
 				// Compute single batch
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.MeshesInfo.Size; ++k, ++i)
+				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
+				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < data.World.MeshInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
-					const auto& info = data.World.Meshes[i];
 
-					Utils::SetupTransformData(transforms[info.TransformIndex], buffer->Transforms[k], data.World.DynamicData.ViewProjection);
+					const auto& info = data.World.Meshes[i];
+					const auto& transform = transforms[info.TransformIndex];
+					buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					buffer->Transforms[k].ModelViewProjection = buffer->Transforms[k].Model * data.World.DynamicData.ViewProjection;
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);
@@ -114,21 +117,21 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			const auto& materials = data.World.ActiveScene->Materials;
 			U64 currentMaterialIndex = UINT64_MAX;
 			// Normal pass
-			for (U64 i = 0, j = 0; i < data.World.MeshesInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < data.World.MeshInfo.Size; ++j)
 			{
 				renderData.CL.Open(renderData.Dev, data.StateNormal);
 				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Lambertian Batch_" + std::to_wstring(j)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
 				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetOutput<3>(renderData.CL, &ids.Color, ids.DepthStencil);
+				renderData.Buffers.SetOutput<3>(renderData.CL, &ids.Color, ids.DepthStencil, true);
 
 				ctx.SetFromEnd(1);
 				data.TransformBuffers.at(j).Bind(renderData.CL, ctx);
-				renderData.EngineData.Bind(renderData.CL, ctx);
 				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
+				renderData.EngineData.Bind(renderData.CL, ctx);
 				ctx.Reset();
 
 				// Compute single batch
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.MeshesInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.MeshInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);

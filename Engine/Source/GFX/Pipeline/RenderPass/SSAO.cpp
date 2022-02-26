@@ -12,6 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData });
+		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -58,8 +59,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Normal);
 		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Depth);
 		data.Noise.Bind(data.CL, ctxSSAO);
-		renderData.EngineData.Bind(data.CL, ctxSSAO);
 		data.WorldDataBuffer.Bind(data.CL, ctxSSAO);
+		renderData.EngineData.Bind(data.CL, ctxSSAO);
 		data.CL.Compute(renderData.Dev, 64, 32, 1); // Need to decouple from screen dimmensions
 		renderData.Buffers.BarrierUAV(data.CL, ids.SSAO);
 

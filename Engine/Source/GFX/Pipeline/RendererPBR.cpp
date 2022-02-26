@@ -15,12 +15,6 @@ namespace ZE::GFX::Pipeline
 				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
 				Binding::RangeFlag::CBV
 			});
-		buildData.RendererSlots.AddRange(
-			{
-				1, 12,
-				Resource::ShaderType::Vertex | Resource::ShaderType::Compute,
-				Binding::RangeFlag::CBV
-			});
 
 		constexpr Resource::Texture::AddressMode ADDRESS_MODES[]
 		{
@@ -112,11 +106,13 @@ namespace ZE::GFX::Pipeline
 	RendererPBR::~RendererPBR()
 	{
 		if (worldData.Meshes)
-			Table::Clear(worldData.MeshesInfo, worldData.Meshes);
+			Table::Clear(worldData.MeshInfo, worldData.Meshes);
 		if (worldData.Outlines)
-			Table::Clear(worldData.OutlinesInfo, worldData.Outlines);
+			Table::Clear(worldData.OutlineInfo, worldData.Outlines);
 		if (worldData.Wireframes)
-			Table::Clear(worldData.WireframesInfo, worldData.Wireframes);
+			Table::Clear(worldData.WireframeInfo, worldData.Wireframes);
+		if (worldData.PointLights)
+			Table::Clear(worldData.PointLightInfo, worldData.PointLights);
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
@@ -163,6 +159,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
 		settingsData.HDRExposure = params.HDRExposure;
 		settingsData.FrameDimmensions = { width, height };
+		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
 		SetupSsaoData(width, height);
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
 
@@ -214,11 +211,12 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("pointLight", GFX::QueueType::Main, nullptr);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
+			ZE_MAKE_NODE_DATA("pointLight", QueueType::Main, PointLight, dev, buildData, worldData,
+				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
+				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
+			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
 			node.AddInput("spotLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("spotLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
@@ -297,14 +295,24 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
 
-		worldData.MeshesInfo.Size = 0;
-		worldData.MeshesInfo.Allocated = MESH_LIST_GROW_SIZE;
-		worldData.Meshes = Table::Create<MeshInfo>(worldData.MeshesInfo);
-		worldData.OutlinesInfo = worldData.MeshesInfo;
-		worldData.Outlines = Table::Create<MeshInfo>(worldData.OutlinesInfo);
-		worldData.WireframesInfo = worldData.MeshesInfo;
-		worldData.Wireframes = Table::Create<MeshInfo>(worldData.WireframesInfo);
-		worldData.DynamicDataBuffer.Init(dev, nullptr, sizeof(DynamicWorldData), true);
+		worldData.MeshInfo.Size = 0;
+		worldData.MeshInfo.Allocated = MESH_LIST_GROW_SIZE;
+		worldData.Meshes = Table::Create<Info::Mesh>(worldData.MeshInfo);
+
+		worldData.ShadowCasterInfo = worldData.MeshInfo;
+		worldData.ShadowCasters = Table::Create<Info::Mesh>(worldData.ShadowCasterInfo);
+
+		worldData.OutlineInfo = worldData.MeshInfo;
+		worldData.Outlines = Table::Create<Info::Mesh>(worldData.OutlineInfo);
+
+		worldData.WireframeInfo = worldData.MeshInfo;
+		worldData.Wireframes = Table::Create<Info::Mesh>(worldData.WireframeInfo);
+
+		worldData.PointLightInfo.Size = 0;
+		worldData.PointLightInfo.Allocated = POINT_LIGHT_LIST_GROW_SIZE;
+		worldData.PointLights = Table::Create<Info::Light>(worldData.PointLightInfo);
+
+		worldData.DynamicDataBuffer.Init(dev, nullptr, sizeof(Info::DynamicWorldData), true);
 		dev.EndUploadRegion();
 	}
 
@@ -329,7 +337,7 @@ namespace ZE::GFX::Pipeline
 			"Current camera not present!");
 
 		// Setup shader world data
-		DynamicWorldData data;
+		Info::DynamicWorldData data;
 		data.ViewProjection =
 			Math::XMMatrixLookToLH(Math::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
 				Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), Math::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)) *
@@ -338,41 +346,56 @@ namespace ZE::GFX::Pipeline
 		data.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, data.ViewProjection));
 		data.ViewProjection = Math::XMMatrixTranspose(data.ViewProjection);
 		data.CameraPos = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera)].Position;
-		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(DynamicWorldData));
-
-		U64 modelCount = worldData.ActiveScene->ModelInfo.Size;
-		const Data::EID* modelEntities = worldData.ActiveScene->ModelEntities;
-		const Data::Model* models = worldData.ActiveScene->Models;
-		const Data::LocationLookup<Data::EID>& transformPositions = worldData.ActiveScene->TransformPositions;
-		const Data::Mesh* meshes = worldData.ActiveScene->Meshes;
+		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(Info::DynamicWorldData));
 
 		// TODO: Add some culling
-		for (U64 i = 0, j = 0; i < modelCount; ++i)
+		const Data::LocationLookup<Data::EID>& transformPositions = worldData.ActiveScene->TransformPositions;
+
+		// Meshes
+		U64 count = worldData.ActiveScene->ModelInfo.Size;
+		const Data::EID* entities = worldData.ActiveScene->ModelEntities;
+		const Data::Model* models = worldData.ActiveScene->Models;
+		const Data::Mesh* meshes = worldData.ActiveScene->Meshes;
+		for (U64 i = 0, j = 0; i < count; ++i)
 		{
-			ZE_ASSERT(transformPositions.contains(modelEntities[i]), "Entity not containing required Transform component!");
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
 
 			Data::Model model = models[i];
-			U64 transformIndex = transformPositions.at(modelEntities[i]);
+			U64 transformIndex = transformPositions.at(entities[i]);
 
 			for (U64 k = 0; k < model.MeshCount; ++j, ++k)
 			{
 				Data::Mesh mesh = meshes[model.MeshIDs[k]];
 
-				MeshInfo info
+				Info::Mesh info
 				{
 					mesh.GeometryIndex,
 					mesh.MaterialIndex,
 					transformIndex
 				};
 
+				if (mesh.Flags & Data::MeshFlag::Shadow)
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.ShadowCasterInfo, worldData.ShadowCasters, info);
+
 				if (mesh.Flags & Data::MeshFlag::Outline)
-					Table::Append<MESH_LIST_GROW_SIZE>(worldData.OutlinesInfo, worldData.Outlines, info);
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.OutlineInfo, worldData.Outlines, info);
 
 				if (mesh.Flags & Data::MeshFlag::Wireframe)
-					Table::Append<MESH_LIST_GROW_SIZE>(worldData.WireframesInfo, worldData.Wireframes, info);
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.WireframeInfo, worldData.Wireframes, info);
 				else
-					Table::Append<MESH_LIST_GROW_SIZE>(worldData.MeshesInfo, worldData.Meshes, info);
+					Table::Append<MESH_LIST_GROW_SIZE>(worldData.MeshInfo, worldData.Meshes, info);
 			}
+		}
+
+		// Point lights
+		count = worldData.ActiveScene->PointLightInfo.Size;
+		entities = worldData.ActiveScene->PointLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
+
+			Table::Append<POINT_LIGHT_LIST_GROW_SIZE>(worldData.PointLightInfo, worldData.PointLights,
+				Info::Light(transformPositions.at(entities[i])));
 		}
 	}
 }

@@ -28,6 +28,9 @@ namespace ZE::GFX::Pipeline
 		U32 BlurHeight;
 		float BlurIntensity;
 
+		float ShadowMapSize;
+		Float3 _Padding;
+
 		Float4 SsaoKernel[SSAO_KERNEL_MAX_SIZE];
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];

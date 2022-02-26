@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, WorldInfo& worldData, PixelFormat formatRT, PixelFormat formatDS)
+	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		Data* passData = new Data{ worldData };
 
@@ -47,10 +47,10 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		renderData.CL.Close(renderData.Dev);
 		renderData.Dev.ExecuteMain(renderData.CL);
 
-		if (data.World.OutlinesInfo.Size)
+		if (data.World.OutlineInfo.Size)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers(renderData.Dev, data.TransformBuffers, data.World.OutlinesInfo.Size);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(renderData.Dev, data.TransformBuffers, data.World.OutlineInfo.Size);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
@@ -58,7 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			const auto& geometries = data.World.ActiveScene->Geometries;
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.OutlinesInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < data.World.OutlineInfo.Size; ++j)
 			{
 				renderData.CL.Open(renderData.Dev, data.State);
 				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Outline Draw Batch_" + std::to_wstring(j)).c_str(), Pixel(0xF9, 0xE0, 0x76));
@@ -74,12 +74,13 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.OutlinesInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.OutlineInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
-					const auto& info = data.World.Outlines[i];
 
-					Utils::SetupTransformData(transforms[info.TransformIndex], buffer->Transforms[k], data.World.DynamicData.ViewProjection);
+					const auto& info = data.World.Outlines[i];
+					const auto& transform = transforms[info.TransformIndex];
+					buffer->Transforms[k] = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)) * data.World.DynamicData.ViewProjection;
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);

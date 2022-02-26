@@ -1,15 +1,9 @@
 #include "CBuffer.hlsli"
 
-struct ModelTransform
-{
-	matrix M;
-	matrix MVP;
-};
-
 struct TransformArray
 {
-	// Size according to 64KB / sizeof(ModelTransform)
-	ModelTransform Transforms[512];
+	// Size according to 64KB / sizeof(matrix)
+	matrix Transforms[1024];
 };
 
 CBUFFER(transformIndex, uint, 0);

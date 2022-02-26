@@ -6,17 +6,14 @@
 namespace ZE::GFX::Pipeline::RenderPass::Utils
 {
 	// Resizes vector of temporary transform buffers
-	template<U64 ShrinkStepOffset = 0>
+	template<typename SingleTransform, typename TransformBuffer, U64 ShrinkStepOffset = 0>
 	void ResizeTransformBuffers(Device& dev, std::vector<Resource::CBuffer>& transformBuffers, U64 count);
 
-	// Computes single model transform
-	void SetupTransformData(const Data::Transform& transform, ModelTransform& model, const Matrix& viewProjectionTransposed);
-
 #pragma region Functions
-	template<U64 ShrinkStepOffset>
+	template<typename SingleTransform, typename TransformBuffer, U64 ShrinkStepOffset>
 	void ResizeTransformBuffers(Device& dev, std::vector<Resource::CBuffer>& transformBuffers, U64 count)
 	{
-		U64 buffCount = Math::DivideRoundUp(count * sizeof(ModelTransform), sizeof(TransformBuffer)) / sizeof(TransformBuffer);
+		U64 buffCount = Math::DivideRoundUp(count * sizeof(SingleTransform), sizeof(TransformBuffer)) / sizeof(TransformBuffer);
 		if (buffCount + ShrinkStepOffset < transformBuffers.size())
 		{
 			for (U64 i = buffCount; i < transformBuffers.size(); ++i)

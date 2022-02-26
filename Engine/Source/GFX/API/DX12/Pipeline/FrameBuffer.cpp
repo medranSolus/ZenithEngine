@@ -257,6 +257,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		// Prepare data for allocating resources and heaps
 		const U64 levelCount = desc.TransitionsPerLevel.size() / 2;
 		const U64 invalidID = desc.ResourceInfo.size();
+		const D3D12_RESIDENCY_PRIORITY residencyPriority = D3D12_RESIDENCY_PRIORITY_MAXIMUM;
 		U64 rt_dsCount;
 		U32 maxChunks = 0;
 		std::vector<U64> memory;
@@ -318,6 +319,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
 				ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
+				ZE_GFX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(uavHeap.GetAddressOf()), &residencyPriority));
+
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
@@ -394,6 +397,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
 		ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
+		ZE_GFX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
+
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif

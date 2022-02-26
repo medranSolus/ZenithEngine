@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Pipeline/WorldInfo.h"
+#include "GFX/Pipeline/Info/World.h"
 #include "GFX/TransformBuffer.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 	struct Data
 	{
-		WorldInfo& World;
+		Info::World& World;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
 		Resource::PipelineStateGfx StateNormal;
@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, WorldInfo& worldData, PixelFormat formatDS,
+	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData, PixelFormat formatDS,
 		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular);
 	void Execute(RendererExecuteData& renderData, PassData& passData);
 }

@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, WorldInfo& worldData, PixelFormat formatRT, PixelFormat formatDS)
+	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		Data* passData = new Data{ worldData };
 
@@ -35,10 +35,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 	{
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 
-		if (data.World.WireframesInfo.Size)
+		if (data.World.WireframeInfo.Size)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers(renderData.Dev, data.TransformBuffers, data.World.WireframesInfo.Size);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(renderData.Dev, data.TransformBuffers, data.World.WireframeInfo.Size);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			const auto& geometries = data.World.ActiveScene->Geometries;
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.WireframesInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < data.World.WireframeInfo.Size; ++j)
 			{
 				renderData.CL.Open(renderData.Dev, data.State);
 				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Wireframe Batch_" + std::to_wstring(j)).c_str(), Pixel(0xBC, 0x54, 0x4B));
@@ -63,12 +63,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.WireframesInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.WireframeInfo.Size; ++k, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xE3, 0x24, 0x2B));
-					const auto& info = data.World.Wireframes[i];
 
-					Utils::SetupTransformData(transforms[info.TransformIndex], buffer->Transforms[k], data.World.DynamicData.ViewProjection);
+					const auto& info = data.World.Wireframes[i];
+					const auto& transform = transforms[info.TransformIndex];
+					buffer->Transforms[k] = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)) * data.World.DynamicData.ViewProjection;
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);

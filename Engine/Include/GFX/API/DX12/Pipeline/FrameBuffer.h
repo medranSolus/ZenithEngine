@@ -70,9 +70,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const;
 
 		template<U32 RTVCount>
-		void SetRTV(GFX::CommandList& cl, const RID* rid) const;
+		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const;
 		template<U32 RTVCount>
-		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv) const;
+		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const;
 
 		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
@@ -91,7 +91,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 #pragma region Functions
 	template<U32 RTVCount>
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid) const
+	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetRTV() should be only used for multiple render targets!");
 
@@ -107,11 +107,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, nullptr);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, adjacent, nullptr);
 	}
 
 	template<U32 RTVCount>
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv) const
+	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetOutput() should be only used for multiple render targets!");
 		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
@@ -129,7 +129,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, FALSE, rtvDsv + dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, adjacent, rtvDsv + dsv);
 	}
 #pragma endregion
 }

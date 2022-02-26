@@ -78,4 +78,11 @@ namespace ZE::Math
 		}
 		return rotation;
 	}
+
+	Matrix GetTransform(const Float3& position, const Float4& rotor, const Float3& scale) noexcept
+	{
+		return XMMatrixScalingFromVector(XMLoadFloat3(&scale)) *
+			XMMatrixRotationQuaternion(XMLoadFloat4(&rotor)) *
+			XMMatrixTranslationFromVector(XMLoadFloat3(&position));
+	}
 }

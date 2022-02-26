@@ -2,14 +2,13 @@
 
 namespace ZE::Data
 {
-	// Component describing point light params
+	// Component containing point light parameters
 	struct PointLight
 	{
-		Float3 Position;
-		float Intensity;
 		ColorF3 Color;
-		float LinearAttenuation;
+		float Intensity;
 		ColorF3 Shadow;
-		float QuadAttenuation;
+		float AttnLinear;
+		float AttnQuad;
 	};
 }

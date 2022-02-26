@@ -6,8 +6,9 @@ namespace ZE::Data
 	// Options to display mesh with
 	enum MeshFlag : MeshFlags
 	{
-		Outline,
-		Wireframe
+		Shadow = 1,
+		Outline = 2,
+		Wireframe = 4
 	};
 
 	// Component storing data about single mesh

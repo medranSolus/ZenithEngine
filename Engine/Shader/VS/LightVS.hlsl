@@ -1,4 +1,4 @@
-#include "CBuffer/Transform.hlsli"
+#include "CB/Transform.hlsli"
 
 struct VSOut
 {
@@ -9,7 +9,7 @@ struct VSOut
 VSOut main(float3 pos : POSITION)
 {
 	VSOut vso;
-	vso.pos = mul(float4(pos, 1.0f), cb_transformViewProjection);
+	vso.pos = mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex]);
 	vso.texPos = vso.pos.xyw;
 	return vso;
 }

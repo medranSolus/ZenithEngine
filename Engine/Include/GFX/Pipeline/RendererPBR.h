@@ -2,7 +2,7 @@
 #include "DataPBR.h"
 #include "ParamsPBR.h"
 #include "RenderGraph.h"
-#include "WorldInfo.h"
+#include "Info/World.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -10,8 +10,9 @@ namespace ZE::GFX::Pipeline
 	class RendererPBR : public RenderGraph
 	{
 		static constexpr U64 MESH_LIST_GROW_SIZE = 64;
+		static constexpr U64 POINT_LIGHT_LIST_GROW_SIZE = 16;
 
-		WorldInfo worldData;
+		Info::World worldData;
 		DataPBR settingsData;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;

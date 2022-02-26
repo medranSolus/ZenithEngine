@@ -1,4 +1,4 @@
-#include "CB/Transform.hlsli"
+#include "CB/ModelTransform.hlsli"
 #include "WorldDataCB.hlsli"
 
 struct VSOut

@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/Skybox.h"
+#include "GFX/Primitive.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
@@ -11,7 +12,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
+		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
+		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::Texture::PackDesc texDesc;
@@ -27,29 +29,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		texDesc.AddTexture(Resource::Texture::Type::Cube, Resource::Texture::Usage::PixelShader, std::move(textures));
 		passData->SkyTexture.Init(dev, texDesc);
 
-		constexpr float POINT = 0.5f;
-		Float3 vertices[]
-		{
-			{ -POINT, -POINT, -POINT },
-			{ -POINT, POINT, -POINT },
-			{ POINT, POINT, -POINT },
-			{ POINT, -POINT, -POINT },
-			{ -POINT, -POINT, POINT },
-			{ -POINT, POINT, POINT },
-			{ POINT, POINT, POINT },
-			{ POINT, -POINT, POINT }
-		};
-		passData->VertexBuffer.Init(dev, { sizeof(vertices) / sizeof(Float3), sizeof(Float3), vertices });
-		const U32 indices[]
-		{
-			2,1,0, 3,2,0, // Front
-			1,5,4, 0,1,4, // Left
-			5,6,7, 4,5,7, // Back
-			6,2,3, 7,6,3, // Right
-			6,5,1, 2,6,1, // Top
-			3,0,4, 7,3,4  // Down
-		};
-		passData->IndexBuffer.Init(dev, { sizeof(indices) / sizeof(U32), indices });
+		const std::vector<Float3> vertices = Primitive::MakeCubeVertex();
+		passData->VertexBuffer.Init(dev, { static_cast<U32>(vertices.size()), sizeof(Float3), vertices.data() });
+		const std::vector<U32> indices = Primitive::MakeCubeIndexInverted();
+		passData->IndexBuffer.Init(dev, { static_cast<U32>(indices.size()), indices.data() });
 		dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;
@@ -80,8 +63,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 		renderData.Buffers.SetOutput(renderData.CL, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(renderData.CL, ctx);
-		renderData.EngineData.Bind(renderData.CL, ctx);
 		data.WorldDataBuffer.Bind(renderData.CL, ctx);
+		renderData.EngineData.Bind(renderData.CL, ctx);
 		data.VertexBuffer.Bind(renderData.CL);
 		data.IndexBuffer.Bind(renderData.CL);
 		renderData.CL.DrawIndexed(renderData.Dev, data.IndexBuffer.GetCount());

@@ -30,10 +30,14 @@ namespace ZE::GFX::Pipeline
 		constexpr void SetDSV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetDSV, cl, rid); }
 		constexpr void SetOutput(CommandList& cl, RID rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput, cl, rtv, dsv); }
 
+		// When render targets have been created one after one without any depth stencil between them
+		// they are considered adjacent which can speed-up their setting in the pipeline
 		template<U32 RTVCount>
-		constexpr void SetRTV(CommandList& cl, const RID* rid) const { ZE_API_BACKEND_CALL(SetRTV<RTVCount>, cl, rid); }
+		constexpr void SetRTV(CommandList& cl, const RID* rid, bool adjacent = false) const { ZE_API_BACKEND_CALL(SetRTV<RTVCount>, cl, rid, adjacent); }
+		// When render targets have been created one after one without any depth stencil between them
+		// they are considered adjacent which can speed-up their setting in the pipeline
 		template<U32 RTVCount>
-		constexpr void SetOutput(CommandList& cl, const RID* rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput<RTVCount>, cl, rtv, dsv); }
+		constexpr void SetOutput(CommandList& cl, const RID* rtv, RID dsv, bool adjacent = false) const { ZE_API_BACKEND_CALL(SetOutput<RTVCount>, cl, rtv, dsv, adjacent); }
 
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.

@@ -3,7 +3,7 @@
 
 namespace ZE::Data
 {
-	// PBR material parameterss
+	// PBR material parameters
 	struct ParamsPBR
 	{
 		static constexpr const char TEX_SCHEMA_NAME[] = "PBR";
