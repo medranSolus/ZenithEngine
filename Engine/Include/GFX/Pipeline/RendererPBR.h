@@ -9,10 +9,10 @@ namespace ZE::GFX::Pipeline
 	// Physically Based Renderer
 	class RendererPBR : public RenderGraph
 	{
-		static constexpr U64 MESH_LIST_GROW_SIZE = 64;
-		static constexpr U64 DIR_LIGHT_LIST_GROW_SIZE = 4;
-		static constexpr U64 SPOT_LIGHT_LIST_GROW_SIZE = 8;
-		static constexpr U64 POINT_LIGHT_LIST_GROW_SIZE = 16;
+		static constexpr U64 MESH_LIST_GROW_SIZE = 1024;
+		static constexpr U64 DIR_LIGHT_LIST_GROW_SIZE = 24;
+		static constexpr U64 SPOT_LIGHT_LIST_GROW_SIZE = 32;
+		static constexpr U64 POINT_LIGHT_LIST_GROW_SIZE = 48;
 
 		Info::World worldData;
 		DataPBR settingsData;

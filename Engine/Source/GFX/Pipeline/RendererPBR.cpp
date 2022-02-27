@@ -362,12 +362,53 @@ namespace ZE::GFX::Pipeline
 		data.CameraPos = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera)].Position;
 		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(Info::DynamicWorldData));
 
-		// TODO: Add some culling
+		// Directional lights
 		const Data::LocationLookup<Data::EID>& transformPositions = worldData.ActiveScene->TransformPositions;
+		U64 count = worldData.ActiveScene->DirectionalLightInfo.Size;
+		const Data::EID* entities = worldData.ActiveScene->DirectionalLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
 
+			Table::Append<DIR_LIGHT_LIST_GROW_SIZE>(worldData.DirectionalLightInfo, worldData.DirectionalLights,
+				Info::Light(transformPositions.at(entities[i])));
+		}
+
+		// Spot lights
+		count = worldData.ActiveScene->SpotLightInfo.Size;
+		entities = worldData.ActiveScene->SpotLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
+
+			Table::Append<SPOT_LIGHT_LIST_GROW_SIZE>(worldData.SpotLightInfo, worldData.SpotLights,
+				Info::Light(transformPositions.at(entities[i])));
+		}
+
+		// Point lights
+		count = worldData.ActiveScene->PointLightInfo.Size;
+		entities = worldData.ActiveScene->PointLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
+
+			Table::Append<POINT_LIGHT_LIST_GROW_SIZE>(worldData.PointLightInfo, worldData.PointLights,
+				Info::Light(transformPositions.at(entities[i])));
+		}
+
+		// Clear last batch
+		worldData.MeshInfo.Size = 0;
+		worldData.ShadowCasterInfo.Size = 0;
+		worldData.OutlineInfo.Size = 0;
+		worldData.WireframeInfo.Size = 0;
+		worldData.DirectionalLightInfo.Size = 0;
+		worldData.SpotLightInfo.Size = 0;
+		worldData.PointLightInfo.Size = 0;
+
+		// TODO: Add some frustum culling
 		// Meshes
-		U64 count = worldData.ActiveScene->ModelInfo.Size;
-		const Data::EID* entities = worldData.ActiveScene->ModelEntities;
+		count = worldData.ActiveScene->ModelInfo.Size;
+		entities = worldData.ActiveScene->ModelEntities;
 		const Data::Model* models = worldData.ActiveScene->Models;
 		const Data::Mesh* meshes = worldData.ActiveScene->Meshes;
 		for (U64 i = 0, j = 0; i < count; ++i)
@@ -399,39 +440,6 @@ namespace ZE::GFX::Pipeline
 				else
 					Table::Append<MESH_LIST_GROW_SIZE>(worldData.MeshInfo, worldData.Meshes, info);
 			}
-		}
-
-		// Directional lights
-		count = worldData.ActiveScene->DirectionalLightInfo.Size;
-		entities = worldData.ActiveScene->DirectionalLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
-		{
-			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
-
-			Table::Append<DIR_LIGHT_LIST_GROW_SIZE>(worldData.DirectionalLightInfo, worldData.DirectionalLights,
-				Info::Light(transformPositions.at(entities[i])));
-		}
-
-		// Spot lights
-		count = worldData.ActiveScene->SpotLightInfo.Size;
-		entities = worldData.ActiveScene->SpotLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
-		{
-			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
-
-			Table::Append<SPOT_LIGHT_LIST_GROW_SIZE>(worldData.SpotLightInfo, worldData.SpotLights,
-				Info::Light(transformPositions.at(entities[i])));
-		}
-
-		// Point lights
-		count = worldData.ActiveScene->PointLightInfo.Size;
-		entities = worldData.ActiveScene->PointLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
-		{
-			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
-
-			Table::Append<POINT_LIGHT_LIST_GROW_SIZE>(worldData.PointLightInfo, worldData.PointLights,
-				Info::Light(transformPositions.at(entities[i])));
 		}
 	}
 }
