@@ -5,13 +5,12 @@ namespace ZE::Data
 	// Component describing spot light params
 	struct SpotLight
 	{
-		Float3 Position;
-		float Intensity;
 		ColorF3 Color;
-		float LinearAttenuation;
+		float Intensity;
 		ColorF3 Shadow;
-		float QuadAttenuation;
+		float AttnLinear;
 		Float3 Direction;
+		float AttnQuad;
 		float InnerAngle;
 		float OuterAngle;
 	};

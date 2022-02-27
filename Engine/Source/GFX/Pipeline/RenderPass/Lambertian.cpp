@@ -114,7 +114,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				renderData.Dev.ExecuteMain(renderData.CL);
 			}
 
-			const auto& materials = data.World.ActiveScene->Materials;
+			const auto& materials = data.World.ActiveScene->MaterialBuffers;
 			U64 currentMaterialIndex = UINT64_MAX;
 			// Normal pass
 			for (U64 i = 0, j = 0; i < data.World.MeshInfo.Size; ++j)

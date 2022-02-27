@@ -70,7 +70,52 @@ namespace ZE::GFX::Primitive
 		};
 	}
 
-	std::pair<std::vector<Float3>, std::vector<U32>> MakeSphereIco(U32 density) noexcept
+	Data<Float3> MakeCone(U32 density) noexcept
+	{
+		if (!density)
+			density = 1;
+		density *= 3;
+
+		Data<Float3> data;
+		data.Vertices.resize(static_cast<U64>(density) + 1);
+
+		data.Vertices.at(0) = { 0.0f, 1.0f, 0.0f };
+		data.Vertices.at(1) = { 0.0f, 0.0f, 1.0f }; // Base of circle
+
+		const float angle = 2.0f * static_cast<float>(M_PI / density);
+		const Vector base = Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+		for (U64 i = 1; i < density; ++i)
+		{
+			Math::XMStoreFloat3(&data.Vertices.at(i + 1),
+				Math::XMVector3Transform(base, Math::XMMatrixRotationY(angle * i)));
+		}
+
+		data.Indices.reserve(static_cast<U64>(density - 1) * 6);
+		for (U32 i = 2; i < density; ++i)
+		{
+			// Cone wall
+			data.Indices.emplace_back(0);
+			data.Indices.emplace_back(i);
+			data.Indices.emplace_back(i + 1);
+			// Cone base
+			data.Indices.emplace_back(1);
+			data.Indices.emplace_back(i + 1);
+			data.Indices.emplace_back(i);
+		}
+		// First wall
+		data.Indices.emplace_back(0);
+		data.Indices.emplace_back(1);
+		data.Indices.emplace_back(2);
+		// Last wall
+		data.Indices.emplace_back(0);
+		data.Indices.emplace_back(density);
+		data.Indices.emplace_back(1);
+
+		return data;
+	}
+
+	Data<Float3> MakeSphereIco(U32 density) noexcept
 	{
 		constexpr float BIG_ANGLE = static_cast<float>(M_PI / 10.0f);
 		constexpr float SMALL_ANGLE = static_cast<float>(M_PI * 0.3f);
@@ -83,47 +128,47 @@ namespace ZE::GFX::Primitive
 		const float smallZ = centerZ * sinf(SMALL_ANGLE);
 		const float level = sinf(baseAngle);
 
-		std::vector<Float3> vertices
+		Data<Float3> data
 		{
-			{ 0.0f, 1.0f, 0.0f },
-			{ 0.0f, -1.0f, 0.0f },
-			{ 0.0f, level, -centerZ },
-			{ -bigX, level, -bigZ },
-			{ -smallX, level, smallZ },
-			{ smallX, level, smallZ },
-			{ bigX, level, -bigZ },
-			{ 0.0f, -level, centerZ },
-			{ bigX, -level, bigZ },
-			{ smallX, -level, -smallZ },
-			{ -smallX, -level, -smallZ },
-			{ -bigX, -level, bigZ }
-		};
-
-		std::vector<U32> indices
-		{
-			// Triangle ring
-			10,2,9,
-			3,2,10,
-			11,3,10,
-			4,3,11,
-			7,4,11,
-			5,4,7,
-			8,5,7,
-			6,5,8,
-			9,6,8,
-			2,6,9,
-			// North
-			3,0,2,
-			4,0,3,
-			5,0,4,
-			6,0,5,
-			2,0,6,
-			// South
-			10,9,1,
-			11,10,1,
-			7,11,1,
-			8,7,1,
-			9,8,1
+			{
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, -1.0f, 0.0f },
+				{ 0.0f, level, -centerZ },
+				{ -bigX, level, -bigZ },
+				{ -smallX, level, smallZ },
+				{ smallX, level, smallZ },
+				{ bigX, level, -bigZ },
+				{ 0.0f, -level, centerZ },
+				{ bigX, -level, bigZ },
+				{ smallX, -level, -smallZ },
+				{ -smallX, -level, -smallZ },
+				{ -bigX, -level, bigZ }
+			},
+			{
+				// Triangle ring
+				10,2,9,
+				3,2,10,
+				11,3,10,
+				4,3,11,
+				7,4,11,
+				5,4,7,
+				8,5,7,
+				6,5,8,
+				9,6,8,
+				2,6,9,
+				// North
+				3,0,2,
+				4,0,3,
+				5,0,4,
+				6,0,5,
+				2,0,6,
+				// South
+				10,9,1,
+				11,10,1,
+				7,11,1,
+				8,7,1,
+				9,8,1
+			}
 		};
 
 		auto comparator = [](const Key& x, const Key& y) constexpr -> bool
@@ -134,45 +179,45 @@ namespace ZE::GFX::Primitive
 		{
 			std::unordered_map<Key, U32, std::hash<Key>, decltype(comparator)> lookup(0, std::hash<Key>{}, comparator);
 			std::vector<U32> tmpIndices;
-			for (U64 j = 0; j < indices.size(); j += 3)
+			for (U64 j = 0; j < data.Indices.size(); j += 3)
 			{
-				auto i1 = lookup.find({ indices.at(j), indices.at(j + 1) });
+				auto i1 = lookup.find({ data.Indices.at(j), data.Indices.at(j + 1) });
 				if (i1 == lookup.end())
 				{
-					i1 = lookup.emplace(std::make_pair(indices.at(j), indices.at(j + 1)), static_cast<U32>(vertices.size())).first;
-					vertices.emplace_back(Math::AddNormal(vertices[indices.at(j)], vertices[indices.at(j + 1)]));
+					i1 = lookup.emplace(std::make_pair(data.Indices.at(j), data.Indices.at(j + 1)), static_cast<U32>(data.Vertices.size())).first;
+					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j)], data.Vertices[data.Indices.at(j + 1)]));
 				}
-				auto i2 = lookup.find({ indices.at(j + 1), indices.at(j + 2) });
+				auto i2 = lookup.find({ data.Indices.at(j + 1), data.Indices.at(j + 2) });
 				if (i2 == lookup.end())
 				{
-					i2 = lookup.emplace(std::make_pair(indices.at(j + 1), indices.at(j + 2)), static_cast<U32>(vertices.size())).first;
-					vertices.emplace_back(Math::AddNormal(vertices[indices.at(j + 1)], vertices[indices.at(j + 2)]));
+					i2 = lookup.emplace(std::make_pair(data.Indices.at(j + 1), data.Indices.at(j + 2)), static_cast<U32>(data.Vertices.size())).first;
+					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j + 1)], data.Vertices[data.Indices.at(j + 2)]));
 				}
-				auto i3 = lookup.find({ indices.at(j + 2), indices.at(j) });
+				auto i3 = lookup.find({ data.Indices.at(j + 2), data.Indices.at(j) });
 				if (i3 == lookup.end())
 				{
-					i3 = lookup.emplace(std::make_pair(indices.at(j + 2), indices.at(j)), static_cast<U32>(vertices.size())).first;
-					vertices.emplace_back(Math::AddNormal(vertices[indices.at(j + 2)], vertices[indices.at(j)]));
+					i3 = lookup.emplace(std::make_pair(data.Indices.at(j + 2), data.Indices.at(j)), static_cast<U32>(data.Vertices.size())).first;
+					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j + 2)], data.Vertices[data.Indices.at(j)]));
 				}
 				// Left
-				tmpIndices.emplace_back(indices.at(j));
+				tmpIndices.emplace_back(data.Indices.at(j));
 				tmpIndices.emplace_back(i1->second);
 				tmpIndices.emplace_back(i3->second);
 				// Up
 				tmpIndices.emplace_back(i1->second);
-				tmpIndices.emplace_back(indices.at(j + 1));
+				tmpIndices.emplace_back(data.Indices.at(j + 1));
 				tmpIndices.emplace_back(i2->second);
 				// Right
 				tmpIndices.emplace_back(i3->second);
 				tmpIndices.emplace_back(i2->second);
-				tmpIndices.emplace_back(indices.at(j + 2));
+				tmpIndices.emplace_back(data.Indices.at(j + 2));
 				// Down
 				tmpIndices.emplace_back(i1->second);
 				tmpIndices.emplace_back(i2->second);
 				tmpIndices.emplace_back(i3->second);
 			}
-			indices = std::move(tmpIndices);
+			data.Indices = std::move(tmpIndices);
 		}
-		return { std::move(vertices), std::move(indices) };
+		return data;
 	}
 }

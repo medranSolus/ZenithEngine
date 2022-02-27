@@ -1,5 +1,6 @@
 #pragma once
 #include "Camera.h"
+#include "DirectionalLight.h"
 #include "Entity.h"
 #include "Geometry.h"
 #include "LightBuffer.h"
@@ -7,6 +8,7 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "PointLight.h"
+#include "SpotLight.h"
 #include "Transform.h"
 
 namespace ZE::Data
@@ -44,10 +46,22 @@ namespace ZE::Data
 
 		TableInfo<U64> MaterialInfo;
 		Ptr<MaterialPBR> Materials;
+		Ptr<MaterialBuffersPBR> MaterialBuffers;
 
 		TableInfo<EID> CameraInfo;
 		Ptr<Camera> Cameras;
 		LocationLookup<EID> CameraPositions;
+
+		TableInfo<EID> DirectionalLightInfo;
+		Ptr<EID> DirectionalLightEntities;
+		Ptr<DirectionalLight> DirectionalLights;
+		Ptr<Float3> DirectionalLightDirections;
+		Ptr<GFX::Resource::CBuffer> DirectionalLightBuffers;
+
+		TableInfo<EID> SpotLightInfo;
+		Ptr<EID> SpotLightEntities;
+		Ptr<SpotLight> SpotLights;
+		Ptr<LightBuffer> SpotLightBuffers;
 
 		TableInfo<EID> PointLightInfo;
 		Ptr<EID> PointLightEntities;

@@ -10,6 +10,8 @@ namespace ZE::GFX::Pipeline
 	class RendererPBR : public RenderGraph
 	{
 		static constexpr U64 MESH_LIST_GROW_SIZE = 64;
+		static constexpr U64 DIR_LIGHT_LIST_GROW_SIZE = 4;
+		static constexpr U64 SPOT_LIGHT_LIST_GROW_SIZE = 8;
 		static constexpr U64 POINT_LIGHT_LIST_GROW_SIZE = 16;
 
 		Info::World worldData;

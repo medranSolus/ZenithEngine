@@ -4,7 +4,7 @@
 namespace ZE::Data
 {
 	// PBR material parameters
-	struct ParamsPBR
+	struct MaterialPBR
 	{
 		static constexpr const char TEX_SCHEMA_NAME[] = "PBR";
 
@@ -20,6 +20,6 @@ namespace ZE::Data
 		float ParallaxScale;
 	};
 
-	// Component containing material data for meshes
-	typedef GFX::Material<ParamsPBR, ParamsPBR::TEX_SCHEMA_NAME> MaterialPBR;
+	// Component containing graphics material data for meshes
+	typedef GFX::Material<MaterialPBR, MaterialPBR::TEX_SCHEMA_NAME> MaterialBuffersPBR;
 }

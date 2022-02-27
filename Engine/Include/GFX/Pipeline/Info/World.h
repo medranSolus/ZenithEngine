@@ -35,6 +35,12 @@ namespace ZE::GFX::Pipeline::Info
 		TableInfo<U64> WireframeInfo;
 		Ptr<Mesh> Wireframes;
 
+		TableInfo<U64> DirectionalLightInfo;
+		Ptr<Light> DirectionalLights;
+
+		TableInfo<U64> SpotLightInfo;
+		Ptr<Light> SpotLights;
+
 		TableInfo<U64> PointLightInfo;
 		Ptr<Light> PointLights;
 	};

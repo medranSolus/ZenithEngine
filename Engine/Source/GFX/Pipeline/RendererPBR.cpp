@@ -111,6 +111,10 @@ namespace ZE::GFX::Pipeline
 			Table::Clear(worldData.OutlineInfo, worldData.Outlines);
 		if (worldData.Wireframes)
 			Table::Clear(worldData.WireframeInfo, worldData.Wireframes);
+		if (worldData.DirectionalLights)
+			Table::Clear(worldData.DirectionalLightInfo, worldData.DirectionalLights);
+		if (worldData.SpotLights)
+			Table::Clear(worldData.SpotLightInfo, worldData.SpotLights);
 		if (worldData.PointLights)
 			Table::Clear(worldData.PointLightInfo, worldData.PointLights);
 	}
@@ -181,31 +185,33 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Lightning
 		{
-			GFX::Pipeline::RenderNode node("dirLight", GFX::QueueType::Main, nullptr);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
+			ZE_MAKE_NODE_DATA("dirLight", QueueType::Main, DirectionalLight, dev, buildData, worldData,
+				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
+				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
-			//node.AddInnerBuffer(Resource::State::RenderTarget,
-			//	{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
-			//node.AddInnerBuffer(Resource::State::DepthWrite,
-			//	{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
+			node.AddInnerBuffer(Resource::State::RenderTarget,
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+			node.AddInnerBuffer(Resource::State::DepthWrite,
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			GFX::Pipeline::RenderNode node("spotLight", GFX::QueueType::Main, nullptr);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
+			ZE_MAKE_NODE_DATA("spotLight", QueueType::Main, SpotLight, dev, buildData, worldData,
+				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
+				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
+			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
 			node.AddInput("dirLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("dirLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -222,7 +228,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInnerBuffer(Resource::State::RenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -308,6 +314,14 @@ namespace ZE::GFX::Pipeline
 		worldData.WireframeInfo = worldData.MeshInfo;
 		worldData.Wireframes = Table::Create<Info::Mesh>(worldData.WireframeInfo);
 
+		worldData.DirectionalLightInfo.Size = 0;
+		worldData.DirectionalLightInfo.Allocated = DIR_LIGHT_LIST_GROW_SIZE;
+		worldData.DirectionalLights = Table::Create<Info::Light>(worldData.DirectionalLightInfo);
+
+		worldData.SpotLightInfo.Size = 0;
+		worldData.SpotLightInfo.Allocated = SPOT_LIGHT_LIST_GROW_SIZE;
+		worldData.SpotLights = Table::Create<Info::Light>(worldData.SpotLightInfo);
+
 		worldData.PointLightInfo.Size = 0;
 		worldData.PointLightInfo.Allocated = POINT_LIGHT_LIST_GROW_SIZE;
 		worldData.PointLights = Table::Create<Info::Light>(worldData.PointLightInfo);
@@ -385,6 +399,28 @@ namespace ZE::GFX::Pipeline
 				else
 					Table::Append<MESH_LIST_GROW_SIZE>(worldData.MeshInfo, worldData.Meshes, info);
 			}
+		}
+
+		// Directional lights
+		count = worldData.ActiveScene->DirectionalLightInfo.Size;
+		entities = worldData.ActiveScene->DirectionalLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
+
+			Table::Append<DIR_LIGHT_LIST_GROW_SIZE>(worldData.DirectionalLightInfo, worldData.DirectionalLights,
+				Info::Light(transformPositions.at(entities[i])));
+		}
+
+		// Spot lights
+		count = worldData.ActiveScene->SpotLightInfo.Size;
+		entities = worldData.ActiveScene->SpotLightEntities;
+		for (U64 i = 0, j = 0; i < count; ++i)
+		{
+			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
+
+			Table::Append<SPOT_LIGHT_LIST_GROW_SIZE>(worldData.SpotLightInfo, worldData.SpotLights,
+				Info::Light(transformPositions.at(entities[i])));
 		}
 
 		// Point lights
