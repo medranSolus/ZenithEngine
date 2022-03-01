@@ -95,7 +95,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					const auto& info = data.World.Meshes[i];
 					const auto& transform = transforms[info.TransformIndex];
 					buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					buffer->Transforms[k].ModelViewProjection = buffer->Transforms[k].Model * data.World.DynamicData.ViewProjection;
+					buffer->Transforms[k].ModelViewProjection = data.World.DynamicData.ViewProjection * buffer->Transforms[k].Model;
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);

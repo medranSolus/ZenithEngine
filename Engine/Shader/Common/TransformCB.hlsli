@@ -6,5 +6,5 @@ struct TransformArray
 	matrix Transforms[1024];
 };
 
-CBUFFER(transformIndex, uint, 0);
 CBUFFER(transform, TransformArray, 1);
+CBUFFER(transformIndex, uint, 0);

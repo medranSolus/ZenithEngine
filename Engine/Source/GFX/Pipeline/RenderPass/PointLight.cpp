@@ -12,19 +12,16 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		Data* passData = new Data{ worldData };
 		ShadowMapCube::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow);
 
-		if (buildData.BindingLib.FetchBinding("light", passData->BindingIndex))
-		{
-			Binding::SchemaDesc desc;
-			desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
-			desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
-			desc.AddRange({ 1, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
-			desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-			desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-			desc.AddRange({ 3, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-			desc.AddRange({ 1, 12, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
-			desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
-			passData->BindingIndex = buildData.BindingLib.RegisterCommonBinding(dev, desc, "light");
-		}
+		Binding::SchemaDesc desc;
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
+		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
+		desc.AddRange({ 1, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 3, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 1, 12, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
@@ -74,9 +71,9 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					ShadowMapCube::Execute(renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position);
 
 					const float volume = lights[i].Volume;
-					buffer->Transforms[k] = Math::XMMatrixTranspose(Math::XMMatrixScaling(volume, volume, volume) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position))) *
-						data.ShadowData.World.DynamicData.ViewProjection;
+					buffer->Transforms[k] = data.ShadowData.World.DynamicData.ViewProjection *
+						Math::XMMatrixTranspose(Math::XMMatrixScaling(volume, volume, volume) *
+							Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position)));
 
 					renderData.CL.Open(renderData.Dev, data.State);
 					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Point Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));

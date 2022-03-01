@@ -69,7 +69,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 					const auto& info = data.World.Wireframes[i];
 					const auto& transform = transforms[info.TransformIndex];
-					buffer->Transforms[k] = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)) * data.World.DynamicData.ViewProjection;
+					buffer->Transforms[k] = data.World.DynamicData.ViewProjection *
+						Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
 					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
 					meshBatchId.Bind(renderData.CL, ctx);

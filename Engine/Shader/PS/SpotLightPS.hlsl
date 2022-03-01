@@ -2,6 +2,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
+#include "TransformCB.hlsli"
 #include "Utils/LightUtils.hlsli"
 #include "CB/SpotLight.hlsli"
 
@@ -40,9 +41,8 @@ PSOut main(float3 texPos : TEX_POSITION)
 			GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance);
 
 		// Shadow test
-		const float shadowLevel = 1.0f;
-		//const float shadowLevel = GetShadowLevel(normalize(cb_worldData.CameraPos - position), lightDistance,
-		//	directionToLight, GetShadowUV(position), splr_AB, shadowMap, cb_pbrData.ShadowMapSize);
+		const float shadowLevel = GetShadowLevel(normalize(cb_worldData.CameraPos - position), lightDistance,
+			directionToLight, GetShadowUV(position, cb_transform.Transforms[cb_transformIndex]), splr_AB, shadowMap, cb_pbrData.ShadowMapSize);
 		if (shadowLevel != 0.0f)
 		{
 			const float3 normal = DecodeNormal(normalMap.Sample(splr_PW, tc).rg);

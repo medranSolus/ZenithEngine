@@ -1,4 +1,4 @@
-#include "CB/Transform.hlsli"
+#include "TransformCB.hlsli"
 
 float4 main(float3 pos : POSITION) : SV_POSITION
 {

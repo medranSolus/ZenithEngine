@@ -17,6 +17,12 @@ float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, c
 	return specularColor * pow(max(dot(normal, H), 0.0f), specularPower);
 }
 
+float2 GetShadowUV(const in float3 position, uniform matrix shadowViewProjection)
+{
+	const float4 shadowSpacePos = mul(float4(position, 1.0f), shadowViewProjection);
+	return (shadowSpacePos.xy * float2(0.5f, -0.5f)) / shadowSpacePos.w + float2(0.5f, 0.5f);
+}
+
 float GetShadowLevel(const in float3 directionToCamera, const in float distanceToLight, const in float3 directionToLight,
 	const in float2 shadowPos, uniform SamplerState shadowSplr, uniform Texture2D shadowMap, uniform float mapSize)
 {

@@ -12,5 +12,5 @@ struct SpotLightBuffer
 	float OuterAngle;
 };
 
-CBUFFER(light, SpotLightBuffer, 1);
-CBUFFER(lightPos, float3, 0);
+CBUFFER(light, SpotLightBuffer, 3);
+CBUFFER(lightPos, float3, 2);

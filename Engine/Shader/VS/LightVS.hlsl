@@ -1,4 +1,4 @@
-#include "CB/Transform.hlsli"
+#include "TransformCB.hlsli"
 
 struct VSOut
 {
