@@ -17,6 +17,10 @@ namespace ZE::GFX::Pipeline
 		bool MinimizeRenderPassDistances = false;
 		// Dimensions of used shadow maps
 		U32 ShadowMapSize = 1024;
+		// Constant bias to be applied when performing shadow depth test
+		S32 ShadowBias = 26;
+		// Factor determining length of offset to be applied along surface normal vector during shadow computation
+		float ShadowNormalOffset = 0.001f;
 		// Sigma parameter to Gauss function used during computing blur
 		float Sigma = 2.6f;
 		// Level of exposure during tonemapping

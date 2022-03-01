@@ -10,6 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
 		Data* passData = new Data{ worldData };
+		ShadowMapCube::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow);
 
 		if (buildData.BindingLib.FetchBinding("light", passData->BindingIndex))
 		{
@@ -52,70 +53,60 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 	{
 		Data& data = *reinterpret_cast<Data*>(passData.OptData);
 
-		if (data.World.PointLightInfo.Size)
+		if (data.ShadowData.World.PointLightInfo.Size)
 		{
-			Resources ids = *passData.Buffers.CastConst<Resources>();
-
-			// Clear shadow map
-			renderData.CL.Open(renderData.Dev);
-			renderData.Buffers.ClearRTV(renderData.CL, ids.ShadowMap, ColorF4());
-			renderData.Buffers.ClearDSV(renderData.CL, ids.ShadowMapDepth, 1.0f, 0);
-			renderData.CL.Close(renderData.Dev);
-			renderData.Dev.ExecuteMain(renderData.CL);
-
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.World.PointLightInfo.Size);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.ShadowData.World.PointLightInfo.Size);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
-			const auto& lights = data.World.ActiveScene->PointLightBuffers;
+			const auto& transforms = data.ShadowData.World.ActiveScene->TransformsGlobal;
+			const auto& lights = data.ShadowData.World.ActiveScene->PointLightBuffers;
 
-			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.PointLightInfo.Size; ++j)
+			Resources ids = *passData.Buffers.CastConst<Resources>();
+			for (U64 i = 0, j = 0; i < data.ShadowData.World.PointLightInfo.Size; ++j)
 			{
-				renderData.CL.Open(renderData.Dev, data.State);
-				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Point Light Batch_" + std::to_wstring(j)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
-				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetRTV<2>(renderData.CL, &ids.Color, true);
-
-				ctx.SetFromEnd(4);
 				auto& cbuffer = data.TransformBuffers.at(j);
-				cbuffer.Bind(renderData.CL, ctx);
-				renderData.Buffers.SetSRV(renderData.CL, ctx, ids.ShadowMap);
-				renderData.Buffers.SetSRV(renderData.CL, ctx, ids.GBufferNormal);
-				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
-				renderData.EngineData.Bind(renderData.CL, ctx);
-				ctx.Reset();
-
-				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.PointLightInfo.Size; ++k, ++i)
-				{
-					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Light_" + std::to_wstring(k)).c_str(), Pixel(0xF4, 0xE9, 0x9B));
 
-					const auto& transform = transforms[data.World.PointLights[i].TransformIndex];
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.ShadowData.World.PointLightInfo.Size; ++k, ++i)
+				{
+					const auto& transform = transforms[data.ShadowData.World.PointLights[i].TransformIndex];
+					ShadowMapCube::Execute(renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position);
+
 					const float volume = lights[i].Volume;
 					buffer->Transforms[k] = Math::XMMatrixTranspose(Math::XMMatrixScaling(volume, volume, volume) *
 						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position))) *
-						data.World.DynamicData.ViewProjection;
+						data.ShadowData.World.DynamicData.ViewProjection;
+
+					renderData.CL.Open(renderData.Dev, data.State);
+					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Point Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
+					renderData.Buffers.BarrierTransition(renderData.CL, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
+
+					ctx.BindingSchema.SetGraphics(renderData.CL);
+					renderData.Buffers.SetRTV<2>(renderData.CL, &ids.Color, true);
 
 					Resource::Constant<U32> lightBatchId(renderData.Dev, k);
 					lightBatchId.Bind(renderData.CL, ctx);
 					Resource::Constant<Float3> lightPos(renderData.Dev, transform.Position);
 					lightPos.Bind(renderData.CL, ctx);
 					lights[i].Buffer.Bind(renderData.CL, ctx);
+
+					cbuffer.Bind(renderData.CL, ctx);
+					renderData.Buffers.SetSRV(renderData.CL, ctx, ids.ShadowMap);
+					renderData.Buffers.SetSRV(renderData.CL, ctx, ids.GBufferNormal);
+					data.ShadowData.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
+					renderData.EngineData.Bind(renderData.CL, ctx);
 					ctx.Reset();
 
 					data.VolumeVB.Bind(renderData.CL);
 					data.VolumeIB.Bind(renderData.CL);
 
 					renderData.CL.DrawIndexed(renderData.Dev, data.VolumeIB.GetCount());
+					renderData.Buffers.BarrierTransition(renderData.CL, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 					ZE_DRAW_TAG_END(renderData.CL);
+					renderData.CL.Close(renderData.Dev);
+					renderData.Dev.ExecuteMain(renderData.CL);
 				}
-
-				ZE_DRAW_TAG_END(renderData.CL);
-				renderData.CL.Close(renderData.Dev);
-				renderData.Dev.ExecuteMain(renderData.CL);
 			}
 		}
 	}

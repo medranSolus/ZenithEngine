@@ -34,14 +34,14 @@ namespace ZE::GFX::API::DX12::Resource
 		if (schema.IsCompute())
 		{
 			if constexpr (sizeof(T) == 4)
-				list->SetComputeRoot32BitConstant(bindCtx.Count++, data, 0);
+				list->SetComputeRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0);
 			else
 				list->SetComputeRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0);
 		}
 		else
 		{
 			if constexpr (sizeof(T) == 4)
-				list->SetGraphicsRoot32BitConstant(bindCtx.Count++, data, 0);
+				list->SetGraphicsRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0);
 			else
 				list->SetGraphicsRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0);
 		}

@@ -31,6 +31,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const {}
 
 		void BarrierUAV(GFX::CommandList& cl, RID rid) const {}
+		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const {}
 
 		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const {}
 		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const {}

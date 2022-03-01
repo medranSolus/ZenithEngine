@@ -1,8 +1,5 @@
 #pragma once
-#include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Pipeline/Info/World.h"
-#include "GFX/TransformBuffer.h"
+#include "ShadowMapCube.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
@@ -21,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 	struct Data
 	{
-		Info::World& World;
+		ShadowMapCube::Data ShadowData;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 		std::vector<Resource::CBuffer> TransformBuffers;

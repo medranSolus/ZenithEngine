@@ -164,6 +164,8 @@ namespace ZE::GFX::Pipeline
 		settingsData.HDRExposure = params.HDRExposure;
 		settingsData.FrameDimmensions = { width, height };
 		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
+		settingsData.ShadowBias = params.ShadowBias / settingsData.ShadowMapSize;
+		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupSsaoData(width, height);
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
 
@@ -192,7 +194,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
@@ -209,7 +211,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("dirLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("dirLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
@@ -226,7 +228,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("spotLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("spotLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube | FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);

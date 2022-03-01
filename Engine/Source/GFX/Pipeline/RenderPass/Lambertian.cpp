@@ -81,7 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ctx.BindingSchema.SetGraphics(renderData.CL);
 				renderData.Buffers.SetDSV(renderData.CL, ids.DepthStencil);
 
-				ctx.SetFromEnd(1);
+				ctx.SetFromEnd(2);
 				auto& cbuffer = data.TransformBuffers.at(j);
 				cbuffer.Bind(renderData.CL, ctx);
 				ctx.Reset();
@@ -124,7 +124,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ctx.BindingSchema.SetGraphics(renderData.CL);
 				renderData.Buffers.SetOutput<3>(renderData.CL, &ids.Color, ids.DepthStencil, true);
 
-				ctx.SetFromEnd(1);
+				ctx.SetFromEnd(2);
 				data.TransformBuffers.at(j).Bind(renderData.CL, ctx);
 				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
 				renderData.EngineData.Bind(renderData.CL, ctx);

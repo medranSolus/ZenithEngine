@@ -882,6 +882,43 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
 	}
 
+	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const
+	{
+		ZE_ASSERT(before != GFX::Resource::State::UnorderedAccess ||
+			before == GFX::Resource::State::UnorderedAccess && uav[rid - 1].first.ptr != -1,
+			"Current resource is not suitable for being unnordered access!");
+
+		ZE_ASSERT(before != GFX::Resource::State::RenderTarget ||
+			before == GFX::Resource::State::RenderTarget && rtvDsv[rid].ptr != -1,
+			"Current resource is not suitable for being render target!");
+
+		ZE_ASSERT(before != GFX::Resource::State::DepthRead ||
+			before == GFX::Resource::State::DepthRead && rtvDsv[rid].ptr != -1,
+			"Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(before != GFX::Resource::State::DepthWrite ||
+			before == GFX::Resource::State::DepthWrite && rtvDsv[rid].ptr != -1,
+			"Current resource is not suitable for being depth stencil!");
+
+		ZE_ASSERT(before != GFX::Resource::State::ShaderResourceAll ||
+			before == GFX::Resource::State::ShaderResourceAll && srv[rid].ptr != -1,
+			"Current resource is not suitable for being shader resource!");
+		ZE_ASSERT(before != GFX::Resource::State::ShaderResourcePS ||
+			before == GFX::Resource::State::ShaderResourcePS && srv[rid].ptr != -1,
+			"Current resource is not suitable for being shader resource!");
+		ZE_ASSERT(before != GFX::Resource::State::ShaderResourceNonPS ||
+			before == GFX::Resource::State::ShaderResourceNonPS && srv[rid].ptr != -1,
+			"Current resource is not suitable for being shader resource!");
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = resources[rid].Resource.Get();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = GetResourceState(before);
+		barrier.Transition.StateAfter = GetResourceState(after);
+		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
+	}
+
 	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const
 	{
 		ZE_ASSERT(rtvDsv[rid].ptr != -1, "Current resource is not suitable for being render target!");

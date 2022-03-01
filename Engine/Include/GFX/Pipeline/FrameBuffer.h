@@ -54,8 +54,10 @@ namespace ZE::GFX::Pipeline
 		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
 
-		// Perfomr barrier between 2 usages of resource as UAV
+		// Perform barrier between 2 usages of resource as UAV
 		constexpr void BarrierUAV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(BarrierUAV, cl, rid); }
+		// Manually transitions resource between states, recomended to use only on innner resources!
+		constexpr void BarrierTransition(CommandList& cl, RID rid, Resource::State before, Resource::State after) const { ZE_API_BACKEND_CALL(BarrierTransition, cl, rid, before, after); }
 
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void ClearRTV(CommandList& cl, RID rid, const ColorF4& color) const { ZE_API_BACKEND_CALL(ClearRTV, cl, rid, color); }
