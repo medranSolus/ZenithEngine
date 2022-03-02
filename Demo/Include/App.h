@@ -9,6 +9,7 @@ class App final
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.3";
 
 	Engine engine;
+	Data::EID camera;
 	Data::Scene scene = {};
 	bool run = true;
 

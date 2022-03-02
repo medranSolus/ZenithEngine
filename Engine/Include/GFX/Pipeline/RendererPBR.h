@@ -28,10 +28,9 @@ namespace ZE::GFX::Pipeline
 		~RendererPBR();
 
 		constexpr void SetActiveScene(const Data::Scene& scene) noexcept { worldData.ActiveScene = &scene; }
-
+		
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
-		void SetCurrentCamera(Device& dev, Data::EID camera);
-		void UpdateWorldData(Device& dev) noexcept;
+		void UpdateWorldData(Device& dev, Data::EID camera) noexcept;
 	};
 }

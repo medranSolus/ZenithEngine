@@ -8,10 +8,6 @@ namespace ZE::GFX::Pipeline
 		static constexpr U32 SSAO_KERNEL_MAX_SIZE = 32;
 		static constexpr S32 BLUR_KERNEL_RADIUS = 7;
 
-		float NearClip;
-		float FarClip;
-		float Gamma;
-		float GammaInverse;
 		Float3 AmbientLight;
 		float HDRExposure;
 		UInt2 FrameDimmensions;
@@ -31,7 +27,10 @@ namespace ZE::GFX::Pipeline
 		float ShadowMapSize;
 		float ShadowBias;
 		float ShadowNormalOffset;
-		float _Padding;
+
+		float Gamma;
+		float GammaInverse;
+		Float3 _Padding;
 
 		Float4 SsaoKernel[SSAO_KERNEL_MAX_SIZE];
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)

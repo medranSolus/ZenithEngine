@@ -6,9 +6,9 @@ void App::ProcessInput()
 	{
 		if (auto opt = engine.Window().Keyboard().ReadKey())
 		{
-			if (opt.value().IsDown())
+			if (opt->IsDown())
 			{
-				switch (opt.value().GetCode())
+				switch (opt->GetCode())
 				{
 				case VK_ESCAPE:
 				{
@@ -30,7 +30,7 @@ void App::MakeFrame()
 {
 	engine.BeginFrame();
 	ImGui::ShowDemoWindow();
-	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice());
+	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), camera);
 	engine.EndFrame();
 }
 
@@ -38,9 +38,8 @@ App::App(const std::string& commandLine)
 	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000, "Skybox/Space", ".png" })
 {
 	engine.Reneder().SetActiveScene(scene);
-	Data::EID camera = scene.CreateEntity();
-	scene.AddCamera(camera, { { 0.0f, 0.0f, 0.0f } });
-	engine.Reneder().SetCurrentCamera(engine.Gfx().GetDevice(), camera);
+	camera = scene.CreateEntity();
+	scene.AddCamera(camera, {});
 }
 
 int App::Run()

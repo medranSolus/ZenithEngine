@@ -51,6 +51,8 @@ namespace ZE::Data
 		TableInfo<EID> CameraInfo;
 		Ptr<Camera> Cameras;
 		LocationLookup<EID> CameraPositions;
+		// Projection matrix of current camera
+		Matrix CurrentProjection;
 
 		TableInfo<EID> DirectionalLightInfo;
 		Ptr<EID> DirectionalLightEntities;

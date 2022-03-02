@@ -156,8 +156,6 @@ namespace ZE::GFX::Pipeline
 		RendererBuildData buildData = { bindings, texLib };
 		SetupRenderSlots(buildData);
 
-		settingsData.NearClip = 0.001f;
-		settingsData.FarClip = 1000.0f;
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
@@ -332,36 +330,29 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::SetCurrentCamera(Device& dev, Data::EID camera)
-	{
-		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(camera), "Camera not present in the scene!");
-
-		worldData.CurrnetCamera = camera;
-
-		auto& cameraData = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.at(camera)];
-		// TODO: Set camera data
-		dev.BeginUploadRegion();
-		settingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
-		dev.StartUpload();
-		dev.EndUploadRegion();
-	}
-
-	void RendererPBR::UpdateWorldData(Device& dev) noexcept
+	void RendererPBR::UpdateWorldData(Device& dev, Data::EID camera) noexcept
 	{
 		ZE_ASSERT(worldData.ActiveScene, "No active scene set!");
-		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera),
+		ZE_ASSERT(worldData.ActiveScene->CameraPositions.contains(camera),
 			"Current camera not present!");
+		ZE_ASSERT(worldData.ActiveScene->TransformPositions.contains(camera),
+			"Current camera does not have Transform component!");
 
 		// Setup shader world data
 		Info::DynamicWorldData data;
+		data.CameraPos = worldData.ActiveScene->TransformsGlobal[worldData.ActiveScene->TransformPositions.at(camera)].Position;
+		const Data::Camera& currentCamera = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.at(camera)];
+		data.NearClip = currentCamera.Projection.NearClip;
+		data.FarClip = currentCamera.Projection.FarClip;
 		data.ViewProjection =
-			Math::XMMatrixLookToLH(Math::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-				Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), Math::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)) *
-			Math::XMMatrixPerspectiveFovLH(1.047f,
-				static_cast<float>(settingsData.FrameDimmensions.x) / settingsData.FrameDimmensions.y, settingsData.NearClip, settingsData.FarClip);
+			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&data.CameraPos),
+				Math::XMLoadFloat3(&currentCamera.EyeDirection),
+				Math::XMLoadFloat3(&currentCamera.UpVector)) *
+			worldData.ActiveScene->CurrentProjection;
+		/*Math::XMMatrixPerspectiveFovLH(Math::ToRadians(60.0f),
+			static_cast<float>(settingsData.FrameDimmensions.x) / settingsData.FrameDimmensions.y, settingsData.NearClip, settingsData.FarClip);*/
 		data.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, data.ViewProjection));
 		data.ViewProjection = Math::XMMatrixTranspose(data.ViewProjection);
-		data.CameraPos = worldData.ActiveScene->Cameras[worldData.ActiveScene->CameraPositions.contains(worldData.CurrnetCamera)].Position;
 		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(Info::DynamicWorldData));
 
 		// Directional lights

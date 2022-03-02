@@ -12,13 +12,14 @@ namespace ZE::GFX::Pipeline::Info
 		Matrix ViewProjection;
 		Matrix ViewProjectionInverse;
 		Float3 CameraPos;
+		float NearClip;
+		float FarClip;
 	};
 
 	// Information about current scene
 	struct World
 	{
 		Ptr<const Data::Scene> ActiveScene;
-		Data::EID CurrnetCamera = Data::Entity::INVALID_ID;
 
 		DynamicWorldData DynamicData;
 		Resource::CBuffer DynamicDataBuffer;
