@@ -16,6 +16,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
   - [DirectXMath](https://github.com/microsoft/DirectXMath)
   - [DirectXTex](https://github.com/microsoft/DirectXTex)
   - [Assimp](https://github.com/assimp/assimp)
+  - [EnTT](https://github.com/skypjack/entt)
 
 ## License
 
