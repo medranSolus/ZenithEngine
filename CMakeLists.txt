@@ -14,6 +14,7 @@ set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
 
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
+option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" ON)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
@@ -57,6 +58,7 @@ set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
+set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -72,6 +74,7 @@ set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
+set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
 
 
@@ -90,6 +93,7 @@ set(ASSIMP_LIB "assimp")
 set(FTYPE_LIB "freetype")
 set(DXTEX_LIB "DirectXTex")
 set(PIX_LIB "WinPixEventRuntime")
+set(ENTT_LIB "EnTT::EnTT")
 
 # Inject debug suffix if library use it
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -112,6 +116,7 @@ else()
 	set(PIX_TARGET "")
 endif()
 set(DXTEX_TARGET "${DXTEX_LIB}")
+set(ENTT_TARGET "${ENTT_LIB}")
 
 
 ######### COMPILE CONFIGURATION #########
@@ -151,7 +156,10 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 
 # General flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION")
+if(ZE_USE_WIDE_ENTITY_ID)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENTT_ID_TYPE=std::uint64_t")
+endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
 if(ZE_DEBUG_FRAME_MEMORY_PRINT)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_MEMORY_PRINT")
@@ -229,3 +237,13 @@ set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
 	"-DBUILD_DX11:BOOL=OFF"
 	"-DBUILD_DX12:BOOL=OFF")
 add_external_project(DXTEX "bin/CMake/" "")
+
+# EnTT
+if(MSVC)
+	set(ENTT_INCLUDE_NATVIS ON CACHE BOOL "Use debug natvis files" FORCE)
+endif()
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+	set(ENTT_USE_SANITIZER ON CACHE BOOL "Enable address sanitizer" FORCE)
+endif()
+set(ENTT_INCLUDE_HEADERS ON CACHE BOOL "Include header for dependency" FORCE)
+add_subdirectory(${ENTT_DIR})
