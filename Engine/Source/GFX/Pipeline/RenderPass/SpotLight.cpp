@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
-		Data* passData = new Data{ worldData };
+		Data* passData = new Data{ { worldData } };
 		ShadowMap::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow,
 			Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f));
 

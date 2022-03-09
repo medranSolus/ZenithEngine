@@ -85,6 +85,8 @@ namespace ZE::GFX::API::DX11::Resource
 			blendTarget.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 			break;
 		}
+		default:
+			break;
 		}
 		ZE_GFX_THROW_FAILED(device->CreateBlendState(&blendDesc, &blendState));
 		ZE_GFX_SET_ID(blendState, "Blender_" + desc.DebugName);
@@ -130,6 +132,8 @@ namespace ZE::GFX::API::DX11::Resource
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 			break;
 		}
+		default:
+			break;
 		}
 		ZE_GFX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
 		ZE_GFX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);

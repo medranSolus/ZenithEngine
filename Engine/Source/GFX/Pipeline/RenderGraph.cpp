@@ -43,6 +43,10 @@ namespace ZE::GFX::Pipeline
 			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
 			break;
 		}
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case SyncType::None:
+			break;
 		}
 	}
 
@@ -73,6 +77,10 @@ namespace ZE::GFX::Pipeline
 			nextFence = dev.SetCopyFence();
 			break;
 		}
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case SyncType::None:
+			break;
 		}
 
 		// Update fence values for all passes that depends on current pass
@@ -446,6 +454,8 @@ namespace ZE::GFX::Pipeline
 						{
 							switch (nodes.at(dep).GetPassType())
 							{
+							default:
+								ZE_ASSERT(false, "Unhandled enum value!");
 							case QueueType::Main:
 								throw ZE_RGC_EXCEPT("Trying to create sync point between same GPU engine type! Bug in culling redundant nodes!");
 							case QueueType::Compute:
@@ -469,6 +479,8 @@ namespace ZE::GFX::Pipeline
 						{
 							switch (nodes.at(dep).GetPassType())
 							{
+							default:
+								ZE_ASSERT(false, "Unhandled enum value!");
 							case QueueType::Main:
 							{
 								requiredFence1 = true;
@@ -492,6 +504,8 @@ namespace ZE::GFX::Pipeline
 						{
 							switch (nodes.at(dep).GetPassType())
 							{
+							default:
+								ZE_ASSERT(false, "Unhandled enum value!");
 							case QueueType::Main:
 							{
 								requiredFence1 = true;
@@ -515,6 +529,8 @@ namespace ZE::GFX::Pipeline
 					}
 					switch (node.GetPassType())
 					{
+					default:
+						ZE_ASSERT(false, "Unhandled enum value!");
 					case QueueType::Main:
 					{
 						if (requiredFence1 && requiredFence2)
@@ -558,9 +574,9 @@ namespace ZE::GFX::Pipeline
 				passSync = &passes[0].first[i].Syncs;
 			assert(passSync->DependentsCount <= 255);
 			bool requiredFence1 = false, requiredFence2 = false;
-			for (U8 i = 0; i < passSync->DependentsCount; ++i)
+			for (U8 j = 0; j < passSync->DependentsCount; ++j)
 			{
-				ExitSync syncInfo = passSync->ExitSyncs[i];
+				ExitSync syncInfo = passSync->ExitSyncs[j];
 				switch (syncInfo.Type)
 				{
 				case SyncType::MainToCompute:
@@ -577,10 +593,16 @@ namespace ZE::GFX::Pipeline
 					requiredFence2 = true;
 					break;
 				}
+				default:
+					break;
 				}
 			}
 			switch (passSync->EnterSync)
 			{
+			default:
+				ZE_ASSERT(false, "Unhandled enum value!");
+			case SyncType::None:
+				break;
 			case SyncType::MainToAll:
 			case SyncType::MainToCompute:
 			case SyncType::MainToCopy:

@@ -38,7 +38,7 @@ namespace ZE::GFX
 		constexpr const Pixel* GetBuffer() const noexcept { return (const Pixel*)image->pixels; }
 
 		bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
-		void Clear(const Pixel& color) noexcept { memset(GetBuffer(), color, GetSize() * sizeof(Pixel)); }
+		void Clear(const Pixel& color) noexcept { memset(GetBuffer(), static_cast<int>(color), GetSize() * sizeof(Pixel)); }
 
 		void Save(const std::string& filename) const;
 	};
@@ -46,8 +46,6 @@ namespace ZE::GFX
 #pragma region Functions
 	constexpr void Surface::PutPixel(U64 x, U64 y, const Pixel& c) noexcept
 	{
-		assert(x >= 0);
-		assert(y >= 0);
 		assert(x < GetWidth());
 		assert(y < GetHeight());
 		GetBuffer()[y * GetWidth() + x] = c;
@@ -55,8 +53,6 @@ namespace ZE::GFX
 
 	constexpr Pixel Surface::GetPixel(U64 x, U64 y) const noexcept
 	{
-		assert(x >= 0);
-		assert(y >= 0);
 		assert(x < GetWidth());
 		assert(y < GetHeight());
 		return GetBuffer()[y * GetWidth() + x];

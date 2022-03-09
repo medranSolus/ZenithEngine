@@ -33,7 +33,7 @@ namespace ZE::GFX
 		if (time != 0.0L)
 		{
 			auto& dataPoint = data.at(lastTag);
-			dataPoint.first += (time - dataPoint.first) / ++dataPoint.second;
+			dataPoint.first += (time - dataPoint.first) / static_cast<long double>(++dataPoint.second);
 		}
 		lastTag = "";
 	}

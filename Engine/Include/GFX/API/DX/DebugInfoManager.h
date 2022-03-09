@@ -2,7 +2,9 @@
 #include "ComPtr.h"
 #include <vector>
 #include <string>
+#include "WarningGuardOn.h"
 #include <dxgidebug.h>
+#include "WarningGuardOff.h"
 
 namespace ZE::GFX::API::DX
 {

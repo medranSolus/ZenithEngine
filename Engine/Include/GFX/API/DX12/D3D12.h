@@ -7,7 +7,9 @@
 #include "GFX/Resource/ShaderType.h"
 #include "GFX/Resource/State.h"
 #include "GFX/CommandType.h"
+#include "WarningGuardOn.h"
 #include <d3d12.h>
+#include "WarningGuardOff.h"
 #include <bitset>
 
 namespace ZE::GFX::API::DX12
@@ -42,6 +44,10 @@ namespace ZE::GFX::API::DX12
 	{
 		switch (type)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case CommandType::All:
+			return D3D12_COMMAND_LIST_TYPE_DIRECT;
 		case CommandType::Bundle:
 			return D3D12_COMMAND_LIST_TYPE_BUNDLE;
 		case CommandType::Compute:
@@ -49,13 +55,16 @@ namespace ZE::GFX::API::DX12
 		case CommandType::Copy:
 			return D3D12_COMMAND_LIST_TYPE_COPY;
 		}
-		return D3D12_COMMAND_LIST_TYPE_DIRECT;
 	}
 
 	constexpr D3D12_COMPARISON_FUNC GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept
 	{
 		switch (func)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::CompareMethod::Never:
+			return D3D12_COMPARISON_FUNC_NEVER;
 		case GFX::Resource::CompareMethod::Less:
 			return D3D12_COMPARISON_FUNC_LESS;
 		case GFX::Resource::CompareMethod::Equal:
@@ -71,19 +80,21 @@ namespace ZE::GFX::API::DX12
 		case GFX::Resource::CompareMethod::Always:
 			return D3D12_COMPARISON_FUNC_ALWAYS;
 		}
-		return D3D12_COMPARISON_FUNC_NEVER;
 	}
 
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept
 	{
 		switch (mode)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::CullMode::None:
+			return D3D12_CULL_MODE_NONE;
 		case GFX::Resource::CullMode::Front:
 			return D3D12_CULL_MODE_FRONT;
 		case GFX::Resource::CullMode::Back:
 			return D3D12_CULL_MODE_BACK;
 		}
-		return D3D12_CULL_MODE_NONE;
 	}
 
 	constexpr D3D12_FILTER GetFilterType(U8 samplerType) noexcept
@@ -196,25 +207,29 @@ namespace ZE::GFX::API::DX12
 		ZE_ASSERT(type, "Empty shader type!");
 		return 0;
 
-		switch (type)
-		{
-		case GFX::Resource::ShaderType::Vertex:
-			return 1;
-		case GFX::Resource::ShaderType::Domain:
-			return 3;
-		case GFX::Resource::ShaderType::Hull:
-			return 4;
-		case GFX::Resource::ShaderType::Geometry:
-			return 2;
-		default:
-			return 0;
-		}
+		//switch (type)
+		//{
+		//case GFX::Resource::ShaderType::Vertex:
+		//	return 1;
+		//case GFX::Resource::ShaderType::Domain:
+		//	return 3;
+		//case GFX::Resource::ShaderType::Hull:
+		//	return 4;
+		//case GFX::Resource::ShaderType::Geometry:
+		//	return 2;
+		//default:
+		//	return 0;
+		//}
 	}
 
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept
 	{
 		switch (state)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::State::Common:
+			return D3D12_RESOURCE_STATE_COMMON;
 		case GFX::Resource::State::GenericRead:
 			return D3D12_RESOURCE_STATE_GENERIC_READ;
 		case GFX::Resource::State::Present:
@@ -269,7 +284,6 @@ namespace ZE::GFX::API::DX12
 		case GFX::Resource::State::VideoEncodeWrite:
 			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
 		}
-		return D3D12_RESOURCE_STATE_COMMON;
 	}
 
 	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, ShaderPresenceMask* presence) noexcept
@@ -326,18 +340,25 @@ namespace ZE::GFX::API::DX12
 	{
 		switch (color)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::Texture::EdgeColor::TransparentBlack:
+			return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		case GFX::Resource::Texture::EdgeColor::SolidBlack:
 			return D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
 		case GFX::Resource::Texture::EdgeColor::SolidWhite:
 			return D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
 		}
-		return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	}
 
 	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept
 	{
 		switch (mode)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::Texture::AddressMode::Repeat:
+			return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		case GFX::Resource::Texture::AddressMode::Mirror:
 			return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
 		case GFX::Resource::Texture::AddressMode::Edge:
@@ -347,13 +368,16 @@ namespace ZE::GFX::API::DX12
 		case GFX::Resource::Texture::AddressMode::MirrorOnce:
 			return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
 		}
-		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	}
 
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept
 	{
 		switch (type)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Resource::TopologyType::Undefined:
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
 		case GFX::Resource::TopologyType::Point:
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
 		case GFX::Resource::TopologyType::Line:
@@ -363,19 +387,21 @@ namespace ZE::GFX::API::DX12
 		case GFX::Resource::TopologyType::ControlPoint:
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
 		}
-		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
 	}
 
 	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept
 	{
 		switch (type)
 		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GFX::Pipeline::BarrierType::Immediate:
+			return D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		case GFX::Pipeline::BarrierType::Begin:
 			return D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
 		case GFX::Pipeline::BarrierType::End:
 			return D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 		}
-		return D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	}
 #pragma endregion
 }

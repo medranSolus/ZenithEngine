@@ -50,7 +50,7 @@ namespace ZE::GFX::API::DX12
 	}
 
 	Device::Device(U32 descriptorCount, U32 scratchDescriptorCount)
-		: descriptorCount(descriptorCount), scratchDescStart(descriptorCount - scratchDescriptorCount)
+		: scratchDescStart(descriptorCount - scratchDescriptorCount), descriptorCount(descriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		std::string ZE_GFX_DEBUG_ID;
@@ -93,7 +93,7 @@ namespace ZE::GFX::API::DX12
 			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT
 		};
 
-		D3D12_INFO_QUEUE_FILTER filter = { 0 };
+		D3D12_INFO_QUEUE_FILTER filter = { { 0 } };
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
 		filter.DenyList.NumIDs = 3;

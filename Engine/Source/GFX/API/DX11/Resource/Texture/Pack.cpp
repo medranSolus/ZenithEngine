@@ -131,7 +131,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	{
 		std::vector<std::vector<Surface>> vec;
 		vec.emplace_back(std::vector<Surface>());
-		vec.front().emplace_back(1, 1);
+		vec.front().emplace_back(1U, 1U);
 		return vec;
 	}
 }

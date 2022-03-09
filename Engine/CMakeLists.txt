@@ -44,11 +44,12 @@ endif()
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
 set(PCH "${ENGINE_INC_DIR}/pch.h")
-set(STB "${EXT_INC_DIR}/stb_sprintf.h")
 file(GLOB_RECURSE SRC_LIST
     "${SRC_DIR}/*.cpp"
     "${ENGINE_INC_DIR}/*.h"
     "${ZE_BUILD_INC_DIR}/*.h")
+set(SRC_LIST "${SRC_LIST}"
+    "${EXT_INC_DIR}/stb_sprintf.h")
 
 file(GLOB IMGUI_SRC_LIST
     "${IMGUI_DIR}/*.cpp"
@@ -57,10 +58,6 @@ file(GLOB IMGUI_SRC_LIST
     "${IMGUI_INC_DIR}/misc/cpp/*.h"
     "${IMGUI_DIR}/misc/freetype/*.cpp"
     "${IMGUI_INC_DIR}/misc/freetype/*.h")
-if(MSVC)
-    set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
-        "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
-endif()
 if(WIN32)
     file(GLOB IMGUI_BACKEND_LIST
         "${IMGUI_DIR}/backends/*win32.cpp"
@@ -69,12 +66,26 @@ if(WIN32)
         "${IMGUI_DIR}/backends/*dx11.h"
         "${IMGUI_DIR}/backends/*dx12.cpp"
         "${IMGUI_DIR}/backends/*dx12.h")
+    set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
+        "${IMGUI_BACKEND_LIST}")
 else()
 	message(FATAL_ERROR "Building ImGui for unsupported platform!")
 endif()
+if(MSVC)
+    # Disable high warnings for ImGui
+    if(CMAKE_CXX_FLAGS MATCHES "/Wall")
+        string(REPLACE "/Wall" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+        set_source_files_properties(${IMGUI_SRC_LIST} PROPERTIES COMPILE_FLAGS /W4)
+        set_source_files_properties(${SRC_LIST} PROPERTIES COMPILE_FLAGS /Wall)
+        set_source_files_properties(${PCH} PROPERTIES COMPILE_FLAGS /Wall)
+    endif()
+
+    set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
+        "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
+endif()
 
 # Target setup
-add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${IMGUI_BACKEND_LIST} ${STB} ${ZE_API_HEADER})
+add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADER})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}

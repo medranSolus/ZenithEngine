@@ -67,8 +67,8 @@ namespace ZE::Window
 		constexpr void SetAutorepeat(bool mode) noexcept { autorepeatEnabled = mode; }
 		constexpr bool IsKeyDown(U8 keycode) const noexcept { return keystates[keycode]; }
 
-		bool IsKeyReady() const noexcept { return keybuffer.size(); }
-		bool IsCharReady() const noexcept { return charbuffer.size(); }
+		bool IsKeyReady() const noexcept { return static_cast<bool>(keybuffer.size()); }
+		bool IsCharReady() const noexcept { return static_cast<bool>(charbuffer.size()); }
 		void FlushKeys() noexcept { keybuffer = std::deque<Event>(); }
 		void FlushChars() noexcept { charbuffer = std::deque<char>(); }
 

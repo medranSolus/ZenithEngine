@@ -26,7 +26,7 @@ namespace ZE::WinAPI
 }
 
 #define	ZE_WIN_EXCEPT(code) ZE::WinAPI::WinApiException(__LINE__, __FILENAME__, code)
-#define	ZE_WIN_EXCEPT_LAST() ZE_WIN_EXCEPT(GetLastError())
+#define	ZE_WIN_EXCEPT_LAST() ZE_WIN_EXCEPT(static_cast<HRESULT>(GetLastError()))
 
 // Variable holding result of last Windows call
 #define ZE_WIN_EXCEPT_RESULT __hResult

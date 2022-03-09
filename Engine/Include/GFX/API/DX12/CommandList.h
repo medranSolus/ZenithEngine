@@ -1,7 +1,9 @@
 #pragma once
 #include "Table.h"
 #include "D3D12.h"
+#include "WarningGuardOn.h"
 #include "WinPixEventRuntime/pix3.h"
+#include "WarningGuardOff.h"
 
 namespace ZE::GFX
 {

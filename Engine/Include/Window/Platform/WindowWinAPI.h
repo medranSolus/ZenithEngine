@@ -27,7 +27,7 @@ namespace ZE::Window::WinAPI
 		static constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		static inline WindowClass wndClass;
 
-		HWND hWnd;
+		HWND wndHandle;
 		RECT windowRect;
 		std::vector<U8> rawBuffer; // TODO: Replace with Table<>
 
@@ -50,9 +50,9 @@ namespace ZE::Window::WinAPI
 		ZE_CLASS_DELETE(WindowWinAPI);
 		virtual ~WindowWinAPI();
 
-		constexpr HWND GetHandle() const noexcept { return hWnd; }
-		constexpr U32 GetWidth() const noexcept override { return windowRect.right; }
-		constexpr U32 GetHeight() const noexcept override { return windowRect.bottom; }
+		constexpr HWND GetHandle() const noexcept { return wndHandle; }
+		constexpr U32 GetWidth() const noexcept override { return static_cast<U32>(windowRect.right); }
+		constexpr U32 GetHeight() const noexcept override { return static_cast<U32>(windowRect.bottom); }
 
 		void Init(const char* name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;

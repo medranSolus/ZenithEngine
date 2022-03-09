@@ -162,7 +162,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.HDRExposure = params.HDRExposure;
 		settingsData.FrameDimmensions = { width, height };
 		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
-		settingsData.ShadowBias = params.ShadowBias / settingsData.ShadowMapSize;
+		settingsData.ShadowBias = static_cast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupSsaoData(width, height);
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
@@ -359,7 +359,7 @@ namespace ZE::GFX::Pipeline
 		const Data::LocationLookup<Data::EID>& transformPositions = worldData.ActiveScene->TransformPositions;
 		U64 count = worldData.ActiveScene->DirectionalLightInfo.Size;
 		const Data::EID* entities = worldData.ActiveScene->DirectionalLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
+		for (U64 i = 0; i < count; ++i)
 		{
 			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
 
@@ -370,7 +370,7 @@ namespace ZE::GFX::Pipeline
 		// Spot lights
 		count = worldData.ActiveScene->SpotLightInfo.Size;
 		entities = worldData.ActiveScene->SpotLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
+		for (U64 i = 0; i < count; ++i)
 		{
 			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
 
@@ -381,7 +381,7 @@ namespace ZE::GFX::Pipeline
 		// Point lights
 		count = worldData.ActiveScene->PointLightInfo.Size;
 		entities = worldData.ActiveScene->PointLightEntities;
-		for (U64 i = 0, j = 0; i < count; ++i)
+		for (U64 i = 0; i < count; ++i)
 		{
 			ZE_ASSERT(transformPositions.contains(entities[i]), "Entity not containing required Transform component!");
 

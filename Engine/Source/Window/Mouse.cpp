@@ -12,8 +12,8 @@ namespace ZE::Window
 	{
 		left = true;
 		eventBuffer.emplace_back(Event::Type::LeftDown, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
@@ -21,8 +21,8 @@ namespace ZE::Window
 	{
 		left = false;
 		eventBuffer.emplace_back(Event::Type::LeftUp, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
@@ -30,8 +30,8 @@ namespace ZE::Window
 	{
 		right = true;
 		eventBuffer.emplace_back(Event::Type::RightDown, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
@@ -39,8 +39,8 @@ namespace ZE::Window
 	{
 		right = false;
 		eventBuffer.emplace_back(Event::Type::RightUp, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
@@ -48,8 +48,8 @@ namespace ZE::Window
 	{
 		wheel = true;
 		eventBuffer.emplace_back(Event::Type::WheelDown, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
@@ -57,23 +57,23 @@ namespace ZE::Window
 	{
 		wheel = false;
 		eventBuffer.emplace_back(Event::Type::WheelUp, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
 	void Mouse::OnMouseMove(S32 x, S32 y) noexcept
 	{
 		eventBuffer.emplace_back(Event::Type::Move, *this, x, y);
-		this->x = x;
-		this->y = y;
+		currX = x;
+		currY = y;
 		TrimBuffer();
 	}
 
 	void Mouse::OnRawDelta(S32 dx, S32 dy) noexcept
 	{
-		this->x += dx;
-		this->y += dy;
+		currX += dx;
+		currY += dy;
 		eventBuffer.emplace_back(Event::Type::RawMove, *this, Event::RawInput({ dx, dy }));
 		TrimBuffer();
 	}
@@ -95,27 +95,27 @@ namespace ZE::Window
 
 	void Mouse::OnWheelForward() noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::WheelForward, *this, x, y);
+		eventBuffer.emplace_back(Event::Type::WheelForward, *this, currX, currY);
 		TrimBuffer();
 	}
 
 	void Mouse::OnWheelBackward() noexcept
 	{
-		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, x, y);
+		eventBuffer.emplace_back(Event::Type::WheelBackward, *this, currX, currY);
 		TrimBuffer();
 	}
 
 	void Mouse::OnEnter() noexcept
 	{
 		window = true;
-		eventBuffer.emplace_back(Event::Type::Enter, *this, x, y);
+		eventBuffer.emplace_back(Event::Type::Enter, *this, currX, currY);
 		TrimBuffer();
 	}
 
 	void Mouse::OnLeave() noexcept
 	{
 		window = false;
-		eventBuffer.emplace_back(Event::Type::Leave, *this, x, y);
+		eventBuffer.emplace_back(Event::Type::Leave, *this, currX, currY);
 		TrimBuffer();
 	}
 

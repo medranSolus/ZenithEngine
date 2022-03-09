@@ -3,9 +3,11 @@
 #include "GFX/Resource/Topology.h"
 #include "GFX/DX.h"
 #include "DebugInfoManager.h"
+#include "WarningGuardOn.h"
 #include <dxgi1_6.h>
 #include <d3dcommon.h>
 #include <d3dcompiler.h>
+#include "WarningGuardOff.h"
 
 namespace ZE::GFX::API::DX
 {
@@ -44,8 +46,9 @@ namespace ZE::GFX::API::DX
 			{
 			case GFX::Resource::TopologyOrder::List:
 				return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+			default:
+				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			}
-			ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			break;
 		}
 		case GFX::Resource::TopologyType::Line:
@@ -60,8 +63,9 @@ namespace ZE::GFX::API::DX
 				return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
 			case GFX::Resource::TopologyOrder::StripAdjacency:
 				return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+			default:
+				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			}
-			ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			break;
 		}
 		case GFX::Resource::TopologyType::Triangle:
@@ -76,8 +80,9 @@ namespace ZE::GFX::API::DX
 				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
 			case GFX::Resource::TopologyOrder::StripAdjacency:
 				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+			default:
+				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			}
-			ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			break;
 		}
 		case GFX::Resource::TopologyType::ControlPoint:
@@ -148,10 +153,13 @@ namespace ZE::GFX::API::DX
 				return D3D_PRIMITIVE_TOPOLOGY_31_CONTROL_POINT_PATCHLIST;
 			case GFX::Resource::TopologyOrder::PatchList32:
 				return D3D_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST;
+			default:
+				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			}
-			ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
 			break;
 		}
+		default:
+			break;
 		}
 		return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	}

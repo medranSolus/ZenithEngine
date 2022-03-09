@@ -6,8 +6,8 @@ namespace ZE::Exception
 	// Generic exception for simple message
 	class GenericException : public virtual BasicException
 	{
-		std::string info;
 		const char* type;
+		std::string info;
 
 	public:
 		GenericException(U32 line, const char* file, std::string&& note, const char* type = nullptr) noexcept

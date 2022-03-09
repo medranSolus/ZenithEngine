@@ -1,6 +1,8 @@
 #include "GUI/Manager.h"
+#include "WarningGuardOn.h"
 #include "backends/imgui_impl_dx11.h"
 #include "backends/imgui_impl_dx12.h"
+#include "WarningGuardOff.h"
 
 namespace ZE::GUI
 {
@@ -30,7 +32,7 @@ namespace ZE::GUI
 		case GfxApiType::DX12:
 		{
 			auto handles = dev.Get().dx12.AddStaticDescs(1);
-			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Settings::GetBackbufferCount(),
+			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), static_cast<int>(Settings::GetBackbufferCount()),
 				GFX::API::DX::GetDXFormat(Settings::GetBackbufferFormat()),
 				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
 			return;

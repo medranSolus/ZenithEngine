@@ -42,7 +42,7 @@ namespace ZE::GFX::API::DX11
 
 		// Suppress non important messages
 		D3D11_MESSAGE_SEVERITY severities[] = { D3D11_MESSAGE_SEVERITY_INFO };
-		D3D11_INFO_QUEUE_FILTER filter = { 0 };
+		D3D11_INFO_QUEUE_FILTER filter = { { 0 } };
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
 

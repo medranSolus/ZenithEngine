@@ -1,7 +1,7 @@
 #pragma once
-#pragma warning(disable:4265)
+#include "WarningGuardOn.h"
 #include <wrl.h>
-#pragma warning(default:4265)
+#include "WarningGuardOff.h"
 
 namespace ZE::GFX::API::DX
 {

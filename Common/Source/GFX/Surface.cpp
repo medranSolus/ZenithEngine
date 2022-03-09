@@ -9,7 +9,7 @@ namespace ZE::GFX
 		ZE_DXT_ENABLE_EXCEPT();
 		const std::filesystem::path path(name);
 		std::string ext = path.extension().string();
-		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return std::tolower(c); });
+		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 		if (ext == ".dds")
 		{
 			ZE_DXT_THROW_FAILED(Tex::LoadFromDDSFile(Utils::ToUtf8(name).c_str(), Tex::DDS_FLAGS::DDS_FLAGS_FORCE_RGB, nullptr, scratch),
@@ -89,7 +89,7 @@ namespace ZE::GFX
 		ZE_DXT_ENABLE_EXCEPT();
 		const std::filesystem::path path = filename;
 		std::string ext = path.extension().string();
-		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return std::tolower(c); });
+		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
 		if (ext == ".dds")
 		{

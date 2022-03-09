@@ -10,8 +10,11 @@ namespace ZE::GFX::API::DX
 		if (size > 0)
 		{
 			stream << "\n[Debug Error Info]";
-			for (size_t i = 0; i < size; ++i)
+			size_t i = 0;
+			do
+			{
 				stream << "\n[" << i + 1 << "] " << debugInfo.at(i);
+			} while (i++ < size);
 			stream << std::endl;
 		}
 		return stream.str();

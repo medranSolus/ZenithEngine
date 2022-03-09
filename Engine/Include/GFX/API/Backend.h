@@ -244,6 +244,12 @@ namespace ZE::GFX::API
 		##ret## ##variable##.vk.##function##(__VA_ARGS__); \
 		break; \
 	} \
+	default: \
+	{ \
+		ZE_ASSERT(false, "Unhandled enum value!"); \
+		##ret## {}; \
+		break; \
+	} \
 	}
 
 // Wrapper for calling methods on currently active API implementation

@@ -224,6 +224,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 					isSR = true;
 					break;
 				}
+				default:
+					break;
 				}
 			}
 
@@ -551,7 +553,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				dsvHandle.ptr += dsvDescSize;
 			}
 			else
-				rtvDsv[i].ptr = -1;
+				rtvDsv[i].ptr = UINT64_MAX;
 			if (res.IsUAV())
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
@@ -579,7 +581,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				srvUavHandle.second.ptr += srvUavDescSize;
 			}
 			else
-				uav[i - 1].first.ptr = uav[i - 1].second.ptr = -1;
+				uav[i - 1].first.ptr = uav[i - 1].second.ptr = UINT64_MAX;
 			if (res.IsSRV())
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -628,7 +630,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				srvUavHandle.second.ptr += srvUavDescSize;
 			}
 			else
-				srv[i].ptr = -1;
+				srv[i].ptr = UINT64_MAX;
 			++i;
 		}
 
@@ -723,6 +725,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 						computeBefore = true;
 						break;
 					}
+					default:
+						break;
 					}
 				}
 
@@ -742,6 +746,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 					computeAfter = true;
 					break;
 				}
+				default:
+					break;
 				}
 			}
 			if (syncBefore)
@@ -994,6 +1000,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 			device.WaitCopyFromMain(device.SetMainFence());
 			break;
 		}
+		default:
+			break;
 		}
 	}
 
@@ -1020,6 +1028,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				device.WaitMainFromCopy(device.SetCopyFence());
 				break;
 			}
+			default:
+				break;
 			}
 
 			cl.Get().dx12.Open(device);
@@ -1049,6 +1059,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				device.WaitCopyFromMain(device.SetMainFence());
 				break;
 			}
+			default:
+				break;
 			}
 		}
 	}

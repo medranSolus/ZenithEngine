@@ -3,6 +3,15 @@
 
 namespace ZE::Utils
 {
+	std::wstring ToUtf8(const std::string& s) noexcept
+	{
+		std::wstring str;
+		str.reserve(s.size());
+		for (char c : s)
+			str += static_cast<wchar_t>(c);
+		return str;
+	}
+
 	std::string ToAscii(const std::wstring& s) noexcept
 	{
 		std::string str;

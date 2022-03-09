@@ -31,7 +31,7 @@ namespace ZE::GFX::API::DX12::Binding
 		// Gfx API Internal
 
 		constexpr bool IsCompute() const noexcept { return isCompute; }
-		constexpr bool GetCount() const noexcept { return count; }
+		constexpr U32 GetCount() const noexcept { return count; }
 
 		BindType GetCurrentType(U32 index) const noexcept { ZE_ASSERT(index < count, "Access out of range!"); return bindings[index]; }
 		ID3D12RootSignature* GetSignature() const noexcept { return signature.Get(); }

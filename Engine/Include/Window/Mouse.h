@@ -46,9 +46,9 @@ namespace ZE::Window
 
 		public:
 			constexpr Event(Type type, const Mouse& mouse, S32 x, S32 y) noexcept
-				: type(type), x(x), y(y), delta({ x - mouse.x, y - mouse.y }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
+				: type(type), x(x), y(y), delta({ x - mouse.currX, y - mouse.currY }), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			constexpr Event(Type type, const Mouse& mouse, RawInput delta) noexcept
-				: type(type), x(mouse.x), y(mouse.y), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
+				: type(type), x(mouse.currX), y(mouse.currY), delta(delta), left(mouse.left), right(mouse.right), wheel(mouse.wheel) {}
 			ZE_CLASS_DEFAULT(Event);
 			~Event() = default;
 
@@ -68,8 +68,8 @@ namespace ZE::Window
 		// Rotation for high precision mouse wheels https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
 		static constexpr S32 WHEEL_TRESHOLD = 120;
 
-		S32 x = 0;
-		S32 y = 0;
+		S32 currX = 0;
+		S32 currY = 0;
 		S32 wheelRotation = 0;
 		bool left = false;
 		bool right = false;
@@ -97,15 +97,15 @@ namespace ZE::Window
 		ZE_CLASS_DELETE(Mouse);
 		~Mouse() = default;
 
-		constexpr std::pair<S32, S32> GetPosition() const noexcept { return { x, y }; }
-		constexpr S32 GetX() const noexcept { return x; }
-		constexpr S32 GetY() const noexcept { return y; }
+		constexpr std::pair<S32, S32> GetPosition() const noexcept { return { GetX(), GetY() }; }
+		constexpr S32 GetX() const noexcept { return currX; }
+		constexpr S32 GetY() const noexcept { return currY; }
 		constexpr bool IsLeftDown() const noexcept { return left; }
 		constexpr bool IsRightDown() const noexcept { return right; }
 		constexpr bool IsWheelDown() const noexcept { return wheel; }
 		constexpr bool IsInWindow() const noexcept { return window; }
 
-		bool IsInput() const noexcept { return eventBuffer.size(); }
+		bool IsInput() const noexcept { return static_cast<bool>(eventBuffer.size()); }
 		void Flush() noexcept { eventBuffer = std::deque<Event>{}; }
 
 		std::optional<Event> Read() noexcept;

@@ -42,6 +42,9 @@ namespace ZE::GFX::API::DX12
 		U64 frequency = 0;
 		switch (listType)
 		{
+		default:
+		case D3D12_COMMAND_LIST_TYPE_BUNDLE:
+			ZE_ASSERT(false, "Unhandled enum value!");
 		case D3D12_COMMAND_LIST_TYPE_DIRECT:
 		{
 			dev.Get().dx12.GetQueueMain()->GetTimestampFrequency(&frequency);
@@ -61,7 +64,7 @@ namespace ZE::GFX::API::DX12
 		long double megaFrequency = static_cast<long double>(frequency) / 1000000.0L;
 		U64* timestamps = nullptr;
 		data->Map(0, nullptr, reinterpret_cast<void**>(&timestamps));
-		megaFrequency = (timestamps[1] - timestamps[0]) / megaFrequency;
+		megaFrequency = static_cast<long double>(timestamps[1] - timestamps[0]) / megaFrequency;
 		data->Unmap(0, nullptr);
 		return megaFrequency;
 	}

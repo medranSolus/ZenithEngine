@@ -209,7 +209,7 @@ namespace ZE::GFX::API::DX12::Resource
 		ZE_ASSERT(desc.RenderTargetsCount < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
 		for (stateDesc.NumRenderTargets = 0; stateDesc.NumRenderTargets < desc.RenderTargetsCount; ++stateDesc.NumRenderTargets)
 			stateDesc.RTVFormats[stateDesc.NumRenderTargets] = DX::GetDXFormat(desc.FormatsRT[stateDesc.NumRenderTargets]);
-		for (U8 i = stateDesc.NumRenderTargets; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+		for (U8 i = static_cast<U8>(stateDesc.NumRenderTargets); i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
 			stateDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
 		stateDesc.DSVFormat = DX::GetDXFormat(desc.FormatDS);
 

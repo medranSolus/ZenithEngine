@@ -18,8 +18,8 @@ namespace ZE
 		ZE_CLASS_DEFAULT(Pixel);
 		~Pixel() = default;
 
-		constexpr U32 GetRGBA() const noexcept { return Red | (Green << 8) | (Blue << 16) | (Alpha << 24); }
-		constexpr U32 GetBGRA() const noexcept { return Blue | (Green << 8) | (Red << 16) | (Alpha << 24); }
+		constexpr U32 GetRGBA() const noexcept { return static_cast<U32>(Red | (Green << 8) | (Blue << 16) | (Alpha << 24)); }
+		constexpr U32 GetBGRA() const noexcept { return static_cast<U32>(Blue | (Green << 8) | (Red << 16) | (Alpha << 24)); }
 		constexpr operator U32() const noexcept { return GetRGBA(); }
 
 		constexpr bool operator==(const Pixel& c) const noexcept { return static_cast<const U32&>(*this) == static_cast<const U32&>(c); }

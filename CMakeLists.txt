@@ -14,7 +14,7 @@ set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
 
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
-option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" ON)
+option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
@@ -137,11 +137,29 @@ else()
 	message(FATAL_ERROR "Building for unsupported platform!")
 endif()
 
-# Compiler specific flags (remove 4250 later when ECS system created)
+# Compiler specific flags
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
 	# Move to C++/WinRT with /ZW /EHsc when /ZW can be used with /std:c++latest
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /w34265 /wd4250 /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
+	# C4265 - class with virtual functions does not have virutal destructor
+	# C4061 - not all enums are explicitly handled in switch where `default` is present
+	# C4668 - not defined as preprocessor macro in #if/#elif
+	# C4820 - X bytes padding added after data member
+	# C4514 - unreferenced inline function has been removed
+	# C5045 - compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+	# C4100 - unreferenced formal parameter
+	# C4582 - constructor is not implicitly called
+	# C4583 - destructor is not implicitly called
+	# C4623 - default constructor was implicitly defined as deleted
+	# C4625 - copy constructor was implicitly defined as deleted
+	# C4626 - assignment operator was implicitly defined as deleted
+	# C5026 - move constructor was implicitly defined as deleted
+	# C5027 - move assignment operator was implicitly defined as deleted
+	# C4365 - signed/unsigned mismatch
+	# C4652 - compiler option inconsistent with precompiled header; current command-line option will override that defined in the precompiled header
+	#	Note: Caused by removing /Wall from CXX_FLAGS and then setting it for specific files, due to ImGui warnings, maybe /W4 would suffice?
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)
@@ -156,17 +174,17 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 
 # General flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION")
-if(ZE_USE_WIDE_ENTITY_ID)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENTT_ID_TYPE=std::uint64_t")
-endif()
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
-if(ZE_DEBUG_FRAME_MEMORY_PRINT)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_MEMORY_PRINT")
-endif()
 if(ZE_RENDERER_SINGLE_THREAD)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_RENDER_GRAPH_SINGLE_THREAD")
 endif()
+if(ZE_USE_WIDE_ENTITY_ID)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENTT_ID_TYPE=std::uint64_t")
+endif()
+if(ZE_DEBUG_FRAME_MEMORY_PRINT)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_MEMORY_PRINT")
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
 set(COMPILER_REL_CXX_FLAGS "${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=1")
 set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS}")

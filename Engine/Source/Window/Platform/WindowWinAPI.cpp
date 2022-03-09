@@ -1,5 +1,7 @@
 #include "Window/Platform/WindowWinAPI.h"
+#include "WarningGuardOn.h"
 #include "backends/imgui_impl_win32.h"
+#include "WarningGuardOff.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -7,20 +9,20 @@ namespace ZE::Window::WinAPI
 {
 	WindowWinAPI::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
 	{
-		WNDCLASSEX wndClass = { 0 };
-		wndClass.cbClsExtra = 0;
-		wndClass.cbWndExtra = 0;
-		wndClass.hInstance = hInstance;
-		wndClass.cbSize = sizeof(wndClass);
-		wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW);
-		wndClass.hCursor = nullptr;
-		wndClass.lpszMenuName = nullptr;
-		wndClass.style = CS_OWNDC;
-		wndClass.lpszClassName = WND_CLASS_NAME;
-		wndClass.lpfnWndProc = HandleMsgSetup;
-		wndClass.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
-		wndClass.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
-		RegisterClassEx(&wndClass);
+		WNDCLASSEX wndClassEx = { 0 };
+		wndClassEx.cbClsExtra = 0;
+		wndClassEx.cbWndExtra = 0;
+		wndClassEx.hInstance = hInstance;
+		wndClassEx.cbSize = sizeof(wndClassEx);
+		wndClassEx.hbrBackground = (HBRUSH)(COLOR_WINDOW);
+		wndClassEx.hCursor = nullptr;
+		wndClassEx.lpszMenuName = nullptr;
+		wndClassEx.style = CS_OWNDC;
+		wndClassEx.lpszClassName = WND_CLASS_NAME;
+		wndClassEx.lpfnWndProc = HandleMsgSetup;
+		wndClassEx.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
+		wndClassEx.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
+		RegisterClassEx(&wndClassEx);
 	}
 
 	LRESULT WINAPI WindowWinAPI::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
@@ -207,20 +209,20 @@ namespace ZE::Window::WinAPI
 	void WindowWinAPI::TrapCursor() const noexcept
 	{
 		RECT rect;
-		GetClientRect(hWnd, &rect);
-		MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+		GetClientRect(wndHandle, &rect);
+		MapWindowPoints(wndHandle, nullptr, reinterpret_cast<POINT*>(&rect), 2);
 		ClipCursor(&rect);
 	}
 
 	void WindowWinAPI::EnterFullscreen() noexcept
 	{
 		// Set the window style to a borderless window so the client area fills the entire screen.
-		SetWindowLong(hWnd, GWL_STYLE, WS_POPUP);
+		SetWindowLong(wndHandle, GWL_STYLE, WS_POPUP);
 
 		// Query the nearest display device for the window.
 		// This is required to set the fullscreen dimensions of the window
 		// when using a multi-monitor setup.
-		HMONITOR monitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+		HMONITOR monitor = MonitorFromWindow(wndHandle, MONITOR_DEFAULTTONEAREST);
 		MONITORINFOEX monitorInfo = {};
 		monitorInfo.cbSize = sizeof(MONITORINFOEX);
 		GetMonitorInfo(monitor, &monitorInfo);
@@ -231,26 +233,26 @@ namespace ZE::Window::WinAPI
 		devMode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
 
-		SetWindowPos(hWnd, HWND_TOP, devMode.dmPosition.x, devMode.dmPosition.y,
+		SetWindowPos(wndHandle, HWND_TOP, devMode.dmPosition.x, devMode.dmPosition.y,
 			devMode.dmPosition.x + devMode.dmPelsWidth, devMode.dmPosition.y + devMode.dmPelsHeight,
 			SWP_FRAMECHANGED | SWP_NOACTIVATE);
-		ShowWindow(hWnd, SW_MAXIMIZE);
+		ShowWindow(wndHandle, SW_MAXIMIZE);
 	}
 
 	void WindowWinAPI::LeaveFullscreen() noexcept
 	{
 		// Restore all the window decorators.
-		SetWindowLong(hWnd, GWL_STYLE, WIN_STYLE);
+		SetWindowLong(wndHandle, GWL_STYLE, WIN_STYLE);
 
-		SetWindowPos(hWnd, HWND_NOTOPMOST, windowRect.left, windowRect.top,
+		SetWindowPos(wndHandle, HWND_NOTOPMOST, windowRect.left, windowRect.top,
 			GetWidth(), GetHeight(), SWP_FRAMECHANGED | SWP_NOACTIVATE);
-		ShowWindow(hWnd, SW_NORMAL);
+		ShowWindow(wndHandle, SW_NORMAL);
 	}
 
 	WindowWinAPI::~WindowWinAPI()
 	{
 		ImGui_ImplWin32_Shutdown();
-		DestroyWindow(hWnd);
+		DestroyWindow(wndHandle);
 	}
 
 	void WindowWinAPI::Init(const char* name, U32 width, U32 height)
@@ -289,22 +291,22 @@ namespace ZE::Window::WinAPI
 			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
 		}
 
-		hWnd = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
+		wndHandle = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
 			windowRect.left, windowRect.top, GetWidth(), GetHeight(),
 			nullptr, nullptr, wndClass.GetInstance(), this);
-		if (hWnd == nullptr)
+		if (wndHandle == nullptr)
 			throw ZE_WIN_EXCEPT_LAST();
 
 		if (width == 0 || height == 0)
 		{
-			ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+			ShowWindow(wndHandle, SW_SHOWMAXIMIZED);
 			// Get maximized client area
-			if (GetClientRect(hWnd, &windowRect) == 0)
+			if (GetClientRect(wndHandle, &windowRect) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
 		}
 		else
-			ShowWindow(hWnd, SW_SHOW);
-		ImGui_ImplWin32_Init(hWnd);
+			ShowWindow(wndHandle, SW_SHOW);
+		ImGui_ImplWin32_Init(wndHandle);
 
 		RAWINPUTDEVICE rid;
 		rid.usUsagePage = 1; // Mouse page
@@ -330,7 +332,7 @@ namespace ZE::Window::WinAPI
 
 	void WindowWinAPI::SetTitle(const std::string& title)
 	{
-		if (SetWindowText(hWnd, title.c_str()) == 0)
+		if (SetWindowText(wndHandle, title.c_str()) == 0)
 			throw ZE_WIN_EXCEPT_LAST();
 	}
 

@@ -1,5 +1,8 @@
 #pragma once
 
+// Suppress external warnings
+#include "WarningGuardOn.h"
+
 // Define target system to Windows 10
 // https://docs.microsoft.com/pl-pl/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
 #define _WIN32_WINNT 0x0A00
@@ -91,3 +94,4 @@
 #define _USE_MATH_DEFINES
 
 #include <Windows.h>
+#include "WarningGuardOff.h"

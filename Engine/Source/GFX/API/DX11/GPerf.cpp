@@ -40,7 +40,7 @@ namespace ZE::GFX::API::DX11
 			while (dev.Get().dx11.GetMainContext()->GetData(end.Get(), &ticksEnd, sizeof(U64), 0) != S_OK);
 
 			const long double megaFrequency = static_cast<long double>(dataDisjoint.Frequency) / 1000000.0L;
-			return (ticksEnd - ticksBegin) / megaFrequency;
+			return static_cast<long double>(ticksEnd - ticksBegin) / megaFrequency;
 		}
 		return 0.0L;
 	}

@@ -114,7 +114,7 @@ namespace ZE::GFX::API::DX12::Binding
 						"Too much shader slots!");
 
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-					tables.emplace_back(i, std::make_pair(1, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
+					tables.emplace_back(i, std::make_pair(1U, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
 					bindings[i++] = BindType::Table;
 
 					auto& range = tables.back().second.second[0];

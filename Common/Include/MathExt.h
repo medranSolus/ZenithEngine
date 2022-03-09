@@ -24,7 +24,7 @@ namespace ZE::Math
 		return { ToDegrees(angles.x), ToDegrees(angles.y), ToDegrees(angles.z) };
 	}
 
-	constexpr short ClampAngle(U16 angle, U16 maxAngle = 360) noexcept
+	constexpr S16 ClampAngle(S16 angle, S16 maxAngle = 360) noexcept
 	{
 		if (angle > maxAngle)
 			return maxAngle;

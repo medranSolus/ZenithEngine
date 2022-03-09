@@ -8,7 +8,7 @@ namespace ZE::Data
 	// Component representing single object in the scene
 	struct Entity
 	{
-		static constexpr EID INVALID_ID = -1;
+		static constexpr EID INVALID_ID = UINT64_MAX;
 
 		EID ID;
 		EID ParentID = INVALID_ID;

@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
-		Data* passData = new Data{ worldData };
+		Data* passData = new Data{ { worldData } };
 		ShadowMapCube::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow);
 
 		Binding::SchemaDesc desc;

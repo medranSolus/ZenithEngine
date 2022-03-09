@@ -88,29 +88,29 @@ namespace ZE::GFX::Primitive
 		for (U64 i = 1; i < density; ++i)
 		{
 			Math::XMStoreFloat3(&data.Vertices.at(i + 1),
-				Math::XMVector3Transform(base, Math::XMMatrixRotationY(angle * i)));
+				Math::XMVector3Transform(base, Math::XMMatrixRotationY(angle * static_cast<float>(i))));
 		}
 
 		data.Indices.reserve(static_cast<U64>(density - 1) * 6);
 		for (U32 i = 2; i < density; ++i)
 		{
 			// Cone wall
-			data.Indices.emplace_back(0);
+			data.Indices.emplace_back(0U);
 			data.Indices.emplace_back(i);
 			data.Indices.emplace_back(i + 1);
 			// Cone base
-			data.Indices.emplace_back(1);
+			data.Indices.emplace_back(1U);
 			data.Indices.emplace_back(i + 1);
 			data.Indices.emplace_back(i);
 		}
 		// First wall
-		data.Indices.emplace_back(0);
-		data.Indices.emplace_back(1);
-		data.Indices.emplace_back(2);
+		data.Indices.emplace_back(0U);
+		data.Indices.emplace_back(1U);
+		data.Indices.emplace_back(2U);
 		// Last wall
-		data.Indices.emplace_back(0);
+		data.Indices.emplace_back(0U);
 		data.Indices.emplace_back(density);
-		data.Indices.emplace_back(1);
+		data.Indices.emplace_back(1U);
 
 		return data;
 	}
