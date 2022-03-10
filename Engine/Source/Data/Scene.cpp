@@ -27,6 +27,30 @@ namespace ZE::Data
 			Table::Append<1>(CameraInfo, Cameras, camera);
 	}
 
+	void Scene::AddTransform(EID entity, const Transform& transform) noexcept
+	{
+		ZE_ASSERT(!TransformPositions.contains(entity), "Entity already contains Transform component!");
+
+		TransformPositions.emplace(entity, TransformInfo.Size);
+		if (TransformEntities == nullptr)
+		{
+			ZE_ASSERT(TransformsLocal == nullptr && TransformsGlobal == nullptr, "When single column in component group is null all should be!");
+
+			TransformEntities = Table::Create(1U, entity);
+			TransformsLocal = Table::Create(1U, transform);
+			TransformsGlobal = Table::Create(1U, transform);
+		}
+		else
+		{
+			ZE_ASSERT(TransformsLocal && TransformsGlobal, "When single column in component group is present all should be!");
+
+			Table::AppendBegin<1>(TransformInfo, TransformEntities, entity);
+			Table::AppendBegin<1>(TransformInfo, TransformsLocal, transform);
+			Table::AppendBegin<1>(TransformInfo, TransformsGlobal, transform);
+			Table::AppendEnd<1>(TransformInfo);
+		}
+	}
+
 	void Scene::UpdateTransforms() noexcept
 	{
 		ZE_ASSERT(EntityInfo.Size == 0 || Entities[EntityInfo.Size - 1].ParentID == Data::Entity::INVALID_ID,

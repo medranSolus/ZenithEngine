@@ -32,6 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"LightVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.PS, L"SpotLightPS", buildData.ShaderCache);
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;
 		psoDesc.SetDepthClip(false);

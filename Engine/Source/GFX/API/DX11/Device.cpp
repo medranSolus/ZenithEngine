@@ -30,11 +30,11 @@ namespace ZE::GFX::API::DX11
 		ZE_GFX_THROW_FAILED(D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
 			ZE_NO_DEBUG ? 0 : D3D11_CREATE_DEVICE_DEBUG, features, 1,
 			D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr));
-		ZE_GFX_THROW_FAILED(tempDevice->QueryInterface(IID_PPV_ARGS(&device)));
+		ZE_GFX_THROW_FAILED(tempDevice.As(device));
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D11InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)));
+		ZE_GFX_THROW_FAILED(device.As(infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -53,16 +53,6 @@ namespace ZE::GFX::API::DX11
 		ZE_GFX_THROW_FAILED(tempCtx->QueryInterface(IID_PPV_ARGS(&context)));
 #ifdef _ZE_MODE_DEBUG
 		ZE_GFX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
-#endif
-	}
-
-	Device::~Device()
-	{
-#ifdef _ZE_MODE_DEBUG
-		DX::ComPtr<ID3D11Debug> debug;
-		device->QueryInterface(IID_PPV_ARGS(&debug));
-		if (debug != nullptr)
-			debug->ReportLiveDeviceObjects(D3D11_RLDO_IGNORE_INTERNAL);
 #endif
 	}
 

@@ -75,6 +75,7 @@ namespace ZE::Data
 		// Maybe move out of Scene as independent functions
 		EID CreateEntity() noexcept;
 		void AddCamera(EID entity, const Camera& camera) noexcept;
+		void AddTransform(EID entity, const Transform& transform) noexcept;
 		void UpdateTransforms() noexcept;
 	};
 }

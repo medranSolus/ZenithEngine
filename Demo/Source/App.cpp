@@ -39,7 +39,19 @@ App::App(const std::string& commandLine)
 {
 	engine.Reneder().SetActiveScene(scene);
 	camera = scene.CreateEntity();
-	scene.AddCamera(camera, {});
+	Data::Camera camData =
+	{
+		{ 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 1.0f, 0.0f },
+		{
+			Math::ToRadians(60.0f),
+			static_cast<float>(engine.Reneder().GetFrameWidth()) / static_cast<float>(engine.Reneder().GetFrameHeight()),
+			0.001f, 1000.0f
+		}
+	};
+	scene.AddCamera(camera, camData);
+	scene.AddTransform(camera, { { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } });
+	scene.CurrentProjection = Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ScreenRatio, camData.Projection.NearClip, camData.Projection.FarClip);
 }
 
 int App::Run()

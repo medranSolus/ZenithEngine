@@ -39,7 +39,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					data[j].SysMemPitch = static_cast<U32>(surface.GetRowByteSize());
 					data[j].SysMemSlicePitch = 0;
 				}
-				Microsoft::WRL::ComPtr<ID3D11Texture3D> texture;
+				DX::ComPtr<ID3D11Texture3D> texture;
 				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateTexture3D(&texDesc, data, &texture));
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;

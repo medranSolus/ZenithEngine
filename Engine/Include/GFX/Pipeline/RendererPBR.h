@@ -28,7 +28,9 @@ namespace ZE::GFX::Pipeline
 		~RendererPBR();
 
 		constexpr void SetActiveScene(const Data::Scene& scene) noexcept { worldData.ActiveScene = &scene; }
-		
+		constexpr U32 GetFrameWidth() const noexcept { return settingsData.FrameDimmensions.x; }
+		constexpr U32 GetFrameHeight() const noexcept { return settingsData.FrameDimmensions.y; }
+
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
 		void UpdateWorldData(Device& dev, Data::EID camera) noexcept;

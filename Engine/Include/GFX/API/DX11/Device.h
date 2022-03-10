@@ -28,7 +28,7 @@ namespace ZE::GFX::API::DX11
 		Device() = default;
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
-		~Device();
+		~Device() = default;
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, scratchDescriptorCount }; }
 
@@ -82,6 +82,7 @@ namespace ZE::GFX::API::DX11
 #ifdef _ZE_MODE_DEBUG
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
+		constexpr const DX::ComPtr<ID3D11Device5>& GetDev() const noexcept { return device; }
 		ID3D11Device5* GetDevice() const noexcept { return device.Get(); }
 		ID3D11DeviceContext4* GetMainContext() const noexcept { return context.Get(); }
 	};

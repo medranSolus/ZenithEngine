@@ -349,8 +349,6 @@ namespace ZE::GFX::Pipeline
 				Math::XMLoadFloat3(&currentCamera.EyeDirection),
 				Math::XMLoadFloat3(&currentCamera.UpVector)) *
 			worldData.ActiveScene->CurrentProjection;
-		/*Math::XMMatrixPerspectiveFovLH(Math::ToRadians(60.0f),
-			static_cast<float>(settingsData.FrameDimmensions.x) / settingsData.FrameDimmensions.y, settingsData.NearClip, settingsData.FarClip);*/
 		data.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, data.ViewProjection));
 		data.ViewProjection = Math::XMMatrixTranspose(data.ViewProjection);
 		worldData.DynamicDataBuffer.Update(dev, &data, sizeof(Info::DynamicWorldData));

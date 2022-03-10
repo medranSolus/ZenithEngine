@@ -5,7 +5,6 @@
 #include "DebugInfoManager.h"
 #include "WarningGuardOn.h"
 #include <dxgi1_6.h>
-#include <d3dcommon.h>
 #include <d3dcompiler.h>
 #include "WarningGuardOff.h"
 

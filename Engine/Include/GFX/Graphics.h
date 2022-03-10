@@ -8,14 +8,14 @@ namespace ZE::GFX
 	// Main interactions with GPU rendering objects
 	class Graphics final
 	{
+		Device device;
 		SwapChain swapChain;
 		CommandList mainList;
-		Device device;
 
 	public:
 		Graphics() = default;
 		ZE_CLASS_DELETE(Graphics);
-		~Graphics() = default;
+		~Graphics() { device.WaitMain(device.SetMainFence()); }
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList; }

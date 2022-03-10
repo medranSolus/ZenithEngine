@@ -124,6 +124,7 @@ namespace ZE::GFX::API::DX12
 #endif
 		constexpr AllocTier GetCurrentAllocTier() const noexcept { return allocTier; }
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
+		constexpr const DX::ComPtr<ID3D12Device8>& GetDev() const noexcept { return device; }
 
 		ID3D12Device8* GetDevice() const noexcept { return device.Get(); }
 		ID3D12CommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }

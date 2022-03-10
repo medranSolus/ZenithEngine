@@ -75,7 +75,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED_NOINFO(device->QueryInterface(IID_PPV_ARGS(&infoQueue)));
+		ZE_GFX_THROW_FAILED_NOINFO(device.As(infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -160,13 +160,6 @@ namespace ZE::GFX::API::DX12
 			allocTier2.~AllocatorTier2();
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
-
-#ifdef _ZE_MODE_DEBUG
-		DX::ComPtr<ID3D12DebugDevice> debug;
-		device->QueryInterface(IID_PPV_ARGS(&debug));
-		if (debug != nullptr)
-			debug->ReportLiveDeviceObjects(D3D12_RLDO_IGNORE_INTERNAL);
-#endif
 	}
 
 	void Device::BeginUploadRegion()
@@ -431,6 +424,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
 
+		DX::ComPtr<ID3D12Resource> ptr(source.pResource);
 		copyList.GetList()->CopyTextureRegion(&dest, 0, 0, 0, &source, nullptr);
 		if (dest.SubresourceIndex == 0)
 			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, dest.pResource, source.pResource));

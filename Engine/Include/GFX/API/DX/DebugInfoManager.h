@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX
 	public:
 		DebugInfoManager();
 		ZE_CLASS_MOVE(DebugInfoManager);
-		~DebugInfoManager() { debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_IGNORE_INTERNAL); }
+		~DebugInfoManager() { infoQueue.Reset(); debug->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)); }
 
 		void BeginRecord() noexcept { offset = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL); }
 

@@ -13,7 +13,7 @@ namespace ZE::GFX
 	public:
 		Device() = default;
 		ZE_CLASS_DELETE(Device);
-		~Device() { WaitMain(SetMainFence()); }
+		~Device() = default;
 
 		constexpr void Init(U32 descriptorCount, U32 scratchDescriptorCount) { ZE_API_BACKEND_VAR.Init(descriptorCount, scratchDescriptorCount); }
 		ZE_API_BACKEND_GET(Device);
