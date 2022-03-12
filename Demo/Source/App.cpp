@@ -30,15 +30,14 @@ void App::MakeFrame()
 {
 	engine.BeginFrame();
 	ImGui::ShowDemoWindow();
-	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), camera);
+	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), camera, currentProjection);
 	engine.EndFrame();
 }
 
 App::App(const std::string& commandLine)
 	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 8000, { "Skybox/Space", ".png" } })
 {
-	engine.Reneder().SetActiveScene(scene);
-	camera = scene.CreateEntity();
+	camera = engine.GetData().create();
 	Data::Camera camData =
 	{
 		{ 0.0f, 0.0f, 1.0f },
@@ -49,9 +48,9 @@ App::App(const std::string& commandLine)
 			0.001f, 1000.0f
 		}
 	};
-	scene.AddCamera(camera, camData);
-	scene.AddTransform(camera, { { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } });
-	scene.CurrentProjection = Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ScreenRatio, camData.Projection.NearClip, camData.Projection.FarClip);
+	engine.GetData().emplace<Data::Camera>(camera, camData);
+	engine.GetData().emplace<Data::Transform>(camera, Data::Transform({ 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
+	currentProjection = Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ScreenRatio, camData.Projection.NearClip, camData.Projection.FarClip);
 }
 
 int App::Run()
@@ -63,7 +62,7 @@ int App::Run()
 		if (status.first)
 			return status.second;
 		ProcessInput();
-		scene.UpdateTransforms();
+		//scene.UpdateTransforms();
 		MakeFrame();
 	}
 	return 0;

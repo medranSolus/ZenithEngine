@@ -152,11 +152,7 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
 	{
 		BeforeSync(dev, pass.Syncs);
-		if (pass.Execute)
-		{
-			RendererExecuteData data{ dev, cl, frameBuffer, bindings, settingsBuffer, sharedStates };
-			pass.Execute(data, pass.Data);
-		}
+		pass.Execute(dev, cl, execData, pass.Data);
 		AfterSync(dev, pass.Syncs);
 	}
 
@@ -424,6 +420,7 @@ namespace ZE::GFX::Pipeline
 						auto& pass = passes[i].first[passes[i].second];
 						passSync = &pass.Syncs;
 						pass.Execute = node.GetExecuteCallback();
+						ZE_ASSERT(pass.Execute, "Empty execution callbak!");
 						pass.Data.Buffers = node.GetNodeRIDs();
 						pass.Data.OptData = node.GetExecuteData();
 						passesCleaners[i][passes[i].second] = node.GetCleanCallback();
@@ -650,14 +647,14 @@ namespace ZE::GFX::Pipeline
 #endif
 
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
-		frameBuffer.Init(dev, mainList, frameBufferDesc);
+		execData.Buffers.Init(dev, mainList, frameBufferDesc);
 
 		// Create shared gfx states
 		if (buildData.PipelineStates.size())
 		{
-			sharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
+			execData.SharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
 			for (U64 i = 0; const auto & state : buildData.PipelineStates)
-				sharedStates[i++].Init(dev, state.second.second.first, bindings.GetSchema(state.second.first));
+				execData.SharedStates[i++].Init(dev, state.second.second.first, execData.Bindings.GetSchema(state.second.first));
 		}
 
 		// Compute static passes
@@ -671,8 +668,7 @@ namespace ZE::GFX::Pipeline
 				staticPassData.Buffers = node.GetNodeRIDs();
 				// Optional data is not supported for static RenderPass
 				staticPassData.OptData = nullptr;
-				RendererExecuteData executeData{ dev, level.Commands[location.second.second], frameBuffer, bindings, settingsBuffer, sharedStates };
-				node.GetExecuteCallback()(executeData, staticPassData);
+				node.GetExecuteCallback()(dev, level.Commands[location.second.second], execData, staticPassData);
 				staticPassData.Buffers.DeleteArray();
 			}
 			++i;
@@ -717,8 +713,8 @@ namespace ZE::GFX::Pipeline
 				staticPasses[0].Commands.DeleteArray();
 			staticPasses.DeleteArray();
 		}
-		if (sharedStates)
-			sharedStates.DeleteArray();
+		if (execData.SharedStates)
+			execData.SharedStates.DeleteArray();
 	}
 
 	void RenderGraph::Execute(Graphics& gfx)
@@ -727,14 +723,14 @@ namespace ZE::GFX::Pipeline
 		CommandList& mainList = gfx.GetMainList();
 
 		dev.WaitMain(dev.GetMainFence());
-		frameBuffer.SwapBackbuffer(dev, gfx.GetSwapChain());
+		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 		mainList.Reset(dev);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		for (U64 i = 0; i < workersCount; ++i)
 			workerThreads[i].second.Reset(dev);
 #endif
 
-		frameBuffer.InitTransitions(dev, mainList);
+		execData.Buffers.InitTransitions(dev, mainList);
 		for (U64 i = 0; i < levelCount; ++i)
 		{
 			ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
@@ -761,7 +757,7 @@ namespace ZE::GFX::Pipeline
 					ExecuteThread(dev, mainList, level.first[j]);
 #endif
 			}
-			frameBuffer.ExitTransitions(dev, mainList, i);
+			execData.Buffers.ExitTransitions(dev, mainList, i);
 			ZE_DRAW_TAG_END_MAIN(dev);
 		}
 	}

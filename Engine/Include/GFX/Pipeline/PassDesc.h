@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline
 	};
 
 	// Callback for pass execution
-	typedef void (*PassExecuteCallback)(RendererExecuteData&, PassData&);
+	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererExecuteData&, PassData&);
 	// Callback for cleaning optional pass data
 	typedef void (*PassCleanCallback)(void*);
 

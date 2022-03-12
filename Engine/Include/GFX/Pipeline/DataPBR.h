@@ -36,4 +36,14 @@ namespace ZE::GFX::Pipeline
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];
 	};
+
+	// Dynamic constant buffer data used by RendererPBR
+	struct CameraPBR
+	{
+		Matrix ViewProjection;
+		Matrix ViewProjectionInverse;
+		Float3 CameraPos;
+		float NearClip;
+		float FarClip;
+	};
 }

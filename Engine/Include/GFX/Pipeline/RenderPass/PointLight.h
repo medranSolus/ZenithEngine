@@ -16,9 +16,9 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		RID ShadowMapDepth;
 	};
 
-	struct Data
+	struct ExecuteData
 	{
-		ShadowMapCube::Data ShadowData;
+		ShadowMapCube::ExecuteData ShadowData;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 		std::vector<Resource::CBuffer> TransformBuffers;
@@ -26,10 +26,10 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		Resource::IndexBuffer VolumeIB;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
+	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData,
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth);
-	void Execute(RendererExecuteData& renderData, PassData& passData);
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

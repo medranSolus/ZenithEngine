@@ -1,93 +1,44 @@
-#include "Data/Scene.h"
+//#include "Data/Scene.h"
 
 namespace ZE::Data
 {
-	EID Scene::CreateEntity() noexcept
+	void UpdateTransforms() noexcept
 	{
-		Entity entity = {};
-		EID id = EntityInfo.Size;
-		while (EntityPositions.contains(id))
-			++id;
-		EntityPositions.emplace(id, EntityInfo.Size);
-		if (Entities == nullptr)
-			Entities = Table::Create(1U, Entity(id));
-		else
-			Table::Append<1>(EntityInfo, Entities, id);
-		return id;
-	}
+		//ZE_ASSERT(EntityInfo.Size == 0 || Entities[EntityInfo.Size - 1].ParentID == Data::Entity::INVALID_ID,
+		//	"Last entity cannot be child enitty!");
 
-	void Scene::AddCamera(EID entity, const Camera& camera) noexcept
-	{
-		ZE_ASSERT(!CameraPositions.contains(entity), "Entity already contains Camera component!");
+		//// Update global transforms of every root entity
+		//EID i = TransformInfo.Size;
+		//while (i)
+		//{
+		//	Data::Entity entity = GetEntity(TransformEntities[--i]);
+		//	if (entity.ParentID != Data::Entity::INVALID_ID)
+		//		break;
+		//	TransformsGlobal[i] = TransformsLocal[i];
+		//}
 
-		CameraPositions.emplace(entity, CameraInfo.Size);
-		if (Cameras == nullptr)
-			Cameras = Table::Create(1U, camera);
-		else
-			Table::Append<1>(CameraInfo, Cameras, camera);
-	}
+		//// Update every child entity
+		//while (i)
+		//{
+		//	EID parentID = GetEntity(TransformEntities[--i]).ParentID;
+		//	ZE_ASSERT(parentID != Data::Entity::INVALID_ID, "Root entities should be already processed!");
 
-	void Scene::AddTransform(EID entity, const Transform& transform) noexcept
-	{
-		ZE_ASSERT(!TransformPositions.contains(entity), "Entity already contains Transform component!");
+		//	const Data::Transform& parent = TransformsGlobal[TransformPositions.at(parentID)];
+		//	const Data::Transform& local = TransformsLocal[i];
+		//	Data::Transform& global = TransformsGlobal[i];
 
-		TransformPositions.emplace(entity, TransformInfo.Size);
-		if (TransformEntities == nullptr)
-		{
-			ZE_ASSERT(TransformsLocal == nullptr && TransformsGlobal == nullptr, "When single column in component group is null all should be!");
-
-			TransformEntities = Table::Create(1U, entity);
-			TransformsLocal = Table::Create(1U, transform);
-			TransformsGlobal = Table::Create(1U, transform);
-		}
-		else
-		{
-			ZE_ASSERT(TransformsLocal && TransformsGlobal, "When single column in component group is present all should be!");
-
-			Table::AppendBegin<1>(TransformInfo, TransformEntities, entity);
-			Table::AppendBegin<1>(TransformInfo, TransformsLocal, transform);
-			Table::AppendBegin<1>(TransformInfo, TransformsGlobal, transform);
-			Table::AppendEnd<1>(TransformInfo);
-		}
-	}
-
-	void Scene::UpdateTransforms() noexcept
-	{
-		ZE_ASSERT(EntityInfo.Size == 0 || Entities[EntityInfo.Size - 1].ParentID == Data::Entity::INVALID_ID,
-			"Last entity cannot be child enitty!");
-
-		// Update global transforms of every root entity
-		EID i = TransformInfo.Size;
-		while (i)
-		{
-			Data::Entity entity = GetEntity(TransformEntities[--i]);
-			if (entity.ParentID != Data::Entity::INVALID_ID)
-				break;
-			TransformsGlobal[i] = TransformsLocal[i];
-		}
-
-		// Update every child entity
-		while (i)
-		{
-			EID parentID = GetEntity(TransformEntities[--i]).ParentID;
-			ZE_ASSERT(parentID != Data::Entity::INVALID_ID, "Root entities should be already processed!");
-
-			const Data::Transform& parent = TransformsGlobal[TransformPositions.at(parentID)];
-			const Data::Transform& local = TransformsLocal[i];
-			Data::Transform& global = TransformsGlobal[i];
-
-			Math::XMStoreFloat4(&global.Rotation,
-				Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(
-					Math::XMLoadFloat4(&parent.Rotation),
-					Math::XMLoadFloat4(&local.Rotation))));
-			Math::XMStoreFloat3(&global.Position,
-				Math::XMVectorAdd(
-					Math::XMLoadFloat3(&global.Position),
-					Math::XMLoadFloat3(&local.Position)));
-			Math::XMStoreFloat3(&global.Scale,
-				Math::XMVectorMultiply(
-					Math::XMLoadFloat3(&global.Scale),
-					Math::XMLoadFloat3(&local.Scale)));
-		}
+		//	Math::XMStoreFloat4(&global.Rotation,
+		//		Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(
+		//			Math::XMLoadFloat4(&parent.Rotation),
+		//			Math::XMLoadFloat4(&local.Rotation))));
+		//	Math::XMStoreFloat3(&global.Position,
+		//		Math::XMVectorAdd(
+		//			Math::XMLoadFloat3(&global.Position),
+		//			Math::XMLoadFloat3(&local.Position)));
+		//	Math::XMStoreFloat3(&global.Scale,
+		//		Math::XMVectorMultiply(
+		//			Math::XMLoadFloat3(&global.Scale),
+		//			Math::XMLoadFloat3(&local.Scale)));
+		//}
 	}
 }

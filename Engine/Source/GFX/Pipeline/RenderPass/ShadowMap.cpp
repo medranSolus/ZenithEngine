@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
-	void Setup(Device& dev, RendererBuildData& buildData, Data& passData,
+	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection)
 	{
 		Binding::SchemaDesc desc;
@@ -41,8 +41,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		passData.Projection = std::move(projection);
 	}
 
-	Matrix Execute(RendererExecuteData& renderData, Data& data, const Resources& ids,
-		const Float3& lightPos, const Float3& lightDir)
+	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, const Float3& lightDir)
 	{
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
@@ -51,123 +51,120 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f }, direction));
 		Matrix viewProjection = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position, Math::XMVectorAdd(position, direction), up) * data.Projection);
 
-		if (data.World.ShadowCasterInfo.Size)
+		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
+		const U64 count = group.size();
+		if (count)
 		{
 			// Clearing data on first usage
-			renderData.CL.Open(renderData.Dev);
-			ZE_DRAW_TAG_BEGIN(renderData.CL, L"Shadow Map Clear", PixelVal::Gray);
+			cl.Open(dev);
+			ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Clear", PixelVal::Gray);
 
-			renderData.Buffers.ClearDSV(renderData.CL, ids.Depth, 1.0f, 0);
-			renderData.Buffers.ClearRTV(renderData.CL, ids.RenderTarget, ColorF4());
+			renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
+			renderData.Buffers.ClearRTV(cl, ids.RenderTarget, ColorF4());
 
-			ZE_DRAW_TAG_END(renderData.CL);
-			renderData.CL.Close(renderData.Dev);
-			renderData.Dev.ExecuteMain(renderData.CL);
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
 
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(renderData.Dev, data.TransformBuffers, data.World.ShadowCasterInfo.Size);
+			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
-			const auto& geometries = data.World.ActiveScene->Geometries;
-
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.ShadowCasterInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				renderData.CL.Open(renderData.Dev, data.StateDepth);
-				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Shadow Map Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0x98, 0x9F, 0xA7));
-				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetDSV(renderData.CL, ids.Depth);
+				cl.Open(dev, data.StateDepth);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0x98, 0x9F, 0xA7));
+				ctx.BindingSchema.SetGraphics(cl);
+				renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(3);
 				auto& cbuffer = data.TransformBuffers.at(j);
-				cbuffer.Bind(renderData.CL, ctx);
-				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
+				cbuffer.Bind(cl, ctx);
+				renderData.DynamicBuffer.Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
 				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < data.World.ShadowCasterInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
 
-					const auto& info = data.World.Meshes[i];
-					const auto& transform = transforms[info.TransformIndex];
+					auto entity = group[i];
+					const auto& transform = group.get<Data::TransformGlobal>(entity);
 					buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 					buffer->Transforms[k].ModelViewProjection = viewProjection * buffer->Transforms[k].Model;
 
-					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
-					meshBatchId.Bind(renderData.CL, ctx);
+					Resource::Constant<U32> meshBatchId(dev, k);
+					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = geometries[info.GeometryIndex];
-					geometry.Vertices.Bind(renderData.CL);
-					geometry.Indices.Bind(renderData.CL);
+					const auto& geometry = group.get<Data::Geometry>(entity);
+					geometry.Vertices.Bind(cl);
+					geometry.Indices.Bind(cl);
 
-					renderData.CL.DrawIndexed(renderData.Dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(renderData.CL);
+					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_DRAW_TAG_END(cl);
 				}
 
-				ZE_DRAW_TAG_END(renderData.CL);
-				renderData.CL.Close(renderData.Dev);
-				renderData.Dev.ExecuteMain(renderData.CL);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
 			}
 
-			const auto& materials = data.World.ActiveScene->Materials;
-			const auto& materialBufferss = data.World.ActiveScene->MaterialBuffers;
-			U64 currentMaterialIndex = UINT64_MAX;
+			const Data::MaterialPBR* currentMaterial = nullptr;
 			// Normal pass
-			for (U64 i = 0, j = 0; i < data.World.ShadowCasterInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				renderData.CL.Open(renderData.Dev, data.StateNormal);
-				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Shadow Map Batch_" + std::to_wstring(j)).c_str(), Pixel(0x79, 0x82, 0x8D));
-				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetOutput(renderData.CL, ids.RenderTarget, ids.Depth);
+				cl.Open(dev, data.StateNormal);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Batch_" + std::to_wstring(j)).c_str(), Pixel(0x79, 0x82, 0x8D));
+				ctx.BindingSchema.SetGraphics(cl);
+				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(3);
 				auto& cbuffer = data.TransformBuffers.at(j);
-				cbuffer.Bind(renderData.CL, ctx);
-				data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
-				Resource::Constant<Float3> pos(renderData.Dev, lightPos);
-				pos.Bind(renderData.CL, ctx);
-				renderData.EngineData.Bind(renderData.CL, ctx);
+				cbuffer.Bind(cl, ctx);
+				renderData.DynamicBuffer.Bind(cl, ctx);
+				Resource::Constant<Float3> pos(dev, lightPos);
+				pos.Bind(cl, ctx);
+				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
-				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < data.World.ShadowCasterInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0x5D, 0x5E, 0x61));
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0x5D, 0x5E, 0x61));
 
-					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
-					meshBatchId.Bind(renderData.CL, ctx);
+					Resource::Constant<U32> meshBatchId(dev, k);
+					meshBatchId.Bind(cl, ctx);
 
-					const auto& info = data.World.ShadowCasters[i];
-					if (currentMaterialIndex != info.MaterialIndex)
+					auto entity = group[i];
+					const auto& material = group.get<Data::MaterialPBR>(entity);
+					if (currentMaterial != &material)
 					{
-						currentMaterialIndex = info.MaterialIndex;
-						const auto& material = materials[currentMaterialIndex];
+						currentMaterial = &material;
 
-						Resource::Constant<float> parallaxScale(renderData.Dev, material.ParallaxScale);
-						parallaxScale.Bind(renderData.CL, ctx);
-						Resource::Constant<U32> materialFlags(renderData.Dev, material.Flags);
-						materialFlags.Bind(renderData.CL, ctx);
-						materialBufferss[currentMaterialIndex].BindTextures(renderData.CL, ctx);
+						Resource::Constant<float> parallaxScale(dev, material.ParallaxScale);
+						parallaxScale.Bind(cl, ctx);
+						Resource::Constant<U32> materialFlags(dev, material.Flags);
+						materialFlags.Bind(cl, ctx);
+						group.get<Data::MaterialBuffersPBR>(entity).BindTextures(cl, ctx);
 					}
 					ctx.Reset();
 
-					const auto& geometry = geometries[info.GeometryIndex];
-					geometry.Vertices.Bind(renderData.CL);
-					geometry.Indices.Bind(renderData.CL);
+					const auto& geometry = group.get<Data::Geometry>(entity);
+					geometry.Vertices.Bind(cl);
+					geometry.Indices.Bind(cl);
 
-					renderData.CL.DrawIndexed(renderData.Dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(renderData.CL);
+					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_DRAW_TAG_END(cl);
 				}
 
-				ZE_DRAW_TAG_END(renderData.CL);
-				renderData.CL.Close(renderData.Dev);
-				renderData.Dev.ExecuteMain(renderData.CL);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
 			}
 		}
 		return viewProjection;

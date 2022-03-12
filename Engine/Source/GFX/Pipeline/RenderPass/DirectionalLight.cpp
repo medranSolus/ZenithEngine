@@ -3,11 +3,11 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData,
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
-		Data* passData = new Data{ worldData };
+		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
@@ -35,52 +35,51 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return passData;
 	}
 
-	void Execute(RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
-		Data& data = *reinterpret_cast<Data*>(passData.OptData);
-		renderData.CL.Open(renderData.Dev);
+		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		cl.Open(dev);
 
 		// Clearing data on first usage
-		ZE_DRAW_TAG_BEGIN(renderData.CL, L"Lighting Clear", PixelVal::White);
-		renderData.Buffers.ClearRTV(renderData.CL, ids.Color, ColorF4());
-		renderData.Buffers.ClearRTV(renderData.CL, ids.Specular, ColorF4());
-		ZE_DRAW_TAG_END(renderData.CL);
+		ZE_DRAW_TAG_BEGIN(cl, L"Lighting Clear", PixelVal::White);
+		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
+		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());
+		ZE_DRAW_TAG_END(cl);
 
-		if (data.World.DirectionalLightInfo.Size)
+		auto group = Data::GetDirectionalLightGroup(renderData.Registry);
+		if (group.size())
 		{
-			const auto& directions = data.World.ActiveScene->DirectionalLightDirections;
-			const auto& lights = data.World.ActiveScene->DirectionalLightBuffers;
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			ZE_DRAW_TAG_BEGIN(renderData.CL, L"Directional Light", Pixel(0xF5, 0xF5, 0xD1));
+			ZE_DRAW_TAG_BEGIN(cl, L"Directional Light", Pixel(0xF5, 0xF5, 0xD1));
 
-			renderData.Buffers.ClearRTV(renderData.CL, ids.ShadowMap, ColorF4());
-			renderData.Buffers.ClearDSV(renderData.CL, ids.ShadowMapDepth, 1.0f, 0);
+			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, ColorF4());
+			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
 
-			ctx.BindingSchema.SetGraphics(renderData.CL);
-			renderData.Buffers.SetRTV<2>(renderData.CL, &ids.Color, true);
+			ctx.BindingSchema.SetGraphics(cl);
+			renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
 
 			ctx.SetFromEnd(3);
-			renderData.Buffers.SetSRV(renderData.CL, ctx, ids.ShadowMap);
-			renderData.Buffers.SetSRV(renderData.CL, ctx, ids.GBufferNormal);
-			data.World.DynamicDataBuffer.Bind(renderData.CL, ctx);
-			renderData.EngineData.Bind(renderData.CL, ctx);
+			renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
+			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
+			renderData.DynamicBuffer.Bind(cl, ctx);
+			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
 
-			for (U64 i = 0; i < data.World.DirectionalLightInfo.Size; ++i)
+			for (auto entity : group)
 			{
-				Resource::Constant<Float3> direction(renderData.Dev, directions[i]);
-				direction.Bind(renderData.CL, ctx);
-				lights[i].Bind(renderData.CL, ctx);
+				Resource::Constant<Float3> direction(dev, group.get<Data::Direction>(entity).Direction);
+				direction.Bind(cl, ctx);
+				group.get<Data::DirectionalLightBuffer>(entity).Buffer.Bind(cl, ctx);
 				ctx.Reset();
 
-				renderData.CL.DrawFullscreen(renderData.Dev);
+				cl.DrawFullscreen(dev);
 			}
-			ZE_DRAW_TAG_END(renderData.CL);
+			ZE_DRAW_TAG_END(cl);
 		}
 
-		renderData.CL.Close(renderData.Dev);
-		renderData.Dev.ExecuteMain(renderData.CL);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
 	}
 }

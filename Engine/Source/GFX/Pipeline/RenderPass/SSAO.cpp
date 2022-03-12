@@ -2,9 +2,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer)
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData)
 	{
-		Data* passData = new Data{ worldDataBuffer };
+		ExecuteData* passData = new ExecuteData;
 		passData->CL.Init(dev, CommandType::Compute);
 
 		Binding::SchemaDesc desc;
@@ -44,13 +44,13 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		return passData;
 	}
 
-	void Execute(RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
-		Data& data = *reinterpret_cast<Data*>(passData.OptData);
+		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
-		data.CL.Reset(renderData.Dev);
-		data.CL.Open(renderData.Dev, data.StateSSAO);
+		data.CL.Reset(dev);
+		data.CL.Open(dev, data.StateSSAO);
 
 		ZE_DRAW_TAG_BEGIN(data.CL, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
 		Binding::Context ctxSSAO{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
@@ -59,20 +59,20 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Normal);
 		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Depth);
 		data.Noise.Bind(data.CL, ctxSSAO);
-		data.WorldDataBuffer.Bind(data.CL, ctxSSAO);
-		renderData.EngineData.Bind(data.CL, ctxSSAO);
-		data.CL.Compute(renderData.Dev, 64, 32, 1); // Need to decouple from screen dimmensions
+		renderData.DynamicBuffer.Bind(data.CL, ctxSSAO);
+		renderData.SettingsBuffer.Bind(data.CL, ctxSSAO);
+		data.CL.Compute(dev, 64, 32, 1); // Need to decouple from screen dimmensions
 		renderData.Buffers.BarrierUAV(data.CL, ids.SSAO);
 
 		data.StateBlur.Bind(data.CL);
 		Binding::Context ctxBlur{ renderData.Bindings.GetSchema(data.BindingIndexBlur) };
 		ctxBlur.BindingSchema.SetCompute(data.CL);
 		renderData.Buffers.SetUAV(data.CL, ctxBlur, ids.SSAO);
-		renderData.EngineData.Bind(data.CL, ctxBlur);
-		data.CL.Compute(renderData.Dev, 8, 8, 1);
+		renderData.SettingsBuffer.Bind(data.CL, ctxBlur);
+		data.CL.Compute(dev, 8, 8, 1);
 		ZE_DRAW_TAG_END(data.CL);
 
-		data.CL.Close(renderData.Dev);
-		renderData.Dev.ExecuteCompute(data.CL);
+		data.CL.Close(dev);
+		dev.ExecuteCompute(data.CL);
 	}
 }

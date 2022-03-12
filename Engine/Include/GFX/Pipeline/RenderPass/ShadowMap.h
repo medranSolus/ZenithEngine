@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Pipeline/Info/World.h"
 #include "GFX/TransformBuffer.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
@@ -14,9 +13,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		RID Depth;
 	};
 
-	struct Data
+	struct ExecuteData
 	{
-		Info::World& World;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
 		Resource::PipelineStateGfx StateNormal;
@@ -24,8 +22,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Matrix Projection;
 	};
 
-	void Setup(Device& dev, RendererBuildData& buildData, Data& passData,
+	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
-	Matrix Execute(RendererExecuteData& renderData, Data& data, const Resources& ids,
-		const Float3& lightPos, const Float3& lightDir);
+	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, const Float3& lightDir);
 }

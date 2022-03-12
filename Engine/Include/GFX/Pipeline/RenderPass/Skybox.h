@@ -13,9 +13,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		RID DepthStencil;
 	};
 
-	struct Data
+	struct ExecuteData
 	{
-		Resource::CBuffer& WorldDataBuffer;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 		Resource::Texture::Pack SkyTexture;
@@ -23,9 +22,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		Resource::IndexBuffer IndexBuffer;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
+	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer,
-		PixelFormat formatRT, PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt);
-	void Execute(RendererExecuteData& renderData, PassData& passData);
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT,
+		PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt);
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

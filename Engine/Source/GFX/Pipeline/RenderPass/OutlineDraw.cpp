@@ -1,12 +1,13 @@
 #include "GFX/Pipeline/RenderPass/OutlineDraw.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
+#include "GFX/Pipeline/DataPBR.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, Info::World& worldData, PixelFormat formatRT, PixelFormat formatDS)
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
 	{
-		Data* passData = new Data{ worldData };
+		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
@@ -31,73 +32,73 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		return passData;
 	}
 
-	void Execute(RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
-		Data& data = *reinterpret_cast<Data*>(passData.OptData);
+		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
 		// Clearing data on first usage
-		renderData.CL.Open(renderData.Dev);
-		ZE_DRAW_TAG_BEGIN(renderData.CL, L"Outline Draw Clear", PixelVal::White);
+		cl.Open(dev);
+		ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Clear", PixelVal::White);
 
-		renderData.Buffers.ClearDSV(renderData.CL, ids.DepthStencil, 1.0f, 0);
-		renderData.Buffers.ClearRTV(renderData.CL, ids.RenderTarget, ColorF4());
+		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, ColorF4());
 
-		ZE_DRAW_TAG_END(renderData.CL);
-		renderData.CL.Close(renderData.Dev);
-		renderData.Dev.ExecuteMain(renderData.CL);
+		ZE_DRAW_TAG_END(cl);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
 
-		if (data.World.OutlineInfo.Size)
+		auto group = Data::GetRenderGroup<Data::RenderOutline>(renderData.Registry);
+		const U64 count = group.size();
+		if (count)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(renderData.Dev, data.TransformBuffers, data.World.OutlineInfo.Size);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers, count);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
-			const auto& transforms = data.World.ActiveScene->TransformsGlobal;
-			const auto& geometries = data.World.ActiveScene->Geometries;
+			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < data.World.OutlineInfo.Size; ++j)
+			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				renderData.CL.Open(renderData.Dev, data.State);
-				ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Outline Draw Batch_" + std::to_wstring(j)).c_str(), Pixel(0xF9, 0xE0, 0x76));
-				ctx.BindingSchema.SetGraphics(renderData.CL);
-				renderData.Buffers.SetOutput(renderData.CL, ids.RenderTarget, ids.DepthStencil);
+				cl.Open(dev, data.State);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Outline Draw Batch_" + std::to_wstring(j)).c_str(), Pixel(0xF9, 0xE0, 0x76));
+				ctx.BindingSchema.SetGraphics(cl);
+				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
 				ctx.SetFromEnd(1);
 				auto& cbuffer = data.TransformBuffers.at(j);
-				cbuffer.Bind(renderData.CL, ctx);
-				Resource::Constant<Float3> solidColor(renderData.Dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
-				solidColor.Bind(renderData.CL, ctx);
+				cbuffer.Bind(cl, ctx);
+				Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
+				solidColor.Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < data.World.OutlineInfo.Size; ++k, ++i)
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(renderData.CL, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
-					const auto& info = data.World.Outlines[i];
-					const auto& transform = transforms[info.TransformIndex];
-					buffer->Transforms[k] = data.World.DynamicData.ViewProjection *
+					auto entity = group[i];
+					const auto& transform = group.get<Data::TransformGlobal>(entity);
+					buffer->Transforms[k] = viewProjection *
 						Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
-					Resource::Constant<U32> meshBatchId(renderData.Dev, k);
-					meshBatchId.Bind(renderData.CL, ctx);
+					Resource::Constant<U32> meshBatchId(dev, k);
+					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = geometries[info.GeometryIndex];
-					geometry.Vertices.Bind(renderData.CL);
-					geometry.Indices.Bind(renderData.CL);
+					const auto& geometry = group.get<Data::Geometry>(entity);
+					geometry.Vertices.Bind(cl);
+					geometry.Indices.Bind(cl);
 
-					renderData.CL.DrawIndexed(renderData.Dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(renderData.CL);
+					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_DRAW_TAG_END(cl);
 				}
 
-				ZE_DRAW_TAG_END(renderData.CL);
-				renderData.CL.Close(renderData.Dev);
-				renderData.Dev.ExecuteMain(renderData.CL);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
 			}
 		}
 	}

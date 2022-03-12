@@ -11,14 +11,14 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		RID RenderTarget;
 	};
 
-	struct Data
+	struct ExecuteData
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
+	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
-	void Execute(RendererExecuteData& renderData, PassData& passData);
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

@@ -140,7 +140,7 @@ endif()
 # Compiler specific flags
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
-	# Move to C++/WinRT with /ZW /EHsc when /ZW can be used with /std:c++latest
+	# Move to /EHsc when exceptions will be replaced with error codes
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
 	# C4265 - class with virtual functions does not have virutal destructor
 	# C4061 - not all enums are explicitly handled in switch where `default` is present
@@ -159,7 +159,9 @@ if(MSVC)
 	# C4365 - signed/unsigned mismatch
 	# C4652 - compiler option inconsistent with precompiled header; current command-line option will override that defined in the precompiled header
 	#	Note: Caused by removing /Wall from CXX_FLAGS and then setting it for specific files, due to ImGui warnings, maybe /W4 would suffice?
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652")
+	# C4868 - compiler may not enforce left-to-right evaluation order in braced initializer list
+	#	Note: Caused by entt::dense_map, just hide it.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)

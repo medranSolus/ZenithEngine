@@ -17,9 +17,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		RID SSAO;
 	};
 
-	struct Data
+	struct ExecuteData
 	{
-		Resource::CBuffer& WorldDataBuffer;
 		CommandList CL;
 		U32 BindingIndexSSAO;
 		U32 BindingIndexBlur;
@@ -28,8 +27,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		Resource::Texture::Pack Noise;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<Data*>(data); }
+	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
 
-	Data* Setup(Device& dev, RendererBuildData& buildData, Resource::CBuffer& worldDataBuffer);
-	void Execute(RendererExecuteData& renderData, PassData& passData);
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData);
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

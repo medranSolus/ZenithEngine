@@ -2,7 +2,6 @@
 #include "DataPBR.h"
 #include "ParamsPBR.h"
 #include "RenderGraph.h"
-#include "Info/World.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -14,8 +13,8 @@ namespace ZE::GFX::Pipeline
 		static constexpr U64 SPOT_LIGHT_LIST_GROW_SIZE = 32;
 		static constexpr U64 POINT_LIGHT_LIST_GROW_SIZE = 48;
 
-		Info::World worldData;
 		DataPBR settingsData;
+		CameraPBR dynamicData;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
 
@@ -23,16 +22,15 @@ namespace ZE::GFX::Pipeline
 		void SetupSsaoData(U32 width, U32 height) noexcept;
 
 	public:
-		RendererPBR() = default;
+		RendererPBR() noexcept : RenderGraph(&settingsData, &dynamicData) {}
 		ZE_CLASS_DELETE(RendererPBR);
-		~RendererPBR();
+		virtual ~RendererPBR() = default;
 
-		constexpr void SetActiveScene(const Data::Scene& scene) noexcept { worldData.ActiveScene = &scene; }
 		constexpr U32 GetFrameWidth() const noexcept { return settingsData.FrameDimmensions.x; }
 		constexpr U32 GetFrameHeight() const noexcept { return settingsData.FrameDimmensions.y; }
 
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
-		void UpdateWorldData(Device& dev, Data::EID camera) noexcept;
+		void UpdateWorldData(Device& dev, entt::entity camera, const Matrix& projection) noexcept;
 	};
 }

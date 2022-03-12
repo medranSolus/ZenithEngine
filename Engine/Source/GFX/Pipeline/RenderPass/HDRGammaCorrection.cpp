@@ -2,9 +2,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 {
-	Data* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat)
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat)
 	{
-		Data* passData = new Data;
+		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
@@ -24,24 +24,24 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		return passData;
 	}
 
-	void Execute(RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
-		Data& data = *reinterpret_cast<Data*>(passData.OptData);
+		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-		renderData.CL.Open(renderData.Dev, data.State);
-		ZE_DRAW_TAG_BEGIN(renderData.CL, L"HDRGammaCorrection", PixelVal::White);
-		ctx.BindingSchema.SetGraphics(renderData.CL);
+		cl.Open(dev, data.State);
+		ZE_DRAW_TAG_BEGIN(cl, L"HDRGammaCorrection", PixelVal::White);
+		ctx.BindingSchema.SetGraphics(cl);
 
-		renderData.Buffers.SetSRV(renderData.CL, ctx, ids.Scene);
-		renderData.EngineData.Bind(renderData.CL, ctx);
-		renderData.Buffers.SetRTV(renderData.CL, ids.RenderTarget);
-		renderData.CL.DrawFullscreen(renderData.Dev);
+		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
+		renderData.SettingsBuffer.Bind(cl, ctx);
+		renderData.Buffers.SetRTV(cl, ids.RenderTarget);
+		cl.DrawFullscreen(dev);
 
-		ZE_DRAW_TAG_END(renderData.CL);
-		renderData.CL.Close(renderData.Dev);
-		renderData.Dev.ExecuteMain(renderData.CL);
+		ZE_DRAW_TAG_END(cl);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
 	}
 }

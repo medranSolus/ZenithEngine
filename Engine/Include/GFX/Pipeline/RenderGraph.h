@@ -19,7 +19,6 @@ namespace ZE::GFX::Pipeline
 		Ptr<std::pair<Ptr<PassDesc>, U64>> passes;
 		Ptr<PassDescStatic> staticPasses;
 		Ptr<Ptr<PassCleanCallback>> passesCleaners;
-		Ptr<Resource::PipelineStateGfx> sharedStates;
 
 		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);
 		static void AfterSync(Device& dev, PassSyncDesc& syncInfo);
@@ -33,17 +32,17 @@ namespace ZE::GFX::Pipeline
 	protected:
 		static constexpr U64 BACKBUFFER_RID = 0;
 
-		FrameBuffer frameBuffer;
-		Binding::Library bindings;
-		Resource::CBuffer settingsBuffer;
+		RendererExecuteData execData;
 
 		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);
 
 	public:
-		RenderGraph() = default;
+		RenderGraph(void* settingsData, void* dynamicData) noexcept { execData.SettingsData = settingsData; execData.DynamicData = dynamicData; }
 		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph();
+
+		constexpr entt::registry& GetRegistry() noexcept { return execData.Registry; }
 
 		void Execute(Graphics& gfx);
 	};
