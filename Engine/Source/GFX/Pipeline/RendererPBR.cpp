@@ -289,7 +289,7 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateWorldData(Device& dev, entt::entity camera, const Matrix& projection) noexcept
+	void RendererPBR::UpdateWorldData(Device& dev, EID camera, const Matrix& projection) noexcept
 	{
 		ZE_ASSERT((GetRegistry().all_of<Data::Transform, Data::Camera>(camera)),
 			"Current camera does not have all required components!");

@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 	struct RendererExecuteData
 	{
 		// Registry containing all the scene data
-		entt::registry Registry;
+		Data::Storage Registry;
 		// Buffers used for rendering. Initialized by RenderGraph
 		FrameBuffer Buffers;
 		Binding::Library Bindings;

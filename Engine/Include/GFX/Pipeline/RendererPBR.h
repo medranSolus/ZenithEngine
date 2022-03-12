@@ -28,9 +28,10 @@ namespace ZE::GFX::Pipeline
 
 		constexpr U32 GetFrameWidth() const noexcept { return settingsData.FrameDimmensions.x; }
 		constexpr U32 GetFrameHeight() const noexcept { return settingsData.FrameDimmensions.y; }
+		constexpr float GetFrameRation() const noexcept { return static_cast<float>(GetFrameWidth()) / static_cast<float>(GetFrameHeight()); }
 
 		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
-		void UpdateWorldData(Device& dev, entt::entity camera, const Matrix& projection) noexcept;
+		void UpdateWorldData(Device& dev, EID camera, const Matrix& projection) noexcept;
 	};
 }

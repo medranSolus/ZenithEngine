@@ -6,15 +6,21 @@ using namespace ZE;
 class App final
 {
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.3";
+	static constexpr float MAX_MOVE_SPEED = 5.0f;
 
 	Engine engine;
-	entt::entity camera;
+	Data::CameraType cameraType = Data::CameraType::Person;
+	EID camera;
+	float moveSpeed = 0.1f;
+	float rollSpeed = 0.01f;
+	float rotateSpeed = 1.5f;
 	Matrix currentProjection;
 	bool run = true;
 
 	void ProcessInput();
-	void ShowObjectWindow();
 	void ShowOptionsWindow();
+
+	void ShowObjectWindow();
 	void AddModelButton();
 	void ChangeBackgroundButton();
 	void AddLightButton();

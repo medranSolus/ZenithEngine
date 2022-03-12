@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph();
 
-		constexpr entt::registry& GetRegistry() noexcept { return execData.Registry; }
+		constexpr Data::Storage& GetRegistry() noexcept { return execData.Registry; }
 
 		void Execute(Graphics& gfx);
 	};

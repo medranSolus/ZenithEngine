@@ -1,14 +1,12 @@
 #pragma once
 #include "Camera.h"
+#include "Entity.h"
 #include "Geometry.h"
 #include "Light.h"
 #include "MaterialPBR.h"
 #include "Mesh.h"
 #include "Model.h"
 #include "Transform.h"
-#include "WarningGuardOn.h"
-#include "entt/entt.hpp"
-#include "WarningGuardOff.h"
 
 namespace ZE::Data
 {
@@ -33,9 +31,9 @@ namespace ZE::Data
 	struct LightPoint {};
 
 	template<EmptyType T>
-	constexpr auto GetRenderGroup(entt::registry& reg) noexcept { return reg.group<T>(entt::get<Geometry, TransformGlobal, MaterialBuffersPBR, MaterialPBR>); }
+	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<Geometry, TransformGlobal, MaterialBuffersPBR, MaterialPBR>); }
 
-	inline auto GetDirectionalLightGroup(entt::registry& reg) noexcept { return reg.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
-	inline auto GetSpotLightGroup(entt::registry& reg) noexcept { return reg.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
-	inline auto GetPointLightGroup(entt::registry& reg) noexcept { return reg.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }
+	inline auto GetDirectionalLightGroup(Storage& registry) noexcept { return registry.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
+	inline auto GetSpotLightGroup(Storage& registry) noexcept { return registry.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
+	inline auto GetPointLightGroup(Storage& registry) noexcept { return registry.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }
 }
