@@ -1,6 +1,7 @@
 #include "GFX/Pipeline/RenderPass/ShadowMapCube.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
+#include "GFX/Vertex.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
@@ -23,10 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		psoDesc.SetShader(psoDesc.VS, L"ShadowCubeDepthVS", buildData.ShaderCache);
 		psoDesc.SetShader(psoDesc.GS, L"ShadowCubeDepthGS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Normal);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::TexCoord);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Bitangent);
+		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 

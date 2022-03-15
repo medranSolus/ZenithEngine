@@ -28,7 +28,111 @@ namespace std
 
 namespace ZE::GFX::Primitive
 {
-	std::vector<Float3> MakeCubeVertex() noexcept
+#pragma region Geometry computation
+	template<bool GetSurfaceNormal, bool GetTangent>
+	constexpr void ComputeGeometryData(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept
+	{
+		static_assert(GetSurfaceNormal || GetTangent, "At least one of compute options should be specified!");
+		ZE_ASSERT(indices.size() % 3 == 0 && indices.size() > 2, "Incorrect index data!");
+
+		// https://gamedev.stackexchange.com/questions/68612/how-to-compute-tangent-and-bitangent-vectors
+		for (U64 i = 0; i < indices.size(); i += 3)
+		{
+			Vertex& v0 = vertices.at(indices.at(i));
+			Vertex& v1 = vertices.at(indices.at(i + 1));
+			Vertex& v2 = vertices.at(indices.at(i + 2));
+
+			const Vector p0 = Math::XMLoadFloat3(&v0.Position);
+			const Vector edge1 = Math::XMVectorSubtract(Math::XMLoadFloat3(&v1.Position), p0);
+			const Vector edge2 = Math::XMVectorSubtract(Math::XMLoadFloat3(&v2.Position), p0);
+
+			// Compute surface normal
+			Vector normal;
+			if constexpr (GetSurfaceNormal)
+			{
+				normal = Math::XMVector3Normalize(Math::XMVector3Cross(edge1, edge2));
+
+				Math::XMStoreFloat3(&v0.Normal, normal);
+				Math::XMStoreFloat3(&v1.Normal, normal);
+				Math::XMStoreFloat3(&v2.Normal, normal);
+			}
+			else
+			{
+				ZE_ASSERT(Math::XMVectorGetX(Math::XMVector3Length(Math::XMLoadFloat3(&v0.Normal))) == 1.0f &&
+					Math::XMVectorGetX(Math::XMVector3Length(Math::XMLoadFloat3(&v1.Normal))) == 1.0f &&
+					Math::XMVectorGetX(Math::XMVector3Length(Math::XMLoadFloat3(&v2.Normal))) == 1.0f,
+					"Mesh don't have proper normals!");
+			}
+
+			if constexpr (GetTangent)
+			{
+				Float2 deltaUV1;
+				Float2 deltaUV2;
+				const Vector uv0 = Math::XMLoadFloat2(&v0.UV);
+				Math::XMStoreFloat2(&deltaUV1, Math::XMVectorSubtract(Math::XMLoadFloat2(&v1.UV), uv0));
+				Math::XMStoreFloat2(&deltaUV2, Math::XMVectorSubtract(Math::XMLoadFloat2(&v2.UV), uv0));
+
+				const float direction = Math::Sign(deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+				ZE_ASSERT(direction != 0.0f, "Incorrect UV coordinates!");
+
+				Vector tangent = Math::XMVectorScale(Math::XMVectorSubtract(
+					Math::XMVectorScale(edge1, deltaUV2.y),
+					Math::XMVectorScale(edge2, deltaUV1.y)), direction);
+
+				// In case bitangent computation would be needed too
+				//Vector bitangent = Math::XMVectorScale(Math::XMVectorSubtract(
+				//	Math::XMVectorScale(edge2, deltaUV1.x),
+				//	Math::XMVectorScale(edge1, deltaUV2.x)), direction);
+				//
+				//Vector bitan = Math::XMVectorSubtract(
+				//	Math::XMVectorSubtract(bitangent, Math::XMVectorMultiply(normal, Math::XMVectorMultiply(bitangent, normal))),
+				//	Math::XMVectorMultiply(localTan, Math::XMVectorMultiply(bitangent, localTan)));
+
+				if constexpr (GetSurfaceNormal)
+				{
+					Math::XMStoreFloat4(&v0.Tangent, Math::XMVector3Normalize(tangent));
+					Math::XMStoreFloat4(&v1.Tangent, Math::XMVector3Normalize(tangent));
+					Math::XMStoreFloat4(&v2.Tangent, Math::XMVector3Normalize(tangent));
+				}
+				else
+				{
+					normal = Math::XMLoadFloat3(&v0.Normal);
+					Math::XMStoreFloat4(&v0.Tangent,
+						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
+							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
+
+					normal = Math::XMLoadFloat3(&v1.Normal);
+					Math::XMStoreFloat4(&v1.Tangent,
+						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
+							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
+
+					normal = Math::XMLoadFloat3(&v2.Normal);
+					Math::XMStoreFloat4(&v2.Tangent,
+						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
+							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
+				}
+
+				// Store handness
+				v0.Tangent.w = direction;
+				v1.Tangent.w = direction;
+				v2.Tangent.w = direction;
+			}
+		}
+	}
+
+	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept
+	{
+		ComputeGeometryData<true, true>(vertices, indices);
+	}
+
+	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept
+	{
+		ComputeGeometryData<false, true>(vertices, indices);
+	}
+#pragma endregion
+
+#pragma region Cube
+	std::vector<Float3> MakeCubeSolidVertex() noexcept
 	{
 		constexpr float POINT = 0.5f;
 		return
@@ -44,7 +148,7 @@ namespace ZE::GFX::Primitive
 		};
 	}
 
-	std::vector<U32> MakeCubeIndex() noexcept
+	std::vector<U32> MakeCubeSolidIndex() noexcept
 	{
 		return
 		{
@@ -57,7 +161,7 @@ namespace ZE::GFX::Primitive
 		};
 	}
 
-	std::vector<U32> MakeCubeIndexInverted() noexcept
+	std::vector<U32> MakeCubeSolidIndexInverted() noexcept
 	{
 		return
 		{
@@ -70,7 +174,73 @@ namespace ZE::GFX::Primitive
 		};
 	}
 
-	Data<Float3> MakeCone(U32 density) noexcept
+	std::vector<Vertex> MakeCubeVertex(const std::vector<U32>& indices) noexcept
+	{
+		ZE_ASSERT(indices.size() % 3 == 0 && indices.size() > 2, "Incorrect index data!");
+		constexpr float POINT = 0.5f;
+		constexpr float UV_SHORT_1 = 1.0f / 3.0f;
+		constexpr float UV_SHORT_2 = 2.0f / 3.0f;
+
+		/*
+		* UV mapping according to:
+		* 0,0        ______             1,0
+		*    _______| Left |____________
+		*   | Front | Down | Back | Top |
+		*    -------| Right|------------
+		* 0,1        ------             1,1
+		*/
+		std::vector<Vertex> vertices
+		{
+			// Front
+			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { -POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_1 } },
+			{ { POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_2 } },
+			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			// Left
+			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			{ { -POINT, POINT, POINT }, {}, { 0.5f, 0.0f } },
+			{ { -POINT, POINT, -POINT }, {}, { 0.25f, 0.0f } },
+			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			// Back
+			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
+			{ { POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_2 } },
+			{ { -POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_1 } },
+			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			// Right
+			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { POINT, POINT, -POINT }, {}, { 0.25f, 1.0f } },
+			{ { POINT, POINT, POINT }, {}, { 0.5f, 1.0f } },
+			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
+			// Top
+			{ { -POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_1 } },
+			{ { -POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_1 } },
+			{ { POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_2 } },
+			{ { POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_2 } },
+			// Down
+			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
+		};
+		ComputeSurfaceNormalsTangents(vertices, indices);
+		return vertices;
+	}
+
+	std::vector<U32> MakeCubeIndex() noexcept
+	{
+		return
+		{
+			0,1,2,    0,2,3,    // Front
+			4,5,6,    4,6,7,    // Left
+			8,9,10,   8,10,11,  // Back
+			12,13,14, 12,14,15, // Right
+			16,17,18, 16,18,19, // Top
+			20,21,22, 20,22,23  // Down
+		};
+	}
+#pragma endregion
+
+	Data<Float3> MakeConeSolid(U32 density) noexcept
 	{
 		if (!density)
 			density = 1;
@@ -115,7 +285,7 @@ namespace ZE::GFX::Primitive
 		return data;
 	}
 
-	Data<Float3> MakeSphereIco(U32 density) noexcept
+	Data<Float3> MakeSphereIcoSolid(U32 density) noexcept
 	{
 		constexpr float BIG_ANGLE = static_cast<float>(M_PI / 10.0f);
 		constexpr float SMALL_ANGLE = static_cast<float>(M_PI * 0.3f);

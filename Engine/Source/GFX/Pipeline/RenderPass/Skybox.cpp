@@ -29,9 +29,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		texDesc.AddTexture(Resource::Texture::Type::Cube, Resource::Texture::Usage::PixelShader, std::move(textures));
 		passData->SkyTexture.Init(dev, texDesc);
 
-		const std::vector<Float3> vertices = Primitive::MakeCubeVertex();
+		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
 		passData->VertexBuffer.Init(dev, { static_cast<U32>(vertices.size()), sizeof(Float3), vertices.data() });
-		const std::vector<U32> indices = Primitive::MakeCubeIndexInverted();
+		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
 		passData->IndexBuffer.Init(dev, { static_cast<U32>(indices.size()), indices.data() });
 		dev.StartUpload();
 

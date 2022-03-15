@@ -1,6 +1,7 @@
 #include "GFX/Pipeline/RenderPass/ShadowMap.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
+#include "GFX/Vertex.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
@@ -22,10 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Normal);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::TexCoord);
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Bitangent);
+		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 

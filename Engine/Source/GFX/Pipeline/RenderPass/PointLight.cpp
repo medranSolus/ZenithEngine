@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
 
-		const auto volume = Primitive::MakeSphereIco(3);
+		const auto volume = Primitive::MakeSphereIcoSolid(3);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
 		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), volume.Indices.data() });
 

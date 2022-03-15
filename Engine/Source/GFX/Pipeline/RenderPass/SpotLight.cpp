@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		passData->ShadowBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
 		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
 
-		const auto volume = Primitive::MakeCone(8);
+		const auto volume = Primitive::MakeConeSolid(8);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
 		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), volume.Indices.data() });
 

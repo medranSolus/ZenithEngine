@@ -61,7 +61,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		data.Noise.Bind(data.CL, ctxSSAO);
 		renderData.DynamicBuffer.Bind(data.CL, ctxSSAO);
 		renderData.SettingsBuffer.Bind(data.CL, ctxSSAO);
-		data.CL.Compute(dev, 64, 32, 1); // Need to decouple from screen dimmensions
+		auto dimm = renderData.Buffers.GetDimmensions(ids.SSAO);
+		data.CL.Compute(dev, Math::DivideRoundUp(dimm.first, 32U), Math::DivideRoundUp(dimm.second, 32U), 1);
 		renderData.Buffers.BarrierUAV(data.CL, ids.SSAO);
 
 		data.StateBlur.Bind(data.CL);
