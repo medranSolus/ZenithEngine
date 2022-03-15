@@ -20,6 +20,9 @@ namespace ZE::GFX::Pipeline
 
 		// Main Gfx API
 
+		// Get width and height of the resource
+		constexpr std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { std::pair<U32, U32> dimm; ZE_API_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
+
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void InitRTV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitRTV, cl, rid); }
 		// Depth stencil before first use must be initialized or cleared

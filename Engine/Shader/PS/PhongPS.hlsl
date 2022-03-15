@@ -18,13 +18,13 @@ struct PSOut
 PSOut main(float3 worldPos : POSITION,
 	float3 worldNormal : NORMAL,
 	float2 tc : TEXCOORD,
-	float3 worldBitan : BITANGENT,
+	float4 worldTan : TANGENTPACK,
 	float3 cameraDir : CAMERADIR)
 {
 	PSOut pso;
 	if (cb_material.Flags & FLAG_USE_NORMAL)
 	{
-		const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
+		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 		if (cb_material.Flags & FLAG_USE_PARALLAX)
 		{
 			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, parallax, splr_AW);

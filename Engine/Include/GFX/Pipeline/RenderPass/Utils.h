@@ -13,7 +13,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	template<typename SingleTransform, typename TransformBuffer, U64 ShrinkStepOffset>
 	void ResizeTransformBuffers(Device& dev, std::vector<Resource::CBuffer>& transformBuffers, U64 count)
 	{
-		U64 buffCount = Math::DivideRoundUp(count * sizeof(SingleTransform), sizeof(TransformBuffer)) / sizeof(TransformBuffer);
+		U64 buffCount = Math::DivideRoundUp(count * sizeof(SingleTransform), sizeof(TransformBuffer));
 		if (buffCount + ShrinkStepOffset < transformBuffers.size())
 		{
 			for (U64 i = buffCount; i < transformBuffers.size(); ++i)

@@ -7,13 +7,13 @@ float GetSampledSpecularPower(const in float specularPower)
 }
 
 // Get tangent space rotation (normalized)
-float3x3 GetTangentToWorld(const in float3 bitan, const in float3 normal)
+float3x3 GetTangentToWorld(const in float4 tan, const in float3 normal)
 {
-	// Make bitangent again orthogonal to normal (Gramm-Schmidt process)
+	// Make tangent again orthogonal to normal (Gramm-Schmidt process)
 	const float3 N = normalize(normal);
-	float3 B = normalize(bitan);
-	B = normalize(B - dot(B, N) * N);
-	return float3x3(normalize(cross(N, B)), B, N);
+	float3 T = normalize(tan.xyz);
+	T = normalize(T - dot(T, N) * N);
+	return float3x3(T, normalize(cross(N, T)) * tan.w, N);
 }
 
 // Create offset texture coordinates (parallax occlussion mapping)

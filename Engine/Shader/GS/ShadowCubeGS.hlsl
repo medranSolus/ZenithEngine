@@ -6,7 +6,7 @@ struct GSIn
 	float3 worldPos : POSITION;
 	float3 worldNormal : NORMAL;
 	float2 tc : TEXCOORD;
-	float3 worldBitan : BITANGENT;
+	float4 worldTan : TANGENTPACK;
 };
 
 struct GSOut
@@ -14,7 +14,7 @@ struct GSOut
 	float3 worldPos : POSITION;
 	float3 worldNormal : NORMAL;
 	float2 tc : TEXCOORD;
-	float3 worldBitan : BITANGENT;
+	noperspective float4 worldTan : TANGENTPACK;
 	float3 cameraDir : CAMERADIR;
 	uint face : SV_RENDERTARGETARRAYINDEX;
 	float4 pos : SV_POSITION;
@@ -31,7 +31,7 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 			element.worldPos = input[j].worldPos;
 			element.worldNormal = input[j].worldNormal;
 			element.tc = input[j].tc;
-			element.worldBitan = input[j].worldBitan;
+			element.worldTan = input[j].worldTan;
 			element.cameraDir = cb_worldData.CameraPos - input[j].worldPos;
 			element.face = i;
 			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.ViewProjection[i]);

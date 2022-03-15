@@ -15,6 +15,8 @@ namespace ZE::GFX::Resource
 		Normal,
 		// 3 component float tangent
 		Tangent,
+		// 4 component float tangent with handness data in .w component
+		TangentPacked,
 		// 3 component float bitangent
 		Bitangent,
 		// 4 component U8 color
@@ -44,6 +46,8 @@ namespace ZE::GFX::Resource
 			return "NORMAL";
 		case InputParam::Tangent:
 			return "TANGENT";
+		case InputParam::TangentPacked:
+			return "TANGENTPACK";
 		case InputParam::Bitangent:
 			return "BITANGENT";
 		case InputParam::Pixel:
@@ -70,6 +74,7 @@ namespace ZE::GFX::Resource
 			return PixelFormat::R32G32B32_Float;
 		case InputParam::Pixel:
 			return PixelFormat::R32G32B32A32_UInt;
+		case InputParam::TangentPacked:
 		case InputParam::ColorF4:
 			return PixelFormat::R32G32B32A32_Float;
 		}

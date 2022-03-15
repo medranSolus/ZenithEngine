@@ -62,6 +62,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
+		std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { const auto& data = resources[rid]; return { data.Width, data.Height }; }
+
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 

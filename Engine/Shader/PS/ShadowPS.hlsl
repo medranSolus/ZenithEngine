@@ -10,7 +10,7 @@ Texture2D parallax : register(t3);
 float main(float3 worldPos : POSITION,
 	float3 worldNormal : NORMAL,
 	float2 tc : TEXCOORD,
-	float3 worldBitan : BITANGENT,
+	float4 worldTan : TANGENTPACK,
 	float3 cameraDir : CAMERADIR) : SV_TARGET
 {
 	float depth = 0.0f;
@@ -20,7 +20,7 @@ float main(float3 worldPos : POSITION,
 	{
 		if (cb_materialFlags & (FLAG_USE_PARALLAX | FLAG_USE_NORMAL))
 		{
-			const float3x3 TBN = GetTangentToWorld(worldBitan, worldNormal);
+			const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AW);
 			if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 				discard;

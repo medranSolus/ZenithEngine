@@ -152,6 +152,12 @@ namespace ZE::Math
 		return val < down ? down : (val > up ? up : val);
 	}
 
+	template<typename T>
+	constexpr T Sign(T val) noexcept
+	{
+		return (static_cast<T>(0) < val) - (val < static_cast<T>(0));
+	}
+
 	Float3 GetEulerAngles(const Float4& rotor) noexcept;
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept;
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept;

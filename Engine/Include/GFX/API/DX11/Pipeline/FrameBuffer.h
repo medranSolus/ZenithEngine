@@ -15,6 +15,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
+		std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { return { 0, 0 }; }
+
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
 		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}
 
