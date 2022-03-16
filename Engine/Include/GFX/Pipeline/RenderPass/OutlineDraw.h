@@ -15,7 +15,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 	struct ExecuteData
 	{
 		U32 BindingIndex;
-		Resource::PipelineStateGfx State;
+		Resource::PipelineStateGfx StateStencil;
+		Resource::PipelineStateGfx StateRender;
 		std::vector<Resource::CBuffer> TransformBuffers;
 	};
 

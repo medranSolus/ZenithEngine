@@ -39,6 +39,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		ZE_DRAW_TAG_BEGIN(cl, L"Outline Vertical Blur", Pixel(0xFD, 0xEF, 0xB2));
 		ctx.BindingSchema.SetGraphics(cl);
 
+		data.State.SetStencilRef(cl, 0xFF);
 		Resource::Constant<U32> direction(dev, true);
 		direction.Bind(cl, ctx);
 		renderData.Buffers.SetSRV(cl, ctx, ids.OutlineBlur);

@@ -23,10 +23,12 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
+		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { SetStencilRef(cl.Get().dx11.GetContext(), refValue); }
 		void Bind(GFX::CommandList& cl) const noexcept { Bind(cl.Get().dx11.GetContext()); }
 
 		// Gfx API Internal
 
+		void SetStencilRef(ID3D11DeviceContext4* ctx, U32 refValue) const noexcept { ctx->OMSetDepthStencilState(depthStencilState.Get(), refValue); }
 		void Bind(ID3D11DeviceContext4* ctx) const noexcept;
 	};
 }

@@ -156,6 +156,7 @@ namespace ZE::GFX::API::DX11::Resource
 		ctx->GSSetShader(geometryShader.Get(), nullptr, 0);
 		ctx->PSSetShader(pixelShader.Get(), nullptr, 0);
 		ctx->OMSetBlendState(blendState.Get(), nullptr, 0xFFFFFFFF);
+		SetStencilRef(ctx, 0);
 		ctx->OMSetDepthStencilState(depthStencilState.Get(), 0xFF);
 		ctx->RSSetState(rasterState.Get());
 	}

@@ -21,6 +21,7 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
+		constexpr void SetStencilRef(CommandList& cl, U32 refValue) const noexcept { ZE_API_BACKEND_CALL(SetStencilRef, cl, refValue); }
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
 	};
 }

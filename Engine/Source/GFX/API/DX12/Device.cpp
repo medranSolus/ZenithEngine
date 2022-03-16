@@ -64,6 +64,12 @@ namespace ZE::GFX::API::DX12
 
 		// Enable device removed recovery
 		DREDRecovery::Enable(debugManager);
+
+#ifdef _ZE_DEBUG_GPU_VALIDATION
+		DX::ComPtr<ID3D12Debug1> debugInterface1;
+		ZE_GFX_THROW_FAILED_NOINFO(debugInterface.As(debugInterface1));
+		debugInterface1->SetEnableGPUBasedValidation(TRUE);
+#endif
 #endif
 
 		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(
@@ -75,7 +81,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED_NOINFO(device.As(infoQueue));
+		ZE_GFX_THROW_FAILED(device.As(infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -100,6 +106,24 @@ namespace ZE::GFX::API::DX12
 		filter.DenyList.pIDList = denyIds;
 
 		ZE_GFX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
+
+#ifdef _ZE_DEBUG_GPU_VALIDATION
+		DX::ComPtr<ID3D12DebugDevice1> debugDevice1;
+		ZE_GFX_THROW_FAILED_NOINFO(device.As(debugDevice1));
+
+		const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
+		ZE_GFX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
+			&debugFeature, sizeof(D3D12_DEBUG_FEATURE)));
+
+		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings;
+		// Should cover all messages
+		validationSettings.MaxMessagesPerCommandList = 1024;
+		// Can avoid most cases of TDRs
+		validationSettings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
+		validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
+		ZE_GFX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
+			&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS)));
+#endif
 #endif
 		D3D12_COMMAND_QUEUE_DESC desc;
 		desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;

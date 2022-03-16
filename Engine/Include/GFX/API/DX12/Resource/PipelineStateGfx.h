@@ -15,6 +15,8 @@ namespace ZE::GFX::API::DX12::Resource
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
+		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { cl.Get().dx12.GetList()->OMSetStencilRef(refValue); }
+
 		void Bind(GFX::CommandList& cl) const noexcept;
 
 		// Gfx API Internal

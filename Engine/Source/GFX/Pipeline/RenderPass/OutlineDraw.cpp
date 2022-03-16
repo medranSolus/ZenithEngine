@@ -17,15 +17,20 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"SolidVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.PS, L"SolidPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
-		psoDesc.RenderTargetsCount = 1;
-		psoDesc.FormatsRT[0] = formatRT;
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
-		ZE_PSO_SET_NAME(psoDesc, "OutlineDraw");
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawStencil");
+		passData->StateStencil.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+
+		psoDesc.SetShader(psoDesc.PS, L"SolidPS", buildData.ShaderCache);
+		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
+		psoDesc.RenderTargetsCount = 1;
+		psoDesc.FormatsRT[0] = formatRT;
+		psoDesc.FormatDS = PixelFormat::Unknown;
+		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
+		passData->StateRender.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
 		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
 
@@ -42,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Clear", PixelVal::White);
 
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
-		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, ColorF4());
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
 
 		ZE_DRAW_TAG_END(cl);
 		cl.Close(dev);
@@ -61,25 +66,24 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				cl.Open(dev, data.State);
+				cl.Open(dev, data.StateStencil);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Outline Draw Batch_" + std::to_wstring(j)).c_str(), Pixel(0xF9, 0xE0, 0x76));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
+				data.StateStencil.SetStencilRef(cl, 0xFF);
+				renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 				ctx.SetFromEnd(1);
 				auto& cbuffer = data.TransformBuffers.at(j);
 				cbuffer.Bind(cl, ctx);
-				Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
-				solidColor.Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
+				for (U32 k = 0, I = i; k < TransformBuffer::TRANSFORM_COUNT && I < count; ++k, ++I)
 				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
+					ZE_DRAW_TAG_BEGIN(cl, (L"MeshStencil_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
-					auto entity = group[i];
+					auto entity = group[I];
 					const auto& transform = group.get<Data::TransformGlobal>(entity);
 					buffer->Transforms[k] = viewProjection *
 						Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
@@ -88,6 +92,35 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
+					const auto& geometry = group.get<Data::Geometry>(entity);
+					geometry.Vertices.Bind(cl);
+					geometry.Indices.Bind(cl);
+
+					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_DRAW_TAG_END(cl);
+				}
+
+				// Separate calls due to different RT/DS sizes
+				data.StateRender.Bind(cl);
+				ctx.BindingSchema.SetGraphics(cl);
+				renderData.Buffers.SetRTV(cl, ids.RenderTarget);
+
+				ctx.SetFromEnd(1);
+				cbuffer.Bind(cl, ctx);
+				Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
+				solidColor.Bind(cl, ctx);
+				ctx.Reset();
+
+				// Compute single batch
+				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
+				{
+					ZE_DRAW_TAG_BEGIN(cl, (L"MeshRender_" + std::to_wstring(k)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
+
+					Resource::Constant<U32> meshBatchId(dev, k);
+					meshBatchId.Bind(cl, ctx);
+					ctx.Reset();
+
+					auto entity = group[i];
 					const auto& geometry = group.get<Data::Geometry>(entity);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);

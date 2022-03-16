@@ -231,7 +231,8 @@ namespace ZE::GFX::API::DX12::Resource
 
 	void PipelineStateGfx::Bind(GFX::CommandList& cl) const noexcept
 	{
-		cl.Get().dx12.GetList()->SetPipelineState(GetState());
-		cl.Get().dx12.GetList()->IASetPrimitiveTopology(topology);
+		auto list = cl.Get().dx12.GetList();
+		list->SetPipelineState(GetState());
+		list->IASetPrimitiveTopology(topology);
 	}
 }
