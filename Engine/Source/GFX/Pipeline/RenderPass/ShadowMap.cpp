@@ -42,6 +42,17 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, const Float3& lightDir)
 	{
+		// Clearing data on first usage
+		cl.Open(dev);
+		ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Clear", PixelVal::Gray);
+
+		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+
+		ZE_DRAW_TAG_END(cl);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
+
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
 		const Vector direction = Math::XMLoadFloat3(&lightDir);
@@ -53,17 +64,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		const U64 count = group.size();
 		if (count)
 		{
-			// Clearing data on first usage
-			cl.Open(dev);
-			ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Clear", PixelVal::Gray);
-
-			renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
-			renderData.Buffers.ClearRTV(cl, ids.RenderTarget, ColorF4());
-
-			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
-
 			// Resize temporary buffer for transform data
 			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
 

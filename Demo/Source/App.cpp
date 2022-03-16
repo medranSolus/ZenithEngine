@@ -1,5 +1,6 @@
 #include "App.h"
 #include "Data/Operations.h"
+#include "GFX/Primitive.h"
 
 void App::ShowOptionsWindow()
 {
@@ -75,6 +76,38 @@ void App::ProcessInput()
 					engine.ToggleGui();
 					break;
 				}
+				case 'O':
+				{
+					if (engine.GetData().all_of<Data::RenderOutline>(cube))
+						engine.GetData().remove<Data::RenderOutline>(cube);
+					else
+						engine.GetData().emplace<Data::RenderOutline>(cube);
+					break;
+				}
+				case 'F':
+				{
+					if (engine.GetData().all_of<Data::RenderWireframe>(cube))
+						engine.GetData().remove<Data::RenderWireframe>(cube);
+					else
+						engine.GetData().emplace<Data::RenderWireframe>(cube);
+					break;
+				}
+				case 'L':
+				{
+					if (engine.GetData().all_of<Data::RenderLambertian>(cube))
+						engine.GetData().remove<Data::RenderLambertian>(cube);
+					else
+						engine.GetData().emplace<Data::RenderLambertian>(cube);
+					break;
+				}
+				case 'K':
+				{
+					if (engine.GetData().all_of<Data::ShadowCaster>(cube))
+						engine.GetData().remove<Data::ShadowCaster>(cube);
+					else
+						engine.GetData().emplace<Data::ShadowCaster>(cube);
+					break;
+				}
 				}
 			}
 		}
@@ -118,12 +151,70 @@ App::App(const std::string& commandLine)
 		{
 			Math::ToRadians(60.0f),
 			engine.Reneder().GetFrameRation(),
-			0.001f, 1000.0f
+			0.01f, 1000.0f
 		}
 	};
 	engine.GetData().emplace<Data::Camera>(camera, camData);
 	engine.GetData().emplace<Data::Transform>(camera, Data::Transform({ 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
 	currentProjection = Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio, camData.Projection.NearClip, camData.Projection.FarClip);
+
+	std::vector<U32> indices = GFX::Primitive::MakeCubeIndex();
+	std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
+	engine.Gfx().GetDevice().BeginUploadRegion();
+	{
+		EID cube1 = engine.GetData().create();
+		engine.GetData().emplace<Data::RenderLambertian>(cube1);
+		engine.GetData().emplace<Data::RenderOutline>(cube1);
+		engine.GetData().emplace<Data::ShadowCaster>(cube1);
+		engine.GetData().emplace<Data::TransformGlobal>(cube1, Data::Transform({ 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 3.0f }, { 1.0f, 1.0f, 1.0f }));
+		engine.GetData().emplace<Data::MaterialPBR>(cube1, ColorF4(0.0f, 0.5f, 0.8f), ColorF3(0.5f, 0.5f, 0.5f), 0U, 1.0f, 0.5f, 1.0f);
+		Data::Geometry& geo = engine.GetData().emplace<Data::Geometry>(cube1, GFX::Resource::VertexBuffer(), GFX::Resource::IndexBuffer());
+		Data::MaterialBuffersPBR& mat = engine.GetData().emplace<Data::MaterialBuffersPBR>(cube1, Data::MaterialBuffersPBR());
+
+		GFX::Resource::Texture::PackDesc desc;
+		std::vector<GFX::Surface> surfaces;
+		desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+		desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+		desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+		desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+		mat.Init(engine.Gfx().GetDevice(), engine.GetData().get<Data::MaterialPBR>(cube1), desc);
+
+		geo.Vertices.Init(engine.Gfx().GetDevice(), { static_cast<U32>(vertices.size()), sizeof(GFX::Vertex), vertices.data() });
+		geo.Indices.Init(engine.Gfx().GetDevice(), { static_cast<U32>(indices.size()), indices.data() });
+	}
+	cube = engine.GetData().create();
+	engine.GetData().emplace<Data::RenderLambertian>(cube);
+	engine.GetData().emplace<Data::RenderOutline>(cube);
+	engine.GetData().emplace<Data::RenderWireframe>(cube);
+	engine.GetData().emplace<Data::ShadowCaster>(cube);
+	Float4 rot;
+	Math::XMStoreFloat4(&rot, Math::XMQuaternionRotationRollPitchYaw(0.0f, Math::ToRadians(45.0f), 0.0f));
+	engine.GetData().emplace<Data::TransformGlobal>(cube, Data::Transform(rot, { 0.0f, 2.0f, 3.0f }, { 1.0f, 1.0f, 1.0f }));
+	engine.GetData().emplace<Data::MaterialPBR>(cube, ColorF4(1.0f, 0.5f, 0.8f), ColorF3(1.0f, 1.0f, 1.0f), 0U, 1.0f, 5.0f, 1.0f);
+	Data::Geometry& geo = engine.GetData().emplace<Data::Geometry>(cube, GFX::Resource::VertexBuffer(), GFX::Resource::IndexBuffer());
+	Data::MaterialBuffersPBR& mat = engine.GetData().emplace<Data::MaterialBuffersPBR>(cube, Data::MaterialBuffersPBR());
+
+	GFX::Resource::Texture::PackDesc desc;
+	std::vector<GFX::Surface> surfaces;
+	desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+	desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+	desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+	desc.AddTexture(GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader, std::move(surfaces));
+	mat.Init(engine.Gfx().GetDevice(), engine.GetData().get<Data::MaterialPBR>(cube), desc);
+
+	geo.Vertices.Init(engine.Gfx().GetDevice(), { static_cast<U32>(vertices.size()), sizeof(GFX::Vertex), vertices.data() });
+	geo.Indices.Init(engine.Gfx().GetDevice(), { static_cast<U32>(indices.size()), indices.data() });
+
+	EID light = engine.GetData().create();
+	engine.GetData().emplace<Data::LightPoint>(light);
+	engine.GetData().emplace<Data::TransformGlobal>(light, Data::Transform({ 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 4.0f, 3.0f }, { 1.0f, 1.0f, 1.0f }));
+	Data::PointLight& pointLight = engine.GetData().emplace<Data::PointLight>(light, ColorF3(1.0f, 1.0f, 1.0f), 100.0f, ColorF3(0.05f, 0.05f, 0.05f), 1.0f, 4.0f);
+	engine.GetData().emplace<Data::PointLightBuffer>(light,
+		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad),
+		GFX::Resource::CBuffer()).Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight), false);
+
+	engine.Gfx().GetDevice().StartUpload();
+	engine.Gfx().GetDevice().EndUploadRegion();
 }
 
 int App::Run()

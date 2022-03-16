@@ -43,8 +43,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(cl, L"Lighting Clear", PixelVal::White);
-		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
-		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());
+		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
+		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
 		ZE_DRAW_TAG_END(cl);
 
 		auto group = Data::GetDirectionalLightGroup(renderData.Registry);

@@ -46,21 +46,21 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos)
 	{
+		// Clearing data on first usage
+		cl.Open(dev);
+		ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Clear", PixelVal::Gray);
+
+		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+
+		ZE_DRAW_TAG_END(cl);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
+
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		const U64 count = group.size();
 		if (count)
 		{
-			// Clearing data on first usage
-			cl.Open(dev);
-			ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Clear", PixelVal::Gray);
-
-			renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
-			renderData.Buffers.ClearRTV(cl, ids.RenderTarget, ColorF4());
-
-			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
-
 			// Prepare view-projections for casting onto 6 faces
 			Matrix* viewBuffer = reinterpret_cast<Matrix*>(data.ViewBuffer.GetRegion());
 			const Vector position = Math::XMLoadFloat3(&lightPos);

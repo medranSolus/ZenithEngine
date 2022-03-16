@@ -123,15 +123,15 @@ namespace ZE::GFX::Pipeline
 		const RID gbuffDepth = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 		const RID lightbuffColor = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID lightbuffSpecular = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID outline = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineBlur = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4() });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineDepth = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 #pragma endregion
@@ -176,7 +176,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
@@ -193,7 +193,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("dirLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("dirLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
@@ -210,7 +210,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("spotLight.LB_C", Resource::State::RenderTarget);
 			node.AddInput("spotLight.LB_S", Resource::State::RenderTarget);
 			node.AddInnerBuffer(Resource::State::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube | FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4() });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube | FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::State::DepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
 			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);

@@ -190,6 +190,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 			resDesc.Width = res.Width;
 			resDesc.Height = res.Height;
 			resDesc.DepthOrArraySize = res.ArraySize;
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Cube)
+				resDesc.DepthOrArraySize *= 6;
 			resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 			bool isRT = false, isDS = false, isUA = false, isSR = res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV;
@@ -589,13 +591,13 @@ namespace ZE::GFX::API::DX12::Pipeline
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				if (res.IsCube())
 				{
-					if (res.Desc.DepthOrArraySize > 1)
+					if (res.Desc.DepthOrArraySize > 6)
 					{
 						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
 						srvDesc.TextureCubeArray.MostDetailedMip = 0;
 						srvDesc.TextureCubeArray.MipLevels = res.Desc.MipLevels;
 						srvDesc.TextureCubeArray.First2DArrayFace = 0;
-						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize;
+						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize / 6;
 						srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
 					}
 					else

@@ -11,7 +11,8 @@ class App final
 	Engine engine;
 	Data::CameraType cameraType = Data::CameraType::Person;
 	EID camera;
-	float moveSpeed = 0.1f;
+	EID cube;
+	float moveSpeed = 0.02f;
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
 	Matrix currentProjection;
