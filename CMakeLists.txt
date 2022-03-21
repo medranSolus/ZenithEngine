@@ -53,6 +53,7 @@ set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 
 # External
+set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
@@ -69,6 +70,7 @@ set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 
 # External
 set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
+set(ZLIB_INC_DIR "${ZLIB_DIR}")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
@@ -162,7 +164,9 @@ if(MSVC)
 	#	Note: Caused by removing /Wall from CXX_FLAGS and then setting it for specific files, due to ImGui warnings, maybe /W4 would suffice?
 	# C4868 - compiler may not enforce left-to-right evaluation order in braced initializer list
 	#	Note: Caused by entt::dense_map, just hide it.
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868")
+	# C4710 - function not inlined
+	# C4711 - function selected for automatic inline expansion
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)
@@ -177,6 +181,9 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 
 # General flags
+if(${ZE_MODEL_LOADING})
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_MODEL_LOADING")
+endif()
 if(ZE_RENDERER_SINGLE_THREAD)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_RENDER_GRAPH_SINGLE_THREAD")
 endif()
@@ -223,6 +230,18 @@ else()
 	set(LIB_PREFIX "lib")
 endif()
 
+# zlib
+set(ZLIB_CACHE_ARGS "")
+add_external_project(ZLIB "" "")
+if(NOT EXISTS "${ZLIB_OUT_LIB}")
+	ExternalProject_Add_Step(${ZLIB_TARGET} headerConfig
+		DEPENDEES install
+		LOG OFF
+		COMMAND "${CMAKE_COMMAND}" -E copy
+		"${ZLIB_BUILD_DIR}/zconf.h"
+		"${EXTERNAL_BIN_DIR}")
+endif()
+
 # Assimp
 if(${ZE_MODEL_LOADING})
 	# No exports set
@@ -232,11 +251,12 @@ if(${ZE_MODEL_LOADING})
 		"-DASSIMP_BUILD_ASSIMP_VIEW:BOOL=OFF"
 		"-DINJECT_DEBUG_POSTFIX:BOOL=OFF"
 		"-DASSIMP_INSTALL:BOOL=OFF"
-		"-DASSIMP_BUILD_ZLIB :BOOL=ON"
+		"-DASSIMP_BUILD_ZLIB:BOOL=ON"
+		"-DZLIB_FOUND:BOOL=OFF"
+		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DASSIMP_INSTALL_PDB:BOOL=OFF"
 		"-DASSIMP_NO_EXPORT:BOOL=OFF")
 	add_external_project(ASSIMP "lib/" "code/")
-	copy_inner_lib(ASSIMP ZLIB "" "" "contrib/zlib/")
 	if(NOT EXISTS "${ASSIMP_OUT_LIB}")
 		ExternalProject_Add_Step(${ASSIMP_TARGET} headerConfig
 			DEPENDEES install
@@ -248,11 +268,12 @@ if(${ZE_MODEL_LOADING})
 endif()
 
 # FreeType
-set(FTYPE_CACHE_ARGS "-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB:BOOL=ON"
-	"-DCMAKE_DISABLE_FIND_PACKAGE_BZip2:BOOL=ON"
-	"-DCMAKE_DISABLE_FIND_PACKAGE_PNG:BOOL=ON"
-	"-DCMAKE_DISABLE_FIND_PACKAGE_HarfBuzz:BOOL=ON"
-	"-DCMAKE_DISABLE_FIND_PACKAGE_BrotliDec:BOOL=ON")
+set(FTYPE_CACHE_ARGS "-DFT_DISABLE_ZLIB:BOOL=ON"
+	"-DZLIB_FOUND:BOOL=ON"
+	"-DZLIB_INCLUDE_DIRS:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
+	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
+	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
+	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
 add_external_project(FTYPE "" "")
 
  # DirectXTex
@@ -264,8 +285,7 @@ add_external_project(DXTEX "bin/CMake/" "")
 # EnTT
 if(MSVC)
 	set(ENTT_INCLUDE_NATVIS ON CACHE BOOL "Use debug natvis files" FORCE)
-endif()
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+elseif(GNU OR Clang)
 	set(ENTT_USE_SANITIZER ON CACHE BOOL "Enable address sanitizer" FORCE)
 endif()
 set(ENTT_INCLUDE_HEADERS ON CACHE BOOL "Include header for dependency" FORCE)
