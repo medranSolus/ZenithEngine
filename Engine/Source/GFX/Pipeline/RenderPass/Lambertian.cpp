@@ -20,6 +20,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
+		Resource::Texture::Schema textureSchema;
+		textureSchema.AddTexture(Data::MaterialPBR::TEX_COLOR_NAME, Resource::Texture::Type::Tex2D, Resource::Texture::Usage::PixelShader);
+		textureSchema.AddTexture(Data::MaterialPBR::TEX_NORMAL_NAME, Resource::Texture::Type::Tex2D, Resource::Texture::Usage::PixelShader);
+		textureSchema.AddTexture(Data::MaterialPBR::TEX_SPECULAR_NAME, Resource::Texture::Type::Tex2D, Resource::Texture::Usage::PixelShader);
+		textureSchema.AddTexture(Data::MaterialPBR::TEX_HEIGHT_NAME, Resource::Texture::Type::Tex2D, Resource::Texture::Usage::PixelShader);
+		buildData.TextureLib.Add(Data::MaterialPBR::TEX_SCHEMA_NAME, std::move(textureSchema));
+
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
@@ -100,7 +107,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
@@ -113,7 +120,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				dev.ExecuteMain(cl);
 			}
 
-			const Data::MaterialBuffersPBR* currentMaterial = nullptr;
+			Data::MaterialID currentMaterial = { INVALID_EID };
 			// Normal pass
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
@@ -136,16 +143,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					meshBatchId.Bind(cl, ctx);
 
 					auto entity = group[i];
-					const auto& material = group.get<Data::MaterialBuffersPBR>(entity);
-					if (currentMaterial != &material)
+					auto material = group.get<Data::MaterialID>(entity);
+					if (currentMaterial.ID != material.ID)
 					{
-						currentMaterial = &material;
-						material.BindBuffer(cl, ctx);
-						material.BindTextures(cl, ctx);
+						currentMaterial = material;
+
+						const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID);
+						buffers.BindBuffer(cl, ctx);
+						buffers.BindTextures(cl, ctx);
 					}
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 

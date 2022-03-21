@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/Shader.h"
-#include "GFX/Resource/Texture/Library.h"
+#include "GFX/Resource/Texture/Schema.h"
 #include "GFX/Binding/Library.h"
 
 namespace ZE::GFX::Pipeline

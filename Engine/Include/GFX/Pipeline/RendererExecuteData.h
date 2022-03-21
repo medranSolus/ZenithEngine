@@ -12,6 +12,8 @@ namespace ZE::GFX::Pipeline
 	{
 		// Registry containing all the scene data
 		Data::Storage Registry;
+		// Registry containing material and geometry data
+		Data::Storage Resources;
 		// Buffers used for rendering. Initialized by RenderGraph
 		FrameBuffer Buffers;
 		Binding::Library Bindings;

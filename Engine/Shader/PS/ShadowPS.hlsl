@@ -13,28 +13,32 @@ float main(float3 worldPos : POSITION,
 	float4 worldTan : TANGENTPACK,
 	float3 cameraDir : CAMERADIR) : SV_TARGET
 {
-	float depth = 0.0f;
 	float3 lightToVertex = worldPos - cb_lightPos;
 
+	[branch]
 	if (cb_materialFlags & FLAG_USE_TEXTURE)
+		clip(tex.Sample(splr_AW, tc).a - 0.0039f);
+
+	[branch]
+	if (cb_materialFlags & (FLAG_USE_NORMAL | FLAG_USE_PARALLAX))
 	{
-		if (cb_materialFlags & (FLAG_USE_PARALLAX | FLAG_USE_NORMAL))
+		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
+		[branch]
+		if (cb_materialFlags & FLAG_USE_PARALLAX)
 		{
-			const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AW);
 			if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 				discard;
-
-			const float3 normal = GetMappedNormal(TBN, tc, normalMap, splr_PW).rgb;
-			//if (dot(normal, lightToVertex) <= 0)
-			//	depth = GetParallaxDepth(tc, normalize(mul(TBN, -lightToVertex)), parallax, splr_AW);
-			lightToVertex -= normal * (depth + cb_pbrData.ShadowNormalOffset);
 		}
-		else
-			lightToVertex -= cb_pbrData.ShadowNormalOffset * normalize(worldNormal);
 
-		clip(tex.Sample(splr_AW, tc).a - 0.0039f);
+		const float3 normal = GetMappedNormal(TBN, tc, normalMap, splr_PW).rgb;
+		//float depth = 0.0f;
+		//if (dot(normal, lightToVertex) <= 0)
+		//	depth = GetParallaxDepth(tc, normalize(mul(TBN, -lightToVertex)), parallax, splr_AW);
+		lightToVertex -= normal * (/*depth + */cb_pbrData.ShadowNormalOffset);
 	}
+	else
+		lightToVertex -= cb_pbrData.ShadowNormalOffset * normalize(worldNormal);
 
 	return length(lightToVertex) + cb_pbrData.ShadowBias;
 }

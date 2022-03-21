@@ -46,15 +46,15 @@ namespace ZE::GFX
 #pragma region Functions
 	constexpr void Surface::PutPixel(U64 x, U64 y, const Pixel& c) noexcept
 	{
-		assert(x < GetWidth());
-		assert(y < GetHeight());
+		ZE_ASSERT(x < GetWidth(), "X out of bounds!");
+		ZE_ASSERT(y < GetHeight(), "Y out of bounds!");
 		GetBuffer()[y * GetWidth() + x] = c;
 	}
 
 	constexpr Pixel Surface::GetPixel(U64 x, U64 y) const noexcept
 	{
-		assert(x < GetWidth());
-		assert(y < GetHeight());
+		ZE_ASSERT(x < GetWidth(), "X out of bounds!");
+		ZE_ASSERT(y < GetHeight(), "Y out of bounds!");
 		return GetBuffer()[y * GetWidth() + x];
 	}
 #pragma endregion

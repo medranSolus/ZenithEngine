@@ -22,20 +22,24 @@ PSOut main(float3 worldPos : POSITION,
 	float3 cameraDir : CAMERADIR)
 {
 	PSOut pso;
-	if (cb_material.Flags & FLAG_USE_NORMAL)
+
+	[branch]
+	if (cb_material.Flags & FLAG_USE_NORMAL || cb_material.Flags & FLAG_USE_PARALLAX)
 	{
 		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
+		[branch]
 		if (cb_material.Flags & FLAG_USE_PARALLAX)
 		{
 			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, parallax, splr_AW);
 			if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 				discard;
 		}
-		pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AW));
+		[branch]
+		if (cb_material.Flags & FLAG_USE_NORMAL)
+			pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AW));
 	}
-	else
-		pso.normal = EncodeNormal(normalize(worldNormal));
 
+	[branch]
 	if (cb_material.Flags & FLAG_USE_TEXTURE)
 		pso.color = tex.Sample(splr_AW, tc);
 	else
@@ -43,6 +47,9 @@ PSOut main(float3 worldPos : POSITION,
 
 	clip(pso.color.a - 0.0039f);
 	pso.color.a = 0.0f;
+
+	if ((cb_material.Flags & FLAG_USE_NORMAL) == 0)
+		pso.normal = EncodeNormal(normalize(worldNormal));
 
 	if (cb_material.Flags & FLAG_USE_SPECULAR)
 	{

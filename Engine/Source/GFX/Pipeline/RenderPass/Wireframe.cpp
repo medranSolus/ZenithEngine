@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 

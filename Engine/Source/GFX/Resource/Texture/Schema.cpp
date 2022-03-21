@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::Resource::Texture
 {
-	void Schema::AddTexture(const std::string& name, Type type, Usage usage) noexcept
+	void Schema::AddTexture(const std::string& name, Type type, Usages usage) noexcept
 	{
 		ZE_ASSERT(!Location.contains(name) && !Info.contains(name), "Texture already present!");
 		Location.emplace(name, static_cast<U32>(Location.size()));

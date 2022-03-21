@@ -92,7 +92,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
@@ -120,8 +120,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					auto entity = group[i];
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(group[i]).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 

@@ -1,11 +1,8 @@
 #pragma once
 #include "Camera.h"
-#include "Entity.h"
 #include "Geometry.h"
 #include "Light.h"
 #include "MaterialPBR.h"
-#include "Mesh.h"
-#include "Model.h"
 #include "Transform.h"
 
 namespace ZE::Data
@@ -31,7 +28,7 @@ namespace ZE::Data
 	struct LightPoint {};
 
 	template<EmptyType T>
-	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<Geometry, TransformGlobal, MaterialBuffersPBR, MaterialPBR>); }
+	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
 
 	inline auto GetDirectionalLightGroup(Storage& registry) noexcept { return registry.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
 	inline auto GetSpotLightGroup(Storage& registry) noexcept { return registry.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }

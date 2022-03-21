@@ -166,43 +166,46 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			for (U32 i = 0; const auto& info : copyInfo)
 			{
 				auto& tex = desc.Textures.at(i);
-				U64 depthSlice = info.first / info.second.size();
-				D3D12_TEXTURE_COPY_LOCATION copyDest;
-				copyDest.pResource = resources[i].Resource.Get();
-				copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				copyDest.SubresourceIndex = 0;
-
-				// Memcpy according to resource structure
-				for (U16 j = 0; const auto& region : info.second)
+				if (tex.Surfaces.size())
 				{
-					for (U32 z = 0; z < region.Footprint.Depth; ++z)
+					U64 depthSlice = info.first / info.second.size();
+					D3D12_TEXTURE_COPY_LOCATION copyDest;
+					copyDest.pResource = resources[i].Resource.Get();
+					copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+					copyDest.SubresourceIndex = 0;
+
+					// Memcpy according to resource structure
+					for (U16 j = 0; const auto & region : info.second)
 					{
-						U8* dest = uploadBuffer + z * depthSlice + region.Offset;
-						const Surface& surface = tex.Surfaces.at(static_cast<U64>(j) + z);
-						const U8* src = reinterpret_cast<const U8*>(surface.GetBuffer());
-						for (U32 y = 0; y < region.Footprint.Height; ++y)
+						for (U32 z = 0; z < region.Footprint.Depth; ++z)
 						{
-							U64 destRowOffset = static_cast<U64>(y) * region.Footprint.RowPitch;
-							U64 srcRowOffset = static_cast<U64>(y) * surface.GetRowByteSize();
-							memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
+							U8* dest = uploadBuffer + z * depthSlice + region.Offset;
+							const Surface& surface = tex.Surfaces.at(static_cast<U64>(j) + z);
+							const U8* src = reinterpret_cast<const U8*>(surface.GetBuffer());
+							for (U32 y = 0; y < region.Footprint.Height; ++y)
+							{
+								U64 destRowOffset = static_cast<U64>(y) * region.Footprint.RowPitch;
+								U64 srcRowOffset = static_cast<U64>(y) * surface.GetRowByteSize();
+								memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
+							}
 						}
+						copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
+						copySource.PlacedFootprint.Footprint = region.Footprint;
+
+						ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
+						D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
+						if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
+							endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+						if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
+							endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+
+						device.UploadTexture(copyDest, copySource, endState);
+						++copyDest.SubresourceIndex;
+						++j;
 					}
-					copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
-					copySource.PlacedFootprint.Footprint = region.Footprint;
-
-					ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
-					D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
-					if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
-						endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-					if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
-						endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-
-					device.UploadTexture(copyDest, copySource, endState);
-					++copyDest.SubresourceIndex;
-					++j;
+					bufferOffset += info.first;
+					uploadBuffer += info.first;
 				}
-				bufferOffset += info.first;
-				uploadBuffer += info.first;
 				++i;
 			}
 			uploadRes->Unmap(0, nullptr);

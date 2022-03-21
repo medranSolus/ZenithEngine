@@ -24,6 +24,8 @@ namespace ZE
 		constexpr void ToggleGui() noexcept { guiEnabled = !guiEnabled; }
 
 		constexpr Data::Storage& GetData() noexcept { return renderer.GetRegistry(); }
+		constexpr Data::Storage& GetResourceData() noexcept { return renderer.GetResources(); }
+		constexpr GFX::Resource::Texture::Library& GetTextureLibrary() noexcept { return textureLib; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
 		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }

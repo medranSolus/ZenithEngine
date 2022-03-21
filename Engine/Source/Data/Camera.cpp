@@ -1,4 +1,4 @@
-#include "Data/Operations.h"
+#include "Data/Camera.h"
 #include "Data/Transform.h"
 
 namespace ZE::Data
@@ -70,6 +70,8 @@ namespace ZE::Data
 
 	void MovePersonCameraX(Storage& registry, EID camera, float dX) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3& position = registry.get<Transform>(camera).Position;
 		Float3 moveDir = registry.get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
@@ -82,11 +84,14 @@ namespace ZE::Data
 
 	void MovePersonCameraY(Storage& registry, EID camera, float dY) noexcept
 	{
+		ZE_VALID_EID(camera);
 		registry.get<Transform>(camera).Position.y += dY;
 	}
 
 	void MovePersonCameraZ(Storage& registry, EID camera, float dZ) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3& position = registry.get<Transform>(camera).Position;
 		Float3 moveDir = registry.get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
@@ -98,6 +103,8 @@ namespace ZE::Data
 
 	void RollPersonCamera(Storage& registry, EID camera, float delta) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3 moveDir = registry.get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
 
@@ -115,6 +122,7 @@ namespace ZE::Data
 
 	void RotatePersonCamera(Storage& registry, EID camera, float angleDX, float angleDY) noexcept
 	{
+		ZE_VALID_EID(camera);
 		Camera& cam = registry.get<Camera>(camera);
 
 		if (abs(angleDX) < Camera::ROTATE_EPSILON)
@@ -165,6 +173,8 @@ namespace ZE::Data
 
 	void MoveFloatingCameraX(Storage& registry, EID camera, float dX) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3& position = registry.get<Transform>(camera).Position;
 		const Camera& cam = registry.get<Camera>(camera);
 
@@ -176,6 +186,8 @@ namespace ZE::Data
 
 	void MoveFloatingCameraY(Storage& registry, EID camera, float dY) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3& position = registry.get<Transform>(camera).Position;
 		const Float3& up = registry.get<Camera>(camera).UpVector;
 
@@ -186,6 +198,8 @@ namespace ZE::Data
 
 	void MoveFloatingCameraZ(Storage& registry, EID camera, float dZ) noexcept
 	{
+		ZE_VALID_EID(camera);
+
 		Float3& position = registry.get<Transform>(camera).Position;
 		const Float3& moveDir = registry.get<Camera>(camera).EyeDirection;
 
@@ -196,6 +210,7 @@ namespace ZE::Data
 
 	void RollFloatingCamera(Storage& registry, EID camera, float delta) noexcept
 	{
+		ZE_VALID_EID(camera);
 		const Vector rotor = Math::XMQuaternionRotationNormal(Math::XMLoadFloat3(&registry.get<Camera>(camera).EyeDirection), delta);
 
 		Float3& up = registry.get<Camera>(camera).UpVector;
@@ -210,6 +225,7 @@ namespace ZE::Data
 
 	void RotateFloatingCamera(Storage& registry, EID camera, float angleDX, float angleDY) noexcept
 	{
+		ZE_VALID_EID(camera);
 		Camera& cam = registry.get<Camera>(camera);
 
 		if (abs(angleDX) < Camera::ROTATE_EPSILON)

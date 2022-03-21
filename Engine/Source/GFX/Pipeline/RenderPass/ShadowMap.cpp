@@ -99,7 +99,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
@@ -112,7 +112,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				dev.ExecuteMain(cl);
 			}
 
-			const Data::MaterialPBR* currentMaterial = nullptr;
+			Data::MaterialID currentMaterial = { INVALID_EID };
 			// Normal pass
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
@@ -139,20 +139,21 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					meshBatchId.Bind(cl, ctx);
 
 					auto entity = group[i];
-					const auto& material = group.get<Data::MaterialPBR>(entity);
-					if (currentMaterial != &material)
+					auto material = group.get<Data::MaterialID>(entity);
+					if (currentMaterial.ID != material.ID)
 					{
-						currentMaterial = &material;
+						currentMaterial = material;
 
-						Resource::Constant<float> parallaxScale(dev, material.ParallaxScale);
+						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(material.ID);
+						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
 						parallaxScale.Bind(cl, ctx);
-						Resource::Constant<U32> materialFlags(dev, material.Flags);
+						Resource::Constant<U32> materialFlags(dev, matData.Flags);
 						materialFlags.Bind(cl, ctx);
-						group.get<Data::MaterialBuffersPBR>(entity).BindTextures(cl, ctx);
+						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 					}
 					ctx.Reset();
 
-					const auto& geometry = group.get<Data::Geometry>(entity);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 

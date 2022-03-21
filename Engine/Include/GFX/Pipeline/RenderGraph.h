@@ -43,6 +43,7 @@ namespace ZE::GFX::Pipeline
 		virtual ~RenderGraph();
 
 		constexpr Data::Storage& GetRegistry() noexcept { return execData.Registry; }
+		constexpr Data::Storage& GetResources() noexcept { return execData.Resources; }
 
 		void Execute(Graphics& gfx);
 	};

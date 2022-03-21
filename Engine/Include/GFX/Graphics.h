@@ -15,7 +15,7 @@ namespace ZE::GFX
 	public:
 		Graphics() = default;
 		ZE_CLASS_DELETE(Graphics);
-		~Graphics() { device.WaitMain(device.SetMainFence()); }
+		~Graphics() = default;
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList; }

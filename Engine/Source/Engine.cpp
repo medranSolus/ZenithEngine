@@ -18,6 +18,8 @@ namespace ZE
 
 	Engine::~Engine()
 	{
+		// Wait till all GPU operations are done
+		graphics.GetDevice().WaitMain(graphics.GetDevice().SetMainFence());
 	}
 
 	void Engine::BeginFrame()
