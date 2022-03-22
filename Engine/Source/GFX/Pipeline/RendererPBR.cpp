@@ -306,6 +306,5 @@ namespace ZE::GFX::Pipeline
 
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
-		execData.DynamicBuffer.Update(dev, &dynamicData, sizeof(dynamicData));
 	}
 }

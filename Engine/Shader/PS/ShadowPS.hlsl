@@ -10,7 +10,7 @@ Texture2D parallax : register(t3);
 float main(float3 worldPos : POSITION,
 	float3 worldNormal : NORMAL,
 	float2 tc : TEXCOORD,
-	float4 worldTan : TANGENTPACK,
+	float3 worldTan : TANGENT,
 	float3 cameraDir : CAMERADIR) : SV_TARGET
 {
 	float3 lightToVertex = worldPos - cb_lightPos;

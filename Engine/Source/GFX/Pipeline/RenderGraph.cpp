@@ -723,6 +723,7 @@ namespace ZE::GFX::Pipeline
 		CommandList& mainList = gfx.GetMainList();
 
 		dev.WaitMain(dev.GetMainFence());
+		execData.DynamicBuffer.Update(dev, execData.DynamicData, dynamicDataSize);
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 		mainList.Reset(dev);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD

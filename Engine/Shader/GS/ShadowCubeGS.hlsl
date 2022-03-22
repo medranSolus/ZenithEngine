@@ -6,7 +6,7 @@ struct GSIn
 	float3 worldPos : POSITION;
 	float3 worldNormal : NORMAL;
 	float2 tc : TEXCOORD;
-	float4 worldTan : TANGENTPACK;
+	float3 worldTan : TANGENT;
 };
 
 struct GSOut
@@ -14,7 +14,7 @@ struct GSOut
 	float3 worldPos : POSITION;
 	float3 worldNormal : NORMAL;
 	float2 tc : TEXCOORD;
-	noperspective float4 worldTan : TANGENTPACK;
+	float3 worldTan : TANGENT;
 	float3 cameraDir : CAMERADIR;
 	uint face : SV_RENDERTARGETARRAYINDEX;
 	float4 pos : SV_POSITION;

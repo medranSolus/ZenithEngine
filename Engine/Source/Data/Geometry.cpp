@@ -48,7 +48,7 @@ namespace ZE::Data
 			vertex.Tangent.x = mesh.mTangents[i].x;
 			vertex.Tangent.y = mesh.mTangents[i].y;
 			vertex.Tangent.z = mesh.mTangents[i].z;
-			vertex.Tangent.w = 1.0f; // TODO: Check somehow
+			//vertex.Tangent.w = -1.0f; // TODO: Check somehow
 		}
 
 		EID meshId = meshRegistry.create();

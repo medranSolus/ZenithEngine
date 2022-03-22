@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline
 		void SetupSsaoData(U32 width, U32 height) noexcept;
 
 	public:
-		RendererPBR() noexcept : RenderGraph(&settingsData, &dynamicData) {}
+		RendererPBR() noexcept : RenderGraph(&settingsData, &dynamicData, sizeof(CameraPBR)) {}
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 

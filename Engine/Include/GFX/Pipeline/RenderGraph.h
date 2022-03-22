@@ -32,13 +32,15 @@ namespace ZE::GFX::Pipeline
 	protected:
 		static constexpr U64 BACKBUFFER_RID = 0;
 
+		U32 dynamicDataSize;
 		RendererExecuteData execData;
 
 		void Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);
 
 	public:
-		RenderGraph(void* settingsData, void* dynamicData) noexcept { execData.SettingsData = settingsData; execData.DynamicData = dynamicData; }
+		RenderGraph(void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept
+			: dynamicDataSize(dynamicDataSize) { execData.SettingsData = settingsData; execData.DynamicData = dynamicData; }
 		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph();
 
