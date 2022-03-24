@@ -4,7 +4,7 @@
 namespace ZE::GFX::Pipeline
 {
 	// Handle to single resource in FrameBuffer
-	typedef U64 ResourceID;
+	typedef U16 ResourceID;
 }
 namespace ZE
 {

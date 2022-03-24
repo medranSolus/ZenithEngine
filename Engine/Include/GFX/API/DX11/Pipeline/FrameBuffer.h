@@ -15,13 +15,15 @@ namespace ZE::GFX::API::DX11::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { return { 0, 0 }; }
+		UInt2 GetDimmensions(RID rid) const noexcept { return { 0, 0 }; }
 
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
 		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}
 
 		void SetRTV(GFX::CommandList& cl, RID rid) const {}
+		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const {}
 		void SetDSV(GFX::CommandList& cl, RID rid) const {}
+		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const {}
 		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const {}
 
 		template<U32 RTVCount>
@@ -31,9 +33,12 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const {}
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const {}
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const {}
 
 		void BarrierUAV(GFX::CommandList& cl, RID rid) const {}
 		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const {}
+		template<U32 BarrierCount>
+		void BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const {}
 
 		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const {}
 		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const {}

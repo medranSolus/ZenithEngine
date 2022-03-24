@@ -32,9 +32,12 @@ namespace ZE::GFX::API::DX12::Pipeline
 		Ptr<bool> aliasingResources;
 		Ptr<BufferData> resources;
 
+		RID resourceCount;
 		Ptr<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDsv;
+		Ptr<Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>> rtvDsvMips; // No backbuffer
 		Ptr<D3D12_GPU_DESCRIPTOR_HANDLE> srv;
-		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> uav;
+		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> uav; // No backbuffer
+		Ptr<Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>> uavMips; // No backbuffer
 
 		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
 		DX::ComPtr<ID3D12DescriptorHeap> dsvDescHeap;
@@ -62,13 +65,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
-		std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { const auto& data = resources[rid]; return { data.Width, data.Height }; }
+		UInt2 GetDimmensions(RID rid) const noexcept { const auto& data = resources[rid]; return { data.Width, data.Height }; }
 
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
-		void InitDSV(GFX::CommandList& cl, U64 rid) const noexcept { InitResource(cl.Get().dx12, rid); }
+		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 
 		void SetRTV(GFX::CommandList& cl, RID rid) const;
+		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const;
 		void SetDSV(GFX::CommandList& cl, RID rid) const;
+		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const;
 		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const;
 
 		template<U32 RTVCount>
@@ -78,9 +83,12 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const;
 
 		void BarrierUAV(GFX::CommandList& cl, RID rid) const;
 		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const;
+		template<U32 BarrierCount>
+		void BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const;
 
 		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const;
 		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const;
@@ -104,6 +112,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
 			RID id = rid[i];
+			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
 			handles[i] = rtvDsv[id];
 			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
@@ -126,6 +136,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
 			RID id = rtv[i];
+			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
 			handles[i] = rtvDsv[id];
 			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
@@ -133,6 +145,53 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
 		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, adjacent, rtvDsv + dsv);
+	}
+
+	template<U32 BarrierCount>
+	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const
+	{
+		static_assert(BarrierCount > 1, "For performance reasons FrameBuffer::BarrierTransition() should be only used for multiple barriers!");
+
+		D3D12_RESOURCE_BARRIER transitions[BarrierCount];
+		for (U32 i = 0; i < BarrierCount; ++i)
+		{
+			const GFX::Pipeline::TransitionInfo& info = barriers.at(i);
+			ZE_ASSERT(info.RID < resourceCount, "Resource ID outside available range!");
+
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::UnorderedAccess ||
+				info.BeforeState == GFX::Resource::State::UnorderedAccess && uav[info.RID - 1].first.ptr != -1,
+				"Current resource is not suitable for being unnordered access!");
+
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::RenderTarget ||
+				info.BeforeState == GFX::Resource::State::RenderTarget && rtvDsv[info.RID].ptr != -1,
+				"Current resource is not suitable for being render target!");
+
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::DepthRead ||
+				info.BeforeState == GFX::Resource::State::DepthRead && rtvDsv[info.RID].ptr != -1,
+				"Current resource is not suitable for being depth stencil!");
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::DepthWrite ||
+				info.BeforeState == GFX::Resource::State::DepthWrite && rtvDsv[info.RID].ptr != -1,
+				"Current resource is not suitable for being depth stencil!");
+
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourceAll ||
+				info.BeforeState == GFX::Resource::State::ShaderResourceAll && srv[info.RID].ptr != -1,
+				"Current resource is not suitable for being shader resource!");
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourcePS ||
+				info.BeforeState == GFX::Resource::State::ShaderResourcePS && srv[info.RID].ptr != -1,
+				"Current resource is not suitable for being shader resource!");
+			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourceNonPS ||
+				info.BeforeState == GFX::Resource::State::ShaderResourceNonPS && srv[info.RID].ptr != -1,
+				"Current resource is not suitable for being shader resource!");
+
+			D3D12_RESOURCE_BARRIER& barrier = transitions[i];
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = resources[info.RID].Resource.Get();
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Transition.StateBefore = GetResourceState(info.BeforeState);
+			barrier.Transition.StateAfter = GetResourceState(info.AfterState);
+		}
+		cl.Get().dx12.GetList()->ResourceBarrier(BarrierCount, transitions);
 	}
 #pragma endregion
 }

@@ -12,4 +12,12 @@ namespace ZE::GFX::Pipeline
 		Resource::State BeforeState;
 		Resource::State AfterState;
 	};
+
+	// Single info what transition barrier to perform on resource
+	struct TransitionInfo
+	{
+		RID RID;
+		Resource::State BeforeState;
+		Resource::State AfterState;
+	};
 }

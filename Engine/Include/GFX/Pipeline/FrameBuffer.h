@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline
 		// Main Gfx API
 
 		// Get width and height of the resource
-		constexpr std::pair<U32, U32> GetDimmensions(RID rid) const noexcept { std::pair<U32, U32> dimm; ZE_API_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
+		constexpr UInt2 GetDimmensions(RID rid) const noexcept { UInt2 dimm; ZE_API_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
 
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void InitRTV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitRTV, cl, rid); }
@@ -30,15 +30,19 @@ namespace ZE::GFX::Pipeline
 
 		// Maybe add also ability to set scale and offset for viewport if needed
 		constexpr void SetRTV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetRTV, cl, rid); }
+		constexpr void SetRTV(CommandList& cl, RID rid, U16 mipLevel) const { ZE_API_BACKEND_CALL(SetRTV, cl, rid, mipLevel); }
 		constexpr void SetDSV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(SetDSV, cl, rid); }
+		constexpr void SetDSV(CommandList& cl, RID rid, U16 mipLevel) const { ZE_API_BACKEND_CALL(SetDSV, cl, rid, mipLevel); }
 		constexpr void SetOutput(CommandList& cl, RID rtv, RID dsv) const { ZE_API_BACKEND_CALL(SetOutput, cl, rtv, dsv); }
 
 		// When render targets have been created one after one without any depth stencil between them
-		// they are considered adjacent which can speed-up their setting in the pipeline
+		// they are considered adjacent which can speed-up their setting in the pipeline.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		template<U32 RTVCount>
 		constexpr void SetRTV(CommandList& cl, const RID* rid, bool adjacent = false) const { ZE_API_BACKEND_CALL(SetRTV<RTVCount>, cl, rid, adjacent); }
 		// When render targets have been created one after one without any depth stencil between them
-		// they are considered adjacent which can speed-up their setting in the pipeline
+		// they are considered adjacent which can speed-up their setting in the pipeline.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		template<U32 RTVCount>
 		constexpr void SetOutput(CommandList& cl, const RID* rtv, RID dsv, bool adjacent = false) const { ZE_API_BACKEND_CALL(SetOutput<RTVCount>, cl, rtv, dsv, adjacent); }
 
@@ -48,6 +52,7 @@ namespace ZE::GFX::Pipeline
 		// UAV resources are only adjacent in situation of following resources, ex:
 		// 1: SRV, 2: UAV/SRV, 3: SRV
 		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetSRV, cl, bindCtx, rid); }
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.
@@ -55,12 +60,17 @@ namespace ZE::GFX::Pipeline
 		// UAV resources are only adjacent in situation of following resources, ex:
 		// 1: SRV, 2: UAV/SRV, 3: SRV
 		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const { ZE_API_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
+		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const { ZE_API_BACKEND_CALL(SetUAV, cl, bindCtx, rid, mipLevel); }
 
 		// Perform barrier between 2 usages of resource as UAV
 		constexpr void BarrierUAV(CommandList& cl, RID rid) const { ZE_API_BACKEND_CALL(BarrierUAV, cl, rid); }
 		// Manually transitions resource between states, recomended to use only on innner resources!
 		constexpr void BarrierTransition(CommandList& cl, RID rid, Resource::State before, Resource::State after) const { ZE_API_BACKEND_CALL(BarrierTransition, cl, rid, before, after); }
+		// Manually transitions resource between states, recomended to use only on innner resources!
+		template<U32 BarrierCount>
+		constexpr void BarrierTransition(CommandList& cl, const std::array<TransitionInfo, BarrierCount>& barriers) const { ZE_API_BACKEND_CALL(BarrierTransition<BarrierCount>, cl, barriers); }
 
 		// Render target before first use must be initialized or cleared (except backbuffer)
 		constexpr void ClearRTV(CommandList& cl, RID rid, const ColorF4& color) const { ZE_API_BACKEND_CALL(ClearRTV, cl, rid, color); }

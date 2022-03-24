@@ -17,5 +17,6 @@ namespace ZE::GFX::Pipeline
 		ColorF4 ClearColor;
 		float ClearDepth = 0.0f;
 		U8 ClearStencil = 0;
+		U16 MipLevels = 1;
 	};
 }
