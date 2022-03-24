@@ -156,7 +156,8 @@ App::App(const std::string& commandLine)
 	};
 	engine.GetData().emplace<Data::Camera>(camera, camData);
 	engine.GetData().emplace<Data::Transform>(camera, Data::Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
-	currentProjection = Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio, camData.Projection.NearClip, camData.Projection.FarClip);
+	Math::XMStoreFloat4x4(&currentProjection, Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio, camData.Projection.NearClip, camData.Projection.FarClip));
+	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), currentProjection);
 
 	EID cubeGeometry = engine.GetResourceData().create();
 	EID cubeMaterial = engine.GetResourceData().create();

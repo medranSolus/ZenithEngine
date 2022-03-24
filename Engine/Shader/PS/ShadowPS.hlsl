@@ -15,23 +15,21 @@ float main(float3 worldPos : POSITION,
 {
 	float3 lightToVertex = worldPos - cb_lightPos;
 
-	[branch]
 	if (cb_materialFlags & FLAG_USE_TEXTURE)
-		clip(tex.Sample(splr_AW, tc).a - 0.0039f);
+		clip(tex.Sample(splr_AR, tc).a - 0.0039f);
 
-	[branch]
 	if (cb_materialFlags & (FLAG_USE_NORMAL | FLAG_USE_PARALLAX))
 	{
 		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 		[branch]
 		if (cb_materialFlags & FLAG_USE_PARALLAX)
 		{
-			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AW);
+			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_parallaxScale, parallax, splr_AR);
 			if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 				discard;
 		}
 
-		const float3 normal = GetMappedNormal(TBN, tc, normalMap, splr_PW).rgb;
+		const float3 normal = GetMappedNormal(TBN, tc, normalMap, splr_PR);
 		//float depth = 0.0f;
 		//if (dot(normal, lightToVertex) <= 0)
 		//	depth = GetParallaxDepth(tc, normalize(mul(TBN, -lightToVertex)), parallax, splr_AW);

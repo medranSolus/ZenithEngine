@@ -6,25 +6,26 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
-	static constexpr U32 NOISE_SIZE = 32;
-	static constexpr U32 NOISE_WIDTH = NOISE_SIZE / 4;
-	static constexpr U32 NOISE_HEIGHT = NOISE_SIZE / 8;
-
 	struct Resources
 	{
 		RID Depth;
 		RID Normal;
+		RID ViewspaceDepth;
+		RID ScratchSSAO;
+		RID DepthEdges;
 		RID SSAO;
 	};
 
 	struct ExecuteData
 	{
 		CommandList CL;
+		U32 BindingIndexPrefilter;
 		U32 BindingIndexSSAO;
-		U32 BindingIndexBlur;
+		U32 BindingIndexDenoise;
+		Resource::PipelineStateCompute StatePrefilter;
 		Resource::PipelineStateCompute StateSSAO;
-		Resource::PipelineStateCompute StateBlur;
-		Resource::Texture::Pack Noise;
+		Resource::PipelineStateCompute StateDenoise;
+		Resource::Texture::Pack HilbertLUT;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }

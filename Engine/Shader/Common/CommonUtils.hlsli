@@ -1,3 +1,6 @@
+#ifndef COMMON_UTILS_HLSLI
+#define COMMON_UTILS_HLSLI
+
 // Encode normal into modified spherical coordinates
 float2 EncodeNormal(const in float3 normal)
 {
@@ -39,3 +42,5 @@ float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform 
 	const float4 pos = mul(float4(x, y, depth, 1.0f), inverseViewProjection);
 	return pos.xyz / pos.w;
 }
+
+#endif // COMMON_UTILS_HLSLI

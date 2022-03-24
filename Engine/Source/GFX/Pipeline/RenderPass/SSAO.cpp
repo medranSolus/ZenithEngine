@@ -1,4 +1,6 @@
 #include "GFX/Pipeline/RenderPass/SSAO.h"
+#include "GFX/Resource/Constant.h"
+#include "XeGTAO.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
@@ -7,8 +9,20 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		ExecuteData* passData = new ExecuteData;
 		passData->CL.Init(dev, CommandType::Compute);
 
+		// Prefilter pass
 		Binding::SchemaDesc desc;
+		desc.AddRange({ 5, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
+		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
+
+		Resource::Shader prefilter(L"SSAOPrefilterDepthCS");
+		passData->StatePrefilter.Init(dev, prefilter, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter));
+
+		// Main pass
+		desc.Clear();
 		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData });
@@ -16,29 +30,34 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader ssao(L"AmbientOcclusionCS");
+		Resource::Shader ssao(L"SSAOMainCS");
 		passData->StateSSAO.Init(dev, ssao, buildData.BindingLib.GetSchema(passData->BindingIndexSSAO));
 
+		// Denoise passes
 		desc.Clear();
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant });
 		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
-		passData->BindingIndexBlur = buildData.BindingLib.AddDataBinding(dev, desc);
+		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader blur(L"SSAOBlurCS");
-		passData->StateBlur.Init(dev, blur, buildData.BindingLib.GetSchema(passData->BindingIndexBlur));
+		Resource::Shader denoise(L"SSAODenoiseCS");
+		passData->StateDenoise.Init(dev, denoise, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise));
 
-		Resource::Texture::PackDesc noiseDesc;
+		// Create Hilbert look-up texture
+		Resource::Texture::PackDesc hilbertDesc;
 		std::vector<Surface> surfaces;
-		surfaces.emplace_back(NOISE_WIDTH, NOISE_HEIGHT, PixelFormat::R32G32_Float);
+		surfaces.emplace_back(XE_HILBERT_WIDTH, XE_HILBERT_WIDTH, PixelFormat::R16_UInt);
 
-		std::mt19937_64 engine(std::random_device{}());
-		float* buffer = reinterpret_cast<float*>(surfaces.front().GetBuffer());
-		for (U32 i = 0; i < NOISE_SIZE * 2; ++i)
-			buffer[i] = Math::RandNDC(engine);
+		U16* buffer = reinterpret_cast<U16*>(surfaces.front().GetBuffer());
+		for (U32 x = 0; x < XE_HILBERT_WIDTH; ++x)
+			for (U32 y = 0; y < XE_HILBERT_WIDTH; ++y)
+				buffer[x + y * XE_HILBERT_WIDTH] = XeGTAO::HilbertIndex(x, y);
 
-		noiseDesc.Options = Resource::Texture::PackOption::StaticCreation;
-		noiseDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
-		passData->Noise.Init(dev, noiseDesc);
+		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
+		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
+		passData->HilbertLUT.Init(dev, hilbertDesc);
 		dev.StartUpload();
 
 		return passData;
@@ -48,31 +67,62 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
 		data.CL.Reset(dev);
-		data.CL.Open(dev, data.StateSSAO);
-
+		data.CL.Open(dev, data.StatePrefilter);
 		ZE_DRAW_TAG_BEGIN(data.CL, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
-		Binding::Context ctxSSAO{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
-		ctxSSAO.BindingSchema.SetCompute(data.CL);
-		renderData.Buffers.SetUAV(data.CL, ctxSSAO, ids.SSAO);
-		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Normal);
-		renderData.Buffers.SetSRV(data.CL, ctxSSAO, ids.Depth);
-		data.Noise.Bind(data.CL, ctxSSAO);
-		renderData.DynamicBuffer.Bind(data.CL, ctxSSAO);
-		renderData.SettingsBuffer.Bind(data.CL, ctxSSAO);
-		auto dimm = renderData.Buffers.GetDimmensions(ids.SSAO);
-		data.CL.Compute(dev, Math::DivideRoundUp(dimm.first, 32U), Math::DivideRoundUp(dimm.second, 32U), 1);
-		renderData.Buffers.BarrierUAV(data.CL, ids.SSAO);
 
-		data.StateBlur.Bind(data.CL);
-		Binding::Context ctxBlur{ renderData.Bindings.GetSchema(data.BindingIndexBlur) };
-		ctxBlur.BindingSchema.SetCompute(data.CL);
-		renderData.Buffers.SetUAV(data.CL, ctxBlur, ids.SSAO);
-		renderData.SettingsBuffer.Bind(data.CL, ctxBlur);
-		data.CL.Compute(dev, 8, 8, 1);
+		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
+		prefilterCtx.BindingSchema.SetCompute(data.CL);
+		renderData.Buffers.SetUAV(data.CL, prefilterCtx, ids.ViewspaceDepth); // Bind 5 mip levels
+		renderData.Buffers.SetSRV(data.CL, prefilterCtx, ids.Depth);
+		renderData.SettingsBuffer.Bind(data.CL, prefilterCtx);
+		data.CL.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);
+
+		renderData.Buffers.BarrierTransition(data.CL, ids.ViewspaceDepth, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS);
+
+		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
+		data.StateSSAO.Bind(data.CL);
+		mainCtx.BindingSchema.SetCompute(data.CL);
+		renderData.Buffers.SetUAV(data.CL, mainCtx, ids.ScratchSSAO);
+		renderData.Buffers.SetUAV(data.CL, mainCtx, ids.DepthEdges);
+		renderData.Buffers.SetSRV(data.CL, mainCtx, ids.ViewspaceDepth);
+		renderData.Buffers.SetSRV(data.CL, mainCtx, ids.Normal);
+		data.HilbertLUT.Bind(data.CL, mainCtx);
+		renderData.DynamicBuffer.Bind(data.CL, mainCtx);
+		renderData.SettingsBuffer.Bind(data.CL, mainCtx);
+		data.CL.Compute(dev, Math::DivideRoundUp(size.x, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
+			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
+
+		renderData.Buffers.BarrierTransition(data.CL,
+			std::array
+			{
+				TransitionInfo(ids.ScratchSSAO, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS),
+				TransitionInfo(ids.DepthEdges, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS),
+				TransitionInfo(ids.ViewspaceDepth, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess)
+			});
+
+		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
+		data.StateDenoise.Bind(data.CL);
+		denoiseCtx.BindingSchema.SetCompute(data.CL);
+		Resource::Constant<U32> lastDenoise(dev, true);
+		lastDenoise.Bind(data.CL, denoiseCtx);
+		renderData.Buffers.SetUAV(data.CL, denoiseCtx, ids.SSAO);
+		renderData.Buffers.SetSRV(data.CL, denoiseCtx, ids.ScratchSSAO);
+		renderData.Buffers.SetSRV(data.CL, denoiseCtx, ids.DepthEdges);
+		renderData.SettingsBuffer.Bind(data.CL, denoiseCtx);
+		data.CL.Compute(dev, Math::DivideRoundUp(size.x, XE_GTAO_NUMTHREADS_X * 2U),
+			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
+
+		renderData.Buffers.BarrierTransition(data.CL,
+			std::array
+			{
+				TransitionInfo(ids.ScratchSSAO, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess),
+				TransitionInfo(ids.DepthEdges, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess)
+			});
+
 		ZE_DRAW_TAG_END(data.CL);
-
 		data.CL.Close(dev);
 		dev.ExecuteCompute(data.CL);
 	}

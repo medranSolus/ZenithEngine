@@ -19,7 +19,7 @@ struct PSOut
 PSOut main(float2 tc : TEXCOORD)
 {
 	// Position depth reconstruction
-	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PW, tc).x, cb_worldData.ViewProjectionInverse);
+	const float3 position = GetWorldPosition(tc, depthMap.Sample(splr_PR, tc).x, cb_worldData.ViewProjectionInverse);
 	const float3 shadowColor = DeleteGammaCorr(cb_light.Shadow);
 	const float3 lightColor = DeleteGammaCorr(cb_light.Color) * cb_light.Intensity;
 
@@ -31,13 +31,13 @@ PSOut main(float2 tc : TEXCOORD)
 	//	directionToLight, GetShadowUV(position), splr_AB, shadowMap, cb_pbrData.ShadowMapSize);
 	if (shadowLevel != 0.0f)
 	{
-		const float3 normal = DecodeNormal(normalMap.Sample(splr_PW, tc).rg);
+		const float3 normal = DecodeNormal(normalMap.Sample(splr_PR, tc).rg);
 		const float3 directionToLight = -cb_lightDir;
 		pso.color = float4(lerp(shadowColor, GetDiffuse(lightColor, directionToLight, normal), shadowLevel), 0.0f);
 
 		if (shadowLevel > 0.98f)
 		{
-			const float4 specularData = specularMap.Sample(splr_PW, tc);
+			const float4 specularData = specularMap.Sample(splr_PR, tc);
 			pso.specular = float4(GetSpecular(cb_worldData.CameraPos, directionToLight, position, normal,
 				pso.color.rgb * specularData.rgb, specularData.a), 0.0f);
 		}

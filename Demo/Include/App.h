@@ -15,7 +15,7 @@ class App final
 	float moveSpeed = 0.02f;
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
-	Matrix currentProjection;
+	Float4x4 currentProjection;
 	bool run = true;
 
 	void ProcessInput();

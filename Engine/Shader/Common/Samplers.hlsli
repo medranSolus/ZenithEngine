@@ -7,18 +7,20 @@
 		A - Anisotropic
 	}
 	{
-		B - Exceedeing clamp to border color
-		W - Wrap coordinates
-		R - Coordinates reflection
+		E - Exceedeing clamp to edge color
+		R - Repeat coordinates after edge
+		M - Coordinates mirror at the edge
 	}
 */
 
-SamplerState splr_AB : register(s0);
-SamplerState splr_AW : register(s1);
-SamplerState splr_AR : register(s2);
+SamplerState splr_AE : register(s0);
+SamplerState splr_AR : register(s1);
+SamplerState splr_AM : register(s2);
 
-SamplerState splr_LW : register(s3);
+SamplerState splr_LE : register(s3);
 SamplerState splr_LR : register(s4);
+SamplerState splr_LM : register(s5);
 
-SamplerState splr_PW : register(s5);
-SamplerState splr_PR : register(s6);
+SamplerState splr_PE : register(s6);
+SamplerState splr_PR : register(s7);
+SamplerState splr_PM : register(s8);

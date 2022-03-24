@@ -18,6 +18,7 @@ namespace ZE::GFX::Pipeline
 
 		constexpr Resource::Texture::AddressMode ADDRESS_MODES[]
 		{
+			Resource::Texture::AddressMode::Edge,
 			Resource::Texture::AddressMode::Repeat,
 			Resource::Texture::AddressMode::Mirror
 		};
@@ -28,21 +29,9 @@ namespace ZE::GFX::Pipeline
 			Resource::SamplerType::Point
 		};
 
-		buildData.RendererSlots.Samplers.reserve(sizeof(TYPES) * sizeof(ADDRESS_MODES) + 1);
-		buildData.RendererSlots.AddSampler(
-			{
-				Resource::SamplerType::Anisotropic,
-				{
-					Resource::Texture::AddressMode::Edge,
-					Resource::Texture::AddressMode::Edge,
-					Resource::Texture::AddressMode::Edge
-				},
-				0.0f, 4, Resource::CompareMethod::Never,
-				Resource::Texture::EdgeColor::TransparentBlack,
-				0.0f, FLT_MAX, 0
-			});
+		buildData.RendererSlots.Samplers.reserve(sizeof(TYPES) * sizeof(ADDRESS_MODES));
 
-		U32 slot = 1;
+		U32 slot = 0;
 		for (U8 type = 0; type < sizeof(TYPES); ++type)
 		{
 			for (U8 address = 0; address < sizeof(ADDRESS_MODES); ++address)
@@ -81,25 +70,38 @@ namespace ZE::GFX::Pipeline
 			settingsData.BlurCoefficients[i].x /= sum;
 	}
 
-	void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
+	constexpr void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
 	{
-		settingsData.SsaoNoiseDimmensions = { width / RenderPass::SSAO::NOISE_WIDTH, height / RenderPass::SSAO::NOISE_HEIGHT };
-		settingsData.SsaoBias = 0.188f;
-		settingsData.SsaoSampleRadius = 0.69f;
-		settingsData.SsaoPower = 2.77f;
-		settingsData.SsaoKernelSize = DataPBR::SSAO_KERNEL_MAX_SIZE;
-
-		std::mt19937_64 engine(std::random_device{}());
-		for (U32 i = 0; i < DataPBR::SSAO_KERNEL_MAX_SIZE; ++i)
+		ssaoSettings.DenoisePasses = 1;
+		settingsData.SsaoData.ViewportSize = { static_cast<int>(width), static_cast<int>(height) };
+		switch (ssaoSettings.QualityLevel)
 		{
-			const Vector sample = Math::XMVectorSet(Math::RandNDC(engine),
-				Math::RandNDC(engine), Math::Rand01(engine), 0.0f);
-
-			float scale = static_cast<float>(i) / DataPBR::SSAO_KERNEL_MAX_SIZE;
-			scale = Math::Lerp(0.1f, 1.0f, scale * scale);
-
-			Math::XMStoreFloat4(&settingsData.SsaoKernel[i],
-				Math::XMVectorMultiply(Math::XMVector3Normalize(sample), Math::XMVectorSet(scale, scale, scale, 0.0f)));
+		default:
+			ZE_ASSERT(false, "Unknown SSAO quality level!");
+		case 0: // Low
+		{
+			settingsData.SsaoSliceCount = 1.0f;
+			settingsData.SsaoStepsPerSlice = 2.0f;
+			break;
+		}
+		case 1: // Medium
+		{
+			settingsData.SsaoSliceCount = 2.0f;
+			settingsData.SsaoStepsPerSlice = 2.0f;
+			break;
+		}
+		case 2: // High
+		{
+			settingsData.SsaoSliceCount = 3.0f;
+			settingsData.SsaoStepsPerSlice = 3.0f;
+			break;
+		}
+		case 3: // Ultra
+		{
+			settingsData.SsaoSliceCount = 9.0f;
+			settingsData.SsaoStepsPerSlice = 3.0f;
+			break;
+		}
 		}
 	}
 
@@ -113,11 +115,11 @@ namespace ZE::GFX::Pipeline
 
 #pragma region Framebuffer definition
 		const RID ssao = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32_Float, ColorF4() });
+			{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R32G32_Float, ColorF4() });
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
@@ -144,12 +146,11 @@ namespace ZE::GFX::Pipeline
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
 		settingsData.HDRExposure = params.HDRExposure;
-		settingsData.FrameDimmensions = { width, height };
 		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = static_cast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-		SetupSsaoData(width, height);
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
+		SetupSsaoData(width, height);
 
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR), false);
@@ -221,6 +222,12 @@ namespace ZE::GFX::Pipeline
 			ZE_MAKE_NODE_DATA("ssao", QueueType::Compute, SSAO, dev, buildData);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourceNonPS);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourceNonPS);
+			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
+			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
+			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
 			node.AddOutput("SB", Resource::State::UnorderedAccess, ssao);
 			nodes.emplace_back(std::move(node));
 		}
@@ -289,7 +296,19 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateWorldData(Device& dev, EID camera, const Matrix& projection) noexcept
+	void RendererPBR::UpdateSettingsData(Device& dev, const Float4x4& projection)
+	{
+		XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
+			settingsData.SsaoData.ViewportSize.x,
+			settingsData.SsaoData.ViewportSize.y,
+			ssaoSettings, reinterpret_cast<const float*>(&projection), true, 0);
+		dev.BeginUploadRegion();
+		execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
+		dev.StartUpload();
+		dev.EndUploadRegion();
+	}
+
+	void RendererPBR::UpdateWorldData(Device& dev, EID camera, const Float4x4& projection) noexcept
 	{
 		ZE_ASSERT((GetRegistry().all_of<Data::Transform, Data::Camera>(camera)),
 			"Current camera does not have all required components!");
@@ -299,11 +318,12 @@ namespace ZE::GFX::Pipeline
 		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
 		dynamicData.NearClip = currentCamera.Projection.NearClip;
 		dynamicData.FarClip = currentCamera.Projection.FarClip;
-		dynamicData.ViewProjection =
-			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
-				Math::XMLoadFloat3(&currentCamera.EyeDirection),
-				Math::XMLoadFloat3(&currentCamera.UpVector)) * projection;
+		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
+			Math::XMLoadFloat3(&currentCamera.EyeDirection),
+			Math::XMLoadFloat3(&currentCamera.UpVector));
+		dynamicData.ViewProjection = dynamicData.View * Math::XMLoadFloat4x4(&projection);
 
+		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
 	}

@@ -23,25 +23,21 @@ PSOut main(float3 worldPos : POSITION,
 {
 	PSOut pso;
 
-	[branch]
 	if (cb_material.Flags & FLAG_USE_NORMAL || cb_material.Flags & FLAG_USE_PARALLAX)
 	{
 		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
-		[branch]
 		if (cb_material.Flags & FLAG_USE_PARALLAX)
 		{
-			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, parallax, splr_AW);
+			tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, parallax, splr_AR);
 			if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 				discard;
 		}
-		[branch]
 		if (cb_material.Flags & FLAG_USE_NORMAL)
-			pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AW));
+			pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AR));
 	}
 
-	[branch]
 	if (cb_material.Flags & FLAG_USE_TEXTURE)
-		pso.color = tex.Sample(splr_AW, tc);
+		pso.color = tex.Sample(splr_AR, tc);
 	else
 		pso.color = cb_material.Color;
 
@@ -53,7 +49,7 @@ PSOut main(float3 worldPos : POSITION,
 
 	if (cb_material.Flags & FLAG_USE_SPECULAR)
 	{
-		const float4 specularTex = spec.Sample(splr_AW, tc);
+		const float4 specularTex = spec.Sample(splr_AR, tc);
 		pso.specular = float4(specularTex.rgb * cb_material.SpecularIntensity,
 			GetSampledSpecularPower(cb_material.Flags & FLAG_USE_SPECULAR_POWER_ALPHA ?
 				specularTex.a : cb_material.SpecularPower));

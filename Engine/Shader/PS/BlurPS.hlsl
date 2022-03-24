@@ -16,7 +16,7 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	float alpha = 0.0f;
 	for (int i = -cb_pbrData.BlurRadius; i <= cb_pbrData.BlurRadius; ++i)
 	{
-		const float4 color = tex.Sample(splr_LR, tc + delta * i);
+		const float4 color = tex.Sample(splr_LM, tc + delta * i);
 		alpha += color.a * cb_pbrData.BlurCoefficients[abs(i)];
 		maxColor = max(maxColor, color.rgb);
 	}
