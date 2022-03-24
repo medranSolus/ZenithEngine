@@ -79,6 +79,7 @@ set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
+set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 
 
 ################ TARGETS ################
@@ -202,7 +203,7 @@ set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAG
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi /Od")
 endif()
