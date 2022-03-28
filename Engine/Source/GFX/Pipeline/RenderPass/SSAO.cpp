@@ -69,6 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
+		dev.WaitComputeFromMain(dev.SetMainFence());
 		data.CL.Reset(dev);
 		data.CL.Open(dev, data.StatePrefilter);
 		ZE_DRAW_TAG_BEGIN(data.CL, L"SSAO", Pixel(0x89, 0xCF, 0xF0));

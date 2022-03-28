@@ -5,6 +5,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
+	// Indicates that entity is inside view frustum
+	struct InsideFrustum {};
+
 	struct Resources
 	{
 		RID RenderTarget;

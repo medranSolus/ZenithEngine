@@ -7,6 +7,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
 
+	// Indicates that entity is inside view frustum
+	struct InsideFrustumSolid {};
+	// Indicates that entity is inside view frustum and is not opaque
+	struct InsideFrustumNotSolid {};
+
 	struct Resources
 	{
 		RID DepthStencil;
@@ -19,7 +24,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
-		Resource::PipelineStateGfx StateNormal;
+		Resource::PipelineStateGfx StateSolid;
+		Resource::PipelineStateGfx StateTransparent;
 		std::vector<Resource::CBuffer> TransformBuffers;
 	};
 

@@ -97,7 +97,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 							Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation)));
 
 					cl.Open(dev, data.State);
-					ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(j)).c_str(), Pixel(0xFB, 0xE1, 0x06));
+					ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
 					renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
 
 					ctx.BindingSchema.SetGraphics(cl);

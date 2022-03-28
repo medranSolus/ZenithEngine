@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/OutlineDraw.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/DataPBR.h"
+#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
@@ -54,14 +54,26 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		dev.ExecuteMain(cl);
 
 		auto group = Data::GetRenderGroup<Data::RenderOutline>(renderData.Registry);
-		const U64 count = group.size();
+		U64 count = group.size();
 		if (count)
 		{
+			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
+			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+
+			// Compute visibility of objects inside camera view and sort them front-back
+			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Resources, group, frustum);
+
+			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderOutline, InsideFrustum>(renderData.Registry);
+			count = visibleGroup.size();
+			Utils::ViewSortAscending(visibleGroup, cameraPos);
+
 			// Resize temporary buffer for transform data
 			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers, count);
-
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
 			for (U64 i = 0, j = 0; i < count; ++j)
@@ -83,8 +95,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				{
 					ZE_DRAW_TAG_BEGIN(cl, (L"MeshStencil_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
-					auto entity = group[I];
-					const auto& transform = group.get<Data::TransformGlobal>(entity);
+					auto entity = visibleGroup[I];
+					const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
 					buffer->Transforms[k] = viewProjection *
 						Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
@@ -92,7 +104,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
@@ -120,7 +132,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(group[i]).ID);
+					const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(visibleGroup[i]).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
@@ -132,6 +144,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
 			}
+			// Remove current visibility
+			renderData.Registry.clear<InsideFrustum>();
 		}
 	}
 }

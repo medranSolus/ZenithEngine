@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/Lambertian.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/DataPBR.h"
+#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 #include "GFX/Vertex.h"
 
@@ -42,8 +42,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
-		ZE_PSO_SET_NAME(psoDesc, "Lambertian");
-		passData->StateNormal.Init(dev, psoDesc, schema);
+		ZE_PSO_SET_NAME(psoDesc, "LambertianSolid");
+		passData->StateSolid.Init(dev, psoDesc, schema);
+
+		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
+		ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent");
+		passData->StateTransparent.Init(dev, psoDesc, schema);
 
 		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true);
 
@@ -52,7 +56,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
-		Resources ids = *passData.Buffers.CastConst<Resources>();
+		const Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
 		// Clearing data on first usage
@@ -68,104 +72,179 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 
-		auto group = Data::GetRenderGroup<Data::RenderLambertian>(renderData.Registry);
-		const U64 count = group.size();
-		if (count)
+		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
+		const Matrix viewProjection = dynamicData.ViewProjection;
+		const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+
+		// Compute visibility of objects inside camera view
+		Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Resources,
+			Data::GetRenderGroup<Data::RenderLambertian>(renderData.Registry), frustum);
+
+		// Use new group visible only in current frustum and sort
+		auto solidGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumSolid>(renderData.Registry);
+		auto transparentGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumNotSolid>(renderData.Registry);
+		const U64 solidCount = solidGroup.size();
+		const U64 transparentCount = transparentGroup.size();
+		Utils::ViewSortAscending(solidGroup, cameraPos);
+		Utils::ViewSortDescending(transparentGroup, cameraPos);
+
+		// Resize temporary buffer for transform data
+		Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, solidCount + transparentCount);
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+
+		// Depth pre-pass
+		// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
+		for (U64 i = 0, j = 0; i < solidCount; ++j)
 		{
-			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
+			cl.Open(dev, data.StateDepth);
+			ZE_DRAW_TAG_BEGIN(cl, (L"Lambertian Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
+			ctx.BindingSchema.SetGraphics(cl);
+			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
-			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
+			ctx.SetFromEnd(2);
+			auto& cbuffer = data.TransformBuffers.at(j);
+			cbuffer.Bind(cl, ctx);
+			ctx.Reset();
 
-			// Depth pre-pass
-			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < count; ++j)
+			// Compute single batch
+			ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
+			for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++k, ++i)
 			{
-				cl.Open(dev, data.StateDepth);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Lambertian Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
-				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
 
-				ctx.SetFromEnd(2);
-				auto& cbuffer = data.TransformBuffers.at(j);
-				cbuffer.Bind(cl, ctx);
+				EID entity = solidGroup[i];
+				const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
+				buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				buffer->Transforms[k].ModelViewProjection = viewProjection * buffer->Transforms[k].Model;
+
+				Resource::Constant<U32> meshBatchId(dev, k);
+				meshBatchId.Bind(cl, ctx);
 				ctx.Reset();
 
-				// Compute single batch
-				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
-				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
+				const auto& geometry = renderData.Resources.get<Data::Geometry>(solidGroup.get<Data::MeshID>(entity).ID);
+				geometry.Vertices.Bind(cl);
+				geometry.Indices.Bind(cl);
 
-					auto entity = group[i];
-					const auto& transform = group.get<Data::TransformGlobal>(entity);
-					buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					buffer->Transforms[k].ModelViewProjection = viewProjection * buffer->Transforms[k].Model;
-
-					Resource::Constant<U32> meshBatchId(dev, k);
-					meshBatchId.Bind(cl, ctx);
-					ctx.Reset();
-
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
-					geometry.Vertices.Bind(cl);
-					geometry.Indices.Bind(cl);
-
-					cl.DrawIndexed(dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(cl);
-				}
-
+				cl.DrawIndexed(dev, geometry.Indices.GetCount());
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
 
-			Data::MaterialID currentMaterial = { INVALID_EID };
-			// Normal pass
-			for (U64 i = 0, j = 0; i < count; ++j)
-			{
-				cl.Open(dev, data.StateNormal);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Lambertian Batch_" + std::to_wstring(j)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
-				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
-
-				ctx.SetFromEnd(2);
-				data.TransformBuffers.at(j).Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
-				renderData.SettingsBuffer.Bind(cl, ctx);
-				ctx.Reset();
-
-				// Compute single batch
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
-				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
-					Resource::Constant<U32> meshBatchId(dev, k);
-					meshBatchId.Bind(cl, ctx);
-
-					auto entity = group[i];
-					auto material = group.get<Data::MaterialID>(entity);
-					if (currentMaterial.ID != material.ID)
-					{
-						currentMaterial = material;
-
-						const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID);
-						buffers.BindBuffer(cl, ctx);
-						buffers.BindTextures(cl, ctx);
-					}
-					ctx.Reset();
-
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(group.get<Data::MeshID>(entity).ID);
-					geometry.Vertices.Bind(cl);
-					geometry.Indices.Bind(cl);
-
-					cl.DrawIndexed(dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(cl);
-				}
-
-				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
-			}
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
 		}
+
+		// Solid pass
+		Data::MaterialID currentMaterial = { INVALID_EID };
+		U64 currentBuffer = 0;
+		U64 currentTransform = 0;
+		for (U64 i = 0; i < solidCount; ++currentBuffer)
+		{
+			cl.Open(dev, data.StateSolid);
+			ZE_DRAW_TAG_BEGIN(cl, (L"Lambertian Solid Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0xC2, 0xC5, 0xCC));
+			ctx.BindingSchema.SetGraphics(cl);
+			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
+
+			ctx.SetFromEnd(2);
+			data.TransformBuffers.at(currentBuffer).Bind(cl, ctx);
+			renderData.DynamicBuffer.Bind(cl, ctx);
+			renderData.SettingsBuffer.Bind(cl, ctx);
+			ctx.Reset();
+
+			// Compute single batch
+			for (currentTransform = 0; currentTransform < TransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
+			{
+				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
+				Resource::Constant<U32> meshBatchId(dev, currentTransform);
+				meshBatchId.Bind(cl, ctx);
+
+				EID entity = solidGroup[i];
+				const Data::MaterialID material = solidGroup.get<Data::MaterialID>(entity);
+				if (currentMaterial.ID != material.ID)
+				{
+					currentMaterial = material;
+
+					const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID);
+					buffers.BindBuffer(cl, ctx);
+					buffers.BindTextures(cl, ctx);
+				}
+				ctx.Reset();
+
+				const auto& geometry = renderData.Resources.get<Data::Geometry>(solidGroup.get<Data::MeshID>(entity).ID);
+				geometry.Vertices.Bind(cl);
+				geometry.Indices.Bind(cl);
+
+				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_DRAW_TAG_END(cl);
+			}
+
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+			currentMaterial = { INVALID_EID };
+		}
+
+		// Transparent pass
+		--currentBuffer;
+		if (currentTransform == TransformBuffer::TRANSFORM_COUNT)
+			currentTransform = 0;
+		for (U64 i = 0; i < transparentCount; ++currentBuffer)
+		{
+			cl.Open(dev, data.StateTransparent);
+			ZE_DRAW_TAG_BEGIN(cl, (L"Lambertian Transparent Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0xEC, 0xED, 0xEF));
+			ctx.BindingSchema.SetGraphics(cl);
+			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
+
+			ctx.SetFromEnd(2);
+			auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+			cbuffer.Bind(cl, ctx);
+			renderData.DynamicBuffer.Bind(cl, ctx);
+			renderData.SettingsBuffer.Bind(cl, ctx);
+			ctx.Reset();
+
+			// Compute single batch
+			ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
+			for (; currentTransform < TransformBuffer::TRANSFORM_COUNT && i < transparentCount; ++currentTransform, ++i)
+			{
+				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0xD6, 0xD6, 0xE4));
+
+				EID entity = transparentGroup[i];
+				const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
+				buffer->Transforms[currentTransform].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				buffer->Transforms[currentTransform].ModelViewProjection = viewProjection * buffer->Transforms[currentTransform].Model;
+
+				Resource::Constant<U32> meshBatchId(dev, currentTransform);
+				meshBatchId.Bind(cl, ctx);
+
+				const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
+				if (currentMaterial.ID != material.ID)
+				{
+					currentMaterial = material;
+
+					const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID);
+					buffers.BindBuffer(cl, ctx);
+					buffers.BindTextures(cl, ctx);
+				}
+				ctx.Reset();
+
+				const auto& geometry = renderData.Resources.get<Data::Geometry>(transparentGroup.get<Data::MeshID>(entity).ID);
+				geometry.Vertices.Bind(cl);
+				geometry.Indices.Bind(cl);
+
+				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_DRAW_TAG_END(cl);
+			}
+
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+			currentTransform = 0;
+			currentMaterial = { INVALID_EID };
+		}
+		// Remove current visibility
+		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 	}
 }

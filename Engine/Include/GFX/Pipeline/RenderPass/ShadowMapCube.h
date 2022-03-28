@@ -7,6 +7,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
 
+	// Indicates that material of the geometry can be processed in depth pre-pass
+	struct Solid {};
+	// Indicates that material of the geometry cannot be processed in depth pre-pass
+	struct Transparent {};
+
 	struct Resources
 	{
 		RID RenderTarget;
@@ -17,7 +22,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
-		Resource::PipelineStateGfx StateNormal;
+		Resource::PipelineStateGfx StateSolid;
+		Resource::PipelineStateGfx StateTransparent;
 		Resource::CBuffer ViewBuffer;
 		std::vector<Resource::CBuffer> TransformBuffers;
 		Matrix Projection;
