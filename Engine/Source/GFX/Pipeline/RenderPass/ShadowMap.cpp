@@ -60,9 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
 		const Vector direction = Math::XMLoadFloat3(&lightDir);
-		const Vector up = Math::XMVector3TransformNormal({ 0.0f, 0.0f, 1.0f, 0.0f },
-			Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f }, direction));
-		Matrix viewProjection = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position, Math::XMVectorAdd(position, direction), up) * data.Projection);
+		Matrix viewProjection = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position, direction, Math::XMVector3Orthogonal(direction)) * data.Projection);
 
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		if (group.size())

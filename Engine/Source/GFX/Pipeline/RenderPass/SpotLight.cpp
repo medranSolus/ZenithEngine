@@ -66,6 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.ShadowBuffers, count);
 			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
 
+			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
@@ -81,7 +82,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 					auto entity = group[i];
 					const auto& transform = group.get<Data::TransformGlobal>(entity);
 					const auto& lightData = group.get<Data::SpotLight>(entity);
-					const Matrix viewProjection = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
+					shadowBuffer->Transforms[k] = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
 						*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction);
 
 					const auto& light = group.get<Data::SpotLightBuffer>(entity);
@@ -89,7 +90,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 					translation.y -= light.Volume;
 					const float circleScale = light.Volume * tanf(lightData.OuterAngle + 0.22f);
 
-					shadowBuffer->Transforms[k] = viewProjection;
 					buffer->Transforms[k] = viewProjection *
 						Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
 							Math::GetVectorRotation(Math::XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f),

@@ -54,7 +54,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		std::string ZE_GFX_DEBUG_ID;
-		assert(descriptorCount > scratchDescriptorCount && "Descriptor count has to be greater than scratch descriptor count!");
+		ZE_ASSERT(descriptorCount > scratchDescriptorCount, "Descriptor count has to be greater than scratch descriptor count!");
 
 #ifdef _ZE_MODE_DEBUG
 		// Enable Debug Layer before calling any DirectX commands
@@ -150,13 +150,32 @@ namespace ZE::GFX::API::DX12
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
-		if (options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1)
+		if (options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1 || true)
 		{
 			new(&allocTier1) AllocatorTier1(*this);
 			allocTier = AllocTier::Tier1;
 		}
 		else
 		{
+			/*
+			* TODO: Fix heap allocation on resource tier 2
+			*
+			D3D12 ERROR: ID3D12Device::CreateHeap:
+				D3D12_HEAP_FLAGS has invalid flag combinations set.
+				The following flags may not all be set simultaneously.
+				Exactly one must be left unset, or all may be left unset
+				when the adapter supports D3D12_RESOURCE_HEAP_TIER_2
+				or creating a heap in conjunction with D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER:
+
+				D3D12_FEATURE_DATA_D3D12_OPTIONS::ResourceHeapTier = D3D12_RESOURCE_HEAP_TIER_2,
+				D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER = 0,
+				D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES = 0,
+				D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES = 1, and
+				D3D12_HEAP_FLAG_DENY_BUFFERS = 0.
+
+				[ STATE_CREATION ERROR #631: CREATEHEAP_INVALIDMISCFLAGS]
+			*/
+
 			new(&allocTier2) AllocatorTier2(*this);
 			allocTier = AllocTier::Tier2;
 		}

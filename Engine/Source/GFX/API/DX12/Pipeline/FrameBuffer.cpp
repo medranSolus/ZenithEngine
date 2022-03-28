@@ -53,6 +53,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 #endif
 
+#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 	U64 FrameBuffer::FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
 	{
 		U32 lastChunk = 0;
@@ -92,6 +93,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 		return false;
 	}
+#endif
 
 	U32 FrameBuffer::AllocResource(RID id, U32 chunks, U64 startLevel, U64 lastLevel,
 		U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory)
@@ -265,9 +267,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 			else
 				*reinterpret_cast<ColorF4*>(clearDesc.Color) = res.ClearColor;
 
-			U64 size = device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes;
-			size = size / D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
-				+ static_cast<bool>(size % D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
+				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
 			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
 				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
 

@@ -69,25 +69,23 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			const Vector position = Math::XMLoadFloat3(&lightPos);
 			const Vector up = { 0.0f, 1.0f, 0.0f, 0.0f };
 			// +x
-			viewBuffer[0] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { 1.0f, 0.0f, 0.0f, 0.0f }), up) * data.Projection);
+			viewBuffer[0] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 1.0f, 0.0f, 0.0f, 0.0f }, up) * data.Projection);
 			// -x
-			viewBuffer[1] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { -1.0f, 0.0f, 0.0f, 0.0f }), up) * data.Projection);
+			viewBuffer[1] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ -1.0f, 0.0f, 0.0f, 0.0f }, up) * data.Projection);
 			// +y
-			viewBuffer[2] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { 0.0f, 1.0f, 0.0f, 0.0f }),
-				{ 0.0f, 0.0f, -1.0f, 0.0f }) * data.Projection);
+			viewBuffer[2] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }) * data.Projection);
 			// -y
-			viewBuffer[3] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { 0.0f, -1.0f, 0.0f, 0.0f }),
-				{ 0.0f, 0.0f, 1.0f, 0.0f }) * data.Projection);
+			viewBuffer[3] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }) * data.Projection);
 			// +z
-			viewBuffer[4] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { 0.0f, 0.0f, 1.0f, 0.0f }), up) * data.Projection);
+			viewBuffer[4] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 0.0f, 1.0f, 0.0f }, up) * data.Projection);
 			// -z
-			viewBuffer[5] = Math::XMMatrixTranspose(Math::XMMatrixLookAtLH(position,
-				Math::XMVectorAdd(position, { 0.0f, 0.0f, -1.0f, 0.0f }), up) * data.Projection);
+			viewBuffer[5] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 0.0f, -1.0f, 0.0f }, up) * data.Projection);
 
 			// Sort and split into groups based on materials
 			Utils::ViewSortAscending(group, position);
