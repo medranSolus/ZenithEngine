@@ -97,6 +97,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory)
 	{
 		U32 foundOffset = 0;
+#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+		// Place resources one after another
+		for (; foundOffset < maxChunks; ++foundOffset)
+			if (memory.at(foundOffset * levelCount) == invalidID)
+				break;
+		// Indicate that this memory will be occupied by single resource
+		for (U32 chunk = 0; chunk < chunks; ++chunk)
+			memory.at(static_cast<U64>(foundOffset + chunk) * levelCount) = id;
+#else
 		// Search through whole memory
 		for (U32 offset = 0, chunksFound = 0; offset < maxChunks; ++offset)
 		{
@@ -120,6 +129,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				foundOffset = offset + 1;
 			}
 		}
+#endif
 		// Should never happen, bug in memory table creation!!!
 		if (foundOffset == maxChunks)
 			throw ZE_RGC_EXCEPT("Memory too small to fit requested resource! ID: [" + std::to_string(id) +
@@ -338,6 +348,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 					res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
 				}
 
+#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+				heapDesc.SizeInBytes = static_cast<U64>(maxChunksUAV) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+#else
 				// Check resource aliasing
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
@@ -346,9 +359,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 						res.LastLevel, maxChunksUAV, levelCount, invalidID, memory))
 						res.SetAliasing();
 				}
-
 				// Find final size for UAV only heap and create it with resources
 				heapDesc.SizeInBytes = FindHeapSize(maxChunksUAV, levelCount, invalidID, memory);
+#endif
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
 				ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
@@ -416,6 +429,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 			res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
 		}
 
+#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+		heapDesc.SizeInBytes = static_cast<U64>(maxChunks) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+#else
 		// Check resource aliasing
 		for (RID i = 0; i < rt_dsCount; ++i)
 		{
@@ -424,9 +440,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 				res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory))
 				res.SetAliasing();
 		}
-
 		// Find final size for heap and create it with resources
 		heapDesc.SizeInBytes = FindHeapSize(maxChunks, levelCount, invalidID, memory);
+#endif
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
 		ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
@@ -799,10 +815,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 			bool copyAfter = false, computeAfter = false;
 			for (U32 i = 0; i < transitions.BarrierCount; ++i)
 			{
-				auto& transition = transitions.Barriers[i].Transition;
-				if (syncBefore)
+				auto& barrier = transitions.Barriers[i];
+				if (syncBefore && barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
 				{
-					switch (transition.StateBefore)
+					switch (barrier.Transition.StateBefore)
 					{
 					case D3D12_RESOURCE_STATE_GENERIC_READ:
 						computeBefore = true;
@@ -823,34 +839,37 @@ namespace ZE::GFX::API::DX12::Pipeline
 					}
 				}
 
-				switch (transition.StateAfter)
+				if (barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY)
 				{
-				case D3D12_RESOURCE_STATE_GENERIC_READ:
-					computeAfter = true;
-				case D3D12_RESOURCE_STATE_COMMON:
-				{
-					copyAfter = true;
-					break;
-				}
-				case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
-				case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
-				case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
-				{
-					computeAfter = true;
-					break;
-				}
-				default:
-					break;
+					switch (barrier.Transition.StateAfter)
+					{
+					case D3D12_RESOURCE_STATE_GENERIC_READ:
+						computeAfter = true;
+					case D3D12_RESOURCE_STATE_COMMON:
+					{
+						copyAfter = true;
+						break;
+					}
+					case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
+					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+					{
+						computeAfter = true;
+						break;
+					}
+					default:
+						break;
+					}
 				}
 			}
 			if (syncBefore)
 			{
 				if (copyBefore && computeBefore)
-					*syncBefore = GFX::Pipeline::SyncType::MainToAll;
+					*syncBefore = GFX::Pipeline::SyncType::AllToMain;
 				else if (copyBefore)
-					*syncBefore = GFX::Pipeline::SyncType::MainToCopy;
+					*syncBefore = GFX::Pipeline::SyncType::CopyToMain;
 				else if (computeBefore)
-					*syncBefore = GFX::Pipeline::SyncType::MainToCompute;
+					*syncBefore = GFX::Pipeline::SyncType::ComputeToMain;
 				else
 					*syncBefore = GFX::Pipeline::SyncType::None;
 			}
@@ -1183,19 +1202,21 @@ namespace ZE::GFX::API::DX12::Pipeline
 			// Insert waits if barrier adresses other engines
 			switch (transitionSyncs[level])
 			{
-			case GFX::Pipeline::SyncType::MainToAll:
+			case GFX::Pipeline::SyncType::AllToMain:
 				device.WaitMainFromCopy(device.SetCopyFence());
-			case GFX::Pipeline::SyncType::MainToCompute:
+			case GFX::Pipeline::SyncType::ComputeToMain:
 			{
 				device.WaitMainFromCompute(device.SetComputeFence());
 				break;
 			}
-			case GFX::Pipeline::SyncType::MainToCopy:
+			case GFX::Pipeline::SyncType::CopyToMain:
 			{
 				device.WaitMainFromCopy(device.SetCopyFence());
 				break;
 			}
 			default:
+				ZE_ASSERT(false, "Incorret enum value for enter sync context!");
+			case GFX::Pipeline::SyncType::None:
 				break;
 			}
 
@@ -1227,6 +1248,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 			}
 			default:
+				ZE_ASSERT(false, "Incorret enum value for exit sync context!");
+			case GFX::Pipeline::SyncType::None:
 				break;
 			}
 		}

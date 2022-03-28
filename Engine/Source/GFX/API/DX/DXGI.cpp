@@ -16,7 +16,7 @@ namespace ZE::GFX::API::DX
 		ComPtr<IDXGIFactory2> oldFactory = nullptr;
 		ZE_GFX_THROW_FAILED(CreateDXGIFactory2(ZE_NO_DEBUG ? 0 : DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&oldFactory)));
 		ComPtr<IDXGIFactory7> factory = nullptr;
-		ZE_GFX_THROW_FAILED(oldFactory.As(factory));
+		ZE_GFX_THROW_FAILED(oldFactory.As(&factory));
 
 		return factory;
 	}
@@ -83,7 +83,7 @@ namespace ZE::GFX::API::DX
 		DX::ComPtr<IDXGISwapChain1> tempChain = nullptr;
 		ZE_GFX_THROW_FAILED(factory->CreateSwapChainForHwnd(device,
 			window, &swapDesc, nullptr, nullptr, &tempChain));
-		ZE_GFX_THROW_FAILED(tempChain.As(swapChain));
+		ZE_GFX_THROW_FAILED(tempChain.As(&swapChain));
 
 		// Don't use Alt+Enter Windows handling, only borderless fulsscreen window
 		ZE_GFX_THROW_FAILED(factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));

@@ -67,7 +67,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12Debug1> debugInterface1;
-		ZE_GFX_THROW_FAILED_NOINFO(debugInterface.As(debugInterface1));
+		ZE_GFX_THROW_FAILED_NOINFO(debugInterface.As(&debugInterface1));
 		debugInterface1->SetEnableGPUBasedValidation(TRUE);
 #endif
 #endif
@@ -81,7 +81,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED(device.As(infoQueue));
+		ZE_GFX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -109,7 +109,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12DebugDevice1> debugDevice1;
-		ZE_GFX_THROW_FAILED_NOINFO(device.As(debugDevice1));
+		ZE_GFX_THROW_FAILED_NOINFO(device.As(&debugDevice1));
 
 		const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
 		ZE_GFX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
@@ -254,7 +254,7 @@ namespace ZE::GFX::API::DX12
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 				return ExecuteCopy(*cls);
 			default:
-				assert(false && "Incorrect type of command list!!!");
+				ZE_ASSERT(false, "Incorrect type of command list!!!");
 			}
 		}
 		U32 mainCount = 0, computeCount = 0, copyCount = 0;
@@ -264,24 +264,24 @@ namespace ZE::GFX::API::DX12
 			{
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 			{
-				assert(cls[i].Get().dx12.GetList() != nullptr);
+				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				commandLists[mainCount++] = cls[i].Get().dx12.GetList();
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
 			{
-				assert(cls[i].Get().dx12.GetList() != nullptr);
+				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				commandLists[count + computeCount++] = cls[i].Get().dx12.GetList();
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 			{
-				assert(cls[i].Get().dx12.GetList() != nullptr);
+				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				commandLists[2 * count + copyCount++] = cls[i].Get().dx12.GetList();
 				break;
 			}
 			default:
-				assert(false && "Incorrect type of command list!!!");
+				ZE_ASSERT(false, "Incorrect type of command list!!!");
 			}
 		}
 		if (mainCount)

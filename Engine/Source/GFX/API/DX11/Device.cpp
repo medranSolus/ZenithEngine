@@ -30,11 +30,11 @@ namespace ZE::GFX::API::DX11
 		ZE_GFX_THROW_FAILED(D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
 			ZE_NO_DEBUG ? 0 : D3D11_CREATE_DEVICE_DEBUG, features, 1,
 			D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr));
-		ZE_GFX_THROW_FAILED(tempDevice.As(device));
+		ZE_GFX_THROW_FAILED(tempDevice.As(&device));
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D11InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED(device.As(infoQueue));
+		ZE_GFX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);

@@ -16,6 +16,7 @@ set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
+option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" ON)
 option(ZE_DEBUG_GPU_VALIDATION "Enable additional GPU validation for supported APIs on debug builds for more verbose checks. May slow rendering considerably" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
@@ -167,7 +168,8 @@ if(MSVC)
 	#	Note: Caused by entt::dense_map, just hide it.
 	# C4710 - function not inlined
 	# C4711 - function selected for automatic inline expansion
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711")
+	# C4355 - 'this' used in base member initializer list
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)
@@ -193,6 +195,9 @@ if(ZE_USE_WIDE_ENTITY_ID)
 endif()
 if(ZE_DEBUG_FRAME_MEMORY_PRINT)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_MEMORY_PRINT")
+endif()
+if(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_FRAME_NO_ALIASING_MEMORY")
 endif()
 if(ZE_DEBUG_GPU_VALIDATION)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_GPU_VALIDATION")

@@ -4,6 +4,7 @@
 namespace ZE::GFX::Pipeline
 {
 	// Sync direction between possible GPU engines
+	// Naming QxToQy: queue Y needs to wait for queue X
 	enum class SyncType : U8
 	{
 		None,
@@ -18,6 +19,10 @@ namespace ZE::GFX::Pipeline
 
 		CopyToAll,
 		CopyToMain,
-		CopyToCompute
+		CopyToCompute,
+
+		AllToMain,
+		AllToCompute,
+		AllToCopy
 	};
 }

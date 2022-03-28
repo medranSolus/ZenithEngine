@@ -12,9 +12,9 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		dev.Get().dx11.GetDevice()->GetImmediateContext3(&tempCtx);
 
-		ZE_GFX_THROW_FAILED(tempCtx.As(context));
+		ZE_GFX_THROW_FAILED(tempCtx.As(&context));
 #ifdef _ZE_MODE_DEBUG
-		ZE_GFX_THROW_FAILED(context.As(tagManager));
+		ZE_GFX_THROW_FAILED(context.As(&tagManager));
 #endif
 	}
 
@@ -25,9 +25,9 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateDeferredContext3(0, &tempCtx));
 
-		ZE_GFX_THROW_FAILED(tempCtx.As(context));
+		ZE_GFX_THROW_FAILED(tempCtx.As(&context));
 #ifdef _ZE_MODE_DEBUG
-		ZE_GFX_THROW_FAILED(context.As(tagManager));
+		ZE_GFX_THROW_FAILED(context.As(&tagManager));
 #endif
 	}
 

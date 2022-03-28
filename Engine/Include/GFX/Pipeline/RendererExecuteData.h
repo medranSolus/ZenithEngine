@@ -23,6 +23,8 @@ namespace ZE::GFX::Pipeline
 		void* SettingsData;
 		// Per-frame changing data of the renderer. Initialized by RenderGraph
 		void* DynamicData;
+		// Renderer issuing current execution. Initialized by RenderGraph
+		void* Renderer;
 		// Initialized by RenderGraph
 		Ptr<Resource::PipelineStateGfx> SharedStates;
 	};

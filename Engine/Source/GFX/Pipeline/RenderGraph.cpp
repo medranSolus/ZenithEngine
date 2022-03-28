@@ -7,44 +7,44 @@ namespace ZE::GFX::Pipeline
 		// Insert waits into correnct GPU engines
 		switch (syncInfo.EnterSync)
 		{
-		case SyncType::MainToAll:
+		case SyncType::AllToMain:
 			dev.WaitMainFromCopy(syncInfo.EnterFence2);
-		case SyncType::MainToCompute:
+		case SyncType::ComputeToMain:
 		{
 			dev.WaitMainFromCompute(syncInfo.EnterFence1);
 			break;
 		}
-		case SyncType::MainToCopy:
+		case SyncType::CopyToMain:
 		{
 			dev.WaitMainFromCopy(syncInfo.EnterFence2);
 			break;
 		}
-		case SyncType::ComputeToAll:
+		case SyncType::AllToCompute:
 			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
-		case SyncType::ComputeToMain:
+		case SyncType::MainToCompute:
 		{
 			dev.WaitComputeFromMain(syncInfo.EnterFence1);
 			break;
 		}
-		case SyncType::ComputeToCopy:
+		case SyncType::CopyToCompute:
 		{
 			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
 			break;
 		}
-		case SyncType::CopyToAll:
+		case SyncType::AllToCopy:
 			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
-		case SyncType::CopyToMain:
+		case SyncType::MainToCopy:
 		{
 			dev.WaitCopyFromMain(syncInfo.EnterFence1);
 			break;
 		}
-		case SyncType::CopyToCompute:
+		case SyncType::ComputeToCopy:
 		{
 			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
 			break;
 		}
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ASSERT(false, "Incorret enum value for enter sync context!");
 		case SyncType::None:
 			break;
 		}
@@ -78,21 +78,28 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ASSERT(false, "Incorret enum value for exit sync context!");
 		case SyncType::None:
-			break;
+		{
+			ZE_ASSERT(syncInfo.DependentsCount == 0, "No syncing performed while there are dependent passes!");
+			return;
+		}
 		}
 
 		// Update fence values for all passes that depends on current pass
 		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
 		{
 			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
+#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+			(*exitSyncInfo.NextPassFence) = nextFence;
+#else
 			U64 currentFence = *exitSyncInfo.NextPassFence;
 			// Atomicitly check if current stored fence value is highest
 			// if no then store new value (or try if other thread also tries to store)
 			while (currentFence < nextFence)
 				if (exitSyncInfo.NextPassFence->compare_exchange_weak(currentFence, nextFence, std::memory_order::relaxed))
 					break;
+#endif
 		}
 	}
 
@@ -443,6 +450,7 @@ namespace ZE::GFX::Pipeline
 						else
 							depPassSync = &passes[passLocation.at(dep).second.first].first[passLocation.at(dep).second.second].Syncs;
 						ZE_ASSERT(depPassSync->DependentsCount < 255, "Need to change used data type!");
+
 						depPassSync->ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPassSync->ExitSyncs, sizeof(ExitSync) * ++depPassSync->DependentsCount));
 						auto& exitSync = depPassSync->ExitSyncs[depPassSync->DependentsCount - 1];
 						switch (node.GetPassType())
@@ -531,31 +539,31 @@ namespace ZE::GFX::Pipeline
 					case QueueType::Main:
 					{
 						if (requiredFence1 && requiredFence2)
-							passSync->EnterSync = SyncType::MainToAll;
+							passSync->EnterSync = SyncType::AllToMain;
 						else if (requiredFence1)
-							passSync->EnterSync = SyncType::MainToCompute;
+							passSync->EnterSync = SyncType::ComputeToMain;
 						else if (requiredFence2)
-							passSync->EnterSync = SyncType::MainToCopy;
+							passSync->EnterSync = SyncType::CopyToMain;
 						break;
 					}
 					case QueueType::Compute:
 					{
 						if (requiredFence1 && requiredFence2)
-							passSync->EnterSync = SyncType::ComputeToAll;
+							passSync->EnterSync = SyncType::AllToCompute;
 						else if (requiredFence1)
-							passSync->EnterSync = SyncType::ComputeToMain;
+							passSync->EnterSync = SyncType::MainToCompute;
 						else if (requiredFence2)
-							passSync->EnterSync = SyncType::ComputeToCopy;
+							passSync->EnterSync = SyncType::CopyToCompute;
 						break;
 					}
 					case QueueType::Copy:
 					{
 						if (requiredFence1 && requiredFence2)
-							passSync->EnterSync = SyncType::CopyToAll;
+							passSync->EnterSync = SyncType::AllToCopy;
 						else if (requiredFence1)
-							passSync->EnterSync = SyncType::CopyToMain;
+							passSync->EnterSync = SyncType::MainToCopy;
 						else if (requiredFence2)
-							passSync->EnterSync = SyncType::CopyToCompute;
+							passSync->EnterSync = SyncType::ComputeToCopy;
 						break;
 					}
 					}
@@ -566,15 +574,15 @@ namespace ZE::GFX::Pipeline
 		{
 			PassSyncDesc* passSync;
 			if (nodes.at(i).IsStatic())
-				passSync = &staticPasses[passLocation.at(i).first].Syncs;
+				passSync = &staticPasses[passLocation.at(i).second.first].Syncs;
 			else
-				passSync = &passes[0].first[i].Syncs;
-			assert(passSync->DependentsCount <= 255);
+				passSync = &passes[passLocation.at(i).second.first].first[passLocation.at(i).second.second].Syncs;
+			ZE_ASSERT(passSync->DependentsCount <= 255, "Need to increase DependentsCount range!");
+
 			bool requiredFence1 = false, requiredFence2 = false;
 			for (U8 j = 0; j < passSync->DependentsCount; ++j)
 			{
-				ExitSync syncInfo = passSync->ExitSyncs[j];
-				switch (syncInfo.Type)
+				switch (passSync->ExitSyncs[j].Type)
 				{
 				case SyncType::MainToCompute:
 				case SyncType::ComputeToMain:
@@ -594,15 +602,12 @@ namespace ZE::GFX::Pipeline
 					break;
 				}
 			}
-			switch (passSync->EnterSync)
+
+			switch (nodes.at(i).GetPassType())
 			{
 			default:
 				ZE_ASSERT(false, "Unhandled enum value!");
-			case SyncType::None:
-				break;
-			case SyncType::MainToAll:
-			case SyncType::MainToCompute:
-			case SyncType::MainToCopy:
+			case QueueType::Main:
 			{
 				if (requiredFence1 && requiredFence2)
 					passSync->AllExitSyncs = SyncType::MainToAll;
@@ -612,9 +617,7 @@ namespace ZE::GFX::Pipeline
 					passSync->AllExitSyncs = SyncType::MainToCopy;
 				break;
 			}
-			case SyncType::ComputeToAll:
-			case SyncType::ComputeToMain:
-			case SyncType::ComputeToCopy:
+			case QueueType::Compute:
 			{
 				if (requiredFence1 && requiredFence2)
 					passSync->AllExitSyncs = SyncType::ComputeToAll;
@@ -624,9 +627,7 @@ namespace ZE::GFX::Pipeline
 					passSync->AllExitSyncs = SyncType::ComputeToCopy;
 				break;
 			}
-			case SyncType::CopyToAll:
-			case SyncType::CopyToMain:
-			case SyncType::CopyToCompute:
+			case QueueType::Copy:
 			{
 				if (requiredFence1 && requiredFence2)
 					passSync->AllExitSyncs = SyncType::CopyToAll;
@@ -674,6 +675,14 @@ namespace ZE::GFX::Pipeline
 			++i;
 		}
 		passLocation.clear();
+	}
+
+	RenderGraph::RenderGraph(void* renderer, void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept
+		: dynamicDataSize(dynamicDataSize)
+	{
+		execData.SettingsData = settingsData;
+		execData.DynamicData = dynamicData;
+		execData.Renderer = renderer;
 	}
 
 	RenderGraph::~RenderGraph()
@@ -745,7 +754,10 @@ namespace ZE::GFX::Pipeline
 			auto& level = passes[i];
 			if (level.second)
 			{
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+				for (U64 j = 0; j < level.second; ++j)
+					ExecuteThread(dev, mainList, level.first[j]);
+#else
 				U64 workersDispatch = level.second - 1;
 				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
 				for (U64 j = 0; j < workersDispatch; ++j)
@@ -753,9 +765,6 @@ namespace ZE::GFX::Pipeline
 				ExecuteThread(dev, mainList, level.first[workersDispatch]);
 				for (U64 j = 0; j < workersDispatch; ++j)
 					workerThreads[j].first.join();
-#else
-				for (U64 j = 0; j < level.second; ++j)
-					ExecuteThread(dev, mainList, level.first[j]);
 #endif
 			}
 			execData.Buffers.ExitTransitions(dev, mainList, i);

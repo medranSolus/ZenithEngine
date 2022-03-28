@@ -39,8 +39,7 @@ namespace ZE::GFX::Pipeline
 			FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances);
 
 	public:
-		RenderGraph(void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept
-			: dynamicDataSize(dynamicDataSize) { execData.SettingsData = settingsData; execData.DynamicData = dynamicData; }
+		RenderGraph(void* renderer, void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept;
 		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph();
 

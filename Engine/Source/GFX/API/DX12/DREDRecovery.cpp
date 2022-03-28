@@ -187,7 +187,7 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_ENABLE(dev);
 
 		DX::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
-		ZE_GFX_THROW_FAILED(dev.GetDev().As(dred));
+		ZE_GFX_THROW_FAILED(dev.GetDev().As(&dred));
 
 		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs;
 		D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault;

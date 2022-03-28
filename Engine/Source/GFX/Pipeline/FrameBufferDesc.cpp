@@ -63,11 +63,11 @@ namespace ZE::GFX::Pipeline
 					{
 						if (next->first - first->first > 1)
 						{
-							TransitionsPerLevel.at(2 * first->first + 1).emplace_back(i, BarrierType::Begin, first->second, next->second);
-							TransitionsPerLevel.at(2 * next->first).emplace_back(i, BarrierType::End, first->second, next->second);
+							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Begin, first->second, next->second);
+							TransitionsPerLevel.at(2 * static_cast<U64>(next->first)).emplace_back(static_cast<RID>(i), BarrierType::End, first->second, next->second);
 						}
 						else
-							TransitionsPerLevel.at(2 * first->first + 1).emplace_back(i, BarrierType::Immediate, first->second, next->second);
+							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Immediate, first->second, next->second);
 						first = next++;
 					}
 				}

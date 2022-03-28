@@ -298,6 +298,7 @@ namespace ZE::GFX::Pipeline
 
 	void RendererPBR::UpdateSettingsData(Device& dev, const Float4x4& projection)
 	{
+		currentProjection = projection;
 		XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
 			settingsData.SsaoData.ViewportSize.x,
 			settingsData.SsaoData.ViewportSize.y,
@@ -308,20 +309,23 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateWorldData(Device& dev, EID camera, const Float4x4& projection) noexcept
+	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
 	{
-		ZE_ASSERT((GetRegistry().all_of<Data::Transform, Data::Camera>(camera)),
+		ZE_ASSERT((GetRegistry().all_of<Data::TransformGlobal, Data::Camera>(camera)),
 			"Current camera does not have all required components!");
 
+		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
+		cameraRotation = transform.Rotation;
+
 		// Setup shader world data
-		dynamicData.CameraPos = GetRegistry().get<Data::Transform>(camera).Position;
+		dynamicData.CameraPos = transform.Position;
 		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
 		dynamicData.NearClip = currentCamera.Projection.NearClip;
 		dynamicData.FarClip = currentCamera.Projection.FarClip;
 		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));
-		dynamicData.ViewProjection = dynamicData.View * Math::XMLoadFloat4x4(&projection);
+		dynamicData.ViewProjection = dynamicData.View * Math::XMLoadFloat4x4(&currentProjection);
 
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
