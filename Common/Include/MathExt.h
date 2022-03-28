@@ -93,16 +93,36 @@ namespace ZE::Math
 		return XMVector3Normalize(XMLoadFloat3(&v));
 	}
 
+	inline Float3 NormalizeReturn(const Float3& v) noexcept
+	{
+		Float3 n;
+		XMStoreFloat3(&n, XMVector3Normalize(XMLoadFloat3(&v)));
+		return n;
+	}
+
 	inline Float3& NormalizeStore(Float3& v) noexcept
 	{
 		XMStoreFloat3(&v, XMVector3Normalize(XMLoadFloat3(&v)));
 		return v;
 	}
 
+	inline Float4 GetQuaternion(float angleX, float angleY, float angleZ) noexcept
+	{
+		Float4 q;
+		XMStoreFloat4(&q, XMQuaternionRotationRollPitchYaw(ToRadians(angleX), ToRadians(angleY), ToRadians(angleZ)));
+		return q;
+	}
+
 	inline float GetLightVolume(const ColorF3& color, float intensity, float attnLinear, float attnQuad) noexcept
 	{
 		const float lightMax = intensity * fmaxf(fmaxf(color.RGB.x, color.RGB.y), color.RGB.z);
 		return (-attnLinear + sqrtf(attnLinear * attnLinear - 4.0f * attnQuad * (1.0f - lightMax * 256.0f))) / (2.0f * attnQuad);
+	}
+
+	constexpr void SetLightAttenuation(float& linear, float& quad, U64 range) noexcept
+	{
+		linear = 4.5f / static_cast<float>(range);
+		quad = 75.0f / static_cast<float>(range * range);
 	}
 
 	// Not to be used with floats
@@ -165,4 +185,5 @@ namespace ZE::Math
 	Matrix GetVectorRotation(const Vector& baseDirection, const Vector& newDirection,
 		bool targetGeometry = false, float geometryOffsetY = 0.0f) noexcept;
 	Matrix GetTransform(const Float3& position, const Float4& rotor, const Float3& scale) noexcept;
+	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept;
 }

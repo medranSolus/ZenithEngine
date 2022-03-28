@@ -102,7 +102,7 @@ namespace ZE::GFX::API::DX12
 	ResourceInfo Allocator::AllocAlignBigChunks(Device& dev, BufferInfo& bufferInfo,
 		U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
-		assert(bytes < HEAP_SIZE);
+		ZE_ASSERT(bytes < HEAP_SIZE, "Heap size to small to fit resource!");
 		constexpr U32 SMALL_CHUNKS_IN_BOUNDARY = BOUNDARY / SMALL_CHUNK;
 
 		U32 index = 0, chunks = GetGlobalIndex<SMALL_CHUNK>(bytes);
@@ -179,7 +179,7 @@ namespace ZE::GFX::API::DX12
 	ResourceInfo Allocator::AllocAlignMinimalChunks(Device& dev, BufferInfo& bufferInfo,
 		U32 bytes, const D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
-		assert(bytes < HEAP_SIZE);
+		ZE_ASSERT(bytes < HEAP_SIZE, "Heap size to small to fit resource!");
 
 		U32 index = 0, chunks = GetGlobalIndex<MIN_CHUNK>(bytes);
 		if (bufferInfo.FreeInfo.Size == 0)

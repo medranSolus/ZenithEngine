@@ -127,6 +127,12 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	{
 	}
 
+	void Pack::Free(GFX::Device& dev) noexcept
+	{
+		for (U32 i = 0; i < count; ++i)
+			srvs[i] = nullptr;
+	}
+
 	std::vector<std::vector<Surface>> Pack::GetData(GFX::Device& dev) const
 	{
 		std::vector<std::vector<Surface>> vec;

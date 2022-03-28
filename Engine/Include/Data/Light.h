@@ -26,11 +26,13 @@ namespace ZE::Data
 		ColorF3 Color;
 		float Intensity;
 		ColorF3 Shadow;
-		float AttnLinear;
-		Float3 Direction;
-		float AttnQuad;
 		float InnerAngle;
+		Float3 Direction;
 		float OuterAngle;
+		float AttnLinear;
+		float AttnQuad;
+
+		constexpr void SetAttenuationRange(U64 range) noexcept { Math::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
 	struct SpotLightBuffer : public LightBuffer {};
 
@@ -42,6 +44,8 @@ namespace ZE::Data
 		ColorF3 Shadow;
 		float AttnLinear;
 		float AttnQuad;
+
+		constexpr void SetAttenuationRange(U64 range) noexcept { Math::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
 	struct PointLightBuffer : public LightBuffer {};
 }

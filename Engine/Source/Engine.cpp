@@ -20,6 +20,23 @@ namespace ZE
 	{
 		// Wait till all GPU operations are done
 		graphics.GetDevice().WaitMain(graphics.GetDevice().SetMainFence());
+
+		// Free all remaining gpu data
+		for (auto& buffer : GetData().view<Data::DirectionalLightBuffer>())
+			GetData().get<Data::DirectionalLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+		for (auto& buffer : GetData().view<Data::SpotLightBuffer>())
+			GetData().get<Data::SpotLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+		for (auto& buffer : GetData().view<Data::PointLightBuffer>())
+			GetData().get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+
+		for (auto& buffer : GetResourceData().view<Data::MaterialBuffersPBR>())
+			GetResourceData().get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
+		for (auto& buffer : GetResourceData().view<Data::Geometry>())
+		{
+			auto& geometry = GetResourceData().get<Data::Geometry>(buffer);
+			geometry.Indices.Free(graphics.GetDevice());
+			geometry.Vertices.Free(graphics.GetDevice());
+		}
 	}
 
 	void Engine::BeginFrame()

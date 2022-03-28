@@ -15,6 +15,9 @@ namespace ZE::GFX::Primitive
 	// Computes tangent vectors for mesh. Must contain valid UV and normal vectors
 	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept;
 
+	// Generate bounding box for any cube
+	constexpr Math::BoundingBox MakeCubeBoundingBox() noexcept { return { { 0.0f, 0.0f, 0.0f }, { 0.5, 0.5f, 0.5f } }; }
+
 	// Generate simple cube vertex data
 	std::vector<Float3> MakeCubeSolidVertex() noexcept;
 	// Generate simple cube index data

@@ -5,11 +5,11 @@ struct SpotLightBuffer
 	float3 Color;
 	float Intensity;
 	float3 Shadow;
-	float AttnLinear;
-	float3 Direction;
-	float AttnQuad;
 	float InnerAngle;
+	float3 Direction;
 	float OuterAngle;
+	float AttnLinear;
+	float AttnQuad;
 };
 
 CBUFFER(light, SpotLightBuffer, 3);

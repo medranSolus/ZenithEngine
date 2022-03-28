@@ -18,6 +18,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 		~Pack();
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
+		void Free(GFX::Device& dev) noexcept;
 		std::vector<std::vector<Surface>> GetData(GFX::Device& dev) const;
 	};
 }

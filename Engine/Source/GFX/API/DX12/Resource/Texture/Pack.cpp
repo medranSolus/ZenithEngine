@@ -231,6 +231,13 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
 	}
 
+	void Pack::Free(GFX::Device& dev) noexcept
+	{
+		for (U32 i = 0; i < count; ++i)
+			if (resources[i].Resource != nullptr)
+				dev.Get().dx12.FreeTexture(resources[i]);
+	}
+
 	std::vector<std::vector<Surface>> Pack::GetData(GFX::Device& dev) const
 	{
 		std::vector<std::vector<Surface>> vec;

@@ -85,4 +85,14 @@ namespace ZE::Math
 			XMMatrixRotationQuaternion(XMLoadFloat4(&rotor)) *
 			XMMatrixTranslationFromVector(XMLoadFloat3(&position));
 	}
+
+	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept
+	{
+		BoundingBox box;
+		Math::XMStoreFloat3(&box.Extents,
+			Math::XMVectorScale(Math::XMVectorSubtract(maxPositive, maxNegative), 0.5f));
+		Math::XMStoreFloat3(&box.Center,
+			Math::XMVectorScale(Math::XMVectorAdd(maxPositive, maxNegative), 0.5f));
+		return box;
+	}
 }

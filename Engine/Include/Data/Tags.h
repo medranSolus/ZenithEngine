@@ -27,8 +27,13 @@ namespace ZE::Data
 	// Enables entity to emit point light
 	struct LightPoint {};
 
+	// Indicates that material contains transparent or translucent elements
+	struct MaterialNotSolid {};
+
 	template<EmptyType T>
 	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
+	template<EmptyType T, EmptyType Visibility>
+	constexpr auto GetVisibleRenderGroup(Storage& registry) noexcept { return registry.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
 
 	inline auto GetDirectionalLightGroup(Storage& registry) noexcept { return registry.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
 	inline auto GetSpotLightGroup(Storage& registry) noexcept { return registry.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }

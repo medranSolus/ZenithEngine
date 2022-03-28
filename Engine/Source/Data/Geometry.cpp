@@ -23,6 +23,8 @@ namespace ZE::Data
 			indices[indexData.Count++] = face.mIndices[2];
 		}
 
+		Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+		Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
 		GFX::Vertex* vertices = new GFX::Vertex[mesh.mNumVertices];
 		for (U32 i = 0; i < mesh.mNumVertices; ++i)
 		{
@@ -33,6 +35,9 @@ namespace ZE::Data
 				&& vertex.Position.y == mesh.mVertices[i].y
 				&& vertex.Position.z == mesh.mVertices[i].z,
 				"Position data is incorrect, type of aiMesh::mVertices changed!");
+			const Vector pos = Math::XMLoadFloat3(&vertex.Position);
+			min = Math::XMVectorMin(min, pos);
+			max = Math::XMVectorMax(max, pos);
 
 			vertex.Normal = *reinterpret_cast<Float3*>(mesh.mNormals + i);
 			ZE_ASSERT(vertex.Normal.x == mesh.mNormals[i].x
@@ -52,6 +57,7 @@ namespace ZE::Data
 		}
 
 		EID meshId = meshRegistry.create();
+		meshRegistry.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
 		Geometry& geometry = meshRegistry.emplace<Geometry>(meshId);
 		geometry.Indices.Init(dev, indexData);
 		geometry.Vertices.Init(dev, { mesh.mNumVertices, sizeof(GFX::Vertex), vertices });
@@ -77,6 +83,9 @@ namespace ZE::Data
 		if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 		{
 			surfaces.emplace_back(path + texFile.C_Str());
+			if (surfaces.back().HasAlpha())
+				materialRegistry.emplace<MaterialNotSolid>(materialId);
+
 			texDesc.AddTexture(schema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
 			data.Flags |= MaterialPBR::Flag::UseTexture;
 		}
@@ -105,10 +114,14 @@ namespace ZE::Data
 			surfaces.emplace_back(path + texFile.C_Str());
 			texDesc.AddTexture(schema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
 			data.Flags |= MaterialPBR::Flag::UseParallax;
+			if (!materialRegistry.all_of<MaterialNotSolid>(materialId))
+				materialRegistry.emplace<MaterialNotSolid>(materialId);
 		}
 
 		if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Color)) != aiReturn_SUCCESS)
 			data.Color = { 0.0f, 0.8f, 1.0f };
+		else if (data.Color.RGBA.w != 1.0f && !materialRegistry.all_of<MaterialNotSolid>(materialId))
+			materialRegistry.emplace<MaterialNotSolid>(materialId);
 
 		if (material.Get(AI_MATKEY_COLOR_SPECULAR, reinterpret_cast<aiColor3D&>(data.Specular)) != aiReturn_SUCCESS)
 			data.Specular = { 1.0f, 1.0f, 1.0f };
@@ -226,7 +239,6 @@ namespace ZE::Data
 			std::swap(scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.c3);
 		}
 
-		dev.BeginUploadRegion();
 		std::vector<std::pair<EID, U32>> meshes;
 		meshes.reserve(scene->mNumMeshes);
 		for (U32 i = 0; i < scene->mNumMeshes; ++i)
@@ -240,7 +252,6 @@ namespace ZE::Data
 			materials.emplace_back(ParseMaterial(*scene->mMaterials[i], textureSchema,
 				filePath.remove_filename().string(), dev, resourceRegistry));
 		dev.StartUpload();
-		dev.EndUploadRegion();
 
 		ParseNode(*scene->mRootNode, root, meshes, materials, registry);
 	}

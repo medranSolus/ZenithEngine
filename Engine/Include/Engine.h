@@ -8,9 +8,9 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
+		GFX::Graphics graphics;
 		GUI::Manager gui;
 		Window::MainWindow window;
-		GFX::Graphics graphics;
 		GFX::Pipeline::RendererPBR renderer;
 		GFX::Resource::Texture::Library textureLib;
 		bool guiEnabled = true;

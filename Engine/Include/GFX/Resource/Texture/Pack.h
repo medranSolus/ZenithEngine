@@ -22,5 +22,7 @@ namespace ZE::GFX::Resource::Texture
 		// Main Gfx API
 
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const { ZE_API_BACKEND_CALL(Bind, cl, bindCtx); }
+		// Before destroying texture pack you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 	};
 }
