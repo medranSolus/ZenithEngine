@@ -4,6 +4,11 @@
 
 namespace ZE::Math
 {
+	constexpr Float4 NoRotation() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
+	constexpr Float3 NoRotationAngles() noexcept { return { 0.0f, 0.0f, 0.0f }; }
+	constexpr Float3 StartPosition() noexcept { return { 0.0f, 0.0f, 0.0f }; }
+	constexpr Float3 UnitScale() noexcept { return { 1.0f, 1.0f, 1.0f }; }
+
 	constexpr float ToRadians(float angle) noexcept
 	{
 		return static_cast<float>(M_PI - FLT_EPSILON) * angle / 180.0f;

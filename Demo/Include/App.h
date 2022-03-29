@@ -10,8 +10,7 @@ class App final
 
 	Engine engine;
 	Data::CameraType cameraType = Data::CameraType::Person;
-	EID camera;
-	EID cube;
+	EID currentCamera;
 	float moveSpeed = 0.02f;
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
@@ -24,6 +23,18 @@ class App final
 	void AddModelButton();
 	void ChangeBackgroundButton();
 	void AddLightButton();
+
+	EID AddCamera(std::string&& name, float nearZ, float farZ, float fov,
+		Float3&& position, const Float3& angle);
+	EID AddModel(std::string&& name, Float3&& position,
+		const Float3& angle, float scale, const std::string& file);
+	EID AddPointLight(std::string&& name, Float3&& position,
+		ColorF3&& color, float intensity, U64 range);
+	EID AddSpotLight(std::string&& name, Float3&& position,
+		ColorF3&& color, float intensity, U64 range,
+		float innerAngle, float outerAngle, const Float3& direction);
+	EID AddDirectionalLight(std::string&& name,
+		ColorF3&& color, float intensity, const Float3& direction);
 	void MakeFrame();
 
 public:
