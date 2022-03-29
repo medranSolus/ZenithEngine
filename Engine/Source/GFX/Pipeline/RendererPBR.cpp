@@ -52,17 +52,12 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	constexpr void RendererPBR::SetupBlurData(U32 width, U32 height, float sigma) noexcept
+	constexpr void RendererPBR::SetupBlurKernel() noexcept
 	{
-		settingsData.BlurRadius = DataPBR::BLUR_KERNEL_RADIUS;
-		settingsData.BlurWidth = width;
-		settingsData.BlurHeight = height;
-		settingsData.BlurIntensity = settingsData.HDRExposure < 1.0f ? 1.0f / settingsData.HDRExposure : 1.0f;
-
 		float sum = 0.0f;
 		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
 		{
-			const float g = Math::Gauss(static_cast<float>(i), sigma);
+			const float g = Math::Gauss(static_cast<float>(i), blurSigma);
 			sum += g;
 			settingsData.BlurCoefficients[i].x = g;
 		}
@@ -70,10 +65,25 @@ namespace ZE::GFX::Pipeline
 			settingsData.BlurCoefficients[i].x /= sum;
 	}
 
-	constexpr void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
+	constexpr void RendererPBR::SetupBlurIntensity() noexcept
 	{
-		ssaoSettings.DenoisePasses = 1;
-		settingsData.SsaoData.ViewportSize = { static_cast<int>(width), static_cast<int>(height) };
+		if (settingsData.HDRExposure < 1.0f)
+			settingsData.BlurIntensity = 1.0f / settingsData.HDRExposure;
+		else
+			settingsData.BlurIntensity = 1.0f;
+	}
+
+	constexpr void RendererPBR::SetupBlurData(U32 width, U32 height) noexcept
+	{
+		settingsData.BlurRadius = DataPBR::BLUR_KERNEL_RADIUS;
+		settingsData.BlurWidth = width;
+		settingsData.BlurHeight = height;
+		SetupBlurIntensity();
+		SetupBlurKernel();
+	}
+
+	constexpr void RendererPBR::SetupSsaoQuality() noexcept
+	{
 		switch (ssaoSettings.QualityLevel)
 		{
 		default:
@@ -103,6 +113,13 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		}
+	}
+
+	constexpr void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
+	{
+		ssaoSettings.DenoisePasses = 1;
+		settingsData.SsaoData.ViewportSize = { static_cast<int>(width), static_cast<int>(height) };
+		SetupSsaoQuality();
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
@@ -142,6 +159,7 @@ namespace ZE::GFX::Pipeline
 		RendererBuildData buildData = { execData.Bindings, texLib };
 		SetupRenderSlots(buildData);
 
+		blurSigma = params.Sigma;
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
@@ -149,7 +167,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = static_cast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-		SetupBlurData(outlineBuffWidth, outlineBuffHeight, params.Sigma);
+		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
 		SetupSsaoData(width, height);
 
 		dev.BeginUploadRegion();
@@ -330,5 +348,108 @@ namespace ZE::GFX::Pipeline
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
+	}
+
+	void RendererPBR::ShowWindow(Device& dev)
+	{
+		bool change = false;
+		if (ImGui::CollapsingHeader("Outline"))
+		{
+			ImGui::Columns(2, "##outline_options", false);
+			ImGui::Text("Blur radius");
+			ImGui::SetNextItemWidth(-1.0f);
+			change |= ImGui::SliderInt("##blur_radius", &settingsData.BlurRadius, 1, DataPBR::BLUR_KERNEL_RADIUS);
+			ImGui::NextColumn();
+			ImGui::Text("Outline range");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##blur_sigma", &blurSigma, 0.1f, 0.0f, "%.1f"))
+			{
+				change = true;
+				if (blurSigma < 0.1f)
+					blurSigma = 0.1f;
+				else if (blurSigma > 25.0f)
+					blurSigma = 25.0f;
+				SetupBlurKernel();
+			}
+			ImGui::Columns(1);
+		}
+		if (ImGui::CollapsingHeader("Display"))
+		{
+			ImGui::Columns(2, "##display_options", false);
+			ImGui::Text("Gamma correction");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##gamma", &settingsData.Gamma, 0.1f, 0.0f, "%.1f"))
+			{
+				change = true;
+				if (settingsData.Gamma < 1.0f)
+					settingsData.Gamma = 1.0f;
+				else if (settingsData.Gamma > 10.0f)
+					settingsData.Gamma = 10.0f;
+				settingsData.GammaInverse = 1.0f / settingsData.Gamma;
+			}
+			ImGui::NextColumn();
+			ImGui::Text("HDR exposure");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##hdr", &settingsData.HDRExposure, 0.1f, 0.0f, "%.1f"))
+			{
+				change = true;
+				if (settingsData.HDRExposure < 0.1f)
+					settingsData.HDRExposure = 0.1f;
+				SetupBlurIntensity();
+			}
+			ImGui::Columns(1);
+		}
+		if (ImGui::CollapsingHeader("Shadows"))
+		{
+			ImGui::Columns(2, "##shadow_options", false);
+			ImGui::Text("Depth bias");
+			ImGui::SetNextItemWidth(-1.0f);
+			S32 bias = static_cast<S32>(settingsData.ShadowBias * settingsData.ShadowMapSize);
+			if (ImGui::InputInt("##depth_bias", &bias))
+			{
+				change = true;
+				settingsData.ShadowBias = static_cast<float>(bias) / settingsData.ShadowMapSize;
+			}
+			ImGui::NextColumn();
+			ImGui::Text("Normal offset");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputFloat("##normal_offset", &settingsData.ShadowNormalOffset, 0.001f, 0.0f, "%.3f"))
+			{
+				change = true;
+				if (settingsData.ShadowNormalOffset < 0.0f)
+					settingsData.ShadowNormalOffset = 0.0f;
+				else if (settingsData.ShadowNormalOffset > 1.0f)
+					settingsData.ShadowNormalOffset = 1.0f;
+			}
+			ImGui::Columns(1);
+			ImGui::Text("Ambient color");
+			ImGui::SetNextItemWidth(-5.0f);
+			change |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&settingsData.AmbientLight),
+				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
+		}
+		if (ImGui::CollapsingHeader("SSAO"))
+		{
+			// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
+			const int quality = ssaoSettings.QualityLevel;
+			const int denoise = ssaoSettings.DenoisePasses;
+			change |= XeGTAO::GTAOImGuiSettings(ssaoSettings);
+			change |= quality != ssaoSettings.QualityLevel || denoise != ssaoSettings.DenoisePasses;
+			if (change)
+			{
+				SetupSsaoQuality();
+				XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
+					settingsData.SsaoData.ViewportSize.x,
+					settingsData.SsaoData.ViewportSize.y,
+					ssaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+			}
+		}
+		// If any settings data updated then upload new buffer
+		if (change)
+		{
+			dev.BeginUploadRegion();
+			execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
+			dev.StartUpload();
+			dev.EndUploadRegion();
+		}
 	}
 }

@@ -2,20 +2,6 @@
 #include "Data/Camera.h"
 #include "GFX/Primitive.h"
 
-void App::ShowOptionsWindow()
-{
-	if (ImGui::Begin("Options"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
-	{
-		if (ImGui::Button("Exit"))
-			run = false;
-		ImGui::SameLine();
-		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		const Float3& pos = engine.GetData().get<Data::Transform>(camera).Position;
-		ImGui::Text("Postion [ %.1f | %.1f | %.1f ]", pos.x, pos.y, pos.z);
-	}
-	ImGui::End();
-}
-
 void App::ProcessInput()
 {
 	Window::MainWindow& window = engine.Window();
@@ -131,11 +117,33 @@ void App::ProcessInput()
 		Data::RollCamera(engine.GetData(), camera, -rollSpeed, cameraType);
 }
 
+void App::ShowOptionsWindow()
+{
+	if (ImGui::Begin("Options"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
+	{
+		if (ImGui::Button("Exit"))
+			run = false;
+		ImGui::SameLine();
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		engine.Reneder().ShowWindow(engine.Gfx().GetDevice());
+	}
+	ImGui::End();
+}
+
+void App::ShowObjectWindow()
+{
+	if (ImGui::Begin("Objects"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
+	{
+	}
+	ImGui::End();
+}
+
 void App::MakeFrame()
 {
 	engine.BeginFrame();
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	ShowOptionsWindow();
+	ShowObjectWindow();
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), camera);
 	engine.EndFrame();
 }
@@ -143,6 +151,7 @@ void App::MakeFrame()
 App::App(const std::string& commandLine)
 	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
 {
+	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	camera = engine.GetData().create();
 	Data::Camera camData =
 	{

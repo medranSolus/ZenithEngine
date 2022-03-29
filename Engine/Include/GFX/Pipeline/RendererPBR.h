@@ -10,13 +10,17 @@ namespace ZE::GFX::Pipeline
 	{
 		DataPBR settingsData;
 		CameraPBR dynamicData;
+		float blurSigma;
 		XeGTAO::GTAOSettings ssaoSettings = {};
 		Float4x4 currentProjection;
 		Float4 cameraRotation;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
 
-		constexpr void SetupBlurData(U32 width, U32 height, float sigma) noexcept;
+		constexpr void SetupBlurKernel() noexcept;
+		constexpr void SetupBlurIntensity() noexcept;
+		constexpr void SetupBlurData(U32 width, U32 height) noexcept;
+		constexpr void SetupSsaoQuality() noexcept;
 		constexpr void SetupSsaoData(U32 width, U32 height) noexcept;
 
 	public:
@@ -37,5 +41,6 @@ namespace ZE::GFX::Pipeline
 		void UpdateSettingsData(Device& dev, const Float4x4& projection);
 		// Need to be called before ending every frame
 		void UpdateWorldData(Device& dev, EID camera) noexcept;
+		void ShowWindow(Device& dev);
 	};
 }

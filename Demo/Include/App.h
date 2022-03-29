@@ -19,8 +19,8 @@ class App final
 
 	void ProcessInput();
 	void ShowOptionsWindow();
-
 	void ShowObjectWindow();
+
 	void AddModelButton();
 	void ChangeBackgroundButton();
 	void AddLightButton();

@@ -1,4 +1,5 @@
 #pragma once
+#include "GUI/DearImGui.h"
 #include "XeGTAO.h"
 
 namespace ZE::GFX::Pipeline
