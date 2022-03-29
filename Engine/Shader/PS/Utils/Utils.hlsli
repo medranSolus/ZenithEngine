@@ -1,3 +1,5 @@
+#ifndef PS_UTILS_HLSLI
+#define PS_UTILS_HLSLI
 #include "CommonUtils.hlsli"
 
 float GetSampledSpecularPower(const in float specularPower)
@@ -34,10 +36,11 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 	float2 currentUV = uv;
 
 	// Follow pixel<->camera line to find intersection with geometry displacement (bump)
-	[unroll]
+	[unroll(MAX_LAYERS)]
 	for (uint i = 0; i < MAX_LAYERS; ++i)
 	{
 		currentDepthMapValue = depthMap.Sample(splr, currentUV).r;
+		[branch]
 		if (currentLayerDepth >= currentDepthMapValue)
 			break;
 		// Go to next layer
@@ -55,10 +58,7 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 float GetParallaxDepth(const in float2 uv, const in float3 tangentLightDir,
 	uniform Texture2D depthMap, uniform SamplerState splr)
 {
-	float currentDepth = depthMap.Sample(splr, uv).r;
-	if (currentDepth == 0.0f)
-		return 0.0f;
-	return 1.0f;
+	return sign(depthMap.Sample(splr, uv).r);
 }
 
 float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
@@ -69,3 +69,5 @@ float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
 	// Transform from tangent into world space
 	return normalize(mul(tangentNormal, TBN));
 }
+
+#endif // PS_UTILS_HLSLI

@@ -1,3 +1,6 @@
+#ifndef PS_LIGHT_UTILS_HLSLI
+#define PS_LIGHT_UTILS_HLSLI
+
 float GetAttenuation(uniform float attLinear, uniform float attQuad, const in float distanceToLight)
 {
 	// http://wiki.ogre3d.org/-Point+Light+Attenuation
@@ -55,6 +58,8 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 float GetShadowLevel(const in float3 directionToCamera, const in float distanceToLight, const in float3 directionToLight,
 	uniform SamplerState shadowSplr, uniform TextureCube shadowMap, uniform float mapSize)
 {
+	static const uint SAMPLES = 20;
+
 	// NOTE: Maybe use cascaded shadow maps, maybe it will stop z fighting, to be check
 	const float slope = clamp(dot(directionToLight, directionToCamera), 0.0f, 0.99f);
 	const float shadowLength = distanceToLight - 0.038f * sqrt(1.0f - slope * slope) / (1.0f - slope);
@@ -63,16 +68,18 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 
 	// NOTE: Maybe change to some random sphere with better distribution of sample points
 	static const float DIST = 1.0f;
-	static const float3 OFFSETS[20] =
+	static const float3 OFFSETS[SAMPLES] =
 	{
 		float3(DIST, DIST, DIST),   float3(-DIST, DIST, DIST),   float3(DIST, DIST, 0.0f),   float3(DIST, 0.0f, DIST),   float3(0.0f, DIST, DIST),
 		float3(DIST, DIST, -DIST),  float3(-DIST, DIST, -DIST),  float3(DIST, -DIST, 0.0f),  float3(DIST, 0.0f, -DIST),  float3(0.0f, DIST, -DIST),
 		float3(DIST, -DIST, DIST),  float3(-DIST, -DIST, DIST),  float3(-DIST, DIST, 0.0f),  float3(-DIST, 0.0f, DIST),  float3(0.0f, -DIST, DIST),
 		float3(DIST, -DIST, -DIST), float3(-DIST, -DIST, -DIST), float3(-DIST, -DIST, 0.0f), float3(-DIST, 0.0f, -DIST), float3(0.0f, -DIST, -DIST)
 	};
-	[unroll]
-	for (int i = 0; i < 20; ++i)
+	[unroll(SAMPLES)]
+	for (int i = 0; i < SAMPLES; ++i)
 		level += saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / mapSize).x)));
 
 	return (saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos).x))) + level) / 21.0f;
 }
+
+#endif // PS_LIGHT_UTILS_HLSLI

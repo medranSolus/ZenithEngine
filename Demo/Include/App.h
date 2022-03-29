@@ -11,7 +11,7 @@ class App final
 	Engine engine;
 	Data::CameraType cameraType = Data::CameraType::Person;
 	EID currentCamera;
-	float moveSpeed = 0.02f;
+	float moveSpeed = 0.25f;
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
 	bool run = true;
