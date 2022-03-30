@@ -28,4 +28,20 @@ namespace ZE::GFX
 
 		Matrix Transforms[TRANSFORM_COUNT];
 	};
+
+	// Single view data for cube map
+	struct CubeView
+	{
+		Matrix View[6];
+	};
+
+	// Transform buffer containing view projection data for cube map
+	struct CubeViewBuffer
+	{
+		// After changin content of the view buffer, set size of view array in
+		// Engine/Shader/GS/CB/View.hlsli
+		static constexpr U32 CUBE_COUNT = 170;
+
+		CubeView Cubes[CUBE_COUNT];
+	};
 }

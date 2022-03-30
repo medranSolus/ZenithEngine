@@ -23,8 +23,10 @@ struct GSOut
 [maxvertexcount(18)]
 void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 {
+	[unroll(6)]
 	for (uint i = 0; i < 6; ++i)
 	{
+		[unroll(3)]
 		for (uint j = 0; j < 3; ++j)
 		{
 			GSOut element;
@@ -34,7 +36,7 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 			element.worldTan = input[j].worldTan;
 			element.cameraDir = cb_worldData.CameraPos - input[j].worldPos;
 			element.face = i;
-			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.ViewProjection[i]);
+			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.Cube[cb_viewIndex].ViewProjection[i]);
 			output.Append(element);
 		}
 		output.RestartStrip();

@@ -162,7 +162,7 @@ namespace ZE::GFX::API::DX12::Binding
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 					else
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
-
+					
 					bindings[i++] = type;
 					for (U32 j = 1; j < entry.Count; ++j)
 					{
@@ -172,7 +172,7 @@ namespace ZE::GFX::API::DX12::Binding
 						nextParameter.ParameterType = parameter.ParameterType;
 						nextParameter.Descriptor.ShaderRegister = parameter.Descriptor.ShaderRegister + j;
 						nextParameter.Descriptor.RegisterSpace = parameter.Descriptor.RegisterSpace;
-						nextParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
+						nextParameter.Descriptor.Flags = parameter.Descriptor.Flags;
 					}
 				}
 			}

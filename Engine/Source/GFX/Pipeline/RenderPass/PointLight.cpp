@@ -51,6 +51,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		data.ShadowData.PreviousEntityCount = 0;
 
 		auto group = Data::GetPointLightGroup(renderData.Registry);
 		const U64 count = group.size();
@@ -72,7 +73,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				{
 					auto entity = group[i];
 					const auto& transform = group.get<Data::TransformGlobal>(entity);
-					ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position);
+					ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, i);
 
 					const auto& light = group.get<Data::PointLightBuffer>(entity);
 					buffer->Transforms[k] = viewProjection *

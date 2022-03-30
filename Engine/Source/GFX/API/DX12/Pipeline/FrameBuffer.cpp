@@ -211,7 +211,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 				resDesc.MipLevels = 1;
 			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Cube)
 				resDesc.DepthOrArraySize *= 6;
-			resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess)
+				resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+			else
+				resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 			bool isRT = false, isDS = false, isUA = false, isSR = res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV;
 			const auto& lifetime = desc.ResourceLifetimes.at(i);
@@ -221,6 +224,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				{
 				case GFX::Resource::State::RenderTarget:
 				{
+					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
+
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 					isRT = true;
 					if (resDesc.MipLevels > 1)
@@ -230,6 +235,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 				case GFX::Resource::State::DepthRead:
 				case GFX::Resource::State::DepthWrite:
 				{
+					ZE_ASSERT((res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess) == 0, "Simultaneous access cannot be used on depth stencil!");
+					ZE_ASSERT(!isRT, "Cannot create depth stencil and render target view for same buffer!");
+					ZE_ASSERT(!isUA, "Cannot create depth stencil and unordered access view for same buffer!");
+
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 					isDS = true;
 					if (resDesc.MipLevels > 1)
@@ -238,6 +247,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 				case GFX::Resource::State::UnorderedAccess:
 				{
+					ZE_ASSERT(!isDS, "Cannot create depth stencil and unordered access view for same buffer!");
+
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 					isUA = true;
 					if (resDesc.MipLevels > 1)

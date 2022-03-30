@@ -16,7 +16,7 @@ set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
-option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" ON)
+option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" OFF)
 option(ZE_DEBUG_GPU_VALIDATION "Enable additional GPU validation for supported APIs on debug builds for more verbose checks. May slow rendering considerably" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)

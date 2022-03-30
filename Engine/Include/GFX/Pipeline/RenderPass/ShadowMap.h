@@ -26,6 +26,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Resource::PipelineStateGfx StateTransparent;
 		std::vector<Resource::CBuffer> TransformBuffers;
 		Matrix Projection;
+		// Number of entities that were previously used in computing shadow map,
+		// have to be zeroed once per frame
+		U64 PreviousEntityCount = 0;
 	};
 
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,

@@ -4,7 +4,13 @@
 namespace ZE::GFX::Pipeline
 {
 	// Additional info for specified buffer
-	enum FrameResourceFlags : U8 { None, Cube, ForceSRV };
+	enum FrameResourceFlags : U8
+	{
+		None = 0,
+		Cube = 1,
+		ForceSRV = 2,
+		SimultaneousAccess = 4
+	};
 
 	// Description of single resource in FrameBuffer
 	struct FrameResourceDesc

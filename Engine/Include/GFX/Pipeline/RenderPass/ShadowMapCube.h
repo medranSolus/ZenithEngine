@@ -24,13 +24,16 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Resource::PipelineStateGfx StateDepth;
 		Resource::PipelineStateGfx StateSolid;
 		Resource::PipelineStateGfx StateTransparent;
-		Resource::CBuffer ViewBuffer;
+		std::vector<Resource::CBuffer> ViewBuffers;
 		std::vector<Resource::CBuffer> TransformBuffers;
 		Matrix Projection;
+		// Number of entities that were previously used in computing shadow map,
+		// have to be zeroed once per frame
+		U64 PreviousEntityCount = 0;
 	};
 
 	void Setup(Device& dev, RendererBuildData& buildData,
 		ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos);
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, U64 lightNumber);
 }

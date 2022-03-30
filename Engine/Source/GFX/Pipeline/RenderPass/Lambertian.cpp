@@ -188,7 +188,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		}
 
 		// Transparent pass
-		--currentBuffer;
+		currentBuffer = solidCount / TransformBuffer::TRANSFORM_COUNT;
 		if (currentTransform == TransformBuffer::TRANSFORM_COUNT)
 			currentTransform = 0;
 		for (U64 i = 0; i < transparentCount; ++currentBuffer)

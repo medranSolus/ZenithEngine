@@ -140,7 +140,7 @@ namespace ZE::GFX::API::DX12
 		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&computeQueue)));
 		ZE_GFX_SET_ID(computeQueue, "compute_queue");
 		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&computeFence)));
-		ZE_GFX_SET_ID(computeFence, "computev");
+		ZE_GFX_SET_ID(computeFence, "compute_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
 		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&copyQueue)));
@@ -243,21 +243,19 @@ namespace ZE::GFX::API::DX12
 
 	void Device::EndUploadRegion()
 	{
-		if (copyResList)
-		{
-			ZE_WIN_ENABLE_EXCEPT();
+		ZE_ASSERT(copyResList != nullptr, "Start upload region first!");
+		ZE_WIN_ENABLE_EXCEPT();
 
-			copyList.Close(*this);
-			U64 fenceVal = ++mainFenceVal;
-			ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
-			WaitMain(fenceVal);
-			copyList.Reset(*this);
+		copyList.Close(*this);
+		U64 fenceVal = ++mainFenceVal;
+		ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
+		WaitMain(fenceVal);
+		copyList.Reset(*this);
 
-			Table::Clear(copyResInfo.Size, copyResList);
-			copyOffset = 0;
-			copyResInfo.Size = 0;
-			copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
-		}
+		Table::Clear(copyResInfo.Size, copyResList);
+		copyOffset = 0;
+		copyResInfo.Size = 0;
+		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
 	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)

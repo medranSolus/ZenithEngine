@@ -76,38 +76,43 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, InsideFrustumNotSolid>(renderData.Registry);
 			const U64 solidCount = solidGroup.size();
 			const U64 transparentCount = transparentGroup.size();
+			const U64 bufferOffset = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
+			const U64 bufferTransformOffset = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
 
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, solidCount + transparentCount);
+			data.PreviousEntityCount += solidCount;
+			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, data.PreviousEntityCount + transparentCount);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < solidCount; ++j)
+			U64 currentBuffer = bufferOffset;
+			U64 currentTransform = bufferTransformOffset;
+			for (U64 i = 0; i < solidCount; ++currentBuffer)
 			{
 				cl.Open(dev, data.StateDepth);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Depth Batch_" + std::to_wstring(j)).c_str(), Pixel(0x98, 0x9F, 0xA7));
+				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Depth Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x98, 0x9F, 0xA7));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.at(j);
+				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
 				renderData.DynamicBuffer.Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
 				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
-				for (U32 k = 0; k < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++k, ++i)
+				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), PixelVal::Gray);
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), PixelVal::Gray);
 
 					auto entity = solidGroup[i];
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
-					buffer->Transforms[k].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					buffer->Transforms[k].ModelViewProjection = viewProjection * buffer->Transforms[k].Model;
+					buffer->Transforms[currentTransform].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					buffer->Transforms[currentTransform].ModelViewProjection = viewProjection * buffer->Transforms[currentTransform].Model;
 
-					Resource::Constant<U32> meshBatchId(dev, k);
+					Resource::Constant<U32> meshBatchId(dev, currentTransform);
 					meshBatchId.Bind(cl, ctx);
 					ctx.Reset();
 
@@ -122,12 +127,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ZE_DRAW_TAG_END(cl);
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
+				currentTransform = 0;
 			}
 
 			// Solid pass
 			Data::MaterialID currentMaterial = { INVALID_EID };
-			U64 currentBuffer = 0;
-			U64 currentTransform = 0;
+			currentBuffer = bufferOffset;
+			currentTransform = bufferTransformOffset;
 			for (U64 i = 0; i < solidCount; ++currentBuffer)
 			{
 				cl.Open(dev, data.StateSolid);
@@ -145,7 +151,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.Reset();
 
 				// Compute single batch
-				for (currentTransform = 0; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
+				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
 				{
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0x5D, 0x5E, 0x61));
 
@@ -178,13 +184,14 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ZE_DRAW_TAG_END(cl);
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
+				currentTransform = 0;
 				currentMaterial = { INVALID_EID };
 			}
 
 			// Transparent pass
-			--currentBuffer;
-			if (currentTransform == ModelTransformBuffer::TRANSFORM_COUNT)
-				currentTransform = 0;
+			currentBuffer = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
+			currentTransform = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
+			data.PreviousEntityCount += transparentCount;
 			for (U64 i = 0; i < transparentCount; ++currentBuffer)
 			{
 				cl.Open(dev, data.StateTransparent);

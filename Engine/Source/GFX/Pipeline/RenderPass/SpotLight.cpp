@@ -57,6 +57,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		data.ShadowData.PreviousEntityCount = 0;
 
 		auto group = Data::GetSpotLightGroup(renderData.Registry);
 		const U64 count = group.size();
@@ -92,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 					buffer->Transforms[k] = viewProjection *
 						Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
-							Math::GetVectorRotation(Math::XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f),
+							Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f },
 								Math::XMLoadFloat3(&lightData.Direction), true, light.Volume) *
 							Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation)));
 
