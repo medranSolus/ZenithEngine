@@ -12,15 +12,17 @@
 */
 
 /*
-******* cassert
-***** Macros.h
-*** Ptr.h
-*** atomic
+*********** cassert
+********* Macros.h
+******* Ptr.h
+******* atomic
+******* cstdint
+***** BasicTypes.h
+***** intrin.h/x86intrin.h
+*** Intrinsics.h
 *** cmath
 *** cstddef
-*** cstdint
 *** cfloat
-*** intrin.h
 *** DirectXMath.h
 *** DirectXCollision.h
 * Types.h

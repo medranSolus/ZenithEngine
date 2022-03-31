@@ -1,4 +1,5 @@
 #include "Perf.h"
+#include "Intrinsics.h"
 
 namespace ZE
 {
@@ -29,14 +30,14 @@ namespace ZE
 		if (data.find(sectionTag) == data.end())
 			data.emplace(sectionTag + tag, std::make_pair(0ULL, 0ULL));
 		lastTag = sectionTag;
-		__faststorefence();
-		stamp = __rdtsc();
+		Intrin::FenceStore();
+		stamp = Intrin::Rdtsc();
 	}
 
 	void Perf::Stop() noexcept
 	{
-		const U64 end = __rdtsc();
-		__faststorefence();
+		const U64 end = Intrin::Rdtsc();
+		Intrin::FenceStore();
 		data.at(lastTag).first += end - stamp;
 		++data.at(lastTag).second;
 		stamp = 0;

@@ -146,7 +146,7 @@ endif()
 if(MSVC)
 	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
 	# Move to /EHsc when exceptions will be replaced with error codes
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_COMPILER_MSVC /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
 	# C4265 - class with virtual functions does not have virutal destructor
 	# C4061 - not all enums are explicitly handled in switch where `default` is present
 	# C4668 - not defined as preprocessor macro in #if/#elif
@@ -173,6 +173,11 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)
+	if(GNU)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_COMPILER_GCC")
+	elseif(Clang)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_COMPILER_CLANG")
+	endif()
 	# GCC asumed although they should work on Clang too
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -pedantic -ffast-math")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
