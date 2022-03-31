@@ -24,8 +24,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Resource::PipelineStateGfx StateDepth;
 		Resource::PipelineStateGfx StateSolid;
 		Resource::PipelineStateGfx StateTransparent;
-		std::vector<Resource::CBuffer> ViewBuffers;
-		std::vector<Resource::CBuffer> TransformBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> ViewBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 		Matrix Projection;
 		// Number of entities that were previously used in computing shadow map,
 		// have to be zeroed once per frame

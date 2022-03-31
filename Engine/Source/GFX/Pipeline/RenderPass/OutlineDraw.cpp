@@ -32,7 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
 		passData->StateRender.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 
 		return passData;
 	}
@@ -72,7 +72,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Utils::ViewSortAscending(visibleGroup, cameraPos);
 
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers, count);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers.Get(), count);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
@@ -85,7 +85,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 				ctx.SetFromEnd(1);
-				auto& cbuffer = data.TransformBuffers.at(j);
+				auto& cbuffer = data.TransformBuffers.Get().at(j);
 				cbuffer.Bind(cl, ctx);
 				ctx.Reset();
 

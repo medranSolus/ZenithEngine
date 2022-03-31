@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		std::vector<Resource::CBuffer> TransformBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }

@@ -39,7 +39,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapTransparent");
 		passData.StateTransparent.Init(dev, psoDesc, schema);
 
-		passData.TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true);
+		passData.TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true); });
 		passData.Projection = std::move(projection);
 	}
 
@@ -81,7 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 			// Resize temporary buffer for transform data
 			data.PreviousEntityCount += solidCount;
-			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, data.PreviousEntityCount + transparentCount);
+			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), data.PreviousEntityCount + transparentCount);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			// Depth pre-pass
@@ -96,9 +96,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
@@ -142,9 +142,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				Resource::Constant<Float3> pos(dev, lightPos);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
@@ -200,9 +200,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				Resource::Constant<Float3> pos(dev, lightPos);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);

@@ -49,7 +49,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent");
 		passData->StateTransparent.Init(dev, psoDesc, schema);
 
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true);
+		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true); });
 
 		return passData;
 	}
@@ -92,7 +92,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Utils::ViewSortDescending(transparentGroup, cameraPos);
 
 		// Resize temporary buffer for transform data
-		Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, solidCount + transparentCount);
+		Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), solidCount + transparentCount);
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		// Depth pre-pass
@@ -105,7 +105,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 			ctx.SetFromEnd(2);
-			auto& cbuffer = data.TransformBuffers.at(j);
+			auto& cbuffer = data.TransformBuffers.Get().at(j);
 			cbuffer.Bind(cl, ctx);
 			ctx.Reset();
 
@@ -149,8 +149,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
 			ctx.SetFromEnd(2);
-			data.TransformBuffers.at(currentBuffer).Bind(cl, ctx);
-			renderData.DynamicBuffer.Bind(cl, ctx);
+			data.TransformBuffers.Get().at(currentBuffer).Bind(cl, ctx);
+			renderData.DynamicBuffers.Get().Bind(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
 
@@ -199,9 +199,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
 			ctx.SetFromEnd(2);
-			auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+			auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 			cbuffer.Bind(cl, ctx);
-			renderData.DynamicBuffer.Bind(cl, ctx);
+			renderData.DynamicBuffers.Get().Bind(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
 

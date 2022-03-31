@@ -76,7 +76,7 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 		float3(DIST, -DIST, -DIST), float3(-DIST, -DIST, -DIST), float3(-DIST, -DIST, 0.0f), float3(-DIST, 0.0f, -DIST), float3(0.0f, -DIST, -DIST)
 	};
 	[unroll(SAMPLES)]
-	for (int i = 0; i < SAMPLES; ++i)
+	for (uint i = 0; i < SAMPLES; ++i)
 		level += saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / mapSize).x)));
 
 	return (saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos).x))) + level) / 21.0f;

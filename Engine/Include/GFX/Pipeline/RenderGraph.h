@@ -14,7 +14,7 @@ namespace ZE::GFX::Pipeline
 		U64 levelCount = 0;
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		U64 workersCount = 0;
-		Ptr<std::pair<std::thread, CommandList>> workerThreads;
+		Ptr<std::pair<std::thread, ChainPool<CommandList>>> workerThreads;
 #endif
 		Ptr<std::pair<Ptr<PassDesc>, U64>> passes;
 		Ptr<PassDescStatic> staticPasses;

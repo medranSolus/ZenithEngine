@@ -310,7 +310,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
 
-		execData.DynamicBuffer.Init(dev, nullptr, sizeof(CameraPBR), true);
+		execData.DynamicBuffers.Exec([&dev](auto& x) { x.Init(dev, nullptr, sizeof(CameraPBR), true); });
 		dev.EndUploadRegion();
 	}
 

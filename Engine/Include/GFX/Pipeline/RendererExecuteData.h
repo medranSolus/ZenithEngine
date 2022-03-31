@@ -2,6 +2,7 @@
 #include "GFX/Binding/Library.h"
 #include "GFX/Resource/CBuffer.h"
 #include "GFX/Resource/PipelineStateGfx.h"
+#include "GFX/ChainPool.h"
 #include "Data/Tags.h"
 #include "FrameBuffer.h"
 
@@ -18,7 +19,7 @@ namespace ZE::GFX::Pipeline
 		FrameBuffer Buffers;
 		Binding::Library Bindings;
 		Resource::CBuffer SettingsBuffer;
-		Resource::CBuffer DynamicBuffer;
+		ChainPool<Resource::CBuffer> DynamicBuffers;
 		// Global settings of the renderer. Initialized by RenderGraph
 		void* SettingsData;
 		// Per-frame changing data of the renderer. Initialized by RenderGraph

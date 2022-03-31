@@ -64,7 +64,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			ctx.SetFromEnd(3);
 			renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
-			renderData.DynamicBuffer.Bind(cl, ctx);
+			renderData.DynamicBuffers.Get().Bind(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
 

@@ -63,7 +63,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 		renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(cl, ctx);
-		renderData.DynamicBuffer.Bind(cl, ctx);
+		renderData.DynamicBuffers.Get().Bind(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		data.VertexBuffer.Bind(cl);
 		data.IndexBuffer.Bind(cl);

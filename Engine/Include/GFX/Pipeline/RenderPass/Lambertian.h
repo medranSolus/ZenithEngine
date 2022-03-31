@@ -26,7 +26,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Resource::PipelineStateGfx StateDepth;
 		Resource::PipelineStateGfx StateSolid;
 		Resource::PipelineStateGfx StateTransparent;
-		std::vector<Resource::CBuffer> TransformBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }

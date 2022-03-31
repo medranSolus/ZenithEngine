@@ -262,7 +262,7 @@ namespace ZE::GFX::API::DX12
 	{
 		if (count == 1)
 		{
-			switch (cls->Get().dx12.GetType())
+			switch (cls->Get().dx12.GetList()->GetType())
 			{
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 				return ExecuteMain(*cls);
@@ -277,7 +277,7 @@ namespace ZE::GFX::API::DX12
 		U32 mainCount = 0, computeCount = 0, copyCount = 0;
 		for (U32 i = 0; i < count; ++i)
 		{
-			switch (cls[i].Get().dx12.GetType())
+			switch (cls[i].Get().dx12.GetList()->GetType())
 			{
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 			{

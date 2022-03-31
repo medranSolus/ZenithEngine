@@ -21,8 +21,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		ShadowMap::ExecuteData ShadowData;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		std::vector<Resource::CBuffer> ShadowBuffers;
-		std::vector<Resource::CBuffer> TransformBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> ShadowBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 		Resource::VertexBuffer VolumeVB;
 		Resource::IndexBuffer VolumeIB;
 	};

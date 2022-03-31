@@ -7,7 +7,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
-		passData->CL.Init(dev, CommandType::Compute);
+		passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, CommandType::Compute); });
 
 		// Prefilter pass
 		Binding::SchemaDesc desc;
@@ -70,33 +70,34 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
 		dev.WaitComputeFromMain(dev.SetMainFence());
-		data.CL.Reset(dev);
-		data.CL.Open(dev, data.StatePrefilter);
-		ZE_DRAW_TAG_BEGIN(data.CL, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
+		CommandList& list = data.ListChain.Get();
+		list.Reset(dev);
+		list.Open(dev, data.StatePrefilter);
+		ZE_DRAW_TAG_BEGIN(list, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
-		prefilterCtx.BindingSchema.SetCompute(data.CL);
-		renderData.Buffers.SetUAV(data.CL, prefilterCtx, ids.ViewspaceDepth); // Bind 5 mip levels
-		renderData.Buffers.SetSRV(data.CL, prefilterCtx, ids.Depth);
-		renderData.SettingsBuffer.Bind(data.CL, prefilterCtx);
-		data.CL.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);
+		prefilterCtx.BindingSchema.SetCompute(list);
+		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth); // Bind 5 mip levels
+		renderData.Buffers.SetSRV(list, prefilterCtx, ids.Depth);
+		renderData.SettingsBuffer.Bind(list, prefilterCtx);
+		list.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);
 
-		renderData.Buffers.BarrierTransition(data.CL, ids.ViewspaceDepth, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS);
+		renderData.Buffers.BarrierTransition(list, ids.ViewspaceDepth, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS);
 
 		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
-		data.StateSSAO.Bind(data.CL);
-		mainCtx.BindingSchema.SetCompute(data.CL);
-		renderData.Buffers.SetUAV(data.CL, mainCtx, ids.ScratchSSAO);
-		renderData.Buffers.SetUAV(data.CL, mainCtx, ids.DepthEdges);
-		renderData.Buffers.SetSRV(data.CL, mainCtx, ids.ViewspaceDepth);
-		renderData.Buffers.SetSRV(data.CL, mainCtx, ids.Normal);
-		data.HilbertLUT.Bind(data.CL, mainCtx);
-		renderData.DynamicBuffer.Bind(data.CL, mainCtx);
-		renderData.SettingsBuffer.Bind(data.CL, mainCtx);
-		data.CL.Compute(dev, Math::DivideRoundUp(size.x, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
+		data.StateSSAO.Bind(list);
+		mainCtx.BindingSchema.SetCompute(list);
+		renderData.Buffers.SetUAV(list, mainCtx, ids.ScratchSSAO);
+		renderData.Buffers.SetUAV(list, mainCtx, ids.DepthEdges);
+		renderData.Buffers.SetSRV(list, mainCtx, ids.ViewspaceDepth);
+		renderData.Buffers.SetSRV(list, mainCtx, ids.Normal);
+		data.HilbertLUT.Bind(list, mainCtx);
+		renderData.DynamicBuffers.Get().Bind(list, mainCtx);
+		renderData.SettingsBuffer.Bind(list, mainCtx);
+		list.Compute(dev, Math::DivideRoundUp(size.x, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
 			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		renderData.Buffers.BarrierTransition(data.CL,
+		renderData.Buffers.BarrierTransition(list,
 			std::array
 			{
 				TransitionInfo(ids.ScratchSSAO, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS),
@@ -105,26 +106,26 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 			});
 
 		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
-		data.StateDenoise.Bind(data.CL);
-		denoiseCtx.BindingSchema.SetCompute(data.CL);
+		data.StateDenoise.Bind(list);
+		denoiseCtx.BindingSchema.SetCompute(list);
 		Resource::Constant<U32> lastDenoise(dev, true);
-		lastDenoise.Bind(data.CL, denoiseCtx);
-		renderData.Buffers.SetUAV(data.CL, denoiseCtx, ids.SSAO);
-		renderData.Buffers.SetSRV(data.CL, denoiseCtx, ids.ScratchSSAO);
-		renderData.Buffers.SetSRV(data.CL, denoiseCtx, ids.DepthEdges);
-		renderData.SettingsBuffer.Bind(data.CL, denoiseCtx);
-		data.CL.Compute(dev, Math::DivideRoundUp(size.x, XE_GTAO_NUMTHREADS_X * 2U),
+		lastDenoise.Bind(list, denoiseCtx);
+		renderData.Buffers.SetUAV(list, denoiseCtx, ids.SSAO);
+		renderData.Buffers.SetSRV(list, denoiseCtx, ids.ScratchSSAO);
+		renderData.Buffers.SetSRV(list, denoiseCtx, ids.DepthEdges);
+		renderData.SettingsBuffer.Bind(list, denoiseCtx);
+		list.Compute(dev, Math::DivideRoundUp(size.x, XE_GTAO_NUMTHREADS_X * 2U),
 			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		renderData.Buffers.BarrierTransition(data.CL,
+		renderData.Buffers.BarrierTransition(list,
 			std::array
 			{
 				TransitionInfo(ids.ScratchSSAO, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess),
 				TransitionInfo(ids.DepthEdges, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess)
 			});
 
-		ZE_DRAW_TAG_END(data.CL);
-		data.CL.Close(dev);
-		dev.ExecuteCompute(data.CL);
+		ZE_DRAW_TAG_END(list);
+		list.Close(dev);
+		dev.ExecuteCompute(list);
 	}
 }

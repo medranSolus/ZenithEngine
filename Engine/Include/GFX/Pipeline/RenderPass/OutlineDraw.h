@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateStencil;
 		Resource::PipelineStateGfx StateRender;
-		std::vector<Resource::CBuffer> TransformBuffers;
+		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }

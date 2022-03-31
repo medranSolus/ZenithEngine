@@ -642,9 +642,9 @@ namespace ZE::GFX::Pipeline
 
 		dev.SetCommandBufferSize(staticCount);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		workerThreads = new std::pair<std::thread, CommandList>[--workersCount];
+		workerThreads = new std::pair<std::thread, ChainPool<CommandList>>[--workersCount];
 		for (U64 i = 0; i < workersCount; ++i)
-			workerThreads[i].second.Init(dev);
+			workerThreads[i].second.Exec([&dev](auto& x) { x.Init(dev, CommandType::All); });
 #endif
 
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
@@ -731,13 +731,13 @@ namespace ZE::GFX::Pipeline
 		Device& dev = gfx.GetDevice();
 		CommandList& mainList = gfx.GetMainList();
 
-		dev.WaitMain(dev.GetMainFence());
-		execData.DynamicBuffer.Update(dev, execData.DynamicData, dynamicDataSize);
+		gfx.WaitForFrame();
+		execData.DynamicBuffers.Get().Update(dev, execData.DynamicData, dynamicDataSize);
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 		mainList.Reset(dev);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		for (U64 i = 0; i < workersCount; ++i)
-			workerThreads[i].second.Reset(dev);
+			workerThreads[i].second.Get().Reset(dev);
 #endif
 
 		execData.Buffers.InitTransitions(dev, mainList);
@@ -761,7 +761,7 @@ namespace ZE::GFX::Pipeline
 				U64 workersDispatch = level.second - 1;
 				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
 				for (U64 j = 0; j < workersDispatch; ++j)
-					workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second), std::ref(level.first[j]) };
+					workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
 				ExecuteThread(dev, mainList, level.first[workersDispatch]);
 				for (U64 j = 0; j < workersDispatch; ++j)
 					workerThreads[j].first.join();

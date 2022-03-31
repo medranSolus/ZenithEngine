@@ -94,18 +94,18 @@ namespace ZE::GUI
 	void Manager::EndFrame(GFX::Graphics& gfx) const noexcept
 	{
 		ImGui::Render();
+		auto& mainList = gfx.GetMainList();
 		switch (Settings::GetGfxApi())
 		{
 		case GfxApiType::DX11:
 		{
-			ZE_DRAW_TAG_BEGIN(gfx.GetMainList().Get().dx11, L"ImGui", PixelVal::Cobalt);
+			ZE_DRAW_TAG_BEGIN(mainList.Get().dx11, L"ImGui", PixelVal::Cobalt);
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-			ZE_DRAW_TAG_END(gfx.GetMainList().Get().dx11);
+			ZE_DRAW_TAG_END(mainList.Get().dx11);
 			break;
 		}
 		case GfxApiType::DX12:
 		{
-			auto& mainList = gfx.GetMainList();
 			auto& dev = gfx.GetDevice().Get().dx12;
 			auto& swapChain = gfx.GetSwapChain().Get().dx12;
 			mainList.Get().dx12.Open(dev);

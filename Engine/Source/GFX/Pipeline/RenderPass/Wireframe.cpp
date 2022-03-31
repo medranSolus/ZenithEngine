@@ -28,7 +28,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
 		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 
 		return passData;
 	}
@@ -53,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			count = visibleGroup.size();
 
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers, count);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers.Get(), count);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
 				ctx.SetFromEnd(1);
-				auto& cbuffer = data.TransformBuffers.at(j);
+				auto& cbuffer = data.TransformBuffers.Get().at(j);
 				cbuffer.Bind(cl, ctx);
 				Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 1.0f }); // Can be taken from mesh later
 				solidColor.Bind(cl, ctx);

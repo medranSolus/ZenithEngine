@@ -50,7 +50,6 @@ namespace ZE::GFX::API::DX12
 
 		// Gfx API Internal
 
-		D3D12_COMMAND_LIST_TYPE GetType() noexcept { return commands->GetType(); }
 		ID3D12GraphicsCommandList6* GetList() noexcept { return commands.Get(); }
 
 		void Init(Device& dev, CommandType type);

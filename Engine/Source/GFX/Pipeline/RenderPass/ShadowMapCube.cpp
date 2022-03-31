@@ -43,8 +43,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeTransparent");
 		passData.StateTransparent.Init(dev, psoDesc, schema);
 
-		passData.ViewBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(CubeViewBuffer)), true);
-		passData.TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData.ViewBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(CubeViewBuffer)), true); });
+		passData.TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 		passData.Projection = Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f);
 	}
 
@@ -68,10 +68,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			// Resize temporary buffer for view projection data of every light
 			const U64 viewBufferIndex = lightNumber / CubeViewBuffer::CUBE_COUNT;
 			const U32 viewBufferLightOffset = lightNumber % CubeViewBuffer::CUBE_COUNT;
-			Utils::ResizeTransformBuffers<CubeView, CubeViewBuffer>(dev, data.ViewBuffers, lightNumber + 1);
+			Utils::ResizeTransformBuffers<CubeView, CubeViewBuffer>(dev, data.ViewBuffers.Get(), lightNumber + 1);
 
 			// Prepare view-projections for casting onto 6 faces
-			CubeView& viewBuffer = reinterpret_cast<CubeViewBuffer*>(data.ViewBuffers.at(viewBufferIndex).GetRegion())->Cubes[viewBufferLightOffset];
+			CubeView& viewBuffer = reinterpret_cast<CubeViewBuffer*>(data.ViewBuffers.Get().at(viewBufferIndex).GetRegion())->Cubes[viewBufferLightOffset];
 			const Vector position = Math::XMLoadFloat3(&lightPos);
 			const Vector up = { 0.0f, 1.0f, 0.0f, 0.0f };
 			// +x
@@ -111,7 +111,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 			// Resize temporary buffer for transform data
 			data.PreviousEntityCount += solidCount;
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, data.PreviousEntityCount + transparentCount);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), data.PreviousEntityCount + transparentCount);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			// Depth pre-pass
@@ -127,11 +127,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(5);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
 				lightIndex.Bind(cl, ctx);
-				data.ViewBuffers.at(viewBufferIndex).Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				data.ViewBuffers.Get().at(viewBufferIndex).Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				ctx.Reset();
 
 				// Compute single batch
@@ -174,11 +174,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(5);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
 				lightIndex.Bind(cl, ctx);
-				data.ViewBuffers.at(viewBufferIndex).Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				data.ViewBuffers.Get().at(viewBufferIndex).Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				Resource::Constant<Float3> pos(dev, lightPos);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
@@ -234,11 +234,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(5);
-				auto& cbuffer = data.TransformBuffers.at(currentBuffer);
+				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
 				cbuffer.Bind(cl, ctx);
 				lightIndex.Bind(cl, ctx);
-				data.ViewBuffers.at(viewBufferIndex).Bind(cl, ctx);
-				renderData.DynamicBuffer.Bind(cl, ctx);
+				data.ViewBuffers.Get().at(viewBufferIndex).Bind(cl, ctx);
+				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				Resource::Constant<Float3> pos(dev, lightPos);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);

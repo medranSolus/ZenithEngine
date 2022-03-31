@@ -44,8 +44,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		ZE_PSO_SET_NAME(psoDesc, "SpotLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		passData->ShadowBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData->ShadowBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
+		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 
 		const auto volume = Primitive::MakeConeSolid(8);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
@@ -64,8 +64,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		if (count)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.ShadowBuffers, count);
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.ShadowBuffers.Get(), count);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), count);
 
 			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 			Resources ids = *passData.Buffers.CastConst<Resources>();
@@ -73,8 +73,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				auto& shadowCBuffer = data.ShadowBuffers.at(j);
-				auto& cbuffer = data.TransformBuffers.at(j);
+				auto& shadowCBuffer = data.ShadowBuffers.Get().at(j);
+				auto& cbuffer = data.TransformBuffers.Get().at(j);
 				TransformBuffer* shadowBuffer = reinterpret_cast<TransformBuffer*>(shadowCBuffer.GetRegion());
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 
@@ -114,7 +114,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 					cbuffer.Bind(cl, ctx);
 					renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 					renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
-					renderData.DynamicBuffer.Bind(cl, ctx);
+					renderData.DynamicBuffers.Get().Bind(cl, ctx);
 					renderData.SettingsBuffer.Bind(cl, ctx);
 					ctx.Reset();
 

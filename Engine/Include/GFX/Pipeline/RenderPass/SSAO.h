@@ -3,6 +3,7 @@
 #include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/Texture/Pack.h"
+#include "GFX/ChainPool.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
@@ -18,7 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	struct ExecuteData
 	{
-		CommandList CL;
+		ChainPool<CommandList> ListChain;
 		U32 BindingIndexPrefilter;
 		U32 BindingIndexSSAO;
 		U32 BindingIndexDenoise;

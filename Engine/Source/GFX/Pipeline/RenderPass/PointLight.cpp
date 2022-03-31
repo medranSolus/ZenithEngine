@@ -39,7 +39,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		ZE_PSO_SET_NAME(psoDesc, "PointLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		passData->TransformBuffers.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true);
+		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 
 		const auto volume = Primitive::MakeSphereIcoSolid(3);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
@@ -58,7 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		if (count)
 		{
 			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers, count);
+			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), count);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -66,7 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
-				auto& cbuffer = data.TransformBuffers.at(j);
+				auto& cbuffer = data.TransformBuffers.Get().at(j);
 				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
@@ -96,7 +96,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					cbuffer.Bind(cl, ctx);
 					renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 					renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
-					renderData.DynamicBuffer.Bind(cl, ctx);
+					renderData.DynamicBuffers.Get().Bind(cl, ctx);
 					renderData.SettingsBuffer.Bind(cl, ctx);
 					ctx.Reset();
 
