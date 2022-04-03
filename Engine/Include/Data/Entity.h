@@ -5,12 +5,6 @@
 
 namespace ZE
 {
-	namespace Data
-	{
-		// Main component data storage object
-		typedef entt::registry Storage;
-	}
-
 	// Identifier of single entity
 	typedef entt::entity EID;
 
@@ -19,6 +13,12 @@ namespace ZE
 
 	// Identifier of invalid entity
 	inline constexpr const EID& INVALID_EID = entt::null;
+
+	namespace Data
+	{
+		// Main component data storage object
+		typedef entt::registry Storage;
+	}
 }
 
 // Check if given entity id is valid

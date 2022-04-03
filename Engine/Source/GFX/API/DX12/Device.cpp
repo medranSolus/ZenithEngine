@@ -488,28 +488,26 @@ namespace ZE::GFX::API::DX12
 
 	void Device::FreeBuffer(ResourceInfo& info) noexcept
 	{
-		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();
-		FreeBuffer(info, static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes));
+		if (allocTier == AllocTier::Tier1)
+			allocTier1.RemoveBuffer(info);
+		else
+			allocTier2.Remove(info);
 	}
 
-	void Device::FreeBuffer(ResourceInfo& info, U32 size) noexcept
+	void Device::FreeDynamicBuffer(ResourceInfo& info) noexcept
 	{
-		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
-			allocTier1.RemoveBuffer(info.ID, size);
+			allocTier1.RemoveDynamicBuffer(info);
 		else
-			allocTier2.Remove(info.ID, size);
+			allocTier2.RemoveDynamicBuffer(info);
 	}
 
 	void Device::FreeTexture(ResourceInfo& info) noexcept
 	{
-		D3D12_RESOURCE_DESC desc = info.Resource->GetDesc();
-		U32 size = static_cast<U32>(device->GetResourceAllocationInfo(0, 1, &desc).SizeInBytes);
-		info.Resource = nullptr;
 		if (allocTier == AllocTier::Tier1)
-			allocTier1.RemoveTexture(info.ID, size);
+			allocTier1.RemoveTexture(info);
 		else
-			allocTier2.Remove(info.ID, size);
+			allocTier2.Remove(info);
 	}
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept

@@ -149,7 +149,7 @@ namespace ZE::GFX::API::DX12
 			U64 size, D3D12_RESOURCE_STATES currentState);
 
 		void FreeBuffer(ResourceInfo& info) noexcept;
-		void FreeBuffer(ResourceInfo& info, U32 size) noexcept;
+		void FreeDynamicBuffer(ResourceInfo& info) noexcept;
 		void FreeTexture(ResourceInfo& info) noexcept;
 
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> AddStaticDescs(U32 count) noexcept;

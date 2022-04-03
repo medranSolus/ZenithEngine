@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX12::Resource
 		~VertexBuffer() = default;
 
 		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->IASetVertexBuffers(0, 1, &view); }
-		void Free(GFX::Device& dev) noexcept { view.SizeInBytes = 0; dev.Get().dx12.FreeBuffer(info, view.SizeInBytes); }
+		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info); }
 
 		VertexData GetData(GFX::Device& dev, GFX::CommandList& ctx) const;
 	};

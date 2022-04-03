@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 		constexpr U32 GetCount() const noexcept { return view.SizeInBytes / sizeof(U32); }
 		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->IASetIndexBuffer(&view); }
-		void Free(GFX::Device& dev) noexcept { view.SizeInBytes = 0; dev.Get().dx12.FreeBuffer(info, view.SizeInBytes); }
+		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info); }
 
 		IndexData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
 	};

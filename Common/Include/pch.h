@@ -52,6 +52,11 @@
 
 /*
 * Types.h (defined by ColorF3.h)
+* vector
+*/
+#include "PoolAllocator.h"
+
+/*
 *** Types.h (defined by ColorF3.h)
 * PixelFormat.h
 * string

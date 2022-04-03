@@ -54,7 +54,11 @@ namespace ZE::GFX::API::DX12::Resource
 	void CBuffer::Free(GFX::Device& dev) noexcept
 	{
 		if (buffer)
+		{
 			resInfo.Resource->Unmap(0, nullptr);
-		dev.Get().dx12.FreeBuffer(resInfo);
+			dev.Get().dx12.FreeDynamicBuffer(resInfo);
+		}
+		else
+			dev.Get().dx12.FreeBuffer(resInfo);
 	}
 }

@@ -24,7 +24,7 @@
 *** filesystem
 *** fstream
 *** functional
-*** intrin.h
+*** intrin.h/x86intrin.h
 *** map
 *** random
 *** sstream
@@ -32,6 +32,5 @@
 *** utility
 *** vector
 */
-
 
 // Standard headers, remove if appears above
