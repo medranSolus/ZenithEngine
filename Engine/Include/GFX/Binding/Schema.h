@@ -22,7 +22,7 @@ namespace ZE::GFX::Binding
 		// Main Gfx API
 
 		// Get binding index from with offset from the end (0=last, 1=last-1, etc.)
-		constexpr U32 GetIndexFromEnd(U32 offsetFromEnd) const noexcept { U32 offset = 0; ZE_API_BACKEND_CALL_RET(offset, GetIndexFromEnd, offsetFromEnd); return offset; }
+		constexpr U32 GetIndexFromEnd(U32 offsetFromEnd) const noexcept { U32 count = 0; ZE_API_BACKEND_CALL_RET(count, GetCount); ZE_ASSERT(count > offsetFromEnd, "Accessing binding out of range!"); return count - offsetFromEnd - 1; }
 		constexpr void SetCompute(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(SetCompute, cl); }
 		constexpr void SetGraphics(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(SetGraphics, cl); }
 	};

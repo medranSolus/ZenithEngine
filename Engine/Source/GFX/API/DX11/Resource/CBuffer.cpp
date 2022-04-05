@@ -48,8 +48,23 @@ namespace ZE::GFX::API::DX11::Resource
 
 	void CBuffer::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
-		//assert(slot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT);
-		//cl.Get().dx11.GetContext()->VSSetConstantBuffers(slot, 1, buffer.GetAddressOf());
+		auto slotInfo = bindCtx.BindingSchema.Get().dx11.GetCurrentSlot(bindCtx.Count++);
+
+		if (slotInfo.first & GFX::Resource::ShaderType::Compute)
+			cl.Get().dx11.GetContext()->CSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+		else
+		{
+			if (slotInfo.first & GFX::Resource::ShaderType::Vertex)
+				cl.Get().dx11.GetContext()->VSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+			if (slotInfo.first & GFX::Resource::ShaderType::Domain)
+				cl.Get().dx11.GetContext()->DSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+			if (slotInfo.first & GFX::Resource::ShaderType::Hull)
+				cl.Get().dx11.GetContext()->HSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+			if (slotInfo.first & GFX::Resource::ShaderType::Geometry)
+				cl.Get().dx11.GetContext()->GSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+			if (slotInfo.first & GFX::Resource::ShaderType::Pixel)
+				cl.Get().dx11.GetContext()->PSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+		}
 	}
 
 	void CBuffer::Free(GFX::Device& dev) noexcept

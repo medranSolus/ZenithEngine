@@ -10,7 +10,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 	public:
 		Constant() = default;
-		Constant(GFX::Device& dev, const T value) : buffer(dev, &value, sizeof(value), true) {}
+		Constant(GFX::Device& dev, const T& value) : buffer(dev, &value, sizeof(T), true) {}
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 

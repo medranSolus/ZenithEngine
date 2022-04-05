@@ -1,6 +1,5 @@
 #include "GFX/API/DX12/Binding/Schema.h"
 #include "GFX/API/DX/GraphicsException.h"
-#include <sstream>
 
 namespace ZE::GFX::API::DX12::Binding
 {
@@ -12,43 +11,36 @@ namespace ZE::GFX::API::DX12::Binding
 		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc;
 		signatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
 		signatureDesc.Desc_1_1.NumStaticSamplers = static_cast<U32>(desc.Samplers.size());
-		D3D12_STATIC_SAMPLER_DESC* staticSamplers = new D3D12_STATIC_SAMPLER_DESC[signatureDesc.Desc_1_1.NumStaticSamplers];
-		signatureDesc.Desc_1_1.pStaticSamplers = staticSamplers;
-		// Load data for samplers
-		for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
+		D3D12_STATIC_SAMPLER_DESC* staticSamplers = nullptr;
+		if (signatureDesc.Desc_1_1.NumStaticSamplers)
 		{
-			auto& sampler = staticSamplers[i++];
-			sampler.Filter = GetFilterType(samplerDesc.Type);
-			sampler.AddressU = GetTextureAddressMode(samplerDesc.Address.U);
-			sampler.AddressV = GetTextureAddressMode(samplerDesc.Address.V);
-			sampler.AddressW = GetTextureAddressMode(samplerDesc.Address.W);
-			sampler.MipLODBias = samplerDesc.MipLevelBias;
-			sampler.MaxAnisotropy = samplerDesc.MaxAnisotropy;
-			sampler.ComparisonFunc = GetComparisonFunc(samplerDesc.Comparison);
-			sampler.BorderColor = GetStaticBorderColor(samplerDesc.EdgeColor);
-			sampler.MinLOD = samplerDesc.MinLOD;
-			sampler.MaxLOD = samplerDesc.MaxLOD;
-			sampler.ShaderRegister = samplerDesc.Slot;
-			sampler.RegisterSpace = 0;
-			sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+			staticSamplers = new D3D12_STATIC_SAMPLER_DESC[signatureDesc.Desc_1_1.NumStaticSamplers];
+			signatureDesc.Desc_1_1.pStaticSamplers = staticSamplers;
+			// Load data for samplers
+			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
+			{
+				auto& sampler = staticSamplers[i++];
+				sampler.Filter = GetFilterType(samplerDesc.Type);
+				sampler.AddressU = GetTextureAddressMode(samplerDesc.Address.U);
+				sampler.AddressV = GetTextureAddressMode(samplerDesc.Address.V);
+				sampler.AddressW = GetTextureAddressMode(samplerDesc.Address.W);
+				sampler.MipLODBias = samplerDesc.MipLevelBias;
+				sampler.MaxAnisotropy = samplerDesc.MaxAnisotropy;
+				sampler.ComparisonFunc = GetComparisonFunc(samplerDesc.Comparison);
+				sampler.BorderColor = GetStaticBorderColor(samplerDesc.EdgeColor);
+				sampler.MinLOD = samplerDesc.MinLOD;
+				sampler.MaxLOD = samplerDesc.MaxLOD;
+				sampler.ShaderRegister = samplerDesc.Slot;
+				sampler.RegisterSpace = 0;
+				sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+			}
 		}
 
-		// Check input data and setup samplers visibility
+		// Check input data
 		signatureDesc.Desc_1_1.NumParameters = 0;
 		for (const auto& entry : desc.Ranges)
 		{
-			ZE_ASSERT(((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPack) == 0)
-				&& ((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0)
-				&& ((entry.Flags & GFX::Binding::RangeFlag::BufferPack) == 0 || (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0),
-				"Single range should only have one of the flags: Constant, BufferPack or BufferPackAppends!");
-			ZE_ASSERT((entry.Flags & GFX::Binding::RangeFlag::Constant) == 0
-				|| (entry.Flags & (GFX::Binding::RangeFlag::SRV | GFX::Binding::RangeFlag::UAV | GFX::Binding::RangeFlag::CBV)) == 0,
-				"Flags SRV, UAV or CBV cannot be specified with flag Constant!");
-			ZE_ASSERT(((entry.Flags & GFX::Binding::RangeFlag::SRV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::UAV) == 0)
-				&& ((entry.Flags & GFX::Binding::RangeFlag::SRV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::CBV) == 0)
-				&& ((entry.Flags & GFX::Binding::RangeFlag::UAV) == 0 || (entry.Flags & GFX::Binding::RangeFlag::CBV) == 0),
-				"Single range should only have one of the flags: SRV, UAV or CBV!");
-			ZE_ASSERT(entry.Count != 0, "There should be at least 1 resource!");
+			entry.Validate();
 
 			if (entry.Flags & GFX::Binding::RangeFlag::Constant
 				|| entry.Flags & GFX::Binding::RangeFlag::BufferPack)
@@ -57,8 +49,8 @@ namespace ZE::GFX::API::DX12::Binding
 				signatureDesc.Desc_1_1.NumParameters += entry.Count;
 		}
 		count = signatureDesc.Desc_1_1.NumParameters;
-		bindings = new BindType[signatureDesc.Desc_1_1.NumParameters];
-		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[signatureDesc.Desc_1_1.NumParameters];
+		bindings = new BindType[count];
+		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[count];
 		signatureDesc.Desc_1_1.pParameters = parameters;
 
 		// Location | Size | Desc
@@ -162,7 +154,7 @@ namespace ZE::GFX::API::DX12::Binding
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 					else
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
-					
+
 					bindings[i++] = type;
 					for (U32 j = 1; j < entry.Count; ++j)
 					{
@@ -239,7 +231,8 @@ namespace ZE::GFX::API::DX12::Binding
 		for (auto& table : tables)
 			free(table.second.second);
 		delete[] parameters;
-		delete[] staticSamplers;
+		if (staticSamplers)
+			delete[] staticSamplers;
 	}
 
 	Schema::~Schema()

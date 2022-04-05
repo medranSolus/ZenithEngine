@@ -35,5 +35,25 @@ namespace ZE::GFX::Binding
 		U32 StartSlot;
 		Resource::ShaderTypes Shaders;
 		RangeFlags Flags = 0;
+
+		constexpr void Validate() const noexcept;
 	};
+
+#pragma region Functions
+	constexpr void Range::Validate() const noexcept
+	{
+		ZE_ASSERT(((Flags & GFX::Binding::RangeFlag::Constant) == 0 || (Flags & GFX::Binding::RangeFlag::BufferPack) == 0)
+			&& ((Flags & GFX::Binding::RangeFlag::Constant) == 0 || (Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0)
+			&& ((Flags & GFX::Binding::RangeFlag::BufferPack) == 0 || (Flags & GFX::Binding::RangeFlag::BufferPackAppend) == 0),
+			"Single range should only have one of the flags: Constant, BufferPack or BufferPackAppends!");
+		ZE_ASSERT((Flags & GFX::Binding::RangeFlag::Constant) == 0
+			|| (Flags & (GFX::Binding::RangeFlag::SRV | GFX::Binding::RangeFlag::UAV | GFX::Binding::RangeFlag::CBV)) == 0,
+			"Flags SRV, UAV or CBV cannot be specified with flag Constant!");
+		ZE_ASSERT(((Flags & GFX::Binding::RangeFlag::SRV) == 0 || (Flags & GFX::Binding::RangeFlag::UAV) == 0)
+			&& ((Flags & GFX::Binding::RangeFlag::SRV) == 0 || (Flags & GFX::Binding::RangeFlag::CBV) == 0)
+			&& ((Flags & GFX::Binding::RangeFlag::UAV) == 0 || (Flags & GFX::Binding::RangeFlag::CBV) == 0),
+			"Single range should only have one of the flags: SRV, UAV or CBV!");
+		ZE_ASSERT(Count != 0, "There should be at least 1 resource!");
+	}
+#pragma endregion
 }
