@@ -111,7 +111,7 @@ namespace ZE::GUI
 			mainList.Get().dx12.Open(dev);
 			ZE_DRAW_TAG_BEGIN(mainList.Get().dx12, L"ImGui", PixelVal::Cobalt);
 
-			D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
+			const D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
 			mainList.Get().dx12.GetList()->OMSetRenderTargets(1, &rtv, true, nullptr);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mainList.Get().dx12.GetList());
 			mainList.Get().dx12.GetList()->ResourceBarrier(1, &swapChain.GetPresentBarrier());

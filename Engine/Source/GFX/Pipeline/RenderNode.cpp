@@ -26,13 +26,12 @@ namespace ZE::GFX::Pipeline
 		outputRIDs.emplace_back(rid);
 	}
 
-	CommandList RenderNode::GetStaticExecuteData() noexcept
+	CommandList RenderNode::GetStaticList() noexcept
 	{
-		ZE_ASSERT(!isStatic, "Cannot get static execute data for non-static pass!");
-		ZE_ASSERT(executeData, "Execute data cannot be empty for static pass!");
+		ZE_ASSERT(IsStatic(), "Cannot get static execute data for non-static pass!");
 
-		CommandList cl = std::move(*reinterpret_cast<CommandList*>(executeData));
-		delete reinterpret_cast<CommandList*>(executeData);
+		CommandList cl = std::move(*staticList);
+		delete staticList;
 		return cl;
 	}
 

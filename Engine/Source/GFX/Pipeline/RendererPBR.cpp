@@ -1,9 +1,8 @@
 #include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Pipeline/RenderPasses.h"
 
-#define ZE_MAKE_NODE(name, queueType, passNamespace) RenderNode node(name, queueType, RenderPass::##passNamespace##::Execute)
-#define ZE_MAKE_NODE_STATIC(name, queueType, passNamespace, ...) RenderNode node(name, queueType, nullptr, nullptr, RenderPass::##passNamespace##::Execute(__VA_ARGS__), true)
-#define ZE_MAKE_NODE_DATA(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
+#define ZE_MAKE_NODE(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
+#define ZE_MAKE_NODE_STATIC(name, queueType, passNamespace, ...) auto nodeData = RenderPass::passNamespace::Setup(__VA_ARGS__); RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, nodeData.second, nodeData.first)
 
 namespace ZE::GFX::Pipeline
 {
@@ -176,7 +175,7 @@ namespace ZE::GFX::Pipeline
 
 #pragma region Geometry
 		{
-			ZE_MAKE_NODE_DATA("lambertian", QueueType::Main, Lambertian, dev, buildData,
+			ZE_MAKE_NODE("lambertian", QueueType::Main, Lambertian, dev, buildData,
 				frameBufferDesc.GetFormat(gbuffDepth), frameBufferDesc.GetFormat(gbuffColor),
 				frameBufferDesc.GetFormat(gbuffNormal), frameBufferDesc.GetFormat(gbuffSpecular));
 			node.AddOutput("DS", Resource::State::DepthWrite, gbuffDepth);
@@ -188,7 +187,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Lightning
 		{
-			ZE_MAKE_NODE_DATA("dirLight", QueueType::Main, DirectionalLight, dev, buildData,
+			ZE_MAKE_NODE("dirLight", QueueType::Main, DirectionalLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
@@ -203,7 +202,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("spotLight", QueueType::Main, SpotLight, dev, buildData,
+			ZE_MAKE_NODE("spotLight", QueueType::Main, SpotLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
@@ -220,7 +219,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("pointLight", QueueType::Main, PointLight, dev, buildData,
+			ZE_MAKE_NODE("pointLight", QueueType::Main, PointLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
@@ -237,7 +236,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("ssao", QueueType::Compute, SSAO, dev, buildData);
+			ZE_MAKE_NODE("ssao", QueueType::Compute, SSAO, dev, buildData);
 			node.AddInput("lambertian.DS", Resource::State::ShaderResourceNonPS);
 			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourceNonPS);
 			node.AddInnerBuffer(Resource::State::UnorderedAccess,
@@ -250,7 +249,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
+			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
 			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
 			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
@@ -261,20 +260,20 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Geometry effects
 		{
-			ZE_MAKE_NODE_DATA("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData,
+			ZE_MAKE_NODE("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData,
 				frameBufferDesc.GetFormat(outline), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddOutput("RT", Resource::State::RenderTarget, outline);
 			node.AddOutput("DS", Resource::State::DepthWrite, outlineDepth);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("horizontalBlur", QueueType::Main, HorizontalBlur, dev, buildData, frameBufferDesc.GetFormat(outlineBlur));
+			ZE_MAKE_NODE("horizontalBlur", QueueType::Main, HorizontalBlur, dev, buildData, frameBufferDesc.GetFormat(outlineBlur));
 			node.AddInput("outlineDraw.RT", Resource::State::ShaderResourcePS);
 			node.AddOutput("RT", Resource::State::RenderTarget, outlineBlur);
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(outlineDepth));
+			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddInput("horizontalBlur.RT", Resource::State::ShaderResourcePS);
 			node.AddInput("skybox.RT", Resource::State::RenderTarget);
 			node.AddInput("outlineDraw.DS", Resource::State::DepthRead);
@@ -282,7 +281,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("wireframe", QueueType::Main, Wireframe, dev, buildData,
+			ZE_MAKE_NODE("wireframe", QueueType::Main, Wireframe, dev, buildData,
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
 			node.AddInput("verticalBlur.RT", Resource::State::RenderTarget);
 			node.AddInput("skybox.DS", Resource::State::DepthWrite);
@@ -292,7 +291,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 #pragma region Post processing
 		{
-			ZE_MAKE_NODE_DATA("skybox", QueueType::Main, Skybox, dev, buildData,
+			ZE_MAKE_NODE("skybox", QueueType::Main, Skybox, dev, buildData,
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
 				params.SkyboxPath, params.SkyboxExt);
 			node.AddInput("lightCombine.RT", Resource::State::RenderTarget);
@@ -302,7 +301,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE_DATA("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::GetBackbufferFormat());
+			ZE_MAKE_NODE("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::GetBackbufferFormat());
 			node.AddInput("wireframe.RT", Resource::State::ShaderResourcePS);
 			node.AddOutput("RT", Resource::State::RenderTarget, BACKBUFFER_RID);
 			nodes.emplace_back(std::move(node));

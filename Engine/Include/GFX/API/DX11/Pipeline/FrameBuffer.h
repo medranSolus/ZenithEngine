@@ -8,6 +8,12 @@ namespace ZE::GFX::API::DX11::Pipeline
 {
 	class FrameBuffer final
 	{
+		RID resourceCount;
+		Ptr<DX::ComPtr<ID3D11RenderTargetView>> rtvs;
+		Ptr<DX::ComPtr<ID3D11DepthStencilView>> dsvs; // No backbuffer
+		Ptr<DX::ComPtr<ID3D11ShaderResourceView>> srvs;
+		Ptr<DX::ComPtr<ID3D11UnorderedAccessView>> uavs; // No backbuffer
+
 	public:
 		FrameBuffer() = default;
 		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList,

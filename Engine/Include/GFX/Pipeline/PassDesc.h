@@ -61,7 +61,9 @@ namespace ZE::GFX::Pipeline
 	struct PassDescStatic
 	{
 		PassSyncDesc Syncs;
-		U32 CommandsCount = 0;
+		U32 Count = 0;
 		Ptr<CommandList> Commands;
+		Ptr<void*> OptData;
+		Ptr<PassCleanCallback> Cleaners;
 	};
 }

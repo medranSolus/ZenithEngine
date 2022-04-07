@@ -394,6 +394,8 @@ namespace ZE::GFX::Pipeline
 		passesCleaners[0] = new PassCleanCallback[normalCount];
 		staticPasses = new PassDescStatic[levelCount];
 		staticPasses[0].Commands = new CommandList[staticCount];
+		staticPasses[0].OptData = new void*[staticCount];
+		staticPasses[0].Cleaners = new PassCleanCallback[staticCount];
 		staticCount = 0;
 		// Static | Level | Location
 		std::vector<std::pair<bool, std::pair<U64, U64>>> passLocation(nodes.size(), { false, { 0, 0 } });
@@ -404,7 +406,9 @@ namespace ZE::GFX::Pipeline
 				U64 prevCount = passes[i - 1].second;
 				passes[i].first = passes[i - 1].first + prevCount;
 				passesCleaners[i] = passesCleaners[i - 1] + prevCount;
-				staticPasses[i].Commands = staticPasses[i - 1].Commands + staticPasses[i - 1].CommandsCount;
+				staticPasses[i].Commands = staticPasses[i - 1].Commands + staticPasses[i - 1].Count;
+				staticPasses[i].OptData = staticPasses[i - 1].OptData + staticPasses[i - 1].Count;
+				staticPasses[i].Cleaners = staticPasses[i - 1].Cleaners + staticPasses[i - 1].Count;
 			}
 			passes[i].second = 0;
 			for (U64 j = 0; j < nodes.size(); ++j)
@@ -413,14 +417,18 @@ namespace ZE::GFX::Pipeline
 				{
 					auto& node = nodes.at(j);
 					PassSyncDesc* passSync;
+					ZE_ASSERT((node.GetExecuteData() != nullptr) == (node.GetCleanCallback() != nullptr),
+						"Optional data and cleaning function must be both provided or neither of them!");
 					if (node.IsStatic())
 					{
 						auto& pass = staticPasses[i];
 						passSync = &pass.Syncs;
-						pass.Commands[pass.CommandsCount] = node.GetStaticExecuteData();
-						passLocation.at(j) = { true, { i, pass.CommandsCount++ } };
-						if (pass.CommandsCount > staticCount)
-							staticCount = pass.CommandsCount;
+						pass.Commands[pass.Count] = node.GetStaticList();
+						pass.OptData[pass.Count] = node.GetExecuteData();
+						pass.Cleaners[pass.Count] = node.GetCleanCallback();
+						passLocation.at(j) = { true, { i, pass.Count++ } };
+						if (pass.Count > staticCount)
+							staticCount = pass.Count;
 					}
 					else
 					{
@@ -431,8 +439,6 @@ namespace ZE::GFX::Pipeline
 						pass.Data.Buffers = node.GetNodeRIDs();
 						pass.Data.OptData = node.GetExecuteData();
 						passesCleaners[i][passes[i].second] = node.GetCleanCallback();
-						ZE_ASSERT((pass.Data.OptData != nullptr) == (node.GetCleanCallback() != nullptr),
-							"Optional data and cleaning function must be both provided or neither of them!");
 						passLocation.at(j).second = { i, passes[i].second++ };
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 						if (passes[i].second > workersCount)
@@ -659,7 +665,7 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Compute static passes
-		for (U64 i = 0; const auto& node : nodes)
+		for (U64 i = 0, j = 0; const auto& node : nodes)
 		{
 			const auto& location = passLocation.at(i);
 			if (location.first)
@@ -667,10 +673,11 @@ namespace ZE::GFX::Pipeline
 				PassDescStatic& level = staticPasses[location.second.first];
 				PassData staticPassData;
 				staticPassData.Buffers = node.GetNodeRIDs();
-				// Optional data is not supported for static RenderPass
-				staticPassData.OptData = nullptr;
+				staticPassData.OptData = level.OptData[location.second.second];
 				node.GetExecuteCallback()(dev, level.Commands[location.second.second], execData, staticPassData);
 				staticPassData.Buffers.DeleteArray();
+				if (++j >= staticCount)
+					break;
 			}
 			++i;
 		}
@@ -706,8 +713,6 @@ namespace ZE::GFX::Pipeline
 					if (pass.Syncs.ExitSyncs)
 						pass.Syncs.ExitSyncs.Free();
 				}
-				if (staticPasses[i].Syncs.ExitSyncs)
-					staticPasses[i].Syncs.ExitSyncs.Free();
 			}
 			if (passes[0].first)
 				passes[0].first.DeleteArray();
@@ -718,8 +723,23 @@ namespace ZE::GFX::Pipeline
 		}
 		if (staticPasses)
 		{
+			for (U64 i = 0; i < levelCount; ++i)
+			{
+				auto& level = staticPasses[i];
+				for (U32 j = 0; j < level.Count; ++j)
+				{
+					if (level.OptData[j])
+						level.Cleaners[j](level.OptData[j]);
+				}
+				if (staticPasses[i].Syncs.ExitSyncs)
+					staticPasses[i].Syncs.ExitSyncs.Free();
+			}
 			if (staticPasses[0].Commands)
 				staticPasses[0].Commands.DeleteArray();
+			if (staticPasses[0].OptData)
+				staticPasses[0].OptData.DeleteArray();
+			if (staticPasses[0].Cleaners)
+				staticPasses[0].Cleaners.DeleteArray();
 			staticPasses.DeleteArray();
 		}
 		if (execData.SharedStates)
@@ -745,10 +765,10 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
 			auto& staticLevel = staticPasses[i];
-			if (staticLevel.CommandsCount)
+			if (staticLevel.Count)
 			{
 				BeforeSync(dev, staticLevel.Syncs);
-				dev.Execute(staticLevel.Commands, staticLevel.CommandsCount);
+				dev.Execute(staticLevel.Commands, staticLevel.Count);
 				AfterSync(dev, staticLevel.Syncs);
 			}
 			auto& level = passes[i];

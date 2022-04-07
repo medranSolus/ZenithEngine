@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline
 		PassExecuteCallback passExecute;
 		PassCleanCallback passClean;
 		void* executeData;
-		bool isStatic;
+		CommandList* staticList;
 		// Input info
 		std::vector<std::string> inputNames;
 		std::vector<Resource::State> inputStates;
@@ -33,9 +33,9 @@ namespace ZE::GFX::Pipeline
 
 	public:
 		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute,
-			PassCleanCallback passClean = nullptr, void* executeData = nullptr, bool isStatic = false) noexcept
+			PassCleanCallback passClean = nullptr, void* executeData = nullptr, CommandList* staticList = nullptr) noexcept
 			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute),
-			passClean(passClean), executeData(executeData), isStatic(isStatic) {}
+			passClean(passClean), executeData(executeData), staticList(staticList) {}
 		ZE_CLASS_DEFAULT(RenderNode);
 		~RenderNode() = default;
 
@@ -44,7 +44,7 @@ namespace ZE::GFX::Pipeline
 		constexpr PassExecuteCallback GetExecuteCallback() const noexcept { return passExecute; }
 		constexpr PassCleanCallback GetCleanCallback() const noexcept { return passClean; }
 		constexpr void* GetExecuteData() const noexcept { return executeData; }
-		constexpr bool IsStatic() const noexcept { return isStatic; }
+		constexpr bool IsStatic() const noexcept { return staticList != nullptr; }
 
 		constexpr const std::vector<std::string>& GetInputs() const noexcept { return inputNames; }
 		constexpr std::vector<InnerBuffer>& GetInnerBuffers() noexcept { return innerBuffers; }
@@ -60,7 +60,8 @@ namespace ZE::GFX::Pipeline
 		void AddInput(std::string&& name, Resource::State state);
 		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
 		void AddOutput(std::string&& name, Resource::State state, RID rid);
-		CommandList GetStaticExecuteData() noexcept;
+
+		CommandList GetStaticList() noexcept;
 		// Order: input, inner, output (without already present RIDs from inputs)
 		RID* GetNodeRIDs() const noexcept;
 	};
