@@ -11,6 +11,12 @@ namespace ZE
 	// Identifier of parent for given entity
 	typedef EID ParentID;
 
+	// List of children for given entity
+	struct Children
+	{
+		std::vector<EID> Childs;
+	};
+
 	// Identifier of invalid entity
 	inline constexpr const EID& INVALID_EID = entt::null;
 

@@ -2,6 +2,30 @@
 #include "Data/Camera.h"
 #include "GFX/Primitive.h"
 
+template<typename T>
+void App::EnableProperty(EID entity)
+{
+	if (!engine.GetData().all_of<T>(entity))
+		engine.GetData().emplace<T>(entity);
+
+	// Process childs
+	if (engine.GetData().all_of<Children>(entity))
+		for (EID child : engine.GetData().get<Children>(entity).Childs)
+			EnableProperty<T>(child);
+}
+
+template<typename T>
+void App::DisableProperty(EID entity)
+{
+	if (engine.GetData().all_of<T>(entity))
+		engine.GetData().remove<T>(entity);
+
+	// Process childs
+	if (engine.GetData().all_of<Children>(entity))
+		for (EID child : engine.GetData().get<Children>(entity).Childs)
+			DisableProperty<T>(child);
+}
+
 void App::ProcessInput()
 {
 	Window::MainWindow& window = engine.Window();
@@ -98,10 +122,352 @@ void App::ShowOptionsWindow()
 	ImGui::End();
 }
 
+void App::BuiltObjectTree(EID currentEntity, EID& selected)
+{
+	const bool children = engine.GetData().all_of<Children>(currentEntity);
+	const bool expanded = ImGui::TreeNodeEx(reinterpret_cast<void*>(currentEntity),
+		ImGuiTreeNodeFlags_OpenOnArrow |
+		(children ? 0 : ImGuiTreeNodeFlags_Leaf) |
+		(currentEntity == selected ? ImGuiTreeNodeFlags_Selected : 0),
+		engine.GetData().get<std::string>(currentEntity).c_str());
+
+	if (ImGui::IsItemClicked() && selected != currentEntity)
+	{
+		if (selected != INVALID_EID)
+			DisableProperty<Data::RenderOutline>(selected);
+		selected = currentEntity;
+		EnableProperty<Data::RenderOutline>(selected);
+	}
+
+	if (expanded)
+	{
+		if (children)
+			for (EID child : engine.GetData().get<Children>(currentEntity).Childs)
+				BuiltObjectTree(child, selected);
+		ImGui::TreePop();
+	}
+}
+
 void App::ShowObjectWindow()
 {
+	static EID selected = INVALID_EID;
+
 	if (ImGui::Begin("Objects"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
 	{
+		ImGui::Columns(2);
+		ImGui::BeginChild("##node_tree", { 0.0f, 231.5f }, false, ImGuiWindowFlags_HorizontalScrollbar);
+		for (EID parent : engine.GetData().view<std::string>(entt::exclude<ParentID>))
+		{
+			BuiltObjectTree(parent, selected);
+		}
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		if (selected != INVALID_EID)
+		{
+			constexpr float SLIDER_WIDTH = -15.0f;
+			constexpr float INPUT_WIDTH = 80.0f;
+			constexpr ImGuiColorEditFlags COLOR_FLAGS = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float;
+
+			ImGui::Text("Node ID: %llu", static_cast<U64>(selected));
+			ImGui::BeginChild("##node_options");
+			ImGui::Columns(2, "##model_node_options", false);
+
+			bool change = engine.GetData().all_of<Data::RenderOutline>(selected);
+			if (ImGui::Checkbox("Model outline", &change))
+			{
+				if (change)
+					EnableProperty<Data::RenderOutline>(selected);
+				else
+					DisableProperty<Data::RenderOutline>(selected);
+			}
+			change = engine.GetData().all_of<Data::RenderWireframe>(selected);
+			if (ImGui::Checkbox("Wireframe", &change))
+			{
+				if (change)
+					EnableProperty<Data::RenderWireframe>(selected);
+				else
+					DisableProperty<Data::RenderWireframe>(selected);
+			}
+			ImGui::NextColumn();
+			change = engine.GetData().all_of<Data::RenderLambertian>(selected);
+			if (ImGui::Checkbox("Render mesh", &change))
+			{
+				if (change)
+					EnableProperty<Data::RenderLambertian>(selected);
+				else
+					DisableProperty<Data::RenderLambertian>(selected);
+			}
+			change = engine.GetData().all_of<Data::ShadowCaster>(selected);
+			if (ImGui::Checkbox("Shadows", &change))
+			{
+				if (change)
+					EnableProperty<Data::ShadowCaster>(selected);
+				else
+					DisableProperty<Data::ShadowCaster>(selected);
+			}
+			ImGui::Columns(1);
+
+			if (engine.GetData().all_of<Data::Transform>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				auto& transform = engine.GetData().get<Data::Transform>(selected);
+
+				ImGui::InputFloat3("Scale [X|Y|Z]", reinterpret_cast<float*>(&transform.Scale));
+				if (transform.Scale.x < 0.001f)
+					transform.Scale.x = 0.001f;
+				if (transform.Scale.y < 0.001f)
+					transform.Scale.y = 0.001f;
+				if (transform.Scale.z < 0.001f)
+					transform.Scale.z = 0.001f;
+				ImGui::Columns(2, "##transform_options", false);
+
+				ImGui::Text("Position");
+				ImGui::SetNextItemWidth(SLIDER_WIDTH);
+				ImGui::InputFloat("X##position", &transform.Position.x, 0.1f, 0.0f, "%.2f");
+				ImGui::SetNextItemWidth(SLIDER_WIDTH);
+				ImGui::InputFloat("Y##position", &transform.Position.y, 0.1f, 0.0f, "%.2f");
+				ImGui::SetNextItemWidth(SLIDER_WIDTH);
+				ImGui::InputFloat("Z##position", &transform.Position.z, 0.1f, 0.0f, "%.2f");
+				ImGui::NextColumn();
+
+				Float3 rotation = Math::ToDegrees(Math::GetEulerAngles(transform.Rotation));
+				ImGui::Text("Rotation");
+				ImGui::SetNextItemWidth(INPUT_WIDTH);
+				bool angleSet = ImGui::InputFloat("X##angle", &rotation.x, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				ImGui::SetNextItemWidth(INPUT_WIDTH);
+				angleSet |= ImGui::InputFloat("Y##angle", &rotation.y, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				ImGui::SetNextItemWidth(INPUT_WIDTH);
+				angleSet |= ImGui::InputFloat("Z##angle", &rotation.z, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				if (angleSet)
+				{
+					rotation = Math::ToRadians(rotation);
+					Math::XMStoreFloat4(&transform.Rotation,
+						Math::XMQuaternionRotationRollPitchYawFromVector(Math::XMLoadFloat3(&rotation)));
+				}
+				ImGui::Columns(1);
+			}
+
+			if (engine.GetData().all_of<Data::MaterialID>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				EID materialId = engine.GetData().get<Data::MaterialID>(selected).ID;
+				auto& material = engine.GetResourceData().get<Data::MaterialPBR>(materialId);
+
+				ImGui::Text("Material ID: %llu", materialId);
+				if (engine.GetResourceData().all_of<std::string>(materialId))
+				{
+					ImGui::SameLine();
+					ImGui::Text("Name: %s", engine.GetResourceData().get<std::string>(materialId).c_str());
+				}
+
+				change = ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&material.Color),
+					COLOR_FLAGS | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+				change |= ImGui::ColorEdit3("Specular color", reinterpret_cast<float*>(&material.Specular), COLOR_FLAGS);
+
+				ImGui::Columns(2, "##specular", false);
+				ImGui::Text("Specular intensity");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::InputFloat("##spec_int", &material.SpecularIntensity, 0.1f, 0.0f, "%.2f");
+				if (material.SpecularIntensity < 0.01f)
+					material.SpecularIntensity = 0.01f;
+				ImGui::NextColumn();
+
+				ImGui::Text("Specular power");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::InputFloat("##spec_pow", &material.SpecularPower, 0.001f, 0.0f, "%.3f");
+				if (material.SpecularPower < 0.001f)
+					material.SpecularPower = 0.001f;
+				else if (material.SpecularPower > 1.0f)
+					material.SpecularPower = 1.0f;
+				ImGui::Columns(1);
+
+				bool useSpecularAlpha = material.Flags & Data::MaterialPBR::UseSpecularPowerAlpha;
+				change |= ImGui::Checkbox("Use specular map alpha", &useSpecularAlpha);
+				if (useSpecularAlpha)
+					material.Flags |= Data::MaterialPBR::UseSpecularPowerAlpha;
+				else
+					material.Flags &= ~Data::MaterialPBR::UseSpecularPowerAlpha;
+
+				change |= ImGui::InputFloat("Parallax scale", &material.ParallaxScale, 0.01f, 0.0f, "%.2f");
+				if (material.ParallaxScale < 0.0f)
+					material.ParallaxScale = 0.0f;
+
+				if (change)
+				{
+					auto& buffers = engine.GetResourceData().get<Data::MaterialBuffersPBR>(materialId);
+					auto& dev = engine.Gfx().GetDevice();
+
+					dev.BeginUploadRegion();
+					buffers.UpdateData(dev, material);
+					dev.StartUpload();
+					dev.EndUploadRegion();
+				}
+			}
+
+			if (engine.GetData().all_of<Data::PointLight>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				auto& light = engine.GetData().get<Data::PointLight>(selected);
+
+				ImGui::Text("Point Light Intensity");
+				change = ImGui::InputFloat("##point_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (light.Intensity < 0.0f)
+					light.Intensity = 0.0f;
+
+				ImGui::Text("Color:");
+				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
+				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
+
+				ImGui::Text("Attenuation:");
+				change |= ImGui::InputFloat("Linear##point", &light.AttnLinear, 0.01f, 0.0f, "%.2f");
+				change |= ImGui::InputFloat("Quad##point", &light.AttnQuad, 0.001f, 0.0f, "%.3f");
+
+				if (change)
+				{
+					auto& buffer = engine.GetData().get<Data::PointLightBuffer>(selected);
+					auto& dev = engine.Gfx().GetDevice();
+
+					dev.BeginUploadRegion();
+					buffer.Buffer.Update(dev, &light, sizeof(light));
+					dev.StartUpload();
+					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
+					dev.EndUploadRegion();
+				}
+			}
+
+			if (engine.GetData().all_of<Data::SpotLight>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				auto& light = engine.GetData().get<Data::SpotLight>(selected);
+
+				ImGui::Text("Spot Light Intensity");
+				change = ImGui::InputFloat("##spot_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (light.Intensity < 0.0f)
+					light.Intensity = 0.0f;
+
+				ImGui::Text("Color:");
+				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
+				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
+
+				ImGui::Text("Attenuation:");
+				change |= ImGui::InputFloat("Linear##point", &light.AttnLinear, 0.01f, 0.0f, "%.2f");
+				change |= ImGui::InputFloat("Quad##point", &light.AttnQuad, 0.001f, 0.0f, "%.3f");
+
+				ImGui::Text("Direction [X|Y|Z]");
+				ImGui::SetNextItemWidth(-5.0f);
+				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&light.Direction), -1.0f, 1.0f, "%.2f"))
+				{
+					Math::NormalizeStore(light.Direction);
+					change = true;
+				}
+
+				ImGui::Columns(2, "##spotlight", false);
+				ImGui::Text("Outer angle");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::SliderAngle("##outer_spot", &light.OuterAngle, 0.0f, 45.0f, "%.2f");
+				if (light.InnerAngle > light.OuterAngle)
+				{
+					light.InnerAngle = light.OuterAngle;
+					change = true;
+				}
+				ImGui::NextColumn();
+				ImGui::Text("Inner angle");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::SliderAngle("##inner_spot", &light.InnerAngle, 0.0f, Math::ToDegrees(light.OuterAngle), "%.2f");
+				ImGui::Columns(1);
+
+				if (change)
+				{
+					auto& buffer = engine.GetData().get<Data::SpotLightBuffer>(selected);
+					auto& dev = engine.Gfx().GetDevice();
+
+					dev.BeginUploadRegion();
+					buffer.Buffer.Update(dev, &light, sizeof(light));
+					dev.StartUpload();
+					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
+					dev.EndUploadRegion();
+				}
+			}
+
+			if (engine.GetData().all_of<Data::DirectionalLight>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				auto& light = engine.GetData().get<Data::DirectionalLight>(selected);
+
+				ImGui::Text("Directional Light Intensity");
+				change = ImGui::InputFloat("##dir_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (light.Intensity < 0.0f)
+					light.Intensity = 0.0f;
+
+				ImGui::Text("Color:");
+				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
+				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
+
+				ImGui::Text("Direction [X|Y|Z]");
+				ImGui::SetNextItemWidth(-5.0f);
+				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&engine.GetData().get<Data::Direction>(selected).Direction), -1.0f, 1.0f, "%.2f"))
+				{
+					Math::NormalizeStore(engine.GetData().get<Data::Direction>(selected).Direction);
+					change = true;
+				}
+
+				if (change)
+				{
+					auto& buffer = engine.GetData().get<Data::DirectionalLightBuffer>(selected);
+					auto& dev = engine.Gfx().GetDevice();
+
+					dev.BeginUploadRegion();
+					buffer.Buffer.Update(dev, &light, sizeof(light));
+					dev.StartUpload();
+					dev.EndUploadRegion();
+				}
+			}
+
+			if (engine.GetData().all_of<Data::Camera>(selected))
+			{
+				ImGui::Separator();
+				ImGui::NewLine();
+				auto& camera = engine.GetData().get<Data::Camera>(selected);
+
+				ImGui::Text("FOV");
+				ImGui::SetNextItemWidth(-1.0f);
+				change = ImGui::SliderAngle("##fov", &camera.Projection.FOV, 1.0f, 179.0f, "%.1f");
+				ImGui::NextColumn();
+
+				ImGui::Text("Ratio");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::SliderFloat("##screen_ratio", &camera.Projection.ViewRatio, 0.1f, 5.0f, "%.2f");
+				ImGui::Columns(2, "##camera", false);
+
+				ImGui::Text("Near clip");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f");
+				if (camera.Projection.NearClip < 0.01f)
+					camera.Projection.NearClip = 0.01f;
+				else if (camera.Projection.NearClip > 10.0f)
+					camera.Projection.NearClip = 10.0f;
+				ImGui::NextColumn();
+
+				ImGui::Text("Far clip");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::InputFloat("##far_clip", &camera.Projection.FarClip, 0.1f, 0.0f, "%.1f");
+				if (camera.Projection.FarClip < camera.Projection.NearClip + 0.01f)
+					camera.Projection.FarClip = camera.Projection.NearClip + 0.01f;
+				else if (camera.Projection.FarClip > 50000.0f)
+					camera.Projection.FarClip = 50000.0f;
+
+				if (selected == currentCamera && change)
+					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
+						Math::XMMatrixPerspectiveFovLH(camera.Projection.FOV, camera.Projection.ViewRatio,
+							camera.Projection.NearClip, camera.Projection.FarClip));
+			}
+			ImGui::EndChild();
+		}
 	}
 	ImGui::End();
 }
@@ -146,7 +512,7 @@ EID App::AddModel(std::string&& name, Float3&& position,
 			Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale)));
 
 	Data::LoadGeometryFromModel(engine.Gfx().GetDevice(), engine.GetTextureLibrary(),
-		engine.GetData(), engine.GetResourceData(), model, file);
+		engine.GetData(), engine.GetResourceData(), model, file, true);
 	return model;
 }
 
@@ -231,10 +597,9 @@ App::App(const std::string& commandLine)
 
 	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, Math::StartPosition(), Math::NoRotationAngles());
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
-	Float4x4 projection;
-	Math::XMStoreFloat4x4(&projection, Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV,
-		camData.Projection.ViewRatio, camData.Projection.NearClip, camData.Projection.FarClip));
-	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), projection);
+	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
+		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
+			camData.Projection.NearClip, camData.Projection.FarClip));
 
 	engine.Gfx().GetDevice().BeginUploadRegion();
 	AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
@@ -244,8 +609,7 @@ App::App(const std::string& commandLine)
 	// Sample Scene
 #ifdef _ZE_MODE_RELEASE
 	AddCamera("Camera #2", 2.0f, 15.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
-	if (false)
-		AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
+	AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
 	AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);
 	AddPointLight("Torch", { 21.95f, -1.9f, 9.9f }, { 1.0f, 0.0f, 0.2f }, 5.0f, 70);
 
@@ -256,12 +620,10 @@ App::App(const std::string& commandLine)
 	AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
 
 	AddModel("Sponza", { 0.0f, -8.0f, 0.0f }, Math::NoRotationAngles(), 0.045f, "Models/Sponza/sponza.obj");
-	if (false) // No UV generated
-		AddModel("Jack'O'Lantern", { 13.5f, -8.2f, -5.0f }, Math::NoRotationAngles(), 13.0f, "Models/Jack/Jack_O_Lantern.3ds");
+	AddModel("Jack'O'Lantern", { 13.5f, -8.2f, -5.0f }, Math::NoRotationAngles(), 13.0f, "Models/Jack/Jack_O_Lantern.3ds");
 	AddModel("Black dragon", { -39.0f, -8.1f, 2.0f }, { 0.0f, 290.0f, 0.0f }, 0.15f, "Models/Black Dragon/Dragon 2.5.fbx");
 	AddModel("Sting sword", { -20.0f, 0.0f, -6.0f }, { 35.0f, 270.0f, 110.0f }, 0.2f, "Models/Sting_Sword/Sting_Sword.obj");
-	if (false) // No UV generated
-		AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
+	AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
 #endif
 	engine.Gfx().GetDevice().EndUploadRegion();
 }

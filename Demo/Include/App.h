@@ -16,8 +16,14 @@ class App final
 	float rotateSpeed = 1.5f;
 	bool run = true;
 
+	template<typename T>
+	void EnableProperty(EID entity);
+	template<typename T>
+	void DisableProperty(EID entity);
+
 	void ProcessInput();
 	void ShowOptionsWindow();
+	void BuiltObjectTree(EID currentEntity, EID& selected);
 	void ShowObjectWindow();
 
 	void AddModelButton();

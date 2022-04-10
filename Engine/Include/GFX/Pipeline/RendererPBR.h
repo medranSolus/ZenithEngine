@@ -38,7 +38,7 @@ namespace ZE::GFX::Pipeline
 			U32 width, U32 height, const ParamsPBR& params);
 
 		// Need to be called when data in parameters changed (also after creation of renderer)
-		void UpdateSettingsData(Device& dev, const Float4x4& projection);
+		void UpdateSettingsData(Device& dev, const Matrix& projection);
 		// Need to be called before ending every frame
 		void UpdateWorldData(Device& dev, EID camera) noexcept;
 		void ShowWindow(Device& dev);

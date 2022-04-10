@@ -9,7 +9,7 @@
 namespace ZE::Data
 {
 #ifdef _ZE_MODEL_LOADING
-	EID ParseMesh(const aiMesh& mesh, GFX::Device& dev, Storage& meshRegistry)
+	EID ParseMesh(const aiMesh& mesh, GFX::Device& dev, Storage& meshRegistry, bool loadName)
 	{
 		U32* indices = new U32[mesh.mNumFaces * 3];
 		GFX::IndexData indexData = { 0, indices };
@@ -45,18 +45,26 @@ namespace ZE::Data
 				&& vertex.Normal.z == mesh.mNormals[i].z,
 				"Normal data is incorrect, type of aiMesh::mNormals changed!");
 
-			vertex.UV = *reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i);
-			ZE_ASSERT(vertex.UV.x == mesh.mTextureCoords[0][i].x
-				&& vertex.UV.y == mesh.mTextureCoords[0][i].y,
-				"UV data is incorrect, type of aiMesh::mTextureCoords changed!");
+			if (mesh.HasTextureCoords(0))
+			{
+				vertex.UV = *reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i);
+				ZE_ASSERT(vertex.UV.x == mesh.mTextureCoords[0][i].x
+					&& vertex.UV.y == mesh.mTextureCoords[0][i].y,
+					"UV data is incorrect, type of aiMesh::mTextureCoords changed!");
+			}
 
-			vertex.Tangent.x = mesh.mTangents[i].x;
-			vertex.Tangent.y = mesh.mTangents[i].y;
-			vertex.Tangent.z = mesh.mTangents[i].z;
-			//vertex.Tangent.w = -1.0f; // TODO: Check somehow
+			if (mesh.HasTangentsAndBitangents())
+			{
+				vertex.Tangent.x = mesh.mTangents[i].x;
+				vertex.Tangent.y = mesh.mTangents[i].y;
+				vertex.Tangent.z = mesh.mTangents[i].z;
+				//vertex.Tangent.w = -1.0f; // TODO: Check somehow
+			}
 		}
 
 		EID meshId = meshRegistry.create();
+		if (loadName)
+			meshRegistry.emplace<std::string>(meshId, mesh.mName.length != 0 ? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
 		meshRegistry.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
 		Geometry& geometry = meshRegistry.emplace<Geometry>(meshId);
 		geometry.Indices.Init(dev, indexData);
@@ -68,9 +76,13 @@ namespace ZE::Data
 	}
 
 	EID ParseMaterial(const aiMaterial& material, const GFX::Resource::Texture::Schema& schema,
-		const std::string& path, GFX::Device& dev, Storage& materialRegistry)
+		const std::string& path, GFX::Device& dev, Storage& materialRegistry, bool loadName)
 	{
 		EID materialId = materialRegistry.create();
+		if (loadName)
+			materialRegistry.emplace<std::string>(materialId, material.GetName().length != 0 ?
+				material.GetName().C_Str() : "material_" + std::to_string(static_cast<U64>(materialId)));
+
 		MaterialPBR& data = materialRegistry.emplace<MaterialPBR>(materialId);
 		MaterialBuffersPBR& buffers = materialRegistry.emplace<MaterialBuffersPBR>(materialId);
 
@@ -142,12 +154,18 @@ namespace ZE::Data
 	}
 
 	void ParseNode(const aiNode& node, EID currentEntity, const std::vector<std::pair<EID, U32>>& meshes,
-		const std::vector<EID>& materials, Storage& registry) noexcept
+		const std::vector<EID>& materials, Storage& registry, bool loadNames) noexcept
 	{
+		if (loadNames && !registry.all_of<std::string>(currentEntity))
+			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
+
 		TransformGlobal& transform = registry.get<TransformGlobal>(currentEntity);
 		const Vector globalRotation = Math::XMLoadFloat4(&transform.Rotation);
 		const Vector globalPosition = Math::XMLoadFloat3(&transform.Position);
 		const Vector globalScale = Math::XMLoadFloat3(&transform.Scale);
+
+		if (!registry.all_of<Children>(currentEntity))
+			registry.emplace<Children>(currentEntity);
 
 		if (node.mNumMeshes)
 		{
@@ -160,10 +178,16 @@ namespace ZE::Data
 			{
 				EID child = registry.create();
 				registry.emplace<ParentID>(child, currentEntity);
+				registry.emplace<RenderLambertian>(child);
+				registry.emplace<ShadowCaster>(child);
+				if (loadNames)
+					registry.emplace<std::string>(child, registry.get<std::string>(currentEntity) + "_" + std::to_string(i));
+
 				registry.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
 				registry.emplace<TransformGlobal>(child, transform);
 				registry.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
 				registry.emplace<MaterialID>(child, materials.at(meshes.at(node.mMeshes[i]).second));
+				registry.get<Children>(currentEntity).Childs.emplace_back(child);
 			}
 		}
 
@@ -171,6 +195,7 @@ namespace ZE::Data
 		{
 			EID child = registry.create();
 			registry.emplace<ParentID>(child, currentEntity);
+			registry.get<Children>(currentEntity).Childs.emplace_back(child);
 
 			Vector translation, rotation, scaling;
 			if (!Math::XMMatrixDecompose(&scaling, &rotation, &translation,
@@ -191,12 +216,15 @@ namespace ZE::Data
 			Math::XMStoreFloat3(&global.Position, Math::XMVectorAdd(globalPosition, translation));
 			Math::XMStoreFloat3(&global.Scale, Math::XMVectorMultiply(globalScale, scaling));
 
-			ParseNode(*node.mChildren[i], child, meshes, materials, registry);
+			ParseNode(*node.mChildren[i], child, meshes, materials, registry, loadNames);
 		}
+
+		if (registry.get<Children>(currentEntity).Childs.size() == 0)
+			registry.remove<Children>(currentEntity);
 	}
 
 	void LoadGeometryFromModel(GFX::Device& dev, GFX::Resource::Texture::Library& textureLib,
-		Storage& registry, Storage& resourceRegistry, EID root, const std::string& file)
+		Storage& registry, Storage& resourceRegistry, EID root, const std::string& file, bool loadNames)
 	{
 		ZE_VALID_EID(root);
 		ZE_ASSERT(registry.all_of<Transform>(root), "Entity should contain Transform component!");
@@ -229,20 +257,28 @@ namespace ZE::Data
 			throw ZE_MDL_EXCEPT(std::move(error));
 
 		std::filesystem::path filePath(file);
-		// Fix for incorrect format with YZ coords
 		bool flipYZ = filePath.extension().string() == ".3ds";
 		if (flipYZ)
 		{
+			// Fix for incorrect format with YZ coords
 			float temp = scene->mRootNode->mTransformation.b2;
 			scene->mRootNode->mTransformation.b2 = -scene->mRootNode->mTransformation.b3;
 			scene->mRootNode->mTransformation.b3 = temp;
 			std::swap(scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.c3);
 		}
+		if (flipYZ || filePath.extension().string() == ".fbx")
+		{
+			// Fix for model rotated by 90 degrees in X axis
+			Float4& rotation = registry.get<TransformGlobal>(root).Rotation;
+			Math::XMStoreFloat4(&rotation,
+				Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(90.0f), 0.0f, 0.0f),
+					Math::XMLoadFloat4(&rotation))));
+		}
 
 		std::vector<std::pair<EID, U32>> meshes;
 		meshes.reserve(scene->mNumMeshes);
 		for (U32 i = 0; i < scene->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(*scene->mMeshes[i], dev, resourceRegistry), scene->mMeshes[i]->mMaterialIndex);
+			meshes.emplace_back(ParseMesh(*scene->mMeshes[i], dev, resourceRegistry, loadNames), scene->mMeshes[i]->mMaterialIndex);
 		dev.StartUpload();
 
 		std::vector<EID> materials;
@@ -250,10 +286,10 @@ namespace ZE::Data
 		const GFX::Resource::Texture::Schema& textureSchema = textureLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 		for (U32 i = 0; i < scene->mNumMaterials; ++i)
 			materials.emplace_back(ParseMaterial(*scene->mMaterials[i], textureSchema,
-				filePath.remove_filename().string(), dev, resourceRegistry));
+				filePath.remove_filename().string(), dev, resourceRegistry, loadNames));
 		dev.StartUpload();
 
-		ParseNode(*scene->mRootNode, root, meshes, materials, registry);
+		ParseNode(*scene->mRootNode, root, meshes, materials, registry, loadNames);
 	}
 #endif
 }

@@ -22,7 +22,7 @@ namespace ZE::Data
 	// Root entity should already contain Transform and TransformGlobal components.
 	// Must be within upload region!
 	void LoadGeometryFromModel(GFX::Device& dev, GFX::Resource::Texture::Library& textureLib,
-		Storage& registry, Storage& resourceRegistry, EID root, const std::string& file);
+		Storage& registry, Storage& resourceRegistry, EID root, const std::string& file, bool loadNames = false);
 #endif
 #pragma endregion
 }

@@ -313,13 +313,13 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateSettingsData(Device& dev, const Float4x4& projection)
+	void RendererPBR::UpdateSettingsData(Device& dev, const Matrix& projection)
 	{
-		currentProjection = projection;
+		Math::XMStoreFloat4x4(&currentProjection, projection);
 		XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
 			settingsData.SsaoData.ViewportSize.x,
 			settingsData.SsaoData.ViewportSize.y,
-			ssaoSettings, reinterpret_cast<const float*>(&projection), true, 0);
+			ssaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
