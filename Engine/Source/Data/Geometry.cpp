@@ -75,7 +75,7 @@ namespace ZE::Data
 		return meshId;
 	}
 
-	EID ParseMaterial(const aiMaterial& material, const GFX::Resource::Texture::Schema& schema,
+	MaterialID ParseMaterial(const aiMaterial& material, const GFX::Resource::Texture::Schema& schema,
 		const std::string& path, GFX::Device& dev, Storage& materialRegistry, bool loadName)
 	{
 		EID materialId = materialRegistry.create();
@@ -150,11 +150,11 @@ namespace ZE::Data
 			data.ParallaxScale = 0.1f;
 
 		buffers.Init(dev, data, texDesc);
-		return materialId;
+		return { materialId, MaterialPBR::GetPipelineStateNumber(data.Flags) };
 	}
 
 	void ParseNode(const aiNode& node, EID currentEntity, const std::vector<std::pair<EID, U32>>& meshes,
-		const std::vector<EID>& materials, Storage& registry, bool loadNames) noexcept
+		const std::vector<MaterialID>& materials, Storage& registry, bool loadNames) noexcept
 	{
 		if (loadNames && !registry.all_of<std::string>(currentEntity))
 			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
@@ -281,7 +281,7 @@ namespace ZE::Data
 			meshes.emplace_back(ParseMesh(*scene->mMeshes[i], dev, resourceRegistry, loadNames), scene->mMeshes[i]->mMaterialIndex);
 		dev.StartUpload();
 
-		std::vector<EID> materials;
+		std::vector<MaterialID> materials;
 		materials.reserve(scene->mNumMaterials);
 		const GFX::Resource::Texture::Schema& textureSchema = textureLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 		for (U32 i = 0; i < scene->mNumMaterials; ++i)

@@ -27,8 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		Resource::IndexBuffer VolumeIB;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
-
+	void Clean(void* data);
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth);

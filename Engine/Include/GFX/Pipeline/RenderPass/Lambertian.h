@@ -24,13 +24,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
-		Resource::PipelineStateGfx StateSolid;
-		Resource::PipelineStateGfx StateTransparent;
+		Ptr<Resource::PipelineStateGfx> StatesSolid;
+		Ptr<Resource::PipelineStateGfx> StatesTransparent;
 		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
-
+	void Clean(void* data);
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS,
 		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);

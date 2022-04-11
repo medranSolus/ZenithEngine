@@ -22,8 +22,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
-		Resource::PipelineStateGfx StateSolid;
-		Resource::PipelineStateGfx StateTransparent;
+		Ptr<Resource::PipelineStateGfx> StatesSolid;
+		Ptr<Resource::PipelineStateGfx> StatesTransparent;
 		ChainPool<std::vector<Resource::CBuffer>> ViewBuffers;
 		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 		Matrix Projection;
@@ -32,6 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		U64 PreviousEntityCount = 0;
 	};
 
+	void Clean(ExecuteData& data);
 	void Setup(Device& dev, RendererBuildData& buildData,
 		ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,

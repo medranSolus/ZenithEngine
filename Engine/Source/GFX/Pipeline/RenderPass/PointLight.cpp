@@ -6,6 +6,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
+	void Clean(void* data)
+	{
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		ShadowMapCube::Clean(execData->ShadowData);
+		delete execData;
+	}
+
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth)

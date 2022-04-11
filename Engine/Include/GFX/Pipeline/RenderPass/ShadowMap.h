@@ -22,8 +22,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateDepth;
-		Resource::PipelineStateGfx StateSolid;
-		Resource::PipelineStateGfx StateTransparent;
+		Ptr<Resource::PipelineStateGfx> StatesSolid;
+		Ptr<Resource::PipelineStateGfx> StatesTransparent;
 		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 		Matrix Projection;
 		// Number of entities that were previously used in computing shadow map,
@@ -31,6 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		U64 PreviousEntityCount = 0;
 	};
 
+	void Clean(ExecuteData& data);
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,

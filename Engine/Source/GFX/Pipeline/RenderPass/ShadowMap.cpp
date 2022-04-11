@@ -5,6 +5,12 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
+	void Clean(ExecuteData& data)
+	{
+		data.StatesSolid.DeleteArray();
+		data.StatesTransparent.DeleteArray();
+	}
+
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection)
 	{
@@ -28,16 +34,25 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		passData.StateDepth.Init(dev, psoDesc, schema);
 
 		psoDesc.SetShader(psoDesc.VS, L"PhongVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.PS, L"ShadowPS", buildData.ShaderCache);
-		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
-		ZE_PSO_SET_NAME(psoDesc, "ShadowMapSolid");
-		passData.StateSolid.Init(dev, psoDesc, schema);
+		const std::wstring shaderName = L"ShadowPS";
+		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
+		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
+		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
+		while (stateIndex--)
+		{
+			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
+			psoDesc.SetShader(psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
-		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-		ZE_PSO_SET_NAME(psoDesc, "ShadowMapTransparent");
-		passData.StateTransparent.Init(dev, psoDesc, schema);
+			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
+			ZE_PSO_SET_NAME(psoDesc, "ShadowMapSolid" + ZE::Utils::ToAscii(suffix));
+			passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
+
+			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
+			ZE_PSO_SET_NAME(psoDesc, "ShadowMapTransparent" + ZE::Utils::ToAscii(suffix));
+			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
+		}
 
 		passData.TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true); });
 		passData.Projection = std::move(projection);
@@ -71,13 +86,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Resources, group, frustum);
 
 			// Use new group visible only in current frustum and sort
-			Utils::ViewSortAscending(group, position);
 			auto solidGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, InsideFrustumSolid>(renderData.Registry);
 			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, InsideFrustumNotSolid>(renderData.Registry);
 			const U64 solidCount = solidGroup.size();
 			const U64 transparentCount = transparentGroup.size();
 			const U64 bufferOffset = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
 			const U64 bufferTransformOffset = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
+			Utils::ViewSortAscending(solidGroup, position);
 
 			// Resize temporary buffer for transform data
 			data.PreviousEntityCount += solidCount;
@@ -131,19 +146,19 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			}
 
 			// Solid pass
-			Data::MaterialID currentMaterial = { INVALID_EID };
+			EID currentMaterial = INVALID_EID;
 			currentBuffer = bufferOffset;
 			currentTransform = bufferTransformOffset;
+			U8 currentState = -1;
 			for (U64 i = 0; i < solidCount; ++currentBuffer)
 			{
-				cl.Open(dev, data.StateSolid);
+				cl.Open(dev);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Solid Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
-				cbuffer.Bind(cl, ctx);
+				data.TransformBuffers.Get().at(currentBuffer).Bind(cl, ctx);
 				renderData.DynamicBuffers.Get().Bind(cl, ctx);
 				Resource::Constant<Float3> pos(dev, lightPos);
 				pos.Bind(cl, ctx);
@@ -159,17 +174,22 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					meshBatchId.Bind(cl, ctx);
 
 					auto entity = solidGroup[i];
-					auto material = solidGroup.get<Data::MaterialID>(entity);
-					if (currentMaterial.ID != material.ID)
+					const Data::MaterialID material = solidGroup.get<Data::MaterialID>(entity);
+					if (currentMaterial != material.ID)
 					{
-						currentMaterial = material;
+						currentMaterial = material.ID;
 
-						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(material.ID);
+						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(currentMaterial);
 						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
 						parallaxScale.Bind(cl, ctx);
 						Resource::Constant<U32> materialFlags(dev, matData.Flags);
 						materialFlags.Bind(cl, ctx);
-						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
+						renderData.Resources.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
+					}
+					if (currentState != material.StateIndex)
+					{
+						currentState = material.StateIndex;
+						data.StatesSolid[material.StateIndex].Bind(cl);
 					}
 					ctx.Reset();
 
@@ -185,16 +205,20 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
 				currentTransform = 0;
-				currentMaterial = { INVALID_EID };
+				currentMaterial = INVALID_EID;
+				currentState = -1;
 			}
 
 			// Transparent pass
+			Utils::ViewSortDescending(transparentGroup, position);
+			currentMaterial = INVALID_EID;
 			currentBuffer = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
 			currentTransform = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
+			currentState = -1;
 			data.PreviousEntityCount += transparentCount;
 			for (U64 i = 0; i < transparentCount; ++currentBuffer)
 			{
-				cl.Open(dev, data.StateTransparent);
+				cl.Open(dev);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Transparent Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -222,10 +246,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					Resource::Constant<U32> meshBatchId(dev, currentTransform);
 					meshBatchId.Bind(cl, ctx);
 
-					auto material = transparentGroup.get<Data::MaterialID>(entity);
-					if (currentMaterial.ID != material.ID)
+					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
+					if (currentMaterial != material.ID)
 					{
-						currentMaterial = material;
+						currentMaterial = material.ID;
 
 						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(material.ID);
 						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
@@ -233,6 +257,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						Resource::Constant<U32> materialFlags(dev, matData.Flags);
 						materialFlags.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
+					}
+					if (currentState != material.StateIndex)
+					{
+						currentState = material.StateIndex;
+						data.StatesTransparent[material.StateIndex].Bind(cl);
 					}
 					ctx.Reset();
 
@@ -248,7 +277,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
 				currentTransform = 0;
-				currentMaterial = { INVALID_EID };
+				currentMaterial = INVALID_EID;
+				currentState = -1;
 			}
 			// Remove current visibility indication
 			renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
