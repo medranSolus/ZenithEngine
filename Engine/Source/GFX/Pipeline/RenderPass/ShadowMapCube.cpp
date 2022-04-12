@@ -41,7 +41,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
 		const std::wstring shaderName = L"ShadowPS";
-		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
+		// Ignore flag UseSpecular as it does not have impact on shadows
+		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
 		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
@@ -219,11 +220,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						Resource::Constant<U32> materialFlags(dev, matData.Flags);
 						materialFlags.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
-					}
-					if (currentState != material.StateIndex)
-					{
-						currentState = material.StateIndex;
-						data.StatesSolid[material.StateIndex].Bind(cl);
+
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
+						if (currentState != state)
+						{
+							currentState = state;
+							data.StatesSolid[state].Bind(cl);
+						}
 					}
 					ctx.Reset();
 
@@ -292,11 +295,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						Resource::Constant<U32> materialFlags(dev, matData.Flags);
 						materialFlags.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
-					}
-					if (currentState != material.StateIndex)
-					{
-						currentState = material.StateIndex;
-						data.StatesTransparent[material.StateIndex].Bind(cl);
+
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
+						if (currentState != state)
+						{
+							currentState = state;
+							data.StatesTransparent[state].Bind(cl);
+						}
 					}
 					ctx.Reset();
 

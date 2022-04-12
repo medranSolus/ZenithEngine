@@ -187,11 +187,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(currentMaterial);
 					buffers.BindBuffer(cl, ctx);
 					buffers.BindTextures(cl, ctx);
-				}
-				if (currentState != material.StateIndex)
-				{
-					currentState = material.StateIndex;
-					data.StatesSolid[material.StateIndex].Bind(cl);
+
+					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial));
+					if (currentState != state)
+					{
+						currentState = state;
+						data.StatesSolid[state].Bind(cl);
+					}
 				}
 				ctx.Reset();
 
@@ -253,11 +255,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					const auto& buffers = renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID);
 					buffers.BindBuffer(cl, ctx);
 					buffers.BindTextures(cl, ctx);
-				}
-				if (currentState != material.StateIndex)
-				{
-					currentState = material.StateIndex;
-					data.StatesTransparent[material.StateIndex].Bind(cl);
+
+					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial));
+					if (currentState != state)
+					{
+						currentState = state;
+						data.StatesTransparent[state].Bind(cl);
+					}
 				}
 				ctx.Reset();
 

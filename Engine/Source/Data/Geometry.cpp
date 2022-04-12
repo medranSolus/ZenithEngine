@@ -75,7 +75,7 @@ namespace ZE::Data
 		return meshId;
 	}
 
-	MaterialID ParseMaterial(const aiMaterial& material, const GFX::Resource::Texture::Schema& schema,
+	EID ParseMaterial(const aiMaterial& material, const GFX::Resource::Texture::Schema& schema,
 		const std::string& path, GFX::Device& dev, Storage& materialRegistry, bool loadName)
 	{
 		EID materialId = materialRegistry.create();
@@ -85,6 +85,7 @@ namespace ZE::Data
 
 		MaterialPBR& data = materialRegistry.emplace<MaterialPBR>(materialId);
 		MaterialBuffersPBR& buffers = materialRegistry.emplace<MaterialBuffersPBR>(materialId);
+		PBRFlags& flags = materialRegistry.emplace<PBRFlags>(materialId);
 
 		GFX::Resource::Texture::PackDesc texDesc;
 		texDesc.Init(schema);
@@ -99,7 +100,7 @@ namespace ZE::Data
 				materialRegistry.emplace<MaterialNotSolid>(materialId);
 
 			texDesc.AddTexture(schema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
-			data.Flags |= MaterialPBR::Flag::UseTexture;
+			flags |= MaterialPBR::Flag::UseTexture;
 		}
 
 		// Get normal map texture
@@ -107,7 +108,7 @@ namespace ZE::Data
 		{
 			surfaces.emplace_back(path + texFile.C_Str());
 			texDesc.AddTexture(schema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
-			data.Flags |= MaterialPBR::Flag::UseNormal;
+			flags |= MaterialPBR::Flag::UseNormal;
 		}
 
 		// Get specular data
@@ -117,7 +118,7 @@ namespace ZE::Data
 			if (surfaces.back().HasAlpha())
 				data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
 			texDesc.AddTexture(schema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
-			data.Flags |= MaterialPBR::Flag::UseSpecular;
+			flags |= MaterialPBR::Flag::UseSpecular;
 		}
 
 		// Get parallax map texture
@@ -125,7 +126,7 @@ namespace ZE::Data
 		{
 			surfaces.emplace_back(path + texFile.C_Str());
 			texDesc.AddTexture(schema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
-			data.Flags |= MaterialPBR::Flag::UseParallax;
+			flags |= MaterialPBR::Flag::UseParallax;
 			if (!materialRegistry.all_of<MaterialNotSolid>(materialId))
 				materialRegistry.emplace<MaterialNotSolid>(materialId);
 		}
@@ -150,11 +151,11 @@ namespace ZE::Data
 			data.ParallaxScale = 0.1f;
 
 		buffers.Init(dev, data, texDesc);
-		return { materialId, MaterialPBR::GetPipelineStateNumber(data.Flags) };
+		return materialId;
 	}
 
 	void ParseNode(const aiNode& node, EID currentEntity, const std::vector<std::pair<EID, U32>>& meshes,
-		const std::vector<MaterialID>& materials, Storage& registry, bool loadNames) noexcept
+		const std::vector<EID>& materials, Storage& registry, bool loadNames) noexcept
 	{
 		if (loadNames && !registry.all_of<std::string>(currentEntity))
 			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
@@ -281,7 +282,7 @@ namespace ZE::Data
 			meshes.emplace_back(ParseMesh(*scene->mMeshes[i], dev, resourceRegistry, loadNames), scene->mMeshes[i]->mMaterialIndex);
 		dev.StartUpload();
 
-		std::vector<MaterialID> materials;
+		std::vector<EID> materials;
 		materials.reserve(scene->mNumMaterials);
 		const GFX::Resource::Texture::Schema& textureSchema = textureLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 		for (U32 i = 0; i < scene->mNumMaterials; ++i)
