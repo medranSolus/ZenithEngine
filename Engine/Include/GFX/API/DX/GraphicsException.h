@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX
 
 // Before using needs call to ZE_GFX_ENABLE_ID()
 // Sets debug name for GPU object with given id
-#define ZE_GFX_SET_ID(child, id) ZE_GFX_DEBUG_ID = id; ZE_GFX_THROW_FAILED(child.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(ZE_GFX_DEBUG_ID.size()), ZE_GFX_DEBUG_ID.c_str()))
+#define ZE_GFX_SET_ID(child, id) ZE_GFX_DEBUG_ID = id; ZE_GFX_THROW_FAILED(child->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(ZE_GFX_DEBUG_ID.size()), ZE_GFX_DEBUG_ID.c_str()))
 
 #else
 // Enables useage of ZE_GFX_SET_ID macros in current scope

@@ -19,17 +19,28 @@ namespace ZE::GFX::API::DX11::Resource
 			bufferDesc.CPUAccessFlags = 0;
 		}
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = bytes;
+		bufferDesc.ByteWidth = Math::AlignUp(bytes, 16U);
 		bufferDesc.StructureByteStride = 0;
 
+		// If aligned size is greater than actual data then create new region
+		const void* data = values;
+		if (bufferDesc.ByteWidth > bytes)
+		{
+			U8* buffData = new U8[bufferDesc.ByteWidth];
+			memcpy(buffData, values, bytes);
+			data = buffData;
+		}
+
 		D3D11_SUBRESOURCE_DATA resData;
-		resData.pSysMem = values;
+		resData.pSysMem = data;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, values ? &resData : nullptr, &buffer));
 		ZE_GFX_SET_ID(buffer, "CBuffer");
 
+		if (bufferDesc.ByteWidth > bytes)
+			delete[] reinterpret_cast<const U8*>(data);
 		if (dynamic)
 		{
 			D3D11_MAPPED_SUBRESOURCE subres;
