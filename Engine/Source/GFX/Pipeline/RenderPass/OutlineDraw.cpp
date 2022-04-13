@@ -90,9 +90,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				ctx.Reset();
 
 				// Compute single batch
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 				for (U32 k = 0, I = i; k < TransformBuffer::TRANSFORM_COUNT && I < count; ++k, ++I)
 				{
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"MeshStencil_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
 					auto entity = visibleGroup[I];
@@ -108,6 +108,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}

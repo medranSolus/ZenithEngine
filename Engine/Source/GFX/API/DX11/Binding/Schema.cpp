@@ -33,14 +33,25 @@ namespace ZE::GFX::API::DX11::Binding
 
 		// Check input data
 		count = 0;
+		U32 dataCount = 0;
 		for (const auto& entry : desc.Ranges)
 		{
 			entry.Validate();
 
-			if (entry.Flags & GFX::Binding::RangeFlag::Constant)
+			if (entry.Flags & (GFX::Binding::RangeFlag::Constant | GFX::Binding::RangeFlag::BufferPack))
+			{
 				++count;
+				++dataCount;
+			}
+			else if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
+			{
+				++dataCount;
+			}
 			else
+			{
 				count += entry.Count;
+				dataCount += entry.Count;
+			}
 
 			if (entry.Shaders & GFX::Resource::ShaderType::Compute)
 				activeShaders[5] = true;
@@ -62,21 +73,39 @@ namespace ZE::GFX::API::DX11::Binding
 			"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the SchemaDesc!");
 
 		// Gather slots
-		slots = new std::pair<GFX::Resource::ShaderTypes, U32>[count];
-		for (U32 i = 0; const auto& entry : desc.Ranges)
+		slots = new SlotInfo[count];
+		slotsData = new SlotData[dataCount];
+		for (U32 i = 0, j = 0; const auto& entry : desc.Ranges)
 		{
 			if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 			{
-				ZE_ASSERT(entry.StartSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
-				slots[i++] = { entry.Shaders, entry.StartSlot };
+				ZE_ASSERT(entry.StartSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
+				slots[i++] = { j, 1 };
+				slotsData[j++] = { entry.Shaders, entry.StartSlot, 1 };
 			}
 			else
 			{
-				ZE_ASSERT(entry.StartSlot + entry.Count < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
+				ZE_ASSERT(entry.StartSlot + entry.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
 					"Too much shader slots!");
 
-				for (U32 j = 0; j < entry.Count; ++j)
-					slots[i++] = { entry.Shaders, entry.StartSlot + j };
+				if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
+				{
+					slots[i++] = { j, 1 };
+					slotsData[j++] = { entry.Shaders, entry.StartSlot, entry.Count };
+				}
+				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
+				{
+					++slots[i - 1].SlotsCount;
+					slotsData[j - 1] = { entry.Shaders, entry.StartSlot, entry.Count };
+				}
+				else
+				{
+					for (U32 k = 0; k < entry.Count; ++k)
+					{
+						slots[i++] = { j, 1 };
+						slotsData[j++] = { entry.Shaders, entry.StartSlot + k, 1 };
+					}
+				}
 			}
 		}
 	}
@@ -85,6 +114,8 @@ namespace ZE::GFX::API::DX11::Binding
 	{
 		if (slots)
 			slots.DeleteArray();
+		if (slotsData)
+			slotsData.DeleteArray();
 		if (samplers)
 			samplers.DeleteArray();
 	}

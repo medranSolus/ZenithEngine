@@ -6,9 +6,24 @@ namespace ZE::GFX::API::DX11::Binding
 {
 	class Schema final
 	{
+	public:
+		struct SlotInfo
+		{
+			U32 DataStart;
+			U32 SlotsCount;
+		};
+		struct SlotData
+		{
+			GFX::Resource::ShaderTypes Shaders;
+			U32 BindStart;
+			U32 Count;
+		};
+
+	private:
 		std::bitset<6> activeShaders;
 		U32 count;
-		Ptr<std::pair<GFX::Resource::ShaderTypes, U32>> slots;
+		Ptr<SlotInfo> slots;
+		Ptr<SlotData> slotsData;
 		U32 samplersCount;
 		Ptr<std::pair<U32, DX::ComPtr<ID3D11SamplerState>>> samplers;
 
@@ -24,6 +39,7 @@ namespace ZE::GFX::API::DX11::Binding
 
 		// Gfx API Internal
 
-		std::pair<GFX::Resource::ShaderTypes, U32> GetCurrentSlot(U32 index) const noexcept { ZE_ASSERT(index < count, "Access out of range!"); return slots[index]; }
+		SlotInfo GetCurrentSlot(U32 index) const noexcept { ZE_ASSERT(index < count, "Access out of range!"); return slots[index]; }
+		SlotData GetSlotData(U32 index) const noexcept { return slotsData[index]; }
 	};
 }

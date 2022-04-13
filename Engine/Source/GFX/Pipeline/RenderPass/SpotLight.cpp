@@ -82,11 +82,12 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			{
 				auto& shadowCBuffer = data.ShadowBuffers.Get().at(j);
 				auto& cbuffer = data.TransformBuffers.Get().at(j);
-				TransformBuffer* shadowBuffer = reinterpret_cast<TransformBuffer*>(shadowCBuffer.GetRegion());
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
+					TransformBuffer* shadowBuffer = reinterpret_cast<TransformBuffer*>(shadowCBuffer.GetRegion(dev));
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
+
 					auto entity = group[i];
 					const auto& transform = group.get<Data::TransformGlobal>(entity);
 					const auto& lightData = group.get<Data::SpotLight>(entity);
@@ -128,6 +129,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 					data.VolumeVB.Bind(cl);
 					data.VolumeIB.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, data.VolumeIB.GetCount());
 					renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 					ZE_DRAW_TAG_END(cl);

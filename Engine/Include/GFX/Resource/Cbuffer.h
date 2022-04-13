@@ -25,7 +25,9 @@ namespace ZE::GFX::Resource
 		// Main Gfx API
 
 		// Get pointer to region of a buffer. Only valid on dynamic buffers
-		constexpr void* GetRegion() const noexcept { void* buffer = nullptr; ZE_API_BACKEND_CALL_RET(buffer, GetRegion); return buffer; }
+		constexpr void* GetRegion(Device& dev) const { void* buffer = nullptr; ZE_API_BACKEND_CALL_RET(buffer, GetRegion, dev); return buffer; }
+		// Indicates that CPU stopped writing to resource, must be called before GPU can use the data
+		constexpr void FlushRegion(Device& devs) const noexcept { ZE_API_BACKEND_CALL(FlushRegion, devs); }
 		// Requires call to Device::BeginUploadRegion() if created buffer is not dynamic or 'values' is not nullptr
 		constexpr void Update(Device& dev, const void* values, U32 bytes) const { ZE_API_BACKEND_CALL(Update, dev, values, bytes); }
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_API_BACKEND_CALL(Bind, cl, bindCtx); }

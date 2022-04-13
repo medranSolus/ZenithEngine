@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX11::Resource
 	class CBuffer final
 	{
 		DX::ComPtr<ID3D11Buffer> buffer;
-		void* bufferData = nullptr;
+		bool dynamic;
 
 	public:
 		CBuffer() = default;
@@ -16,7 +16,8 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_CLASS_MOVE(CBuffer);
 		~CBuffer() = default;
 
-		constexpr void* GetRegion() const noexcept { ZE_ASSERT(bufferData, "CBuffer is not dynamic!"); return bufferData; }
+		void* GetRegion(GFX::Device& dev) const;
+		void FlushRegion(GFX::Device& dev) const noexcept;
 
 		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;

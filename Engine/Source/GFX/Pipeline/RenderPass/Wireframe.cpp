@@ -74,9 +74,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				ctx.Reset();
 
 				// Compute single batch
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(k)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
 					auto entity = visibleGroup[i];
@@ -92,6 +92,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}

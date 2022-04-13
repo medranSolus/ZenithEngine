@@ -77,7 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(list);
-		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth); // Bind 5 mip levels
+		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
 		renderData.Buffers.SetSRV(list, prefilterCtx, ids.Depth);
 		renderData.SettingsBuffer.Bind(list, prefilterCtx);
 		list.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);

@@ -127,24 +127,31 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
-		for (U32 i = 0; i < count; ++i)
-		{
-			auto slotInfo = bindCtx.BindingSchema.Get().dx11.GetCurrentSlot(bindCtx.Count++);
+		auto& schema = bindCtx.BindingSchema.Get().dx11;
 
-			if (slotInfo.first & GFX::Resource::ShaderType::Compute)
-				cl.Get().dx11.GetContext()->CSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
+		auto slotInfo = schema.GetCurrentSlot(bindCtx.Count++);
+		ZE_ASSERT(slotInfo.SlotsCount == 1, "Texture pack slot should only contain 1 entry!");
+
+		auto slotData = schema.GetSlotData(slotInfo.DataStart);
+		ZE_ASSERT(slotData.Count == count, "Texture pack slot should contain space for all current textures!");
+
+		auto* ctx = cl.Get().dx11.GetContext();
+		for (U32 i = 0; i < count; ++i, ++slotData.BindStart)
+		{
+			if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
+				ctx->CSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
 			else
 			{
-				if (slotInfo.first & GFX::Resource::ShaderType::Vertex)
-					cl.Get().dx11.GetContext()->VSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
-				if (slotInfo.first & GFX::Resource::ShaderType::Domain)
-					cl.Get().dx11.GetContext()->DSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
-				if (slotInfo.first & GFX::Resource::ShaderType::Hull)
-					cl.Get().dx11.GetContext()->HSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
-				if (slotInfo.first & GFX::Resource::ShaderType::Geometry)
-					cl.Get().dx11.GetContext()->GSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
-				if (slotInfo.first & GFX::Resource::ShaderType::Pixel)
-					cl.Get().dx11.GetContext()->PSSetShaderResources(slotInfo.second, 1, srvs[i].GetAddressOf());
+				if (slotData.Shaders & GFX::Resource::ShaderType::Vertex)
+					ctx->VSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
+				if (slotData.Shaders & GFX::Resource::ShaderType::Domain)
+					ctx->DSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
+				if (slotData.Shaders & GFX::Resource::ShaderType::Hull)
+					ctx->HSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
+				if (slotData.Shaders & GFX::Resource::ShaderType::Geometry)
+					ctx->GSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
+				if (slotData.Shaders & GFX::Resource::ShaderType::Pixel)
+					ctx->PSSetShaderResources(slotData.BindStart, 1, srvs[i].GetAddressOf());
 			}
 		}
 	}

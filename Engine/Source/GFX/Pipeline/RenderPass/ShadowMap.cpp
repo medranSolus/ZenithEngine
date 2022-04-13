@@ -118,9 +118,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.Reset();
 
 				// Compute single batch
-				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
 				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
 				{
+					ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), PixelVal::Gray);
 
 					auto entity = solidGroup[i];
@@ -136,6 +136,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}
@@ -236,9 +237,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.Reset();
 
 				// Compute single batch
-				ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion());
 				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < transparentCount; ++currentTransform, ++i)
 				{
+					ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0x5D, 0x5E, 0x61));
 
 					EID entity = transparentGroup[i];
@@ -274,6 +275,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}

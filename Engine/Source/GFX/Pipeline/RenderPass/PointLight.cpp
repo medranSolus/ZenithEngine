@@ -74,10 +74,11 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			for (U64 i = 0, j = 0; i < count; ++j)
 			{
 				auto& cbuffer = data.TransformBuffers.Get().at(j);
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 
 				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
 				{
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
+
 					auto entity = group[i];
 					const auto& transform = group.get<Data::TransformGlobal>(entity);
 					ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, i);
@@ -110,6 +111,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					data.VolumeVB.Bind(cl);
 					data.VolumeIB.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, data.VolumeIB.GetCount());
 					renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 					ZE_DRAW_TAG_END(cl);

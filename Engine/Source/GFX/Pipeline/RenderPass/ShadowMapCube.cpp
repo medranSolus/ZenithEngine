@@ -87,7 +87,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			Utils::ResizeTransformBuffers<CubeView, CubeViewBuffer>(dev, data.ViewBuffers.Get(), lightNumber + 1);
 
 			// Prepare view-projections for casting onto 6 faces
-			CubeView& viewBuffer = reinterpret_cast<CubeViewBuffer*>(data.ViewBuffers.Get().at(viewBufferIndex).GetRegion())->Cubes[viewBufferLightOffset];
+			CubeView& viewBuffer = reinterpret_cast<CubeViewBuffer*>(data.ViewBuffers.Get().at(viewBufferIndex).GetRegion(dev))->Cubes[viewBufferLightOffset];
 			const Vector position = Math::XMLoadFloat3(&lightPos);
 			const Vector up = { 0.0f, 1.0f, 0.0f, 0.0f };
 			// +x
@@ -129,6 +129,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			data.PreviousEntityCount += solidCount;
 			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), data.PreviousEntityCount + transparentCount);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+			data.ViewBuffers.Get().at(viewBufferIndex).FlushRegion(dev);
 
 			// Depth pre-pass
 			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
@@ -151,9 +152,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ctx.Reset();
 
 				// Compute single batch
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 				for (; currentTransform < TransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
 				{
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), PixelVal::Gray);
 
 					auto entity = solidGroup[i];
@@ -168,6 +169,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}
@@ -272,9 +274,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ctx.Reset();
 
 				// Compute single batch
-				TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion());
 				for (; currentTransform < TransformBuffer::TRANSFORM_COUNT && i < transparentCount; ++currentTransform, ++i)
 				{
+					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
 					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = transparentGroup[i];
@@ -309,6 +311,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}

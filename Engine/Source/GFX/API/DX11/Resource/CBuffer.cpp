@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::API::DX11::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic)
+	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic) : dynamic(dynamic)
 	{
 		ZE_GFX_ENABLE_ID(dev.Get().dx11);
 
@@ -41,50 +41,69 @@ namespace ZE::GFX::API::DX11::Resource
 
 		if (bufferDesc.ByteWidth > bytes)
 			delete[] reinterpret_cast<const U8*>(data);
-		if (dynamic)
-		{
-			D3D11_MAPPED_SUBRESOURCE subres;
-			ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
-			bufferData = subres.pData;
-		}
+	}
+
+	void* CBuffer::GetRegion(GFX::Device& dev) const
+	{
+		ZE_ASSERT(dynamic, "CBuffer is not dynamic!");
+		ZE_GFX_ENABLE(dev.Get().dx11);
+
+		D3D11_MAPPED_SUBRESOURCE subres;
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
+		return subres.pData;
+	}
+
+	void CBuffer::FlushRegion(GFX::Device& dev) const noexcept
+	{
+		ZE_ASSERT(dynamic, "CBuffer is not dynamic!");
+		dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
 	}
 
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
 	{
-		if (bufferData)
-			memcpy(bufferData, values, bytes);
+		if (dynamic)
+		{
+			ZE_GFX_ENABLE(dev.Get().dx11);
+
+			D3D11_MAPPED_SUBRESOURCE subres;
+			ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
+			memcpy(subres.pData, values, bytes);
+			dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
+		}
 		else
 			dev.Get().dx11.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
 	}
 
 	void CBuffer::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
-		auto slotInfo = bindCtx.BindingSchema.Get().dx11.GetCurrentSlot(bindCtx.Count++);
+		auto& schema = bindCtx.BindingSchema.Get().dx11;
 
-		if (slotInfo.first & GFX::Resource::ShaderType::Compute)
-			cl.Get().dx11.GetContext()->CSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+		auto slotInfo = schema.GetCurrentSlot(bindCtx.Count++);
+		ZE_ASSERT(slotInfo.SlotsCount == 1, "Constant buffer slot should only contain 1 entry!");
+
+		auto slotData = schema.GetSlotData(slotInfo.DataStart);
+		ZE_ASSERT(slotData.Count == 1, "Constant buffer slot should only be bound as single buffer!");
+
+		auto* ctx = cl.Get().dx11.GetContext();
+		if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
+			ctx->CSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 		else
 		{
-			if (slotInfo.first & GFX::Resource::ShaderType::Vertex)
-				cl.Get().dx11.GetContext()->VSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
-			if (slotInfo.first & GFX::Resource::ShaderType::Domain)
-				cl.Get().dx11.GetContext()->DSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
-			if (slotInfo.first & GFX::Resource::ShaderType::Hull)
-				cl.Get().dx11.GetContext()->HSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
-			if (slotInfo.first & GFX::Resource::ShaderType::Geometry)
-				cl.Get().dx11.GetContext()->GSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
-			if (slotInfo.first & GFX::Resource::ShaderType::Pixel)
-				cl.Get().dx11.GetContext()->PSSetConstantBuffers(slotInfo.second, 1, buffer.GetAddressOf());
+			if (slotData.Shaders & GFX::Resource::ShaderType::Vertex)
+				ctx->VSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+			if (slotData.Shaders & GFX::Resource::ShaderType::Domain)
+				ctx->DSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+			if (slotData.Shaders & GFX::Resource::ShaderType::Hull)
+				ctx->HSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+			if (slotData.Shaders & GFX::Resource::ShaderType::Geometry)
+				ctx->GSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+			if (slotData.Shaders & GFX::Resource::ShaderType::Pixel)
+				ctx->PSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 		}
 	}
 
 	void CBuffer::Free(GFX::Device& dev) noexcept
 	{
-		if (bufferData)
-		{
-			bufferData = nullptr;
-			dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
-		}
 		buffer = nullptr;
 	}
 }
