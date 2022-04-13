@@ -10,6 +10,7 @@
 * Removed component accesses on literal constants: 1.xxx -> 1
 * Specified max unroll number for loop with stepsPerSlice (line 417): [unroll] -> [unroll(3)]
 * Specified unroll for loop with sliceCount (line 370): //[unroll] -> [unroll(9)]
+* For DX11 in XeGTAO_Denoise() replaced GatherRed with texture fetches
 */
 #include "XeGTAO.hlsli"
 

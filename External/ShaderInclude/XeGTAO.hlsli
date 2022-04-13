@@ -731,6 +731,27 @@ void XeGTAO_DecodeGatherPartial( const uint4 packedValue, out AOTermType outDeco
 #endif
 }
 
+#ifdef _DX11
+lpfloat4 GatherRedFloat(Texture2D<lpfloat> tex, const in float2 center, const in int2 offset)
+{
+    lpfloat4 data;
+    data.x = tex.Load(int3(center + float2(-0.5f, 0.5f), 0), offset);
+    data.y = tex.Load(int3(center + float2(0.5f, 0.5f), 0), offset);
+    data.z = tex.Load(int3(center + float2(0.5f, -0.5f), 0), offset);
+    data.w = tex.Load(int3(center + float2(-0.5f, -0.5f), 0), offset);
+    return data;
+}
+
+uint4 GatherRedUInt(Texture2D<uint> tex, const in float2 center, const in int2 offset)
+{
+    uint4 data;
+    data.x = tex.Load(int3(center + float2(-0.5f, 0.5f), 0), offset);
+    data.y = tex.Load(int3(center + float2(0.5f, 0.5f), 0), offset);
+    data.z = tex.Load(int3(center + float2(0.5f, -0.5f), 0), offset);
+    data.w = tex.Load(int3(center + float2(-0.5f, -0.5f), 0), offset);
+    return data;
+}
+#endif
 void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Texture2D<uint> sourceAOTerm, Texture2D<lpfloat> sourceEdges, SamplerState texSampler, RWTexture2D<uint> outputTexture, const uniform bool finalApply )
 {
     const lpfloat blurAmount = (finalApply)?((lpfloat)consts.DenoiseBlurBeta):((lpfloat)consts.DenoiseBlurBeta/(lpfloat)5.0);
@@ -745,6 +766,7 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
 
     // gather edge and visibility quads, used later
     const float2 gatherCenter = float2( pixCoordBase.x, pixCoordBase.y ) * consts.ViewportPixelSize;
+#ifdef _DX12
     lpfloat4 edgesQ0        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 0, 0 ) );
     lpfloat4 edgesQ1        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 2, 0 ) );
     lpfloat4 edgesQ2        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 1, 2 ) );
@@ -753,6 +775,16 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
     AOTermType visQ1[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 2, 0 ) ), visQ1 );
     AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 0, 2 ) ), visQ2 );
     AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 2, 2 ) ), visQ3 );
+#elif defined(_DX11)
+    lpfloat4 edgesQ0 = GatherRedFloat(sourceEdges, gatherCenter, int2(0, 0));
+    lpfloat4 edgesQ1 = GatherRedFloat(sourceEdges, gatherCenter, int2(2, 0));
+    lpfloat4 edgesQ2 = GatherRedFloat(sourceEdges, gatherCenter, int2(1, 2));
+
+    AOTermType visQ0[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(0, 0)), visQ0);
+    AOTermType visQ1[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(2, 0)), visQ1);
+    AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(0, 2)), visQ2);
+    AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(2, 2)), visQ3);
+#endif
 
     for( int side = 0; side < 2; side++ )
     {
