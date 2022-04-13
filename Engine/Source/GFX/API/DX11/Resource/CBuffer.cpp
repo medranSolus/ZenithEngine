@@ -86,19 +86,19 @@ namespace ZE::GFX::API::DX11::Resource
 
 		auto* ctx = cl.Get().dx11.GetContext();
 		if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
-			ctx->CSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+			ctx->CSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 		else
 		{
 			if (slotData.Shaders & GFX::Resource::ShaderType::Vertex)
-				ctx->VSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+				ctx->VSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 			if (slotData.Shaders & GFX::Resource::ShaderType::Domain)
-				ctx->DSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+				ctx->DSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 			if (slotData.Shaders & GFX::Resource::ShaderType::Hull)
-				ctx->HSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+				ctx->HSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 			if (slotData.Shaders & GFX::Resource::ShaderType::Geometry)
-				ctx->GSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+				ctx->GSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 			if (slotData.Shaders & GFX::Resource::ShaderType::Pixel)
-				ctx->PSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
+				ctx->PSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
 		}
 	}
 

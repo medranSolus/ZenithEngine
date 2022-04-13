@@ -100,6 +100,8 @@ namespace ZE::GUI
 		case GfxApiType::DX11:
 		{
 			ZE_DRAW_TAG_BEGIN(mainList.Get().dx11, L"ImGui", PixelVal::Cobalt);
+			mainList.Get().dx11.GetContext()->OMSetRenderTargets(1,
+				reinterpret_cast<ID3D11RenderTargetView* const*>(gfx.GetSwapChain().Get().dx11.GetRTV().GetAddressOf()), nullptr);
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 			ZE_DRAW_TAG_END(mainList.Get().dx11);
 			break;
