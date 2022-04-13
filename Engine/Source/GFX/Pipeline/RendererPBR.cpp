@@ -242,7 +242,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInnerBuffer(Resource::State::UnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
 			node.AddInnerBuffer(Resource::State::UnorderedAccess,
-				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
+				{ width, height, 1, FrameResourceFlags::ForceSRV, frameBufferDesc.GetFormat(ssao), ColorF4() });
 			node.AddInnerBuffer(Resource::State::UnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
 			node.AddOutput("SB", Resource::State::UnorderedAccess, ssao);

@@ -39,7 +39,7 @@ namespace ZE::GUI
 		}
 		default:
 		{
-			assert("GUI not supported under current API!" && false);
+			ZE_ASSERT(false, "GUI not supported under current API!");
 			break;
 		}
 		}
@@ -83,7 +83,7 @@ namespace ZE::GUI
 		}
 		default:
 		{
-			assert("GUI not supported under current API!" && false);
+			ZE_ASSERT(false, "GUI not supported under current API!");
 			break;
 		}
 		}
@@ -123,7 +123,7 @@ namespace ZE::GUI
 		}
 		default:
 		{
-			assert("GUI not supported under current API!" && false);
+			ZE_ASSERT(false, "GUI not supported under current API!");
 			break;
 		}
 		}

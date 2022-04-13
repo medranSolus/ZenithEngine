@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		SwapChain() = default;
-		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev);
+		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev, bool shaderInput);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();
 

@@ -25,7 +25,8 @@ namespace ZE::GFX::API::DX
 	);
 
 	// Creates swap chain for window and returns present flags
-	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device, HWND window, ComPtr<IDXGISwapChain4>& swapChain
+	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device,
+		HWND window, ComPtr<IDXGISwapChain4>& swapChain, bool shaderInput
 #ifdef _ZE_MODE_DEBUG
 		, DebugInfoManager& debugManager
 #endif

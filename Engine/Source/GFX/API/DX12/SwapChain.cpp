@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX12
 {
-	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev)
+	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev, bool shaderInput)
 	{
 		ZE_GFX_ENABLE(dev.Get().dx12);
 		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(
@@ -11,7 +11,7 @@ namespace ZE::GFX::API::DX12
 			debugManager
 #endif
 		);
-		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), swapChain
+		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), swapChain, shaderInput
 #ifdef _ZE_MODE_DEBUG
 			, debugManager
 #endif
@@ -49,8 +49,14 @@ namespace ZE::GFX::API::DX12
 			DX::ComPtr<ID3D12Resource> buffer;
 			ZE_GFX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
-			ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
-			rtvSrv[i] = { rtvHandle, srvHandle.second };
+			rtvSrv[i].first = rtvHandle;
+			if (shaderInput)
+			{
+				ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
+				rtvSrv[i].second = srvHandle.second;
+			}
+			else
+				rtvSrv[i].second.ptr = -1;
 			rtvHandle.ptr += rtvDescSize;
 			srvHandle.first.ptr += srvDescSize;
 			srvHandle.second.ptr += srvDescSize;

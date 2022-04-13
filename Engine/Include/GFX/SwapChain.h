@@ -15,8 +15,8 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
-		constexpr void Init(const Window::MainWindow& window, Device& dev) { ZE_API_BACKEND_VAR.Init(window, dev); }
-		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev) { ZE_API_BACKEND_VAR.Switch(nextApi, window, dev); }
+		constexpr void Init(const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_API_BACKEND_VAR.Init(window, dev, shaderInput); }
+		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_API_BACKEND_VAR.Switch(nextApi, window, dev, shaderInput); }
 		ZE_API_BACKEND_GET(SwapChain);
 
 		// Main Gfx API

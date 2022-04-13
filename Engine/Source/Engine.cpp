@@ -5,7 +5,7 @@ namespace ZE
 	Engine::Engine(const EngineParams& params) : StartupConfig(params)
 	{
 		window.Init(params.WindowName, params.Width, params.Height);
-		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount);
+		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, false);
 		gui.Init(graphics.GetDevice());
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), textureLib,
 			window.GetWidth(), window.GetHeight(), params.Renderer);

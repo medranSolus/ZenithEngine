@@ -158,8 +158,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
 
-		scissorRect.right = resources[rid].Width;
-		scissorRect.bottom = resources[rid].Height;
+		const UInt2 size = resources[rid].Size;
+		scissorRect.right = size.x;
+		scissorRect.bottom = size.y;
 		viewport.Width = static_cast<float>(scissorRect.right);
 		viewport.Height = static_cast<float>(scissorRect.bottom);
 
@@ -200,7 +201,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		resDesc.SampleDesc.Count = 1;
 		resDesc.SampleDesc.Quality = 0;
 		resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		for (RID i = 1; i < desc.ResourceInfo.size(); ++i)
+		for (RID i = 1; i < resourceCount; ++i)
 		{
 			const auto& res = desc.ResourceInfo.at(i);
 			resDesc.Width = res.Width;
@@ -528,15 +529,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new BufferData[invalidID];
 		resources[0].Resource = nullptr;
-		resources[0].Width = desc.ResourceInfo.at(0).Width;
-		resources[0].Height = desc.ResourceInfo.at(0).Height;
+		resources[0].Size.x = desc.ResourceInfo.at(0).Width;
+		resources[0].Size.y = desc.ResourceInfo.at(0).Height;
 		for (RID i = 1; auto& res : resourcesInfo)
 		{
 			aliasingResources[i - 1] = res.IsAliasing();
 			auto& data = resources[i];
 			data.Resource = std::move(res.Resource);
-			data.Width = desc.ResourceInfo.at(i).Width;
-			data.Height = desc.ResourceInfo.at(i).Height;
+			data.Size.x = desc.ResourceInfo.at(i).Width;
+			data.Size.y = desc.ResourceInfo.at(i).Height;
 			++i;
 		}
 
@@ -693,7 +694,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 							uavDesc.Texture2D.MipSlice = j;
 
 						ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
-						targetResourceMip[i - 1] = { uavHandle, srvUavHandle.second };
+						targetResourceMip[j] = { uavHandle, srvUavHandle.second };
 						uavHandle.ptr += srvUavDescSize;
 						srvUavHandle.first.ptr += srvUavDescSize;
 						srvUavHandle.second.ptr += srvUavDescSize;
@@ -942,7 +943,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 	}
 
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const
+	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rtvDsv[rid].ptr != -1, "Current resource is not suitable for being render target!");
@@ -951,7 +952,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rid, TRUE, nullptr);
 	}
 
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const
+	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rtvDsv[rid].ptr != -1, "Current resource is not suitable for being render target!");
@@ -962,7 +963,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rid - 1] + mipLevel, TRUE, nullptr);
 	}
 
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid) const
+	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
@@ -972,7 +973,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, TRUE, rtvDsv + rid);
 	}
 
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const
+	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
@@ -984,7 +985,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, TRUE, rtvDsvMips[rid - 1] + mipLevel);
 	}
 
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const
+	void FrameBuffer::SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
 	{
 		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
 		ZE_ASSERT(dsv < resourceCount, "DSV resource ID outside available range!");
@@ -996,7 +997,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rtv, TRUE, rtvDsv + dsv);
 	}
 
-	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const
+	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(srv[rid].ptr != -1, "Current resource is not suitable for being shader resource!");
@@ -1020,7 +1021,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, srv[rid]);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
@@ -1045,7 +1046,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uav[rid - 1].second);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
@@ -1064,7 +1065,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uavMips[rid - 1][mipLevel].second);
 	}
 
-	void FrameBuffer::BarrierUAV(GFX::CommandList& cl, RID rid) const
+	void FrameBuffer::BarrierUAV(GFX::CommandList& cl, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
@@ -1077,7 +1078,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
 	}
 
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const
+	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 
@@ -1116,7 +1117,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
 	}
 
-	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const
+	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rtvDsv[rid].ptr != -1, "Current resource is not suitable for being render target!");
@@ -1125,7 +1126,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
 
-	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const
+	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
@@ -1135,7 +1136,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
 	}
 
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const
+	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
@@ -1146,7 +1147,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			resources[rid].Resource.Get(), reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
 
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const
+	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
@@ -1157,7 +1158,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			resources[rid].Resource.Get(), reinterpret_cast<const U32*>(colors), 0, nullptr);
 	}
 
-	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain)
+	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
 	{
 		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, resources[0].Resource);
 		rtvDsv[0] = backbufferRtvSrv.first;
@@ -1203,7 +1204,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 	}
 
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept
+	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const
 	{
 		// Perform normal transitions and reseting resources to initial state for aliasing
 		auto& transition = transitions[level];

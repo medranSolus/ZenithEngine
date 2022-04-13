@@ -584,8 +584,11 @@ void App::MakeFrame()
 {
 	engine.BeginFrame();
 	//ImGui::ShowDemoWindow();
-	ShowOptionsWindow();
-	ShowObjectWindow();
+	if (engine.IsGuiActive())
+	{
+		ShowOptionsWindow();
+		ShowObjectWindow();
+	}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 	engine.EndFrame();
 }

@@ -19,8 +19,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		struct BufferData
 		{
 			DX::ComPtr<ID3D12Resource> Resource;
-			U32 Width;
-			U32 Height;
+			UInt2 Size;
 		};
 
 		TransitionPoint initTransitions;
@@ -67,44 +66,44 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
-		UInt2 GetDimmensions(RID rid) const noexcept { const auto& data = resources[rid]; return { data.Width, data.Height }; }
+		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
 
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 
-		void SetRTV(GFX::CommandList& cl, RID rid) const;
-		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const;
-		void SetDSV(GFX::CommandList& cl, RID rid) const;
-		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const;
-		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const;
+		void SetRTV(GFX::CommandList& cl, RID rid) const noexcept;
+		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
+		void SetDSV(GFX::CommandList& cl, RID rid) const noexcept;
+		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
+		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept;
 
 		template<U32 RTVCount>
-		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const;
+		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept;
 		template<U32 RTVCount>
-		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const;
+		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept;
 
-		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const;
+		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept;
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept;
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept;
 
-		void BarrierUAV(GFX::CommandList& cl, RID rid) const;
-		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const;
+		void BarrierUAV(GFX::CommandList& cl, RID rid) const noexcept;
+		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept;
 		template<U32 BarrierCount>
-		void BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const;
+		void BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const noexcept;
 
-		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const;
-		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const;
-		void ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const;
-		void ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const;
+		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept;
+		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept;
+		void ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept;
+		void ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept;
 
-		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain);
+		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
-		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
+		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const;
 	};
 
 #pragma region Functions
 	template<U32 RTVCount>
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const
+	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetRTV() should be only used for multiple render targets!");
 
@@ -126,7 +125,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 
 	template<U32 RTVCount>
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const
+	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetOutput() should be only used for multiple render targets!");
 		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
@@ -150,7 +149,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 
 	template<U32 BarrierCount>
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const
+	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const noexcept
 	{
 		static_assert(BarrierCount > 1, "For performance reasons FrameBuffer::BarrierTransition() should be only used for multiple barriers!");
 
