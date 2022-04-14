@@ -32,7 +32,7 @@ namespace ZE::Data
 
 	template<EmptyType T>
 	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
-	template<EmptyType T, EmptyType Visibility>
+	template<EmptyType T, typename Visibility>
 	constexpr auto GetVisibleRenderGroup(Storage& registry) noexcept { return registry.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
 
 	inline auto GetDirectionalLightGroup(Storage& registry) noexcept { return registry.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }

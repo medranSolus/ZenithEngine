@@ -37,7 +37,7 @@ if(NOT (ZE_NO_DATA OR ZE_CI_JOB))
 endif()
 
 # DirectX 12 debug library
-if(WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(WIN32 AND ${CMAKE_BUILD_TYPE} MATCHES "Debug|RelWithDebInfo")
     copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll")
 endif()
 
