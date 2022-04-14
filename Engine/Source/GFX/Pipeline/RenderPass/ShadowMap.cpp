@@ -135,8 +135,17 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
 
+				// Sort by pipeline state
+				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
+					{
+						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular);
+						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
+						return state1 < state2;
+					});
+				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
+
 				// Solid pass
-				cl.Open(dev);
+				cl.Open(dev, data.StatesSolid[currentState]);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Solid", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);

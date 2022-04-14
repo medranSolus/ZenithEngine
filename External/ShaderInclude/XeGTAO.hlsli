@@ -765,8 +765,8 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
     lpfloat weightBR[2];
 
     // gather edge and visibility quads, used later
-    const float2 gatherCenter = float2( pixCoordBase.x, pixCoordBase.y ) * consts.ViewportPixelSize;
 #ifdef _DX12
+    const float2 gatherCenter = float2(pixCoordBase.x, pixCoordBase.y) * consts.ViewportPixelSize;
     lpfloat4 edgesQ0        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 0, 0 ) );
     lpfloat4 edgesQ1        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 2, 0 ) );
     lpfloat4 edgesQ2        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 1, 2 ) );
@@ -776,6 +776,7 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
     AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 0, 2 ) ), visQ2 );
     AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 2, 2 ) ), visQ3 );
 #elif defined(_DX11)
+    const float2 gatherCenter = float2(pixCoordBase);
     lpfloat4 edgesQ0 = GatherRedFloat(sourceEdges, gatherCenter, int2(0, 0));
     lpfloat4 edgesQ1 = GatherRedFloat(sourceEdges, gatherCenter, int2(2, 0));
     lpfloat4 edgesQ2 = GatherRedFloat(sourceEdges, gatherCenter, int2(1, 2));

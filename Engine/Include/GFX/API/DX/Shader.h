@@ -37,11 +37,11 @@ namespace ZE::GFX::API::DX
 		// TODO: Seperate shader compilation for every target API and place it in seperate subdirectory
 		if constexpr (IsDX12)
 		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + name + L".cso").c_str(), &bytecode));
+			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX12/" + name + L".cso").c_str(), &bytecode));
 		}
 		else
 		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/" + name + L".cso").c_str(), &bytecode));
+			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX11/" + name + L".cso").c_str(), &bytecode));
 		}
 	}
 #pragma endregion

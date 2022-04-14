@@ -6,7 +6,8 @@
 #ifdef _DX11
 #define CBUFFER_EX(name, dataType, slot, space_slot) cbuffer dataType##Buffer : register(b##slot) { dataType cb_##name; }
 #elif defined _DX12
-#define CBUFFER_EX(name, dataType, slot, space_slot) ConstantBuffer<dataType> cb_##name : register(b##slot, space##space_slot)
+#define CBUFFER_EX(name, dataType, slot, space_slot) cbuffer dataType##Buffer : register(b##slot) { dataType cb_##name; }
+//#define CBUFFER_EX(name, dataType, slot, space_slot) ConstantBuffer<dataType> cb_##name : register(b##slot, space##space_slot)
 #else
 #error Wrong type of graphics API used!
 #endif

@@ -144,8 +144,17 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
 
+			// Sort by pipeline state
+			solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
+				{
+					const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m1.ID));
+					const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID));
+					return state1 < state2;
+				});
+			currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
+
 			// Solid pass
-			cl.Open(dev);
+			cl.Open(dev, data.StatesSolid[currentState]);
 			ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
