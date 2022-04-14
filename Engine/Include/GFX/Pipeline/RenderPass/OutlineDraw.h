@@ -7,7 +7,7 @@
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
 	// Indicates that entity is inside view frustum
-	struct InsideFrustum {};
+	struct InsideFrustum { Resource::DynamicBufferAlloc Transform; };
 
 	struct Resources
 	{
@@ -20,7 +20,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		U32 BindingIndex;
 		Resource::PipelineStateGfx StateStencil;
 		Resource::PipelineStateGfx StateRender;
-		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
 	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }

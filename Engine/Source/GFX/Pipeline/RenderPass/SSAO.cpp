@@ -11,8 +11,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Prefilter pass
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 5, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ 5, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -21,12 +21,12 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Main pass
 		desc.Clear();
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData });
-		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map
+		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
+		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
+		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
+		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -35,10 +35,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Denoise passes
 		desc.Clear();
-		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant });
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant }); // Is last denoise
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map out
+		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev SSAO map
+		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -92,7 +92,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetSRV(list, mainCtx, ids.ViewspaceDepth);
 		renderData.Buffers.SetSRV(list, mainCtx, ids.Normal);
 		data.HilbertLUT.Bind(list, mainCtx);
-		renderData.DynamicBuffers.Get().Bind(list, mainCtx);
+		renderData.BindRendererDynamicData(list, mainCtx);
 		renderData.SettingsBuffer.Bind(list, mainCtx);
 		list.Compute(dev, Math::DivideRoundUp(size.x, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
 			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);

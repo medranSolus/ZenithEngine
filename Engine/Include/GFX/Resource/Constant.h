@@ -21,7 +21,7 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-		constexpr void Set(const T& value) { ZE_API_BACKEND_CALL(Set, value); }
+		constexpr void Set(GFX::Device& dev, const T& value) { ZE_API_BACKEND_CALL(Set, dev, value); }
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_API_BACKEND_CALL(Bind, cl, bindCtx); }
 	};
 
@@ -30,7 +30,7 @@ namespace ZE::GFX::Resource
 	constexpr void Constant<T>::SwitchApi(GfxApiType nextApi, Device& dev)
 	{
 		T data;
-		ZE_API_BACKEND_CALL_RET(data, GetData);
+		ZE_API_BACKEND_CALL_RET(data, GetData, dev);
 		ZE_API_BACKEND_VAR.Switch(nextApi, dev, std::move(data));
 	}
 #pragma endregion

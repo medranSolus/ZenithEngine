@@ -166,6 +166,8 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 		FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances)
 	{
+		execData.DynamicBuffers.Exec([&dev](auto& x) { x.Init(dev); });
+
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
 		std::vector<std::vector<U64>> syncList(nodes.size());
@@ -752,7 +754,8 @@ namespace ZE::GFX::Pipeline
 		CommandList& mainList = gfx.GetMainList();
 
 		gfx.WaitForFrame();
-		execData.DynamicBuffers.Get().Update(dev, execData.DynamicData, dynamicDataSize);
+		execData.DynamicBuffers.Get().StartFrame(dev);
+		execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 		mainList.Reset(dev);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD

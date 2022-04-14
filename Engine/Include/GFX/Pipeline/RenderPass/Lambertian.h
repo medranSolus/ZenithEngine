@@ -8,7 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
 
 	// Indicates that entity is inside view frustum
-	struct InsideFrustumSolid {};
+	struct InsideFrustumSolid { Resource::DynamicBufferAlloc Transform; };
 	// Indicates that entity is inside view frustum and is not opaque
 	struct InsideFrustumNotSolid {};
 
@@ -26,7 +26,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Resource::PipelineStateGfx StateDepth;
 		Ptr<Resource::PipelineStateGfx> StatesSolid;
 		Ptr<Resource::PipelineStateGfx> StatesTransparent;
-		ChainPool<std::vector<Resource::CBuffer>> TransformBuffers;
 	};
 
 	void Clean(void* data);

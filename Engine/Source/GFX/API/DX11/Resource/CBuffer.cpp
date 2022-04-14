@@ -43,22 +43,6 @@ namespace ZE::GFX::API::DX11::Resource
 			delete[] reinterpret_cast<const U8*>(data);
 	}
 
-	void* CBuffer::GetRegion(GFX::Device& dev) const
-	{
-		ZE_ASSERT(dynamic, "CBuffer is not dynamic!");
-		ZE_GFX_ENABLE(dev.Get().dx11);
-
-		D3D11_MAPPED_SUBRESOURCE subres;
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
-		return subres.pData;
-	}
-
-	void CBuffer::FlushRegion(GFX::Device& dev) const noexcept
-	{
-		ZE_ASSERT(dynamic, "CBuffer is not dynamic!");
-		dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
-	}
-
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
 	{
 		if (dynamic)
@@ -86,24 +70,48 @@ namespace ZE::GFX::API::DX11::Resource
 
 		auto* ctx = cl.Get().dx11.GetContext();
 		if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
-			ctx->CSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+			ctx->CSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 		else
 		{
 			if (slotData.Shaders & GFX::Resource::ShaderType::Vertex)
-				ctx->VSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+				ctx->VSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 			if (slotData.Shaders & GFX::Resource::ShaderType::Domain)
-				ctx->DSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+				ctx->DSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 			if (slotData.Shaders & GFX::Resource::ShaderType::Hull)
-				ctx->HSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+				ctx->HSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 			if (slotData.Shaders & GFX::Resource::ShaderType::Geometry)
-				ctx->GSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+				ctx->GSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 			if (slotData.Shaders & GFX::Resource::ShaderType::Pixel)
-				ctx->PSSetConstantBuffers1(slotData.BindStart, 1, buffer.GetAddressOf(), nullptr, nullptr);
+				ctx->PSSetConstantBuffers(slotData.BindStart, 1, buffer.GetAddressOf());
 		}
 	}
 
 	void CBuffer::Free(GFX::Device& dev) noexcept
 	{
 		buffer = nullptr;
+	}
+
+	void CBuffer::GetData(GFX::Device& dev, void* values, U32 bytes) const
+	{
+		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+
+		D3D11_BUFFER_DESC bufferDesc;
+		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bufferDesc.Usage = D3D11_USAGE_STAGING;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		bufferDesc.MiscFlags = 0;
+		bufferDesc.ByteWidth = Math::AlignUp(bytes, 16U);
+		bufferDesc.StructureByteStride = 0;
+
+		DX::ComPtr<ID3D11Buffer> stagingBuffer;
+		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
+		ZE_GFX_SET_ID(buffer, "CBuffer_Staging");
+
+		auto* ctx = dev.Get().dx11.GetMainContext();
+		ctx->CopyResource(stagingBuffer.Get(), buffer.Get());
+		D3D11_MAPPED_SUBRESOURCE subres;
+		ZE_GFX_THROW_FAILED(ctx->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &subres));
+		memcpy(values, subres.pData, bytes);
+		ctx->Unmap(stagingBuffer.Get(), 0);
 	}
 }

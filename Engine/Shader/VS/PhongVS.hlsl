@@ -17,14 +17,14 @@ VSOut main(float3 pos : POSITION,
 	float3 tangent : TANGENT)
 {
 	VSOut vso;
-	vso.worldPos = (float3)mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex].M);
-	vso.worldNormal = mul(normal, (float3x3) cb_transform.Transforms[cb_transformIndex].M);
+	vso.worldPos = (float3)mul(float4(pos, 1.0f), cb_transform.M);
+	vso.worldNormal = mul(normal, (float3x3) cb_transform.M);
 
 	vso.tc = tc;
-	vso.worldTan = mul(tangent, (float3x3)cb_transform.Transforms[cb_transformIndex].M);
+	vso.worldTan = mul(tangent, (float3x3)cb_transform.M);
 
 	vso.cameraDir = (cb_worldData.CameraPos - vso.worldPos) * -1.0f;
-	vso.pos = mul(float4(pos, 1.0f), cb_transform.Transforms[cb_transformIndex].MVP);
+	vso.pos = mul(float4(pos, 1.0f), cb_transform.MVP);
 
 	return vso;
 }

@@ -22,7 +22,7 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 		{
 			GSOut element;
 			element.face = i;
-			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.Cube[cb_viewIndex].ViewProjection[i]);
+			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.ViewProjection[i]);
 			output.Append(element);
 		}
 		output.RestartStrip();

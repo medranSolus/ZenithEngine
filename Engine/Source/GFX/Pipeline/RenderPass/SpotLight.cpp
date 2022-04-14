@@ -24,14 +24,13 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		if (buildData.BindingLib.FetchBinding("light", passData->BindingIndex))
 		{
 			Binding::SchemaDesc desc;
-			desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
-			desc.AddRange({ sizeof(Float3), 2, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
-			desc.AddRange({ 1, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
-			desc.AddRange({ 1, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
-			desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-			desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-			desc.AddRange({ 3, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-			desc.AddRange({ 1, 12, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::CBV });
+			desc.AddRange({ sizeof(Float3), 1, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
+			desc.AddRange({ 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Spot light buffer
+			desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Shadow transform
+			desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+			desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Shadow map
+			desc.AddRange({ 3, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff normal, specular, depth
+			desc.AddRange({ 1, 12, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Renderer dynamic data
 			desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 			passData->BindingIndex = buildData.BindingLib.RegisterCommonBinding(dev, desc, "light");
 		}
@@ -51,9 +50,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		ZE_PSO_SET_NAME(psoDesc, "SpotLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		passData->ShadowBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
-		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
-
 		const auto volume = Primitive::MakeConeSolid(8);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
 		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), volume.Indices.data() });
@@ -64,78 +60,64 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-		data.ShadowData.PreviousEntityCount = 0;
 
 		auto group = Data::GetSpotLightGroup(renderData.Registry);
 		const U64 count = group.size();
 		if (count)
 		{
-			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.ShadowBuffers.Get(), count);
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), count);
-
 			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			for (U64 i = 0, j = 0; i < count; ++j)
+			auto& cbuffer = renderData.DynamicBuffers.Get();
+			for (U64 i = 0; i < count; ++i)
 			{
-				auto& shadowCBuffer = data.ShadowBuffers.Get().at(j);
-				auto& cbuffer = data.TransformBuffers.Get().at(j);
+				auto entity = group[i];
+				const auto& transform = group.get<Data::TransformGlobal>(entity);
+				const auto& lightData = group.get<Data::SpotLight>(entity);
 
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
-				{
-					TransformBuffer* shadowBuffer = reinterpret_cast<TransformBuffer*>(shadowCBuffer.GetRegion(dev));
-					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
+				TransformBuffer transformBuffer;
+				transformBuffer.Transform = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
+					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction);
 
-					auto entity = group[i];
-					const auto& transform = group.get<Data::TransformGlobal>(entity);
-					const auto& lightData = group.get<Data::SpotLight>(entity);
-					shadowBuffer->Transforms[k] = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
-						*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction);
+				cl.Open(dev, data.State);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
+				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
 
-					const auto& light = group.get<Data::SpotLightBuffer>(entity);
-					Float3 translation = transform.Position;
-					translation.y -= light.Volume;
-					const float circleScale = light.Volume * tanf(lightData.OuterAngle + 0.22f);
+				ctx.BindingSchema.SetGraphics(cl);
+				renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
 
-					buffer->Transforms[k] = viewProjection *
-						Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
-							Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f },
-								Math::XMLoadFloat3(&lightData.Direction), true, light.Volume) *
-							Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation)));
+				const auto& light = group.get<Data::SpotLightBuffer>(entity);
+				Float3 translation = transform.Position;
+				translation.y -= light.Volume;
+				const float circleScale = light.Volume * tanf(lightData.OuterAngle + 0.22f);
 
-					cl.Open(dev, data.State);
-					ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
-					renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
+				Resource::Constant<Float3> lightPos(dev, transform.Position);
+				lightPos.Bind(cl, ctx);
+				light.Buffer.Bind(cl, ctx);
+				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 
-					ctx.BindingSchema.SetGraphics(cl);
-					renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
+				transformBuffer.Transform = viewProjection *
+					Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
+						Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f },
+							Math::XMLoadFloat3(&lightData.Direction), true, light.Volume) *
+						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation)));
 
-					Resource::Constant<U32> lightBatchId(dev, k);
-					lightBatchId.Bind(cl, ctx);
-					Resource::Constant<Float3> lightPos(dev, transform.Position);
-					lightPos.Bind(cl, ctx);
-					light.Buffer.Bind(cl, ctx);
+				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
+				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
+				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
+				renderData.BindRendererDynamicData(cl, ctx);
+				renderData.SettingsBuffer.Bind(cl, ctx);
+				ctx.Reset();
 
-					shadowCBuffer.Bind(cl, ctx);
-					cbuffer.Bind(cl, ctx);
-					renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-					renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
-					renderData.DynamicBuffers.Get().Bind(cl, ctx);
-					renderData.SettingsBuffer.Bind(cl, ctx);
-					ctx.Reset();
+				data.VolumeVB.Bind(cl);
+				data.VolumeIB.Bind(cl);
 
-					data.VolumeVB.Bind(cl);
-					data.VolumeIB.Bind(cl);
-
-					cbuffer.FlushRegion(dev);
-					cl.DrawIndexed(dev, data.VolumeIB.GetCount());
-					renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
-					ZE_DRAW_TAG_END(cl);
-					cl.Close(dev);
-					dev.ExecuteMain(cl);
-				}
+				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
+				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
 			}
 		}
 	}

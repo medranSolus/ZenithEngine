@@ -10,9 +10,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
-		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-		desc.AddRange({ sizeof(Float3), 2, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Solid color
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
@@ -31,8 +30,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		psoDesc.FormatDS = PixelFormat::Unknown;
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
 		passData->StateRender.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
-
-		passData->TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(TransformBuffer)), true); });
 
 		return passData;
 	}
@@ -71,80 +68,70 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			count = visibleGroup.size();
 			Utils::ViewSortAscending(visibleGroup, cameraPos);
 
-			// Resize temporary buffer for transform data
-			Utils::ResizeTransformBuffers<Matrix, TransformBuffer>(dev, data.TransformBuffers.Get(), count);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+			auto& cbuffer = renderData.DynamicBuffers.Get();
 
-			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			for (U64 i = 0, j = 0; i < count; ++j)
+			cl.Open(dev, data.StateStencil);
+			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
+			ctx.BindingSchema.SetGraphics(cl);
+			data.StateStencil.SetStencilRef(cl, 0xFF);
+			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+			for (U64 i = 0; i < count; ++i)
 			{
-				cl.Open(dev, data.StateStencil);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Outline Draw Batch_" + std::to_wstring(j)).c_str(), Pixel(0xF9, 0xE0, 0x76));
-				ctx.BindingSchema.SetGraphics(cl);
-				data.StateStencil.SetStencilRef(cl, 0xFF);
-				renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
-				ctx.SetFromEnd(1);
-				auto& cbuffer = data.TransformBuffers.Get().at(j);
-				cbuffer.Bind(cl, ctx);
+				EID entity = visibleGroup[i];
+				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
+
+				TransformBuffer transformBuffer;
+				transformBuffer.Transform = viewProjection *
+					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+
+				auto& transformInfo = visibleGroup.get<InsideFrustum>(entity);
+				transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer));
+				cbuffer.Bind(cl, ctx, transformInfo.Transform);
 				ctx.Reset();
 
-				// Compute single batch
-				for (U32 k = 0, I = i; k < TransformBuffer::TRANSFORM_COUNT && I < count; ++k, ++I)
-				{
-					TransformBuffer* buffer = reinterpret_cast<TransformBuffer*>(cbuffer.GetRegion(dev));
-					ZE_DRAW_TAG_BEGIN(cl, (L"MeshStencil_" + std::to_wstring(k)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
+				const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(entity).ID);
+				geometry.Vertices.Bind(cl);
+				geometry.Indices.Bind(cl);
 
-					auto entity = visibleGroup[I];
-					const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
-					buffer->Transforms[k] = viewProjection *
-						Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-
-					Resource::Constant<U32> meshBatchId(dev, k);
-					meshBatchId.Bind(cl, ctx);
-					ctx.Reset();
-
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(entity).ID);
-					geometry.Vertices.Bind(cl);
-					geometry.Indices.Bind(cl);
-
-					cbuffer.FlushRegion(dev);
-					cl.DrawIndexed(dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(cl);
-				}
-
-				// Separate calls due to different RT/DS sizes
-				data.StateRender.Bind(cl);
-				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetRTV(cl, ids.RenderTarget);
-
-				ctx.SetFromEnd(1);
-				cbuffer.Bind(cl, ctx);
-				Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
-				solidColor.Bind(cl, ctx);
-				ctx.Reset();
-
-				// Compute single batch
-				for (U32 k = 0; k < TransformBuffer::TRANSFORM_COUNT && i < count; ++k, ++i)
-				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"MeshRender_" + std::to_wstring(k)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
-
-					Resource::Constant<U32> meshBatchId(dev, k);
-					meshBatchId.Bind(cl, ctx);
-					ctx.Reset();
-
-					const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(visibleGroup[i]).ID);
-					geometry.Vertices.Bind(cl);
-					geometry.Indices.Bind(cl);
-
-					cl.DrawIndexed(dev, geometry.Indices.GetCount());
-					ZE_DRAW_TAG_END(cl);
-				}
-
+				cl.DrawIndexed(dev, geometry.Indices.GetCount());
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+
+			// Separate calls due to different RT/DS sizes
+			cl.Open(dev, data.StateRender);
+			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
+			ctx.BindingSchema.SetGraphics(cl);
+			renderData.Buffers.SetRTV(cl, ids.RenderTarget);
+
+			ctx.SetFromEnd(0);
+			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
+			solidColor.Bind(cl, ctx);
+			ctx.Reset();
+			for (U64 i = 0; i < count; ++i)
+			{
+				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
+
+				EID entity = visibleGroup[i];
+				cbuffer.Bind(cl, ctx, visibleGroup.get<InsideFrustum>(entity).Transform);
+				ctx.Reset();
+
+				const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(entity).ID);
+				geometry.Vertices.Bind(cl);
+				geometry.Indices.Bind(cl);
+
+				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_DRAW_TAG_END(cl);
+			}
+			ZE_DRAW_TAG_END(cl);
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+
 			// Remove current visibility
 			renderData.Registry.clear<InsideFrustum>();
 		}

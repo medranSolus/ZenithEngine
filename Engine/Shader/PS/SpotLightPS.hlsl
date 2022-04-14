@@ -39,7 +39,7 @@ PSOut main(float3 texPos : TEX_POSITION)
 
 	// Shadow test
 	const float shadowLevel = GetShadowLevel(normalize(cb_worldData.CameraPos - position), lightDistance,
-		directionToLight, GetShadowUV(position, cb_transform.Transforms[cb_transformIndex]), splr_AE, shadowMap, cb_pbrData.ShadowMapSize);
+		directionToLight, GetShadowUV(position, cb_transform), splr_AE, shadowMap, cb_pbrData.ShadowMapSize);
 
 	const float3 normal = DecodeNormal(normalMap.Sample(splr_PR, tc).rg);
 	const float4 specularData = specularMap.Sample(splr_PR, tc);

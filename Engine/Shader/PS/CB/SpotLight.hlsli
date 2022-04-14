@@ -12,5 +12,5 @@ struct SpotLightBuffer
 	float AttnQuad;
 };
 
-CBUFFER(light, SpotLightBuffer, 3);
-CBUFFER(lightPos, float3, 2);
+CBUFFER(light, SpotLightBuffer, 2);
+CBUFFER(lightPos, float3, 1);

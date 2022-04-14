@@ -31,7 +31,7 @@ namespace ZE::GFX
 	template<typename T, const char* TextureSchemaName>
 	constexpr void Material<T, TextureSchemaName>::Init(Device& dev, const T& initData, const Resource::Texture::PackDesc& desc)
 	{
-		buffer.Init(dev, reinterpret_cast<const U8*>(&initData), sizeof(T), false);
+		buffer.Init(dev, reinterpret_cast<const U8*>(&initData), sizeof(T));
 		textures.Init(dev, desc);
 	}
 #pragma endregion

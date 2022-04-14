@@ -8,11 +8,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 	{
 		ExecuteData* passData = new ExecuteData;
 
-		// Create skybox Cube/Dome and use it's vertex and index buffers
-
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Skybox
+		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -63,7 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 		renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(cl, ctx);
-		renderData.DynamicBuffers.Get().Bind(cl, ctx);
+		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		data.VertexBuffer.Bind(cl);
 		data.IndexBuffer.Bind(cl);

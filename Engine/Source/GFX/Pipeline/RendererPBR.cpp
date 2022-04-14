@@ -170,7 +170,7 @@ namespace ZE::GFX::Pipeline
 		SetupSsaoData(width, height);
 
 		dev.BeginUploadRegion();
-		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR), false);
+		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
 
 #pragma region Geometry
@@ -308,8 +308,6 @@ namespace ZE::GFX::Pipeline
 		}
 #pragma endregion
 		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
-
-		execData.DynamicBuffers.Exec([&dev](auto& x) { x.Init(dev, nullptr, sizeof(CameraPBR), true); });
 		dev.EndUploadRegion();
 	}
 

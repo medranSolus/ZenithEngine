@@ -117,6 +117,30 @@ void App::ShowOptionsWindow()
 			run = false;
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::SameLine();
+		switch (Settings::GetGfxApi())
+		{
+		case GfxApiType::DX11:
+		{
+			ImGui::Text("DirectX 11");
+			break;
+		}
+		case GfxApiType::DX12:
+		{
+			ImGui::Text("DirectX 12");
+			break;
+		}
+		case GfxApiType::OpenGL:
+		{
+			ImGui::Text("OpenGL");
+			break;
+		}
+		case GfxApiType::Vulkan:
+		{
+			ImGui::Text("Vulkan");
+			break;
+		}
+		}
 		engine.Reneder().ShowWindow(engine.Gfx().GetDevice());
 	}
 	ImGui::End();
@@ -531,7 +555,7 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 
 	Data::PointLightBuffer& buffer = engine.GetData().emplace<Data::PointLightBuffer>(light,
 		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight), false);
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -556,7 +580,7 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 
 	Data::SpotLightBuffer& buffer = engine.GetData().emplace<Data::SpotLightBuffer>(light,
 		Math::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &spotLight, sizeof(Data::SpotLight), false);
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), &spotLight, sizeof(Data::SpotLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -574,7 +598,7 @@ EID App::AddDirectionalLight(std::string&& name,
 	engine.GetData().emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
 	Data::DirectionalLightBuffer& buffer = engine.GetData().emplace<Data::DirectionalLightBuffer>(light);
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &dirLight, sizeof(Data::DirectionalLight), false);
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), &dirLight, sizeof(Data::DirectionalLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -594,7 +618,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
+	: engine({ WINDOW_TITLE, GfxApiType::DX12, 3, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 

@@ -14,8 +14,8 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 
-		constexpr T& GetData() noexcept { return *reinterpret_cast<T*>(buffer.GetRegion()); }
-		constexpr void Set(const T& value) const { *reinterpret_cast<T*>(buffer.GetRegion()) = value; }
+		constexpr T GetData(GFX::Device& dev) const { T data; buffer.GetData(dev, &data, sizeof(T)); return data; }
+		constexpr void Set(GFX::Device& dev, const T& value) const { buffer.Update(dev, &value, sizeof(T)); }
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 	};

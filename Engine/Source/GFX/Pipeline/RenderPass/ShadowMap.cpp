@@ -15,13 +15,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection)
 	{
 		Binding::SchemaDesc desc;
-		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Vertex, Binding::RangeFlag::Constant });
-		desc.AddRange({ sizeof(float), 2, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
-		desc.AddRange({ sizeof(U32), 1, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
-		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		desc.AddRange({ 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });
-		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant });
+		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		desc.AddRange({ sizeof(float), 1, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Parallax scale
+		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
+		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });  // Renderer dynamic data
+		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -55,7 +53,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
-		passData.TransformBuffers.Exec([&dev](auto& x) { x.emplace_back(dev, nullptr, static_cast<U32>(sizeof(ModelTransformBuffer)), true); });
 		passData.Projection = std::move(projection);
 	}
 
@@ -91,91 +88,71 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, InsideFrustumNotSolid>(renderData.Registry);
 			const U64 solidCount = solidGroup.size();
 			const U64 transparentCount = transparentGroup.size();
-			const U64 bufferOffset = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
-			const U64 bufferTransformOffset = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
-			Utils::ViewSortAscending(solidGroup, position);
 
-			// Resize temporary buffer for transform data
-			data.PreviousEntityCount += solidCount;
-			Utils::ResizeTransformBuffers<ModelTransform, ModelTransformBuffer, BUFFER_SHRINK_STEP>(dev, data.TransformBuffers.Get(), data.PreviousEntityCount + transparentCount);
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+			auto& cbuffer = renderData.DynamicBuffers.Get();
 
-			// Depth pre-pass
-			// Send data in batches to fill every transform buffer to it's maximal capacity (64KB)
-			U64 currentBuffer = bufferOffset;
-			U64 currentTransform = bufferTransformOffset;
-			for (U64 i = 0; i < solidCount; ++currentBuffer)
+			EID currentMaterial = INVALID_EID;
+			U8 currentState = -1;
+			Resource::Constant<Float3> pos(dev, lightPos);
+			if (solidCount)
 			{
+				Utils::ViewSortAscending(solidGroup, position);
+
+				// Depth pre-pass
 				cl.Open(dev, data.StateDepth);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Depth Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x98, 0x9F, 0xA7));
+				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Depth", Pixel(0x98, 0x9F, 0xA7));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
-				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
-				cbuffer.Bind(cl, ctx);
-				renderData.DynamicBuffers.Get().Bind(cl, ctx);
+				ctx.SetFromEnd(2);
+				renderData.BindRendererDynamicData(cl, ctx);
 				ctx.Reset();
-
-				// Compute single batch
-				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
+				for (U64 i = 0; i < solidCount; ++i)
 				{
-					ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion(dev));
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), PixelVal::Gray);
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), PixelVal::Gray);
 
-					auto entity = solidGroup[i];
+					EID entity = solidGroup[i];
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
-					buffer->Transforms[currentTransform].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					buffer->Transforms[currentTransform].ModelViewProjection = viewProjection * buffer->Transforms[currentTransform].Model;
 
-					Resource::Constant<U32> meshBatchId(dev, currentTransform);
-					meshBatchId.Bind(cl, ctx);
+					ModelTransformBuffer transformBuffer;
+					transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
+
+					auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
+					transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
+					cbuffer.Bind(cl, ctx, transformInfo.Transform);
 					ctx.Reset();
 
 					const auto& geometry = renderData.Resources.get<Data::Geometry>(solidGroup.get<Data::MeshID>(entity).ID);
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
-					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}
-
 				ZE_DRAW_TAG_END(cl);
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
-				currentTransform = 0;
-			}
 
-			// Solid pass
-			EID currentMaterial = INVALID_EID;
-			currentBuffer = bufferOffset;
-			currentTransform = bufferTransformOffset;
-			U8 currentState = -1;
-			for (U64 i = 0; i < solidCount; ++currentBuffer)
-			{
+				// Solid pass
 				cl.Open(dev);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Solid Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x79, 0x82, 0x8D));
+				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Solid", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
-				ctx.SetFromEnd(3);
-				data.TransformBuffers.Get().at(currentBuffer).Bind(cl, ctx);
-				renderData.DynamicBuffers.Get().Bind(cl, ctx);
-				Resource::Constant<Float3> pos(dev, lightPos);
+				ctx.SetFromEnd(2);
+				renderData.BindRendererDynamicData(cl, ctx);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
-
-				// Compute single batch
-				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < solidCount; ++currentTransform, ++i)
+				for (U64 i = 0; i < solidCount; ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0x5D, 0x5E, 0x61));
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0x5D, 0x5E, 0x61));
 
-					Resource::Constant<U32> meshBatchId(dev, currentTransform);
-					meshBatchId.Bind(cl, ctx);
+					EID entity = solidGroup[i];
+					cbuffer.Bind(cl, ctx, solidGroup.get<InsideFrustumSolid>(entity).Transform);
 
-					auto entity = solidGroup[i];
 					const Data::MaterialID material = solidGroup.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
 					{
@@ -184,8 +161,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(currentMaterial);
 						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
 						parallaxScale.Bind(cl, ctx);
-						Resource::Constant<U32> materialFlags(dev, matData.Flags);
-						materialFlags.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
 						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
@@ -204,51 +179,39 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}
-
 				ZE_DRAW_TAG_END(cl);
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
-				currentTransform = 0;
 				currentMaterial = INVALID_EID;
 				currentState = -1;
 			}
 
 			// Transparent pass
-			Utils::ViewSortDescending(transparentGroup, position);
-			currentMaterial = INVALID_EID;
-			currentBuffer = data.PreviousEntityCount / ModelTransformBuffer::TRANSFORM_COUNT;
-			currentTransform = data.PreviousEntityCount % ModelTransformBuffer::TRANSFORM_COUNT;
-			currentState = -1;
-			data.PreviousEntityCount += transparentCount;
-			for (U64 i = 0; i < transparentCount; ++currentBuffer)
+			if (transparentCount)
 			{
+				Utils::ViewSortDescending(transparentGroup, position);
+
 				cl.Open(dev);
-				ZE_DRAW_TAG_BEGIN(cl, (L"Shadow Map Transparent Batch_" + std::to_wstring(currentBuffer)).c_str(), Pixel(0x79, 0x82, 0x8D));
+				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Transparent", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
-				ctx.SetFromEnd(3);
-				auto& cbuffer = data.TransformBuffers.Get().at(currentBuffer);
-				cbuffer.Bind(cl, ctx);
-				renderData.DynamicBuffers.Get().Bind(cl, ctx);
-				Resource::Constant<Float3> pos(dev, lightPos);
+				ctx.SetFromEnd(2);
+				renderData.BindRendererDynamicData(cl, ctx);
 				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
-
-				// Compute single batch
-				for (; currentTransform < ModelTransformBuffer::TRANSFORM_COUNT && i < transparentCount; ++currentTransform, ++i)
+				for (U64 i = 0; i < transparentCount; ++i)
 				{
-					ModelTransformBuffer* buffer = reinterpret_cast<ModelTransformBuffer*>(cbuffer.GetRegion(dev));
-					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(currentTransform)).c_str(), Pixel(0x5D, 0x5E, 0x61));
+					ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0x5D, 0x5E, 0x61));
 
 					EID entity = transparentGroup[i];
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
-					buffer->Transforms[currentTransform].Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					buffer->Transforms[currentTransform].ModelViewProjection = viewProjection * buffer->Transforms[currentTransform].Model;
 
-					Resource::Constant<U32> meshBatchId(dev, currentTransform);
-					meshBatchId.Bind(cl, ctx);
+					ModelTransformBuffer transformBuffer;
+					transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
+					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
 
 					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
@@ -258,8 +221,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(material.ID);
 						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
 						parallaxScale.Bind(cl, ctx);
-						Resource::Constant<U32> materialFlags(dev, matData.Flags);
-						materialFlags.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 
 						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
@@ -275,17 +236,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
-					cbuffer.FlushRegion(dev);
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
 					ZE_DRAW_TAG_END(cl);
 				}
-
 				ZE_DRAW_TAG_END(cl);
 				cl.Close(dev);
 				dev.ExecuteMain(cl);
-				currentTransform = 0;
-				currentMaterial = INVALID_EID;
-				currentState = -1;
 			}
 			// Remove current visibility indication
 			renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();

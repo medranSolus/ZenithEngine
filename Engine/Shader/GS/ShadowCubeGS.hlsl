@@ -36,7 +36,7 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 			element.worldTan = input[j].worldTan;
 			element.cameraDir = cb_worldData.CameraPos - input[j].worldPos;
 			element.face = i;
-			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.Cube[cb_viewIndex].ViewProjection[i]);
+			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.ViewProjection[i]);
 			output.Append(element);
 		}
 		output.RestartStrip();

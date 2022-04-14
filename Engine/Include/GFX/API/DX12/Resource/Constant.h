@@ -16,8 +16,8 @@ namespace ZE::GFX::API::DX12::Resource
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 
-		constexpr T& GetData() noexcept { return data; }
-		constexpr void Set(const T& value) noexcept { data = value; }
+		constexpr const T& GetData(GFX::Device& dev) const noexcept { return data; }
+		constexpr void Set(GFX::Device& dev, const T& value) noexcept { data = value; }
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 	};

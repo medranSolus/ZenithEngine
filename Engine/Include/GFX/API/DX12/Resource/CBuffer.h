@@ -9,16 +9,12 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS address;
 		ResourceInfo resInfo;
-		void* buffer = nullptr;
 
 	public:
 		CBuffer() = default;
-		CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic);
+		CBuffer(GFX::Device& dev, const void* values, U32 bytes);
 		ZE_CLASS_MOVE(CBuffer);
 		~CBuffer() = default;
-
-		constexpr void* GetRegion(GFX::Device& dev) const noexcept { ZE_ASSERT(buffer, "CBuffer is not dynamic!"); return buffer; }
-		constexpr void FlushRegion(GFX::Device& dev) const noexcept {}
 
 		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
