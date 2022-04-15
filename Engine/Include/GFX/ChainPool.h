@@ -11,7 +11,7 @@ namespace ZE::GFX
 		Ptr<T> pool;
 
 	public:
-		constexpr ChainPool() noexcept : pool(new T[Settings::GetBackbufferCount()]) {}
+		constexpr ChainPool() noexcept : pool(new T[Settings::GetChainResourceCount()]) {}
 		ZE_CLASS_MOVE(ChainPool);
 		~ChainPool() { if (pool) pool.DeleteArray(); }
 
@@ -20,6 +20,6 @@ namespace ZE::GFX
 		// Get current resource
 		constexpr const T& Get() const noexcept { return pool[Settings::GetCurrentChainResourceIndex()]; }
 		// Execute function on every inner resource, ex. when resources need special init/destroy or to alter their state
-		constexpr void Exec(std::function<void(T&)> x) { for (U32 i = Settings::GetBackbufferCount(); i;) x(pool[--i]); }
+		constexpr void Exec(std::function<void(T&)> x) { for (U32 i = Settings::GetChainResourceCount(); i;) x(pool[--i]); }
 	};
 }

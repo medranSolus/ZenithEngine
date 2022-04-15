@@ -24,8 +24,8 @@ namespace ZE::GFX
 		// Main Gfx API
 
 #ifdef _ZE_MODE_DEBUG
-		constexpr void TagBegin(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBegin, tag, color); }
-		constexpr void TagEnd() const noexcept { ZE_API_BACKEND_CALL(TagEnd); }
+		constexpr void TagBegin(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBegin, tag, color); } }
+		constexpr void TagEnd() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEnd); } }
 #endif
 		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }

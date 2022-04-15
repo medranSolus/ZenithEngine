@@ -60,18 +60,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos)
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
 	{
 		// Clearing data on first usage
-		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Clear", PixelVal::Gray);
-
 		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
-
 		ZE_DRAW_TAG_END(cl);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		if (group.size())
@@ -103,13 +98,22 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 			auto cubeBufferInfo = cbuffer.Alloc(dev, &viewBuffer, sizeof(CubeViewBuffer));
 
-			// Sort and split into groups based on materials
+			// Split into groups based on materials and if inside light volume
+			const Math::BoundingSphere lightSphere(lightPos, lightVolume);
 			for (EID entity : group)
 			{
-				if (renderData.Resources.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
-					renderData.Registry.emplace<Transparent>(entity);
-				else
-					renderData.Registry.emplace<Solid>(entity);
+				const auto& transform = group.get<Data::TransformGlobal>(entity);
+
+				Math::BoundingBox box = renderData.Resources.get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
+				box.Transform(box, Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+
+				if (box.Intersects(lightSphere))
+				{
+					if (renderData.Resources.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
+						renderData.Registry.emplace<Transparent>(entity);
+					else
+						renderData.Registry.emplace<Solid>(entity);
+				}
 			}
 			auto solidGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Solid>(renderData.Registry);
 			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Transparent>(renderData.Registry);
@@ -124,7 +128,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				Utils::ViewSortAscending(solidGroup, position);
 
 				// Depth pre-pass
-				cl.Open(dev, data.StateDepth);
+				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
@@ -156,8 +160,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 
 				// Sort by pipeline state
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
@@ -169,7 +171,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
 
 				// Solid pass
-				cl.Open(dev, data.StatesSolid[currentState]);
+				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -214,8 +216,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 				currentMaterial = INVALID_EID;
 				currentState = -1;
 			}
@@ -225,7 +225,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			{
 				Utils::ViewSortDescending(transparentGroup, position);
 
-				cl.Open(dev);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -274,8 +273,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
 			// Remove current material indication
 			renderData.Registry.clear<Solid, Transparent>();

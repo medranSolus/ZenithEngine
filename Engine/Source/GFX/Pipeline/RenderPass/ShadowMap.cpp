@@ -57,18 +57,14 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	}
 
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos, const Float3& lightDir)
+		ExecuteData& data, const Resources& ids, const Float3& lightPos,
+		const Float3& lightDir, const Math::BoundingFrustum& frustum)
 	{
 		// Clearing data on first usage
-		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Clear", PixelVal::Gray);
-
 		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
-
 		ZE_DRAW_TAG_END(cl);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
@@ -79,8 +75,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		if (group.size())
 		{
 			// Compute visibility of objects inside camera view
-			Math::BoundingFrustum frustum(data.Projection, false);
-			frustum.Transform(frustum, 1.0f, Math::XMQuaternionRotationMatrix(Math::GetVectorRotation({ 0.0f, 0.0f, 1.0f, 0.0f }, direction)), position);
 			Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Resources, group, frustum);
 
 			// Use new group visible only in current frustum and sort
@@ -100,7 +94,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				Utils::ViewSortAscending(solidGroup, position);
 
 				// Depth pre-pass
-				cl.Open(dev, data.StateDepth);
+				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Depth", Pixel(0x98, 0x9F, 0xA7));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
@@ -132,8 +126,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 
 				// Sort by pipeline state
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
@@ -145,7 +137,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
 
 				// Solid pass
-				cl.Open(dev, data.StatesSolid[currentState]);
+				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Solid", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -189,8 +181,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 				currentMaterial = INVALID_EID;
 				currentState = -1;
 			}
@@ -200,7 +190,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			{
 				Utils::ViewSortDescending(transparentGroup, position);
 
-				cl.Open(dev);
 				ZE_DRAW_TAG_BEGIN(cl, L"Shadow Map Transparent", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -249,8 +238,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					ZE_DRAW_TAG_END(cl);
 				}
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
 			// Remove current visibility indication
 			renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();

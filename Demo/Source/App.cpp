@@ -618,11 +618,11 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 3, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
+	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 
-	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, Math::StartPosition(), Math::NoRotationAngles());
+	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
 	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
 		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
@@ -663,8 +663,8 @@ int App::Run()
 		if (status.first)
 			return status.second;
 		ProcessInput();
-		//scene.UpdateTransforms();
 		MakeFrame();
+		//scene.UpdateTransforms();
 	}
 	return 0;
 }

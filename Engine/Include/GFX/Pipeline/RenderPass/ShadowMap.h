@@ -31,5 +31,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos, const Float3& lightDir);
+		ExecuteData& data, const Resources& ids, const Float3& lightPos,
+		const Float3& lightDir, const Math::BoundingFrustum& frustum);
 }

@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/PointLight.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/DataPBR.h"
+#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 #include "GFX/Primitive.h"
 
@@ -60,24 +60,39 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		const U64 count = group.size();
 		if (count)
 		{
+			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
+			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+
+			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
 
 			auto& cbuffer = renderData.DynamicBuffers.Get();
+			cl.Open(dev);
 			for (U64 i = 0; i < count; ++i)
 			{
-				auto entity = group[i];
+				EID entity = group[i];
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
-				ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position);
-
 				const auto& light = group.get<Data::PointLightBuffer>(entity);
+
+				// Check if light will be visible in current view
+				const Math::BoundingSphere lightSphere(transform.Position, light.Volume);
+				if (!frustum.Intersects(lightSphere))
+					continue;
+
+				ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData,
+					*reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume);
+
 				TransformBuffer transformBuffer;
 				transformBuffer.Transform = viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(light.Volume, light.Volume, light.Volume) *
 						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position)));
 
-				cl.Open(dev, data.State);
+				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Point Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
 
@@ -101,9 +116,9 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
 		}
 	}
 }

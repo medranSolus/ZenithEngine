@@ -7,16 +7,14 @@ namespace ZE
 	class Settings final
 	{
 		static constexpr PixelFormat BACKBUFFER_FORMAT = PixelFormat::R8G8B8A8_UNorm;
-		static inline Settings* instance = nullptr;
 		static inline U64 frameIndex = 0;
+		static inline U32 swapChainBufferCount = 0;
+		static inline GfxApiType gfxApi;
+#ifdef _ZE_MODE_DEBUG
+		static inline bool enableGfxTags = true;
+#endif
 
-		GfxApiType gfxApi;
-		U32 backBufferCount;
-
-		Settings(GfxApiType type, U32 backBufferCount) noexcept : gfxApi(type), backBufferCount(backBufferCount)
-		{
-			ZE_ASSERT(backBufferCount > 1 && backBufferCount < 17, "Incorrect params!");
-		}
+		static constexpr bool Initialized() noexcept { return swapChainBufferCount != 0; }
 
 	public:
 		ZE_CLASS_DELETE(Settings);
@@ -26,11 +24,29 @@ namespace ZE
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 
-		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(instance, "Not initialized!"); return frameIndex % instance->backBufferCount; }
-		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(instance, "Not initialized!"); return instance->backBufferCount; }
-		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(instance, "Not initialized!"); return instance->gfxApi; }
+#ifdef _ZE_MODE_DEBUG
+		static constexpr void SetGfxTags(bool enabled) noexcept { enableGfxTags = enabled; }
+		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
+#endif
 
-		static void Init(GfxApiType type, U32 backBufferCount) noexcept { ZE_ASSERT(!instance, "Already initialized!"); instance = new Settings(type, backBufferCount); }
-		static void Destroy() noexcept { ZE_ASSERT(instance, "Not initialized!"); delete instance; }
+		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
+		static constexpr U64 GetChainResourceCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
+		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
+		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
+		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
+
+		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
+		static constexpr void Init(GfxApiType type, U32 backBufferCount) noexcept;
 	};
+
+#pragma region Functions
+	constexpr void Settings::Init(GfxApiType type, U32 backBufferCount) noexcept
+	{
+		ZE_ASSERT(!Initialized(), "Already initialized!");
+		ZE_ASSERT(backBufferCount > 1 && backBufferCount < 17, "Incorrect params!");
+
+		gfxApi = type;
+		swapChainBufferCount = backBufferCount;
+	}
+#pragma endregion
 }

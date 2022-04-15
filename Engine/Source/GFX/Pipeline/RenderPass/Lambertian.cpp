@@ -75,15 +75,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		// Clearing data on first usage
 		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Clear", PixelVal::White);
-
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Normal, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());
-
 		ZE_DRAW_TAG_END(cl);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
@@ -112,7 +108,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			Utils::ViewSortAscending(solidGroup, cameraPos);
 
 			// Depth pre-pass
-			cl.Open(dev, data.StateDepth);
+			data.StateDepth.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
@@ -141,8 +137,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 
 			// Sort by pipeline state
 			solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
@@ -154,7 +148,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
 
 			// Solid pass
-			cl.Open(dev, data.StatesSolid[currentState]);
+			data.StatesSolid[currentState].Bind(cl);
 			ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
@@ -196,8 +190,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 			currentMaterial = INVALID_EID;
 			currentState = -1;
 		}
@@ -207,7 +199,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		{
 			Utils::ViewSortDescending(transparentGroup, cameraPos);
 
-			cl.Open(dev);
 			ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
@@ -254,9 +245,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 		}
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
+
 		// Remove current visibility
 		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 	}

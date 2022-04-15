@@ -42,13 +42,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		// Clearing data on first usage
 		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Clear", PixelVal::White);
-
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
-
 		ZE_DRAW_TAG_END(cl);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		auto group = Data::GetRenderGroup<Data::RenderOutline>(renderData.Registry);
 		U64 count = group.size();
@@ -71,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 
-			cl.Open(dev, data.StateStencil);
+			data.StateStencil.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
 			ctx.BindingSchema.SetGraphics(cl);
 			data.StateStencil.SetStencilRef(cl, 0xFF);
@@ -100,11 +96,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 
 			// Separate calls due to different RT/DS sizes
-			cl.Open(dev, data.StateRender);
+			data.StateRender.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetRTV(cl, ids.RenderTarget);
@@ -129,11 +123,11 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 
 			// Remove current visibility
 			renderData.Registry.clear<InsideFrustum>();
 		}
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
 	}
 }

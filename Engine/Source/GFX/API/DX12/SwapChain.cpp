@@ -121,7 +121,7 @@ namespace ZE::GFX::API::DX12
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
 	{
 		ZE_GFX_ENABLE(dev.Get().dx12);
-		U32 current = swapChain->GetCurrentBackBufferIndex();
+		const U32 current = Settings::GetCurrentBackbufferIndex();
 		ZE_GFX_THROW_FAILED(swapChain->GetBuffer(current, IID_PPV_ARGS(&buffer)));
 		presentBarrier.Transition.pResource = buffer.Get();
 		return rtvSrv[current];

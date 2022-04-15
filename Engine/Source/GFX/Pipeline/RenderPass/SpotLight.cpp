@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/SpotLight.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/DataPBR.h"
+#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 #include "GFX/Primitive.h"
 
@@ -65,22 +65,39 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		const U64 count = group.size();
 		if (count)
 		{
-			const Matrix viewProjection = reinterpret_cast<CameraPBR*>(renderData.DynamicData)->ViewProjection;
+			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
+			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+
+			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			auto& cbuffer = renderData.DynamicBuffers.Get();
+			cl.Open(dev);
 			for (U64 i = 0; i < count; ++i)
 			{
-				auto entity = group[i];
+				EID entity = group[i];
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 				const auto& lightData = group.get<Data::SpotLight>(entity);
 
+				// Check if light will be visible in current view
+				Math::BoundingFrustum lightFrustum(data.ShadowData.Projection, false);
+				lightFrustum.Transform(lightFrustum, 1.0f,
+					Math::XMQuaternionRotationMatrix(Math::GetVectorRotation({ 0.0f, 0.0f, 1.0f, 0.0f },
+						Math::XMLoadFloat3(&lightData.Direction))), Math::XMLoadFloat3(&transform.Position));
+				if (!frustum.Intersects(lightFrustum))
+					continue;
+
 				TransformBuffer transformBuffer;
 				transformBuffer.Transform = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
-					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction);
+					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap),
+					transform.Position, lightData.Direction, lightFrustum);
 
-				cl.Open(dev, data.State);
+				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
 
@@ -116,9 +133,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 				ZE_DRAW_TAG_END(cl);
-				cl.Close(dev);
-				dev.ExecuteMain(cl);
 			}
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
 		}
 	}
 }

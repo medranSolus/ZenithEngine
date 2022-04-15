@@ -80,7 +80,6 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
 			ZE_DRAW_TAG_END(cl);
 		}
-
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 	}

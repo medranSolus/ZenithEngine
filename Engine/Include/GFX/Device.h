@@ -60,13 +60,13 @@ namespace ZE::GFX
 		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(val, SetCopyFence); return val; }
 
 #ifdef _ZE_MODE_DEBUG
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); }
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); }
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); }
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
 
-		void TagEndMain() const noexcept { ZE_API_BACKEND_CALL(TagEndMain); }
-		void TagEndCompute() const noexcept { ZE_API_BACKEND_CALL(TagEndCompute); }
-		void TagEndCopy() const noexcept { ZE_API_BACKEND_CALL(TagEndCopy); }
+		void TagEndMain() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndMain); } }
+		void TagEndCompute() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndCompute); } }
+		void TagEndCopy() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
 #endif
 
 		// Set max size of command lists to execute in single call to Execute()

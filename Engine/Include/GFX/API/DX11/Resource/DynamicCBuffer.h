@@ -4,6 +4,7 @@
 #include "GFX/Resource/DynamicBufferAlloc.h"
 #include "Data/Library.h"
 #include "D3D11.h"
+#include <mutex>
 
 namespace ZE::GFX::API::DX11::Resource
 {
