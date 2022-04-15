@@ -9,17 +9,19 @@ include_guard(DIRECTORY)
 #   SHADER_DIR = directory containing "Shader" folder with all shader code
 #       (each shader type in directory named: VS, GS, PS or CS)
 #   BIN_DIR = binary directory
-#   FXC = path to shader compiler
 #   FLAGS = flags used for compilation
-macro(setup_shader BIN_DIR SHADER_DIR FXC FLAGS)
+macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
     set(SD_CSO_DIR "${BIN_DIR}/Shaders")
     set(SD_DIR "${SHADER_DIR}/Shader")
     set(SD_INC_DIR "${SD_DIR}/Common")
     file(GLOB_RECURSE SD_INC_LIST
         "${SD_INC_DIR}/*.hlsli"
         "${EXT_SHADER_INC_DIR}/*.hlsli")
-    set(SD_FXC ${FXC})
-    set(SD_APIS "DX11;DX12")
+    if(WIN32)
+        set(SD_APIS "DX11;DX12")
+    else()
+        message(FATAL_ERROR "Unsupporder platform for shader compiling!")
+    endif()
     separate_arguments(SD_FLAGS WINDOWS_COMMAND "${FLAGS}")
 endmacro()
  
@@ -29,17 +31,32 @@ macro(add_shader_type SD_TYPE)
     set(${SD_TYPE}_DIR "${SD_DIR}/${SD_TYPE}")
     file(GLOB_RECURSE ${SD_TYPE}_SRC_LIST "${${SD_TYPE}_DIR}/*.hlsl")
     file(GLOB_RECURSE ${SD_TYPE}_INC_LIST "${${SD_TYPE}_DIR}/*.hlsli")
+    
+    foreach(API IN LISTS SD_APIS)
+        if(${API} STREQUAL "DX11")
+            string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
+            set(SD_COMPILER "${EXTERNAL_DIR}/fxc.exe")
+            set(API_FLAGS "")
+        elseif(${API} STREQUAL "DX12")
+            string(TOLOWER "${SD_TYPE}_6_5" ${SD_TYPE}_TYPE_FLAG)
+            set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
+            if(MODE_DEBUG)
+                set(API_FLAGS "-Qembed_debug")
+            else()
+                set(API_FLAGS "")
+            endif()  
+        else()
+            message(FATAL_ERROR "API <${API}> not supported for shaders!")
+        endif()
 
-    string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
-    foreach(SD IN LISTS ${SD_TYPE}_SRC_LIST)
-        foreach(API IN LISTS SD_APIS)
+        foreach(SD IN LISTS ${SD_TYPE}_SRC_LIST)
             get_filename_component(SD_NAME ${SD} NAME_WE)
             set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.cso")
             list(APPEND SD_LIST ${SD_OUT})
             add_custom_command(OUTPUT ${SD_OUT}
-                COMMAND "${SD_FXC}" ${SD_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
+                COMMAND "${SD_COMPILER}" ${SD_FLAGS} ${API_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
                 MAIN_DEPENDENCY "${SD}"
-                DEPENDS "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" VERBATIM)
+                DEPENDS "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${SD_COMPILER}" VERBATIM)
         endforeach()
     endforeach()
 endmacro()

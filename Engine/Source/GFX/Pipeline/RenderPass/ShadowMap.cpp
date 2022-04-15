@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(float), 1, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Parallax scale
 		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
-		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV });  // Renderer dynamic data
+		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer });  // Renderer dynamic data
 		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);

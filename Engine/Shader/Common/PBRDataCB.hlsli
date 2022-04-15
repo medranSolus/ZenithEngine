@@ -3,7 +3,7 @@
 #include "CBuffer.hlsli"
 #include "../Include/XeGTAO.h"
 
-static const uint BLUR_KERNEL_MAX_SIZE = 8;
+#define BLUR_KERNEL_MAX_SIZE 8
 
 struct PBRData
 {

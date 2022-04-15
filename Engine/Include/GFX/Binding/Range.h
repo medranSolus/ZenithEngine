@@ -18,6 +18,8 @@ namespace ZE::GFX::Binding
 		// Should only be used with ranges not belonging to resources created by pipeline! Automatically set when flags 'Constant' or 'CBV' are set.
 		// Warning: Schema does not perform checks on this flag as it's impossible to determine if current range is using FrameBuffer data!
 		StaticData = 8,
+		// When CBuffer is defined as global in shader code use this flag for proper shader space generation for supported APIs.
+		GlobalBuffer = 16,
 		// Mark range as Shader Resource View range. Cannot be used with Constant flag set.
 		// When not using raw or structured texture this flag have to be used only inside buffer pack
 		SRV = 32,

@@ -1,6 +1,7 @@
 #pragma once
 // Headers needed for DirectX 12
 #include "GFX/API/DX/DXGI.h"
+#include "GFX/Binding/Range.h"
 #include "GFX/Pipeline/BarrierType.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
@@ -25,7 +26,7 @@ namespace ZE::GFX::API::DX12
 	// Get DirectX 12 version of filter type
 	constexpr D3D12_FILTER GetFilterType(U8 samplerType) noexcept;
 	// Get register space for given shader type
-	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderTypes type) noexcept;
+	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept;
 	// Get DirectX 12 version of resource states
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept;
 	// Get shader visibility from shader type
@@ -202,24 +203,26 @@ namespace ZE::GFX::API::DX12
 		return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // 001
 	}
 
-	constexpr U32 GetRegisterSpaceForShader(GFX::Resource::ShaderTypes type) noexcept
+	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept
 	{
 		ZE_ASSERT(type, "Empty shader type!");
-		return 0;
 
-		//switch (type)
-		//{
-		//case GFX::Resource::ShaderType::Vertex:
-		//	return 1;
-		//case GFX::Resource::ShaderType::Domain:
-		//	return 3;
-		//case GFX::Resource::ShaderType::Hull:
-		//	return 4;
-		//case GFX::Resource::ShaderType::Geometry:
-		//	return 2;
-		//default:
-		//	return 0;
-		//}
+		if (flags & GFX::Binding::RangeFlag::GlobalBuffer)
+			return 0;
+
+		switch (type)
+		{
+		case GFX::Resource::ShaderType::Vertex:
+			return 1;
+		case GFX::Resource::ShaderType::Domain:
+			return 3;
+		case GFX::Resource::ShaderType::Hull:
+			return 4;
+		case GFX::Resource::ShaderType::Geometry:
+			return 2;
+		default:
+			return 0;
+		}
 	}
 
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept

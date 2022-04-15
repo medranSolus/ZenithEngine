@@ -26,7 +26,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
 		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
 		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
-		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // Renderer dynamic data
+		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 

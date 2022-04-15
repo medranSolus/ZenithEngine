@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline
 			{
 				1, 13,
 				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
-				Binding::RangeFlag::CBV
+				Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer
 			});
 
 		constexpr Resource::Texture::AddressMode ADDRESS_MODES[]

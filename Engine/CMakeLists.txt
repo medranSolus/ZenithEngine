@@ -5,7 +5,7 @@ include(PostBuild)
 ############# SHADER RULES ##############
 
 set(SHADER_TARGET "Shaders")
-setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} "${EXTERNAL_DIR}/fxc.exe" ${SHADER_FLAGS})
+setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} ${SHADER_FLAGS})
 
 # Shader compilation
 add_shader_type(VS)
@@ -17,27 +17,13 @@ add_shader_target(${SHADER_TARGET})
 
 ############# ENGINE RULES ##############
 
-# Shader slots generation
-set(SHADER_SLOT_COUNT 128)
-math(EXPR LAST_SHADER_SLOT "${SHADER_SLOT_COUNT}-1")
-set(SLOT_GEN "${ZE_BUILD_INC_DIR}/SlotsGen.h")
-file(WRITE ${SLOT_GEN}
-    "#pragma once\n"
-    "#define ZE_GEN_SLOTS0(X)\n")
-foreach(I RANGE 1 ${LAST_SHADER_SLOT})
-    math(EXPR PREV_SLOT "${I}-1")
-    file(APPEND ${SLOT_GEN} "#define ZE_GEN_SLOTS${I}(X) ZE_GEN_SLOTS${PREV_SLOT}(X) ##X##${PREV_SLOT} = ${PREV_SLOT},\n")
-endforeach()
-file(APPEND ${SLOT_GEN}
-    "#define ZE_GEN_SLOTS(X) ZE_GEN_SLOTS${LAST_SHADER_SLOT}(X) Count = ${SHADER_SLOT_COUNT}")
-
 # Post build data copy
 if(NOT (ZE_NO_DATA OR ZE_CI_JOB))
     copy_runtime_data(ENGINE "Data" "" "")
 endif()
 
 # DirectX 12 debug library
-if(WIN32 AND ${CMAKE_BUILD_TYPE} MATCHES "Debug|RelWithDebInfo")
+if(WIN32 AND (MODE_DEBUG OR MODE_RELINFO))
     copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll")
 endif()
 

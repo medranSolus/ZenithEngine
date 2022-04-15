@@ -43,6 +43,17 @@ if(NOT ${SIZEOF_VOID_PTR} STREQUAL "8")
     message(FATAL_ERROR "Unsupported architecture!")
 endif()
 
+# Set current configuration
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+	set(MODE_DEBUG TRUE)
+elseif(${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+	set(MODE_RELINFO TRUE)
+elseif(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+	set(MODE_RELEASE TRUE)
+else()
+	message(FATAL_ERROR "Unsupported build type <${CMAKE_BUILD_TYPE}>!")
+endif()
+
 
 ########### MAIN DIRECTORIES ############
 
@@ -101,7 +112,7 @@ set(PIX_LIB "WinPixEventRuntime")
 set(ENTT_LIB "EnTT::EnTT")
 
 # Inject debug suffix if library use it
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(MODE_DEBUG)
 	if(${ZE_MODEL_LOADING})
 		set(ZLIB_TARGET "${ZLIB_LIB}d")
 		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mtd")
@@ -114,8 +125,8 @@ else()
 	endif()
 	set(FTYPE_TARGET "${FTYPE_LIB}")
 endif()
-if(WIN32 AND ${CMAKE_BUILD_TYPE} MATCHES "Debug|RelWithDebInfo")
-	set(PIX_TARGET "${PIX_DIR}/bin/x64/WinPixEventRuntime.lib")
+if(WIN32 AND (MODE_DEBUG OR MODE_RELINFO))
+	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
 else()
 	set(PIX_TARGET "")
 endif()
@@ -189,7 +200,7 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 
 # General flags
-if(${ZE_MODEL_LOADING})
+if(ZE_MODEL_LOADING)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_MODEL_LOADING")
 endif()
 if(ZE_RENDERER_SINGLE_THREAD)
@@ -217,7 +228,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(MODE_DEBUG)
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi /Od")
 endif()
 
