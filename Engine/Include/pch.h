@@ -26,6 +26,7 @@
 *** functional
 *** intrin.h/x86intrin.h
 *** map
+*** mutex
 *** random
 *** sstream
 *** string

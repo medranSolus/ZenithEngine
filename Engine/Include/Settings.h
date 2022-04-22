@@ -21,25 +21,42 @@ namespace ZE
 		~Settings() = default;
 
 		static constexpr PixelFormat GetBackbufferFormat() noexcept { return BACKBUFFER_FORMAT; }
-		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
+		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 
 #ifdef _ZE_MODE_DEBUG
 		static constexpr void SetGfxTags(bool enabled) noexcept { enableGfxTags = enabled; }
 		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
 #endif
 
-		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
-		static constexpr U64 GetChainResourceCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
+		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
-		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
+		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
+		static constexpr U64 GetChainResourceCount() noexcept;
 
 		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
 		static constexpr void Init(GfxApiType type, U32 backBufferCount) noexcept;
 	};
 
 #pragma region Functions
+	constexpr U64 Settings::GetChainResourceCount() noexcept
+	{
+		ZE_ASSERT(Initialized(), "Not initialized!");
+
+		switch (GetGfxApi())
+		{
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GfxApiType::DX11:
+		case GfxApiType::OpenGL:
+			return 1;
+		case GfxApiType::DX12:
+		case GfxApiType::Vulkan:
+			return swapChainBufferCount;
+		}
+	}
+
 	constexpr void Settings::Init(GfxApiType type, U32 backBufferCount) noexcept
 	{
 		ZE_ASSERT(!Initialized(), "Already initialized!");

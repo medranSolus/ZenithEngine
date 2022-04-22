@@ -8,18 +8,73 @@ namespace ZE::GFX
 	class ChainPool final
 	{
 		// TODO: Seems to be slower for now, investigate later
-		Ptr<T> pool;
+		union
+		{
+			Ptr<T> ptr;
+			T impl;
+		};
 
 	public:
-		constexpr ChainPool() noexcept : pool(new T[Settings::GetChainResourceCount()]) {}
+		constexpr ChainPool();
 		ZE_CLASS_MOVE(ChainPool);
-		~ChainPool() { if (pool) pool.DeleteArray(); }
+		~ChainPool();
 
 		// Get current resource
-		constexpr T& Get() noexcept { return pool[Settings::GetCurrentChainResourceIndex()]; }
+		constexpr T& Get() noexcept;
 		// Get current resource
-		constexpr const T& Get() const noexcept { return pool[Settings::GetCurrentChainResourceIndex()]; }
+		constexpr const T& Get() const noexcept;
 		// Execute function on every inner resource, ex. when resources need special init/destroy or to alter their state
-		constexpr void Exec(std::function<void(T&)> x) { for (U32 i = Settings::GetChainResourceCount(); i;) x(pool[--i]); }
+		constexpr void Exec(std::function<void(T&)> x);
 	};
+
+#pragma region Functions
+	template<typename T>
+	constexpr ChainPool<T>::ChainPool()
+	{
+		if (Settings::GetChainResourceCount() > 1)
+			ptr = new T[Settings::GetChainResourceCount()];
+		else
+			new(&impl) T;
+	}
+
+	template<typename T>
+	ChainPool<T>::~ChainPool()
+	{
+		if (Settings::GetChainResourceCount() > 1)
+		{
+			if (ptr)
+				ptr.DeleteArray();
+		}
+		else
+			impl.~T();
+	}
+
+	template<typename T>
+	constexpr T& ChainPool<T>::Get() noexcept
+	{
+		if (Settings::GetChainResourceCount() > 1)
+			return ptr[Settings::GetCurrentChainResourceIndex()];
+		return impl;
+	}
+
+	template<typename T>
+	constexpr const T& ChainPool<T>::Get() const noexcept
+	{
+		if (Settings::GetChainResourceCount() > 1)
+			return ptr[Settings::GetCurrentChainResourceIndex()];
+		return impl;
+	}
+
+	template<typename T>
+	constexpr void ChainPool<T>::Exec(std::function<void(T&)> x)
+	{
+		if (Settings::GetChainResourceCount() > 1)
+		{
+			for (U32 i = Settings::GetChainResourceCount(); i;)
+				x(ptr[--i]);
+		}
+		else
+			x(impl);
+	}
+#pragma endregion
 }

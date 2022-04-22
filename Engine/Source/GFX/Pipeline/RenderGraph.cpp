@@ -158,8 +158,13 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
 	{
-		BeforeSync(dev, pass.Syncs);
 		pass.Execute(dev, cl, execData, pass.Data);
+	}
+
+	void RenderGraph::ExecuteThreadSync(Device& dev, CommandList& cl, PassDesc& pass)
+	{
+		BeforeSync(dev, pass.Syncs);
+		ExecuteThread(dev, cl, pass);
 		AfterSync(dev, pass.Syncs);
 	}
 
@@ -753,45 +758,90 @@ namespace ZE::GFX::Pipeline
 		Device& dev = gfx.GetDevice();
 		CommandList& mainList = gfx.GetMainList();
 
-		gfx.WaitForFrame();
-		execData.DynamicBuffers.Get().StartFrame(dev);
-		execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
-		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
-		mainList.Reset(dev);
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		for (U64 i = 0; i < workersCount; ++i)
-			workerThreads[i].second.Get().Reset(dev);
-#endif
-
-		execData.Buffers.InitTransitions(dev, mainList);
-		for (U64 i = 0; i < levelCount; ++i)
+		switch (Settings::GetGfxApi())
 		{
-			ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
-			auto& staticLevel = staticPasses[i];
-			if (staticLevel.Count)
+		default:
+			ZE_ASSERT(false, "Unhandled enum value!");
+		case GfxApiType::DX11:
+		case GfxApiType::OpenGL:
+		{
+			execData.DynamicBuffers.Get().StartFrame(dev);
+			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
+			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+
+			for (U64 i = 0; i < levelCount; ++i)
 			{
-				BeforeSync(dev, staticLevel.Syncs);
-				dev.Execute(staticLevel.Commands, staticLevel.Count);
-				AfterSync(dev, staticLevel.Syncs);
-			}
-			auto& level = passes[i];
-			if (level.second)
-			{
+				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
+				auto& staticLevel = staticPasses[i];
+				if (staticLevel.Count)
+					dev.Execute(staticLevel.Commands, staticLevel.Count);
+
+				auto& level = passes[i];
+				if (level.second)
+				{
 #ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-				for (U64 j = 0; j < level.second; ++j)
-					ExecuteThread(dev, mainList, level.first[j]);
+					for (U64 j = 0; j < level.second; ++j)
+						ExecuteThread(dev, mainList, level.first[j]);
 #else
-				U64 workersDispatch = level.second - 1;
-				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
-				for (U64 j = 0; j < workersDispatch; ++j)
-					workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
-				ExecuteThread(dev, mainList, level.first[workersDispatch]);
-				for (U64 j = 0; j < workersDispatch; ++j)
-					workerThreads[j].first.join();
+					U64 workersDispatch = level.second - 1;
+					ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
+					for (U64 j = 0; j < workersDispatch; ++j)
+						workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
+					ExecuteThread(dev, mainList, level.first[workersDispatch]);
+					for (U64 j = 0; j < workersDispatch; ++j)
+						workerThreads[j].first.join();
 #endif
+				}
+				execData.Buffers.ExitTransitions(dev, mainList, i);
+				ZE_DRAW_TAG_END_MAIN(dev);
 			}
-			execData.Buffers.ExitTransitions(dev, mainList, i);
-			ZE_DRAW_TAG_END_MAIN(dev);
+			break;
+		}
+		case GfxApiType::DX12:
+		case GfxApiType::Vulkan:
+		{
+			gfx.WaitForFrame();
+			execData.DynamicBuffers.Get().StartFrame(dev);
+			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
+			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+
+			mainList.Reset(dev);
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+			for (U64 i = 0; i < workersCount; ++i)
+				workerThreads[i].second.Get().Reset(dev);
+#endif
+			execData.Buffers.InitTransitions(dev, mainList);
+			for (U64 i = 0; i < levelCount; ++i)
+			{
+				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
+				auto& staticLevel = staticPasses[i];
+				if (staticLevel.Count)
+				{
+					BeforeSync(dev, staticLevel.Syncs);
+					dev.Execute(staticLevel.Commands, staticLevel.Count);
+					AfterSync(dev, staticLevel.Syncs);
+				}
+				auto& level = passes[i];
+				if (level.second)
+				{
+#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+					for (U64 j = 0; j < level.second; ++j)
+						ExecuteThreadSync(dev, mainList, level.first[j]);
+#else
+					U64 workersDispatch = level.second - 1;
+					ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
+					for (U64 j = 0; j < workersDispatch; ++j)
+						workerThreads[j].first = { &RenderGraph::ExecuteThreadSync, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
+					ExecuteThreadSync(dev, mainList, level.first[workersDispatch]);
+					for (U64 j = 0; j < workersDispatch; ++j)
+						workerThreads[j].first.join();
+#endif
+				}
+				execData.Buffers.ExitTransitions(dev, mainList, i);
+				ZE_DRAW_TAG_END_MAIN(dev);
+			}
+			break;
+		}
 		}
 	}
 }

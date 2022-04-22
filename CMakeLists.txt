@@ -18,7 +18,7 @@ option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large numbe
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
 option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" OFF)
 option(ZE_DEBUG_GPU_VALIDATION "Enable additional GPU validation for supported APIs on debug builds for more verbose checks. May slow rendering considerably" OFF)
-option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" OFF)
+option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)

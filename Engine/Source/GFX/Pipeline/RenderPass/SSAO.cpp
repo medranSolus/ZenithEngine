@@ -69,6 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
+		dev.WaitComputeFromMain(dev.SetMainFence());
 		CommandList& list = data.ListChain.Get();
 		list.Reset(dev);
 		list.Open(dev, data.StatePrefilter);

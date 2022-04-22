@@ -31,6 +31,12 @@
 #include "ColorF3.h"
 
 /*
+* Macros.h (defined by ColorF3.h)
+* mutex
+*/
+#include "LockGuard.h"
+
+/*
 * string
 */
 #include "Logger.h"

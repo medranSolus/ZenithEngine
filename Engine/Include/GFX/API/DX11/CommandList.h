@@ -15,6 +15,7 @@ namespace ZE::GFX::API::DX11
 {
 	class CommandList final
 	{
+		bool deferred;
 		DX::ComPtr<ID3D11DeviceContext4> context;
 		DX::ComPtr<ID3D11CommandList> commands;
 #ifdef _ZE_MODE_DEBUG
@@ -47,6 +48,7 @@ namespace ZE::GFX::API::DX11
 
 		// Gfx API Internal
 
+		constexpr bool IsDeferred() const noexcept { return deferred; }
 		ID3D11DeviceContext4* GetContext() const noexcept { return context.Get(); }
 		ID3D11CommandList* GetList() const noexcept { return commands.Get(); }
 	};

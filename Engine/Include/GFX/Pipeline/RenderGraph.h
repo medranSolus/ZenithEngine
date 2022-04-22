@@ -28,6 +28,7 @@ namespace ZE::GFX::Pipeline
 			const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept;
 
 		void ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass);
+		void ExecuteThreadSync(Device& dev, CommandList& cl, PassDesc& pass);
 
 	protected:
 		static constexpr U64 BACKBUFFER_RID = 0;

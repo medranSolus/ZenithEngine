@@ -11,6 +11,7 @@ namespace ZE::GFX::API::DX11
 
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		dev.Get().dx11.GetDevice()->GetImmediateContext3(&tempCtx);
+		deferred = false;
 
 		ZE_GFX_THROW_FAILED(tempCtx.As(&context));
 #ifdef _ZE_MODE_DEBUG
@@ -24,6 +25,7 @@ namespace ZE::GFX::API::DX11
 
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateDeferredContext3(0, &tempCtx));
+		deferred = true;
 
 		ZE_GFX_THROW_FAILED(tempCtx.As(&context));
 #ifdef _ZE_MODE_DEBUG
@@ -43,7 +45,7 @@ namespace ZE::GFX::API::DX11
 
 	void CommandList::Close(GFX::Device& dev)
 	{
-		if (context->GetType() == D3D11_DEVICE_CONTEXT_DEFERRED)
+		if (deferred)
 		{
 			ZE_GFX_ENABLE(dev.Get().dx11);
 			ZE_GFX_THROW_FAILED(context->FinishCommandList(FALSE, &commands));
