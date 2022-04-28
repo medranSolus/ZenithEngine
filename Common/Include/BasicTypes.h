@@ -26,3 +26,28 @@
 	typedef std::atomic_int32_t SA32;
 	typedef std::atomic_int64_t SA64;
 #pragma endregion
+
+#pragma region Vector types
+	struct UInt2 { U32 x, y; };
+	struct UInt3 : public UInt2 { U32 z; };
+	struct UInt4 : public UInt3 { U32 w; };
+	struct SInt2 { S32 x, y; };
+	struct SInt3 : public SInt2 { S32 z; };
+	struct SInt4 : public SInt3 { S32 w; };
+#pragma endregion
+
+#pragma region Vector operators
+	constexpr bool operator==(const UInt2& i1, const UInt2& i2) noexcept { return i1.x == i2.x && i1.y == i2.y; }
+	constexpr bool operator==(const UInt3& i1, const UInt3& i2) noexcept { return i1.z == i2.z && static_cast<const UInt2&>(i1) == static_cast<const UInt2&>(i2); }
+	constexpr bool operator==(const UInt4& i1, const UInt4& i2) noexcept { return i1.w == i2.w && static_cast<const UInt3&>(i1) == static_cast<const UInt3&>(i2); }
+	constexpr bool operator==(const SInt2& i1, const SInt2& i2) noexcept { return i1.x == i2.x && i1.y == i2.y; }
+	constexpr bool operator==(const SInt3& i1, const SInt3& i2) noexcept { return i1.z == i2.z && static_cast<const SInt2&>(i1) == static_cast<const SInt2&>(i2); }
+	constexpr bool operator==(const SInt4& i1, const SInt4& i2) noexcept { return i1.w == i2.w && static_cast<const SInt3&>(i1) == static_cast<const SInt3&>(i2); }
+
+	constexpr bool operator!=(const UInt2& i1, const UInt2& i2) noexcept { return i1.x != i2.x || i1.y != i2.y; }
+	constexpr bool operator!=(const UInt3& i1, const UInt3& i2) noexcept { return i1.z != i2.z || static_cast<const UInt2&>(i1) != static_cast<const UInt2&>(i2); }
+	constexpr bool operator!=(const UInt4& i1, const UInt4& i2) noexcept { return i1.w != i2.w || static_cast<const UInt3&>(i1) != static_cast<const UInt3&>(i2); }
+	constexpr bool operator!=(const SInt2& i1, const SInt2& i2) noexcept { return i1.x != i2.x || i1.y != i2.y; }
+	constexpr bool operator!=(const SInt3& i1, const SInt3& i2) noexcept { return i1.z != i2.z || static_cast<const SInt2&>(i1) != static_cast<const SInt2&>(i2); }
+	constexpr bool operator!=(const SInt4& i1, const SInt4& i2) noexcept { return i1.w != i2.w || static_cast<const SInt3&>(i1) != static_cast<const SInt3&>(i2); }
+#pragma endregion
