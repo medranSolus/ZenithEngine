@@ -16,6 +16,8 @@ namespace ZE::GFX::Pipeline
 
 	RID FrameBufferDesc::AddResource(FrameResourceDesc&& info) noexcept
 	{
+		ZE_ASSERT(!((info.Flags & FrameResourceFlags::ForceDSV) && (info.Flags & FrameResourceFlags::SimultaneousAccess)),
+			"Cannot use depth stencil with simultaneous access resource!");
 		RID id = ResourceInfo.size();
 		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
 		ResourceLifetimes.emplace_back(std::map<RID, Resource::State>({}));
@@ -29,11 +31,11 @@ namespace ZE::GFX::Pipeline
 		TransitionsPerLevel.resize(dependencyLevels * 2);
 		if (backbuffer.begin()->first != 0)
 		{
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::State::Present, backbuffer.begin()->second);
-			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::State::Present, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::StatePresent, backbuffer.begin()->second);
 		}
 		else
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::State::Present, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::StatePresent, backbuffer.begin()->second);
 
 		// Cull same states between dependency levels and compute types of barriers per resource
 		for (U64 i = 0; i < ResourceLifetimes.size(); ++i)

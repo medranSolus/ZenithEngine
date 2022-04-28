@@ -8,11 +8,17 @@ namespace ZE::GFX::API::DX11::Pipeline
 {
 	class FrameBuffer final
 	{
+		struct BufferData
+		{
+			DX::ComPtr<ID3D11Resource> Resource;
+			UInt2 Size;
+		};
+
 		const DX::ComPtr<ID3D11UnorderedAccessView> nullUAV = nullptr;
 		const DX::ComPtr<ID3D11ShaderResourceView> nullSRV = nullptr;
 
 		RID resourceCount;
-		Ptr<UInt2> dimmensions;
+		Ptr<BufferData> resources;
 
 		Ptr<DX::ComPtr<ID3D11RenderTargetView1>> rtvs;
 		Ptr<DX::ComPtr<ID3D11DepthStencilView>> dsvs; // No backbuffer
@@ -33,10 +39,12 @@ namespace ZE::GFX::API::DX11::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
-		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return dimmensions[rid]; }
+		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
 
 		constexpr void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
 		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}
+
+		void Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept;
 
 		void SetRTV(GFX::CommandList& cl, RID rid) const noexcept;
 		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;

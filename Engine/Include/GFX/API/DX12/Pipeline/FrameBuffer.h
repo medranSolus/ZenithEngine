@@ -71,6 +71,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 
+		void Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept;
+
 		void SetRTV(GFX::CommandList& cl, RID rid) const noexcept;
 		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
 		void SetDSV(GFX::CommandList& cl, RID rid) const noexcept;
@@ -159,29 +161,29 @@ namespace ZE::GFX::API::DX12::Pipeline
 			const GFX::Pipeline::TransitionInfo& info = barriers.at(i);
 			ZE_ASSERT(info.RID < resourceCount, "Resource ID outside available range!");
 
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::UnorderedAccess ||
-				info.BeforeState == GFX::Resource::State::UnorderedAccess && uav[info.RID - 1].first.ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateUnorderedAccess ||
+				info.BeforeState == GFX::Resource::StateUnorderedAccess && uav[info.RID - 1].first.ptr != -1,
 				"Current resource is not suitable for being unnordered access!");
 
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::RenderTarget ||
-				info.BeforeState == GFX::Resource::State::RenderTarget && rtvDsv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateRenderTarget ||
+				info.BeforeState == GFX::Resource::StateRenderTarget && rtvDsv[info.RID].ptr != -1,
 				"Current resource is not suitable for being render target!");
 
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::DepthRead ||
-				info.BeforeState == GFX::Resource::State::DepthRead && rtvDsv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateDepthRead ||
+				info.BeforeState == GFX::Resource::StateDepthRead && rtvDsv[info.RID].ptr != -1,
 				"Current resource is not suitable for being depth stencil!");
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::DepthWrite ||
-				info.BeforeState == GFX::Resource::State::DepthWrite && rtvDsv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateDepthWrite ||
+				info.BeforeState == GFX::Resource::StateDepthWrite && rtvDsv[info.RID].ptr != -1,
 				"Current resource is not suitable for being depth stencil!");
 
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourceAll ||
-				info.BeforeState == GFX::Resource::State::ShaderResourceAll && srv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourceAll ||
+				info.BeforeState == GFX::Resource::StateShaderResourceAll && srv[info.RID].ptr != -1,
 				"Current resource is not suitable for being shader resource!");
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourcePS ||
-				info.BeforeState == GFX::Resource::State::ShaderResourcePS && srv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourcePS ||
+				info.BeforeState == GFX::Resource::StateShaderResourcePS && srv[info.RID].ptr != -1,
 				"Current resource is not suitable for being shader resource!");
-			ZE_ASSERT(info.BeforeState != GFX::Resource::State::ShaderResourceNonPS ||
-				info.BeforeState == GFX::Resource::State::ShaderResourceNonPS && srv[info.RID].ptr != -1,
+			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourceNonPS ||
+				info.BeforeState == GFX::Resource::StateShaderResourceNonPS && srv[info.RID].ptr != -1,
 				"Current resource is not suitable for being shader resource!");
 
 			D3D12_RESOURCE_BARRIER& barrier = transitions[i];

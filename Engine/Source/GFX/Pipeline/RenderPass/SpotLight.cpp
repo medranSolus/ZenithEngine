@@ -99,7 +99,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
-				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
+				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
@@ -131,7 +131,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				data.VolumeIB.Bind(cl);
 
 				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
-				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
+				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(cl);
 			}
 			cl.Close(dev);

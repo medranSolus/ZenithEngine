@@ -130,6 +130,8 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.Init(11, width, height);
 
 #pragma region Framebuffer definition
+		const RID gbuffDepthCompute = frameBufferDesc.AddResource(
+			{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 		const RID ssao = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
 		const RID gbuffColor = frameBufferDesc.AddResource(
@@ -178,10 +180,16 @@ namespace ZE::GFX::Pipeline
 			ZE_MAKE_NODE("lambertian", QueueType::Main, Lambertian, dev, buildData,
 				frameBufferDesc.GetFormat(gbuffDepth), frameBufferDesc.GetFormat(gbuffColor),
 				frameBufferDesc.GetFormat(gbuffNormal), frameBufferDesc.GetFormat(gbuffSpecular));
-			node.AddOutput("DS", Resource::State::DepthWrite, gbuffDepth);
-			node.AddOutput("GB_C", Resource::State::RenderTarget, gbuffColor);
-			node.AddOutput("GB_N", Resource::State::RenderTarget, gbuffNormal);
-			node.AddOutput("GB_S", Resource::State::RenderTarget, gbuffSpecular);
+			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
+			node.AddOutput("GB_C", Resource::StateRenderTarget, gbuffColor);
+			node.AddOutput("GB_N", Resource::StateRenderTarget, gbuffNormal);
+			node.AddOutput("GB_S", Resource::StateRenderTarget, gbuffSpecular);
+			nodes.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("lambertianDepthCopy", QueueType::Main, RenderPass::LambertianDepthCopy::Execute);
+			node.AddInput("lambertian.DS", Resource::StateCopySource);
+			node.AddOutput("DS_compute", Resource::StateCopyDestination, gbuffDepthCompute);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
@@ -190,71 +198,71 @@ namespace ZE::GFX::Pipeline
 			ZE_MAKE_NODE("dirLight", QueueType::Main, DirectionalLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
-			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInnerBuffer(Resource::State::RenderTarget,
+			node.AddInput("lambertian.GB_N", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.GB_S", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.DS", Resource::StateShaderResourcePS);
+			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
-			node.AddInnerBuffer(Resource::State::DepthWrite,
+			node.AddInnerBuffer(Resource::StateDepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
-			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
-			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
+			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
+			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("spotLight", QueueType::Main, SpotLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
-			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInput("dirLight.LB_C", Resource::State::RenderTarget);
-			node.AddInput("dirLight.LB_S", Resource::State::RenderTarget);
-			node.AddInnerBuffer(Resource::State::RenderTarget,
+			node.AddInput("lambertian.GB_N", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.GB_S", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.DS", Resource::StateShaderResourcePS);
+			node.AddInput("dirLight.LB_C", Resource::StateRenderTarget);
+			node.AddInput("dirLight.LB_S", Resource::StateRenderTarget);
+			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
-			node.AddInnerBuffer(Resource::State::DepthWrite,
+			node.AddInnerBuffer(Resource::StateDepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
-			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
-			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
+			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
+			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("pointLight", QueueType::Main, PointLight, dev, buildData,
 				frameBufferDesc.GetFormat(lightbuffColor), frameBufferDesc.GetFormat(lightbuffSpecular),
 				PixelFormat::R32_Float, PixelFormat::DepthOnly);
-			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_S", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourcePS);
-			node.AddInput("spotLight.LB_C", Resource::State::RenderTarget);
-			node.AddInput("spotLight.LB_S", Resource::State::RenderTarget);
-			node.AddInnerBuffer(Resource::State::RenderTarget,
+			node.AddInput("lambertian.GB_N", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.GB_S", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.DS", Resource::StateShaderResourcePS);
+			node.AddInput("spotLight.LB_C", Resource::StateRenderTarget);
+			node.AddInput("spotLight.LB_S", Resource::StateRenderTarget);
+			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube | FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
-			node.AddInnerBuffer(Resource::State::DepthWrite,
+			node.AddInnerBuffer(Resource::StateDepthWrite,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
-			node.AddOutput("LB_C", Resource::State::RenderTarget, lightbuffColor);
-			node.AddOutput("LB_S", Resource::State::RenderTarget, lightbuffSpecular);
+			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
+			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("ssao", QueueType::Compute, SSAO, dev, buildData);
-			node.AddInput("lambertian.DS", Resource::State::ShaderResourceNonPS);
-			node.AddInput("lambertian.GB_N", Resource::State::ShaderResourceNonPS);
-			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+			node.AddInput("lambertianDepthCopy.DS_compute", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_N", Resource::StateShaderResourceNonPS);
+			node.AddInnerBuffer(Resource::StateUnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
-			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+			node.AddInnerBuffer(Resource::StateUnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, frameBufferDesc.GetFormat(ssao), ColorF4() });
-			node.AddInnerBuffer(Resource::State::UnorderedAccess,
+			node.AddInnerBuffer(Resource::StateUnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
-			node.AddOutput("SB", Resource::State::UnorderedAccess, ssao);
+			node.AddOutput("SB", Resource::StateUnorderedAccess, ssao);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
-			node.AddInput("ssao.SB", Resource::State::ShaderResourcePS);
-			node.AddInput("lambertian.GB_C", Resource::State::ShaderResourcePS);
-			node.AddInput("pointLight.LB_C", Resource::State::ShaderResourcePS);
-			node.AddInput("pointLight.LB_S", Resource::State::ShaderResourcePS);
-			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
+			node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
+			node.AddInput("lambertian.GB_C", Resource::StateShaderResourcePS);
+			node.AddInput("pointLight.LB_C", Resource::StateShaderResourcePS);
+			node.AddInput("pointLight.LB_S", Resource::StateShaderResourcePS);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
@@ -262,30 +270,30 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData,
 				frameBufferDesc.GetFormat(outline), frameBufferDesc.GetFormat(outlineDepth));
-			node.AddOutput("RT", Resource::State::RenderTarget, outline);
-			node.AddOutput("DS", Resource::State::DepthWrite, outlineDepth);
+			node.AddOutput("RT", Resource::StateRenderTarget, outline);
+			node.AddOutput("DS", Resource::StateDepthWrite, outlineDepth);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("horizontalBlur", QueueType::Main, HorizontalBlur, dev, buildData, frameBufferDesc.GetFormat(outlineBlur));
-			node.AddInput("outlineDraw.RT", Resource::State::ShaderResourcePS);
-			node.AddOutput("RT", Resource::State::RenderTarget, outlineBlur);
+			node.AddInput("outlineDraw.RT", Resource::StateShaderResourcePS);
+			node.AddOutput("RT", Resource::StateRenderTarget, outlineBlur);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(outlineDepth));
-			node.AddInput("horizontalBlur.RT", Resource::State::ShaderResourcePS);
-			node.AddInput("skybox.RT", Resource::State::RenderTarget);
-			node.AddInput("outlineDraw.DS", Resource::State::DepthRead);
-			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
+			node.AddInput("horizontalBlur.RT", Resource::StateShaderResourcePS);
+			node.AddInput("skybox.RT", Resource::StateRenderTarget);
+			node.AddInput("outlineDraw.DS", Resource::StateDepthRead);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("wireframe", QueueType::Main, Wireframe, dev, buildData,
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
-			node.AddInput("verticalBlur.RT", Resource::State::RenderTarget);
-			node.AddInput("skybox.DS", Resource::State::DepthWrite);
-			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
+			node.AddInput("verticalBlur.RT", Resource::StateRenderTarget);
+			node.AddInput("skybox.DS", Resource::StateDepthWrite);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
@@ -294,16 +302,16 @@ namespace ZE::GFX::Pipeline
 			ZE_MAKE_NODE("skybox", QueueType::Main, Skybox, dev, buildData,
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
 				params.SkyboxPath, params.SkyboxExt);
-			node.AddInput("lightCombine.RT", Resource::State::RenderTarget);
-			node.AddInput("lambertian.DS", Resource::State::DepthRead);
-			node.AddOutput("RT", Resource::State::RenderTarget, rawScene);
-			node.AddOutput("DS", Resource::State::DepthRead, gbuffDepth);
+			node.AddInput("lightCombine.RT", Resource::StateRenderTarget);
+			node.AddInput("lambertian.DS", Resource::StateDepthRead);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
+			node.AddOutput("DS", Resource::StateDepthRead, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::GetBackbufferFormat());
-			node.AddInput("wireframe.RT", Resource::State::ShaderResourcePS);
-			node.AddOutput("RT", Resource::State::RenderTarget, BACKBUFFER_RID);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourcePS);
+			node.AddOutput("RT", Resource::StateRenderTarget, BACKBUFFER_RID);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion

@@ -218,12 +218,20 @@ namespace ZE::GFX::API::DX12::Pipeline
 				resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 			bool isRT = false, isDS = false, isUA = false, isSR = res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV;
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::ForceDSV)
+			{
+				resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+				isDS = true;
+				if (resDesc.MipLevels > 1)
+					rtvDsvMipsPresent = true;
+			}
+
 			const auto& lifetime = desc.ResourceLifetimes.at(i);
 			for (const auto& state : lifetime)
 			{
 				switch (state.second)
 				{
-				case GFX::Resource::State::RenderTarget:
+				case GFX::Resource::StateRenderTarget:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
 
@@ -233,8 +241,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 						rtvDsvMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::DepthRead:
-				case GFX::Resource::State::DepthWrite:
+				case GFX::Resource::StateDepthRead:
+				case GFX::Resource::StateDepthWrite:
 				{
 					ZE_ASSERT((res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess) == 0, "Simultaneous access cannot be used on depth stencil!");
 					ZE_ASSERT(!isRT, "Cannot create depth stencil and render target view for same buffer!");
@@ -246,7 +254,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						rtvDsvMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::UnorderedAccess:
+				case GFX::Resource::StateUnorderedAccess:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and unordered access view for same buffer!");
 
@@ -256,9 +264,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 						uavMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::ShaderResourcePS:
-				case GFX::Resource::State::ShaderResourceNonPS:
-				case GFX::Resource::State::ShaderResourceAll:
+				case GFX::Resource::StateShaderResourcePS:
+				case GFX::Resource::StateShaderResourceNonPS:
+				case GFX::Resource::StateShaderResourceAll:
 				{
 					isSR = true;
 					break;
@@ -390,7 +398,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					GFX::Resource::State firstState = lifetime.begin()->second;
 					GFX::Resource::State lastState = lifetime.rbegin()->second;
 					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
-						resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+						res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
@@ -471,7 +479,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			GFX::Resource::State firstState = lifetime.begin()->second;
 			GFX::Resource::State lastState = lifetime.rbegin()->second;
 			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
-				resourcesInfo.at(i).Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 			ZE_GFX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
@@ -829,50 +837,25 @@ namespace ZE::GFX::API::DX12::Pipeline
 			for (U32 i = 0; i < transitions.BarrierCount; ++i)
 			{
 				auto& barrier = transitions.Barriers[i];
+				// TODO: Compute syncs based on passes from which resources are used
 				if (syncBefore && barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
 				{
-					switch (barrier.Transition.StateBefore)
-					{
-					case D3D12_RESOURCE_STATE_GENERIC_READ:
+					if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 						computeBefore = true;
-					case D3D12_RESOURCE_STATE_COMMON:
-					{
+
+					if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
+						|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
 						copyBefore = true;
-						break;
-					}
-					case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
-					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
-					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
-					{
-						computeBefore = true;
-						break;
-					}
-					default:
-						break;
-					}
 				}
 
 				if (barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY)
 				{
-					switch (barrier.Transition.StateAfter)
-					{
-					case D3D12_RESOURCE_STATE_GENERIC_READ:
+					if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 						computeAfter = true;
-					case D3D12_RESOURCE_STATE_COMMON:
-					{
+
+					if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
+						|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
 						copyAfter = true;
-						break;
-					}
-					case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
-					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
-					case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
-					{
-						computeAfter = true;
-						break;
-					}
-					default:
-						break;
-					}
 				}
 			}
 			if (syncBefore)
@@ -941,6 +924,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 					uavMips[i].DeleteArray();
 			uavMips.DeleteArray();
 		}
+	}
+
+	void FrameBuffer::Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept
+	{
+		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
+		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
+		ZE_ASSERT(GetDimmensions(src) == GetDimmensions(dest), "Resources must have same dimmensions for copy!");
+
+		cl.Get().dx12.GetList()->CopyResource(resources[dest].Resource.Get(), resources[src].Resource.Get());
 	}
 
 	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const noexcept
@@ -1082,29 +1074,29 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 
-		ZE_ASSERT(before != GFX::Resource::State::UnorderedAccess ||
-			before == GFX::Resource::State::UnorderedAccess && uav[rid - 1].first.ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateUnorderedAccess ||
+			before == GFX::Resource::StateUnorderedAccess && uav[rid - 1].first.ptr != -1,
 			"Current resource is not suitable for being unnordered access!");
 
-		ZE_ASSERT(before != GFX::Resource::State::RenderTarget ||
-			before == GFX::Resource::State::RenderTarget && rtvDsv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateRenderTarget ||
+			before == GFX::Resource::StateRenderTarget && rtvDsv[rid].ptr != -1,
 			"Current resource is not suitable for being render target!");
 
-		ZE_ASSERT(before != GFX::Resource::State::DepthRead ||
-			before == GFX::Resource::State::DepthRead && rtvDsv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateDepthRead ||
+			before == GFX::Resource::StateDepthRead && rtvDsv[rid].ptr != -1,
 			"Current resource is not suitable for being depth stencil!");
-		ZE_ASSERT(before != GFX::Resource::State::DepthWrite ||
-			before == GFX::Resource::State::DepthWrite && rtvDsv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateDepthWrite ||
+			before == GFX::Resource::StateDepthWrite && rtvDsv[rid].ptr != -1,
 			"Current resource is not suitable for being depth stencil!");
 
-		ZE_ASSERT(before != GFX::Resource::State::ShaderResourceAll ||
-			before == GFX::Resource::State::ShaderResourceAll && srv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateShaderResourceAll ||
+			before == GFX::Resource::StateShaderResourceAll && srv[rid].ptr != -1,
 			"Current resource is not suitable for being shader resource!");
-		ZE_ASSERT(before != GFX::Resource::State::ShaderResourcePS ||
-			before == GFX::Resource::State::ShaderResourcePS && srv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateShaderResourcePS ||
+			before == GFX::Resource::StateShaderResourcePS && srv[rid].ptr != -1,
 			"Current resource is not suitable for being shader resource!");
-		ZE_ASSERT(before != GFX::Resource::State::ShaderResourceNonPS ||
-			before == GFX::Resource::State::ShaderResourceNonPS && srv[rid].ptr != -1,
+		ZE_ASSERT(before != GFX::Resource::StateShaderResourceNonPS ||
+			before == GFX::Resource::StateShaderResourceNonPS && srv[rid].ptr != -1,
 			"Current resource is not suitable for being shader resource!");
 
 		D3D12_RESOURCE_BARRIER barrier;

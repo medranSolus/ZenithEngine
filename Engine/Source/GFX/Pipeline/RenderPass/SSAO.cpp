@@ -69,7 +69,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
-		dev.WaitComputeFromMain(dev.SetMainFence());
 		CommandList& list = data.ListChain.Get();
 		list.Reset(dev);
 		list.Open(dev, data.StatePrefilter);
@@ -82,7 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.SettingsBuffer.Bind(list, prefilterCtx);
 		list.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);
 
-		renderData.Buffers.BarrierTransition(list, ids.ViewspaceDepth, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS);
+		renderData.Buffers.BarrierTransition(list, ids.ViewspaceDepth, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS);
 
 		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
 		data.StateSSAO.Bind(list);
@@ -100,9 +99,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.BarrierTransition(list,
 			std::array
 			{
-				TransitionInfo(ids.ScratchSSAO, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS),
-				TransitionInfo(ids.DepthEdges, Resource::State::UnorderedAccess, Resource::State::ShaderResourceNonPS),
-				TransitionInfo(ids.ViewspaceDepth, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess)
+				TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
+				TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
+				TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
 			});
 
 		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
@@ -120,8 +119,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.BarrierTransition(list,
 			std::array
 			{
-				TransitionInfo(ids.ScratchSSAO, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess),
-				TransitionInfo(ids.DepthEdges, Resource::State::ShaderResourceNonPS, Resource::State::UnorderedAccess)
+				TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
+				TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
 			});
 
 		ZE_DRAW_TAG_END(list);

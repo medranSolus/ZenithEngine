@@ -156,6 +156,27 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
+	void RenderGraph::AssignState(Resource::State& presentState, Resource::State& currentState, RID rid, U64 depLevel)
+	{
+		if (presentState != currentState)
+		{
+			if (Resource::IsReadOnlyState(presentState) && Resource::IsReadOnlyState(currentState))
+			{
+				presentState |= currentState;
+			}
+			else if (Resource::IsWriteEnabledState(presentState) || Resource::IsWriteEnabledState(currentState))
+			{
+				throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
+					std::to_string(depLevel) + "] in 2 write states at once! Wrong graph definition.");
+			}
+			else
+			{
+				throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
+					std::to_string(depLevel) + "] in 2 disjunctive states!");
+			}
+		}
+	}
+
 	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
 	{
 		pass.Execute(dev, cl, execData, pass.Data);
@@ -307,7 +328,7 @@ namespace ZE::GFX::Pipeline
 			U64 depLevel = dependencyLevels.at(i);
 			auto& node = nodes.at(i);
 			// Check all inputs by resources connected to them from dependent nodes
-			for (U64 j = 0; const auto & input : node.GetInputs())
+			for (U64 j = 0; const auto& input : node.GetInputs())
 			{
 				auto splitInput = Utils::SplitString(input, ".");
 				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
@@ -328,24 +349,9 @@ namespace ZE::GFX::Pipeline
 						node.AddInputResource(rid);
 						Resource::State currentState = node.GetInputState(j);
 						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+
 						if (lifetime.contains(depLevel))
-						{
-							Resource::State presentState = lifetime.at(depLevel);
-							if (presentState != currentState)
-							{
-								if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
-									|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
-								{
-									lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
-								}
-								else if (presentState != Resource::State::ShaderResourceAll
-									|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
-								{
-									throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
-										std::to_string(depLevel) + "] in 2 disjunctive states!");
-								}
-							}
-						}
+							AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
 						else
 							lifetime[depLevel] = currentState;
 						break;
@@ -363,24 +369,9 @@ namespace ZE::GFX::Pipeline
 
 				Resource::State currentState = node.GetOutputState(j);
 				auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+
 				if (lifetime.contains(depLevel))
-				{
-					Resource::State presentState = lifetime.at(depLevel);
-					if (presentState != currentState)
-					{
-						if (presentState == Resource::State::ShaderResourceNonPS && currentState == Resource::State::ShaderResourcePS
-							|| currentState == Resource::State::ShaderResourceNonPS && presentState == Resource::State::ShaderResourcePS)
-						{
-							lifetime.at(depLevel) = Resource::State::ShaderResourceAll;
-						}
-						else if (presentState != Resource::State::ShaderResourceAll
-							|| currentState != Resource::State::ShaderResourcePS && currentState != Resource::State::ShaderResourceNonPS)
-						{
-							throw ZE_RGC_EXCEPT("Resource [" + std::to_string(rid) + "] cannot be at same dependency level [" +
-								std::to_string(depLevel) + "] in 2 disjunctive states!");
-						}
-					}
-				}
+					AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
 				else
 					lifetime[depLevel] = currentState;
 				++j;

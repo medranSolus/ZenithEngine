@@ -9,7 +9,10 @@ namespace ZE::GFX::Pipeline
 		None = 0,
 		Cube = 1,
 		ForceSRV = 2,
-		SimultaneousAccess = 4
+		// Cannot be used together with SimultaneousAccess
+		ForceDSV = 4,
+		// Cannot be used together with ForceDSV
+		SimultaneousAccess = 8
 	};
 
 	// Description of single resource in FrameBuffer

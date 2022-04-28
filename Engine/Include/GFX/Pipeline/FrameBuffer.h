@@ -23,10 +23,13 @@ namespace ZE::GFX::Pipeline
 		// Get width and height of the resource
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { UInt2 dimm; ZE_API_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
 
-		// Render target before first use must be initialized or cleared (except backbuffer)
+		// Render target before first use must be initialized, cleared or overwritten by full resource copy (except backbuffer)
 		constexpr void InitRTV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitRTV, cl, rid); }
-		// Depth stencil before first use must be initialized or cleared
+		// Depth stencil before first use must be initialized, cleared or overwritten by full resource copy
 		constexpr void InitDSV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(InitDSV, cl, rid); }
+
+		// Render targets (except backbuffer) and Depth stencils before first use must be initialized, cleared or overwritten by full resource copy
+		constexpr void Copy(CommandList& cl, RID src, RID dest) const noexcept { ZE_API_BACKEND_CALL(Copy, cl, src, dest); }
 
 		// Maybe add also ability to set scale and offset for viewport if needed
 		constexpr void SetRTV(CommandList& cl, RID rid) const noexcept { ZE_API_BACKEND_CALL(SetRTV, cl, rid); }
@@ -72,9 +75,9 @@ namespace ZE::GFX::Pipeline
 		template<U32 BarrierCount>
 		constexpr void BarrierTransition(CommandList& cl, const std::array<TransitionInfo, BarrierCount>& barriers) const noexcept { ZE_API_BACKEND_CALL(BarrierTransition<BarrierCount>, cl, barriers); }
 
-		// Render target before first use must be initialized or cleared (except backbuffer)
+		// Render target before first use must be initialized, cleared or overwritten by full resource copy (except backbuffer)
 		constexpr void ClearRTV(CommandList& cl, RID rid, const ColorF4& color) const noexcept { ZE_API_BACKEND_CALL(ClearRTV, cl, rid, color); }
-		// Depth stencil before first use must be initialized or cleared
+		// Depth stencil before first use must be initialized, cleared or overwritten by full resource copy
 		constexpr void ClearDSV(CommandList& cl, RID rid, float depth, U8 stencil) const noexcept { ZE_API_BACKEND_CALL(ClearDSV, cl, rid, depth, stencil); }
 		constexpr void ClearUAV(CommandList& cl, RID rid, const ColorF4& color) const noexcept { ZE_API_BACKEND_CALL(ClearUAV, cl, rid, color); }
 		constexpr void ClearUAV(CommandList& cl, RID rid, const Pixel colors[4]) const noexcept { ZE_API_BACKEND_CALL(ClearUAV, cl, rid, colors); }

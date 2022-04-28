@@ -26,6 +26,7 @@ namespace ZE::GFX::Pipeline
 			std::vector<U64>& nodes, std::vector<std::bitset<2>>& visited);
 		static void CullIndirectDependecies(U64 currentNode, U64 checkNode, U64 minDepLevel, std::vector<std::vector<U64>>& syncList,
 			const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept;
+		static void AssignState(Resource::State& presentState, Resource::State& currentState, RID rid, U64 depLevel);
 
 		void ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass);
 		void ExecuteThreadSync(Device& dev, CommandList& cl, PassDesc& pass);

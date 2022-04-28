@@ -9,6 +9,7 @@ namespace ZE::GFX::API::DX11
 	{
 		UINT presentFlags = 0;
 		DX::ComPtr<IDXGISwapChain4> swapChain;
+		DX::ComPtr<ID3D11Resource> backBuffer;
 		DX::ComPtr<ID3D11RenderTargetView1> rtv;
 		DX::ComPtr<ID3D11ShaderResourceView1> srv;
 
@@ -24,6 +25,7 @@ namespace ZE::GFX::API::DX11
 
 		// Gfx API Internal
 
+		DX::ComPtr<ID3D11Resource> GetBuffer() const noexcept { return backBuffer; }
 		DX::ComPtr<ID3D11RenderTargetView1> GetRTV() const noexcept { return rtv; }
 		DX::ComPtr<ID3D11ShaderResourceView1> GetSRV() const noexcept { return srv; }
 	};

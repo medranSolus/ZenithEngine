@@ -22,7 +22,6 @@ namespace ZE::GFX::API::DX11
 		);
 
 		// Retrieve RTV
-		DX::ComPtr<ID3D11Resource> backBuffer = nullptr;
 		ZE_GFX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateRenderTargetView1(backBuffer.Get(), nullptr, &rtv));
 		if (shaderInput)

@@ -227,66 +227,66 @@ namespace ZE::GFX::API::DX12
 
 	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept
 	{
-		switch (state)
+		D3D12_RESOURCE_STATES resState = D3D12_RESOURCE_STATE_COMMON;
+
+		if (state == GFX::Resource::StateGenericRead)
+			resState = D3D12_RESOURCE_STATE_GENERIC_READ;
+		else
 		{
-		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
-		case GFX::Resource::State::Common:
-			return D3D12_RESOURCE_STATE_COMMON;
-		case GFX::Resource::State::GenericRead:
-			return D3D12_RESOURCE_STATE_GENERIC_READ;
-		case GFX::Resource::State::Present:
-			return D3D12_RESOURCE_STATE_PRESENT;
-		case GFX::Resource::State::VertexBuffer:
-		case GFX::Resource::State::ConstantBuffer:
-			return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-		case GFX::Resource::State::IndexBuffer:
-			return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-		case GFX::Resource::State::ShaderResourceNonPS:
-			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		case GFX::Resource::State::ShaderResourcePS:
-			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-		case GFX::Resource::State::ShaderResourceAll:
-			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-		case GFX::Resource::State::DepthRead:
-			return D3D12_RESOURCE_STATE_DEPTH_READ;
-		case GFX::Resource::State::RenderTarget:
-			return D3D12_RESOURCE_STATE_RENDER_TARGET;
-		case GFX::Resource::State::UnorderedAccess:
-			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		case GFX::Resource::State::DepthWrite:
-			return D3D12_RESOURCE_STATE_DEPTH_WRITE;
-		case GFX::Resource::State::CopyDestination:
-			return D3D12_RESOURCE_STATE_COPY_DEST;
-		case GFX::Resource::State::CopySource:
-			return D3D12_RESOURCE_STATE_COPY_SOURCE;
-		case GFX::Resource::State::ResolveDestination:
-			return D3D12_RESOURCE_STATE_RESOLVE_DEST;
-		case GFX::Resource::State::ResolveSource:
-			return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-		case GFX::Resource::State::StreamOut:
-			return D3D12_RESOURCE_STATE_STREAM_OUT;
-		case GFX::Resource::State::Indirect:
-			return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-		case GFX::Resource::State::Predication:
-			return D3D12_RESOURCE_STATE_PREDICATION;
-		case GFX::Resource::State::AccelerationStructureRT:
-			return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-		case GFX::Resource::State::ShadingRateSource:
-			return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-		case GFX::Resource::State::VideoDecodeRead:
-			return D3D12_RESOURCE_STATE_VIDEO_DECODE_READ;
-		case GFX::Resource::State::VideoDecodeWrite:
-			return D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-		case GFX::Resource::State::VideoProcessRead:
-			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
-		case GFX::Resource::State::VideoProcessWrite:
-			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
-		case GFX::Resource::State::VideoEncodeRead:
-			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ;
-		case GFX::Resource::State::VideoEncodeWrite:
-			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
+			if (state & GFX::Resource::StateVertexBuffer || state & GFX::Resource::StateConstantBuffer)
+				resState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			if (state & GFX::Resource::StateIndexBuffer)
+				resState |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+			if (state & GFX::Resource::StateShaderResourceNonPS)
+				resState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+			if (state & GFX::Resource::StateShaderResourcePS)
+				resState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			if (state & GFX::Resource::StateCopySource)
+				resState |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+			if (state & GFX::Resource::StateIndirect)
+				resState |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
 		}
+		if (state & GFX::Resource::StateDepthRead)
+			resState |= D3D12_RESOURCE_STATE_DEPTH_READ;
+
+		if (state & GFX::Resource::StateRenderTarget)
+			resState |= D3D12_RESOURCE_STATE_RENDER_TARGET;
+		if (state & GFX::Resource::StateCopyDestination)
+			resState |= D3D12_RESOURCE_STATE_COPY_DEST;
+		if (state & GFX::Resource::StateStreamOut)
+			resState |= D3D12_RESOURCE_STATE_STREAM_OUT;
+		if (state & GFX::Resource::StateDepthWrite)
+			resState |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
+
+		if (state & GFX::Resource::StateUnorderedAccess)
+			resState |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		if (state & GFX::Resource::StateAccelerationStructureRT)
+			resState |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+		if (state & GFX::Resource::StateShadingRateSource)
+			resState |= D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
+		if (state & GFX::Resource::StatePredication)
+			resState |= D3D12_RESOURCE_STATE_PREDICATION;
+
+		if (state & GFX::Resource::StateResolveDestination)
+			resState |= D3D12_RESOURCE_STATE_RESOLVE_DEST;
+		if (state & GFX::Resource::StateResolveSource)
+			resState |= D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+
+		if (state & GFX::Resource::StateVideoDecodeRead)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_DECODE_READ;
+		if (state & GFX::Resource::StateVideoProcessRead)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
+		if (state & GFX::Resource::StateVideoEncodeRead)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ;
+
+		if (state & GFX::Resource::StateVideoDecodeWrite)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+		if (state & GFX::Resource::StateVideoProcessWrite)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
+		if (state & GFX::Resource::StateVideoEncodeWrite)
+			resState |= D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
+
+		return resState;
 	}
 
 	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, ShaderPresenceMask* presence) noexcept

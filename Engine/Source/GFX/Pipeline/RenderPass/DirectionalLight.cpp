@@ -56,7 +56,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
-			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::RenderTarget, Resource::State::ShaderResourcePS);
+			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
@@ -77,7 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 				cl.DrawFullscreen(dev);
 			}
-			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::State::ShaderResourcePS, Resource::State::RenderTarget);
+			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 			ZE_DRAW_TAG_END(cl);
 		}
 		cl.Close(dev);

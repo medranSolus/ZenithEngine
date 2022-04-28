@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	void FrameBuffer::SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept
 	{
-		const UInt2 size = dimmensions[rid];
+		const UInt2 size = resources[rid].Size;
 		viewport.Width = static_cast<float>(size.x);
 		viewport.Height = static_cast<float>(size.y);
 		viewport.MinDepth = 0.0f;
@@ -42,8 +42,9 @@ namespace ZE::GFX::API::DX11::Pipeline
 		resourceCount = desc.ResourceInfo.size();
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
 
-		dimmensions = new UInt2[resourceCount];
-		dimmensions[0] = { desc.ResourceInfo.front().Width, desc.ResourceInfo.front().Height };
+		resources = new BufferData[resourceCount];
+		resources[0].Resource = nullptr;
+		resources[0].Size = { desc.ResourceInfo.front().Width, desc.ResourceInfo.front().Height };
 		bool rtvMipsPresent = false;
 		bool dsvMipsPresent = false;
 		bool uavMipsPresent = false;
@@ -60,7 +61,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		for (RID i = 1; i < resourceCount; ++i)
 		{
 			const auto& res = desc.ResourceInfo.at(i);
-			dimmensions[i] = { res.Width, res.Height };
+			resources[i].Size = { res.Width, res.Height };
 
 			texDesc.Width = res.Width;
 			texDesc.Height = res.Height;
@@ -80,11 +81,24 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 			texDesc.BindFlags = 0;
 			bool isRT = false, isDS = false, isUA = false, isSR = false;
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV)
+			{
+				isSR = true;
+				texDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+			}
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::ForceDSV)
+			{
+				texDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				isDS = true;
+				if (texDesc.MipLevels > 1)
+					dsvMipsPresent = true;
+			}
+
 			for (const auto& state : desc.ResourceLifetimes.at(i))
 			{
 				switch (state.second)
 				{
-				case GFX::Resource::State::RenderTarget:
+				case GFX::Resource::StateRenderTarget:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
 
@@ -94,8 +108,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 						rtvMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::DepthRead:
-				case GFX::Resource::State::DepthWrite:
+				case GFX::Resource::StateDepthRead:
+				case GFX::Resource::StateDepthWrite:
 				{
 					ZE_ASSERT((res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess) == 0, "Simultaneous access cannot be used on depth stencil!");
 					ZE_ASSERT(!isRT, "Cannot create depth stencil and render target view for same buffer!");
@@ -107,7 +121,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 						dsvMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::UnorderedAccess:
+				case GFX::Resource::StateUnorderedAccess:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and unordered access view for same buffer!");
 
@@ -117,9 +131,9 @@ namespace ZE::GFX::API::DX11::Pipeline
 						uavMipsPresent = true;
 					break;
 				}
-				case GFX::Resource::State::ShaderResourcePS:
-				case GFX::Resource::State::ShaderResourceNonPS:
-				case GFX::Resource::State::ShaderResourceAll:
+				case GFX::Resource::StateShaderResourcePS:
+				case GFX::Resource::StateShaderResourceNonPS:
+				case GFX::Resource::StateShaderResourceAll:
 				{
 					texDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
 					isSR = true;
@@ -129,14 +143,10 @@ namespace ZE::GFX::API::DX11::Pipeline
 					break;
 				}
 			}
-			if (res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV)
-			{
-				isSR = true;
-				texDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-			}
 
 			DX::ComPtr<ID3D11Texture2D1> texture;
 			ZE_GFX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
+			ZE_GFX_THROW_FAILED(texture.As(&resources[i].Resource));
 			texDesc.Format = format;
 
 			resourcesInfo.emplace_back(texDesc, std::move(texture),
@@ -314,8 +324,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	FrameBuffer::~FrameBuffer()
 	{
-		if (dimmensions)
-			dimmensions.DeleteArray();
+		if (resources)
+			resources.DeleteArray();
 		if (rtvs)
 			rtvs.DeleteArray();
 		if (dsvs)
@@ -346,6 +356,15 @@ namespace ZE::GFX::API::DX11::Pipeline
 					uavMips[i].DeleteArray();
 			uavMips.DeleteArray();
 		}
+	}
+
+	void FrameBuffer::Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept
+	{
+		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
+		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
+		ZE_ASSERT(GetDimmensions(src) == GetDimmensions(dest), "Resources must have same dimmensions for copy!");
+
+		cl.Get().dx11.GetContext()->CopyResource(resources[dest].Resource.Get(), resources[src].Resource.Get());
 	}
 
 	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const noexcept
@@ -404,6 +423,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
+		// TODO: Save slot+shader and then use them to correctly flush state in exit barriers
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(srvs[rid], "Current resource is not suitable for being shader resource!");
 
@@ -492,11 +512,11 @@ namespace ZE::GFX::API::DX11::Pipeline
 	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept
 	{
 		auto* ctx = cl.Get().dx11.GetContext();
-		if (before == GFX::Resource::State::RenderTarget
-			|| before == GFX::Resource::State::DepthRead
-			|| before == GFX::Resource::State::DepthWrite)
+		if (before == GFX::Resource::StateRenderTarget
+			|| before == GFX::Resource::StateDepthRead
+			|| before == GFX::Resource::StateDepthWrite)
 			ctx->OMSetRenderTargets(0, nullptr, nullptr);
-		else if (before == GFX::Resource::State::UnorderedAccess)
+		else if (before == GFX::Resource::StateUnorderedAccess)
 		{
 			for (U8 i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; ++i)
 				ctx->CSSetUnorderedAccessViews(i, 1, nullUAV.GetAddressOf(), nullptr);
@@ -556,8 +576,9 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
 	{
-		if (rtvs[0] == nullptr)
+		if (resources[0].Resource == nullptr)
 		{
+			resources[0].Resource = swapChain.Get().dx11.GetBuffer();
 			rtvs[0] = swapChain.Get().dx11.GetRTV();
 			srvs[0] = swapChain.Get().dx11.GetSRV();
 		}
