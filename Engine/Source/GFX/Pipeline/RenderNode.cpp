@@ -26,15 +26,6 @@ namespace ZE::GFX::Pipeline
 		outputRIDs.emplace_back(rid);
 	}
 
-	CommandList RenderNode::GetStaticList() noexcept
-	{
-		ZE_ASSERT(IsStatic(), "Cannot get static execute data for non-static pass!");
-
-		CommandList cl = std::move(*staticList);
-		delete staticList;
-		return cl;
-	}
-
 	RID* RenderNode::GetNodeRIDs() const noexcept
 	{
 		std::vector<RID> out = outputRIDs;

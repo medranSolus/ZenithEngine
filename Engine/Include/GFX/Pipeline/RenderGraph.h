@@ -17,7 +17,6 @@ namespace ZE::GFX::Pipeline
 		Ptr<std::pair<std::thread, ChainPool<CommandList>>> workerThreads;
 #endif
 		Ptr<std::pair<Ptr<PassDesc>, U64>> passes;
-		Ptr<PassDescStatic> staticPasses;
 		Ptr<Ptr<PassCleanCallback>> passesCleaners;
 
 		static void BeforeSync(Device& dev, const PassSyncDesc& syncInfo);

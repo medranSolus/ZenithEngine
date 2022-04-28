@@ -16,7 +16,6 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11Device5> device;
 		DX::ComPtr<ID3D11DeviceContext4> context;
 
-		U32 commandListsCount = 0;
 		U32 descriptorCount;
 		U32 scratchDescriptorCount;
 
@@ -63,8 +62,6 @@ namespace ZE::GFX::API::DX11
 		void TagEndCopy() const noexcept { tagManager->EndEvent(); }
 #endif
 
-		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandListsCount = count; }
 		constexpr void BeginUploadRegion() {}
 		constexpr void StartUpload() {}
 		constexpr void EndUploadRegion() {}

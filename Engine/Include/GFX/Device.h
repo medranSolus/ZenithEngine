@@ -69,8 +69,6 @@ namespace ZE::GFX
 		void TagEndCopy() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
 #endif
 
-		// Set max size of command lists to execute in single call to Execute()
-		constexpr void SetCommandBufferSize(U32 count) noexcept { ZE_API_BACKEND_CALL(SetCommandBufferSize, count); }
 		// Start sequence after which new resources can be created/updated and uploaded to GPU
 		constexpr void BeginUploadRegion() { ZE_API_BACKEND_CALL(BeginUploadRegion); }
 		// Send current resources to GPU resources to GPU
@@ -88,11 +86,8 @@ namespace ZE::GFX
 	constexpr void Device::SwitchApi(GfxApiType nextApi)
 	{
 		std::pair<U32, U32> data;
-		U32 commandCount;
 		ZE_API_BACKEND_CALL_RET(data, GetData);
-		ZE_API_BACKEND_CALL_RET(commandCount, GetCommandBufferSize);
 		ZE_API_BACKEND_VAR.Switch(nextApi, data.first, data.second);
-		SetCommandBufferSize(commandCount);
 	}
 #pragma endregion
 }

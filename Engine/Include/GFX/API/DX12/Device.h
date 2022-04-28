@@ -74,7 +74,6 @@ namespace ZE::GFX::API::DX12
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
-		constexpr void SetCommandBufferSize(U32 count) noexcept { commandLists = new ID3D12CommandList*[static_cast<U64>(count) * 3]; commandListsCount = count; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

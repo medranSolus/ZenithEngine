@@ -2,7 +2,6 @@
 #include "GFX/Pipeline/RenderPasses.h"
 
 #define ZE_MAKE_NODE(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
-#define ZE_MAKE_NODE_STATIC(name, queueType, passNamespace, ...) auto nodeData = RenderPass::passNamespace::Setup(__VA_ARGS__); RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, nodeData.second, nodeData.first)
 
 namespace ZE::GFX::Pipeline
 {

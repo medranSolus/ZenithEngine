@@ -56,14 +56,4 @@ namespace ZE::GFX::Pipeline
 		PassExecuteCallback Execute = nullptr;
 		PassData Data;
 	};
-
-	// Descriptor containing commands for static passes in single level
-	struct PassDescStatic
-	{
-		PassSyncDesc Syncs;
-		U32 Count = 0;
-		Ptr<CommandList> Commands;
-		Ptr<void*> OptData;
-		Ptr<PassCleanCallback> Cleaners;
-	};
 }

@@ -274,6 +274,8 @@ namespace ZE::GFX::API::DX12
 				ZE_ASSERT(false, "Incorrect type of command list!!!");
 			}
 		}
+
+		// Find max size for command lists to execute at once
 		U32 mainCount = 0, computeCount = 0, copyCount = 0;
 		for (U32 i = 0; i < count; ++i)
 		{
@@ -282,36 +284,71 @@ namespace ZE::GFX::API::DX12
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 			{
 				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
-				commandLists[mainCount++] = cls[i].Get().dx12.GetList();
+				++mainCount;
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
 			{
 				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
-				commandLists[count + computeCount++] = cls[i].Get().dx12.GetList();
+				++computeCount;
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 			{
 				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
-				commandLists[2 * count + copyCount++] = cls[i].Get().dx12.GetList();
+				++copyCount;
 				break;
 			}
 			default:
 				ZE_ASSERT(false, "Incorrect type of command list!!!");
 			}
 		}
+
+		// Realloc if needed bigger list
+		count = std::max(commandListsCount, mainCount);
+		if (computeCount > count)
+			count = computeCount;
+		if (copyCount > count)
+			count = copyCount;
+		if (count > commandListsCount)
+		{
+			commandListsCount = count;
+			commandLists = reinterpret_cast<ID3D12CommandList**>(realloc(commandLists, count * sizeof(ID3D12CommandList*)));
+		}
+
+		// Execute lists
 		if (mainCount)
 		{
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().dx12.GetList()->GetType() == D3D12_COMMAND_LIST_TYPE_DIRECT)
+					commandLists[i++] = cls[j].Get().dx12.GetList();
+				++j;
+			} while (i < mainCount);
 			ZE_GFX_THROW_FAILED_INFO(mainQueue->ExecuteCommandLists(mainCount, commandLists));
 		}
 		if (computeCount)
 		{
-			ZE_GFX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists + count));
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().dx12.GetList()->GetType() == D3D12_COMMAND_LIST_TYPE_COMPUTE)
+					commandLists[i++] = cls[j].Get().dx12.GetList();
+				++j;
+			} while (i < computeCount);
+			ZE_GFX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists));
 		}
 		if (copyCount)
 		{
-			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists + 2 * static_cast<U64>(count)));
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().dx12.GetList()->GetType() == D3D12_COMMAND_LIST_TYPE_COPY)
+					commandLists[i++] = cls[j].Get().dx12.GetList();
+				++j;
+			} while (i < copyCount);
+			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
 		}
 	}
 
