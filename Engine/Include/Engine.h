@@ -22,6 +22,7 @@ namespace ZE
 
 		constexpr bool IsGuiActive() const noexcept { return guiEnabled; }
 		constexpr void ToggleGui() noexcept { guiEnabled = !guiEnabled; }
+		constexpr void SetGui(bool enabled) noexcept { guiEnabled = enabled; }
 
 		constexpr Data::Storage& GetData() noexcept { return renderer.GetRegistry(); }
 		constexpr Data::Storage& GetResourceData() noexcept { return renderer.GetResources(); }

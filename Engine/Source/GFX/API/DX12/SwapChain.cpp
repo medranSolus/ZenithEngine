@@ -84,24 +84,7 @@ namespace ZE::GFX::API::DX12
 			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
 			{
 #ifdef _ZE_MODE_DEBUG
-				DREDRecovery::Data dredData;
-				DREDRecovery::GetDeviceRemovedData(dev.Get().dx12, dredData);
-
-				std::string error = "";
-				if (dredData.AutoBreadcrumbs.size())
-					error = "[AUTO BREADCRUMBS]\n" + dredData.AutoBreadcrumbs;
-
-				if (dredData.ExistingAllocations.size())
-					error += "\n[EXISTING ALLOCATIONS]\n" + dredData.ExistingAllocations;
-
-				if (dredData.FreedAllocations.size())
-					error += "\n[FREED ALLOCATIONS]\n" + dredData.FreedAllocations;
-
-				if (dredData.PageFaultAddress != 0)
-					error += "\n[PAGE FAULT ADDRESS]\n" + std::to_string(dredData.PageFaultAddress);
-
-				if (error.size())
-					Logger::Error(error);
+				DREDRecovery::SaveDeviceRemovedData(dev.Get().dx12, "tdr_error.txt");
 #endif
 				throw ZE_GFX_EXCEPT(dev.Get().dx12.GetDevice()->GetDeviceRemovedReason());
 			}
