@@ -24,8 +24,9 @@ endmacro()
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
 #	ADD_PDB_DIR = different path for MSVC debug symbols
+#	DEP_PROJECT = prefix of project on which this eternal project depends
 # Set ${PROJECT}_CACHE_ARGS variable to pass options for project
-macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
+macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR DEP_PROJECT)
 	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${PROJECT}/")
 	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
@@ -34,6 +35,7 @@ macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR)
 			BINARY_DIR ${${PROJECT}_BUILD_DIR}
 			STAMP_DIR ${${PROJECT}_BUILD_DIR}
 			INSTALL_DIR ${EXTERNAL_BIN_DIR}
+			DEPENDS ${${DEP_PROJECT}_TARGET}
 			CMAKE_CACHE_ARGS "${${PROJECT}_CACHE_ARGS}"
 				"-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
 			INSTALL_COMMAND "${${PROJECT}_CP_CMD}")

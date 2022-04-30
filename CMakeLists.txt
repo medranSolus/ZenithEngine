@@ -257,7 +257,7 @@ endif()
 
 # zlib
 set(ZLIB_CACHE_ARGS "")
-add_external_project(ZLIB "" "")
+add_external_project(ZLIB "" "" "")
 if(NOT EXISTS "${ZLIB_OUT_LIB}")
 	ExternalProject_Add_Step(${ZLIB_TARGET} headerConfig
 		DEPENDEES install
@@ -281,7 +281,7 @@ if(${ZE_MODEL_LOADING})
 		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DASSIMP_INSTALL_PDB:BOOL=OFF"
 		"-DASSIMP_NO_EXPORT:BOOL=OFF")
-	add_external_project(ASSIMP "lib/" "code/")
+	add_external_project(ASSIMP "lib/" "code/" ZLIB)
 	if(NOT EXISTS "${ASSIMP_OUT_LIB}")
 		ExternalProject_Add_Step(${ASSIMP_TARGET} headerConfig
 			DEPENDEES install
@@ -299,13 +299,13 @@ set(FTYPE_CACHE_ARGS "-DFT_DISABLE_ZLIB:BOOL=ON"
 	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
 	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
-add_external_project(FTYPE "" "")
+add_external_project(FTYPE "" "" ZLIB)
 
  # DirectXTex
 set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
 	"-DBUILD_DX11:BOOL=OFF"
 	"-DBUILD_DX12:BOOL=OFF")
-add_external_project(DXTEX "bin/CMake/" "")
+add_external_project(DXTEX "bin/CMake/" "" "")
 
 # EnTT
 if(MSVC)
