@@ -36,7 +36,7 @@ jobs:
       - name: Install Visual Studio 2022 Community
         run: choco install visualstudio2022community
       - name: Install VS2022 gamedev extensions
-        run: choco install visualstudio2022-workload-nativegame --package-parameters "--productId Microsoft.VisualStudio.Product.Community"
+        run: choco install visualstudio2022-workload-nativegame --package-parameters "--channelId VisualStudio.17.Release --productId Microsoft.VisualStudio.Product.Community"
       - name: Setup VS dev enviroment
         uses: ilammy/msvc-dev-cmd@v1
         with:
