@@ -73,6 +73,7 @@ set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
+set(AGS_DIR "${EXTERNAL_DIR}/AGS")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -90,6 +91,7 @@ set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
+set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
 set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 
@@ -110,6 +112,7 @@ set(FTYPE_LIB "freetype")
 set(DXTEX_LIB "DirectXTex")
 set(PIX_LIB "WinPixEventRuntime")
 set(ENTT_LIB "EnTT::EnTT")
+set(AGS_LIB "amd_ags_x64")
 
 # Inject debug suffix if library use it
 if(MODE_DEBUG)
@@ -132,6 +135,7 @@ else()
 endif()
 set(DXTEX_TARGET "${DXTEX_LIB}")
 set(ENTT_TARGET "${ENTT_LIB}")
+set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
 
 
 ######### COMPILE CONFIGURATION #########

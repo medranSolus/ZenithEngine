@@ -77,7 +77,41 @@ namespace ZE::GFX::API::DX12
 			debugManager
 #endif
 		);
-		ZE_GFX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
+
+		// Initialize via hardware specific functions
+		switch (Settings::GetGpuVendor())
+		{
+		case VendorGPU::AMD:
+		{
+			AGSConfiguration agsConfig = {};
+			if (agsInitialize(AGS_MAKE_VERSION(AMD_AGS_VERSION_MAJOR, AMD_AGS_VERSION_MINOR, AMD_AGS_VERSION_PATCH),
+				&agsConfig, &gpuCtxAMD, nullptr) == AGS_SUCCESS)
+			{
+				AGSDX12DeviceCreationParams deviceParams;
+				deviceParams.pAdapter = adapter.Get();
+				deviceParams.iid = __uuidof(device);
+				deviceParams.FeatureLevel = D3D_FEATURE_LEVEL_12_1;
+
+				AGSDX12ExtensionParams extensionParams = {};
+				AGSDX12ReturnedParams returnParams;
+				if (agsDriverExtensionsDX12_CreateDevice(gpuCtxAMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
+				{
+					device.Attach(reinterpret_cast<ID3D12Device8*>(returnParams.pDevice));
+					break;
+				}
+				agsDeInitialize(gpuCtxAMD);
+				gpuCtxAMD = nullptr;
+			}
+			Settings::SetGpuVendor(VendorGPU::Unknown);
+			break;
+		}
+		}
+
+		// Failed to create GPU specific device
+		if (device == nullptr)
+		{
+			ZE_GFX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
+		}
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
@@ -203,6 +237,17 @@ namespace ZE::GFX::API::DX12
 			allocTier2.~AllocatorTier2();
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
+
+		switch (Settings::GetGpuVendor())
+		{
+		case VendorGPU::AMD:
+		{
+			agsDriverExtensionsDX12_DestroyDevice(gpuCtxAMD, device.Get(), nullptr);
+			device.Detach();
+			agsDeInitialize(gpuCtxAMD);
+			break;
+		}
+		}
 	}
 
 	void Device::BeginUploadRegion()

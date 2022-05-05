@@ -44,6 +44,28 @@ namespace ZE::GFX::API::DX
 			if (SUCCEEDED(adapter->EnumOutputs(0, &ouptut)))
 				break;
 		}
+		DXGI_ADAPTER_DESC desc;
+		if (SUCCEEDED(adapter->GetDesc(&desc)))
+		{
+			switch (desc.VendorId)
+			{
+			case 0x10DE:
+			{
+				Settings::SetGpuVendor(VendorGPU::Nvidia);
+				break;
+			}
+			case 0x1002:
+			{
+				Settings::SetGpuVendor(VendorGPU::AMD);
+				break;
+			}
+			case 0x8086:
+			{
+				Settings::SetGpuVendor(VendorGPU::Intel);
+				break;
+			}
+			}
+		}
 		return adapter;
 	}
 

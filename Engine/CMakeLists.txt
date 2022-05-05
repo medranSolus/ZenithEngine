@@ -27,6 +27,9 @@ if(WIN32 AND (MODE_DEBUG OR MODE_RELINFO))
     copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll")
 endif()
 
+# Hardware specific lib
+copy_runtime_data(ENGINE_AGS "${AGS_DIR}/ags_lib/lib" "${AGS_LIB}" ".dll")
+
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
 set(PCH "${ENGINE_INC_DIR}/pch.h")
@@ -75,11 +78,11 @@ add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADE
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET}
-    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${EXT_INC_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR} ${PIX_INC_DIR} ${ENTT_INC_DIR})
+    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${EXT_INC_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR} ${PIX_INC_DIR} ${ENTT_INC_DIR} ${AGS_INC_DIR})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET} ${PIX_TARGET} ${ENTT_TARGET})
-add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
+    PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET} ${PIX_TARGET} ${ENTT_TARGET} ${AGS_TARGET})
+add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET})
 
 # Icon definition
 if(WIN32)

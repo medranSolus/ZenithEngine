@@ -19,3 +19,6 @@
 [submodule "External/zlib"]
 	path = External/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "External/AGS"]
+	path = External/AGS
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK.git

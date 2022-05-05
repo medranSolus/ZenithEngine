@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/API/ApiType.h"
+#include "GFX/VendorGPU.h"
 
 namespace ZE
 {
@@ -9,6 +10,7 @@ namespace ZE
 		static constexpr PixelFormat BACKBUFFER_FORMAT = PixelFormat::R8G8B8A8_UNorm;
 		static inline U64 frameIndex = 0;
 		static inline U32 swapChainBufferCount = 0;
+		static inline GFX::VendorGPU gpuVendor = GFX::VendorGPU::Unknown;
 		static inline GfxApiType gfxApi;
 #ifdef _ZE_MODE_DEBUG
 		static inline bool enableGfxTags = true;
@@ -29,6 +31,8 @@ namespace ZE
 		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
 #endif
 
+		static constexpr void SetGpuVendor(GFX::VendorGPU vendor) noexcept { gpuVendor = vendor; }
+		static constexpr GFX::VendorGPU GetGpuVendor() noexcept { return gpuVendor; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }

@@ -5,6 +5,9 @@
 #include "AllocatorTier1.h"
 #include "AllocatorTier2.h"
 #include "DescriptorInfo.h"
+#include "WarningGuardOn.h"
+#include "amd_ags.h"
+#include "WarningGuardOff.h"
 
 namespace ZE::GFX::API::DX12
 {
@@ -59,6 +62,12 @@ namespace ZE::GFX::API::DX12
 		U32 descriptorCount;
 		U32 descriptorSize;
 		DX::ComPtr<ID3D12DescriptorHeap> descHeap;
+
+		// Hardware specific data
+		union
+		{
+			AGSContext* gpuCtxAMD;
+		};
 
 		void WaitCPU(ID3D12Fence1* fence, U64 val);
 		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
@@ -130,6 +139,7 @@ namespace ZE::GFX::API::DX12
 		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ID3D12CommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 		ID3D12DescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
+		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GetGpuVendor() == VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
 
 		D3D12_RESOURCE_DESC GetBufferDesc(U64 size) const noexcept;
 		std::pair<D3D12_RESOURCE_DESC, U32> GetTextureDesc(U32 width, U32 height, U16 count,
