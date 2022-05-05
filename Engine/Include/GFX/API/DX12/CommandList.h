@@ -33,8 +33,8 @@ namespace ZE::GFX::API::DX12
 		~CommandList() = default;
 
 #ifdef _ZE_MODE_DEBUG
-		void TagBegin(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
-		void TagEnd() const noexcept { PIXEndEvent(commands.Get()); }
+		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept;
+		void TagEnd(GFX::Device& dev) const noexcept;
 #endif
 
 		void Open(GFX::Device& dev);

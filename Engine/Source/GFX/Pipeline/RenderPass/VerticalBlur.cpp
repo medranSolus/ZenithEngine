@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(cl, L"Outline Vertical Blur", Pixel(0xFD, 0xEF, 0xB2));
+		ZE_DRAW_TAG_BEGIN(dev, cl, L"Outline Vertical Blur", Pixel(0xFD, 0xEF, 0xB2));
 		ctx.BindingSchema.SetGraphics(cl);
 
 		data.State.SetStencilRef(cl, 0xFF);
@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		cl.DrawFullscreen(dev);
 
-		ZE_DRAW_TAG_END(cl);
+		ZE_DRAW_TAG_END(dev, cl);
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 	}

@@ -72,7 +72,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		CommandList& list = data.ListChain.Get();
 		list.Reset(dev);
 		list.Open(dev, data.StatePrefilter);
-		ZE_DRAW_TAG_BEGIN(list, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
+		ZE_DRAW_TAG_BEGIN(dev, list, L"SSAO", Pixel(0x89, 0xCF, 0xF0));
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(list);
@@ -123,7 +123,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 				TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
 			});
 
-		ZE_DRAW_TAG_END(list);
+		ZE_DRAW_TAG_END(dev, list);
 		list.Close(dev);
 		dev.ExecuteCompute(list);
 	}

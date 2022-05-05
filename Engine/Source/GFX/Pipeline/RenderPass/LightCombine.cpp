@@ -33,7 +33,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(cl, L"LightCombine", Pixel(0xFF, 0xFF, 0x9F));
+		ZE_DRAW_TAG_BEGIN(dev, cl, L"LightCombine", Pixel(0xFF, 0xFF, 0x9F));
 		ctx.BindingSchema.SetGraphics(cl);
 
 		renderData.Buffers.InitRTV(cl, ids.RenderTarget);
@@ -43,7 +43,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 		cl.DrawFullscreen(dev);
 
-		ZE_DRAW_TAG_END(cl);
+		ZE_DRAW_TAG_END(dev, cl);
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 	}

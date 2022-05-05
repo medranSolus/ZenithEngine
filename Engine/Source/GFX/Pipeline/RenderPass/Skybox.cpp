@@ -56,7 +56,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(cl, L"Skybox", Pixel(0x82, 0xCA, 0xFA));
+		ZE_DRAW_TAG_BEGIN(dev, cl, L"Skybox", Pixel(0x82, 0xCA, 0xFA));
 		ctx.BindingSchema.SetGraphics(cl);
 
 		renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		data.IndexBuffer.Bind(cl);
 		cl.DrawIndexed(dev, data.IndexBuffer.GetCount());
 
-		ZE_DRAW_TAG_END(cl);
+		ZE_DRAW_TAG_END(dev, cl);
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 	}

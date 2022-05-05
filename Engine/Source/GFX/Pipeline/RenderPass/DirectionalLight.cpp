@@ -42,17 +42,17 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		cl.Open(dev, data.State);
 
 		// Clearing data on first usage
-		ZE_DRAW_TAG_BEGIN(cl, L"Lighting Clear", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, L"Lighting Clear", PixelVal::White);
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
-		ZE_DRAW_TAG_END(cl);
+		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetDirectionalLightGroup(renderData.Registry);
 		if (group.size())
 		{
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			ZE_DRAW_TAG_BEGIN(cl, L"Directional Light", Pixel(0xF5, 0xF5, 0xD1));
+			ZE_DRAW_TAG_BEGIN(dev, cl, L"Directional Light", Pixel(0xF5, 0xF5, 0xD1));
 
 			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 				cl.DrawFullscreen(dev);
 			}
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
-			ZE_DRAW_TAG_END(cl);
+			ZE_DRAW_TAG_END(dev, cl);
 		}
 		cl.Close(dev);
 		dev.ExecuteMain(cl);

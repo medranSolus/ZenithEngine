@@ -53,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			cl.Open(dev, data.State);
-			ZE_DRAW_TAG_BEGIN(cl, L"Wireframe", Pixel(0xBC, 0x54, 0x4B));
+			ZE_DRAW_TAG_BEGIN(dev, cl, L"Wireframe", Pixel(0xBC, 0x54, 0x4B));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
@@ -65,7 +65,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
+				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
 				auto entity = visibleGroup[i];
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
@@ -82,9 +82,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				geometry.Indices.Bind(cl);
 
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
-				ZE_DRAW_TAG_END(cl);
+				ZE_DRAW_TAG_END(dev, cl);
 			}
-			ZE_DRAW_TAG_END(cl);
+			ZE_DRAW_TAG_END(dev, cl);
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
 			// Remove current visibility

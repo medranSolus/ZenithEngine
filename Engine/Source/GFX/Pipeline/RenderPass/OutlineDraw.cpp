@@ -41,10 +41,10 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 		// Clearing data on first usage
 		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Clear", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, L"Outline Draw Clear", PixelVal::White);
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
-		ZE_DRAW_TAG_END(cl);
+		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetRenderGroup<Data::RenderOutline>(renderData.Registry);
 		U64 count = group.size();
@@ -68,13 +68,13 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 
 			data.StateStencil.Bind(cl);
-			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
+			ZE_DRAW_TAG_BEGIN(dev, cl, L"Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
 			ctx.BindingSchema.SetGraphics(cl);
 			data.StateStencil.SetStencilRef(cl, 0xFF);
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
+				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
 				EID entity = visibleGroup[i];
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
@@ -93,13 +93,13 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				geometry.Indices.Bind(cl);
 
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
-				ZE_DRAW_TAG_END(cl);
+				ZE_DRAW_TAG_END(dev, cl);
 			}
-			ZE_DRAW_TAG_END(cl);
+			ZE_DRAW_TAG_END(dev, cl);
 
 			// Separate calls due to different RT/DS sizes
 			data.StateRender.Bind(cl);
-			ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
+			ZE_DRAW_TAG_BEGIN(dev, cl, L"Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 
@@ -109,7 +109,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ctx.Reset();
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
+				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
 
 				EID entity = visibleGroup[i];
 				cbuffer.Bind(cl, ctx, visibleGroup.get<InsideFrustum>(entity).Transform);
@@ -120,9 +120,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				geometry.Indices.Bind(cl);
 
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
-				ZE_DRAW_TAG_END(cl);
+				ZE_DRAW_TAG_END(dev, cl);
 			}
-			ZE_DRAW_TAG_END(cl);
+			ZE_DRAW_TAG_END(dev, cl);
 
 			// Remove current visibility
 			renderData.Registry.clear<InsideFrustum>();

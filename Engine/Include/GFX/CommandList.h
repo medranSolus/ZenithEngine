@@ -24,8 +24,8 @@ namespace ZE::GFX
 		// Main Gfx API
 
 #ifdef _ZE_MODE_DEBUG
-		constexpr void TagBegin(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBegin, tag, color); } }
-		constexpr void TagEnd() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEnd); } }
+		constexpr void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
+		constexpr void TagEnd(GFX::Device& dev) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
 #endif
 		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
@@ -43,9 +43,9 @@ namespace ZE::GFX
 }
 
 #ifdef _ZE_MODE_DEBUG
-#define ZE_DRAW_TAG_BEGIN(cl, tag, color) cl.TagBegin(tag, color)
-#define ZE_DRAW_TAG_END(cl) cl.TagEnd()
+#define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color) cl.TagBegin(dev, tag, color)
+#define ZE_DRAW_TAG_END(dev, cl) cl.TagEnd(dev)
 #else
-#define ZE_DRAW_TAG_BEGIN(cl, tag, color)
-#define ZE_DRAW_TAG_END(cl)
+#define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color)
+#define ZE_DRAW_TAG_END(dev, cl)
 #endif
