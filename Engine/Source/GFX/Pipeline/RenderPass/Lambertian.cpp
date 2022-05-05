@@ -73,7 +73,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
 		// Clearing data on first usage
-		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Lambertian Clear", PixelVal::White);
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
@@ -246,8 +245,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			}
 			ZE_DRAW_TAG_END(cl);
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		// Remove current visibility
 		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();

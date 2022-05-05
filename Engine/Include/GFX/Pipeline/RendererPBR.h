@@ -34,7 +34,7 @@ namespace ZE::GFX::Pipeline
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
 
-		void Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
+		void Init(Graphics& gfx, Resource::Texture::Library& texLib,
 			U32 width, U32 height, const ParamsPBR& params);
 
 		// Need to be called when data in parameters changed (also after creation of renderer)

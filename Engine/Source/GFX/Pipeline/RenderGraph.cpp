@@ -2,107 +2,6 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RenderGraph::BeforeSync(Device& dev, const PassSyncDesc& syncInfo)
-	{
-		// Insert waits into correnct GPU engines
-		switch (syncInfo.EnterSync)
-		{
-		case SyncType::AllToMain:
-			dev.WaitMainFromCopy(syncInfo.EnterFence2);
-		case SyncType::ComputeToMain:
-		{
-			dev.WaitMainFromCompute(syncInfo.EnterFence1);
-			break;
-		}
-		case SyncType::CopyToMain:
-		{
-			dev.WaitMainFromCopy(syncInfo.EnterFence2);
-			break;
-		}
-		case SyncType::AllToCompute:
-			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
-		case SyncType::MainToCompute:
-		{
-			dev.WaitComputeFromMain(syncInfo.EnterFence1);
-			break;
-		}
-		case SyncType::CopyToCompute:
-		{
-			dev.WaitComputeFromCopy(syncInfo.EnterFence2);
-			break;
-		}
-		case SyncType::AllToCopy:
-			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
-		case SyncType::MainToCopy:
-		{
-			dev.WaitCopyFromMain(syncInfo.EnterFence1);
-			break;
-		}
-		case SyncType::ComputeToCopy:
-		{
-			dev.WaitCopyFromCompute(syncInfo.EnterFence2);
-			break;
-		}
-		default:
-			ZE_ASSERT(false, "Incorret enum value for enter sync context!");
-		case SyncType::None:
-			break;
-		}
-	}
-
-	void RenderGraph::AfterSync(Device& dev, PassSyncDesc& syncInfo)
-	{
-		// Set fences for correct GPU engines
-		U64 nextFence = 0;
-		switch (syncInfo.AllExitSyncs)
-		{
-		case SyncType::MainToAll:
-		case SyncType::MainToCompute:
-		case SyncType::MainToCopy:
-		{
-			nextFence = dev.SetMainFence();
-			break;
-		}
-		case SyncType::ComputeToAll:
-		case SyncType::ComputeToMain:
-		case SyncType::ComputeToCopy:
-		{
-			nextFence = dev.SetComputeFence();
-			break;
-		}
-		case SyncType::CopyToAll:
-		case SyncType::CopyToMain:
-		case SyncType::CopyToCompute:
-		{
-			nextFence = dev.SetCopyFence();
-			break;
-		}
-		default:
-			ZE_ASSERT(false, "Incorret enum value for exit sync context!");
-		case SyncType::None:
-		{
-			ZE_ASSERT(syncInfo.DependentsCount == 0, "No syncing performed while there are dependent passes!");
-			return;
-		}
-		}
-
-		// Update fence values for all passes that depends on current pass
-		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
-		{
-			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-			(*exitSyncInfo.NextPassFence) = nextFence;
-#else
-			U64 currentFence = *exitSyncInfo.NextPassFence;
-			// Atomicitly check if current stored fence value is highest
-			// if no then store new value (or try if other thread also tries to store)
-			while (currentFence < nextFence)
-				if (exitSyncInfo.NextPassFence->compare_exchange_weak(currentFence, nextFence, std::memory_order::relaxed))
-					break;
-#endif
-		}
-	}
-
 	void RenderGraph::SortNodes(U64 currentNode, U64& orderedCount, const std::vector<std::vector<U64>>& graphList,
 		std::vector<U64>& nodes, std::vector<std::bitset<2>>& visited)
 	{
@@ -177,22 +76,10 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
-	{
-		pass.Execute(dev, cl, execData, pass.Data);
-	}
-
-	void RenderGraph::ExecuteThreadSync(Device& dev, CommandList& cl, PassDesc& pass)
-	{
-		BeforeSync(dev, pass.Syncs);
-		ExecuteThread(dev, cl, pass);
-		AfterSync(dev, pass.Syncs);
-	}
-
-	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
+	void RenderGraph::Finalize(Graphics& gfx, std::vector<RenderNode>& nodes,
 		FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances)
 	{
-		execData.DynamicBuffers.Exec([&dev](auto& x) { x.Init(dev); });
+		execData.DynamicBuffers.Exec([&dev = gfx.GetDevice()](auto& x) { x.Init(dev); });
 
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
@@ -235,6 +122,7 @@ namespace ZE::GFX::Pipeline
 		visited.clear();
 
 		// Compute longest path for each node as it's dependency level
+		U64 levelCount = 0;
 		std::vector<U64> dependencyLevels(nodes.size(), 0);
 		for (U64 node : ordered)
 		{
@@ -317,7 +205,6 @@ namespace ZE::GFX::Pipeline
 				CullIndirectDependecies(i, i, minDepLevel, syncList, depList, dependencyLevels);
 			}
 		}
-		depList.clear();
 
 		// Compute resource lifetimes based on dependency levels
 		for (U64 i = 0; i < nodes.size(); ++i)
@@ -339,7 +226,7 @@ namespace ZE::GFX::Pipeline
 				{
 					if (it->GetOutputs().at(k) == input)
 					{
-						const U64 rid = it->GetOutputResources().at(k);
+						const RID rid = it->GetOutputResources().at(k);
 						if (rid >= frameBufferDesc.ResourceInfo.size())
 							throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "], RID out of range [" + std::to_string(rid) + "]!");
 
@@ -348,9 +235,9 @@ namespace ZE::GFX::Pipeline
 						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
 						if (lifetime.contains(depLevel))
-							AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
+							AssignState(lifetime.at(depLevel).first, currentState, rid, depLevel);
 						else
-							lifetime[depLevel] = currentState;
+							lifetime[depLevel] = { currentState, node.GetPassType() };
 						break;
 					}
 					else if (++k == it->GetOutputs().size())
@@ -359,7 +246,7 @@ namespace ZE::GFX::Pipeline
 				++j;
 			}
 			// Check all output resources
-			for (U64 j = 0; const U64 rid : node.GetOutputResources())
+			for (U64 j = 0; const RID rid : node.GetOutputResources())
 			{
 				if (rid >= frameBufferDesc.ResourceInfo.size())
 					throw ZE_RGC_EXCEPT("RID out of range [" + std::to_string(rid) + "] for output + [" + node.GetOutputs().at(j) + "]!");
@@ -368,265 +255,257 @@ namespace ZE::GFX::Pipeline
 				auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
 				if (lifetime.contains(depLevel))
-					AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
+				{
+					AssignState(lifetime.at(depLevel).first, currentState, rid, depLevel);
+					if (lifetime.at(depLevel).second != node.GetPassType())
+					{
+						if ((frameBufferDesc.ResourceInfo.at(rid).Flags & FrameResourceFlags::SimultaneousAccess) == 0)
+							throw ZE_RGC_EXCEPT("Resource of output [" + node.GetOutputs().at(j) + "] used on 2 different engines on level ["
+								+ std::to_string(depLevel) + "] without SimultaneousAccess flag!");
+
+						lifetime.at(depLevel).second = QueueType::Main;
+					}
+				}
 				else
-					lifetime[depLevel] = currentState;
+					lifetime[depLevel] = { currentState, node.GetPassType() };
 				++j;
 			}
 			// Check temporary inner resources
 			for (auto& innerBuffer : node.GetInnerBuffers())
 			{
 				node.AddInnerBufferResource(frameBufferDesc.AddResource(std::move(innerBuffer.Info)));
-				frameBufferDesc.ResourceLifetimes.back()[depLevel] = innerBuffer.InitState;
+				frameBufferDesc.ResourceLifetimes.back()[depLevel] = { innerBuffer.InitState, node.GetPassType() };
 			}
 		}
 
-		// Sort passes into dependency level groups of execution
-		passes = new std::pair<Ptr<PassDesc>, U64>[++levelCount];
-		passesCleaners = new Ptr<PassCleanCallback>[levelCount];
-		passes[0].first = new PassDesc[nodes.size()];
-		passesCleaners[0] = new PassCleanCallback[nodes.size()];
-		// Level | Location
-		std::vector<std::pair<U64, U64>> passLocation(nodes.size(), { 0, 0 });
-		for (U64 i = 0; i < levelCount; ++i)
+		// Divide into render levels and find required syncs between them
+		// Gfx -> Compute | Compute -> Gfx | Compute -> Compute
+		std::vector<std::pair<std::pair<bool, bool>, bool>> requiredSyncs;
+		// First bundle always starts at the begining
+		std::vector<U64> renderLevelStarts = { 0 };
+		for (U64 i = 0; auto& syncs : syncList)
 		{
-			if (i != 0)
+			if (syncs.size())
 			{
-				U64 prevCount = passes[i - 1].second;
-				passes[i].first = passes[i - 1].first + prevCount;
-				passesCleaners[i] = passesCleaners[i - 1] + prevCount;
-			}
-			passes[i].second = 0;
-			for (U64 j = 0; j < nodes.size(); ++j)
-			{
-				if (dependencyLevels.at(j) == i)
+				const U64 currentLevel = dependencyLevels.at(i);
+				U16 renderLevel = 0;
+				for (U16 level : renderLevelStarts)
 				{
-					auto& node = nodes.at(j);
+					if (level == currentLevel)
+						break;
+					++renderLevel;
+				}
+				if (renderLevel >= renderLevelStarts.size())
+				{
+					renderLevel = renderLevelStarts.size() - 1;
+					renderLevelStarts.emplace_back(currentLevel);
+					requiredSyncs.emplace_back(std::make_pair(false, false), false);
+				}
+
+				if (nodes.at(i).GetPassType() == QueueType::Main)
+					requiredSyncs.at(renderLevel).first.second = true;
+				else
+					requiredSyncs.at(renderLevel).first.first = true;
+
+				// Check if possible situation when Compute resource will be used on Compute and Gfx queue
+				// NOTE: Only possible if resource have SimultaneousAccess flag set
+				for (U64 dep : depList.at(i))
+				{
+					if (nodes.at(dep).GetPassType() == QueueType::Compute)
+					{
+						// Check whether dependent pass have output resource shared between engines
+						for (RID res : nodes.at(dep).GetOutputResources())
+						{
+							if (frameBufferDesc.ResourceInfo.at(res).Flags & FrameResourceFlags::SimultaneousAccess)
+							{
+								requiredSyncs.at(renderLevel).second = true;
+								break;
+							}
+						}
+						if (requiredSyncs.at(renderLevel).second)
+							break;
+					}
+				}
+			}
+			++i;
+		}
+		depList.clear();
+		syncList.clear();
+
+		// Create render levels and compute how many pass levels fits in them
+		renderLevelCount = renderLevelStarts.size();
+		levels = new RenderLevel[renderLevelCount];
+		for (U16 i = 1; i < renderLevelCount; ++i)
+			levels[i - 1].LevelCount = renderLevelStarts.at(i) - renderLevelStarts.at(i - 1);
+		levels[renderLevelStarts.size() - 1].LevelCount = ++levelCount - renderLevelStarts.back();
+
+		// Compute proper syncs between levels
+		for (U16 i = 0; const auto& sync : requiredSyncs)
+		{
+			if (sync.second)
+				levels[i].ExitSync = SyncType::ComputeToAll;
+			else
+			{
+				if (sync.first.first)
+					levels[i].ExitSync = SyncType::MainToCompute;
+				if (sync.first.second)
+					levels[i + 1].EnterSync = SyncType::ComputeToMain;
+			}
+			++i;
+		}
+		for (U16 i = 0; i < renderLevelCount; ++i)
+			frameBufferDesc.RenderLevels.emplace_back(std::make_pair(renderLevelStarts.at(i), levels[i].LevelCount), std::make_pair(levels[i].EnterSync, levels[i].ExitSync));
+		requiredSyncs.clear();
+
+		// Gather data about how many passes are on each level
+		// Gfx count, compute count | pass list
+		std::vector<std::pair<std::pair<U16, U16>, std::vector<std::pair<U64, QueueType>>>> passLevels(levelCount, { { 0, 0 }, {} });
+		for (U64 i = 0; const auto& node: nodes)
+		{
+			ZE_ASSERT(node.GetPassType() != QueueType::Copy, "Incorrect pass type in render graph!");
+			auto& level = passLevels.at(dependencyLevels.at(i));
+			level.second.emplace_back(i++, node.GetPassType());
+
+			if (node.GetPassType() == QueueType::Main)
+				++level.first.first;
+			else
+				++level.first.second;
+		}
+		dependencyLevels.clear();
+
+		// Emplace passes into final structure
+		passCleaners = new std::array<Ptr<Ptr<PassCleanCallback>>, 2>[renderLevelCount];
+		PassDesc* passDescs = new PassDesc[nodes.size()];
+		PassCleanCallback* passCleanCallbacks = new PassCleanCallback[nodes.size()];
+		for (U16 i = 0; i < renderLevelCount; ++i)
+		{
+			auto& renderLevel = levels[i];
+			auto& renderLevelCleaners = passCleaners[i];
+			const U64 levelStart = renderLevelStarts.at(i);
+
+			// Check what passes are on this level
+			bool gfxPresent = false, computePresent = false;
+			for (U16 j = 0; j < renderLevel.LevelCount; ++j)
+			{
+				const auto& passLevel = passLevels.at(j + levelStart);
+
+				if (passLevel.first.first)
+					gfxPresent = true;
+				if (passLevel.first.second)
+					computePresent = true;
+				if (gfxPresent && computePresent)
+					break;
+			}
+			// Create correct bundles
+			ZE_ASSERT(gfxPresent || computePresent, "At least one bundle must be present on each render level!");
+			if (gfxPresent)
+			{
+				renderLevel.Bundles[0] = new std::pair<Ptr<PassDesc>, U16>[renderLevel.LevelCount];
+				renderLevelCleaners.at(0) = new Ptr<PassCleanCallback>[renderLevel.LevelCount];
+			}
+			if (computePresent)
+			{
+				renderLevel.Bundles[1] = new std::pair<Ptr<PassDesc>, U16>[renderLevel.LevelCount];
+				renderLevelCleaners.at(1) = new Ptr<PassCleanCallback>[renderLevel.LevelCount];
+			}
+
+			// Populate each level of bundle with passes
+			for (U16 j = 0; j < renderLevel.LevelCount; ++j)
+			{
+				const auto& passLevel = passLevels.at(j + levelStart);
+				ZE_ASSERT(passLevel.first.first || passLevel.first.second, "At least one pass must be present on each level!");
+
+				if (renderLevel.Bundles[0])
+				{
+					renderLevel.Bundles[0][j].second = passLevel.first.first;
+					if (passLevel.first.first)
+					{
+						renderLevel.Bundles[0][j].first = passDescs;
+						renderLevelCleaners.at(0)[j] = passCleanCallbacks;
+						passDescs += passLevel.first.first;
+						passCleanCallbacks += passLevel.first.first;
+					}
+				}
+
+				if (renderLevel.Bundles[1])
+				{
+					renderLevel.Bundles[1][j].second = passLevel.first.second;
+					if (passLevel.first.second)
+					{
+						renderLevel.Bundles[1][j].first = passDescs;
+						renderLevelCleaners.at(1)[j] = passCleanCallbacks;
+						passDescs += passLevel.first.second;
+						passCleanCallbacks += passLevel.first.second;
+					}
+				}
+
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+				if (passLevel.first.first > gfxWorkersCount)
+					gfxWorkersCount = passLevel.first.first;
+				if (passLevel.first.second > computeWorkersCount)
+					computeWorkersCount = passLevel.first.second;
+#endif
+				U16 gfx = 0, compute = 0;
+				for (const auto& pass : passLevel.second)
+				{
+					auto& node = nodes.at(pass.first);
 					ZE_ASSERT((node.GetExecuteData() != nullptr) == (node.GetCleanCallback() != nullptr),
 						"Optional data and cleaning function must be both provided or neither of them!");
+					ZE_ASSERT(node.GetExecuteCallback(), "Empty execution callback!");
 
-					auto& pass = passes[i].first[passes[i].second];
-					pass.Execute = node.GetExecuteCallback();
-					ZE_ASSERT(pass.Execute, "Empty execution callbak!");
-					pass.Data.Buffers = node.GetNodeRIDs();
-					pass.Data.OptData = node.GetExecuteData();
-					passesCleaners[i][passes[i].second] = node.GetCleanCallback();
-					passLocation.at(j) = { i, passes[i].second++ };
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-					if (passes[i].second > workersCount)
-						workersCount = passes[i].second;
-#endif
+					auto& desc = pass.second == QueueType::Main ?
+						renderLevel.Bundles[0][j].first[gfx] : renderLevel.Bundles[1][j].first[compute];
+					desc.Execute = node.GetExecuteCallback();
+					desc.Data.OptData = node.GetExecuteData();
+					desc.Data.Buffers = node.GetNodeRIDs();
 
-					// Go through dependent passes and append current pass to their syncs
-					bool requiredFence1 = false, requiredFence2 = false;
-					for (U64 dep : syncList.at(j))
-					{
-						PassSyncDesc& depPassSync = passes[passLocation.at(dep).first].first[passLocation.at(dep).second].Syncs;
-						ZE_ASSERT(depPassSync.DependentsCount < 255, "Need to change used data type!");
-
-						depPassSync.ExitSyncs = reinterpret_cast<ExitSync*>(realloc(depPassSync.ExitSyncs, sizeof(ExitSync) * ++depPassSync.DependentsCount));
-						auto& exitSync = depPassSync.ExitSyncs[depPassSync.DependentsCount - 1];
-						switch (node.GetPassType())
-						{
-						case QueueType::Main:
-						{
-							switch (nodes.at(dep).GetPassType())
-							{
-							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
-							case QueueType::Main:
-								throw ZE_RGC_EXCEPT("Trying to create sync point between same GPU engine type! Bug in culling redundant nodes!");
-							case QueueType::Compute:
-							{
-								requiredFence1 = true;
-								exitSync.Type = SyncType::ComputeToMain;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence1;
-								break;
-							}
-							case QueueType::Copy:
-							{
-								requiredFence2 = true;
-								exitSync.Type = SyncType::CopyToMain;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence2;
-								break;
-							}
-							}
-							break;
-						}
-						case QueueType::Compute:
-						{
-							switch (nodes.at(dep).GetPassType())
-							{
-							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
-							case QueueType::Main:
-							{
-								requiredFence1 = true;
-								exitSync.Type = SyncType::MainToCompute;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence1;
-								break;
-							}
-							case QueueType::Compute:
-								throw ZE_RGC_EXCEPT("Trying to create sync point between same GPU engine type! Bug in culling redundant nodes!");
-							case QueueType::Copy:
-							{
-								requiredFence2 = true;
-								exitSync.Type = SyncType::CopyToCompute;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence2;
-								break;
-							}
-							}
-							break;
-						}
-						case QueueType::Copy:
-						{
-							switch (nodes.at(dep).GetPassType())
-							{
-							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
-							case QueueType::Main:
-							{
-								requiredFence1 = true;
-								exitSync.Type = SyncType::MainToCopy;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence1;
-								break;
-							}
-							case QueueType::Compute:
-							{
-								requiredFence2 = true;
-								exitSync.Type = SyncType::ComputeToCopy;
-								exitSync.NextPassFence = &pass.Syncs.EnterFence2;
-								break;
-							}
-							case QueueType::Copy:
-								throw ZE_RGC_EXCEPT("Trying to create sync point between same GPU engine type! Bug in culling redundant nodes!");
-							}
-							break;
-						}
-						}
-					}
-					switch (node.GetPassType())
-					{
-					default:
-						ZE_ASSERT(false, "Unhandled enum value!");
-					case QueueType::Main:
-					{
-						if (requiredFence1 && requiredFence2)
-							pass.Syncs.EnterSync = SyncType::AllToMain;
-						else if (requiredFence1)
-							pass.Syncs.EnterSync = SyncType::ComputeToMain;
-						else if (requiredFence2)
-							pass.Syncs.EnterSync = SyncType::CopyToMain;
-						break;
-					}
-					case QueueType::Compute:
-					{
-						if (requiredFence1 && requiredFence2)
-							pass.Syncs.EnterSync = SyncType::AllToCompute;
-						else if (requiredFence1)
-							pass.Syncs.EnterSync = SyncType::MainToCompute;
-						else if (requiredFence2)
-							pass.Syncs.EnterSync = SyncType::CopyToCompute;
-						break;
-					}
-					case QueueType::Copy:
-					{
-						if (requiredFence1 && requiredFence2)
-							pass.Syncs.EnterSync = SyncType::AllToCopy;
-						else if (requiredFence1)
-							pass.Syncs.EnterSync = SyncType::MainToCopy;
-						else if (requiredFence2)
-							pass.Syncs.EnterSync = SyncType::ComputeToCopy;
-						break;
-					}
-					}
+					(pass.second == QueueType::Main ?
+						renderLevelCleaners.at(0)[j][gfx++] :
+						renderLevelCleaners.at(1)[j][compute++]) = node.GetCleanCallback();
 				}
 			}
 		}
-		// Merge info about required fences
-		for (U64 i = 0; i < nodes.size(); ++i)
+		renderLevelStarts.clear();
+		passLevels.clear();
+
+#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+		if (gfxWorkersCount > 1)
 		{
-			PassSyncDesc& passSync = passes[passLocation.at(i).first].first[passLocation.at(i).second].Syncs;
-			ZE_ASSERT(passSync.DependentsCount <= 255, "Need to increase DependentsCount range!");
-
-			bool requiredFence1 = false, requiredFence2 = false;
-			for (U8 j = 0; j < passSync.DependentsCount; ++j)
-			{
-				switch (passSync.ExitSyncs[j].Type)
-				{
-				case SyncType::MainToCompute:
-				case SyncType::ComputeToMain:
-				case SyncType::CopyToMain:
-				{
-					requiredFence1 = true;
-					break;
-				}
-				case SyncType::MainToCopy:
-				case SyncType::ComputeToCopy:
-				case SyncType::CopyToCompute:
-				{
-					requiredFence2 = true;
-					break;
-				}
-				default:
-					break;
-				}
-			}
-
-			switch (nodes.at(i).GetPassType())
-			{
-			default:
-				ZE_ASSERT(false, "Unhandled enum value!");
-			case QueueType::Main:
-			{
-				if (requiredFence1 && requiredFence2)
-					passSync.AllExitSyncs = SyncType::MainToAll;
-				else if (requiredFence1)
-					passSync.AllExitSyncs = SyncType::MainToCompute;
-				else if (requiredFence2)
-					passSync.AllExitSyncs = SyncType::MainToCopy;
-				break;
-			}
-			case QueueType::Compute:
-			{
-				if (requiredFence1 && requiredFence2)
-					passSync.AllExitSyncs = SyncType::ComputeToAll;
-				else if (requiredFence1)
-					passSync.AllExitSyncs = SyncType::ComputeToMain;
-				else if (requiredFence2)
-					passSync.AllExitSyncs = SyncType::ComputeToCopy;
-				break;
-			}
-			case QueueType::Copy:
-			{
-				if (requiredFence1 && requiredFence2)
-					passSync.AllExitSyncs = SyncType::CopyToAll;
-				else if (requiredFence1)
-					passSync.AllExitSyncs = SyncType::CopyToMain;
-				else if (requiredFence2)
-					passSync.AllExitSyncs = SyncType::CopyToCompute;
-				break;
-			}
-			}
+			workerThreadsGfx = new std::pair<std::thread, ChainPool<CommandList>>[--gfxWorkersCount];
+			for (U16 i = 0; i < gfxWorkersCount; ++i)
+				workerThreadsGfx[i].second.Exec([&dev](auto& x) { x.Init(dev, CommandType::All); });
 		}
-
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		workerThreads = new std::pair<std::thread, ChainPool<CommandList>>[--workersCount];
-		for (U64 i = 0; i < workersCount; ++i)
-			workerThreads[i].second.Exec([&dev](auto& x) { x.Init(dev, CommandType::All); });
+		else
+			gfxWorkersCount = 0;
+		if (computeWorkersCount > 1)
+		{
+			workerThreadsCompute = new std::pair<std::thread, ChainPool<CommandList>>[--computeWorkersCount];
+			for (U16 i = 0; i < computeWorkersCount; ++i)
+				workerThreadsCompute[i].second.Exec([&dev](auto& x) { x.Init(dev, CommandType::Compute); });
+		}
+		else
+			computeWorkersCount = 0;
 #endif
 
 		frameBufferDesc.ComputeWorkflowTransitions(levelCount);
-		execData.Buffers.Init(dev, mainList, frameBufferDesc);
+		execData.Buffers.Init(gfx, frameBufferDesc);
+		for (U16 i = 0; const auto& levelInfo : frameBufferDesc.RenderLevels)
+		{
+			if (levelInfo.second.first != levels[i].EnterSync)
+			{
+				ZE_ASSERT(levelInfo.second.first == SyncType::MainToAll, "Unsupported sync type!");
+				levels[i].EnterSync = levelInfo.second.first;
+			}
+			++i;
+		}
 
 		// Create shared gfx states
 		if (buildData.PipelineStates.size())
 		{
 			execData.SharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
-			for (U64 i = 0; const auto & state : buildData.PipelineStates)
-				execData.SharedStates[i++].Init(dev, state.second.second.first, execData.Bindings.GetSchema(state.second.first));
+			for (U64 i = 0; const auto& state : buildData.PipelineStates)
+				execData.SharedStates[i++].Init(gfx.GetDevice(), state.second.second.first, execData.Bindings.GetSchema(state.second.first));
 		}
-		passLocation.clear();
 	}
 
 	RenderGraph::RenderGraph(void* renderer, void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept
@@ -640,31 +519,58 @@ namespace ZE::GFX::Pipeline
 	RenderGraph::~RenderGraph()
 	{
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		if (workerThreads)
-			workerThreads.DeleteArray();
+		if (workerThreadsGfx)
+			workerThreadsGfx.DeleteArray();
+		if (workerThreadsCompute)
+			workerThreadsCompute.DeleteArray();
 #endif
-		if (passes)
+		if (levels)
 		{
-			for (U64 i = 0; i < levelCount; ++i)
+			PassDesc* passes;
+			if (levels[0].Bundles[0] && levels[0].Bundles[0][0].first)
+				passes = levels[0].Bundles[0][0].first;
+			else
+				passes = levels[0].Bundles[1][0].first;
+			PassCleanCallback* cleaners;
+			if (passCleaners[0].at(0) && passCleaners[0].at(0)[0])
+				cleaners = passCleaners[0].at(0)[0];
+			else
+				cleaners = passCleaners[0].at(1)[0];
+
+			for (U16 i = 0; i < renderLevelCount; ++i)
 			{
-				auto& level = passes[i];
-				for (U64 j = 0; j < level.second; ++j)
+				auto& level = levels[i];
+				auto levelCleaners = passCleaners[i];
+				for (U8 bundleType = 0; bundleType < 2; ++bundleType)
 				{
-					auto& pass = level.first[j];
-					if (pass.Data.Buffers)
-						pass.Data.Buffers.DeleteArray();
-					if (pass.Data.OptData)
-						passesCleaners[i][j](pass.Data.OptData);
-					if (pass.Syncs.ExitSyncs)
-						pass.Syncs.ExitSyncs.Free();
+					if (!level.Bundles[bundleType])
+						continue;
+
+					auto bundle = level.Bundles[bundleType];
+					auto bundleCleanres = levelCleaners[bundleType];
+					for (U16 j = 0; j < level.LevelCount; ++j)
+					{
+						auto& passLevel = bundle[j];
+						auto passLevelCleaners = bundleCleanres[j];
+						for (U16 k = 0; k < passLevel.second; ++k)
+						{
+							auto& pass = passLevel.first[k];
+							if (pass.Data.Buffers)
+								pass.Data.Buffers.DeleteArray();
+							if (pass.Data.OptData)
+								passLevelCleaners[k](pass.Data.OptData);
+						}
+					}
+					bundle.DeleteArray();
+					bundleCleanres.DeleteArray();
 				}
 			}
-			if (passes[0].first)
-				passes[0].first.DeleteArray();
-			passes.DeleteArray();
-			if (passesCleaners[0])
-				passesCleaners[0].DeleteArray();
-			passesCleaners.DeleteArray();
+			if (passes)
+				delete[] passes;
+			if (cleaners)
+				delete[] cleaners;
+			levels.DeleteArray();
+			passCleaners.DeleteArray();
 		}
 		if (execData.SharedStates)
 			execData.SharedStates.DeleteArray();
@@ -673,81 +579,147 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::Execute(Graphics& gfx)
 	{
 		Device& dev = gfx.GetDevice();
-		CommandList& mainList = gfx.GetMainList();
+		CommandList* lists[2] = { &gfx.GetMainList(), &gfx.GetComputeList() };
 
-		switch (Settings::GetGfxApi())
-		{
-		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
-		case GfxApiType::DX11:
-		case GfxApiType::OpenGL:
-		{
-			execData.DynamicBuffers.Get().StartFrame(dev);
-			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
-			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+		//switch (Settings::GetGfxApi())
+		//{
+		//default:
+		//	ZE_ASSERT(false, "Unhandled enum value!");
+		//case GfxApiType::DX11:
+		//case GfxApiType::OpenGL:
+		//{
+		//}
+		//case GfxApiType::DX12:
+		//case GfxApiType::Vulkan:
+		//{
+		//	break;
+		//}
+		//}
 
-			for (U64 i = 0; i < levelCount; ++i)
-			{
-				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
-				auto& level = passes[i];
-				if (level.second)
-				{
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-					for (U64 j = 0; j < level.second; ++j)
-						ExecuteThread(dev, mainList, level.first[j]);
-#else
-					U64 workersDispatch = level.second - 1;
-					ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
-					for (U64 j = 0; j < workersDispatch; ++j)
-						workerThreads[j].first = { &RenderGraph::ExecuteThread, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
-					ExecuteThread(dev, mainList, level.first[workersDispatch]);
-					for (U64 j = 0; j < workersDispatch; ++j)
-						workerThreads[j].first.join();
-#endif
-				}
-				execData.Buffers.ExitTransitions(dev, mainList, i);
-				ZE_DRAW_TAG_END_MAIN(dev);
-			}
-			break;
-		}
-		case GfxApiType::DX12:
-		case GfxApiType::Vulkan:
-		{
-			gfx.WaitForFrame();
-			execData.DynamicBuffers.Get().StartFrame(dev);
-			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
-			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+		gfx.WaitForFrame();
+		execData.DynamicBuffers.Get().StartFrame(dev);
+		execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
+		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 
-			mainList.Reset(dev);
+		for (auto& cl : lists)
+			cl->Reset(dev);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-			for (U64 i = 0; i < workersCount; ++i)
-				workerThreads[i].second.Get().Reset(dev);
+		for (U64 i = 0; i < workersCount; ++i)
+			workerThreads[i].second.Get().Reset(dev);
 #endif
-			execData.Buffers.InitTransitions(dev, mainList);
-			for (U64 i = 0; i < levelCount; ++i)
+		for (U16 i = 0; i < renderLevelCount; ++i)
+		{
+			auto& level = levels[i];
+			ZE_ASSERT(level.Bundles[0] || level.Bundles[1], "At least one bundle must be present at each rendering level!");
+
+			// Enter sync required for level (if need to wait for Compute engine resources to perform transitions)
+			switch (level.EnterSync)
 			{
-				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
-				auto& level = passes[i];
-				if (level.second)
-				{
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-					for (U64 j = 0; j < level.second; ++j)
-						ExecuteThreadSync(dev, mainList, level.first[j]);
-#else
-					U64 workersDispatch = level.second - 1;
-					ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
-					for (U64 j = 0; j < workersDispatch; ++j)
-						workerThreads[j].first = { &RenderGraph::ExecuteThreadSync, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
-					ExecuteThreadSync(dev, mainList, level.first[workersDispatch]);
-					for (U64 j = 0; j < workersDispatch; ++j)
-						workerThreads[j].first.join();
-#endif
-				}
-				execData.Buffers.ExitTransitions(dev, mainList, i);
-				ZE_DRAW_TAG_END_MAIN(dev);
+			case SyncType::ComputeToMain:
+			{
+				dev.WaitMainFromCompute(dev.SetComputeFence());
+				break;
 			}
-			break;
-		}
+			case SyncType::MainToAll:
+			{
+				dev.WaitMainFromCompute(dev.SetComputeFence());
+				auto& cl = *lists[0];
+
+				cl.Open(dev);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Cross engine wrapping at render level " + std::to_wstring(i + 1)).c_str(), PixelVal::Red);
+				execData.Buffers.SyncedEntryTransitions(cl, i);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
+
+				dev.WaitComputeFromMain(dev.SetMainFence());
+				break;
+			}
+			default:
+				ZE_ASSERT(false, "Incorret enum value for enter sync context!");
+			case SyncType::None:
+				break;
+			}
+
+			for (U8 bundleType = 0; bundleType < 2; ++bundleType)
+			{
+				if (!level.Bundles[bundleType])
+					continue;
+
+				const QueueType queue = bundleType ? QueueType::Compute : QueueType::Main;
+				auto& cl = *lists[bundleType];
+				cl.Open(dev);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Render level " + std::to_wstring(i + 1) + (bundleType ? L" [Compute]" : L" [GFX]")).c_str(), PixelVal::White);
+				execData.Buffers.EntryTransitions(cl, queue, i);
+
+				auto bundle = level.Bundles[bundleType];
+				for (U16 j = 0; j < level.LevelCount; ++j)
+				{
+					ZE_DRAW_TAG_BEGIN(cl, (L"Pass level " + std::to_wstring(j + 1)).c_str(), PixelVal::White);
+					auto& passLevel = bundle[j];
+
+					for (U16 k = 0; k < passLevel.second; ++k)
+					{
+						auto& pass = passLevel.first[k];
+						pass.Execute(dev, cl, execData, pass.Data);
+					}
+					execData.Buffers.ExitTransitions(cl, queue, i, j);
+					ZE_DRAW_TAG_END(cl);
+				}
+
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				if (bundleType)
+					dev.ExecuteCompute(cl);
+				else
+					dev.ExecuteMain(cl);
+			}
+
+			// Exit sync if barriers reference cross-engine resources
+			switch (level.ExitSync)
+			{
+			case SyncType::MainToCompute:
+			{
+				dev.WaitComputeFromMain(dev.SetMainFence());
+				break;
+			}
+			case SyncType::ComputeToAll:
+			{
+				dev.WaitMainFromCompute(dev.SetComputeFence());
+				auto& cl = *lists[0];
+
+				cl.Open(dev);
+				ZE_DRAW_TAG_BEGIN(cl, (L"Cross engine transition at render level " + std::to_wstring(i + 1)).c_str(), PixelVal::Red);
+				execData.Buffers.SyncedExitTransitions(cl, i);
+				ZE_DRAW_TAG_END(cl);
+				cl.Close(dev);
+				dev.ExecuteMain(cl);
+
+				dev.WaitComputeFromMain(dev.SetMainFence());
+				break;
+			}
+			default:
+				ZE_ASSERT(false, "Incorret enum value for exit sync context!");
+			case SyncType::None:
+				break;
+			}
+
+			//			auto& level = passes[i];
+			//			if (level.second)
+			//			{
+			//#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+			//				for (U64 j = 0; j < level.second; ++j)
+			//					ExecuteThreadSync(dev, mainList, level.first[j]);
+			//#else
+			//				U64 workersDispatch = level.second - 1;
+			//				ZE_ASSERT(workersCount >= workersDispatch, "Insufficient number of workers!");
+			//				for (U64 j = 0; j < workersDispatch; ++j)
+			//					workerThreads[j].first = { &RenderGraph::ExecuteThreadSync, this, std::ref(dev), std::ref(workerThreads[j].second.Get()), std::ref(level.first[j]) };
+			//				ExecuteThreadSync(dev, mainList, level.first[workersDispatch]);
+			//				for (U64 j = 0; j < workersDispatch; ++j)
+			//					workerThreads[j].first.join();
+			//#endif
+			//			}
 		}
 	}
 }

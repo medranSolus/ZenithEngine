@@ -5,35 +5,6 @@
 
 namespace ZE::GFX::Pipeline
 {
-	// Description of sync required for dependent RenderPass
-	struct ExitSync
-	{
-		SyncType Type;
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		U64* NextPassFence;
-#else
-		UA64* NextPassFence;
-#endif
-	};
-
-	// Info about sync to perform before and after RenderPass
-	struct PassSyncDesc
-	{
-		// Sync required before execution of RenderPass
-		SyncType EnterSync = SyncType::None;
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		U64 EnterFence1 = 0;
-		U64 EnterFence2 = 0;
-#else
-		UA64 EnterFence1 = 0;
-		UA64 EnterFence2 = 0;
-#endif
-		// Syncs required for dependent RenderPasses
-		SyncType AllExitSyncs = SyncType::None;
-		U8 DependentsCount = 0;
-		Ptr<ExitSync> ExitSyncs;
-	};
-
 	// Data needed for executing RenderPass
 	struct PassData
 	{
@@ -52,8 +23,17 @@ namespace ZE::GFX::Pipeline
 	// Descriptor containing params for executing RenderPass
 	struct PassDesc
 	{
-		PassSyncDesc Syncs;
 		PassExecuteCallback Execute = nullptr;
 		PassData Data;
+	};
+
+	// Data about render passes allowed for execution betweem queue sync points
+	struct RenderLevel
+	{
+		SyncType EnterSync = SyncType::None;
+		U16 LevelCount;
+		// [0]:Gfx, [1]:Compute bundles
+		Ptr<std::pair<Ptr<PassDesc>, U16>> Bundles[2];
+		SyncType ExitSync = SyncType::None;
 	};
 }

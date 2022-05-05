@@ -4,7 +4,7 @@
 #include "RenderPass/HDRGammaCorrection.h"
 #include "RenderPass/HorizontalBlur.h"
 #include "RenderPass/Lambertian.h"
-#include "RenderPass/LambertianDepthCopy.h"
+#include "RenderPass/LambertianComputeCopy.h"
 #include "RenderPass/LightCombine.h"
 #include "RenderPass/OutlineDraw.h"
 #include "RenderPass/PointLight.h"

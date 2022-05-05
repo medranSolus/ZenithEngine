@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Binding/Context.h"
 #include "GFX/Pipeline/FrameBufferDesc.h"
-#include "GFX/SwapChain.h"
+#include "GFX/Graphics.h"
 #include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Pipeline
@@ -34,8 +34,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	public:
 		FrameBuffer() = default;
-		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList,
-			const GFX::Pipeline::FrameBufferDesc& desc);
+		FrameBuffer(GFX::Graphics& gfx, const GFX::Pipeline::FrameBufferDesc& desc);
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
@@ -71,9 +70,11 @@ namespace ZE::GFX::API::DX11::Pipeline
 		void ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept;
 		void ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept;
 
-		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
-		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const noexcept {}
-		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
+		constexpr void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept {}
+		constexpr void SyncedEntryTransitions(GFX::CommandList& cl, U16 renderLevel) const noexcept {}
+		constexpr void SyncedExitTransitions(GFX::CommandList& cl, U16 renderLevel) const noexcept {}
+		constexpr void EntryTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel) const noexcept {}
+		void ExitTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel, U16 passlevel) const noexcept;
 	};
 
 #pragma region Functions

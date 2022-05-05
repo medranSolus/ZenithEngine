@@ -3,27 +3,6 @@
 
 namespace ZE::GFX::API::DX12::Pipeline
 {
-	struct ResourceInfo
-	{
-		RID Handle;
-		U32 Offset;
-		U32 Chunks;
-		U64 StartLevel;
-		U64 LastLevel;
-		D3D12_RESOURCE_DESC Desc;
-		D3D12_CLEAR_VALUE ClearVal;
-		DX::ComPtr<ID3D12Resource> Resource;
-		std::bitset<6> Flags;
-
-		constexpr bool IsRTV() const noexcept { return Flags[0]; }
-		constexpr bool IsDSV() const noexcept { return Flags[1]; }
-		constexpr bool IsSRV() const noexcept { return Flags[2]; }
-		constexpr bool IsUAV() const noexcept { return Flags[3]; }
-		constexpr bool IsCube() const noexcept { return Flags[4]; }
-		constexpr bool IsAliasing() const noexcept { return Flags[5]; }
-		void SetAliasing() noexcept { Flags[5] = true; }
-	};
-
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
 		RID invalidID, const std::vector<RID>& memory, U64 heapSize)
@@ -143,6 +122,153 @@ namespace ZE::GFX::API::DX12::Pipeline
 		return foundOffset;
 	}
 
+	U16 FrameBuffer::GetRenderLevel(U64 passLevel, GFX::Pipeline::FrameBufferDesc& desc) noexcept
+	{
+		for (const auto& level : desc.RenderLevels)
+		{
+			if (level.first.first <= passLevel && level.first.first + level.first.second > passLevel)
+			{
+				return level.first.first;
+			}
+		}
+		return desc.RenderLevels.back().first.first;
+	}
+
+	D3D12_RESOURCE_BARRIER FrameBuffer::CreateResource(ResourceInfo& res, ID3D12Heap* heap, Device& dev, GFX::Pipeline::FrameBufferDesc& desc)
+	{
+		ZE_GFX_ENABLE_ID(dev);
+
+		const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
+		GFX::Resource::State firstState = lifetime.begin()->second.first;
+		GFX::Resource::State lastState = lifetime.rbegin()->second.first;
+
+		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource(heap,
+			res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+			&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
+			res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
+		ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Transition.pResource = nullptr;
+
+		const U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
+		const U64 firstLevel = 2 * lifetime.begin()->first;
+		if (lastState != firstState)
+		{
+#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+			if (res.IsAliasing())
+			{
+				desc.TransitionsPerLevel.at(lastLevel).emplace_back(GFX::Pipeline::TransitionDesc(res.Handle,
+					GFX::Pipeline::BarrierType::Immediate, lastState, firstState), lifetime.rbegin()->second.second);
+			}
+			else
+#endif
+			{
+				desc.TransitionsPerLevel.at(lastLevel).emplace_back(GFX::Pipeline::TransitionDesc(res.Handle,
+					GFX::Pipeline::BarrierType::Begin, lastState, firstState), lifetime.rbegin()->second.second);
+				desc.TransitionsPerLevel.at(firstLevel).emplace_back(GFX::Pipeline::TransitionDesc(res.Handle,
+					GFX::Pipeline::BarrierType::End, lastState, firstState), lifetime.begin()->second.second);
+
+				// Cross engine barrier, need to synchronize on entry level
+				if (lifetime.begin()->second.second != lifetime.rbegin()->second.second)
+				{
+					desc.TransitionsPerLevel.at(firstLevel).back().second = QueueType::Main;
+					// Can skip synchronization and move barrier before treshold
+					if (firstLevel > 0)
+					{
+						desc.TransitionsPerLevel.at(firstLevel - 1).emplace_back(desc.TransitionsPerLevel.at(firstLevel).back());
+						desc.TransitionsPerLevel.at(firstLevel).pop_back();
+					}
+					else
+					{
+						desc.RenderLevels.at(GetRenderLevel(lifetime.begin()->first, desc)).second.first = GFX::Pipeline::SyncType::MainToAll;
+					}
+				}
+
+				// Barrier to wrap resource state
+				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrier.Transition.StateBefore = GetResourceState(lastState);
+				barrier.Transition.StateAfter = GetResourceState(firstState);
+				barrier.Transition.pResource = res.Resource.Get();
+				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+			}
+		}
+#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+		if (res.IsAliasing())
+		{
+			// Aliasing barriers
+			desc.TransitionsPerLevel.at(firstLevel).emplace_back(GFX::Pipeline::TransitionDesc(res.Handle,
+				GFX::Pipeline::BarrierType::Begin, GFX::Resource::StateCommon, GFX::Resource::StateCommon), QueueType::Main);
+			desc.TransitionsPerLevel.at(lastLevel).emplace_back(GFX::Pipeline::TransitionDesc(res.Handle,
+				GFX::Pipeline::BarrierType::End, GFX::Resource::StateCommon, GFX::Resource::StateCommon), QueueType::Main);
+		}
+#endif
+		return barrier;
+	}
+
+	bool FrameBuffer::FillBarrier(const GFX::Pipeline::TransitionDesc& transition, D3D12_RESOURCE_BARRIER& barrier) const noexcept
+	{
+#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+		if (transition.BeforeState == GFX::Resource::StateCommon
+			&& transition.AfterState == GFX::Resource::StateCommon)
+		{
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			if (transition.Barrier == GFX::Pipeline::BarrierType::Begin)
+			{
+				barrier.Aliasing.pResourceBefore = nullptr;
+				barrier.Aliasing.pResourceAfter = resources[transition.RID].Resource.Get();
+			}
+			else
+			{
+				barrier.Aliasing.pResourceBefore = resources[transition.RID].Resource.Get();
+				barrier.Aliasing.pResourceAfter = nullptr;
+			}
+		}
+		else
+#endif
+		{
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = GetTransitionType(transition.Barrier);
+			barrier.Transition.pResource = resources[transition.RID].Resource.Get();
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
+			barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
+
+			if (transition.RID == 0)
+				return true;
+		}
+		return false;
+	}
+
+	bool FrameBuffer::FillBarrierLevelGfx(U32& barrierCount, U64 levelIndex,
+		D3D12_RESOURCE_BARRIER*& barrierBuffer, GFX::Pipeline::FrameBufferDesc& desc) noexcept
+	{
+		bool foundCompute = false;
+		for (const auto& transition : desc.TransitionsPerLevel.at(levelIndex))
+		{
+			if (transition.second == QueueType::Main)
+			{
+				if (FillBarrier(transition.first, barrierBuffer[barrierCount++]))
+					backbufferBarriers[backbufferBarriersCount++] = barrierBuffer + barrierCount - 1;
+			}
+			else
+				foundCompute = true;
+		}
+		barrierBuffer += barrierCount;
+		return foundCompute;
+	}
+
+	void FrameBuffer::FillBarrierLevelCompute(U32& barrierCount, U64 levelIndex,
+		D3D12_RESOURCE_BARRIER*& barrierBuffer, GFX::Pipeline::FrameBufferDesc& desc) noexcept
+	{
+		for (const auto& transition : desc.TransitionsPerLevel.at(levelIndex))
+			if (transition.second == QueueType::Compute)
+				FillBarrier(transition.first, barrierBuffer[barrierCount++]);
+		barrierBuffer += barrierCount;
+	}
+
 	void FrameBuffer::InitResource(CommandList& cl, RID rid) const noexcept
 	{
 		// Perform discard operations for aliasing resources
@@ -177,14 +303,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		cl.GetList()->RSSetScissorRects(1, &scissorRect);
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
+	FrameBuffer::FrameBuffer(GFX::Graphics& gfx, GFX::Pipeline::FrameBufferDesc& desc)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx12);
+		auto& dev = gfx.GetDevice().Get().dx12;
+		ZE_GFX_ENABLE_ID(dev);
 
 		resourceCount = desc.ResourceInfo.size();
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
 
-		auto* device = dev.Get().dx12.GetDevice();
+		auto* device = dev.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
 		resourcesInfo.reserve(resourceCount - 1);
 		U32 rtvCount = 0, rtvAdditionalMipsCount = 0;
@@ -229,7 +356,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			const auto& lifetime = desc.ResourceLifetimes.at(i);
 			for (const auto& state : lifetime)
 			{
-				switch (state.second)
+				switch (state.second.first)
 				{
 				case GFX::Resource::StateRenderTarget:
 				{
@@ -289,8 +416,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
 				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
-			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
-				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
+			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first,
+				lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
+				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
+				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
 
 			if (isRT)
 			{
@@ -334,11 +463,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
-		std::vector<D3D12_RESOURCE_BARRIER> startingTransitions;
-		std::vector<std::pair<U64, D3D12_RESOURCE_BARRIER>> wrappingTransitions;
+		std::vector<D3D12_RESOURCE_BARRIER> wrappingTransitions;
 
 		// Handle resource types (Non RT/DS) depending on present tier level
-		if (dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1)
+		if (dev.GetCurrentAllocTier() == Device::AllocTier::Tier1)
 		{
 			// Sort resources descending by size leaving UAV only on the end
 			rt_dsCount = rtvCount + dsvCount;
@@ -393,39 +521,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 #endif
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
-					auto& res = resourcesInfo.at(i);
-					const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
-					GFX::Resource::State firstState = lifetime.begin()->second;
-					GFX::Resource::State lastState = lifetime.rbegin()->second;
-					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
-						res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
-						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
-					if (lastState != firstState)
-					{
-						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
-						if (res.IsAliasing())
-						{
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-								GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
-						}
-						else
-						{
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-								GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-							D3D12_RESOURCE_BARRIER barrier;
-							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-							barrier.Transition.StateBefore = GetResourceState(lastState);
-							barrier.Transition.StateAfter = GetResourceState(firstState);
-							barrier.Transition.pResource = res.Resource.Get();
-							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-							startingTransitions.emplace_back(barrier);
-							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-							wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
-						}
-					}
+					D3D12_RESOURCE_BARRIER wrappingBarrier = CreateResource(resourcesInfo.at(i), uavHeap.Get(), dev, desc);
+					if (wrappingBarrier.Transition.pResource)
+						wrappingTransitions.emplace_back(wrappingBarrier);
 				}
 			}
 		}
@@ -470,63 +568,30 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_GFX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
-		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
+		PrintMemory(dev.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
 		for (U64 i = 0; i < rt_dsCount; ++i)
 		{
-			auto& res = resourcesInfo.at(i);
-			const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
-			GFX::Resource::State firstState = lifetime.begin()->second;
-			GFX::Resource::State lastState = lifetime.rbegin()->second;
-			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
-				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
-				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_GFX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
-			if (lastState != firstState)
-			{
-				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
-				if (res.IsAliasing())
-				{
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-						GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
-				}
-				else
-				{
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-						GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-					D3D12_RESOURCE_BARRIER barrier;
-					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					barrier.Transition.StateBefore = GetResourceState(lastState);
-					barrier.Transition.StateAfter = GetResourceState(firstState);
-					barrier.Transition.pResource = res.Resource.Get();
-					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-					startingTransitions.emplace_back(barrier);
-					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-					wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
-				}
-			}
+			D3D12_RESOURCE_BARRIER wrappingBarrier = CreateResource(resourcesInfo.at(i), mainHeap.Get(), dev, desc);
+			if (wrappingBarrier.Transition.pResource)
+				wrappingTransitions.emplace_back(wrappingBarrier);
 		}
 
 		// Perform initial transitions for wrapping consistency
+		auto& mainList = gfx.GetMainList().Get().dx12;
 		U64 transitionFence = 0;
-		if (startingTransitions.size() > 0)
+		if (wrappingTransitions.size() > 0)
 		{
-			mainList.Get().dx12.Open(dev);
-			ZE_DRAW_TAG_BEGIN(mainList.Get().dx12, L"DX12 Wrapping Transitions", PixelVal::Gray);
-			mainList.Get().dx12.GetList()->ResourceBarrier(static_cast<U32>(startingTransitions.size()), startingTransitions.data());
-			ZE_DRAW_TAG_END(mainList.Get().dx12);
-			mainList.Get().dx12.Close(dev);
-			dev.Get().dx12.ExecuteMain(mainList);
-			transitionFence = dev.Get().dx12.SetMainFence();
+			mainList.Open(dev);
+			ZE_DRAW_TAG_BEGIN(mainList, L"DX12 Wrapping Transitions", PixelVal::Gray);
+			mainList.GetList()->ResourceBarrier(static_cast<U32>(wrappingTransitions.size()), wrappingTransitions.data());
+			ZE_DRAW_TAG_END(mainList);
+			mainList.Close(dev);
+			dev.ExecuteMain(gfx.GetMainList());
+
+			transitionFence = dev.SetMainFence();
+			wrappingTransitions.clear();
 		}
-		// Sort wrapping transitions in descending order
-		std::sort(wrappingTransitions.begin(), wrappingTransitions.end(),
-			[](const auto& t1, const auto& t2) -> bool
-			{
-				return t1.first > t2.first;
-			});
 
 		// Sort resources for increasing RID
 		std::sort(resourcesInfo.begin(), resourcesInfo.end(),
@@ -573,7 +638,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = uavDescHeap->GetCPUDescriptorHandleForHeapStart();
-		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount + uavCount + uavAdditionalMipsCount);
+		auto srvUavHandle = dev.AddStaticDescs(srvUavCount + uavCount + uavAdditionalMipsCount);
 		// Create demanded views for each resource
 		for (RID i = 1; const auto& res : resourcesInfo)
 		{
@@ -764,142 +829,150 @@ namespace ZE::GFX::API::DX12::Pipeline
 			++i;
 		}
 
-		// Find number of barriers and prepare aux structures
-		transitionSyncs = new GFX::Pipeline::SyncType[levelCount];
-		transitions = new TransitionPoint[levelCount];
+		// Prepare buffer for all the barriers
 		U64 barrierCount = 0;
-		for (const auto& level : desc.TransitionsPerLevel)
+		for (const auto& passLevel : desc.TransitionsPerLevel)
 		{
-			for (const auto& transition : level)
-				if (transition.RID == 0)
-					++backbufferBarriersLocationsCount;
-			barrierCount += level.size();
+			for (const auto& transition : passLevel)
+				if (transition.first.RID == 0)
+					++backbufferBarriersCount;
+			barrierCount += passLevel.size();
 		}
-		backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
-		backbufferBarriersLocations[0] = 0;
-		barrierCount += wrappingTransitions.size();
-		initTransitions.Barriers = new D3D12_RESOURCE_BARRIER[barrierCount];
-		initTransitions.BarrierCount = 0;
-		D3D12_RESOURCE_BARRIER barrier;
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		// Compute barriers before first render passes
-		U64 backbufferBarrierIndex = 0;
-		auto computeBarriers = [&](TransitionPoint& transitions, const U64 level, const U64 barrierIndex)
-		{
-			for (const auto& transition : desc.TransitionsPerLevel.at(level))
-			{
-				barrier.Flags = GetTransitionType(transition.Barrier);
-				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
-				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
-				barrier.Transition.pResource = resources[transition.RID].Resource.Get();
+		D3D12_RESOURCE_BARRIER* barriers = new D3D12_RESOURCE_BARRIER[barrierCount];
+		backbufferBarriers = new D3D12_RESOURCE_BARRIER*[backbufferBarriersCount];
+		backbufferBarriersCount = 0;
 
-				transitions.Barriers[transitions.BarrierCount++] = barrier;
-				if (transition.RID == 0 && level != 0)
+		// Compute barriers for every level and group them into:
+		// single entry group before render level and exit group after every pass level
+		transitionLevels = desc.RenderLevels.size();
+		gfxTransitions = new LevelTransition[transitionLevels];
+		computeTransitions = new LevelTransition[transitionLevels];
+		for (U16 i = 0; const auto& level : desc.RenderLevels)
+		{
+			auto& gfx = gfxTransitions[i];
+			auto& compute = computeTransitions[i];
+
+			// Prepare entry barriers for level
+			U64 levelIndex = level.first.first * 2;
+			gfx.EntryBarriers = barriers;
+			if (level.second.first == GFX::Pipeline::SyncType::MainToAll)
+			{
+				if (!syncedEntryTransitions)
 				{
-					backbufferBarriersLocations[backbufferBarrierIndex++] = barrierIndex;
-					if (transitions.BarrierCount != 1)
-					{
-						ZE_ASSERT(transitions.Barriers[0].Transition.pResource != nullptr, "Backbuffer barrier already at top of the list!");
-						transitions.Barriers[transitions.BarrierCount - 1] = transitions.Barriers[0];
-						transitions.Barriers[0] = barrier;
-					}
+					syncedEntryTransitions = new std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>[transitionLevels];
+					for (U16 j = transitionLevels; j;)
+						syncedEntryTransitions[--j] = { nullptr, 0 };
+				}
+				syncedEntryTransitions[i].first = barriers;
+				for (const auto& transition : desc.TransitionsPerLevel.at(levelIndex))
+				{
+					if (FillBarrier(transition.first, barriers[syncedEntryTransitions[i].second++]))
+						backbufferBarriers[backbufferBarriersCount++] = barriers + syncedEntryTransitions[i].second - 1;
+				}
+				barriers += syncedEntryTransitions[i].second;
+			}
+			else if (i == 0 || desc.RenderLevels.at(i - 1).second.second != GFX::Pipeline::SyncType::ComputeToAll)
+			{
+				if (FillBarrierLevelGfx(gfx.BarrierCount, levelIndex, barriers, desc))
+				{
+					compute.EntryBarriers = barriers;
+					FillBarrierLevelCompute(compute.BarrierCount, levelIndex, barriers, desc);
 				}
 			}
-			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
+			++levelIndex;
+
+			// Fill normal barriers for each pass level
+			gfx.ExitBarriers = new std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>[level.first.second];
+			compute.ExitBarriers = new std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>[level.first.second];
+			const U16 lastLevel = level.first.second - 1;
+			for (U16 j = 0; j < lastLevel; ++j)
 			{
-				transitions.Barriers[transitions.BarrierCount++] = wrappingTransitions.back().second;
-				wrappingTransitions.pop_back();
+				// Merge previous pass End and next one Begin barrier groups
+				gfx.ExitBarriers[j].second = 0;
+				gfx.ExitBarriers[j].first = barriers;
+				bool computeEnd = FillBarrierLevelGfx(gfx.ExitBarriers[j].second, levelIndex, barriers, desc);
+				U32 countBegin = 0;
+				bool computeBegin = FillBarrierLevelGfx(countBegin, levelIndex + 1, barriers, desc);
+				gfx.ExitBarriers[j].second += countBegin;
+
+				// Same for compute
+				compute.ExitBarriers[j].second = 0;
+				compute.ExitBarriers[j].first = barriers;
+				if (computeEnd)
+					FillBarrierLevelCompute(compute.ExitBarriers[j].second, levelIndex, barriers, desc);
+				if (computeBegin)
+				{
+					countBegin = 0;
+					FillBarrierLevelCompute(countBegin, levelIndex + 1, barriers, desc);
+					compute.ExitBarriers[j].second += countBegin;
+				}
+				levelIndex += 2;
 			}
-		};
-		computeBarriers(initTransitions, 0, 0);
-		for (auto& wrap : wrappingTransitions)
-			--wrap.first;
-		transitions[0].Barriers = initTransitions.Barriers + initTransitions.BarrierCount;
-		transitions[0].BarrierCount = 0;
-		// Compute normal barriers between passes
-		for (U64 i = 1; i < desc.TransitionsPerLevel.size(); ++i)
-		{
-			const U64 index = i / 2 - (i % 2 == 0);
-			if (index != 0 && i % 2 != 0)
+
+			// Handle last not full level and move correct barriers into separate group if sync needed
+			if (level.second.second == GFX::Pipeline::SyncType::ComputeToAll)
 			{
-				transitions[index].Barriers = transitions[index - 1].Barriers + transitions[index - 1].BarrierCount;
-				transitions[index].BarrierCount = 0;
+				if (!syncedExitTransitions)
+				{
+					syncedExitTransitions = new std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>[transitionLevels - 1];
+					for (U16 j = transitionLevels - 1; j;)
+						syncedExitTransitions[--j] = { nullptr, 0 };
+				}
+				syncedExitTransitions[i].first = barriers;
+				for (const auto& transition : desc.TransitionsPerLevel.at(levelIndex))
+				{
+					if (FillBarrier(transition.first, barriers[syncedExitTransitions[i].second++]))
+						backbufferBarriers[backbufferBarriersCount++] = barriers + syncedExitTransitions[i].second - 1;
+				}
+				for (const auto& transition : desc.TransitionsPerLevel.at(levelIndex + 1))
+				{
+					if (FillBarrier(transition.first, barriers[syncedExitTransitions[i].second++]))
+						backbufferBarriers[backbufferBarriersCount++] = barriers + syncedExitTransitions[i].second - 1;
+				}
+				barriers += syncedExitTransitions[i].second;
 			}
-			computeBarriers(transitions[index], i, index);
+			else
+			{
+				gfx.ExitBarriers[lastLevel].first = barriers;
+				if (FillBarrierLevelGfx(gfx.ExitBarriers[lastLevel].second, levelIndex, barriers, desc))
+				{
+					compute.ExitBarriers[lastLevel].first = barriers;
+					FillBarrierLevelCompute(compute.ExitBarriers[lastLevel].second, levelIndex, barriers, desc);
+				}
+			}
+			++i;
 		}
-
-		// Check what kind of transition sync is needed
-		auto computeBarrierSyncs = [](TransitionPoint& transitions, GFX::Pipeline::SyncType* syncBefore)
-		{
-			bool copyBefore = false, computeBefore = false;
-			bool copyAfter = false, computeAfter = false;
-			for (U32 i = 0; i < transitions.BarrierCount; ++i)
-			{
-				auto& barrier = transitions.Barriers[i];
-				// TODO: Compute syncs based on passes from which resources are used
-				if (syncBefore && barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
-				{
-					if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
-						computeBefore = true;
-
-					if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
-						|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
-						copyBefore = true;
-				}
-
-				if (barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY)
-				{
-					if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
-						computeAfter = true;
-
-					if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
-						|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
-						copyAfter = true;
-				}
-			}
-			if (syncBefore)
-			{
-				if (copyBefore && computeBefore)
-					*syncBefore = GFX::Pipeline::SyncType::AllToMain;
-				else if (copyBefore)
-					*syncBefore = GFX::Pipeline::SyncType::CopyToMain;
-				else if (computeBefore)
-					*syncBefore = GFX::Pipeline::SyncType::ComputeToMain;
-				else
-					*syncBefore = GFX::Pipeline::SyncType::None;
-			}
-
-			if (copyAfter && computeAfter)
-				transitions.AfterSync = GFX::Pipeline::SyncType::MainToAll;
-			else if (copyAfter)
-				transitions.AfterSync = GFX::Pipeline::SyncType::MainToCopy;
-			else if (computeAfter)
-				transitions.AfterSync = GFX::Pipeline::SyncType::MainToCompute;
-		};
-		computeBarrierSyncs(initTransitions, nullptr);
-		for (U64 i = 0; i < levelCount; ++i)
-			computeBarrierSyncs(transitions[i], transitionSyncs + i);
 
 		// Finish initial transitions
-		if (startingTransitions.size() > 0)
+		if (transitionFence > 0)
 		{
-			dev.Get().dx12.WaitMain(transitionFence);
-			mainList.Get().dx12.Reset(dev);
-			startingTransitions.clear();
+			dev.WaitMain(transitionFence);
+			mainList.Reset(dev);
 		}
 	}
 
 	FrameBuffer::~FrameBuffer()
 	{
-		if (initTransitions.Barriers)
-			initTransitions.Barriers.DeleteArray();
-		if (transitionSyncs)
-			transitionSyncs.DeleteArray();
-		if (transitions)
-			transitions.DeleteArray();
-		if (backbufferBarriersLocations)
-			backbufferBarriersLocations.DeleteArray();
+		if (gfxTransitions)
+		{
+			if (gfxTransitions[0].EntryBarriers)
+				gfxTransitions[0].EntryBarriers.DeleteArray();
+			for (U16 i = 0; i < transitionLevels; ++i)
+				gfxTransitions[i].ExitBarriers.DeleteArray();
+			gfxTransitions.DeleteArray();
+		}
+		if (computeTransitions)
+		{
+			for (U16 i = 0; i < transitionLevels; ++i)
+				computeTransitions[i].ExitBarriers.DeleteArray();
+			computeTransitions.DeleteArray();
+		}
+		if (syncedEntryTransitions)
+			syncedEntryTransitions.DeleteArray();
+		if (syncedExitTransitions)
+			syncedExitTransitions.DeleteArray();
+		if (backbufferBarriers)
+			backbufferBarriers.DeleteArray();
 		if (aliasingResources)
 			aliasingResources.DeleteArray();
 		if (resources)
@@ -1155,108 +1228,56 @@ namespace ZE::GFX::API::DX12::Pipeline
 		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, resources[0].Resource);
 		rtvDsv[0] = backbufferRtvSrv.first;
 		srv[0] = backbufferRtvSrv.second;
-		initTransitions.Barriers[0].Transition.pResource = resources[0].Resource.Get();
-		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
-			transitions[backbufferBarriersLocations[i]].Barriers[0].Transition.pResource = resources[0].Resource.Get();
+		for (U32 i = 0; i < backbufferBarriersCount; ++i)
+			backbufferBarriers[i]->Transition.pResource = resources[0].Resource.Get();
 	}
 
-	void FrameBuffer::InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const
+	void FrameBuffer::SyncedEntryTransitions(GFX::CommandList& cl, U16 renderLevel) const
 	{
-		// Perform wrapping barriers
-		auto& device = dev.Get().dx12;
-		cl.Get().dx12.Open(device);
-		ZE_DRAW_TAG_BEGIN(cl.Get().dx12, L"Init Transitions", PixelVal::Gray);
-		cl.Get().dx12.GetList()->ResourceBarrier(initTransitions.BarrierCount, initTransitions.Barriers);
-		ZE_DRAW_TAG_END(cl.Get().dx12);
-		cl.Get().dx12.Close(device);
-		device.ExecuteMain(cl);
+		auto& transition = syncedEntryTransitions[renderLevel];
+		ZE_ASSERT(transition.second > 0, "No transition barriers at this level! Missing barriers or wrong sync type chosen.");
 
-		// Insert waits for engines that consumes addressed resources
-		switch (initTransitions.AfterSync)
-		{
-		case GFX::Pipeline::SyncType::MainToAll:
-		{
-			U64 fence = device.SetMainFence();
-			device.WaitCopyFromMain(fence);
-			device.WaitComputeFromMain(fence);
-			break;
-		}
-		case GFX::Pipeline::SyncType::MainToCompute:
-		{
-			device.WaitComputeFromMain(device.SetMainFence());
-			break;
-		}
-		case GFX::Pipeline::SyncType::MainToCopy:
-		{
-			device.WaitCopyFromMain(device.SetMainFence());
-			break;
-		}
-		default:
-			break;
-		}
+		cl.Get().dx12.GetList()->ResourceBarrier(transition.second, transition.first);
 	}
 
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const
+	void FrameBuffer::SyncedExitTransitions(GFX::CommandList& cl, U16 renderLevel) const
 	{
-		// Perform normal transitions and reseting resources to initial state for aliasing
-		auto& transition = transitions[level];
+		auto& transition = syncedExitTransitions[renderLevel];
+		ZE_ASSERT(transition.second > 0, "No transition barriers at this level! Missing barriers or wrong sync type chosen.");
+
+		cl.Get().dx12.GetList()->ResourceBarrier(transition.second, transition.first);
+	}
+
+	void FrameBuffer::EntryTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel) const
+	{
+		ZE_ASSERT(queue != QueueType::Copy, "Copy queue is not supported as part of render graph and target for framebuffer transitions!");
+
+		// Perform cross-engine barriers
+		auto& transition = queue == QueueType::Main ?
+			gfxTransitions[renderLevel] : computeTransitions[renderLevel];
+
 		if (transition.BarrierCount > 0)
 		{
-			auto& device = dev.Get().dx12;
-
-			// Insert waits if barrier adresses other engines
-			switch (transitionSyncs[level])
-			{
-			case GFX::Pipeline::SyncType::AllToMain:
-				device.WaitMainFromCopy(device.SetCopyFence());
-			case GFX::Pipeline::SyncType::ComputeToMain:
-			{
-				device.WaitMainFromCompute(device.SetComputeFence());
-				break;
-			}
-			case GFX::Pipeline::SyncType::CopyToMain:
-			{
-				device.WaitMainFromCopy(device.SetCopyFence());
-				break;
-			}
-			default:
-				ZE_ASSERT(false, "Incorret enum value for enter sync context!");
-			case GFX::Pipeline::SyncType::None:
-				break;
-			}
-
-			cl.Get().dx12.Open(device);
-			ZE_DRAW_TAG_BEGIN(cl.Get().dx12, L"Exit Transitions", PixelVal::Gray);
-			cl.Get().dx12.GetList()->ResourceBarrier(transition.BarrierCount, transition.Barriers);
+			ZE_DRAW_TAG_BEGIN(cl.Get().dx12, L"Entry Transitions", PixelVal::Gray);
+			cl.Get().dx12.GetList()->ResourceBarrier(transition.BarrierCount, transition.EntryBarriers);
 			ZE_DRAW_TAG_END(cl.Get().dx12);
-			cl.Get().dx12.Close(device);
-			device.ExecuteMain(cl);
+		}
+	}
 
-			// Insert waits for engines that consumes addressed resources
-			switch (transition.AfterSync)
-			{
-			case GFX::Pipeline::SyncType::MainToAll:
-			{
-				U64 fence = device.SetMainFence();
-				device.WaitCopyFromMain(fence);
-				device.WaitComputeFromMain(fence);
-				break;
-			}
-			case GFX::Pipeline::SyncType::MainToCompute:
-			{
-				device.WaitComputeFromMain(device.SetMainFence());
-				break;
-			}
-			case GFX::Pipeline::SyncType::MainToCopy:
-			{
-				device.WaitCopyFromMain(device.SetMainFence());
-				break;
-			}
-			default:
-				ZE_ASSERT(false, "Incorret enum value for exit sync context!");
-			case GFX::Pipeline::SyncType::None:
-				break;
-			}
+	void FrameBuffer::ExitTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel, U16 passlevel) const
+	{
+		ZE_ASSERT(queue != QueueType::Copy, "Copy queue is not supported as part of render graph and target for framebuffer transitions!");
+
+		// Perform normal transitions, aliasing barriers and reseting resources to initial state for aliasing
+		auto& transition = queue == QueueType::Main ?
+			gfxTransitions[renderLevel].ExitBarriers[passlevel] :
+			computeTransitions[renderLevel].ExitBarriers[passlevel];
+
+		if (transition.second > 0)
+		{
+			ZE_DRAW_TAG_BEGIN(cl.Get().dx12, L"Exit Transitions", PixelVal::Gray);
+			cl.Get().dx12.GetList()->ResourceBarrier(transition.second, transition.first);
+			ZE_DRAW_TAG_END(cl.Get().dx12);
 		}
 	}
 }

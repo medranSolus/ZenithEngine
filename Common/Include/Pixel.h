@@ -41,7 +41,8 @@ namespace ZE
 		White = 0xFFFFFFFF,
 		Gray = 0xFF808080,
 		Black = 0xFF000000,
-		Cobalt = 0xFFC22000
+		Cobalt = 0xFFC22000,
+		Red = 0xFF0000FF
 	};
 
 #pragma region Functions

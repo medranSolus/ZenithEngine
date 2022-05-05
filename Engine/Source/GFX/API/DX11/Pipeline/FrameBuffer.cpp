@@ -33,17 +33,17 @@ namespace ZE::GFX::API::DX11::Pipeline
 		cl.GetContext()->RSSetViewports(1, &viewport);
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList,
-		const GFX::Pipeline::FrameBufferDesc& desc)
+	FrameBuffer::FrameBuffer(GFX::Graphics& gfx, const GFX::Pipeline::FrameBufferDesc& desc)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
-		auto* device = dev.Get().dx11.GetDevice();
+		ZE_GFX_ENABLE_ID(gfx.GetDevice().Get().dx11);
+		auto* device = gfx.GetDevice().Get().dx11.GetDevice();
+		auto& swapChain = gfx.GetSwapChain().Get().dx11;
 
 		resourceCount = desc.ResourceInfo.size();
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
 
 		resources = new BufferData[resourceCount];
-		resources[0].Resource = nullptr;
+		resources[0].Resource = swapChain.GetBuffer();
 		resources[0].Size = { desc.ResourceInfo.front().Width, desc.ResourceInfo.front().Height };
 		bool rtvMipsPresent = false;
 		bool dsvMipsPresent = false;
@@ -96,7 +96,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 			for (const auto& state : desc.ResourceLifetimes.at(i))
 			{
-				switch (state.second)
+				switch (state.second.first)
 				{
 				case GFX::Resource::StateRenderTarget:
 				{
@@ -155,8 +155,10 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 		// Create view arrays
 		rtvs = new DX::ComPtr<ID3D11RenderTargetView1>[resourceCount];
+		rtvs[0] = swapChain.GetRTV();
 		dsvs = new DX::ComPtr<ID3D11DepthStencilView>[resourceCount - 1];
 		srvs = new DX::ComPtr<ID3D11ShaderResourceView1>[resourceCount];
+		srvs[0] = swapChain.GetSRV();
 		uavs = new DX::ComPtr<ID3D11UnorderedAccessView1>[resourceCount - 1];
 		if (rtvMipsPresent)
 			rtvMips = new Ptr<DX::ComPtr<ID3D11RenderTargetView1>>[resourceCount - 1];
@@ -574,32 +576,24 @@ namespace ZE::GFX::API::DX11::Pipeline
 			reinterpret_cast<const U32*>(colors));
 	}
 
-	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
-	{
-		if (resources[0].Resource == nullptr)
-		{
-			resources[0].Resource = swapChain.Get().dx11.GetBuffer();
-			rtvs[0] = swapChain.Get().dx11.GetRTV();
-			srvs[0] = swapChain.Get().dx11.GetSRV();
-		}
-	}
-
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept
+	void FrameBuffer::ExitTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel, U16 passlevel) const noexcept
 	{
 		auto* ctx = cl.Get().dx11.GetContext();
-		ctx->OMSetRenderTargets(0, nullptr, nullptr);
-
 		for (U8 i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; ++i)
 			ctx->CSSetUnorderedAccessViews(i, 1, nullUAV.GetAddressOf(), nullptr);
 
-		for (U8 i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT; ++i)
+		if (queue == QueueType::Main)
 		{
-			ctx->CSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->VSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->DSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->HSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->GSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->PSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+			ctx->OMSetRenderTargets(0, nullptr, nullptr);
+			for (U8 i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT; ++i)
+			{
+				ctx->CSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				ctx->VSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				ctx->DSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				ctx->HSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				ctx->GSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				ctx->PSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+			}
 		}
 	}
 }

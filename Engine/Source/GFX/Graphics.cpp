@@ -6,6 +6,7 @@ namespace ZE::GFX
 	{
 		device.Init(descriptorCount, scratchDescriptorCount);
 		mainList.Exec([&](CommandList& x) { x.InitMain(device); });
+		computeList.Exec([&](CommandList& x) { x.Init(device, CommandType::Compute); });
 		fenceChain.Exec([](U64& x) { x = 0; });
 		swapChain.Init(window, device, backbufferSRV);
 	}

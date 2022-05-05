@@ -14,7 +14,7 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		constexpr void Init(Device& dev, CommandList& mainList, FrameBufferDesc& desc) { ZE_API_BACKEND_VAR.Init(dev, mainList, desc); }
+		constexpr void Init(Graphics& gfx, FrameBufferDesc& desc) { ZE_API_BACKEND_VAR.Init(gfx, desc); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& mainList) { /*ZE_API_BACKEND_VAR.Switch(nextApi, dev, mainList);*/ }
 		ZE_API_BACKEND_GET(Pipeline::FrameBuffer);
 
@@ -83,7 +83,9 @@ namespace ZE::GFX::Pipeline
 		constexpr void ClearUAV(CommandList& cl, RID rid, const Pixel colors[4]) const noexcept { ZE_API_BACKEND_CALL(ClearUAV, cl, rid, colors); }
 
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_API_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
-		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(InitTransitions, dev, cl); }
-		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const { ZE_API_BACKEND_CALL(ExitTransitions, dev, cl, level); }
+		constexpr void SyncedEntryTransitions(CommandList& cl, U16 renderLevel) const { ZE_API_BACKEND_CALL(SyncedEntryTransitions, cl, renderLevel); }
+		constexpr void SyncedExitTransitions(CommandList& cl, U16 renderLevel) const { ZE_API_BACKEND_CALL(SyncedExitTransitions, cl, renderLevel); }
+		constexpr void EntryTransitions(CommandList& cl, QueueType queue, U16 renderLevel) const { ZE_API_BACKEND_CALL(EntryTransitions, cl, queue, renderLevel); }
+		constexpr void ExitTransitions(CommandList& cl, QueueType queue, U16 renderLevel, U16 passLevel) const { ZE_API_BACKEND_CALL(ExitTransitions, cl, queue, renderLevel, passLevel); }
 	};
 }

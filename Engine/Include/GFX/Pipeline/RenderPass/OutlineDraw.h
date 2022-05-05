@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Pipeline/PassDesc.h"
+#include "GFX/Pipeline/RenderLevel.h"
 #include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/TransformBuffer.h"
 #

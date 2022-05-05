@@ -2,6 +2,14 @@
 
 namespace ZE::GFX::Pipeline
 {
+	RenderNode::RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute,
+		PassCleanCallback passClean, void* executeData) noexcept
+		: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute),
+		passClean(passClean), executeData(executeData)
+	{
+		ZE_ASSERT(passType != QueueType::Copy,
+			"Copy queue not supported in render passes! Consider using Compute queue for async copying of data and Copy queue for outside of renderer copies.");
+	}
 	void RenderNode::AddInput(std::string&& name, Resource::State state)
 	{
 		if (std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end())

@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/QueueType.h"
-#include "PassDesc.h"
+#include "RenderLevel.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -32,9 +32,7 @@ namespace ZE::GFX::Pipeline
 
 	public:
 		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute,
-			PassCleanCallback passClean = nullptr, void* executeData = nullptr) noexcept
-			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute),
-			passClean(passClean), executeData(executeData) {}
+			PassCleanCallback passClean = nullptr, void* executeData = nullptr) noexcept;
 		ZE_CLASS_DEFAULT(RenderNode);
 		~RenderNode() = default;
 

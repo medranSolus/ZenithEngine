@@ -39,7 +39,6 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 	{
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-		cl.Open(dev, data.State);
 
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(cl, L"Lighting Clear", PixelVal::White);
@@ -53,6 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			ZE_DRAW_TAG_BEGIN(cl, L"Directional Light", Pixel(0xF5, 0xF5, 0xD1));
+			data.State.Bind(cl);
 
 			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
@@ -80,7 +80,5 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 			ZE_DRAW_TAG_END(cl);
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 	}
 }

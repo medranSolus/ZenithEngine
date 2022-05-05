@@ -2,19 +2,38 @@
 #include "GFX/Binding/Context.h"
 #include "GFX/Pipeline/FrameBufferDesc.h"
 #include "GFX/Pipeline/SyncType.h"
-#include "GFX/CommandList.h"
-#include "GFX/SwapChain.h"
+#include "GFX/Graphics.h"
 #include "D3D12.h"
 
 namespace ZE::GFX::API::DX12::Pipeline
 {
 	class FrameBuffer final
 	{
-		struct TransitionPoint
+		struct ResourceInfo
+		{
+			RID Handle;
+			U32 Offset;
+			U32 Chunks;
+			U64 StartLevel;
+			U64 LastLevel;
+			D3D12_RESOURCE_DESC Desc;
+			D3D12_CLEAR_VALUE ClearVal;
+			DX::ComPtr<ID3D12Resource> Resource;
+			std::bitset<6> Flags;
+
+			constexpr bool IsRTV() const noexcept { return Flags[0]; }
+			constexpr bool IsDSV() const noexcept { return Flags[1]; }
+			constexpr bool IsSRV() const noexcept { return Flags[2]; }
+			constexpr bool IsUAV() const noexcept { return Flags[3]; }
+			constexpr bool IsCube() const noexcept { return Flags[4]; }
+			constexpr bool IsAliasing() const noexcept { return Flags[5]; }
+			void SetAliasing() noexcept { Flags[5] = true; }
+		};
+		struct LevelTransition
 		{
 			U32 BarrierCount = 0;
-			Ptr<D3D12_RESOURCE_BARRIER> Barriers;
-			GFX::Pipeline::SyncType AfterSync = GFX::Pipeline::SyncType::None;
+			Ptr<D3D12_RESOURCE_BARRIER> EntryBarriers;
+			Ptr<std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>> ExitBarriers;
 		};
 		struct BufferData
 		{
@@ -22,12 +41,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 			UInt2 Size;
 		};
 
-		TransitionPoint initTransitions;
-		Ptr<GFX::Pipeline::SyncType> transitionSyncs;
-		Ptr<TransitionPoint> transitions;
+		U16 transitionLevels = 0;
+		Ptr<LevelTransition> gfxTransitions;
+		Ptr<LevelTransition> computeTransitions;
+		Ptr<std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>> syncedEntryTransitions;
+		Ptr<std::pair<Ptr<D3D12_RESOURCE_BARRIER>, U32>> syncedExitTransitions; // No last transition
 
-		U64 backbufferBarriersLocationsCount = 0;
-		Ptr<U64> backbufferBarriersLocations;
+		U32 backbufferBarriersCount = 0;
+		Ptr<D3D12_RESOURCE_BARRIER*> backbufferBarriers;
 		Ptr<bool> aliasingResources;
 		Ptr<BufferData> resources;
 
@@ -43,7 +64,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		DX::ComPtr<ID3D12DescriptorHeap> uavDescHeap;
 		DX::ComPtr<ID3D12Heap> mainHeap;
 		DX::ComPtr<ID3D12Heap> uavHeap;
-
+#define _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
 			RID invalidID, const std::vector<RID>& memory, U64 heapSize);
@@ -55,14 +76,22 @@ namespace ZE::GFX::API::DX12::Pipeline
 #endif
 		static U32 AllocResource(RID id, U32 chunks, U64 startLevel, U64 lastLevel,
 			U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory);
+		static U16 GetRenderLevel(U64 passLevel, GFX::Pipeline::FrameBufferDesc& desc) noexcept;
+		static D3D12_RESOURCE_BARRIER CreateResource(ResourceInfo& res, ID3D12Heap* heap,
+			Device& dev, GFX::Pipeline::FrameBufferDesc& desc);
 
+		bool FillBarrier(const GFX::Pipeline::TransitionDesc& transition, D3D12_RESOURCE_BARRIER& barrier) const noexcept;
+		bool FillBarrierLevelGfx(U32& barrierCount, U64 levelIndex,
+			D3D12_RESOURCE_BARRIER*& barrierBuffer, GFX::Pipeline::FrameBufferDesc& desc) noexcept;
+		void FillBarrierLevelCompute(U32& barrierCount, U64 levelIndex,
+			D3D12_RESOURCE_BARRIER*& barrierBuffer, GFX::Pipeline::FrameBufferDesc& desc) noexcept;
 		void InitResource(CommandList& cl, RID rid) const noexcept;
 		void SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;
 
 	public:
 		FrameBuffer() = default;
-		FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc);
+		FrameBuffer(GFX::Graphics& gfx, GFX::Pipeline::FrameBufferDesc& desc);
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
@@ -99,8 +128,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept;
 
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
-		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
-		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const;
+		void SyncedEntryTransitions(GFX::CommandList& cl, U16 renderLevel) const;
+		void SyncedExitTransitions(GFX::CommandList& cl, U16 renderLevel) const;
+		void EntryTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel) const;
+		void ExitTransitions(GFX::CommandList& cl, QueueType queue, U16 renderLevel, U16 passlevel) const;
 	};
 
 #pragma region Functions

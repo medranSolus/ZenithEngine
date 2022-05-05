@@ -12,6 +12,7 @@ namespace ZE::GFX
 		Device device;
 		SwapChain swapChain;
 		ChainPool<CommandList> mainList;
+		ChainPool<CommandList> computeList;
 		ChainPool<U64> fenceChain;
 
 	public:
@@ -21,6 +22,7 @@ namespace ZE::GFX
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
+		constexpr CommandList& GetComputeList() noexcept { return computeList.Get(); }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
 		constexpr void WaitForFrame() noexcept { return device.WaitMain(fenceChain.Get()); }
 		constexpr void Present();

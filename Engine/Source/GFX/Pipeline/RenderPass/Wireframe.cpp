@@ -52,8 +52,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			cl.Open(dev, data.State);
 			ZE_DRAW_TAG_BEGIN(cl, L"Wireframe", Pixel(0xBC, 0x54, 0x4B));
+			data.State.Bind(cl);
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
@@ -85,8 +85,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				ZE_DRAW_TAG_END(cl);
 			}
 			ZE_DRAW_TAG_END(cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
+
 			// Remove current visibility
 			renderData.Registry.clear<InsideFrustum>();
 		}

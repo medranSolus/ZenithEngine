@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline
 			"Cannot use depth stencil with simultaneous access resource!");
 		RID id = ResourceInfo.size();
 		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
-		ResourceLifetimes.emplace_back(std::map<RID, Resource::State>({}));
+		ResourceLifetimes.emplace_back(std::map<U64, std::pair<Resource::State, QueueType>>({}));
 		return id;
 	}
 
@@ -31,11 +31,11 @@ namespace ZE::GFX::Pipeline
 		TransitionsPerLevel.resize(dependencyLevels * 2);
 		if (backbuffer.begin()->first != 0)
 		{
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::StatePresent, backbuffer.begin()->second);
-			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(TransitionDesc(0, BarrierType::Begin, Resource::StatePresent, backbuffer.begin()->second.first), QueueType::Main);
+			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(TransitionDesc(0, BarrierType::End, Resource::StatePresent, backbuffer.begin()->second.first), QueueType::Main);
 		}
 		else
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(TransitionDesc(0, BarrierType::Immediate, Resource::StatePresent, backbuffer.begin()->second.first), QueueType::Main);
 
 		// Cull same states between dependency levels and compute types of barriers per resource
 		for (U64 i = 0; i < ResourceLifetimes.size(); ++i)
@@ -45,12 +45,12 @@ namespace ZE::GFX::Pipeline
 			{
 				for (auto first = res.begin(), next = ++res.begin(); next != res.end();)
 				{
-					if (first->second == next->second)
+					if (first->second.first == next->second.first)
 					{
 						if (next != --res.end())
 						{
 							auto after = next;
-							if ((++after)->second == next->second)
+							if ((++after)->second.first == next->second.first)
 								next = res.erase(next);
 							else
 							{
@@ -65,11 +65,16 @@ namespace ZE::GFX::Pipeline
 					{
 						if (next->first - first->first > 1)
 						{
-							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Begin, first->second, next->second);
-							TransitionsPerLevel.at(2 * static_cast<U64>(next->first)).emplace_back(static_cast<RID>(i), BarrierType::End, first->second, next->second);
+							if (first->second.second == next->second.second)
+							{
+								TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(TransitionDesc(static_cast<RID>(i), BarrierType::Begin, first->second.first, next->second.first), first->second.second);
+								TransitionsPerLevel.at(2 * static_cast<U64>(next->first)).emplace_back(TransitionDesc(static_cast<RID>(i), BarrierType::End, first->second.first, next->second.first), next->second.second);
+							}
+							else
+								TransitionsPerLevel.at(2 * static_cast<U64>(next->first)).emplace_back(TransitionDesc(static_cast<RID>(i), BarrierType::Immediate, first->second.first, next->second.first), next->second.second);
 						}
 						else
-							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Immediate, first->second, next->second);
+							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(TransitionDesc(static_cast<RID>(i), BarrierType::Immediate, first->second.first, next->second.first), first->second.second);
 						first = next++;
 					}
 				}

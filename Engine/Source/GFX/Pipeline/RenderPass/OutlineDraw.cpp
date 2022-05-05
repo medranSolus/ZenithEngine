@@ -40,7 +40,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
 		// Clearing data on first usage
-		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(cl, L"Outline Draw Clear", PixelVal::White);
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
@@ -127,7 +126,5 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			// Remove current visibility
 			renderData.Registry.clear<InsideFrustum>();
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 	}
 }

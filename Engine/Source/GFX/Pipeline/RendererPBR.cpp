@@ -120,7 +120,7 @@ namespace ZE::GFX::Pipeline
 		SetupSsaoQuality();
 	}
 
-	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
+	void RendererPBR::Init(Graphics& gfx, Resource::Texture::Library& texLib,
 		U32 width, U32 height, const ParamsPBR& params)
 	{
 		const U32 outlineBuffWidth = width / 2;
@@ -129,6 +129,8 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.Init(11, width, height);
 
 #pragma region Framebuffer definition
+		const RID gbuffNormalCompute = frameBufferDesc.AddResource(
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffDepthCompute = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 		const RID ssao = frameBufferDesc.AddResource(
@@ -170,6 +172,7 @@ namespace ZE::GFX::Pipeline
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
 		SetupSsaoData(width, height);
 
+		auto& dev = gfx.GetDevice();
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
@@ -186,9 +189,11 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("lambertianDepthCopy", QueueType::Main, RenderPass::LambertianDepthCopy::Execute);
+			RenderNode node("lambertianComputeCopy", QueueType::Main, RenderPass::LambertianComputeCopy::Execute);
 			node.AddInput("lambertian.DS", Resource::StateCopySource);
-			node.AddOutput("DS_compute", Resource::StateCopyDestination, gbuffDepthCompute);
+			node.AddInput("lambertian.GB_N", Resource::StateCopySource);
+			node.AddOutput("DS", Resource::StateCopyDestination, gbuffDepthCompute);
+			node.AddOutput("GB_N", Resource::StateCopyDestination, gbuffNormalCompute);
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
@@ -244,8 +249,8 @@ namespace ZE::GFX::Pipeline
 		}
 		{
 			ZE_MAKE_NODE("ssao", QueueType::Compute, SSAO, dev, buildData);
-			node.AddInput("lambertianDepthCopy.DS_compute", Resource::StateShaderResourceNonPS);
-			node.AddInput("lambertian.GB_N", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
@@ -314,7 +319,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
+		Finalize(gfx, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
 		dev.EndUploadRegion();
 	}
 

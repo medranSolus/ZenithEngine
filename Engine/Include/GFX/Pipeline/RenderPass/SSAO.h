@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Pipeline/PassDesc.h"
+#include "GFX/Pipeline/RenderLevel.h"
 #include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/Texture/Pack.h"
@@ -19,7 +19,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	struct ExecuteData
 	{
-		ChainPool<CommandList> ListChain;
 		U32 BindingIndexPrefilter;
 		U32 BindingIndexSSAO;
 		U32 BindingIndexDenoise;

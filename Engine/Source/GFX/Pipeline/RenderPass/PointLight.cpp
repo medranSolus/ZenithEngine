@@ -72,7 +72,6 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			auto& cbuffer = renderData.DynamicBuffers.Get();
-			cl.Open(dev);
 			for (U64 i = 0; i < count; ++i)
 			{
 				EID entity = group[i];
@@ -117,8 +116,6 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(cl);
 			}
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 		}
 	}
 }
