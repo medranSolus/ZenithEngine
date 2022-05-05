@@ -423,7 +423,6 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
-		// TODO: Save slot+shader and then use them to correctly flush state in exit barriers
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(srvs[rid], "Current resource is not suitable for being shader resource!");
 
@@ -434,6 +433,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		for (U32 i = 0; i < slotInfo.SlotsCount; ++i)
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
+			currentSlots.emplace_back(true, slotData);
 			for (U32 j = 0; j < slotData.Count; ++j, ++slotData.BindStart, ++rid)
 			{
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
@@ -469,6 +469,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		for (U32 i = 0; i < slotInfo.SlotsCount; ++i)
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
+			currentSlots.emplace_back(false, slotData);
 			for (U32 j = 0; j < slotData.Count; ++j, ++slotData.BindStart)
 			{
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
@@ -497,6 +498,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		for (U32 i = 0; i < slotInfo.SlotsCount; ++i)
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
+			currentSlots.emplace_back(false, slotData);
 			for (U32 j = 0; j < slotData.Count; ++j, ++slotData.BindStart)
 			{
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
@@ -518,20 +520,42 @@ namespace ZE::GFX::API::DX11::Pipeline
 			ctx->OMSetRenderTargets(0, nullptr, nullptr);
 		else if (before == GFX::Resource::StateUnorderedAccess)
 		{
-			for (U8 i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; ++i)
-				ctx->CSSetUnorderedAccessViews(i, 1, nullUAV.GetAddressOf(), nullptr);
+			ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
+			for (auto it = currentSlots.begin(); it != currentSlots.end();)
+			{
+				if (!it->first)
+				{
+					ZE_ASSERT(it->second.BindStart + it->second.Count < D3D11_PS_CS_UAV_REGISTER_COUNT, "Too wide binding range!");
+					ctx->CSSetUnorderedAccessViews(it->second.BindStart, it->second.Count, nullUav, nullptr);
+					it = currentSlots.erase(it);
+				}
+				else
+					++it;
+			}
 		}
 		else
 		{
-			// SRV
-			for (U8 i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT; ++i)
+			ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
+			for (auto it = currentSlots.begin(); it != currentSlots.end();)
 			{
-				ctx->CSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-				ctx->VSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-				ctx->DSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-				ctx->HSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-				ctx->GSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-				ctx->PSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+				if (it->first)
+				{
+					ZE_ASSERT(it->second.BindStart + it->second.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too wide binding range!");
+
+					if (it->second.Shaders & GFX::Resource::ShaderType::Vertex)
+						ctx->VSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
+					if (it->second.Shaders & GFX::Resource::ShaderType::Domain)
+						ctx->DSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
+					if (it->second.Shaders & GFX::Resource::ShaderType::Hull)
+						ctx->HSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
+					if (it->second.Shaders & GFX::Resource::ShaderType::Geometry)
+						ctx->GSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
+					if (it->second.Shaders & GFX::Resource::ShaderType::Pixel)
+						ctx->PSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
+					it = currentSlots.erase(it);
+				}
+				else
+					++it;
 			}
 		}
 	}
@@ -589,17 +613,32 @@ namespace ZE::GFX::API::DX11::Pipeline
 		auto* ctx = cl.Get().dx11.GetContext();
 		ctx->OMSetRenderTargets(0, nullptr, nullptr);
 
-		for (U8 i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; ++i)
-			ctx->CSSetUnorderedAccessViews(i, 1, nullUAV.GetAddressOf(), nullptr);
+		ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
+		ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
 
-		for (U8 i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT; ++i)
+		for (const auto& slot : currentSlots)
 		{
-			ctx->CSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->VSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->DSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->HSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->GSSetShaderResources(i, 1, nullSRV.GetAddressOf());
-			ctx->PSSetShaderResources(i, 1, nullSRV.GetAddressOf());
+			if (slot.first)
+			{
+				ZE_ASSERT(slot.second.BindStart + slot.second.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too wide binding range!");
+
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Vertex)
+					ctx->VSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Domain)
+					ctx->DSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Hull)
+					ctx->HSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Geometry)
+					ctx->GSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Pixel)
+					ctx->PSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+			}
+			else
+			{
+				ZE_ASSERT(slot.second.BindStart + slot.second.Count < D3D11_PS_CS_UAV_REGISTER_COUNT, "Too wide binding range!");
+				ctx->CSSetUnorderedAccessViews(slot.second.BindStart, slot.second.Count, nullUav, nullptr);
+			}
 		}
+		currentSlots.clear();
 	}
 }

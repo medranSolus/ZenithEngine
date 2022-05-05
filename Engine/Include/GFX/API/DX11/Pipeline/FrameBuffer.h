@@ -14,11 +14,10 @@ namespace ZE::GFX::API::DX11::Pipeline
 			UInt2 Size;
 		};
 
-		const DX::ComPtr<ID3D11UnorderedAccessView> nullUAV = nullptr;
-		const DX::ComPtr<ID3D11ShaderResourceView> nullSRV = nullptr;
-
 		RID resourceCount;
 		Ptr<BufferData> resources;
+		// Is SRV | correct binding slots
+		mutable std::vector<std::pair<bool, Binding::Schema::SlotData>> currentSlots;
 
 		Ptr<DX::ComPtr<ID3D11RenderTargetView1>> rtvs;
 		Ptr<DX::ComPtr<ID3D11DepthStencilView>> dsvs; // No backbuffer
