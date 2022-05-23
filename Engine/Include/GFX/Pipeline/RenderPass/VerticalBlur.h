@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/CBuffer.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 {

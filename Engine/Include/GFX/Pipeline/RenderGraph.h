@@ -1,5 +1,4 @@
 #pragma once
-#include "GFX/Resource/CBuffer.h"
 #include "GFX/Graphics.h"
 #include "RendererBuildData.h"
 #include "RenderNode.h"

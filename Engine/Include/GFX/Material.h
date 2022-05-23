@@ -1,5 +1,5 @@
 #pragma once
-#include "Resource/Cbuffer.h"
+#include "Resource/CBuffer.h"
 #include "Resource/Texture/Pack.h"
 
 namespace ZE::GFX
