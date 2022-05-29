@@ -55,5 +55,5 @@ namespace ZE::Window
 	typedef WinAPI::WindowWinAPI MainWindow;
 }
 #else
-#error Missing window platform specyfic implementation!
+#error Missing Window platform specific implementation!
 #endif

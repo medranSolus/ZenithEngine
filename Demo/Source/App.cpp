@@ -116,7 +116,7 @@ void App::ShowOptionsWindow()
 		if (ImGui::Button("Exit"))
 			run = false;
 		ImGui::SameLine();
-		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::Text("FPS: %.2f", 1000000.0L / frametime);
 		ImGui::SameLine();
 		switch (Settings::GetGfxApi())
 		{
@@ -657,8 +657,11 @@ App::App(const std::string& commandLine)
 
 int App::Run()
 {
+	ZE_PERF_START("Frame");
 	while (run)
 	{
+		frametime = ZE_PERF_STOP();
+		ZE_PERF_START("Frame");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
 		if (status.first)
 			return status.second;

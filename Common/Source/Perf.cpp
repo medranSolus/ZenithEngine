@@ -10,9 +10,7 @@ namespace ZE
 			return;
 		for (auto& x : data)
 		{
-			if (x.second.second != 0)
-				x.second.first /= x.second.second;
-			fout << '[' << x.first << "] Avg cycles: " << x.second.first << ", tests: " << x.second.second << std::endl;
+			fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
 		}
 		data.clear();
 		fout.close();
@@ -28,19 +26,23 @@ namespace ZE
 	{
 		std::string tag = "";
 		if (data.find(sectionTag) == data.end())
-			data.emplace(sectionTag + tag, std::make_pair(0ULL, 0ULL));
+			data.emplace(sectionTag + tag, Data(0.0L, 0ULL));
 		lastTag = sectionTag;
-		Intrin::FenceStore();
-		stamp = Intrin::Rdtsc();
+		stamp = platformImpl.GetCurrentTimestamp();
 	}
 
-	void Perf::Stop() noexcept
+	long double Perf::Stop() noexcept
 	{
-		const U64 end = Intrin::Rdtsc();
-		Intrin::FenceStore();
-		data.at(lastTag).first += end - stamp;
-		++data.at(lastTag).second;
+		// Get timestamp and convert to microseconds elapsed time
+		stamp = (platformImpl.GetCurrentTimestamp() - stamp) * 1000000ULL;
+		const long double time = static_cast<long double>(stamp) / platformImpl.GetFrequency();
+
+		// Combine with rest of data
+		Data& dataPoint = data.at(lastTag);
+		dataPoint.AvgMicroseconds += (time - dataPoint.AvgMicroseconds) / static_cast<long double>(++dataPoint.Count);
+
 		stamp = 0;
 		lastTag = "";
+		return time;
 	}
 }
