@@ -24,8 +24,7 @@ namespace ZE
 		static constexpr const char* LOG_FILE = "perf_log.txt";
 
 		std::map<std::string, Data> data;
-		std::string lastTag = "";
-		U64 stamp = 0;
+		std::vector<std::pair<U64, std::string>> lastTags;
 		PlatformPerf platformImpl;
 
 		void Save();
@@ -40,8 +39,10 @@ namespace ZE
 
 		void Start(const std::string& sectionTag) noexcept;
 		long double Stop() noexcept;
+		U64 GetSectionCallCount(const std::string& sectionTag) noexcept;
 	};
 }
 
 #define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
 #define ZE_PERF_STOP() ZE::Perf::Get().Stop()
+#define ZE_PERF_COUNT(sectionTag) ZE::Perf::Get().GetSectionCallCount(sectionTag)
