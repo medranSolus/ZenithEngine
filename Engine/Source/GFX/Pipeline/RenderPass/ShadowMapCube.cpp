@@ -60,7 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume, U64 lightNumber)
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Cube Clear", PixelVal::Gray);
@@ -68,6 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
+		ZE_PERF_START("Point Light " + std::to_string(lightNumber) + " - Shadow Map");
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		if (group.size())
 		{
@@ -156,7 +157,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Point Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -212,7 +215,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Point Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -269,7 +274,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Point Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -277,5 +284,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			// Remove current material indication
 			renderData.Registry.clear<Solid, Transparent>();
 		}
+		ZE_PERF_STOP();
 	}
 }

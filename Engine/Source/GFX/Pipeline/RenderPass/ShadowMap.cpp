@@ -58,7 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
-		const Float3& lightDir, const Math::BoundingFrustum& frustum)
+		const Float3& lightDir, const Math::BoundingFrustum& frustum, U64 lightNumber)
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Clear", PixelVal::Gray);
@@ -66,6 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
+		ZE_PERF_START("Spot Light " + std::to_string(lightNumber) + " - Shadow Map");
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
 		const Vector direction = Math::XMLoadFloat3(&lightDir);
@@ -122,7 +123,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Spot Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -177,7 +180,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Spot Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -234,7 +239,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					geometry.Vertices.Bind(cl);
 					geometry.Indices.Bind(cl);
 
+					ZE_PERF_START("Spot Light " + std::to_string(lightNumber) + " - Shadow Map Draw");
 					cl.DrawIndexed(dev, geometry.Indices.GetCount());
+					ZE_PERF_STOP();
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_DRAW_TAG_END(dev, cl);
@@ -242,6 +249,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			// Remove current visibility indication
 			renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 		}
+		ZE_PERF_STOP();
 		return viewProjection;
 	}
 }

@@ -116,7 +116,7 @@ void App::ShowOptionsWindow()
 		if (ImGui::Button("Exit"))
 			run = false;
 		ImGui::SameLine();
-		ImGui::Text("FPS: %.2f", 1000000.0L / frametime);
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::SameLine();
 		switch (Settings::GetGfxApi())
 		{
@@ -141,6 +141,8 @@ void App::ShowOptionsWindow()
 			break;
 		}
 		}
+		ImGui::SameLine();
+		ImGui::Text("%u", ZE_PERF_COUNT("Frame"));
 		engine.Reneder().ShowWindow(engine.Gfx().GetDevice());
 	}
 	ImGui::End();
@@ -606,6 +608,7 @@ EID App::AddDirectionalLight(std::string&& name,
 
 void App::MakeFrame()
 {
+	ZE_PERF_START("Prepare frame");
 	engine.BeginFrame();
 	//ImGui::ShowDemoWindow();
 	if (engine.IsGuiActive())
@@ -614,15 +617,16 @@ void App::MakeFrame()
 		ShowObjectWindow();
 	}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
+	ZE_PERF_STOP();
 	engine.EndFrame();
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
+	: engine({ WINDOW_TITLE, GfxApiType::DX11, 2, 1920, 1080, 10000, 800, { "Skybox/Space", ".png" } })
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 
-	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { 0.0f, 75.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
 	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
 		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
@@ -657,17 +661,20 @@ App::App(const std::string& commandLine)
 
 int App::Run()
 {
-	ZE_PERF_START("Frame");
 	while (run)
 	{
-		frametime = ZE_PERF_STOP();
 		ZE_PERF_START("Frame");
+		ZE_PERF_START("Input processing");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
 		if (status.first)
 			return status.second;
 		ProcessInput();
+		ZE_PERF_STOP();
 		MakeFrame();
 		//scene.UpdateTransforms();
+		ZE_PERF_STOP();
+		if (ZE_PERF_COUNT("Frame") == 100000)
+			break;
 	}
 	return 0;
 }

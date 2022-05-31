@@ -32,5 +32,5 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
-		const Float3& lightDir, const Math::BoundingFrustum& frustum);
+		const Float3& lightDir, const Math::BoundingFrustum& frustum, U64 lightNumber);
 }

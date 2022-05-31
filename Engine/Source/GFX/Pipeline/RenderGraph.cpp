@@ -672,6 +672,7 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::Execute(Graphics& gfx)
 	{
+		ZE_PERF_START("Rendering sync");
 		Device& dev = gfx.GetDevice();
 		CommandList& mainList = gfx.GetMainList();
 
@@ -682,6 +683,8 @@ namespace ZE::GFX::Pipeline
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
 		{
+			ZE_PERF_STOP();
+			ZE_PERF_START("Rendering");
 			execData.DynamicBuffers.Get().StartFrame(dev);
 			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
 			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
@@ -714,6 +717,8 @@ namespace ZE::GFX::Pipeline
 		case GfxApiType::Vulkan:
 		{
 			gfx.WaitForFrame();
+			ZE_PERF_STOP();
+			ZE_PERF_START("Rendering");
 			execData.DynamicBuffers.Get().StartFrame(dev);
 			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
 			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());

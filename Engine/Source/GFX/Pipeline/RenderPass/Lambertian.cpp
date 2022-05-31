@@ -81,6 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());
 		ZE_DRAW_TAG_END(dev, cl);
 
+		ZE_PERF_START("Lambertian");
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 		const Matrix viewProjection = dynamicData.ViewProjection;
@@ -133,7 +134,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				geometry.Vertices.Bind(cl);
 				geometry.Indices.Bind(cl);
 
+				ZE_PERF_START("Lambertian Draw");
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_PERF_STOP();
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_DRAW_TAG_END(dev, cl);
@@ -186,7 +189,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				geometry.Vertices.Bind(cl);
 				geometry.Indices.Bind(cl);
 
+				ZE_PERF_START("Lambertian Draw");
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_PERF_STOP();
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_DRAW_TAG_END(dev, cl);
@@ -241,15 +246,20 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				geometry.Vertices.Bind(cl);
 				geometry.Indices.Bind(cl);
 
+				ZE_PERF_START("Lambertian Draw");
 				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				ZE_PERF_STOP();
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_DRAW_TAG_END(dev, cl);
 		}
+		ZE_PERF_START("Lambertian Execute");
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
+		ZE_PERF_STOP();
 
 		// Remove current visibility
 		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
+		ZE_PERF_STOP();
 	}
 }

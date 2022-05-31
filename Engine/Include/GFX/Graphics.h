@@ -23,17 +23,25 @@ namespace ZE::GFX
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
 		constexpr void WaitForFrame() noexcept { return device.WaitMain(fenceChain.Get()); }
-		constexpr void Present();
+		void Present()
+		{
+			fenceChain.Get() = device.SetMainFence();
+			ZE_PERF_STOP();
+			ZE_PERF_START("Present");
+			swapChain.Present(device);
+			Settings::AdvanceFrame();
+			ZE_PERF_STOP();
+		}
 
 		void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount, bool backbufferSRV);
 	};
 
 #pragma region Functions
-	constexpr void Graphics::Present()
-	{
-		fenceChain.Get() = device.SetMainFence();
-		swapChain.Present(device);
-		Settings::AdvanceFrame();
-	}
+	//constexpr void Graphics::Present()
+	//{
+	//	fenceChain.Get() = device.SetMainFence();
+	//	swapChain.Present(device);
+	//	Settings::AdvanceFrame();
+	//}
 #pragma endregion
 }

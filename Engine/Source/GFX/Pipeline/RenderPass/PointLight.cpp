@@ -60,6 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		const U64 count = group.size();
 		if (count)
 		{
+			ZE_PERF_START("Point Light");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
@@ -85,7 +86,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					continue;
 
 				ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData,
-					*reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume);
+					*reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume, i);
 
 				TransformBuffer transformBuffer;
 				transformBuffer.Transform = viewProjection *
@@ -113,12 +114,17 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				data.VolumeVB.Bind(cl);
 				data.VolumeIB.Bind(cl);
 
+				ZE_PERF_START("Point Light Draw");
 				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
+				ZE_PERF_STOP();
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
+			ZE_PERF_START("Point Light Execute");
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
+			ZE_PERF_STOP();
+			ZE_PERF_STOP();
 		}
 	}
 }

@@ -65,6 +65,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		const U64 count = group.size();
 		if (count)
 		{
+			ZE_PERF_START("Spot Light");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
@@ -95,7 +96,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				TransformBuffer transformBuffer;
 				transformBuffer.Transform = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
 					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap),
-					transform.Position, lightData.Direction, lightFrustum);
+					transform.Position, lightData.Direction, lightFrustum, i);
 
 				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Spot Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
@@ -130,12 +131,17 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				data.VolumeVB.Bind(cl);
 				data.VolumeIB.Bind(cl);
 
+				ZE_PERF_START("Spot Light Draw");
 				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
+				ZE_PERF_STOP();
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
+			ZE_PERF_START("Spot Light Execute");
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
+			ZE_PERF_STOP();
+			ZE_PERF_STOP();
 		}
 	}
 }
