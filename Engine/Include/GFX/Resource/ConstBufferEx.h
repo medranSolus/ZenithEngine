@@ -121,7 +121,9 @@ namespace ZE::GFX::Resource
 		else if constexpr (T == ShaderType::Compute)
 			BindCompute(gfx);
 		else
-			static_assert(false, "Not all ConstBufferEx have defined Bind function!");
+		{
+			assert(false && "Not all ConstBuffersEx have defined Bind function!");
+		}
 	}
 #pragma endregion
 

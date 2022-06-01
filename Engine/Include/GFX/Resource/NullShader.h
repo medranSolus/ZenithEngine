@@ -32,7 +32,9 @@ namespace ZE::GFX::Resource
 		else if constexpr (T == ShaderType::Pixel)
 			GetContext(gfx)->PSSetShader(nullptr, nullptr, 0);
 		else
-			static_assert(false, "Not all null shaders have defined Bind function!");
+		{
+			assert(false && "Not all null shaders have defined Bind function!");
+		}
 	}
 #pragma endregion
 

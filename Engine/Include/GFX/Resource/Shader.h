@@ -88,7 +88,9 @@ namespace ZE::GFX::Resource
 				bytecode->GetBufferSize(), nullptr, &shader));
 		}
 		else
-			static_assert(false, "Not all shaders have defined constructor!");
+		{
+			assert(false && "Not all shaders have defined constructor!");
+		}
 
 		ZE_GFX_SET_RID(shader.Get());
 	}
@@ -105,7 +107,9 @@ namespace ZE::GFX::Resource
 		else if constexpr (T == ShaderType::Compute)
 			BindCompute(gfx);
 		else
-			static_assert(false, "Not all shaders have defined Bind function!");
+		{
+			assert(false && "Not all shaders have defined Bind function!");
+		}
 	}
 
 	template<ShaderType T>

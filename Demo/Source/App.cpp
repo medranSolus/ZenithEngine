@@ -382,7 +382,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: window(WINDOW_TITLE, 1600, 896), renderer(window.Gfx(), "Skybox/Space", ".png"),
+	: window(WINDOW_TITLE, 0, 0), renderer(window.Gfx(), "Skybox/Space", ".png"),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {

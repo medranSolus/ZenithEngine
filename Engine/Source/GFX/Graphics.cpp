@@ -36,7 +36,7 @@ namespace ZE::GFX
 		swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // Pipeline draws to this buffer
 		swapDesc.Windowed = TRUE;
 		swapDesc.BufferCount = 2; // Triple buffering
-		swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+		swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 		// This needed and resize buffers for fullscreen:
 		// https://forums.codeguru.com/showthread.php?500867-RESOLVED-How-do-I-remove-the-window-border-to-get-fullscreen
 
@@ -100,7 +100,7 @@ namespace ZE::GFX
 		}
 		HRESULT result;
 		ZE_GFX_SET_DEBUG_WATCH();
-		if (FAILED(result = swapChain->Present(1, 0)))
+		if (FAILED(result = swapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING)))
 		{
 			if (result == DXGI_ERROR_DEVICE_REMOVED)
 				throw ZE_GFX_DEV_REMOVED_EXCEPT(device->GetDeviceRemovedReason());
