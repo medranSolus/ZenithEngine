@@ -25,6 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		constexpr void BindCamera(Camera::ICamera& camera) noexcept { mainCamera = &camera; }
 		constexpr void BindLight(const Light::ILight& light) noexcept { shadowSource = &light; }
 
-		void Execute(Graphics& gfx) override;
+		void Execute(Graphics& gfx) override { Execute(gfx, -1); }
+		void Execute(Graphics& gfx, U64 lightNumber);
 	};
 }

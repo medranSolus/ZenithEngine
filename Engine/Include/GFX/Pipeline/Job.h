@@ -21,6 +21,6 @@ namespace ZE::GFX::Pipeline
 		constexpr const class TechniqueStep& GetStep() const noexcept { return *step; }
 
 		bool IsInsideFrustum(const Math::BoundingFrustum& volume) const noexcept;
-		void Execute(Graphics& gfx, RenderChannel mode = RenderChannel::All) const;
+		void Execute(Graphics& gfx, RenderChannel mode = RenderChannel::All, U8 type = 0, U64 lightNumber = -1) const;
 	};
 }

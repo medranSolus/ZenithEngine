@@ -26,6 +26,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 	void LambertianDepthOptimizedPass::Execute(Graphics& gfx)
 	{
+		ZE_PERF_START("Lambertian");
 		assert(mainCamera);
 		CullFrustum(*mainCamera);
 		SortFrontBack(mainCamera->GetPos());
@@ -42,7 +43,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		for (auto& job : GetJobs())
 		{
 			ZE_DRAW_TAG_START(gfx, job.GetData().GetName());
-			job.Execute(gfx);
+			job.Execute(gfx, RenderChannel::All, 1);
 			ZE_DRAW_TAG_END(gfx);
 		}
 		ZE_DRAW_TAG_END(gfx);

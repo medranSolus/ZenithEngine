@@ -189,6 +189,8 @@ void App::ShowOptionsWindow()
 			run = false;
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::SameLine();
+		ImGui::Text("%u", ZE_PERF_COUNT("Frame"));
 		renderer.ShowWindow(window.Gfx());
 	}
 	ImGui::End();
@@ -359,10 +361,13 @@ void App::AddLightButton()
 
 void App::MakeFrame()
 {
+	ZE_PERF_START("Prepare frame");
 	window.Gfx().BeginFrame();
 	ShowObjectWindow();
 	ShowOptionsWindow();
 	//ImGui::ShowDemoWindow();
+	ZE_PERF_STOP();
+	ZE_PERF_START("Submit objects");
 	if (cameras.CameraChanged())
 		renderer.BindMainCamera(cameras.GetCamera());
 	cameras.Submit(RenderChannel::Main);
@@ -376,13 +381,15 @@ void App::MakeFrame()
 		model.Submit(RenderChannel::Main | RenderChannel::Shadow);
 	for (auto& shape : shapes)
 		shape->Submit(RenderChannel::Main | RenderChannel::Shadow);
+	ZE_PERF_STOP();
+	ZE_PERF_START("Rendering");
 	renderer.Execute(window.Gfx());
 	renderer.Reset();
 	window.Gfx().EndFrame();
 }
 
 App::App(const std::string& commandLine)
-	: window(WINDOW_TITLE, 0, 0), renderer(window.Gfx(), "Skybox/Space", ".png"),
+	: window(WINDOW_TITLE, 1920, 1080), renderer(window.Gfx(), "Skybox/Space", ".png"),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
 		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
 {
@@ -436,11 +443,17 @@ int App::Run()
 	std::pair<bool, int> status;
 	while (run)
 	{
+		ZE_PERF_START("Frame");
+		ZE_PERF_START("Input processing");
 		status = WinAPI::Window::ProcessMessage();
 		if (status.first)
 			return status.second;
 		ProcessInput();
+		ZE_PERF_STOP();
 		MakeFrame();
+		ZE_PERF_STOP();
+		if (ZE_PERF_COUNT("Frame") == 100000)
+			break;
 	}
 	return 0;
 }

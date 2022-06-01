@@ -40,8 +40,9 @@ namespace ZE::GFX::Pipeline::RenderPass
 		Math::XMStoreFloat4x4(&projection, Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f));
 	}
 
-	void ShadowMapCubePass::Execute(Graphics& gfx)
+	void ShadowMapCubePass::Execute(Graphics& gfx, U64 lightNumber)
 	{
+		ZE_PERF_START("Point Light" + std::to_string(lightNumber) + " - Shadow Map");
 		assert(mainCamera);
 		assert(shadowSource);
 		depthCube->Unbind(gfx);
@@ -82,6 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 		renderTarget->Clear(gfx, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		depthStencil->Clear(gfx);
-		QueuePass::Execute(gfx);
+		QueuePass::Execute(gfx, RenderChannel::All, 4, lightNumber);
+		ZE_PERF_STOP();
 	}
 }

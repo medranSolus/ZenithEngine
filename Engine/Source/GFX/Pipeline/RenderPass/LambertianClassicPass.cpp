@@ -27,6 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		// For transparent surfaces
 		SortBackFront(mainCamera->GetPos());
 		mainCamera->BindCamera(gfx);
-		QueuePass::Execute(gfx);
+		QueuePass::Execute(gfx, RenderChannel::All, 1);
+		ZE_PERF_STOP();
 	}
 }

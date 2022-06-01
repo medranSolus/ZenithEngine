@@ -59,21 +59,24 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 	void SpotLightingPass::Execute(Graphics& gfx)
 	{
+		ZE_PERF_START("Spot Light");
 		assert(mainCamera);
 		ZE_DRAW_TAG_START(gfx, GetName());
 		mainCamera->BindPS(gfx);
+		U64 i = 0;
 		for (auto& job : GetJobs())
 		{
 			ZE_DRAW_TAG_START(gfx, job.GetData().GetName());
 			shadowMapPass.BindLight(dynamic_cast<const Light::ILight&>(job.GetData()));
-			shadowMapPass.Execute(gfx);
+			shadowMapPass.Execute(gfx, i++);
 			Math::XMStoreFloat4x4(&shadowBuffer->GetBuffer()["shadowViewProjection"],
 				Math::XMMatrixTranspose(gfx.GetView() * gfx.GetProjection()));
 			mainCamera->BindCamera(gfx);
 			BindAll(gfx);
-			job.Execute(gfx);
+			job.Execute(gfx, RenderChannel::All, 3);
 			ZE_DRAW_TAG_END(gfx);
 		}
 		ZE_DRAW_TAG_END(gfx);
+		ZE_PERF_STOP();
 	}
 }

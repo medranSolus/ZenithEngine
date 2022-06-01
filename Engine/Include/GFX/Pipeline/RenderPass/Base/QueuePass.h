@@ -32,6 +32,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 		void Reset() noexcept override { jobs.clear(); }
 		void Execute(Graphics& gfx) override { Execute(gfx, RenderChannel::All); }
 
-		void Execute(Graphics& gfx, RenderChannel mode);
+		void Execute(Graphics& gfx, RenderChannel mode, U8 type = 0, U64 lightNumber = -1);
 	};
 }

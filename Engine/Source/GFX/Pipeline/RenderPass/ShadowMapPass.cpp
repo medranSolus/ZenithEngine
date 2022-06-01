@@ -26,8 +26,9 @@ namespace ZE::GFX::Pipeline::RenderPass
 		Math::XMStoreFloat4x4(&projection, projectionMatrix);
 	}
 
-	void ShadowMapPass::Execute(Graphics& gfx)
+	void ShadowMapPass::Execute(Graphics& gfx, U64 lightNumber)
 	{
+		ZE_PERF_START("Spot Light" + std::to_string(lightNumber) + " - Shadow Map");
 		assert(mainCamera);
 		assert(shadowSource);
 
@@ -45,6 +46,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 		renderTarget->Clear(gfx, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		depthStencil->Clear(gfx);
-		QueuePass::Execute(gfx);
+		QueuePass::Execute(gfx, RenderChannel::All, 5, lightNumber);
+		ZE_PERF_STOP();
 	}
 }

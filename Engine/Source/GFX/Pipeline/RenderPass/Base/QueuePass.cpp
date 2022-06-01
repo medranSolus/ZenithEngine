@@ -55,14 +55,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Base
 			jobs.erase(jobs.begin() + rejectedIndex, jobs.begin() + rejectedIndex + rejectedCount);
 	}
 
-	void QueuePass::Execute(Graphics& gfx, RenderChannel mode)
+	void QueuePass::Execute(Graphics& gfx, RenderChannel mode, U8 type, U64 lightNumber)
 	{
 		ZE_DRAW_TAG_START(gfx, GetName());
 		BindAll(gfx);
 		for (auto& job : jobs)
 		{
 			ZE_DRAW_TAG_START(gfx, job.GetData().GetName());
-			job.Execute(gfx, mode);
+			job.Execute(gfx, mode, type, lightNumber);
 			ZE_DRAW_TAG_END(gfx);
 		}
 		ZE_DRAW_TAG_END(gfx);

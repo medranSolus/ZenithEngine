@@ -98,6 +98,8 @@ namespace ZE::GFX
 			PopDrawTag();
 #endif
 		}
+		ZE_PERF_STOP();
+		ZE_PERF_START("Present");
 		HRESULT result;
 		ZE_GFX_SET_DEBUG_WATCH();
 		if (FAILED(result = swapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING)))
@@ -107,6 +109,7 @@ namespace ZE::GFX
 			else
 				throw ZE_GFX_EXCEPT(result);
 		}
+		ZE_PERF_STOP();
 	}
 
 	void Graphics::BeginFrame() noexcept
