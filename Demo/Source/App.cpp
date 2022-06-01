@@ -391,7 +391,7 @@ void App::MakeFrame()
 App::App(const std::string& commandLine)
 	: window(WINDOW_TITLE, 1920, 1080), renderer(window.Gfx(), "Skybox/Space", ".png"),
 	cameras(std::make_unique<Camera::PersonCamera>(window.Gfx(), renderer,
-		Camera::CameraParams({ -8.0f, 0.0f, 0.0f }, "Main camera", Math::ToRadians(90.0f), 0.0f, 1.047f, 0.01f, 500.0f)))
+		Camera::CameraParams({ 0.0f, 75.0f, 0.0f }, "Main camera", 0.0f, Math::ToRadians(89.0f), 1.047f, 0.01f, 500.0f)))
 {
 	window.Gfx().Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 	objects.emplace("---None---", std::make_pair(Container::None, 0));
