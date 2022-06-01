@@ -5,17 +5,26 @@
 
 namespace ZE
 {
+	// CPU performance measurement tool
 	class Perf final
 	{
+		struct Data
+		{
+			long double AvgMicroseconds;
+			U64 Count;
+		};
+
 		static constexpr const char* LOG_FILE = "perf_log.txt";
 
-		std::map<std::string, std::pair<U64, U64>> data;
-		std::string lastTag = "";
-		U64 stamp = 0;
+		std::map<std::string, Data> data;
+		std::vector<std::pair<U64, std::string>> lastTags;
+		long double frequency;
+
+		static U64 GetCurrentTimestamp() noexcept { LARGE_INTEGER stamp; QueryPerformanceCounter(&stamp); return stamp.QuadPart; }
 
 		void Save();
 
-		Perf() = default;
+		Perf() noexcept;
 
 	public:
 		Perf(Perf&&) = default;
@@ -27,9 +36,11 @@ namespace ZE
 		static Perf& Get() noexcept { static Perf perf; return perf; }
 
 		void Start(const std::string& sectionTag) noexcept;
-		void Stop() noexcept;
+		long double Stop() noexcept;
+		U64 GetSectionCallCount(const std::string& sectionTag) noexcept;
 	};
 }
 
 #define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
 #define ZE_PERF_STOP() ZE::Perf::Get().Stop()
+#define ZE_PERF_COUNT(sectionTag) ZE::Perf::Get().GetSectionCallCount(sectionTag)

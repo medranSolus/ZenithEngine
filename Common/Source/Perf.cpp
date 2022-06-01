@@ -10,12 +10,17 @@ namespace ZE
 			return;
 		for (auto& x : data)
 		{
-			if (x.second.second != 0)
-				x.second.first /= x.second.second;
-			fout << '[' << x.first << "] Avg cycles: " << x.second.first << ", tests: " << x.second.second << std::endl;
+			fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
 		}
 		data.clear();
 		fout.close();
+	}
+
+	Perf::Perf() noexcept
+	{
+		LARGE_INTEGER freq;
+		QueryPerformanceFrequency(&freq);
+		frequency = static_cast<long double>(freq.QuadPart);
 	}
 
 	Perf::~Perf()
@@ -28,19 +33,32 @@ namespace ZE
 	{
 		std::string tag = "";
 		if (data.find(sectionTag) == data.end())
-			data.emplace(sectionTag + tag, std::make_pair(0ULL, 0ULL));
-		lastTag = sectionTag;
-		__faststorefence();
-		stamp = __rdtsc();
+			data.emplace(sectionTag + tag, Data(0.0L, 0ULL));
+		lastTags.emplace_back(0ULL, sectionTag).first = GetCurrentTimestamp();
 	}
 
-	void Perf::Stop() noexcept
+	long double Perf::Stop() noexcept
 	{
-		const U64 end = __rdtsc();
-		__faststorefence();
-		data.at(lastTag).first += end - stamp;
-		++data.at(lastTag).second;
-		stamp = 0;
-		lastTag = "";
+		U64 stamp = GetCurrentTimestamp();
+		assert(lastTags.size() && "Incorrect Start-Stop calling of performance measurements!");
+
+		// Get timestamp and convert to microseconds elapsed time
+		stamp = (stamp - lastTags.back().first) * 1000000ULL;
+		const long double time = static_cast<long double>(stamp) / frequency;
+
+		// Combine with rest of data
+		Data& dataPoint = data.at(lastTags.back().second);
+		dataPoint.AvgMicroseconds += (time - dataPoint.AvgMicroseconds) / static_cast<long double>(++dataPoint.Count);
+
+		lastTags.pop_back();
+		return time;
+	}
+
+	U64 Perf::GetSectionCallCount(const std::string& sectionTag) noexcept
+	{
+		auto it = data.find(sectionTag);
+		if (it == data.end())
+			return 0;
+		return it->second.Count;
 	}
 }
