@@ -184,7 +184,9 @@ if(MSVC)
 	# C4710 - function not inlined
 	# C4711 - function selected for automatic inline expansion
 	# C4355 - 'this' used in base member initializer list
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355")
+	# C5246 - the initialization of a subobject should be wrapped in braces
+	#	Note: Caused by not respecing newer initializations aggregate, bug in MSVC
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)
@@ -225,7 +227,8 @@ if(ZE_DEBUG_GPU_VALIDATION)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ZE_DEBUG_GPU_VALIDATION")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -D_ZE_DEBUG_GPU_VALIDATION")
 endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION")
+# EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION -D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=1 -D_ZE_MODE_RELEASE")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMPILER_REL_CXX_FLAGS} -DZE_NO_DEBUG=0 -D_ZE_MODE_DEBUG -D_ZE_MODE_RELEASE")
