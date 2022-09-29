@@ -9,6 +9,7 @@ Also make sure that CMake can access compiler of your choice, to use 'cl.exe' fr
 Script by default bulds the project, but supports also following commands:
   - `help` - displaying tool syntax,
   - `init` - initializing external submodules,
+  - `clear` - clear the build system,
   - `up` - updating external submodules,
   - `gen` - generation of CMake build system,
   - `run` - running builded technological demo.
@@ -20,4 +21,4 @@ Project contains following configurations needed by `gen`, `run` and default com
   - **CI tools** - pass `CI` to configure only for CI jobs, same as **Release** but without engine data.
 
 Tool syntax:
-`build.ps1 <COMMAND> <CONFIGURATION>`
+`./build.ps1 <COMMAND> <CONFIGURATION>`

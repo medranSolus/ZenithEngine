@@ -24,13 +24,6 @@ option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
 
-# Using engine
-#
-# In order to avoid setting up all include directories add this CMake file as subdirectory.
-set(ZE_API_DIR "${PROJECT_SOURCE_DIR}/Engine/API")
-set(ZE_API_HEADER "${ZE_API_DIR}/Zenith.h")
-set(ZE_BUILD_INC_DIR "${ZE_BUILD_DIR}/Include") # Directory containing generated headers
-
 # CMake modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
@@ -94,6 +87,29 @@ set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
 set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
+
+
+############# USING ENGINE ##############
+
+set(ZE_API_DIR "${PROJECT_SOURCE_DIR}/Engine/API") # Global directory for API headers 
+set(ZE_API_HEADER "${ZE_API_DIR}/Zenith.h")        # Main engine API header file
+set(ZE_BUILD_INC_DIR "${ZE_BUILD_DIR}/Include")    # Directory containing generated headers
+set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessary include directories for linking agains engine library
+	"${ZE_BUILD_INC_DIR}"
+	"${COMMON_INC_DIR}"
+	"${ENGINE_INC_DIR}"
+	"${EXTERNAL_CONFIG_INC_DIR}"
+	"${ZLIB_INC_DIR}"
+	"${ASSIMP_INC_DIR}"
+	"${DXMATH_INC_DIR}"
+	"${FTYPE_INC_DIR}"
+	"${DXTEX_INC_DIR}"
+	"${PIX_INC_DIR}"
+	"${IMGUI_INC_DIR}"
+	"${ENTT_INC_DIR}"
+	"${AGS_INC_DIR}"
+	"${EXT_INC_DIR}"
+	"${EXT_SHADER_INC_DIR}")
 
 
 ################ TARGETS ################
@@ -186,7 +202,8 @@ if(MSVC)
 	# C4355 - 'this' used in base member initializer list
 	# C5246 - the initialization of a subobject should be wrapped in braces
 	#	Note: Caused by not respecing newer initializations aggregate, bug in MSVC
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246")
+	# C4464 - relative include path contains '..'
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246 /wd4464")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(COMPILER_REL_CXX_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
 elseif(GNU OR Clang)

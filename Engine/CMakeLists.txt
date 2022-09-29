@@ -36,9 +36,8 @@ set(PCH "${ENGINE_INC_DIR}/pch.h")
 file(GLOB_RECURSE SRC_LIST
     "${SRC_DIR}/*.cpp"
     "${ENGINE_INC_DIR}/*.h"
-    "${ZE_BUILD_INC_DIR}/*.h")
-set(SRC_LIST "${SRC_LIST}"
-    "${EXT_INC_DIR}/stb_sprintf.h")
+    "${ZE_BUILD_INC_DIR}/*.h"
+    "${EXT_INC_DIR}/*.h")
 
 file(GLOB IMGUI_SRC_LIST
     "${IMGUI_DIR}/*.cpp"
@@ -77,8 +76,7 @@ endif()
 add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADER})
 
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
-target_include_directories(${ENGINE_TARGET}
-    PUBLIC ${ENGINE_INC_DIR} ${ZE_BUILD_INC_DIR} ${ZE_API_DIR} ${EXT_INC_DIR} ${ASSIMP_INC_DIR} ${IMGUI_INC_DIR} ${FTYPE_INC_DIR} ${PIX_INC_DIR} ${ENTT_INC_DIR} ${AGS_INC_DIR})
+target_include_directories(${ENGINE_TARGET} PUBLIC ${ZE_INC_DIRS})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
     PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET} ${PIX_TARGET} ${ENTT_TARGET} ${AGS_TARGET})

@@ -1,6 +1,4 @@
 #include "App.h"
-#include "Data/Camera.h"
-#include "GFX/Primitive.h"
 
 template<typename T>
 void App::EnableProperty(EID entity)
