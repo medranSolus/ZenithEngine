@@ -5,12 +5,13 @@ include_guard(DIRECTORY)
 #	DATA_DIR = directory holding runtime data to copy
 #   DATA_PREFIX = prefix pattern for data to copy
 #   DATA_SUFIX = sufix pattern for data to copy
-macro(copy_runtime_data PROJECT DATA_DIR DATA_PREFIX DATA_SUFIX)
+#   DATA_OUT_PREFIX = prefix for outputing copied data
+macro(copy_runtime_data PROJECT DATA_DIR DATA_PREFIX DATA_SUFIX DATA_OUT_PREFIX)
     set(${PROJECT}_COPY_TARGET "${PROJECT}_DataCopy")
     file(GLOB_RECURSE ${PROJECT}_DATA_LIST RELATIVE "${${PROJECT}_DIR}" "${DATA_DIR}/${DATA_PREFIX}*${DATA_SUFIX}")
 
     foreach(FILE IN LISTS ${PROJECT}_DATA_LIST)
-        string(REPLACE ${DATA_DIR} ${ZE_BIN_DIR} FILE_OUT ${FILE})
+        string(REPLACE "${DATA_DIR}/" "${ZE_BIN_DIR}/${DATA_OUT_PREFIX}" FILE_OUT ${FILE})
         list(APPEND ${PROJECT}_DATA_OUT_LIST ${FILE_OUT})
         add_custom_command(OUTPUT ${FILE_OUT} POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy "${FILE}" "${FILE_OUT}"

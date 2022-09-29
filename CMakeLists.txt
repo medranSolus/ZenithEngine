@@ -67,6 +67,7 @@ set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(AGS_DIR "${EXTERNAL_DIR}/AGS")
+set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -85,6 +86,7 @@ set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
+set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
 set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 
@@ -108,6 +110,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${IMGUI_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${AGS_INC_DIR}"
+	"${AGILITY_INC_DIR}"
 	"${EXT_INC_DIR}"
 	"${EXT_SHADER_INC_DIR}")
 
@@ -163,7 +166,7 @@ link_directories(${EXTERNAL_BIN_DIR})
 
 # Platform specific flags
 if(WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS -DNOMINMAX")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport)")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DUSE_PIX")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DUSE_PIX")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")

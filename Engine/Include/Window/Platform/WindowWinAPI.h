@@ -10,7 +10,7 @@ namespace ZE::Window::WinAPI
 		// Window class register
 		class WindowClass final
 		{
-			static constexpr const char* WND_CLASS_NAME = "ZE_WND";
+			static constexpr const char* WND_CLASS_NAME = "ZENITH_WND";
 
 			HINSTANCE hInstance;
 

@@ -114,8 +114,6 @@ void App::ShowOptionsWindow()
 		if (ImGui::Button("Exit"))
 			run = false;
 		ImGui::SameLine();
-		ImGui::Text("FPS: %.2f", 1000000.0L / frametime);
-		ImGui::SameLine();
 		switch (Settings::GetGfxApi())
 		{
 		case GfxApiType::DX11:
@@ -139,6 +137,8 @@ void App::ShowOptionsWindow()
 			break;
 		}
 		}
+		ImGui::SameLine();
+		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
 		engine.Reneder().ShowWindow(engine.Gfx().GetDevice());
 	}
 	ImGui::End();
@@ -655,11 +655,8 @@ App::App(const std::string& commandLine)
 
 int App::Run()
 {
-	ZE_PERF_START("Frame");
 	while (run)
 	{
-		frametime = ZE_PERF_STOP();
-		ZE_PERF_START("Frame");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
 		if (status.first)
 			return status.second;
