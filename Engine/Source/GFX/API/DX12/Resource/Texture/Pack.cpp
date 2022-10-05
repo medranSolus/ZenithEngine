@@ -1,5 +1,4 @@
 #include "GFX/API/DX12/Resource/Texture/Pack.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX12::Resource::Texture
 {
@@ -7,7 +6,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 	{
 		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
 		auto& device = dev.Get().dx12;
-		ZE_GFX_ENABLE_ID(device);
+		ZE_DX_ENABLE_ID(device);
 
 		count = static_cast<U32>(desc.Textures.size());
 		if (desc.Options & GFX::Resource::Texture::PackOption::StaticCreation)
@@ -138,7 +137,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 				}
 				}
 				resInfo = device.CreateTexture(texDesc);
-				ZE_GFX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i));
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i));
 				uploadRegionSize += copyInfo.back().first;
 			}
 			else
@@ -146,14 +145,14 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
 			handle.ptr += static_cast<U64>(i++) * device.GetDescriptorSize();
-			ZE_GFX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
+			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
 
 		if (uploadRegionSize)
 		{
 			// Create one big committed buffer and copy data into it
 			DX::ComPtr<ID3D12Resource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
-			ZE_GFX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
+			ZE_DX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
 			D3D12_TEXTURE_COPY_LOCATION copySource;
 			copySource.pResource = uploadRes.Get();
 			copySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -161,7 +160,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 			D3D12_RANGE range = { 0 };
 			U8* uploadBuffer;
-			ZE_GFX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
+			ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
 			// Copy all regions upload heap
 			for (U32 i = 0; const auto& info : copyInfo)
 			{

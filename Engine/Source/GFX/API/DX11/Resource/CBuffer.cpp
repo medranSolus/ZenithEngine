@@ -4,7 +4,7 @@ namespace ZE::GFX::API::DX11::Resource
 {
 	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic) : dynamic(dynamic)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -36,8 +36,8 @@ namespace ZE::GFX::API::DX11::Resource
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, values ? &resData : nullptr, &buffer));
-		ZE_GFX_SET_ID(buffer, "CBuffer");
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, values ? &resData : nullptr, &buffer));
+		ZE_DX_SET_ID(buffer, "CBuffer");
 
 		if (bufferDesc.ByteWidth > bytes)
 			delete[] reinterpret_cast<const U8*>(data);
@@ -47,10 +47,10 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		if (dynamic)
 		{
-			ZE_GFX_ENABLE(dev.Get().dx11);
+			ZE_DX_ENABLE(dev.Get().dx11);
 
 			D3D11_MAPPED_SUBRESOURCE subres;
-			ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
+			ZE_DX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
 			memcpy(subres.pData, values, bytes);
 			dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
 		}
@@ -93,7 +93,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 	void CBuffer::GetData(GFX::Device& dev, void* values, U32 bytes) const
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -104,13 +104,13 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.StructureByteStride = 0;
 
 		DX::ComPtr<ID3D11Buffer> stagingBuffer;
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
-		ZE_GFX_SET_ID(buffer, "CBuffer_Staging");
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
+		ZE_DX_SET_ID(buffer, "CBuffer_Staging");
 
 		auto* ctx = dev.Get().dx11.GetMainContext();
 		ctx->CopyResource(stagingBuffer.Get(), buffer.Get());
 		D3D11_MAPPED_SUBRESOURCE subres;
-		ZE_GFX_THROW_FAILED(ctx->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &subres));
+		ZE_DX_THROW_FAILED(ctx->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &subres));
 		memcpy(values, subres.pData, bytes);
 		ctx->Unmap(stagingBuffer.Get(), 0);
 	}

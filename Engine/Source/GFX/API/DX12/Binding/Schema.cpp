@@ -1,12 +1,11 @@
 #include "GFX/API/DX12/Binding/Schema.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX12::Binding
 {
 	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
 	{
 		ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!");
-		ZE_GFX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE(dev.Get().dx12);
 
 		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc;
 		signatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -217,15 +216,15 @@ namespace ZE::GFX::API::DX12::Binding
 
 		// Sanity check for Signature 1.1, if there is no support for new one there should be code to handle that, for now assume 1.1
 		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = { D3D_ROOT_SIGNATURE_VERSION_1_1 };
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)));
+		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)));
 
 		DX::ComPtr<ID3DBlob> serializedSignature;
 		DX::ComPtr<ID3DBlob> errors;
-		ZE_GFX_SET_DEBUG_WATCH();
+		ZE_DX_SET_DEBUG_WATCH();
 		ZE_WIN_EXCEPT_RESULT = D3D12SerializeVersionedRootSignature(&signatureDesc, &serializedSignature, &errors);
 		if (FAILED(ZE_WIN_EXCEPT_RESULT))
 			throw Exception::GenericException(__LINE__, __FILENAME__, reinterpret_cast<char*>(errors->GetBufferPointer()), "Root Signature Invalid Parameter");
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
+		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
 			serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature)));
 
 		for (auto& table : tables)

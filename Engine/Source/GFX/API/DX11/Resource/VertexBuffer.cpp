@@ -1,5 +1,4 @@
 #include "GFX/API/DX11/Resource/VertexBuffer.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {
@@ -7,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 		: byteStride(data.VertexSize)
 	{
 		ZE_ASSERT(data.Vertices != nullptr && data.Count != 0 && data.VertexSize != 0, "Empty vertex data!");
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
 		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -22,8 +21,8 @@ namespace ZE::GFX::API::DX11::Resource
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
-		ZE_GFX_SET_ID(buffer, "VertexBuffer");
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
+		ZE_DX_SET_ID(buffer, "VertexBuffer");
 	}
 
 	void VertexBuffer::Bind(GFX::CommandList& cl) const noexcept

@@ -1,5 +1,4 @@
 #include "GFX/API/DX12/CommandList.h"
-#include "GFX/API/DX/GraphicsException.h"
 #include "GFX/Binding/Schema.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
@@ -9,8 +8,8 @@ namespace ZE::GFX::API::DX12
 {
 	void CommandList::Open(Device& dev, ID3D12PipelineState* state)
 	{
-		ZE_GFX_ENABLE(dev);
-		ZE_GFX_THROW_FAILED(commands->Reset(allocator.Get(), state));
+		ZE_DX_ENABLE(dev);
+		ZE_DX_THROW_FAILED(commands->Reset(allocator.Get(), state));
 		ID3D12DescriptorHeap* heaps[] = { dev.GetDescHeap() };
 		commands->SetDescriptorHeaps(1, heaps);
 	}
@@ -81,36 +80,36 @@ namespace ZE::GFX::API::DX12
 
 	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG)
 	{
-		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(commands->DrawInstanced(vertexCount, 1, 0, 0));
+		ZE_DX_ENABLE_INFO(dev.Get().dx12);
+		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(vertexCount, 1, 0, 0));
 	}
 
 	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG)
 	{
-		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(indexCount, 1, 0, 0, 0));
+		ZE_DX_ENABLE_INFO(dev.Get().dx12);
+		ZE_DX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(indexCount, 1, 0, 0, 0));
 	}
 
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG)
 	{
-		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
+		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 
 		commands->IASetVertexBuffers(0, 0, nullptr);
 		commands->IASetIndexBuffer(nullptr);
-		ZE_GFX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
+		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
 	}
 
 	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG)
 	{
-		ZE_GFX_ENABLE_INFO(dev.Get().dx12);
-		ZE_GFX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
+		ZE_DX_ENABLE_INFO(dev.Get().dx12);
+		ZE_DX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
 	}
 
 	void CommandList::Init(Device& dev, CommandType type)
 	{
-		ZE_GFX_ENABLE_ID(dev);
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
+		ZE_DX_ENABLE_ID(dev);
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
 
 #ifdef _ZE_MODE_DEBUG
@@ -119,26 +118,26 @@ namespace ZE::GFX::API::DX12
 		default:
 		case ZE::GFX::CommandType::All:
 		{
-			ZE_GFX_SET_ID(allocator, "direct_allocator");
-			ZE_GFX_SET_ID(commands, "direct_command");
+			ZE_DX_SET_ID(allocator, "direct_allocator");
+			ZE_DX_SET_ID(commands, "direct_command");
 			break;
 		}
 		case ZE::GFX::CommandType::Bundle:
 		{
-			ZE_GFX_SET_ID(allocator, "bundle_allocator");
-			ZE_GFX_SET_ID(commands, "bundle_command");
+			ZE_DX_SET_ID(allocator, "bundle_allocator");
+			ZE_DX_SET_ID(commands, "bundle_command");
 			break;
 		}
 		case ZE::GFX::CommandType::Compute:
 		{
-			ZE_GFX_SET_ID(allocator, "compute_allocator");
-			ZE_GFX_SET_ID(commands, "compute_command");
+			ZE_DX_SET_ID(allocator, "compute_allocator");
+			ZE_DX_SET_ID(commands, "compute_command");
 			break;
 		}
 		case ZE::GFX::CommandType::Copy:
 		{
-			ZE_GFX_SET_ID(allocator, "copy_allocator");
-			ZE_GFX_SET_ID(commands, "copy_command");
+			ZE_DX_SET_ID(allocator, "copy_allocator");
+			ZE_DX_SET_ID(commands, "copy_command");
 			break;
 		}
 		}
@@ -152,13 +151,13 @@ namespace ZE::GFX::API::DX12
 
 	void CommandList::Close(Device& dev)
 	{
-		ZE_GFX_ENABLE(dev);
-		ZE_GFX_THROW_FAILED(commands->Close());
+		ZE_DX_ENABLE(dev);
+		ZE_DX_THROW_FAILED(commands->Close());
 	}
 
 	void CommandList::Reset(Device& dev)
 	{
-		ZE_GFX_ENABLE(dev);
-		ZE_GFX_THROW_FAILED(allocator->Reset());
+		ZE_DX_ENABLE(dev);
+		ZE_DX_THROW_FAILED(allocator->Reset());
 	}
 }

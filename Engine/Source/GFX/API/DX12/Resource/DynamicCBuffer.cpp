@@ -5,14 +5,14 @@ namespace ZE::GFX::API::DX12::Resource
 	void DynamicCBuffer::AllocBlock(GFX::Device& dev)
 	{
 		auto& device = dev.Get().dx12;
-		ZE_GFX_ENABLE_ID(device);
+		ZE_DX_ENABLE_ID(device);
 
 		const D3D12_RESOURCE_DESC desc = dev.Get().dx12.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
 		ResourceInfo resource = device.CreateBuffer(desc, true);
-		ZE_GFX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
+		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
 		const D3D12_RANGE range = { 0 };
-		ZE_GFX_THROW_FAILED(resource.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
+		ZE_DX_THROW_FAILED(resource.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
 
 		const D3D12_GPU_VIRTUAL_ADDRESS address = resource.Resource->GetGPUVirtualAddress();
 		resInfo.emplace_back(std::move(resource), address);
@@ -21,10 +21,10 @@ namespace ZE::GFX::API::DX12::Resource
 	void DynamicCBuffer::MapBlock(GFX::Device& dev, U64 block)
 	{
 		ZE_ASSERT(block < resInfo.size(), "Trying to map block outside of range!");
-		ZE_GFX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE(dev.Get().dx12);
 
 		const D3D12_RANGE range = { 0 };
-		ZE_GFX_THROW_FAILED(resInfo.at(block).first.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
+		ZE_DX_THROW_FAILED(resInfo.at(block).first.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
 	}
 
 	GFX::Resource::DynamicBufferAlloc DynamicCBuffer::Alloc(GFX::Device& dev, const void* values, U32 bytes)

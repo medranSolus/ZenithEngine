@@ -1,5 +1,5 @@
 #include "GFX/API/DX/DXGI.h"
-#include "GFX/API/DX/GraphicsException.h"
+#include "GFX/API/DX/DirectXException.h"
 #include "Settings.h"
 
 namespace ZE::GFX::API::DX
@@ -14,9 +14,9 @@ namespace ZE::GFX::API::DX
 
 		// Create proper DXGI factory
 		ComPtr<IDXGIFactory2> oldFactory = nullptr;
-		ZE_GFX_THROW_FAILED(CreateDXGIFactory2(ZE_NO_DEBUG ? 0 : DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&oldFactory)));
+		ZE_DX_THROW_FAILED(CreateDXGIFactory2(ZE_NO_DEBUG ? 0 : DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&oldFactory)));
 		ComPtr<IDXGIFactory7> factory = nullptr;
-		ZE_GFX_THROW_FAILED(oldFactory.As(&factory));
+		ZE_DX_THROW_FAILED(oldFactory.As(&factory));
 
 		return factory;
 	}
@@ -38,7 +38,7 @@ namespace ZE::GFX::API::DX
 		for (UINT i = 0; true; ++i)
 		{
 			// Get highest possible performant GPU
-			ZE_GFX_THROW_FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));
+			ZE_DX_THROW_FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));
 			// Check if GPU is attached to the screen
 			ComPtr<IDXGIOutput> ouptut = nullptr;
 			if (SUCCEEDED(adapter->EnumOutputs(0, &ouptut)))
@@ -95,7 +95,7 @@ namespace ZE::GFX::API::DX
 		// Check support for tearing (vsync-off), required in variable rate displays
 		BOOL allowTearing = FALSE;
 		UINT presentFlags = 0;
-		ZE_GFX_THROW_FAILED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+		ZE_DX_THROW_FAILED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
 			&allowTearing, sizeof(allowTearing)));
 		if (allowTearing == TRUE)
 		{
@@ -104,12 +104,12 @@ namespace ZE::GFX::API::DX
 		}
 
 		DX::ComPtr<IDXGISwapChain1> tempChain = nullptr;
-		ZE_GFX_THROW_FAILED(factory->CreateSwapChainForHwnd(device,
+		ZE_DX_THROW_FAILED(factory->CreateSwapChainForHwnd(device,
 			window, &swapDesc, nullptr, nullptr, &tempChain));
-		ZE_GFX_THROW_FAILED(tempChain.As(&swapChain));
+		ZE_DX_THROW_FAILED(tempChain.As(&swapChain));
 
 		// Don't use Alt+Enter Windows handling, only borderless fulsscreen window
-		ZE_GFX_THROW_FAILED(factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
+		ZE_DX_THROW_FAILED(factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
 		return presentFlags;
 	}
 }

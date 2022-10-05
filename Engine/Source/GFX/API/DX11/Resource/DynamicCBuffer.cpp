@@ -4,7 +4,7 @@ namespace ZE::GFX::API::DX11::Resource
 {
 	void DynamicCBuffer::AllocBlock(GFX::Device& dev)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -15,8 +15,8 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.StructureByteStride = 0;
 
 		DX::ComPtr<ID3D11Buffer> buffer;
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &buffer));
-		ZE_GFX_SET_ID(buffer, "DynamicCBuffer_" + std::to_string(blocks.size()));
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &buffer));
+		ZE_DX_SET_ID(buffer, "DynamicCBuffer_" + std::to_string(blocks.size()));
 		blocks.emplace_back(std::move(buffer), Data::Library<U32, U32>{});
 	}
 
@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		ZE_ASSERT(blocks.size(), "Dynamic buffer has been freed already!");
 		ZE_ASSERT(bytes <= BLOCK_SIZE, "Structure too large for dynamic buffer!");
-		ZE_GFX_ENABLE(dev.Get().dx11);
+		ZE_DX_ENABLE(dev.Get().dx11);
 
 		const U32 newBlock = Math::AlignUp(bytes, 256U);
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
@@ -38,7 +38,7 @@ namespace ZE::GFX::API::DX11::Resource
 		}
 
 		D3D11_MAPPED_SUBRESOURCE subres;
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(blocks.at(currentBlock).first.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(blocks.at(currentBlock).first.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
 		memcpy(reinterpret_cast<U8*>(subres.pData) + nextOffset, values, bytes);
 		dev.Get().dx11.GetMainContext()->Unmap(blocks.at(currentBlock).first.Get(), 0);
 
@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX11::Resource
 	void DynamicCBuffer::StartFrame(GFX::Device& dev)
 	{
 		ZE_ASSERT(blocks.size(), "Dynamic buffer has been freed already!");
-		ZE_GFX_ENABLE(dev.Get().dx11);
+		ZE_DX_ENABLE(dev.Get().dx11);
 
 		const U64 blockCount = blocks.size();
 		if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
@@ -100,7 +100,7 @@ namespace ZE::GFX::API::DX11::Resource
 		for (auto& buffer : blocks)
 		{
 			D3D11_MAPPED_SUBRESOURCE subres;
-			ZE_GFX_THROW_FAILED(ctx->Map(buffer.first.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
+			ZE_DX_THROW_FAILED(ctx->Map(buffer.first.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
 			ctx->Unmap(buffer.first.Get(), 0);
 
 			buffer.second.Clear();

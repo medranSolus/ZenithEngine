@@ -1,5 +1,4 @@
 #include "GFX/API/DX11/Resource/Texture/Pack.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX11::Resource::Texture
 {
@@ -7,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	{
 		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
 		auto& device = dev.Get().dx11;
-		ZE_GFX_ENABLE_ID(device);
+		ZE_DX_ENABLE_ID(device);
 
 		count = static_cast<U32>(desc.Textures.size());
 		srvs = new DX::ComPtr<ID3D11ShaderResourceView>[count];
@@ -41,7 +40,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					++j;
 				}
 				DX::ComPtr<ID3D11Texture3D> texture;
-				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateTexture3D(&texDesc, data, &texture));
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture3D(&texDesc, data, &texture));
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 				srvDesc.Format = texDesc.Format;
@@ -49,8 +48,8 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 				srvDesc.Texture3D.MostDetailedMip = 0;
 				srvDesc.Texture3D.MipLevels = texDesc.MipLevels;
 
-				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, &srvs[i]));
-				ZE_GFX_SET_ID(srvs[i], "Texture3D_" + std::to_string(i));
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, &srvs[i]));
+				ZE_DX_SET_ID(srvs[i], "Texture3D_" + std::to_string(i));
 				delete[] data;
 			}
 			else
@@ -110,9 +109,9 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					++j;
 				}
 				DX::ComPtr<ID3D11Texture2D> texture;
-				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateTexture2D(&texDesc, data, &texture));
-				ZE_GFX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, &srvs[i]));
-				ZE_GFX_SET_ID(srvs[i], "Texture_" + std::to_string(i));
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture2D(&texDesc, data, &texture));
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, &srvs[i]));
+				ZE_DX_SET_ID(srvs[i], "Texture_" + std::to_string(i));
 				delete[] data;
 			}
 			++i;

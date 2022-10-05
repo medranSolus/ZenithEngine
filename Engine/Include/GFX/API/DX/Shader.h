@@ -1,6 +1,6 @@
 #pragma once
 #include "DXGI.h"
-#include "GraphicsException.h"
+#include "DirectXException.h"
 
 namespace ZE::GFX::API::DX
 {

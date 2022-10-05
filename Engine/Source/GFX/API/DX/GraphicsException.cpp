@@ -1,9 +1,9 @@
-#include "GFX/API/DX/GraphicsException.h"
+#include "GFX/API/DX/DirectXException.h"
 
 namespace ZE::GFX::API::DX
 {
 #ifdef _ZE_MODE_DEBUG
-	std::string GraphicsException::GetDebugInfo() const noexcept
+	std::string DirectXException::GetDebugInfo() const noexcept
 	{
 		std::ostringstream stream;
 		size_t size = debugInfo.size();
@@ -21,7 +21,7 @@ namespace ZE::GFX::API::DX
 	}
 #endif
 
-	const char* GraphicsException::what() const noexcept
+	const char* DirectXException::what() const noexcept
 	{
 		std::ostringstream stream;
 		stream << WinApiException::what();

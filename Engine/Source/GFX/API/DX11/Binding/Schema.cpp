@@ -1,12 +1,11 @@
 #include "GFX/API/DX11/Binding/Schema.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX11::Binding
 {
 	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
 	{
 		ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!");
-		ZE_GFX_ENABLE(dev.Get().dx11);
+		ZE_DX_ENABLE(dev.Get().dx11);
 
 		samplersCount = desc.Samplers.size();
 		if (samplersCount)
@@ -27,7 +26,7 @@ namespace ZE::GFX::API::DX11::Binding
 				desc.MaxLOD = samplerDesc.MaxLOD;
 
 				samplers[i].first = samplerDesc.Slot;
-				ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateSamplerState(&desc, &samplers[i++].second));
+				ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateSamplerState(&desc, &samplers[i++].second));
 			}
 		}
 

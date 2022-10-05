@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX12
 			fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 			assert(fenceEvent && "Cannot create fence event!");
 
-			ZE_GFX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
+			ZE_DX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
 			if (WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0)
 				throw ZE_WIN_EXCEPT_LAST();
 		}
@@ -23,14 +23,14 @@ namespace ZE::GFX::API::DX12
 	void Device::WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
-		ZE_GFX_THROW_FAILED(queue->Wait(fence, val));
+		ZE_DX_THROW_FAILED(queue->Wait(fence, val));
 	}
 
 	U64 Device::SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
-		ZE_GFX_THROW_FAILED(fence->Signal(val));
+		ZE_DX_THROW_FAILED(fence->Signal(val));
 		return val;
 	}
 
@@ -38,7 +38,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
-		ZE_GFX_THROW_FAILED(queue->Signal(fence, val));
+		ZE_DX_THROW_FAILED(queue->Signal(fence, val));
 		return val;
 	}
 
@@ -46,20 +46,20 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_ASSERT(cl.GetList() != nullptr, "Empty list!");
 		ID3D12CommandList* lists[] = { cl.GetList() };
-		ZE_GFX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
+		ZE_DX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
 	Device::Device(U32 descriptorCount, U32 scratchDescriptorCount)
 		: scratchDescStart(descriptorCount - scratchDescriptorCount), descriptorCount(descriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
-		std::string ZE_GFX_DEBUG_ID;
+		std::string ZE_DX_DEBUG_ID;
 		ZE_ASSERT(descriptorCount > scratchDescriptorCount, "Descriptor count has to be greater than scratch descriptor count!");
 
 #ifdef _ZE_MODE_DEBUG
 		// Enable Debug Layer before calling any DirectX commands
 		DX::ComPtr<ID3D12Debug> debugInterface;
-		ZE_GFX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
+		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
 
 		// Enable device removed recovery
@@ -67,7 +67,7 @@ namespace ZE::GFX::API::DX12
 
 #ifdef _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12Debug1> debugInterface1;
-		ZE_GFX_THROW_FAILED_NOINFO(debugInterface.As(&debugInterface1));
+		ZE_DX_THROW_FAILED_NOINFO(debugInterface.As(&debugInterface1));
 		debugInterface1->SetEnableGPUBasedValidation(TRUE);
 #endif
 #endif
@@ -110,12 +110,12 @@ namespace ZE::GFX::API::DX12
 		// Failed to create GPU specific device
 		if (device == nullptr)
 		{
-			ZE_GFX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
+			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
 		}
 
 #ifdef _ZE_MODE_DEBUG
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
-		ZE_GFX_THROW_FAILED(device.As(&infoQueue));
+		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -139,14 +139,14 @@ namespace ZE::GFX::API::DX12
 		filter.DenyList.NumIDs = 3;
 		filter.DenyList.pIDList = denyIds;
 
-		ZE_GFX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
+		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
 
 #ifdef _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12DebugDevice1> debugDevice1;
-		ZE_GFX_THROW_FAILED_NOINFO(device.As(&debugDevice1));
+		ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice1));
 
 		const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
-		ZE_GFX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
+		ZE_DX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
 			&debugFeature, sizeof(D3D12_DEBUG_FEATURE)));
 
 		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings;
@@ -155,7 +155,7 @@ namespace ZE::GFX::API::DX12
 		// Can avoid most cases of TDRs
 		validationSettings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
 		validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
-		ZE_GFX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
+		ZE_DX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
 			&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS)));
 #endif
 #endif
@@ -165,22 +165,22 @@ namespace ZE::GFX::API::DX12
 		desc.NodeMask = 0;
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&mainQueue)));
-		ZE_GFX_SET_ID(mainQueue, "direct_queue");
-		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mainFence)));
-		ZE_GFX_SET_ID(mainFence, "direct_fence");
+		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&mainQueue)));
+		ZE_DX_SET_ID(mainQueue, "direct_queue");
+		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mainFence)));
+		ZE_DX_SET_ID(mainFence, "direct_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&computeQueue)));
-		ZE_GFX_SET_ID(computeQueue, "compute_queue");
-		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&computeFence)));
-		ZE_GFX_SET_ID(computeFence, "compute_fence");
+		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&computeQueue)));
+		ZE_DX_SET_ID(computeQueue, "compute_queue");
+		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&computeFence)));
+		ZE_DX_SET_ID(computeFence, "compute_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-		ZE_GFX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&copyQueue)));
-		ZE_GFX_SET_ID(copyQueue, "copy_queue");
-		ZE_GFX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
-		ZE_GFX_SET_ID(copyFence, "copy_fence");
+		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&copyQueue)));
+		ZE_DX_SET_ID(copyQueue, "copy_queue");
+		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
+		ZE_DX_SET_ID(copyFence, "copy_fence");
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
@@ -223,7 +223,7 @@ namespace ZE::GFX::API::DX12
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		descHeapDesc.NumDescriptors = descriptorCount;
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
+		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
 		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
@@ -293,7 +293,7 @@ namespace ZE::GFX::API::DX12
 
 		copyList.Close(*this);
 		U64 fenceVal = ++mainFenceVal;
-		ZE_GFX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
+		ZE_DX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
 		WaitMain(fenceVal);
 		copyList.Reset(*this);
 
@@ -371,7 +371,7 @@ namespace ZE::GFX::API::DX12
 					commandLists[i++] = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < mainCount);
-			ZE_GFX_THROW_FAILED_INFO(mainQueue->ExecuteCommandLists(mainCount, commandLists));
+			ZE_DX_THROW_FAILED_INFO(mainQueue->ExecuteCommandLists(mainCount, commandLists));
 		}
 		if (computeCount)
 		{
@@ -382,7 +382,7 @@ namespace ZE::GFX::API::DX12
 					commandLists[i++] = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < computeCount);
-			ZE_GFX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists));
+			ZE_DX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists));
 		}
 		if (copyCount)
 		{
@@ -393,7 +393,7 @@ namespace ZE::GFX::API::DX12
 					commandLists[i++] = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < copyCount);
-			ZE_GFX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
+			ZE_DX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
 		}
 	}
 
@@ -504,7 +504,7 @@ namespace ZE::GFX::API::DX12
 		tempHeap.VisibleNodeMask = 0;
 
 		DX::ComPtr<ID3D12Resource> uploadRes;
-		ZE_GFX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
+		ZE_DX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
 			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadRes)));
 		return uploadRes;
@@ -526,14 +526,14 @@ namespace ZE::GFX::API::DX12
 		tempHeap.VisibleNodeMask = 0;
 
 		DX::ComPtr<ID3D12Resource> uploadRes;
-		ZE_GFX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
+		ZE_DX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
 			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadRes)));
 
 		// Map and copy data into upload buffer
 		D3D12_RANGE range = { 0 };
 		void* uploadBuffer = nullptr;
-		ZE_GFX_THROW_FAILED(uploadRes->Map(0, &range, &uploadBuffer));
+		ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, &uploadBuffer));
 		memcpy(uploadBuffer, data, size);
 		uploadRes->Unmap(0, nullptr);
 

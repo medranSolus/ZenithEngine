@@ -1,11 +1,10 @@
 #include "GFX/API/DX12/Resource/PipelineStateGfx.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX12::Resource
 {
 	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx12);
+		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc;
 		stateDesc.pRootSignature = binding.Get().dx12.GetSignature();
@@ -222,8 +221,8 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.CachedPSO.CachedBlobSizeInBytes = 0;
 		stateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
-		ZE_GFX_SET_ID(state, "PSO_" + desc.DebugName);
+		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
+		ZE_DX_SET_ID(state, "PSO_" + desc.DebugName);
 
 		if (stateDesc.InputLayout.pInputElementDescs)
 			delete[] stateDesc.InputLayout.pInputElementDescs;

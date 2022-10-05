@@ -6,11 +6,11 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 		ZE_ASSERT(bytes != 0, "Empty buffer!");
 		auto& device = dev.Get().dx12;
-		ZE_GFX_ENABLE_ID(device);
+		ZE_DX_ENABLE_ID(device);
 
 		const D3D12_RESOURCE_DESC desc = dev.Get().dx12.GetBufferDesc(bytes);
 		resInfo = device.CreateBuffer(desc, false);
-		ZE_GFX_SET_ID(resInfo.Resource, "CBuffer");
+		ZE_DX_SET_ID(resInfo.Resource, "CBuffer");
 		address = resInfo.Resource->GetGPUVirtualAddress();
 
 		if (values)

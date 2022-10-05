@@ -35,7 +35,7 @@ namespace ZE::GFX::API::DX12
 
 	void Allocator::BufferInfo::CreateHeap(Device& dev, ID3D12Heap** heap, HeapFlags flags, U64 heapSize)
 	{
-		ZE_GFX_ENABLE(dev);
+		ZE_DX_ENABLE(dev);
 
 		D3D12_HEAP_DESC desc;
 		desc.SizeInBytes = heapSize;
@@ -47,7 +47,7 @@ namespace ZE::GFX::API::DX12
 		desc.Alignment = GetHeapAlignment(flags);
 		desc.Flags = GetHeapFlags(flags);
 
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateHeap(&desc, IID_PPV_ARGS(heap)));
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateHeap(&desc, IID_PPV_ARGS(heap)));
 	}
 
 	Allocator::Block* Allocator::BufferInfo::AllocWithHeap(Device& dev,
@@ -460,7 +460,7 @@ namespace ZE::GFX::API::DX12
 	DX::ComPtr<ID3D12Resource> Allocator::CreateCommittedResource(Device& dev,
 		const D3D12_RESOURCE_DESC& desc, HeapFlags flags)
 	{
-		ZE_GFX_ENABLE(dev);
+		ZE_DX_ENABLE(dev);
 
 		D3D12_HEAP_PROPERTIES heapProp;
 		heapProp.Type = GetHeapType(flags);
@@ -470,7 +470,7 @@ namespace ZE::GFX::API::DX12
 		heapProp.VisibleNodeMask = 0;
 
 		DX::ComPtr<ID3D12Resource> res;
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreateCommittedResource(&heapProp,
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommittedResource(&heapProp,
 			GetHeapFlags(flags), &desc, GetResourceState(flags), nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}
@@ -479,10 +479,10 @@ namespace ZE::GFX::API::DX12
 		const D3D12_RESOURCE_DESC& desc, U64 chunkSize, Block* block, HeapFlags flags)
 	{
 		ZE_VALID_EID(block->HeapNumber);
-		ZE_GFX_ENABLE(dev);
+		ZE_DX_ENABLE(dev);
 
 		DX::ComPtr<ID3D12Resource> res;
-		ZE_GFX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource(heaps.get<DX::ComPtr<ID3D12Heap>>(block->HeapNumber).Get(),
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource(heaps.get<DX::ComPtr<ID3D12Heap>>(block->HeapNumber).Get(),
 			block->Offset * chunkSize, &desc, GetResourceState(flags), nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}

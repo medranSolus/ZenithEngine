@@ -36,7 +36,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList,
 		const GFX::Pipeline::FrameBufferDesc& desc)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 		auto* device = dev.Get().dx11.GetDevice();
 
 		resourceCount = desc.ResourceInfo.size();
@@ -145,8 +145,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 			}
 
 			DX::ComPtr<ID3D11Texture2D1> texture;
-			ZE_GFX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
-			ZE_GFX_THROW_FAILED(texture.As(&resources[i].Resource));
+			ZE_DX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
+			ZE_DX_THROW_FAILED(texture.As(&resources[i].Resource));
 			texDesc.Format = format;
 
 			resourcesInfo.emplace_back(texDesc, std::move(texture),
@@ -186,7 +186,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					rtvDesc.Texture2D.MipSlice = 0;
 					rtvDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView1(info.Texture.Get(), &rtvDesc, &rtvs[i]));
+				ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView1(info.Texture.Get(), &rtvDesc, &rtvs[i]));
 
 				// Generate views for proper mips
 				if (info.Desc.MipLevels > 1)
@@ -201,7 +201,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 						else
 							rtvDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView1(info.Texture.Get(), &rtvDesc, &targetResourceMip[j]));
+						ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView1(info.Texture.Get(), &rtvDesc, &targetResourceMip[j]));
 					}
 				}
 			}
@@ -222,7 +222,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 					dsvDesc.Texture2D.MipSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &dsvs[i - 1]));
+				ZE_DX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &dsvs[i - 1]));
 
 				// Generate views for proper mips
 				if (info.Desc.MipLevels > 1)
@@ -237,7 +237,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 						else
 							dsvDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &targetResourceMip[j]));
+						ZE_DX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &targetResourceMip[j]));
 					}
 				}
 			}
@@ -259,7 +259,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					uavDesc.Texture2D.MipSlice = 0;
 					uavDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &uavs[i - 1]));
+				ZE_DX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &uavs[i - 1]));
 
 				// Generate views for proper mips
 				if (info.Desc.MipLevels > 1)
@@ -275,7 +275,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 						else
 							uavDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &targetResourceMip[j]));
+						ZE_DX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &targetResourceMip[j]));
 					}
 				}
 			}
@@ -316,7 +316,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					srvDesc.Texture2D.MipLevels = info.Desc.MipLevels;
 					srvDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED(device->CreateShaderResourceView1(info.Texture.Get(), &srvDesc, &srvs[i]));
+				ZE_DX_THROW_FAILED(device->CreateShaderResourceView1(info.Texture.Get(), &srvDesc, &srvs[i]));
 			}
 			++i;
 		}

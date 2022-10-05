@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX12
 {
 	SwapChain::SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE(dev.Get().dx12);
 		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(
 #ifdef _ZE_MODE_DEBUG
 			debugManager
@@ -23,7 +23,7 @@ namespace ZE::GFX::API::DX12
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = Settings::GetBackbufferCount();
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
+		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
 		rtvSrv = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[descHeapDesc.NumDescriptors];
 
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -47,12 +47,12 @@ namespace ZE::GFX::API::DX12
 		for (U32 i = 0; i < descHeapDesc.NumDescriptors; ++i)
 		{
 			DX::ComPtr<ID3D12Resource> buffer;
-			ZE_GFX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
-			ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
+			ZE_DX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
+			ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
 			rtvSrv[i].first = rtvHandle;
 			if (shaderInput)
 			{
-				ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
 				rtvSrv[i].second = srvHandle.second;
 			}
 			else
@@ -77,8 +77,8 @@ namespace ZE::GFX::API::DX12
 
 	void SwapChain::Present(GFX::Device& dev) const
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
-		ZE_GFX_SET_DEBUG_WATCH();
+		ZE_DX_ENABLE(dev.Get().dx12);
+		ZE_DX_SET_DEBUG_WATCH();
 		if (FAILED(ZE_WIN_EXCEPT_RESULT = swapChain->Present(0, presentFlags)))
 		{
 			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
@@ -86,10 +86,10 @@ namespace ZE::GFX::API::DX12
 #ifdef _ZE_MODE_DEBUG
 				DREDRecovery::SaveDeviceRemovedData(dev.Get().dx12, "tdr_error.txt");
 #endif
-				throw ZE_GFX_EXCEPT(dev.Get().dx12.GetDevice()->GetDeviceRemovedReason());
+				throw ZE_DX_EXCEPT(dev.Get().dx12.GetDevice()->GetDeviceRemovedReason());
 			}
 			else
-				throw ZE_GFX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
+				throw ZE_DX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
 		}
 	}
 
@@ -103,9 +103,9 @@ namespace ZE::GFX::API::DX12
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
 	{
-		ZE_GFX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE(dev.Get().dx12);
 		const U32 current = Settings::GetCurrentBackbufferIndex();
-		ZE_GFX_THROW_FAILED(swapChain->GetBuffer(current, IID_PPV_ARGS(&buffer)));
+		ZE_DX_THROW_FAILED(swapChain->GetBuffer(current, IID_PPV_ARGS(&buffer)));
 		presentBarrier.Transition.pResource = buffer.Get();
 		return rtvSrv[current];
 	}

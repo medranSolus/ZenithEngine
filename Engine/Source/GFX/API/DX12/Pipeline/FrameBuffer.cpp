@@ -1,5 +1,4 @@
 #include "GFX/API/DX12/Pipeline/FrameBuffer.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX12::Pipeline
 {
@@ -179,7 +178,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx12);
+		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
 		resourceCount = desc.ResourceInfo.size();
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
@@ -385,8 +384,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 #endif
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
-				ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
-				ZE_GFX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(uavHeap.GetAddressOf()), &residencyPriority));
+				ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
+				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(uavHeap.GetAddressOf()), &residencyPriority));
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
@@ -397,11 +396,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 					const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
 					GFX::Resource::State firstState = lifetime.begin()->second;
 					GFX::Resource::State lastState = lifetime.rbegin()->second;
-					ZE_GFX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
+					ZE_DX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-					ZE_GFX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
+					ZE_DX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
 					if (lastState != firstState)
 					{
 						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
@@ -466,8 +465,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 #endif
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
-		ZE_GFX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
-		ZE_GFX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
+		ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
+		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
 #ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
 		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
@@ -478,11 +477,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 			const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
 			GFX::Resource::State firstState = lifetime.begin()->second;
 			GFX::Resource::State lastState = lifetime.rbegin()->second;
-			ZE_GFX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
+			ZE_DX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
 				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_GFX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
+			ZE_DX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
 			if (lastState != firstState)
 			{
 				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
@@ -555,13 +554,13 @@ namespace ZE::GFX::API::DX12::Pipeline
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = rtvCount + rtvAdditionalMipsCount;
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
+		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 		descHeapDesc.NumDescriptors = dsvCount + dsvAdditionalMipsCount;
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
+		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		descHeapDesc.NumDescriptors = uavCount + uavAdditionalMipsCount;
-		ZE_GFX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&uavDescHeap)));
+		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&uavDescHeap)));
 
 		// Get sizes of descriptors
 		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
@@ -595,7 +594,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					rtvDesc.Texture2D.MipSlice = 0;
 					rtvDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
+				ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
 				rtvDsv[i] = rtvHandle;
 				rtvHandle.ptr += rtvDescSize;
 
@@ -612,7 +611,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						else
 							rtvDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
+						ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
 						targetResourceMip[j] = rtvHandle;
 						rtvHandle.ptr += rtvDescSize;
 					}
@@ -635,7 +634,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 					dsvDesc.Texture2D.MipSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
+				ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
 				rtvDsv[i] = dsvHandle;
 				dsvHandle.ptr += dsvDescSize;
 
@@ -652,7 +651,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						else
 							dsvDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
+						ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
 						targetResourceMip[j] = dsvHandle;
 						dsvHandle.ptr += dsvDescSize;
 					}
@@ -678,7 +677,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					uavDesc.Texture2D.MipSlice = 0;
 					uavDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
+				ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
 				device->CopyDescriptorsSimple(1, srvUavHandle.first, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				uav[i - 1] = { uavHandle, srvUavHandle.second };
 				uavHandle.ptr += srvUavDescSize;
@@ -701,7 +700,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						else
 							uavDesc.Texture2D.MipSlice = j;
 
-						ZE_GFX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
+						ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
 						targetResourceMip[j] = { uavHandle, srvUavHandle.second };
 						uavHandle.ptr += srvUavDescSize;
 						srvUavHandle.first.ptr += srvUavDescSize;
@@ -754,7 +753,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					srvDesc.Texture2D.PlaneSlice = 0;
 					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 				}
-				ZE_GFX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavHandle.first));
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavHandle.first));
 				srv[i] = srvUavHandle.second;
 				srvUavHandle.first.ptr += srvUavDescSize;
 				srvUavHandle.second.ptr += srvUavDescSize;

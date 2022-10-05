@@ -1,19 +1,18 @@
 #include "GFX/API/DX11/Resource/PipelineStateGfx.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {
 	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
 	{
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 		auto device = dev.Get().dx11.GetDevice();
 		topology = DX::GetTopology(desc.Topology, desc.Ordering);
 
 		assert(desc.VS && "Vertex Shader is always required!");
 		ID3DBlob* bytecode = desc.VS->Get().dx11.GetBytecode();
-		ZE_GFX_THROW_FAILED(device->CreateVertexShader(bytecode->GetBufferPointer(),
+		ZE_DX_THROW_FAILED(device->CreateVertexShader(bytecode->GetBufferPointer(),
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
-		ZE_GFX_SET_ID(vertexShader, desc.VS->Get().dx11.GetName() + "_" + desc.DebugName);
+		ZE_DX_SET_ID(vertexShader, desc.VS->Get().dx11.GetName() + "_" + desc.DebugName);
 
 		if (desc.InputLayout.size())
 		{
@@ -31,39 +30,39 @@ namespace ZE::GFX::API::DX11::Resource
 				element.InstanceDataStepRate = 0;
 			}
 
-			ZE_GFX_THROW_FAILED(device->CreateInputLayout(elements, static_cast<UINT>(desc.InputLayout.size()),
+			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements, static_cast<UINT>(desc.InputLayout.size()),
 				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
-			ZE_GFX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
+			ZE_DX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
 			delete[] elements;
 		}
 
 		if (desc.DS)
 		{
 			bytecode = desc.DS->Get().dx11.GetBytecode();
-			ZE_GFX_THROW_FAILED(device->CreateDomainShader(bytecode->GetBufferPointer(),
+			ZE_DX_THROW_FAILED(device->CreateDomainShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &domainShader));
-			ZE_GFX_SET_ID(domainShader, desc.DS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_SET_ID(domainShader, desc.DS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.HS)
 		{
 			bytecode = desc.HS->Get().dx11.GetBytecode();
-			ZE_GFX_THROW_FAILED(device->CreateHullShader(bytecode->GetBufferPointer(),
+			ZE_DX_THROW_FAILED(device->CreateHullShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &hullShader));
-			ZE_GFX_SET_ID(hullShader, desc.HS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_SET_ID(hullShader, desc.HS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.GS)
 		{
 			bytecode = desc.GS->Get().dx11.GetBytecode();
-			ZE_GFX_THROW_FAILED(device->CreateGeometryShader(bytecode->GetBufferPointer(),
+			ZE_DX_THROW_FAILED(device->CreateGeometryShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &geometryShader));
-			ZE_GFX_SET_ID(geometryShader, desc.GS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_SET_ID(geometryShader, desc.GS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.PS)
 		{
 			bytecode = desc.PS->Get().dx11.GetBytecode();
-			ZE_GFX_THROW_FAILED(device->CreatePixelShader(bytecode->GetBufferPointer(),
+			ZE_DX_THROW_FAILED(device->CreatePixelShader(bytecode->GetBufferPointer(),
 				bytecode->GetBufferSize(), nullptr, &pixelShader));
-			ZE_GFX_SET_ID(pixelShader, desc.PS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_SET_ID(pixelShader, desc.PS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 
 		D3D11_BLEND_DESC blendDesc = CD3D11_BLEND_DESC(CD3D11_DEFAULT{});
@@ -88,8 +87,8 @@ namespace ZE::GFX::API::DX11::Resource
 		default:
 			break;
 		}
-		ZE_GFX_THROW_FAILED(device->CreateBlendState(&blendDesc, &blendState));
-		ZE_GFX_SET_ID(blendState, "Blender_" + desc.DebugName);
+		ZE_DX_THROW_FAILED(device->CreateBlendState(&blendDesc, &blendState));
+		ZE_DX_SET_ID(blendState, "Blender_" + desc.DebugName);
 
 		D3D11_DEPTH_STENCIL_DESC stencilDesc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT{});
 		switch (desc.DepthStencil)
@@ -135,15 +134,15 @@ namespace ZE::GFX::API::DX11::Resource
 		default:
 			break;
 		}
-		ZE_GFX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
-		ZE_GFX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
+		ZE_DX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
+		ZE_DX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
 
 		D3D11_RASTERIZER_DESC rasterDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT{});
 		rasterDesc.FillMode = desc.IsWireFrame() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 		rasterDesc.CullMode = GetCulling(desc.Culling);
 		rasterDesc.DepthClipEnable = desc.IsDepthClip();
-		ZE_GFX_THROW_FAILED(device->CreateRasterizerState(&rasterDesc, &rasterState));
-		ZE_GFX_SET_ID(rasterState, "Raster_" + desc.DebugName);
+		ZE_DX_THROW_FAILED(device->CreateRasterizerState(&rasterDesc, &rasterState));
+		ZE_DX_SET_ID(rasterState, "Raster_" + desc.DebugName);
 	}
 
 	void PipelineStateGfx::Bind(ID3D11DeviceContext4* ctx) const noexcept

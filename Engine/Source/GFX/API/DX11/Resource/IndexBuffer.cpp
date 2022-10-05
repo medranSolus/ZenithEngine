@@ -1,12 +1,11 @@
 #include "GFX/API/DX11/Resource/IndexBuffer.h"
-#include "GFX/API/DX/GraphicsException.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {
 	IndexBuffer::IndexBuffer(GFX::Device& dev, const IndexData& data) : count(data.Count)
 	{
 		assert(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0);
-		ZE_GFX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;
 		bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -21,8 +20,8 @@ namespace ZE::GFX::API::DX11::Resource
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_GFX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
-		ZE_GFX_SET_ID(buffer, "IndexBuffer");
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
+		ZE_DX_SET_ID(buffer, "IndexBuffer");
 	}
 
 	void IndexBuffer::Bind(GFX::CommandList& cl) const noexcept
