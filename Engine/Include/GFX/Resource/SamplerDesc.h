@@ -1,6 +1,6 @@
 #pragma once
-#include "SamplerType.h"
 #include "Texture/AddressMode.h"
+#include "SamplerType.h"
 
 namespace ZE::GFX::Resource
 {

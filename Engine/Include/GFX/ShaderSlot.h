@@ -1,6 +1,6 @@
 #pragma once
-#include "Types.h"
 #include "SlotsGen.h"
+#include "Types.h"
 
 namespace ZE::GFX
 {

@@ -1,7 +1,5 @@
 #pragma once
 #include "ComPtr.h"
-#include <vector>
-#include <string>
 #include "WarningGuardOn.h"
 #include <dxgidebug.h>
 #include "WarningGuardOff.h"

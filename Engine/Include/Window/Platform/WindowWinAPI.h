@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/WinAPI/WinAPI.h"
-#include "Window/MainWindow.h"
+#include "Window/BaseWindow.h"
 
 namespace ZE::Window::WinAPI
 {

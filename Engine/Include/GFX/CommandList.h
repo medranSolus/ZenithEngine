@@ -1,6 +1,7 @@
 #pragma once
 #include "API/DX11/CommandList.h"
 #include "API/DX12/CommandList.h"
+#include "API/VK/CommandList.h"
 #include "API/Backend.h"
 
 namespace ZE::GFX

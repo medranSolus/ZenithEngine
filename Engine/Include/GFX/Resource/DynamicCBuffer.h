@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/DynamicCBuffer.h"
 #include "GFX/API/DX12/Resource/DynamicCBuffer.h"
+#include "GFX/API/VK/Resource/DynamicCBuffer.h"
 
 namespace ZE::GFX::Resource
 {

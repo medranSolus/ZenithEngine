@@ -1,7 +1,8 @@
 #pragma once
-#include "GFX/API/DX11/Device.h"
-#include "GFX/API/DX12/Device.h"
-#include "GFX/API/Backend.h"
+#include "API/DX11/Device.h"
+#include "API/DX12/Device.h"
+#include "API/VK/Device.h"
+#include "API/Backend.h"
 
 namespace ZE::GFX
 {

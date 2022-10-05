@@ -1,6 +1,6 @@
 #pragma once
-#include "Resource/CBuffer.h"
 #include "Resource/Texture/Pack.h"
+#include "Resource/CBuffer.h"
 
 namespace ZE::GFX
 {

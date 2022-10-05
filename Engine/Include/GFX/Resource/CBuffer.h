@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/CBuffer.h"
 #include "GFX/API/DX12/Resource/CBuffer.h"
+#include "GFX/API/VK/Resource/CBuffer.h"
 
 namespace ZE::GFX::Resource
 {

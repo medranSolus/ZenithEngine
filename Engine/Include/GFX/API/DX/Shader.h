@@ -18,11 +18,12 @@ namespace ZE::GFX::API::DX
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
-		// Gfx API Internal
-
 #if _ZE_MODE_DEBUG
 		constexpr const std::string& GetName() const noexcept { return shaderName; }
 #endif
+
+		// Gfx API Internal
+
 		ID3DBlob* GetBytecode() const noexcept { return bytecode.Get(); }
 	};
 

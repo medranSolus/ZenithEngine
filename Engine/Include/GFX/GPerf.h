@@ -1,6 +1,7 @@
 #pragma once
 #include "API/DX11/GPerf.h"
 #include "API/DX12/GPerf.h"
+#include "API/VK/GPerf.h"
 #include <unordered_map>
 
 namespace ZE::GFX

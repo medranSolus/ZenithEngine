@@ -1,8 +1,8 @@
 #pragma once
 #include "Data/Entity.h"
-#include "Table.h"
 #include "D3D12.h"
 #include "ResourceInfo.h"
+#include "Table.h"
 
 namespace ZE::GFX::API::DX12
 {

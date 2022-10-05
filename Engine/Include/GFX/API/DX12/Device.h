@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Resource/Texture/Type.h"
 #include "GFX/CommandList.h"
-#include "D3D12.h"
 #include "AllocatorTier1.h"
 #include "AllocatorTier2.h"
 #include "DescriptorInfo.h"

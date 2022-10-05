@@ -1,7 +1,6 @@
 #pragma once
 #include "Types.h"
 #include <bitset>
-#include <deque>
 #include <optional>
 
 namespace ZE::Window

@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/Constant.h"
 #include "GFX/API/DX12/Resource/Constant.h"
+#include "GFX/API/VK/Resource/Constant.h"
 
 namespace ZE::GFX::Resource
 {

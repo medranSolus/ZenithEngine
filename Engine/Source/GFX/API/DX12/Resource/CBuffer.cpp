@@ -42,4 +42,8 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 		dev.Get().dx12.FreeBuffer(resInfo);
 	}
+
+	void CBuffer::GetData(GFX::Device& dev, void* values, U32 bytes) const
+	{
+	}
 }

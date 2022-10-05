@@ -1,8 +1,7 @@
 #pragma once
-#include "GFX/Device.h"
-#include "GFX/Binding/Context.h"
 #include "GFX/Resource/Texture/PackDesc.h"
-#include "D3D12.h"
+#include "GFX/Binding/Context.h"
+#include "GFX/Device.h"
 
 namespace ZE::GFX::API::DX12::Resource::Texture
 {

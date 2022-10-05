@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/IndexBuffer.h"
 #include "GFX/API/DX12/Resource/IndexBuffer.h"
+#include "GFX/API/VK/Resource/IndexBuffer.h"
 
 namespace ZE::GFX::Resource
 {

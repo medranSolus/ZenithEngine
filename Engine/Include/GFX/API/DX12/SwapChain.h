@@ -1,7 +1,6 @@
 #pragma once
-#include "Window/Platform/WindowWinAPI.h"
 #include "GFX/Device.h"
-#include "D3D12.h"
+#include "Window/MainWindow.h"
 
 namespace ZE::GFX::API::DX12
 {
@@ -15,7 +14,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		SwapChain() = default;
-		SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev, bool shaderInput);
+		SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();
 

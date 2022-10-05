@@ -1,7 +1,6 @@
 #pragma once
-#include "GFX/Device.h"
 #include "GFX/Binding/Context.h"
-#include "D3D12.h"
+#include "GFX/Device.h"
 
 namespace ZE::GFX::API::DX12::Resource
 {
@@ -19,5 +18,6 @@ namespace ZE::GFX::API::DX12::Resource
 		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 		void Free(GFX::Device& dev) noexcept;
+		void GetData(GFX::Device& dev, void* values, U32 bytes) const;
 	};
 }

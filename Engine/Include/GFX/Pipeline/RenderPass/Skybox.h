@@ -1,7 +1,7 @@
 #pragma once
+#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Resource/IndexBuffer.h"
 #include "GFX/Resource/VertexBuffer.h"
 

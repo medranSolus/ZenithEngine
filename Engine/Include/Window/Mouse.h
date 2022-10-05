@@ -1,6 +1,5 @@
 #pragma once
 #include "Types.h"
-#include <deque>
 #include <optional>
 
 namespace ZE::Window

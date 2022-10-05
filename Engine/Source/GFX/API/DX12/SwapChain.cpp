@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX12
 {
-	SwapChain::SwapChain(const Window::WinAPI::WindowWinAPI& window, GFX::Device& dev, bool shaderInput)
+	SwapChain::SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput)
 	{
 		ZE_GFX_ENABLE(dev.Get().dx12);
 		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(

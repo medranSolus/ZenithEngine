@@ -1,7 +1,7 @@
 #pragma once
 #include "API/DX11/SwapChain.h"
 #include "API/DX12/SwapChain.h"
-#include "Device.h"
+#include "API/VK/SwapChain.h"
 
 namespace ZE::GFX
 {

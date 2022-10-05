@@ -2,9 +2,7 @@
 #include "GFX/Binding/Context.h"
 #include "GFX/Pipeline/FrameBufferDesc.h"
 #include "GFX/Pipeline/SyncType.h"
-#include "GFX/CommandList.h"
 #include "GFX/SwapChain.h"
-#include "D3D12.h"
 
 namespace ZE::GFX::API::DX12::Pipeline
 {

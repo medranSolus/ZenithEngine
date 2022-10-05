@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/API/DX/Shader.h"
+#include "GFX/API/VK/Resource/Shader.h"
 #include "GFX/API/Backend.h"
 
 namespace ZE::GFX::Resource
@@ -15,5 +16,11 @@ namespace ZE::GFX::Resource
 		~Shader() = default;
 
 		ZE_API_BACKEND_GET(Resource::Shader);
+
+		// Main Gfx API
+
+#ifdef _ZE_MODE_DEBUG
+		const std::string& GetName() const noexcept { ZE_API_BACKEND_CALL(GetName); }
+#endif
 	};
 }

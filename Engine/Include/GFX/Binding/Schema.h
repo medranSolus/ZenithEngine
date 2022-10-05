@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Binding/Schema.h"
 #include "GFX/API/DX12/Binding/Schema.h"
+#include "GFX/API/VK/Binding/Schema.h"
 
 namespace ZE::GFX::Binding
 {

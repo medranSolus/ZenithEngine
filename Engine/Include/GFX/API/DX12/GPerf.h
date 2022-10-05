@@ -1,6 +1,5 @@
 #pragma once
 #include "GFX/Device.h"
-#include "D3D12.h"
 
 namespace ZE::GFX::API::DX12
 {

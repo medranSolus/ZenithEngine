@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Pipeline/FrameBuffer.h"
 #include "GFX/API/DX12/Pipeline/FrameBuffer.h"
+#include "GFX/API/VK/Pipeline/FrameBuffer.h"
 
 namespace ZE::GFX::Pipeline
 {

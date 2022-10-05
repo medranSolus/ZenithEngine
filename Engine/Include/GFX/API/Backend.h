@@ -220,7 +220,7 @@ namespace ZE::GFX::API
 	ZE::GFX::API::DX11::##type##, \
 	ZE::GFX::API::DX12::##type##, \
 	ZE::GFX::API::DX11::##type##, \
-	ZE::GFX::API::DX11::##type##>
+	ZE::GFX::API::VK::##type##>
 
 // Name of backend variable
 #define ZE_API_BACKEND_VAR backend

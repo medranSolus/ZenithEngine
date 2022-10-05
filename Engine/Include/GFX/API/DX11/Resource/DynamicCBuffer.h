@@ -1,10 +1,8 @@
 #pragma once
-#include "GFX/Device.h"
 #include "GFX/Binding/Context.h"
 #include "GFX/Resource/DynamicBufferAlloc.h"
 #include "Data/Library.h"
-#include "D3D11.h"
-#include <mutex>
+#include "GFX/Device.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {

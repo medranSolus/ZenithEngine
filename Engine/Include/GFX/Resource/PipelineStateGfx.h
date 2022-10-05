@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/PipelineStateGfx.h"
 #include "GFX/API/DX12/Resource/PipelineStateGfx.h"
+#include "GFX/API/VK/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Resource
 {

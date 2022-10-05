@@ -1,8 +1,8 @@
 #pragma once
+#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/Resource/PipelineStateCompute.h"
-#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/ChainPool.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO

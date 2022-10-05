@@ -1,6 +1,6 @@
 #pragma once
-#include "Type.h"
 #include "Data/Library.h"
+#include "Type.h"
 
 namespace ZE::GFX::Resource::Texture
 {

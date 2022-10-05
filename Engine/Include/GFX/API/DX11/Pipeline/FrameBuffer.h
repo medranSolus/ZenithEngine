@@ -2,7 +2,6 @@
 #include "GFX/Binding/Context.h"
 #include "GFX/Pipeline/FrameBufferDesc.h"
 #include "GFX/SwapChain.h"
-#include "D3D11.h"
 
 namespace ZE::GFX::API::DX11::Pipeline
 {

@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/VertexBuffer.h"
 #include "GFX/API/DX12/Resource/VertexBuffer.h"
+#include "GFX/API/VK/Resource/VertexBuffer.h"
 
 namespace ZE::GFX::Resource
 {

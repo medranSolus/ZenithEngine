@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/DX11/Resource/Texture/Pack.h"
 #include "GFX/API/DX12/Resource/Texture/Pack.h"
+#include "GFX/API/VK/Resource/Texture/Pack.h"
 
 namespace ZE::GFX::Resource::Texture
 {

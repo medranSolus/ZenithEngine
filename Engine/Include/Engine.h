@@ -1,7 +1,7 @@
 #pragma once
-#include "StartupConfig.h"
-#include "GUI/Manager.h"
 #include "GFX/Pipeline/RendererPBR.h"
+#include "GUI/Manager.h"
+#include "StartupConfig.h"
 
 namespace ZE
 {

@@ -1,6 +1,5 @@
 #pragma once
 #include "GFX/Binding/Schema.h"
-#include "D3D12.h"
 
 namespace ZE::GFX::API::DX12::Resource
 {
