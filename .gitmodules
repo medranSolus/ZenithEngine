@@ -22,3 +22,6 @@
 [submodule "External/AGS"]
 	path = External/AGS
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK.git
+[submodule "External/volk"]
+	path = External/volk
+	url = https://github.com/zeux/volk

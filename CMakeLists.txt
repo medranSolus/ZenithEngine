@@ -68,6 +68,7 @@ set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(AGS_DIR "${EXTERNAL_DIR}/AGS")
 set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
+set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -87,6 +88,7 @@ set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
+set(VOLK_INC_DIR "${VOLK_DIR}")
 set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
 set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 
@@ -111,6 +113,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${ENTT_INC_DIR}"
 	"${AGS_INC_DIR}"
 	"${AGILITY_INC_DIR}"
+	"${VOLK_INC_DIR}"
 	"${EXT_INC_DIR}"
 	"${EXT_SHADER_INC_DIR}")
 
@@ -132,6 +135,7 @@ set(DXTEX_LIB "DirectXTex")
 set(PIX_LIB "WinPixEventRuntime")
 set(ENTT_LIB "EnTT::EnTT")
 set(AGS_LIB "amd_ags_x64")
+set(VOLK_LIB "volk")
 
 # Inject debug suffix if library use it
 if(MODE_DEBUG)
@@ -155,6 +159,7 @@ endif()
 set(DXTEX_TARGET "${DXTEX_LIB}")
 set(ENTT_TARGET "${ENTT_LIB}")
 set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
+set(VOLK_TARGET "${VOLK_LIB}")
 
 
 ######### COMPILE CONFIGURATION #########
@@ -166,7 +171,7 @@ link_directories(${EXTERNAL_BIN_DIR})
 
 # Platform specific flags
 if(WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport)")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ZE_PLATFORM_WINDOWS -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport) -DVK_USE_PLATFORM_WIN32_KHR")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DUSE_PIX")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DUSE_PIX")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -342,3 +347,11 @@ elseif(GNU OR Clang)
 endif()
 set(ENTT_INCLUDE_HEADERS ON CACHE BOOL "Include header for dependency" FORCE)
 add_subdirectory(${ENTT_DIR})
+
+# volk
+if(WIN32)
+	set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR CACHE STRING "Enabled Vulkan for Windows" FORCE)
+else()
+	message(FATAL_ERROR "Building for unsupported platform!")
+endif()
+add_subdirectory(${VOLK_DIR})
