@@ -18,7 +18,7 @@ namespace ZE::Window::WinAPI
 		wndClassEx.hCursor = nullptr;
 		wndClassEx.lpszMenuName = nullptr;
 		wndClassEx.style = CS_OWNDC;
-		wndClassEx.lpszClassName = WND_CLASS_NAME;
+		wndClassEx.lpszClassName = Settings::GetEngineName();
 		wndClassEx.lpfnWndProc = HandleMsgSetup;
 		wndClassEx.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
 		wndClassEx.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
@@ -291,7 +291,7 @@ namespace ZE::Window::WinAPI
 			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
 		}
 
-		wndHandle = CreateWindowEx(WIN_STYLE_EX, WindowClass::GetName(), name, WIN_STYLE,
+		wndHandle = CreateWindowEx(WIN_STYLE_EX, Settings::GetEngineName(), name, WIN_STYLE,
 			windowRect.left, windowRect.top, GetWidth(), GetHeight(),
 			nullptr, nullptr, wndClass.GetInstance(), this);
 		if (wndHandle == nullptr)

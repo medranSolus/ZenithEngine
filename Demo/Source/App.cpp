@@ -616,7 +616,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ WINDOW_TITLE, GfxApiType::DX12, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
+	: engine({ APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), GfxApiType::DX12, 2, 0, 0, 10000, 800, {"Skybox/Space", ".png"} })
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 

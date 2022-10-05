@@ -4,7 +4,7 @@ namespace ZE
 {
 	Engine::Engine(const EngineParams& params) : StartupConfig(params)
 	{
-		window.Init(params.WindowName, params.Width, params.Height);
+		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, false);
 		gui.Init(graphics.GetDevice());
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), textureLib,

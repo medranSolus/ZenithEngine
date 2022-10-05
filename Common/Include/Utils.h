@@ -7,6 +7,12 @@
 
 namespace ZE::Utils
 {
+	// Encode app version in format 'major.minor.patch' into single uint32_t
+	constexpr uint32_t MakeVersion(uint16_t major, uint16_t minor, uint16_t patch) noexcept { return (static_cast<uint32_t>(major & 0x3FF) << 22) | static_cast<uint32_t>(minor & 0x3FF) << 12 | (patch & 0xFFF); }
+	constexpr uint64_t GetVersionMajor(uint32_t version) noexcept { return (version >> 22) & 0x3FF; }
+	constexpr uint64_t GetVersionMinor(uint32_t version) noexcept { return (version >> 12) & 0x3FF; }
+	constexpr uint64_t GetVersionPatch(uint32_t version) noexcept { return version & 0xFFF; }
+
 	// Checks wheter format is avaiable for depth stencil
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept;
 

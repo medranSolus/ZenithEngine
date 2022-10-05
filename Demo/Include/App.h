@@ -5,6 +5,7 @@ using namespace ZE;
 class App final
 {
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine v0.3";
+	static constexpr const char* APP_NAME = "Zenith Engine Demo";
 	static constexpr float MAX_MOVE_SPEED = 5.0f;
 
 	Engine engine;

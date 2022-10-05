@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/WinAPI/WinAPI.h"
 #include "Window/BaseWindow.h"
+#include "Settings.h"
 
 namespace ZE::Window::WinAPI
 {
@@ -10,16 +11,12 @@ namespace ZE::Window::WinAPI
 		// Window class register
 		class WindowClass final
 		{
-			static constexpr const char* WND_CLASS_NAME = "ZENITH_WND";
-
 			HINSTANCE hInstance;
 
 		public:
 			WindowClass() noexcept;
 			ZE_CLASS_DELETE(WindowClass);
-			~WindowClass() { UnregisterClass(WND_CLASS_NAME, hInstance); }
-
-			static constexpr const char* GetName() noexcept { return WND_CLASS_NAME; }
+			~WindowClass() { UnregisterClass(Settings::GetEngineName(), hInstance); }
 
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
