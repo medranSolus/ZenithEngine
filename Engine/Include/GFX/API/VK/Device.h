@@ -9,11 +9,14 @@ namespace ZE::GFX::API::VK
 {
 	class Device final
 	{
+		VkInstance instance;
+		VkDevice device;
+
 	public:
 		Device() = default;
 		Device(U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
-		~Device() = default;
+		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { 0, 0 }; }
 
@@ -41,13 +44,13 @@ namespace ZE::GFX::API::VK
 		constexpr U64 SetCopyFence() { return 0; }
 
 #ifdef _ZE_MODE_DEBUG
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept {  }
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept {  }
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept {  }
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept {}
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept {}
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept {}
 
-		void TagEndMain() const noexcept {  }
-		void TagEndCompute() const noexcept {  }
-		void TagEndCopy() const noexcept {  }
+		void TagEndMain() const noexcept {}
+		void TagEndCompute() const noexcept {}
+		void TagEndCopy() const noexcept {}
 #endif
 
 		constexpr void BeginUploadRegion() {}
@@ -55,8 +58,8 @@ namespace ZE::GFX::API::VK
 		constexpr void EndUploadRegion() {}
 
 		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {  }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {  }
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
 	};

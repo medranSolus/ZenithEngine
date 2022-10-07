@@ -30,3 +30,5 @@ namespace ZE::Exception
 #define ZE_RGC_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Render Graph Compile Exception")
 // Exception thrown while loading models
 #define ZE_MDL_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Model Loading Exception")
+// Exception thrown when checking versions
+#define ZE_CMP_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Compatibility Exception")
