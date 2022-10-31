@@ -1,5 +1,6 @@
 #pragma once
 #include "VK.h"
+#include <bitset>
 
 namespace ZE::GFX
 {
@@ -9,8 +10,22 @@ namespace ZE::GFX::API::VK
 {
 	class Device final
 	{
+#define X(ext) + 1
+		static constexpr U16 KNOWN_EXTENSION_COUNT = ZE_VK_EXT_LIST;
+#undef X
+
 		VkInstance instance;
 		VkDevice device;
+		std::bitset<KNOWN_EXTENSION_COUNT + 1> extensionSupport;
+
+#ifdef _ZE_MODE_DEBUG
+		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+#endif
+		template<U64 Size>
+		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
+		// To be used with dynamically allocated string (slower than normal version)
+		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
 
 	public:
 		Device() = default;
@@ -62,5 +77,31 @@ namespace ZE::GFX::API::VK
 		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
+
+		// Gfx API Internal
+
+		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them
+		template<U64 Size>
+		constexpr bool IsExtensionSupported(const char(&extName)[Size]) const noexcept { return extensionSupport[GetExtensionIndex<Size>(extName)]; }
+		// To be used with dynamically allocated string (slower than normal version)
+		bool IsExtensionSupportedDynamic(const char* extName) const noexcept { return extensionSupport[GetExtensionIndexDynamic(extName)]; }
 	};
+
+#pragma region Functions
+	template<U64 Size>
+	constexpr U16 Device::GetExtensionIndex(const char(&extName)[Size]) noexcept
+	{
+		// __COUNTER__ is supported on MSVC, GCC and Clang, on other compilers should find alternative
+		constexpr U16 COUNTER_BASE = __COUNTER__ + 1;
+
+		switch (Utils::GetStringHash(extName, Size))
+		{
+#define X(ext) case Utils::GetStringHash(ext, sizeof(ext)): return __COUNTER__ - COUNTER_BASE;
+			ZE_VK_EXT_LIST
+#undef X
+		default:
+			return KNOWN_EXTENSION_COUNT;
+		}
+	}
+#pragma endregion
 }

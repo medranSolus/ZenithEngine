@@ -2,6 +2,7 @@
 #include "WarningGuardOn.h"
 #include "backends/imgui_impl_dx11.h"
 #include "backends/imgui_impl_dx12.h"
+#include "backends/imgui_impl_vulkan.h"
 #include "WarningGuardOff.h"
 
 namespace ZE::GUI
@@ -59,9 +60,14 @@ namespace ZE::GUI
 			ImGui_ImplDX12_Shutdown();
 			return;
 		}
+		case GfxApiType::Vulkan:
+		{
+			ImGui_ImplVulkan_Shutdown();
+			break;
+		}
 		default:
 		{
-			assert("GUI not supported under current API!" && false);
+			ZE_ASSERT(false, "GUI not supported under current API!");
 			break;
 		}
 		}
@@ -79,6 +85,11 @@ namespace ZE::GUI
 		case GfxApiType::DX12:
 		{
 			ImGui_ImplDX12_NewFrame();
+			break;
+		}
+		case GfxApiType::Vulkan:
+		{
+			ImGui_ImplVulkan_NewFrame();
 			break;
 		}
 		default:

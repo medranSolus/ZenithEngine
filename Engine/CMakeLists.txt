@@ -59,7 +59,9 @@ if(WIN32)
         "${IMGUI_DIR}/backends/*dx11.cpp"
         "${IMGUI_DIR}/backends/*dx11.h"
         "${IMGUI_DIR}/backends/*dx12.cpp"
-        "${IMGUI_DIR}/backends/*dx12.h")
+        "${IMGUI_DIR}/backends/*dx12.h"
+        "${IMGUI_DIR}/backends/*vulkan.cpp"
+        "${IMGUI_DIR}/backends/*vulkan.h")
     set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
         "${IMGUI_BACKEND_LIST}")
 else()
