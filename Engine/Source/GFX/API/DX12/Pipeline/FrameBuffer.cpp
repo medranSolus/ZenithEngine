@@ -1219,7 +1219,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 			}
 			default:
-				ZE_ASSERT(false, "Incorret enum value for enter sync context!");
+				ZE_FAIL("Incorret enum value for enter sync context!");
 			case GFX::Pipeline::SyncType::None:
 				break;
 			}
@@ -1252,7 +1252,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 			}
 			default:
-				ZE_ASSERT(false, "Incorret enum value for exit sync context!");
+				ZE_FAIL("Incorret enum value for exit sync context!");
 			case GFX::Pipeline::SyncType::None:
 				break;
 			}

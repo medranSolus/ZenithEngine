@@ -46,7 +46,7 @@ namespace ZE::GFX::API::DX12
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CommandType::All:
 			return D3D12_COMMAND_LIST_TYPE_DIRECT;
 		case CommandType::Bundle:
@@ -63,7 +63,7 @@ namespace ZE::GFX::API::DX12
 		switch (func)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::CompareMethod::Never:
 			return D3D12_COMPARISON_FUNC_NEVER;
 		case GFX::Resource::CompareMethod::Less:
@@ -88,7 +88,7 @@ namespace ZE::GFX::API::DX12
 		switch (mode)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::CullMode::None:
 			return D3D12_CULL_MODE_NONE;
 		case GFX::Resource::CullMode::Front:
@@ -344,7 +344,7 @@ namespace ZE::GFX::API::DX12
 		switch (color)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::Texture::EdgeColor::TransparentBlack:
 			return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		case GFX::Resource::Texture::EdgeColor::SolidBlack:
@@ -359,7 +359,7 @@ namespace ZE::GFX::API::DX12
 		switch (mode)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::Texture::AddressMode::Repeat:
 			return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		case GFX::Resource::Texture::AddressMode::Mirror:
@@ -378,7 +378,7 @@ namespace ZE::GFX::API::DX12
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::TopologyType::Undefined:
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
 		case GFX::Resource::TopologyType::Point:
@@ -397,7 +397,7 @@ namespace ZE::GFX::API::DX12
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Pipeline::BarrierType::Immediate:
 			return D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		case GFX::Pipeline::BarrierType::Begin:

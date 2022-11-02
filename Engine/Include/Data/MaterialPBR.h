@@ -58,39 +58,42 @@ namespace ZE::Data
 	constexpr const wchar_t* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept
 	{
 		flags &= ~UseSpecularPowerAlpha;
-		if (flags == None)
+		switch (flags)
+		{
+		case None:
 			return L"";
-		if (flags == UseParallax)
+		case UseParallax:
 			return L"_P";
-		if (flags == UseSpecular)
+		case UseSpecular:
 			return L"_S";
-		if (flags == (UseSpecular | UseParallax))
+		case UseSpecular | UseParallax:
 			return L"_SP";
-		if (flags == UseNormal)
+		case UseNormal:
 			return L"_N";
-		if (flags == (UseNormal | UseParallax))
+		case UseNormal | UseParallax:
 			return L"_NP";
-		if (flags == (UseNormal | UseSpecular))
+		case UseNormal | UseSpecular:
 			return L"_NS";
-		if (flags == (UseNormal | UseSpecular | UseParallax))
+		case UseNormal | UseSpecular | UseParallax:
 			return L"_NSP";
-		if (flags == UseTexture)
+		case UseTexture:
 			return L"_T";
-		if (flags == (UseTexture | UseParallax))
+		case UseTexture | UseParallax:
 			return L"_TP";
-		if (flags == (UseTexture | UseSpecular))
+		case UseTexture | UseSpecular:
 			return L"_TS";
-		if (flags == (UseTexture | UseSpecular | UseParallax))
+		case UseTexture | UseSpecular | UseParallax:
 			return L"_TSP";
-		if (flags == (UseTexture | UseNormal))
+		case UseTexture | UseNormal:
 			return L"_TN";
-		if (flags == (UseTexture | UseNormal | UseParallax))
+		case UseTexture | UseNormal | UseParallax:
 			return L"_TNP";
-		if (flags == (UseTexture | UseNormal | UseSpecular))
+		case UseTexture | UseNormal | UseSpecular:
 			return L"_TNS";
-		if (flags == (UseTexture | UseNormal | UseSpecular | UseParallax))
+		case UseTexture | UseNormal | UseSpecular | UseParallax:
 			return L"_TNSP";
-		ZE_ASSERT(false, "Unknown set of flags!");
+		}
+		ZE_FAIL("Unknown set of flags!");
 		return L"";
 	}
 #pragma endregion

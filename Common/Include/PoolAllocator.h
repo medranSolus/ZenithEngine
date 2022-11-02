@@ -115,7 +115,7 @@ namespace ZE
 				return;
 			}
 		}
-		ZE_ASSERT(false, "Pointer doesn't belong to this memory pool!");
+		ZE_FAIL("Pointer doesn't belong to this memory pool!");
 	}
 
 	template<typename T>

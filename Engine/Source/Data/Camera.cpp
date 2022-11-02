@@ -8,7 +8,7 @@ namespace ZE::Data
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CameraType::Person:
 			return MovePersonCameraX(registry, camera, dX);
 		case CameraType::Floating:
@@ -21,7 +21,7 @@ namespace ZE::Data
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CameraType::Person:
 			return MovePersonCameraY(registry, camera, dY);
 		case CameraType::Floating:
@@ -34,7 +34,7 @@ namespace ZE::Data
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CameraType::Person:
 			return MovePersonCameraZ(registry, camera, dZ);
 		case CameraType::Floating:
@@ -47,7 +47,7 @@ namespace ZE::Data
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CameraType::Person:
 			return RollPersonCamera(registry, camera, delta);
 		case CameraType::Floating:
@@ -60,7 +60,7 @@ namespace ZE::Data
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case CameraType::Person:
 			return RotatePersonCamera(registry, camera, angleDX, angleDY);
 		case CameraType::Floating:

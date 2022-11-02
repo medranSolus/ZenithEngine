@@ -316,7 +316,7 @@ namespace ZE::GFX::API::DX12
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 				return ExecuteCopy(*cls);
 			default:
-				ZE_ASSERT(false, "Incorrect type of command list!!!");
+				ZE_FAIL("Incorrect type of command list!!!");
 			}
 		}
 
@@ -345,7 +345,7 @@ namespace ZE::GFX::API::DX12
 				break;
 			}
 			default:
-				ZE_ASSERT(false, "Incorrect type of command list!!!");
+				ZE_FAIL("Incorrect type of command list!!!");
 			}
 		}
 

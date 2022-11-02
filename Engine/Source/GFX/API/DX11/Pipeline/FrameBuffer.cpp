@@ -476,7 +476,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					ctx->CSSetUnorderedAccessViews(slotData.BindStart, 1, reinterpret_cast<ID3D11UnorderedAccessView* const*>(uavs[rid++].GetAddressOf()), nullptr);
 				else
 				{
-					ZE_ASSERT(false, "Cannot use UAV outside compute shader!");
+					ZE_FAIL("Cannot use UAV outside compute shader!");
 				}
 			}
 		}
@@ -505,7 +505,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 					ctx->CSSetUnorderedAccessViews(slotData.BindStart, 1, reinterpret_cast<ID3D11UnorderedAccessView* const*>(uavMips[rid][mipLevel++].GetAddressOf()), nullptr);
 				else
 				{
-					ZE_ASSERT(false, "Cannot use UAV outside compute shader!");
+					ZE_FAIL("Cannot use UAV outside compute shader!");
 				}
 			}
 		}

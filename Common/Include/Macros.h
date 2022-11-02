@@ -2,7 +2,11 @@
 #include <cassert>
 
 // Regular debug assert
-#define ZE_ASSERT(condition, message) assert((condition) && message)
+#define ZE_ASSERT(condition, message) assert((condition) && (message))
+// Always failing debug assert, indicating wrong code path that shouldn't occur
+#define ZE_FAIL(message) ZE_ASSERT(false, message)
+// Failing assert indicating not correctly handled enum value in switch-case
+#define ZE_ENUM_UNHANDLED() ZE_FAIL("Unhandled enum value!")
 // Check if quaternion vector is unit length
 #define ZE_ASSERT_Q_UNIT_V(rotor) assert(ZE::Math::Internal::XMQuaternionIsUnit(rotor))
 // Check if stored quaternion is unit length

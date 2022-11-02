@@ -55,7 +55,7 @@ namespace ZE::GFX::Resource
 		case InputParam::ColorF4:
 			return "COLOR";
 		}
-		ZE_ASSERT(false, "Incorrect input parameter!");
+		ZE_FAIL("Incorrect input parameter!");
 		return "?";
 	}
 
@@ -78,7 +78,7 @@ namespace ZE::GFX::Resource
 		case InputParam::ColorF4:
 			return PixelFormat::R32G32B32A32_Float;
 		}
-		ZE_ASSERT(false, "Incorrect input parameter!");
+		ZE_FAIL("Incorrect input parameter!");
 		return PixelFormat::Unknown;
 	}
 #pragma endregion

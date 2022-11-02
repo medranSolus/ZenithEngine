@@ -47,7 +47,7 @@ namespace ZE::GFX::API::DX
 			case GFX::Resource::TopologyOrder::List:
 				return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
 			default:
-				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
 			}
 			break;
 		}
@@ -64,7 +64,7 @@ namespace ZE::GFX::API::DX
 			case GFX::Resource::TopologyOrder::StripAdjacency:
 				return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
 			default:
-				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
 			}
 			break;
 		}
@@ -81,7 +81,7 @@ namespace ZE::GFX::API::DX
 			case GFX::Resource::TopologyOrder::StripAdjacency:
 				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
 			default:
-				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
 			}
 			break;
 		}
@@ -154,7 +154,7 @@ namespace ZE::GFX::API::DX
 			case GFX::Resource::TopologyOrder::PatchList32:
 				return D3D_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST;
 			default:
-				ZE_ASSERT(false, "Wrong combination of TopologyType and TopologyOrder!");
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
 			}
 			break;
 		}

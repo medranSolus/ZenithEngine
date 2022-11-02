@@ -43,7 +43,7 @@ namespace ZE::GFX::API::DX12
 		{
 		default:
 		case D3D12_COMMAND_LIST_TYPE_BUNDLE:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case D3D12_COMMAND_LIST_TYPE_DIRECT:
 		{
 			dev.Get().dx12.GetQueueMain()->GetTimestampFrequency(&frequency);

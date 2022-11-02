@@ -26,7 +26,7 @@ namespace ZE::GFX::API::DX11
 		switch (func)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::CompareMethod::Never:
 			return D3D11_COMPARISON_NEVER;
 		case GFX::Resource::CompareMethod::Less:
@@ -51,7 +51,7 @@ namespace ZE::GFX::API::DX11
 		switch (mode)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::CullMode::None:
 			return D3D11_CULL_NONE;
 		case GFX::Resource::CullMode::Front:
@@ -171,7 +171,7 @@ namespace ZE::GFX::API::DX11
 		switch (color)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::Texture::EdgeColor::TransparentBlack:
 			return { 0.0f, 0.0f, 0.0f, 0.0f };
 		case GFX::Resource::Texture::EdgeColor::SolidBlack:
@@ -186,7 +186,7 @@ namespace ZE::GFX::API::DX11
 		switch (mode)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::Texture::AddressMode::Repeat:
 			return D3D11_TEXTURE_ADDRESS_WRAP;
 		case GFX::Resource::Texture::AddressMode::Mirror:

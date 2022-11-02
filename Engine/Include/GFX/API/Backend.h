@@ -36,7 +36,7 @@ namespace ZE::GFX::API
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			new(&dx11) D11(std::move(b.dx11));
@@ -66,7 +66,7 @@ namespace ZE::GFX::API
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			new(&dx11) D11(b.dx11);
@@ -96,7 +96,7 @@ namespace ZE::GFX::API
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			dx11 = std::move(b.dx11);
@@ -127,7 +127,7 @@ namespace ZE::GFX::API
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			dx11 = b.dx11;
@@ -159,7 +159,7 @@ namespace ZE::GFX::API
 		switch (type)
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			new(&dx11) D11(std::forward<Params>(p)...);
@@ -189,7 +189,7 @@ namespace ZE::GFX::API
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case ApiType::DX11:
 		{
 			dx11.~D11();
@@ -258,7 +258,7 @@ namespace ZE::GFX::API
 	} \
 	default: \
 	{ \
-		ZE_ASSERT(false, "Unhandled enum value!"); \
+		ZE_ENUM_UNHANDLED(); \
 		##ret## {}; \
 		break; \
 	} \

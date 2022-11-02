@@ -85,7 +85,7 @@ namespace ZE::GFX::Pipeline
 		switch (ssaoSettings.QualityLevel)
 		{
 		default:
-			ZE_ASSERT(false, "Unknown SSAO quality level!");
+			ZE_FAIL("Unknown SSAO quality level!");
 		case 0: // Low
 		{
 			settingsData.SsaoSliceCount = 1.0f;

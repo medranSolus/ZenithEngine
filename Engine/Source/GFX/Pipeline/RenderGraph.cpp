@@ -44,7 +44,7 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		default:
-			ZE_ASSERT(false, "Incorret enum value for enter sync context!");
+			ZE_FAIL("Incorret enum value for enter sync context!");
 		case SyncType::None:
 			break;
 		}
@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		default:
-			ZE_ASSERT(false, "Incorret enum value for exit sync context!");
+			ZE_FAIL("Incorret enum value for exit sync context!");
 		case SyncType::None:
 		{
 			ZE_ASSERT(syncInfo.DependentsCount == 0, "No syncing performed while there are dependent passes!");
@@ -433,7 +433,7 @@ namespace ZE::GFX::Pipeline
 							switch (nodes.at(dep).GetPassType())
 							{
 							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
+								ZE_ENUM_UNHANDLED();
 							case QueueType::Main:
 								throw ZE_RGC_EXCEPT("Trying to create sync point between same GPU engine type! Bug in culling redundant nodes!");
 							case QueueType::Compute:
@@ -458,7 +458,7 @@ namespace ZE::GFX::Pipeline
 							switch (nodes.at(dep).GetPassType())
 							{
 							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
+								ZE_ENUM_UNHANDLED();
 							case QueueType::Main:
 							{
 								requiredFence1 = true;
@@ -483,7 +483,7 @@ namespace ZE::GFX::Pipeline
 							switch (nodes.at(dep).GetPassType())
 							{
 							default:
-								ZE_ASSERT(false, "Unhandled enum value!");
+								ZE_ENUM_UNHANDLED();
 							case QueueType::Main:
 							{
 								requiredFence1 = true;
@@ -508,7 +508,7 @@ namespace ZE::GFX::Pipeline
 					switch (node.GetPassType())
 					{
 					default:
-						ZE_ASSERT(false, "Unhandled enum value!");
+						ZE_ENUM_UNHANDLED();
 					case QueueType::Main:
 					{
 						if (requiredFence1 && requiredFence2)
@@ -576,7 +576,7 @@ namespace ZE::GFX::Pipeline
 			switch (nodes.at(i).GetPassType())
 			{
 			default:
-				ZE_ASSERT(false, "Unhandled enum value!");
+				ZE_ENUM_UNHANDLED();
 			case QueueType::Main:
 			{
 				if (requiredFence1 && requiredFence2)
@@ -678,7 +678,7 @@ namespace ZE::GFX::Pipeline
 		switch (Settings::GetGfxApi())
 		{
 		default:
-			ZE_ASSERT(false, "Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
 		{
