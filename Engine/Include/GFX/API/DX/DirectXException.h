@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX
 	// Standard exception for DirectX Graphics Infrastructure based APIs
 	class DirectXException : public WinAPI::WinApiException
 	{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		std::vector<std::string> debugInfo;
 
 	public:
@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX
 
 		constexpr const char* GetType() const noexcept override { return "DirectX Graphics Exception"; }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		std::string GetDebugInfo() const noexcept;
 #endif
 		const char* what() const noexcept override;
@@ -35,7 +35,7 @@ namespace ZE::GFX::API::DX
 // Name of variable holding reference to DebugManager
 #define ZE_DX_EXCEPT_MANAGER debugManager
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 // Enables useage of ZE_DX_*_INFO macros in current scope
 #define ZE_DX_ENABLE_INFO(device) auto& ZE_DX_EXCEPT_MANAGER = device.GetInfoManager()
 
@@ -84,7 +84,7 @@ namespace ZE::GFX::API::DX
 // Variable name holding debug name
 #define ZE_DX_DEBUG_ID __debugID
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 // Enables useage of ZE_DX_SET_ID macros in current scope
 #define ZE_DX_ENABLE_ID(device) ZE_DX_ENABLE(device); std::string ZE_DX_DEBUG_ID
 

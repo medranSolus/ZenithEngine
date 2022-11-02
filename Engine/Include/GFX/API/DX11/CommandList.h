@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX11
 		bool deferred;
 		DX::ComPtr<ID3D11DeviceContext4> context;
 		DX::ComPtr<ID3D11CommandList> commands;
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
 #endif
 
@@ -31,7 +31,7 @@ namespace ZE::GFX::API::DX11
 
 		constexpr void Open(GFX::Device& dev) {}
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
@@ -41,10 +41,10 @@ namespace ZE::GFX::API::DX11
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
 		void Close(GFX::Device& dev);
 
-		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG);
-		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG);
-		void DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG);
-		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
+		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API);
+		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API);
+		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
+		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 

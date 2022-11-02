@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX11
 {
-	void Device::Execute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		if (cl.Get().dx11.GetList() != nullptr)
 		{
@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX11
 		ZE_WIN_ENABLE_EXCEPT();
 
 		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
 		);
@@ -27,11 +27,11 @@ namespace ZE::GFX::API::DX11
 			D3D_FEATURE_LEVEL_11_1
 		};
 		ZE_DX_THROW_FAILED(D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
-			ZE_NO_DEBUG ? 0 : D3D11_CREATE_DEVICE_DEBUG, features, 1,
+			_ZE_DEBUG_GFX_API ? D3D11_CREATE_DEVICE_DEBUG : 0, features, 1,
 			D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr));
 		ZE_DX_THROW_FAILED(tempDevice.As(&device));
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DX::ComPtr<ID3D11InfoQueue> infoQueue;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
@@ -50,12 +50,12 @@ namespace ZE::GFX::API::DX11
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		device->GetImmediateContext3(&tempCtx);
 		ZE_DX_THROW_FAILED(tempCtx->QueryInterface(IID_PPV_ARGS(&context)));
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		ZE_DX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
 #endif
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		for (U32 i = 0; i < count; ++i)
 			Execute(cls[i]);

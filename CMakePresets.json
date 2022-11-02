@@ -1,0 +1,97 @@
+﻿{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "cacheVariables": {
+        "ZE_PLATFORM": "unknown",
+        "ZE_PLATFORM_WINDOWS": false,
+        "ZE_PLATFORM_LINUX": false,
+        "ZE_PLATFORM_ANDROID": false,
+        "ZE_PLATFORM_FUCHSIA": false,
+        "ZE_PLATFORM_NSWITCH": false,
+        "ZE_COMPILER_MSVC": false,
+        "ZE_COMPILER_CLANG": false,
+        "ZE_COMPILER_GCC": false,
+        "ZE_BUILD_DEBUG": false,
+        "ZE_BUILD_DEVELOPMENT": false,
+        "ZE_BUILD_PROFILE": false,
+        "ZE_BUILD_RELEASE": false
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "inherits": "default",
+      "generator": "Ninja",
+      "displayName": "Windows x64",
+      "description": "Windows 64-bit build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "ZE_PLATFORM": "Windows",
+        "ZE_PLATFORM_WINDOWS": true,
+        "ZE_COMPILER_MSVC": true
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "Debug-Win",
+      "inherits": "windows",
+      "displayName": "Debug",
+      "description": "Most restrictive debug build",
+      "binaryDir": "${sourceDir}/Build/Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZE_BUILD_DEBUG": true
+      }
+    },
+    {
+      "name": "Development-Win",
+      "inherits": "windows",
+      "displayName": "Development",
+      "description": "General development build with faster CPU execution but with debug features enabled",
+      "binaryDir": "${sourceDir}/Build/Development",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Development",
+        "ZE_BUILD_DEVELOPMENT": true
+      }
+    },
+    {
+      "name": "Profile-Win",
+      "inherits": "windows",
+      "displayName": "Profile",
+      "description": "Most light-weight build with little debug information",
+      "binaryDir": "${sourceDir}/Build/Profile",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Profile",
+        "ZE_BUILD_PROFILE": true
+      }
+    },
+    {
+      "name": "Release-Win",
+      "inherits": "windows",
+      "displayName": "Release",
+      "description": "Final build",
+      "binaryDir": "${sourceDir}/Build/Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZE_BUILD_RELEASE": true
+      }
+    }
+  ]
+}

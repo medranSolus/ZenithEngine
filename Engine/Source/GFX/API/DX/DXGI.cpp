@@ -5,7 +5,7 @@
 namespace ZE::GFX::API::DX
 {
 	ComPtr<IDXGIFactory7> CreateFactory(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	)
@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX
 
 		// Create proper DXGI factory
 		ComPtr<IDXGIFactory2> oldFactory = nullptr;
-		ZE_DX_THROW_FAILED(CreateDXGIFactory2(ZE_NO_DEBUG ? 0 : DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&oldFactory)));
+		ZE_DX_THROW_FAILED(CreateDXGIFactory2(_ZE_DEBUG_GFX_API ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&oldFactory)));
 		ComPtr<IDXGIFactory7> factory = nullptr;
 		ZE_DX_THROW_FAILED(oldFactory.As(&factory));
 
@@ -22,7 +22,7 @@ namespace ZE::GFX::API::DX
 	}
 
 	ComPtr<IDXGIAdapter4> CreateAdapter(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	)
@@ -30,7 +30,7 @@ namespace ZE::GFX::API::DX
 		ZE_WIN_ENABLE_EXCEPT();
 
 		ComPtr<IDXGIFactory7> factory = CreateFactory(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
 		);
@@ -71,7 +71,7 @@ namespace ZE::GFX::API::DX
 
 	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device,
 		HWND window, ComPtr<IDXGISwapChain4>& swapChain, bool shaderInput
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		, DebugInfoManager& debugManager
 #endif
 	)

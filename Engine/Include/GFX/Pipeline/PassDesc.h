@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline
 	struct ExitSync
 	{
 		SyncType Type;
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
 		U64* NextPassFence;
 #else
 		UA64* NextPassFence;
@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline
 	{
 		// Sync required before execution of RenderPass
 		SyncType EnterSync = SyncType::None;
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
 		U64 EnterFence1 = 0;
 		U64 EnterFence2 = 0;
 #else

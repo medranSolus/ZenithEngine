@@ -3,11 +3,11 @@
 #include <string>
 #include <map>
 
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 #include "Platform/WinAPI/Perf.h"
 namespace ZE { typedef WinAPI::Perf PlatformPerf; }
 #else
-#error Missing Perf platform specific implementation!
+#	error Missing Perf platform specific implementation!
 #endif
 
 namespace ZE

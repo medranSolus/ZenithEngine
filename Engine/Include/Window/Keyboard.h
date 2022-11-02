@@ -5,13 +5,13 @@
 
 namespace ZE::Window
 {
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 	namespace WinAPI
 	{
 		class WindowWinAPI;
 	}
 #else
-#error Missing platform specyfic window forward declaration for Keyboard!
+#	error Missing platform specific window forward declaration for Keyboard!
 #endif
 
 	// Keyboard events controller

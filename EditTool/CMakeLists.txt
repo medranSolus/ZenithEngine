@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
 
 # Target files
 set(SRC_DIR "${TOOL_DIR}/Source")
@@ -8,7 +8,7 @@ file(GLOB_RECURSE SRC_LIST
     "${SRC_DIR}/*.cpp"
     "${INC_DIR}/*.h")
 
-if(ZE_CI_JOB)
+if(${ZE_CI_JOB})
     set(BUILD_EXCLUDE FALSE)
 else()
     set(BUILD_EXCLUDE TRUE)

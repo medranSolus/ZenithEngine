@@ -19,7 +19,7 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		const std::string& GetName() const noexcept { ZE_API_BACKEND_CALL(GetName); }
 #endif
 	};

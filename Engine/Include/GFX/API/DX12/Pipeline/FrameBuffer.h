@@ -42,11 +42,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 		DX::ComPtr<ID3D12Heap> mainHeap;
 		DX::ComPtr<ID3D12Heap> uavHeap;
 
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+#if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
 			RID invalidID, const std::vector<RID>& memory, U64 heapSize);
 #endif
-#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+#if !_ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 		static U64 FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept;
 		static bool CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
 			U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept;

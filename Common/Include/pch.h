@@ -102,7 +102,7 @@
 /*
 * Platform specific headers
 */
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 /*
 * Exception/GenericException.h (defined by platform agnostic headers)
 *** Exception/BasicException.h (defined by Exception/ImageException.h)

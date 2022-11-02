@@ -1,9 +1,9 @@
 #pragma once
 #include "BasicTypes.h"
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 #   include <intrin.h>
 #   pragma intrinsic(__rdtsc, __faststorefence)
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 #   include <x86intrin.h>
 #else
 #   error Unsupported compiler!
@@ -36,9 +36,9 @@ namespace ZE::Intrin
 
 	inline void FenceStore() noexcept
 	{
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 		__faststorefence();
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		_mm_sfence();
 #endif
 	}
@@ -47,9 +47,9 @@ namespace ZE::Intrin
 	{
 #if __cplusplus >= 202002L
 		return std::popcount(val);
-#elif defined _ZE_COMPILER_MSVC
+#elif _ZE_COMPILER_MSVC
 		return __popcnt(val);
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		return static_cast<U32>(__builtin_popcount(val));
 #else
 		U32 c = val - ((val >> 1) & 0x55555555);
@@ -63,12 +63,12 @@ namespace ZE::Intrin
 
 	inline U8 BitScanLSB(U64 mask) noexcept
 	{
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 		unsigned long pos;
 		if (_BitScanForward64(&pos, mask))
 			return static_cast<U8>(pos);
 		return UINT8_MAX;
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		return static_cast<U8>(__builtin_ffsll(mask)) - 1U;
 #else
 		U8 pos = 0;
@@ -85,12 +85,12 @@ namespace ZE::Intrin
 
 	inline U8 BitScanLSB(U32 mask) noexcept
 	{
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 		unsigned long pos;
 		if (_BitScanForward(&pos, mask))
 			return static_cast<U8>(pos);
 		return UINT8_MAX;
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		return static_cast<U8>(__builtin_ffs(mask)) - 1U;
 #else
 		U8 pos = 0;
@@ -107,11 +107,11 @@ namespace ZE::Intrin
 
 	inline U8 BitScanMSB(U64 mask) noexcept
 	{
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 		unsigned long pos;
 		if (_BitScanReverse64(&pos, mask))
 			return static_cast<U8>(pos);
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		if (mask)
 			return 63 - static_cast<U8>(__builtin_clzll(mask));
 #else
@@ -129,11 +129,11 @@ namespace ZE::Intrin
 
 	inline U8 BitScanMSB(U32 mask) noexcept
 	{
-#ifdef _ZE_COMPILER_MSVC
+#if _ZE_COMPILER_MSVC
 		unsigned long pos;
 		if (_BitScanReverse(&pos, mask))
 			return static_cast<U8>(pos);
-#elif defined _ZE_COMPILER_GCC || defined _ZE_COMPILER_CLANG
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		if (mask)
 			return 31 - static_cast<U8>(__builtin_clz(mask));
 #else

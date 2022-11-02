@@ -4,7 +4,7 @@ namespace ZE::GFX::API::VK::Resource
 {
 	Shader::Shader(const std::wstring& name)
 	{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		shaderName = Utils::ToAscii(name);
 #endif
 	}

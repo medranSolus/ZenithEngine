@@ -1,6 +1,6 @@
 #include "Data/Tags.h"
 #include "GFX/Vertex.h"
-#ifdef _ZE_MODEL_LOADING
+#if _ZE_MODEL_LOADING
 #	include "assimp/Importer.hpp"
 #	include "assimp/scene.h"
 #	include "assimp/postprocess.h"
@@ -8,7 +8,7 @@
 
 namespace ZE::Data
 {
-#ifdef _ZE_MODEL_LOADING
+#if _ZE_MODEL_LOADING
 	EID ParseMesh(const aiMesh& mesh, GFX::Device& dev, Storage& meshRegistry, bool loadName)
 	{
 		U32* indices = new U32[mesh.mNumFaces * 3];

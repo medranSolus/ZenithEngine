@@ -1,8 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
 include(PostBuild)
 
 # Resource embedding
-if(WIN32)
+if(${ZE_PLATFORM_WINDOWS})
     enable_language(RC)
     set(RES_FILE "${ZE_BUILD_DIR}/resource.rc")
     file(WRITE ${RES_FILE}
@@ -10,7 +10,7 @@ if(WIN32)
 endif()
 
 # Post build data copy
-if(NOT ZE_CI_JOB)
+if(NOT ${ZE_CI_JOB})
     copy_runtime_data(DEMO "Data/Runtime" "" "" "")
 endif()
 

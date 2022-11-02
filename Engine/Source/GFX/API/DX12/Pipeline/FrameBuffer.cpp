@@ -23,7 +23,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		void SetAliasing() noexcept { Flags[5] = true; }
 	};
 
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+#if _ZE_DEBUG_FRAME_MEMORY_PRINT
 	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
 		RID invalidID, const std::vector<RID>& memory, U64 heapSize)
 	{
@@ -52,7 +52,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	}
 #endif
 
-#ifndef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+#if !_ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 	U64 FrameBuffer::FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
 	{
 		U32 lastChunk = 0;
@@ -98,7 +98,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory)
 	{
 		U32 foundOffset = 0;
-#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 		// Place resources one after another
 		for (; foundOffset < maxChunks; ++foundOffset)
 			if (memory.at(foundOffset * levelCount) == invalidID)
@@ -368,7 +368,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 					res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
 				}
 
-#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 				heapDesc.SizeInBytes = static_cast<U64>(maxChunksUAV) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 #else
 				// Check resource aliasing
@@ -387,7 +387,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
 				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(uavHeap.GetAddressOf()), &residencyPriority));
 
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+#if _ZE_DEBUG_FRAME_MEMORY_PRINT
 				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
@@ -449,7 +449,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
 		}
 
-#ifdef _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
+#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
 		heapDesc.SizeInBytes = static_cast<U64>(maxChunks) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 #else
 		// Check resource aliasing
@@ -468,7 +468,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
-#ifdef _ZE_DEBUG_FRAME_MEMORY_PRINT
+#if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
 		for (U64 i = 0; i < rt_dsCount; ++i)

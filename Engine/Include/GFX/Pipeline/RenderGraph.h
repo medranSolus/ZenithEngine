@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 	class RenderGraph
 	{
 		U64 levelCount = 0;
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 		U64 workersCount = 0;
 		Ptr<std::pair<std::thread, ChainPool<CommandList>>> workerThreads;
 #endif

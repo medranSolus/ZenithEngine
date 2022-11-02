@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::API::DX
 {
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 	std::string DirectXException::GetDebugInfo() const noexcept
 	{
 		std::ostringstream stream;
@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX
 	{
 		std::ostringstream stream;
 		stream << WinApiException::what();
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		stream << GetDebugInfo();
 #endif
 		whatBuffer = stream.str();

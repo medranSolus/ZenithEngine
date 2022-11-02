@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::VK
 {
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 	VkBool32 VKAPI_PTR Device::DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
@@ -53,23 +53,23 @@ namespace ZE::GFX::API::VK
 
 		std::vector<const char*> enabledExtensions
 		{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #endif
 			VK_KHR_SURFACE_EXTENSION_NAME,
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 			VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-#elif !defined(_ZE_PLATFORM_LINUX)
+#elif !_ZE_PLATFORM_LINUX
 #	error Building for platform not supported by current Vulkan implementation!
 #endif
 		};
 		std::vector<U16> enabledExtensionsIndices
 		{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			GetExtensionIndex(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
 #endif
 			GetExtensionIndex(VK_KHR_SURFACE_EXTENSION_NAME),
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 			GetExtensionIndex(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)
 #endif
 		};
@@ -89,7 +89,7 @@ namespace ZE::GFX::API::VK
 		}
 		enabledExtensionsIndices.clear();
 
-#ifdef _ZE_PLATFORM_LINUX
+#if _ZE_PLATFORM_LINUX
 		const char* linuxSurface = nullptr;
 		std::bitset<4> linuxSurfaceSupport = 0;
 		// Find correct supported surface type
@@ -144,7 +144,7 @@ namespace ZE::GFX::API::VK
 		// Specify features for type of build
 		VkValidationFeaturesEXT validationFeatures = { VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr };
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		VkDebugUtilsMessengerCreateInfoEXT debugMessenger = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, nullptr };
 		debugMessenger.flags = 0;
 		debugMessenger.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -156,7 +156,7 @@ namespace ZE::GFX::API::VK
 
 		const VkValidationFeatureEnableEXT enabledValidations[] =
 		{
-#ifdef _ZE_DEBUG_GPU_VALIDATION
+#if _ZE_DEBUG_GPU_VALIDATION
 			VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
 			VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
 #else
@@ -172,7 +172,7 @@ namespace ZE::GFX::API::VK
 		validationFeatures.pEnabledValidationFeatures = nullptr;
 #endif
 
-#ifdef _ZE_MODE_RELEASE
+#if _ZE_MODE_PROFILE || _ZE_MODE_RELEASE
 		const VkValidationFeatureDisableEXT disabledFeature = VK_VALIDATION_FEATURE_DISABLE_ALL_EXT;
 		validationFeatures.disabledValidationFeatureCount = 1;
 		validationFeatures.pDisabledValidationFeatures = &disabledFeature;
@@ -187,7 +187,7 @@ namespace ZE::GFX::API::VK
 			enabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 			extensionSupport[GetExtensionIndex(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)] = true;
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			debugMessenger.pNext = &validationFeatures;
 #else
 			instanceInfo.pNext = &validationFeatures;
@@ -207,7 +207,7 @@ namespace ZE::GFX::API::VK
 		vkDestroyInstance(instance, nullptr);
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 	}
 }

@@ -32,7 +32,7 @@ namespace ZE::GFX::API::DX12
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept;
 		void TagEnd(GFX::Device& dev) const noexcept;
 #endif
@@ -43,10 +43,10 @@ namespace ZE::GFX::API::DX12
 
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);
-		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG);
-		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG);
-		void DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG);
-		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG);
+		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API);
+		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API);
+		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
+		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 

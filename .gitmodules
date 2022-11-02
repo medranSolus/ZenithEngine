@@ -25,3 +25,9 @@
 [submodule "External/volk"]
 	path = External/volk
 	url = https://github.com/zeux/volk
+[submodule "External/libpng"]
+	path = External/libpng
+	url = https://github.com/glennrp/libpng.git
+[submodule "External/HarfBuzz"]
+	path = External/HarfBuzz
+	url = https://github.com/harfbuzz/harfbuzz

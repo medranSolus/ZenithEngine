@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX11
 		ZE_DX_THROW_FAILED(adapter->GetParent(IID_PPV_ARGS(&factory)));
 
 		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx11.GetDevice(), window.GetHandle(), swapChain, shaderInput
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			, dev.Get().dx11.GetInfoManager()
 #endif
 		);

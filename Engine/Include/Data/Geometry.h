@@ -17,7 +17,7 @@ namespace ZE::Data
 	struct MeshID { EID ID; };
 
 #pragma region Functions
-#ifdef _ZE_MODEL_LOADING
+#if _ZE_MODEL_LOADING
 	// Loads model from file along with all of it's resources and places it's structure at `root` entity.
 	// Root entity should already contain Transform and TransformGlobal components.
 	// Must be within upload region!

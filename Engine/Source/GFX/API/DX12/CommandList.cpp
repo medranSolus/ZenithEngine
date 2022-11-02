@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX12
 		Init(dev.Get().dx12, CommandType::All);
 	}
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept
 	{
 		switch (Settings::GetGpuVendor())
@@ -78,19 +78,19 @@ namespace ZE::GFX::API::DX12
 		Reset(dev.Get().dx12);
 	}
 
-	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG)
+	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(vertexCount, 1, 0, 0));
 	}
 
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG)
+	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 		ZE_DX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(indexCount, 1, 0, 0, 0));
 	}
 
-	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(ZE_NO_DEBUG)
+	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 
@@ -99,7 +99,7 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
 	}
 
-	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG)
+	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 		ZE_DX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
@@ -112,7 +112,7 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		switch (type)
 		{
 		default:

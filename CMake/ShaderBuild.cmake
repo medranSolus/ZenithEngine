@@ -17,12 +17,12 @@ macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
     file(GLOB_RECURSE SD_INC_LIST
         "${SD_INC_DIR}/*.hlsli"
         "${EXT_SHADER_INC_DIR}/*.hlsli")
-    if(WIN32)
+    if(${ZE_PLATFORM_WINDOWS})
         set(SD_APIS "DX11;DX12")
+        separate_arguments(SD_FLAGS WINDOWS_COMMAND "${FLAGS}")
     else()
         message(FATAL_ERROR "Unsupporder platform for shader compiling!")
     endif()
-    separate_arguments(SD_FLAGS WINDOWS_COMMAND "${FLAGS}")
 endmacro()
  
 # Creates commands for shader compilation
@@ -40,7 +40,7 @@ macro(add_shader_type SD_TYPE)
         elseif(${API} STREQUAL "DX12")
             string(TOLOWER "${SD_TYPE}_6_5" ${SD_TYPE}_TYPE_FLAG)
             set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
-            if(MODE_DEBUG)
+            if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT})
                 set(API_FLAGS "-Qembed_debug")
             else()
                 set(API_FLAGS "")

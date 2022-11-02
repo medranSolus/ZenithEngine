@@ -104,7 +104,7 @@ namespace ZE::GFX::API::VK
 // Variable name holding debug name
 #define ZE_VK_DEBUG_ID __debugObjectInfo
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 // Enables useage of ZE_VK_SET_ID macros in current scope
 #define ZE_VK_ENABLE_ID() ZE_VK_ENABLE(); VkDebugUtilsObjectNameInfoEXT ZE_VK_DEBUG_ID = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr }
 

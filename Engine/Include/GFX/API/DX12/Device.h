@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX12
 			DX::ComPtr<ID3D12Resource> UploadRes;
 		};
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;
 #endif
 		DX::ComPtr<ID3D12Device8> device;
@@ -72,7 +72,7 @@ namespace ZE::GFX::API::DX12
 		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
 		U64 SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal);
 		U64 SetFenceGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
-		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 	public:
 		Device() noexcept {}
@@ -106,7 +106,7 @@ namespace ZE::GFX::API::DX12
 		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
 		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(copyQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
@@ -119,14 +119,14 @@ namespace ZE::GFX::API::DX12
 		void BeginUploadRegion();
 		void StartUpload();
 		void EndUploadRegion();
-		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
-		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
 		constexpr AllocTier GetCurrentAllocTier() const noexcept { return allocTier; }

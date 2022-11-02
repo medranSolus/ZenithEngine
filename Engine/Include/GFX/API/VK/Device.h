@@ -18,7 +18,7 @@ namespace ZE::GFX::API::VK
 		VkDevice device;
 		std::bitset<KNOWN_EXTENSION_COUNT + 1> extensionSupport;
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 #endif
@@ -58,7 +58,7 @@ namespace ZE::GFX::API::VK
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept {}
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept {}
 		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept {}
@@ -72,11 +72,11 @@ namespace ZE::GFX::API::VK
 		constexpr void StartUpload() {}
 		constexpr void EndUploadRegion() {}
 
-		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) {}
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
 
-		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
+		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 

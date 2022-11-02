@@ -7,12 +7,12 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
 		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
 		);
 		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), swapChain, shaderInput
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			, debugManager
 #endif
 		);
@@ -83,7 +83,7 @@ namespace ZE::GFX::API::DX12
 		{
 			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
 			{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 				DREDRecovery::SaveDeviceRemovedData(dev.Get().dx12, "tdr_error.txt");
 #endif
 				throw ZE_DX_EXCEPT(dev.Get().dx12.GetDevice()->GetDeviceRemovedReason());

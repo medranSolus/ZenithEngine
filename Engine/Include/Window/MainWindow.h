@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 #include "Platform/WindowWinAPI.h"
 namespace ZE::Window
 {
@@ -8,5 +8,5 @@ namespace ZE::Window
 	typedef WinAPI::WindowWinAPI MainWindow;
 }
 #else
-#error Missing Window platform specific implementation!
+#	error Missing Window platform specific implementation!
 #endif

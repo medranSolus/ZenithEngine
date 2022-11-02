@@ -12,14 +12,14 @@ namespace ZE::GFX::API::DX
 {
 	// Creates DXGI Factory
 	ComPtr<IDXGIFactory7> CreateFactory(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	);
 
 	// Creates DXGI Factory and enumerates available GPU adapters in order of highest performant
 	ComPtr<IDXGIAdapter4> CreateAdapter(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	);
@@ -27,7 +27,7 @@ namespace ZE::GFX::API::DX
 	// Creates swap chain for window and returns present flags
 	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device,
 		HWND window, ComPtr<IDXGISwapChain4>& swapChain, bool shaderInput
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		, DebugInfoManager& debugManager
 #endif
 	);

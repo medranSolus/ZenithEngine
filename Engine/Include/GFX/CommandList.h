@@ -24,7 +24,7 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		constexpr void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
 		constexpr void TagEnd(GFX::Device& dev) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
 #endif
@@ -35,18 +35,18 @@ namespace ZE::GFX
 		constexpr void Close(Device& dev) { ZE_API_BACKEND_CALL(Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_API_BACKEND_CALL(Reset, dev); }
 
-		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Draw, dev, vertexCount); }
-		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(DrawIndexed, dev, indexCount); }
-		constexpr void DrawFullscreen(Device& dev) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(DrawFullscreen, dev); }
+		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Draw, dev, vertexCount); }
+		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(DrawIndexed, dev, indexCount); }
+		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
-		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
+		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 	};
 }
 
-#ifdef _ZE_MODE_DEBUG
-#define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color) cl.TagBegin(dev, tag, color)
-#define ZE_DRAW_TAG_END(dev, cl) cl.TagEnd(dev)
+#if _ZE_GFX_MARKERS
+#	define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color) cl.TagBegin(dev, tag, color)
+#	define ZE_DRAW_TAG_END(dev, cl) cl.TagEnd(dev)
 #else
-#define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color)
-#define ZE_DRAW_TAG_END(dev, cl)
+#	define ZE_DRAW_TAG_BEGIN(dev, cl, tag, color)
+#	define ZE_DRAW_TAG_END(dev, cl)
 #endif

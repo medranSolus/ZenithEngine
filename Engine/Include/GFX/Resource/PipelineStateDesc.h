@@ -33,7 +33,7 @@ namespace ZE::GFX::Resource
 		std::vector<InputParam> InputLayout;
 		// Wireframe | DepthClip
 		std::bitset<2> Flags = 1;
-#if _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		std::string DebugName = "Unknown";
 #endif
 
@@ -49,10 +49,10 @@ namespace ZE::GFX::Resource
 	};
 }
 
-#if _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 // Sets name to be used as indentificator of created Pipeline State
-#define ZE_PSO_SET_NAME(psoDesc, name) psoDesc.DebugName = name
+#	define ZE_PSO_SET_NAME(psoDesc, name) psoDesc.DebugName = name
 #else
 // Sets name to be used as indentificator of created Pipeline State
-#define ZE_PSO_SET_NAME(psoDesc, name)
+#	define ZE_PSO_SET_NAME(psoDesc, name)
 #endif

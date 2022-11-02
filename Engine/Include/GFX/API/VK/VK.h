@@ -43,11 +43,11 @@
 	X(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)              /* Specifying validation checks [EXT_DEBUG] */
 
 // Platform specific extensions (WSI)
-#ifdef _ZE_PLATFORM_WINDOWS
+#if _ZE_PLATFORM_WINDOWS
 // List of platform dependent instance extension names, intended for use in X() macro
 #	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
 		X(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)         /* Surface for Windows targets [EXT_WINDOW] */
-#elif defined(_ZE_PLATFORM_LINUX)
+#elif _ZE_PLATFORM_LINUX
 // List of platform dependent instance extension names, intended for use in X() macro
 #	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
 		X(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)   /* Full control over Linux DRM display [EXT_WINDOW] */ \
@@ -56,13 +56,13 @@
 		X(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)       /* Surface for Wayland Linux targets [EXT_WINDOW] */ \
 		X(VK_KHR_XCB_SURFACE_EXTENSION_NAME)           /* Surface for Xcb Linux targets [EXT_WINDOW] */ \
 		X(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)          /* Surface for Xlib Linux targets [EXT_WINDOW] */
-#elif defined(_ZE_PLATFORM_ANDROID)
+#elif _ZE_PLATFORM_ANDROID
 #	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
 		X(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)       /* Surface for android targets [EXT_WINDOW] */
-#elif defined(_ZE_PLATFORM_FUCHSIA)
+#elif _ZE_PLATFORM_FUCHSIA
 #	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
 		X(VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME) /* Surface for Fuchsia OS targets [EXT_WINDOW] */
-#elif defined(_ZE_PLATFORM_NSWITCH)
+#elif _ZE_PLATFORM_NSWITCH
 #	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
 		X(VK_NN_VI_SURFACE_EXTENSION_NAME)             /* Surface for Nintendo Switch targets [EXT_WINDOW] */
 #else

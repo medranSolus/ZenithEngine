@@ -7,16 +7,16 @@ function Display-Info
     Write-Output "        <COMMAND: (default - build project)"
     Write-Output "            help - display tool syntax (MODE not required)"
     Write-Output "            init - initialize submodules (MODE not required)"
-    Write-Output "            clear - clear the build system (MODE not required)"
+    Write-Output "            clean - clear the build system (MODE not required)"
     Write-Output "            up - update submodules (MODE not required)"
     Write-Output "            gen - generate build system"
     Write-Output "            run - run tech demo>"
-    Write-Output "        <MODE: R|Release; Ri|ReleaseInfo; D|Debug; CI (Static analysis setup)>`n"
+    Write-Output "        <MODE: D|Debug; Dev|Development; P|Profile; R|Release; CI (Static analysis setup)>`n"
 }
 
 Switch ($command)
 {
-    "clear"
+    "clean"
     {
         Get-ChildItem Bin -Recurse | Remove-Item -Recurse
         Get-ChildItem Build -Recurse | Remove-Item -Recurse
@@ -55,9 +55,14 @@ Switch ($mode.ToLower())
         $build_type="Release"
         break
     }
-    {($_ -eq "ri") -or ($_ -eq "releaseinfo")}
+    {($_ -eq "p") -or ($_ -eq "profile")}
     {
-        $build_type="RelWithDebInfo"
+        $build_type="Profile"
+        break
+    }
+    {($_ -eq "dev") -or ($_ -eq "development")}
+    {
+        $build_type="Development"
         break
     }
     {($_ -eq "d") -or ($_ -eq "debug")}
@@ -80,7 +85,7 @@ Switch ($command)
     "gen"
     {
         $args=""
-        if ($mode -eq "CI")
+        if ($mode.ToLower() -eq "ci")
         {
             $args="-DZE_CI_JOB=ON"
         }

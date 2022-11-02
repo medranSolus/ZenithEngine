@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX
 	class Shader final
 	{
 		ComPtr<ID3DBlob> bytecode;
-#if _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		std::string shaderName = "";
 #endif
 
@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
-#if _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		constexpr const std::string& GetName() const noexcept { return shaderName; }
 #endif
 
@@ -32,7 +32,7 @@ namespace ZE::GFX::API::DX
 	Shader<IsDX12>::Shader(const std::wstring& name)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
-#if _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_NAMES
 		shaderName = Utils::ToAscii(name);
 #endif
 		// TODO: Seperate shader compilation for every target API and place it in seperate subdirectory

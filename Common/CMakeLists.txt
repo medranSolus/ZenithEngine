@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.19)
+﻿cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
 
 # Target files
 set(SRC_DIR "${COMMON_DIR}/Source")

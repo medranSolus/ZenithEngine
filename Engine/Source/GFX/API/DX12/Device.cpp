@@ -42,7 +42,7 @@ namespace ZE::GFX::API::DX12
 		return val;
 	}
 
-	void Device::Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_ASSERT(cl.GetList() != nullptr, "Empty list!");
 		ID3D12CommandList* lists[] = { cl.GetList() };
@@ -56,7 +56,7 @@ namespace ZE::GFX::API::DX12
 		std::string ZE_DX_DEBUG_ID;
 		ZE_ASSERT(descriptorCount > scratchDescriptorCount, "Descriptor count has to be greater than scratch descriptor count!");
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands
 		DX::ComPtr<ID3D12Debug> debugInterface;
 		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
@@ -65,7 +65,7 @@ namespace ZE::GFX::API::DX12
 		// Enable device removed recovery
 		DREDRecovery::Enable(debugManager);
 
-#ifdef _ZE_DEBUG_GPU_VALIDATION
+#if _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12Debug1> debugInterface1;
 		ZE_DX_THROW_FAILED_NOINFO(debugInterface.As(&debugInterface1));
 		debugInterface1->SetEnableGPUBasedValidation(TRUE);
@@ -73,7 +73,7 @@ namespace ZE::GFX::API::DX12
 #endif
 
 		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
 		);
@@ -113,7 +113,7 @@ namespace ZE::GFX::API::DX12
 			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
 		}
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DX::ComPtr<ID3D12InfoQueue> infoQueue;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
@@ -141,7 +141,7 @@ namespace ZE::GFX::API::DX12
 
 		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
 
-#ifdef _ZE_DEBUG_GPU_VALIDATION
+#if _ZE_DEBUG_GPU_VALIDATION
 		DX::ComPtr<ID3D12DebugDevice1> debugDevice1;
 		ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice1));
 
@@ -303,7 +303,7 @@ namespace ZE::GFX::API::DX12
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG)
+	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		if (count == 1)
 		{
@@ -397,17 +397,17 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	void Device::ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		Execute(mainQueue.Get(), cl.Get().dx12);
 	}
 
-	void Device::ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		Execute(computeQueue.Get(), cl.Get().dx12);
 	}
 
-	void Device::ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG)
+	void Device::ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		Execute(copyQueue.Get(), cl.Get().dx12);
 	}

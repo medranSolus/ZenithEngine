@@ -17,7 +17,7 @@ namespace ZE
 		static inline GfxApiType gfxApi;
 		static inline const char* applicationName;
 		static inline uint32_t applicationVersion;
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		static inline bool enableGfxTags = true;
 #endif
 
@@ -33,7 +33,7 @@ namespace ZE
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		static constexpr void SetGfxTags(bool enabled) noexcept { enableGfxTags = enabled; }
 		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
 #endif

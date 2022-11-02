@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX11
 {
 	class Device final
 	{
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
 #endif
@@ -19,7 +19,7 @@ namespace ZE::GFX::API::DX11
 		U32 descriptorCount;
 		U32 scratchDescriptorCount;
 
-		void Execute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG);
+		void Execute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 	public:
 		Device() = default;
@@ -52,7 +52,7 @@ namespace ZE::GFX::API::DX11
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
@@ -66,15 +66,15 @@ namespace ZE::GFX::API::DX11
 		constexpr void StartUpload() {}
 		constexpr void EndUploadRegion() {}
 
-		void ExecuteMain(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(ZE_NO_DEBUG) { Execute(cl); }
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
 
-		void Execute(GFX::CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG);
+		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_DEBUG_GFX_API
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
 		constexpr const DX::ComPtr<ID3D11Device5>& GetDev() const noexcept { return device; }

@@ -90,7 +90,7 @@ namespace ZE::GFX::Pipeline
 		for (U8 i = 0; i < syncInfo.DependentsCount; ++i)
 		{
 			ExitSync exitSyncInfo = syncInfo.ExitSyncs[i];
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
 			(*exitSyncInfo.NextPassFence) = nextFence;
 #else
 			U64 currentFence = *exitSyncInfo.NextPassFence;
@@ -412,7 +412,7 @@ namespace ZE::GFX::Pipeline
 					pass.Data.OptData = node.GetExecuteData();
 					passesCleaners[i][passes[i].second] = node.GetCleanCallback();
 					passLocation.at(j) = { i, passes[i].second++ };
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 					if (passes[i].second > workersCount)
 						workersCount = passes[i].second;
 #endif
@@ -610,7 +610,7 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 		workerThreads = new std::pair<std::thread, ChainPool<CommandList>>[--workersCount];
 		for (U64 i = 0; i < workersCount; ++i)
 			workerThreads[i].second.Exec([&dev](auto& x) { x.Init(dev, CommandType::All); });
@@ -639,7 +639,7 @@ namespace ZE::GFX::Pipeline
 
 	RenderGraph::~RenderGraph()
 	{
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 		if (workerThreads)
 			workerThreads.DeleteArray();
 #endif
@@ -692,7 +692,7 @@ namespace ZE::GFX::Pipeline
 				auto& level = passes[i];
 				if (level.second)
 				{
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
 					for (U64 j = 0; j < level.second; ++j)
 						ExecuteThread(dev, mainList, level.first[j]);
 #else
@@ -719,7 +719,7 @@ namespace ZE::GFX::Pipeline
 			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 
 			mainList.Reset(dev);
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 			for (U64 i = 0; i < workersCount; ++i)
 				workerThreads[i].second.Get().Reset(dev);
 #endif
@@ -730,7 +730,7 @@ namespace ZE::GFX::Pipeline
 				auto& level = passes[i];
 				if (level.second)
 				{
-#ifdef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
 					for (U64 j = 0; j < level.second; ++j)
 						ExecuteThreadSync(dev, mainList, level.first[j]);
 #else

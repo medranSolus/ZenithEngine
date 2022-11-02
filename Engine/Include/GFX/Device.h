@@ -60,7 +60,7 @@ namespace ZE::GFX
 		// GPU side signal from copy queue for it's fence
 		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(val, SetCopyFence); return val; }
 
-#ifdef _ZE_MODE_DEBUG
+#if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
 		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
@@ -77,10 +77,10 @@ namespace ZE::GFX
 		// Flushes all the upload data to GPU
 		constexpr void EndUploadRegion() { ZE_API_BACKEND_CALL(EndUploadRegion); }
 
-		constexpr void Execute(CommandList* cls, U32 count) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(Execute, cls, count); }
-		constexpr void ExecuteMain(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }
-		constexpr void ExecuteCompute(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(ExecuteCompute, cl); }
-		constexpr void ExecuteCopy(CommandList& cl) noexcept(ZE_NO_DEBUG) { ZE_API_BACKEND_CALL(ExecuteCopy, cl); }
+		constexpr void Execute(CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Execute, cls, count); }
+		constexpr void ExecuteMain(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }
+		constexpr void ExecuteCompute(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCompute, cl); }
+		constexpr void ExecuteCopy(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCopy, cl); }
 	};
 
 #pragma region Functions
@@ -93,20 +93,20 @@ namespace ZE::GFX
 #pragma endregion
 }
 
-#ifdef _ZE_MODE_DEBUG
-#define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color) dev.TagBeginMain(tag, color)
-#define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color) dev.TagBeginCompute(tag, color)
-#define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color) dev.TagBeginCopy(tag, color)
+#if _ZE_GFX_MARKERS
+#	define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color) dev.TagBeginMain(tag, color)
+#	define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color) dev.TagBeginCompute(tag, color)
+#	define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color) dev.TagBeginCopy(tag, color)
 
-#define ZE_DRAW_TAG_END_MAIN(dev) dev.TagEndMain()
-#define ZE_DRAW_TAG_END_COMPUTE(dev) dev.TagEndCompute()
-#define ZE_DRAW_TAG_END_COPY(dev) dev.TagEndCopy()
+#	define ZE_DRAW_TAG_END_MAIN(dev) dev.TagEndMain()
+#	define ZE_DRAW_TAG_END_COMPUTE(dev) dev.TagEndCompute()
+#	define ZE_DRAW_TAG_END_COPY(dev) dev.TagEndCopy()
 #else
-#define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color)
-#define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color)
-#define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color)
+#	define ZE_DRAW_TAG_BEGIN_MAIN(dev, tag, color)
+#	define ZE_DRAW_TAG_BEGIN_COMPUTE(dev, tag, color)
+#	define ZE_DRAW_TAG_BEGIN_COPY(dev, tag, color)
 
-#define ZE_DRAW_TAG_END_MAIN(dev)
-#define ZE_DRAW_TAG_END_COMPUTE(dev)
-#define ZE_DRAW_TAG_END_COPY(dev)
+#	define ZE_DRAW_TAG_END_MAIN(dev)
+#	define ZE_DRAW_TAG_END_COMPUTE(dev)
+#	define ZE_DRAW_TAG_END_COPY(dev)
 #endif

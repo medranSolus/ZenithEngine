@@ -12,7 +12,7 @@ macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR)
 		"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${${PROJECT}_OUT_LIB_NAME}"
 		"${${PROJECT}_OUT_LIB}")
 
-	if(MSVC AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
+	if(${ZE_COMPILER_MSVC} AND NOT ${ZE_BUILD_RELEASE})
 		set(${PROJECT}_CP_CMD "${${PROJECT}_CP_CMD}" &&
 			"${CMAKE_COMMAND}" -E rename
 				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR}CMakeFiles/${${PROJECT}_LIB}.dir/${${PROJECT}_LIB}.pdb"
@@ -24,18 +24,21 @@ endmacro()
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
 #	ADD_PDB_DIR = different path for MSVC debug symbols
-#	DEP_PROJECT = prefix of project on which this eternal project depends
+#	DEP_PROJECTS = prefixes of projects on which this eternal project depends (semicolon separated)
 # Set ${PROJECT}_CACHE_ARGS variable to pass options for project
-macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR DEP_PROJECT)
+macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR DEP_PROJECTS)
 	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${PROJECT}/")
 	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
+		foreach(DEP_PROJECT IN ITEMS ${DEP_PROJECTS})
+			list(APPEND ${PROJECT}_DEPENDENCY "${${DEP_PROJECT}_TARGET}")
+		endforeach()
 		ExternalProject_Add(${${PROJECT}_TARGET}
 			SOURCE_DIR ${${PROJECT}_DIR}
 			BINARY_DIR ${${PROJECT}_BUILD_DIR}
 			STAMP_DIR ${${PROJECT}_BUILD_DIR}
 			INSTALL_DIR ${EXTERNAL_BIN_DIR}
-			DEPENDS ${${DEP_PROJECT}_TARGET}
+			DEPENDS ${${PROJECT}_DEPENDENCY}
 			CMAKE_CACHE_ARGS "${${PROJECT}_CACHE_ARGS}"
 				"-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
 			INSTALL_COMMAND "${${PROJECT}_CP_CMD}")
