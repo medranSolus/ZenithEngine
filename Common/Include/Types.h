@@ -31,3 +31,9 @@ namespace ZE::Math
 	// SSE 4x4 Matrix
 	typedef ZE::External::DirectX::XMMATRIX Matrix;
 #pragma endregion
+
+namespace ZE
+{
+	// Opaque handle to dynamically loaded library
+	typedef void* LibraryHandle;
+}

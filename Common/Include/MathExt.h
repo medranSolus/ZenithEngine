@@ -4,6 +4,10 @@
 
 namespace ZE::Math
 {
+	constexpr U64 GIGABYTE = 1ULL << 30;
+	constexpr U64 MEGABYTE = 1ULL << 20;
+	constexpr U64 KILOBYTE = 1ULL << 10;
+
 	constexpr Float4 NoRotation() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
 	constexpr Float3 NoRotationAngles() noexcept { return { 0.0f, 0.0f, 0.0f }; }
 	constexpr Float3 StartPosition() noexcept { return { 0.0f, 0.0f, 0.0f }; }

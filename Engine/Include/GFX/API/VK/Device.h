@@ -10,13 +10,25 @@ namespace ZE::GFX::API::VK
 {
 	class Device final
 	{
+		struct QueueFamilyIndices
+		{
+			U32 Gfx = UINT32_MAX;
+			U32 Compute = UINT32_MAX;
+			U32 Copy = UINT32_MAX;
+		};
+
 #define X(ext) + 1
 		static constexpr U16 KNOWN_EXTENSION_COUNT = ZE_VK_EXT_LIST;
 #undef X
 
-		VkInstance instance;
-		VkDevice device;
+		LibraryHandle vulkanLibModule = nullptr;
 		std::bitset<KNOWN_EXTENSION_COUNT + 1> extensionSupport;
+		VkInstance instance = VK_NULL_HANDLE;
+		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+		VkDevice device = VK_NULL_HANDLE;
+		VkQueue gfxQueue = VK_NULL_HANDLE;
+		VkQueue computeQueue = VK_NULL_HANDLE;
+		VkQueue copyQueue = VK_NULL_HANDLE;
 
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -26,6 +38,11 @@ namespace ZE::GFX::API::VK
 		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
 		// To be used with dynamically allocated string (slower than normal version)
 		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
+		static bool FindQueueIndices(VkPhysicalDevice device, QueueFamilyIndices& indices) noexcept;
+
+		void InitVolk();
+		void CreateInstance();
+		QueueFamilyIndices FindPhysicalDevice(VkPhysicalDeviceFeatures2& features);
 
 	public:
 		Device() = default;
@@ -79,6 +96,10 @@ namespace ZE::GFX::API::VK
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
+
+		constexpr VkInstance GetInstance() const noexcept { return instance; }
+		constexpr VkPhysicalDevice GetPhysicalDevice() const noexcept { return physicalDevice; }
+		constexpr VkDevice GetDevice() const noexcept { return device; }
 
 		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them
 		template<U64 Size>
