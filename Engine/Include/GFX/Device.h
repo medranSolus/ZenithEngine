@@ -16,9 +16,9 @@ namespace ZE::GFX
 		ZE_CLASS_DELETE(Device);
 		~Device() = default;
 
-		constexpr void Init(U32 descriptorCount, U32 scratchDescriptorCount) { ZE_API_BACKEND_VAR.Init(descriptorCount, scratchDescriptorCount); }
+		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount) { ZE_API_BACKEND_VAR.Init(window, descriptorCount, scratchDescriptorCount); }
 		ZE_API_BACKEND_GET(Device);
-		constexpr void SwitchApi(GfxApiType nextApi);
+		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window);
 
 		// Main Gfx API
 
@@ -84,11 +84,11 @@ namespace ZE::GFX
 	};
 
 #pragma region Functions
-	constexpr void Device::SwitchApi(GfxApiType nextApi)
+	constexpr void Device::SwitchApi(GfxApiType nextApi, const Window::MainWindow& window)
 	{
 		std::pair<U32, U32> data;
 		ZE_API_BACKEND_CALL_RET(data, GetData);
-		ZE_API_BACKEND_VAR.Switch(nextApi, data.first, data.second);
+		ZE_API_BACKEND_VAR.Switch(nextApi, window, data.first, data.second);
 	}
 #pragma endregion
 }

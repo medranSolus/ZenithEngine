@@ -15,6 +15,7 @@ namespace ZE::GFX::API::VK
 			U32 Gfx = UINT32_MAX;
 			U32 Compute = UINT32_MAX;
 			U32 Copy = UINT32_MAX;
+			bool PresentFromCompute = false;
 		};
 
 #define X(ext) + 1
@@ -29,6 +30,7 @@ namespace ZE::GFX::API::VK
 		VkQueue gfxQueue = VK_NULL_HANDLE;
 		VkQueue computeQueue = VK_NULL_HANDLE;
 		VkQueue copyQueue = VK_NULL_HANDLE;
+		bool computePresentSupport;
 
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -38,15 +40,15 @@ namespace ZE::GFX::API::VK
 		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
 		// To be used with dynamically allocated string (slower than normal version)
 		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
-		static bool FindQueueIndices(VkPhysicalDevice device, QueueFamilyIndices& indices) noexcept;
+		static bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyIndices& indices) noexcept;
 
 		void InitVolk();
 		void CreateInstance();
-		QueueFamilyIndices FindPhysicalDevice(VkPhysicalDeviceFeatures2& features);
+		QueueFamilyIndices FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features);
 
 	public:
 		Device() = default;
-		Device(U32 descriptorCount, U32 scratchDescriptorCount);
+		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();
 
@@ -100,6 +102,7 @@ namespace ZE::GFX::API::VK
 		constexpr VkInstance GetInstance() const noexcept { return instance; }
 		constexpr VkPhysicalDevice GetPhysicalDevice() const noexcept { return physicalDevice; }
 		constexpr VkDevice GetDevice() const noexcept { return device; }
+		constexpr bool CanPresentFromCompute() const noexcept { return computePresentSupport; }
 
 		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them
 		template<U64 Size>

@@ -11,7 +11,7 @@ namespace ZE::GFX::API::DX11
 		}
 	}
 
-	Device::Device(U32 descriptorCount, U32 scratchDescriptorCount)
+	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
 		: descriptorCount(descriptorCount), scratchDescriptorCount(scratchDescriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();

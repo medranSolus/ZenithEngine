@@ -16,6 +16,8 @@ namespace ZE::Utils
 	// Extract patch part from encoded version
 	constexpr U16 GetVersionPatch(U32 version) noexcept { return version & 0xFFF; }
 
+	// Check whether formats come from same family with automatic conversion rules
+	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept;
 	// Checks whether format is available for depth stencil
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept;
 	// Get string representation of PixelFormat
@@ -42,6 +44,329 @@ namespace ZE::Utils
 	std::deque<std::string> SplitString(const std::string& input, const std::string& delimeter) noexcept;
 
 #pragma region Functions
+	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept
+	{
+		switch (f1)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case PixelFormat::Unknown:
+			return false;
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R32G32B32A32_Float:
+			case PixelFormat::R32G32B32A32_UInt:
+			case PixelFormat::R32G32B32A32_SInt:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16B16A16_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R16G16B16A16_Float:
+			case PixelFormat::R16G16B16A16_UInt:
+			case PixelFormat::R16G16B16A16_SInt:
+			case PixelFormat::R16G16B16A16_UNorm:
+			case PixelFormat::R16G16B16A16_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::R8G8B8A8_SNorm:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R8G8B8A8_UInt:
+			case PixelFormat::R8G8B8A8_SInt:
+			case PixelFormat::R8G8B8A8_UNorm:
+			case PixelFormat::R8G8B8A8_UNorm_SRGB:
+			case PixelFormat::R8G8B8A8_SNorm:
+			case PixelFormat::B8G8R8A8_UNorm:
+			case PixelFormat::B8G8R8A8_UNorm_SRGB:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R32G32B32_Float:
+			case PixelFormat::R32G32B32_UInt:
+			case PixelFormat::R32G32B32_SInt:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R32G32_Float:
+			case PixelFormat::R32G32_UInt:
+			case PixelFormat::R32G32_SInt:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R16G16_Float:
+			case PixelFormat::R16G16_UInt:
+			case PixelFormat::R16G16_SInt:
+			case PixelFormat::R16G16_UNorm:
+			case PixelFormat::R16G16_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R8G8_UInt:
+			case PixelFormat::R8G8_SInt:
+			case PixelFormat::R8G8_UNorm:
+			case PixelFormat::R8G8_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R32_Float:
+			case PixelFormat::R32_Depth:
+			case PixelFormat::R32_UInt:
+			case PixelFormat::R32_SInt:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R16_Float:
+			case PixelFormat::R16_UInt:
+			case PixelFormat::R16_SInt:
+			case PixelFormat::R16_UNorm:
+			case PixelFormat::R16_SNorm:
+			case PixelFormat::R16_Depth:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R8_UInt:
+			case PixelFormat::R8_SInt:
+			case PixelFormat::R8_UNorm:
+			case PixelFormat::R8_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R24G8_DepthStencil:
+			return f2 == PixelFormat::R24G8_DepthStencil;
+		case PixelFormat::R32G8_DepthStencil:
+			return f2 == PixelFormat::R32G8_DepthStencil;
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::R10G10B10A2_UInt:
+			case PixelFormat::R10G10B10A2_UNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::R11G11B10_Float:
+			return f2 == PixelFormat::R11G11B10_Float;
+		case PixelFormat::R9G9B9E5_SharedExp:
+			return f2 == PixelFormat::R9G9B9E5_SharedExp;
+		case PixelFormat::B4G4R4A4_UNorm:
+			return f2 == PixelFormat::B4G4R4A4_UNorm;
+		case PixelFormat::B5G5R5A1_UNorm:
+			return f2 == PixelFormat::B5G5R5A1_UNorm;
+		case PixelFormat::B5G6R5_UNorm:
+			return f2 == PixelFormat::B5G6R5_UNorm;
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC1_UNorm:
+			case PixelFormat::BC1_UNorm_SRGB:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC2_UNorm:
+			case PixelFormat::BC2_UNorm_SRGB:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC3_UNorm:
+			case PixelFormat::BC3_UNorm_SRGB:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC4_UNorm:
+			case PixelFormat::BC4_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC5_UNorm:
+			case PixelFormat::BC5_SNorm:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC6H_UF16:
+			case PixelFormat::BC6H_SF16:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+		{
+			switch (f2)
+			{
+			case PixelFormat::BC7_UNorm:
+			case PixelFormat::BC7_UNorm_SRGB:
+				return true;
+			default:
+				return false;
+			}
+			break;
+		}
+		case PixelFormat::YUV_Y410:
+			return f2 == PixelFormat::YUV_Y410;
+		case PixelFormat::YUV_Y216:
+			return f2 == PixelFormat::YUV_Y216;
+		case PixelFormat::YUV_Y210:
+			return f2 == PixelFormat::YUV_Y210;
+		case PixelFormat::YUV_YUY2:
+			return f2 == PixelFormat::YUV_YUY2;
+		case PixelFormat::YUV_P208:
+			return f2 == PixelFormat::YUV_P208;
+		case PixelFormat::YUV_P016:
+			return f2 == PixelFormat::YUV_P016;
+		case PixelFormat::YUV_P010:
+			return f2 == PixelFormat::YUV_P010;
+		case PixelFormat::YUV_NV12:
+			return f2 == PixelFormat::YUV_NV12;
+		}
+	}
+
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept
 	{
 		switch (format)

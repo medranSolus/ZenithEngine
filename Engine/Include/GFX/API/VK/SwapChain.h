@@ -1,16 +1,17 @@
 #pragma once
 #include "GFX/Device.h"
-#include "Window/MainWindow.h"
 
 namespace ZE::GFX::API::VK
 {
 	class SwapChain final
 	{
+		VkSurfaceKHR surface = VK_NULL_HANDLE;
+
 	public:
 		SwapChain() = default;
 		SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput);
 		ZE_CLASS_MOVE(SwapChain);
-		~SwapChain() = default;
+		~SwapChain();
 
 		constexpr void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const {}
 

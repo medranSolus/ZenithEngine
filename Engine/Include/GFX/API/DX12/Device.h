@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Resource/Texture/Type.h"
 #include "GFX/CommandList.h"
+#include "Window/MainWindow.h"
 #include "AllocatorTier1.h"
 #include "AllocatorTier2.h"
 #include "DescriptorInfo.h"
@@ -76,7 +77,7 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		Device() noexcept {}
-		Device(U32 descriptorCount, U32 scratchDescriptorCount);
+		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();
 

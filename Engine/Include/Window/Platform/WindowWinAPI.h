@@ -47,6 +47,8 @@ namespace ZE::Window::WinAPI
 		ZE_CLASS_DELETE(WindowWinAPI);
 		virtual ~WindowWinAPI();
 
+		static constexpr HINSTANCE GetInstance() noexcept { return wndClass.GetInstance(); }
+
 		constexpr HWND GetHandle() const noexcept { return wndHandle; }
 		constexpr U32 GetWidth() const noexcept override { return static_cast<U32>(windowRect.right); }
 		constexpr U32 GetHeight() const noexcept override { return static_cast<U32>(windowRect.bottom); }

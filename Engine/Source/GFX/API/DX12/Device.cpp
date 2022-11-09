@@ -49,7 +49,7 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
-	Device::Device(U32 descriptorCount, U32 scratchDescriptorCount)
+	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
 		: scratchDescStart(descriptorCount - scratchDescriptorCount), descriptorCount(descriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();

@@ -8,15 +8,17 @@ namespace ZE
 	class Settings final
 	{
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
-		static constexpr uint32_t ENGINE_VERSION = Utils::MakeVersion(0, 3, 0);
-		static constexpr PixelFormat BACKBUFFER_FORMAT = PixelFormat::R8G8B8A8_UNorm;
+		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(0, 3, 0);
 
 		static inline U64 frameIndex = 0;
 		static inline U32 swapChainBufferCount = 0;
+		static inline PixelFormat backbufferFormat = PixelFormat::R8G8B8A8_UNorm;
 		static inline GFX::VendorGPU gpuVendor = GFX::VendorGPU::Unknown;
+		// TODO: Replace by some global GFX context, distinct from chosen GPU
+		static inline void* gfxBackendCustomData = nullptr;
 		static inline GfxApiType gfxApi;
 		static inline const char* applicationName;
-		static inline uint32_t applicationVersion;
+		static inline U32 applicationVersion;
 #if _ZE_GFX_MARKERS
 		static inline bool enableGfxTags = true;
 #endif
@@ -28,8 +30,7 @@ namespace ZE
 		~Settings() = default;
 
 		static constexpr const char* GetEngineName() noexcept { return ENGINE_NAME; }
-		static constexpr uint32_t GetEngineVersion() noexcept { return ENGINE_VERSION; }
-		static constexpr PixelFormat GetBackbufferFormat() noexcept { return BACKBUFFER_FORMAT; }
+		static constexpr U32 GetEngineVersion() noexcept { return ENGINE_VERSION; }
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 
@@ -38,18 +39,23 @@ namespace ZE
 		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
 #endif
 
+		static constexpr void SetBackbufferFormat(PixelFormat format) noexcept { backbufferFormat = format; }
+		static constexpr PixelFormat GetBackbufferFormat() noexcept { return backbufferFormat; }
 		static constexpr void SetGpuVendor(GFX::VendorGPU vendor) noexcept { gpuVendor = vendor; }
 		static constexpr GFX::VendorGPU GetGpuVendor() noexcept { return gpuVendor; }
+		static constexpr void SetGfxCustomData(void* data) noexcept { gfxBackendCustomData = data; }
+		// VkInstance for Vulkan, otherwise empty
+		static constexpr void* GetGfxCustomData() noexcept { ZE_ASSERT(gfxBackendCustomData, "Custom GFX data not set!"); return gfxBackendCustomData; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationName; }
-		static constexpr uint32_t GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }
+		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
 		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
 		static constexpr U64 GetChainResourceCount() noexcept;
 
 		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
-		static constexpr void Init(GfxApiType type, U32 backBufferCount, const char* appName, uint32_t appVersion) noexcept;
+		static constexpr void Init(GfxApiType type, U32 backBufferCount, const char* appName, U32 appVersion) noexcept;
 	};
 
 #pragma region Functions
@@ -70,7 +76,7 @@ namespace ZE
 		}
 	}
 
-	constexpr void Settings::Init(GfxApiType type, U32 backBufferCount, const char* appName, uint32_t appVersion) noexcept
+	constexpr void Settings::Init(GfxApiType type, U32 backBufferCount, const char* appName, U32 appVersion) noexcept
 	{
 		ZE_ASSERT(!Initialized(), "Already initialized!");
 		ZE_ASSERT(backBufferCount > 1 && backBufferCount < 17, "Incorrect params!");

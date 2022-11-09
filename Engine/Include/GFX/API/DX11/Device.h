@@ -1,4 +1,5 @@
 #pragma once
+#include "Window/MainWindow.h"
 #include "D3D11.h"
 
 namespace ZE::GFX
@@ -23,7 +24,7 @@ namespace ZE::GFX::API::DX11
 
 	public:
 		Device() = default;
-		Device(U32 descriptorCount, U32 scratchDescriptorCount);
+		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device() = default;
 
