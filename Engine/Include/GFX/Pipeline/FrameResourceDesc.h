@@ -12,7 +12,9 @@ namespace ZE::GFX::Pipeline
 		// Cannot be used together with SimultaneousAccess
 		ForceDSV = 4,
 		// Cannot be used together with ForceDSV
-		SimultaneousAccess = 8
+		SimultaneousAccess = 8,
+		// When creating SRV over depth stencil choose to use stencil instead of depth
+		StencilView = 16
 	};
 
 	// Description of single resource in FrameBuffer

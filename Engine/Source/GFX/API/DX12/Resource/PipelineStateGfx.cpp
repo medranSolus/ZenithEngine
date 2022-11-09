@@ -210,7 +210,7 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.RTVFormats[stateDesc.NumRenderTargets] = DX::GetDXFormat(desc.FormatsRT[stateDesc.NumRenderTargets]);
 		for (U8 i = static_cast<U8>(stateDesc.NumRenderTargets); i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
 			stateDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
-		stateDesc.DSVFormat = DX::GetDXFormat(desc.FormatDS);
+		stateDesc.DSVFormat = DX::GetTypedDepthDXFormat(desc.FormatDS);
 
 		// Multisampling
 		stateDesc.SampleDesc.Count = 1;

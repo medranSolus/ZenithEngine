@@ -10,7 +10,6 @@
       "name": "default",
       "hidden": true,
       "cacheVariables": {
-        "ZE_PLATFORM": "unknown",
         "ZE_PLATFORM_WINDOWS": false,
         "ZE_PLATFORM_LINUX": false,
         "ZE_PLATFORM_ANDROID": false,
@@ -35,7 +34,6 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl",
-        "ZE_PLATFORM": "Windows",
         "ZE_PLATFORM_WINDOWS": true,
         "ZE_COMPILER_MSVC": true
       },

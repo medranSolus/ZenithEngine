@@ -616,7 +616,7 @@ void App::MakeFrame()
 }
 
 App::App(const std::string& commandLine)
-	: engine({ APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), GfxApiType::Vulkan, 2, 0, 0, 10000, 800, {"Skybox/Space", ".png"} })
+	: engine({ APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), GfxApiType::Vulkan, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 
@@ -632,7 +632,7 @@ App::App(const std::string& commandLine)
 	AddModel("Brick wall", { -5.0f, -2.0f, 7.0f }, Math::NoRotationAngles(), 2.0f, "Models/bricks/brick_wall.obj");
 
 	// Sample Scene
-#if _ZE_MODE_PROFILE || _ZE_MODE_RELEASE
+#if !_ZE_MODE_DEBUG
 	AddCamera("Camera #2", 2.0f, 15.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
 	AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
 	AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);

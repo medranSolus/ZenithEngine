@@ -6,13 +6,14 @@ namespace ZE::GFX::API::DX11::Pipeline
 	{
 		D3D11_TEXTURE2D_DESC1 Desc;
 		DX::ComPtr<ID3D11Texture2D1> Texture;
-		std::bitset<5> Flags;
+		std::bitset<6> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
 		constexpr bool IsDSV() const noexcept { return Flags[1]; }
 		constexpr bool IsSRV() const noexcept { return Flags[2]; }
 		constexpr bool IsUAV() const noexcept { return Flags[3]; }
 		constexpr bool IsCube() const noexcept { return Flags[4]; }
+		constexpr bool UseStencilView() const noexcept { return Flags[5]; }
 	};
 
 	void FrameBuffer::SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept
@@ -67,8 +68,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			texDesc.Height = res.Height;
 			texDesc.ArraySize = res.ArraySize;
 			texDesc.MipLevels = res.MipLevels;
-			DXGI_FORMAT format = DX::GetDXFormat(res.Format);
-			texDesc.Format = DX::GetTypelessDepthStencilFormat(format);
+			texDesc.Format = DX::GetNonDepthDXFormat(res.Format);
 			if (!texDesc.MipLevels)
 				texDesc.MipLevels = 1;
 			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Cube)
@@ -101,6 +101,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				case GFX::Resource::StateRenderTarget:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
+					ZE_ASSERT(!Utils::IsDepthStencilFormat(res.Format), "Cannot use depth stencil format with render target!");
 
 					texDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 					isRT = true;
@@ -147,10 +148,11 @@ namespace ZE::GFX::API::DX11::Pipeline
 			DX::ComPtr<ID3D11Texture2D1> texture;
 			ZE_DX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
 			ZE_DX_THROW_FAILED(texture.As(&resources[i].Resource));
-			texDesc.Format = format;
 
 			resourcesInfo.emplace_back(texDesc, std::move(texture),
-				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
+				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
+				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4)
+				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::StencilView) << 5));
 		}
 
 		// Create view arrays
@@ -166,7 +168,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			uavMips = new Ptr<DX::ComPtr<ID3D11UnorderedAccessView1>>[resourceCount - 1];
 
 		// Create views
-		for (RID i = 1; auto & info : resourcesInfo)
+		for (RID i = 1; auto& info : resourcesInfo)
 		{
 			if (info.IsRTV())
 			{
@@ -208,8 +210,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 			else if (info.IsDSV())
 			{
 				D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-				dsvDesc.Format = info.Desc.Format;
-				dsvDesc.Flags = 0; // Maybe check if format is DepthOnly so Stencil would be set to read only
+				dsvDesc.Format = DX::ConvertDepthFormatToDSV(info.Desc.Format);
+				dsvDesc.Flags = 0;
 				if (info.Desc.ArraySize > 1)
 				{
 					dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
@@ -244,7 +246,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			if (info.IsUAV())
 			{
 				D3D11_UNORDERED_ACCESS_VIEW_DESC1 uavDesc;
-				uavDesc.Format = DX::ConvertFromDepthStencilFormat(info.Desc.Format);
+				uavDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
 				if (info.Desc.ArraySize > 1)
 				{
 					uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
@@ -282,7 +284,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			if (info.IsSRV())
 			{
 				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc;
-				srvDesc.Format = DX::ConvertFromDepthStencilFormat(info.Desc.Format);
+				srvDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
 				if (info.IsCube())
 				{
 					if (info.Desc.ArraySize > 6)

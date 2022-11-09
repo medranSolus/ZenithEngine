@@ -12,15 +12,16 @@ namespace ZE::GFX::API::DX12::Pipeline
 		D3D12_RESOURCE_DESC Desc;
 		D3D12_CLEAR_VALUE ClearVal;
 		DX::ComPtr<ID3D12Resource> Resource;
-		std::bitset<6> Flags;
+		std::bitset<7> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
 		constexpr bool IsDSV() const noexcept { return Flags[1]; }
 		constexpr bool IsSRV() const noexcept { return Flags[2]; }
 		constexpr bool IsUAV() const noexcept { return Flags[3]; }
 		constexpr bool IsCube() const noexcept { return Flags[4]; }
-		constexpr bool IsAliasing() const noexcept { return Flags[5]; }
-		void SetAliasing() noexcept { Flags[5] = true; }
+		constexpr bool UseStencilView() const noexcept { return Flags[5]; }
+		constexpr bool IsAliasing() const noexcept { return Flags[6]; }
+		void SetAliasing() noexcept { Flags[6] = true; }
 	};
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
@@ -233,6 +234,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				case GFX::Resource::StateRenderTarget:
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
+					ZE_ASSERT(!Utils::IsDepthStencilFormat(res.Format), "Cannot use depth stencil format with render target!");
 
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 					isRT = true;
@@ -275,7 +277,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 			}
 
-			resDesc.Format = DX::GetDXFormat(res.Format);
+			resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
 			D3D12_CLEAR_VALUE clearDesc;
 			clearDesc.Format = resDesc.Format;
 			if (Utils::IsDepthStencilFormat(res.Format))
@@ -289,7 +291,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
 				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
 			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
-				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3) | ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4));
+				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
+				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4)
+				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::StencilView) << 5));
 
 			if (isRT)
 			{
@@ -662,7 +666,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			if (res.IsUAV())
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
-				uavDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
+				uavDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
 				if (res.Desc.DepthOrArraySize > 1)
 				{
 					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
@@ -714,7 +718,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			if (res.IsSRV())
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-				srvDesc.Format = DX::ConvertFromDepthStencilFormat(res.Desc.Format);
+				srvDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				if (res.IsCube())
 				{

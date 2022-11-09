@@ -1,90 +1,299 @@
 #pragma once
-// Headers needed for Vulkan
-#include "WarningGuardOn.h"
-#include "volk.h"
-#include "WarningGuardOff.h"
+#include "Window/MainWindow.h"
+#include "VulkanExtensions.h"
 
-/* Definitions of extensions (up to v1.3.231)
-*
-* Every listed extension here have tags attached to it, which will help
-* in searching for possible use case for that extension.
-* Possible extension tags:
-*
-* EXT_DEBUG  - debugging and other tools
-* EXT_RT     - ray tracing
-* EXT_WINDOW - windowning and surfaces
-* EXT_SHADER - shader related operations
-* EXT_MEMORY - memory managment
-* EXT_EXMEM  - memory sharing (memory from external sources)
-* EXT_QUERY  - queries and info
-* EXT_PERF   - performance and optimizations
-* EXT_FEAT   - general features
-* NOT_USED   - extension currently not used in basic version of the engine
-*
-* Additionally to indicate if any of the extensions were promoted to core Vulkan,
-* there are tags indicating at which version it happened: 1.1, 1.2 or 1.3
-*/
-#pragma region Instance extensions
-// List of platform independent instance extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_INSTANCE_GENERAL \
-	X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)                      /* Debug instrumentation [EXT_DEBUG] */ \
-	X(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)            /* [NOT_USED] Multiple physical devices as one logical [EXT_FEAT] [1.1] */ \
-	X(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)              /* [NOT_USED] Full control over display [EXT_WINDOW] */ \
-	X(VK_KHR_DISPLAY_EXTENSION_NAME)                          /* [NOT_USED] Display handling [EXT_WINDOW] */ \
-	X(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)          /* [NOT_USED] Quering for display vertical blank [EXT_WINDOW] [EXT_QUERY] */ \
-	X(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)      /* [NOT_USED] Info about imported external fences [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
-	X(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)     /* [NOT_USED] Info about imported external memory regions [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
-	X(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)  /* [NOT_USED] Info about imported external semaphores [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
-	X(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME)         /* [NOT_USED] Informations about displays [EXT_WINDOW] [EXT_QUERY] */ \
-	X(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) /* Informations about GPUs [EXT_QUERY] */ \
-	X(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)       /* [NOT_USED] Informations about surfaces [EXT_WINDOW] [EXT_QUERY] */ \
-	X(VK_KHR_SURFACE_EXTENSION_NAME)                          /* [NOT_USED] Window surface management [EXT_WINDOW] */ \
-	X(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME)   /* [NOT_USED] Info about protected session for surface [EXT_FEAT] [EXT_QUERY] */ \
-	X(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)            /* [NOT_USED] Additional colorspaces for swapchain surface (HDR) [EXT_WINDOW] [EXT_FEAT] */ \
-	X(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)              /* Specifying validation checks [EXT_DEBUG] */
+namespace ZE::GFX::API::VK
+{
+	// Create surface over current display buffer
+	VkSurfaceKHR CreateSurface(const Window::MainWindow& window, VkInstance instance);
+	// Convert PixelFormat to VkFormat
+	constexpr VkFormat GetVkFormat(PixelFormat format) noexcept;
+	// Convert VkFormat to PixelFormat
+	constexpr PixelFormat GetFormatFromVk(VkFormat format) noexcept;
 
-// Platform specific extensions (WSI)
-#if _ZE_PLATFORM_WINDOWS
-// List of platform dependent instance extension names, intended for use in X() macro
-#	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
-		X(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)         /* [NOT_USED] Surface for Windows targets [EXT_WINDOW] */
-#elif _ZE_PLATFORM_LINUX
-// List of platform dependent instance extension names, intended for use in X() macro
-#	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
-		X(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)   /* [NOT_USED] Full control over Linux DRM display [EXT_WINDOW] */ \
-		X(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME)  /* [NOT_USED] Full control over Linux Xlib display [EXT_WINDOW] */ \
-		X(VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME)      /* [NOT_USED] Surface for DirectFB Linux targets [EXT_WINDOW] */ \
-		X(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)       /* [NOT_USED] Surface for Wayland Linux targets [EXT_WINDOW] */ \
-		X(VK_KHR_XCB_SURFACE_EXTENSION_NAME)           /* [NOT_USED] Surface for Xcb Linux targets [EXT_WINDOW] */ \
-		X(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)          /* [NOT_USED] Surface for Xlib Linux targets [EXT_WINDOW] */
-#elif _ZE_PLATFORM_ANDROID
-#	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
-		X(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)       /* [NOT_USED] Surface for android targets [EXT_WINDOW] */
-#elif _ZE_PLATFORM_FUCHSIA
-#	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
-		X(VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME) /* [NOT_USED] Surface for Fuchsia OS targets [EXT_WINDOW] */
-#elif _ZE_PLATFORM_NSWITCH
-#	define ZE_VK_EXT_LIST_INSTANCE_PLATFORM \
-		X(VK_NN_VI_SURFACE_EXTENSION_NAME)             /* [NOT_USED] Surface for Nintendo Switch targets [EXT_WINDOW] */
-#else
-#	error Vulkan not supported for that platform!
-#endif
+#pragma region Functions
+// List of mappings between PixelFormat and VkFormat for enum decoding in X() macro
+#define ZE_VK_FORMAT_MAPPINGS \
+	X(Unknown,             VK_FORMAT_UNDEFINED) \
+	X(R32G32B32A32_Float,  VK_FORMAT_R32G32B32A32_SFLOAT) \
+	X(R32G32B32A32_UInt,   VK_FORMAT_R32G32B32A32_UINT) \
+	X(R32G32B32A32_SInt,   VK_FORMAT_R32G32B32A32_SINT) \
+	X(R16G16B16A16_Float,  VK_FORMAT_R16G16B16A16_SFLOAT) \
+	X(R16G16B16A16_UInt,   VK_FORMAT_R16G16B16A16_UINT) \
+	X(R16G16B16A16_SInt,   VK_FORMAT_R16G16B16A16_SINT) \
+	X(R16G16B16A16_UNorm,  VK_FORMAT_R16G16B16A16_UNORM) \
+	X(R16G16B16A16_SNorm,  VK_FORMAT_R16G16B16A16_SNORM) \
+	X(R8G8B8A8_UInt,       VK_FORMAT_R8G8B8A8_UINT) \
+	X(R8G8B8A8_SInt,       VK_FORMAT_R8G8B8A8_SINT) \
+	X(R8G8B8A8_UNorm,      VK_FORMAT_R8G8B8A8_UNORM) \
+	X(R8G8B8A8_UNorm_SRGB, VK_FORMAT_R8G8B8A8_SRGB) \
+	X(R8G8B8A8_SNorm,      VK_FORMAT_R8G8B8A8_SNORM) \
+	X(B8G8R8A8_UNorm,      VK_FORMAT_B8G8R8A8_UNORM) \
+	X(B8G8R8A8_UNorm_SRGB, VK_FORMAT_B8G8R8A8_SRGB) \
+	X(R32G32B32_Float,     VK_FORMAT_R32G32B32_SFLOAT) \
+	X(R32G32B32_UInt,      VK_FORMAT_R32G32B32_UINT) \
+	X(R32G32B32_SInt,      VK_FORMAT_R32G32B32_SINT) \
+	X(R32G32_Float,        VK_FORMAT_R32G32_SFLOAT) \
+	X(R32G32_UInt,         VK_FORMAT_R32G32_UINT) \
+	X(R32G32_SInt,         VK_FORMAT_R32G32_SINT) \
+	X(R16G16_Float,        VK_FORMAT_R16G16_SFLOAT) \
+	X(R16G16_UInt,         VK_FORMAT_R16G16_UINT) \
+	X(R16G16_SInt,         VK_FORMAT_R16G16_SINT) \
+	X(R16G16_UNorm,        VK_FORMAT_R16G16_UNORM) \
+	X(R16G16_SNorm,        VK_FORMAT_R16G16_SNORM) \
+	X(R8G8_UInt,           VK_FORMAT_R8G8_UINT) \
+	X(R8G8_SInt,           VK_FORMAT_R8G8_SINT) \
+	X(R8G8_UNorm,          VK_FORMAT_R8G8_UNORM) \
+	X(R8G8_SNorm,          VK_FORMAT_R8G8_SNORM) \
+	X(R32_Float,           VK_FORMAT_R32_SFLOAT) \
+	X(R32_Depth,           VK_FORMAT_D32_SFLOAT) \
+	X(R32_UInt,            VK_FORMAT_R32_UINT) \
+	X(R32_SInt,            VK_FORMAT_R32_SINT) \
+	X(R16_Float,           VK_FORMAT_R16_SFLOAT) \
+	X(R16_UInt,            VK_FORMAT_R16_UINT) \
+	X(R16_SInt,            VK_FORMAT_R16_SINT) \
+	X(R16_UNorm,           VK_FORMAT_R16_UNORM) \
+	X(R16_SNorm,           VK_FORMAT_R16_SNORM) \
+	X(R16_Depth,           VK_FORMAT_D16_UNORM) \
+	X(R8_UInt,             VK_FORMAT_R8_UINT) \
+	X(R8_SInt,             VK_FORMAT_R8_SINT) \
+	X(R8_UNorm,            VK_FORMAT_R8_UNORM) \
+	X(R8_SNorm,            VK_FORMAT_R8_SNORM) \
+	X(R24G8_DepthStencil,  VK_FORMAT_D24_UNORM_S8_UINT) \
+	X(R32G8_DepthStencil,  VK_FORMAT_D32_SFLOAT_S8_UINT) \
+	X(R10G10B10A2_UInt,    VK_FORMAT_A2B10G10R10_UINT_PACK32) \
+	X(R10G10B10A2_UNorm,   VK_FORMAT_A2B10G10R10_UNORM_PACK32) \
+	X(R11G11B10_Float,     VK_FORMAT_B10G11R11_UFLOAT_PACK32) \
+	X(R9G9B9E5_SharedExp,  VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) \
+	X(B4G4R4A4_UNorm,      VK_FORMAT_A4R4G4B4_UNORM_PACK16) \
+	X(B5G5R5A1_UNorm,      VK_FORMAT_B5G5R5A1_UNORM_PACK16) \
+	X(B5G6R5_UNorm,        VK_FORMAT_B5G6R5_UNORM_PACK16) \
+	X(BC1_UNorm,           VK_FORMAT_BC1_RGBA_UNORM_BLOCK) \
+	X(BC1_UNorm_SRGB,      VK_FORMAT_BC1_RGBA_SRGB_BLOCK) \
+	X(BC2_UNorm,           VK_FORMAT_BC2_UNORM_BLOCK) \
+	X(BC2_UNorm_SRGB,      VK_FORMAT_BC2_SRGB_BLOCK) \
+	X(BC3_UNorm,           VK_FORMAT_BC3_UNORM_BLOCK) \
+	X(BC3_UNorm_SRGB,      VK_FORMAT_BC3_SRGB_BLOCK) \
+	X(BC4_UNorm,           VK_FORMAT_BC4_UNORM_BLOCK) \
+	X(BC4_SNorm,           VK_FORMAT_BC4_SNORM_BLOCK) \
+	X(BC5_UNorm,           VK_FORMAT_BC5_UNORM_BLOCK) \
+	X(BC5_SNorm,           VK_FORMAT_BC5_SNORM_BLOCK) \
+	X(BC6H_UF16,           VK_FORMAT_BC6H_UFLOAT_BLOCK) \
+	X(BC6H_SF16,           VK_FORMAT_BC6H_SFLOAT_BLOCK) \
+	X(BC7_UNorm,           VK_FORMAT_BC7_UNORM_BLOCK) \
+	X(BC7_UNorm_SRGB,      VK_FORMAT_BC7_SRGB_BLOCK) \
+	X(YUV_Y410,            VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16) \
+	X(YUV_Y216,            VK_FORMAT_G16B16G16R16_422_UNORM) \
+	X(YUV_Y210,            VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16) \
+	X(YUV_YUY2,            VK_FORMAT_G8B8G8R8_422_UNORM) \
+	X(YUV_P208,            VK_FORMAT_G8_B8R8_2PLANE_422_UNORM) \
+	X(YUV_P016,            VK_FORMAT_G16_B16R16_2PLANE_420_UNORM) \
+	X(YUV_P010,            VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16) \
+	X(YUV_NV12,            VK_FORMAT_G8_B8R8_2PLANE_420_UNORM)
 
-// List of instance extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_INSTANCE ZE_VK_EXT_LIST_INSTANCE_GENERAL ZE_VK_EXT_LIST_INSTANCE_PLATFORM
+	constexpr VkFormat GetVkFormat(PixelFormat format) noexcept
+	{
+#define X(pixelFormat, vkFormat) case PixelFormat::##pixelFormat: return vkFormat;
+		switch (format)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		ZE_VK_FORMAT_MAPPINGS
+		}
+#undef X
+	}
+
+	constexpr PixelFormat GetFormatFromVk(VkFormat format) noexcept
+	{
+#define X(pixelFormat, vkFormat) case vkFormat: return PixelFormat::##pixelFormat;
+		switch (format)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case VK_FORMAT_R4G4_UNORM_PACK8:
+		case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
+		case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
+		case VK_FORMAT_R5G6B5_UNORM_PACK16:
+		case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
+		case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
+		case VK_FORMAT_R8_SRGB:
+		case VK_FORMAT_R8G8_SRGB:
+		case VK_FORMAT_R8G8B8_UNORM:
+		case VK_FORMAT_R8G8B8_SNORM:
+		case VK_FORMAT_R8G8B8_UINT:
+		case VK_FORMAT_R8G8B8_SINT:
+		case VK_FORMAT_R8G8B8_SRGB:
+		case VK_FORMAT_B8G8R8_UNORM:
+		case VK_FORMAT_B8G8R8_SNORM:
+		case VK_FORMAT_B8G8R8_UINT:
+		case VK_FORMAT_B8G8R8_SINT:
+		case VK_FORMAT_B8G8R8_SRGB:
+		case VK_FORMAT_B8G8R8A8_SNORM:
+		case VK_FORMAT_B8G8R8A8_UINT:
+		case VK_FORMAT_B8G8R8A8_SINT:
+		case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+		case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+		case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+		case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+		case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+		case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+		case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+		case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+		case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+		case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+		case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+		case VK_FORMAT_R16G16B16_UNORM:
+		case VK_FORMAT_R16G16B16_SNORM:
+		case VK_FORMAT_R16G16B16_UINT:
+		case VK_FORMAT_R16G16B16_SINT:
+		case VK_FORMAT_R16G16B16_SFLOAT:
+		case VK_FORMAT_X8_D24_UNORM_PACK32:
+		case VK_FORMAT_D16_UNORM_S8_UINT:
+		case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
+		case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+		case VK_FORMAT_B8G8R8G8_422_UNORM:
+		case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM:
+		case VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM:
+		case VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM:
+		case VK_FORMAT_R10X6_UNORM_PACK16:
+		case VK_FORMAT_R10X6G10X6_UNORM_2PACK16:
+		case VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16:
+		case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16:
+		case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16:
+		case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16:
+		case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16:
+		case VK_FORMAT_R12X4_UNORM_PACK16:
+		case VK_FORMAT_R12X4G12X4_UNORM_2PACK16:
+		case VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16:
+		case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16:
+		case VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16:
+		case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16:
+		case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16:
+		case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16:
+		case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16:
+		case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16:
+		case VK_FORMAT_B16G16R16G16_422_UNORM:
+		case VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM:
+		case VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM:
+		case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM:
+		case VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM:
+		case VK_FORMAT_G8_B8R8_2PLANE_444_UNORM:
+		case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16:
+		case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16:
+		case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM:
+		case VK_FORMAT_A4B4G4R4_UNORM_PACK16:
+		// 64 bit per channel types are not supported yet by other APIs
+		case VK_FORMAT_R64_UINT:
+		case VK_FORMAT_R64_SINT:
+		case VK_FORMAT_R64_SFLOAT:
+		case VK_FORMAT_R64G64_UINT:
+		case VK_FORMAT_R64G64_SINT:
+		case VK_FORMAT_R64G64_SFLOAT:
+		case VK_FORMAT_R64G64B64_UINT:
+		case VK_FORMAT_R64G64B64_SINT:
+		case VK_FORMAT_R64G64B64_SFLOAT:
+		case VK_FORMAT_R64G64B64A64_UINT:
+		case VK_FORMAT_R64G64B64A64_SINT:
+		case VK_FORMAT_R64G64B64A64_SFLOAT:
+		// ETC2 compression not yet supported in other APIs
+		case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
+		case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
+		case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK:
+		case VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK:
+		case VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK:
+		case VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK:
+		case VK_FORMAT_EAC_R11_UNORM_BLOCK:
+		case VK_FORMAT_EAC_R11_SNORM_BLOCK:
+		case VK_FORMAT_EAC_R11G11_UNORM_BLOCK:
+		case VK_FORMAT_EAC_R11G11_SNORM_BLOCK:
+		// ASTC compression not yet supported in other APIs
+		case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_5x4_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_5x4_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_5x5_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_5x5_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_6x5_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_6x5_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_6x6_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_8x5_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_8x5_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_8x6_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_8x6_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_8x8_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_10x5_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_10x5_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_10x6_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_10x6_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_10x8_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_10x8_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_10x10_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_10x10_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_12x10_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
+		case VK_FORMAT_ASTC_12x12_UNORM_BLOCK:
+		case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
+		// VK_EXT_texture_compression_astc_hdr is mostly supported on mobile only with HDR display
+		case VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK:
+		case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK:
+		// Scaled formats won't be supported due to API compatibility
+		case VK_FORMAT_R8_USCALED:
+		case VK_FORMAT_R8_SSCALED:
+		case VK_FORMAT_R8G8_USCALED:
+		case VK_FORMAT_R8G8_SSCALED:
+		case VK_FORMAT_R8G8B8_USCALED:
+		case VK_FORMAT_R8G8B8_SSCALED:
+		case VK_FORMAT_B8G8R8_USCALED:
+		case VK_FORMAT_B8G8R8_SSCALED:
+		case VK_FORMAT_R8G8B8A8_USCALED:
+		case VK_FORMAT_R8G8B8A8_SSCALED:
+		case VK_FORMAT_B8G8R8A8_USCALED:
+		case VK_FORMAT_B8G8R8A8_SSCALED:
+		case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+		case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+		case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+		case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+		case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+		case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+		case VK_FORMAT_R16_USCALED:
+		case VK_FORMAT_R16_SSCALED:
+		case VK_FORMAT_R16G16_USCALED:
+		case VK_FORMAT_R16G16_SSCALED:
+		case VK_FORMAT_R16G16B16_USCALED:
+		case VK_FORMAT_R16G16B16_SSCALED:
+		case VK_FORMAT_R16G16B16A16_USCALED:
+		case VK_FORMAT_R16G16B16A16_SSCALED:
+		// VK_NV_optical_flow won't be supported
+		case VK_FORMAT_R16G16_S10_5_NV:
+		// VK_IMG_format_pvrtc is deprecated
+		case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
+			ZE_FAIL("Trying to convert unsupported format!");
+		ZE_VK_FORMAT_MAPPINGS
+		case VK_FORMAT_S8_UINT:
+			return PixelFormat::R24G8_DepthStencil;
+		}
+#undef X
+	}
 #pragma endregion
-
-// List of device extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_DEVICE \
-	X(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)          /* [NOT_USED] Caching validation checks for multiple runs [EXT_DEBUG] */ \
-	X(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)    /* [NOT_USED] Managing acceleration structures for RT [EXT_RT] */ \
-	X(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)      /* [NOT_USED] Managing RT pipelines [EXT_RT] */ \
-	X(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) /* [NOT_USED] Minor RT tweaks [EXT_RT] */ \
-	X(VK_KHR_RAY_QUERY_EXTENSION_NAME)                 /* [NOT_USED] Inline RT (DXR 1.1) [EXT_RT] */ \
-	X(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME)  /* [NOT_USED] Async CPU acceleration structures builds [EXT_RT] */ \
-	X(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME)          /* [NOT_USED] Handling opaque and transparent geometry (RTX 30+) [EXT_RT] */ \
-	X(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME)    /* [NOT_USED] Faster tracing of geometry in motion [EXT_RT] */ \
-	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)         /* Normal rendering without render passes [EXT_FEAT] [1.3] */
-
-// List of extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST ZE_VK_EXT_LIST_INSTANCE ZE_VK_EXT_LIST_DEVICE
+}
