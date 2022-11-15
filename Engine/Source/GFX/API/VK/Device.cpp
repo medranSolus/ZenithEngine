@@ -37,7 +37,7 @@ namespace ZE::GFX::API::VK
 			return KNOWN_EXTENSION_COUNT;
 	}
 
-	bool Device::FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyIndices& indices) noexcept
+	bool Device::FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept
 	{
 		U32 queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, nullptr);
@@ -63,26 +63,88 @@ namespace ZE::GFX::API::VK
 						if (presentSupport)
 						{
 							supportedQueues[0] = true;
-							indices.Gfx = i;
+							familyInfo.Gfx = i;
 						}
 					}
 					else
 					{
 						supportedQueues[1] = true;
-						indices.Compute = i;
-						indices.PresentFromCompute = presentSupport;
+						familyInfo.Compute = i;
+						familyInfo.PresentFromCompute = presentSupport;
 					}
 				}
 				else
 				{
 					supportedQueues[2] = true;
-					indices.Copy = i;
+					familyInfo.Copy = i;
 				}
 			}
 			if (supportedQueues.all())
 				break;
 		}
 		return supportedQueues.all();
+	}
+
+	Device::GpuFitness Device::CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
+		const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features, QueueFamilyInfo& familyInfo)
+	{
+		ZE_VK_ENABLE();
+
+		// Check if this GPU is enough for using in rendering
+		vkGetPhysicalDeviceFeatures2(device, &features);
+		if (!features.features.geometryShader || !features.features.samplerAnisotropy)
+			return { GpuFitness::Status::FeaturesInsufficient };
+
+		// Check if surface has any present modes
+		U32 count = 0;
+		ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfacePresentModesKHR(device, testSurfaceInfo.surface, &count, nullptr));
+		if (count == 0)
+			return { GpuFitness::Status::NoPresentModes };
+
+		// Check if surface has needed formats
+		ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(device, &testSurfaceInfo, &count, nullptr));
+		if (count == 0)
+			return { GpuFitness::Status::NoPixelFormats };
+		std::vector<VkSurfaceFormat2KHR> supportedFormats(count, { VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR, nullptr });
+		ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(device, &testSurfaceInfo, &count, supportedFormats.data()));
+		bool notSupported = true;
+		for (const VkSurfaceFormat2KHR& format : supportedFormats)
+		{
+			if (Utils::IsSameFormatFamily(GetFormatFromVk(format.surfaceFormat.format), Settings::GetBackbufferFormat()))
+			{
+				notSupported = false;
+				break;
+			}
+		}
+		if (notSupported)
+			return { GpuFitness::Status::BackbufferFormatNotSupported };
+
+		// Check for needed queues
+		if (!FindQueueIndices(device, testSurfaceInfo.surface, familyInfo))
+			return { GpuFitness::Status::QueuesInsufficient };
+
+		// Make sure that all required extensions are present
+		ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
+		if (count == 0)
+			return { GpuFitness::Status::NoExtensions };
+		std::vector<VkExtensionProperties> supportedExtensions(count);
+		ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, supportedExtensions.data()));
+		for (U32 i = 0; i < requiredExt.size(); ++i)
+		{
+			bool notFound = true;
+			for (const VkExtensionProperties& ext : supportedExtensions)
+			{
+				if (strcmp(ext.extensionName, requiredExt.at(i)) == 0)
+				{
+					notFound = false;
+					break;
+				}
+			}
+			if (notFound)
+				return { GpuFitness::Status::NotAllRequiredExtSupported, i };
+		}
+
+		return { GpuFitness::Status::Good };
 	}
 
 	void Device::InitVolk()
@@ -300,7 +362,7 @@ namespace ZE::GFX::API::VK
 		Settings::SetGfxCustomData(instance);
 	}
 
-	Device::QueueFamilyIndices Device::FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features)
+	void Device::FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features)
 	{
 		ZE_VK_ENABLE();
 
@@ -310,19 +372,7 @@ namespace ZE::GFX::API::VK
 		if (deviceCount == 0)
 			throw ZE_CMP_EXCEPT("Current system have no avaiable GPUs!");
 
-		std::vector<VkExtensionProperties> supportedExtensions;
-		auto isExtSupported = [&supportedExtensions](const char* name) -> bool
-		{
-			for (const VkExtensionProperties& ext : supportedExtensions)
-				if (strcmp(ext.extensionName, name) == 0)
-					return true;
-			return false;
-		};
-#define X(ext) GetExtensionIndex(ext),
-		std::vector<U16> enabledExtensionsIndices{ ZE_VK_REQUIRED_DEVICE_EXT };
-#undef X
-
-		QueueFamilyIndices queueIndices;
+		QueueFamilyInfo familyInfo{};
 		// Check for support of presentation on given queue
 		// VkSurfaceFullScreenExclusiveInfoEXT or VkSurfaceFullScreenExclusiveWin32InfoEXT
 		VkPhysicalDeviceSurfaceInfo2KHR testSurfaceInfo = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, CreateSurface(window, instance) };
@@ -331,51 +381,32 @@ namespace ZE::GFX::API::VK
 			// Only 1 GPU present so can skip all the hassle
 			ZE_VK_THROW_NOSUCC(vkEnumeratePhysicalDevices(instance, &deviceCount, &physicalDevice));
 
-			// Check if this GPU is enough for using in rendering
-			vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
-			if (!features.features.geometryShader || !FindQueueIndices(physicalDevice, testSurfaceInfo.surface, queueIndices))
+			const GpuFitness fit = CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo);
+			if (fit.Status != GpuFitness::Status::Good)
 			{
 				VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, nullptr };
 				vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
-				throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] don't support all of the graphics, compute and copy queues!");
-			}
-
-			// Make sure that all required extensions are present
-			U32 count = 0;
-			ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, nullptr));
-			if (count == 0)
-				throw ZE_CMP_EXCEPT("No Vulkan device extensions present!");
-			supportedExtensions.resize(count);
-			ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, supportedExtensions.data()));
-			for (U32 i = 0; i < requiredExt.size(); ++i)
-			{
-				if (!isExtSupported(requiredExt.at(i)))
-					throw ZE_CMP_EXCEPT("Required device extension is not supported: " + std::string(requiredExt.at(i)));
-				extensionSupport[enabledExtensionsIndices.at(i)] = true;
-			}
-
-			// Check if surface has any present modes
-			ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, testSurfaceInfo.surface, &count, nullptr));
-			if (count == 0)
-				throw ZE_CMP_EXCEPT("Window surface doesn't support any present modes!");
-
-			// Check if surface has needed formats
-			ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, &testSurfaceInfo, &count, nullptr));
-			if (count == 0)
-				throw ZE_CMP_EXCEPT("Window surface doesn't support any pixel formats!");
-			std::vector<VkSurfaceFormat2KHR> supportedFormats(count, { VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR, nullptr });
-			ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, &testSurfaceInfo, &count, supportedFormats.data()));
-			bool notSupported = true;
-			for (const VkSurfaceFormat2KHR& format : supportedFormats)
-			{
-				if (Utils::IsSameFormatFamily(GetFormatFromVk(format.surfaceFormat.format), Settings::GetBackbufferFormat()))
+				switch (fit.Status)
 				{
-					notSupported = false;
-					break;
+				default:
+					ZE_ENUM_UNHANDLED();
+					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] has insufficient Vulkan support!");
+				case GpuFitness::Status::FeaturesInsufficient:
+					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support enough basic features!");
+				case GpuFitness::Status::NoPresentModes:
+					throw ZE_CMP_EXCEPT("Window surface doesn't support any present modes on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				case GpuFitness::Status::NoPixelFormats:
+					throw ZE_CMP_EXCEPT("Window surface doesn't support any pixel formats on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				case GpuFitness::Status::BackbufferFormatNotSupported:
+					throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer formaton GPU [" + std::string(properties.properties.deviceName) + "]! Format: [" + std::string(Utils::FormatToString(Settings::GetBackbufferFormat())) + "]");
+				case GpuFitness::Status::QueuesInsufficient:
+					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support all of the graphics, compute and copy queues!");
+				case GpuFitness::Status::NoExtensions:
+					throw ZE_CMP_EXCEPT("No Vulkan device extensions present on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				case GpuFitness::Status::NotAllRequiredExtSupported:
+					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support required device extension: " + std::string(requiredExt.at(fit.ExtIndex)));
 				}
 			}
-			if (notSupported)
-				throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer format! Format: [" + std::string(Utils::FormatToString(Settings::GetBackbufferFormat())) + "]");
 		}
 		else
 		{
@@ -383,45 +414,10 @@ namespace ZE::GFX::API::VK
 			ZE_VK_THROW_NOSUCC(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
 
 			// Get most suited GPU for rendering using some ranking algorithm
-			std::multimap<U16, std::pair<VkPhysicalDevice, QueueFamilyIndices>> deviceRank;
+			std::multimap<U16, std::pair<VkPhysicalDevice, QueueFamilyInfo>> deviceRank;
 			for (VkPhysicalDevice dev : devices)
 			{
-				// Skip GPUs with not sufficient features and without 3 distinct queues
-				vkGetPhysicalDeviceFeatures2(dev, &features);
-				if (!features.features.geometryShader || !FindQueueIndices(dev, testSurfaceInfo.surface, queueIndices))
-					continue;
-
-				// Check for required extensions
-				U32 count = 0;
-				ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(dev, nullptr, &count, nullptr));
-				if (count == 0)
-					continue;
-				supportedExtensions.resize(count);
-				ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(dev, nullptr, &count, supportedExtensions.data()));
-				if (!std::all_of(requiredExt.begin(), requiredExt.end(), [&isExtSupported](const char* x) -> bool { return isExtSupported(x); }))
-					continue;
-
-				// Check if surface has any present modes
-				ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, testSurfaceInfo.surface, &count, nullptr));
-				if (count == 0)
-					continue;
-
-				// Check if surface has needed formats
-				ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, &testSurfaceInfo, &count, nullptr));
-				if (count == 0)
-					continue;
-				std::vector<VkSurfaceFormat2KHR> supportedFormats(count, { VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR, nullptr });
-				ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, &testSurfaceInfo, &count, supportedFormats.data()));
-				bool notSupported = true;
-				for (const VkSurfaceFormat2KHR& format : supportedFormats)
-				{
-					if (Utils::IsSameFormatFamily(GetFormatFromVk(format.surfaceFormat.format), Settings::GetBackbufferFormat()))
-					{
-						notSupported = false;
-						break;
-					}
-				}
-				if (notSupported)
+				if (CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo).Status != GpuFitness::Status::Good)
 					continue;
 
 				U16 rank = 0;
@@ -469,25 +465,33 @@ namespace ZE::GFX::API::VK
 					if (memoryProps.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
 						rank += Math::DivideRoundUp(memoryProps.memoryProperties.memoryHeaps[i].size, Math::GIGABYTE) * 100;
 				}
-				deviceRank.emplace(rank, std::make_pair(dev, queueIndices));
+				deviceRank.emplace(rank, std::make_pair(dev, familyInfo));
 			}
 			devices.clear();
 
 			// Sanity check whether we have enough GPUs to choose from
 			if (deviceRank.size() == 0)
-				throw ZE_CMP_EXCEPT("None of the GPUs support geometry shaders and all of the graphics, compute and copy queues!");
-
-			// Mark all required extensions as present
-			for (U32 i = 0; i < requiredExt.size(); ++i)
-				extensionSupport[enabledExtensionsIndices.at(i)] = true;
+				throw ZE_CMP_EXCEPT("None of the GPUs support required Vulkan features!");
 
 			// Get one with highest score
 			physicalDevice = deviceRank.end()->second.first;
-			queueIndices = deviceRank.end()->second.second;
+			familyInfo = deviceRank.end()->second.second;
 			vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 		}
 		vkDestroySurfaceKHR(instance, testSurfaceInfo.surface, nullptr);
-		return queueIndices;
+
+		// Mark all required extensions as present
+#define X(ext) GetExtensionIndex(ext),
+		std::vector<U16> enabledExtIndices{ ZE_VK_REQUIRED_DEVICE_EXT };
+#undef X
+		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
+			extensionSupport[enabledExtIndices.at(i)] = true;
+
+		// Setup all queue indices
+		gfxQueueIndex = familyInfo.Gfx;
+		computeQueueIndex = familyInfo.Compute;
+		copyQueueIndex = familyInfo.Copy;
+		computePresentSupport = familyInfo.PresentFromCompute;
 	}
 
 	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
@@ -504,16 +508,15 @@ namespace ZE::GFX::API::VK
 #define X(ext) ext,
 		std::vector<const char*> enabledExtensions{ ZE_VK_REQUIRED_DEVICE_EXT };
 #undef X
-		QueueFamilyIndices queueIndices = FindPhysicalDevice(enabledExtensions, window, features);
-		computePresentSupport = queueIndices.PresentFromCompute;
+		FindPhysicalDevice(enabledExtensions, window, features);
 
 		// Describe used queues
 		const float queuePriority = 1.0f;
 		const VkDeviceQueueCreateInfo queueInfos[3]
 		{
-			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, queueIndices.Gfx, 1, &queuePriority },
-			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, queueIndices.Compute, 1, &queuePriority },
-			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, queueIndices.Copy, 1, &queuePriority }
+			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, gfxQueueIndex, 1, &queuePriority },
+			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, computeQueueIndex, 1, &queuePriority },
+			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, copyQueueIndex, 1, &queuePriority }
 		};
 
 		// Create logic device
@@ -529,9 +532,9 @@ namespace ZE::GFX::API::VK
 
 		ZE_VK_THROW_NOSUCC(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
 		volkLoadDevice(device);
-		vkGetDeviceQueue(device, queueIndices.Gfx, 0, &gfxQueue);
-		vkGetDeviceQueue(device, queueIndices.Compute, 0, &computeQueue);
-		vkGetDeviceQueue(device, queueIndices.Copy, 0, &copyQueue);
+		vkGetDeviceQueue(device, gfxQueueIndex, 0, &gfxQueue);
+		vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
+		vkGetDeviceQueue(device, copyQueueIndex, 0, &copyQueue);
 	}
 
 	Device::~Device()
@@ -558,4 +561,4 @@ namespace ZE::GFX::API::VK
 	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 	}
-		}
+}

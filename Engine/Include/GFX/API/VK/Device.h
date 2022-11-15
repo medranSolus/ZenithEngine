@@ -10,12 +10,22 @@ namespace ZE::GFX::API::VK
 {
 	class Device final
 	{
-		struct QueueFamilyIndices
+		struct QueueFamilyInfo
 		{
 			U32 Gfx = UINT32_MAX;
 			U32 Compute = UINT32_MAX;
 			U32 Copy = UINT32_MAX;
 			bool PresentFromCompute = false;
+		};
+		struct GpuFitness
+		{
+			enum class Status : U8
+			{
+				Good, FeaturesInsufficient, NoPresentModes, NoPixelFormats, BackbufferFormatNotSupported,
+				QueuesInsufficient, NoExtensions, NotAllRequiredExtSupported
+			};
+			Status Status;
+			U32 ExtIndex = UINT32_MAX;
 		};
 
 #define X(ext) + 1
@@ -27,10 +37,14 @@ namespace ZE::GFX::API::VK
 		VkInstance instance = VK_NULL_HANDLE;
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 		VkDevice device = VK_NULL_HANDLE;
+
 		VkQueue gfxQueue = VK_NULL_HANDLE;
 		VkQueue computeQueue = VK_NULL_HANDLE;
 		VkQueue copyQueue = VK_NULL_HANDLE;
-		bool computePresentSupport;
+		U32 gfxQueueIndex = UINT32_MAX;
+		U32 computeQueueIndex = UINT32_MAX;
+		U32 copyQueueIndex = UINT32_MAX;
+		bool computePresentSupport = false;
 
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -40,11 +54,13 @@ namespace ZE::GFX::API::VK
 		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
 		// To be used with dynamically allocated string (slower than normal version)
 		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
-		static bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyIndices& indices) noexcept;
+		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
+		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
+			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features, QueueFamilyInfo& familyInfo);
 
 		void InitVolk();
 		void CreateInstance();
-		QueueFamilyIndices FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features);
+		void FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features);
 
 	public:
 		Device() = default;
