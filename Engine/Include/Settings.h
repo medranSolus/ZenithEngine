@@ -14,8 +14,6 @@ namespace ZE
 		static inline U32 swapChainBufferCount = 0;
 		static inline PixelFormat backbufferFormat = PixelFormat::R8G8B8A8_UNorm;
 		static inline GFX::VendorGPU gpuVendor = GFX::VendorGPU::Unknown;
-		// TODO: Replace by some global GFX context, distinct from chosen GPU
-		static inline void* gfxBackendCustomData = nullptr;
 		static inline GfxApiType gfxApi;
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
@@ -43,9 +41,6 @@ namespace ZE
 		static constexpr PixelFormat GetBackbufferFormat() noexcept { return backbufferFormat; }
 		static constexpr void SetGpuVendor(GFX::VendorGPU vendor) noexcept { gpuVendor = vendor; }
 		static constexpr GFX::VendorGPU GetGpuVendor() noexcept { return gpuVendor; }
-		static constexpr void SetGfxCustomData(void* data) noexcept { gfxBackendCustomData = data; }
-		// VkInstance for Vulkan, otherwise empty
-		static constexpr void* GetGfxCustomData() noexcept { ZE_ASSERT(gfxBackendCustomData, "Custom GFX data not set!"); return gfxBackendCustomData; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }

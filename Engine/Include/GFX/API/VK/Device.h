@@ -118,6 +118,9 @@ namespace ZE::GFX::API::VK
 		constexpr VkInstance GetInstance() const noexcept { return instance; }
 		constexpr VkPhysicalDevice GetPhysicalDevice() const noexcept { return physicalDevice; }
 		constexpr VkDevice GetDevice() const noexcept { return device; }
+		constexpr VkQueue GetGfxQueue() const noexcept { return gfxQueue; }
+		constexpr VkQueue GetComputeQueue() const noexcept { return computeQueue; }
+		constexpr VkQueue GetCopyQueue() const noexcept { return copyQueue; }
 		constexpr bool CanPresentFromCompute() const noexcept { return computePresentSupport; }
 
 		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them

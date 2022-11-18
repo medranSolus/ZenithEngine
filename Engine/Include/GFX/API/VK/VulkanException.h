@@ -110,7 +110,7 @@ namespace ZE::GFX::API::VK
 
 // Before using needs call to ZE_VK_ENABLE_ID()
 // Sets debug name for GPU object with given id
-#define ZE_VK_SET_ID(device, object, objectType, id) ZE_VK_DEBUG_ID.objectType = objectType; ZE_VK_DEBUG_ID.objectHandle = object; ZE_VK_DEBUG_ID.pObjectName = id; ZE_VK_THROW_NOSUCC(vkSetDebugUtilsObjectNameEXT(device, &ZE_VK_DEBUG_ID))
+#define ZE_VK_SET_ID(device, object, vkObjectType, id) ZE_VK_DEBUG_ID.objectType = vkObjectType; ZE_VK_DEBUG_ID.objectHandle = (U64)(object); ZE_VK_DEBUG_ID.pObjectName = id; ZE_VK_THROW_NOSUCC(vkSetDebugUtilsObjectNameEXT(device, &ZE_VK_DEBUG_ID))
 
 #else
 // Enables useage of ZE_VK_SET_ID macros in current scope

@@ -359,7 +359,6 @@ namespace ZE::GFX::API::VK
 		// Create instance
 		ZE_VK_THROW_NOSUCC(vkCreateInstance(&instanceInfo, nullptr, &instance));
 		volkLoadInstanceOnly(instance);
-		Settings::SetGfxCustomData(instance);
 	}
 
 	void Device::FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features)
@@ -532,9 +531,16 @@ namespace ZE::GFX::API::VK
 
 		ZE_VK_THROW_NOSUCC(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
 		volkLoadDevice(device);
+
+		ZE_VK_SET_ID(device, device, VK_OBJECT_TYPE_DEVICE, "main_device");
+		ZE_VK_SET_ID(device, physicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE, "selected_gpu");
+
 		vkGetDeviceQueue(device, gfxQueueIndex, 0, &gfxQueue);
 		vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
 		vkGetDeviceQueue(device, copyQueueIndex, 0, &copyQueue);
+		ZE_VK_SET_ID(device, gfxQueue, VK_OBJECT_TYPE_QUEUE, "gfx_queue");
+		ZE_VK_SET_ID(device, computeQueue, VK_OBJECT_TYPE_QUEUE, "compute_queue");
+		ZE_VK_SET_ID(device, copyQueue, VK_OBJECT_TYPE_QUEUE, "copy_queue");
 	}
 
 	Device::~Device()

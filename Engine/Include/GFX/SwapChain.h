@@ -23,5 +23,7 @@ namespace ZE::GFX
 
 		constexpr void Present(Device& dev) const { ZE_API_BACKEND_CALL(Present, dev); }
 		constexpr void PrepareBackbuffer(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(PrepareBackbuffer, dev, cl); }
+		// Have to be called before destroying the SwapChain
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 	};
 }

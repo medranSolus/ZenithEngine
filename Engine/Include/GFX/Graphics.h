@@ -17,7 +17,7 @@ namespace ZE::GFX
 	public:
 		Graphics() = default;
 		ZE_CLASS_DELETE(Graphics);
-		~Graphics() = default;
+		~Graphics() { swapChain.Free(device); }
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
