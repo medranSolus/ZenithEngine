@@ -15,11 +15,14 @@
 * STD HEADERS:
 *** algorithm
 *** atomic
+*** cassert
+*** cfloat
+*** chrono
 *** cmath
 *** cstddef
 *** cstdint
-*** cfloat
-*** cassert
+*** cstdlib
+*** cstring
 *** deque
 *** exception
 *** filesystem
@@ -29,8 +32,9 @@
 *** map
 *** mutex
 *** random
-*** sstream
 *** string
+*** sstream
+*** type_traits
 *** utility
 *** vector
 */

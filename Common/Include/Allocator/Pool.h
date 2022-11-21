@@ -2,12 +2,12 @@
 #include "Types.h"
 #include <vector>
 
-namespace ZE
+namespace ZE::Allocator
 {
 	// Allocator for objects of type T using a list of arrays to speed up allocation.
 	// Number of elements that can be allocated is not bounded because allocator can create multiple blocks.
 	template<typename T>
-	class PoolAllocator
+	class Pool final
 	{
 		union Item
 		{
@@ -29,9 +29,9 @@ namespace ZE
 		ItemBlock& CreateNewBlock() noexcept;
 
 	public:
-		PoolAllocator(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
-		ZE_CLASS_DEFAULT(PoolAllocator);
-		~PoolAllocator() { Clear(); }
+		Pool(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
+		ZE_CLASS_DEFAULT(Pool);
+		~Pool() { Clear(); }
 
 		template<typename... Types>
 		T* Alloc(Types... args) noexcept;
@@ -41,7 +41,7 @@ namespace ZE
 
 #pragma region Functions
 	template<typename T>
-	typename PoolAllocator<T>::ItemBlock& PoolAllocator<T>::CreateNewBlock() noexcept
+	typename Pool<T>::ItemBlock& Pool<T>::CreateNewBlock() noexcept
 	{
 		U64 newBlockCapacity = itemBlocks.size() ? itemBlocks.back().Capacity * 3 / 2 : firstBlockCapacity;
 		ItemBlock& newBlock = itemBlocks.emplace_back(new Item[newBlockCapacity], newBlockCapacity, 0);
@@ -57,7 +57,7 @@ namespace ZE
 	}
 
 	template<typename T> template<typename... Types>
-	T* PoolAllocator<T>::Alloc(Types... args) noexcept
+	T* Pool<T>::Alloc(Types... args) noexcept
 	{
 		for (U64 i = itemBlocks.size(); i;)
 		{
@@ -89,7 +89,7 @@ namespace ZE
 	}
 
 	template<typename T>
-	void PoolAllocator<T>::Free(T* ptr) noexcept
+	void Pool<T>::Free(T* ptr) noexcept
 	{
 		// Search all memory blocks to find ptr
 		for (U64 i = itemBlocks.size(); i;)
@@ -119,7 +119,7 @@ namespace ZE
 	}
 
 	template<typename T>
-	void PoolAllocator<T>::Clear() noexcept
+	void Pool<T>::Clear() noexcept
 	{
 		for (auto& block : itemBlocks)
 			delete[] block.Items;

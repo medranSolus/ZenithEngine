@@ -58,9 +58,17 @@
 
 /*
 * Types.h (defined by ColorF3.h)
-* vector
+* type_traits
+* cstdlib
+* cstring
 */
-#include "PoolAllocator.h"
+#include "Table.h"
+
+/*
+* Macros.h (defined by ColorF3.h)
+* chrono
+*/
+#include "Timer.h"
 
 /*
 *** Types.h (defined by ColorF3.h)
@@ -70,6 +78,12 @@
 * deque
 */
 #include "Utils.h"
+
+/*
+* Types.h (defined by ColorF3.h)
+* vector
+*/
+#include "Allocator/Pool.h"
 
 /*
 *** Types.h (defined by ColorF3.h)

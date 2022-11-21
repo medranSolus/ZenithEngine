@@ -56,7 +56,7 @@ namespace ZE::GFX::API::DX12
 			Block** freeList = nullptr;
 			Block* nullBlock = nullptr;
 
-			PoolAllocator<Block> blockAllocator;
+			ZE::Allocator::Pool<Block> blockAllocator;
 			Data::Storage* heapStorage;
 
 			static U8 SizeToMemoryClass(Chunk size) noexcept { return size > SMALL_BUFFER_SIZE ? Intrin::BitScanMSB(size) - MEMORY_CLASS_SHIFT : 0; }

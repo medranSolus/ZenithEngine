@@ -10,14 +10,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	enum class Sort : bool { Ascending, Descending };
 
 	// Perform frustum culling on entities in a group and emplace `Visibility` components on those inside camera frustum.
-	// `VisibilitySolid` component is added only to entities which material is not transparent,
-	// to other ones `VisibilityTransparent` is added. Specify both as same component to avoid whole material check.
-	template<typename VisibilitySolid, typename VisibilityTransparent>
+	// `VISIBILITY_SOLID` component is added only to entities which material is not transparent,
+	// to other ones `VISIBILITY_TRANSPARENT` is added. Specify both as same component to avoid whole material check.
+	template<typename VISIBILITY_SOLID, typename VISIBILITY_TRANSPARENT>
 	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
 		const auto& group, const Math::BoundingFrustum& frustum) noexcept;
 
 	// Sort entities according to distance from camera
-	template<Sort Order>
+	template<Sort ORDER>
 	constexpr void ViewSort(auto& group, const Vector& cameraPos) noexcept;
 	// Sort entities front-back according to distance from camera
 	constexpr void ViewSortAscending(auto& group, const Vector& cameraPos) noexcept { ViewSort<Sort::Ascending>(group, cameraPos); }
@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	constexpr void ViewSortDescending(auto& group, const Vector& cameraPos) noexcept { ViewSort<Sort::Descending>(group, cameraPos); }
 
 #pragma region Functions
-	template<typename VisibilitySolid, typename VisibilityTransparent>
+	template<typename VISIBILITY_SOLID, typename VISIBILITY_TRANSPARENT>
 	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
 		const auto& group, const Math::BoundingFrustum& frustum) noexcept
 	{
@@ -39,29 +39,29 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 			// Mark entity as visible
 			if (frustum.Intersects(box))
 			{
-				if constexpr (std::is_same_v<VisibilitySolid, VisibilityTransparent>)
-					registry.emplace<VisibilitySolid>(entity);
+				if constexpr (std::is_same_v<VISIBILITY_SOLID, VISIBILITY_TRANSPARENT>)
+					registry.emplace<VISIBILITY_SOLID>(entity);
 				else
 				{
 					if (resources.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
-						registry.emplace<VisibilityTransparent>(entity);
+						registry.emplace<VISIBILITY_TRANSPARENT>(entity);
 					else
-						registry.emplace<VisibilitySolid>(entity);
+						registry.emplace<VISIBILITY_SOLID>(entity);
 				}
 			}
 		}
 	}
 
-	template<Sort Order>
+	template<Sort ORDER>
 	constexpr void ViewSort(auto& group, const Vector& cameraPos) noexcept
 	{
 		group.sort<Data::TransformGlobal>([&cameraPos](const Data::TransformGlobal& t1, const Data::TransformGlobal& t2) -> bool
 			{
 				const float len1 = Math::XMVectorGetX(Math::XMVector3Length(Math::XMVectorSubtract(Math::XMLoadFloat3(&t1.Position), cameraPos)));
 				const float len2 = Math::XMVectorGetX(Math::XMVector3Length(Math::XMVectorSubtract(Math::XMLoadFloat3(&t2.Position), cameraPos)));
-				if constexpr (Order == Sort::Ascending)
+				if constexpr (ORDER == Sort::Ascending)
 					return len1 < len2;
-				else if constexpr (Order == Sort::Descending)
+				else if constexpr (ORDER == Sort::Descending)
 					return len1 > len2;
 			});
 	}

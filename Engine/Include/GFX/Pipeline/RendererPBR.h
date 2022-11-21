@@ -6,7 +6,7 @@
 namespace ZE::GFX::Pipeline
 {
 	// Physically Based Renderer
-	class RendererPBR : public RenderGraph
+	class RendererPBR final : public RenderGraph
 	{
 		DataPBR settingsData;
 		CameraPBR dynamicData;

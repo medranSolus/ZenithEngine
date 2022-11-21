@@ -6,7 +6,7 @@
 namespace ZE::Window::WinAPI
 {
 	// Window implementation for Windows
-	class WindowWinAPI : public BaseWindow
+	class WindowWinAPI final : public BaseWindow
 	{
 		// Window class register
 		class WindowClass final

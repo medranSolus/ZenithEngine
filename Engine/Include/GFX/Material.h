@@ -5,7 +5,7 @@
 namespace ZE::GFX
 {
 	// Base class for creation of material types
-	template<typename T, const char* TextureSchemaName>
+	template<typename T, const char* TEXTURE_SCHEMA_NAME>
 	class Material final
 	{
 		Resource::CBuffer buffer;
@@ -17,7 +17,7 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(Material);
 		~Material() = default;
 
-		static constexpr const char* GetTextureSchemaName() noexcept { return TextureSchemaName; }
+		static constexpr const char* GetTextureSchemaName() noexcept { return TEXTURE_SCHEMA_NAME; }
 
 		constexpr void UpdateData(Device& dev, const T& data) const { buffer.Update(dev, &data, sizeof(T)); }
 		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
@@ -28,8 +28,8 @@ namespace ZE::GFX
 	};
 
 #pragma region Functions
-	template<typename T, const char* TextureSchemaName>
-	constexpr void Material<T, TextureSchemaName>::Init(Device& dev, const T& initData, const Resource::Texture::PackDesc& desc)
+	template<typename T, const char* TEXTURE_SCHEMA_NAME>
+	constexpr void Material<T, TEXTURE_SCHEMA_NAME>::Init(Device& dev, const T& initData, const Resource::Texture::PackDesc& desc)
 	{
 		buffer.Init(dev, reinterpret_cast<const U8*>(&initData), sizeof(T));
 		textures.Init(dev, desc);

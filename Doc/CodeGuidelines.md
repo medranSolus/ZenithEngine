@@ -18,6 +18,7 @@ To unify code style, here are rules followed by this project:
     - **ALL_CAPS:**
       - Macros
       - Constexpr variables
+      - Template parameters
     - Macros defined in header files in *Common* and *Engine* projects should be preceeded with **ZE_**.
     - All switch macros disabling parts of code should be preceeded with **_ZE_**.
   - References and pointers should be formatted without space, `SomeType* ptr;`, `OtherType& ref;`

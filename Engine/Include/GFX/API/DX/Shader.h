@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::DX
 {
-	template<bool IsDX12>
+	template<bool IS_DX12>
 	class Shader final
 	{
 		ComPtr<ID3DBlob> bytecode;
@@ -28,22 +28,14 @@ namespace ZE::GFX::API::DX
 	};
 
 #pragma region Functions
-	template<bool IsDX12>
-	Shader<IsDX12>::Shader(const std::wstring& name)
+	template<bool IS_DX12>
+	Shader<IS_DX12>::Shader(const std::wstring& name)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 #if _ZE_DEBUG_GFX_NAMES
 		shaderName = Utils::ToAscii(name);
 #endif
-		// TODO: Seperate shader compilation for every target API and place it in seperate subdirectory
-		if constexpr (IsDX12)
-		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX12/" + name + L".cso").c_str(), &bytecode));
-		}
-		else
-		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX11/" + name + L".cso").c_str(), &bytecode));
-		}
+		ZE_WIN_THROW_FAILED(D3DReadFileToBlob(((IS_DX12 ? L"Shaders/DX12/" : L"Shaders/DX11/") + name + L".cso").c_str(), &bytecode));
 	}
 #pragma endregion
 }
