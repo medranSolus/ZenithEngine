@@ -12,13 +12,14 @@ To unify code style, here are rules followed by this project:
       - Enums
       - Methods
       - Typedefs
+      - Template parameter types
     - **camelCase:**
       - Function variables and parameters
       - Class fields
     - **ALL_CAPS:**
       - Macros
       - Constexpr variables
-      - Template parameters
+      - Template parameter variables
     - Macros defined in header files in *Common* and *Engine* projects should be preceeded with **ZE_**.
     - All switch macros disabling parts of code should be preceeded with **_ZE_**.
   - References and pointers should be formatted without space, `SomeType* ptr;`, `OtherType& ref;`

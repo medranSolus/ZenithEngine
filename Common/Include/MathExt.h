@@ -158,7 +158,7 @@ namespace ZE::Math
 	}
 
 	template <typename T>
-	constexpr T DivideRoundUp(T x, T y)
+	constexpr T DivideRoundUp(T x, T y) noexcept
 	{
 		return (x + y - static_cast<T>(1)) / y;
 	}

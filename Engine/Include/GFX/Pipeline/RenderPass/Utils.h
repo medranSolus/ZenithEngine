@@ -10,9 +10,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	enum class Sort : bool { Ascending, Descending };
 
 	// Perform frustum culling on entities in a group and emplace `Visibility` components on those inside camera frustum.
-	// `VISIBILITY_SOLID` component is added only to entities which material is not transparent,
-	// to other ones `VISIBILITY_TRANSPARENT` is added. Specify both as same component to avoid whole material check.
-	template<typename VISIBILITY_SOLID, typename VISIBILITY_TRANSPARENT>
+	// `VisibilitySolid` component is added only to entities which material is not transparent,
+	// to other ones `VisibilityTransparent` is added. Specify both as same component to avoid whole material check.
+	template<typename VisibilitySolid, typename VisibilityTransparent>
 	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
 		const auto& group, const Math::BoundingFrustum& frustum) noexcept;
 
@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	constexpr void ViewSortDescending(auto& group, const Vector& cameraPos) noexcept { ViewSort<Sort::Descending>(group, cameraPos); }
 
 #pragma region Functions
-	template<typename VISIBILITY_SOLID, typename VISIBILITY_TRANSPARENT>
+	template<typename VisibilitySolid, typename VisibilityTransparent>
 	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
 		const auto& group, const Math::BoundingFrustum& frustum) noexcept
 	{
@@ -39,14 +39,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 			// Mark entity as visible
 			if (frustum.Intersects(box))
 			{
-				if constexpr (std::is_same_v<VISIBILITY_SOLID, VISIBILITY_TRANSPARENT>)
-					registry.emplace<VISIBILITY_SOLID>(entity);
+				if constexpr (std::is_same_v<VisibilitySolid, VisibilityTransparent>)
+					registry.emplace<VisibilitySolid>(entity);
 				else
 				{
 					if (resources.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
-						registry.emplace<VISIBILITY_TRANSPARENT>(entity);
+						registry.emplace<VisibilityTransparent>(entity);
 					else
-						registry.emplace<VISIBILITY_SOLID>(entity);
+						registry.emplace<VisibilitySolid>(entity);
 				}
 			}
 		}

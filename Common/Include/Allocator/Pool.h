@@ -34,7 +34,7 @@ namespace ZE::Allocator
 		~Pool() { Clear(); }
 
 		template<typename... Types>
-		T* Alloc(Types... args) noexcept;
+		T* Alloc(Types&&... args) noexcept;
 		void Free(T* ptr) noexcept;
 		void Clear() noexcept;
 	};
@@ -57,7 +57,7 @@ namespace ZE::Allocator
 	}
 
 	template<typename T> template<typename... Types>
-	T* Pool<T>::Alloc(Types... args) noexcept
+	T* Pool<T>::Alloc(Types&&... args) noexcept
 	{
 		for (U64 i = itemBlocks.size(); i;)
 		{
