@@ -80,10 +80,13 @@
 #include "Utils.h"
 
 /*
-* Types.h (defined by ColorF3.h)
-* vector
+*** Types.h (defined by ColorF3.h)
+*** vector
+* Allocator/Pool.h
+* Intrinsics.h (defined by ColorF3.h)
+* bitset
 */
-#include "Allocator/Pool.h"
+#include "Allocator/ChunkedTLSF.h"
 
 /*
 *** Types.h (defined by ColorF3.h)

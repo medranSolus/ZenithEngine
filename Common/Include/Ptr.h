@@ -43,12 +43,6 @@ namespace ZE
 		template<typename S>
 		constexpr const S* CastConst() const noexcept { return reinterpret_cast<const S*>(ptr); }
 
-		constexpr operator T* () noexcept { return ptr; }
-		constexpr operator const T* () const noexcept { return ptr; }
-
-		constexpr bool operator==(const void* p) const noexcept { return ptr == p; }
-		constexpr bool operator!=(const void* p) const noexcept { return ptr != p; }
-		constexpr bool operator==(std::nullptr_t p) const noexcept { return ptr == p; }
-		constexpr bool operator!=(std::nullptr_t p) const noexcept { return ptr != p; }
+		constexpr operator T* () const noexcept { return ptr; }
 	};
 }

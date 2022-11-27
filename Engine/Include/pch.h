@@ -32,8 +32,8 @@
 *** map
 *** mutex
 *** random
-*** string
 *** sstream
+*** string
 *** type_traits
 *** utility
 *** vector

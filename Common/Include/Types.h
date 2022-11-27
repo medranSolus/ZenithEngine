@@ -36,4 +36,6 @@ namespace ZE
 {
 	// Opaque handle to dynamically loaded library
 	typedef void* LibraryHandle;
+	// Identifier to single allocation
+	typedef void* AllocHandle;
 }
