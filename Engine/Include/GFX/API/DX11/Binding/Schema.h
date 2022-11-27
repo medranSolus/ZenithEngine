@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX11::Binding
 		Ptr<SlotInfo> slots;
 		Ptr<SlotData> slotsData;
 		U32 samplersCount;
-		Ptr<std::pair<U32, DX::ComPtr<ID3D11SamplerState>>> samplers;
+		Ptr<std::pair<U32, DX::ComPtr<ISamplerState>>> samplers;
 
 	public:
 		Schema() = default;

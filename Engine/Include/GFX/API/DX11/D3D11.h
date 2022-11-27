@@ -9,6 +9,32 @@
 
 namespace ZE::GFX::API::DX11
 {
+	// Wrappers for DirectX 11 interfaces (to avoid using multiple different versions)
+	typedef ID3D11BlendState1          IBlendState;
+	typedef ID3D11Buffer               IBuffer;
+	typedef ID3D11CommandList          ICommandList;
+	typedef ID3D11ComputeShader        IComputeShader;
+	typedef ID3D11DepthStencilState    IDepthStencilState;
+	typedef ID3D11DepthStencilView     IDepthStencilView;
+	typedef ID3D11Device5              IDevice;
+	typedef ID3D11DeviceContext4       IDeviceContext;
+	typedef ID3D11DomainShader         IDomainShader;
+	typedef ID3D11GeometryShader       IGeometryShader;
+	typedef ID3D11HullShader           IHullShader;
+	typedef ID3D11InfoQueue            IInfoQueue;
+	typedef ID3D11InputLayout          IInputLayout;
+	typedef ID3D11PixelShader          IPixelShader;
+	typedef ID3D11Query1               IQuery;
+	typedef ID3D11RasterizerState2     IRasterizerState;
+	typedef ID3D11RenderTargetView1    IRenderTargetView;
+	typedef ID3D11Resource             IResource;
+	typedef ID3D11SamplerState         ISamplerState;
+	typedef ID3D11ShaderResourceView1  IShaderResourceView;
+	typedef ID3D11Texture2D1           ITexture2D;
+	typedef ID3D11Texture3D1           ITexture3D;
+	typedef ID3D11UnorderedAccessView1 IUnorderedAccessView;
+	typedef ID3D11VertexShader         IVertexShader;
+
 	// Get DirectX 11 version of comparison function
 	constexpr D3D11_COMPARISON_FUNC GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept;
 	// Get DirectX 11 version of culling modes

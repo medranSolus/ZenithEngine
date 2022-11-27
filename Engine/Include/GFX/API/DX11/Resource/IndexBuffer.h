@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 {
 	class IndexBuffer final
 	{
-		DX::ComPtr<ID3D11Buffer> buffer;
+		DX::ComPtr<IBuffer> buffer;
 		U32 count;
 
 	public:

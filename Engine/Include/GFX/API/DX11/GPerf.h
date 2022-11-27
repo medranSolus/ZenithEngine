@@ -5,9 +5,9 @@ namespace ZE::GFX::API::DX11
 {
 	class GPerf final
 	{
-		DX::ComPtr<ID3D11Query> disjoint;
-		DX::ComPtr<ID3D11Query> begin;
-		DX::ComPtr<ID3D11Query> end;
+		DX::ComPtr<IQuery> disjoint;
+		DX::ComPtr<IQuery> begin;
+		DX::ComPtr<IQuery> end;
 
 	public:
 		GPerf() = default;

@@ -6,15 +6,15 @@ namespace ZE::GFX::API::DX11::Resource
 	class PipelineStateGfx final
 	{
 		D3D_PRIMITIVE_TOPOLOGY topology;
-		DX::ComPtr<ID3D11InputLayout> inputLayout;
-		DX::ComPtr<ID3D11VertexShader> vertexShader;
-		DX::ComPtr<ID3D11DomainShader> domainShader;
-		DX::ComPtr<ID3D11HullShader> hullShader;
-		DX::ComPtr<ID3D11GeometryShader> geometryShader;
-		DX::ComPtr<ID3D11PixelShader> pixelShader;
-		DX::ComPtr<ID3D11BlendState> blendState;
-		DX::ComPtr<ID3D11DepthStencilState> depthStencilState;
-		DX::ComPtr<ID3D11RasterizerState> rasterState;
+		DX::ComPtr<IInputLayout> inputLayout;
+		DX::ComPtr<IVertexShader> vertexShader;
+		DX::ComPtr<IDomainShader> domainShader;
+		DX::ComPtr<IHullShader> hullShader;
+		DX::ComPtr<IGeometryShader> geometryShader;
+		DX::ComPtr<IPixelShader> pixelShader;
+		DX::ComPtr<IBlendState> blendState;
+		DX::ComPtr<IDepthStencilState> depthStencilState;
+		DX::ComPtr<IRasterizerState> rasterState;
 
 	public:
 		PipelineStateGfx() = default;
@@ -27,7 +27,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 		// Gfx API Internal
 
-		void SetStencilRef(ID3D11DeviceContext4* ctx, U32 refValue) const noexcept { ctx->OMSetDepthStencilState(depthStencilState.Get(), refValue); }
-		void Bind(ID3D11DeviceContext4* ctx) const noexcept;
+		void SetStencilRef(IDeviceContext* ctx, U32 refValue) const noexcept { ctx->OMSetDepthStencilState(depthStencilState.Get(), refValue); }
+		void Bind(IDeviceContext* ctx) const noexcept;
 	};
 }

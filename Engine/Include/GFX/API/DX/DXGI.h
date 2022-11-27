@@ -10,23 +10,29 @@
 
 namespace ZE::GFX::API::DX
 {
+	// Wrappers for DXGI interfaces (rest is in DebugInfoManager.h)
+	typedef IDXGIAdapter4   IAdapter;
+	typedef IDXGIDevice4    IDevice;
+	typedef IDXGIFactory7   IFactory;
+	typedef IDXGISwapChain4 ISwapChain;
+
 	// Creates DXGI Factory
-	ComPtr<IDXGIFactory7> CreateFactory(
+	ComPtr<IFactory> CreateFactory(
 #if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	);
 
 	// Creates DXGI Factory and enumerates available GPU adapters in order of highest performant
-	ComPtr<IDXGIAdapter4> CreateAdapter(
+	ComPtr<IAdapter> CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
 	);
 
 	// Creates swap chain for window and returns present flags
-	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device,
-		HWND window, ComPtr<IDXGISwapChain4>& swapChain, bool shaderInput
+	UINT CreateSwapChain(ComPtr<IFactory> factory, IUnknown* device,
+		HWND window, ComPtr<ISwapChain>& swapChain, bool shaderInput
 #if _ZE_DEBUG_GFX_API
 		, DebugInfoManager& debugManager
 #endif

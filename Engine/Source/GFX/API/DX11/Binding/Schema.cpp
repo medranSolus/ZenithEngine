@@ -10,7 +10,7 @@ namespace ZE::GFX::API::DX11::Binding
 		samplersCount = desc.Samplers.size();
 		if (samplersCount)
 		{
-			samplers = new std::pair<U32, DX::ComPtr<ID3D11SamplerState>>[desc.Samplers.size()];
+			samplers = new std::pair<U32, DX::ComPtr<ISamplerState>>[desc.Samplers.size()];
 			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
 			{
 				D3D11_SAMPLER_DESC desc;

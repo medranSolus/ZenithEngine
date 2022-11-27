@@ -9,9 +9,9 @@ namespace ZE::GFX::API::DX11::Resource
 	class DynamicCBuffer final
 	{
 		static constexpr U64 BLOCK_SHRINK_STEP = 2;
-		static constexpr U32 BLOCK_SIZE = 64 * 1024;
+		static constexpr U32 BLOCK_SIZE = 64 * Math::KILOBYTE;
 
-		std::vector<std::pair<DX::ComPtr<ID3D11Buffer>, Data::Library<U32, U32>>> blocks;
+		std::vector<std::pair<DX::ComPtr<IBuffer>, Data::Library<U32, U32>>> blocks;
 		U32 nextOffset = 0;
 		U64 currentBlock = 0;
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD

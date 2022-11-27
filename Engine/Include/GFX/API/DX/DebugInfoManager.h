@@ -6,12 +6,16 @@
 
 namespace ZE::GFX::API::DX
 {
+	// Wrappers for DXGI interfaces (rest is in DXGI.h)
+	typedef IDXGIInfoQueue IInfoQueue;
+	typedef IDXGIDebug1    IDebug;
+
 	// Retrieving info from DirectX Debug Layer
 	class DebugInfoManager final
 	{
 		U64 offset = 0;
-		ComPtr<IDXGIInfoQueue> infoQueue = nullptr;
-		ComPtr<IDXGIDebug> debug = nullptr;
+		ComPtr<IInfoQueue> infoQueue = nullptr;
+		ComPtr<IDebug> debug = nullptr;
 
 	public:
 		DebugInfoManager();

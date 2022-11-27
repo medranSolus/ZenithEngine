@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 	class Pack final
 	{
 		U32 count = 0;
-		Ptr<DX::ComPtr<ID3D11ShaderResourceView>> srvs;
+		Ptr<DX::ComPtr<IShaderResourceView>> srvs;
 
 	public:
 		Pack() = default;

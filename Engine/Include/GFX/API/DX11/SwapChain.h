@@ -6,10 +6,10 @@ namespace ZE::GFX::API::DX11
 	class SwapChain final
 	{
 		UINT presentFlags = 0;
-		DX::ComPtr<IDXGISwapChain4> swapChain;
-		DX::ComPtr<ID3D11Resource> backBuffer;
-		DX::ComPtr<ID3D11RenderTargetView1> rtv;
-		DX::ComPtr<ID3D11ShaderResourceView1> srv;
+		DX::ComPtr<DX::ISwapChain> swapChain;
+		DX::ComPtr<IResource> backBuffer;
+		DX::ComPtr<IRenderTargetView> rtv;
+		DX::ComPtr<IShaderResourceView> srv;
 
 	public:
 		SwapChain() = default;
@@ -24,8 +24,8 @@ namespace ZE::GFX::API::DX11
 
 		// Gfx API Internal
 
-		DX::ComPtr<ID3D11Resource> GetBuffer() const noexcept { return backBuffer; }
-		DX::ComPtr<ID3D11RenderTargetView1> GetRTV() const noexcept { return rtv; }
-		DX::ComPtr<ID3D11ShaderResourceView1> GetSRV() const noexcept { return srv; }
+		DX::ComPtr<IResource> GetBuffer() const noexcept { return backBuffer; }
+		DX::ComPtr<IRenderTargetView> GetRTV() const noexcept { return rtv; }
+		DX::ComPtr<IShaderResourceView> GetSRV() const noexcept { return srv; }
 	};
 }

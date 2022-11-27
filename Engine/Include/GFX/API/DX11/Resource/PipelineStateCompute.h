@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX11::Resource
 {
 	class PipelineStateCompute final
 	{
-		DX::ComPtr<ID3D11ComputeShader> computeShader;
+		DX::ComPtr<IComputeShader> computeShader;
 
 	public:
 		PipelineStateCompute() = default;
@@ -17,6 +17,6 @@ namespace ZE::GFX::API::DX11::Resource
 
 		// Gfx API Internal
 
-		void Bind(ID3D11DeviceContext4* ctx) const noexcept { ctx->CSSetShader(computeShader.Get(), nullptr, 0); }
+		void Bind(IDeviceContext* ctx) const noexcept { ctx->CSSetShader(computeShader.Get(), nullptr, 0); }
 	};
 }

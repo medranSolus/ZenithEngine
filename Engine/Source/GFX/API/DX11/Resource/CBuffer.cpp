@@ -103,7 +103,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = Math::AlignUp(bytes, 16U);
 		bufferDesc.StructureByteStride = 0;
 
-		DX::ComPtr<ID3D11Buffer> stagingBuffer;
+		DX::ComPtr<IBuffer> stagingBuffer;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
 		ZE_DX_SET_ID(buffer, "CBuffer_Staging");
 

@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::DX
 {
-	ComPtr<IDXGIFactory7> CreateFactory(
+	ComPtr<IFactory> CreateFactory(
 #if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
@@ -15,13 +15,13 @@ namespace ZE::GFX::API::DX
 		// Create proper DXGI factory
 		ComPtr<IDXGIFactory2> oldFactory = nullptr;
 		ZE_DX_THROW_FAILED(CreateDXGIFactory2(_ZE_DEBUG_GFX_API ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&oldFactory)));
-		ComPtr<IDXGIFactory7> factory = nullptr;
+		ComPtr<IFactory> factory = nullptr;
 		ZE_DX_THROW_FAILED(oldFactory.As(&factory));
 
 		return factory;
 	}
 
-	ComPtr<IDXGIAdapter4> CreateAdapter(
+	ComPtr<IAdapter> CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 		DebugInfoManager& debugManager
 #endif
@@ -29,12 +29,12 @@ namespace ZE::GFX::API::DX
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		ComPtr<IDXGIFactory7> factory = CreateFactory(
+		ComPtr<IFactory> factory = CreateFactory(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
 		);
-		ComPtr<IDXGIAdapter4> adapter = nullptr;
+		ComPtr<IAdapter> adapter = nullptr;
 		for (UINT i = 0; true; ++i)
 		{
 			// Get highest possible performant GPU
@@ -69,8 +69,8 @@ namespace ZE::GFX::API::DX
 		return adapter;
 	}
 
-	UINT CreateSwapChain(ComPtr<IDXGIFactory7> factory, IUnknown* device,
-		HWND window, ComPtr<IDXGISwapChain4>& swapChain, bool shaderInput
+	UINT CreateSwapChain(ComPtr<IFactory> factory, IUnknown* device,
+		HWND window, ComPtr<ISwapChain>& swapChain, bool shaderInput
 #if _ZE_DEBUG_GFX_API
 		, DebugInfoManager& debugManager
 #endif

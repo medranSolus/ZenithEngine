@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 	{
 		struct BufferData
 		{
-			DX::ComPtr<ID3D11Resource> Resource;
+			DX::ComPtr<IResource> Resource;
 			UInt2 Size;
 		};
 
@@ -18,14 +18,14 @@ namespace ZE::GFX::API::DX11::Pipeline
 		// Is SRV | correct binding slots
 		mutable std::vector<std::pair<bool, Binding::Schema::SlotData>> currentSlots;
 
-		Ptr<DX::ComPtr<ID3D11RenderTargetView1>> rtvs;
-		Ptr<DX::ComPtr<ID3D11DepthStencilView>> dsvs; // No backbuffer
-		Ptr<DX::ComPtr<ID3D11ShaderResourceView1>> srvs;
-		Ptr<DX::ComPtr<ID3D11UnorderedAccessView1>> uavs; // No backbuffer
+		Ptr<DX::ComPtr<IRenderTargetView>> rtvs;
+		Ptr<DX::ComPtr<IDepthStencilView>> dsvs; // No backbuffer
+		Ptr<DX::ComPtr<IShaderResourceView>> srvs;
+		Ptr<DX::ComPtr<IUnorderedAccessView>> uavs; // No backbuffer
 
-		Ptr<Ptr<DX::ComPtr<ID3D11RenderTargetView1>>> rtvMips; // No backbuffer
-		Ptr<Ptr<DX::ComPtr<ID3D11DepthStencilView>>> dsvMips; // No backbuffer
-		Ptr<Ptr<DX::ComPtr<ID3D11UnorderedAccessView1>>> uavMips; // No backbuffer
+		Ptr<Ptr<DX::ComPtr<IRenderTargetView>>> rtvMips; // No backbuffer
+		Ptr<Ptr<DX::ComPtr<IDepthStencilView>>> dsvMips; // No backbuffer
+		Ptr<Ptr<DX::ComPtr<IUnorderedAccessView>>> uavMips; // No backbuffer
 
 		void SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;

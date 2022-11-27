@@ -14,8 +14,8 @@ namespace ZE::GFX::API::DX11
 		DX::DebugInfoManager debugManager;
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
 #endif
-		DX::ComPtr<ID3D11Device5> device;
-		DX::ComPtr<ID3D11DeviceContext4> context;
+		DX::ComPtr<IDevice> device;
+		DX::ComPtr<IDeviceContext> context;
 
 		U32 descriptorCount;
 		U32 scratchDescriptorCount;
@@ -78,8 +78,8 @@ namespace ZE::GFX::API::DX11
 #if _ZE_DEBUG_GFX_API
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
-		constexpr const DX::ComPtr<ID3D11Device5>& GetDev() const noexcept { return device; }
-		ID3D11Device5* GetDevice() const noexcept { return device.Get(); }
-		ID3D11DeviceContext4* GetMainContext() const noexcept { return context.Get(); }
+		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
+		IDevice* GetDevice() const noexcept { return device.Get(); }
+		IDeviceContext* GetMainContext() const noexcept { return context.Get(); }
 	};
 }

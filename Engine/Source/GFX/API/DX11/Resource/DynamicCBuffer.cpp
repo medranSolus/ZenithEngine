@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = BLOCK_SIZE;
 		bufferDesc.StructureByteStride = 0;
 
-		DX::ComPtr<ID3D11Buffer> buffer;
+		DX::ComPtr<IBuffer> buffer;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &buffer));
 		ZE_DX_SET_ID(buffer, "DynamicCBuffer_" + std::to_string(blocks.size()));
 		blocks.emplace_back(std::move(buffer), Data::Library<U32, U32>{});

@@ -7,11 +7,11 @@ namespace ZE::GFX::API::DX11
 		ZE_DX_ENABLE(dev.Get().dx11);
 
 		// Retrieve factory used to create device
-		DX::ComPtr<IDXGIDevice4> dxgiDevice = nullptr;
+		DX::ComPtr<DX::IDevice> dxgiDevice = nullptr;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDev().As(&dxgiDevice));
 		DX::ComPtr<IDXGIAdapter> adapter = nullptr;
 		ZE_DX_THROW_FAILED(dxgiDevice->GetAdapter(&adapter));
-		DX::ComPtr<IDXGIFactory7> factory = nullptr;
+		DX::ComPtr<DX::IFactory> factory = nullptr;
 		ZE_DX_THROW_FAILED(adapter->GetParent(IID_PPV_ARGS(&factory)));
 
 		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx11.GetDevice(), window.GetHandle(), swapChain, shaderInput

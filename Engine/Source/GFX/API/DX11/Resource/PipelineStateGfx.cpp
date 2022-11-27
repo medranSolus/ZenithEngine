@@ -65,7 +65,7 @@ namespace ZE::GFX::API::DX11::Resource
 			ZE_DX_SET_ID(pixelShader, desc.PS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 
-		D3D11_BLEND_DESC blendDesc = CD3D11_BLEND_DESC(CD3D11_DEFAULT{});
+		D3D11_BLEND_DESC1 blendDesc = CD3D11_BLEND_DESC1(CD3D11_DEFAULT{});
 		auto& blendTarget = blendDesc.RenderTarget[0];
 		switch (desc.Blender)
 		{
@@ -87,7 +87,7 @@ namespace ZE::GFX::API::DX11::Resource
 		default:
 			break;
 		}
-		ZE_DX_THROW_FAILED(device->CreateBlendState(&blendDesc, &blendState));
+		ZE_DX_THROW_FAILED(device->CreateBlendState1(&blendDesc, &blendState));
 		ZE_DX_SET_ID(blendState, "Blender_" + desc.DebugName);
 
 		D3D11_DEPTH_STENCIL_DESC stencilDesc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT{});
@@ -137,15 +137,15 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_DX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
 		ZE_DX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
 
-		D3D11_RASTERIZER_DESC rasterDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT{});
+		D3D11_RASTERIZER_DESC2 rasterDesc = CD3D11_RASTERIZER_DESC2(CD3D11_DEFAULT{});
 		rasterDesc.FillMode = desc.IsWireFrame() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 		rasterDesc.CullMode = GetCulling(desc.Culling);
 		rasterDesc.DepthClipEnable = desc.IsDepthClip();
-		ZE_DX_THROW_FAILED(device->CreateRasterizerState(&rasterDesc, &rasterState));
+		ZE_DX_THROW_FAILED(device->CreateRasterizerState2(&rasterDesc, &rasterState));
 		ZE_DX_SET_ID(rasterState, "Raster_" + desc.DebugName);
 	}
 
-	void PipelineStateGfx::Bind(ID3D11DeviceContext4* ctx) const noexcept
+	void PipelineStateGfx::Bind(IDeviceContext* ctx) const noexcept
 	{
 		ctx->IASetPrimitiveTopology(topology);
 		ctx->IASetInputLayout(inputLayout.Get());
@@ -154,7 +154,7 @@ namespace ZE::GFX::API::DX11::Resource
 		ctx->HSSetShader(hullShader.Get(), nullptr, 0);
 		ctx->GSSetShader(geometryShader.Get(), nullptr, 0);
 		ctx->PSSetShader(pixelShader.Get(), nullptr, 0);
-		ctx->OMSetBlendState(blendState.Get(), nullptr, 0xFFFFFFFF);
+		ctx->OMSetBlendState(blendState.Get(), nullptr, UINT32_MAX);
 		SetStencilRef(ctx, 0);
 		ctx->OMSetDepthStencilState(depthStencilState.Get(), 0xFF);
 		ctx->RSSetState(rasterState.Get());

@@ -16,7 +16,7 @@ namespace ZE::GFX::API::DX11
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(
+		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
@@ -32,7 +32,7 @@ namespace ZE::GFX::API::DX11
 		ZE_DX_THROW_FAILED(tempDevice.As(&device));
 
 #if _ZE_DEBUG_GFX_API
-		DX::ComPtr<ID3D11InfoQueue> infoQueue;
+		DX::ComPtr<IInfoQueue> infoQueue;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
@@ -49,9 +49,9 @@ namespace ZE::GFX::API::DX11
 #endif
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 		device->GetImmediateContext3(&tempCtx);
-		ZE_DX_THROW_FAILED(tempCtx->QueryInterface(IID_PPV_ARGS(&context)));
+		ZE_DX_THROW_FAILED(tempCtx.As(&context));
 #if _ZE_GFX_MARKERS
-		ZE_DX_THROW_FAILED(context->QueryInterface(IID_PPV_ARGS(&tagManager)));
+		ZE_DX_THROW_FAILED(context.As(&tagManager));
 #endif
 	}
 

@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 	struct ResourceInfo
 	{
 		D3D11_TEXTURE2D_DESC1 Desc;
-		DX::ComPtr<ID3D11Texture2D1> Texture;
+		DX::ComPtr<ITexture2D> Texture;
 		std::bitset<6> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
@@ -145,7 +145,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				}
 			}
 
-			DX::ComPtr<ID3D11Texture2D1> texture;
+			DX::ComPtr<ITexture2D> texture;
 			ZE_DX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
 			ZE_DX_THROW_FAILED(texture.As(&resources[i].Resource));
 
@@ -156,16 +156,16 @@ namespace ZE::GFX::API::DX11::Pipeline
 		}
 
 		// Create view arrays
-		rtvs = new DX::ComPtr<ID3D11RenderTargetView1>[resourceCount];
-		dsvs = new DX::ComPtr<ID3D11DepthStencilView>[resourceCount - 1];
-		srvs = new DX::ComPtr<ID3D11ShaderResourceView1>[resourceCount];
-		uavs = new DX::ComPtr<ID3D11UnorderedAccessView1>[resourceCount - 1];
+		rtvs = new DX::ComPtr<IRenderTargetView>[resourceCount];
+		dsvs = new DX::ComPtr<IDepthStencilView>[resourceCount - 1];
+		srvs = new DX::ComPtr<IShaderResourceView>[resourceCount];
+		uavs = new DX::ComPtr<IUnorderedAccessView>[resourceCount - 1];
 		if (rtvMipsPresent)
-			rtvMips = new Ptr<DX::ComPtr<ID3D11RenderTargetView1>>[resourceCount - 1];
+			rtvMips = new Ptr<DX::ComPtr<IRenderTargetView>>[resourceCount - 1];
 		if (dsvMipsPresent)
-			dsvMips = new Ptr<DX::ComPtr<ID3D11DepthStencilView>>[resourceCount - 1];
+			dsvMips = new Ptr<DX::ComPtr<IDepthStencilView>>[resourceCount - 1];
 		if (uavMipsPresent)
-			uavMips = new Ptr<DX::ComPtr<ID3D11UnorderedAccessView1>>[resourceCount - 1];
+			uavMips = new Ptr<DX::ComPtr<IUnorderedAccessView>>[resourceCount - 1];
 
 		// Create views
 		for (RID i = 1; auto& info : resourcesInfo)
@@ -194,7 +194,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				if (info.Desc.MipLevels > 1)
 				{
 					auto& targetResourceMip = rtvMips[i - 1];
-					targetResourceMip = new DX::ComPtr<ID3D11RenderTargetView1>[info.Desc.MipLevels];
+					targetResourceMip = new DX::ComPtr<IRenderTargetView>[info.Desc.MipLevels];
 					targetResourceMip[0] = rtvs[i];
 					for (U16 j = 1; j < info.Desc.MipLevels; ++j)
 					{
@@ -230,7 +230,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				if (info.Desc.MipLevels > 1)
 				{
 					auto& targetResourceMip = dsvMips[i - 1];
-					targetResourceMip = new DX::ComPtr<ID3D11DepthStencilView>[info.Desc.MipLevels];
+					targetResourceMip = new DX::ComPtr<IDepthStencilView>[info.Desc.MipLevels];
 					targetResourceMip[0] = dsvs[i];
 					for (U16 j = 1; j < info.Desc.MipLevels; ++j)
 					{
@@ -267,7 +267,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				if (info.Desc.MipLevels > 1)
 				{
 					auto& targetResourceMip = uavMips[i - 1];
-					targetResourceMip = new DX::ComPtr<ID3D11UnorderedAccessView1>[info.Desc.MipLevels];
+					targetResourceMip = new DX::ComPtr<IUnorderedAccessView>[info.Desc.MipLevels];
 					targetResourceMip[0] = uavs[i - 1];
 
 					for (U16 j = 1; j < info.Desc.MipLevels; ++j)
