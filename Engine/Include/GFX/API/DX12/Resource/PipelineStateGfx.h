@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	class PipelineStateGfx final
 	{
-		DX::ComPtr<ID3D12PipelineState> state;
+		DX::ComPtr<IPipelineState> state;
 		D3D_PRIMITIVE_TOPOLOGY topology;
 
 	public:
@@ -20,7 +20,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 		// Gfx API Internal
 
-		ID3D12PipelineState* GetState() const noexcept { return state.Get(); }
+		IPipelineState* GetState() const noexcept { return state.Get(); }
 		D3D_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return topology; }
 	};
 }

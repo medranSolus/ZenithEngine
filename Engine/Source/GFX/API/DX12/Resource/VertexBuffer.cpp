@@ -10,7 +10,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 		view.SizeInBytes = data.Count * data.VertexSize;
 		view.StrideInBytes = data.VertexSize;
-		D3D12_RESOURCE_DESC desc = dev.Get().dx12.GetBufferDesc(view.SizeInBytes);
+		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(view.SizeInBytes);
 		info = dev.Get().dx12.CreateBuffer(desc, false);
 		view.BufferLocation = info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(info.Resource, "VertexBuffer");

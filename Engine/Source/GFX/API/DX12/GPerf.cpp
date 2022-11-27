@@ -18,9 +18,9 @@ namespace ZE::GFX::API::DX12
 		dataHeapDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		dataHeapDesc.CreationNodeMask = 0;
 		dataHeapDesc.VisibleNodeMask = 0;
-		D3D12_RESOURCE_DESC dataDesc = dev.Get().dx12.GetBufferDesc(sizeof(U64) * 2);
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommittedResource(&dataHeapDesc,
-			D3D12_HEAP_FLAG_NONE, &dataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&data)));
+		const D3D12_RESOURCE_DESC1 dataDesc = dev.Get().dx12.GetBufferDesc(sizeof(U64) * 2);
+		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommittedResource2(&dataHeapDesc,
+			D3D12_HEAP_FLAG_NONE, &dataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, nullptr, IID_PPV_ARGS(&data)));
 	}
 
 	void GPerf::Start(GFX::CommandList& cl) noexcept

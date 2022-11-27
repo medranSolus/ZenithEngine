@@ -5,7 +5,7 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	class PipelineStateCompute final
 	{
-		DX::ComPtr<ID3D12PipelineState> state;
+		DX::ComPtr<IPipelineState> state;
 
 	public:
 		PipelineStateCompute() = default;
@@ -17,6 +17,6 @@ namespace ZE::GFX::API::DX12::Resource
 
 		// Gfx API Internal
 
-		ID3D12PipelineState* GetState() const noexcept { return state.Get(); }
+		IPipelineState* GetState() const noexcept { return state.Get(); }
 	};
 }

@@ -16,7 +16,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		};
 		struct BufferData
 		{
-			DX::ComPtr<ID3D12Resource> Resource;
+			DX::ComPtr<IResource> Resource;
 			UInt2 Size;
 		};
 
@@ -36,11 +36,11 @@ namespace ZE::GFX::API::DX12::Pipeline
 		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> uav; // No backbuffer
 		Ptr<Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>> uavMips; // No backbuffer
 
-		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
-		DX::ComPtr<ID3D12DescriptorHeap> dsvDescHeap;
-		DX::ComPtr<ID3D12DescriptorHeap> uavDescHeap;
-		DX::ComPtr<ID3D12Heap> mainHeap;
-		DX::ComPtr<ID3D12Heap> uavHeap;
+		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
+		DX::ComPtr<IDescriptorHeap> dsvDescHeap;
+		DX::ComPtr<IDescriptorHeap> uavDescHeap;
+		DX::ComPtr<IHeap> mainHeap;
+		DX::ComPtr<IHeap> uavHeap;
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,

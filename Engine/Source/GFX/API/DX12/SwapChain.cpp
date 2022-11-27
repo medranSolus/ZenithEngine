@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX12
 	SwapChain::SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput)
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
-		DX::ComPtr<IDXGIFactory7> factory = DX::CreateFactory(
+		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
@@ -46,7 +46,7 @@ namespace ZE::GFX::API::DX12
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 		for (U32 i = 0; i < descHeapDesc.NumDescriptors; ++i)
 		{
-			DX::ComPtr<ID3D12Resource> buffer;
+			DX::ComPtr<IResource> buffer;
 			ZE_DX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
 			rtvSrv[i].first = rtvHandle;
@@ -101,7 +101,7 @@ namespace ZE::GFX::API::DX12
 		dev.Get().dx12.ExecuteMain(cl);
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer)
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer)
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
 		const U32 current = Settings::GetCurrentBackbufferIndex();

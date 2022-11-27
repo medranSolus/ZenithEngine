@@ -6,8 +6,8 @@ namespace ZE::GFX::API::DX12
 	class SwapChain final
 	{
 		UINT presentFlags = 0;
-		DX::ComPtr<IDXGISwapChain4> swapChain;
-		DX::ComPtr<ID3D12DescriptorHeap> rtvDescHeap;
+		DX::ComPtr<DX::ISwapChain> swapChain;
+		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
 		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> rtvSrv;
 		D3D12_RESOURCE_BARRIER presentBarrier;
 
@@ -27,6 +27,6 @@ namespace ZE::GFX::API::DX12
 		constexpr const D3D12_RESOURCE_BARRIER& GetPresentBarrier() const noexcept { return presentBarrier; }
 		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[Settings::GetCurrentBackbufferIndex()].first; }
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<ID3D12Resource>& buffer);
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer);
 	};
 }

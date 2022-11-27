@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::API::DX12
 {
-	void Device::WaitCPU(ID3D12Fence1* fence, U64 val)
+	void Device::WaitCPU(IFence* fence, U64 val)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
@@ -20,13 +20,13 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	void Device::WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val)
+	void Device::WaitGPU(IFence* fence, ICommandQueue* queue, U64 val)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		ZE_DX_THROW_FAILED(queue->Wait(fence, val));
 	}
 
-	U64 Device::SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal)
+	U64 Device::SetFenceCPU(IFence* fence, UA64& fenceVal)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
@@ -34,7 +34,7 @@ namespace ZE::GFX::API::DX12
 		return val;
 	}
 
-	U64 Device::SetFenceGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal)
+	U64 Device::SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
@@ -42,10 +42,10 @@ namespace ZE::GFX::API::DX12
 		return val;
 	}
 
-	void Device::Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(ICommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_ASSERT(cl.GetList() != nullptr, "Empty list!");
-		ID3D12CommandList* lists[] = { cl.GetList() };
+		ICommandList* lists[] = { cl.GetList() };
 		ZE_DX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
@@ -58,7 +58,7 @@ namespace ZE::GFX::API::DX12
 
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands
-		DX::ComPtr<ID3D12Debug> debugInterface;
+		DX::ComPtr<IDebug> debugInterface;
 		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
 
@@ -66,13 +66,11 @@ namespace ZE::GFX::API::DX12
 		DREDRecovery::Enable(debugManager);
 
 #if _ZE_DEBUG_GPU_VALIDATION
-		DX::ComPtr<ID3D12Debug1> debugInterface1;
-		ZE_DX_THROW_FAILED_NOINFO(debugInterface.As(&debugInterface1));
-		debugInterface1->SetEnableGPUBasedValidation(TRUE);
+		debugInterface->SetEnableGPUBasedValidation(TRUE);
 #endif
 #endif
 
-		DX::ComPtr<IDXGIAdapter4> adapter = DX::CreateAdapter(
+		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif
@@ -96,7 +94,7 @@ namespace ZE::GFX::API::DX12
 				AGSDX12ReturnedParams returnParams;
 				if (agsDriverExtensionsDX12_CreateDevice(gpuCtxAMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
 				{
-					device.Attach(reinterpret_cast<ID3D12Device8*>(returnParams.pDevice));
+					device.Attach(reinterpret_cast<IDevice*>(returnParams.pDevice));
 					break;
 				}
 				agsDeInitialize(gpuCtxAMD);
@@ -114,7 +112,7 @@ namespace ZE::GFX::API::DX12
 		}
 
 #if _ZE_DEBUG_GFX_API
-		DX::ComPtr<ID3D12InfoQueue> infoQueue;
+		DX::ComPtr<IInfoQueue> infoQueue;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
@@ -142,11 +140,11 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
 
 #if _ZE_DEBUG_GPU_VALIDATION
-		DX::ComPtr<ID3D12DebugDevice1> debugDevice1;
-		ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice1));
+		DX::ComPtr<IDebugDevice> debugDevice;
+		ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice));
 
 		const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
-		ZE_DX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
+		ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
 			&debugFeature, sizeof(D3D12_DEBUG_FEATURE)));
 
 		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings;
@@ -155,7 +153,7 @@ namespace ZE::GFX::API::DX12
 		// Can avoid most cases of TDRs
 		validationSettings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
 		validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
-		ZE_DX_THROW_FAILED(debugDevice1->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
+		ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
 			&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS)));
 #endif
 #endif
@@ -182,38 +180,6 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
 		ZE_DX_SET_ID(copyFence, "copy_fence");
 
-		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
-		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
-		if (options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1 || true)
-		{
-			new(&allocTier1) AllocatorTier1(*this);
-			allocTier = AllocTier::Tier1;
-		}
-		else
-		{
-			/*
-			* TODO: Fix heap allocation on resource tier 2
-			*
-			D3D12 ERROR: ID3D12Device::CreateHeap:
-				D3D12_HEAP_FLAGS has invalid flag combinations set.
-				The following flags may not all be set simultaneously.
-				Exactly one must be left unset, or all may be left unset
-				when the adapter supports D3D12_RESOURCE_HEAP_TIER_2
-				or creating a heap in conjunction with D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER:
-
-				D3D12_FEATURE_DATA_D3D12_OPTIONS::ResourceHeapTier = D3D12_RESOURCE_HEAP_TIER_2,
-				D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER = 0,
-				D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES = 0,
-				D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES = 1, and
-				D3D12_HEAP_FLAG_DENY_BUFFERS = 0.
-
-				[ STATE_CREATION ERROR #631: CREATEHEAP_INVALIDMISCFLAGS]
-			*/
-
-			new(&allocTier2) AllocatorTier2(*this);
-			allocTier = AllocTier::Tier2;
-		}
-
 		copyList.Init(*this, CommandType::All);
 		copyResInfo.Size = 0;
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
@@ -225,16 +191,16 @@ namespace ZE::GFX::API::DX12
 		descHeapDesc.NumDescriptors = descriptorCount;
 		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
 		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
+		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
+		allocator.Init(*this, options.ResourceHeapTier);
 	}
 
 	Device::~Device()
 	{
 		if (commandLists)
 			commandLists.DeleteArray();
-		if (allocTier == AllocTier::Tier1)
-			allocTier1.~AllocatorTier1();
-		else
-			allocTier2.~AllocatorTier2();
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
 
@@ -358,7 +324,7 @@ namespace ZE::GFX::API::DX12
 		if (count > commandListsCount)
 		{
 			commandListsCount = count;
-			commandLists = reinterpret_cast<ID3D12CommandList**>(realloc(commandLists, count * sizeof(ID3D12CommandList*)));
+			commandLists = reinterpret_cast<ICommandList**>(realloc(commandLists, count * sizeof(ICommandList*)));
 		}
 
 		// Execute lists
@@ -412,11 +378,11 @@ namespace ZE::GFX::API::DX12
 		Execute(copyQueue.Get(), cl.Get().dx12);
 	}
 
-	D3D12_RESOURCE_DESC Device::GetBufferDesc(U64 size) const noexcept
+	D3D12_RESOURCE_DESC1 Device::GetBufferDesc(U64 size) const noexcept
 	{
 		ZE_ASSERT(size, "Cannot create empty buffer!");
 
-		D3D12_RESOURCE_DESC desc;
+		D3D12_RESOURCE_DESC1 desc;
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = size;
@@ -428,17 +394,20 @@ namespace ZE::GFX::API::DX12
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		desc.SamplerFeedbackMipRegion.Width = 0;
+		desc.SamplerFeedbackMipRegion.Height = 0;
+		desc.SamplerFeedbackMipRegion.Depth = 0;
 		return desc;
 	}
 
-	std::pair<D3D12_RESOURCE_DESC, U32> Device::GetTextureDesc(U32 width, U32 height, U16 count,
+	std::pair<D3D12_RESOURCE_DESC1, U32> Device::GetTextureDesc(U32 width, U32 height, U16 count,
 		DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept
 	{
 		ZE_ASSERT(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
 			&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION,
 			"Texture too big!");
 
-		D3D12_RESOURCE_DESC desc;
+		D3D12_RESOURCE_DESC1 desc;
 		desc.Dimension = type == GFX::Resource::Texture::Type::Tex3D ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		desc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = width;
@@ -450,48 +419,38 @@ namespace ZE::GFX::API::DX12
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		desc.SamplerFeedbackMipRegion.Width = 0;
+		desc.SamplerFeedbackMipRegion.Height = 0;
+		desc.SamplerFeedbackMipRegion.Depth = 0;
 
-		D3D12_RESOURCE_ALLOCATION_INFO info = device->GetResourceAllocationInfo(0, 1, &desc);
+		D3D12_RESOURCE_ALLOCATION_INFO1 info;
+		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
 		if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
 		{
 			desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-			info = device->GetResourceAllocationInfo(0, 1, &desc);
+			device->GetResourceAllocationInfo2(0, 1, &desc, &info);
 		}
 
 		return { desc, static_cast<U32>(info.SizeInBytes) };
 	}
 
-	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC& desc, bool dynamic)
+	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic)
 	{
-		if (allocTier == AllocTier::Tier1)
-		{
-			if (dynamic)
-				return allocTier1.AllocDynamicBuffer(*this, static_cast<U32>(desc.Width), desc);
-			else
-				return allocTier1.AllocBuffer(*this, static_cast<U32>(desc.Width), desc);
-		}
-		else if (dynamic)
-			return allocTier2.AllocDynamicBuffer(*this, static_cast<U32>(desc.Width), desc);
-		else
-			return allocTier2.Alloc_64KB(*this, static_cast<U32>(desc.Width), desc);
+		if (dynamic)
+			return allocator.AllocDynamicBuffer(*this, desc);
+		return allocator.AllocBuffer(*this, desc);
 	}
 
-	ResourceInfo Device::CreateTexture(const std::pair<D3D12_RESOURCE_DESC, U32>& desc)
+	ResourceInfo Device::CreateTexture(const std::pair<D3D12_RESOURCE_DESC1, U32>& desc)
 	{
 		if (desc.first.Alignment == D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
-		{
-			if (allocTier == AllocTier::Tier1)
-				return allocTier1.AllocTexture_64KB(*this, desc.second, desc.first);
-			else
-				return allocTier2.Alloc_64KB(*this, desc.second, desc.first);
-		}
-		else if (allocTier == AllocTier::Tier1)
-			return allocTier1.AllocTexture_4KB(*this, desc.second, desc.first);
-		else
-			return allocTier2.Alloc_4KB(*this, desc.second, desc.first);
+			return allocator.AllocTexture_64KB(*this, desc.second, desc.first);
+		else if (desc.first.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+			return allocator.AllocTexture_4KB(*this, desc.second, desc.first);
+		return allocator.AllocTexture_4MB(*this, desc.second, desc.first);
 	}
 
-	DX::ComPtr<ID3D12Resource> Device::CreateTextureUploadBuffer(U64 size)
+	DX::ComPtr<IResource> Device::CreateTextureUploadBuffer(U64 size)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
@@ -503,14 +462,14 @@ namespace ZE::GFX::API::DX12
 		tempHeap.CreationNodeMask = 0;
 		tempHeap.VisibleNodeMask = 0;
 
-		DX::ComPtr<ID3D12Resource> uploadRes;
-		ZE_DX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
-			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadRes)));
+		DX::ComPtr<IResource> uploadRes;
+		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
+			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
 		return uploadRes;
 	}
 
-	void Device::UploadBuffer(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc,
+	void Device::UploadBuffer(IResource* dest, const D3D12_RESOURCE_DESC1& desc,
 		const void* data, U64 size, D3D12_RESOURCE_STATES finalState)
 	{
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
@@ -525,10 +484,10 @@ namespace ZE::GFX::API::DX12
 		tempHeap.CreationNodeMask = 0;
 		tempHeap.VisibleNodeMask = 0;
 
-		DX::ComPtr<ID3D12Resource> uploadRes;
-		ZE_DX_THROW_FAILED(device->CreateCommittedResource(&tempHeap,
-			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadRes)));
+		DX::ComPtr<IResource> uploadRes;
+		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
+			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
 
 		// Map and copy data into upload buffer
 		D3D12_RANGE range = { 0 };
@@ -547,13 +506,12 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
 
-		DX::ComPtr<ID3D12Resource> ptr(source.pResource);
 		copyList.GetList()->CopyTextureRegion(&dest, 0, 0, 0, &source, nullptr);
 		if (dest.SubresourceIndex == 0)
-			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, dest.pResource, source.pResource));
+			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, reinterpret_cast<IResource*>(dest.pResource), reinterpret_cast<IResource*>(source.pResource)));
 	}
 
-	void Device::UpdateBuffer(ID3D12Resource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
+	void Device::UpdateBuffer(IResource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
 	{
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -564,32 +522,8 @@ namespace ZE::GFX::API::DX12
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 
 		copyList.GetList()->ResourceBarrier(1, &barrier);
-		D3D12_RESOURCE_DESC desc = GetBufferDesc(size);
+		D3D12_RESOURCE_DESC1 desc = GetBufferDesc(size);
 		UploadBuffer(res, desc, data, size, currentState);
-	}
-
-	void Device::FreeBuffer(ResourceInfo& info) noexcept
-	{
-		if (allocTier == AllocTier::Tier1)
-			allocTier1.RemoveBuffer(info);
-		else
-			allocTier2.Remove(info);
-	}
-
-	void Device::FreeDynamicBuffer(ResourceInfo& info) noexcept
-	{
-		if (allocTier == AllocTier::Tier1)
-			allocTier1.RemoveDynamicBuffer(info);
-		else
-			allocTier2.RemoveDynamicBuffer(info);
-	}
-
-	void Device::FreeTexture(ResourceInfo& info) noexcept
-	{
-		if (allocTier == AllocTier::Tier1)
-			allocTier1.RemoveTexture(info);
-		else
-			allocTier2.Remove(info);
 	}
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept

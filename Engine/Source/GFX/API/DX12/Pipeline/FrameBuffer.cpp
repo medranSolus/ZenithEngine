@@ -11,7 +11,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U64 LastLevel;
 		D3D12_RESOURCE_DESC Desc;
 		D3D12_CLEAR_VALUE ClearVal;
-		DX::ComPtr<ID3D12Resource> Resource;
+		DX::ComPtr<IResource> Resource;
 		std::bitset<7> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
@@ -341,7 +341,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		std::vector<std::pair<U64, D3D12_RESOURCE_BARRIER>> wrappingTransitions;
 
 		// Handle resource types (Non RT/DS) depending on present tier level
-		if (dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1)
+		if (dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1)
 		{
 			// Sort resources descending by size leaving UAV only on the end
 			rt_dsCount = rtvCount + dsvCount;
@@ -389,7 +389,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
 				ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
-				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(uavHeap.GetAddressOf()), &residencyPriority));
+				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(uavHeap.GetAddressOf()), &residencyPriority));
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
@@ -470,7 +470,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
 		ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
-		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<ID3D12Pageable**>(mainHeap.GetAddressOf()), &residencyPriority));
+		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);

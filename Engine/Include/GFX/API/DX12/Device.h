@@ -2,8 +2,7 @@
 #include "GFX/Resource/Texture/Type.h"
 #include "GFX/CommandList.h"
 #include "Window/MainWindow.h"
-#include "AllocatorTier1.h"
-#include "AllocatorTier2.h"
+#include "AllocatorGPU.h"
 #include "DescriptorInfo.h"
 #include "WarningGuardOn.h"
 #include "amd_ags.h"
@@ -13,43 +12,35 @@ namespace ZE::GFX::API::DX12
 {
 	class Device final
 	{
-	public:
-		enum class AllocTier : bool { Tier1, Tier2 };
-
 	private:
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
 
 		struct UploadInfo
 		{
 			D3D12_RESOURCE_STATES FinalState;
-			ID3D12Resource* Destination;
-			DX::ComPtr<ID3D12Resource> UploadRes;
+			IResource* Destination;
+			DX::ComPtr<IResource> UploadRes;
 		};
 
 #if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;
 #endif
-		DX::ComPtr<ID3D12Device8> device;
-		DX::ComPtr<ID3D12CommandQueue> mainQueue;
-		DX::ComPtr<ID3D12CommandQueue> computeQueue;
-		DX::ComPtr<ID3D12CommandQueue> copyQueue;
+		DX::ComPtr<IDevice> device;
+		DX::ComPtr<ICommandQueue> mainQueue;
+		DX::ComPtr<ICommandQueue> computeQueue;
+		DX::ComPtr<ICommandQueue> copyQueue;
 
 		U32 commandListsCount = 0;
-		Ptr<ID3D12CommandList*> commandLists = nullptr;
+		Ptr<ICommandList*> commandLists = nullptr;
 
 		UA64 mainFenceVal = 0;
-		DX::ComPtr<ID3D12Fence1> mainFence;
+		DX::ComPtr<IFence> mainFence;
 		UA64 computeFenceVal = 0;
-		DX::ComPtr<ID3D12Fence1> computeFence;
+		DX::ComPtr<IFence> computeFence;
 		UA64 copyFenceVal = 0;
-		DX::ComPtr<ID3D12Fence1> copyFence;
+		DX::ComPtr<IFence> copyFence;
 
-		AllocTier allocTier;
-		union
-		{
-			AllocatorTier1 allocTier1;
-			AllocatorTier2 allocTier2;
-		};
+		AllocatorGPU allocator;
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -61,7 +52,7 @@ namespace ZE::GFX::API::DX12
 		U32 scratchDescStart;
 		U32 descriptorCount;
 		U32 descriptorSize;
-		DX::ComPtr<ID3D12DescriptorHeap> descHeap;
+		DX::ComPtr<IDescriptorHeap> descHeap;
 
 		// Hardware specific data
 		union
@@ -69,11 +60,11 @@ namespace ZE::GFX::API::DX12
 			AGSContext* gpuCtxAMD;
 		};
 
-		void WaitCPU(ID3D12Fence1* fence, U64 val);
-		void WaitGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, U64 val);
-		U64 SetFenceCPU(ID3D12Fence1* fence, UA64& fenceVal);
-		U64 SetFenceGPU(ID3D12Fence1* fence, ID3D12CommandQueue* queue, UA64& fenceVal);
-		void Execute(ID3D12CommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+		void WaitCPU(IFence* fence, U64 val);
+		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);
+		U64 SetFenceCPU(IFence* fence, UA64& fenceVal);
+		U64 SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal);
+		void Execute(ICommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 	public:
 		Device() noexcept {}
@@ -130,36 +121,36 @@ namespace ZE::GFX::API::DX12
 #if _ZE_DEBUG_GFX_API
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
-		constexpr AllocTier GetCurrentAllocTier() const noexcept { return allocTier; }
+		constexpr AllocatorGPU::AllocTier GetCurrentAllocTier() const noexcept { return allocator.GetCurrentTier(); }
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
-		constexpr const DX::ComPtr<ID3D12Device8>& GetDev() const noexcept { return device; }
+		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 
-		ID3D12Device8* GetDevice() const noexcept { return device.Get(); }
-		ID3D12CommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
-		ID3D12CommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
-		ID3D12CommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
-		ID3D12DescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
+		IDevice* GetDevice() const noexcept { return device.Get(); }
+		ICommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
+		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
+		ICommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
+		IDescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
 		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GetGpuVendor() == VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
 
-		D3D12_RESOURCE_DESC GetBufferDesc(U64 size) const noexcept;
-		std::pair<D3D12_RESOURCE_DESC, U32> GetTextureDesc(U32 width, U32 height, U16 count,
+		void FreeBuffer(ResourceInfo& info) { allocator.RemoveBuffer(info); }
+		void FreeDynamicBuffer(ResourceInfo& info) { allocator.RemoveDynamicBuffer(info); }
+		void FreeTexture(ResourceInfo& info) { allocator.RemoveTexture(info); }
+
+		D3D12_RESOURCE_DESC1 GetBufferDesc(U64 size) const noexcept;
+		std::pair<D3D12_RESOURCE_DESC1, U32> GetTextureDesc(U32 width, U32 height, U16 count,
 			DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept;
 
-		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC& desc, bool dynamic);
-		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC, U32>& desc);
-		DX::ComPtr<ID3D12Resource> CreateTextureUploadBuffer(U64 size);
+		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic);
+		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC1, U32>& desc);
+		DX::ComPtr<IResource> CreateTextureUploadBuffer(U64 size);
 
-		void UploadBuffer(ID3D12Resource* dest, const D3D12_RESOURCE_DESC& desc,
+		void UploadBuffer(IResource* dest, const D3D12_RESOURCE_DESC1& desc,
 			const void* data, U64 size, D3D12_RESOURCE_STATES finalState);
 		void UploadTexture(const D3D12_TEXTURE_COPY_LOCATION& dest,
 			const D3D12_TEXTURE_COPY_LOCATION& source, D3D12_RESOURCE_STATES finalState);
 
-		void UpdateBuffer(ID3D12Resource* res, const void* data,
+		void UpdateBuffer(IResource* res, const void* data,
 			U64 size, D3D12_RESOURCE_STATES currentState);
-
-		void FreeBuffer(ResourceInfo& info) noexcept;
-		void FreeDynamicBuffer(ResourceInfo& info) noexcept;
-		void FreeTexture(ResourceInfo& info) noexcept;
 
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> AddStaticDescs(U32 count) noexcept;
 		DescriptorInfo AllocDescs(U32 count) noexcept;

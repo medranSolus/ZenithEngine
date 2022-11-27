@@ -6,11 +6,11 @@
 
 namespace ZE::GFX::API::DX12
 {
-	void CommandList::Open(Device& dev, ID3D12PipelineState* state)
+	void CommandList::Open(Device& dev, IPipelineState* state)
 	{
 		ZE_DX_ENABLE(dev);
 		ZE_DX_THROW_FAILED(commands->Reset(allocator.Get(), state));
-		ID3D12DescriptorHeap* heaps[] = { dev.GetDescHeap() };
+		IDescriptorHeap* heaps[] = { dev.GetDescHeap() };
 		commands->SetDescriptorHeaps(1, heaps);
 	}
 

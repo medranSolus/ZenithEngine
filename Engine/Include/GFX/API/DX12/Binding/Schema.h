@@ -16,7 +16,7 @@ namespace ZE::GFX::API::DX12::Binding
 		bool isCompute;
 		U32 count;
 		Ptr<BindType> bindings;
-		DX::ComPtr<ID3D12RootSignature> signature;
+		DX::ComPtr<IRootSignature> signature;
 
 	public:
 		Schema() = default;
@@ -33,6 +33,6 @@ namespace ZE::GFX::API::DX12::Binding
 		constexpr bool IsCompute() const noexcept { return isCompute; }
 
 		BindType GetCurrentType(U32 index) const noexcept { ZE_ASSERT(index < count, "Access out of range!"); return bindings[index]; }
-		ID3D12RootSignature* GetSignature() const noexcept { return signature.Get(); }
+		IRootSignature* GetSignature() const noexcept { return signature.Get(); }
 	};
 }

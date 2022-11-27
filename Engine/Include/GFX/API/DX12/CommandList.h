@@ -20,10 +20,10 @@ namespace ZE::GFX::API::DX12
 
 	class CommandList final
 	{
-		DX::ComPtr<ID3D12GraphicsCommandList6> commands;
-		DX::ComPtr<ID3D12CommandAllocator> allocator;
+		DX::ComPtr<IGraphicsCommandList> commands;
+		DX::ComPtr<ICommandAllocator> allocator;
 
-		void Open(Device& dev, ID3D12PipelineState* state);
+		void Open(Device& dev, IPipelineState* state);
 
 	public:
 		CommandList() = default;
@@ -50,7 +50,7 @@ namespace ZE::GFX::API::DX12
 
 		// Gfx API Internal
 
-		ID3D12GraphicsCommandList6* GetList() noexcept { return commands.Get(); }
+		IGraphicsCommandList* GetList() noexcept { return commands.Get(); }
 
 		void Init(Device& dev, CommandType type);
 		void Open(Device& dev);

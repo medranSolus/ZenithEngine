@@ -122,7 +122,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 					srv.TextureCube.MipLevels = texDesc.first.MipLevels;
 
 					copyInfo.back().second.resize(surfaces);
-					device.GetDevice()->GetCopyableFootprints(&texDesc.first, 0, 6, 0,
+					device.GetDevice()->GetCopyableFootprints1(&texDesc.first, 0, 6, 0,
 						copyInfo.back().second.data(), nullptr, nullptr, &copyInfo.back().first);
 					break;
 				}
@@ -131,7 +131,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 					srv.Texture2DArray.MipLevels = texDesc.first.MipLevels;
 					srv.Texture2DArray.ArraySize = texDesc.first.DepthOrArraySize;
 					copyInfo.back().second.resize(surfaces);
-					device.GetDevice()->GetCopyableFootprints(&texDesc.first, 0, surfaces, 0,
+					device.GetDevice()->GetCopyableFootprints1(&texDesc.first, 0, surfaces, 0,
 						copyInfo.back().second.data(), nullptr, nullptr, &copyInfo.back().first);
 					break;
 				}
@@ -151,7 +151,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 		if (uploadRegionSize)
 		{
 			// Create one big committed buffer and copy data into it
-			DX::ComPtr<ID3D12Resource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
+			DX::ComPtr<IResource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
 			ZE_DX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
 			D3D12_TEXTURE_COPY_LOCATION copySource;
 			copySource.pResource = uploadRes.Get();

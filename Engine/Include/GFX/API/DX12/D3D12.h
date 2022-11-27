@@ -15,6 +15,26 @@
 
 namespace ZE::GFX::API::DX12
 {
+	// Wrappers for DirectX 12 interfaces (to avoid using multiple different versions)
+	typedef ID3D12CommandAllocator                   ICommandAllocator;
+	typedef ID3D12CommandList                        ICommandList;
+	typedef ID3D12CommandQueue                       ICommandQueue;
+	typedef ID3D12DescriptorHeap                     IDescriptorHeap;
+	typedef ID3D12Debug1                             IDebug;
+	typedef ID3D12DebugDevice2                       IDebugDevice;
+	typedef ID3D12Device8                            IDevice;
+	typedef ID3D12DeviceRemovedExtendedData1         IDeviceRemovedExtendedData;
+	typedef ID3D12DeviceRemovedExtendedDataSettings1 IDeviceRemovedExtendedDataSettings;
+	typedef ID3D12Fence1                             IFence;
+	typedef ID3D12GraphicsCommandList6               IGraphicsCommandList;
+	typedef ID3D12Heap1                              IHeap;
+	typedef ID3D12InfoQueue                          IInfoQueue;
+	typedef ID3D12Pageable                           IPageable;
+	typedef ID3D12PipelineState                      IPipelineState;
+	typedef ID3D12QueryHeap                          IQueryHeap;
+	typedef ID3D12Resource2                          IResource;
+	typedef ID3D12RootSignature                      IRootSignature;
+
 	typedef std::bitset<6> ShaderPresenceMask;
 
 	// Get DirectX 12 version of command list types

@@ -3,13 +3,10 @@
 
 namespace ZE::GFX::API::DX12
 {
-	// Identifier to single allocation
-	typedef void* AllocHandle;
-
 	// Resource information holding reference to created resource
 	struct ResourceInfo
 	{
-		DX::ComPtr<ID3D12Resource> Resource = nullptr;
+		DX::ComPtr<IResource> Resource = nullptr;
 		AllocHandle Handle = 0;
 	};
 }

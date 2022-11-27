@@ -5,8 +5,8 @@ namespace ZE::GFX::API::DX12
 {
 	class GPerf final
 	{
-		DX::ComPtr<ID3D12QueryHeap> queryHeap;
-		DX::ComPtr<ID3D12Resource> data;
+		DX::ComPtr<IQueryHeap> queryHeap;
+		DX::ComPtr<IResource> data;
 		D3D12_COMMAND_LIST_TYPE listType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	public:
