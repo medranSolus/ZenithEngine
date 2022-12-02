@@ -29,15 +29,20 @@ namespace ZE::GFX::API::DX12
 		static constexpr U64 SMALL_CHUNK = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT; // 4 KB
 		static constexpr U64 NORMAL_CHUNK = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 64 KB
 		static constexpr U64 HUGE_CHUNK = D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT; // 4 MB
+		static constexpr U64 BLOCK_ALLOC_CAPACITY = 200;
+		static constexpr U64 CHUNK_ALLOC_CAPACITY = 30;
 
-		static constexpr HeapFlags MAIN_HEAP_FLAGS = HeapFlag::AllowBuffers;
-		static constexpr HeapFlags SECONDARY_HEAP_FLAGS = HeapFlag::AllowTextures;
-		static constexpr HeapFlags DYNAMIC_BUFF_HEAP_FLAGS = static_cast<HeapFlags>(HeapFlag::AllowBuffers | HeapFlag::Dynamic);
+		static constexpr HeapFlags MAIN_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::NoMSAA;
+		static constexpr HeapFlags SECONDARY_HEAP_FLAGS = HeapFlag::AllowTextures | HeapFlag::NoMSAA;
+		static constexpr HeapFlags DYNAMIC_BUFF_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::Dynamic | HeapFlag::NoMSAA;
 		static constexpr U64 MAIN_HEAP_SIZE = 256 * Math::MEGABYTE;
 		static constexpr U64 SECONDARY_HEAP_SIZE = 512 * Math::MEGABYTE;
 		static constexpr U64 DYNAMIC_BUFF_HEAP_SIZE = 64 * Math::MEGABYTE;
 
 		AllocTier allocTier = AllocTier::Tier1;
+		HeapAllocator::BlockAllocator blockAllocator;
+		HeapAllocator::ChunkAllocator chunkAllocator;
+
 		// Tier1: buffers | Tier2: buffers + textures
 		HeapAllocator mainAllocator;
 		// Tier1: textures | Tier2: unused
@@ -65,7 +70,8 @@ namespace ZE::GFX::API::DX12
 		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator);
 
 	public:
-		AllocatorGPU() = default;
+		AllocatorGPU() : blockAllocator(BLOCK_ALLOC_CAPACITY), chunkAllocator(CHUNK_ALLOC_CAPACITY), mainAllocator(blockAllocator, chunkAllocator),
+			secondaryAllocator(blockAllocator, chunkAllocator), dynamicBuffersAllocator(blockAllocator, chunkAllocator) {}
 		ZE_CLASS_MOVE(AllocatorGPU);
 		~AllocatorGPU() = default;
 
