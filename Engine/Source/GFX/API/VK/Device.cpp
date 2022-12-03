@@ -2,19 +2,6 @@
 #include "GFX/API/VK/VulkanException.h"
 #include "GFX/CommandList.h"
 
-// List of current required instance extensions
-#define ZE_VK_REQUIRED_INSTANCE_EXT \
-	X(VK_KHR_SURFACE_EXTENSION_NAME) \
-	X(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) \
-	X(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) \
-
-// List of current required device extensions
-#define ZE_VK_REQUIRED_DEVICE_EXT \
-	X(VK_KHR_SWAPCHAIN_EXTENSION_NAME) \
-	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) \
-	X(VK_EXT_4444_FORMATS_EXTENSION_NAME) \
-	X(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)
-
 namespace ZE::GFX::API::VK
 {
 #if _ZE_DEBUG_GFX_API
@@ -202,27 +189,25 @@ namespace ZE::GFX::API::VK
 		std::vector<const char*> enabledExtensions
 		{
 #if _ZE_DEBUG_GFX_API
-			VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
-			VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_REQUIRED_INSTANCE_EXT
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
 #define X(ext) GetExtensionIndex(ext),
-		std::vector<U16> enabledExtensionsIndices
+		std::vector<U16> extensionsIndices
 		{
 #if _ZE_DEBUG_GFX_API
-			GetExtensionIndex(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME),
-			GetExtensionIndex(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
+			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_REQUIRED_INSTANCE_EXT
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -238,9 +223,26 @@ namespace ZE::GFX::API::VK
 		{
 			if (!isExtSupported(enabledExtensions.at(i)))
 				throw ZE_CMP_EXCEPT("Required instance extension is not supported: " + std::string(enabledExtensions.at(i)));
-			extensionSupport[enabledExtensionsIndices.at(i)] = true;
+			extensionSupport[extensionsIndices.at(i)] = true;
 		}
-		enabledExtensionsIndices.clear();
+
+		// Enable all optional extensions that are present
+#define X(ext) ext,
+		std::vector<const char*> optionalExtensions{ ZE_VK_EXT_LIST_INSTANCE_OPTIONAL };
+#undef X
+#define X(ext) GetExtensionIndex(ext),
+		extensionsIndices = { ZE_VK_EXT_LIST_INSTANCE_OPTIONAL };
+#undef X
+		for (U32 i = 0; i < optionalExtensions.size(); ++i)
+		{
+			if (isExtSupported(optionalExtensions.at(i)))
+			{
+				extensionSupport[extensionsIndices.at(i)] = true;
+				enabledExtensions.emplace_back(optionalExtensions.at(i));
+			}
+		}
+		extensionsIndices.clear();
+		optionalExtensions.clear();
 		supportedExtensions.clear();
 
 #if _ZE_PLATFORM_LINUX
@@ -481,7 +483,13 @@ namespace ZE::GFX::API::VK
 
 		// Mark all required extensions as present
 #define X(ext) GetExtensionIndex(ext),
-		std::vector<U16> enabledExtIndices{ ZE_VK_REQUIRED_DEVICE_EXT };
+		std::vector<U16> enabledExtIndices
+		{
+#if _ZE_DEBUG_GFX_API
+			ZE_VK_EXT_LIST_DEVICE_DEBUG
+#endif
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+		};
 #undef X
 		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
 			extensionSupport[enabledExtIndices.at(i)] = true;
@@ -505,9 +513,44 @@ namespace ZE::GFX::API::VK
 		VkPhysicalDeviceFeatures2 features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &features1 };
 
 #define X(ext) ext,
-		std::vector<const char*> enabledExtensions{ ZE_VK_REQUIRED_DEVICE_EXT };
+		std::vector<const char*> enabledExtensions
+		{
+#if _ZE_DEBUG_GFX_API
+			ZE_VK_EXT_LIST_DEVICE_DEBUG
+#endif
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+		};
 #undef X
 		FindPhysicalDevice(enabledExtensions, window, features);
+
+		// Enable all optional extensions that are present
+#define X(ext) ext,
+		std::vector<const char*> optionalExtensions{ ZE_VK_EXT_LIST_DEVICE_OPTIONAL };
+#undef X
+#define X(ext) GetExtensionIndex(ext),
+		std::vector<U16> extensionsIndices{ ZE_VK_EXT_LIST_DEVICE_OPTIONAL };
+#undef X
+		U32 count = 0;
+		ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, nullptr));
+		ZE_ASSERT(count != 0, "There should be always some extensions in picked physical device!");
+		std::vector<VkExtensionProperties> supportedExtensions(count);
+		ZE_VK_THROW_NOSUCC(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, supportedExtensions.data()));
+
+		for (U32 i = 0; i < optionalExtensions.size(); ++i)
+		{
+			for (const VkExtensionProperties& ext : supportedExtensions)
+			{
+				if (strcmp(ext.extensionName, optionalExtensions.at(i)) == 0)
+				{
+					extensionSupport[extensionsIndices.at(i)] = true;
+					enabledExtensions.emplace_back(optionalExtensions.at(i));
+					break;
+				}
+			}
+		}
+		supportedExtensions.clear();
+		extensionsIndices.clear();
+		optionalExtensions.clear();
 
 		// Describe used queues
 		const float queuePriority = 1.0f;
