@@ -11,7 +11,7 @@ namespace ZE::GFX::API::VK
 	class AllocatorGPU final
 	{
 		typedef Allocator::TLSFMemoryChunkFlags MemoryFlags;
-		enum MemoryFlag : MemoryFlags { None = 0 };
+		enum MemoryFlag : MemoryFlags { None = 0, HostVisible = 1 };
 
 		struct AllocParams
 		{
@@ -23,6 +23,7 @@ namespace ZE::GFX::API::VK
 		struct Memory
 		{
 			VkDeviceMemory DeviceMemory = VK_NULL_HANDLE;
+			void* MappedMemory = nullptr;
 
 			static void Init(Memory& chunk, MemoryFlags flags, U64 size, void* userData);
 			static void Destroy(Memory& chunk, void* userData) noexcept;
@@ -46,14 +47,13 @@ namespace ZE::GFX::API::VK
 		U32 deviceMemoryCount = 0;
 		U16 minimalAlignment = 1;
 		U8 texturesStartIndex = 0;
-		// Single image buffer heap | ReBAR | All host coherent
-		std::bitset<3> flags = 0;
+		// Single image buffer heap | ReBAR
+		std::bitset<2> flags = 0;
 
 		static constexpr void UpdateBudget(HeapInfo& heapInfo, VkDeviceSize usage, VkDeviceSize budget) noexcept;
 
 		void SetSingleBufferImageHeap(bool present) noexcept { flags[0] = present; }
 		void SetReBAR(bool enabled) noexcept { flags[1] = enabled; }
-		void SetAllHostCoherent(bool present) noexcept { flags[2] = present; }
 
 		constexpr void FindMemoryPreferences(Allocation::Usage usage, bool isIntegratedGPU,
 			VkMemoryPropertyFlags& required, VkMemoryPropertyFlags& preferred, VkMemoryPropertyFlags& notPreferred) noexcept;
@@ -67,7 +67,6 @@ namespace ZE::GFX::API::VK
 
 		constexpr bool IsSingleBufferImageHeap() const noexcept { return flags[0]; }
 		constexpr bool IsReBAREnabled() const noexcept { return flags[1]; }
-		constexpr bool IsAllHostCoherent() const noexcept { return flags[2]; }
 
 		void Init(Device& dev);
 		Allocation AllocBuffer(Device& dev, VkBuffer buffer, Allocation::Usage usage);

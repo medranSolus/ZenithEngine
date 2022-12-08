@@ -18,13 +18,23 @@ namespace ZE::GFX::API::VK
 		ZE_VK_THROW_NOSUCC(vkAllocateMemory(params.Dev.GetDevice(), &allocInfo, nullptr, &chunk.DeviceMemory));
 
 		params.NewAllocation = true;
+		if (flags & MemoryFlag::HostVisible)
+		{
+			ZE_VK_THROW_NOSUCC(vkMapMemory(params.Dev.GetDevice(), chunk.DeviceMemory, 0, size, 0, &chunk.MappedMemory));
+		}
 	}
 
 	void AllocatorGPU::Memory::Destroy(Memory& chunk, void* userData) noexcept
 	{
+		VkDevice device = reinterpret_cast<Device*>(userData)->GetDevice();
+		if (chunk.MappedMemory)
+		{
+			vkUnmapMemory(device, chunk.DeviceMemory);
+			chunk.MappedMemory = nullptr;
+		}
 		if (chunk.DeviceMemory)
 		{
-			vkFreeMemory(reinterpret_cast<Device*>(userData)->GetDevice(), chunk.DeviceMemory, nullptr);
+			vkFreeMemory(device, chunk.DeviceMemory, nullptr);
 			chunk.DeviceMemory = VK_NULL_HANDLE;
 		}
 	}
@@ -44,46 +54,19 @@ namespace ZE::GFX::API::VK
 	constexpr void AllocatorGPU::FindMemoryPreferences(Allocation::Usage usage, bool isIntegratedGPU,
 		VkMemoryPropertyFlags& required, VkMemoryPropertyFlags& preferred, VkMemoryPropertyFlags& notPreferred) noexcept
 	{
-		notPreferred = VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+		notPreferred = VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD | VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
 
 		switch (usage)
 		{
-		case Allocation::Usage::GPU:
-		{
-			required = 0;
-			if (!isIntegratedGPU)
-				preferred = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-			else
-				preferred = 0;
-			if (IsReBAREnabled())
-				preferred |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-			break;
-		}
 		default:
 			ZE_ENUM_UNHANDLED();
 		case Allocation::Usage::CPU:
-		case Allocation::Usage::StagingToCPU:
 		{
-			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-			preferred = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-			if (IsAllHostCoherent())
-				required |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-			else
-				preferred |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+			preferred = 0;
+			notPreferred |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 			break;
 		}
-		case Allocation::Usage::StagingToGPU:
-		{
-			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-			if (!isIntegratedGPU)
-				preferred = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-			if (IsAllHostCoherent())
-				required |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-			else
-				preferred |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-			break;
-		}
-#if _ZE_DEBUG_GFX_API
 		case Allocation::Usage::DebugCPU:
 		{
 			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -91,12 +74,33 @@ namespace ZE::GFX::API::VK
 			notPreferred = 0;
 			break;
 		}
-#endif
-		case Allocation::Usage::ProtectedGPU:
+		case Allocation::Usage::StagingToCPU:
 		{
-			required = VK_MEMORY_PROPERTY_PROTECTED_BIT;
+			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+			preferred = isIntegratedGPU ? 0 : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+			break;
+		}
+		case Allocation::Usage::GPU:
+		{
+			required = 0;
 			preferred = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-			notPreferred = VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+			if (IsReBAREnabled())
+				preferred |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			break;
+		}
+		case Allocation::Usage::StagingToGPU:
+		{
+			required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			if (IsReBAREnabled())
+				required |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+			preferred = isIntegratedGPU ? 0 : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+			notPreferred |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+			break;
+		}
+		case Allocation::Usage::OnlyTransferGPU:
+		{
+			required = 0;
+			preferred = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 			break;
 		}
 		}
@@ -162,7 +166,6 @@ namespace ZE::GFX::API::VK
 
 	void AllocatorGPU::Init(Device& dev)
 	{
-		SetAllHostCoherent(true);
 		VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudget = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT, nullptr };
 		VkPhysicalDeviceMemoryProperties2 memoryProps =
 		{
@@ -173,16 +176,7 @@ namespace ZE::GFX::API::VK
 
 		typeInfo = new VkMemoryType[memoryProps.memoryProperties.memoryTypeCount];
 		for (U32 i = 0; i < memoryProps.memoryProperties.memoryTypeCount; ++i)
-		{
-			const VkMemoryPropertyFlags memoryFlags = memoryProps.memoryProperties.memoryTypes[i].propertyFlags;
-			// Check if all host visible memory is also host coherent (to avoid manual cache invalidation)
-			if (IsAllHostCoherent() && (memoryFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-				&& !(memoryFlags & (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT)))
-			{
-				SetAllHostCoherent(false);
-			}
 			typeInfo[i] = memoryProps.memoryProperties.memoryTypes[i];
-		}
 
 		// Chek for Resizeable BAR enabled in the system (but not in integrated GPU)
 		// (system shouldn't report 2 DEVICE_LOCAL heaps and there should be DEVICE_LOCAL | HOST_VISIBLE memory available)
@@ -246,6 +240,7 @@ namespace ZE::GFX::API::VK
 		allocators.reserve(allocatorCount);
 		for (U32 i = 0; i < allocatorCount; ++i)
 		{
+			const VkMemoryPropertyFlags flags = memoryProps.memoryProperties.memoryTypes[i % memoryProps.memoryProperties.memoryTypeCount].propertyFlags;
 			U64 heapSize = hostHeapSize;
 			if (dev.IsIntegratedGPU())
 			{
@@ -254,14 +249,14 @@ namespace ZE::GFX::API::VK
 				else
 					heapSize += Settings::GetHeapSizeTextures();
 			}
-			else if (memoryProps.memoryProperties.memoryTypes[i % memoryProps.memoryProperties.memoryTypeCount].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			else if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
 			{
 				if (i < memoryProps.memoryProperties.memoryTypeCount)
 					heapSize = deviceHeapSize;
 				else
 					heapSize = Settings::GetHeapSizeTextures();
 			}
-			allocators.emplace_back(blockAllocator, chunkAllocator).Init(MemoryFlag::None, heapSize, 1, 2);
+			allocators.emplace_back(blockAllocator, chunkAllocator).Init(IsReBAREnabled() || (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ? MemoryFlag::HostVisible : MemoryFlag::None, heapSize, 1, 2);
 		}
 	}
 
