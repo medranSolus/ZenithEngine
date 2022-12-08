@@ -373,6 +373,7 @@ namespace ZE::GFX::API::VK
 		if (deviceCount == 0)
 			throw ZE_CMP_EXCEPT("Current system have no avaiable GPUs!");
 
+		VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, nullptr };
 		QueueFamilyInfo familyInfo{};
 		// Check for support of presentation on given queue
 		// VkSurfaceFullScreenExclusiveInfoEXT or VkSurfaceFullScreenExclusiveWin32InfoEXT
@@ -381,12 +382,11 @@ namespace ZE::GFX::API::VK
 		{
 			// Only 1 GPU present so can skip all the hassle
 			ZE_VK_THROW_NOSUCC(vkEnumeratePhysicalDevices(instance, &deviceCount, &physicalDevice));
+			vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
 
 			const GpuFitness fit = CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo);
 			if (fit.Status != GpuFitness::Status::Good)
 			{
-				VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, nullptr };
-				vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
 				switch (fit.Status)
 				{
 				default:
@@ -477,6 +477,8 @@ namespace ZE::GFX::API::VK
 			// Get one with highest score
 			physicalDevice = deviceRank.end()->second.first;
 			familyInfo = deviceRank.end()->second.second;
+
+			vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
 			vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 		}
 		vkDestroySurfaceKHR(instance, testSurfaceInfo.surface, nullptr);
@@ -498,7 +500,9 @@ namespace ZE::GFX::API::VK
 		gfxQueueIndex = familyInfo.Gfx;
 		computeQueueIndex = familyInfo.Compute;
 		copyQueueIndex = familyInfo.Copy;
-		computePresentSupport = familyInfo.PresentFromCompute;
+		limits = properties.properties.limits;
+		SetIntegratedGPU(properties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+		SetPresentFromComputeSupport(familyInfo.PresentFromCompute);
 	}
 
 	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
@@ -507,10 +511,31 @@ namespace ZE::GFX::API::VK
 		InitVolk();
 		CreateInstance();
 
-		VkPhysicalDeviceVulkan13Features features3 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, nullptr };
-		VkPhysicalDeviceVulkan12Features features2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, &features3 };
-		VkPhysicalDeviceVulkan11Features features1 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &features2 };
-		VkPhysicalDeviceFeatures2 features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &features1 };
+		VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicatedAllocAliasing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV, nullptr, VK_FALSE };
+		VkPhysicalDeviceCoherentMemoryFeaturesAMD coherentMemory = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD, nullptr, VK_FALSE };
+		VkPhysicalDeviceMemoryPriorityFeaturesEXT memPriority = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT };
+		switch (Settings::GetGpuVendor())
+		{
+		case VendorGPU::AMD:
+		{
+			memPriority.pNext = &coherentMemory;
+			break;
+		}
+		case VendorGPU::Nvidia:
+		{
+			memPriority.pNext = &dedicatedAllocAliasing;
+			break;
+		}
+		default:
+		{
+			memPriority.pNext = nullptr;
+			break;
+		}
+		}
+		VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageableMemory = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, &memPriority };
+		VkPhysicalDeviceIndexTypeUint8FeaturesEXT indicesU8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT, &pageableMemory };
+		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &indicesU8 };
+		VkPhysicalDeviceFeatures2 features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &memoryModel };
 
 #define X(ext) ext,
 		std::vector<const char*> enabledExtensions
@@ -552,6 +577,18 @@ namespace ZE::GFX::API::VK
 		extensionsIndices.clear();
 		optionalExtensions.clear();
 
+		// Enable features of the extensions
+		extensionSupport[GetExtensionIndex(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)] = dedicatedAllocAliasing.dedicatedAllocationImageAliasing;
+		extensionSupport[GetExtensionIndex(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)] = coherentMemory.deviceCoherentMemory;
+		extensionSupport[GetExtensionIndex(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)] = memPriority.memoryPriority;
+		extensionSupport[GetExtensionIndex(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)] = pageableMemory.pageableDeviceLocalMemory;
+		Settings::SetU8IndexSets(extensionSupport[GetExtensionIndex(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)] = indicesU8.indexTypeUint8);
+		if (extensionSupport[GetExtensionIndex(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)] = memoryModel.vulkanMemoryModel)
+		{
+			SetMemoryModelDeviceScope(memoryModel.vulkanMemoryModelDeviceScope);
+			SetMemoryModelChains(memoryModel.vulkanMemoryModelAvailabilityVisibilityChains);
+		}
+
 		// Describe used queues
 		const float queuePriority = 1.0f;
 		const VkDeviceQueueCreateInfo queueInfos[3]
@@ -561,8 +598,16 @@ namespace ZE::GFX::API::VK
 			{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, copyQueueIndex, 1, &queuePriority }
 		};
 
+		// Control overallocation behavior on AMD cards
+		VkDeviceMemoryOverallocationCreateInfoAMD overallocBehavior = { VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD, nullptr };
+		if (IsExtensionSupported(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME))
+		{
+			overallocBehavior.overallocationBehavior = VK_MEMORY_OVERALLOCATION_BEHAVIOR_ALLOWED_AMD;
+			coherentMemory.pNext = &overallocBehavior;
+		}
+
 		// Create logic device
-		VkDeviceCreateInfo deviceInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, nullptr };
+		VkDeviceCreateInfo deviceInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &features };
 		deviceInfo.flags = 0;
 		deviceInfo.queueCreateInfoCount = sizeof(queueInfos) / sizeof(VkDeviceQueueCreateInfo);
 		deviceInfo.pQueueCreateInfos = queueInfos;
@@ -570,7 +615,7 @@ namespace ZE::GFX::API::VK
 		deviceInfo.ppEnabledLayerNames = nullptr;
 		deviceInfo.enabledExtensionCount = static_cast<U32>(enabledExtensions.size());
 		deviceInfo.ppEnabledExtensionNames = enabledExtensions.data();
-		deviceInfo.pEnabledFeatures = &features.features;
+		deviceInfo.pEnabledFeatures = nullptr;
 
 		ZE_VK_THROW_NOSUCC(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
 		volkLoadDevice(device);
@@ -584,6 +629,8 @@ namespace ZE::GFX::API::VK
 		ZE_VK_SET_ID(device, gfxQueue, VK_OBJECT_TYPE_QUEUE, "gfx_queue");
 		ZE_VK_SET_ID(device, computeQueue, VK_OBJECT_TYPE_QUEUE, "compute_queue");
 		ZE_VK_SET_ID(device, copyQueue, VK_OBJECT_TYPE_QUEUE, "copy_queue");
+
+		allocator.Init(*this);
 	}
 
 	Device::~Device()
@@ -609,5 +656,10 @@ namespace ZE::GFX::API::VK
 
 	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
 	{
+	}
+
+	void Device::EndFrame() noexcept
+	{
+		allocator.HandleBudget(*this);
 	}
 }

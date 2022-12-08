@@ -66,19 +66,19 @@
 	X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)                      /* Debug instrumentation [EXT_DEBUG] */
 
 // List of optional platform independent instance extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_INSTANCE_OPTIONAL
-
-// List of currently not used platform independent instance extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_INSTANCE_NOT_USED \
-	X(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)            /* Multiple physical devices as one logical [EXT_FEAT] [1.1] */ \
+#define ZE_VK_EXT_LIST_INSTANCE_OPTIONAL \
 	X(VK_KHR_DISPLAY_EXTENSION_NAME)                          /* Display handling [EXT_WINDOW] */ \
 	X(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)      /* Info about imported external fences [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
 	X(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)     /* Info about imported external memory regions [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
 	X(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)  /* Info about imported external semaphores [EXT_EXMEM] [EXT_QUERY] [1.1] */ \
+	X(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)              /* Full control over display [EXT_WINDOW] */
+
+// List of currently not used platform independent instance extension names, intended for use in X() macro
+#define ZE_VK_EXT_LIST_INSTANCE_NOT_USED \
+	X(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)            /* Multiple physical devices as one logical [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME)         /* Informations about displays [EXT_WINDOW] [EXT_QUERY] */ \
 	X(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME)   /* Info about protected session for surface [EXT_FEAT] [EXT_QUERY] */ \
 	X(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)              /* Full control over Linux DRM display [EXT_WINDOW] */ \
-	X(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME)              /* Full control over display [EXT_WINDOW] */ \
 	X(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)          /* Quering for display vertical blank [EXT_WINDOW] [EXT_QUERY] */ \
 	X(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME)                 /* Creation of surface not used by any windowing system for testing [EXT_WINDOW] [EXT_DEBUG] */ \
 	X(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)            /* Additional colorspaces for swapchain surface (HDR) [EXT_WINDOW] [EXT_FEAT] */ \
@@ -113,7 +113,10 @@
 
 // List of device extension names, required by the engine, intended for use in X() macro
 #define ZE_VK_EXT_LIST_DEVICE_REQUIRED \
-	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)                            /* Normal rendering without render passes [EXT_FEAT] [1.3] */ \
+	X(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)                                /* Bind multiple memory regions and allows aliasing [EXT_MEMORY] [1.1] */ \
+	X(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)                         /* Dedicated allocs for certain resources [EXT_MEMORY] [EXT_PERF] [1.1] */ \
+	X(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)                    /* Better query for memory info [EXT_MEMORY] [EXT_QUERY] [1.1] */ \
+	X(VK_KHR_MAINTENANCE1_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)                     /* Support for YCbCr textures [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_SWAPCHAIN_EXTENSION_NAME)                                    /* Creation of swapchain [EXT_WINDOW] */ \
 	X(VK_EXT_4444_FORMATS_EXTENSION_NAME)                                 /* New 16 bit packed pixel formats [EXT_FEAT] [1.3] */
@@ -141,16 +144,28 @@
 #endif
 
 // List of optional device extension extension names, intended for use in X() macro
-#define ZE_VK_EXT_LIST_DEVICE_OPTIONAL ZE_VK_EXT_LIST_DEVICE_PLATFORM_OPTIONAL
+#define ZE_VK_EXT_LIST_DEVICE_OPTIONAL \
+	X(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)                               /* Access implemenation handle of internal fence [EXT_EXMEM] [1.1] */ \
+	X(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)                              /* Access implemenation handle of internal memory [EXT_EXMEM] [1.1] */ \
+	X(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)                           /* Access implemenation handle of internal semaphore [EXT_EXMEM] [1.1] */ \
+	X(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME)                         /* Less restrictive alignment restrictions [EXT_FEAT] [EXT_MEMORY] [1.1] */ \
+	X(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)                          /* More explicit memory handling [EXT_MEMORY] [1.2] */ \
+	X(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME)                         /* New queue for resource ownership transfer for external memory [EXT_EXMEM] [1.3] */ \
+	X(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)                             /* 8-bit indices [EXT_MEMORY] [EXT_FEAT] */ \
+	X(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)                                /* Getting info about current usage of memory [EXT_MEMORY] [EXT_QUERY] */ \
+	X(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)                              /* Influencing what memory regions would be evicted first [EXT_MEMORY] */ \
+	X(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)                 /* Enable memory paging [EXT_MEMORY] [EXT_FEAT] */ \
+	X(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)                       /* A bit slower memory but useful for debug [EXT_MEMORY] [EXT_DEBUG] */ \
+	X(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME)               /* Controlling behavior of oversubscription of memory [EXT_MEMORY] */ \
+	X(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)           /* Aliasing of memory in dedicated allocs [EXT_MEMORY] */ \
+	ZE_VK_EXT_LIST_DEVICE_PLATFORM_OPTIONAL
 
 // List of device extension names, currently not used by basic version of the engine, intended for use in X() macro
 #define ZE_VK_EXT_LIST_DEVICE_NOT_USED \
 	X(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)                       /* Managing acceleration structures for RT [EXT_RT] */ \
-	X(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)                                /* Bind multiple memory regions and allows aliasing [EXT_MEMORY] [1.1] */ \
 	X(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)                        /* Get GPU address of buffers for usage in shaders, RT or tools [EXT_FEAT] [EXT_SHADER] [EXT_MEMORY] [1.2] */ \
 	X(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)                              /* Better copy commands interfaces [EXT_FEAT] [1.3] */ \
 	X(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)                          /* Better way for creating render passes [EXT_FEAT] [1.2] */ \
-	X(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)                         /* Dedicated allocs for certain resources [EXT_MEMORY] [EXT_PERF] [1.1] */ \
 	X(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME)                     /* Async CPU acceleration structures builds [EXT_RT] [EXT_PERF] */ \
 	X(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)                        /* Automatic resolve for multisampled depth stencil [EXT_PERF] [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME)                   /* Faster updates of common descriptor sets [EXT_PERF] [1.1] */ \
@@ -158,11 +173,9 @@
 	X(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)                            /* Creation of swapchain directly from display [EXT_WINDOW] */ \ \
 	X(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)                          /* Get the number of commands used in indirect drawing from buffer (can be produced by GPU before) [EXT_FEAT] [EXT_PERF] [1.2] */ \ \
 	X(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)                            /* Get info what driver is used on GPU [EXT_QUERY] [1.2] */ \ \
-	X(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)                               /* Access implemenation handle of internal fence [EXT_EXMEM] [1.1] */ \
+	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)                            /* Normal rendering without render passes [EXT_FEAT] [1.3] */ \
 	X(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME)                            /* Get Linux file descriptor for fence from Vulkan [EXT_EXMEM] */ \
-	X(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)                              /* Access implemenation handle of internal memory [EXT_EXMEM] [1.1] */ \
 	X(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME)                           /* Get Linux file descriptor for allocated memory from Vulkan [EXT_EXMEM] */ \
-	X(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)                           /* Access implemenation handle of internal semaphore [EXT_EXMEM] [1.1] */ \
 	X(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME)                        /* Get Linux file descriptor for fence from Vulkan [EXT_EXMEM] */ \
 	X(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)                       /* Format feature flags are now 64 bit due to running out of space [1.3] */ \
 	X(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME)                  /* New barycentric modes [EXT_SHADER] */ \
@@ -170,9 +183,7 @@
 	X(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)                            /* Provide formats that mutable image will be used in [EXT_PERF] [1.2] */ \
 	X(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)                        /* Create framebuffer without previously created images [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME)                          /* Present only part of surface to screen [EXT_WINDOW] [EXT_PERF] */ \
-	X(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)                    /* Better query for memory info [EXT_MEMORY] [EXT_QUERY] [1.1] */ \
 	X(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)                              /* Setting queue priorities [EXT_FEAT] [EXT_PERF] */ \
-	X(VK_KHR_MAINTENANCE1_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_MAINTENANCE2_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_MAINTENANCE3_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release regarding limits of descriptors and allocations [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)                                /* Collection of minor features too small for their own extensions [EXT_FEAT] [1.3] */ \
@@ -186,7 +197,6 @@
 	X(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)                    /* Minor RT tweaks [EXT_RT] */ \
 	X(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)                         /* Managing RT pipelines [EXT_RT] */ \
 	X(VK_KHR_RAY_QUERY_EXTENSION_NAME)                                    /* Inline RT (DXR 1.1) [EXT_RT] */ \
-	X(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME)                         /* Less restrictive alignment restrictions [EXT_FEAT] [EXT_MEMORY] [1.1] */ \
 	X(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)                 /* New sampler addressing mode (mirror clamp to edge) [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)               /* Separate layouts for depth and stencil buffers [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)                          /* 64 bit integer atomics in shaders [EXT_SHADER] [EXT_FEAT] [1.2] */ \
@@ -207,7 +217,6 @@
 	X(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)                           /* Copy of D3D12 fence behavior for semaphores [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)               /* Tighter alignment for arrays and structs in uniform buffers [EXT_SHADER] [1.2] */ \
 	X(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)                            /* New addressing modes in shaders [EXT_SHADER] [1.1] */ \
-	X(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)                          /* More explicit memory handling [EXT_MEMORY] [1.2] */ \
 	X(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME)             /* Specifying layout of group shared memory (can handle aliasing based on lifecycle) [EXT_SHADER] */ \
 	X(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)             /* Zero initialized workgroup memory [EXT_SHADER] [1.3] */ \
 	X(VK_KHR_16BIT_STORAGE_EXTENSION_NAME)                                /* 16 bit types in input/outpus of the shaders [EXT_FEAT] [1.1] */ \
@@ -225,7 +234,7 @@
 	X(VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME)                         /* Ensure clamping depth in [0;1] range [EXT_FEAT] */ \
 	X(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME)                            /* Explicit control over depth clip (like in D3D) [EXT_FEAT] */ \
 	X(VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME)                     /* Depth beyond [0;1] [EXT_FEAT] */ \
-	X(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)                            /* Shader-accessible descriptors managed directly in memory [EXT_FEAT] */ \
+	X(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)                            /* Shader-accessible descriptors managed directly in memory [EXT_MEMORY] [EXT_FEAT] */ \
 	X(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)                          /* Non-uniform indexing of resources in shaders [EXT_SHADER] [EXT_FEAT] [1.2] */ \
 	X(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME)                /* Tracking memory pages used by resources [EXT_DEBUG] */ \
 	X(VK_EXT_DEVICE_FAULT_EXTENSION_NAME)                                 /* Info about TDR [EXT_DEBUG] */ \
@@ -248,19 +257,15 @@
 	X(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)                    /* Better handling specific Linux formats [EXT_WINDOW] */ \
 	X(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)                             /* Strict out of bound access behavior for images [EXT_DEBUG] [1.3] */ \
 	X(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME)                           /* Specify minimal LOD [EXT_FEAT] */ \
-	X(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)                             /* 8-bit indices [EXT_FEAT] */ \
 	X(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)                         /* Similar to push constants but can be reused [EXT_FEAT] [1.3] */ \
 	X(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)                           /* New options for line rendering [EXT_FEAT] */ \
 	X(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME)                           /* No unnecessary synchronization on non-write resources [EXT_PERF] */ \
-	X(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)                                /* Getting info about current usage of memory [EXT_MEMORY] [EXT_QUERY] */ \
-	X(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)                              /* Influencing what memory regions would be evicted first [EXT_MEMORY] */ \
 	X(VK_EXT_MESH_SHADER_EXTENSION_NAME)                                  /* Support for mesh shaders [EXT_FEAT] [EXT_SHADER] */ \
 	X(VK_EXT_MULTI_DRAW_EXTENSION_NAME)                                   /* Faster multiple commands with same state [EXT_PERF] */ \
 	X(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME)        /* Less memory consumed when using certain multisampled modes [EXT_PERF] */ \
 	X(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)                      /* Similar descriptor handling to D3D12 [EXT_FEAT] */ \
 	X(VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME)                        /* Disable cubemap edge handling in sampling for compatibility with other APIs [EXT_FEAT] */ \
 	X(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME)                             /* Handling opaque and transparent geometry (RTX 30+) [EXT_RT] [EXT_PERF] */ \
-	X(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)                 /* Control memory paging [EXT_MEMORY] [EXT_FEAT] */ \
 	X(VK_EXT_PCI_BUS_INFO_EXTENSION_NAME)                                 /* Get data about PCI bus of GPU [EXT_QUERY] */ \
 	X(VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME)                          /* Get info about Linux DRM [EXT_QUERY] [EXT_WINDOW] */ \
 	X(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)              /* More deterministic time control for PSO creation [EXT_FEAT] [EXT_PERF] [1.3] */ \
@@ -290,7 +295,6 @@
 	X(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME)                       /* Better info about texture alignments [EXT_MEMORY] [EXT_QUERY] [1.3] */ \
 	X(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)                 /* ASTC texture compression for HDR [EXT_FEAT] [1.3] */ \
 	X(VK_EXT_TOOLING_INFO_EXTENSION_NAME)                                 /* Get info about what tools are currently working [EXT_QUERY] [EXT_FEAT] [EXT_DEBUG] [1.3] */ \
-	X(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME)                         /* New queue for resource ownership transfer for external memory [EXT_EXMEM] [1.3] */ \
 	X(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)                             /* Caching validation checks for multiple runs [EXT_DEBUG] */ \
 	X(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)                     /* Using same atributes for multiple instances without duplication [EXT_PERF] */ \
 	X(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)                   /* Vertex input binding as dynamic state [EXT_FEAT] [EXT_PERF] */ \
@@ -298,10 +302,8 @@
 	X(VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME)                     /* Additional YCbCr 4:4:4 planar textures [EXT_FEAT] [1.3] */ \
 	\
 	X(VK_AMD_BUFFER_MARKER_EXTENSION_NAME)                                /* Breadcrumb markers for tracking commands execution in case of TDR [EXT_DEBUG] */ \
-	X(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)                       /* A bit slower memory but useful for debug [EXT_MEMORY] [EXT_DEBUG] */ \
 	X(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME)                           /* Using native display HDR formats (probably FreeSync support too) [EXT_WINDOW] [EXT_FEAT] */ \
 	X(VK_AMD_GCN_SHADER_EXTENSION_NAME)                                   /* New shader instructions for cube textures [EXT_SHADER] */ \
-	X(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME)               /* Controlling behavior of oversubscription of memory [EXT_MEMORY] */ \
 	X(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)                     /* Using bigger depth stencils with smaller render targets in multisampled rendering (counterpart to VK_NV_framebuffer_mixed_samples) [EXT_FEAT] */ \
 	X(VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME)                    /* Control over PSO compilation process [EXT_PERF] */ \
 	X(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME)                          /* Change order of resterization process for better parallelism [EXT_PERF] */ \
@@ -335,7 +337,6 @@
 	X(VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME)                          /* Indirect copies between into image [EXT_FEAT] */ \
 	X(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME)                          /* New image format with different sample logic [EXT_FEAT] */ \
 	X(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME)                       /* Control how render target value is computed in VK_NV_framebuffer_mixed_samples [EXT_FEAT] */ \
-	X(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)           /* Aliasing of memory in dedicated allocs [EXT_MEMORY] */ \
 	X(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME)                 /* Inserting breadcrumb markers for crash post-mortem [EXT_DEBUG] */ \
 	X(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME)                     /* Configuring crash dumps with Nsight Aftermath [EXT_DEBUG] */ \
 	X(VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME)                          /* Accessing external memory between GPUs [EXT_EXMEM] [EXT_FEAT] */ \

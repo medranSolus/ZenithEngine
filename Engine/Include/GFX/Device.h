@@ -60,16 +60,6 @@ namespace ZE::GFX
 		// GPU side signal from copy queue for it's fence
 		constexpr U64 SetCopyFence() { U64 val; ZE_API_BACKEND_CALL_RET(val, SetCopyFence); return val; }
 
-#if _ZE_GFX_MARKERS
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
-
-		void TagEndMain() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndMain); } }
-		void TagEndCompute() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndCompute); } }
-		void TagEndCopy() const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
-#endif
-
 		// Start sequence after which new resources can be created/updated and uploaded to GPU
 		constexpr void BeginUploadRegion() { ZE_API_BACKEND_CALL(BeginUploadRegion); }
 		// Send current resources to GPU resources to GPU
@@ -81,6 +71,18 @@ namespace ZE::GFX
 		constexpr void ExecuteMain(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }
 		constexpr void ExecuteCompute(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCompute, cl); }
 		constexpr void ExecuteCopy(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCopy, cl); }
+
+		constexpr void EndFrame() noexcept { ZE_API_BACKEND_CALL(EndFrame); }
+
+#if _ZE_GFX_MARKERS
+		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
+		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
+		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
+
+		void TagEndMain() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndMain); } }
+		void TagEndCompute() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCompute); } }
+		void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
+#endif
 	};
 
 #pragma region Functions

@@ -1,6 +1,6 @@
 #pragma once
 #include "VK.h"
-#include <bitset>
+#include "AllocatorGPU.h"
 
 namespace ZE::GFX
 {
@@ -44,7 +44,11 @@ namespace ZE::GFX::API::VK
 		U32 gfxQueueIndex = UINT32_MAX;
 		U32 computeQueueIndex = UINT32_MAX;
 		U32 copyQueueIndex = UINT32_MAX;
-		bool computePresentSupport = false;
+		// Is integrated | Present from compute | Memory model device scope | Memory model chains
+		std::bitset<4> flags = 0;
+		VkPhysicalDeviceLimits limits;
+
+		AllocatorGPU allocator;
 
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -57,6 +61,11 @@ namespace ZE::GFX::API::VK
 		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
 		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
 			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features, QueueFamilyInfo& familyInfo);
+
+		void SetIntegratedGPU(bool present) noexcept { flags[0] = present; }
+		void SetPresentFromComputeSupport(bool enabled) noexcept { flags[1] = enabled; }
+		void SetMemoryModelDeviceScope(bool enabled) noexcept { flags[2] = enabled; }
+		void SetMemoryModelChains(bool enabled) noexcept { flags[3] = enabled; }
 
 		void InitVolk();
 		void CreateInstance();
@@ -93,6 +102,14 @@ namespace ZE::GFX::API::VK
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
 
+		constexpr void BeginUploadRegion() {}
+		constexpr void StartUpload() {}
+		constexpr void EndUploadRegion() {}
+
+		constexpr void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+		constexpr void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+		constexpr void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept {}
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept {}
@@ -103,15 +120,8 @@ namespace ZE::GFX::API::VK
 		void TagEndCopy() const noexcept {}
 #endif
 
-		constexpr void BeginUploadRegion() {}
-		constexpr void StartUpload() {}
-		constexpr void EndUploadRegion() {}
-
-		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
-
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
+		void EndFrame() noexcept;
 
 		// Gfx API Internal
 
@@ -121,7 +131,14 @@ namespace ZE::GFX::API::VK
 		constexpr VkQueue GetGfxQueue() const noexcept { return gfxQueue; }
 		constexpr VkQueue GetComputeQueue() const noexcept { return computeQueue; }
 		constexpr VkQueue GetCopyQueue() const noexcept { return copyQueue; }
-		constexpr bool CanPresentFromCompute() const noexcept { return computePresentSupport; }
+
+		constexpr bool IsIntegratedGPU() const noexcept { return flags[0]; }
+		constexpr bool CanPresentFromCompute() const noexcept { return flags[1]; }
+		constexpr bool IsMemoryModelDeviceScope() const noexcept { return flags[2]; }
+		constexpr bool IsMemoryModelChains() const noexcept { return flags[3]; }
+
+		constexpr const VkPhysicalDeviceLimits& GetLimits() const noexcept { return limits; }
+		constexpr AllocatorGPU& GetMemory() noexcept { return allocator; }
 
 		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them
 		template<U64 Size>

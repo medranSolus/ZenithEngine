@@ -33,6 +33,7 @@ namespace ZE::GFX
 	{
 		fenceChain.Get() = device.SetMainFence();
 		swapChain.Present(device);
+		device.EndFrame();
 		Settings::AdvanceFrame();
 	}
 #pragma endregion
