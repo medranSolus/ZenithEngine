@@ -110,7 +110,7 @@ namespace ZE::GUI
 		{
 		case GfxApiType::DX11:
 		{
-			ZE_DRAW_TAG_BEGIN(gfx.GetDevice(), mainList.Get().dx11, L"ImGui", PixelVal::Cobalt);
+			ZE_DRAW_TAG_BEGIN(gfx.GetDevice(), mainList.Get().dx11, "ImGui", PixelVal::Cobalt);
 			mainList.Get().dx11.GetContext()->OMSetRenderTargets(1,
 				reinterpret_cast<ID3D11RenderTargetView* const*>(gfx.GetSwapChain().Get().dx11.GetRTV().GetAddressOf()), nullptr);
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -122,7 +122,7 @@ namespace ZE::GUI
 			auto& dev = gfx.GetDevice().Get().dx12;
 			auto& swapChain = gfx.GetSwapChain().Get().dx12;
 			mainList.Get().dx12.Open(dev);
-			ZE_DRAW_TAG_BEGIN(gfx.GetDevice(), mainList.Get().dx12, L"ImGui", PixelVal::Cobalt);
+			ZE_DRAW_TAG_BEGIN(gfx.GetDevice(), mainList.Get().dx12, "ImGui", PixelVal::Cobalt);
 
 			const D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
 			mainList.Get().dx12.GetList()->OMSetRenderTargets(1, &rtv, true, nullptr);

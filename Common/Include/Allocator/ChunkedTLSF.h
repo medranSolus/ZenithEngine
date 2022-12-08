@@ -103,9 +103,9 @@ namespace ZE::Allocator
 		ZE_CLASS_MOVE(ChunkedTLSF);
 		constexpr ~ChunkedTLSF();
 
-		constexpr U64 GetOffset(AllocHandle alloc) noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Offset * chunkSizeDivisor; }
-		constexpr U64 GetSize(AllocHandle alloc) noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Size * chunkSizeDivisor; }
-		constexpr Memory GetMemory(AllocHandle alloc) noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->ChunkHandle->Memory; }
+		constexpr U64 GetOffset(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Offset * chunkSizeDivisor; }
+		constexpr U64 GetSize(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Size * chunkSizeDivisor; }
+		constexpr Memory GetMemory(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->ChunkHandle->Memory; }
 
 		constexpr U64 GetChunkSize() const noexcept { return chunkSize * GetChunkSizeGranularity(); }
 		constexpr U32 GetChunkSizeGranularity() const noexcept { return chunkSizeDivisor; }
@@ -418,7 +418,7 @@ namespace ZE::Allocator
 		innerIsFreeBitmap = new U32[memoryClasses];
 		memset(innerIsFreeBitmap, 0, memoryClasses * sizeof(U32));
 
-		freeList = new Block*[listsCount];
+		freeList = new Block * [listsCount];
 		memset(freeList, 0, listsCount * sizeof(Block*));
 	}
 

@@ -74,7 +74,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		// Clearing data on first usage
 		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, cl, L"Lambertian Clear", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Clear", PixelVal::White);
 		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Normal, ColorF4());
@@ -109,12 +109,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			// Depth pre-pass
 			data.StateDepth.Bind(cl);
-			ZE_DRAW_TAG_BEGIN(dev, cl, L"Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
+			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 			for (U64 i = 0; i < solidCount; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), PixelVal::Gray);
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), PixelVal::Gray);
 
 				EID entity = solidGroup[i];
 				const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
@@ -149,7 +149,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			// Solid pass
 			data.StatesSolid[currentState].Bind(cl);
-			ZE_DRAW_TAG_BEGIN(dev, cl, L"Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
+			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
@@ -159,7 +159,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ctx.Reset();
 			for (U64 i = 0; i < solidCount; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
 
 				EID entity = solidGroup[i];
 				cbuffer.Bind(cl, ctx, solidGroup.get<InsideFrustumSolid>(entity).Transform);
@@ -199,7 +199,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		{
 			Utils::ViewSortDescending(transparentGroup, cameraPos);
 
-			ZE_DRAW_TAG_BEGIN(dev, cl, L"Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
+			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
@@ -209,7 +209,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ctx.Reset();
 			for (U64 i = 0; i < transparentCount; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xD6, 0xD6, 0xE4));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xD6, 0xD6, 0xE4));
 
 				EID entity = transparentGroup[i];
 				const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);

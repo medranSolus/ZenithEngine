@@ -33,7 +33,7 @@ namespace ZE::GFX::API::DX11
 
 		void Reset(GFX::Device& dev) { commands = nullptr; }
 #if _ZE_GFX_MARKERS
-		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
+		void TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
 

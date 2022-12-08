@@ -3,7 +3,7 @@
 
 namespace ZE::Utils
 {
-	std::wstring ToUtf8(const std::string& s) noexcept
+	std::wstring ToUtf8(const std::string_view s) noexcept
 	{
 		std::wstring str;
 		str.reserve(s.size());
@@ -12,7 +12,7 @@ namespace ZE::Utils
 		return str;
 	}
 
-	std::string ToAscii(const std::wstring& s) noexcept
+	std::string ToAscii(const std::wstring_view s) noexcept
 	{
 		std::string str;
 		str.reserve(s.size());
@@ -42,7 +42,7 @@ namespace ZE::Utils
 		return output;
 	}
 
-	std::deque<std::string> SplitString(const std::string& input, const std::string& delimiter) noexcept
+	std::deque<std::string> SplitString(const std::string_view input, const std::string_view delimiter) noexcept
 	{
 		size_t pos = 0, offset = 0, step = delimiter.size();
 		std::deque<std::string> output;

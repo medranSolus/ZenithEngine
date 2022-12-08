@@ -20,6 +20,10 @@ namespace ZE::GFX::API::DX11
 		U32 descriptorCount;
 		U32 scratchDescriptorCount;
 
+#if _ZE_GFX_MARKERS
+		void TagBegin(const std::string_view tag) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
+#endif
+
 		void Execute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 	public:
@@ -63,9 +67,9 @@ namespace ZE::GFX::API::DX11
 		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
 
 #if _ZE_GFX_MARKERS
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
+		void TagBeginMain(const std::string_view tag, Pixel color) const noexcept { TagBegin(tag); }
+		void TagBeginCompute(const std::string_view tag, Pixel color) const noexcept { TagBegin(tag); }
+		void TagBeginCopy(const std::string_view tag, Pixel color) const noexcept { TagBegin(tag); }
 
 		void TagEndMain() const noexcept { tagManager->EndEvent(); }
 		void TagEndCompute() const noexcept { tagManager->EndEvent(); }

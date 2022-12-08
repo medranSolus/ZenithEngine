@@ -63,7 +63,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
 	{
 		// Clearing data on first usage
-		ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Cube Clear", PixelVal::Gray);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Clear", PixelVal::Gray);
 		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
@@ -129,7 +129,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 				// Depth pre-pass
 				data.StateDepth.Bind(cl);
-				ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
+				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
@@ -139,7 +139,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ctx.Reset();
 				for (U64 i = 0; i < solidCount; ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), PixelVal::Gray);
+					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), PixelVal::Gray);
 
 					EID entity = solidGroup[i];
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
@@ -172,7 +172,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 				// Solid pass
 				data.StatesSolid[currentState].Bind(cl);
-				ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
+				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
@@ -184,7 +184,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ctx.Reset();
 				for (U64 i = 0; i < solidCount; ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0x01, 0x60, 0x64));
+					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = solidGroup[i];
 					cbuffer.Bind(cl, ctx, solidGroup.get<Solid>(entity).Transform);
@@ -225,7 +225,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			{
 				Utils::ViewSortDescending(transparentGroup, position);
 
-				ZE_DRAW_TAG_BEGIN(dev, cl, L"Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
+				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
@@ -237,7 +237,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ctx.Reset();
 				for (U64 i = 0; i < transparentCount; ++i)
 				{
-					ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0x01, 0x60, 0x64));
+					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = transparentGroup[i];
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);

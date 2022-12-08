@@ -35,13 +35,13 @@ namespace ZE::Utils
 	constexpr U32 GetStringHash(const char str[], U64 size) noexcept { return CalculateCRC32(str, size); }
 
 	// Convert ASCII string to UTF-8
-	std::wstring ToUtf8(const std::string& s) noexcept;
+	std::wstring ToUtf8(const std::string_view s) noexcept;
 	// Convert UTF-8 string to ASCII
-	std::string ToAscii(const std::wstring& s) noexcept;
+	std::string ToAscii(const std::wstring_view s) noexcept;
 	// Seperate quoted strings into vector
 	std::vector<std::string> ParseQuoted(const std::string& input) noexcept;
 	// Split string based on given delimeter
-	std::deque<std::string> SplitString(const std::string& input, const std::string& delimeter) noexcept;
+	std::deque<std::string> SplitString(const std::string_view input, const std::string_view delimeter) noexcept;
 
 #pragma region Functions
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept

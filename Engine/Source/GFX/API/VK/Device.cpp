@@ -4,15 +4,6 @@
 
 namespace ZE::GFX::API::VK
 {
-#if _ZE_DEBUG_GFX_API
-	VkBool32 VKAPI_PTR Device::DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-	{
-		Logger::InfoNoFile(pCallbackData->pMessage);
-		return VK_FALSE;
-	}
-#endif
-
 	U16 Device::GetExtensionIndexDynamic(const char* extName) noexcept
 	{
 		// __COUNTER__ is supported on MSVC, GCC and Clang, on other compilers should find alternative
@@ -23,6 +14,24 @@ namespace ZE::GFX::API::VK
 #undef X
 			return KNOWN_EXTENSION_COUNT;
 	}
+
+#if _ZE_DEBUG_GFX_API
+	VkBool32 VKAPI_PTR Device::DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+	{
+		Logger::InfoNoFile(pCallbackData->pMessage);
+		return VK_FALSE;
+	}
+#endif
+#if _ZE_GFX_MARKERS
+	void Device::BeingTag(VkQueue queue, const std::string_view tag, Pixel color) noexcept
+	{
+		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
+		labelInfo.pLabelName = tag.data();
+		*reinterpret_cast<ColorF4*>(labelInfo.color) = { color.Red, color.Green, color.Blue, color.Alpha };
+		vkQueueBeginDebugUtilsLabelEXT(queue, &labelInfo);
+	}
+#endif
 
 	bool Device::FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept
 	{
@@ -191,6 +200,9 @@ namespace ZE::GFX::API::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
+#if _ZE_GFX_MARKERS
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+#endif
 #if !_ZE_PLATFORM_LINUX
 			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
@@ -203,6 +215,9 @@ namespace ZE::GFX::API::VK
 		{
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
+#endif
+#if _ZE_GFX_MARKERS
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
 			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED

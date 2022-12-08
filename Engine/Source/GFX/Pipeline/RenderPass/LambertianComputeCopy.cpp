@@ -6,7 +6,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 	{
 		const Resources ids = *passData.Buffers.CastConst<Resources>();
 		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, cl, L"Copy gbuffer for SSAO", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Copy gbuffer for SSAO", PixelVal::White);
 		renderData.Buffers.Copy(cl, ids.SourceNormal, ids.CopyNormal);
 		renderData.Buffers.Copy(cl, ids.SourceDepth, ids.CopyDepth);
 		ZE_DRAW_TAG_END(dev, cl);

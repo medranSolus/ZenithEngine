@@ -32,7 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(dev, cl, L"HDRGammaCorrection", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "HDRGammaCorrection", PixelVal::White);
 		ctx.BindingSchema.SetGraphics(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);

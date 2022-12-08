@@ -53,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			cl.Open(dev, data.State);
-			ZE_DRAW_TAG_BEGIN(dev, cl, L"Wireframe", Pixel(0xBC, 0x54, 0x4B));
+			ZE_DRAW_TAG_BEGIN(dev, cl, "Wireframe", Pixel(0xBC, 0x54, 0x4B));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
@@ -65,7 +65,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Mesh_" + std::to_wstring(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
 				auto entity = visibleGroup[i];
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);

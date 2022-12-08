@@ -517,7 +517,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		if (startingTransitions.size() > 0)
 		{
 			mainList.Get().dx12.Open(dev);
-			ZE_DRAW_TAG_BEGIN(dev, mainList.Get().dx12, L"DX12 Wrapping Transitions", PixelVal::Gray);
+			ZE_DRAW_TAG_BEGIN(dev, mainList.Get().dx12, "DX12 Wrapping Transitions", PixelVal::Gray);
 			mainList.Get().dx12.GetList()->ResourceBarrier(static_cast<U32>(startingTransitions.size()), startingTransitions.data());
 			ZE_DRAW_TAG_END(dev, mainList.Get().dx12);
 			mainList.Get().dx12.Close(dev);
@@ -1168,7 +1168,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		// Perform wrapping barriers
 		auto& device = dev.Get().dx12;
 		cl.Get().dx12.Open(device);
-		ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, L"Init Transitions", PixelVal::Gray);
+		ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, "Init Transitions", PixelVal::Gray);
 		cl.Get().dx12.GetList()->ResourceBarrier(initTransitions.BarrierCount, initTransitions.Barriers);
 		ZE_DRAW_TAG_END(dev, cl.Get().dx12);
 		cl.Get().dx12.Close(device);
@@ -1229,7 +1229,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			}
 
 			cl.Get().dx12.Open(device);
-			ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, L"Exit Transitions", PixelVal::Gray);
+			ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, "Exit Transitions", PixelVal::Gray);
 			cl.Get().dx12.GetList()->ResourceBarrier(transition.BarrierCount, transition.Barriers);
 			ZE_DRAW_TAG_END(dev, cl.Get().dx12);
 			cl.Get().dx12.Close(device);

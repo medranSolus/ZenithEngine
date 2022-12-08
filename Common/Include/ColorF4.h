@@ -11,6 +11,8 @@ namespace ZE
 		Float4 RGBA = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 		ColorF4() = default;
+		constexpr ColorF4(U8 r, U8 g, U8 b, U8 a = 255) noexcept : RGBA(r / 255.f, g / 255.f, b / 255.f, a / 255.f) {}
+		constexpr ColorF4(const Float3& rgb) noexcept : ColorF4(rgb.x, rgb.y, rgb.z) {}
 		constexpr ColorF4(float r, float g, float b, float a = 1.0f) noexcept : RGBA(r, g, b, a) {}
 		constexpr ColorF4(Float4&& rgba) noexcept : RGBA(std::move(rgba)) {}
 		constexpr ColorF4(const Float4& rgba) noexcept : RGBA(rgba) {}

@@ -50,14 +50,18 @@ namespace ZE::GFX::API::VK
 
 		AllocatorGPU allocator;
 
-#if _ZE_DEBUG_GFX_API
-		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-#endif
 		template<U64 Size>
 		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
 		// To be used with dynamically allocated string (slower than normal version)
 		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
+#if _ZE_DEBUG_GFX_API
+		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+#endif
+#if _ZE_GFX_MARKERS
+		static void BeingTag(VkQueue queue, const std::string_view tag, Pixel color) noexcept;
+#endif
+
 		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
 		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
 			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features, QueueFamilyInfo& familyInfo);
@@ -111,13 +115,13 @@ namespace ZE::GFX::API::VK
 		constexpr void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
 
 #if _ZE_GFX_MARKERS
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept {}
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept {}
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept {}
+		void TagBeginMain(const std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
+		void TagBeginCompute(const std::string_view tag, Pixel color) const noexcept { BeingTag(computeQueue, tag, color); }
+		void TagBeginCopy(const std::string_view tag, Pixel color) const noexcept { BeingTag(copyQueue, tag, color); }
 
-		void TagEndMain() const noexcept {}
-		void TagEndCompute() const noexcept {}
-		void TagEndCopy() const noexcept {}
+		void TagEndMain() const noexcept { vkQueueEndDebugUtilsLabelEXT(gfxQueue); }
+		void TagEndCompute() const noexcept { vkQueueEndDebugUtilsLabelEXT(computeQueue); }
+		void TagEndCopy() const noexcept { vkQueueEndDebugUtilsLabelEXT(copyQueue); }
 #endif
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);

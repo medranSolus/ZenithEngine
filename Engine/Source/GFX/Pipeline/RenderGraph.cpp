@@ -688,7 +688,7 @@ namespace ZE::GFX::Pipeline
 
 			for (U64 i = 0; i < levelCount; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
+				ZE_DRAW_TAG_BEGIN_MAIN(dev, ("Level " + std::to_string(i + 1)).c_str(), PixelVal::White);
 				auto& level = passes[i];
 				if (level.second)
 				{
@@ -726,7 +726,7 @@ namespace ZE::GFX::Pipeline
 			execData.Buffers.InitTransitions(dev, mainList);
 			for (U64 i = 0; i < levelCount; ++i)
 			{
-				ZE_DRAW_TAG_BEGIN_MAIN(dev, (L"Level " + std::to_wstring(i + 1)).c_str(), PixelVal::White);
+				ZE_DRAW_TAG_BEGIN_MAIN(dev, ("Level " + std::to_string(i + 1)).c_str(), PixelVal::White);
 				auto& level = passes[i];
 				if (level.second)
 				{

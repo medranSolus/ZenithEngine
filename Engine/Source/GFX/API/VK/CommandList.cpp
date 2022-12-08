@@ -39,4 +39,19 @@ namespace ZE::GFX::API::VK
 	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 	}
+
+#if _ZE_GFX_MARKERS
+	void CommandList::TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept
+	{
+		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
+		labelInfo.pLabelName = tag.data();
+		*reinterpret_cast<ColorF4*>(labelInfo.color) = { color.Red, color.Green, color.Blue, color.Alpha };
+		vkCmdBeginDebugUtilsLabelEXT(commands, &labelInfo);
+	}
+
+	void CommandList::TagEnd(GFX::Device& dev) const noexcept
+	{
+		vkCmdEndDebugUtilsLabelEXT(commands);
+	}
+#endif
 }

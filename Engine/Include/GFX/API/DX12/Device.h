@@ -100,9 +100,9 @@ namespace ZE::GFX::API::DX12
 		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
 #if _ZE_GFX_MARKERS
-		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
-		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
-		void TagBeginCopy(const wchar_t* tag, Pixel color) const noexcept { PIXBeginEvent(copyQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag); }
+		void TagBeginMain(const std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
+		void TagBeginCompute(const std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
+		void TagBeginCopy(const std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(copyQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
 
 		void TagEndMain() const noexcept { PIXEndEvent(mainQueue.Get()); }
 		void TagEndCompute() const noexcept { PIXEndEvent(computeQueue.Get()); }

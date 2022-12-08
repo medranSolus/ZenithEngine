@@ -93,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position)));
 
 				data.State.Bind(cl);
-				ZE_DRAW_TAG_BEGIN(dev, cl, (L"Point Light nr_" + std::to_wstring(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Point Light nr_" + std::to_string(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 				ctx.BindingSchema.SetGraphics(cl);

@@ -78,17 +78,17 @@ namespace ZE::GFX::API::DX12
 	}
 
 #if _ZE_GFX_MARKERS
-	void CommandList::TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept
+	void CommandList::TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept
 	{
 		switch (Settings::GetGpuVendor())
 		{
 		case VendorGPU::AMD:
 		{
-			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), Utils::ToAscii(tag).c_str());
+			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), tag.data());
 			break;
 		}
 		}
-		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag);
+		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data());
 	}
 
 	void CommandList::TagEnd(GFX::Device& dev) const noexcept

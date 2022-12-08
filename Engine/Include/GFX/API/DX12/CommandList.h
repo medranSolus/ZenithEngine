@@ -44,7 +44,7 @@ namespace ZE::GFX::API::DX12
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
 #if _ZE_GFX_MARKERS
-		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept;
+		void TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept;
 		void TagEnd(GFX::Device& dev) const noexcept;
 #endif
 

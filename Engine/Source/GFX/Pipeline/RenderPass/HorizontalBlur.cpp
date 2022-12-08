@@ -34,7 +34,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(dev, cl, L"Outline Horizontal Blur", Pixel(0xF3, 0xEA, 0xAF));
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Horizontal Blur", Pixel(0xF3, 0xEA, 0xAF));
 		ctx.BindingSchema.SetGraphics(cl);
 		renderData.Buffers.InitRTV(cl, ids.RenderTarget);
 
