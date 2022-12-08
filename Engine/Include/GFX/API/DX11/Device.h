@@ -53,6 +53,15 @@ namespace ZE::GFX::API::DX11
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
 
+		constexpr void BeginUploadRegion() {}
+		constexpr void StartUpload() {}
+		constexpr void EndUploadRegion() {}
+		constexpr void EndFrame() noexcept {}
+
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagBeginCompute(const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
@@ -62,14 +71,6 @@ namespace ZE::GFX::API::DX11
 		void TagEndCompute() const noexcept { tagManager->EndEvent(); }
 		void TagEndCopy() const noexcept { tagManager->EndEvent(); }
 #endif
-
-		constexpr void BeginUploadRegion() {}
-		constexpr void StartUpload() {}
-		constexpr void EndUploadRegion() {}
-
-		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
 

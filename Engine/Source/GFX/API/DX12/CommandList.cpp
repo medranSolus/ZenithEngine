@@ -24,34 +24,6 @@ namespace ZE::GFX::API::DX12
 		Init(dev.Get().dx12, CommandType::All);
 	}
 
-#if _ZE_GFX_MARKERS
-	void CommandList::TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept
-	{
-		switch (Settings::GetGpuVendor())
-		{
-		case VendorGPU::AMD:
-		{
-			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), Utils::ToAscii(tag).c_str());
-			break;
-		}
-		}
-		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag);
-	}
-
-	void CommandList::TagEnd(GFX::Device& dev) const noexcept
-	{
-		switch (Settings::GetGpuVendor())
-		{
-		case VendorGPU::AMD:
-		{
-			agsDriverExtensionsDX12_PopMarker(dev.Get().dx12.GetAGSContext(), commands.Get());
-			break;
-		}
-		}
-		PIXEndEvent(commands.Get());
-	}
-#endif
-
 	void CommandList::Open(GFX::Device& dev)
 	{
 		Open(dev.Get().dx12, nullptr);
@@ -104,6 +76,34 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);
 		ZE_DX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
 	}
+
+#if _ZE_GFX_MARKERS
+	void CommandList::TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept
+	{
+		switch (Settings::GetGpuVendor())
+		{
+		case VendorGPU::AMD:
+		{
+			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), Utils::ToAscii(tag).c_str());
+			break;
+		}
+		}
+		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag);
+	}
+
+	void CommandList::TagEnd(GFX::Device& dev) const noexcept
+	{
+		switch (Settings::GetGpuVendor())
+		{
+		case VendorGPU::AMD:
+		{
+			agsDriverExtensionsDX12_PopMarker(dev.Get().dx12.GetAGSContext(), commands.Get());
+			break;
+		}
+		}
+		PIXEndEvent(commands.Get());
+	}
+#endif
 
 	void CommandList::Init(Device& dev, CommandType type)
 	{

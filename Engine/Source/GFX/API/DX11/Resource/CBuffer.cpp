@@ -86,11 +86,6 @@ namespace ZE::GFX::API::DX11::Resource
 		}
 	}
 
-	void CBuffer::Free(GFX::Device& dev) noexcept
-	{
-		buffer = nullptr;
-	}
-
 	void CBuffer::GetData(GFX::Device& dev, void* values, U32 bytes) const
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx11);

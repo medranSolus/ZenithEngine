@@ -15,6 +15,8 @@ namespace ZE::GFX::API::DX11
 		: descriptorCount(descriptorCount), scratchDescriptorCount(scratchDescriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
+		// No support for 8 bit indices on DirectX
+		Settings::SetU8IndexSets(false);
 
 		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API

@@ -13,7 +13,7 @@ namespace ZE::GFX::API::DX12::Resource
 		CBuffer() = default;
 		CBuffer(GFX::Device& dev, const void* values, U32 bytes);
 		ZE_CLASS_MOVE(CBuffer);
-		~CBuffer() = default;
+		~CBuffer() { ZE_ASSERT(resInfo.IsFree(), "Resource not freed before deletion!"); }
 
 		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;

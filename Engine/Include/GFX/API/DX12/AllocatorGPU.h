@@ -35,9 +35,6 @@ namespace ZE::GFX::API::DX12
 		static constexpr HeapFlags MAIN_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::NoMSAA;
 		static constexpr HeapFlags SECONDARY_HEAP_FLAGS = HeapFlag::AllowTextures | HeapFlag::NoMSAA;
 		static constexpr HeapFlags DYNAMIC_BUFF_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::Dynamic | HeapFlag::NoMSAA;
-		static constexpr U64 MAIN_HEAP_SIZE = 256 * Math::MEGABYTE;
-		static constexpr U64 SECONDARY_HEAP_SIZE = 512 * Math::MEGABYTE;
-		static constexpr U64 DYNAMIC_BUFF_HEAP_SIZE = 64 * Math::MEGABYTE;
 
 		AllocTier allocTier = AllocTier::Tier1;
 		HeapAllocator::BlockAllocator blockAllocator;
@@ -67,7 +64,7 @@ namespace ZE::GFX::API::DX12
 		static ResourceInfo AllocMinimalChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc, HeapAllocator& allocator);
 
 		// Remove allocated memory and return it to free pool merging whenever possible with nerby free regions
-		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator);
+		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept;
 
 	public:
 		AllocatorGPU() : blockAllocator(BLOCK_ALLOC_CAPACITY), chunkAllocator(CHUNK_ALLOC_CAPACITY), mainAllocator(blockAllocator, chunkAllocator),
@@ -77,9 +74,9 @@ namespace ZE::GFX::API::DX12
 
 		constexpr AllocTier GetCurrentTier() const noexcept { return allocTier; }
 
-		void RemoveBuffer(ResourceInfo& resInfo) { Remove(resInfo, mainAllocator); }
-		void RemoveDynamicBuffer(ResourceInfo& resInfo) { Remove(resInfo, dynamicBuffersAllocator); }
-		void RemoveTexture(ResourceInfo& resInfo) { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
+		void RemoveBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, mainAllocator); }
+		void RemoveDynamicBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, dynamicBuffersAllocator); }
+		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
 		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier);
 

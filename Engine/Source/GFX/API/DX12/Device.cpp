@@ -52,9 +52,14 @@ namespace ZE::GFX::API::DX12
 	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
 		: scratchDescStart(descriptorCount - scratchDescriptorCount), descriptorCount(descriptorCount)
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-		std::string ZE_DX_DEBUG_ID;
 		ZE_ASSERT(descriptorCount > scratchDescriptorCount, "Descriptor count has to be greater than scratch descriptor count!");
+
+		ZE_WIN_ENABLE_EXCEPT();
+#if _ZE_DEBUG_GFX_NAMES
+		std::string ZE_DX_DEBUG_ID;
+#endif
+		// No support for 8 bit indices on DirectX
+		Settings::SetU8IndexSets(false);
 
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands

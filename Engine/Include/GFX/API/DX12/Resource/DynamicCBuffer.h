@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX12::Resource
 		DynamicCBuffer() = default;
 		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); MapBlock(dev, 0); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
-		~DynamicCBuffer() = default;
+		~DynamicCBuffer();
 
 		GFX::Resource::DynamicBufferAlloc Alloc(GFX::Device& dev, const void* values, U32 bytes);
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept;

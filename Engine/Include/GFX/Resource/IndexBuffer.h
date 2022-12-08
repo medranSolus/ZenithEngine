@@ -16,7 +16,7 @@ namespace ZE::GFX::Resource
 		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;
 
-		constexpr void Init(Device& dev, const IndexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		constexpr void Init(Device& dev, const IndexData& data);
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
 		ZE_API_BACKEND_GET(Resource::IndexBuffer);
 
@@ -29,6 +29,13 @@ namespace ZE::GFX::Resource
 	};
 
 #pragma region Functions
+	constexpr void IndexBuffer::Init(Device& dev, const IndexData& data)
+	{
+		ZE_ASSERT(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0,
+			"Indices cannot be empty and they have to be multiple of 3!");
+		ZE_API_BACKEND_VAR.Init(dev, data);
+	}
+
 	constexpr void IndexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
 	{
 		IndexData data;

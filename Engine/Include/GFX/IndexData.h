@@ -7,6 +7,7 @@ namespace ZE::GFX
 	struct IndexData
 	{
 		U32 Count;
-		const U32* Indices;
+		U8 IndexSize;
+		const void* Indices;
 	};
 }

@@ -13,8 +13,10 @@ namespace ZE::Intrin
 {
 	inline U64 Rdtsc() noexcept;
 	inline void FenceStore() noexcept;
-	// Returns number of bits set to 1
-	inline U32 CountBitsSet(U32 val) noexcept;
+	// Returns number of bits set to 1 in 64 bit integer
+	inline U8 CountBitsSet(U64 val) noexcept;
+	// Returns number of bits set to 1 in 32 bit integer
+	inline U8 CountBitsSet(U32 val) noexcept;
 	// Scans U64 for index of first nonzero value from the Least Significant Bit (LSB).
 	// If mask is 0 then returns UINT8_MAX
 	inline U8 BitScanLSB(U64 mask) noexcept;
@@ -43,21 +45,35 @@ namespace ZE::Intrin
 #endif
 	}
 
-	inline U32 CountBitsSet(U32 val) noexcept
+	inline U8 CountBitsSet(U64 val) noexcept
 	{
 #if __cplusplus >= 202002L
-		return std::popcount(val);
+		return static_cast<U8>(std::popcount(val));
 #elif _ZE_COMPILER_MSVC
-		return __popcnt(val);
+		return static_cast<U8>(__popcnt64(val));
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
-		return static_cast<U32>(__builtin_popcount(val));
+		return static_cast<U8>(__builtin_popcountll(val));
+#else
+		val -= (val >> 1) & 0x5555555555555555;
+		val = (val & 0x3333333333333333) + ((val >> 2) & 0x3333333333333333);
+		return static_cast<U8>((((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 56);
+#endif
+	}
+
+	inline U8 CountBitsSet(U32 val) noexcept
+	{
+#if __cplusplus >= 202002L
+		return static_cast<U8>(std::popcount(val));
+#elif _ZE_COMPILER_MSVC
+		return static_cast<U8>(__popcnt(val));
+#elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		return static_cast<U8>(__builtin_popcount(val));
 #else
 		U32 c = val - ((val >> 1) & 0x55555555);
 		c = ((c >> 2) & 0x33333333) + (c & 0x33333333);
 		c = ((c >> 4) + c) & 0x0F0F0F0F;
 		c = ((c >> 8) + c) & 0x00FF00FF;
-		c = ((c >> 16) + c) & 0x0000FFFF;
-		return c;
+		return static_cast<U8>(((c >> 16) + c) & 0x0000FFFF);
 #endif
 	}
 

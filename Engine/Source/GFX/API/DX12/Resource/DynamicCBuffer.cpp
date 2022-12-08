@@ -27,6 +27,14 @@ namespace ZE::GFX::API::DX12::Resource
 		ZE_DX_THROW_FAILED(resInfo.at(block).first.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
 	}
 
+	DynamicCBuffer::~DynamicCBuffer()
+	{
+		for (auto& res : resInfo)
+		{
+			ZE_ASSERT(res.first.IsFree(), "Resource not freed before deletion!");
+		}
+	}
+
 	GFX::Resource::DynamicBufferAlloc DynamicCBuffer::Alloc(GFX::Device& dev, const void* values, U32 bytes)
 	{
 		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");

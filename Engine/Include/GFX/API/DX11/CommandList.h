@@ -31,11 +31,11 @@ namespace ZE::GFX::API::DX11
 
 		constexpr void Open(GFX::Device& dev) {}
 
+		void Reset(GFX::Device& dev) { commands = nullptr; }
 #if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { tagManager->BeginEvent(tag); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
-		void Reset(GFX::Device& dev) { commands = nullptr; }
 
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);

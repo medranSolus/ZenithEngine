@@ -24,10 +24,6 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
-#if _ZE_GFX_MARKERS
-		constexpr void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
-		constexpr void TagEnd(GFX::Device& dev) const noexcept { if (Settings::GfxTagsActive()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
-#endif
 		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
@@ -40,6 +36,11 @@ namespace ZE::GFX
 		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
+
+#if _ZE_GFX_MARKERS
+		void TagBegin(GFX::Device& dev, const wchar_t* tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
+		void TagEnd(GFX::Device& dev) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
+#endif
 	};
 }
 

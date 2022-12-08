@@ -99,7 +99,7 @@ namespace ZE::GFX::API::DX12
 		return Alloc(dev, bytes, desc, 1, allocator);
 	}
 
-	void AllocatorGPU::Remove(ResourceInfo& resInfo, HeapAllocator& allocator)
+	void AllocatorGPU::Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept
 	{
 		ZE_ASSERT(resInfo.Resource, "Freeing already destroyed resource!");
 		resInfo.Resource = nullptr;
@@ -120,17 +120,17 @@ namespace ZE::GFX::API::DX12
 			ZE_ENUM_UNHANDLED();
 		case AllocTier::Tier1:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS, MAIN_HEAP_SIZE, NORMAL_CHUNK, 3);
-			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS, SECONDARY_HEAP_SIZE, SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS, Settings::GetHeapSizeBuffers(), NORMAL_CHUNK, 3);
+			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS, Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
 			break;
 		}
 		case AllocTier::Tier2:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS, MAIN_HEAP_SIZE + SECONDARY_HEAP_SIZE, SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS, Settings::GetHeapSizeBuffers() + Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
 			break;
 		}
 		}
-		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS, DYNAMIC_BUFF_HEAP_SIZE, NORMAL_CHUNK, 3);
+		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS, Settings::GetHeapSizeHost(), NORMAL_CHUNK, 3);
 	}
 
 	ResourceInfo AllocatorGPU::AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)

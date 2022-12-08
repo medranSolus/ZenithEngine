@@ -8,12 +8,13 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		DX::ComPtr<IBuffer> buffer;
 		U32 count;
+		bool is16bit;
 
 	public:
 		IndexBuffer() = default;
 		IndexBuffer(GFX::Device& dev, const IndexData& data);
 		ZE_CLASS_MOVE(IndexBuffer);
-		~IndexBuffer() = default;
+		~IndexBuffer() { ZE_ASSERT(count == 0 && buffer == nullptr, "Resource not freed before deletion!"); }
 
 		constexpr U32 GetCount() const noexcept { return count; }
 		void Free(GFX::Device& dev) noexcept { count = 0; buffer = nullptr; }

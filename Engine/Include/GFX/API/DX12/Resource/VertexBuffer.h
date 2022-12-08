@@ -13,7 +13,7 @@ namespace ZE::GFX::API::DX12::Resource
 		VertexBuffer() = default;
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		ZE_CLASS_MOVE(VertexBuffer);
-		~VertexBuffer() = default;
+		~VertexBuffer() { ZE_ASSERT(info.IsFree(), "Resource not freed before deletion!"); }
 
 		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->IASetVertexBuffers(0, 1, &view); }
 		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info); }

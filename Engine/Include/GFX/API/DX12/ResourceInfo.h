@@ -8,5 +8,7 @@ namespace ZE::GFX::API::DX12
 	{
 		DX::ComPtr<IResource> Resource = nullptr;
 		AllocHandle Handle = 0;
+
+		bool IsFree() const noexcept { return Resource == nullptr && Handle == 0; }
 	};
 }

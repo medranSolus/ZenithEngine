@@ -214,7 +214,13 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 	Pack::~Pack()
 	{
 		if (resources)
+		{
+			for (U32 i = 0; i < count; ++i)
+			{
+				ZE_ASSERT(resources[i].IsFree(), "Resource not freed before deletion!");
+			}
 			resources.DeleteArray();
+		}
 	}
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept

@@ -30,7 +30,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
 		passData->VertexBuffer.Init(dev, { static_cast<U32>(vertices.size()), sizeof(Float3), vertices.data() });
 		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
-		passData->IndexBuffer.Init(dev, { static_cast<U32>(indices.size()), indices.data() });
+		passData->IndexBuffer.Init(dev, { static_cast<U32>(indices.size()), sizeof(U32), indices.data() });
 		dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;

@@ -10,6 +10,10 @@ namespace ZE
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(0, 3, 0);
 
+		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
+		static constexpr U64 TEXTURES_HEAP_SIZE = 512 * Math::MEGABYTE;
+		static constexpr U64 HOST_HEAP_SIZE = 64 * Math::MEGABYTE;
+
 		static inline U64 frameIndex = 0;
 		static inline U32 swapChainBufferCount = 0;
 		static inline PixelFormat backbufferFormat = PixelFormat::R8G8B8A8_UNorm;
@@ -17,9 +21,7 @@ namespace ZE
 		static inline GfxApiType gfxApi;
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
-#if _ZE_GFX_MARKERS
-		static inline bool enableGfxTags = true;
-#endif
+		static inline std::bitset<2> flags = 0;
 
 		static constexpr bool Initialized() noexcept { return swapChainBufferCount != 0; }
 
@@ -29,13 +31,13 @@ namespace ZE
 
 		static constexpr const char* GetEngineName() noexcept { return ENGINE_NAME; }
 		static constexpr U32 GetEngineVersion() noexcept { return ENGINE_VERSION; }
+
+		static constexpr U64 GetHeapSizeBuffers() noexcept { return BUFFERS_HEAP_SIZE; }
+		static constexpr U64 GetHeapSizeTextures() noexcept { return TEXTURES_HEAP_SIZE; }
+		static constexpr U64 GetHeapSizeHost() noexcept { return HOST_HEAP_SIZE; }
+
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
-
-#if _ZE_GFX_MARKERS
-		static constexpr void SetGfxTags(bool enabled) noexcept { enableGfxTags = enabled; }
-		static constexpr bool GfxTagsActive() noexcept { return enableGfxTags; }
-#endif
 
 		static constexpr void SetBackbufferFormat(PixelFormat format) noexcept { backbufferFormat = format; }
 		static constexpr PixelFormat GetBackbufferFormat() noexcept { return backbufferFormat; }
@@ -51,6 +53,13 @@ namespace ZE
 
 		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
 		static constexpr void Init(GfxApiType type, U32 backBufferCount, const char* appName, U32 appVersion) noexcept;
+
+#if _ZE_GFX_MARKERS
+		static void SetGfxTags(bool enabled) noexcept { flags[0] = enabled; }
+		static bool IsEnabledGfxTags() noexcept { return flags[0]; }
+#endif
+		static void SetU8IndexSets(bool enabled) noexcept { flags[1] = enabled; }
+		static bool IsEnabledU8IndexSets() noexcept { return flags[1]; }
 	};
 
 #pragma region Functions

@@ -13,7 +13,7 @@ namespace ZE::GFX::API::DX11::Resource
 		VertexBuffer() = default;
 		VertexBuffer(GFX::Device& dev, const VertexData& data);
 		ZE_CLASS_MOVE(VertexBuffer);
-		~VertexBuffer() = default;
+		~VertexBuffer() { ZE_ASSERT(byteStride == 0 && buffer == nullptr, "Resource not freed before deletion!"); }
 
 		void Free(GFX::Device& dev) noexcept { byteStride = 0; buffer = nullptr; }
 

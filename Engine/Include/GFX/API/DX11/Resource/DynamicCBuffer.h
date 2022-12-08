@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX11::Resource
 		DynamicCBuffer() = default;
 		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
-		~DynamicCBuffer() = default;
+		~DynamicCBuffer() { ZE_ASSERT(blocks.size() == 0, "Resource not freed before deletion!"); };
 
 		void Free(GFX::Device& dev) noexcept { blocks.clear(); }
 

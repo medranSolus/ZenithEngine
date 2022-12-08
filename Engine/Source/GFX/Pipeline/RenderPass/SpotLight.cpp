@@ -52,7 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 		const auto volume = Primitive::MakeConeSolid(8);
 		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
-		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), volume.Indices.data() });
+		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), sizeof(U32), volume.Indices.data() });
 
 		return passData;
 	}

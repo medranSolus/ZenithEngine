@@ -8,19 +8,47 @@
 
 namespace ZE::Data
 {
-#if _ZE_MODEL_LOADING
-	EID ParseMesh(const aiMesh& mesh, GFX::Device& dev, Storage& meshRegistry, bool loadName)
+	template<typename Index>
+	void ParseIndices(std::vector<Index>& indices, const aiMesh& mesh)
 	{
-		U32* indices = new U32[mesh.mNumFaces * 3];
-		GFX::IndexData indexData = { 0, indices };
-		for (U32 i = 0; i < mesh.mNumFaces; ++i)
+		for (U32 i = 0, index = 0; i < mesh.mNumFaces; ++i)
 		{
 			const aiFace& face = mesh.mFaces[i];
 			ZE_ASSERT(face.mNumIndices == 3, "Mesh face is not a triangle!");
 
-			indices[indexData.Count++] = face.mIndices[0];
-			indices[indexData.Count++] = face.mIndices[1];
-			indices[indexData.Count++] = face.mIndices[2];
+			indices[index++] = face.mIndices[0];
+			indices[index++] = face.mIndices[1];
+			indices[index++] = face.mIndices[2];
+		}
+	}
+
+#if _ZE_MODEL_LOADING
+	EID ParseMesh(const aiMesh& mesh, GFX::Device& dev, Storage& meshRegistry, bool loadName)
+	{
+		std::vector<U32> indicesU32;
+		std::vector<U16> indicesU16;
+		std::vector<U8> indicesU8;
+		GFX::IndexData indexData = { mesh.mNumFaces * 3 };
+		if (indexData.Count >= UINT16_MAX)
+		{
+			indicesU32.resize(indexData.Count);
+			indexData.IndexSize = sizeof(U32);
+			indexData.Indices = indicesU32.data();
+			ParseIndices(indicesU32, mesh);
+		}
+		else if (!Settings::IsEnabledU8IndexSets() || indexData.Count >= UINT8_MAX)
+		{
+			indicesU16.resize(indexData.Count);
+			indexData.IndexSize = sizeof(U16);
+			indexData.Indices = indicesU16.data();
+			ParseIndices(indicesU16, mesh);
+		}
+		else
+		{
+			indicesU8.resize(indexData.Count);
+			indexData.IndexSize = sizeof(U8);
+			indexData.Indices = indicesU8.data();
+			ParseIndices(indicesU8, mesh);
 		}
 
 		Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
@@ -71,7 +99,6 @@ namespace ZE::Data
 		geometry.Vertices.Init(dev, { mesh.mNumVertices, sizeof(GFX::Vertex), vertices });
 
 		delete[] vertices;
-		delete[] indices;
 		return meshId;
 	}
 
