@@ -615,8 +615,14 @@ void App::MakeFrame()
 	engine.EndFrame();
 }
 
-App::App(const std::string& commandLine)
-	: engine({ APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), GfxApiType::Vulkan, 2, 0, 0, 10000, 800, { "Skybox/Space", ".png" } })
+App::App(const CmdParser& params)
+	: engine(EngineParams
+		{
+			APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), EngineParams::GetParsedApi(params),
+			params.GetNumber("backbuffers"), params.GetNumber("width"), params.GetNumber("height"),
+			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"),
+			{ "Skybox/Space", ".png", params.GetOption("minPassDist"), params.GetNumber("shadowMapSize") }
+		})
 {
 	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
 

@@ -48,8 +48,8 @@ namespace ZE
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
-		static constexpr U64 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
-		static constexpr U64 GetChainResourceCount() noexcept;
+		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
+		static constexpr U32 GetChainResourceCount() noexcept;
 
 		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
 		static constexpr void Init(GfxApiType type, U32 backBufferCount, const char* appName, U32 appVersion) noexcept;
@@ -63,7 +63,7 @@ namespace ZE
 	};
 
 #pragma region Functions
-	constexpr U64 Settings::GetChainResourceCount() noexcept
+	constexpr U32 Settings::GetChainResourceCount() noexcept
 	{
 		ZE_ASSERT(Initialized(), "Not initialized!");
 

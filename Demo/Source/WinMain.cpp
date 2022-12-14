@@ -6,7 +6,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	try
 	{
 		srand(static_cast<unsigned int>(time(NULL)));
-		return App(lpCmdLine).Run();
+		CmdParser parser;
+		EngineParams::SetupParser(parser);
+		parser.Parse(lpCmdLine);
+		return App(parser).Run();
 	}
 	catch (const ZE::Exception::BasicException& e)
 	{

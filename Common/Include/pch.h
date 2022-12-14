@@ -26,12 +26,20 @@
 *** DirectXMath.h
 *** DirectXCollision.h
 * Types.h
+* string_view
+* unordered_map
+* vector
+*/
+#include "CmdParser.h"
+
+/*
+* Types.h (defined by CmdParser.h)
 * utility
 */
 #include "ColorF3.h"
 
 /*
-* Macros.h (defined by ColorF3.h)
+* Macros.h (defined by CmdParser.h)
 * mutex
 */
 #include "LockGuard.h"
@@ -42,7 +50,7 @@
 #include "Logger.h"
 
 /*
-*** Types.h (defined by ColorF3.h)
+*** Types.h (defined by CmdParser.h)
 *** utility
 * ColorF4.h
 * random
@@ -50,14 +58,14 @@
 #include "MathExt.h"
 
 /*
-* Types.h (defined by ColorF3.h)
+* Types.h (defined by CmdParser.h)
 * string
 * map
 */
 #include "Perf.h"
 
 /*
-* Types.h (defined by ColorF3.h)
+* Types.h (defined by CmdParser.h)
 * type_traits
 * cstdlib
 * cstring
@@ -65,13 +73,13 @@
 #include "Table.h"
 
 /*
-* Macros.h (defined by ColorF3.h)
+* Macros.h (defined by CmdParser.h)
 * chrono
 */
 #include "Timer.h"
 
 /*
-*** Types.h (defined by ColorF3.h)
+*** Types.h (defined by CmdParser.h)
 * PixelFormat.h
 * string
 * vector
@@ -80,16 +88,16 @@
 #include "Utils.h"
 
 /*
-*** Types.h (defined by ColorF3.h)
+*** Types.h (defined by CmdParser.h)
 *** vector
 * Allocator/Pool.h
-* Intrinsics.h (defined by ColorF3.h)
+* Intrinsics.h (defined by CmdParser.h)
 * bitset
 */
 #include "Allocator/ChunkedTLSF.h"
 
 /*
-*** Types.h (defined by ColorF3.h)
+*** Types.h (defined by CmdParser.h)
 *** exception
 *** string
 * Exception/BasicException.h
@@ -97,7 +105,7 @@
 #include "Exception/GenericException.h"
 
 /*
-*** Types.h (defined by ColorF3.h)
+*** Types.h (defined by CmdParser.h)
 * Pixel.h
 *** PixelFormat.h (defined by Utils.h)
 *** DirectXTex.h

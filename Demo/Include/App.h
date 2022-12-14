@@ -44,7 +44,7 @@ class App final
 	void MakeFrame();
 
 public:
-	App(const std::string& commandLine = "");
+	App(const CmdParser& params);
 	ZE_CLASS_DELETE(App);
 	~App() = default;
 

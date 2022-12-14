@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/API/ApiType.h"
 #include "GFX/Pipeline/ParamsPBR.h"
+#include "CmdParser.h"
 
 namespace ZE
 {
@@ -29,5 +30,8 @@ namespace ZE
 		U32 ScratchDescriptorCount;
 		// Parameters for used render pipeline
 		GFX::Pipeline::ParamsPBR Renderer;
+
+		static void SetupParser(CmdParser& parser) noexcept;
+		static GfxApiType GetParsedApi(const CmdParser& parser, GfxApiType defApi = GfxApiType::DX12) noexcept;
 	};
 }

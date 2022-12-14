@@ -34,8 +34,10 @@
 *** random
 *** sstream
 *** string
+*** string_view
 *** type_traits
 *** utility
+*** unordered_map
 *** vector
 */
 
