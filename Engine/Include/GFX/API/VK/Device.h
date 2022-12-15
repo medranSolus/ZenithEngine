@@ -44,8 +44,8 @@ namespace ZE::GFX::API::VK
 		U32 gfxQueueIndex = UINT32_MAX;
 		U32 computeQueueIndex = UINT32_MAX;
 		U32 copyQueueIndex = UINT32_MAX;
-		// Is integrated | Present from compute | Memory model device scope | Memory model chains
-		std::bitset<4> flags = 0;
+		// Is integrated | Present from compute | Memory model device scope | Memory model chains | Compute full subgroups
+		std::bitset<5> flags = 0;
 		VkPhysicalDeviceLimits limits;
 
 		AllocatorGPU allocator;
@@ -59,7 +59,7 @@ namespace ZE::GFX::API::VK
 			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 #endif
 #if _ZE_GFX_MARKERS
-		static void BeingTag(VkQueue queue, const std::string_view tag, Pixel color) noexcept;
+		static void BeingTag(VkQueue queue, std::string_view tag, Pixel color) noexcept;
 #endif
 
 		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
@@ -70,6 +70,7 @@ namespace ZE::GFX::API::VK
 		void SetPresentFromComputeSupport(bool enabled) noexcept { flags[1] = enabled; }
 		void SetMemoryModelDeviceScope(bool enabled) noexcept { flags[2] = enabled; }
 		void SetMemoryModelChains(bool enabled) noexcept { flags[3] = enabled; }
+		void SetFullComputeSubgroupSupport(bool enabled) noexcept { flags[4] = enabled; }
 
 		void InitVolk();
 		void CreateInstance();
@@ -115,9 +116,9 @@ namespace ZE::GFX::API::VK
 		constexpr void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
 
 #if _ZE_GFX_MARKERS
-		void TagBeginMain(const std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
-		void TagBeginCompute(const std::string_view tag, Pixel color) const noexcept { BeingTag(computeQueue, tag, color); }
-		void TagBeginCopy(const std::string_view tag, Pixel color) const noexcept { BeingTag(copyQueue, tag, color); }
+		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
+		void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { BeingTag(computeQueue, tag, color); }
+		void TagBeginCopy(std::string_view tag, Pixel color) const noexcept { BeingTag(copyQueue, tag, color); }
 
 		void TagEndMain() const noexcept { vkQueueEndDebugUtilsLabelEXT(gfxQueue); }
 		void TagEndCompute() const noexcept { vkQueueEndDebugUtilsLabelEXT(computeQueue); }
@@ -132,14 +133,19 @@ namespace ZE::GFX::API::VK
 		constexpr VkInstance GetInstance() const noexcept { return instance; }
 		constexpr VkPhysicalDevice GetPhysicalDevice() const noexcept { return physicalDevice; }
 		constexpr VkDevice GetDevice() const noexcept { return device; }
+
 		constexpr VkQueue GetGfxQueue() const noexcept { return gfxQueue; }
 		constexpr VkQueue GetComputeQueue() const noexcept { return computeQueue; }
 		constexpr VkQueue GetCopyQueue() const noexcept { return copyQueue; }
+		constexpr U32 GetGfxQueueIndex() const noexcept { return gfxQueueIndex; }
+		constexpr U32 GetComputeQueueIndex() const noexcept { return computeQueueIndex; }
+		constexpr U32 GetCopyQueueIndex() const noexcept { return copyQueueIndex; }
 
 		constexpr bool IsIntegratedGPU() const noexcept { return flags[0]; }
 		constexpr bool CanPresentFromCompute() const noexcept { return flags[1]; }
 		constexpr bool IsMemoryModelDeviceScope() const noexcept { return flags[2]; }
 		constexpr bool IsMemoryModelChains() const noexcept { return flags[3]; }
+		constexpr bool IsFullComputeSubgroupSupport() const noexcept { return flags[4]; }
 
 		constexpr const VkPhysicalDeviceLimits& GetLimits() const noexcept { return limits; }
 		constexpr AllocatorGPU& GetMemory() noexcept { return allocator; }

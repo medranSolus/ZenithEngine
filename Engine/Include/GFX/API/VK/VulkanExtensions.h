@@ -155,6 +155,7 @@
 	X(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)                                /* Getting info about current usage of memory [EXT_MEMORY] [EXT_QUERY] */ \
 	X(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)                              /* Influencing what memory regions would be evicted first [EXT_MEMORY] */ \
 	X(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)                 /* Enable memory paging [EXT_MEMORY] [EXT_FEAT] */ \
+	X(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)                        /* Get better info about waves sizes and control them [EXT_QUERY] [EXT_FEAT] [1.3] */ \
 	X(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)                       /* A bit slower memory but useful for debug [EXT_MEMORY] [EXT_DEBUG] */ \
 	X(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME)               /* Controlling behavior of oversubscription of memory [EXT_MEMORY] */ \
 	X(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)           /* Aliasing of memory in dedicated allocs [EXT_MEMORY] */ \
@@ -291,7 +292,6 @@
 	X(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME)                     /* Caching compiled at runtime shader modules on disks to be used on subsequent runs [EXT_PERF] [EXT_FEAT] [EXT_SHADER] */ \
 	X(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME)                        /* Allow shader to output stencil ref value [EXT_SHADER] */ \
 	X(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)                  /* Allow vertex/hull shader to select which render target layer or viewport to write to [EXT_SHADER] [EXT_FEAT] [1.2] */ \
-	X(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)                        /* Get better info about waves sizes and control them [EXT_QUERY] [EXT_FEAT] [1.3] */ \
 	X(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME)                       /* Better info about texture alignments [EXT_MEMORY] [EXT_QUERY] [1.3] */ \
 	X(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)                 /* ASTC texture compression for HDR [EXT_FEAT] [1.3] */ \
 	X(VK_EXT_TOOLING_INFO_EXTENSION_NAME)                                 /* Get info about what tools are currently working [EXT_QUERY] [EXT_FEAT] [EXT_DEBUG] [1.3] */ \

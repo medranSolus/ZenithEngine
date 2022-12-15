@@ -27,15 +27,16 @@ namespace ZE::GFX::API::DX11
 		CommandList(GFX::Device& dev);
 		CommandList(GFX::Device& dev, CommandType type);
 		ZE_CLASS_MOVE(CommandList);
-		~CommandList() = default;
+		~CommandList() { ZE_ASSERT(tagManager == nullptr && commands == nullptr && context == nullptr, "Command list not freed before deletion!"); }
 
 		constexpr void Open(GFX::Device& dev) {}
 
 		void Reset(GFX::Device& dev) { commands = nullptr; }
 #if _ZE_GFX_MARKERS
-		void TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
+		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
+		void Free(GFX::Device& dev) noexcept { tagManager = nullptr; commands = nullptr; context = nullptr; }
 
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);

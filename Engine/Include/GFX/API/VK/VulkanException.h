@@ -103,14 +103,15 @@ namespace ZE::GFX::API::VK
 #pragma region Debug name macros
 // Variable name holding debug name
 #define ZE_VK_DEBUG_ID __debugObjectInfo
+#define ZE_VK_DEBUG_ID_STRING __debugObjectInfoName
 
 #if _ZE_DEBUG_GFX_NAMES
 // Enables useage of ZE_VK_SET_ID macros in current scope
-#define ZE_VK_ENABLE_ID() ZE_VK_ENABLE(); VkDebugUtilsObjectNameInfoEXT ZE_VK_DEBUG_ID = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr }
+#define ZE_VK_ENABLE_ID() ZE_VK_ENABLE(); VkDebugUtilsObjectNameInfoEXT ZE_VK_DEBUG_ID = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr }; std::string ZE_VK_DEBUG_ID_STRING
 
 // Before using needs call to ZE_VK_ENABLE_ID()
 // Sets debug name for GPU object with given id
-#define ZE_VK_SET_ID(device, object, vkObjectType, id) ZE_VK_DEBUG_ID.objectType = vkObjectType; ZE_VK_DEBUG_ID.objectHandle = (U64)(object); ZE_VK_DEBUG_ID.pObjectName = id; ZE_VK_THROW_NOSUCC(vkSetDebugUtilsObjectNameEXT(device, &ZE_VK_DEBUG_ID))
+#define ZE_VK_SET_ID(device, object, vkObjectType, id) ZE_VK_DEBUG_ID.objectType = vkObjectType; ZE_VK_DEBUG_ID.objectHandle = (U64)(object); ZE_VK_DEBUG_ID_STRING = id; ZE_VK_DEBUG_ID.pObjectName = ZE_VK_DEBUG_ID_STRING.c_str(); ZE_VK_THROW_NOSUCC(vkSetDebugUtilsObjectNameEXT(device, &ZE_VK_DEBUG_ID))
 
 #else
 // Enables useage of ZE_VK_SET_ID macros in current scope

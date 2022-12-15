@@ -38,9 +38,11 @@ namespace ZE::GFX
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 
 #if _ZE_GFX_MARKERS
-		void TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
+		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
 		void TagEnd(GFX::Device& dev) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
 #endif
+		// Before destroying command list you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 	};
 }
 

@@ -204,6 +204,7 @@ namespace ZE::GFX::API::DX12
 
 	Device::~Device()
 	{
+		copyList.Free();
 		if (commandLists)
 			commandLists.DeleteArray();
 		if (copyResList != nullptr)

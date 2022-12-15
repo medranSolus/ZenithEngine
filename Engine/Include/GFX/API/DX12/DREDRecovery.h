@@ -3,6 +3,8 @@
 
 namespace ZE::GFX::API::DX12
 {
+	class Device;
+
 	// Device Removed Extended Data handler
 	class DREDRecovery
 	{
@@ -16,6 +18,6 @@ namespace ZE::GFX::API::DX12
 		// Must be called before creation of the ID3D12Device
 		static void Enable(DX::DebugInfoManager& debugManager);
 		// Gather information after receiving device removed
-		static void SaveDeviceRemovedData(class Device& dev, const std::string& filename);
+		static void SaveDeviceRemovedData(Device& dev, const std::string& filename);
 	};
 }

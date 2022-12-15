@@ -43,9 +43,14 @@ namespace ZE::GFX::API::DX11
 
 		// Suppress non important messages
 		D3D11_MESSAGE_SEVERITY severities[] = { D3D11_MESSAGE_SEVERITY_INFO };
+		// Ignore bug when setting object names
+		D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS };
+
 		D3D11_INFO_QUEUE_FILTER filter = { { 0 } };
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
+		filter.DenyList.NumIDs = 1;
+		filter.DenyList.pIDList = hide;
 
 		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
 #endif

@@ -11,13 +11,14 @@ namespace ZE::GFX
 	{
 		Device device;
 		SwapChain swapChain;
+		// TODO: Move chainPool inside CL
 		ChainPool<CommandList> mainList;
 		ChainPool<U64> fenceChain;
 
 	public:
 		Graphics() = default;
 		ZE_CLASS_DELETE(Graphics);
-		~Graphics() { swapChain.Free(device); }
+		~Graphics() { swapChain.Free(device); mainList.Exec([&dev = device](CommandList& cl) { cl.Free(dev); }); }
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }

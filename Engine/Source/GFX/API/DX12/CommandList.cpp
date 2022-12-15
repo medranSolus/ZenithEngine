@@ -1,5 +1,4 @@
 #include "GFX/API/DX12/CommandList.h"
-#include "GFX/Binding/Schema.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"
@@ -17,11 +16,6 @@ namespace ZE::GFX::API::DX12
 	CommandList::CommandList(GFX::Device& dev, CommandType type)
 	{
 		Init(dev.Get().dx12, type);
-	}
-
-	CommandList::CommandList(GFX::Device& dev)
-	{
-		Init(dev.Get().dx12, CommandType::All);
 	}
 
 	void CommandList::Open(GFX::Device& dev)
@@ -78,7 +72,7 @@ namespace ZE::GFX::API::DX12
 	}
 
 #if _ZE_GFX_MARKERS
-	void CommandList::TagBegin(GFX::Device& dev, const std::string_view tag, Pixel color) const noexcept
+	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
 		switch (Settings::GetGpuVendor())
 		{
@@ -142,11 +136,6 @@ namespace ZE::GFX::API::DX12
 		}
 		}
 #endif
-	}
-
-	void CommandList::Open(Device& dev)
-	{
-		Open(dev, nullptr);
 	}
 
 	void CommandList::Close(Device& dev)

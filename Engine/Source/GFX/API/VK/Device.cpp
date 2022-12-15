@@ -24,7 +24,7 @@ namespace ZE::GFX::API::VK
 	}
 #endif
 #if _ZE_GFX_MARKERS
-	void Device::BeingTag(VkQueue queue, const std::string_view tag, Pixel color) noexcept
+	void Device::BeingTag(VkQueue queue, std::string_view tag, Pixel color) noexcept
 	{
 		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
 		labelInfo.pLabelName = tag.data();
@@ -549,7 +549,8 @@ namespace ZE::GFX::API::VK
 		}
 		VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageableMemory = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, &memPriority };
 		VkPhysicalDeviceIndexTypeUint8FeaturesEXT indicesU8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT, &pageableMemory };
-		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &indicesU8 };
+		VkPhysicalDeviceSubgroupSizeControlFeatures subgroupControl = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES, &indicesU8 };
+		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &subgroupControl };
 		VkPhysicalDeviceFeatures2 features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &memoryModel };
 
 #define X(ext) ext,
@@ -598,6 +599,8 @@ namespace ZE::GFX::API::VK
 		extensionSupport[GetExtensionIndex(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)] = memPriority.memoryPriority;
 		extensionSupport[GetExtensionIndex(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)] = pageableMemory.pageableDeviceLocalMemory;
 		Settings::SetU8IndexSets(extensionSupport[GetExtensionIndex(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)] = indicesU8.indexTypeUint8);
+		if (extensionSupport[GetExtensionIndex(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)] = subgroupControl.subgroupSizeControl)
+			SetFullComputeSubgroupSupport(subgroupControl.computeFullSubgroups);
 		if (extensionSupport[GetExtensionIndex(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)] = memoryModel.vulkanMemoryModel)
 		{
 			SetMemoryModelDeviceScope(memoryModel.vulkanMemoryModelDeviceScope);
@@ -650,6 +653,7 @@ namespace ZE::GFX::API::VK
 
 	Device::~Device()
 	{
+		allocator.Destroy(*this);
 		if (device)
 			vkDestroyDevice(device, nullptr);
 		if (instance)
@@ -657,7 +661,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_PLATFORM_WINDOWS
 		if (vulkanLibModule)
 		{
-			const bool status = FreeLibrary(static_cast<HMODULE>(vulkanLibModule));
+			const bool status = FreeLibrary(vulkanLibModule.CastPtr<HMODULE>());
 			ZE_ASSERT(status, "Error unloading Vulkan library!");
 		}
 #else
