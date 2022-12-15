@@ -13,6 +13,8 @@ namespace ZE::Intrin
 {
 	inline U64 Rdtsc() noexcept;
 	inline void FenceStore() noexcept;
+	inline void FenceLoad() noexcept;
+	inline void FenceMemory() noexcept;
 	// Returns number of bits set to 1 in 64 bit integer
 	inline U8 CountBitsSet(U64 val) noexcept;
 	// Returns number of bits set to 1 in 32 bit integer
@@ -38,10 +40,24 @@ namespace ZE::Intrin
 
 	inline void FenceStore() noexcept
 	{
+#if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		_mm_sfence();
+#endif
+	}
+
+	inline void FenceLoad() noexcept
+	{
+#if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		_mm_lfence();
+#endif
+	}
+
+	inline void FenceMemory() noexcept
+	{
 #if _ZE_COMPILER_MSVC
 		__faststorefence();
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
-		_mm_sfence();
+		_mm_mfence();
 #endif
 	}
 

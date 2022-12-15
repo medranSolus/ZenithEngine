@@ -6,6 +6,7 @@ namespace ZE::WinAPI
 {
 	class Perf final
 	{
+		// Counts per second
 		long double frequency;
 
 	public:
