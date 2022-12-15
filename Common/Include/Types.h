@@ -35,7 +35,7 @@ namespace ZE::Math
 namespace ZE
 {
 	// Opaque handle to dynamically loaded library
-	typedef void* LibraryHandle;
+	typedef PtrVoid LibraryHandle;
 	// Identifier to single allocation
-	typedef void* AllocHandle;
+	typedef PtrVoid AllocHandle;
 }

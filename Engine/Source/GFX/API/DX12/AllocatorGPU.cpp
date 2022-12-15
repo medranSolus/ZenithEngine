@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX12
 		ZE_ASSERT(userData, "Cannot access GFX::API::DX12::Device for creating heap!");
 
 		Device& dev = *reinterpret_cast<Device*>(userData);
-		ZE_DX_ENABLE(dev);
+		ZE_DX_ENABLE_ID(dev);
 
 		D3D12_HEAP_DESC desc;
 		desc.SizeInBytes = size;
@@ -21,6 +21,33 @@ namespace ZE::GFX::API::DX12
 		desc.Flags = GetHeapFlags(flags);
 
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateHeap1(&desc, nullptr, IID_PPV_ARGS(&chunk.Heap)));
+#if _ZE_DEBUG_GFX_NAMES
+		switch (desc.Properties.Type)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case D3D12_HEAP_TYPE_DEFAULT:
+		{
+			ZE_DX_SET_ID(chunk.Heap, "Default heap");
+			break;
+		}
+		case D3D12_HEAP_TYPE_UPLOAD:
+		{
+			ZE_DX_SET_ID(chunk.Heap, "Upload heap");
+			break;
+		}
+		case D3D12_HEAP_TYPE_READBACK:
+		{
+			ZE_DX_SET_ID(chunk.Heap, "Readback heap");
+			break;
+		}
+		case D3D12_HEAP_TYPE_CUSTOM:
+		{
+			ZE_DX_SET_ID(chunk.Heap, "Custom heap");
+			break;
+		}
+		}
+#endif
 	}
 
 	constexpr U64 AllocatorGPU::GetHeapAlignment(HeapFlags flags) noexcept
@@ -109,6 +136,13 @@ namespace ZE::GFX::API::DX12
 			return;
 		allocator.Free(resInfo.Handle, nullptr);
 		resInfo.Handle = 0;
+	}
+
+	AllocatorGPU::~AllocatorGPU()
+	{
+		mainAllocator.DestroyFreeChunks(nullptr);
+		secondaryAllocator.DestroyFreeChunks(nullptr);
+		dynamicBuffersAllocator.DestroyFreeChunks(nullptr);
 	}
 
 	void AllocatorGPU::Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier)

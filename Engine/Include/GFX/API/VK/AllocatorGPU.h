@@ -23,7 +23,7 @@ namespace ZE::GFX::API::VK
 		struct Memory
 		{
 			VkDeviceMemory DeviceMemory = VK_NULL_HANDLE;
-			void* MappedMemory = nullptr;
+			U8* MappedMemory = nullptr;
 
 			static void Init(Memory& chunk, MemoryFlags flags, U64 size, void* userData);
 			static void Destroy(Memory& chunk, void* userData) noexcept;
@@ -69,10 +69,12 @@ namespace ZE::GFX::API::VK
 		constexpr bool IsReBAREnabled() const noexcept { return flags[1]; }
 
 		void Init(Device& dev);
+		void Destroy(Device& dev) noexcept;
 		Allocation AllocBuffer(Device& dev, VkBuffer buffer, Allocation::Usage usage);
 		// Disjoint images need plane requirements
 		Allocation AllocImage(Device& dev, VkImage image, Allocation::Usage usage, VkImagePlaneMemoryRequirementsInfo* planeInfo = nullptr);
 		void Remove(Device& dev, Allocation& alloc) noexcept;
 		void HandleBudget(Device& dev) noexcept;
+		void GetAllocInfo(Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory = nullptr) const noexcept;
 	};
 }

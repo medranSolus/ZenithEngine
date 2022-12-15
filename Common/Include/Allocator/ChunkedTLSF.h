@@ -98,14 +98,14 @@ namespace ZE::Allocator
 		void MergeBlock(Block* block, Block* prev) noexcept;
 
 	public:
-		ChunkedTLSF(BlockAllocator& blockAllocator, ChunkAllocator& chunkAllocator) noexcept
+		constexpr ChunkedTLSF(BlockAllocator& blockAllocator, ChunkAllocator& chunkAllocator) noexcept
 			: blockAllocator(blockAllocator), chunkAllocator(chunkAllocator) {}
 		ZE_CLASS_MOVE(ChunkedTLSF);
 		constexpr ~ChunkedTLSF();
 
-		constexpr U64 GetOffset(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Offset * chunkSizeDivisor; }
-		constexpr U64 GetSize(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->Size * chunkSizeDivisor; }
-		constexpr Memory GetMemory(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return reinterpret_cast<Block*>(alloc)->ChunkHandle->Memory; }
+		constexpr U64 GetOffset(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->Offset * chunkSizeDivisor; }
+		constexpr U64 GetSize(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->Size * chunkSizeDivisor; }
+		constexpr Memory GetMemory(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->ChunkHandle->Memory; }
 
 		constexpr U64 GetChunkSize() const noexcept { return chunkSize * GetChunkSizeGranularity(); }
 		constexpr U32 GetChunkSizeGranularity() const noexcept { return chunkSizeDivisor; }
@@ -119,6 +119,8 @@ namespace ZE::Allocator
 		AllocHandle Alloc(U64 allocSize, U64 alignment, void* memoryUserData);
 		// To pass custom data used in destruction of memory chunk, pass it as memoryUserData
 		void Free(AllocHandle allocation, void* memoryUserData) noexcept;
+		// Delete allocated chunks not used by any allocation (only by null block), required to call before destruction of allocator
+		void DestroyFreeChunks(void* memoryUserData) noexcept;
 	};
 
 #pragma region Functions
@@ -384,6 +386,8 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	constexpr ZE_CHUNKED_TLSF_TYPE::~ChunkedTLSF()
 	{
+		ZE_ASSERT(!nullBlock->ChunkHandle, "Memory used by free chunk not destroyed (forgot to call DestroyFreeChunks()), memory leak!");
+
 		if (chunkSizeDivisor != 0)
 		{
 			ZE_ASSERT(nullBlock->Offset == 0 && nullBlock->Size == chunkSize, "Not all allocations have been freed before destroying allocator, memory leak!");
@@ -502,7 +506,7 @@ namespace ZE::Allocator
 	void ZE_CHUNKED_TLSF_TYPE::Free(AllocHandle allocation, void* memoryUserData) noexcept
 	{
 		ZE_ASSERT(allocation, "Invalid allocation!");
-		Ptr<Block> block = reinterpret_cast<Block*>(allocation);
+		Ptr<Block> block = allocation.Cast<Block>();
 		ZE_ASSERT(!block->IsFree(), "Block is already free!");
 
 		// Try merging
@@ -561,6 +565,17 @@ namespace ZE::Allocator
 				else
 					SetFreeChunk(true);
 			}
+		}
+	}
+
+	ZE_CHUNKED_TLSF_TEMPLATE
+	void ZE_CHUNKED_TLSF_TYPE::DestroyFreeChunks(void* memoryUserData) noexcept
+	{
+		if (nullBlock->ChunkHandle)
+		{
+			TLSFMemoryChunk<Memory>::DestroyMemory(nullBlock->ChunkHandle, memoryUserData);
+			chunkAllocator.Free(nullBlock->ChunkHandle);
+			nullBlock->ChunkHandle = nullptr;
 		}
 	}
 #pragma endregion

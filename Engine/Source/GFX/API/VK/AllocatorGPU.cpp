@@ -20,8 +20,11 @@ namespace ZE::GFX::API::VK
 		params.NewAllocation = true;
 		if (flags & MemoryFlag::HostVisible)
 		{
-			ZE_VK_THROW_NOSUCC(vkMapMemory(params.Dev.GetDevice(), chunk.DeviceMemory, 0, size, 0, &chunk.MappedMemory));
+			ZE_VK_THROW_NOSUCC(vkMapMemory(params.Dev.GetDevice(), chunk.DeviceMemory, 0, size, 0, reinterpret_cast<void**>(&chunk.MappedMemory)));
 		}
+		ZE_VK_SET_ID(params.Dev.GetDevice(), chunk.DeviceMemory, VK_OBJECT_TYPE_DEVICE_MEMORY,
+			"Memory chunk [size:" + std::to_string(size) + "]" +
+			(flags & MemoryFlag::HostVisible ? " mapped at " + std::to_string((U64)chunk.MappedMemory) : ""));
 	}
 
 	void AllocatorGPU::Memory::Destroy(Memory& chunk, void* userData) noexcept
@@ -82,10 +85,10 @@ namespace ZE::GFX::API::VK
 		}
 		case Allocation::Usage::GPU:
 		{
-			required = 0;
+			required = isIntegratedGPU ? 0 : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 			preferred = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 			if (IsReBAREnabled())
-				preferred |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+				required |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 			break;
 		}
 		case Allocation::Usage::StagingToGPU:
@@ -260,6 +263,12 @@ namespace ZE::GFX::API::VK
 		}
 	}
 
+	void AllocatorGPU::Destroy(Device& dev) noexcept
+	{
+		for (MemoryTypeAllocator& alloc : allocators)
+			alloc.DestroyFreeChunks(&dev);
+	}
+
 	Allocation AllocatorGPU::AllocBuffer(Device& dev, VkBuffer buffer, Allocation::Usage usage)
 	{
 		VkBufferMemoryRequirementsInfo2 bufferMemoryReq = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr };
@@ -286,6 +295,7 @@ namespace ZE::GFX::API::VK
 
 	void AllocatorGPU::Remove(Device& dev, Allocation& alloc) noexcept
 	{
+		ZE_ASSERT(!alloc.IsFree(), "Invalid allocation!");
 		// Manual counting when budget disabled
 		if (!dev.IsExtensionSupported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
 			heapInfo[typeInfo[alloc.MemoryIndex - (alloc.MemoryIndex >= texturesStartIndex ? texturesStartIndex : 0)].heapIndex].Usage -= allocators.at(alloc.MemoryIndex).GetSize(alloc.Handle);
@@ -306,5 +316,16 @@ namespace ZE::GFX::API::VK
 			for (U32 i = 0; i < memoryProps.memoryProperties.memoryHeapCount; ++i)
 				UpdateBudget(heapInfo[i], memoryBudget.heapUsage[i], memoryBudget.heapBudget[i]);
 		}
+	}
+
+	void AllocatorGPU::GetAllocInfo(Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory) const noexcept
+	{
+		ZE_ASSERT(!alloc.IsFree(), "Invalid allocation!");
+
+		offset = allocators.at(alloc.MemoryIndex).GetOffset(alloc.Handle);
+		Memory mem = allocators.at(alloc.MemoryIndex).GetMemory(alloc.Handle);
+		memory = mem.DeviceMemory;
+		if (mappedMemory)
+			*mappedMemory = mem.MappedMemory + offset;
 	}
 }

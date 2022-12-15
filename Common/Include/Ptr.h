@@ -42,7 +42,48 @@ namespace ZE
 		// Reinterpret cast const wrapper
 		template<typename S>
 		constexpr const S* CastConst() const noexcept { return reinterpret_cast<const S*>(ptr); }
+		// Reinterpret cast wrapper directly on pointer
+		template<typename S>
+		constexpr S CastPtr() noexcept { return reinterpret_cast<S>(ptr); }
+		// Reinterpret cast const wrapper directly on pointer
+		template<typename S>
+		constexpr const S CastPtrConst() const noexcept { return reinterpret_cast<const S>(ptr); }
 
 		constexpr operator T* () const noexcept { return ptr; }
+	};
+
+	// Raw pointer wrapper specialization for Ptr<void> with reduced funcionality
+	class PtrVoid final
+	{
+		void* ptr;
+
+	public:
+		constexpr PtrVoid() noexcept : ptr(nullptr) {}
+		constexpr PtrVoid(void* p) noexcept : ptr(p) {}
+		constexpr PtrVoid(PtrVoid&& p) noexcept : ptr(p.ptr) { p.ptr = nullptr; }
+		constexpr PtrVoid(const PtrVoid& p) noexcept : ptr(p.ptr) {}
+
+		constexpr PtrVoid& operator=(PtrVoid&& p) noexcept { ptr = p.ptr; p.ptr = nullptr; return *this; }
+		constexpr PtrVoid& operator=(const PtrVoid& p) noexcept { ptr = p.ptr; return *this; }
+
+		~PtrVoid() = default;
+
+		// For conveniece use this instead of calling normal 'free()'. It's not prohibited but this way pointer is safely set to null or other pointer
+		void Free(void* p = nullptr) noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); free(ptr); ptr = p; }
+
+		// Reinterpret cast wrapper
+		template<typename S>
+		constexpr S* Cast() noexcept { return reinterpret_cast<S*>(ptr); }
+		// Reinterpret cast const wrapper
+		template<typename S>
+		constexpr const S* CastConst() const noexcept { return reinterpret_cast<const S*>(ptr); }
+		// Reinterpret cast wrapper directly on pointer
+		template<typename S>
+		constexpr S CastPtr() noexcept { return reinterpret_cast<S>(ptr); }
+		// Reinterpret cast const wrapper directly on pointer
+		template<typename S>
+		constexpr const S CastPtrConst() const noexcept { return reinterpret_cast<const S>(ptr); }
+
+		constexpr operator void* () const noexcept { return ptr; }
 	};
 }

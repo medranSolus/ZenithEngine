@@ -70,7 +70,7 @@ namespace ZE::GFX::API::DX12
 		AllocatorGPU() : blockAllocator(BLOCK_ALLOC_CAPACITY), chunkAllocator(CHUNK_ALLOC_CAPACITY), mainAllocator(blockAllocator, chunkAllocator),
 			secondaryAllocator(blockAllocator, chunkAllocator), dynamicBuffersAllocator(blockAllocator, chunkAllocator) {}
 		ZE_CLASS_MOVE(AllocatorGPU);
-		~AllocatorGPU() = default;
+		~AllocatorGPU();
 
 		constexpr AllocTier GetCurrentTier() const noexcept { return allocTier; }
 
