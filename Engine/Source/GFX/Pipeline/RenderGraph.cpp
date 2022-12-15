@@ -325,7 +325,7 @@ namespace ZE::GFX::Pipeline
 			U64 depLevel = dependencyLevels.at(i);
 			auto& node = nodes.at(i);
 			// Check all inputs by resources connected to them from dependent nodes
-			for (U64 j = 0; const auto& input : node.GetInputs())
+			for (U64 j = 0; const std::string& input : node.GetInputs())
 			{
 				auto splitInput = Utils::SplitString(input, ".");
 				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
@@ -333,7 +333,7 @@ namespace ZE::GFX::Pipeline
 						return n.GetName() == splitInput.front();
 					});
 				if (it == nodes.end())
-					throw ZE_RGC_EXCEPT("Cannot find source node [" + splitInput.front() + "] for pass [" + node.GetName() + "]!");
+					throw ZE_RGC_EXCEPT("Cannot find source node [" + std::string(splitInput.front()) + "] for pass [" + node.GetName() + "]!");
 
 				for (U64 k = 0; k < it->GetOutputs().size();)
 				{
@@ -622,10 +622,13 @@ namespace ZE::GFX::Pipeline
 		// Create shared gfx states
 		if (buildData.PipelineStates.size())
 		{
-			execData.SharedStates = new Resource::PipelineStateGfx[buildData.PipelineStates.size()];
-			for (U64 i = 0; const auto & state : buildData.PipelineStates)
+			execData.SharedStatesCount = buildData.PipelineStates.size();
+			execData.SharedStates = new Resource::PipelineStateGfx[execData.SharedStatesCount];
+			U64 i = 0;
+			for (const auto& state : buildData.PipelineStates)
 				execData.SharedStates[i++].Init(dev, state.second.second.first, execData.Bindings.GetSchema(state.second.first));
 		}
+		buildData.FreeShaderCache(dev);
 		passLocation.clear();
 	}
 
@@ -635,39 +638,6 @@ namespace ZE::GFX::Pipeline
 		execData.SettingsData = settingsData;
 		execData.DynamicData = dynamicData;
 		execData.Renderer = renderer;
-	}
-
-	RenderGraph::~RenderGraph()
-	{
-#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
-		if (workerThreads)
-			workerThreads.DeleteArray();
-#endif
-		if (passes)
-		{
-			for (U64 i = 0; i < levelCount; ++i)
-			{
-				auto& level = passes[i];
-				for (U64 j = 0; j < level.second; ++j)
-				{
-					auto& pass = level.first[j];
-					if (pass.Data.Buffers)
-						pass.Data.Buffers.DeleteArray();
-					if (pass.Data.OptData)
-						passesCleaners[i][j](pass.Data.OptData);
-					if (pass.Syncs.ExitSyncs)
-						pass.Syncs.ExitSyncs.Free();
-				}
-			}
-			if (passes[0].first)
-				passes[0].first.DeleteArray();
-			passes.DeleteArray();
-			if (passesCleaners[0])
-				passesCleaners[0].DeleteArray();
-			passesCleaners.DeleteArray();
-		}
-		if (execData.SharedStates)
-			execData.SharedStates.DeleteArray();
 	}
 
 	void RenderGraph::Execute(Graphics& gfx)
@@ -748,6 +718,49 @@ namespace ZE::GFX::Pipeline
 			}
 			break;
 		}
+		}
+	}
+
+	void RenderGraph::Free(Device& dev) noexcept
+	{
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
+		if (workerThreads)
+		{
+			for (U64 i = 0; i < workersCount; ++i)
+				workerThreads[i].second.Exec([&dev](CommandList& cl) { cl.Free(dev); });
+			workerThreads.DeleteArray();
+		}
+#endif
+		if (passes)
+		{
+			for (U64 i = 0; i < levelCount; ++i)
+			{
+				auto& level = passes[i];
+				for (U64 j = 0; j < level.second; ++j)
+				{
+					auto& pass = level.first[j];
+					if (pass.Data.Buffers)
+						pass.Data.Buffers.DeleteArray();
+					if (pass.Data.OptData)
+						passesCleaners[i][j](dev, pass.Data.OptData);
+					if (pass.Syncs.ExitSyncs)
+						pass.Syncs.ExitSyncs.Free();
+				}
+			}
+			if (passes[0].first)
+				passes[0].first.DeleteArray();
+			passes.DeleteArray();
+			if (passesCleaners[0])
+				passesCleaners[0].DeleteArray();
+			passesCleaners.DeleteArray();
+		}
+		execData.SettingsBuffer.Free(dev);
+		execData.DynamicBuffers.Exec([&dev](Resource::DynamicCBuffer& x) { x.Free(dev); });
+		if (execData.SharedStates)
+		{
+			for (U64 i = 0; i < execData.SharedStatesCount; ++i)
+				execData.SharedStates[i].Free(dev);
+			execData.SharedStates.DeleteArray();
 		}
 	}
 }

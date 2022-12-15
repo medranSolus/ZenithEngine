@@ -22,8 +22,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		Resource::PipelineStateGfx StateRender;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
-
+	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

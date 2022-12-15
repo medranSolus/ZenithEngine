@@ -23,5 +23,7 @@ namespace ZE::GFX::Pipeline
 		// Index for relevant data binding is also required.
 		// Schema index | PSO desc | PSO location = PipelineStates.size()
 		std::unordered_map<std::string, std::pair<U32, std::pair<Resource::PipelineStateDesc, U32>>> PipelineStates;
+
+		void FreeShaderCache(Device& dev) noexcept { for (auto& shader : ShaderCache) shader.second.Free(dev); }
 	};
 }

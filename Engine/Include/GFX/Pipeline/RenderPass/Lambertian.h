@@ -28,7 +28,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Ptr<Resource::PipelineStateGfx> StatesTransparent;
 	};
 
-	void Clean(void* data);
+	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS,
 		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);

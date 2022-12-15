@@ -6,10 +6,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 {
-	void Clean(void* data)
+	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		ShadowMap::Clean(execData->ShadowData);
+		execData->State.Free(dev);
+		execData->VolumeVB.Free(dev);
+		execData->VolumeIB.Free(dev);
+		ShadowMap::Clean(dev, execData->ShadowData);
 		delete execData;
 	}
 
@@ -37,8 +40,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"LightVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.PS, L"SpotLightPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"LightVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, L"SpotLightPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;

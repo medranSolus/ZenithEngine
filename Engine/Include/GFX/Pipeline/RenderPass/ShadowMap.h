@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Matrix Projection;
 	};
 
-	void Clean(ExecuteData& data);
+	void Clean(Device& dev, ExecuteData& data) noexcept;
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,

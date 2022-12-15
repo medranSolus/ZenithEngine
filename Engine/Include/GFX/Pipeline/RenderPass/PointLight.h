@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		Resource::IndexBuffer VolumeIB;
 	};
 
-	void Clean(void* data);
+	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
 		PixelFormat formatColor, PixelFormat formatSpecular,
 		PixelFormat formatShadow, PixelFormat formatShadowDepth);

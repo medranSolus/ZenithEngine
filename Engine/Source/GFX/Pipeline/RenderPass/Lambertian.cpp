@@ -5,9 +5,16 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
-	void Clean(void* data)
+	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->StateDepth.Free(dev);
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
+		while (stateCount--)
+		{
+			execData->StatesSolid[stateCount].Free(dev);
+			execData->StatesTransparent[stateCount].Free(dev);
+		}
 		execData->StatesSolid.DeleteArray();
 		execData->StatesTransparent.DeleteArray();
 		delete execData;
@@ -35,13 +42,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		passData->StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(psoDesc.VS, L"PhongVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"PhongVS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 3;
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
@@ -53,7 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		while (stateIndex--)
 		{
 			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + ZE::Utils::ToAscii(suffix));

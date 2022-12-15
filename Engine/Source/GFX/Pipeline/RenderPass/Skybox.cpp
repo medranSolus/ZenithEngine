@@ -3,6 +3,16 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
+	void Clean(Device& dev, void* data) noexcept
+	{
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->State.Free(dev);
+		execData->SkyTexture.Free(dev);
+		execData->VertexBuffer.Free(dev);
+		execData->IndexBuffer.Free(dev);
+		delete execData;
+	}
+
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT,
 		PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt)
 	{
@@ -34,8 +44,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"SkyboxVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.PS, L"SkyboxPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"SkyboxVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, L"SkyboxPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;

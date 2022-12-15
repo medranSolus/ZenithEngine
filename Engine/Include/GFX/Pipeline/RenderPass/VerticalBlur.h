@@ -17,7 +17,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		Resource::PipelineStateGfx State;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
+	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
 
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);

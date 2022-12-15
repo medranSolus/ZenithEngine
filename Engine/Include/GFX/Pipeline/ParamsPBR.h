@@ -13,7 +13,7 @@ namespace ZE::GFX::Pipeline
 		// Disables kicking off work earlier, trying to run pass as late as possible.
 		//
 		// WARNING: may result in higher or lower memory reservation for frame in some cases
-		//   but can sometimes lowerage GPU consumption if most of heavy work is done early, measure it for specific use case
+		//   but can sometimes leverage GPU consumption if most of heavy work is done early, measure it for specific use case
 		bool MinimizeRenderPassDistances = false;
 		// Dimensions of used shadow maps
 		U32 ShadowMapSize = 1024;

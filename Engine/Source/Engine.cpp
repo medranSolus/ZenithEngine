@@ -38,6 +38,7 @@ namespace ZE
 			geometry.Indices.Free(graphics.GetDevice());
 			geometry.Vertices.Free(graphics.GetDevice());
 		}
+		renderer.Free(graphics.GetDevice());
 	}
 
 	void Engine::BeginFrame()

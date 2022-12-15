@@ -5,8 +5,15 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
-	void Clean(ExecuteData& data)
+	void Clean(Device& dev, ExecuteData& data) noexcept
 	{
+		data.StateDepth.Free(dev);
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
+		while (stateCount--)
+		{
+			data.StatesSolid[stateCount].Free(dev);
+			data.StatesTransparent[stateCount].Free(dev);
+		}
 		data.StatesSolid.DeleteArray();
 		data.StatesTransparent.DeleteArray();
 	}
@@ -25,13 +32,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(psoDesc.VS, L"PhongVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"PhongVS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		const std::wstring shaderName = L"ShadowPS";
@@ -42,7 +49,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		while (stateIndex--)
 		{
 			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapSolid" + ZE::Utils::ToAscii(suffix));

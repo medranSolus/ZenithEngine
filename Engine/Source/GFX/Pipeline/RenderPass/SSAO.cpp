@@ -4,6 +4,17 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {
+	void Clean(Device& dev, void* data) noexcept
+	{
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->ListChain.Exec([&dev](CommandList& cl) { cl.Free(dev); });
+		execData->StatePrefilter.Free(dev);
+		execData->StateSSAO.Free(dev);
+		execData->StateDenoise.Free(dev);
+		execData->HilbertLUT.Free(dev);
+		delete execData;
+	}
+
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
@@ -16,8 +27,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader prefilter(L"SSAOPrefilterDepthCS");
+		Resource::Shader prefilter(dev, L"SSAOPrefilterDepthCS");
 		passData->StatePrefilter.Init(dev, prefilter, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter));
+		prefilter.Free(dev);
 
 		// Main pass
 		desc.Clear();
@@ -30,8 +42,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader ssao(L"SSAOMainCS");
+		Resource::Shader ssao(dev, L"SSAOMainCS");
 		passData->StateSSAO.Init(dev, ssao, buildData.BindingLib.GetSchema(passData->BindingIndexSSAO));
+		ssao.Free(dev);
 
 		// Denoise passes
 		desc.Clear();
@@ -42,8 +55,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader denoise(L"SSAODenoiseCS");
+		Resource::Shader denoise(dev, L"SSAODenoiseCS");
 		passData->StateDenoise.Init(dev, denoise, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise));
+		denoise.Free(dev);
 
 		// Create Hilbert look-up texture
 		Resource::Texture::PackDesc hilbertDesc;

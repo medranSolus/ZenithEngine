@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Matrix Projection;
 	};
 
-	void Clean(ExecuteData& data);
+	void Clean(Device& dev, ExecuteData& data) noexcept;
 	void Setup(Device& dev, RendererBuildData& buildData,
 		ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,

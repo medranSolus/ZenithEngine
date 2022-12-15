@@ -29,8 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		Resource::Texture::Pack HilbertLUT;
 	};
 
-	inline void Clean(void* data) { delete reinterpret_cast<ExecuteData*>(data); }
-
+	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

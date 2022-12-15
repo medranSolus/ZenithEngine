@@ -32,6 +32,7 @@ namespace ZE::GFX::Pipeline
 		void* Renderer;
 		// Initialized by RenderGraph
 		Ptr<Resource::PipelineStateGfx> SharedStates;
+		U64 SharedStatesCount = 0;
 
 		void BindRendererDynamicData(CommandList& cl, Binding::Context& bindCtx) const noexcept { DynamicBuffers.Get().Bind(cl, bindCtx, RENDERER_DYNAMIC_BUFFER); }
 	};

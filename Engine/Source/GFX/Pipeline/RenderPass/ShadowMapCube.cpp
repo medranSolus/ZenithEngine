@@ -5,8 +5,15 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
-	void Clean(ExecuteData& data)
+	void Clean(Device& dev, ExecuteData& data) noexcept
 	{
+		data.StateDepth.Free(dev);
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
+		while (stateCount--)
+		{
+			data.StatesSolid[stateCount].Free(dev);
+			data.StatesTransparent[stateCount].Free(dev);
+		}
 		data.StatesSolid.DeleteArray();
 		data.StatesTransparent.DeleteArray();
 	}
@@ -25,15 +32,15 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(psoDesc.VS, L"ShadowCubeDepthVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.GS, L"ShadowCubeDepthGS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"ShadowCubeDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.GS, L"ShadowCubeDepthGS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(psoDesc.VS, L"ShadowCubeVS", buildData.ShaderCache);
-		psoDesc.SetShader(psoDesc.GS, L"ShadowCubeGS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, L"ShadowCubeVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.GS, L"ShadowCubeGS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 6;
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
@@ -45,7 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		while (stateIndex--)
 		{
 			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeSolid" + ZE::Utils::ToAscii(suffix));

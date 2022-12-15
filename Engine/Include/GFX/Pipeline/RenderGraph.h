@@ -41,11 +41,12 @@ namespace ZE::GFX::Pipeline
 	public:
 		RenderGraph(void* renderer, void* settingsData, void* dynamicData, U32 dynamicDataSize) noexcept;
 		ZE_CLASS_DELETE(RenderGraph);
-		virtual ~RenderGraph();
+		virtual ~RenderGraph() { ZE_ASSERT(passes == nullptr, "Render graph not freed before deletion!"); }
 
 		constexpr Data::Storage& GetRegistry() noexcept { return execData.Registry; }
 		constexpr Data::Storage& GetResources() noexcept { return execData.Resources; }
 
 		void Execute(Graphics& gfx);
+		void Free(Device& dev) noexcept;
 	};
 }
