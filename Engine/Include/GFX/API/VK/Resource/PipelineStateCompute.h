@@ -5,14 +5,19 @@ namespace ZE::GFX::API::VK::Resource
 {
 	class PipelineStateCompute final
 	{
-		DX::ComPtr<ID3D11ComputeShader> computeShader;
+		VkPipeline state = VK_NULL_HANDLE;
 
 	public:
 		PipelineStateCompute() = default;
 		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
-		~PipelineStateCompute() = default;
+		~PipelineStateCompute() { ZE_ASSERT(state == VK_NULL_HANDLE, "Pipeline not freed before deletion!"); }
 
-		void Bind(GFX::CommandList& cl) const noexcept {}
+		void Bind(GFX::CommandList& cl) const noexcept { vkCmdBindPipeline(cl.Get().vk.GetBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, state); }
+		void Free(GFX::Device& dev) noexcept;
+
+		// Gfx API Internal
+
+		constexpr VkPipeline GetState() const noexcept { return state; }
 	};
 }

@@ -23,5 +23,7 @@ namespace ZE::GFX::Resource
 		// Main Gfx API
 
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
+		// Before destroying pipeline you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 	};
 }

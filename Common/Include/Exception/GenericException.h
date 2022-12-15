@@ -32,3 +32,5 @@ namespace ZE::Exception
 #define ZE_MDL_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Model Loading Exception")
 // Exception thrown when checking versions
 #define ZE_CMP_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "Compatibility Exception")
+// Exception thrown when doing generic IO
+#define ZE_IO_EXCEPT(info) ZE::Exception::GenericException(__LINE__, __FILENAME__, info, "I/O Exception")

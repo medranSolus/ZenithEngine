@@ -20,10 +20,11 @@ namespace ZE::GFX::API::DX11::Resource
 		PipelineStateGfx() = default;
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() = default;
+		~PipelineStateGfx() { ZE_ASSERT(vertexShader == nullptr, "Pipeline not freed before deletion!"); }
 
 		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { SetStencilRef(cl.Get().dx11.GetContext(), refValue); }
 		void Bind(GFX::CommandList& cl) const noexcept { Bind(cl.Get().dx11.GetContext()); }
+		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal
 

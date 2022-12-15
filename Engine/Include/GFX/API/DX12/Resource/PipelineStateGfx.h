@@ -12,9 +12,10 @@ namespace ZE::GFX::API::DX12::Resource
 		PipelineStateGfx() = default;
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() = default;
+		~PipelineStateGfx() { ZE_ASSERT(state == nullptr, "Pipeline not freed before deletion!"); }
 
 		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { cl.Get().dx12.GetList()->OMSetStencilRef(refValue); }
+		void Free(GFX::Device& dev) noexcept { state = nullptr; }
 
 		void Bind(GFX::CommandList& cl) const noexcept;
 

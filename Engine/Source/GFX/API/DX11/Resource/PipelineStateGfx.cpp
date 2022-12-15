@@ -145,6 +145,19 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_DX_SET_ID(rasterState, "Raster_" + desc.DebugName);
 	}
 
+	void PipelineStateGfx::Free(GFX::Device& dev) noexcept
+	{
+		inputLayout = nullptr;
+		vertexShader = nullptr;
+		domainShader = nullptr;
+		hullShader = nullptr;
+		geometryShader = nullptr;
+		pixelShader = nullptr;
+		blendState = nullptr;
+		depthStencilState = nullptr;
+		rasterState = nullptr;
+	}
+
 	void PipelineStateGfx::Bind(IDeviceContext* ctx) const noexcept
 	{
 		ctx->IASetPrimitiveTopology(topology);

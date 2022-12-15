@@ -11,7 +11,7 @@ namespace ZE::GFX::Resource
 		ZE_API_BACKEND(Resource::Shader);
 
 	public:
-		constexpr Shader(const std::wstring& name) { ZE_API_BACKEND_VAR.Init(name); }
+		constexpr Shader(GFX::Device& dev, const std::wstring& name) { ZE_API_BACKEND_VAR.Init(dev, name); }
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
@@ -19,6 +19,8 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
+		// Before destroying shader you have to call this function for proper memory freeing
+		constexpr void Free(GFX::Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
 #if _ZE_DEBUG_GFX_NAMES
 		const std::string& GetName() const noexcept { ZE_API_BACKEND_CALL(GetName); }
 #endif

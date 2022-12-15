@@ -12,7 +12,7 @@ namespace ZE::GFX::API::DX11::Resource
 		Constant() = default;
 		Constant(GFX::Device& dev, const T& value) : buffer(dev, &value, sizeof(T), true) {}
 		ZE_CLASS_MOVE(Constant);
-		~Constant() = default;
+		~Constant() { buffer.Free(); }
 
 		constexpr void Set(GFX::Device& dev, const T& value) const { buffer.Update(dev, &value, sizeof(T)); }
 		constexpr T GetData(GFX::Device& dev) const { T data; buffer.GetData(dev, &data, sizeof(T)); return data; }

@@ -44,7 +44,7 @@ namespace ZE::GFX::Resource
 		constexpr bool IsDepthClip() const noexcept { return Flags[0]; }
 		constexpr bool IsWireFrame() const noexcept { return Flags[1]; }
 
-		static void SetShader(Shader*& shader, const wchar_t* name,
+		static void SetShader(Device& dev, Shader*& shader, const wchar_t* name,
 			std::unordered_map<std::wstring, Resource::Shader>& shaders) noexcept;
 	};
 }
