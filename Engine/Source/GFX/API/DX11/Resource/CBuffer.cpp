@@ -102,7 +102,7 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
 		ZE_DX_SET_ID(buffer, "CBuffer_Staging");
 
-		auto* ctx = dev.Get().dx11.GetMainContext();
+		IDeviceContext* ctx = dev.Get().dx11.GetMainContext();
 		ctx->CopyResource(stagingBuffer.Get(), buffer.Get());
 		D3D11_MAPPED_SUBRESOURCE subres;
 		ZE_DX_THROW_FAILED(ctx->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &subres));

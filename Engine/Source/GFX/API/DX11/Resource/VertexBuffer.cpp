@@ -5,7 +5,6 @@ namespace ZE::GFX::API::DX11::Resource
 	VertexBuffer::VertexBuffer(GFX::Device& dev, const VertexData& data)
 		: byteStride(data.VertexSize)
 	{
-		ZE_ASSERT(data.Vertices != nullptr && data.Count != 0 && data.VertexSize != 0, "Empty vertex data!");
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
 		D3D11_BUFFER_DESC bufferDesc;

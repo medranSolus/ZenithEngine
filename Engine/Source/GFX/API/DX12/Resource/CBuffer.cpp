@@ -4,12 +4,10 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes)
 	{
-		ZE_ASSERT(bytes != 0, "Empty buffer!");
-		auto& device = dev.Get().dx12;
-		ZE_DX_ENABLE_ID(device);
+		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
 		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(bytes);
-		resInfo = device.CreateBuffer(desc, false);
+		resInfo = dev.Get().dx12.CreateBuffer(desc, false);
 		ZE_DX_SET_ID(resInfo.Resource, "CBuffer");
 		address = resInfo.Resource->GetGPUVirtualAddress();
 
@@ -36,11 +34,6 @@ namespace ZE::GFX::API::DX12::Resource
 			list->SetComputeRootConstantBufferView(bindCtx.Count++, address);
 		else
 			list->SetGraphicsRootConstantBufferView(bindCtx.Count++, address);
-	}
-
-	void CBuffer::Free(GFX::Device& dev) noexcept
-	{
-		dev.Get().dx12.FreeBuffer(resInfo);
 	}
 
 	void CBuffer::GetData(GFX::Device& dev, void* values, U32 bytes) const

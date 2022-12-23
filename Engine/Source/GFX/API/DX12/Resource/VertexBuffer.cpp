@@ -4,8 +4,6 @@ namespace ZE::GFX::API::DX12::Resource
 {
 	VertexBuffer::VertexBuffer(GFX::Device& dev, const VertexData& data)
 	{
-		ZE_ASSERT(data.Vertices != nullptr && data.Count != 0 && data.VertexSize != 0,
-			"Empty vertex buffer!");
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
 		view.SizeInBytes = data.Count * data.VertexSize;

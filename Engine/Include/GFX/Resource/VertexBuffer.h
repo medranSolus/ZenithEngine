@@ -12,11 +12,11 @@ namespace ZE::GFX::Resource
 
 	public:
 		VertexBuffer() = default;
-		constexpr VertexBuffer(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		constexpr VertexBuffer(Device& dev, const VertexData& data) { Init(dev, data); }
 		ZE_CLASS_MOVE(VertexBuffer);
 		~VertexBuffer() = default;
 
-		constexpr void Init(Device& dev, const VertexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		constexpr void Init(Device& dev, const VertexData& data) { ZE_ASSERT(data.Vertices && data.Count && data.VertexSize, "Empty vertex data!"); ZE_API_BACKEND_VAR.Init(dev, data); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
 		ZE_API_BACKEND_GET(Resource::VertexBuffer);
 
