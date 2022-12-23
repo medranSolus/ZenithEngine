@@ -6,16 +6,22 @@ namespace ZE::GFX::API::VK::Resource
 {
 	class IndexBuffer final
 	{
+		VkBuffer buffer = VK_NULL_HANDLE;
+		U32 count = 0;
+		VkIndexType indexType;
+		Allocation alloc;
+
 	public:
 		IndexBuffer() = default;
 		IndexBuffer(GFX::Device& dev, const IndexData& data);
 		ZE_CLASS_MOVE(IndexBuffer);
-		~IndexBuffer() = default;
+		~IndexBuffer() { ZE_ASSERT(buffer == VK_NULL_HANDLE && alloc.IsFree(), "Resource not freed before deletion!"); }
 
-		constexpr U32 GetCount() const noexcept { return 0; }
-		void Free(GFX::Device& dev) noexcept {}
+		constexpr U32 GetCount() const noexcept { return count; }
 
-		void Bind(GFX::CommandList& cl) const noexcept;
+		void Free(GFX::Device& dev) noexcept { dev.Get().vk.GetMemory().Remove(dev.Get().vk, alloc); }
+		void Bind(GFX::CommandList& cl) const noexcept { vkCmdBindIndexBuffer(cl.Get().vk.GetBuffer(), buffer, 0, indexType); }
+
 		IndexData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
 	};
 }

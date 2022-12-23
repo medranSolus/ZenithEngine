@@ -318,7 +318,7 @@ namespace ZE::GFX::API::VK
 		}
 	}
 
-	void AllocatorGPU::GetAllocInfo(Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory) const noexcept
+	void AllocatorGPU::GetAllocInfo(const Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory) const noexcept
 	{
 		ZE_ASSERT(!alloc.IsFree(), "Invalid allocation!");
 
@@ -327,5 +327,15 @@ namespace ZE::GFX::API::VK
 		memory = mem.DeviceMemory;
 		if (mappedMemory)
 			*mappedMemory = mem.MappedMemory + offset;
+	}
+
+	U8* AllocatorGPU::GetMappedMemory(const Allocation& alloc) const noexcept
+	{
+		ZE_ASSERT(!alloc.IsFree(), "Invalid allocation!");
+
+		U8* memory = allocators.at(alloc.MemoryIndex).GetMemory(alloc.Handle).MappedMemory;
+		if (memory)
+			return memory + allocators.at(alloc.MemoryIndex).GetOffset(alloc.Handle);
+		return nullptr;
 	}
 }

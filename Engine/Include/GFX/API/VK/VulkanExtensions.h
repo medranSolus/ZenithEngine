@@ -119,6 +119,8 @@
 	X(VK_KHR_MAINTENANCE1_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)                     /* Support for YCbCr textures [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_SWAPCHAIN_EXTENSION_NAME)                                    /* Creation of swapchain [EXT_WINDOW] */ \
+	X(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)                            /* New better interface for managing synchronization with GPU [EXT_FEAT] [1.3] */ \
+	X(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)                           /* Copy of D3D12 fence behavior for semaphores [EXT_FEAT] [1.2] */ \
 	X(VK_EXT_4444_FORMATS_EXTENSION_NAME)                                 /* New 16 bit packed pixel formats [EXT_FEAT] [1.3] */
 
 // List of device extension names, used in debug targets, intended for use in X() macro
@@ -214,8 +216,6 @@
 	X(VK_KHR_SPIRV_1_4_EXTENSION_NAME)                                    /* Support for SPIR-V 1.4 [EXT_FEAT] [EXT_SHADER] [1.2] */ \
 	X(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME)                 /* Storage decorator for buffers [EXT_SHADER] [1.1] */ \
 	X(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME)                     /* Use swapchain with different compatible formats view [EXT_WINDOW] */ \
-	X(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)                            /* New better interface for managing synchronization with GPU [EXT_FEAT] [1.3] */ \
-	X(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)                           /* Copy of D3D12 fence behavior for semaphores [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)               /* Tighter alignment for arrays and structs in uniform buffers [EXT_SHADER] [1.2] */ \
 	X(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)                            /* New addressing modes in shaders [EXT_SHADER] [1.1] */ \
 	X(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME)             /* Specifying layout of group shared memory (can handle aliasing based on lifecycle) [EXT_SHADER] */ \

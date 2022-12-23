@@ -1,22 +1,22 @@
 #pragma once
-#include "CBuffer.h"
+#include "GFX/Binding/Context.h"
+#include "GFX/Device.h"
 
 namespace ZE::GFX::API::VK::Resource
 {
 	template<typename T>
 	class Constant final
 	{
-		CBuffer buffer;
 
 	public:
 		Constant() = default;
-		Constant(GFX::Device& dev, const T& value) : buffer(dev, &value, sizeof(T), true) {}
+		Constant(GFX::Device& dev, const T& value) {}
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 
-		constexpr void Set(GFX::Device& dev, const T& value) const { buffer.Update(dev, &value, sizeof(T)); }
-		constexpr T GetData(GFX::Device& dev) const { T data; buffer.GetData(dev, &data, sizeof(T)); return data; }
+		constexpr void Set(GFX::Device& dev, const T& value) const {}
+		constexpr T GetData(GFX::Device& dev) const { return {}; }
 
-		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
+		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept {}
 	};
 }

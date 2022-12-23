@@ -1,15 +1,32 @@
 #pragma once
-#include "VK.h"
+#include "GFX/CommandList.h"
 #include "AllocatorGPU.h"
+#include "UploadInfo.h"
 
-namespace ZE::GFX
-{
-	class CommandList;
-}
 namespace ZE::GFX::API::VK
 {
 	class Device final
 	{
+		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
+
+		struct UploadInfo
+		{
+			U32 LastUsedQueue;
+			bool IsBuffer;
+			union
+			{
+				VkBuffer DestBuffer;
+				VkImage DestImage;
+			};
+			VkPipelineStageFlags2 DestStage;
+			VkAccessFlags2 DestAccess;
+			union
+			{
+				VkBuffer StagingBuffer;
+				VkImage StagingImage;
+			};
+			Allocation StagingAlloc;
+		};
 		struct QueueFamilyInfo
 		{
 			U32 Gfx = UINT32_MAX;
@@ -44,16 +61,36 @@ namespace ZE::GFX::API::VK
 		U32 gfxQueueIndex = UINT32_MAX;
 		U32 computeQueueIndex = UINT32_MAX;
 		U32 copyQueueIndex = UINT32_MAX;
+
+		UA64 gfxFenceVal = 0;
+		VkSemaphore gfxFence = VK_NULL_HANDLE;
+		UA64 computeFenceVal = 0;
+		VkSemaphore computeFence = VK_NULL_HANDLE;
+		UA64 copyFenceVal = 0;
+		VkSemaphore copyFence = VK_NULL_HANDLE;
+
 		// Is integrated | Present from compute | Memory model device scope | Memory model chains | Compute full subgroups
 		std::bitset<5> flags = 0;
 		VkPhysicalDeviceLimits limits;
 
 		AllocatorGPU allocator;
 
+		CommandList copyList;
+		TableInfo<U16> copyResInfo;
+		U16 copyOffset = 0;
+		Ptr<UploadInfo> copyResList = nullptr;
+
 		template<U64 Size>
 		static constexpr U16 GetExtensionIndex(const char(&extName)[Size]) noexcept;
 		// To be used with dynamically allocated string (slower than normal version)
 		static U16 GetExtensionIndexDynamic(const char* extName)  noexcept;
+
+		void WaitCPU(VkSemaphore fence, U64 val);
+		void WaitGPU(VkSemaphore fence, VkQueue queue, U64 val);
+		U64 SetFenceCPU(VkSemaphore fence, UA64& fenceVal);
+		U64 SetFenceGPU(VkSemaphore fence, VkQueue queue, UA64& fenceVal);
+		void Execute(VkQueue queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -64,7 +101,9 @@ namespace ZE::GFX::API::VK
 
 		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
 		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
-			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features, QueueFamilyInfo& familyInfo);
+			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features,
+			VkPhysicalDeviceTimelineSemaphoreFeatures& timelineSemaphore, VkPhysicalDeviceSynchronization2Features& sync2,
+			QueueFamilyInfo& familyInfo);
 
 		void SetIntegratedGPU(bool present) noexcept { flags[0] = present; }
 		void SetPresentFromComputeSupport(bool enabled) noexcept { flags[1] = enabled; }
@@ -74,7 +113,9 @@ namespace ZE::GFX::API::VK
 
 		void InitVolk();
 		void CreateInstance();
-		void FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window, VkPhysicalDeviceFeatures2& features);
+		void FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window,
+			VkPhysicalDeviceFeatures2& features, VkPhysicalDeviceTimelineSemaphoreFeatures& timelineSemaphore,
+			VkPhysicalDeviceSynchronization2Features& sync2);
 
 	public:
 		Device() = default;
@@ -84,36 +125,32 @@ namespace ZE::GFX::API::VK
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { 0, 0 }; }
 
-		constexpr U64 GetMainFence() const noexcept { return 0; }
-		constexpr U64 GetComputeFence() const noexcept { return 0; }
-		constexpr U64 GetCopyFence() const noexcept { return 0; }
+		U64 GetMainFence() const noexcept { return gfxFenceVal; }
+		U64 GetComputeFence() const noexcept { return computeFenceVal; }
+		U64 GetCopyFence() const noexcept { return copyFenceVal; }
 
-		constexpr void WaitMain(U64 val) {}
-		constexpr void WaitCompute(U64 val) {}
-		constexpr void WaitCopy(U64 val) {}
+		void WaitMain(U64 val) { WaitCPU(gfxFence, val); }
+		void WaitCompute(U64 val) { WaitCPU(computeFence, val); }
+		void WaitCopy(U64 val) { WaitCPU(copyFence, val); }
 
-		constexpr U64 SetMainFenceCPU() { return 0; }
-		constexpr U64 SetComputeFenceCPU() { return 0; }
-		constexpr U64 SetCopyFenceCPU() { return 0; }
+		U64 SetMainFenceCPU() { return SetFenceCPU(gfxFence, gfxFenceVal); }
+		U64 SetComputeFenceCPU() { return SetFenceCPU(computeFence, computeFenceVal); }
+		U64 SetCopyFenceCPU() { return SetFenceCPU(copyFence, copyFenceVal); }
 
-		constexpr void WaitMainFromCompute(U64 val) {}
-		constexpr void WaitMainFromCopy(U64 val) {}
-		constexpr void WaitComputeFromMain(U64 val) {}
-		constexpr void WaitComputeFromCopy(U64 val) {}
-		constexpr void WaitCopyFromMain(U64 val) {}
-		constexpr void WaitCopyFromCompute(U64 val) {}
+		void WaitMainFromCompute(U64 val) { WaitGPU(computeFence, gfxQueue, val); }
+		void WaitMainFromCopy(U64 val) { WaitGPU(copyFence, gfxQueue, val); }
+		void WaitComputeFromMain(U64 val) { WaitGPU(gfxFence, computeQueue, val); }
+		void WaitComputeFromCopy(U64 val) { WaitGPU(copyFence, computeQueue, val); }
+		void WaitCopyFromMain(U64 val) { WaitGPU(gfxFence, copyQueue, val); }
+		void WaitCopyFromCompute(U64 val) { WaitGPU(computeFence, copyQueue, val); }
 
-		constexpr U64 SetMainFence() { return 0; }
-		constexpr U64 SetComputeFence() { return 0; }
-		constexpr U64 SetCopyFence() { return 0; }
+		U64 SetMainFence() { return SetFenceGPU(gfxFence, gfxQueue, gfxFenceVal); }
+		U64 SetComputeFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
+		U64 SetCopyFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
 
-		constexpr void BeginUploadRegion() {}
-		constexpr void StartUpload() {}
-		constexpr void EndUploadRegion() {}
-
-		constexpr void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
-		constexpr void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
-		constexpr void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) {}
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(gfxQueue, cl.Get().vk); }
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(computeQueue, cl.Get().vk); }
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(copyQueue, cl.Get().vk); }
 
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
@@ -124,6 +161,10 @@ namespace ZE::GFX::API::VK
 		void TagEndCompute() const noexcept { vkQueueEndDebugUtilsLabelEXT(computeQueue); }
 		void TagEndCopy() const noexcept { vkQueueEndDebugUtilsLabelEXT(copyQueue); }
 #endif
+
+		void BeginUploadRegion();
+		void StartUpload();
+		void EndUploadRegion();
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
 		void EndFrame() noexcept;
@@ -155,6 +196,10 @@ namespace ZE::GFX::API::VK
 		constexpr bool IsExtensionSupported(const char(&extName)[Size]) const noexcept { return extensionSupport[GetExtensionIndex<Size>(extName)]; }
 		// To be used with dynamically allocated string (slower than normal version)
 		bool IsExtensionSupportedDynamic(const char* extName) const noexcept { return extensionSupport[GetExtensionIndexDynamic(extName)]; }
+
+		void UploadBindBuffer(UploadInfoBuffer& uploadInfo);
+		void UploadBindTexture(UploadInfoTexture& uploadInfo);
+		void UpdateBuffer(UploadInfoBufferUpdate& updateInfo);
 	};
 
 #pragma region Functions

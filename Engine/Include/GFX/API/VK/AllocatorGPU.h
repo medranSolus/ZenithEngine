@@ -75,6 +75,7 @@ namespace ZE::GFX::API::VK
 		Allocation AllocImage(Device& dev, VkImage image, Allocation::Usage usage, VkImagePlaneMemoryRequirementsInfo* planeInfo = nullptr);
 		void Remove(Device& dev, Allocation& alloc) noexcept;
 		void HandleBudget(Device& dev) noexcept;
-		void GetAllocInfo(Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory = nullptr) const noexcept;
+		void GetAllocInfo(const Allocation& alloc, VkDeviceSize& offset, VkDeviceMemory& memory, U8** mappedMemory = nullptr) const noexcept;
+		U8* GetMappedMemory(const Allocation& alloc) const noexcept;
 	};
 }
