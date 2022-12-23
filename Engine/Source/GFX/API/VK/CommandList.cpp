@@ -27,7 +27,7 @@ namespace ZE::GFX::API::VK
 			vkCmdBindPipeline(commands, bindPoint, state);
 	}
 
-	CommandList::CommandList(GFX::Device& dev, CommandType type)
+	CommandList::CommandList(GFX::Device& dev, QueueType type)
 	{
 		Init(dev.Get().vk, type);
 	}
@@ -92,75 +92,60 @@ namespace ZE::GFX::API::VK
 
 	void CommandList::Free(GFX::Device& dev) noexcept
 	{
-		if (commands)
-		{
-			vkFreeCommandBuffers(dev.Get().vk.GetDevice(), pool, 1, &commands);
-			commands = VK_NULL_HANDLE;
-		}
-		if (pool)
-		{
-			vkDestroyCommandPool(dev.Get().vk.GetDevice(), pool, nullptr);
-			pool = VK_NULL_HANDLE;
-		}
+		Free(dev.Get().vk);
 	}
 
-	void CommandList::Init(Device& dev, CommandType type)
+	void CommandList::Init(Device& dev, QueueType commandType)
 	{
 		ZE_VK_ENABLE_ID();
+		switch (commandType)
+		{
+		default:
+		case ZE::GFX::QueueType::Main:
+		{
+			familyIndex = dev.GetGfxQueueIndex();
+			break;
+		}
+		case ZE::GFX::QueueType::Compute:
+		{
+			familyIndex = dev.GetComputeQueueIndex();
+			break;
+		}
+		case ZE::GFX::QueueType::Copy:
+		{
+			familyIndex = dev.GetCopyQueueIndex();
+			break;
+		}
+		}
 
 		VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr };
 		poolInfo.flags = 0;
-		switch (type)
-		{
-		default:
-		case ZE::GFX::CommandType::Bundle:
-		case ZE::GFX::CommandType::All:
-		{
-			poolInfo.queueFamilyIndex = dev.GetGfxQueueIndex();
-			break;
-		}
-		case ZE::GFX::CommandType::Compute:
-		{
-			poolInfo.queueFamilyIndex = dev.GetComputeQueueIndex();
-			break;
-		}
-		case ZE::GFX::CommandType::Copy:
-		{
-			poolInfo.queueFamilyIndex = dev.GetCopyQueueIndex();
-			break;
-		}
-		}
+		poolInfo.queueFamilyIndex = familyIndex;
 		ZE_VK_THROW_NOSUCC(vkCreateCommandPool(dev.GetDevice(), &poolInfo, nullptr, &pool));
 
 		VkCommandBufferAllocateInfo commandsInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr };
 		commandsInfo.commandPool = pool;
-		commandsInfo.level = type == CommandType::Bundle ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandsInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandsInfo.commandBufferCount = 1;
 		ZE_VK_THROW_NOSUCC(vkAllocateCommandBuffers(dev.GetDevice(), &commandsInfo, &commands));
 
-#if _ZE_DEBUG_GFX_API
-		switch (type)
+#if _ZE_DEBUG_GFX_NAMES
+		switch (commandType)
 		{
 		default:
-		case ZE::GFX::CommandType::All:
+		case ZE::GFX::QueueType::Main:
 		{
 			ZE_VK_SET_ID(dev.GetDevice(), pool, VK_OBJECT_TYPE_COMMAND_POOL, "direct_allocator");
 			ZE_VK_SET_ID(dev.GetDevice(), commands, VK_OBJECT_TYPE_COMMAND_BUFFER, "direct_command");
 			break;
 		}
-		case ZE::GFX::CommandType::Bundle:
-		{
-			ZE_VK_SET_ID(dev.GetDevice(), pool, VK_OBJECT_TYPE_COMMAND_POOL, "bundle_allocator");
-			ZE_VK_SET_ID(dev.GetDevice(), commands, VK_OBJECT_TYPE_COMMAND_BUFFER, "bundle_command");
-			break;
-		}
-		case ZE::GFX::CommandType::Compute:
+		case ZE::GFX::QueueType::Compute:
 		{
 			ZE_VK_SET_ID(dev.GetDevice(), pool, VK_OBJECT_TYPE_COMMAND_POOL, "compute_allocator");
 			ZE_VK_SET_ID(dev.GetDevice(), commands, VK_OBJECT_TYPE_COMMAND_BUFFER, "compute_command");
 			break;
 		}
-		case ZE::GFX::CommandType::Copy:
+		case ZE::GFX::QueueType::Copy:
 		{
 			ZE_VK_SET_ID(dev.GetDevice(), pool, VK_OBJECT_TYPE_COMMAND_POOL, "copy_allocator");
 			ZE_VK_SET_ID(dev.GetDevice(), commands, VK_OBJECT_TYPE_COMMAND_BUFFER, "copy_command");
@@ -180,5 +165,38 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 		ZE_VK_THROW_NOSUCC(vkResetCommandPool(dev.GetDevice(), pool, 0));
+	}
+
+	void CommandList::Free(Device& dev) noexcept
+	{
+		if (commands)
+		{
+			vkFreeCommandBuffers(dev.GetDevice(), pool, 1, &commands);
+			commands = VK_NULL_HANDLE;
+		}
+		if (pool)
+		{
+			vkDestroyCommandPool(dev.GetDevice(), pool, nullptr);
+			pool = VK_NULL_HANDLE;
+		}
+	}
+
+	void CommandList::TransferOwnership(VkBufferMemoryBarrier2& barrier) noexcept
+	{
+		barrier.dstStageMask = barrier.srcStageMask;
+		barrier.dstAccessMask = barrier.srcAccessMask;
+		barrier.dstQueueFamilyIndex = familyIndex;
+		barrier.offset = 0;
+		barrier.size = VK_WHOLE_SIZE;
+
+		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
+		depInfo.dependencyFlags = 0;
+		depInfo.memoryBarrierCount = 0;
+		depInfo.pMemoryBarriers = nullptr;
+		depInfo.bufferMemoryBarrierCount = 1;
+		depInfo.pBufferMemoryBarriers = &barrier;
+		depInfo.imageMemoryBarrierCount = 0;
+		depInfo.pImageMemoryBarriers = nullptr;
+		vkCmdPipelineBarrier2(commands, &depInfo);
 	}
 }

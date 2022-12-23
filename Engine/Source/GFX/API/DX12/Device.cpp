@@ -185,7 +185,7 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
 		ZE_DX_SET_ID(copyFence, "copy_fence");
 
-		copyList.Init(*this, CommandType::All);
+		copyList.Init(*this, QueueType::Main);
 		copyResInfo.Size = 0;
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 
@@ -204,6 +204,8 @@ namespace ZE::GFX::API::DX12
 
 	Device::~Device()
 	{
+		ZE_ASSERT(copyResInfo.Size == 0, "Copying data not finished before destroying Device!");
+
 		copyList.Free();
 		if (commandLists)
 			commandLists.DeleteArray();
@@ -367,21 +369,6 @@ namespace ZE::GFX::API::DX12
 			} while (i < copyCount);
 			ZE_DX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
 		}
-	}
-
-	void Device::ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		Execute(mainQueue.Get(), cl.Get().dx12);
-	}
-
-	void Device::ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		Execute(computeQueue.Get(), cl.Get().dx12);
-	}
-
-	void Device::ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		Execute(copyQueue.Get(), cl.Get().dx12);
 	}
 
 	D3D12_RESOURCE_DESC1 Device::GetBufferDesc(U64 size) const noexcept

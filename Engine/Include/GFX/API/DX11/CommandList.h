@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandType.h"
+#include "GFX/QueueType.h"
 #include "D3D11.h"
 
 namespace ZE::GFX
@@ -25,7 +25,7 @@ namespace ZE::GFX::API::DX11
 	public:
 		CommandList() = default;
 		CommandList(GFX::Device& dev);
-		CommandList(GFX::Device& dev, CommandType type);
+		CommandList(GFX::Device& dev, QueueType type);
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() { ZE_ASSERT(tagManager == nullptr && commands == nullptr && context == nullptr, "Command list not freed before deletion!"); }
 

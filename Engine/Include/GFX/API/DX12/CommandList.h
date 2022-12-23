@@ -27,8 +27,8 @@ namespace ZE::GFX::API::DX12
 
 	public:
 		CommandList() = default;
-		CommandList(GFX::Device& dev) : CommandList(dev, CommandType::All) {}
-		CommandList(GFX::Device& dev, CommandType type);
+		CommandList(GFX::Device& dev) : CommandList(dev, QueueType::Main) {}
+		CommandList(GFX::Device& dev, QueueType type);
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() { ZE_ASSERT(commands == nullptr && allocator == nullptr, "Command list not freed before deletion!"); }
 
@@ -57,7 +57,7 @@ namespace ZE::GFX::API::DX12
 		void Open(Device& dev) { Open(dev, nullptr); }
 		void Free() noexcept { commands = nullptr; allocator = nullptr; }
 
-		void Init(Device& dev, CommandType type);
+		void Init(Device& dev, QueueType type);
 		void Close(Device& dev);
 		void Reset(Device& dev);
 	};

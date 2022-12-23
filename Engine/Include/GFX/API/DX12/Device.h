@@ -12,7 +12,6 @@ namespace ZE::GFX::API::DX12
 {
 	class Device final
 	{
-	private:
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
 
 		struct UploadInfo
@@ -99,6 +98,10 @@ namespace ZE::GFX::API::DX12
 		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
+		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(mainQueue.Get(), cl.Get().dx12); }
+		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(computeQueue.Get(), cl.Get().dx12); }
+		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(copyQueue.Get(), cl.Get().dx12); }
+
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
 		void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
@@ -114,9 +117,6 @@ namespace ZE::GFX::API::DX12
 		void EndUploadRegion();
 
 		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
-		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
 
 		// Gfx API Internal
 

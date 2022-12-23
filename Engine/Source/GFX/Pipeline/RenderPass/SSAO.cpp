@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
-		passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, CommandType::Compute); });
+		passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, QueueType::Compute); });
 
 		// Prefilter pass
 		Binding::SchemaDesc desc;

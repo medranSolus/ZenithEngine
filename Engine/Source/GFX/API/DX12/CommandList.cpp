@@ -13,7 +13,7 @@ namespace ZE::GFX::API::DX12
 		commands->SetDescriptorHeaps(1, heaps);
 	}
 
-	CommandList::CommandList(GFX::Device& dev, CommandType type)
+	CommandList::CommandList(GFX::Device& dev, QueueType type)
 	{
 		Init(dev.Get().dx12, type);
 	}
@@ -99,36 +99,30 @@ namespace ZE::GFX::API::DX12
 	}
 #endif
 
-	void CommandList::Init(Device& dev, CommandType type)
+	void CommandList::Init(Device& dev, QueueType type)
 	{
 		ZE_DX_ENABLE_ID(dev);
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
 			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
 
-#if _ZE_DEBUG_GFX_API
+#if _ZE_DEBUG_GFX_NAMES
 		switch (type)
 		{
 		default:
-		case ZE::GFX::CommandType::All:
+		case ZE::GFX::QueueType::Main:
 		{
 			ZE_DX_SET_ID(allocator, "direct_allocator");
 			ZE_DX_SET_ID(commands, "direct_command");
 			break;
 		}
-		case ZE::GFX::CommandType::Bundle:
-		{
-			ZE_DX_SET_ID(allocator, "bundle_allocator");
-			ZE_DX_SET_ID(commands, "bundle_command");
-			break;
-		}
-		case ZE::GFX::CommandType::Compute:
+		case ZE::GFX::QueueType::Compute:
 		{
 			ZE_DX_SET_ID(allocator, "compute_allocator");
 			ZE_DX_SET_ID(commands, "compute_command");
 			break;
 		}
-		case ZE::GFX::CommandType::Copy:
+		case ZE::GFX::QueueType::Copy:
 		{
 			ZE_DX_SET_ID(allocator, "copy_allocator");
 			ZE_DX_SET_ID(commands, "copy_command");

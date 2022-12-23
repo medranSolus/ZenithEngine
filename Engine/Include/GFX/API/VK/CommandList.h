@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandType.h"
+#include "GFX/QueueType.h"
 #include "VK.h"
 
 namespace ZE::GFX
@@ -19,13 +19,14 @@ namespace ZE::GFX::API::VK
 	{
 		VkCommandPool pool = VK_NULL_HANDLE;
 		VkCommandBuffer commands = VK_NULL_HANDLE;
+		U32 familyIndex = UINT32_MAX;
 
 		void Open(Device& dev, VkPipeline state, VkPipelineBindPoint bindPoint);
 
 	public:
 		CommandList() = default;
-		CommandList(GFX::Device& dev) : CommandList(dev, CommandType::All) {}
-		CommandList(GFX::Device& dev, CommandType type);
+		CommandList(GFX::Device& dev) : CommandList(dev, QueueType::Main) {}
+		CommandList(GFX::Device& dev, QueueType type);
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() { ZE_ASSERT(commands == nullptr && pool == nullptr, "Command list not freed before deletion!"); }
 
@@ -50,10 +51,13 @@ namespace ZE::GFX::API::VK
 		// Gfx API Internal
 
 		constexpr VkCommandBuffer GetBuffer() const noexcept { return commands; }
+		constexpr U32 GetFamily() const noexcept { return familyIndex; }
 		void Open(Device& dev) { Open(dev, VK_NULL_HANDLE, VK_PIPELINE_BIND_POINT_GRAPHICS); }
 
-		void Init(Device& dev, CommandType type);
+		void Init(Device& dev, QueueType commandType);
 		void Close();
 		void Reset(Device& dev);
+		void Free(Device& dev) noexcept;
+		void TransferOwnership(VkBufferMemoryBarrier2& barrier) noexcept;
 	};
 }

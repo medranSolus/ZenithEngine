@@ -7,7 +7,7 @@
 #include "GFX/Resource/SamplerDesc.h"
 #include "GFX/Resource/ShaderType.h"
 #include "GFX/Resource/State.h"
-#include "GFX/CommandType.h"
+#include "GFX/QueueType.h"
 #include "WarningGuardOn.h"
 #include <d3d12.h>
 #include "WarningGuardOff.h"
@@ -38,7 +38,7 @@ namespace ZE::GFX::API::DX12
 	typedef std::bitset<6> ShaderPresenceMask;
 
 	// Get DirectX 12 version of command list types
-	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(CommandType type) noexcept;
+	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(QueueType type) noexcept;
 	// Get DirectX 12 version of comparison function
 	constexpr D3D12_COMPARISON_FUNC GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept;
 	// Get DirectX 12 version of culling modes
@@ -61,19 +61,17 @@ namespace ZE::GFX::API::DX12
 	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept;
 
 #pragma region Functions
-	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(CommandType type) noexcept
+	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(QueueType type) noexcept
 	{
 		switch (type)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
-		case CommandType::All:
+		case QueueType::Main:
 			return D3D12_COMMAND_LIST_TYPE_DIRECT;
-		case CommandType::Bundle:
-			return D3D12_COMMAND_LIST_TYPE_BUNDLE;
-		case CommandType::Compute:
+		case QueueType::Compute:
 			return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-		case CommandType::Copy:
+		case QueueType::Copy:
 			return D3D12_COMMAND_LIST_TYPE_COPY;
 		}
 	}

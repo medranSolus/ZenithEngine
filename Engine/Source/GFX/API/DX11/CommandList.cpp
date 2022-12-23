@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX11
 #endif
 	}
 
-	CommandList::CommandList(GFX::Device& dev, CommandType type)
+	CommandList::CommandList(GFX::Device& dev, QueueType type)
 	{
 		ZE_DX_ENABLE(dev.Get().dx11);
 

@@ -13,13 +13,13 @@ namespace ZE::GFX
 
 	public:
 		CommandList() = default;
-		constexpr CommandList(Device& dev, CommandType type) { ZE_API_BACKEND_VAR.Init(dev, type); }
+		constexpr CommandList(Device& dev, QueueType type) { ZE_API_BACKEND_VAR.Init(dev, type); }
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
 		constexpr void InitMain(Device& dev) { ZE_API_BACKEND_VAR.Init(dev); }
-		constexpr void Init(Device& dev, CommandType type = CommandType::All) { ZE_API_BACKEND_VAR.Init(dev, type); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandType type) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, type); }
+		constexpr void Init(Device& dev, QueueType type = QueueType::Main) { ZE_API_BACKEND_VAR.Init(dev, type); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, QueueType type) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, type); }
 		ZE_API_BACKEND_GET(CommandList);
 
 		// Main Gfx API
