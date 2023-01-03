@@ -42,7 +42,7 @@ namespace ZE::GFX::API::DX12
 		return val;
 	}
 
-	void Device::Execute(ICommandQueue* queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(ICommandQueue* queue, CommandList& cl)
 	{
 		ZE_ASSERT(cl.GetList() != nullptr, "Empty list!");
 		ICommandList* lists[] = { cl.GetList() };
@@ -208,7 +208,7 @@ namespace ZE::GFX::API::DX12
 
 		copyList.Free();
 		if (commandLists)
-			commandLists.DeleteArray();
+			commandLists.Free();
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
 
@@ -277,20 +277,20 @@ namespace ZE::GFX::API::DX12
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(GFX::CommandList* cls, U32 count)
 	{
 		if (count == 1)
 		{
 			switch (cls->Get().dx12.GetList()->GetType())
 			{
+			default:
+				ZE_FAIL("Incorrect type of command list!!!");
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 				return ExecuteMain(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
 				return ExecuteCompute(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 				return ExecuteCopy(*cls);
-			default:
-				ZE_FAIL("Incorrect type of command list!!!");
 			}
 		}
 
@@ -298,23 +298,22 @@ namespace ZE::GFX::API::DX12
 		U32 mainCount = 0, computeCount = 0, copyCount = 0;
 		for (U32 i = 0; i < count; ++i)
 		{
+			ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
+
 			switch (cls[i].Get().dx12.GetList()->GetType())
 			{
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 			{
-				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				++mainCount;
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
 			{
-				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				++computeCount;
 				break;
 			}
 			case D3D12_COMMAND_LIST_TYPE_COPY:
 			{
-				ZE_ASSERT(cls[i].Get().dx12.GetList() != nullptr, "Empty command list!");
 				++copyCount;
 				break;
 			}

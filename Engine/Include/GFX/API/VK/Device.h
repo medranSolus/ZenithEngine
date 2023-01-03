@@ -62,6 +62,9 @@ namespace ZE::GFX::API::VK
 		U32 computeQueueIndex = UINT32_MAX;
 		U32 copyQueueIndex = UINT32_MAX;
 
+		U32 commandListsCount = 0;
+		Ptr<VkCommandBufferSubmitInfo> commandLists;
+
 		UA64 gfxFenceVal = 0;
 		VkSemaphore gfxFence = VK_NULL_HANDLE;
 		UA64 computeFenceVal = 0;
@@ -89,7 +92,7 @@ namespace ZE::GFX::API::VK
 		void WaitGPU(VkSemaphore fence, VkQueue queue, U64 val);
 		U64 SetFenceCPU(VkSemaphore fence, UA64& fenceVal);
 		U64 SetFenceGPU(VkSemaphore fence, VkQueue queue, UA64& fenceVal);
-		void Execute(VkQueue queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+		void Execute(VkQueue queue, CommandList& cl);
 
 #if _ZE_DEBUG_GFX_API
 		static VkBool32 VKAPI_PTR DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -148,9 +151,9 @@ namespace ZE::GFX::API::VK
 		U64 SetComputeFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
 
-		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(gfxQueue, cl.Get().vk); }
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(computeQueue, cl.Get().vk); }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(copyQueue, cl.Get().vk); }
+		void ExecuteMain(GFX::CommandList& cl) { Execute(gfxQueue, cl.Get().vk); }
+		void ExecuteCompute(GFX::CommandList& cl) { Execute(computeQueue, cl.Get().vk); }
+		void ExecuteCopy(GFX::CommandList& cl) { Execute(copyQueue, cl.Get().vk); }
 
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
@@ -166,7 +169,7 @@ namespace ZE::GFX::API::VK
 		void StartUpload();
 		void EndUploadRegion();
 
-		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
+		void Execute(GFX::CommandList* cls, U32 count);
 		void EndFrame() noexcept;
 
 		// Gfx API Internal

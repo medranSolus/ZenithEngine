@@ -76,4 +76,13 @@ namespace ZE::GFX::API::DX11
 		ZE_DX_ENABLE_INFO(dev.Get().dx11);
 		ZE_DX_THROW_FAILED_INFO(context->Dispatch(groupX, groupY, groupZ));
 	}
+
+	void CommandList::Free(GFX::Device& dev) noexcept
+	{
+#if _ZE_GFX_MARKERS
+		tagManager = nullptr;
+#endif
+		commands = nullptr;
+		context = nullptr;
+	}
 }

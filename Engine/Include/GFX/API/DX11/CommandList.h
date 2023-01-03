@@ -36,7 +36,6 @@ namespace ZE::GFX::API::DX11
 		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
-		void Free(GFX::Device& dev) noexcept { tagManager = nullptr; commands = nullptr; context = nullptr; }
 
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
@@ -46,6 +45,7 @@ namespace ZE::GFX::API::DX11
 		void DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API);
 		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
+		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal
 

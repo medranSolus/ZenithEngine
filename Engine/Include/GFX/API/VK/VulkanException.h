@@ -119,6 +119,6 @@ namespace ZE::GFX::API::VK
 
 // Before using needs call to ZE_VK_ENABLE_ID()
 // Sets debug name for GPU object with given id
-#define ZE_VK_SET_ID(child, id)
+#define ZE_VK_SET_ID(device, object, vkObjectType, id)
 #endif
 #pragma endregion

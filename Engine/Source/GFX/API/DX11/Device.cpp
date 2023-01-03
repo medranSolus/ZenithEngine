@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::API::DX11
 {
-	void Device::Execute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(GFX::CommandList& cl)
 	{
 		if (cl.Get().dx11.GetList() != nullptr)
 		{
@@ -62,7 +62,7 @@ namespace ZE::GFX::API::DX11
 #endif
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(GFX::CommandList* cls, U32 count)
 	{
 		for (U32 i = 0; i < count; ++i)
 			Execute(cls[i]);

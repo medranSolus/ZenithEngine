@@ -24,7 +24,7 @@ namespace ZE::GFX::API::DX11
 		void TagBegin(std::string_view tag) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
 #endif
 
-		void Execute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API);
+		void Execute(GFX::CommandList& cl);
 
 	public:
 		Device() = default;
@@ -62,9 +62,9 @@ namespace ZE::GFX::API::DX11
 		constexpr void EndUploadRegion() {}
 		constexpr void EndFrame() noexcept {}
 
-		void ExecuteMain(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
-		void ExecuteCompute(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
-		void ExecuteCopy(GFX::CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { Execute(cl); }
+		void ExecuteMain(GFX::CommandList& cl) { Execute(cl); }
+		void ExecuteCompute(GFX::CommandList& cl) { Execute(cl); }
+		void ExecuteCopy(GFX::CommandList& cl) { Execute(cl); }
 
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { TagBegin(tag); }
@@ -76,7 +76,7 @@ namespace ZE::GFX::API::DX11
 		void TagEndCopy() const noexcept { tagManager->EndEvent(); }
 #endif
 
-		void Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API);
+		void Execute(GFX::CommandList* cls, U32 count);
 
 		// Gfx API Internal
 

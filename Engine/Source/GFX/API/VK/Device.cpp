@@ -87,7 +87,7 @@ namespace ZE::GFX::API::VK
 		return signalInfo.value;
 	}
 
-	void Device::Execute(VkQueue queue, CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(VkQueue queue, CommandList& cl)
 	{
 		ZE_ASSERT(cl.GetBuffer() != nullptr, "Empty list!");
 		ZE_VK_ENABLE();
@@ -770,6 +770,8 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(copyResInfo.Size == 0, "Copying data not finished before destroying Device!");
 
 		copyList.Free(*this);
+		if (commandLists)
+			commandLists.Free();
 		allocator.Destroy(*this);
 		if (device)
 			vkDestroyDevice(device, nullptr);
@@ -879,9 +881,110 @@ namespace ZE::GFX::API::VK
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API)
+	void Device::Execute(GFX::CommandList* cls, U32 count)
 	{
-		// Based on queue family index or just own enum (enum smaller)
+		if (count == 1)
+		{
+			const U32 family = cls->Get().vk.GetFamily();
+
+			if (family == gfxQueueIndex)
+				return ExecuteMain(*cls);
+			if (family == computeQueueIndex)
+				return ExecuteCompute(*cls);
+			ZE_ASSERT(family == copyQueueIndex, "Incorrect type of command list!!!");
+			return ExecuteCopy(*cls);
+		}
+
+		ZE_VK_ENABLE();
+
+		// Find max size for command lists to execute at once
+		U32 gfxCount = 0, computeCount = 0, copyCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			ZE_ASSERT(cls[i].Get().vk.GetBuffer() != nullptr, "Empty list!");
+
+			const U32 family = cls[i].Get().vk.GetFamily();
+
+			if (family == gfxQueueIndex)
+				++gfxCount;
+			else if (family == computeQueueIndex)
+				++computeCount;
+			else
+			{
+				ZE_ASSERT(family == copyQueueIndex, "Incorrect type of command list!!!");
+				++copyCount;
+			}
+		}
+
+		// Realloc if needed bigger list
+		count = std::max(commandListsCount, gfxCount);
+		if (computeCount > count)
+			count = computeCount;
+		if (copyCount > count)
+			count = copyCount;
+		if (count > commandListsCount)
+		{
+			commandListsCount = count;
+			commandLists = reinterpret_cast<VkCommandBufferSubmitInfo*>(realloc(commandLists, count * sizeof(VkCommandBufferSubmitInfo)));
+		}
+
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
+		submitInfo.flags = 0;
+		submitInfo.waitSemaphoreInfoCount = 0;
+		submitInfo.pWaitSemaphoreInfos = nullptr;
+		submitInfo.pCommandBufferInfos = commandLists;
+		submitInfo.signalSemaphoreInfoCount = 0;
+		submitInfo.pSignalSemaphoreInfos = nullptr;
+
+		// Execute lists
+		if (gfxCount)
+		{
+			submitInfo.commandBufferInfoCount = gfxCount;
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().vk.GetFamily() == gfxQueueIndex)
+				{
+					commandLists[i] = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
+					commandLists[i].commandBuffer = cls[j].Get().vk.GetBuffer();
+					commandLists[i++].deviceMask = 0;
+				}
+				++j;
+			} while (i < gfxCount);
+			ZE_VK_THROW_NOSUCC(vkQueueSubmit2(gfxQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		}
+		if (computeCount)
+		{
+			submitInfo.commandBufferInfoCount = computeCount;
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().vk.GetFamily() == computeQueueIndex)
+				{
+					commandLists[i] = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
+					commandLists[i].commandBuffer = cls[j].Get().vk.GetBuffer();
+					commandLists[i++].deviceMask = 0;
+				}
+				++j;
+			} while (i < computeCount);
+			ZE_VK_THROW_NOSUCC(vkQueueSubmit2(computeQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		}
+		if (copyCount)
+		{
+			submitInfo.commandBufferInfoCount = copyCount;
+			U32 i = 0, j = 0;
+			do
+			{
+				if (cls[i].Get().vk.GetFamily() == copyQueueIndex)
+				{
+					commandLists[i] = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
+					commandLists[i].commandBuffer = cls[j].Get().vk.GetBuffer();
+					commandLists[i++].deviceMask = 0;
+				}
+				++j;
+			} while (i < copyCount);
+			ZE_VK_THROW_NOSUCC(vkQueueSubmit2(copyQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		}
 	}
 
 	void Device::EndFrame() noexcept

@@ -67,10 +67,10 @@ namespace ZE::GFX
 		// Flushes all the upload data to GPU
 		constexpr void EndUploadRegion() { ZE_API_BACKEND_CALL(EndUploadRegion); }
 
-		constexpr void Execute(CommandList* cls, U32 count) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Execute, cls, count); }
-		constexpr void ExecuteMain(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }
-		constexpr void ExecuteCompute(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCompute, cl); }
-		constexpr void ExecuteCopy(CommandList& cl) noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(ExecuteCopy, cl); }
+		constexpr void Execute(CommandList* cls, U32 count) { ZE_API_BACKEND_CALL(Execute, cls, count); }
+		constexpr void ExecuteMain(CommandList& cl) { ZE_API_BACKEND_CALL(ExecuteMain, cl); }
+		constexpr void ExecuteCompute(CommandList& cl) { ZE_API_BACKEND_CALL(ExecuteCompute, cl); }
+		constexpr void ExecuteCopy(CommandList& cl) { ZE_API_BACKEND_CALL(ExecuteCopy, cl); }
 
 		constexpr void EndFrame() noexcept { ZE_API_BACKEND_CALL(EndFrame); }
 
