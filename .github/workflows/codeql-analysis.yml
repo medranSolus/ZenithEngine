@@ -35,7 +35,7 @@ jobs:
         run: choco install ninja
       - name: Install Vulkan
         run: |
-          curl -O https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe
+          curl -O http://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe
           .\vulkan_sdk.exe
       - name: Install Visual Studio 2022 Community
         run: choco install visualstudio2022community
