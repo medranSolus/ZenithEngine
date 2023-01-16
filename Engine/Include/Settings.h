@@ -70,7 +70,7 @@ namespace ZE
 		switch (GetGfxApi())
 		{
 		default:
-			ZE_FAIL("Unhandled enum value!");
+			ZE_ENUM_UNHANDLED();
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
 			return 1;

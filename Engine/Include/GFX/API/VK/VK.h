@@ -12,7 +12,7 @@ namespace ZE::GFX::API::VK
 	constexpr PixelFormat GetFormatFromVk(VkFormat format) noexcept;
 
 #pragma region Functions
-// List of mappings between PixelFormat and VkFormat for enum decoding in X() macro
+	// List of mappings between PixelFormat and VkFormat for enum decoding in X() macro
 #define ZE_VK_FORMAT_MAPPINGS \
 	X(Unknown,             VK_FORMAT_UNDEFINED) \
 	X(R32G32B32A32_Float,  VK_FORMAT_R32G32B32A32_SFLOAT) \
@@ -98,7 +98,7 @@ namespace ZE::GFX::API::VK
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
-		ZE_VK_FORMAT_MAPPINGS
+			ZE_VK_FORMAT_MAPPINGS
 		}
 #undef X
 	}
@@ -182,7 +182,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16:
 		case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM:
 		case VK_FORMAT_A4B4G4R4_UNORM_PACK16:
-		// 64 bit per channel types are not supported yet by other APIs
+			// 64 bit per channel types are not supported yet by other APIs
 		case VK_FORMAT_R64_UINT:
 		case VK_FORMAT_R64_SINT:
 		case VK_FORMAT_R64_SFLOAT:
@@ -195,7 +195,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_R64G64B64A64_UINT:
 		case VK_FORMAT_R64G64B64A64_SINT:
 		case VK_FORMAT_R64G64B64A64_SFLOAT:
-		// ETC2 compression not yet supported in other APIs
+			// ETC2 compression not yet supported in other APIs
 		case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
 		case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
 		case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK:
@@ -206,7 +206,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_EAC_R11_SNORM_BLOCK:
 		case VK_FORMAT_EAC_R11G11_UNORM_BLOCK:
 		case VK_FORMAT_EAC_R11G11_SNORM_BLOCK:
-		// ASTC compression not yet supported in other APIs
+			// ASTC compression not yet supported in other APIs
 		case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
 		case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
 		case VK_FORMAT_ASTC_5x4_UNORM_BLOCK:
@@ -235,7 +235,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
 		case VK_FORMAT_ASTC_12x12_UNORM_BLOCK:
 		case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
-		// VK_EXT_texture_compression_astc_hdr is mostly supported on mobile only with HDR display
+			// VK_EXT_texture_compression_astc_hdr is mostly supported on mobile only with HDR display
 		case VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK:
 		case VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK:
 		case VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK:
@@ -250,7 +250,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK:
 		case VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK:
 		case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK:
-		// Scaled formats won't be supported due to API compatibility
+			// Scaled formats won't be supported due to API compatibility
 		case VK_FORMAT_R8_USCALED:
 		case VK_FORMAT_R8_SSCALED:
 		case VK_FORMAT_R8G8_USCALED:
@@ -277,9 +277,9 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_R16G16B16_SSCALED:
 		case VK_FORMAT_R16G16B16A16_USCALED:
 		case VK_FORMAT_R16G16B16A16_SSCALED:
-		// VK_NV_optical_flow won't be supported
+			// VK_NV_optical_flow won't be supported
 		case VK_FORMAT_R16G16_S10_5_NV:
-		// VK_IMG_format_pvrtc is deprecated
+			// VK_IMG_format_pvrtc is deprecated
 		case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
 		case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
 		case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
@@ -288,7 +288,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
 		case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
 		case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
-			ZE_FAIL("Trying to convert unsupported format!");
+			ZE_FAIL("Trying to convert unsupported format!"); [[fallthrough]];
 		ZE_VK_FORMAT_MAPPINGS
 		case VK_FORMAT_S8_UINT:
 			return PixelFormat::R24G8_DepthStencil;

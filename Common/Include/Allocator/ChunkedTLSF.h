@@ -152,7 +152,7 @@ namespace ZE::Allocator
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData)
+	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData)
 	{
 		TLSFMemoryChunk<Memory>* newChunk = chunkAllocator.Alloc();
 		TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData);
@@ -193,7 +193,7 @@ namespace ZE::Allocator
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::CreateAlloc(Block* currentBlock, U64 size, U64 alignment) noexcept
+	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::CreateAlloc(Block* currentBlock, U64 size, U64 alignment) noexcept
 	{
 		// Get block and pop it from the free list
 		if (currentBlock != nullBlock)
@@ -291,7 +291,7 @@ namespace ZE::Allocator
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::FindFreeBlock(U64 size, U32& listIndex) const noexcept
+	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::FindFreeBlock(U64 size, U32& listIndex) const noexcept
 	{
 		U8 memoryClass = SizeToMemoryClass(size);
 		U32 innerFreeMap = innerIsFreeBitmap[memoryClass] & (~0U << SizeToSecondIndex(size, memoryClass));

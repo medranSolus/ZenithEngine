@@ -503,9 +503,8 @@ namespace ZE::GFX::API::VK
 				{
 				default:
 					ZE_ENUM_UNHANDLED();
-					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] has insufficient Vulkan support!");
 				case GpuFitness::Status::FeaturesInsufficient:
-					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support enough basic features!");
+					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support enough basic Vulkan features!");
 				case GpuFitness::Status::NoPresentModes:
 					throw ZE_CMP_EXCEPT("Window surface doesn't support any present modes on GPU [" + std::string(properties.properties.deviceName) + "]!");
 				case GpuFitness::Status::NoPixelFormats:

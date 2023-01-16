@@ -258,7 +258,7 @@ namespace ZE::GFX::API
 	} \
 	default: \
 	{ \
-		ZE_ENUM_UNHANDLED(); \
+		ZE_FAIL("Using not supported API!"); \
 		##ret## {}; \
 		break; \
 	} \
