@@ -226,7 +226,11 @@ if(${ZE_COMPILER_MSVC})
 	# C5246 - the initialization of a subobject should be wrapped in braces
 	#	Note: Caused by not respecing newer initializations aggregate, bug in MSVC
 	# C4464 - relative include path contains '..'
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246 /wd4464")
+	# C5262 - currently MSVC standard library uses a lot of unguarded fall-through switch cases
+	#	Note: Enable when fixed by Microsoft since it's bloating output beyond measure.
+	# C5264 - currently MSVC standard library contains a lot of unsused variables
+	#	Note: Enable when fixed by Microsoft since it's bloating output beyond measure.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246 /wd4464 /wd5262 /wd5264")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
 	set(CMAKE_CXX_FLAGS_DEVELOPMENT "${CMAKE_CXX_FLAGS_DEVELOPMENT} /MD /Ot /Oi /Oy /GL /GS /Gy")
 	set(CXX_PERFORMANCE_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")

@@ -50,7 +50,8 @@ namespace ZE::GFX::API::DX12::Resource
 			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
 			if (++currentBlock >= resInfo.size())
 				AllocBlock(dev);
-			MapBlock(dev, currentBlock);
+			else
+				MapBlock(dev, currentBlock);
 		}
 		memcpy(buffer + nextOffset, values, bytes);
 
@@ -94,9 +95,8 @@ namespace ZE::GFX::API::DX12::Resource
 
 			if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
 			{
-				auto& device = dev.Get().dx12;
 				for (U64 i = currentBlock + 1; i < blockCount; ++i)
-					device.FreeDynamicBuffer(resInfo.at(i).first);
+					dev.Get().dx12.FreeDynamicBuffer(resInfo.at(i).first);
 				resInfo.resize(currentBlock + 1);
 			}
 			currentBlock = 0;

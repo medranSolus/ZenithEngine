@@ -31,10 +31,11 @@ namespace ZE
 		// For conveniece use this instead of calling normal 'free()'. It's not prohibited but this way pointer is safely set to null or other pointer
 		constexpr void Free(T* p = nullptr) noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); free(ptr); ptr = p; }
 
-		constexpr T& operator*() { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return *ptr; }
-		constexpr const T& operator*() const { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return *ptr; }
-		constexpr T* operator->() { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return ptr; }
-		constexpr const T* operator->() const { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return ptr; }
+		constexpr T** operator&() noexcept { return &ptr; }
+		constexpr T& operator*() noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return *ptr; }
+		constexpr const T& operator*() const noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return *ptr; }
+		constexpr T* operator->() noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return ptr; }
+		constexpr const T* operator->() const noexcept { ZE_ASSERT(ptr != nullptr, "Invalid pointer!"); return ptr; }
 
 		// Reinterpret cast wrapper
 		template<typename S>

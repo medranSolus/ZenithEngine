@@ -22,7 +22,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 	public:
 		DynamicCBuffer() = default;
-		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); MapBlock(dev, 0); }
+		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
 		~DynamicCBuffer();
 
