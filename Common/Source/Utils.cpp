@@ -58,6 +58,9 @@ namespace ZE::Utils
 			offset = pos + step;
 		}
 		output.emplace_back(input.substr(offset, input.size() - offset));
+		// Remove trailing spaces
+		while (output.back().at(output.back().size() - 1) == ' ')
+			output.back() = output.back().substr(0, output.back().size() - 1);
 		return output;
 	}
 }

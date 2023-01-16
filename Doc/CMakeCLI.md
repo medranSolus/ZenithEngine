@@ -7,12 +7,12 @@ Project is based upon **Ninja** generator and requires its binary to be accessib
 Also make sure that CMake can access compiler of your choice, to use 'cl.exe' from Visual Studio just use **x64 Native Tools Command Prompt**.
 
 Script by default bulds the project, but supports also following commands:
-  - `help` - displaying tool syntax,
-  - `init` - initializing external submodules,
-  - `clean` - clear the build system,
-  - `up` - updating external submodules,
-  - `gen` - generation of CMake build system,
-  - `run` - running builded technological demo.
+  - `help` - display tool syntax,
+  - `init` - initialize external submodules,
+  - `clean/clear` - clear the build system,
+  - `up` - update external submodules,
+  - `gen` - generate of CMake build system,
+  - `run` - run builded technological demo.
 
 Project contains following configurations needed by `gen`, `run` and default command (case insensitive):
   - **Debug** - pass `D` or `Debug`,
@@ -22,4 +22,4 @@ Project contains following configurations needed by `gen`, `run` and default com
   - **CI tools** - pass `CI` to configure only for CI jobs, same as **Release** but without engine data.
 
 Tool syntax:
-`./build.ps1 <COMMAND> <CONFIGURATION>`
+`./build.ps1 <COMMAND> <MODE> <ARGS>`

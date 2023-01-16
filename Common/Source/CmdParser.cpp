@@ -20,6 +20,9 @@ namespace ZE
 
 	void CmdParser::Parse(std::string_view clParams) noexcept
 	{
+		if (clParams.empty())
+			return;
+
 		std::deque<std::string_view> clParameters = Utils::SplitString(clParams, "/");
 		for (std::string_view clParam : clParameters)
 		{

@@ -7,16 +7,17 @@ function Display-Info
     Write-Output "        <COMMAND: (default - build project)"
     Write-Output "            help - display tool syntax (MODE not required)"
     Write-Output "            init - initialize submodules (MODE not required)"
-    Write-Output "            clean - clear the build system (MODE not required)"
+    Write-Output "            clean/clear - clear the build system (MODE not required)"
     Write-Output "            up - update submodules (MODE not required)"
     Write-Output "            gen - generate build system"
-    Write-Output "            run - run tech demo>"
-    Write-Output "        <MODE: D|Debug; Dev|Development; P|Profile; R|Release; CI (Static analysis setup)>`n"
+    Write-Output "            run - run tech demo (you can specify additional arguments after MODE parameter that will be passed to the application)>"
+    Write-Output "        <MODE: D|Debug; Dev|Development; P|Profile; R|Release; CI (static analysis setup)>"
+    Write-Output "        <ARGS: additional parameters for run command>`n"
 }
 
 Switch ($command)
 {
-    "clean"
+    {($_ -eq "clean") -or ($_ -eq "clear")}
     {
         Get-ChildItem Bin -Recurse | Remove-Item -Recurse
         Get-ChildItem Build -Recurse | Remove-Item -Recurse
@@ -48,26 +49,31 @@ Switch ($command)
 }
 
 $build_type
-Switch ($mode.ToLower())
+$build_preset
+Switch ($mode)
 {
     {($_ -eq "r") -or ($_ -eq "release") -or ($_ -eq "ci")}
     {
         $build_type="Release"
+        $build_preset="Release-Win"
         break
     }
     {($_ -eq "p") -or ($_ -eq "profile")}
     {
         $build_type="Profile"
+        $build_preset="Profile-Win"
         break
     }
     {($_ -eq "dev") -or ($_ -eq "development")}
     {
         $build_type="Development"
+        $build_preset="Development-Win"
         break
     }
     {($_ -eq "d") -or ($_ -eq "debug")}
     {
         $build_type="Debug"
+        $build_preset="Debug-Win"
         break
     }
     default
@@ -85,11 +91,11 @@ Switch ($command)
     "gen"
     {
         $args=""
-        if ($mode.ToLower() -eq "ci")
+        if ($mode -eq "ci")
         {
             $args="-DZE_CI_JOB=ON"
         }
-        cmake $args -D CMAKE_BUILD_TYPE=$build_type -G Ninja -S . -B "$obj_dir"
+        cmake $args -S ./ --preset=$build_preset
         break
     }
     "run"
@@ -97,7 +103,7 @@ Switch ($command)
         if (Test-Path -Path "$bin_dir/ZenithDemo.exe" -PathType Leaf)
         {
             cd "$bin_dir"
-            Start-Process -NoNewWindow "./ZenithDemo.exe"
+            Start-Process -NoNewWindow "./ZenithDemo.exe" -ArgumentList $args
             cd ../..
         }
         else
