@@ -11,7 +11,7 @@ namespace ZE::GFX::Resource
 		ZE_API_BACKEND(Resource::Shader);
 
 	public:
-		constexpr Shader(GFX::Device& dev, const std::wstring& name) { ZE_API_BACKEND_VAR.Init(dev, name); }
+		constexpr Shader(GFX::Device& dev, const std::string& name) { ZE_API_BACKEND_VAR.Init(dev, name); }
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 

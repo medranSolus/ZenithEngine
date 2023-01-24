@@ -12,7 +12,7 @@ namespace ZE::GFX
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 		if (ext == ".dds")
 		{
-			ZE_DXT_THROW_FAILED(Tex::LoadFromDDSFile(Utils::ToUtf8(name).c_str(), Tex::DDS_FLAGS::DDS_FLAGS_FORCE_RGB, nullptr, scratch),
+			ZE_DXT_THROW_FAILED(Tex::LoadFromDDSFile(Utils::ToUTF16(name).c_str(), Tex::DDS_FLAGS::DDS_FLAGS_FORCE_RGB, nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
 
@@ -27,21 +27,21 @@ namespace ZE::GFX
 		}
 		else if (ext == ".hdr")
 		{
-			ZE_DXT_THROW_FAILED(Tex::LoadFromHDRFile(Utils::ToUtf8(name).c_str(), nullptr, scratch),
+			ZE_DXT_THROW_FAILED(Tex::LoadFromHDRFile(Utils::ToUTF16(name).c_str(), nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 
 			throw ZE_IMG_EXCEPT("HDR textures not implemented!");
 		}
 		else if (ext == ".tga")
 		{
-			ZE_DXT_THROW_FAILED(Tex::LoadFromTGAFile(Utils::ToUtf8(name).c_str(), nullptr, scratch),
+			ZE_DXT_THROW_FAILED(Tex::LoadFromTGAFile(Utils::ToUTF16(name).c_str(), nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 
 			throw ZE_IMG_EXCEPT("TGA textures not implemented!");
 		}
 		else
 		{
-			ZE_DXT_THROW_FAILED(Tex::LoadFromWICFile(Utils::ToUtf8(name).c_str(),
+			ZE_DXT_THROW_FAILED(Tex::LoadFromWICFile(Utils::ToUTF16(name).c_str(),
 				Tex::WIC_FLAGS::WIC_FLAGS_IGNORE_SRGB, nullptr, scratch),
 				"Loading image \"" + name + "\": failed.");
 			image = scratch.GetImage(0, 0, 0);
@@ -94,17 +94,17 @@ namespace ZE::GFX
 		if (ext == ".dds")
 		{
 			ZE_DXT_THROW_FAILED(Tex::SaveToDDSFile(image, scratch.GetImageCount(), scratch.GetMetadata(),
-				Tex::DDS_FLAGS::DDS_FLAGS_FORCE_DX10_EXT, Utils::ToUtf8(filename).c_str()),
+				Tex::DDS_FLAGS::DDS_FLAGS_FORCE_DX10_EXT, Utils::ToUTF16(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
 		}
 		else if (ext == ".hdr")
 		{
-			ZE_DXT_THROW_FAILED(Tex::SaveToHDRFile(*image, Utils::ToUtf8(filename).c_str()),
+			ZE_DXT_THROW_FAILED(Tex::SaveToHDRFile(*image, Utils::ToUTF16(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
 		}
 		else if (ext == ".tga")
 		{
-			ZE_DXT_THROW_FAILED(Tex::SaveToTGAFile(*image, Utils::ToUtf8(filename).c_str()),
+			ZE_DXT_THROW_FAILED(Tex::SaveToTGAFile(*image, Utils::ToUTF16(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
 		}
 		else
@@ -127,7 +127,7 @@ namespace ZE::GFX
 			else
 				throw ZE_IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
 
-			ZE_DXT_THROW_FAILED(Tex::SaveToWICFile(*image, Tex::WIC_FLAGS::WIC_FLAGS_NONE, Tex::GetWICCodec(codedID), Utils::ToUtf8(filename).c_str()),
+			ZE_DXT_THROW_FAILED(Tex::SaveToWICFile(*image, Tex::WIC_FLAGS::WIC_FLAGS_NONE, Tex::GetWICCodec(codedID), Utils::ToUTF16(filename).c_str()),
 				"Saving surface to \"" + filename + "\": failed to save.");
 		}
 	}

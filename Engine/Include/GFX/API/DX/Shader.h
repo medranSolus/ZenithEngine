@@ -18,7 +18,7 @@ namespace ZE::GFX
 
 		public:
 			Shader() = default;
-			Shader(GFX::Device& dev, const std::wstring& name);
+			Shader(GFX::Device& dev, const std::string& name);
 			ZE_CLASS_MOVE(Shader);
 			~Shader() { ZE_ASSERT(bytecode == nullptr, "Shader not freed before deletion!"); }
 
@@ -34,13 +34,13 @@ namespace ZE::GFX
 
 #pragma region Functions
 		template<bool IS_DX12>
-		Shader<IS_DX12>::Shader(GFX::Device& dev, const std::wstring& name)
+		Shader<IS_DX12>::Shader(GFX::Device& dev, const std::string& name)
 		{
 			ZE_WIN_ENABLE_EXCEPT();
 #if _ZE_DEBUG_GFX_NAMES
-			shaderName = Utils::ToAscii(name);
+			shaderName = name;
 #endif
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob(((IS_DX12 ? L"Shaders/DX12/" : L"Shaders/DX11/") + name + L".cso").c_str(), &bytecode));
+			ZE_WIN_THROW_FAILED(D3DReadFileToBlob(((IS_DX12 ? L"Shaders/DX12/" : L"Shaders/DX11/") + Utils::ToUTF16(name) + L".cso").c_str(), &bytecode));
 		}
 #pragma endregion
 	}

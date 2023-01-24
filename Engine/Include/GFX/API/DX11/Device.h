@@ -21,7 +21,7 @@ namespace ZE::GFX::API::DX11
 		U32 scratchDescriptorCount;
 
 #if _ZE_GFX_MARKERS
-		void TagBegin(std::string_view tag) const noexcept { std::wstring label = Utils::ToUtf8(tag); tagManager->BeginEvent(label.c_str()); }
+		void TagBegin(std::string_view tag) const noexcept { tagManager->BeginEvent(Utils::ToUTF16(tag).c_str()); }
 #endif
 
 		void Execute(GFX::CommandList& cl);

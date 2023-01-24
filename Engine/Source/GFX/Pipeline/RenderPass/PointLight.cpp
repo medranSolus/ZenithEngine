@@ -35,8 +35,8 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"LightVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, L"PointLightPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "LightVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "PointLightPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;

@@ -259,7 +259,7 @@ namespace ZE::Window::WinAPI
 	{
 		constexpr DWORD WIN_STYLE_EX = 0;
 
-		if (SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL)
+		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL)
 			throw ZE_WIN_EXCEPT_LAST();
 		// Initial DPI since no possible way to know window DPI
 		const UINT dpi = GetDpiForSystem();

@@ -16,7 +16,7 @@ namespace ZE::GFX
 
 		public:
 			Shader() = default;
-			Shader(GFX::Device& dev, const std::wstring& name);
+			Shader(GFX::Device& dev, const std::string& name);
 			ZE_CLASS_MOVE(Shader);
 			~Shader() { ZE_ASSERT(shader == VK_NULL_HANDLE, "Shader not freed before deletion!"); }
 

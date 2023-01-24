@@ -4,15 +4,15 @@
 
 namespace ZE::GFX::API::VK::Resource
 {
-	Shader::Shader(GFX::Device& dev, const std::wstring& name)
+	Shader::Shader(GFX::Device& dev, const std::string& name)
 	{
 		ZE_VK_ENABLE_ID();
 #if _ZE_DEBUG_GFX_NAMES
-		shaderName = Utils::ToAscii(name);
+		shaderName = name;
 #endif
-		std::ifstream fin(L"Shaders/Vk/" + name + L".spv", std::ios::ate | std::ios::binary);
+		std::ifstream fin("Shaders/Vk/" + name + ".spv", std::ios::ate | std::ios::binary);
 		if (!fin.good())
-			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + Utils::ToAscii(name));
+			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + name);
 
 		std::vector<char> bytecode(fin.tellg());
 		fin.seekg(0);
@@ -24,7 +24,7 @@ namespace ZE::GFX::API::VK::Resource
 		shaderInfo.codeSize = bytecode.size();
 		shaderInfo.pCode = reinterpret_cast<U32*>(bytecode.data());
 		ZE_VK_THROW_NOSUCC(vkCreateShaderModule(dev.Get().vk.GetDevice(), &shaderInfo, nullptr, &shader));
-		ZE_VK_SET_ID(dev.Get().vk.GetDevice(), shader, VK_OBJECT_TYPE_SHADER_MODULE, Utils::ToAscii(name));
+		ZE_VK_SET_ID(dev.Get().vk.GetDevice(), shader, VK_OBJECT_TYPE_SHADER_MODULE, name);
 	}
 
 	void Shader::Free(GFX::Device& dev) noexcept

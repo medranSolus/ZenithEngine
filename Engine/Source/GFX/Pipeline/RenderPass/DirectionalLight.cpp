@@ -20,8 +20,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, L"DirectionalLightPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "DirectionalLightPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;

@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"SolidVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.FormatDS = formatDS;
@@ -31,7 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawStencil");
 		passData->StateStencil.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
-		psoDesc.SetShader(dev, psoDesc.PS, L"SolidPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;

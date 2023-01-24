@@ -217,7 +217,7 @@ namespace ZE::GFX::API::DX12
 						if (node->ObjectNameA)
 							info += node->ObjectNameA;
 						else if (node->ObjectNameW)
-							info += Utils::ToAscii(node->ObjectNameW);
+							info += Utils::ToUTF8(node->ObjectNameW);
 						else
 							info += "UNKNOWN";
 
@@ -261,7 +261,7 @@ namespace ZE::GFX::API::DX12
 					if (node->pCommandQueueDebugNameA)
 						breadInfo += node->pCommandQueueDebugNameA;
 					else if (node->pCommandQueueDebugNameW)
-						breadInfo += Utils::ToAscii(node->pCommandQueueDebugNameW);
+						breadInfo += Utils::ToUTF8(node->pCommandQueueDebugNameW);
 					else
 						breadInfo += "UNKNOWN";
 
@@ -269,7 +269,7 @@ namespace ZE::GFX::API::DX12
 					if (node->pCommandListDebugNameA)
 						breadInfo += node->pCommandListDebugNameA;
 					else if (node->pCommandListDebugNameW)
-						breadInfo += Utils::ToAscii(node->pCommandListDebugNameW);
+						breadInfo += Utils::ToUTF8(node->pCommandListDebugNameW);
 					else
 						breadInfo += "UNKNOWN";
 
@@ -322,7 +322,7 @@ namespace ZE::GFX::API::DX12
 									do
 									{
 										breadInfo += " | \"";
-										breadInfo += Utils::ToAscii(ctx->pContextString);
+										breadInfo += Utils::ToUTF8(ctx->pContextString);
 										breadInfo += "\"";
 									} while (++ctx != range.second);
 								}

@@ -3,31 +3,104 @@
 
 namespace ZE::Utils
 {
-	std::wstring ToUtf8(std::string_view s) noexcept
+	std::wstring ToUTF16(std::string_view s) noexcept
 	{
+		constexpr const wchar_t* ERROR_STR = L"[Not UTF-8 string]";
+
 		std::wstring str;
 		str.reserve(s.size());
-		for (char c : s)
-			str += static_cast<wchar_t>(c);
+		U64 i = 0;
+		while (i < s.size())
+		{
+			U32 unicode;
+			U64 remaining = 0;
+			U8 c = s[i++];
+
+			if (c <= 0x7F)
+				unicode = c;
+			else if (c <= 0xBF)
+				return ERROR_STR;
+			else if (c <= 0xDF)
+			{
+				unicode = c & 0x1F;
+				remaining = 1;
+			}
+			else if (c <= 0xEF)
+			{
+				unicode = c & 0x0F;
+				remaining = 2;
+			}
+			else if (c <= 0xF7)
+			{
+				unicode = c & 0x07;
+				remaining = 3;
+			}
+			else
+				return ERROR_STR;
+			// Encode multiple characters on 6 bits
+			while (remaining--)
+			{
+				if (i == s.size())
+					return ERROR_STR;
+				c = s[i++];
+				if (c < 0x80 || c > 0xBF)
+					return ERROR_STR;
+				unicode <<= 6;
+				unicode += c & 0x3F;
+			}
+			if ((unicode >= 0xD800 && unicode <= 0xDFFF) || unicode > 0x10FFFF)
+				return ERROR_STR;
+
+			// Encode unicode character as UTF-16
+			if (unicode <= 0xFFFF)
+				str.push_back(static_cast<wchar_t>(unicode));
+			else
+			{
+				unicode -= 0x10000;
+				str.push_back(static_cast<wchar_t>((unicode >> 10) + 0xD800));
+				str.push_back(static_cast<wchar_t>((unicode & 0x3FF) + 0xDC00));
+			}
+		}
 		return str;
 	}
 
-	std::string ToAscii(std::wstring_view s) noexcept
+	std::string ToUTF8(std::wstring_view s) noexcept
 	{
+		constexpr const char* ERROR_STR = "[Not UTF-16 string]";
+
 		std::string str;
 		str.reserve(s.size());
-		for (wchar_t c : s)
+		for (U64 i = 0; i < s.size(); ++i)
 		{
-			str.push_back(static_cast<char>(c));
-			if (c > 0xFF)
+			// Restore unicode character
+			U32 unicode = s[i];
+			if (unicode >= 0xD800 && unicode <= 0xDFFF)
+				unicode = ((unicode - 0xD800) << 10) + s[++i] + 0x2400;
+
+			if (unicode <= 0x7F)
+				str.push_back(static_cast<char>(unicode));
+			else if (unicode <= 0x7FF)
 			{
-				str.push_back(static_cast<char>(c >> 8));
-				// wchar_t is 16 bit only on Windows
-#ifndef _WINDOWS
-				str.push_back(static_cast<char>(c >> 16));
-				str.push_back(static_cast<char>(c >> 24));
-#endif
+				str.push_back(static_cast<char>(0xC0 + (unicode >> 6)));
+				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
 			}
+			else if (unicode <= 0xFFFF)
+			{
+				// 3 bytes
+				str.push_back(static_cast<char>(0xE0 + (unicode >> 12)));
+				str.push_back(static_cast<char>(0x80 + ((unicode >> 6) & 0x3F)));
+				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
+			}
+			else if (unicode <= 0x10FFFF)
+			{
+				//4 bytes
+				str.push_back(static_cast<char>(0xF0 + (unicode >> 18)));
+				str.push_back(static_cast<char>(0x80 + ((unicode >> 12) & 0x3F)));
+				str.push_back(static_cast<char>(0x80 + ((unicode >> 6) & 0x3F)));
+				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
+			}
+			else
+				return ERROR_STR;
 		}
 		return str;
 	}

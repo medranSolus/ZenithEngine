@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader prefilter(dev, L"SSAOPrefilterDepthCS");
+		Resource::Shader prefilter(dev, "SSAOPrefilterDepthCS");
 		passData->StatePrefilter.Init(dev, prefilter, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter));
 		prefilter.Free(dev);
 
@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader ssao(dev, L"SSAOMainCS");
+		Resource::Shader ssao(dev, "SSAOMainCS");
 		passData->StateSSAO.Init(dev, ssao, buildData.BindingLib.GetSchema(passData->BindingIndexSSAO));
 		ssao.Free(dev);
 
@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		Resource::Shader denoise(dev, L"SSAODenoiseCS");
+		Resource::Shader denoise(dev, "SSAODenoiseCS");
 		passData->StateDenoise.Init(dev, denoise, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise));
 		denoise.Free(dev);
 

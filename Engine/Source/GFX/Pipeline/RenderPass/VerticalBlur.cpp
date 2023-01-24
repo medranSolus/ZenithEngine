@@ -14,8 +14,8 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, L"BlurPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "BlurPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilMask;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.Blender = Resource::BlendType::Normal;

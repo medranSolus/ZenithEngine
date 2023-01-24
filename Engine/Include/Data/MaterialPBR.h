@@ -31,7 +31,7 @@ namespace ZE::Data
 		// Describes ordering of pipeline states enforced by the flags, pass -1 to get last index for PSO
 		static constexpr U8 GetPipelineStateNumber(PBRFlags flags) noexcept;
 		static constexpr PBRFlags GetShaderFlagsForState(U8 stateNumber) noexcept;
-		static constexpr const wchar_t* DecodeShaderSuffix(PBRFlags flags) noexcept;
+		static constexpr const char* DecodeShaderSuffix(PBRFlags flags) noexcept;
 	};
 
 	// Component containing graphics material data for meshes
@@ -55,46 +55,46 @@ namespace ZE::Data
 		return stateNumber << 1;
 	}
 
-	constexpr const wchar_t* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept
+	constexpr const char* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept
 	{
 		flags &= ~UseSpecularPowerAlpha;
 		switch (flags)
 		{
 		case None:
-			return L"";
+			return "";
 		case UseParallax:
-			return L"_P";
+			return "_P";
 		case UseSpecular:
-			return L"_S";
+			return "_S";
 		case UseSpecular | UseParallax:
-			return L"_SP";
+			return "_SP";
 		case UseNormal:
-			return L"_N";
+			return "_N";
 		case UseNormal | UseParallax:
-			return L"_NP";
+			return "_NP";
 		case UseNormal | UseSpecular:
-			return L"_NS";
+			return "_NS";
 		case UseNormal | UseSpecular | UseParallax:
-			return L"_NSP";
+			return "_NSP";
 		case UseTexture:
-			return L"_T";
+			return "_T";
 		case UseTexture | UseParallax:
-			return L"_TP";
+			return "_TP";
 		case UseTexture | UseSpecular:
-			return L"_TS";
+			return "_TS";
 		case UseTexture | UseSpecular | UseParallax:
-			return L"_TSP";
+			return "_TSP";
 		case UseTexture | UseNormal:
-			return L"_TN";
+			return "_TN";
 		case UseTexture | UseNormal | UseParallax:
-			return L"_TNP";
+			return "_TNP";
 		case UseTexture | UseNormal | UseSpecular:
-			return L"_TNS";
+			return "_TNS";
 		case UseTexture | UseNormal | UseSpecular | UseParallax:
-			return L"_TNSP";
+			return "_TNSP";
 		}
 		ZE_FAIL("Unknown set of flags!");
-		return L"";
+		return "";
 	}
 #pragma endregion
 }

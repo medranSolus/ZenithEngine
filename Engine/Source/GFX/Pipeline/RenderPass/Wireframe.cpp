@@ -15,8 +15,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"SolidVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, L"SolidPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthReverse;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;

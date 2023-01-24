@@ -42,32 +42,32 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"PhongDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "PhongDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		passData->StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(dev, psoDesc.VS, L"PhongVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "PhongVS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 3;
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
-		const std::wstring shaderName = L"PhongPS";
+		const std::string shaderName = "PhongPS";
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
 		{
-			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
+			const char* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
 			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + ZE::Utils::ToAscii(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + std::string(suffix));
 			passData->StatesSolid[stateIndex].Init(dev, psoDesc, schema);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + ZE::Utils::ToAscii(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + std::string(suffix));
 			passData->StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
@@ -149,8 +149,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 				{
 					const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m1.ID));
-					const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID));
-					return state1 < state2;
+			const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID));
+			return state1 < state2;
 				});
 			currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
 

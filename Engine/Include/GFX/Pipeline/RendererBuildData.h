@@ -15,7 +15,7 @@ namespace ZE::GFX::Pipeline
 		Resource::Texture::Library& TextureLib;
 		// If pass require global renderer data in shaders just simply append this SchemaDesc
 		Binding::SchemaDesc RendererSlots;
-		std::unordered_map<std::wstring, Resource::Shader> ShaderCache;
+		std::unordered_map<std::string, Resource::Shader> ShaderCache;
 		// When several passes are gonna share same binding slots simply save and retrieve it's index inside the map
 		std::unordered_map<std::string, U32> SchemaLocations;
 		// If graphic's PSO can be used in multiple passes it should be placed here to avoid state duplication.

@@ -44,8 +44,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"SkyboxVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, L"SkyboxPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "SkyboxVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "SkyboxPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;

@@ -32,34 +32,34 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, L"ShadowCubeDepthVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.GS, L"ShadowCubeDepthGS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeDepthGS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(dev, psoDesc.VS, L"ShadowCubeVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.GS, L"ShadowCubeGS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeGS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 6;
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
-		const std::wstring shaderName = L"ShadowPS";
+		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
 		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
 		{
-			const wchar_t* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
+			const char* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
 			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
-			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeSolid" + ZE::Utils::ToAscii(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeSolid" + std::string(suffix));
 			passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeTransparent" + ZE::Utils::ToAscii(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeTransparent" + std::string(suffix));
 			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
@@ -172,8 +172,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
 						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular);
-						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
-						return state1 < state2;
+				const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
+				return state1 < state2;
 					});
 				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
 
