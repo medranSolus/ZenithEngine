@@ -16,7 +16,7 @@ namespace ZE::Window::WinAPI
 		public:
 			WindowClass() noexcept;
 			ZE_CLASS_DELETE(WindowClass);
-			~WindowClass() { UnregisterClass(Settings::GetEngineName(), hInstance); }
+			~WindowClass() { UnregisterClassW(Utils::ToUTF16(Settings::GetEngineName()).c_str(), hInstance); }
 
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};
@@ -53,9 +53,9 @@ namespace ZE::Window::WinAPI
 		constexpr U32 GetWidth() const noexcept override { return static_cast<U32>(windowRect.right); }
 		constexpr U32 GetHeight() const noexcept override { return static_cast<U32>(windowRect.bottom); }
 
-		void Init(const char* name, U32 width = 0, U32 height = 0) override;
+		void Init(std::string_view name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;
-		void SetTitle(const std::string& title) override;
+		void SetTitle(std::string_view title) override;
 		void NewGuiFrame() const noexcept override;
 	};
 }

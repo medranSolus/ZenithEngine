@@ -5,7 +5,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	constexpr UINT ERROR_BOX_STYLE = MB_OK | MB_ICONERROR;
 	try
 	{
-		srand(static_cast<unsigned int>(time(NULL)));
+		srand(static_cast<unsigned int>(time(nullptr)));
 		CmdParser parser;
 		EngineParams::SetupParser(parser);
 		parser.Parse(lpCmdLine);
@@ -13,15 +13,15 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	}
 	catch (const ZE::Exception::BasicException& e)
 	{
-		MessageBox(nullptr, e.what(), e.GetType(), ERROR_BOX_STYLE);
+		MessageBoxW(nullptr, Utils::ToUTF16(e.what()).c_str(), Utils::ToUTF16(e.GetType()).c_str(), ERROR_BOX_STYLE);
 	}
 	catch (const std::exception& e)
 	{
-		MessageBox(nullptr, e.what(), "std::exception", ERROR_BOX_STYLE);
+		MessageBoxW(nullptr, Utils::ToUTF16(e.what()).c_str(), L"std::exception", ERROR_BOX_STYLE);
 	}
 	catch (...)
 	{
-		MessageBox(nullptr, "Unknown exception", "No type", ERROR_BOX_STYLE);
+		MessageBoxW(nullptr, L"Unknown exception", L"No type", ERROR_BOX_STYLE);
 	}
 	return -1;
 }

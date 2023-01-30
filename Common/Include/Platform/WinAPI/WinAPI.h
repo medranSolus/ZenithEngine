@@ -72,6 +72,13 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+// No ANSI methods
+#ifndef UNICODE
+#define UNICODE
+#endif
+#ifndef _UNICODE
+#define _UNICODE
+#endif
 
 // Used for display manipulation:
 //

@@ -9,6 +9,8 @@ namespace ZE::Window::WinAPI
 {
 	WindowWinAPI::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
 	{
+		const std::wstring className = Utils::ToUTF16(Settings::GetEngineName());
+
 		WNDCLASSEX wndClassEx = { 0 };
 		wndClassEx.cbClsExtra = 0;
 		wndClassEx.cbWndExtra = 0;
@@ -18,11 +20,11 @@ namespace ZE::Window::WinAPI
 		wndClassEx.hCursor = nullptr;
 		wndClassEx.lpszMenuName = nullptr;
 		wndClassEx.style = CS_OWNDC;
-		wndClassEx.lpszClassName = Settings::GetEngineName();
+		wndClassEx.lpszClassName = className.c_str();
 		wndClassEx.lpfnWndProc = HandleMsgSetup;
 		wndClassEx.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
 		wndClassEx.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
-		RegisterClassEx(&wndClassEx);
+		RegisterClassExW(&wndClassEx);
 	}
 
 	LRESULT WINAPI WindowWinAPI::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
@@ -33,17 +35,17 @@ namespace ZE::Window::WinAPI
 			const CREATESTRUCTW* const create = reinterpret_cast<CREATESTRUCTW*>(lParam);
 			// Passed to CreateWindowEX
 			WindowWinAPI* const wnd = static_cast<WindowWinAPI*>(create->lpCreateParams);
-			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
-			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&WindowWinAPI::HandleMsgStub));
+			SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
+			SetWindowLongPtrW(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&WindowWinAPI::HandleMsgStub));
 			return wnd->HandleMsg(hWnd, msg, wParam, lParam);
 		}
-		return DefWindowProc(hWnd, msg, wParam, lParam);
+		return DefWindowProcW(hWnd, msg, wParam, lParam);
 	}
 
 	LRESULT WINAPI WindowWinAPI::HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		// Get saved Window object
-		WindowWinAPI* wnd = reinterpret_cast<WindowWinAPI*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		WindowWinAPI* wnd = reinterpret_cast<WindowWinAPI*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 		return wnd->HandleMsg(hWnd, msg, wParam, lParam);
 	}
 
@@ -203,7 +205,7 @@ namespace ZE::Window::WinAPI
 		}
 #pragma endregion
 		}
-		return DefWindowProc(hWnd, msg, wParam, lParam);
+		return DefWindowProcW(hWnd, msg, wParam, lParam);
 	}
 
 	void WindowWinAPI::TrapCursor() const noexcept
@@ -217,7 +219,7 @@ namespace ZE::Window::WinAPI
 	void WindowWinAPI::EnterFullscreen() noexcept
 	{
 		// Set the window style to a borderless window so the client area fills the entire screen.
-		SetWindowLong(wndHandle, GWL_STYLE, WS_POPUP);
+		SetWindowLongW(wndHandle, GWL_STYLE, WS_POPUP);
 
 		// Query the nearest display device for the window.
 		// This is required to set the fullscreen dimensions of the window
@@ -225,13 +227,13 @@ namespace ZE::Window::WinAPI
 		HMONITOR monitor = MonitorFromWindow(wndHandle, MONITOR_DEFAULTTONEAREST);
 		MONITORINFOEX monitorInfo = {};
 		monitorInfo.cbSize = sizeof(MONITORINFOEX);
-		GetMonitorInfo(monitor, &monitorInfo);
+		GetMonitorInfoW(monitor, &monitorInfo);
 
 		// Get the settings for the primary display. These settings are used
 		// to determine the correct position and size to position the window.
 		DEVMODE devMode = {};
 		devMode.dmSize = sizeof(DEVMODE);
-		EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+		EnumDisplaySettingsW(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
 
 		SetWindowPos(wndHandle, HWND_TOP, devMode.dmPosition.x, devMode.dmPosition.y,
 			devMode.dmPosition.x + devMode.dmPelsWidth, devMode.dmPosition.y + devMode.dmPelsHeight,
@@ -242,7 +244,7 @@ namespace ZE::Window::WinAPI
 	void WindowWinAPI::LeaveFullscreen() noexcept
 	{
 		// Restore all the window decorators.
-		SetWindowLong(wndHandle, GWL_STYLE, WIN_STYLE);
+		SetWindowLongW(wndHandle, GWL_STYLE, WIN_STYLE);
 
 		SetWindowPos(wndHandle, HWND_NOTOPMOST, windowRect.left, windowRect.top,
 			GetWidth(), GetHeight(), SWP_FRAMECHANGED | SWP_NOACTIVATE);
@@ -255,7 +257,7 @@ namespace ZE::Window::WinAPI
 		DestroyWindow(wndHandle);
 	}
 
-	void WindowWinAPI::Init(const char* name, U32 width, U32 height)
+	void WindowWinAPI::Init(std::string_view name, U32 width, U32 height)
 	{
 		constexpr DWORD WIN_STYLE_EX = 0;
 
@@ -291,9 +293,9 @@ namespace ZE::Window::WinAPI
 			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
 		}
 
-		wndHandle = CreateWindowEx(WIN_STYLE_EX, Settings::GetEngineName(), name, WIN_STYLE,
-			windowRect.left, windowRect.top, GetWidth(), GetHeight(),
-			nullptr, nullptr, wndClass.GetInstance(), this);
+		wndHandle = CreateWindowExW(WIN_STYLE_EX, Utils::ToUTF16(Settings::GetEngineName()).c_str(),
+			Utils::ToUTF16(name).c_str(), WIN_STYLE, windowRect.left, windowRect.top,
+			GetWidth(), GetHeight(), nullptr, nullptr, wndClass.GetInstance(), this);
 		if (wndHandle == nullptr)
 			throw ZE_WIN_EXCEPT_LAST();
 
@@ -320,19 +322,19 @@ namespace ZE::Window::WinAPI
 	std::pair<bool, int> WindowWinAPI::ProcessMessage() noexcept
 	{
 		MSG msg;
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
 				return { true, static_cast<int>(msg.wParam) };
 			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			DispatchMessageW(&msg);
 		}
 		return { false, 0 };
 	}
 
-	void WindowWinAPI::SetTitle(const std::string& title)
+	void WindowWinAPI::SetTitle(std::string_view title)
 	{
-		if (SetWindowText(wndHandle, title.c_str()) == 0)
+		if (SetWindowTextW(wndHandle, Utils::ToUTF16(title).c_str()) == 0)
 			throw ZE_WIN_EXCEPT_LAST();
 	}
 
