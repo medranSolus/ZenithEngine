@@ -6,27 +6,6 @@
 
 namespace ZE::GFX::API::VK
 {
-	void CommandList::Open(Device& dev, VkPipeline state, VkPipelineBindPoint bindPoint)
-	{
-		ZE_VK_ENABLE();
-
-		VkCommandBufferInheritanceInfo inheritanceInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, nullptr };
-		inheritanceInfo.renderPass = VK_NULL_HANDLE;
-		inheritanceInfo.subpass = 0;
-		inheritanceInfo.framebuffer = VK_NULL_HANDLE;
-		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
-		inheritanceInfo.queryFlags = 0;
-		inheritanceInfo.pipelineStatistics = 0;
-
-		VkCommandBufferBeginInfo beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr };
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		beginInfo.pInheritanceInfo = &inheritanceInfo; // Only for secondary buffers
-		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
-
-		if (state)
-			vkCmdBindPipeline(commands, bindPoint, state);
-	}
-
 	CommandList::CommandList(GFX::Device& dev, QueueType type)
 	{
 		Init(dev.Get().vk, type);
@@ -34,18 +13,27 @@ namespace ZE::GFX::API::VK
 
 	void CommandList::Open(GFX::Device& dev)
 	{
-		Open(dev.Get().vk, VK_NULL_HANDLE, VK_PIPELINE_BIND_POINT_GRAPHICS);
+		ZE_VK_ENABLE();
+
+		VkCommandBufferBeginInfo beginInfo;
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.pNext = nullptr;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		beginInfo.pInheritanceInfo = nullptr; // Only for secondary buffers
+		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
 	}
 
 	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
 	{
-		Open(dev.Get().vk, pso.Get().vk.GetState(), VK_PIPELINE_BIND_POINT_COMPUTE);
+		Open(dev);
+		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_COMPUTE, pso.Get().vk.GetState());
 	}
 
 	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
 	{
-		Open(dev.Get().vk, pso.Get().vk.GetState(), VK_PIPELINE_BIND_POINT_GRAPHICS);
-		//commands->IASetPrimitiveTopology(pso.Get().dx12.GetTopology());
+		Open(dev);
+		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS, pso.Get().vk.GetState());
+		vkCmdSetPrimitiveTopologyEXT(commands, pso.Get().vk.GetTopology());
 	}
 
 	void CommandList::Reset(GFX::Device& dev)
@@ -78,7 +66,9 @@ namespace ZE::GFX::API::VK
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
-		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
+		VkDebugUtilsLabelEXT labelInfo;
+		labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+		labelInfo.pNext = nullptr;
 		labelInfo.pLabelName = tag.data();
 		*reinterpret_cast<ColorF4*>(labelInfo.color) = { color.Red, color.Green, color.Blue, color.Alpha };
 		vkCmdBeginDebugUtilsLabelEXT(commands, &labelInfo);
@@ -118,12 +108,16 @@ namespace ZE::GFX::API::VK
 		}
 		}
 
-		VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr };
+		VkCommandPoolCreateInfo poolInfo;
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.pNext = nullptr;
 		poolInfo.flags = 0;
 		poolInfo.queueFamilyIndex = familyIndex;
 		ZE_VK_THROW_NOSUCC(vkCreateCommandPool(dev.GetDevice(), &poolInfo, nullptr, &pool));
 
-		VkCommandBufferAllocateInfo commandsInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr };
+		VkCommandBufferAllocateInfo commandsInfo;
+		commandsInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		commandsInfo.pNext = nullptr;
 		commandsInfo.commandPool = pool;
 		commandsInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandsInfo.commandBufferCount = 1;
@@ -189,7 +183,9 @@ namespace ZE::GFX::API::VK
 		barrier.offset = 0;
 		barrier.size = VK_WHOLE_SIZE;
 
-		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
+		VkDependencyInfo depInfo;
+		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		depInfo.pNext = nullptr;
 		depInfo.dependencyFlags = 0;
 		depInfo.memoryBarrierCount = 0;
 		depInfo.pMemoryBarriers = nullptr;

@@ -21,8 +21,6 @@ namespace ZE::GFX::API::VK
 		VkCommandBuffer commands = VK_NULL_HANDLE;
 		U32 familyIndex = UINT32_MAX;
 
-		void Open(Device& dev, VkPipeline state, VkPipelineBindPoint bindPoint);
-
 	public:
 		CommandList() = default;
 		CommandList(GFX::Device& dev) : CommandList(dev, QueueType::Main) {}

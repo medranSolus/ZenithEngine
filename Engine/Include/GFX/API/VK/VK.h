@@ -6,12 +6,209 @@ namespace ZE::GFX::API::VK
 {
 	// Create surface over current display buffer
 	VkSurfaceKHR CreateSurface(const Window::MainWindow& window, VkInstance instance);
+	// Get opposite of cull mode
+	constexpr VkStencilFaceFlags GetStencilFace(GFX::Resource::CullMode mode) noexcept;
+	// Get Vulkan version of culling modes
+	constexpr VkCullModeFlags GetCulling(GFX::Resource::CullMode mode) noexcept;
+	// Get Vulkan version of primitive topology
+	constexpr VkPrimitiveTopology GetPrimitiveTopology(GFX::Resource::TopologyType type, GFX::Resource::TopologyOrder order) noexcept;
+	// Get Vulkan version of main primitive topology types
+	constexpr VkPrimitiveTopology GetTopologyType(GFX::Resource::TopologyType type) noexcept;
+	// Get number of elements in control patch list
+	constexpr U32 GetPatchCount(GFX::Resource::TopologyOrder order) noexcept;
 	// Convert PixelFormat to VkFormat
 	constexpr VkFormat GetVkFormat(PixelFormat format) noexcept;
 	// Convert VkFormat to PixelFormat
 	constexpr PixelFormat GetFormatFromVk(VkFormat format) noexcept;
 
 #pragma region Functions
+	constexpr VkStencilFaceFlags GetStencilFace(GFX::Resource::CullMode mode) noexcept
+	{
+		switch (mode)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::CullMode::None:
+			return VK_STENCIL_FACE_FRONT_AND_BACK;
+		case GFX::Resource::CullMode::Front:
+			return VK_STENCIL_FACE_BACK_BIT;
+		case GFX::Resource::CullMode::Back:
+			return VK_STENCIL_FACE_FRONT_BIT;
+		}
+	}
+
+	constexpr VkCullModeFlags GetCulling(GFX::Resource::CullMode mode) noexcept
+	{
+		switch (mode)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::CullMode::None:
+			return VK_CULL_MODE_NONE;
+		case GFX::Resource::CullMode::Front:
+			return VK_CULL_MODE_FRONT_BIT;
+		case GFX::Resource::CullMode::Back:
+			return VK_CULL_MODE_BACK_BIT;
+		}
+	}
+
+	constexpr VkPrimitiveTopology GetPrimitiveTopology(GFX::Resource::TopologyType type, GFX::Resource::TopologyOrder order) noexcept
+	{
+		switch (type)
+		{
+		case GFX::Resource::TopologyType::Point:
+		{
+			switch (order)
+			{
+			case GFX::Resource::TopologyOrder::List:
+				return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+			default:
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
+			}
+			break;
+		}
+		case GFX::Resource::TopologyType::Line:
+		{
+			switch (order)
+			{
+			case GFX::Resource::TopologyOrder::List:
+				return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+			case GFX::Resource::TopologyOrder::Strip:
+				return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+			case GFX::Resource::TopologyOrder::ListAdjacency:
+				return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+			case GFX::Resource::TopologyOrder::StripAdjacency:
+				return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+			default:
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
+			}
+			break;
+		}
+		case GFX::Resource::TopologyType::Triangle:
+		{
+			switch (order)
+			{
+			case GFX::Resource::TopologyOrder::List:
+				return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			case GFX::Resource::TopologyOrder::Strip:
+				return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+			case GFX::Resource::TopologyOrder::ListAdjacency:
+				return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+			case GFX::Resource::TopologyOrder::StripAdjacency:
+				return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+			default:
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
+			}
+			break;
+		}
+		case GFX::Resource::TopologyType::ControlPoint:
+		{
+			switch (order)
+			{
+			case GFX::Resource::TopologyOrder::PatchList1:
+			case GFX::Resource::TopologyOrder::PatchList2:
+			case GFX::Resource::TopologyOrder::PatchList3:
+			case GFX::Resource::TopologyOrder::PatchList4:
+			case GFX::Resource::TopologyOrder::PatchList5:
+			case GFX::Resource::TopologyOrder::PatchList6:
+			case GFX::Resource::TopologyOrder::PatchList7:
+			case GFX::Resource::TopologyOrder::PatchList8:
+			case GFX::Resource::TopologyOrder::PatchList9:
+			case GFX::Resource::TopologyOrder::PatchList10:
+			case GFX::Resource::TopologyOrder::PatchList11:
+			case GFX::Resource::TopologyOrder::PatchList12:
+			case GFX::Resource::TopologyOrder::PatchList13:
+			case GFX::Resource::TopologyOrder::PatchList14:
+			case GFX::Resource::TopologyOrder::PatchList15:
+			case GFX::Resource::TopologyOrder::PatchList16:
+			case GFX::Resource::TopologyOrder::PatchList17:
+			case GFX::Resource::TopologyOrder::PatchList18:
+			case GFX::Resource::TopologyOrder::PatchList19:
+			case GFX::Resource::TopologyOrder::PatchList20:
+			case GFX::Resource::TopologyOrder::PatchList21:
+			case GFX::Resource::TopologyOrder::PatchList22:
+			case GFX::Resource::TopologyOrder::PatchList23:
+			case GFX::Resource::TopologyOrder::PatchList24:
+			case GFX::Resource::TopologyOrder::PatchList25:
+			case GFX::Resource::TopologyOrder::PatchList26:
+			case GFX::Resource::TopologyOrder::PatchList27:
+			case GFX::Resource::TopologyOrder::PatchList28:
+			case GFX::Resource::TopologyOrder::PatchList29:
+			case GFX::Resource::TopologyOrder::PatchList30:
+			case GFX::Resource::TopologyOrder::PatchList31:
+			case GFX::Resource::TopologyOrder::PatchList32:
+				return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+			default:
+				ZE_FAIL("Wrong combination of TopologyType and TopologyOrder!");
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	}
+
+	constexpr VkPrimitiveTopology GetTopologyType(GFX::Resource::TopologyType type) noexcept
+	{
+		switch (type)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::TopologyType::Undefined:
+		case GFX::Resource::TopologyType::ControlPoint:
+			return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		case GFX::Resource::TopologyType::Point:
+			return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		case GFX::Resource::TopologyType::Line:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		case GFX::Resource::TopologyType::Triangle:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		}
+	}
+
+	constexpr U32 GetPatchCount(GFX::Resource::TopologyOrder order) noexcept
+	{
+		switch (order)
+		{
+		case GFX::Resource::TopologyOrder::PatchList1:
+		case GFX::Resource::TopologyOrder::PatchList2:
+		case GFX::Resource::TopologyOrder::PatchList3:
+		case GFX::Resource::TopologyOrder::PatchList4:
+		case GFX::Resource::TopologyOrder::PatchList5:
+		case GFX::Resource::TopologyOrder::PatchList6:
+		case GFX::Resource::TopologyOrder::PatchList7:
+		case GFX::Resource::TopologyOrder::PatchList8:
+		case GFX::Resource::TopologyOrder::PatchList9:
+		case GFX::Resource::TopologyOrder::PatchList10:
+		case GFX::Resource::TopologyOrder::PatchList11:
+		case GFX::Resource::TopologyOrder::PatchList12:
+		case GFX::Resource::TopologyOrder::PatchList13:
+		case GFX::Resource::TopologyOrder::PatchList14:
+		case GFX::Resource::TopologyOrder::PatchList15:
+		case GFX::Resource::TopologyOrder::PatchList16:
+		case GFX::Resource::TopologyOrder::PatchList17:
+		case GFX::Resource::TopologyOrder::PatchList18:
+		case GFX::Resource::TopologyOrder::PatchList19:
+		case GFX::Resource::TopologyOrder::PatchList20:
+		case GFX::Resource::TopologyOrder::PatchList21:
+		case GFX::Resource::TopologyOrder::PatchList22:
+		case GFX::Resource::TopologyOrder::PatchList23:
+		case GFX::Resource::TopologyOrder::PatchList24:
+		case GFX::Resource::TopologyOrder::PatchList25:
+		case GFX::Resource::TopologyOrder::PatchList26:
+		case GFX::Resource::TopologyOrder::PatchList27:
+		case GFX::Resource::TopologyOrder::PatchList28:
+		case GFX::Resource::TopologyOrder::PatchList29:
+		case GFX::Resource::TopologyOrder::PatchList30:
+		case GFX::Resource::TopologyOrder::PatchList31:
+		case GFX::Resource::TopologyOrder::PatchList32:
+			return static_cast<U8>(order) - static_cast<U8>(GFX::Resource::TopologyOrder::PatchList1) + 1;
+		default:
+			return 0;
+		}
+	}
+
 	// List of mappings between PixelFormat and VkFormat for enum decoding in X() macro
 #define ZE_VK_FORMAT_MAPPINGS \
 	X(Unknown,             VK_FORMAT_UNDEFINED) \
@@ -289,7 +486,7 @@ namespace ZE::GFX::API::VK
 		case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
 		case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
 			ZE_FAIL("Trying to convert unsupported format!"); [[fallthrough]];
-		ZE_VK_FORMAT_MAPPINGS
+			ZE_VK_FORMAT_MAPPINGS
 		case VK_FORMAT_S8_UINT:
 			return PixelFormat::R24G8_DepthStencil;
 		}

@@ -44,6 +44,16 @@ namespace ZE::GFX::API::VK
 			Status Status;
 			U32 ExtIndex = UINT32_MAX;
 		};
+		struct RequiredExtensionFeatures
+		{
+			VkPhysicalDeviceFeatures2 Features;
+			VkPhysicalDeviceTimelineSemaphoreFeatures TimelineSemaphore;
+			VkPhysicalDeviceSynchronization2Features Sync2;
+			VkPhysicalDeviceDynamicRenderingFeatures DynamicRendering;
+			VkPhysicalDeviceMultiviewFeatures Multiview;
+			VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT PrimitiveRestart;
+			VkPhysicalDeviceExtendedDynamicStateFeaturesEXT DynamicState;
+		};
 
 #define X(ext) + 1
 		static constexpr U16 KNOWN_EXTENSION_COUNT = ZE_VK_EXT_LIST;
@@ -73,8 +83,10 @@ namespace ZE::GFX::API::VK
 		VkSemaphore copyFence = VK_NULL_HANDLE;
 
 		// Is integrated | Present from compute | Memory model device scope | Memory model chains | Compute full subgroups
-		std::bitset<5> flags = 0;
+		// Multiview GS | Multiview Tesselation | Patch list index restart
+		std::bitset<8> flags = 0;
 		VkPhysicalDeviceLimits limits;
+		float conservativeRasterOverestimateSize = 0.0f;
 
 		AllocatorGPU allocator;
 
@@ -104,21 +116,21 @@ namespace ZE::GFX::API::VK
 
 		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
 		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
-			const std::vector<const char*>& requiredExt, VkPhysicalDeviceFeatures2& features,
-			VkPhysicalDeviceTimelineSemaphoreFeatures& timelineSemaphore, VkPhysicalDeviceSynchronization2Features& sync2,
-			QueueFamilyInfo& familyInfo);
+			const std::vector<const char*>& requiredExt, RequiredExtensionFeatures& features, QueueFamilyInfo& familyInfo);
 
 		void SetIntegratedGPU(bool present) noexcept { flags[0] = present; }
 		void SetPresentFromComputeSupport(bool enabled) noexcept { flags[1] = enabled; }
 		void SetMemoryModelDeviceScope(bool enabled) noexcept { flags[2] = enabled; }
 		void SetMemoryModelChains(bool enabled) noexcept { flags[3] = enabled; }
 		void SetFullComputeSubgroupSupport(bool enabled) noexcept { flags[4] = enabled; }
+		void SetMultiviewGeometryShaderSupport(bool enabled) noexcept { flags[5] = enabled; }
+		void SetMultiviewTesselationSupport(bool enabled) noexcept { flags[6] = enabled; }
+		void SetPatchListIndexRestartSupport(bool enabled) noexcept { flags[7] = enabled; }
 
 		void InitVolk();
 		void CreateInstance();
-		void FindPhysicalDevice(const std::vector<const char*>& requiredExt, const Window::MainWindow& window,
-			VkPhysicalDeviceFeatures2& features, VkPhysicalDeviceTimelineSemaphoreFeatures& timelineSemaphore,
-			VkPhysicalDeviceSynchronization2Features& sync2);
+		void FindPhysicalDevice(const std::vector<const char*>& requiredExt,
+			const Window::MainWindow& window, RequiredExtensionFeatures& features);
 
 	public:
 		Device() = default;
@@ -190,8 +202,12 @@ namespace ZE::GFX::API::VK
 		constexpr bool IsMemoryModelDeviceScope() const noexcept { return flags[2]; }
 		constexpr bool IsMemoryModelChains() const noexcept { return flags[3]; }
 		constexpr bool IsFullComputeSubgroupSupport() const noexcept { return flags[4]; }
+		constexpr bool IsMultiviewGeometryShaderSupport() const noexcept { return flags[5]; }
+		constexpr bool IsMultiviewTesselationSupport() const noexcept { return flags[6]; }
+		constexpr bool IsPatchListIndexRestartSupport() const noexcept { return flags[7]; }
 
 		constexpr const VkPhysicalDeviceLimits& GetLimits() const noexcept { return limits; }
+		constexpr float GetConservativeRasterOverestimateSize() const noexcept { return conservativeRasterOverestimateSize; }
 		constexpr AllocatorGPU& GetMemory() noexcept { return allocator; }
 
 		// Use only with VK_*_EXTENSION_NAME macros or string literals that resides underneath them

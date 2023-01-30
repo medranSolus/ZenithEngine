@@ -22,6 +22,8 @@ namespace ZE::Utils
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept;
 	// Get string representation of PixelFormat
 	constexpr const char* FormatToString(PixelFormat format) noexcept;
+	// Get bytes that pixel is occupying
+	constexpr U8 GetFormatSize(PixelFormat format) noexcept;
 
 	// Calculace CRC32 hash over given buffer in compile time
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept;
@@ -439,6 +441,99 @@ namespace ZE::Utils
 			DECODE(YUV_NV12);
 		}
 #undef DECODE
+	}
+
+	constexpr U8 GetFormatSize(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case ZE::PixelFormat::Unknown:
+			return 0;
+		case ZE::PixelFormat::R32G32B32A32_Float:
+		case ZE::PixelFormat::R32G32B32A32_UInt:
+		case ZE::PixelFormat::R32G32B32A32_SInt:
+		case ZE::PixelFormat::BC2_UNorm:
+		case ZE::PixelFormat::BC2_UNorm_SRGB:
+		case ZE::PixelFormat::BC3_UNorm:
+		case ZE::PixelFormat::BC3_UNorm_SRGB:
+		case ZE::PixelFormat::BC5_UNorm:
+		case ZE::PixelFormat::BC5_SNorm:
+		case ZE::PixelFormat::BC6H_UF16:
+		case ZE::PixelFormat::BC6H_SF16:
+		case ZE::PixelFormat::BC7_UNorm:
+		case ZE::PixelFormat::BC7_UNorm_SRGB:
+			return 16;
+		case ZE::PixelFormat::R32G32B32_Float:
+		case ZE::PixelFormat::R32G32B32_UInt:
+		case ZE::PixelFormat::R32G32B32_SInt:
+			return 12;
+		case ZE::PixelFormat::R16G16B16A16_Float:
+		case ZE::PixelFormat::R16G16B16A16_UInt:
+		case ZE::PixelFormat::R16G16B16A16_SInt:
+		case ZE::PixelFormat::R16G16B16A16_UNorm:
+		case ZE::PixelFormat::R16G16B16A16_SNorm:
+		case ZE::PixelFormat::R32G32_Float:
+		case ZE::PixelFormat::R32G32_UInt:
+		case ZE::PixelFormat::R32G32_SInt:
+		case ZE::PixelFormat::BC1_UNorm:
+		case ZE::PixelFormat::BC1_UNorm_SRGB:
+		case ZE::PixelFormat::BC4_UNorm:
+		case ZE::PixelFormat::BC4_SNorm:
+		case ZE::PixelFormat::YUV_Y216:
+		case ZE::PixelFormat::YUV_Y210:
+			return 8;
+		case ZE::PixelFormat::R32G8_DepthStencil:
+			return 5;
+		case ZE::PixelFormat::R8G8B8A8_UInt:
+		case ZE::PixelFormat::R8G8B8A8_SInt:
+		case ZE::PixelFormat::R8G8B8A8_UNorm:
+		case ZE::PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case ZE::PixelFormat::R8G8B8A8_SNorm:
+		case ZE::PixelFormat::B8G8R8A8_UNorm:
+		case ZE::PixelFormat::B8G8R8A8_UNorm_SRGB:
+		case ZE::PixelFormat::R16G16_Float:
+		case ZE::PixelFormat::R16G16_UInt:
+		case ZE::PixelFormat::R16G16_SInt:
+		case ZE::PixelFormat::R16G16_UNorm:
+		case ZE::PixelFormat::R16G16_SNorm:
+		case ZE::PixelFormat::R32_Float:
+		case ZE::PixelFormat::R32_Depth:
+		case ZE::PixelFormat::R32_UInt:
+		case ZE::PixelFormat::R32_SInt:
+		case ZE::PixelFormat::R24G8_DepthStencil:
+		case ZE::PixelFormat::R10G10B10A2_UInt:
+		case ZE::PixelFormat::R10G10B10A2_UNorm:
+		case ZE::PixelFormat::R11G11B10_Float:
+		case ZE::PixelFormat::R9G9B9E5_SharedExp:
+		case ZE::PixelFormat::YUV_Y410:
+		case ZE::PixelFormat::YUV_YUY2:
+			return 4;
+		case ZE::PixelFormat::R8G8_UInt:
+		case ZE::PixelFormat::R8G8_SInt:
+		case ZE::PixelFormat::R8G8_UNorm:
+		case ZE::PixelFormat::R8G8_SNorm:
+		case ZE::PixelFormat::R16_Float:
+		case ZE::PixelFormat::R16_UInt:
+		case ZE::PixelFormat::R16_SInt:
+		case ZE::PixelFormat::R16_UNorm:
+		case ZE::PixelFormat::R16_SNorm:
+		case ZE::PixelFormat::R16_Depth:
+		case ZE::PixelFormat::B4G4R4A4_UNorm:
+		case ZE::PixelFormat::B5G5R5A1_UNorm:
+		case ZE::PixelFormat::B5G6R5_UNorm:
+		case ZE::PixelFormat::YUV_P016:
+		case ZE::PixelFormat::YUV_P010:
+			return 2;
+		case ZE::PixelFormat::R8_UInt:
+		case ZE::PixelFormat::R8_SInt:
+		case ZE::PixelFormat::R8_UNorm:
+		case ZE::PixelFormat::R8_SNorm:
+		case ZE::PixelFormat::YUV_P208:
+		case ZE::PixelFormat::YUV_NV12:
+			return 1;
+		}
 	}
 
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept

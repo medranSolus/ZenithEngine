@@ -114,13 +114,21 @@
 // List of device extension names, required by the engine, intended for use in X() macro
 #define ZE_VK_EXT_LIST_DEVICE_REQUIRED \
 	X(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)                                /* Bind multiple memory regions and allows aliasing [EXT_MEMORY] [1.1] */ \
+	X(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)                          /* Better way for creating render passes [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)                         /* Dedicated allocs for certain resources [EXT_MEMORY] [EXT_PERF] [1.1] */ \
+	X(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)                        /* Automatic resolve for multisampled depth stencil [EXT_PERF] [EXT_FEAT] [1.2] */ \
+	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)                            /* Normal rendering without render passes [EXT_FEAT] [1.3] */ \
 	X(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)                    /* Better query for memory info [EXT_MEMORY] [EXT_QUERY] [1.1] */ \
-	X(VK_KHR_MAINTENANCE1_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
+	X(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
+	X(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
+	X(VK_KHR_MULTIVIEW_EXTENSION_NAME)                                    /* Render same things but with different view, useful for VR [EXT_FEAT] [EXT_PERF] [1.1] */ \
 	X(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)                     /* Support for YCbCr textures [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_SWAPCHAIN_EXTENSION_NAME)                                    /* Creation of swapchain [EXT_WINDOW] */ \
 	X(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)                            /* New better interface for managing synchronization with GPU [EXT_FEAT] [1.3] */ \
 	X(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)                           /* Copy of D3D12 fence behavior for semaphores [EXT_FEAT] [1.2] */ \
+	X(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME)                            /* Explicit control over depth clip (like in D3D) [EXT_FEAT] */ \
+	X(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)                       /* Dynamic states for stencil operations, viewports, scissors, depth and primitives [EXT_FEAT] [EXT_PERF] [1.3] */ \
+	X(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME)              /* Use value in index buffers to restart primitive [EXT_FEAT] */ \
 	X(VK_EXT_4444_FORMATS_EXTENSION_NAME)                                 /* New 16 bit packed pixel formats [EXT_FEAT] [1.3] */
 
 // List of device extension names, used in debug targets, intended for use in X() macro
@@ -152,6 +160,7 @@
 	X(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)                           /* Access implemenation handle of internal semaphore [EXT_EXMEM] [1.1] */ \
 	X(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME)                         /* Less restrictive alignment restrictions [EXT_FEAT] [EXT_MEMORY] [1.1] */ \
 	X(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)                          /* More explicit memory handling [EXT_MEMORY] [1.2] */ \
+	X(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME)                   /* Support fo conservative rasterization [EXT_FEAT] */ \
 	X(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME)                         /* New queue for resource ownership transfer for external memory [EXT_EXMEM] [1.3] */ \
 	X(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)                             /* 8-bit indices [EXT_MEMORY] [EXT_FEAT] */ \
 	X(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)                                /* Getting info about current usage of memory [EXT_MEMORY] [EXT_QUERY] */ \
@@ -160,7 +169,12 @@
 	X(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)                        /* Get better info about waves sizes and control them [EXT_QUERY] [EXT_FEAT] [1.3] */ \
 	X(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)                       /* A bit slower memory but useful for debug [EXT_MEMORY] [EXT_DEBUG] */ \
 	X(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME)               /* Controlling behavior of oversubscription of memory [EXT_MEMORY] */ \
+	X(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)                     /* Using bigger depth stencils with smaller render targets in multisampled rendering (counterpart to VK_NV_framebuffer_mixed_samples) [EXT_FEAT] */ \
+	X(VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME)                    /* Control over PSO compilation process [EXT_PERF] */ \
+	X(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME)                          /* Change order of resterization process for better parallelism [EXT_PERF] */ \
 	X(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)           /* Aliasing of memory in dedicated allocs [EXT_MEMORY] */ \
+	X(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME)                     /* Using different sizes of depth and color buffer to output on smaller target, usable on path rendering (counterpart to VK_AMD_mixed_attachment_samples) [EXT_FEAT] */ \
+	X(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME)                  /* Faster early-z due to less stores [EXT_SHADER] [EXT_PERF] */ \
 	ZE_VK_EXT_LIST_DEVICE_PLATFORM_OPTIONAL
 
 // List of device extension names, currently not used by basic version of the engine, intended for use in X() macro
@@ -168,29 +182,24 @@
 	X(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)                       /* Managing acceleration structures for RT [EXT_RT] */ \
 	X(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)                        /* Get GPU address of buffers for usage in shaders, RT or tools [EXT_FEAT] [EXT_SHADER] [EXT_MEMORY] [1.2] */ \
 	X(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)                              /* Better copy commands interfaces [EXT_FEAT] [1.3] */ \
-	X(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)                          /* Better way for creating render passes [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME)                     /* Async CPU acceleration structures builds [EXT_RT] [EXT_PERF] */ \
-	X(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)                        /* Automatic resolve for multisampled depth stencil [EXT_PERF] [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME)                   /* Faster updates of common descriptor sets [EXT_PERF] [1.1] */ \
 	X(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)                                 /* Multiple physical devices as one logical [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)                            /* Creation of swapchain directly from display [EXT_WINDOW] */ \ \
 	X(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)                          /* Get the number of commands used in indirect drawing from buffer (can be produced by GPU before) [EXT_FEAT] [EXT_PERF] [1.2] */ \ \
 	X(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)                            /* Get info what driver is used on GPU [EXT_QUERY] [1.2] */ \ \
-	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)                            /* Normal rendering without render passes [EXT_FEAT] [1.3] */ \
 	X(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME)                            /* Get Linux file descriptor for fence from Vulkan [EXT_EXMEM] */ \
 	X(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME)                           /* Get Linux file descriptor for allocated memory from Vulkan [EXT_EXMEM] */ \
 	X(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME)                        /* Get Linux file descriptor for fence from Vulkan [EXT_EXMEM] */ \
 	X(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)                       /* Format feature flags are now 64 bit due to running out of space [1.3] */ \
 	X(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME)                  /* New barycentric modes [EXT_SHADER] */ \
-	X(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)                        /* Specifying how pixels should be shaded (VRS) [EXT_FEAT] */ \
+	X(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)                        /* Specifying how pixels should be shaded (VRS, LOD) [EXT_FEAT] */ \
 	X(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)                            /* Provide formats that mutable image will be used in [EXT_PERF] [1.2] */ \
 	X(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)                        /* Create framebuffer without previously created images [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME)                          /* Present only part of surface to screen [EXT_WINDOW] [EXT_PERF] */ \
 	X(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)                              /* Setting queue priorities [EXT_FEAT] [EXT_PERF] */ \
-	X(VK_KHR_MAINTENANCE2_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
-	X(VK_KHR_MAINTENANCE3_EXTENSION_NAME)                                 /* Minor tweaks overlooked in original release regarding limits of descriptors and allocations [EXT_FEAT] [1.1] */ \
+	X(VK_KHR_MAINTENANCE_3_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release regarding limits of descriptors and allocations [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)                                /* Collection of minor features too small for their own extensions [EXT_FEAT] [1.3] */ \
-	X(VK_KHR_MULTIVIEW_EXTENSION_NAME)                                    /* Render same things but with different view, useful for VR [EXT_FEAT] [EXT_PERF] [1.1] */ \
 	X(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)                            /* Query performance counter [EXT_QUERY] [EXT_PERF] */ \
 	X(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME)               /* Query stats about compiled PSO [EXT_QUERY] [EXT_DEBUG] [EXT_PERF] */ \
 	X(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME)                             /* Create set of shaders to be linked into other PSOs [EXT_PERF] [EXT_SHADER] */ \
@@ -230,10 +239,8 @@
 	X(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)                        /* Timestamps from different sources [EXT_QUERY] [EXT_PERF] */ \
 	X(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME)                           /* Controling writing to render targets via dynamic state [EXT_FEAT] [EXT_FEAT] */ \
 	X(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)                        /* Control on the fly whichc command will be executed based on memory values [EXT_FEAT] */ \
-	X(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME)                   /* Support fo conservative rasterization [EXT_FEAT] */ \
 	X(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME)                          /* Use custom border color with samplers [EXT_FEAT] */ \
 	X(VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME)                         /* Ensure clamping depth in [0;1] range [EXT_FEAT] */ \
-	X(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME)                            /* Explicit control over depth clip (like in D3D) [EXT_FEAT] */ \
 	X(VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME)                     /* Depth beyond [0;1] [EXT_FEAT] */ \
 	X(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)                            /* Shader-accessible descriptors managed directly in memory [EXT_MEMORY] [EXT_FEAT] */ \
 	X(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)                          /* Non-uniform indexing of resources in shaders [EXT_SHADER] [EXT_FEAT] [1.2] */ \
@@ -242,7 +249,6 @@
 	X(VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME)                         /* Callback for more memory usage info [EXT_DEBUG] */ \
 	X(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)                           /* Similar to scissors, discarding regions of render target [EXT_FEAT] [EXT_PERF] */ \
 	X(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME)                              /* Some direct control over display [EXT_WINDOW] */ \
-	X(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)                       /* Dynamic states for stencil operations, viewports, scissors, depth and primitives [EXT_FEAT] [EXT_PERF] [1.3] */ \
 	X(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)                     /* Dynamic states for depth bias, patch control points, primitive restart and rasterizer discard [EXT_FEAT] [EXT_PERF] [1.3] */ \
 	X(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)                     /* Almost everything in PSO as dynamic state [EXT_FEAT] [EXT_PERF] */ \
 	X(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME)                         /* Import memory directly from the pointer [EXT_EXMEM] */ \
@@ -275,7 +281,6 @@
 	X(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)                    /* Protected session enabled per pipeline, not per device [EXT_FEAT] */ \
 	X(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)                          /* Stricter access to resources in pipeline [EXT_DEBUG] */ \
 	X(VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME)                          /* Control for pixel shader over coverage of early depth and stencil tests [EXT_SHADER] */ \
-	X(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME)              /* Use value in index buffers to restart primitive [EXT_FEAT] */ \
 	X(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME)                   /* Get data about amount of processed primitives [EXT_QUERY] */ \
 	X(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)                                 /* Allow object to hold additional 64 bit custom data [EXT_FEAT] [1.3] */ \
 	X(VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME)        /* Allow access without sync on write to read resources [EXT_PERF] */ \
@@ -304,9 +309,6 @@
 	X(VK_AMD_BUFFER_MARKER_EXTENSION_NAME)                                /* Breadcrumb markers for tracking commands execution in case of TDR [EXT_DEBUG] */ \
 	X(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME)                           /* Using native display HDR formats (probably FreeSync support too) [EXT_WINDOW] [EXT_FEAT] */ \
 	X(VK_AMD_GCN_SHADER_EXTENSION_NAME)                                   /* New shader instructions for cube textures [EXT_SHADER] */ \
-	X(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)                     /* Using bigger depth stencils with smaller render targets in multisampled rendering (counterpart to VK_NV_framebuffer_mixed_samples) [EXT_FEAT] */ \
-	X(VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME)                    /* Control over PSO compilation process [EXT_PERF] */ \
-	X(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME)                          /* Change order of resterization process for better parallelism [EXT_PERF] */ \
 	X(VK_AMD_SHADER_BALLOT_EXTENSION_NAME)                                /* New shader instructions for multiple cores [EXT_SHADER] */ \
 	X(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME)                       /* Get information about GPU cores [EXT_SHADER] [EXT_QUERY] */ \
 	X(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME)                     /* Get extended information about GPU cores [EXT_SHADER] [EXT_QUERY] */ \
@@ -339,11 +341,11 @@
 	X(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME)                       /* Control how render target value is computed in VK_NV_framebuffer_mixed_samples [EXT_FEAT] */ \
 	X(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME)                 /* Inserting breadcrumb markers for crash post-mortem [EXT_DEBUG] */ \
 	X(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME)                     /* Configuring crash dumps with Nsight Aftermath [EXT_DEBUG] */ \
+	X(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME)                     /* Indirect drawing [EXT_FEAT] [1.1] */ \
 	X(VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME)                          /* Accessing external memory between GPUs [EXT_EXMEM] [EXT_FEAT] */ \
 	X(VK_NV_FILL_RECTANGLE_EXTENSION_NAME)                                /* Render rectangle with single triangle via bounding box [EXT_FEAT] */ \
 	X(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME)                    /* Output coverage after stencils and alpha-to-coverage steps, useful in determining some data of original primitive [EXT_FEAT] */ \
 	X(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME)                   /* Control rate of pixel shading done on VRS via shading rate [EXT_PERF] */ \
-	X(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME)                     /* Using different sizes of depth and color buffer to output on smaller target, usable on path rendering (counterpart to VK_AMD_mixed_attachment_samples) [EXT_FEAT] */ \
 	X(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME)                   /* Faster passing of unchanged vertex data in GS [EXT_SHADER] [EXT_PERF] */ \
 	X(VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME)                    /* Inheriting viewport and scissors for secondary command list [EXT_PERF] */ \
 	X(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME)                       /* Using lineary tiled textures as render targets [EXT_FEAT] */ \
@@ -352,7 +354,6 @@
 	X(VK_NV_PRESENT_BARRIER_EXTENSION_NAME)                               /* Synchronizing presentation between multiple swapchains [EXT_WINDOW] */ \
 	X(VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME)                /* Shader execution reordering for rays [EXT_RT] [EXT_PERF] */ \
 	X(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME)                       /* Faster tracing of geometry in motion [EXT_RT] [EXT_PERF] */ \
-	X(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME)                  /* Faster early-z due to less stores [EXT_SHADER] [EXT_PERF] */ \
 	X(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME)                 /* Control which samples are used to process pixel [EXT_SHADER] */ \
 	X(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME)                             /* Opposite scissor test [EXT_FEAT] */ \
 	X(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)                            /* Specifying image controlling pixel shading amount (VRS) [EXT_FEAT] */ \

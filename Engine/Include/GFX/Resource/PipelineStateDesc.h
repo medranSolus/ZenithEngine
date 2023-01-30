@@ -31,18 +31,26 @@ namespace ZE::GFX::Resource
 		PixelFormat FormatsRT[8];
 		PixelFormat FormatDS = PixelFormat::Unknown;
 		std::vector<InputParam> InputLayout;
-		// Wireframe | DepthClip
-		std::bitset<2> Flags = 1;
+		// Wireframe | DepthClip | RelaxedRasterOrder | ConservativeRaser
+		std::bitset<4> Flags = 1;
 #if _ZE_DEBUG_GFX_NAMES
 		std::string DebugName = "Unknown";
 #endif
 
 		// Whether perform clipping based on depth value
 		void SetDepthClip(bool val) noexcept { Flags[0] = val; }
-		void SetWireFrame(bool val) noexcept { Flags[1] = val; }
+		void SetWireframe(bool val) noexcept { Flags[1] = val; }
+		// Optimalization flag when:
+		// - depth testing is enabled (modes: <, <=, >, >=) and primitives don't overlap in clip space
+		// - primitives don't overlap in screen space
+		// - depth testing is disabled and commutative blending is enabled (order of primitives doesn't affect the result)
+		void SetRelaxedRasterOrder(bool val) noexcept { Flags[2] = val; }
+		void SetConservativeRaster(bool val) noexcept { Flags[3] = val; }
 
 		constexpr bool IsDepthClip() const noexcept { return Flags[0]; }
-		constexpr bool IsWireFrame() const noexcept { return Flags[1]; }
+		constexpr bool IsWireframe() const noexcept { return Flags[1]; }
+		constexpr bool IsRelaxedRasterOrder() const noexcept { return Flags[2]; }
+		constexpr bool IsConservativeRaster() const noexcept { return Flags[3]; }
 
 		static void SetShader(Device& dev, Shader*& shader, const char* name,
 			std::unordered_map<std::string, Resource::Shader>& shaders) noexcept;
