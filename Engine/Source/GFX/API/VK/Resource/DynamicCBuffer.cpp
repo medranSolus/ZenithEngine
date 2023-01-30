@@ -7,21 +7,26 @@ namespace ZE::GFX::API::VK::Resource
 	{
 		ZE_VK_ENABLE_ID();
 
-		VkBufferCreateInfo buffInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
-		buffInfo.flags = 0;
-		buffInfo.size = BLOCK_SIZE;
-		buffInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		buffInfo.queueFamilyIndexCount = 0;
-		buffInfo.pQueueFamilyIndices = nullptr;
+		VkBufferCreateInfo bufferInfo;
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.pNext = nullptr;
+		bufferInfo.flags = 0;
+		bufferInfo.size = BLOCK_SIZE;
+		bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		bufferInfo.queueFamilyIndexCount = 0;
+		bufferInfo.pQueueFamilyIndices = nullptr;
 		VkBuffer block = VK_NULL_HANDLE;
-		ZE_VK_THROW_NOSUCC(vkCreateBuffer(dev.Get().vk.GetDevice(), &buffInfo, nullptr, &block));
+		ZE_VK_THROW_NOSUCC(vkCreateBuffer(dev.Get().vk.GetDevice(), &bufferInfo, nullptr, &block));
 		ZE_VK_SET_ID(dev.Get().vk.GetDevice(), block, VK_OBJECT_TYPE_BUFFER,
 			"DynamicCBuffer_" + std::to_string(resInfo.size()) + " [size:" + std::to_string(BLOCK_SIZE) + "]");
 
 		Allocation alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, block, Allocation::Usage::StagingToGPU);
 
-		VkBindBufferMemoryInfo bindInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, nullptr };
+		VkBindBufferMemoryInfo bindInfo;
+		bindInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+		bindInfo.pNext = nullptr;
+		bindInfo.buffer = block;
 		dev.Get().vk.GetMemory().GetAllocInfo(alloc, bindInfo.memoryOffset, bindInfo.memory, &buffer);
 		ZE_ASSERT(buffer != nullptr, "Dynamic buffer always should be accessible from CPU!");
 

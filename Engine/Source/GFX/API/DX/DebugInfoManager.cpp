@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX
 		ZE_WIN_ENABLE_EXCEPT();
 		typedef HRESULT(WINAPI* DXGIGetDebugInterface)(REFIID, void**);
 
-		const auto dxgiDebugModule = LoadLibraryEx("dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+		const auto dxgiDebugModule = LoadLibraryExW(L"dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 		if (dxgiDebugModule == nullptr)
 			throw ZE_WIN_EXCEPT_LAST();
 
@@ -30,7 +30,7 @@ namespace ZE::GFX::API::DX
 		for (U64 i = offset; i < end; ++i)
 		{
 			SIZE_T msgLen = 0;
-			ZE_WIN_THROW_FAILED(infoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &msgLen)); // Get length of msg
+			ZE_WIN_THROW_FAILED(infoQueue->GetMessageW(DXGI_DEBUG_ALL, i, nullptr, &msgLen)); // Get length of msg
 
 			std::unique_ptr<U8[]> bytes = std::make_unique<U8[]>(msgLen);
 			DXGI_INFO_QUEUE_MESSAGE* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());

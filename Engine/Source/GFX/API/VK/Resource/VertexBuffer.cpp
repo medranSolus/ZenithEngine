@@ -9,7 +9,8 @@ namespace ZE::GFX::API::VK::Resource
 
 		UploadInfoBuffer uploadInfo;
 		uploadInfo.InitData = data.Vertices;
-		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
+		uploadInfo.CreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		uploadInfo.CreateInfo.pNext = nullptr;
 		uploadInfo.CreateInfo.flags = 0;
 		uploadInfo.CreateInfo.size = static_cast<VkDeviceSize>(data.Count) * data.VertexSize;
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -23,7 +24,8 @@ namespace ZE::GFX::API::VK::Resource
 		alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, buffer, Allocation::Usage::GPU);
 
 		U8* mappedMemory = nullptr;
-		uploadInfo.Dest = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, nullptr };
+		uploadInfo.Dest.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+		uploadInfo.Dest.pNext = nullptr;
 		uploadInfo.Dest.buffer = buffer;
 		dev.Get().vk.GetMemory().GetAllocInfo(alloc, uploadInfo.Dest.memoryOffset, uploadInfo.Dest.memory, &mappedMemory);
 

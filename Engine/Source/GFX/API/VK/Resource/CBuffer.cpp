@@ -10,7 +10,8 @@ namespace ZE::GFX::API::VK::Resource
 
 		UploadInfoBuffer uploadInfo;
 		uploadInfo.InitData = values;
-		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
+		uploadInfo.CreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		uploadInfo.CreateInfo.pNext = nullptr;
 		uploadInfo.CreateInfo.flags = 0;
 		uploadInfo.CreateInfo.size = bytes;
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -22,11 +23,13 @@ namespace ZE::GFX::API::VK::Resource
 			"CBuffer [size:" + std::to_string(bytes) + "]");
 
 		alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, buffer, Allocation::Usage::GPU);
+		uploadInfo.Dest.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+		uploadInfo.Dest.pNext = nullptr;
+		uploadInfo.Dest.buffer = buffer;
+
 		if (values)
 		{
 			U8* mappedMemory = nullptr;
-			uploadInfo.Dest = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, nullptr };
-			uploadInfo.Dest.buffer = buffer;
 			dev.Get().vk.GetMemory().GetAllocInfo(alloc, uploadInfo.Dest.memoryOffset, uploadInfo.Dest.memory, &mappedMemory);
 
 			// Memory possible to write directly
@@ -73,7 +76,9 @@ namespace ZE::GFX::API::VK::Resource
 		// Transfer ownership to new queue
 		if (lastUsedQueue != cl.Get().vk.GetFamily())
 		{
-			VkBufferMemoryBarrier2 barrier = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, nullptr };
+			VkBufferMemoryBarrier2 barrier;
+			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+			barrier.pNext = nullptr;
 			barrier.srcStageMask = USAGE_STAGE;
 			barrier.srcAccessMask = USAGE_ACCESS;
 			barrier.srcQueueFamilyIndex = lastUsedQueue;

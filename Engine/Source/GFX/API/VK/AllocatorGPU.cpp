@@ -8,10 +8,9 @@ namespace ZE::GFX::API::VK
 		ZE_VK_ENABLE_ID();
 		AllocParams& params = *reinterpret_cast<AllocParams*>(userData);
 
-		VkMemoryPriorityAllocateInfoEXT priorityInfo = { VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT, params.pNext };
-		priorityInfo.priority = 0.5f;
-
-		VkMemoryAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+		const VkMemoryPriorityAllocateInfoEXT priorityInfo = { VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT, params.pNext, 0.5f };
+		VkMemoryAllocateInfo allocInfo;
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.pNext = params.Dev.IsExtensionSupported(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME) ? &priorityInfo : params.pNext;
 		allocInfo.allocationSize = size;
 		allocInfo.memoryTypeIndex = params.MemIndex;
@@ -140,7 +139,9 @@ namespace ZE::GFX::API::VK
 
 		AllocParams params{ dev };
 		// When required use dedicated alloc and for some heuristics if not too many allocations done already
-		VkMemoryDedicatedAllocateInfo dedicatedAlloc = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr };
+		VkMemoryDedicatedAllocateInfo dedicatedAlloc;
+		dedicatedAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+		dedicatedAlloc.pNext = nullptr;
 		if (dedicatedMemoryReq.requiresDedicatedAllocation
 			|| deviceMemoryCount <= dev.GetLimits().maxMemoryAllocationCount * 3 / 4
 			&& (dedicatedMemoryReq.prefersDedicatedAllocation || memoryReq.size >= allocators.at(selectedMemoryIndex).GetChunkSize()))
@@ -169,12 +170,12 @@ namespace ZE::GFX::API::VK
 
 	void AllocatorGPU::Init(Device& dev)
 	{
-		VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudget = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT, nullptr };
-		VkPhysicalDeviceMemoryProperties2 memoryProps =
-		{
-			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2,
-			dev.IsExtensionSupported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) ? &memoryBudget : nullptr
-		};
+		VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudget;
+		memoryBudget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+		memoryBudget.pNext = nullptr;
+		VkPhysicalDeviceMemoryProperties2 memoryProps;
+		memoryProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+		memoryProps.pNext = dev.IsExtensionSupported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) ? &memoryBudget : nullptr;
 		vkGetPhysicalDeviceMemoryProperties2(dev.GetPhysicalDevice(), &memoryProps);
 
 		typeInfo = new VkMemoryType[memoryProps.memoryProperties.memoryTypeCount];
@@ -271,11 +272,14 @@ namespace ZE::GFX::API::VK
 
 	Allocation AllocatorGPU::AllocBuffer(Device& dev, VkBuffer buffer, Allocation::Usage usage)
 	{
-		VkBufferMemoryRequirementsInfo2 bufferMemoryReq = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr };
-		bufferMemoryReq.buffer = buffer;
+		const VkBufferMemoryRequirementsInfo2 bufferMemoryReq = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr, buffer };
 
-		VkMemoryDedicatedRequirements dedicatedMemoryReq = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS, nullptr };
-		VkMemoryRequirements2 memoryReq = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, &dedicatedMemoryReq };
+		VkMemoryDedicatedRequirements dedicatedMemoryReq;
+		dedicatedMemoryReq.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS;
+		dedicatedMemoryReq.pNext = nullptr;
+		VkMemoryRequirements2 memoryReq;
+		memoryReq.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+		memoryReq.pNext = &dedicatedMemoryReq;
 		vkGetBufferMemoryRequirements2(dev.GetDevice(), &bufferMemoryReq, &memoryReq);
 
 		return Alloc(dev, usage, buffer, VK_NULL_HANDLE, memoryReq.memoryRequirements, dedicatedMemoryReq);
@@ -283,11 +287,14 @@ namespace ZE::GFX::API::VK
 
 	Allocation AllocatorGPU::AllocImage(Device& dev, VkImage image, Allocation::Usage usage, VkImagePlaneMemoryRequirementsInfo* planeInfo)
 	{
-		VkImageMemoryRequirementsInfo2 imageMemoryReq = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, planeInfo };
-		imageMemoryReq.image = image;
+		const VkImageMemoryRequirementsInfo2 imageMemoryReq = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, planeInfo, image };
 
-		VkMemoryDedicatedRequirements dedicatedMemoryReq = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS, nullptr };
-		VkMemoryRequirements2 memoryReq = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, &dedicatedMemoryReq };
+		VkMemoryDedicatedRequirements dedicatedMemoryReq;
+		dedicatedMemoryReq.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS;
+		dedicatedMemoryReq.pNext = nullptr;
+		VkMemoryRequirements2 memoryReq;
+		memoryReq.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+		memoryReq.pNext = &dedicatedMemoryReq;
 		vkGetImageMemoryRequirements2(dev.GetDevice(), &imageMemoryReq, &memoryReq);
 
 		return Alloc(dev, usage, VK_NULL_HANDLE, image, memoryReq.memoryRequirements, dedicatedMemoryReq);
@@ -309,8 +316,12 @@ namespace ZE::GFX::API::VK
 		// Update to current budget
 		if (dev.IsExtensionSupported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
 		{
-			VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudget = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT, nullptr };
-			VkPhysicalDeviceMemoryProperties2 memoryProps = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, &memoryBudget };
+			VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudget;
+			memoryBudget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+			memoryBudget.pNext = nullptr;
+			VkPhysicalDeviceMemoryProperties2 memoryProps;
+			memoryProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+			memoryProps.pNext = &memoryBudget;
 			vkGetPhysicalDeviceMemoryProperties2(dev.GetPhysicalDevice(), &memoryProps);
 
 			for (U32 i = 0; i < memoryProps.memoryProperties.memoryHeapCount; ++i)

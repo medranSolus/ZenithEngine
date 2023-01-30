@@ -28,7 +28,7 @@ namespace ZE::GFX::API::VK
 		ZE_VK_ENABLE();
 
 		U32 count = 0;
-		VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface };
+		const VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface };
 		ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfaceFormats2KHR(device, &surfaceInfo, &count, nullptr));
 		ZE_ASSERT(count > 0, "Chosen surface should have enough supported formats!");
 
@@ -83,7 +83,9 @@ namespace ZE::GFX::API::VK
 		if (swapChainFormat != Settings::GetBackbufferFormat())
 			Settings::SetBackbufferFormat(swapChainFormat);
 
-		VkSwapchainCreateInfoKHR swapChainInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, nullptr };
+		VkSwapchainCreateInfoKHR swapChainInfo;
+		swapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		swapChainInfo.pNext = nullptr;
 		swapChainInfo.flags = 0;
 		swapChainInfo.surface = surface;
 		swapChainInfo.minImageCount = Settings::GetBackbufferCount();
@@ -98,7 +100,7 @@ namespace ZE::GFX::API::VK
 		else
 			swapChainInfo.imageExtent = surfaceCapabilities.currentExtent;
 		swapChainInfo.imageArrayLayers = 1; // Don't care about 3D images (stereoscopic usage)
-		 // DST in case of copy target, SRC in case of saving screenshot, COLOR for rendering, INPUT and SAMPLED for using as shader resource
+		// DST in case of copy target, SRC in case of saving screenshot, COLOR for rendering, INPUT and SAMPLED for using as shader resource
 		swapChainInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 			| (shaderInput ? VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : 0);
 		swapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -117,7 +119,9 @@ namespace ZE::GFX::API::VK
 		std::vector<VkImage> images(imageCount);
 		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data());
 
-		VkImageViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr };
+		VkImageViewCreateInfo viewInfo;
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.pNext = nullptr;
 		viewInfo.flags = 0;
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		viewInfo.format = swapChainInfo.imageFormat;
@@ -147,7 +151,9 @@ namespace ZE::GFX::API::VK
 
 		// Get new swapChain image
 		U32 imageIndex = Settings::GetFrameIndex() % imageCount;
-		VkAcquireNextImageInfoKHR acquireInfo = { VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR, nullptr };
+		VkAcquireNextImageInfoKHR acquireInfo;
+		acquireInfo.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
+		acquireInfo.pNext = nullptr;
 		acquireInfo.swapchain = swapChain;
 		acquireInfo.timeout = UINT64_MAX;
 		acquireInfo.semaphore = VK_NULL_HANDLE;
@@ -156,7 +162,9 @@ namespace ZE::GFX::API::VK
 		ZE_VK_THROW_NOSUCC(vkAcquireNextImage2KHR(dev.Get().vk.GetDevice(), &acquireInfo, &imageIndex));
 
 		// Present to new image
-		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, nullptr };
+		VkPresentInfoKHR presentInfo;
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.pNext = nullptr;
 		presentInfo.waitSemaphoreCount = 0;
 		presentInfo.pWaitSemaphores = nullptr;
 		presentInfo.swapchainCount = 1;

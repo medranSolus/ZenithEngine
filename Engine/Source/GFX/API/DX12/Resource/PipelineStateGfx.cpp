@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX12::Resource
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc;
 		stateDesc.pRootSignature = binding.Get().dx12.GetSignature();
 
-		assert(desc.VS && "Vertex Shader is always required!");
+		ZE_ASSERT(desc.VS, "Vertex Shader is always required!");
 		ID3DBlob* bytecode = desc.VS->Get().dx12.GetBytecode();
 		stateDesc.VS.pShaderBytecode = bytecode->GetBufferPointer();
 		stateDesc.VS.BytecodeLength = bytecode->GetBufferSize();
@@ -64,7 +64,7 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.StreamOutput = { 0 };
 
 		// Blend state and blending sample mask
-		stateDesc.SampleMask = 0xFFFFFFFF;
+		stateDesc.SampleMask = UINT32_MAX;
 		stateDesc.BlendState.AlphaToCoverageEnable = FALSE;
 		stateDesc.BlendState.IndependentBlendEnable = FALSE;
 		auto& blendTarget = stateDesc.BlendState.RenderTarget[0];
@@ -88,7 +88,6 @@ namespace ZE::GFX::API::DX12::Resource
 		case GFX::Resource::BlendType::Light:
 		{
 			blendTarget.BlendEnable = TRUE;
-			blendTarget.SrcBlend = D3D12_BLEND_ONE;
 			blendTarget.DestBlend = D3D12_BLEND_ONE;
 			blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_GREEN | D3D12_COLOR_WRITE_ENABLE_BLUE;
 			break;
@@ -103,7 +102,7 @@ namespace ZE::GFX::API::DX12::Resource
 		}
 
 		// Rasterizer state
-		stateDesc.RasterizerState.FillMode = desc.IsWireFrame() ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
+		stateDesc.RasterizerState.FillMode = desc.IsWireframe() ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
 		stateDesc.RasterizerState.CullMode = GetCulling(desc.Culling);
 		stateDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		stateDesc.RasterizerState.DepthBias = 0;
@@ -113,7 +112,7 @@ namespace ZE::GFX::API::DX12::Resource
 		stateDesc.RasterizerState.MultisampleEnable = FALSE;
 		stateDesc.RasterizerState.AntialiasedLineEnable = FALSE;
 		stateDesc.RasterizerState.ForcedSampleCount = 0;
-		stateDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+		stateDesc.RasterizerState.ConservativeRaster = desc.IsConservativeRaster() ? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON : D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
 		// Depth-Stencil state defaults
 		stateDesc.DepthStencilState.DepthEnable = TRUE;
@@ -144,8 +143,8 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.DepthEnable = FALSE;
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
 			stateDesc.DepthStencilState.StencilWriteMask = 0xFF;
-			stateDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-			stateDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+			stateDesc.DepthStencilState.FrontFace.StencilPassOp =
+				stateDesc.DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
 			break;
 		}
 		case GFX::Resource::DepthStencilMode::StencilMask:
@@ -154,7 +153,8 @@ namespace ZE::GFX::API::DX12::Resource
 			stateDesc.DepthStencilState.StencilEnable = TRUE;
 			stateDesc.DepthStencilState.StencilReadMask = 0xFF;
 			stateDesc.DepthStencilState.StencilWriteMask = 0;
-			stateDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NOT_EQUAL;
+			stateDesc.DepthStencilState.FrontFace.StencilFunc =
+				stateDesc.DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NOT_EQUAL;
 			break;
 		}
 		case GFX::Resource::DepthStencilMode::DepthOff:
@@ -177,14 +177,14 @@ namespace ZE::GFX::API::DX12::Resource
 
 		// Input Layout
 		stateDesc.InputLayout.NumElements = static_cast<U32>(desc.InputLayout.size());
+		std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements(stateDesc.InputLayout.NumElements);
 		if (stateDesc.InputLayout.NumElements)
 		{
-			D3D12_INPUT_ELEMENT_DESC* elements = new D3D12_INPUT_ELEMENT_DESC[stateDesc.InputLayout.NumElements];
-			stateDesc.InputLayout.pInputElementDescs = elements;
+			stateDesc.InputLayout.pInputElementDescs = inputElements.data();
 			for (U32 i = 0; i < stateDesc.InputLayout.NumElements; ++i)
 			{
 				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
-				auto& element = elements[i];
+				auto& element = inputElements.at(i);
 				element.SemanticName = GFX::Resource::GetInputSemantic(paramType);
 				element.SemanticIndex = 0;
 				element.Format = DX::GetDXFormat(GFX::Resource::GetInputFormat(paramType));
@@ -223,9 +223,6 @@ namespace ZE::GFX::API::DX12::Resource
 
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
 		ZE_DX_SET_ID(state, "PSO_" + desc.DebugName);
-
-		if (stateDesc.InputLayout.pInputElementDescs)
-			delete[] stateDesc.InputLayout.pInputElementDescs;
 	}
 
 	void PipelineStateGfx::Bind(GFX::CommandList& cl) const noexcept
@@ -233,5 +230,6 @@ namespace ZE::GFX::API::DX12::Resource
 		auto list = cl.Get().dx12.GetList();
 		list->SetPipelineState(GetState());
 		list->IASetPrimitiveTopology(topology);
+		SetStencilRef(cl, 0);
 	}
 }

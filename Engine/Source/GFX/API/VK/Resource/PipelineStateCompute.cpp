@@ -7,11 +7,15 @@ namespace ZE::GFX::API::VK::Resource
 	{
 		ZE_VK_ENABLE_ID();
 
-		VkComputePipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO, nullptr };
+		VkComputePipelineCreateInfo pipelineInfo;
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		pipelineInfo.pNext = nullptr;
 		pipelineInfo.flags = 0;
 
-		pipelineInfo.stage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr };
+		pipelineInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		pipelineInfo.stage.pNext = nullptr;
 		pipelineInfo.stage.flags = dev.Get().vk.IsExtensionSupported(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME) ? VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT : 0;
+		pipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		pipelineInfo.stage.module = shader.Get().vk.GetModule();
 		pipelineInfo.stage.pName = "main";
 		pipelineInfo.stage.pSpecializationInfo = nullptr;
