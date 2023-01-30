@@ -138,7 +138,7 @@ namespace ZE::GFX::API::DX11::Resource
 		ZE_DX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
 
 		D3D11_RASTERIZER_DESC2 rasterDesc = CD3D11_RASTERIZER_DESC2(CD3D11_DEFAULT{});
-		rasterDesc.FillMode = desc.IsWireFrame() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+		rasterDesc.FillMode = desc.IsWireframe() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 		rasterDesc.CullMode = GetCulling(desc.Culling);
 		rasterDesc.DepthClipEnable = desc.IsDepthClip();
 		ZE_DX_THROW_FAILED(device->CreateRasterizerState2(&rasterDesc, &rasterState));

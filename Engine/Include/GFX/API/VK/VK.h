@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/PipelineStateDesc.h"
 #include "Window/MainWindow.h"
 #include "VulkanExtensions.h"
 

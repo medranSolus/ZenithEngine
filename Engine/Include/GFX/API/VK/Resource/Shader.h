@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/API/VK/VK.h"
+#include "GFX/API/VK/VulkanExtensions.h"
 
 namespace ZE::GFX
 {

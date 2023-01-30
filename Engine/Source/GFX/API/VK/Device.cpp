@@ -839,7 +839,7 @@ namespace ZE::GFX::API::VK
 	void Device::BeginUploadRegion()
 	{
 		ZE_ASSERT(copyResList == nullptr, "Finish previous upload first!");
-		copyList.Open(*this);
+		copyList.Open();
 		copyResList = Table::Create<UploadInfo>(COPY_LIST_GROW_SIZE);
 	}
 
@@ -900,7 +900,7 @@ namespace ZE::GFX::API::VK
 
 			copyList.Close();
 			Execute(gfxQueue, copyList);
-			copyList.Open(*this);
+			copyList.Open();
 		}
 	}
 

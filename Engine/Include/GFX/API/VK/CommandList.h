@@ -28,11 +28,11 @@ namespace ZE::GFX::API::VK
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() { ZE_ASSERT(commands == nullptr && pool == nullptr, "Command list not freed before deletion!"); }
 
-		void Open(GFX::Device& dev);
+		void Open(GFX::Device& dev) { Open(); }
+		void Close(GFX::Device& dev) { Close(); }
+
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
-
-		void Close(GFX::Device& dev) { Close(); }
 		void Reset(GFX::Device& dev);
 
 		void Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API);
@@ -50,9 +50,9 @@ namespace ZE::GFX::API::VK
 
 		constexpr VkCommandBuffer GetBuffer() const noexcept { return commands; }
 		constexpr U32 GetFamily() const noexcept { return familyIndex; }
-		void Open(Device& dev) { Open(dev, VK_NULL_HANDLE, VK_PIPELINE_BIND_POINT_GRAPHICS); }
 
 		void Init(Device& dev, QueueType commandType);
+		void Open();
 		void Close();
 		void Reset(Device& dev);
 		void Free(Device& dev) noexcept;

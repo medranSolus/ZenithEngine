@@ -11,27 +11,15 @@ namespace ZE::GFX::API::VK
 		Init(dev.Get().vk, type);
 	}
 
-	void CommandList::Open(GFX::Device& dev)
-	{
-		ZE_VK_ENABLE();
-
-		VkCommandBufferBeginInfo beginInfo;
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.pNext = nullptr;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		beginInfo.pInheritanceInfo = nullptr; // Only for secondary buffers
-		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
-	}
-
 	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
 	{
-		Open(dev);
+		Open();
 		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_COMPUTE, pso.Get().vk.GetState());
 	}
 
 	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
 	{
-		Open(dev);
+		Open();
 		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS, pso.Get().vk.GetState());
 		vkCmdSetPrimitiveTopologyEXT(commands, pso.Get().vk.GetTopology());
 	}
@@ -147,6 +135,18 @@ namespace ZE::GFX::API::VK
 		}
 		}
 #endif
+	}
+
+	void CommandList::Open()
+	{
+		ZE_VK_ENABLE();
+
+		VkCommandBufferBeginInfo beginInfo;
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.pNext = nullptr;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		beginInfo.pInheritanceInfo = nullptr; // Only for secondary buffers
+		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
 	}
 
 	void CommandList::Close()
