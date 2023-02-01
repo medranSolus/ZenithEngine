@@ -17,6 +17,7 @@ namespace ZE::GFX::API::DX12
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();
 
+		constexpr void StartFrame(GFX::Device& dev) {}
 		void Free(GFX::Device& dev) noexcept { rtvDescHeap = nullptr; swapChain = nullptr; }
 
 		void Present(GFX::Device& dev) const;

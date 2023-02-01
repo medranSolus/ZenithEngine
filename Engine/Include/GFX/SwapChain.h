@@ -21,6 +21,7 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
+		constexpr void StartFrame(Device& dev) { ZE_API_BACKEND_CALL(StartFrame, dev); }
 		constexpr void Present(Device& dev) const { ZE_API_BACKEND_CALL(Present, dev); }
 		constexpr void PrepareBackbuffer(Device& dev, CommandList& cl) const { ZE_API_BACKEND_CALL(PrepareBackbuffer, dev, cl); }
 		// Have to be called before destroying the SwapChain

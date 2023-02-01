@@ -17,6 +17,7 @@ namespace ZE::GFX::API::DX11
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
+		constexpr void StartFrame(GFX::Device& dev) {}
 		constexpr void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const {}
 		void Free(GFX::Device& dev) noexcept { srv = nullptr; rtv = nullptr; backBuffer = nullptr; swapChain = nullptr; }
 

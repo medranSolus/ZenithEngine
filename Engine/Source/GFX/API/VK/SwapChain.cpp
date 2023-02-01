@@ -13,12 +13,10 @@ namespace ZE::GFX::API::VK
 
 		std::vector<VkPresentModeKHR> presentModes(count);
 		ZE_VK_THROW_NOSUCC(vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &count, presentModes.data()));
-		for (VkPresentModeKHR mode : presentModes)
-		{
-			// Check if tearing is supported
-			if (mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-				return VK_PRESENT_MODE_IMMEDIATE_KHR;
-		}
+
+		// Check if tearing is supported
+		if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != presentModes.end())
+			return VK_PRESENT_MODE_IMMEDIATE_KHR;
 		// FIFO always guaranteed to be present
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
@@ -114,10 +112,22 @@ namespace ZE::GFX::API::VK
 		ZE_VK_THROW_NOSUCC(vkCreateSwapchainKHR(device, &swapChainInfo, nullptr, &swapChain));
 		ZE_VK_SET_ID(device, swapChain, VK_OBJECT_TYPE_SWAPCHAIN_KHR, "main_swapchain");
 
+		// Create fence to wait for new image to be available and semaphore for completion of rendering
+		VkFenceCreateInfo fenceInfo;
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.pNext = nullptr;
+		fenceInfo.flags = 0;
+		ZE_VK_THROW_NOSUCC(vkCreateFence(device, &fenceInfo, nullptr, &imageAquireFence));
+		ZE_VK_SET_ID(device, imageAquireFence, VK_OBJECT_TYPE_FENCE, "swapchain_fence");
+
+		const VkSemaphoreCreateInfo semaphoreInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0 };
+		ZE_VK_THROW_NOSUCC(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &presentSemaphore));
+		ZE_VK_SET_ID(device, presentSemaphore, VK_OBJECT_TYPE_SEMAPHORE, "present_semaphore");
+
 		// Create image views from swapChain images
 		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-		std::vector<VkImage> images(imageCount);
-		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data());
+		images = new VkImage[imageCount];
+		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images);
 
 		VkImageViewCreateInfo viewInfo;
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -134,49 +144,88 @@ namespace ZE::GFX::API::VK
 		views = new VkImageView[imageCount];
 		for (U32 i = 0; i < imageCount; ++i)
 		{
-			viewInfo.image = images.at(i);
+			viewInfo.image = images[i];
 			ZE_VK_THROW_NOSUCC(vkCreateImageView(device, &viewInfo, nullptr, views + i));
 		}
 	}
 
 	SwapChain::~SwapChain()
 	{
-		ZE_ASSERT(views == nullptr && swapChain == VK_NULL_HANDLE && surface == VK_NULL_HANDLE,
+		ZE_ASSERT(views == nullptr && images == nullptr
+			&& imageAquireFence == VK_NULL_HANDLE && presentSemaphore == VK_NULL_HANDLE
+			&& swapChain == VK_NULL_HANDLE && surface == VK_NULL_HANDLE,
 			"Free hasn't been called before destroying SwapChain!");
 	}
 
-	void SwapChain::Present(GFX::Device& dev) const
+	void SwapChain::StartFrame(GFX::Device& dev)
 	{
 		ZE_VK_ENABLE();
 
 		// Get new swapChain image
-		U32 imageIndex = Settings::GetFrameIndex() % imageCount;
 		VkAcquireNextImageInfoKHR acquireInfo;
 		acquireInfo.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
 		acquireInfo.pNext = nullptr;
 		acquireInfo.swapchain = swapChain;
 		acquireInfo.timeout = UINT64_MAX;
 		acquireInfo.semaphore = VK_NULL_HANDLE;
-		acquireInfo.fence = VK_NULL_HANDLE;
+		acquireInfo.fence = imageAquireFence;
 		acquireInfo.deviceMask = 1; // No device groups
-		ZE_VK_THROW_NOSUCC(vkAcquireNextImage2KHR(dev.Get().vk.GetDevice(), &acquireInfo, &imageIndex));
+		ZE_VK_THROW_NOSUCC(vkAcquireNextImage2KHR(dev.Get().vk.GetDevice(), &acquireInfo, &currentImage));
+		ZE_VK_THROW_NOSUCC(vkWaitForFences(dev.Get().vk.GetDevice(), 1, &imageAquireFence, VK_TRUE, UINT64_MAX));
+	}
+
+	void SwapChain::Present(GFX::Device& dev) const
+	{
+		ZE_VK_ENABLE();
 
 		// Present to new image
 		VkPresentInfoKHR presentInfo;
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.pNext = nullptr;
-		presentInfo.waitSemaphoreCount = 0;
-		presentInfo.pWaitSemaphores = nullptr;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = &presentSemaphore;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &swapChain;
-		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pImageIndices = &currentImage;
 		presentInfo.pResults = nullptr;
 		ZE_VK_THROW_NOSUCC(vkQueuePresentKHR(dev.Get().vk.GetGfxQueue(), &presentInfo));
 	}
 
 	void SwapChain::PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		// TODO: need to transition to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		auto& device = dev.Get().vk;
+		auto& list = cl.Get().vk;
+
+		// Transition backbuffer to presentable layout
+		VkImageMemoryBarrier2 presentBarrier;
+		presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+		presentBarrier.pNext = nullptr;
+		presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT | (device.CanPresentFromCompute() ? VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT : 0)
+			| VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
+		presentBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+		presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+		presentBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+		presentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // TODO: record last used access
+		presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		presentBarrier.dstQueueFamilyIndex = presentBarrier.srcQueueFamilyIndex = list.GetFamily();
+		presentBarrier.image = images[currentImage];
+		presentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+		VkDependencyInfo depInfo;
+		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		depInfo.pNext = nullptr;
+		depInfo.dependencyFlags = 0;
+		depInfo.memoryBarrierCount = 0;
+		depInfo.pMemoryBarriers = nullptr;
+		depInfo.bufferMemoryBarrierCount = 0;
+		depInfo.pBufferMemoryBarriers = nullptr;
+		depInfo.imageMemoryBarrierCount = 1;
+		depInfo.pImageMemoryBarriers = &presentBarrier;
+
+		list.Open();
+		vkCmdPipelineBarrier2(list.GetBuffer(), &depInfo);
+		list.Close();
+		ExecutePresentTransition(device, list);
 	}
 
 	void SwapChain::Free(GFX::Device& dev) noexcept
@@ -186,6 +235,18 @@ namespace ZE::GFX::API::VK
 			for (U32 i = 0; i < imageCount; ++i)
 				vkDestroyImageView(dev.Get().vk.GetDevice(), views[i], nullptr);
 			views.DeleteArray();
+		}
+		if (images)
+			views.DeleteArray();
+		if (presentSemaphore)
+		{
+			vkDestroySemaphore(dev.Get().vk.GetDevice(), presentSemaphore, nullptr);
+			presentSemaphore = VK_NULL_HANDLE;
+		}
+		if (imageAquireFence)
+		{
+			vkDestroyFence(dev.Get().vk.GetDevice(), imageAquireFence, nullptr);
+			imageAquireFence = VK_NULL_HANDLE;
 		}
 		if (swapChain)
 		{
@@ -197,5 +258,37 @@ namespace ZE::GFX::API::VK
 			vkDestroySurfaceKHR(dev.Get().vk.GetInstance(), surface, nullptr);
 			surface = VK_NULL_HANDLE;
 		}
+	}
+
+	void SwapChain::ExecutePresentTransition(Device& dev, CommandList& cl) const
+	{
+		ZE_VK_ENABLE();
+
+		VkCommandBufferSubmitInfo bufferInfo;
+		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		bufferInfo.pNext = nullptr;
+		bufferInfo.commandBuffer = cl.GetBuffer();
+		bufferInfo.deviceMask = 0;
+
+		// Setup semaphore for present operation
+		VkSemaphoreSubmitInfo signalInfo;
+		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		signalInfo.pNext = nullptr;
+		signalInfo.semaphore = presentSemaphore;
+		signalInfo.value = 0;
+		signalInfo.stageMask = VK_PIPELINE_STAGE_2_NONE;
+		signalInfo.deviceIndex = 0;
+
+		VkSubmitInfo2 submitInfo;
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.pNext = nullptr;
+		submitInfo.flags = 0;
+		submitInfo.waitSemaphoreInfoCount = 0;
+		submitInfo.pWaitSemaphoreInfos = nullptr;
+		submitInfo.commandBufferInfoCount = 1;
+		submitInfo.pCommandBufferInfos = &bufferInfo;
+		submitInfo.signalSemaphoreInfoCount = 1;
+		submitInfo.pSignalSemaphoreInfos = &signalInfo;
+		ZE_VK_THROW_NOSUCC(vkQueueSubmit2(dev.GetGfxQueue(), 1, &submitInfo, VK_NULL_HANDLE));
 	}
 }
