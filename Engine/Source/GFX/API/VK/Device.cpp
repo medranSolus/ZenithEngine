@@ -42,7 +42,7 @@ namespace ZE::GFX::API::VK
 		waitInfo.pNext = nullptr;
 		waitInfo.semaphore = fence;
 		waitInfo.value = val;
-		waitInfo.stageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT; // Second synch scope, wait completed before these commands
+		waitInfo.stageMask = VK_PIPELINE_STAGE_2_NONE; // Second synch scope, wait completed before these commands
 		waitInfo.deviceIndex = 0;
 
 		VkSubmitInfo2 submitInfo;
@@ -201,7 +201,7 @@ namespace ZE::GFX::API::VK
 			|| !features.DynamicRendering.dynamicRendering || !features.Multiview.multiview
 			|| !features.Features.features.geometryShader || !features.Features.features.samplerAnisotropy
 			|| !features.Features.features.multiViewport || !features.PrimitiveRestart.primitiveTopologyListRestart
-			|| !features.DynamicState.extendedDynamicState)
+			|| !features.DynamicState.extendedDynamicState || !features.ImagelessFramebuffer.imagelessFramebuffer)
 			return { GpuFitness::Status::FeaturesInsufficient };
 
 		// Check if surface has any present modes
@@ -676,9 +676,10 @@ namespace ZE::GFX::API::VK
 		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &subgroupControl };
 
 		RequiredExtensionFeatures requiredFeatures;
-		requiredFeatures.DynamicState = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, &memoryModel };
+		requiredFeatures.ImagelessFramebuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, &memoryModel };
+		requiredFeatures.DynamicState = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, &requiredFeatures.ImagelessFramebuffer };
 		requiredFeatures.PrimitiveRestart = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT, &requiredFeatures.DynamicState };
-		requiredFeatures.Multiview = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, &memoryModel };
+		requiredFeatures.Multiview = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, &requiredFeatures.PrimitiveRestart };
 		requiredFeatures.DynamicRendering = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES, &requiredFeatures.Multiview };
 		requiredFeatures.Sync2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES, &requiredFeatures.DynamicRendering };
 		requiredFeatures.TimelineSemaphore = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES, &requiredFeatures.Sync2 };

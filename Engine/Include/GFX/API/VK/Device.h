@@ -53,6 +53,7 @@ namespace ZE::GFX::API::VK
 			VkPhysicalDeviceMultiviewFeatures Multiview;
 			VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT PrimitiveRestart;
 			VkPhysicalDeviceExtendedDynamicStateFeaturesEXT DynamicState;
+			VkPhysicalDeviceImagelessFramebufferFeatures ImagelessFramebuffer;
 		};
 
 #define X(ext) + 1

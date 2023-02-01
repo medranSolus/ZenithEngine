@@ -13,9 +13,11 @@ namespace ZE
 		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
 		static constexpr U64 TEXTURES_HEAP_SIZE = 512 * Math::MEGABYTE;
 		static constexpr U64 HOST_HEAP_SIZE = 64 * Math::MEGABYTE;
+		static constexpr U64 STAGING_HEAP_SIZE = 64 * Math::MEGABYTE;
 
 		static inline U64 frameIndex = 0;
 		static inline U32 swapChainBufferCount = 0;
+		static inline UInt2 swapChainSize = { 0, 0 };
 		static inline PixelFormat backbufferFormat = PixelFormat::R8G8B8A8_UNorm;
 		static inline GFX::VendorGPU gpuVendor = GFX::VendorGPU::Unknown;
 		static inline GfxApiType gfxApi;
@@ -35,6 +37,7 @@ namespace ZE
 		static constexpr U64 GetHeapSizeBuffers() noexcept { return BUFFERS_HEAP_SIZE; }
 		static constexpr U64 GetHeapSizeTextures() noexcept { return TEXTURES_HEAP_SIZE; }
 		static constexpr U64 GetHeapSizeHost() noexcept { return HOST_HEAP_SIZE; }
+		static constexpr U64 GetHeapSizeStaging() noexcept { return STAGING_HEAP_SIZE; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
@@ -48,6 +51,10 @@ namespace ZE
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
+		static constexpr void SetBackbufferSize(U32 width, U32 height) noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainSize = { width, height }; }
+		static constexpr UInt2 GetBackbufferSize() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize; }
+		static constexpr U32 GetBackbufferWidth() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.x; }
+		static constexpr U32 GetBackbufferHeight() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.y; }
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
 		static constexpr U32 GetChainResourceCount() noexcept;
 

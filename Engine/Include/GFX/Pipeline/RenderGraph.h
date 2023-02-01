@@ -7,6 +7,9 @@
 
 namespace ZE::GFX::Pipeline
 {
+	// Type trait for checking whether given render graph is using backbuffer as an SRV
+	template<typename T> struct IsBackbufferSRVInRenderGraph { static constexpr bool VALUE = false; };
+
 	// Building and managing structure of render passes
 	class RenderGraph
 	{

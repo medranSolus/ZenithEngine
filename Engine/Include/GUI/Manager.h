@@ -8,13 +8,15 @@ namespace ZE::GUI
 	// Interacting with GUI subsystem
 	class Manager final
 	{
+		Ptr<U8> backendData;
+
 	public:
 		Manager();
 		ZE_CLASS_DELETE(Manager);
-		~Manager() { Disable(); ImGui::DestroyContext(); }
+		~Manager() { ZE_ASSERT(backendData == nullptr, "GUI backend data not freed!"); ImGui::DestroyContext(); }
 
-		void Init(GFX::Device& dev) const noexcept;
-		void Disable() const noexcept;
+		void Init(GFX::Device& dev, bool backbufferSRV);
+		void Destroy(GFX::Device& dev) noexcept;
 		void StartFrame(const Window::MainWindow& window) const noexcept;
 		void EndFrame(GFX::Graphics& gfx) const noexcept;
 

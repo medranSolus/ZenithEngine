@@ -5,8 +5,9 @@ namespace ZE
 	Engine::Engine(const EngineParams& params) : StartupConfig(params)
 	{
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
-		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, false);
-		gui.Init(graphics.GetDevice());
+		Settings::SetBackbufferSize(window.GetWidth(), window.GetHeight());
+		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		gui.Init(graphics.GetDevice(), GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), textureLib,
 			window.GetWidth(), window.GetHeight(), params.Renderer);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
@@ -39,6 +40,7 @@ namespace ZE
 			geometry.Vertices.Free(graphics.GetDevice());
 		}
 		renderer.Free(graphics.GetDevice());
+		gui.Destroy(graphics.GetDevice());
 	}
 
 	void Engine::BeginFrame()

@@ -115,7 +115,7 @@ namespace ZE::GFX::API::VK
 		FindMemoryPreferences(usage, dev.IsIntegratedGPU(), requiredFlags, preferredFlags, notPreferredFlags);
 
 		// Go over memory types to find best suited one
-		U32 selectedMemoryIndex = UINT32_MAX;
+		AllocParams params = { dev };
 		U32 memoryCost = UINT32_MAX;
 		for (U32 memTypeCount = allocators.size() / (1 + IsSingleBufferImageHeap()), memoryIndex = 0, memTypeBit = 1; memoryIndex < memTypeCount; ++memoryIndex, memTypeBit <<= 1)
 		{
@@ -128,7 +128,7 @@ namespace ZE::GFX::API::VK
 					const U32 cost = Intrin::CountBitsSet(preferredFlags & ~memoryFlags) + Intrin::CountBitsSet(memoryFlags & notPreferredFlags);
 					if (cost < memoryCost)
 					{
-						selectedMemoryIndex = memoryIndex;
+						params.MemIndex = memoryIndex;
 						if (cost == 0)
 							break;
 						memoryCost = cost;
@@ -137,27 +137,26 @@ namespace ZE::GFX::API::VK
 			}
 		}
 
-		AllocParams params{ dev };
 		// When required use dedicated alloc and for some heuristics if not too many allocations done already
 		VkMemoryDedicatedAllocateInfo dedicatedAlloc;
 		dedicatedAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
 		dedicatedAlloc.pNext = nullptr;
 		if (dedicatedMemoryReq.requiresDedicatedAllocation
 			|| deviceMemoryCount <= dev.GetLimits().maxMemoryAllocationCount * 3 / 4
-			&& (dedicatedMemoryReq.prefersDedicatedAllocation || memoryReq.size >= allocators.at(selectedMemoryIndex).GetChunkSize()))
+			&& (dedicatedMemoryReq.prefersDedicatedAllocation || memoryReq.size >= allocators.at(params.MemIndex).GetChunkSize()))
 		{
 			dedicatedAlloc.image = image;
 			dedicatedAlloc.buffer = buffer;
 			params.pNext = &dedicatedAlloc;
 		}
 
-		AllocHandle alloc = allocators.at(selectedMemoryIndex).Alloc(memoryReq.size, memoryReq.alignment, &params);
+		AllocHandle alloc = allocators.at(params.MemIndex).Alloc(memoryReq.size, memoryReq.alignment, &params);
 		if (params.NewAllocation)
 			++deviceMemoryCount;
 		// Manual counting when budget disabled
 		if (!dev.IsExtensionSupported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
-			heapInfo[typeInfo[selectedMemoryIndex].heapIndex].Usage += allocators.at(selectedMemoryIndex).GetSize(alloc);
-		return { alloc, selectedMemoryIndex };
+			heapInfo[typeInfo[params.MemIndex].heapIndex].Usage += allocators.at(params.MemIndex).GetSize(alloc);
+		return { alloc, params.MemIndex };
 	}
 
 	AllocatorGPU::~AllocatorGPU()
@@ -221,6 +220,7 @@ namespace ZE::GFX::API::VK
 		U32 allocatorCount = memoryProps.memoryProperties.memoryTypeCount;
 		U64 deviceHeapSize = Settings::GetHeapSizeBuffers();
 		U64 hostHeapSize = Settings::GetHeapSizeHost();
+		U64 stagingHeapSize = Settings::GetHeapSizeStaging();
 		// Chek alignment rules between images and buffers
 		if (dev.GetLimits().bufferImageGranularity != 1)
 		{
@@ -237,11 +237,13 @@ namespace ZE::GFX::API::VK
 				texturesStartIndex = allocatorCount;
 				allocatorCount *= 2;
 				hostHeapSize /= 2;
+				stagingHeapSize /= 2;
 			}
 		}
 
 		// Allocate for all memory types (use vector due to contructor constraint)
 		allocators.reserve(allocatorCount);
+		bool localHeapFound = false, localTexturesHeapFound = false;
 		for (U32 i = 0; i < allocatorCount; ++i)
 		{
 			const VkMemoryPropertyFlags flags = memoryProps.memoryProperties.memoryTypes[i % memoryProps.memoryProperties.memoryTypeCount].propertyFlags;
@@ -256,9 +258,15 @@ namespace ZE::GFX::API::VK
 			else if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
 			{
 				if (i < memoryProps.memoryProperties.memoryTypeCount)
-					heapSize = deviceHeapSize;
+				{
+					heapSize = localHeapFound ? stagingHeapSize : deviceHeapSize;
+					localHeapFound = true;
+				}
 				else
-					heapSize = Settings::GetHeapSizeTextures();
+				{
+					heapSize = localTexturesHeapFound ? stagingHeapSize : Settings::GetHeapSizeTextures();
+					localTexturesHeapFound = true;
+				}
 			}
 			allocators.emplace_back(blockAllocator, chunkAllocator).Init(IsReBAREnabled() || (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ? MemoryFlag::HostVisible : MemoryFlag::None, heapSize, 1, 2);
 		}

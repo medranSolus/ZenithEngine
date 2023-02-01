@@ -118,6 +118,8 @@
 	X(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)                         /* Dedicated allocs for certain resources [EXT_MEMORY] [EXT_PERF] [1.1] */ \
 	X(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)                        /* Automatic resolve for multisampled depth stencil [EXT_PERF] [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)                            /* Normal rendering without render passes [EXT_FEAT] [1.3] */ \
+	X(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)                            /* Provide formats that mutable image will be used in [EXT_PERF] [1.2] */ \
+	X(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)                        /* Create framebuffer without previously created images [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)                    /* Better query for memory info [EXT_MEMORY] [EXT_QUERY] [1.1] */ \
 	X(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
 	X(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release [EXT_FEAT] [1.1] */ \
@@ -194,8 +196,6 @@
 	X(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)                       /* Format feature flags are now 64 bit due to running out of space [1.3] */ \
 	X(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME)                  /* New barycentric modes [EXT_SHADER] */ \
 	X(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)                        /* Specifying how pixels should be shaded (VRS, LOD) [EXT_FEAT] */ \
-	X(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)                            /* Provide formats that mutable image will be used in [EXT_PERF] [1.2] */ \
-	X(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)                        /* Create framebuffer without previously created images [EXT_FEAT] [1.2] */ \
 	X(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME)                          /* Present only part of surface to screen [EXT_WINDOW] [EXT_PERF] */ \
 	X(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)                              /* Setting queue priorities [EXT_FEAT] [EXT_PERF] */ \
 	X(VK_KHR_MAINTENANCE_3_EXTENSION_NAME)                                /* Minor tweaks overlooked in original release regarding limits of descriptors and allocations [EXT_FEAT] [1.1] */ \
