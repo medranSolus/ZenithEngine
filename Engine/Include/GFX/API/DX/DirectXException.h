@@ -49,7 +49,7 @@ namespace ZE::GFX::API::DX
 
 // Before using needs call to ZE_DX_ENABLE() or ZE_DX_ENABLE_INFO()
 // Checks debug layer messages and throws if any appears after call
-#define	ZE_DX_THROW_FAILED_INFO(call) ZE_DX_SET_DEBUG_WATCH(); (call); { auto msg = ZE_DX_EXCEPT_MANAGER.GetMessages(); if (msg.size()) throw ZE::GFX::API::DX::DirectXException(__LINE__, __FILENAME__, S_FALSE, std::move(msg)); }
+#define	ZE_DX_THROW_FAILED_INFO(call) ZE_DX_SET_DEBUG_WATCH(); (call); do { auto msg = ZE_DX_EXCEPT_MANAGER.GetMessages(); if (msg.size()) { ZE_BREAK(); throw ZE::GFX::API::DX::DirectXException(__LINE__, __FILENAME__, S_FALSE, std::move(msg)); } } while (false)
 
 #else
 // Enables useage of ZE_DX_*_INFO macros in current scope
@@ -73,7 +73,7 @@ namespace ZE::GFX::API::DX
 
 // Before using needs call to ZE_DX_ENABLE()
 // Checks HRESULT returned via function and throws on error
-#define	ZE_DX_THROW_FAILED_NOINFO(call) if(FAILED(ZE_WIN_EXCEPT_RESULT = (call))) throw ZE_DX_EXCEPT(ZE_WIN_EXCEPT_RESULT)
+#define	ZE_DX_THROW_FAILED_NOINFO(call) do { if (FAILED(ZE_WIN_EXCEPT_RESULT = (call))) { ZE_BREAK(); throw ZE_DX_EXCEPT(ZE_WIN_EXCEPT_RESULT); } } while (false)
 
 // Before using needs call to ZE_DX_ENABLE()
 // Checks HRESULT returned via function and throws on error

@@ -5,6 +5,8 @@
 #define ZE_ASSERT(condition, message) assert((condition) && (message))
 // Always failing debug assert, indicating wrong code path that shouldn't occur
 #define ZE_FAIL(message) ZE_ASSERT(false, message)
+// Assert allowing debug break
+#define ZE_BREAK() ZE_FAIL("Debug break")
 // Failing assert indicating not correctly handled enum value in switch-case
 #define ZE_ENUM_UNHANDLED() ZE_FAIL("Unhandled enum value!"); [[fallthrough]]
 // Check if quaternion vector is unit length

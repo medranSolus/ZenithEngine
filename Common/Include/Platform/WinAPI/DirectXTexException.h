@@ -25,4 +25,4 @@ namespace ZE::WinAPI
 // Before using needs call to ZE_DXT_ENABLE_EXCEPT()
 #define ZE_DXT_EXCEPT(info) ZE::WinAPI::DirectXTexException(__LINE__, __FILENAME__, __hResult, info)
 // Before using needs call to ZE_DXT_ENABLE_EXCEPT()
-#define	ZE_DXT_THROW_FAILED(call, info) if( FAILED(__hResult = (call))) throw ZE_DXT_EXCEPT(info)
+#define	ZE_DXT_THROW_FAILED(call, info) do { if (FAILED(__hResult = (call))) { ZE_BREAK(); throw ZE_DXT_EXCEPT(info); } } while (false)

@@ -93,11 +93,11 @@ namespace ZE::GFX::API::VK
 
 // Before using needs call to ZE_VK_ENABLE()
 // Checks VkResult returned via function and throws on error
-#define	ZE_VK_THROW_FAILED(call) if((ZE_VK_EXCEPT_RESULT = (call)) < VK_SUCCESS) throw ZE_VK_EXCEPT(ZE_VK_EXCEPT_RESULT)
+#define	ZE_VK_THROW_FAILED(call) do { if ((ZE_VK_EXCEPT_RESULT = (call)) < VK_SUCCESS) { ZE_BREAK(); throw ZE_VK_EXCEPT(ZE_VK_EXCEPT_RESULT); } } while (false)
 
 // Before using needs call to ZE_VK_ENABLE()
 // Checks VkResult returned via function and throws when no returned VK_SUCCESS
-#define	ZE_VK_THROW_NOSUCC(call) if((ZE_VK_EXCEPT_RESULT = (call)) != VK_SUCCESS) throw ZE_VK_EXCEPT(ZE_VK_EXCEPT_RESULT)
+#define	ZE_VK_THROW_NOSUCC(call) do { if ((ZE_VK_EXCEPT_RESULT = (call)) != VK_SUCCESS) { ZE_BREAK(); throw ZE_VK_EXCEPT(ZE_VK_EXCEPT_RESULT); } } while (false)
 #pragma endregion
 
 #pragma region Debug name macros
