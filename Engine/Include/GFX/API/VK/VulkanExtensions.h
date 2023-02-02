@@ -4,7 +4,7 @@
 #include "volk.h"
 #include "WarningGuardOff.h"
 
-/* Definitions of extensions (up to v1.3.231)
+/* Definitions of extensions (up to v1.3.240)
 *
 * Every listed extension here have tags attached to it, which will help
 * in searching for possible use case for that extension.
@@ -81,7 +81,10 @@
 	X(VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME)              /* Full control over Linux DRM display [EXT_WINDOW] */ \
 	X(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)          /* Quering for display vertical blank [EXT_WINDOW] [EXT_QUERY] */ \
 	X(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME)                 /* Creation of surface not used by any windowing system for testing [EXT_WINDOW] [EXT_DEBUG] */ \
+	X(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME)            /* Minor fixes for surfaces [EXT_WINDOW] [EXT_FEAT] */ \
 	X(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)            /* Additional colorspaces for swapchain surface (HDR) [EXT_WINDOW] [EXT_FEAT] */ \
+	X(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME)          /* Minor fixes for swapchains [EXT_WINDOW] [EXT_FEAT] */ \
+	X(VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME)         /* Shipping application with specific driver [EXT_FEAT] */ \
 	X(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)             /* Don't require surface with single presentation target [EXT_WINDOW] [EXT_FEAT] */
 
 // List of instance extension names, intended for use in X() macro
@@ -90,23 +93,8 @@
 
 #pragma region Device extensions
 // To be changed with new SDKs
-#ifndef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
-#	define VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME "VK_EXT_descriptor_buffer"
-#else
-#	error Extension already supported!
-#endif
-#ifndef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
-#	define VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME "VK_NV_copy_memory_indirect"
-#else
-#	error Extension already supported!
-#endif
-#ifndef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
-#	define VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME "VK_NV_memory_decompression"
-#else
-#	error Extension already supported!
-#endif
-#ifndef VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME
-#	define VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME "VK_NV_ray_tracing_invocation_reorder"
+#ifndef VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME
+#	define VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME "VK_EXT_pipeline_library_group_handles"
 #else
 #	error Extension already supported!
 #endif
@@ -277,6 +265,7 @@
 	X(VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME)                          /* Get info about Linux DRM [EXT_QUERY] [EXT_WINDOW] */ \
 	X(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)              /* More deterministic time control for PSO creation [EXT_FEAT] [EXT_PERF] [1.3] */ \
 	X(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)                   /* Get info about built PSO for swapping some pipeline caches [EXT_FEAT] [EXT_QUERY] [1.3] */ \
+	X(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME)               /* Similar handling of RT pipelines as DXR 1.1 [EXT_FEAT] [EXT_RT] [1.3] */ \
 	X(VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME)                          /* Accessing PSO indentifier [EXT_FEAT] */ \
 	X(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)                    /* Protected session enabled per pipeline, not per device [EXT_FEAT] */ \
 	X(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)                          /* Stricter access to resources in pipeline [EXT_DEBUG] */ \
@@ -327,6 +316,7 @@
 	X(VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME)			              /* Some new UAV counter possibilities [EXT_SHADER] [EXT_FEAT] */ \
 	X(VK_GOOGLE_USER_TYPE_EXTENSION_NAME)					              /* Decorate variables with type strings (something about reflection probably) [EXT_SHADER] */ \
 	\
+	X(VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME)                    /* Optimized cluster culling on compute shader [EXT_FEAT] [EXT_PERF] */ \
 	X(VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME)                           /* In case of sparse rays, provide optimization mask [EXT_RT] [EXT_PERF] */ \
 	\
 	X(VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME)                          /* Performance measurments [EXT_QUERY] [EXT_PERF] */ \
@@ -368,11 +358,12 @@
 	X(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)                /* Multiview output for subpasses [EXT_FEAT] */ \
 	\
 	X(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)                 /* Allow offsets for VRS density maps [EXT_FEAT] [EXT_PERF] */ \
+	X(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME)                            /* New instructions for better processing of images [EXT_SHADER] [EXT_FEAT] */ \
+	X(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)                /* New way of controlling viewport with multiview [EXT_FEAT] */ \
 	X(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME)                  /* Customizable resolve [EXT_FEAT] [EXT_SHADER] */ \
 	X(VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME)                       /* In AR/VR apps when device is rotated, apply said transformation directly in the driver [EXT_PERF] */ \
 	X(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME)                       /* In AR/VR when using rotated buffers, take that into account during copying [EXT_FEAT] */ \
 	X(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME)                             /* Get properties of single tile used by rendering [EXT_FEAT] [EXT_QUERY] */ \
-	X(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME)                            /* New instructions for better processing of images [EXT_SHADER] [EXT_FEAT] */ \
 	\
 	X(VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME)                /* Easier copying descriptors via memcpy [EXT_PERF] [EXT_FEAT] */
 
