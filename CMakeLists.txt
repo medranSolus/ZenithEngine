@@ -59,19 +59,19 @@ set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 
 # External
-set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
+set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
+set(AGS_DIR "${EXTERNAL_DIR}/AGS")
 set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
-set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
-set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
-set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
-set(AGS_DIR "${EXTERNAL_DIR}/AGS")
-set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
-set(VOLK_DIR "${EXTERNAL_DIR}/volk")
-set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
+set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
+set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
+set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
+set(VOLK_DIR "${EXTERNAL_DIR}/volk")
+set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
+set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 
 
 ########## INCLUDE DIRECTORIES ##########
@@ -80,22 +80,22 @@ set(COMMON_INC_DIR "${COMMON_DIR}/Include")
 set(ENGINE_INC_DIR "${ENGINE_DIR}/Include")
 
 # External
-set(EXTERNAL_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
-set(ZLIB_INC_DIR "${ZLIB_DIR}")
+set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
+set(EXT_CONFIG_INC_DIR "${EXTERNAL_BIN_DIR}")
+set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
+set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
+set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
-set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
-set(PIX_INC_DIR "${PIX_DIR}/Include")
-set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
-set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
-set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
-set(VOLK_INC_DIR "${VOLK_DIR}")
-set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
+set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
-set(EXT_INC_DIR "${EXTERNAL_DIR}/Include")
-set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
+set(IMGUI_INC_DIR "${IMGUI_DIR}")
+set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
+set(VOLK_INC_DIR "${VOLK_DIR}")
+set(PIX_INC_DIR "${PIX_DIR}/Include")
+set(ZLIB_INC_DIR "${ZLIB_DIR}")
 
 
 ############# USING ENGINE ##############
@@ -107,22 +107,22 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${ZE_BUILD_INC_DIR}"
 	"${COMMON_INC_DIR}"
 	"${ENGINE_INC_DIR}"
-	"${EXTERNAL_CONFIG_INC_DIR}"
-	"${ZLIB_INC_DIR}"
+	"${EXT_INC_DIR}"
+	"${EXT_CONFIG_INC_DIR}"
+	"${EXT_SHADER_INC_DIR}"
+	"${AGILITY_INC_DIR}"
+	"${AGS_INC_DIR}"
 	"${ASSIMP_INC_DIR}"
 	"${DXMATH_INC_DIR}"
-	"${FTYPE_INC_DIR}"
 	"${DXTEX_INC_DIR}"
-	"${PIX_INC_DIR}"
-	"${IMGUI_INC_DIR}"
 	"${ENTT_INC_DIR}"
-	"${AGS_INC_DIR}"
-	"${AGILITY_INC_DIR}"
-	"${VOLK_INC_DIR}"
-	"${LIBPNG_INC_DIR}"
+	"${FTYPE_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
-	"${EXT_INC_DIR}"
-	"${EXT_SHADER_INC_DIR}")
+	"${IMGUI_INC_DIR}"
+	"${LIBPNG_INC_DIR}"
+	"${VOLK_INC_DIR}"
+	"${PIX_INC_DIR}"
+	"${ZLIB_INC_DIR}")
 
 
 ################ TARGETS ################
@@ -135,45 +135,41 @@ set(COMMON_TARGET "common")
 set(ENGINE_TARGET "zenith")
 
 # External libraries
-set(ZLIB_LIB "zlibstatic")
-set(ASSIMP_LIB "assimp")
-set(FTYPE_LIB "freetype")
-set(DXTEX_LIB "DirectXTex")
-set(PIX_LIB "WinPixEventRuntime")
-set(ENTT_LIB "EnTT::EnTT")
 set(AGS_LIB "amd_ags_x64")
-set(VOLK_LIB "volk")
-set(LIBPNG_LIB "png_static")
-set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
+set(ASSIMP_LIB "assimp")
+set(DXTEX_LIB "DirectXTex")
+set(ENTT_LIB "EnTT::EnTT")
+set(FTYPE_LIB "freetype")
 set(HARFBUZZ_LIB "harfbuzz")
+set(LIBPNG_LIB "png_static")
+set(VOLK_LIB "volk")
+set(PIX_LIB "WinPixEventRuntime")
+set(ZLIB_LIB "zlibstatic")
+
+set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
+if(${ZE_MODEL_LOADING})
+	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
+endif()
+set(DXTEX_TARGET "${DXTEX_LIB}")
+set(ENTT_TARGET "${ENTT_LIB}")
+set(FTYPE_TARGET "${FTYPE_LIB}")
+set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
+set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
+set(VOLK_TARGET "${VOLK_LIB}")
+if(${ZE_PLATFORM_WINDOWS} AND NOT ${ZE_BUILD_RELEASE})
+	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
+endif()
+set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # Inject debug suffix if library use it
 if(${ZE_BUILD_DEBUG})
 	if(${ZE_MODEL_LOADING})
-		set(ZLIB_TARGET "${ZLIB_LIB}d")
-		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mtd")
+		set(ASSIMP_TARGET "${ASSIMP_TARGET}d")
 	endif()
-	set(FTYPE_TARGET "${FTYPE_LIB}d")
+	set(FTYPE_TARGET "${FTYPE_TARGET}d")
 	set(LIBPNG_TARGET "${LIBPNG_TARGET}d")
-else()
-	if(${ZE_MODEL_LOADING})
-		set(ZLIB_TARGET "${ZLIB_LIB}")
-		set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
-	endif()
-	set(FTYPE_TARGET "${FTYPE_LIB}")
+	set(ZLIB_TARGET "${ZLIB_TARGET}d")
 endif()
-
-# Add marker library
-if(${ZE_PLATFORM_WINDOWS} AND NOT ${ZE_BUILD_RELEASE})
-	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
-else()
-	set(PIX_TARGET "")
-endif()
-set(DXTEX_TARGET "${DXTEX_LIB}")
-set(ENTT_TARGET "${ENTT_LIB}")
-set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
-set(VOLK_TARGET "${VOLK_LIB}")
-set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
 
 
 ######### COMPILE CONFIGURATION #########
@@ -252,6 +248,14 @@ endif()
 set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_PROFILE} ${CXX_PERFORMANCE_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_PERFORMANCE_FLAGS}")
 
+# General flags
+add_definitions(-DENTT_NOEXCEPTION)
+add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
+add_definitions(-DVK_NO_PROTOTYPES)
+add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
+add_definitions(-DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>)
+# EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
+add_definitions(-D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # General flags with project options
 add_definitions(-D_ZE_MODEL_LOADING=$<BOOL:${ZE_MODEL_LOADING}>)
 add_definitions(-D_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SINGLE_THREAD}>)
@@ -268,11 +272,6 @@ add_definitions(-D_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> -D_ZE_PLAT
 add_definitions(-D_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> -D_ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> -D_ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # Build type
 add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> -D_ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> -D_ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
-if(${ZE_USE_WIDE_ENTITY_ID})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENTT_ID_TYPE=std::uint64_t")
-endif()
-# EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h> -DENTT_NOEXCEPTION -DVK_NO_PROTOTYPES -DVK_ENABLE_BETA_EXTENSIONS -D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING")
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
