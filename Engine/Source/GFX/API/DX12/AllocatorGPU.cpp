@@ -62,10 +62,11 @@ namespace ZE::GFX::API::DX12
 
 	constexpr D3D12_HEAP_FLAGS AllocatorGPU::GetHeapFlags(HeapFlags flags) noexcept
 	{
-		return static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES
+		return static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
 			| (flags & HeapFlag::CommittedAlloc ? 0 :
 				(flags & HeapFlag::AllowBuffers ? 0 : D3D12_HEAP_FLAG_DENY_BUFFERS)
-				| (flags & HeapFlag::AllowTextures ? 0 : D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES)));
+				| (flags & HeapFlag::AllowTextures ? 0 : D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES))
+				| (flags & HeapFlag::AllowTexturesRTDS ? 0 : D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES));
 	}
 
 	constexpr D3D12_RESOURCE_STATES AllocatorGPU::GetResourceState(HeapFlags flags) noexcept
@@ -140,8 +141,21 @@ namespace ZE::GFX::API::DX12
 
 	AllocatorGPU::~AllocatorGPU()
 	{
-		mainAllocator.DestroyFreeChunks(nullptr);
-		secondaryAllocator.DestroyFreeChunks(nullptr);
+		switch (allocTier)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case AllocTier::Tier1:
+		{
+			secondaryAllocator.DestroyFreeChunks(nullptr);
+			[[fallthrough]];
+		}
+		case AllocTier::Tier2:
+		{
+			mainAllocator.DestroyFreeChunks(nullptr);
+			break;
+		}
+		}
 		dynamicBuffersAllocator.DestroyFreeChunks(nullptr);
 	}
 
@@ -160,7 +174,7 @@ namespace ZE::GFX::API::DX12
 		}
 		case AllocTier::Tier2:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS, Settings::GetHeapSizeBuffers() + Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS, Settings::GetHeapSizeBuffers() + Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
 			break;
 		}
 		}

@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX12
 
 	private:
 		typedef Allocator::TLSFMemoryChunkFlags HeapFlags;
-		enum HeapFlag : HeapFlags { Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, NoMSAA = 8, CommittedAlloc = 16 };
+		enum HeapFlag : HeapFlags { Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, AllowTexturesRTDS = 8, NoMSAA = 16, CommittedAlloc = 32 };
 
 		struct Memory
 		{

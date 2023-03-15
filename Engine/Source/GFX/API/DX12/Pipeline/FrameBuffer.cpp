@@ -335,14 +335,14 @@ namespace ZE::GFX::API::DX12::Pipeline
 		heapDesc.Properties.CreationNodeMask = 0;
 		heapDesc.Properties.VisibleNodeMask = 0;
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
-			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
+		heapDesc.Flags = D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
 		std::vector<D3D12_RESOURCE_BARRIER> startingTransitions;
 		std::vector<std::pair<U64, D3D12_RESOURCE_BARRIER>> wrappingTransitions;
 
 		// Handle resource types (Non RT/DS) depending on present tier level
 		if (dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1)
 		{
+			heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
 			// Sort resources descending by size leaving UAV only on the end
 			rt_dsCount = rtvCount + dsvCount;
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
@@ -386,10 +386,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 				// Find final size for UAV only heap and create it with resources
 				heapDesc.SizeInBytes = FindHeapSize(maxChunksUAV, levelCount, invalidID, memory);
 #endif
-				heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
-					| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES);
 				ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
 				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(uavHeap.GetAddressOf()), &residencyPriority));
+				heapDesc.Flags &= ~D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
+				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
@@ -467,8 +467,6 @@ namespace ZE::GFX::API::DX12::Pipeline
 		// Find final size for heap and create it with resources
 		heapDesc.SizeInBytes = FindHeapSize(maxChunks, levelCount, invalidID, memory);
 #endif
-		heapDesc.Flags = static_cast<D3D12_HEAP_FLAGS>(D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
-			| D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES);
 		ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
