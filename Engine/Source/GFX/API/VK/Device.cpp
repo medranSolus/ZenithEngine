@@ -1010,6 +1010,21 @@ namespace ZE::GFX::API::VK
 		submitQueue(copyCount, copyQueueIndex, copyQueue);
 	}
 
+	void Device::ExecuteMain(GFX::CommandList& cl)
+	{
+		Execute(gfxQueue, cl.Get().vk);
+	}
+
+	void Device::ExecuteCompute(GFX::CommandList& cl)
+	{
+		Execute(computeQueue, cl.Get().vk);
+	}
+
+	void Device::ExecuteCopy(GFX::CommandList& cl)
+	{
+		Execute(copyQueue, cl.Get().vk);
+	}
+
 	void Device::EndFrame() noexcept
 	{
 		allocator.HandleBudget(*this);

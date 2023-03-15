@@ -17,8 +17,8 @@ namespace ZE::GFX
 		~Device() = default;
 
 		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount) { ZE_API_BACKEND_VAR.Init(window, descriptorCount, scratchDescriptorCount); }
-		ZE_API_BACKEND_GET(Device);
 		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window);
+		ZE_API_BACKEND_GET(Device);
 
 		// Main Gfx API
 
@@ -75,13 +75,13 @@ namespace ZE::GFX
 		constexpr void EndFrame() noexcept { ZE_API_BACKEND_CALL(EndFrame); }
 
 #if _ZE_GFX_MARKERS
-		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
-		void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
-		void TagBeginCopy(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
+		constexpr void TagBeginMain(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginMain, tag, color); } }
+		constexpr void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCompute, tag, color); } }
+		constexpr void TagBeginCopy(std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBeginCopy, tag, color); } }
 
-		void TagEndMain() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndMain); } }
-		void TagEndCompute() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCompute); } }
-		void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
+		constexpr void TagEndMain() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndMain); } }
+		constexpr void TagEndCompute() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCompute); } }
+		constexpr void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEndCopy); } }
 #endif
 	};
 

@@ -3,6 +3,7 @@
 #include "API/DX12/CommandList.h"
 #include "API/VK/CommandList.h"
 #include "API/Backend.h"
+#include "Device.h"
 
 namespace ZE::GFX
 {
@@ -37,13 +38,34 @@ namespace ZE::GFX
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 
-#if _ZE_GFX_MARKERS
-		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagBegin, dev, tag, color); } }
-		void TagEnd(GFX::Device& dev) const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_API_BACKEND_CALL(TagEnd, dev); } }
-#endif
 		// Before destroying command list you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+
+#if _ZE_GFX_MARKERS
+		constexpr void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept;
+		constexpr void TagEnd(GFX::Device& dev) const noexcept;
+#endif
 	};
+
+#pragma region Functions
+#if _ZE_GFX_MARKERS
+	constexpr void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
+	{
+		if (Settings::IsEnabledGfxTags())
+		{
+			ZE_API_BACKEND_CALL(TagBegin, dev, tag, color);
+		}
+	}
+
+	constexpr void CommandList::TagEnd(GFX::Device& dev) const noexcept
+	{
+		if (Settings::IsEnabledGfxTags())
+		{
+			ZE_API_BACKEND_CALL(TagEnd, dev);
+		}
+	}
+#endif
+#pragma endregion
 }
 
 #if _ZE_GFX_MARKERS

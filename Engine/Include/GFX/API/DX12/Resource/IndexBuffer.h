@@ -1,6 +1,6 @@
 #pragma once
+#include "GFX/CommandList.h"
 #include "GFX/IndexData.h"
-#include "GFX/Device.h"
 
 namespace ZE::GFX::API::DX12::Resource
 {

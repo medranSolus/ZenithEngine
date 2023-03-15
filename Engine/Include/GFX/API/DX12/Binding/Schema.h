@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Binding/SchemaDesc.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::DX12::Binding
 {

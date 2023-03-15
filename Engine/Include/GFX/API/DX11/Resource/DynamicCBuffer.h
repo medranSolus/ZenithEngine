@@ -2,7 +2,7 @@
 #include "GFX/Binding/Context.h"
 #include "GFX/Resource/DynamicBufferAlloc.h"
 #include "Data/Library.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::DX11::Resource
 {

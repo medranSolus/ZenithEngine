@@ -51,6 +51,11 @@ namespace ZE::GFX::API::VK
 		vkCmdDispatch(commands, groupX, groupY, groupZ);
 	}
 
+	void CommandList::Free(GFX::Device& dev) noexcept
+	{
+		Free(dev.Get().vk);
+	}
+
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
@@ -67,11 +72,6 @@ namespace ZE::GFX::API::VK
 		vkCmdEndDebugUtilsLabelEXT(commands);
 	}
 #endif
-
-	void CommandList::Free(GFX::Device& dev) noexcept
-	{
-		Free(dev.Get().vk);
-	}
 
 	void CommandList::Init(Device& dev, QueueType commandType)
 	{

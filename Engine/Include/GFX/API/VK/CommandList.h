@@ -40,11 +40,11 @@ namespace ZE::GFX::API::VK
 		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
+		void Free(GFX::Device& dev) noexcept;
 #if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept;
 		void TagEnd(GFX::Device& dev) const noexcept;
 #endif
-		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal
 

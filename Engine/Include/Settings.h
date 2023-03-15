@@ -62,11 +62,11 @@ namespace ZE
 		static constexpr void Init(GfxApiType type, U32 backBufferCount, const char* appName, U32 appVersion) noexcept;
 
 #if _ZE_GFX_MARKERS
-		static void SetGfxTags(bool enabled) noexcept { flags[0] = enabled; }
-		static bool IsEnabledGfxTags() noexcept { return flags[0]; }
+		static constexpr void SetGfxTags(bool enabled) noexcept { flags[0] = enabled; }
+		static constexpr bool IsEnabledGfxTags() noexcept { return flags[0]; }
 #endif
-		static void SetU8IndexSets(bool enabled) noexcept { flags[1] = enabled; }
-		static bool IsEnabledU8IndexSets() noexcept { return flags[1]; }
+		static constexpr void SetU8IndexSets(bool enabled) noexcept { flags[1] = enabled; }
+		static constexpr bool IsEnabledU8IndexSets() noexcept { return flags[1]; }
 	};
 
 #pragma region Functions

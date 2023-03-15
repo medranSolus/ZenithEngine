@@ -1,13 +1,12 @@
 #pragma once
 #include "GFX/Binding/Context.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::VK::Resource
 {
 	template<typename T>
 	class Constant final
 	{
-
 	public:
 		Constant() = default;
 		Constant(GFX::Device& dev, const T& value) {}

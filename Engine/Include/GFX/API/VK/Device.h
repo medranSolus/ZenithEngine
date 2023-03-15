@@ -1,8 +1,13 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "VK.h"
 #include "AllocatorGPU.h"
+#include "CommandList.h"
 #include "UploadInfo.h"
 
+namespace ZE::GFX
+{
+	class CommandList;
+}
 namespace ZE::GFX::API::VK
 {
 	class Device final
@@ -164,10 +169,6 @@ namespace ZE::GFX::API::VK
 		U64 SetComputeFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(computeFence, computeQueue, computeFenceVal); }
 
-		void ExecuteMain(GFX::CommandList& cl) { Execute(gfxQueue, cl.Get().vk); }
-		void ExecuteCompute(GFX::CommandList& cl) { Execute(computeQueue, cl.Get().vk); }
-		void ExecuteCopy(GFX::CommandList& cl) { Execute(copyQueue, cl.Get().vk); }
-
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { BeingTag(gfxQueue, tag, color); }
 		void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { BeingTag(computeQueue, tag, color); }
@@ -183,6 +184,9 @@ namespace ZE::GFX::API::VK
 		void EndUploadRegion();
 
 		void Execute(GFX::CommandList* cls, U32 count);
+		void ExecuteMain(GFX::CommandList& cl);
+		void ExecuteCompute(GFX::CommandList& cl);
+		void ExecuteCopy(GFX::CommandList& cl);
 		void EndFrame() noexcept;
 
 		// Gfx API Internal

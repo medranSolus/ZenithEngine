@@ -93,13 +93,14 @@ namespace ZE::GFX::API::DX12
 				AGSDX12DeviceCreationParams deviceParams;
 				deviceParams.pAdapter = adapter.Get();
 				deviceParams.iid = __uuidof(device);
-				deviceParams.FeatureLevel = D3D_FEATURE_LEVEL_12_1;
+				deviceParams.FeatureLevel = MINIMAL_D3D_LEVEL;
 
 				AGSDX12ExtensionParams extensionParams = {};
 				AGSDX12ReturnedParams returnParams;
 				if (agsDriverExtensionsDX12_CreateDevice(gpuCtxAMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
 				{
-					device.Attach(reinterpret_cast<IDevice*>(returnParams.pDevice));
+					ZE_DX_THROW_FAILED(returnParams.pDevice->QueryInterface(IID_PPV_ARGS(&device)));
+					returnParams.pDevice->Release();
 					break;
 				}
 				agsDeInitialize(gpuCtxAMD);
@@ -113,7 +114,7 @@ namespace ZE::GFX::API::DX12
 		// Failed to create GPU specific device
 		if (device == nullptr)
 		{
-			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)));
+			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), MINIMAL_D3D_LEVEL, IID_PPV_ARGS(&device)));
 		}
 
 #if _ZE_DEBUG_GFX_API
@@ -368,6 +369,21 @@ namespace ZE::GFX::API::DX12
 			} while (i < copyCount);
 			ZE_DX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
 		}
+	}
+
+	void Device::ExecuteMain(GFX::CommandList& cl)
+	{
+		Execute(mainQueue.Get(), cl.Get().dx12);
+	}
+
+	void Device::ExecuteCompute(GFX::CommandList& cl)
+	{
+		Execute(computeQueue.Get(), cl.Get().dx12);
+	}
+
+	void Device::ExecuteCopy(GFX::CommandList& cl)
+	{
+		Execute(copyQueue.Get(), cl.Get().dx12);
 	}
 
 	D3D12_RESOURCE_DESC1 Device::GetBufferDesc(U64 size) const noexcept

@@ -1,6 +1,7 @@
 #pragma once
 #include "Window/MainWindow.h"
 #include "D3D11.h"
+#include "CommandList.h"
 
 namespace ZE::GFX
 {

@@ -1,18 +1,24 @@
 #pragma once
 #include "GFX/Resource/Texture/Type.h"
-#include "GFX/CommandList.h"
 #include "Window/MainWindow.h"
+#include "D3D12.h"
 #include "AllocatorGPU.h"
+#include "CommandList.h"
 #include "DescriptorInfo.h"
 #include "WarningGuardOn.h"
 #include "amd_ags.h"
 #include "WarningGuardOff.h"
 
+namespace ZE::GFX
+{
+	class CommandList;
+}
 namespace ZE::GFX::API::DX12
 {
 	class Device final
 	{
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
+		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_1;
 
 		struct UploadInfo
 		{
@@ -98,10 +104,6 @@ namespace ZE::GFX::API::DX12
 		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
 		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
-		void ExecuteMain(GFX::CommandList& cl) { Execute(mainQueue.Get(), cl.Get().dx12); }
-		void ExecuteCompute(GFX::CommandList& cl) { Execute(computeQueue.Get(), cl.Get().dx12); }
-		void ExecuteCopy(GFX::CommandList& cl) { Execute(copyQueue.Get(), cl.Get().dx12); }
-
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
 		void TagBeginCompute(std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(computeQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
@@ -117,6 +119,9 @@ namespace ZE::GFX::API::DX12
 		void EndUploadRegion();
 
 		void Execute(GFX::CommandList* cls, U32 count);
+		void ExecuteMain(GFX::CommandList& cl);
+		void ExecuteCompute(GFX::CommandList& cl);
+		void ExecuteCopy(GFX::CommandList& cl);
 
 		// Gfx API Internal
 

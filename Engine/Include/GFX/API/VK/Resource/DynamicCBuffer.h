@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Resource/DynamicBufferAlloc.h"
 #include "GFX/Binding/Context.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::GFX::API::VK::Resource
 {
