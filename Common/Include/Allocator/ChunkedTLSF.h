@@ -451,15 +451,18 @@ namespace ZE::Allocator
 
 		// Round up to the next block
 		U64 sizeForNextList = allocSize;
-		U64 smallSizeStep = SMALL_BUFFER_SIZE / firstListSize;
 		if (allocSize > SMALL_BUFFER_SIZE)
 		{
-			sizeForNextList += (1ULL << (Intrin::BitScanMSB(allocSize) - SECOND_LEVEL_INDEX));
+			sizeForNextList += (1ULL << (Intrin::BitScanMSB(allocSize) + MEMORY_CLASS_SHIFT - SECOND_LEVEL_INDEX));
 		}
-		else if (allocSize > SMALL_BUFFER_SIZE - smallSizeStep)
-			sizeForNextList = SMALL_BUFFER_SIZE + 1;
 		else
-			sizeForNextList += smallSizeStep;
+		{
+			U64 smallSizeStep = SMALL_BUFFER_SIZE / firstListSize;
+			if (allocSize > SMALL_BUFFER_SIZE - smallSizeStep)
+				sizeForNextList = SMALL_BUFFER_SIZE + 1;
+			else
+				sizeForNextList += smallSizeStep;
+		}
 
 		// Check larger bucket
 		U32 nextListIndex = 0;

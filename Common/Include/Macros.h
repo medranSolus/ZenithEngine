@@ -41,3 +41,13 @@
 	className(const className&) = delete; \
 	className& operator=(className&&) = delete; \
 	className& operator=(const className&) = delete
+
+// Adds deleted copy constructors/assign operators
+#define ZE_CLASS_NO_COPY(className) \
+	className(const className&) = delete; \
+	className& operator=(const className&) = delete
+
+// Adds deleted move constructors/assign operators
+#define ZE_CLASS_NO_MOVE(className) \
+	className(className&&) = delete; \
+	className& operator=(className&&) = delete;
