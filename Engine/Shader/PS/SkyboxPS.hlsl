@@ -1,9 +1,9 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 
-TextureCube box : register(t0);
+TEXTURE_EX(sky, TextureCube, 0);
 
 float4 main(float3 worldPos : POSITION) : SV_TARGET
 {
-	return float4(DeleteGammaCorr(box.Sample(splr_AR, worldPos).rgb), 1.0f);
+	return float4(DeleteGammaCorr(tx_sky.Sample(splr_AR, worldPos).rgb), 1.0f);
 }

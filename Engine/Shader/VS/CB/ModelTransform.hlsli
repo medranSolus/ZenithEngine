@@ -1,4 +1,6 @@
-#include "CBuffer.hlsli"
+#ifndef MODEL_TRANSFORM_VS_HLSLI
+#define MODEL_TRANSFORM_VS_HLSLI
+#include "Buffers.hlsli"
 
 struct ModelTransform
 {
@@ -7,3 +9,5 @@ struct ModelTransform
 };
 
 CBUFFER(transform, ModelTransform, 0);
+
+#endif // MODEL_TRANSFORM_VS_HLSLI

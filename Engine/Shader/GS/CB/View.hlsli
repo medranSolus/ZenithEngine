@@ -1,4 +1,6 @@
-#include "CBuffer.hlsli"
+#ifndef VIEW_GS_HLSLI
+#define VIEW_GS_HLSLI
+#include "Buffers.hlsli"
 
 struct ViewBuffer
 {
@@ -6,3 +8,5 @@ struct ViewBuffer
 };
 
 CBUFFER(view, ViewBuffer, 0);
+
+#endif // VIEW_GS_HLSLI

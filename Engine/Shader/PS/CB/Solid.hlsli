@@ -1,3 +1,7 @@
-#include "CBuffer.hlsli"
+#ifndef SOLID_PS_HLSLI
+#define SOLID_PS_HLSLI
+#include "Buffers.hlsli"
 
-CBUFFER(solidColor, float3, 0);
+CONSTANT(solidColor, float3, 0);
+
+#endif // SOLID_PS_HLSLI

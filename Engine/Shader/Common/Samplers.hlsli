@@ -1,3 +1,5 @@
+#ifndef SAMPLERS_HLSLI
+#define SAMPLERS_HLSLI
 /*	Sampler definitions for different types declared in code.
 
 	Possible type categories:
@@ -24,3 +26,5 @@ SamplerState splr_LM : register(s5);
 SamplerState splr_PE : register(s6);
 SamplerState splr_PR : register(s7);
 SamplerState splr_PM : register(s8);
+
+#endif // SAMPLERS_HLSLI

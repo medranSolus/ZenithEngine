@@ -1,5 +1,5 @@
-#ifndef PS_UTILS_HLSLI
-#define PS_UTILS_HLSLI
+#ifndef UTILS_PS_HLSLI
+#define UTILS_PS_HLSLI
 #include "CommonUtils.hlsli"
 
 float GetSampledSpecularPower(const in float specularPower)
@@ -70,4 +70,4 @@ float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
 	return normalize(mul(tangentNormal, TBN));
 }
 
-#endif // PS_UTILS_HLSLI
+#endif // UTILS_PS_HLSLI

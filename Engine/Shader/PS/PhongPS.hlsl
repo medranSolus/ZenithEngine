@@ -4,16 +4,16 @@
 #include "CB/Phong.hlsli"
 
 #ifdef _USE_TEXTURE
-Texture2D tex : register(t0);
+TEX2D(tex, 0);
 #endif
 #ifdef _USE_NORMAL
-Texture2D normalMap : register(t1);
+TEX2D(normalMap, 1);
 #endif
 #ifdef _USE_SPECULAR
-Texture2D spec : register(t2);
+TEX2D(spec, 2);
 #endif
 #ifdef _USE_PARALLAX
-Texture2D parallax : register(t3);
+TEX2D(parallax, 3);
 #endif
 
 struct PSOut
@@ -32,7 +32,7 @@ PSOut main(float3 worldPos : POSITION,
 #if defined(_USE_NORMAL) || defined(_USE_PARALLAX)
 	const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 #ifdef _USE_PARALLAX
-	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, parallax, splr_AR);
+	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, tx_parallax, splr_AR);
 	[branch]
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
@@ -42,7 +42,7 @@ PSOut main(float3 worldPos : POSITION,
 	PSOut pso;
 
 #ifdef _USE_TEXTURE
-	pso.color = tex.Sample(splr_AR, tc);
+	pso.color = tx_tex.Sample(splr_AR, tc);
 	clip(pso.color.a - 0.0039f);
 	pso.color.a = 0.0f;
 #else
@@ -50,13 +50,13 @@ PSOut main(float3 worldPos : POSITION,
 #endif
 
 #ifdef _USE_NORMAL
-	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, normalMap, splr_AR));
+	pso.normal = EncodeNormal(GetMappedNormal(TBN, tc, tx_normalMap, splr_AR));
 #else
 	pso.normal = EncodeNormal(normalize(worldNormal));
 #endif
 
 #ifdef _USE_SPECULAR
-	const float4 specularTex = spec.Sample(splr_AR, tc);
+	const float4 specularTex = tx_spec.Sample(splr_AR, tc);
 	pso.specular = float4(specularTex.rgb * cb_material.SpecularIntensity,
 		GetSampledSpecularPower(cb_material.Flags & FLAG_USE_SPECULAR_POWER_ALPHA ? specularTex.a : cb_material.SpecularPower));
 #else

@@ -1,4 +1,6 @@
-#include "CBuffer.hlsli"
+#ifndef PHONG_PS_HLSLI
+#define PHONG_PS_HLSLI
+#include "Buffers.hlsli"
 #include "PhongFlags.hlsli"
 
 struct PhongBuffer
@@ -12,3 +14,5 @@ struct PhongBuffer
 };
 
 CBUFFER(material, PhongBuffer, 0);
+
+#endif // PHONG_PS_HLSLI

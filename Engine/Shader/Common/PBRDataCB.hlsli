@@ -1,6 +1,6 @@
 #ifndef PBR_DATA_CB_HLSLI
 #define PBR_DATA_CB_HLSLI
-#include "CBuffer.hlsli"
+#include "Buffers.hlsli"
 #include "../Include/XeGTAO.h"
 
 #define BLUR_KERNEL_MAX_SIZE 8

@@ -1,5 +1,5 @@
-#ifndef SSAO_HLSLI
-#define SSAO_HLSLI
+#ifndef SSAO_CS_HLSLI
+#define SSAO_CS_HLSLI
 
 #define VA_SATURATE saturate
 #define XE_GTAO_USE_HALF_FLOAT_PRECISION 0
@@ -14,4 +14,4 @@
 */
 #include "XeGTAO.hlsli"
 
-#endif // SSAO_HLSLI
+#endif // SSAO_CS_HLSLI

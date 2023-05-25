@@ -1,5 +1,14 @@
-#include "CBuffer.hlsli"
-#include "CB/PhongFlags.hlsli"
+#ifndef SHADOW_PS_HLSLI
+#define SHADOW_PS_HLSLI
+#include "Buffers.hlsli"
+#include "PhongFlags.hlsli"
 
-CBUFFER(parallaxScale, float, 1);
-CBUFFER(lightPos, float3, 0);
+struct ShadowBuffer
+{
+	float3 LightPos;
+	float ParallaxScale;
+};
+
+CONSTANT(shadow, ShadowBuffer, 0);
+
+#endif // SHADOW_PS_HLSLI

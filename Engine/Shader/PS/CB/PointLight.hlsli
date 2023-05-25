@@ -1,4 +1,6 @@
-#include "CBuffer.hlsli"
+#ifndef POINT_LIGHT_PS_HLSLI
+#define POINT_LIGHT_PS_HLSLI
+#include "Buffers.hlsli"
 
 struct PointLightBuffer
 {
@@ -10,4 +12,6 @@ struct PointLightBuffer
 };
 
 CBUFFER(light, PointLightBuffer, 1);
-CBUFFER(lightPos, float3, 0);
+CONSTANT(lightPos, float3, 0);
+
+#endif // POINT_LIGHT_PS_HLSLI

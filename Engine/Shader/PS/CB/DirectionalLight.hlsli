@@ -1,4 +1,6 @@
-#include "CBuffer.hlsli"
+#ifndef DIRECTIONAL_LIGHT_PS_HLSLI
+#define DIRECTIONAL_LIGHT_PS_HLSLI
+#include "Buffers.hlsli"
 
 struct DirectionalLightBuffer
 {
@@ -8,4 +10,6 @@ struct DirectionalLightBuffer
 };
 
 CBUFFER(light, DirectionalLightBuffer, 1);
-CBUFFER(lightDir, float3, 0);
+CONSTANT(lightDir, float3, 0);
+
+#endif // DIRECTIONAL_LIGHT_PS_HLSLI

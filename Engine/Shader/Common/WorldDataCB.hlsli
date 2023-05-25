@@ -1,6 +1,6 @@
 #ifndef WORLD_DATA_CB_HLSLI
 #define WORLD_DATA_CB_HLSLI
-#include "CBuffer.hlsli"
+#include "Buffers.hlsli"
 
 struct WorldData
 {
