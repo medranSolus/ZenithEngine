@@ -30,7 +30,7 @@
 #define CONSTANT_GLOBAL(name, dataType, slot) CONSTANT_EX(name, dataType, slot, 0, 0)
 
 // Typical 2D texture
-#define TEX2D(name, slot, rangeSlot) TEXTURE_EX(name, Texture2D, slot, rangeSlot)
+#define TEX2D(name, slot) TEXTURE_EX(name, Texture2D, slot, 0)
 
 // Shader agnostic macro for CBuffer and Constant
 #if defined(_PS) || defined(_CS)

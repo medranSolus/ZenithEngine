@@ -40,7 +40,14 @@ namespace ZE::GFX
 #if _ZE_DEBUG_GFX_NAMES
 			shaderName = name;
 #endif
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob(((IS_DX12 ? L"Shaders/DX12/" : L"Shaders/DX11/") + Utils::ToUTF16(name) + L".cso").c_str(), &bytecode));
+			if constexpr (IS_DX12)
+			{
+				ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX12/" + Utils::ToUTF16(name) + L".dxil").c_str(), &bytecode));
+			}
+			else
+			{
+				ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX11/" + Utils::ToUTF16(name) + L".dxbc").c_str(), &bytecode));
+			}
 		}
 #pragma endregion
 	}

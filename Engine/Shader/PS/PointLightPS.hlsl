@@ -5,7 +5,7 @@
 #include "Utils/LightUtils.hlsli"
 #include "CB/PointLight.hlsli"
 
-TEXTURE_EX(shadowMap, TextureCube, 0);
+TEXTURE_EX(shadowMap, TextureCube, 0, 0);
 TEX2D(normalMap,   1);
 TEX2D(specularMap, 2); // RGB - color, A - power
 TEX2D(depthMap,    3);

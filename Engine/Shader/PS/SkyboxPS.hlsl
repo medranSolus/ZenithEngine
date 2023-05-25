@@ -1,7 +1,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 
-TEXTURE_EX(sky, TextureCube, 0);
+TEXTURE_EX(sky, TextureCube, 0, 0);
 
 float4 main(float3 worldPos : POSITION) : SV_TARGET
 {

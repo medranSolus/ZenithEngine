@@ -7,9 +7,9 @@
 RWTexture2D<uint>        ssaoMap    : register(u0);
 RWTexture2D<unorm float> depthEdges : register(u1);
 
-TEXTURE_EX(viewDepth,  Texture2D<lpfloat>, 0);
-TEXTURE_EX(normalMap,  Texture2D<float2>,  1);
-TEXTURE_EX(hilbertLUT, Texture2D<uint>,    2);
+TEXTURE_EX(viewDepth,  Texture2D<lpfloat>, 0, 0);
+TEXTURE_EX(normalMap,  Texture2D<float2>,  1, 0);
+TEXTURE_EX(hilbertLUT, Texture2D<uint>,    2, 0);
 
 // Load encoded normal and convert to viewspace
 lpfloat3 LoadNormal(const in uint2 pos)

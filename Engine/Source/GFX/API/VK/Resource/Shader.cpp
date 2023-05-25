@@ -14,7 +14,7 @@ namespace ZE::GFX::API::VK::Resource
 		if (!fin.good())
 			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + name);
 
-		std::vector<char> bytecode(fin.tellg());
+		std::vector<char> bytecode(Math::AlignUp(static_cast<U64>(fin.tellg()), 4ULL));
 		fin.seekg(0);
 		fin.read(bytecode.data(), bytecode.size());
 		fin.close();
@@ -36,5 +36,23 @@ namespace ZE::GFX::API::VK::Resource
 			vkDestroyShaderModule(dev.Get().vk.GetDevice(), shader, nullptr);
 			shader = VK_NULL_HANDLE;
 		}
+	}
+
+	Shader::Shader(Shader&& shdr) noexcept : shader(shdr.shader)
+	{
+		shdr.shader = VK_NULL_HANDLE;
+#if _ZE_DEBUG_GFX_NAMES
+		shaderName = std::move(shdr.shaderName);
+#endif
+	}
+
+	Shader& Shader::operator=(Shader&& shdr) noexcept
+	{
+		shader = shdr.shader;
+		shdr.shader = VK_NULL_HANDLE;
+#if _ZE_DEBUG_GFX_NAMES
+		shaderName = std::move(shdr.shaderName);
+#endif
+		return *this;
 	}
 }

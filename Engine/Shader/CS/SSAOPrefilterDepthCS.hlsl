@@ -7,7 +7,7 @@ RWTexture2D<lpfloat> viewDepthMip1 : register(u1);
 RWTexture2D<lpfloat> viewDepthMip2 : register(u2);
 RWTexture2D<lpfloat> viewDepthMip3 : register(u3);
 RWTexture2D<lpfloat> viewDepthMip4 : register(u4);
-TEXTURE_EX(sourceDepthMap, Texture2D<float>, 0);
+TEXTURE_EX(sourceDepthMap, Texture2D<float>, 0, 0);
 
 // XeGTAO first pass
 // Each thread computes 2x2 blocks so processing 16x16 block,
