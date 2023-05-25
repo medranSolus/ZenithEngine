@@ -21,7 +21,7 @@ To unify code style, here are rules followed by this project:
       - Constexpr variables
       - Template parameter variables
     - Macros defined in header files in *Common* and *Engine* projects should be preceeded with **ZE_**.
-    - All switch macros disabling parts of code should be preceeded with **_ZE_**.
+    - All switch macros disabling parts of code should be preceeded with **_ZE_** and have it's value defined for useage in conditional statements (0 or 1).
   - References and pointers should be formatted without space, `SomeType* ptr;`, `OtherType& ref;`
   - Avoid short names, let every function describe itself but don't make them too long.
   - Don't use build in types, prefer usage of typedefs in **Types.h**, for ex. instead of `int` use `S32`, etc.

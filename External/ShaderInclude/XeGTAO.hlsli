@@ -765,17 +765,7 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
     lpfloat weightBR[2];
 
     // gather edge and visibility quads, used later
-#ifdef _DX12
-    const float2 gatherCenter = float2(pixCoordBase.x, pixCoordBase.y) * consts.ViewportPixelSize;
-    lpfloat4 edgesQ0        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 0, 0 ) );
-    lpfloat4 edgesQ1        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 2, 0 ) );
-    lpfloat4 edgesQ2        = sourceEdges.GatherRed( texSampler, gatherCenter, int2( 1, 2 ) );
-
-    AOTermType visQ0[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 0, 0 ) ), visQ0 );
-    AOTermType visQ1[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 2, 0 ) ), visQ1 );
-    AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 0, 2 ) ), visQ2 );
-    AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial( sourceAOTerm.GatherRed( texSampler, gatherCenter, int2( 2, 2 ) ), visQ3 );
-#elif defined(_DX11)
+#ifdef _DX11
     const float2 gatherCenter = float2(pixCoordBase);
     lpfloat4 edgesQ0 = GatherRedFloat(sourceEdges, gatherCenter, int2(0, 0));
     lpfloat4 edgesQ1 = GatherRedFloat(sourceEdges, gatherCenter, int2(2, 0));
@@ -785,6 +775,18 @@ void XeGTAO_Denoise( const uint2 pixCoordBase, const GTAOConstants consts, Textu
     AOTermType visQ1[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(2, 0)), visQ1);
     AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(0, 2)), visQ2);
     AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial(GatherRedUInt(sourceAOTerm, gatherCenter, int2(2, 2)), visQ3);
+#elif defined(_DX12) || defined(_VK)
+    const float2 gatherCenter = float2(pixCoordBase.x, pixCoordBase.y) * consts.ViewportPixelSize;
+    lpfloat4 edgesQ0 = sourceEdges.GatherRed(texSampler, gatherCenter, int2(0, 0));
+    lpfloat4 edgesQ1 = sourceEdges.GatherRed(texSampler, gatherCenter, int2(2, 0));
+    lpfloat4 edgesQ2 = sourceEdges.GatherRed(texSampler, gatherCenter, int2(1, 2));
+
+    AOTermType visQ0[4];    XeGTAO_DecodeGatherPartial(sourceAOTerm.GatherRed(texSampler, gatherCenter, int2(0, 0)), visQ0);
+    AOTermType visQ1[4];    XeGTAO_DecodeGatherPartial(sourceAOTerm.GatherRed(texSampler, gatherCenter, int2(2, 0)), visQ1);
+    AOTermType visQ2[4];    XeGTAO_DecodeGatherPartial(sourceAOTerm.GatherRed(texSampler, gatherCenter, int2(0, 2)), visQ2);
+    AOTermType visQ3[4];    XeGTAO_DecodeGatherPartial(sourceAOTerm.GatherRed(texSampler, gatherCenter, int2(2, 2)), visQ3);
+#else
+#	error Wrong type of graphics API used!
 #endif
 
     for( int side = 0; side < 2; side++ )
