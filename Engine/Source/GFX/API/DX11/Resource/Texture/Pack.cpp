@@ -4,8 +4,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 {
 	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
 	{
-		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
-		auto& device = dev.Get().dx11;
+		Device& device = dev.Get().dx11;
 		ZE_DX_ENABLE_ID(device);
 
 		count = static_cast<U32>(desc.Textures.size());
@@ -101,7 +100,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 				}
 
 				D3D11_SUBRESOURCE_DATA* data = new D3D11_SUBRESOURCE_DATA[texDesc.ArraySize];
-				for (U32 j = 0; const auto & surface : tex.Surfaces)
+				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(DX::GetDXFormat(surface.GetFormat()) == texDesc.Format, "Every surface should have same format!");
 					ZE_ASSERT(surface.GetWidth() == texDesc.Width, "Every surface should have same width!");

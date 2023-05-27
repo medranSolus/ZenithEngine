@@ -4,8 +4,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 {
 	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
 	{
-		ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!");
-		auto& device = dev.Get().dx12;
+		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
 
 		count = static_cast<U32>(desc.Textures.size());
@@ -31,6 +30,8 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			switch (tex.Type)
 			{
+			default:
+				ZE_ENUM_UNHANDLED();
 			case GFX::Resource::Texture::Type::Tex2D:
 			{
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -75,12 +76,13 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			{
 				auto& startSurface = tex.Surfaces.front();
 				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
-				auto texDesc = device.GetTextureDesc(static_cast<U32>(tex.Surfaces.front().GetWidth()),
-					static_cast<U32>(tex.Surfaces.front().GetHeight()), surfaces,
-					srv.Format, tex.Type);
+				auto texDesc = device.GetTextureDesc(static_cast<U32>(startSurface.GetWidth()),
+					static_cast<U32>(startSurface.GetHeight()), surfaces, srv.Format, tex.Type);
 
 				switch (tex.Type)
 				{
+				default:
+					ZE_ENUM_UNHANDLED();
 				case GFX::Resource::Texture::Type::Tex2D:
 				{
 					ZE_ASSERT(texDesc.first.DepthOrArraySize == 1, "Single texture cannot hold multiple surfaces!");
@@ -174,7 +176,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 					copyDest.SubresourceIndex = 0;
 
 					// Memcpy according to resource structure
-					for (U16 j = 0; const auto & region : info.second)
+					for (U16 j = 0; const auto& region : info.second)
 					{
 						for (U32 z = 0; z < region.Footprint.Depth; ++z)
 						{

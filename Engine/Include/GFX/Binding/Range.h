@@ -8,7 +8,7 @@ namespace ZE::GFX::Binding
 	enum RangeFlag : RangeFlags
 	{
 		// Interpret range as inlined constant. Count field should contain
-		// size of structure to be used with shader as Constant Buffer View
+		// size of structure to be used with shader as Constant. Can only be used once for given shader stage
 		Constant = 1,
 		// Range will be used as a table slot. Allows to set whole range with single call
 		BufferPack = 2,

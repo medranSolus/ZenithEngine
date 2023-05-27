@@ -22,9 +22,10 @@ namespace ZE::GFX::API::DX12::Binding
 		Schema() = default;
 		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc);
 		ZE_CLASS_MOVE(Schema);
-		~Schema();
+		~Schema() { ZE_ASSERT(bindings == nullptr && signature == nullptr, "Resource not freed before deletion!"); }
 
 		constexpr U32 GetCount() const noexcept { return count; }
+		void Free(GFX::Device& dev) noexcept { signature = nullptr; if (bindings) bindings.DeleteArray(); }
 		void SetCompute(GFX::CommandList& cl) const noexcept { ZE_ASSERT(isCompute, "Schema is not created for compute pass!"); cl.Get().dx12.GetList()->SetComputeRootSignature(GetSignature()); }
 		void SetGraphics(GFX::CommandList& cl) const noexcept { ZE_ASSERT(!isCompute, "Schema is not created for graphics pass!"); cl.Get().dx12.GetList()->SetGraphicsRootSignature(GetSignature()); }
 

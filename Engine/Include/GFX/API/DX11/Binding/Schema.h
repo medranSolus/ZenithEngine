@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Binding/SchemaDesc.h"
 #include "GFX/CommandList.h"
+#include "GFX/ShaderPresence.h"
 
 namespace ZE::GFX::API::DX11::Binding
 {
@@ -20,7 +21,7 @@ namespace ZE::GFX::API::DX11::Binding
 		};
 
 	private:
-		std::bitset<6> activeShaders;
+		ShaderPresenceMask activeShaders;
 		U32 count;
 		Ptr<SlotInfo> slots;
 		Ptr<SlotData> slotsData;
@@ -31,9 +32,11 @@ namespace ZE::GFX::API::DX11::Binding
 		Schema() = default;
 		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc);
 		ZE_CLASS_MOVE(Schema);
-		~Schema();
+		~Schema() { ZE_ASSERT(slots == nullptr && slotsData == nullptr && samplers == nullptr, "Resource not freed before deletion!"); }
 
 		constexpr U32 GetCount() const noexcept { return count; }
+
+		void Free(GFX::Device& dev) noexcept;
 		void SetCompute(GFX::CommandList& cl) const noexcept;
 		void SetGraphics(GFX::CommandList& cl) const noexcept;
 

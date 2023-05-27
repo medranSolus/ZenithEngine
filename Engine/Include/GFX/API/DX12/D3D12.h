@@ -5,8 +5,8 @@
 #include "GFX/Pipeline/BarrierType.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
-#include "GFX/Resource/ShaderType.h"
 #include "GFX/Resource/State.h"
+#include "GFX/ShaderPresence.h"
 #include "GFX/QueueType.h"
 #include "WarningGuardOn.h"
 #include <d3d12.h>
@@ -35,8 +35,6 @@ namespace ZE::GFX::API::DX12
 	typedef ID3D12Resource2                          IResource;
 	typedef ID3D12RootSignature                      IRootSignature;
 
-	typedef std::bitset<6> ShaderPresenceMask;
-
 	// Get DirectX 12 version of command list types
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(QueueType type) noexcept;
 	// Get DirectX 12 version of comparison function
@@ -44,7 +42,7 @@ namespace ZE::GFX::API::DX12
 	// Get DirectX 12 version of culling modes
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
 	// Get DirectX 12 version of filter type
-	constexpr D3D12_FILTER GetFilterType(U8 samplerType) noexcept;
+	constexpr D3D12_FILTER GetFilterType(GFX::Resource::SamplerFilter samplerType) noexcept;
 	// Get register space for given shader type
 	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept;
 	// Get DirectX 12 version of resource states
@@ -116,7 +114,7 @@ namespace ZE::GFX::API::DX12
 		}
 	}
 
-	constexpr D3D12_FILTER GetFilterType(U8 samplerType) noexcept
+	constexpr D3D12_FILTER GetFilterType(GFX::Resource::SamplerFilter samplerType) noexcept
 	{
 		if (samplerType == GFX::Resource::SamplerType::Default)
 			return D3D12_FILTER_MIN_MAG_MIP_POINT; // 000
@@ -312,13 +310,13 @@ namespace ZE::GFX::API::DX12
 		if (type & GFX::Resource::ShaderType::Compute)
 		{
 			if (presence)
-				(*presence)[5] = true;
+				presence->SetCompute();
 			return D3D12_SHADER_VISIBILITY_ALL;
 		}
 		if (type == GFX::Resource::ShaderType::AllGfx)
 		{
 			if (presence)
-				*presence = GFX::Resource::ShaderType::AllGfx;
+				presence->SetGfx();
 			return D3D12_SHADER_VISIBILITY_ALL;
 		}
 
@@ -326,31 +324,31 @@ namespace ZE::GFX::API::DX12
 		if (type & GFX::Resource::ShaderType::Vertex)
 		{
 			if (presence)
-				(*presence)[0] = true;
+				presence->SetVertex();
 			visibility = D3D12_SHADER_VISIBILITY_VERTEX;
 		}
 		if (type & GFX::Resource::ShaderType::Domain)
 		{
 			if (presence)
-				(*presence)[1] = true;
+				presence->SetDomain();
 			visibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 		}
 		if (type & GFX::Resource::ShaderType::Hull)
 		{
 			if (presence)
-				(*presence)[2] = true;
+				presence->SetHull();
 			visibility = D3D12_SHADER_VISIBILITY_HULL;
 		}
 		if (type & GFX::Resource::ShaderType::Geometry)
 		{
 			if (presence)
-				(*presence)[3] = true;
+				presence->SetGeometry();
 			visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 		}
 		if (type & GFX::Resource::ShaderType::Pixel)
 		{
 			if (presence)
-				(*presence)[4] = true;
+				presence->SetPixel();
 			visibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		}
 

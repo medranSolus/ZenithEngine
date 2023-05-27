@@ -12,7 +12,7 @@ namespace ZE::GFX::Resource::Texture
 
 	public:
 		Pack() = default;
-		constexpr Pack(Device& dev, const PackDesc& desc) { ZE_API_BACKEND_VAR.Init(dev, desc); }
+		constexpr Pack(Device& dev, const PackDesc& desc) { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_API_BACKEND_VAR.Init(dev, desc); }
 		ZE_CLASS_MOVE(Pack);
 		~Pack() = default;
 

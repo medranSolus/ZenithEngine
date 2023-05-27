@@ -754,6 +754,7 @@ namespace ZE::GFX::Pipeline
 				passesCleaners[0].DeleteArray();
 			passesCleaners.DeleteArray();
 		}
+		execData.Bindings.Free(dev);
 		execData.SettingsBuffer.Free(dev);
 		execData.DynamicBuffers.Exec([&dev](Resource::DynamicCBuffer& x) { x.Free(dev); });
 		if (execData.SharedStates)

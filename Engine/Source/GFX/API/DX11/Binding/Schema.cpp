@@ -4,7 +4,6 @@ namespace ZE::GFX::API::DX11::Binding
 {
 	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
 	{
-		ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!");
 		ZE_DX_ENABLE(dev.Get().dx11);
 
 		samplersCount = desc.Samplers.size();
@@ -33,12 +32,17 @@ namespace ZE::GFX::API::DX11::Binding
 		// Check input data
 		count = 0;
 		U32 dataCount = 0;
+		ShaderPresenceMask shaderPresenceConstants;
 		for (const auto& entry : desc.Ranges)
 		{
 			entry.Validate();
 
 			if (entry.Flags & (GFX::Binding::RangeFlag::Constant | GFX::Binding::RangeFlag::BufferPack))
 			{
+				if (entry.Flags & GFX::Binding::RangeFlag::Constant)
+				{
+					ZE_ASSERT(!shaderPresenceConstants.SetPresence(entry.Shaders), "Only single Constant per shader type is allowed!");
+				}
 				++count;
 				++dataCount;
 			}
@@ -51,24 +55,9 @@ namespace ZE::GFX::API::DX11::Binding
 				count += entry.Count;
 				dataCount += entry.Count;
 			}
-
-			if (entry.Shaders & GFX::Resource::ShaderType::Compute)
-				activeShaders[5] = true;
-			else
-			{
-				if (entry.Shaders & GFX::Resource::ShaderType::Vertex)
-					activeShaders[0] = true;
-				if (entry.Shaders & GFX::Resource::ShaderType::Domain)
-					activeShaders[1] = true;
-				if (entry.Shaders & GFX::Resource::ShaderType::Hull)
-					activeShaders[2] = true;
-				if (entry.Shaders & GFX::Resource::ShaderType::Geometry)
-					activeShaders[3] = true;
-				if (entry.Shaders & GFX::Resource::ShaderType::Pixel)
-					activeShaders[4] = true;
-			}
+			activeShaders.SetPresence(entry.Shaders);
 		}
-		ZE_ASSERT(activeShaders[5] && !activeShaders[0] && !activeShaders[1] && !activeShaders[2] && !activeShaders[3] && !activeShaders[4] || !activeShaders[5],
+		ZE_ASSERT(activeShaders.IsCompute() != activeShaders.IsGfx(),
 			"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the SchemaDesc!");
 
 		// Gather slots
@@ -109,7 +98,7 @@ namespace ZE::GFX::API::DX11::Binding
 		}
 	}
 
-	Schema::~Schema()
+	void Schema::Free(GFX::Device& dev) noexcept
 	{
 		if (slots)
 			slots.DeleteArray();
@@ -121,7 +110,7 @@ namespace ZE::GFX::API::DX11::Binding
 
 	void Schema::SetCompute(GFX::CommandList& cl) const noexcept
 	{
-		ZE_ASSERT(activeShaders[5], "Schema is not created for compute pass!");
+		ZE_ASSERT(activeShaders.IsCompute(), "Schema is not created for compute pass!");
 
 		for (U32 i = 0; i < samplersCount; ++i)
 			cl.Get().dx11.GetContext()->CSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
@@ -129,21 +118,21 @@ namespace ZE::GFX::API::DX11::Binding
 
 	void Schema::SetGraphics(GFX::CommandList& cl) const noexcept
 	{
-		ZE_ASSERT(!activeShaders[5], "Schema is not created for graphics pass!");
+		ZE_ASSERT(!activeShaders.IsCompute(), "Schema is not created for graphics pass!");
 
-		if (activeShaders[0])
+		if (activeShaders.IsVertex())
 			for (U32 i = 0; i < samplersCount; ++i)
 				cl.Get().dx11.GetContext()->VSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
-		if (activeShaders[1])
+		if (activeShaders.IsDomain())
 			for (U32 i = 0; i < samplersCount; ++i)
 				cl.Get().dx11.GetContext()->DSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
-		if (activeShaders[2])
+		if (activeShaders.IsHull())
 			for (U32 i = 0; i < samplersCount; ++i)
 				cl.Get().dx11.GetContext()->HSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
-		if (activeShaders[3])
+		if (activeShaders.IsGeometry())
 			for (U32 i = 0; i < samplersCount; ++i)
 				cl.Get().dx11.GetContext()->GSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
-		if (activeShaders[4])
+		if (activeShaders.IsPixel())
 			for (U32 i = 0; i < samplersCount; ++i)
 				cl.Get().dx11.GetContext()->PSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 	}

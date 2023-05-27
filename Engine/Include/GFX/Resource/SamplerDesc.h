@@ -10,8 +10,7 @@ namespace ZE::GFX::Resource
 	// Definition of Sampler used in shaders
 	struct SamplerDesc
 	{
-		// SamplerType
-		U8 Type;
+		SamplerFilter Type;
 		struct
 		{
 			Texture::AddressMode U;

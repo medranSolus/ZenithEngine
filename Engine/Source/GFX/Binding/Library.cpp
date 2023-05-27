@@ -2,10 +2,14 @@
 
 namespace ZE::GFX::Binding
 {
-	Library::~Library()
+	void Library::Free(Device& dev) noexcept
 	{
 		if (schemas)
+		{
+			for (U32 i = 0; i < schemaCount; ++i)
+				schemas[i].Free(dev);
 			schemas.DeleteArray();
+		}
 	}
 
 	bool Library::FetchBinding(const std::string& name, U32& index) const noexcept

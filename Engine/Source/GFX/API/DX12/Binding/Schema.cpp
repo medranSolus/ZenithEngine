@@ -4,7 +4,6 @@ namespace ZE::GFX::API::DX12::Binding
 {
 	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
 	{
-		ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!");
 		ZE_DX_ENABLE(dev.Get().dx12);
 
 		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc;
@@ -54,7 +53,8 @@ namespace ZE::GFX::API::DX12::Binding
 
 		// Location | Size | Desc
 		std::vector<std::pair<U32, std::pair<U32, D3D12_DESCRIPTOR_RANGE1*>>> tables;
-		ShaderPresenceMask shaderPresence(0);
+		ShaderPresenceMask shaderPresence;
+		ShaderPresenceMask shaderPresenceConstants;
 		// Fill signature parameters
 		for (U32 i = 0; const auto& entry : desc.Ranges)
 		{
@@ -93,6 +93,8 @@ namespace ZE::GFX::API::DX12::Binding
 				if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 				{
 					ZE_ASSERT(entry.StartSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
+					ZE_ASSERT(!shaderPresenceConstants.SetPresence(entry.Shaders), "Only single Constant per shader type is allowed!");
+
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 					parameter.Constants.ShaderRegister = entry.StartSlot;
 					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Flags, entry.Shaders);
@@ -180,9 +182,9 @@ namespace ZE::GFX::API::DX12::Binding
 		signatureDesc.Desc_1_1.Flags =
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS
 			| D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
-		if (shaderPresence[5])
+		if (shaderPresence.IsCompute())
 		{
-			ZE_ASSERT(!shaderPresence[0] && !shaderPresence[1] && !shaderPresence[2] && !shaderPresence[3] && !shaderPresence[4],
+			ZE_ASSERT(!shaderPresence.IsGfx(),
 				"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the SchemaDesc!");
 			signatureDesc.Desc_1_1.Flags |=
 				D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS
@@ -194,23 +196,23 @@ namespace ZE::GFX::API::DX12::Binding
 		}
 		else
 		{
-			if (!shaderPresence[0])
+			if (!shaderPresence.IsVertex())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
-			if (!shaderPresence[1])
+			if (!shaderPresence.IsDomain())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
-			if (!shaderPresence[2])
+			if (!shaderPresence.IsHull())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
-			if (!shaderPresence[3])
+			if (!shaderPresence.IsGeometry())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-			if (!shaderPresence[4])
+			if (!shaderPresence.IsPixel())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 			isCompute = false;
 		}
-		if (!(desc.Options & GFX::Binding::SchemaOption::NoVertexBuffer) || shaderPresence[5])
+		if (!(desc.Options & GFX::Binding::SchemaOption::NoVertexBuffer) || shaderPresence.IsCompute())
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 		if (desc.Options & GFX::Binding::SchemaOption::AllowStreamOutput)
 		{
-			ZE_ASSERT(!shaderPresence[5], "Stream output is not accessible in Compute Shader!");
+			ZE_ASSERT(!shaderPresence.IsCompute(), "Stream output is not accessible in Compute Shader!");
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 		}
 
@@ -232,11 +234,5 @@ namespace ZE::GFX::API::DX12::Binding
 		delete[] parameters;
 		if (staticSamplers)
 			delete[] staticSamplers;
-	}
-
-	Schema::~Schema()
-	{
-		if (bindings)
-			bindings.DeleteArray();
 	}
 }

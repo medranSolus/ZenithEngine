@@ -13,10 +13,12 @@ namespace ZE::GFX::Binding
 	public:
 		Library() = default;
 		ZE_CLASS_DELETE(Library);
-		~Library();
+		~Library() { ZE_ASSERT(schemas == nullptr, "Resource not freed before deletion!"); }
 
 		constexpr Schema& GetSchema(U32 index) noexcept { ZE_ASSERT(index < schemaCount, "Trying to get Schema out of range!"); return schemas[index]; }
 
+		// Before destroying schema you have to call this function for proper memory freeing
+		void Free(Device& dev) noexcept;
 		// If common binding is registered returns its index and returns false (no more work to be done)
 		bool FetchBinding(const std::string& name, U32& index) const noexcept;
 		U32 RegisterCommonBinding(Device& dev, const SchemaDesc& desc, const std::string& name);

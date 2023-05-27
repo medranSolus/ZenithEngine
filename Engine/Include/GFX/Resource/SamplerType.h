@@ -2,6 +2,9 @@
 
 namespace ZE::GFX::Resource
 {
+	// Type of filters used by sampler
+	typedef U8 SamplerFilter;
+
 	// Operation performed by sampler. There are 2 groups to be specified, Operation Type and Sampling Type.
 	// Sampling type can be specified using Anisotropic, Point or Linear filtering.
 	// Additionally every sampling type (Minification, Magnification, Mip-level sampling) can be separately specified
@@ -10,7 +13,7 @@ namespace ZE::GFX::Resource
 	// LinearMinification | LinearMipSampling
 	// Operation type specifies what type of operation will be performed after texture fetch.
 	// It can be independently combined with sampling type, and default operation is filtering. All operations are exclusive
-	enum SamplerType : U8
+	enum SamplerType : SamplerFilter
 	{
 		// Equal to Point Filtering
 		Default = 0b00,
