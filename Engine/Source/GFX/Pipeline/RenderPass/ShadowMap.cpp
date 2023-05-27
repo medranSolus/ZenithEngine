@@ -23,10 +23,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	{
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
-		desc.AddRange({ sizeof(float), 1, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Parallax scale
+		desc.AddRange({ sizeof(Float4), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
 		desc.AddRange({ 1, 12, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer });  // Renderer dynamic data
-		desc.AddRange({ sizeof(Float3), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -95,7 +94,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 			EID currentMaterial = INVALID_EID;
 			U8 currentState = -1;
-			Resource::Constant<Float3> pos(dev, lightPos);
+			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
 			if (solidCount)
 			{
 				Utils::ViewSortAscending(solidGroup, position);
@@ -149,9 +148,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
-				ctx.SetFromEnd(2);
+				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
-				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
 				for (U64 i = 0; i < solidCount; ++i)
@@ -167,8 +165,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(currentMaterial);
-						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
-						parallaxScale.Bind(cl, ctx);
+						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						shadowData.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
 						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
@@ -201,9 +199,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
-				ctx.SetFromEnd(2);
+				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
-				pos.Bind(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
 				for (U64 i = 0; i < transparentCount; ++i)
@@ -224,8 +221,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = renderData.Resources.get<Data::MaterialPBR>(material.ID);
-						Resource::Constant<float> parallaxScale(dev, matData.ParallaxScale);
-						parallaxScale.Bind(cl, ctx);
+						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						shadowData.Bind(cl, ctx);
 						renderData.Resources.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 
 						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);

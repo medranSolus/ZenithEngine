@@ -39,7 +39,7 @@ namespace ZE::GFX::Pipeline
 		~RenderNode() = default;
 
 		constexpr const std::string& GetName() const noexcept { return passName; }
-		constexpr const QueueType GetPassType() const noexcept { return passType; }
+		constexpr QueueType GetPassType() const noexcept { return passType; }
 		constexpr PassExecuteCallback GetExecuteCallback() const noexcept { return passExecute; }
 		constexpr PassCleanCallback GetCleanCallback() const noexcept { return passClean; }
 		constexpr void* GetExecuteData() const noexcept { return executeData; }
