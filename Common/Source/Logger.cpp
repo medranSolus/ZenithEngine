@@ -3,7 +3,7 @@
 
 namespace ZE
 {
-	void Logger::Log(Level type, const std::string& log, bool noFile)
+	void Logger::Log(Level type, const std::string& log, bool flush, bool logToFile)
 	{
 		std::string banner;
 		bool error = false;
@@ -26,7 +26,7 @@ namespace ZE
 			break;
 		}
 		}
-		if (noFile)
+		if (logToFile)
 		{
 			std::ofstream fout;
 			if (firstUse)
@@ -44,9 +44,13 @@ namespace ZE
 			else
 			{
 				fout << banner << log << std::endl;
+				if (flush)
+					fout << std::flush;
 				fout.close();
 			}
 		}
 		(error ? std::cerr : std::cout) << banner << log << std::endl;
+		if (flush)
+			(error ? std::cerr : std::cout) << std::flush;
 	}
 }
