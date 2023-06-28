@@ -270,7 +270,8 @@ namespace ZE::GFX::API::VK::Resource
 		blendStateInfo.logicOp = VK_LOGIC_OP_NO_OP;
 		blendStateInfo.attachmentCount = desc.RenderTargetsCount;
 		blendStateInfo.pAttachments = attachmentBlendStates.data();
-		blendStateInfo.blendConstants[4];
+		blendStateInfo.blendConstants[0] = blendStateInfo.blendConstants[1] =
+			blendStateInfo.blendConstants[2] = blendStateInfo.blendConstants[3] = 1.0f;
 
 		// Setup dynamic states
 		constexpr VkDynamicState DYNAMIC_STATES[]
@@ -285,25 +286,33 @@ namespace ZE::GFX::API::VK::Resource
 		dynamicStateInfo.pDynamicStates = DYNAMIC_STATES;
 
 		// Set output info
+		VkFormat rtFormats[8];
+		for (U8 i = 0; i < desc.RenderTargetsCount; ++i)
+			rtFormats[i] = GetVkFormat(desc.FormatsRT[i]);
+
 		VkPipelineRenderingCreateInfo renderInfo;
 		renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 		renderInfo.pNext = nullptr;
-		renderInfo.viewMask;
-		renderInfo.colorAttachmentCount;
-		renderInfo.pColorAttachmentFormats;
-		renderInfo.depthAttachmentFormat;
-		renderInfo.stencilAttachmentFormat;
+		renderInfo.viewMask = (1U << desc.RenderTargetsCount) - 1;
+		renderInfo.colorAttachmentCount = desc.RenderTargetsCount;
+		renderInfo.pColorAttachmentFormats = rtFormats;
+		renderInfo.stencilAttachmentFormat = renderInfo.depthAttachmentFormat = GetVkFormat(desc.FormatDS);
 
 		// Specify optional extensions
+		constexpr VkSampleCountFlagBits SAMPLE_COUNTS[]
+		{
+			VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT,
+			VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT
+		};
 		VkAttachmentSampleCountInfoAMD sampleCountInfo;
 		if (device.IsExtensionSupported(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)
 			|| device.IsExtensionSupported(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME))
 		{
 			sampleCountInfo.sType = VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD;
 			sampleCountInfo.pNext = nullptr;
-			sampleCountInfo.colorAttachmentCount;
-			sampleCountInfo.pColorAttachmentSamples;
-			sampleCountInfo.depthStencilAttachmentSamples;
+			sampleCountInfo.colorAttachmentCount = desc.RenderTargetsCount;
+			sampleCountInfo.pColorAttachmentSamples = SAMPLE_COUNTS;
+			sampleCountInfo.depthStencilAttachmentSamples = VK_SAMPLE_COUNT_1_BIT;
 			renderInfo.pNext = &sampleCountInfo;
 		}
 
@@ -319,7 +328,7 @@ namespace ZE::GFX::API::VK::Resource
 		VkGraphicsPipelineCreateInfo pipelineInfo;
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext = &renderInfo;
-		pipelineInfo.flags = 0;
+		pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 		pipelineInfo.stageCount = static_cast<U32>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;

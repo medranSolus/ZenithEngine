@@ -10,7 +10,7 @@ namespace ZE::GFX::API::VK::Resource
 		VkComputePipelineCreateInfo pipelineInfo;
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext = nullptr;
-		pipelineInfo.flags = 0;
+		pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
 		pipelineInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		pipelineInfo.stage.pNext = nullptr;
