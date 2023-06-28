@@ -23,8 +23,16 @@ namespace ZE::GFX::API::VK::Resource
 			"CBuffer [size:" + std::to_string(bytes) + "]");
 
 		alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, buffer, Allocation::Usage::GPU);
+
+		const U32 deviceIndex = 0;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceIndexCount = 1;
+		deviceGroupInfo.pDeviceIndices = &deviceIndex;
+
 		uploadInfo.Dest.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		uploadInfo.Dest.pNext = nullptr;
+		uploadInfo.Dest.pNext = &deviceGroupInfo;
 		uploadInfo.Dest.buffer = buffer;
 
 		if (values)

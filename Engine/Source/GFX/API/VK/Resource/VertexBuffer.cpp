@@ -23,9 +23,16 @@ namespace ZE::GFX::API::VK::Resource
 
 		alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, buffer, Allocation::Usage::GPU);
 
+		const U32 deviceIndex = 0;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceIndexCount = 1;
+		deviceGroupInfo.pDeviceIndices = &deviceIndex;
+
 		U8* mappedMemory = nullptr;
 		uploadInfo.Dest.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		uploadInfo.Dest.pNext = nullptr;
+		uploadInfo.Dest.pNext = &deviceGroupInfo;
 		uploadInfo.Dest.buffer = buffer;
 		dev.Get().vk.GetMemory().GetAllocInfo(alloc, uploadInfo.Dest.memoryOffset, uploadInfo.Dest.memory, &mappedMemory);
 

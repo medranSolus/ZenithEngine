@@ -81,9 +81,14 @@ namespace ZE::GFX::API::VK
 		if (swapChainFormat != Settings::GetBackbufferFormat())
 			Settings::SetBackbufferFormat(swapChainFormat);
 
+		VkDeviceGroupSwapchainCreateInfoKHR deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.modes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
+
 		VkSwapchainCreateInfoKHR swapChainInfo;
 		swapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		swapChainInfo.pNext = nullptr;
+		swapChainInfo.pNext = &deviceGroupInfo;
 		swapChainInfo.flags = 0;
 		swapChainInfo.surface = surface;
 		swapChainInfo.minImageCount = Settings::GetBackbufferCount();
@@ -179,9 +184,17 @@ namespace ZE::GFX::API::VK
 		ZE_VK_ENABLE();
 
 		// Present to new image
+		const U32 mask = 1;
+		VkDeviceGroupPresentInfoKHR deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.swapchainCount = 1;
+		deviceGroupInfo.pDeviceMasks = &mask;
+		deviceGroupInfo.mode = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
+
 		VkPresentInfoKHR presentInfo;
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.pNext = nullptr;
+		presentInfo.pNext = &deviceGroupInfo;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &presentSemaphore;
 		presentInfo.swapchainCount = 1;

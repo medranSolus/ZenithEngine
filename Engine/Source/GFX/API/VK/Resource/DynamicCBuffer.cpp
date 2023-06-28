@@ -23,9 +23,16 @@ namespace ZE::GFX::API::VK::Resource
 
 		Allocation alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, block, Allocation::Usage::StagingToGPU);
 
+		const U32 deviceIndex = 0;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceIndexCount = 1;
+		deviceGroupInfo.pDeviceIndices = &deviceIndex;
+
 		VkBindBufferMemoryInfo bindInfo;
 		bindInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		bindInfo.pNext = nullptr;
+		bindInfo.pNext = &deviceGroupInfo;
 		bindInfo.buffer = block;
 		dev.Get().vk.GetMemory().GetAllocInfo(alloc, bindInfo.memoryOffset, bindInfo.memory, &buffer);
 		ZE_ASSERT(buffer != nullptr, "Dynamic buffer always should be accessible from CPU!");
@@ -72,7 +79,7 @@ namespace ZE::GFX::API::VK::Resource
 		GFX::Resource::DynamicBufferAlloc info
 		{
 			nextOffset,
-			currentBlock
+				currentBlock
 		};
 		nextOffset += newBlock;
 		return info;
