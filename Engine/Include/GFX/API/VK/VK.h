@@ -1,5 +1,7 @@
 #pragma once
 #include "GFX/Resource/PipelineStateDesc.h"
+#include "GFX/Resource/SamplerDesc.h"
+#include "GFX/ShaderPresence.h"
 #include "Window/MainWindow.h"
 #include "VulkanExtensions.h"
 
@@ -7,12 +9,28 @@ namespace ZE::GFX::API::VK
 {
 	// Create surface over current display buffer
 	VkSurfaceKHR CreateSurface(const Window::MainWindow& window, VkInstance instance);
+	// Get Vulkan version of border color for immutable sampler
+	constexpr VkBorderColor GetBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept;
+	// Get Vulkan version of comparison function
+	constexpr VkCompareOp GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept;
+	// Get Vulkan version of minification sampler filter
+	constexpr VkFilter GetFilterTypeMin(GFX::Resource::SamplerFilter samplerType) noexcept;
+	// Get Vulkan version of magnification sampler filter
+	constexpr VkFilter GetFilterTypeMag(GFX::Resource::SamplerFilter samplerType) noexcept;
+	// Get Vulkan version of mipmap sampler filter
+	constexpr VkSamplerMipmapMode GetFilterTypeMip(GFX::Resource::SamplerFilter samplerType) noexcept;
+	// Checks whether given sampler should be anisotropic
+	constexpr bool GetFilterTypeIsAnisotropic(GFX::Resource::SamplerFilter samplerType) noexcept;
 	// Get opposite of cull mode
 	constexpr VkStencilFaceFlags GetStencilFace(GFX::Resource::CullMode mode) noexcept;
 	// Get Vulkan version of culling modes
 	constexpr VkCullModeFlags GetCulling(GFX::Resource::CullMode mode) noexcept;
 	// Get Vulkan version of primitive topology
 	constexpr VkPrimitiveTopology GetPrimitiveTopology(GFX::Resource::TopologyType type, GFX::Resource::TopologyOrder order) noexcept;
+	// Get shader stage from shader type
+	constexpr VkShaderStageFlags GetShaderStage(GFX::Resource::ShaderTypes type) noexcept;
+	// Get Vulkan version of texture addressing mode
+	constexpr VkSamplerAddressMode GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept;
 	// Get Vulkan version of main primitive topology types
 	constexpr VkPrimitiveTopology GetTopologyType(GFX::Resource::TopologyType type) noexcept;
 	// Get number of elements in control patch list
@@ -23,6 +41,66 @@ namespace ZE::GFX::API::VK
 	constexpr PixelFormat GetFormatFromVk(VkFormat format) noexcept;
 
 #pragma region Functions
+	constexpr VkBorderColor GetBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept
+	{
+		switch (color)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::Texture::EdgeColor::TransparentBlack:
+			return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case GFX::Resource::Texture::EdgeColor::SolidBlack:
+			return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case GFX::Resource::Texture::EdgeColor::SolidWhite:
+			return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		}
+	}
+
+	constexpr VkCompareOp GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept
+	{
+		switch (func)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::CompareMethod::Never:
+			return VK_COMPARE_OP_NEVER;
+		case GFX::Resource::CompareMethod::Less:
+			return VK_COMPARE_OP_LESS;
+		case GFX::Resource::CompareMethod::Equal:
+			return VK_COMPARE_OP_EQUAL;
+		case GFX::Resource::CompareMethod::LessEqual:
+			return VK_COMPARE_OP_LESS_OR_EQUAL;
+		case GFX::Resource::CompareMethod::Greater:
+			return VK_COMPARE_OP_GREATER;
+		case GFX::Resource::CompareMethod::NotEqual:
+			return VK_COMPARE_OP_NOT_EQUAL;
+		case GFX::Resource::CompareMethod::GreaterEqual:
+			return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		case GFX::Resource::CompareMethod::Always:
+			return VK_COMPARE_OP_ALWAYS;
+		}
+	}
+
+	constexpr VkFilter GetFilterTypeMin(GFX::Resource::SamplerFilter samplerType) noexcept
+	{
+		return samplerType & GFX::Resource::SamplerType::LinearMinification ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	}
+
+	constexpr VkFilter GetFilterTypeMag(GFX::Resource::SamplerFilter samplerType) noexcept
+	{
+		return samplerType & GFX::Resource::SamplerType::LinearMagnification ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	}
+
+	constexpr VkSamplerMipmapMode GetFilterTypeMip(GFX::Resource::SamplerFilter samplerType) noexcept
+	{
+		return samplerType & GFX::Resource::SamplerType::LinearMipSampling ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	}
+
+	constexpr bool GetFilterTypeIsAnisotropic(GFX::Resource::SamplerFilter samplerType) noexcept
+	{
+		return (samplerType & GFX::Resource::SamplerType::Anisotropic) == GFX::Resource::SamplerType::Anisotropic;
+	}
+
 	constexpr VkStencilFaceFlags GetStencilFace(GFX::Resource::CullMode mode) noexcept
 	{
 		switch (mode)
@@ -148,6 +226,47 @@ namespace ZE::GFX::API::VK
 			break;
 		}
 		return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	}
+
+	constexpr VkShaderStageFlags GetShaderStage(GFX::Resource::ShaderTypes type) noexcept
+	{
+		if (type & GFX::Resource::ShaderType::Compute)
+			return VK_SHADER_STAGE_COMPUTE_BIT;
+		if (type == GFX::Resource::ShaderType::AllGfx)
+			return VK_SHADER_STAGE_ALL_GRAPHICS;
+
+		VkShaderStageFlags stage = VK_SHADER_STAGE_ALL;
+		if (type & GFX::Resource::ShaderType::Vertex)
+			stage |= VK_SHADER_STAGE_VERTEX_BIT;
+		if (type & GFX::Resource::ShaderType::Domain)
+			stage |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		if (type & GFX::Resource::ShaderType::Hull)
+			stage |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		if (type & GFX::Resource::ShaderType::Geometry)
+			stage |= VK_SHADER_STAGE_GEOMETRY_BIT;
+		if (type & GFX::Resource::ShaderType::Pixel)
+			stage |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		return stage;
+	}
+
+	constexpr VkSamplerAddressMode GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept
+	{
+		switch (mode)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::Texture::AddressMode::Repeat:
+			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case GFX::Resource::Texture::AddressMode::Mirror:
+			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case GFX::Resource::Texture::AddressMode::Edge:
+			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case GFX::Resource::Texture::AddressMode::BorderColor:
+			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		case GFX::Resource::Texture::AddressMode::MirrorOnce:
+			return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+		}
 	}
 
 	constexpr VkPrimitiveTopology GetTopologyType(GFX::Resource::TopologyType type) noexcept
