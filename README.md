@@ -2,9 +2,14 @@
 
 3D graphics engine.
 
-Before contributing read [coding guidelines](Doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting. Project requires at least `CMake 3.22` support.
+Before contributing read [coding guidelines](Doc/CodeGuidelines.md) for style conventions and formatting. It is recomended to use [CodeMaid](http://www.codemaid.net/) for auto formatting.
 
 Working with project from command prompt is described [here](Doc/CMakeCLI.md).
+
+**Requirements:**
+ - Windows SDK 10.0.20348.0
+ - Vulkan SDK 1.3.246.1
+ - CMake 3.22
 
 **External libraries:**
  - [AMD GPU Services](https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK) - [MIT License](Doc/License/ThirdParty/AGS.txt)

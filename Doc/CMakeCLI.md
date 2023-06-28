@@ -10,6 +10,8 @@ Script by default bulds the project, but supports also following commands:
   - `help` - display tool syntax,
   - `init` - initialize external submodules,
   - `clean/clear` - clear the build system,
+  - `clean-ext/clear-ext` - clear builded external libraries,
+  - `clean-all/clear-all` - clear builded external libraries and the build system,
   - `up` - update external submodules,
   - `gen` - generate of CMake build system,
   - `run` - run builded technological demo.

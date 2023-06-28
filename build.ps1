@@ -9,6 +9,7 @@ function Display-Info
     Write-Output "            init - initialize submodules (MODE not required)"
     Write-Output "            clean/clear - clear the build system (MODE not required)"
     Write-Output "            clean-ext/clear-ext - clear builded external libraries (MODE not required)"
+    Write-Output "            clean-all/clear-all - clear builded external libraries and the build system (MODE not required)"
     Write-Output "            up - update submodules (MODE not required)"
     Write-Output "            gen - generate build system"
     Write-Output "            run - run tech demo (you can specify additional arguments after MODE parameter that will be passed to the application)>"
@@ -26,6 +27,13 @@ Switch ($command)
     }
     {($_ -eq "clean-ext") -or ($_ -eq "clear-ext")}
     {
+        Get-ChildItem External/Bin -Recurse | Remove-Item -Recurse
+        exit 0
+    }
+    {($_ -eq "clean-all") -or ($_ -eq "clear-all")}
+    {
+        Get-ChildItem Bin -Recurse | Remove-Item -Recurse
+        Get-ChildItem Build -Recurse | Remove-Item -Recurse
         Get-ChildItem External/Bin -Recurse | Remove-Item -Recurse
         exit 0
     }
