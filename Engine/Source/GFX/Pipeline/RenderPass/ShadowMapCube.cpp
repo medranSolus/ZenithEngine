@@ -21,11 +21,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT)
 	{
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
-		desc.AddRange({ sizeof(Float4), 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
-		desc.AddRange({ 4, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
-		desc.AddRange({ 1, 0, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
-		desc.AddRange({ 1, 12, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
+		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		desc.AddRange({ sizeof(Float4), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
+		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
+		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
+		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -171,8 +171,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
 						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular);
-				const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
-				return state1 < state2;
+						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
+						return state1 < state2;
 					});
 				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Resources.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
 

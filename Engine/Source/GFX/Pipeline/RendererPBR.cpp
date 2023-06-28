@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline
 	{
 		buildData.RendererSlots.AddRange(
 			{
-				1, 13,
+				1, 13, 0,
 				Resource::ShaderType::Pixel | Resource::ShaderType::Compute,
 				Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer
 			});

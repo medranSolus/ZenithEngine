@@ -7,8 +7,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 2, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // SSAO, GBuff color
-		desc.AddRange({ 2, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Light map, specular map
+		desc.AddRange({ 2, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // SSAO, GBuff color
+		desc.AddRange({ 2, 2, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Light map, specular map
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 

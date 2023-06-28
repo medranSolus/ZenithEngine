@@ -22,8 +22,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Prefilter pass
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 5, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
+		desc.AddRange({ 5, 0, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
+		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -33,12 +33,12 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Main pass
 		desc.Clear();
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
-		desc.AddRange({ 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
-		desc.AddRange({ 1, 12, Resource::ShaderType::Compute, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
+		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map
+		desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
+		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
+		desc.AddRange({ 1, 1, 5, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
+		desc.AddRange({ 1, 2, 6, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
+		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Compute, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -48,10 +48,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		// Denoise passes
 		desc.Clear();
-		desc.AddRange({ sizeof(U32), 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant }); // Is last denoise
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map out
-		desc.AddRange({ 1, 0, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev SSAO map
-		desc.AddRange({ 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
+		desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant }); // Is last denoise
+		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map out
+		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev SSAO map
+		desc.AddRange({ 1, 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -112,11 +112,11 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		renderData.Buffers.BarrierTransition(list,
 			std::array
-			{
-				TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
+		{
+			TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
 				TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
 				TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-			});
+		});
 
 		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
 		data.StateDenoise.Bind(list);
@@ -132,10 +132,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 		renderData.Buffers.BarrierTransition(list,
 			std::array
-			{
-				TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
+		{
+			TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
 				TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-			});
+		});
 
 		ZE_DRAW_TAG_END(dev, list);
 		list.Close(dev);
