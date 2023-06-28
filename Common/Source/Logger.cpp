@@ -5,7 +5,7 @@ namespace ZE
 {
 	void Logger::Log(Level type, const std::string& log, bool flush, bool logToFile)
 	{
-		std::string banner;
+		std::string_view banner;
 		bool error = false;
 		switch (type)
 		{
@@ -26,6 +26,13 @@ namespace ZE
 			break;
 		}
 		}
+		auto writeLog = [&](std::ostream& out)
+		{
+			out << banner << log << std::endl;
+			if (flush)
+				out << std::flush;
+		};
+
 		if (logToFile)
 		{
 			std::ofstream fout;
@@ -43,14 +50,10 @@ namespace ZE
 			}
 			else
 			{
-				fout << banner << log << std::endl;
-				if (flush)
-					fout << std::flush;
+				writeLog(fout);
 				fout.close();
 			}
 		}
-		(error ? std::cerr : std::cout) << banner << log << std::endl;
-		if (flush)
-			(error ? std::cerr : std::cout) << std::flush;
+		writeLog(error ? std::cerr : std::cout);
 	}
 }
