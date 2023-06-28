@@ -8,10 +8,20 @@ namespace ZE::GFX::API::VK
 		ZE_VK_ENABLE_ID();
 		AllocParams& params = *reinterpret_cast<AllocParams*>(userData);
 
-		const VkMemoryPriorityAllocateInfoEXT priorityInfo = { VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT, params.pNext, 0.5f };
+		VkMemoryPriorityAllocateInfoEXT priorityInfo;
+		priorityInfo.sType = VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT;
+		priorityInfo.pNext = params.pNext;
+		priorityInfo.priority = 0.5f;
+
+		VkMemoryAllocateFlagsInfo allocFlags;
+		allocFlags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+		allocFlags.pNext = params.Dev.IsExtensionSupported(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME) ? &priorityInfo : params.pNext;
+		allocFlags.flags = VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT;
+		allocFlags.deviceMask = 1;
+
 		VkMemoryAllocateInfo allocInfo;
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.pNext = params.Dev.IsExtensionSupported(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME) ? &priorityInfo : params.pNext;
+		allocInfo.pNext = &allocFlags;
 		allocInfo.allocationSize = size;
 		allocInfo.memoryTypeIndex = params.MemIndex;
 		ZE_VK_THROW_NOSUCC(vkAllocateMemory(params.Dev.GetDevice(), &allocInfo, nullptr, &chunk.DeviceMemory));
@@ -345,7 +355,7 @@ namespace ZE::GFX::API::VK
 		Memory mem = allocators.at(alloc.MemoryIndex).GetMemory(alloc.Handle);
 		memory = mem.DeviceMemory;
 		if (mappedMemory)
-			*mappedMemory = mem.MappedMemory + offset;
+			*mappedMemory = mem.MappedMemory + (mem.MappedMemory ? offset : 0);
 	}
 
 	U8* AllocatorGPU::GetMappedMemory(const Allocation& alloc) const noexcept

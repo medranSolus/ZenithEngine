@@ -141,12 +141,25 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
+		VkDeviceGroupCommandBufferBeginInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceMask = 1;
+
 		VkCommandBufferBeginInfo beginInfo;
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.pNext = nullptr;
+		beginInfo.pNext = &deviceGroupInfo;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		beginInfo.pInheritanceInfo = nullptr; // Only for secondary buffers
 		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
+
+		VkDescriptorBufferBindingInfoEXT descBufferInfo;
+		descBufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+		descBufferInfo.pNext = nullptr;
+		descBufferInfo.address = 0;
+		descBufferInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT
+			| VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+		//vkCmdBindDescriptorBuffersEXT(commands, 1, &descBufferInfo);
 	}
 
 	void CommandList::Close()
