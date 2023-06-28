@@ -624,7 +624,7 @@ App::App(const CmdParser& params)
 			{ "Skybox/Space", ".png", params.GetOption("minPassDist"), params.GetNumber("shadowMapSize") }
 		})
 {
-	engine.Gui().SetFont("Fonts/Arial.ttf", 14.0f);
+	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
 
 	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);

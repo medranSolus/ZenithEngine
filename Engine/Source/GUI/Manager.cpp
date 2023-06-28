@@ -15,6 +15,17 @@ namespace ZE::GUI
 		VkDescriptorPool DescPool;
 	};
 
+	void Manager::RebuildFontsVK(GFX::Device& dev, GFX::CommandList& cl) const
+	{
+		cl.Open(dev);
+		ImGui_ImplVulkan_CreateFontsTexture(cl.Get().vk.GetBuffer());
+		cl.Close(dev);
+
+		dev.ExecuteMain(cl);
+		dev.WaitMain(dev.SetMainFence());
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
+	}
+
 	Manager::Manager()
 	{
 		if (!std::filesystem::exists("imgui.ini") && std::filesystem::exists("imgui_default.ini"))
@@ -29,8 +40,9 @@ namespace ZE::GUI
 		style.Colors[ImGuiCol_WindowBg].w = 0.785f;
 	}
 
-	void Manager::Init(GFX::Device& dev, bool backbufferSRV)
+	void Manager::Init(GFX::Graphics& gfx, bool backbufferSRV)
 	{
+		GFX::Device& dev = gfx.GetDevice();
 		switch (Settings::GetGfxApi())
 		{
 		case GfxApiType::DX11:
@@ -182,6 +194,8 @@ namespace ZE::GUI
 			initInfo.CheckVkResultFn = [](VkResult res) { if (res != VK_SUCCESS) throw ZE_VK_EXCEPT(res); };
 			ImGui_ImplVulkan_LoadFunctions([](const char* name, void* instance) { return vkGetInstanceProcAddr(reinterpret_cast<VkInstance>(instance), name); }, initInfo.Instance);
 			ImGui_ImplVulkan_Init(&initInfo, renderPass);
+
+			RebuildFontsVK(dev, gfx.GetMainList());
 			break;
 		}
 		default:
@@ -331,11 +345,15 @@ namespace ZE::GUI
 		}
 	}
 
-	void Manager::SetFont(const std::string& font, float size) const
+	void Manager::SetFont(GFX::Graphics& gfx, const std::string& font, float size) const
 	{
 		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		if (atlas->Fonts.size())
+		{
 			atlas->Clear();
+			if (Settings::GetGfxApi() == GfxApiType::Vulkan)
+				RebuildFontsVK(gfx.GetDevice(), gfx.GetMainList());
+		}
 		atlas->AddFontFromFileTTF(font.c_str(), size);
 	}
 }
