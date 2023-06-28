@@ -1,3 +1,4 @@
+#define TRANSFORM_RANGE 4
 #include "TransformCB.hlsli"
 
 struct VSOut

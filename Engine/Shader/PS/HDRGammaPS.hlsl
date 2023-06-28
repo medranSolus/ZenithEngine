@@ -1,7 +1,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 
-TEX2D(frame, 0);
+TEX2D(frame, 0, 1);
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {

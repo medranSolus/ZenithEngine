@@ -2,6 +2,11 @@
 #define DENOISE_CS_HLSLI
 #include "Buffers.hlsli"
 
-CONSTANT(lastDenoise, bool, 0);
+struct Denoise
+{
+	bool IsLast;
+};
+
+CONSTANT(denoise, Denoise, 0);
 
 #endif // DENOISE_CS_HLSLI

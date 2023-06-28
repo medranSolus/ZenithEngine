@@ -5,10 +5,10 @@
 #include "Utils/LightUtils.hlsli"
 #include "CB/DirectionalLight.hlsli"
 
-TEX2D(shadowMap,   0);
-TEX2D(normalMap,   1);
-TEX2D(specularMap, 2); // RGB - color, A - power
-TEX2D(depthMap,    3);
+TEX2D(shadowMap,   0, 3);
+TEX2D(normalMap,   1, 2);
+TEX2D(specularMap, 2, 2); // RGB - color, A - power
+TEX2D(depthMap,    3, 2);
 
 struct PSOut
 {
@@ -29,7 +29,7 @@ PSOut main(float2 tc : TEXCOORD)
 	//	directionToLight, GetShadowUV(position), splr_AB, tx_shadowMap, cb_pbrData.ShadowMapSize);
 
 	const float3 normal = DecodeNormal(tx_normalMap.Sample(splr_PR, tc).rg);
-	const float3 directionToLight = -ct_lightDir;
+	const float3 directionToLight = -ct_lightDir.Dir;
 	const float4 specularData = tx_specularMap.Sample(splr_PR, tc);
 
 	PSOut pso;

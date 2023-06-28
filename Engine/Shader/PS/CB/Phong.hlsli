@@ -13,6 +13,6 @@ struct PhongBuffer
 	float ParallaxScale;
 };
 
-CBUFFER(material, PhongBuffer, 0);
+CBUFFER(material, PhongBuffer, 0, 4);
 
 #endif // PHONG_PS_HLSLI

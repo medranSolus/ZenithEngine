@@ -1,10 +1,10 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 
-TEXTURE_EX(ssaoMap, Texture2D<uint>, 0, 0);
-TEX2D(colorMap, 1);
-TEX2D(lighting, 2);
-TEX2D(specular, 3);
+TEXTURE_EX(ssaoMap, Texture2D<uint>, 0, 1);
+TEX2D(colorMap, 1, 1);
+TEX2D(lighting, 2, 2);
+TEX2D(specular, 3, 2);
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {

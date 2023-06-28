@@ -9,7 +9,12 @@ struct DirectionalLightBuffer
 	float3 Shadow;
 };
 
-CBUFFER(light, DirectionalLightBuffer, 1);
-CONSTANT(lightDir, float3, 0);
+struct LightDir
+{
+	float3 Dir;
+};
+
+CBUFFER(light, DirectionalLightBuffer, 1, 4);
+CONSTANT(lightDir, LightDir, 0);
 
 #endif // DIRECTIONAL_LIGHT_PS_HLSLI

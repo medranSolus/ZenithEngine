@@ -4,12 +4,11 @@
 #include "WorldDataCB.hlsli"
 #include "Utils/SSAO.hlsli"
 
-RWTexture2D<uint>        ssaoMap    : register(u0);
-RWTexture2D<unorm float> depthEdges : register(u1);
-
-TEXTURE_EX(viewDepth,  Texture2D<lpfloat>, 0, 0);
-TEXTURE_EX(normalMap,  Texture2D<float2>,  1, 0);
-TEXTURE_EX(hilbertLUT, Texture2D<uint>,    2, 0);
+UAV2D(ssaoMap,    uint,	       0, 2);
+UAV2D(depthEdges, unorm float, 1, 3);
+TEXTURE_EX(viewDepth,  Texture2D<lpfloat>, 0, 4);
+TEXTURE_EX(normalMap,  Texture2D<float2>,  1, 5);
+TEXTURE_EX(hilbertLUT, Texture2D<uint>,    2, 6);
 
 // Load encoded normal and convert to viewspace
 lpfloat3 LoadNormal(const in uint2 pos)
@@ -35,5 +34,5 @@ void main(const uint2 pixCoord : SV_DispatchThreadID)
 		cb_pbrData.SsaoSliceCount, cb_pbrData.SsaoStepsPerSlice,
 		SpatioTemporalNoise(pixCoord, cb_pbrData.SsaoData.NoiseIndex),
 		LoadNormal(pixCoord), cb_pbrData.SsaoData,
-		tx_viewDepth, splr_PE, ssaoMap, depthEdges);
+		tx_viewDepth, splr_PE, ua_ssaoMap, ua_depthEdges);
 }

@@ -11,7 +11,7 @@ struct WorldData
 	float NearClip;
 	float FarClip;
 };
-CBUFFER_GLOBAL(worldData, WorldData, 12);
+CBUFFER_GLOBAL(worldData, WorldData, 12, 1);
 
 // Convert depth value from logarithmic depth space to linear view space
 float GetLinearDepth(const in float depth)

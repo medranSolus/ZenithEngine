@@ -11,7 +11,12 @@ struct PointLightBuffer
 	float AttnQuad;
 };
 
-CBUFFER(light, PointLightBuffer, 1);
-CONSTANT(lightPos, float3, 0);
+struct LightPos
+{
+	float3 Pos;
+};
+
+CBUFFER(light, PointLightBuffer, 1, 5);
+CONSTANT(lightPos, LightPos, 0);
 
 #endif // POINT_LIGHT_PS_HLSLI

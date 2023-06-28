@@ -4,16 +4,16 @@
 #include "CB/Phong.hlsli"
 
 #ifdef _USE_TEXTURE
-TEX2D(tex, 0);
+TEX2D(tex, 0, 2);
 #endif
 #ifdef _USE_NORMAL
-TEX2D(normalMap, 1);
+TEX2D(normalMap, 1, 2);
 #endif
 #ifdef _USE_SPECULAR
-TEX2D(spec, 2);
+TEX2D(spec, 2, 2);
 #endif
 #ifdef _USE_PARALLAX
-TEX2D(parallax, 3);
+TEX2D(parallax, 3, 2);
 #endif
 
 struct PSOut

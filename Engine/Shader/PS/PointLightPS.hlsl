@@ -5,10 +5,10 @@
 #include "Utils/LightUtils.hlsli"
 #include "CB/PointLight.hlsli"
 
-TEXTURE_EX(shadowMap, TextureCube, 0, 0);
-TEX2D(normalMap,   1);
-TEX2D(specularMap, 2); // RGB - color, A - power
-TEX2D(depthMap,    3);
+TEXTURE_EX(shadowMap, TextureCube, 0, 3);
+TEX2D(normalMap,   1, 2);
+TEX2D(specularMap, 2, 2); // RGB - color, A - power
+TEX2D(depthMap,    3, 2);
 
 struct PSOut
 {
@@ -24,7 +24,7 @@ PSOut main(float3 texPos : TEX_POSITION)
 
 	// Compute main colors and direction
 	const float3 shadowColor = DeleteGammaCorr(cb_light.ShadowColor);
-	float3 directionToLight = ct_lightPos - position;
+	float3 directionToLight = ct_lightPos.Pos - position;
 	const float lightDistance = length(directionToLight);
 	const float3 lightColor = DeleteGammaCorr(cb_light.Color) * (cb_light.Intensity / GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance));
 	directionToLight /= lightDistance;

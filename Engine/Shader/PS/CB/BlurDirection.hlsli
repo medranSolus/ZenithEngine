@@ -2,6 +2,11 @@
 #define BLUR_DIRECTION_PS_HLSLI
 #include "Buffers.hlsli"
 
-CONSTANT(vertical, bool, 0);
+struct BlurDirection
+{
+	bool IsVertical;
+};
+
+CONSTANT(blurDir, BlurDirection, 0);
 
 #endif // BLUR_DIRECTION_PS_HLSLI

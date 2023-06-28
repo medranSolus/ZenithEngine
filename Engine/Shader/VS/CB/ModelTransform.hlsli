@@ -8,6 +8,6 @@ struct ModelTransform
 	matrix MVP;
 };
 
-CBUFFER(transform, ModelTransform, 0);
+CBUFFER(transform, ModelTransform, 0, 3);
 
 #endif // MODEL_TRANSFORM_VS_HLSLI

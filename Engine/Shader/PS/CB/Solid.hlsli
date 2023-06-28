@@ -2,6 +2,11 @@
 #define SOLID_PS_HLSLI
 #include "Buffers.hlsli"
 
-CONSTANT(solidColor, float3, 0);
+struct Solid
+{
+	float3 Color;
+};
+
+CONSTANT(solidColor, Solid, 0);
 
 #endif // SOLID_PS_HLSLI

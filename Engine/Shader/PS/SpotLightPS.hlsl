@@ -2,14 +2,15 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
+#define TRANSFORM_RANGE 6
 #include "TransformCB.hlsli"
 #include "Utils/LightUtils.hlsli"
 #include "CB/SpotLight.hlsli"
 
-TEX2D(shadowMap,   0);
-TEX2D(normalMap,   1);
-TEX2D(specularMap, 2); // RGB - color, A - power
-TEX2D(depthMap,    3);
+TEX2D(shadowMap,   0, 3);
+TEX2D(normalMap,   1, 2);
+TEX2D(specularMap, 2, 2); // RGB - color, A - power
+TEX2D(depthMap,    3, 2);
 
 struct PSOut
 {
@@ -23,7 +24,7 @@ PSOut main(float3 texPos : TEX_POSITION)
 	const float2 tc = float2(0.5f, -0.5f) * (texPos.xy / texPos.z) + 0.5f;
 	const float3 position = GetWorldPosition(tc, tx_depthMap.Sample(splr_PR, tc).x, cb_worldData.ViewProjectionInverse);
 
-	float3 directionToLight = ct_lightPos - position;
+	float3 directionToLight = ct_lightPos.Pos - position;
 	const float lightDistance = length(directionToLight);
 	directionToLight /= lightDistance;
 

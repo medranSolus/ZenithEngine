@@ -7,6 +7,6 @@ struct ViewBuffer
 	matrix ViewProjection[6];
 };
 
-CBUFFER(view, ViewBuffer, 0);
+CBUFFER(view, ViewBuffer, 0, 4);
 
 #endif // VIEW_GS_HLSLI

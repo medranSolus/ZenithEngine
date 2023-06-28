@@ -33,7 +33,7 @@ struct PBRData
 	// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 	float BlurCoefficients[BLUR_KERNEL_MAX_SIZE];
 };
-CBUFFER_GLOBAL(pbrData, PBRData, 13);
+CBUFFER_GLOBAL(pbrData, PBRData, 13, 0);
 
 float3 DeleteGammaCorr(const in float3 srgb)
 {
