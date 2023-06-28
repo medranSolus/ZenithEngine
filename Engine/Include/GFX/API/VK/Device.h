@@ -59,6 +59,9 @@ namespace ZE::GFX::API::VK
 			VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT PrimitiveRestart;
 			VkPhysicalDeviceExtendedDynamicStateFeaturesEXT DynamicState;
 			VkPhysicalDeviceImagelessFramebufferFeatures ImagelessFramebuffer;
+			VkPhysicalDeviceDescriptorIndexingFeatures DescriptorIndexing;
+			VkPhysicalDeviceDescriptorBufferFeaturesEXT DescriptorBuffer;
+			VkPhysicalDeviceBufferDeviceAddressFeatures BufferAddress;
 		};
 
 #define X(ext) + 1
@@ -89,9 +92,11 @@ namespace ZE::GFX::API::VK
 		VkSemaphore copyFence = VK_NULL_HANDLE;
 
 		// Is integrated | Present from compute | Memory model device scope | Memory model chains | Compute full subgroups
-		// Multiview GS | Multiview Tesselation | Patch list index restart
-		std::bitset<8> flags = 0;
+		// Multiview GS | Multiview Tesselation | Patch list index restart | Desc buffer image layout ignored | Desc buffer capture replay
+		// Buffer capture replay | Buffer address for multiple GPUs
+		std::bitset<12> flags = 0;
 		VkPhysicalDeviceLimits limits;
+		U64 descBufferAlignment = 0;
 		float conservativeRasterOverestimateSize = 0.0f;
 
 		AllocatorGPU allocator;
@@ -132,6 +137,10 @@ namespace ZE::GFX::API::VK
 		void SetMultiviewGeometryShaderSupport(bool enabled) noexcept { flags[5] = enabled; }
 		void SetMultiviewTesselationSupport(bool enabled) noexcept { flags[6] = enabled; }
 		void SetPatchListIndexRestartSupport(bool enabled) noexcept { flags[7] = enabled; }
+		void SetDescriptorBufferImageLayoutIngored(bool enabled) noexcept { flags[8] = enabled; }
+		void SetDescriptorBufferCaptureReplaySupported(bool enabled) noexcept { flags[9] = enabled; }
+		void SetBufferCaptureReplaySupported(bool enabled) noexcept { flags[10] = enabled; }
+		void SetBufferAddressMultiDeviceSupported(bool enabled) noexcept { flags[11] = enabled; }
 
 		void InitVolk();
 		void CreateInstance();
@@ -210,6 +219,10 @@ namespace ZE::GFX::API::VK
 		constexpr bool IsMultiviewGeometryShaderSupport() const noexcept { return flags[5]; }
 		constexpr bool IsMultiviewTesselationSupport() const noexcept { return flags[6]; }
 		constexpr bool IsPatchListIndexRestartSupport() const noexcept { return flags[7]; }
+		constexpr bool IsDescriptorBufferImageLayoutIngored() const noexcept { return flags[8]; }
+		constexpr bool IsDescriptorBufferCaptureReplaySupported() const noexcept { return flags[9]; }
+		constexpr bool IsBufferCaptureReplaySupported() const noexcept { return flags[10]; }
+		constexpr bool IsBufferAddressMultiDeviceSupported() const noexcept { return flags[11]; }
 
 		constexpr const VkPhysicalDeviceLimits& GetLimits() const noexcept { return limits; }
 		constexpr float GetConservativeRasterOverestimateSize() const noexcept { return conservativeRasterOverestimateSize; }

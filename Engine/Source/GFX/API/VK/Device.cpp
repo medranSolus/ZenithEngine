@@ -113,6 +113,7 @@ namespace ZE::GFX::API::VK
 		VkSubmitInfo2 submitInfo;
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 		submitInfo.pNext = nullptr;
+		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 0;
 		submitInfo.pWaitSemaphoreInfos = nullptr;
 		submitInfo.commandBufferInfoCount = 1;
@@ -126,7 +127,13 @@ namespace ZE::GFX::API::VK
 	VkBool32 VKAPI_PTR Device::DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
-		Logger::InfoNoFile(pCallbackData->pMessage);
+		const bool attentionRequired = (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+			&& (messageTypes & (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT));
+		Logger::InfoNoFile(pCallbackData->pMessage, attentionRequired);
+		if (attentionRequired)
+		{
+			ZE_BREAK();
+		}
 		return VK_FALSE;
 	}
 #endif
@@ -201,7 +208,23 @@ namespace ZE::GFX::API::VK
 			|| !features.DynamicRendering.dynamicRendering || !features.Multiview.multiview
 			|| !features.Features.features.geometryShader || !features.Features.features.samplerAnisotropy
 			|| !features.Features.features.multiViewport || !features.PrimitiveRestart.primitiveTopologyListRestart
-			|| !features.DynamicState.extendedDynamicState || !features.ImagelessFramebuffer.imagelessFramebuffer)
+			|| !features.DynamicState.extendedDynamicState || !features.ImagelessFramebuffer.imagelessFramebuffer
+			|| !features.DescriptorIndexing.shaderInputAttachmentArrayDynamicIndexing
+			|| !features.DescriptorIndexing.shaderUniformTexelBufferArrayDynamicIndexing
+			|| !features.DescriptorIndexing.shaderStorageTexelBufferArrayDynamicIndexing
+			|| !features.DescriptorIndexing.shaderUniformBufferArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderSampledImageArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderStorageBufferArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderStorageImageArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderInputAttachmentArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderUniformTexelBufferArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.shaderStorageTexelBufferArrayNonUniformIndexing
+			|| !features.DescriptorIndexing.descriptorBindingUpdateUnusedWhilePending
+			|| !features.DescriptorIndexing.descriptorBindingPartiallyBound
+			|| !features.DescriptorIndexing.descriptorBindingVariableDescriptorCount
+			|| !features.DescriptorIndexing.runtimeDescriptorArray
+			|| !features.DescriptorBuffer.descriptorBuffer || !features.DescriptorBuffer.descriptorBufferPushDescriptors
+			|| !features.BufferAddress.bufferDeviceAddress)
 			return { GpuFitness::Status::FeaturesInsufficient };
 
 		// Check if surface has any present modes
@@ -316,12 +339,12 @@ namespace ZE::GFX::API::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -332,12 +355,12 @@ namespace ZE::GFX::API::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -510,7 +533,8 @@ namespace ZE::GFX::API::VK
 		if (deviceCount == 0)
 			throw ZE_CMP_EXCEPT("Current system have no avaiable GPUs!");
 
-		VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT, nullptr };
+		VkPhysicalDeviceDescriptorBufferPropertiesEXT descBufferProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT, nullptr };
+		VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT, &descBufferProperties };
 		VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, &conservativeRasterProperties };
 		QueueFamilyInfo familyInfo = {};
 		// Check for support of presentation on given queue
@@ -522,7 +546,7 @@ namespace ZE::GFX::API::VK
 			ZE_VK_THROW_NOSUCC(vkEnumeratePhysicalDevices(instance, &deviceCount, &physicalDevice));
 			vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
 
-			const GpuFitness fit = CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo);
+			const GpuFitness fit = descBufferProperties.bufferlessPushDescriptors ? CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo) : GpuFitness{ GpuFitness::Status::FeaturesInsufficient };
 			if (fit.Status != GpuFitness::Status::Good)
 			{
 				switch (fit.Status)
@@ -555,12 +579,13 @@ namespace ZE::GFX::API::VK
 			std::multimap<U16, std::pair<VkPhysicalDevice, QueueFamilyInfo>> deviceRank;
 			for (VkPhysicalDevice dev : devices)
 			{
-				if (CheckGpuFitness(physicalDevice, testSurfaceInfo, requiredExt, features, familyInfo).Status != GpuFitness::Status::Good)
+				if (CheckGpuFitness(dev, testSurfaceInfo, requiredExt, features, familyInfo).Status != GpuFitness::Status::Good)
 					continue;
 
 				U16 rank = 0;
-				VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, nullptr };
 				vkGetPhysicalDeviceProperties2(dev, &properties);
+				if (!descBufferProperties.bufferlessPushDescriptors)
+					continue;
 				switch (properties.properties.deviceType)
 				{
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
@@ -612,8 +637,8 @@ namespace ZE::GFX::API::VK
 				throw ZE_CMP_EXCEPT("None of the GPUs support required Vulkan features!");
 
 			// Get one with highest score
-			physicalDevice = deviceRank.end()->second.first;
-			familyInfo = deviceRank.end()->second.second;
+			physicalDevice = deviceRank.rbegin()->second.first;
+			familyInfo = deviceRank.rbegin()->second.second;
 
 			vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
 			vkGetPhysicalDeviceFeatures2(physicalDevice, &features.Features);
@@ -627,7 +652,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+				ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
@@ -638,6 +663,7 @@ namespace ZE::GFX::API::VK
 		computeQueueIndex = familyInfo.Compute;
 		copyQueueIndex = familyInfo.Copy;
 		limits = properties.properties.limits;
+		descBufferAlignment = descBufferProperties.descriptorBufferOffsetAlignment;
 		conservativeRasterOverestimateSize = conservativeRasterProperties.primitiveOverestimationSize;
 		SetIntegratedGPU(properties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
 		SetPresentFromComputeSupport(familyInfo.PresentFromCompute);
@@ -676,7 +702,10 @@ namespace ZE::GFX::API::VK
 		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &subgroupControl };
 
 		RequiredExtensionFeatures requiredFeatures;
-		requiredFeatures.ImagelessFramebuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, &memoryModel };
+		requiredFeatures.BufferAddress = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, &memoryModel };
+		requiredFeatures.DescriptorBuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT, &requiredFeatures.BufferAddress };
+		requiredFeatures.DescriptorIndexing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, &requiredFeatures.DescriptorBuffer };
+		requiredFeatures.ImagelessFramebuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, &requiredFeatures.DescriptorIndexing };
 		requiredFeatures.DynamicState = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, &requiredFeatures.ImagelessFramebuffer };
 		requiredFeatures.PrimitiveRestart = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT, &requiredFeatures.DynamicState };
 		requiredFeatures.Multiview = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, &requiredFeatures.PrimitiveRestart };
@@ -691,7 +720,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+				ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		FindPhysicalDevice(enabledExtensions, window, requiredFeatures);
@@ -741,6 +770,10 @@ namespace ZE::GFX::API::VK
 		SetMultiviewGeometryShaderSupport(requiredFeatures.Multiview.multiviewGeometryShader);
 		SetMultiviewTesselationSupport(requiredFeatures.Multiview.multiviewTessellationShader);
 		SetPatchListIndexRestartSupport(requiredFeatures.PrimitiveRestart.primitiveTopologyPatchListRestart);
+		SetDescriptorBufferImageLayoutIngored(requiredFeatures.DescriptorBuffer.descriptorBufferImageLayoutIgnored);
+		SetDescriptorBufferCaptureReplaySupported(requiredFeatures.DescriptorBuffer.descriptorBufferCaptureReplay);
+		SetBufferCaptureReplaySupported(requiredFeatures.BufferAddress.bufferDeviceAddressCaptureReplay);
+		SetBufferAddressMultiDeviceSupported(requiredFeatures.BufferAddress.bufferDeviceAddressMultiDevice);
 
 		// Setup known features
 		requiredFeatures.Features.features.independentBlend = VK_FALSE;
@@ -765,9 +798,15 @@ namespace ZE::GFX::API::VK
 		}
 
 		// Create logic device
+		VkDeviceGroupDeviceCreateInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+		deviceGroupInfo.pNext = &requiredFeatures.Features;
+		deviceGroupInfo.physicalDeviceCount = 1;
+		deviceGroupInfo.pPhysicalDevices = &physicalDevice;
+
 		VkDeviceCreateInfo deviceInfo;
 		deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		deviceInfo.pNext = &requiredFeatures.Features;
+		deviceInfo.pNext = &deviceGroupInfo;
 		deviceInfo.flags = 0;
 		deviceInfo.queueCreateInfoCount = sizeof(queueInfos) / sizeof(VkDeviceQueueCreateInfo);
 		deviceInfo.pQueueCreateInfos = queueInfos;
@@ -1036,9 +1075,16 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
 		ZE_ASSERT(uploadInfo.InitData != nullptr, "Empty initial data!");
 
+		const U32 deviceIndex = 0;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceIndexCount = 1;
+		deviceGroupInfo.pDeviceIndices = &deviceIndex;
+
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		uploadInfo.Staging.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		uploadInfo.Staging.pNext = nullptr;
+		uploadInfo.Staging.pNext = &deviceGroupInfo;
 		ZE_VK_THROW_NOSUCC(vkCreateBuffer(device, &uploadInfo.CreateInfo, nullptr, &uploadInfo.Staging.buffer));
 		ZE_VK_SET_ID(device, uploadInfo.Staging.buffer, VK_OBJECT_TYPE_BUFFER,
 			"Staging buffer [size:" + std::to_string(uploadInfo.CreateInfo.size) + "]");
@@ -1046,7 +1092,14 @@ namespace ZE::GFX::API::VK
 		Allocation stagingAlloc = allocator.AllocBuffer(*this, uploadInfo.Staging.buffer, Allocation::Usage::StagingToGPU);
 		U8* mappedMemory = nullptr;
 		allocator.GetAllocInfo(stagingAlloc, uploadInfo.Staging.memoryOffset, uploadInfo.Staging.memory, &mappedMemory);
-		ZE_VK_THROW_NOSUCC(vkBindBufferMemory2(device, 2, &uploadInfo.Dest));
+
+		ZE_VK_EXCEPT_RESULT = vkBindBufferMemory2(device, 2, &uploadInfo.Dest);
+		uploadInfo.Staging.pNext = nullptr; // Clear pNext to avoid exposing current stack's data
+		if (ZE_VK_EXCEPT_RESULT != VK_SUCCESS)
+		{
+			ZE_BREAK();
+			throw ZE_VK_EXCEPT(ZE_VK_EXCEPT_RESULT);
+		}
 
 		ZE_ASSERT(mappedMemory != nullptr, "Staging buffer always should be accessible from CPU!");
 		memcpy(mappedMemory, uploadInfo.InitData, uploadInfo.CreateInfo.size);
@@ -1121,9 +1174,16 @@ namespace ZE::GFX::API::VK
 		stagingBufferInfo.queueFamilyIndexCount = 0;
 		stagingBufferInfo.pQueueFamilyIndices = nullptr;
 
+		const U32 deviceIndex = 0;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
+		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
+		deviceGroupInfo.pNext = nullptr;
+		deviceGroupInfo.deviceIndexCount = 1;
+		deviceGroupInfo.pDeviceIndices = &deviceIndex;
+
 		VkBindBufferMemoryInfo stagingBindInfo;
 		stagingBindInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		stagingBufferInfo.pNext = nullptr;
+		stagingBindInfo.pNext = &deviceGroupInfo;
 		ZE_VK_THROW_NOSUCC(vkCreateBuffer(device, &stagingBufferInfo, nullptr, &stagingBindInfo.buffer));
 		ZE_VK_SET_ID(device, stagingBindInfo.buffer, VK_OBJECT_TYPE_BUFFER,
 			"Staging update buffer [size:" + std::to_string(updateInfo.Bytes) + "]");
