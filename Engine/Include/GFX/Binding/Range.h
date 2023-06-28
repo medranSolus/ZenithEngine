@@ -35,6 +35,10 @@ namespace ZE::GFX::Binding
 	{
 		U32 Count;
 		U32 StartSlot;
+		// All range slots have to be consecutive in single Schema (ex. forbidden Schema with range slots: 0, 1, 3).
+		// Ignored when flags contain 'RangeFlag::BufferPackAppend' or 'RangeFlag::Constant' (they don't occupy range slots).
+		// When not using 'RangeFlag::BufferPack' current 'Range' will occupy next consecutive slots so next available range slot starts at "RangeSlot + Count".
+		U8 RangeSlot;
 		Resource::ShaderTypes Shaders;
 		RangeFlags Flags = 0;
 
