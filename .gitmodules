@@ -31,3 +31,6 @@
 [submodule "External/HarfBuzz"]
 	path = External/HarfBuzz
 	url = https://github.com/harfbuzz/harfbuzz
+[submodule "External/RenderPipelineShaders"]
+	path = External/RenderPipelineShaders
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders.git

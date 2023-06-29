@@ -21,6 +21,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - [FreeType](https://gitlab.freedesktop.org/freetype/freetype) - [FREETYPE LICENSES](Doc/License/ThirdParty/FreeType.txt)
  - [HarfBuzz](https://github.com/harfbuzz/harfbuzz) - [Old MIT license](Doc/License/ThirdParty/HarfBuzz.txt)
  - [libpng](https://github.com/glennrp/libpng) - [PNG Reference Library License](Doc/License/ThirdParty/libpng.txt)
+ - [Render Pipeline Shaders](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders) - [AMD Internal Evaluation License](Doc/License/ThirdParty/RenderPipelineShaders.txt)
  - [volk](https://github.com/zeux/volk) - [MIT License](Doc/License/ThirdParty/volk.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
  - [AgilitySDK 1.610.4](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
