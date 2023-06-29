@@ -8,7 +8,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
 
 **Requirements:**
  - Windows SDK 10.0.20348.0
- - Vulkan SDK 1.3.246.1
+ - Vulkan SDK 1.3.250.0
  - CMake 3.22
 
 **External libraries:**
