@@ -13,6 +13,8 @@ namespace ZE::GFX::API::DX11
 	{
 #if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;
+#endif
+#if _ZE_GFX_MARKERS
 		DX::ComPtr<ID3DUserDefinedAnnotation> tagManager;
 #endif
 		DX::ComPtr<IDevice> device;

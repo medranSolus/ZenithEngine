@@ -38,7 +38,15 @@ if(NOT ${SIZEOF_VOID_PTR} STREQUAL "8")
 endif()
 
 # Check current configuration
-if(NOT (${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE} OR ${ZE_BUILD_RELEASE}))
+if(${ZE_BUILD_DEBUG})
+	set(ZE_EXTERNAL_BUILD_TYPE "Debug")
+	set(ZE_EXTERNAL_BUILD_DEBUG TRUE)
+	set(ZE_EXTERNAL_BUILD_RELEASE FALSE)
+elseif(${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE} OR ${ZE_BUILD_RELEASE})
+	set(ZE_EXTERNAL_BUILD_TYPE "Release")
+	set(ZE_EXTERNAL_BUILD_DEBUG FALSE)
+	set(ZE_EXTERNAL_BUILD_RELEASE TRUE)
+else()
 	message(FATAL_ERROR "Unsupported build type [${CMAKE_BUILD_TYPE}]!")
 endif()
 if(NOT (${ZE_PLATFORM_WINDOWS}))
@@ -162,7 +170,7 @@ endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # Inject debug suffix if library use it
-if(${ZE_BUILD_DEBUG})
+if(${ZE_EXTERNAL_BUILD_DEBUG})
 	if(${ZE_MODEL_LOADING})
 		set(ASSIMP_TARGET "${ASSIMP_TARGET}d")
 	endif()
@@ -270,8 +278,11 @@ add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
-if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT})
-	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi /Od")
+if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
+	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
+	if(NOT ${ZE_BUILD_PROFILE})
+		set(SHADER_FLAGS "${SHADER_FLAGS} /Od")
+	endif()
 endif()
 
 
