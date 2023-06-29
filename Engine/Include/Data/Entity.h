@@ -9,7 +9,7 @@ namespace ZE
 	typedef entt::entity EID;
 
 	// Identifier of parent for given entity
-	typedef EID ParentID;
+	struct ParentID { EID ID; };
 
 	// List of children for given entity
 	struct Children
