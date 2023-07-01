@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
-		D3D11_BUFFER_DESC bufferDesc;
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = BLOCK_SIZE;
 		bufferDesc.StructureByteStride = 0;
 
-		DX::ComPtr<IBuffer> buffer;
+		DX::ComPtr<IBuffer> buffer = nullptr;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &buffer));
 		ZE_DX_SET_ID(buffer, "DynamicCBuffer_" + std::to_string(blocks.size()));
 		blocks.emplace_back(std::move(buffer), Data::Library<U32, U32>{});

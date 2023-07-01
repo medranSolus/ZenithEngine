@@ -29,7 +29,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 
 	void FrameBuffer::SetViewport(CommandList& cl, RID rid) const noexcept
 	{
-		D3D11_VIEWPORT viewport;
+		D3D11_VIEWPORT viewport = {};
 		SetupViewport(viewport, rid);
 		cl.GetContext()->RSSetViewports(1, &viewport);
 	}
@@ -53,7 +53,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		// Create textures
 		std::vector<ResourceInfo> resourcesInfo;
 		resourcesInfo.reserve(resourceCount - 1);
-		D3D11_TEXTURE2D_DESC1 texDesc;
+		D3D11_TEXTURE2D_DESC1 texDesc = {};
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
 		texDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -145,7 +145,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 				}
 			}
 
-			DX::ComPtr<ITexture2D> texture;
+			DX::ComPtr<ITexture2D> texture = nullptr;
 			ZE_DX_THROW_FAILED(device->CreateTexture2D1(&texDesc, nullptr, &texture));
 			ZE_DX_THROW_FAILED(texture.As(&resources[i].Resource));
 
@@ -172,7 +172,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		{
 			if (info.IsRTV())
 			{
-				D3D11_RENDER_TARGET_VIEW_DESC1 rtvDesc;
+				D3D11_RENDER_TARGET_VIEW_DESC1 rtvDesc = {};
 				rtvDesc.Format = info.Desc.Format;
 				if (info.Desc.ArraySize > 1)
 				{
@@ -209,7 +209,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			}
 			else if (info.IsDSV())
 			{
-				D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+				D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 				dsvDesc.Format = DX::ConvertDepthFormatToDSV(info.Desc.Format);
 				dsvDesc.Flags = 0;
 				if (info.Desc.ArraySize > 1)
@@ -245,7 +245,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			}
 			if (info.IsUAV())
 			{
-				D3D11_UNORDERED_ACCESS_VIEW_DESC1 uavDesc;
+				D3D11_UNORDERED_ACCESS_VIEW_DESC1 uavDesc = {};
 				uavDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
 				if (info.Desc.ArraySize > 1)
 				{
@@ -283,7 +283,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			}
 			if (info.IsSRV())
 			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc;
+				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
 				srvDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
 				if (info.IsCube())
 				{

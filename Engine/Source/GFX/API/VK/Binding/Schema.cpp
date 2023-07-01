@@ -22,13 +22,8 @@ namespace ZE::GFX::API::VK::Binding
 		}
 		bindings = new Binding[count];
 
-		VkDescriptorSetLayoutBindingFlagsCreateInfo descLayoutFlags;
-		descLayoutFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-		descLayoutFlags.pNext = nullptr;
-
-		VkDescriptorSetLayoutCreateInfo descLayoutInfo;
-		descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		descLayoutInfo.pNext = &descLayoutFlags;
+		VkDescriptorSetLayoutBindingFlagsCreateInfo descLayoutFlags = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO, nullptr };
+		VkDescriptorSetLayoutCreateInfo descLayoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, &descLayoutFlags };
 		descLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
 		std::vector<VkDescriptorBindingFlags> currentFlags;
@@ -70,7 +65,7 @@ namespace ZE::GFX::API::VK::Binding
 			}
 			else
 			{
-				VkDescriptorSetLayoutBinding binding;
+				VkDescriptorSetLayoutBinding binding = {};
 				binding.binding = entry.StartSlot;
 
 				if (entry.Flags & GFX::Binding::RangeFlag::SRV)
@@ -149,7 +144,7 @@ namespace ZE::GFX::API::VK::Binding
 		samplersCount = static_cast<U32>(desc.Samplers.size());
 		if (samplersCount)
 		{
-			VkDescriptorSetLayoutBinding samplerBindings;
+			VkDescriptorSetLayoutBinding samplerBindings = {};
 			samplerBindings.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 			samplerBindings.descriptorCount = 1;
 			samplerBindings.stageFlags = VK_SHADER_STAGE_ALL;
@@ -158,9 +153,7 @@ namespace ZE::GFX::API::VK::Binding
 			descLayoutInfo.bindingCount = 1;
 			descLayoutInfo.pBindings = &samplerBindings;
 
-			VkSamplerCreateInfo samplerInfo;
-			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-			samplerInfo.pNext = nullptr;
+			VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, nullptr };
 			samplerInfo.flags = 0;
 			samplerInfo.compareEnable = VK_TRUE;
 			samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -199,9 +192,7 @@ namespace ZE::GFX::API::VK::Binding
 		}
 
 		// Create final layout
-		VkPipelineLayoutCreateInfo layoutInfo;
-		layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		layoutInfo.pNext = nullptr;
+		VkPipelineLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr };
 		layoutInfo.flags = 0;
 		layoutInfo.setLayoutCount = static_cast<U32>(sets.size());
 		layoutInfo.pSetLayouts = sets.data();

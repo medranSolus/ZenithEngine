@@ -26,7 +26,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			auto& resInfo = resources[i];
-			D3D12_SHADER_RESOURCE_VIEW_DESC srv;
+			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
 			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			switch (tex.Type)
 			{
@@ -88,7 +88,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 					ZE_ASSERT(texDesc.first.DepthOrArraySize == 1, "Single texture cannot hold multiple surfaces!");
 					srv.Texture2D.MipLevels = texDesc.first.MipLevels;
 
-					D3D12_SUBRESOURCE_FOOTPRINT footprint;
+					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
 					footprint.Format = srv.Format;
 					footprint.Width = static_cast<U32>(texDesc.first.Width);
 					footprint.Height = texDesc.first.Height;
@@ -105,7 +105,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 				{
 					srv.Texture3D.MipLevels = texDesc.first.MipLevels;
 
-					D3D12_SUBRESOURCE_FOOTPRINT footprint;
+					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
 					footprint.Format = srv.Format;
 					footprint.Width = static_cast<U32>(texDesc.first.Width);
 					footprint.Height = texDesc.first.Height;
@@ -155,12 +155,12 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			// Create one big committed buffer and copy data into it
 			DX::ComPtr<IResource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
 			ZE_DX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
-			D3D12_TEXTURE_COPY_LOCATION copySource;
+			D3D12_TEXTURE_COPY_LOCATION copySource = {};
 			copySource.pResource = uploadRes.Get();
 			copySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 			U64 bufferOffset = 0;
 
-			D3D12_RANGE range = { 0 };
+			D3D12_RANGE range = {};
 			U8* uploadBuffer;
 			ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
 			// Copy all regions upload heap
@@ -170,7 +170,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 				if (tex.Surfaces.size())
 				{
 					U64 depthSlice = info.first / info.second.size();
-					D3D12_TEXTURE_COPY_LOCATION copyDest;
+					D3D12_TEXTURE_COPY_LOCATION copyDest = {};
 					copyDest.pResource = resources[i].Resource.Get();
 					copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 					copyDest.SubresourceIndex = 0;

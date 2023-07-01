@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11
 	{
 		ZE_DX_ENABLE(dev.Get().dx11);
 
-		D3D11_QUERY_DESC1 desc;
+		D3D11_QUERY_DESC1 desc = {};
 		desc.MiscFlags = 0;
 		desc.ContextType = D3D11_CONTEXT_TYPE_ALL;
 

@@ -78,7 +78,7 @@ namespace ZE::GFX::API::DX
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		DXGI_SWAP_CHAIN_DESC1 swapDesc;
+		DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
 		swapDesc.Width = 0; // Use window sizes
 		swapDesc.Height = 0;
 		swapDesc.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());

@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
-		D3D12_COMPUTE_PIPELINE_STATE_DESC desc;
+		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
 		desc.pRootSignature = binding.Get().dx12.GetSignature();
 		desc.CS.pShaderBytecode = shader.Get().dx12.GetBytecode()->GetBufferPointer();
 		desc.CS.BytecodeLength = shader.Get().dx12.GetBytecode()->GetBufferSize();

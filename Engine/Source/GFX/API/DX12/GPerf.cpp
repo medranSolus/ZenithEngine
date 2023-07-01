@@ -6,13 +6,13 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
 
-		D3D12_QUERY_HEAP_DESC desc;
+		D3D12_QUERY_HEAP_DESC desc = {};
 		desc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 		desc.Count = 2;
 		desc.NodeMask = 0;
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateQueryHeap(&desc, IID_PPV_ARGS(&queryHeap)));
 
-		D3D12_HEAP_PROPERTIES dataHeapDesc;
+		D3D12_HEAP_PROPERTIES dataHeapDesc = {};
 		dataHeapDesc.Type = D3D12_HEAP_TYPE_READBACK;
 		dataHeapDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		dataHeapDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;

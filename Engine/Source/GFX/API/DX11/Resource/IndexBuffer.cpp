@@ -9,7 +9,7 @@ namespace ZE::GFX::API::DX11::Resource
 			"Only 16 and 32 bit indices are supported for DirectX 11!");
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
-		D3D11_BUFFER_DESC bufferDesc;
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
@@ -17,7 +17,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = static_cast<UINT>(count * data.IndexSize);
 		bufferDesc.StructureByteStride = data.IndexSize;
 
-		D3D11_SUBRESOURCE_DATA resData;
+		D3D11_SUBRESOURCE_DATA resData = {};
 		resData.pSysMem = data.Indices;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;

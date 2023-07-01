@@ -81,14 +81,10 @@ namespace ZE::GFX::API::VK
 		if (swapChainFormat != Settings::GetBackbufferFormat())
 			Settings::SetBackbufferFormat(swapChainFormat);
 
-		VkDeviceGroupSwapchainCreateInfoKHR deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR;
-		deviceGroupInfo.pNext = nullptr;
+		VkDeviceGroupSwapchainCreateInfoKHR deviceGroupInfo = { VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR, nullptr };
 		deviceGroupInfo.modes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
 
-		VkSwapchainCreateInfoKHR swapChainInfo;
-		swapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		swapChainInfo.pNext = &deviceGroupInfo;
+		VkSwapchainCreateInfoKHR swapChainInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, &deviceGroupInfo };
 		swapChainInfo.flags = 0;
 		swapChainInfo.surface = surface;
 		swapChainInfo.minImageCount = Settings::GetBackbufferCount();
@@ -118,10 +114,7 @@ namespace ZE::GFX::API::VK
 		ZE_VK_SET_ID(device, swapChain, VK_OBJECT_TYPE_SWAPCHAIN_KHR, "main_swapchain");
 
 		// Create fence to wait for new image to be available and semaphore for completion of rendering
-		VkFenceCreateInfo fenceInfo;
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceInfo.pNext = nullptr;
-		fenceInfo.flags = 0;
+		const VkFenceCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
 		ZE_VK_THROW_NOSUCC(vkCreateFence(device, &fenceInfo, nullptr, &imageAquireFence));
 		ZE_VK_SET_ID(device, imageAquireFence, VK_OBJECT_TYPE_FENCE, "swapchain_fence");
 
@@ -134,9 +127,7 @@ namespace ZE::GFX::API::VK
 		images = new VkImage[imageCount];
 		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images);
 
-		VkImageViewCreateInfo viewInfo;
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
+		VkImageViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr };
 		viewInfo.flags = 0;
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		viewInfo.format = swapChainInfo.imageFormat;
@@ -167,9 +158,7 @@ namespace ZE::GFX::API::VK
 		ZE_VK_ENABLE();
 
 		// Get new swapChain image
-		VkAcquireNextImageInfoKHR acquireInfo;
-		acquireInfo.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
-		acquireInfo.pNext = nullptr;
+		VkAcquireNextImageInfoKHR acquireInfo = { VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR, nullptr };
 		acquireInfo.swapchain = swapChain;
 		acquireInfo.timeout = UINT64_MAX;
 		acquireInfo.semaphore = VK_NULL_HANDLE;
@@ -185,16 +174,12 @@ namespace ZE::GFX::API::VK
 
 		// Present to new image
 		const U32 mask = 1;
-		VkDeviceGroupPresentInfoKHR deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR;
-		deviceGroupInfo.pNext = nullptr;
+		VkDeviceGroupPresentInfoKHR deviceGroupInfo = { VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR, nullptr };
 		deviceGroupInfo.swapchainCount = 1;
 		deviceGroupInfo.pDeviceMasks = &mask;
 		deviceGroupInfo.mode = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
 
-		VkPresentInfoKHR presentInfo;
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.pNext = &deviceGroupInfo;
+		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, &deviceGroupInfo };
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &presentSemaphore;
 		presentInfo.swapchainCount = 1;
@@ -210,9 +195,7 @@ namespace ZE::GFX::API::VK
 		auto& list = cl.Get().vk;
 
 		// Transition backbuffer to presentable layout
-		VkImageMemoryBarrier2 presentBarrier;
-		presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-		presentBarrier.pNext = nullptr;
+		VkImageMemoryBarrier2 presentBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2, nullptr };
 		presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT | (device.CanPresentFromCompute() ? VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT : 0)
 			| VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
 		presentBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
@@ -224,9 +207,7 @@ namespace ZE::GFX::API::VK
 		presentBarrier.image = images[currentImage];
 		presentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
-		VkDependencyInfo depInfo;
-		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		depInfo.pNext = nullptr;
+		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
 		depInfo.dependencyFlags = 0;
 		depInfo.memoryBarrierCount = 0;
 		depInfo.pMemoryBarriers = nullptr;
@@ -277,24 +258,18 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
-		VkCommandBufferSubmitInfo bufferInfo;
-		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-		bufferInfo.pNext = nullptr;
+		VkCommandBufferSubmitInfo bufferInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
 		bufferInfo.commandBuffer = cl.GetBuffer();
 		bufferInfo.deviceMask = 0;
 
 		// Setup semaphore for present operation
-		VkSemaphoreSubmitInfo signalInfo;
-		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		signalInfo.pNext = nullptr;
+		VkSemaphoreSubmitInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr };
 		signalInfo.semaphore = presentSemaphore;
 		signalInfo.value = 0;
 		signalInfo.stageMask = VK_PIPELINE_STAGE_2_NONE;
 		signalInfo.deviceIndex = 0;
 
-		VkSubmitInfo2 submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.pNext = nullptr;
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 0;
 		submitInfo.pWaitSemaphoreInfos = nullptr;

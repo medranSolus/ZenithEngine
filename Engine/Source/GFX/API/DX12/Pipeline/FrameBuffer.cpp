@@ -170,8 +170,8 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 	void FrameBuffer::SetViewport(CommandList& cl, RID rid) const noexcept
 	{
-		D3D12_VIEWPORT viewport;
-		D3D12_RECT scissorRect;
+		D3D12_VIEWPORT viewport = {};
+		D3D12_RECT scissorRect = {};
 		SetupViewport(viewport, scissorRect, rid);
 		cl.GetList()->RSSetViewports(1, &viewport);
 		cl.GetList()->RSSetScissorRects(1, &scissorRect);
@@ -195,7 +195,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		bool uavMipsPresent = false;
 
 		// Get sizes in chunks for resources and their descriptors
-		D3D12_RESOURCE_DESC resDesc;
+		D3D12_RESOURCE_DESC resDesc = {};
 		resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		resDesc.SampleDesc.Count = 1;
@@ -278,7 +278,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			}
 
 			resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
-			D3D12_CLEAR_VALUE clearDesc;
+			D3D12_CLEAR_VALUE clearDesc = {};
 			clearDesc.Format = resDesc.Format;
 			if (Utils::IsDepthStencilFormat(res.Format))
 			{
@@ -328,7 +328,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		U64 rt_dsCount;
 		U32 maxChunks = 0;
 		std::vector<RID> memory;
-		D3D12_HEAP_DESC heapDesc;
+		D3D12_HEAP_DESC heapDesc = {};
 		heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
@@ -417,7 +417,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 						{
 							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 								GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-							D3D12_RESOURCE_BARRIER barrier;
+							D3D12_RESOURCE_BARRIER barrier = {};
 							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 							barrier.Transition.StateBefore = GetResourceState(lastState);
@@ -496,7 +496,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				{
 					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 						GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-					D3D12_RESOURCE_BARRIER barrier;
+					D3D12_RESOURCE_BARRIER barrier = {};
 					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 					barrier.Transition.StateBefore = GetResourceState(lastState);
@@ -551,7 +551,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 
 		// Create descriptor heaps
-		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc;
+		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 		descHeapDesc.NodeMask = 0;
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -580,7 +580,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		{
 			if (res.IsRTV())
 			{
-				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 				rtvDesc.Format = res.Desc.Format;
 				if (res.Desc.DepthOrArraySize > 1)
 				{
@@ -621,7 +621,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			}
 			else if (res.IsDSV())
 			{
-				D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+				D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 				dsvDesc.Format = res.Desc.Format;
 				dsvDesc.Flags = D3D12_DSV_FLAG_NONE; // Maybe check if format is DepthOnly so Stencil would be set to read only
 				if (res.Desc.DepthOrArraySize > 1)
@@ -663,7 +663,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				rtvDsv[i].ptr = UINT64_MAX;
 			if (res.IsUAV())
 			{
-				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
 				if (res.Desc.DepthOrArraySize > 1)
 				{
@@ -715,7 +715,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				uav[i - 1].first.ptr = uav[i - 1].second.ptr = UINT64_MAX;
 			if (res.IsSRV())
 			{
-				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 				srvDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				if (res.IsCube())
@@ -781,7 +781,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		barrierCount += wrappingTransitions.size();
 		initTransitions.Barriers = new D3D12_RESOURCE_BARRIER[barrierCount];
 		initTransitions.BarrierCount = 0;
-		D3D12_RESOURCE_BARRIER barrier;
+		D3D12_RESOURCE_BARRIER barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		// Compute barriers before first render passes
@@ -1064,7 +1064,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(uav[rid - 1].first.ptr != -1, "Current resource is not suitable for being unnordered access!");
 
-		D3D12_RESOURCE_BARRIER barrier;
+		D3D12_RESOURCE_BARRIER barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		barrier.UAV.pResource = resources[rid].Resource.Get();
@@ -1100,7 +1100,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			before == GFX::Resource::StateShaderResourceNonPS && srv[rid].ptr != -1,
 			"Current resource is not suitable for being shader resource!");
 
-		D3D12_RESOURCE_BARRIER barrier;
+		D3D12_RESOURCE_BARRIER barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		barrier.Transition.pResource = resources[rid].Resource.Get();
@@ -1209,7 +1209,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			switch (transitionSyncs[level])
 			{
 			case GFX::Pipeline::SyncType::AllToMain:
-				device.WaitMainFromCopy(device.SetCopyFence());
+				device.WaitMainFromCopy(device.SetCopyFence()); [[fallthrough]];
 			case GFX::Pipeline::SyncType::ComputeToMain:
 			{
 				device.WaitMainFromCompute(device.SetComputeFence());
@@ -1221,7 +1221,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 			}
 			default:
-				ZE_FAIL("Incorret enum value for enter sync context!");
+				ZE_FAIL("Incorret enum value for enter sync context!"); [[fallthrough]];
 			case GFX::Pipeline::SyncType::None:
 				break;
 			}
@@ -1254,7 +1254,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 			}
 			default:
-				ZE_FAIL("Incorret enum value for exit sync context!");
+				ZE_FAIL("Incorret enum value for exit sync context!"); [[fallthrough]];
 			case GFX::Pipeline::SyncType::None:
 				break;
 			}

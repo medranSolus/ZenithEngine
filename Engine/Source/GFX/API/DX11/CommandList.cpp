@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX11
 	{
 		ZE_DX_ENABLE(dev.Get().dx11);
 
-		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
+		DX::ComPtr<ID3D11DeviceContext3> tempCtx = nullptr;
 		dev.Get().dx11.GetDevice()->GetImmediateContext3(&tempCtx);
 		deferred = false;
 
@@ -22,7 +22,7 @@ namespace ZE::GFX::API::DX11
 	{
 		ZE_DX_ENABLE(dev.Get().dx11);
 
-		DX::ComPtr<ID3D11DeviceContext3> tempCtx;
+		DX::ComPtr<ID3D11DeviceContext3> tempCtx = nullptr;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateDeferredContext3(0, &tempCtx));
 		deferred = true;
 

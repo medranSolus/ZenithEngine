@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
-		D3D11_BUFFER_DESC bufferDesc;
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		if (dynamic)
 		{
@@ -24,23 +24,21 @@ namespace ZE::GFX::API::DX11::Resource
 
 		// If aligned size is greater than actual data then create new region
 		const void* data = values;
+		std::unique_ptr<U8[]> buffData = nullptr;
 		if (bufferDesc.ByteWidth > bytes)
 		{
-			U8* buffData = new U8[bufferDesc.ByteWidth];
-			memcpy(buffData, values, bytes);
-			data = buffData;
+			buffData = std::make_unique<U8[]>(bufferDesc.ByteWidth);
+			memcpy(buffData.get(), values, bytes);
+			data = buffData.get();
 		}
 
-		D3D11_SUBRESOURCE_DATA resData;
+		D3D11_SUBRESOURCE_DATA resData = {};
 		resData.pSysMem = data;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, values ? &resData : nullptr, &buffer));
 		ZE_DX_SET_ID(buffer, "CBuffer");
-
-		if (bufferDesc.ByteWidth > bytes)
-			delete[] reinterpret_cast<const U8*>(data);
 	}
 
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
@@ -90,7 +88,7 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
-		D3D11_BUFFER_DESC bufferDesc;
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bufferDesc.Usage = D3D11_USAGE_STAGING;
 		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -98,7 +96,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = Math::AlignUp(bytes, 16U);
 		bufferDesc.StructureByteStride = 0;
 
-		DX::ComPtr<IBuffer> stagingBuffer;
+		DX::ComPtr<IBuffer> stagingBuffer = nullptr;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &stagingBuffer));
 		ZE_DX_SET_ID(buffer, "CBuffer_Staging");
 

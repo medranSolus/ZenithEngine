@@ -10,7 +10,7 @@ namespace ZE::GFX::API::DX12
 		Device& dev = *reinterpret_cast<Device*>(userData);
 		ZE_DX_ENABLE_ID(dev);
 
-		D3D12_HEAP_DESC desc;
+		D3D12_HEAP_DESC desc = {};
 		desc.SizeInBytes = size;
 		desc.Properties.Type = GetHeapType(flags);
 		desc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -78,14 +78,14 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_DX_ENABLE(dev);
 
-		D3D12_HEAP_PROPERTIES heapProp;
+		D3D12_HEAP_PROPERTIES heapProp = {};
 		heapProp.Type = GetHeapType(flags);
 		heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		heapProp.CreationNodeMask = 0;
 		heapProp.VisibleNodeMask = 0;
 
-		DX::ComPtr<IResource> res;
+		DX::ComPtr<IResource> res = nullptr;
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommittedResource2(&heapProp, GetHeapFlags(flags | HeapFlag::CommittedAlloc),
 			&desc, GetResourceState(flags), nullptr, nullptr, IID_PPV_ARGS(&res)));
 		return res;
@@ -96,7 +96,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_DX_ENABLE(dev);
 
-		DX::ComPtr<IResource> res;
+		DX::ComPtr<IResource> res = nullptr;
 		ZE_DX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource1(heap, offset,
 			&desc, GetResourceState(flags), nullptr, IID_PPV_ARGS(&res)));
 		return res;

@@ -6,14 +6,14 @@ namespace ZE::GFX::API::DX12::Binding
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
 
-		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc;
+		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc = {};
 		signatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
 		signatureDesc.Desc_1_1.NumStaticSamplers = static_cast<U32>(desc.Samplers.size());
-		D3D12_STATIC_SAMPLER_DESC* staticSamplers = nullptr;
+		std::unique_ptr < D3D12_STATIC_SAMPLER_DESC[] > staticSamplers = nullptr;
 		if (signatureDesc.Desc_1_1.NumStaticSamplers)
 		{
-			staticSamplers = new D3D12_STATIC_SAMPLER_DESC[signatureDesc.Desc_1_1.NumStaticSamplers];
-			signatureDesc.Desc_1_1.pStaticSamplers = staticSamplers;
+			staticSamplers = std::make_unique<D3D12_STATIC_SAMPLER_DESC[]>(signatureDesc.Desc_1_1.NumStaticSamplers);
+			signatureDesc.Desc_1_1.pStaticSamplers = staticSamplers.get();
 			// Load data for samplers
 			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
 			{
@@ -48,11 +48,11 @@ namespace ZE::GFX::API::DX12::Binding
 		}
 		count = signatureDesc.Desc_1_1.NumParameters;
 		bindings = new BindType[count];
-		D3D12_ROOT_PARAMETER1* parameters = new D3D12_ROOT_PARAMETER1[count];
-		signatureDesc.Desc_1_1.pParameters = parameters;
+		auto parameters = std::make_unique<D3D12_ROOT_PARAMETER1[]>(count);
+		signatureDesc.Desc_1_1.pParameters = parameters.get();
 
-		// Location | Size | Desc
-		std::vector<std::pair<U32, std::pair<U32, D3D12_DESCRIPTOR_RANGE1*>>> tables;
+		// Location | Descs
+		std::vector<std::pair<U32, std::vector<D3D12_DESCRIPTOR_RANGE1>>> tables;
 		ShaderPresenceMask shaderPresence;
 		ShaderPresenceMask shaderPresenceConstants;
 		// Fill signature parameters
@@ -65,10 +65,7 @@ namespace ZE::GFX::API::DX12::Binding
 				ZE_ASSERT(entry.StartSlot + entry.Count < D3D12_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
 					"Too much shader slots!");
 
-				tables.back().second.second = reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(realloc(tables.back().second.second,
-					++tables.back().second.first * sizeof(D3D12_DESCRIPTOR_RANGE1)));
-
-				auto& range = tables.back().second.second[tables.back().second.first - 1];
+				auto& range = tables.back().second.emplace_back();
 				if (entry.Flags & GFX::Binding::RangeFlag::SRV)
 					range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 				else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
@@ -107,10 +104,10 @@ namespace ZE::GFX::API::DX12::Binding
 						"Too much shader slots!");
 
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-					tables.emplace_back(i, std::make_pair(1U, reinterpret_cast<D3D12_DESCRIPTOR_RANGE1*>(malloc(sizeof(D3D12_DESCRIPTOR_RANGE1)))));
+					tables.emplace_back(i, std::vector<D3D12_DESCRIPTOR_RANGE1>{ 1 });
 					bindings[i++] = BindType::Table;
 
-					auto& range = tables.back().second.second[0];
+					auto& range = tables.back().second.front();
 					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
 						range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 					else if (entry.Flags & GFX::Binding::RangeFlag::UAV)
@@ -175,8 +172,8 @@ namespace ZE::GFX::API::DX12::Binding
 		{
 			ZE_ASSERT(parameters[table.first].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
 				"Trying to setup ranges for non descriptor table type!");
-			parameters[table.first].DescriptorTable.NumDescriptorRanges = table.second.first;
-			parameters[table.first].DescriptorTable.pDescriptorRanges = table.second.second;
+			parameters[table.first].DescriptorTable.NumDescriptorRanges = static_cast<UINT>(table.second.size());
+			parameters[table.first].DescriptorTable.pDescriptorRanges = table.second.data();
 		}
 
 		signatureDesc.Desc_1_1.Flags =
@@ -220,19 +217,13 @@ namespace ZE::GFX::API::DX12::Binding
 		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = { D3D_ROOT_SIGNATURE_VERSION_1_1 };
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)));
 
-		DX::ComPtr<ID3DBlob> serializedSignature;
-		DX::ComPtr<ID3DBlob> errors;
+		DX::ComPtr<ID3DBlob> serializedSignature = nullptr;
+		DX::ComPtr<ID3DBlob> errors = nullptr;
 		ZE_DX_SET_DEBUG_WATCH();
 		ZE_WIN_EXCEPT_RESULT = D3D12SerializeVersionedRootSignature(&signatureDesc, &serializedSignature, &errors);
 		if (FAILED(ZE_WIN_EXCEPT_RESULT))
 			throw Exception::GenericException(__LINE__, __FILENAME__, reinterpret_cast<char*>(errors->GetBufferPointer()), "Root Signature Invalid Parameter");
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
 			serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature)));
-
-		for (auto& table : tables)
-			free(table.second.second);
-		delete[] parameters;
-		if (staticSamplers)
-			delete[] staticSamplers;
 	}
 }

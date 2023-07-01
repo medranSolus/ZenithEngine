@@ -18,7 +18,7 @@ namespace ZE::GFX::API::DX12
 		);
 
 		auto device = dev.Get().dx12.GetDevice();
-		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc;
+		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 		descHeapDesc.NodeMask = 0;
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -31,12 +31,12 @@ namespace ZE::GFX::API::DX12
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		auto srvHandle = dev.Get().dx12.AddStaticDescs(descHeapDesc.NumDescriptors);
 
-		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = rtvDesc.Format;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -46,7 +46,7 @@ namespace ZE::GFX::API::DX12
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 		for (U32 i = 0; i < descHeapDesc.NumDescriptors; ++i)
 		{
-			DX::ComPtr<IResource> buffer;
+			DX::ComPtr<IResource> buffer = nullptr;
 			ZE_DX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
 			rtvSrv[i].first = rtvHandle;

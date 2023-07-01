@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX11::Resource
 		auto device = dev.Get().dx11.GetDevice();
 		topology = DX::GetTopology(desc.Topology, desc.Ordering);
 
-		assert(desc.VS && "Vertex Shader is always required!");
+		ZE_ASSERT(desc.VS, "Vertex Shader is always required!");
 		ID3DBlob* bytecode = desc.VS->Get().dx11.GetBytecode();
 		ZE_DX_THROW_FAILED(device->CreateVertexShader(bytecode->GetBufferPointer(),
 			bytecode->GetBufferSize(), nullptr, &vertexShader));
@@ -16,7 +16,7 @@ namespace ZE::GFX::API::DX11::Resource
 
 		if (desc.InputLayout.size())
 		{
-			D3D11_INPUT_ELEMENT_DESC* elements = new D3D11_INPUT_ELEMENT_DESC[desc.InputLayout.size()];
+			auto elements = std::make_unique<D3D11_INPUT_ELEMENT_DESC[]>(desc.InputLayout.size());
 			for (U32 i = 0; i < desc.InputLayout.size(); ++i)
 			{
 				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
@@ -30,10 +30,9 @@ namespace ZE::GFX::API::DX11::Resource
 				element.InstanceDataStepRate = 0;
 			}
 
-			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements, static_cast<UINT>(desc.InputLayout.size()),
+			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements.get(), static_cast<UINT>(desc.InputLayout.size()),
 				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
 			ZE_DX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
-			delete[] elements;
 		}
 
 		if (desc.DS)

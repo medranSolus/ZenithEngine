@@ -39,14 +39,12 @@ namespace ZE::GFX::API::VK::Resource
 		}
 
 		// Setup vertex input
-		VkVertexInputBindingDescription vertexBinding;
+		VkVertexInputBindingDescription vertexBinding = {};
 		vertexBinding.binding = 0;
 		vertexBinding.stride = 0;
 		vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.pNext = nullptr;
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr };
 		vertexInputInfo.flags = 0;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
 		vertexInputInfo.pVertexBindingDescriptions = &vertexBinding;
@@ -71,29 +69,21 @@ namespace ZE::GFX::API::VK::Resource
 			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
 		// Setup input assembly
-		VkPipelineInputAssemblyStateCreateInfo inputInfo;
-		inputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputInfo.pNext = nullptr;
+		VkPipelineInputAssemblyStateCreateInfo inputInfo = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr };
 		inputInfo.flags = 0;
 		inputInfo.topology = GetTopologyType(desc.Topology);
 		inputInfo.primitiveRestartEnable = VK_TRUE;
 
 		// Setup tesselation
-		VkPipelineTessellationDomainOriginStateCreateInfo tessaltionOriginInfo;
-		tessaltionOriginInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
-		tessaltionOriginInfo.pNext = nullptr;
+		VkPipelineTessellationDomainOriginStateCreateInfo tessaltionOriginInfo = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, nullptr };
 		tessaltionOriginInfo.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
 
-		VkPipelineTessellationStateCreateInfo tessalationInfo;
-		tessalationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-		tessalationInfo.pNext = &tessaltionOriginInfo;
+		VkPipelineTessellationStateCreateInfo tessalationInfo = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, &tessaltionOriginInfo };
 		tessalationInfo.flags = 0;
 		tessalationInfo.patchControlPoints = GetPatchCount(desc.Ordering);
 
 		// Setup viewport information
-		VkPipelineViewportStateCreateInfo viewportStateInfo;
-		viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportStateInfo.pNext = nullptr;
+		VkPipelineViewportStateCreateInfo viewportStateInfo = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, nullptr };
 		viewportStateInfo.flags = 0;
 		viewportStateInfo.viewportCount = desc.RenderTargetsCount;
 		viewportStateInfo.pViewports = nullptr;
@@ -101,15 +91,11 @@ namespace ZE::GFX::API::VK::Resource
 		viewportStateInfo.pScissors = nullptr;
 
 		// Setup rasterizer
-		VkPipelineRasterizationDepthClipStateCreateInfoEXT depthClipInfo;
-		depthClipInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT;
-		depthClipInfo.pNext = nullptr;
+		VkPipelineRasterizationDepthClipStateCreateInfoEXT depthClipInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT, nullptr };
 		depthClipInfo.flags = 0;
 		depthClipInfo.depthClipEnable = desc.IsDepthClip();
 
-		VkPipelineRasterizationStateCreateInfo rasterInfo;
-		rasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterInfo.pNext = &depthClipInfo;
+		VkPipelineRasterizationStateCreateInfo rasterInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, &depthClipInfo };
 		rasterInfo.depthClampEnable = VK_TRUE;
 		rasterInfo.rasterizerDiscardEnable = VK_FALSE;
 		rasterInfo.polygonMode = desc.IsWireframe() ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
@@ -124,8 +110,7 @@ namespace ZE::GFX::API::VK::Resource
 		VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterInfo;
 		if (device.IsExtensionSupported(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME))
 		{
-			conservativeRasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
-			conservativeRasterInfo.pNext = nullptr;
+			conservativeRasterInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT, nullptr };
 			conservativeRasterInfo.flags = 0;
 			conservativeRasterInfo.conservativeRasterizationMode = desc.IsConservativeRaster() ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 			conservativeRasterInfo.extraPrimitiveOverestimationSize = device.GetConservativeRasterOverestimateSize();
@@ -135,17 +120,14 @@ namespace ZE::GFX::API::VK::Resource
 		VkPipelineRasterizationStateRasterizationOrderAMD rasterOrder;
 		if (device.IsExtensionSupported(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME))
 		{
-			rasterOrder.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD;
-			rasterOrder.pNext = depthClipInfo.pNext;
+			rasterOrder = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD, depthClipInfo.pNext };
 			rasterOrder.rasterizationOrder = desc.IsRelaxedRasterOrder() ? VK_RASTERIZATION_ORDER_RELAXED_AMD : VK_RASTERIZATION_ORDER_STRICT_AMD;
 			depthClipInfo.pNext = &rasterOrder;
 		}
 
 		// Setup sampling
 		const VkSampleMask sampleMask = UINT32_MAX;
-		VkPipelineMultisampleStateCreateInfo multisampleInfo;
-		multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampleInfo.pNext = nullptr;
+		VkPipelineMultisampleStateCreateInfo multisampleInfo = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, nullptr };
 		multisampleInfo.flags = 0;
 		multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		multisampleInfo.sampleShadingEnable = VK_FALSE;
@@ -157,8 +139,7 @@ namespace ZE::GFX::API::VK::Resource
 		VkPipelineCoverageModulationStateCreateInfoNV coverageModulationInfo;
 		if (device.IsExtensionSupported(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME))
 		{
-			coverageModulationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV;
-			coverageModulationInfo.pNext = nullptr;
+			coverageModulationInfo = { VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV, nullptr };
 			coverageModulationInfo.flags = 0;
 			coverageModulationInfo.coverageModulationMode = VK_COVERAGE_MODULATION_MODE_NONE_NV;
 			coverageModulationInfo.coverageModulationTableEnable = VK_FALSE;
@@ -168,9 +149,7 @@ namespace ZE::GFX::API::VK::Resource
 		}
 
 		// Setup depth stencil state
-		VkPipelineDepthStencilStateCreateInfo depthStencilStateInfo;
-		depthStencilStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencilStateInfo.pNext = nullptr;
+		VkPipelineDepthStencilStateCreateInfo depthStencilStateInfo = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, nullptr };
 		depthStencilStateInfo.flags = 0;
 		depthStencilStateInfo.depthTestEnable = VK_TRUE;
 		depthStencilStateInfo.depthWriteEnable = VK_FALSE;
@@ -230,7 +209,7 @@ namespace ZE::GFX::API::VK::Resource
 		}
 
 		// Setup blend state
-		VkPipelineColorBlendAttachmentState attachmentBlendState;
+		VkPipelineColorBlendAttachmentState attachmentBlendState = {};
 		attachmentBlendState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
 		attachmentBlendState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
 		attachmentBlendState.colorBlendOp = VK_BLEND_OP_ADD;
@@ -262,9 +241,7 @@ namespace ZE::GFX::API::VK::Resource
 		}
 		const std::vector<VkPipelineColorBlendAttachmentState> attachmentBlendStates(desc.RenderTargetsCount, attachmentBlendState);
 
-		VkPipelineColorBlendStateCreateInfo blendStateInfo;
-		blendStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		blendStateInfo.pNext = nullptr;
+		VkPipelineColorBlendStateCreateInfo blendStateInfo = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, nullptr };
 		blendStateInfo.flags = 0;
 		blendStateInfo.logicOpEnable = VK_FALSE;
 		blendStateInfo.logicOp = VK_LOGIC_OP_NO_OP;
@@ -278,21 +255,17 @@ namespace ZE::GFX::API::VK::Resource
 		{
 			VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, VK_DYNAMIC_STATE_STENCIL_REFERENCE
 		};
-		VkPipelineDynamicStateCreateInfo dynamicStateInfo;
-		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicStateInfo.pNext = nullptr;
+		VkPipelineDynamicStateCreateInfo dynamicStateInfo = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr };
 		dynamicStateInfo.flags = 0;
 		dynamicStateInfo.dynamicStateCount = sizeof(DYNAMIC_STATES) / sizeof(VkDynamicState);
 		dynamicStateInfo.pDynamicStates = DYNAMIC_STATES;
 
 		// Set output info
-		VkFormat rtFormats[8];
+		VkFormat rtFormats[8] = {};
 		for (U8 i = 0; i < desc.RenderTargetsCount; ++i)
 			rtFormats[i] = GetVkFormat(desc.FormatsRT[i]);
 
-		VkPipelineRenderingCreateInfo renderInfo;
-		renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-		renderInfo.pNext = nullptr;
+		VkPipelineRenderingCreateInfo renderInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, nullptr };
 		renderInfo.viewMask = (1U << desc.RenderTargetsCount) - 1;
 		renderInfo.colorAttachmentCount = desc.RenderTargetsCount;
 		renderInfo.pColorAttachmentFormats = rtFormats;
@@ -308,8 +281,7 @@ namespace ZE::GFX::API::VK::Resource
 		if (device.IsExtensionSupported(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)
 			|| device.IsExtensionSupported(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME))
 		{
-			sampleCountInfo.sType = VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD;
-			sampleCountInfo.pNext = nullptr;
+			sampleCountInfo = { VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD, nullptr };
 			sampleCountInfo.colorAttachmentCount = desc.RenderTargetsCount;
 			sampleCountInfo.pColorAttachmentSamples = SAMPLE_COUNTS;
 			sampleCountInfo.depthStencilAttachmentSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -325,9 +297,7 @@ namespace ZE::GFX::API::VK::Resource
 			renderInfo.pNext = &fragmentTestInfo;
 
 		// Create final pipeline (check if any of the states is needed for sure when creating, otherwise leave to nullptr)
-		VkGraphicsPipelineCreateInfo pipelineInfo;
-		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.pNext = &renderInfo;
+		VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, &renderInfo };
 		pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 		pipelineInfo.stageCount = static_cast<U32>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();

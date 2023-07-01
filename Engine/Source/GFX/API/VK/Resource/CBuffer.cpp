@@ -8,10 +8,9 @@ namespace ZE::GFX::API::VK::Resource
 		ZE_VK_ENABLE_ID();
 		lastUsedQueue = dev.Get().vk.GetGfxQueueIndex();
 
-		UploadInfoBuffer uploadInfo;
+		UploadInfoBuffer uploadInfo = {};
 		uploadInfo.InitData = values;
-		uploadInfo.CreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		uploadInfo.CreateInfo.pNext = nullptr;
+		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
 		uploadInfo.CreateInfo.flags = 0;
 		uploadInfo.CreateInfo.size = bytes;
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -25,14 +24,11 @@ namespace ZE::GFX::API::VK::Resource
 		alloc = dev.Get().vk.GetMemory().AllocBuffer(dev.Get().vk, buffer, Allocation::Usage::GPU);
 
 		const U32 deviceIndex = 0;
-		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
-		deviceGroupInfo.pNext = nullptr;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO, nullptr };
 		deviceGroupInfo.deviceIndexCount = 1;
 		deviceGroupInfo.pDeviceIndices = &deviceIndex;
 
-		uploadInfo.Dest.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		uploadInfo.Dest.pNext = &deviceGroupInfo;
+		uploadInfo.Dest = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, &deviceGroupInfo };
 		uploadInfo.Dest.buffer = buffer;
 
 		if (values)
@@ -68,7 +64,7 @@ namespace ZE::GFX::API::VK::Resource
 			memcpy(memory, values, bytes);
 		else
 		{
-			UploadInfoBufferUpdate updateInfo;
+			UploadInfoBufferUpdate updateInfo = {};
 			updateInfo.Buffer = buffer;
 			updateInfo.LastUsedQueue = lastUsedQueue;
 			updateInfo.Data = values;
@@ -84,9 +80,7 @@ namespace ZE::GFX::API::VK::Resource
 		// Transfer ownership to new queue
 		if (lastUsedQueue != cl.Get().vk.GetFamily())
 		{
-			VkBufferMemoryBarrier2 barrier;
-			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
-			barrier.pNext = nullptr;
+			VkBufferMemoryBarrier2 barrier = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, nullptr };
 			barrier.srcStageMask = USAGE_STAGE;
 			barrier.srcAccessMask = USAGE_ACCESS;
 			barrier.srcQueueFamilyIndex = lastUsedQueue;

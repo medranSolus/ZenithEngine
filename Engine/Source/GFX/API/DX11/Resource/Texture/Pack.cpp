@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 				srvs[i] = nullptr;
 			else if (tex.Type == GFX::Resource::Texture::Type::Tex3D)
 			{
-				D3D11_TEXTURE3D_DESC1 texDesc;
+				D3D11_TEXTURE3D_DESC1 texDesc = {};
 				texDesc.Width = static_cast<U32>(tex.Surfaces.front().GetWidth());
 				texDesc.Height = static_cast<U32>(tex.Surfaces.front().GetHeight());
 				texDesc.Depth = static_cast<U32>(tex.Surfaces.size());
@@ -27,7 +27,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 				texDesc.MiscFlags = 0;
 				texDesc.TextureLayout = D3D11_TEXTURE_LAYOUT_UNDEFINED;
 
-				D3D11_SUBRESOURCE_DATA* data = new D3D11_SUBRESOURCE_DATA[texDesc.Depth];
+				auto data = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(texDesc.Depth);
 				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(DX::GetDXFormat(surface.GetFormat()) == texDesc.Format, "Every surface should have same format!");
@@ -39,10 +39,10 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					data[j].SysMemSlicePitch = 0;
 					++j;
 				}
-				DX::ComPtr<ITexture3D> texture;
-				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture3D1(&texDesc, data, &texture));
+				DX::ComPtr<ITexture3D> texture = nullptr;
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture3D1(&texDesc, data.get(), &texture));
 
-				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc;
+				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
 				srvDesc.Format = texDesc.Format;
 				srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 				srvDesc.Texture3D.MostDetailedMip = 0;
@@ -50,11 +50,10 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 
 				ZE_DX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView1(texture.Get(), &srvDesc, &srvs[i]));
 				ZE_DX_SET_ID(srvs[i], "Texture3D_" + std::to_string(i));
-				delete[] data;
 			}
 			else
 			{
-				D3D11_TEXTURE2D_DESC1 texDesc;
+				D3D11_TEXTURE2D_DESC1 texDesc = {};
 				texDesc.Width = static_cast<U32>(tex.Surfaces.front().GetWidth());
 				texDesc.Height = static_cast<U32>(tex.Surfaces.front().GetHeight());
 				texDesc.MipLevels = 1; // TODO: Add mip generation module
@@ -67,7 +66,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 				texDesc.CPUAccessFlags = 0;
 				texDesc.TextureLayout = D3D11_TEXTURE_LAYOUT_UNDEFINED;
 
-				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc;
+				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
 				srvDesc.Format = texDesc.Format;
 				if (tex.Type == GFX::Resource::Texture::Type::Cube)
 				{
@@ -99,7 +98,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					}
 				}
 
-				D3D11_SUBRESOURCE_DATA* data = new D3D11_SUBRESOURCE_DATA[texDesc.ArraySize];
+				auto data = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(texDesc.ArraySize);
 				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(DX::GetDXFormat(surface.GetFormat()) == texDesc.Format, "Every surface should have same format!");
@@ -111,11 +110,10 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					data[j].SysMemSlicePitch = 0;
 					++j;
 				}
-				DX::ComPtr<ITexture2D> texture;
-				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture2D1(&texDesc, data, &texture));
+				DX::ComPtr<ITexture2D> texture = nullptr;
+				ZE_DX_THROW_FAILED(device.GetDevice()->CreateTexture2D1(&texDesc, data.get(), &texture));
 				ZE_DX_THROW_FAILED(device.GetDevice()->CreateShaderResourceView1(texture.Get(), &srvDesc, &srvs[i]));
 				ZE_DX_SET_ID(srvs[i], "Texture_" + std::to_string(i));
-				delete[] data;
 			}
 			++i;
 		}

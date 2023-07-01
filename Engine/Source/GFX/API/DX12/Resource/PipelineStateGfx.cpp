@@ -6,7 +6,7 @@ namespace ZE::GFX::API::DX12::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc;
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc = {};
 		stateDesc.pRootSignature = binding.Get().dx12.GetSignature();
 
 		ZE_ASSERT(desc.VS, "Vertex Shader is always required!");

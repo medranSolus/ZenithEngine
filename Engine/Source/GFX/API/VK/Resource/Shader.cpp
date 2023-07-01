@@ -19,9 +19,7 @@ namespace ZE::GFX::API::VK::Resource
 		fin.read(bytecode.data(), bytecode.size());
 		fin.close();
 
-		VkShaderModuleCreateInfo shaderInfo;
-		shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		shaderInfo.pNext = nullptr;
+		VkShaderModuleCreateInfo shaderInfo = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, nullptr };
 		shaderInfo.flags = 0;
 		shaderInfo.codeSize = bytecode.size();
 		shaderInfo.pCode = reinterpret_cast<U32*>(bytecode.data());

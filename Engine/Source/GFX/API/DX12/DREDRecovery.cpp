@@ -139,7 +139,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		DX::ComPtr<IDeviceRemovedExtendedDataSettings> dred;
+		DX::ComPtr<IDeviceRemovedExtendedDataSettings> dred = nullptr;
 		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&dred)));
 
 		dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
@@ -198,7 +198,7 @@ namespace ZE::GFX::API::DX12
 			writeString(std::to_string(Settings::GetFrameIndex()).c_str());
 		}
 
-		DX::ComPtr<IDeviceRemovedExtendedData> dred;
+		DX::ComPtr<IDeviceRemovedExtendedData> dred = nullptr;
 		if (FAILED(dev.GetDev().As(&dred)))
 			Logger::Error("Cannot access IDeviceRemovedExtendedData - no DRED output!");
 		else

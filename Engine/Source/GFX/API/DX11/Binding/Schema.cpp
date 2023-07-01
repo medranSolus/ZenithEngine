@@ -12,7 +12,7 @@ namespace ZE::GFX::API::DX11::Binding
 			samplers = new std::pair<U32, DX::ComPtr<ISamplerState>>[desc.Samplers.size()];
 			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
 			{
-				D3D11_SAMPLER_DESC desc;
+				D3D11_SAMPLER_DESC desc = {};
 				desc.Filter = GetFilterType(samplerDesc.Type);
 				desc.AddressU = GetTextureAddressMode(samplerDesc.Address.U);
 				desc.AddressV = GetTextureAddressMode(samplerDesc.Address.V);

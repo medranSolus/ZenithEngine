@@ -7,7 +7,7 @@ namespace ZE::GFX::API::DX11::Resource
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 
-		D3D11_BUFFER_DESC bufferDesc;
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
@@ -15,7 +15,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.ByteWidth = data.Count * data.VertexSize;
 		bufferDesc.StructureByteStride = byteStride;
 
-		D3D11_SUBRESOURCE_DATA resData;
+		D3D11_SUBRESOURCE_DATA resData = {};
 		resData.pSysMem = data.Vertices;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;

@@ -46,7 +46,7 @@ namespace ZE::GFX::API::DX11
 		// Ignore bug when setting object names
 		D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS };
 
-		D3D11_INFO_QUEUE_FILTER filter = { { 0 } };
+		D3D11_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
 		filter.DenyList.NumIDs = 1;

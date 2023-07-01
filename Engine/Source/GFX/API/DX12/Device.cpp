@@ -63,7 +63,7 @@ namespace ZE::GFX::API::DX12
 
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands
-		DX::ComPtr<IDebug> debugInterface;
+		DX::ComPtr<IDebug> debugInterface = nullptr;
 		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
 
@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX12
 			if (agsInitialize(AGS_MAKE_VERSION(AMD_AGS_VERSION_MAJOR, AMD_AGS_VERSION_MINOR, AMD_AGS_VERSION_PATCH),
 				&agsConfig, &gpuCtxAMD, nullptr) == AGS_SUCCESS)
 			{
-				AGSDX12DeviceCreationParams deviceParams;
+				AGSDX12DeviceCreationParams deviceParams = {};
 				deviceParams.pAdapter = adapter.Get();
 				deviceParams.iid = __uuidof(device);
 				deviceParams.FeatureLevel = MINIMAL_D3D_LEVEL;
@@ -118,7 +118,7 @@ namespace ZE::GFX::API::DX12
 		}
 
 #if _ZE_DEBUG_GFX_API
-		DX::ComPtr<IInfoQueue> infoQueue;
+		DX::ComPtr<IInfoQueue> infoQueue = nullptr;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));
 
 		// Set breaks on dangerous messages
@@ -137,7 +137,7 @@ namespace ZE::GFX::API::DX12
 			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT
 		};
 
-		D3D12_INFO_QUEUE_FILTER filter = { { 0 } };
+		D3D12_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
 		filter.DenyList.NumIDs = 3;
@@ -145,15 +145,15 @@ namespace ZE::GFX::API::DX12
 
 		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
 
-#if _ZE_DEBUG_GPU_VALIDATION
-		DX::ComPtr<IDebugDevice> debugDevice;
+#	if _ZE_DEBUG_GPU_VALIDATION
+		DX::ComPtr<IDebugDevice> debugDevice = nullptr;
 		ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice));
 
 		const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
 		ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
 			&debugFeature, sizeof(D3D12_DEBUG_FEATURE)));
 
-		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings;
+		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings = {};
 		// Should cover all messages
 		validationSettings.MaxMessagesPerCommandList = 1024;
 		// Can avoid most cases of TDRs
@@ -161,9 +161,9 @@ namespace ZE::GFX::API::DX12
 		validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
 		ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
 			&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS)));
+#	endif
 #endif
-#endif
-		D3D12_COMMAND_QUEUE_DESC desc;
+		D3D12_COMMAND_QUEUE_DESC desc = {};
 		desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 		desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		desc.NodeMask = 0;
@@ -190,7 +190,7 @@ namespace ZE::GFX::API::DX12
 		copyResInfo.Size = 0;
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 
-		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc;
+		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 		descHeapDesc.NodeMask = 0;
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -198,7 +198,7 @@ namespace ZE::GFX::API::DX12
 		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
 		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		D3D12_FEATURE_DATA_D3D12_OPTIONS options = { 0 };
+		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
 		allocator.Init(*this, options.ResourceHeapTier);
 	}
@@ -239,7 +239,7 @@ namespace ZE::GFX::API::DX12
 		U16 size = copyResInfo.Size - copyOffset;
 		if (size)
 		{
-			D3D12_RESOURCE_BARRIER* barriers = new D3D12_RESOURCE_BARRIER[size];
+			auto barriers = std::make_unique<D3D12_RESOURCE_BARRIER[]>(size);
 			for (U16 i = 0; i < size; ++i)
 			{
 				auto& barrier = barriers[i];
@@ -252,8 +252,7 @@ namespace ZE::GFX::API::DX12
 				barrier.Transition.pResource = copyInfo.Destination;
 			}
 			copyOffset = copyResInfo.Size;
-			copyList.GetList()->ResourceBarrier(size, barriers);
-			delete[] barriers;
+			copyList.GetList()->ResourceBarrier(size, barriers.get());
 
 			copyList.Close(*this);
 			Execute(mainQueue.Get(), copyList);
@@ -285,7 +284,7 @@ namespace ZE::GFX::API::DX12
 			switch (cls->Get().dx12.GetList()->GetType())
 			{
 			default:
-				ZE_FAIL("Incorrect type of command list!!!");
+				ZE_FAIL("Incorrect type of command list!!!"); [[fallthrough]];
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 				return ExecuteMain(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
@@ -390,7 +389,7 @@ namespace ZE::GFX::API::DX12
 	{
 		ZE_ASSERT(size, "Cannot create empty buffer!");
 
-		D3D12_RESOURCE_DESC1 desc;
+		D3D12_RESOURCE_DESC1 desc = {};
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = size;
@@ -415,7 +414,7 @@ namespace ZE::GFX::API::DX12
 			&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION,
 			"Texture too big!");
 
-		D3D12_RESOURCE_DESC1 desc;
+		D3D12_RESOURCE_DESC1 desc = {};
 		desc.Dimension = type == GFX::Resource::Texture::Type::Tex3D ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		desc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = width;
@@ -463,14 +462,14 @@ namespace ZE::GFX::API::DX12
 		ZE_WIN_ENABLE_EXCEPT();
 
 		auto desc = GetBufferDesc(size);
-		D3D12_HEAP_PROPERTIES tempHeap;
+		D3D12_HEAP_PROPERTIES tempHeap = {};
 		tempHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
 		tempHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		tempHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		tempHeap.CreationNodeMask = 0;
 		tempHeap.VisibleNodeMask = 0;
 
-		DX::ComPtr<IResource> uploadRes;
+		DX::ComPtr<IResource> uploadRes = nullptr;
 		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
 			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
@@ -485,20 +484,20 @@ namespace ZE::GFX::API::DX12
 		ZE_WIN_ENABLE_EXCEPT();
 
 		// Create upload heap and temporary resource
-		D3D12_HEAP_PROPERTIES tempHeap;
+		D3D12_HEAP_PROPERTIES tempHeap = {};
 		tempHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
 		tempHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		tempHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		tempHeap.CreationNodeMask = 0;
 		tempHeap.VisibleNodeMask = 0;
 
-		DX::ComPtr<IResource> uploadRes;
+		DX::ComPtr<IResource> uploadRes = nullptr;
 		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
 			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
 
 		// Map and copy data into upload buffer
-		D3D12_RANGE range = { 0 };
+		D3D12_RANGE range = {};
 		void* uploadBuffer = nullptr;
 		ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, &uploadBuffer));
 		memcpy(uploadBuffer, data, size);
@@ -521,7 +520,7 @@ namespace ZE::GFX::API::DX12
 
 	void Device::UpdateBuffer(IResource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
 	{
-		D3D12_RESOURCE_BARRIER barrier;
+		D3D12_RESOURCE_BARRIER barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		barrier.Transition.pResource = res;
@@ -553,7 +552,7 @@ namespace ZE::GFX::API::DX12
 		ZE_ASSERT(dynamicDescStart + dynamicDescCount + count < scratchDescStart,
 			"Prepared too small range for dynamic descriptors, increase pool size!");
 
-		DescriptorInfo rangeStart;
+		DescriptorInfo rangeStart = {};
 		rangeStart.ID = dynamicDescStart + dynamicDescCount;
 		ZE_ASSERT(rangeStart.ID != 0,
 			"Invalid location for normal descs! Resources created before RenderGraph finalization \

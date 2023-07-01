@@ -59,9 +59,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
-		VkDebugUtilsLabelEXT labelInfo;
-		labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-		labelInfo.pNext = nullptr;
+		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
 		labelInfo.pLabelName = tag.data();
 		*reinterpret_cast<ColorF4*>(labelInfo.color) = { color.Red, color.Green, color.Blue, color.Alpha };
 		vkCmdBeginDebugUtilsLabelEXT(commands, &labelInfo);
@@ -96,16 +94,12 @@ namespace ZE::GFX::API::VK
 		}
 		}
 
-		VkCommandPoolCreateInfo poolInfo;
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.pNext = nullptr;
+		VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr };
 		poolInfo.flags = 0;
 		poolInfo.queueFamilyIndex = familyIndex;
 		ZE_VK_THROW_NOSUCC(vkCreateCommandPool(dev.GetDevice(), &poolInfo, nullptr, &pool));
 
-		VkCommandBufferAllocateInfo commandsInfo;
-		commandsInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		commandsInfo.pNext = nullptr;
+		VkCommandBufferAllocateInfo commandsInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr };
 		commandsInfo.commandPool = pool;
 		commandsInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandsInfo.commandBufferCount = 1;
@@ -141,21 +135,15 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
-		VkDeviceGroupCommandBufferBeginInfo deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO;
-		deviceGroupInfo.pNext = nullptr;
+		VkDeviceGroupCommandBufferBeginInfo deviceGroupInfo = { VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO, nullptr };
 		deviceGroupInfo.deviceMask = 1;
 
-		VkCommandBufferBeginInfo beginInfo;
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.pNext = &deviceGroupInfo;
+		VkCommandBufferBeginInfo beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, &deviceGroupInfo };
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		beginInfo.pInheritanceInfo = nullptr; // Only for secondary buffers
 		ZE_VK_THROW_NOSUCC(vkBeginCommandBuffer(commands, &beginInfo));
 
-		VkDescriptorBufferBindingInfoEXT descBufferInfo;
-		descBufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
-		descBufferInfo.pNext = nullptr;
+		VkDescriptorBufferBindingInfoEXT descBufferInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT, nullptr };
 		descBufferInfo.address = 0;
 		descBufferInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT
 			| VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -196,9 +184,7 @@ namespace ZE::GFX::API::VK
 		barrier.offset = 0;
 		barrier.size = VK_WHOLE_SIZE;
 
-		VkDependencyInfo depInfo;
-		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		depInfo.pNext = nullptr;
+		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
 		depInfo.dependencyFlags = 0;
 		depInfo.memoryBarrierCount = 0;
 		depInfo.pMemoryBarriers = nullptr;

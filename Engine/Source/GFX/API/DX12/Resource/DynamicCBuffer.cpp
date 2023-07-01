@@ -11,7 +11,7 @@ namespace ZE::GFX::API::DX12::Resource
 		ResourceInfo resource = device.CreateBuffer(desc, true);
 		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
-		const D3D12_RANGE range = { 0 };
+		const D3D12_RANGE range = {};
 		ZE_DX_THROW_FAILED(resource.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
 
 		const D3D12_GPU_VIRTUAL_ADDRESS address = resource.Resource->GetGPUVirtualAddress();

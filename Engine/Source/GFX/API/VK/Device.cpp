@@ -19,9 +19,7 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
-		VkSemaphoreWaitInfo waitInfo;
-		waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		waitInfo.pNext = nullptr;
+		VkSemaphoreWaitInfo waitInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO, nullptr };
 		waitInfo.flags = 0;
 		waitInfo.semaphoreCount = 1;
 		waitInfo.pSemaphores = &fence;
@@ -37,17 +35,13 @@ namespace ZE::GFX::API::VK
 		// TODO: expose stageMask with own enum (no effect on D3D12)
 		ZE_VK_ENABLE();
 
-		VkSemaphoreSubmitInfo waitInfo;
-		waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		waitInfo.pNext = nullptr;
+		VkSemaphoreSubmitInfo waitInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr };
 		waitInfo.semaphore = fence;
 		waitInfo.value = val;
 		waitInfo.stageMask = VK_PIPELINE_STAGE_2_NONE; // Second synch scope, wait completed before these commands
 		waitInfo.deviceIndex = 0;
 
-		VkSubmitInfo2 submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.pNext = nullptr;
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 1;
 		submitInfo.pWaitSemaphoreInfos = &waitInfo;
@@ -62,9 +56,7 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
-		VkSemaphoreSignalInfo signalInfo;
-		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-		signalInfo.pNext = nullptr;
+		VkSemaphoreSignalInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO, nullptr };
 		signalInfo.semaphore = fence;
 		signalInfo.value = ++fenceVal;
 		ZE_VK_THROW_NOSUCC(vkSignalSemaphore(device, &signalInfo));
@@ -76,17 +68,13 @@ namespace ZE::GFX::API::VK
 		// TODO: expose stageMask with own enum (no effect on D3D12)
 		ZE_VK_ENABLE();
 
-		VkSemaphoreSubmitInfo signalInfo;
-		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		signalInfo.pNext = nullptr;
+		VkSemaphoreSubmitInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr };
 		signalInfo.semaphore = fence;
 		signalInfo.value = ++fenceVal;
 		signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; // First synch scope, signal after these commands
 		signalInfo.deviceIndex = 0;
 
-		VkSubmitInfo2 submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.pNext = nullptr;
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 0;
 		submitInfo.pWaitSemaphoreInfos = nullptr;
@@ -104,15 +92,11 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(cl.GetBuffer() != nullptr, "Empty list!");
 		ZE_VK_ENABLE();
 
-		VkCommandBufferSubmitInfo bufferInfo;
-		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-		bufferInfo.pNext = nullptr;
+		VkCommandBufferSubmitInfo bufferInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
 		bufferInfo.commandBuffer = cl.GetBuffer();
 		bufferInfo.deviceMask = 0;
 
-		VkSubmitInfo2 submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.pNext = nullptr;
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 0;
 		submitInfo.pWaitSemaphoreInfos = nullptr;
@@ -140,9 +124,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_GFX_MARKERS
 	void Device::BeingTag(VkQueue queue, std::string_view tag, Pixel color) noexcept
 	{
-		VkDebugUtilsLabelEXT labelInfo;
-		labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-		labelInfo.pNext = nullptr;
+		VkDebugUtilsLabelEXT labelInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr };
 		labelInfo.pLabelName = tag.data();
 		*reinterpret_cast<ColorF4*>(labelInfo.color) = { color.Red, color.Green, color.Blue, color.Alpha };
 		vkQueueBeginDebugUtilsLabelEXT(queue, &labelInfo);
@@ -306,9 +288,7 @@ namespace ZE::GFX::API::VK
 	{
 		ZE_VK_ENABLE();
 
-		VkApplicationInfo appInfo;
-		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pNext = nullptr;
+		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO, nullptr };
 		appInfo.pApplicationName = Settings::GetAppName();
 		appInfo.applicationVersion = Settings::GetAppVersion();
 		appInfo.pEngineName = Settings::GetEngineName();
@@ -339,12 +319,12 @@ namespace ZE::GFX::API::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -355,12 +335,12 @@ namespace ZE::GFX::API::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -442,9 +422,7 @@ namespace ZE::GFX::API::VK
 #endif
 
 		// Prepare instace options
-		VkInstanceCreateInfo instanceInfo;
-		instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		instanceInfo.pNext = nullptr;
+		VkInstanceCreateInfo instanceInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr };
 		instanceInfo.flags = 0;
 		instanceInfo.pApplicationInfo = &appInfo;
 		instanceInfo.enabledExtensionCount = static_cast<U32>(enabledExtensions.size());
@@ -485,15 +463,11 @@ namespace ZE::GFX::API::VK
 
 		// Specify debug features
 #if _ZE_DEBUG_GFX_API
-		VkValidationFeaturesEXT validationFeatures;
-		validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-		validationFeatures.pNext = nullptr;
+		VkValidationFeaturesEXT validationFeatures = { VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr };
 		validationFeatures.disabledValidationFeatureCount = 0;
 		validationFeatures.pDisabledValidationFeatures = nullptr;
 
-		VkDebugUtilsMessengerCreateInfoEXT debugMessenger;
-		debugMessenger.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		debugMessenger.pNext = &validationFeatures;
+		VkDebugUtilsMessengerCreateInfoEXT debugMessenger = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, &validationFeatures };
 		debugMessenger.flags = 0;
 		debugMessenger.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		debugMessenger.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
@@ -652,7 +626,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-				ZE_VK_EXT_LIST_DEVICE_REQUIRED
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
@@ -701,7 +675,7 @@ namespace ZE::GFX::API::VK
 		VkPhysicalDeviceSubgroupSizeControlFeatures subgroupControl = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES, &indicesU8 };
 		VkPhysicalDeviceVulkanMemoryModelFeatures memoryModel = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, &subgroupControl };
 
-		RequiredExtensionFeatures requiredFeatures;
+		RequiredExtensionFeatures requiredFeatures = {};
 		requiredFeatures.BufferAddress = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, &memoryModel };
 		requiredFeatures.DescriptorBuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT, &requiredFeatures.BufferAddress };
 		requiredFeatures.DescriptorIndexing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, &requiredFeatures.DescriptorBuffer };
@@ -720,7 +694,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-				ZE_VK_EXT_LIST_DEVICE_REQUIRED
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		FindPhysicalDevice(enabledExtensions, window, requiredFeatures);
@@ -788,9 +762,7 @@ namespace ZE::GFX::API::VK
 		};
 
 		// Control overallocation behavior on AMD cards
-		VkDeviceMemoryOverallocationCreateInfoAMD overallocBehavior;
-		overallocBehavior.sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD;
-		overallocBehavior.pNext = nullptr;
+		VkDeviceMemoryOverallocationCreateInfoAMD overallocBehavior = { VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD, nullptr };
 		if (IsExtensionSupported(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME))
 		{
 			overallocBehavior.overallocationBehavior = VK_MEMORY_OVERALLOCATION_BEHAVIOR_DISALLOWED_AMD;
@@ -798,15 +770,11 @@ namespace ZE::GFX::API::VK
 		}
 
 		// Create logic device
-		VkDeviceGroupDeviceCreateInfo deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
-		deviceGroupInfo.pNext = &requiredFeatures.Features;
+		VkDeviceGroupDeviceCreateInfo deviceGroupInfo = { VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO, &requiredFeatures.Features };
 		deviceGroupInfo.physicalDeviceCount = 1;
 		deviceGroupInfo.pPhysicalDevices = &physicalDevice;
 
-		VkDeviceCreateInfo deviceInfo;
-		deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		deviceInfo.pNext = &deviceGroupInfo;
+		VkDeviceCreateInfo deviceInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &deviceGroupInfo };
 		deviceInfo.flags = 0;
 		deviceInfo.queueCreateInfoCount = sizeof(queueInfos) / sizeof(VkDeviceQueueCreateInfo);
 		deviceInfo.pQueueCreateInfos = queueInfos;
@@ -829,9 +797,7 @@ namespace ZE::GFX::API::VK
 		ZE_VK_SET_ID(device, computeQueue, VK_OBJECT_TYPE_QUEUE, "compute_queue");
 		ZE_VK_SET_ID(device, copyQueue, VK_OBJECT_TYPE_QUEUE, "copy_queue");
 
-		VkSemaphoreTypeCreateInfo timelineSemaphoreInfo;
-		timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
-		timelineSemaphoreInfo.pNext = nullptr;
+		VkSemaphoreTypeCreateInfo timelineSemaphoreInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr };
 		timelineSemaphoreInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 		timelineSemaphoreInfo.initialValue = 0;
 		const VkSemaphoreCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &timelineSemaphoreInfo, 0 };
@@ -864,7 +830,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_PLATFORM_WINDOWS
 		if (vulkanLibModule)
 		{
-			const bool status = FreeLibrary(vulkanLibModule.CastPtr<HMODULE>());
+			const BOOL status = FreeLibrary(vulkanLibModule.CastPtr<HMODULE>());
 			ZE_ASSERT(status, "Error unloading Vulkan library!");
 		}
 #else
@@ -890,9 +856,7 @@ namespace ZE::GFX::API::VK
 		U16 size = copyResInfo.Size - copyOffset;
 		if (size)
 		{
-			VkDependencyInfo depInfo;
-			depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-			depInfo.pNext = nullptr;
+			VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
 			depInfo.dependencyFlags = 0;
 			depInfo.memoryBarrierCount = 0;
 			depInfo.pMemoryBarriers = nullptr;
@@ -1012,9 +976,7 @@ namespace ZE::GFX::API::VK
 			commandLists = reinterpret_cast<VkCommandBufferSubmitInfo*>(realloc(commandLists, count * sizeof(VkCommandBufferSubmitInfo)));
 		}
 
-		VkSubmitInfo2 submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.pNext = nullptr;
+		VkSubmitInfo2 submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2, nullptr };
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 0;
 		submitInfo.pWaitSemaphoreInfos = nullptr;
@@ -1076,9 +1038,7 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(uploadInfo.InitData != nullptr, "Empty initial data!");
 
 		const U32 deviceIndex = 0;
-		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
-		deviceGroupInfo.pNext = nullptr;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO, nullptr };
 		deviceGroupInfo.deviceIndexCount = 1;
 		deviceGroupInfo.pDeviceIndices = &deviceIndex;
 
@@ -1104,16 +1064,12 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(mappedMemory != nullptr, "Staging buffer always should be accessible from CPU!");
 		memcpy(mappedMemory, uploadInfo.InitData, uploadInfo.CreateInfo.size);
 
-		VkBufferCopy2 bufferCopy;
-		bufferCopy.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2;
-		bufferCopy.pNext = nullptr;
+		VkBufferCopy2 bufferCopy = { VK_STRUCTURE_TYPE_BUFFER_COPY_2, nullptr };
 		bufferCopy.srcOffset = 0;
 		bufferCopy.dstOffset = 0;
 		bufferCopy.size = uploadInfo.CreateInfo.size;
 
-		VkCopyBufferInfo2 copyInfo;
-		copyInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
-		copyInfo.pNext = nullptr;
+		VkCopyBufferInfo2 copyInfo = { VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2, nullptr };
 		copyInfo.srcBuffer = uploadInfo.Staging.buffer;
 		copyInfo.dstBuffer = uploadInfo.Dest.buffer;
 		copyInfo.regionCount = 1;
@@ -1138,9 +1094,7 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(updateInfo.Data != nullptr, "Empty initial data!");
 
 		// Ignore previous content and perform barrier for given resource
-		VkBufferMemoryBarrier2 barrier;
-		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
-		barrier.pNext = nullptr;
+		VkBufferMemoryBarrier2 barrier = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, nullptr };
 		barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
 		barrier.srcAccessMask = VK_ACCESS_2_NONE;
 		barrier.dstStageMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
@@ -1151,9 +1105,7 @@ namespace ZE::GFX::API::VK
 		barrier.offset = 0;
 		barrier.size = VK_WHOLE_SIZE;
 
-		VkDependencyInfo depInfo;
-		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		depInfo.pNext = nullptr;
+		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
 		depInfo.dependencyFlags = 0;
 		depInfo.memoryBarrierCount = 0;
 		depInfo.pMemoryBarriers = nullptr;
@@ -1164,9 +1116,7 @@ namespace ZE::GFX::API::VK
 		vkCmdPipelineBarrier2(copyList.GetBuffer(), &depInfo);
 
 		// Create staging buffer
-		VkBufferCreateInfo stagingBufferInfo;
-		stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		stagingBufferInfo.pNext = nullptr;
+		VkBufferCreateInfo stagingBufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
 		stagingBufferInfo.flags = 0;
 		stagingBufferInfo.size = updateInfo.Bytes;
 		stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -1175,15 +1125,11 @@ namespace ZE::GFX::API::VK
 		stagingBufferInfo.pQueueFamilyIndices = nullptr;
 
 		const U32 deviceIndex = 0;
-		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo;
-		deviceGroupInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO;
-		deviceGroupInfo.pNext = nullptr;
+		VkBindBufferMemoryDeviceGroupInfo deviceGroupInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO, nullptr };
 		deviceGroupInfo.deviceIndexCount = 1;
 		deviceGroupInfo.pDeviceIndices = &deviceIndex;
 
-		VkBindBufferMemoryInfo stagingBindInfo;
-		stagingBindInfo.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-		stagingBindInfo.pNext = &deviceGroupInfo;
+		VkBindBufferMemoryInfo stagingBindInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, &deviceGroupInfo };
 		ZE_VK_THROW_NOSUCC(vkCreateBuffer(device, &stagingBufferInfo, nullptr, &stagingBindInfo.buffer));
 		ZE_VK_SET_ID(device, stagingBindInfo.buffer, VK_OBJECT_TYPE_BUFFER,
 			"Staging update buffer [size:" + std::to_string(updateInfo.Bytes) + "]");
@@ -1197,16 +1143,12 @@ namespace ZE::GFX::API::VK
 		ZE_ASSERT(mappedMemory != nullptr, "Staging buffer always should be accessible from CPU!");
 		memcpy(mappedMemory, updateInfo.Data, updateInfo.Bytes);
 
-		VkBufferCopy2 bufferCopy;
-		bufferCopy.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2;
-		bufferCopy.pNext = nullptr;
+		VkBufferCopy2 bufferCopy = { VK_STRUCTURE_TYPE_BUFFER_COPY_2, nullptr };
 		bufferCopy.srcOffset = 0;
 		bufferCopy.dstOffset = 0;
 		bufferCopy.size = updateInfo.Bytes;
 
-		VkCopyBufferInfo2 copyInfo;
-		copyInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
-		copyInfo.pNext = nullptr;
+		VkCopyBufferInfo2 copyInfo = { VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2, nullptr };
 		copyInfo.srcBuffer = stagingBindInfo.buffer;
 		copyInfo.dstBuffer = updateInfo.Buffer;
 		copyInfo.regionCount = 1;
