@@ -79,6 +79,7 @@ set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
+set(RPS_DIR "${EXTERNAL_DIR}/RenderPipelineShaders")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 
 
@@ -103,6 +104,7 @@ set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
+set(RPS_INC_DIR "${RPS_DIR}/include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
 
 
@@ -130,6 +132,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${LIBPNG_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
+	"${RPS_INC_DIR}"
 	"${ZLIB_INC_DIR}")
 
 
@@ -152,6 +155,9 @@ set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
+set(RPS_LIB "rps_core") # RPS consits of multiple libs
+set(RPS_FRONTEND_LIB "rps_frontend")
+set(RPS_RUNTIME_LIB "rps_runtime")
 set(ZLIB_LIB "zlibstatic")
 
 set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
@@ -167,6 +173,9 @@ set(VOLK_TARGET "${VOLK_LIB}")
 if(${ZE_PLATFORM_WINDOWS} AND NOT ${ZE_BUILD_RELEASE})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
 endif()
+set(RPS_TARGET "${RPS_LIB}")
+set(RPS_FRONTEND_TARGET "${RPS_FRONTEND_LIB}")
+set(RPS_RUNTIME_TARGET "${RPS_RUNTIME_LIB}")
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # Inject debug suffix if library use it
@@ -252,6 +261,7 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_PROFILE} ${CXX_PERFORMANCE_FLAGS}
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_PERFORMANCE_FLAGS}")
 
 # General flags
+add_definitions(-DRPS_ENABLE_DEFAULT_DEVICE_IMPL=0)
 add_definitions(-DENTT_NOEXCEPTION)
 add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
 add_definitions(-DVK_NO_PROTOTYPES)
@@ -316,7 +326,7 @@ if(NOT EXISTS "${EXTERNAL_BIN_DIR}/zconf.h")
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${ZLIB_BUILD_DIR}/zconf.h"
+		"${ZLIB_BUILD_DIR}zconf.h"
 		"${EXTERNAL_BIN_DIR}")
 endif()
 
@@ -340,7 +350,7 @@ if(NOT EXISTS "${LIBPNG_OUT_LIB}")
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${LIBPNG_BUILD_DIR}/pnglibconf.h"
+		"${LIBPNG_BUILD_DIR}pnglibconf.h"
 		"${EXTERNAL_BIN_DIR}")
 endif()
 
@@ -364,7 +374,7 @@ if(${ZE_MODEL_LOADING})
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy_directory
-			"${ASSIMP_BUILD_DIR}/include"
+			"${ASSIMP_BUILD_DIR}include"
 			"${EXTERNAL_BIN_DIR}")
 	endif()
 endif()
@@ -393,6 +403,50 @@ add_external_project(FTYPE "" "" "LIBPNG;HARFBUZZ")
 set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
 	"-DBUILD_SAMPLE:BOOL=OFF")
 add_external_project(DXTEX "bin/CMake/" "" "")
+
+ # Render Pipeline Shaders
+set(RPS_CACHE_ARGS "-DRpsBuildTests:BOOL=OFF"
+	"-DRpsBuildTools:BOOL=OFF"
+	"-DRpsBuildExamples:BOOL=OFF"
+	"-DRpsEnableVulkan:BOOL=OFF"
+	"-DRpsEnableImGui:BOOL=OFF"
+	"-DRpsEnableDXAgilitySDK:BOOL=OFF"
+	"-DRpsEnableDefaultDeviceImpl:BOOL=OFF"
+	"-DDXAgilitySDK_VERSION_STRING:STRING=1.610.4"
+	"-DD3D12SDKVersion:STRING=610"
+	"-DRpsDXAgilitySDK_DIR:STRING=${AGILITY_DIR}"
+	"-DRpsRootSolutionFolder:STRING=${PROJECT_SOURCE_DIR}"
+	"-DRpsDXC_DIR:STRING=${EXTERNAL_DIR}"
+	"-DCMAKE_CXX_FLAGS:STRING=-DRPS_ENABLE_DEFAULT_DEVICE_IMPL=0")
+add_external_project(RPS "src/" "src/" "")
+if(NOT EXISTS "${RPS_OUT_LIB}")
+	ExternalProject_Add_Step(${RPS_TARGET} copyFrontend
+		DEPENDEES install
+		LOG OFF
+		COMMAND "${CMAKE_COMMAND}" -E copy
+		"${RPS_BUILD_DIR}src/${LIB_PREFIX}rps_frontend${LIB_EXT}"
+		"${EXTERNAL_BIN_DIR}")
+	ExternalProject_Add_Step(${RPS_TARGET} copyRuntime
+		DEPENDEES install
+		LOG OFF
+		COMMAND "${CMAKE_COMMAND}" -E copy
+		"${RPS_BUILD_DIR}src/${LIB_PREFIX}rps_runtime${LIB_EXT}"
+		"${EXTERNAL_BIN_DIR}")
+	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG})
+		ExternalProject_Add_Step(${RPS_TARGET} copyFrontendPDB
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${CMAKE_COMMAND}" -E copy
+			"${RPS_BUILD_DIR}src/CMakeFiles/rps_frontend.dir/rps_frontend.pdb"
+			"${EXTERNAL_BIN_DIR}")
+		ExternalProject_Add_Step(${RPS_TARGET} copyRuntimePDB
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${CMAKE_COMMAND}" -E copy
+			"${RPS_BUILD_DIR}src/CMakeFiles/rps_runtime.dir/rps_runtime.pdb"
+			"${EXTERNAL_BIN_DIR}")
+	endif()
+endif()
 
 # EnTT
 if(${ZE_COMPILER_MSVC})

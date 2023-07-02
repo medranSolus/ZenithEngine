@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include "GFX/Pipeline/RenderGraphRPS.h"
 
 namespace ZE
 {
@@ -16,6 +17,8 @@ namespace ZE
 		// For typical usage, NearZ is less than FarZ. However, if you flip these values so FarZ is less than NearZ, the result is an inverted z buffer (also known as a "reverse z buffer") which can provide increased floating-point precision.
 		// 24bit depth bad: https://www.gamedev.net/forums/topic/691579-24bit-depthbuffer-is-a-sub-optimal-format/
 		// Check for optimization UB code: https://github.com/xiw/stack/
+
+		GFX::Pipeline::RenderGraphRPS rps(graphics);
 	}
 
 	Engine::~Engine()
