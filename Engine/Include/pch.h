@@ -30,8 +30,8 @@
 *** functional
 *** intrin.h/x86intrin.h
 *** map
-*** mutex
 *** random
+*** shared_mutex
 *** sstream
 *** string
 *** string_view

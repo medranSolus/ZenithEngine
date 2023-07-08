@@ -40,7 +40,7 @@
 
 /*
 * Macros.h (defined by CmdParser.h)
-* mutex
+* shared_mutex
 */
 #include "LockGuard.h"
 
