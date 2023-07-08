@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <iomanip>
+#include <cstdlib>
 
 namespace ZE::Utils
 {
@@ -135,5 +136,50 @@ namespace ZE::Utils
 		while (output.back().at(output.back().size() - 1) == ' ')
 			output.back() = output.back().substr(0, output.back().size() - 1);
 		return output;
+	}
+
+	void* AlignedAlloc(U64 size, U64 alignment) noexcept
+	{
+		ZE_ASSERT(size != 0, "Invalid size of allocation!");
+		ZE_ASSERT(Math::IsPower2(alignment), "Alignment must be power of 2!");
+
+		size = Math::AlignUp(size, alignment);
+#if _ZE_COMPILER_MSVC
+		return _aligned_malloc(size, alignment);
+#else
+		return std::aligned_alloc(alignment, size);
+#endif
+	}
+
+	void* AlignedRealloc(void* ptr, U64 newSize, U64 oldSize, U64 alignment) noexcept
+	{
+		ZE_ASSERT(ptr, "Invalid allocation!");
+		ZE_ASSERT(newSize != 0 && oldSize != 0, "Invalid size of allocation!");
+		ZE_ASSERT(Math::IsPower2(alignment), "Alignment must be power of 2!");
+
+#if _ZE_COMPILER_MSVC
+		return _aligned_realloc(ptr, newSize, alignment);
+#else
+		if (alignment <= alignof(std::max_align_t))
+			return realloc(ptr, newSize);
+
+		void* newBlock = AlignedAlloc(newSize, alignment);
+		if (newBlock)
+			memcpy(newBlock, ptr, oldSize);
+
+		AlignedFree(ptr);
+		return newBlock;
+#endif
+	}
+
+	void AlignedFree(void* ptr) noexcept
+	{
+		ZE_ASSERT(ptr, "Invalid allocation!");
+
+#if _ZE_COMPILER_MSVC
+		_aligned_free(ptr);
+#else
+		free(ptr);
+#endif
 	}
 }

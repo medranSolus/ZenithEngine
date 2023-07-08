@@ -45,6 +45,13 @@ namespace ZE::Utils
 	// Split string based on given delimeter
 	std::deque<std::string_view> SplitString(std::string_view input, std::string_view delimeter) noexcept;
 
+	// Allocate aligned memory with power of 2 alignment
+	void* AlignedAlloc(U64 size, U64 alignment) noexcept;
+	// Reallocate aligned memory with power of 2 alignment
+	void* AlignedRealloc(void* ptr, U64 newSize, U64 oldSize, U64 alignment) noexcept;
+	// Free aligned memory
+	void AlignedFree(void* ptr) noexcept;
+
 #pragma region Functions
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept
 	{
