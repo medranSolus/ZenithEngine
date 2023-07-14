@@ -18,7 +18,7 @@
 ******* atomic
 ******* cstdint
 ***** BasicTypes.h
-***** intrin.h/x86intrin.h
+***** intrin.h/x86intrin.h + cpuid.h
 *** Intrinsics.h
 *** cmath
 *** cstddef
@@ -37,12 +37,6 @@
 * utility
 */
 #include "ColorF3.h"
-
-/*
-* Macros.h (defined by CmdParser.h)
-* shared_mutex
-*/
-#include "LockGuard.h"
 
 /*
 * string
@@ -79,6 +73,26 @@
 #include "Timer.h"
 
 /*
+***** Macros.h (defined by CmdParser.h)
+***** shared_mutex
+*** LockGuard.h
+*** memory
+* Allocator/BlockingQueue.h
+*** BasicTypes.h (defined by CmdParser.h)
+*** vector
+* Allocator/FixedPool.h
+*** BasicTypes.h (defined by CmdParser.h)
+*** future
+*** memory
+* Task.h
+* array
+* condition_variable
+* functional
+* thread
+*/
+#include "ThreadPool.h"
+
+/*
 *** Types.h (defined by CmdParser.h)
 * PixelFormat.h
 * string
@@ -88,7 +102,7 @@
 #include "Utils.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
+*** BasicTypes.h (defined by CmdParser.h)
 *** vector
 * Allocator/Pool.h
 * Intrinsics.h (defined by CmdParser.h)
@@ -110,7 +124,6 @@
 *** PixelFormat.h (defined by Utils.h)
 *** DirectXTex.h
 * GFX/DX.h
-* functional
 * utility
 * vector
 */
@@ -136,5 +149,5 @@
 *** Platform/WinAPI/WinAPI.h
 * Platform/WinAPI/WinApiException.h
 */
-#include "Platform/WinAPI/DirectXTexException.h"
+#	include "Platform/WinAPI/DirectXTexException.h"
 #endif

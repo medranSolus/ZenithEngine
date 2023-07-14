@@ -28,6 +28,10 @@ namespace ZE
 		// higher number means less possible materials but more objects can be rendered.
 		// Have to be smaller than GraphicsDescriptorPoolSize!
 		U32 ScratchDescriptorCount;
+		// Override number of threads used for scheduling tasks to thread pool.
+		// When set to 0 leaves calculation of optimal thread count to the pool.
+		// Set to UINT8_MAX to disable thread pool completly.
+		U8 CustomThreadPoolThreadsCount;
 		// Parameters for used render pipeline
 		GFX::Pipeline::ParamsPBR Renderer;
 

@@ -620,7 +620,7 @@ App::App(const CmdParser& params)
 		{
 			APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), EngineParams::GetParsedApi(params),
 			params.GetNumber("backbuffers"), params.GetNumber("width"), params.GetNumber("height"),
-			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"),
+			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"), static_cast<U8>(params.GetNumber("threadsCount")),
 			{ "Skybox/Space", ".png", params.GetOption("minPassDist"), params.GetNumber("shadowMapSize") }
 		})
 {

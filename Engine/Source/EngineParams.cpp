@@ -12,6 +12,7 @@ namespace ZE
 		parser.AddNumber("height");
 		parser.AddNumber("descPoolSize", 10000);
 		parser.AddNumber("descScratchCount", 800);
+		parser.AddNumber("threadsCount", 0);
 		parser.AddOption("minPassDist");
 		parser.AddNumber("shadowMapSize", 1024);
 	}

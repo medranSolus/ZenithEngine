@@ -14,11 +14,13 @@
 *
 * STD HEADERS:
 *** algorithm
+*** array
 *** atomic
 *** cassert
 *** cfloat
 *** chrono
 *** cmath
+*** condition_variable
 *** cstddef
 *** cstdint
 *** cstdlib
@@ -28,13 +30,16 @@
 *** filesystem
 *** fstream
 *** functional
-*** intrin.h/x86intrin.h
+*** future
+*** intrin.h/x86intrin.h + cpuid.h
 *** map
+*** memory
 *** random
 *** shared_mutex
 *** sstream
 *** string
 *** string_view
+*** thread
 *** type_traits
 *** utility
 *** unordered_map

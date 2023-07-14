@@ -1,7 +1,6 @@
 #pragma once
 #include "Pixel.h"
 #include "DX.h"
-#include <functional>
 #include <utility>
 #include <vector>
 

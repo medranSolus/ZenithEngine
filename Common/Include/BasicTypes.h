@@ -16,6 +16,8 @@
 #pragma endregion
 
 #pragma region Atomic types
+	typedef std::atomic_bool BoolAtom;
+
 	typedef std::atomic_uint8_t UA8;
 	typedef std::atomic_uint16_t UA16;
 	typedef std::atomic_uint32_t UA32;
