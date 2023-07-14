@@ -3,9 +3,9 @@
 
 // To be changed into multiplatform library
 #define XMVECTOR Vector
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "DirectXTex.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 #undef XMVECTOR
 namespace ZE::Tex
 {

@@ -8,9 +8,9 @@
 #include "GFX/Resource/State.h"
 #include "GFX/ShaderPresence.h"
 #include "GFX/QueueType.h"
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include <d3d12.h>
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 #include <bitset>
 
 namespace ZE::GFX::API::DX12

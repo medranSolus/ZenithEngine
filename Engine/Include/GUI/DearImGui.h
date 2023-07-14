@@ -1,6 +1,6 @@
 #pragma once
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #define IMGUI_API
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP

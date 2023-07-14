@@ -7,10 +7,10 @@
 
 namespace ZE::External
 {
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "DirectXMath.h"
 #include "DirectXCollision.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 }
 namespace ZE::Math
 {

@@ -3,10 +3,10 @@
 #include "GFX/Resource/Topology.h"
 #include "GFX/DX.h"
 #include "DebugInfoManager.h"
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::API::DX
 {

@@ -1,10 +1,10 @@
 #include "GUI/Manager.h"
 #include "GFX/API/VK/VulkanException.h"
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "backends/imgui_impl_dx11.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_vulkan.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 namespace ZE::GUI
 {

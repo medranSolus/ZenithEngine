@@ -1,8 +1,8 @@
 #pragma once
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include <d3dcommon.h>
 #include <wrl.h>
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 #include <concepts>
 
 namespace ZE::GFX::API::DX

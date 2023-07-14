@@ -5,9 +5,9 @@
 #include "AllocatorGPU.h"
 #include "CommandList.h"
 #include "DescriptorInfo.h"
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "amd_ags.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX
 {

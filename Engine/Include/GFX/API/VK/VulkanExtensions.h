@@ -1,8 +1,8 @@
 #pragma once
 // Headers needed for Vulkan
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "volk.h"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 /* Definitions of extensions (up to spec version 1.3.250)
 *

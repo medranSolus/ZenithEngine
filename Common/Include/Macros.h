@@ -51,3 +51,31 @@
 #define ZE_CLASS_NO_MOVE(className) \
 	className(className&&) = delete; \
 	className& operator=(className&&) = delete;
+
+// Compiler agnostic way of handling pragma directive
+#define ZE_PRAGMA(X) _Pragma(#X)
+
+// Compiler agnostic macros for handling warnings
+#if _ZE_COMPILER_MSVC
+// Compiler agnostic way of pushing warnings on stack
+#	define ZE_WARNING_PUSH ZE_PRAGMA(warning(push, 0))
+// Compiler agnostic way of popping warnings from stack
+#	define ZE_WARNING_POP ZE_PRAGMA(warning(pop))
+
+// Disable MSVC specific warning
+#	define ZE_WARNING_DISABLE_MSVC(number) ZE_PRAGMA(warning(disable : number))
+// Disable GCC and Clang specific warning
+#	define ZE_WARNING_DISABLE_GCC_CLANG(warningName)
+#elif _ZE_COMPILER_GCC || _ZE_COMPILER_CLANG
+// Compiler agnostic way of pushing warnings on stack
+#	define ZE_WARNING_PUSH ZE_PRAGMA(GCC diagnostic push)
+// Compiler agnostic way of popping warnings from stack
+#	define ZE_WARNING_POP ZE_PRAGMA(GCC diagnostic pop)
+
+// Disable MSVC specific warning
+#	define ZE_WARNING_DISABLE_MSVC(number)
+// Disable GCC and Clang specific warning
+#	define ZE_WARNING_DISABLE_GCC_CLANG(warningName) ZE_PRAGMA(GCC diagnostic ignored #warningName)
+#else
+#	error Compiler not supported!
+#endif

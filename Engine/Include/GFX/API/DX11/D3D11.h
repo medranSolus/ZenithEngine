@@ -3,9 +3,9 @@
 #include "GFX/API/DX/DXGI.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include <d3d11_4.h>
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::API::DX11
 {

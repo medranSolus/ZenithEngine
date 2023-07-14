@@ -1,7 +1,7 @@
 #pragma once
-#include "WarningGuardOn.h"
+ZE_WARNING_PUSH
 #include "entt/entt.hpp"
-#include "WarningGuardOff.h"
+ZE_WARNING_POP
 
 namespace ZE
 {
