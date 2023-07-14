@@ -11,7 +11,7 @@ namespace ZE
 		std::shared_mutex* lock = nullptr;
 
 	public:
-		constexpr LockGuard(std::shared_mutex& mutex, bool aquireLock) noexcept;
+		constexpr LockGuard(std::shared_mutex& mutex, bool aquireLock = true) noexcept;
 		ZE_CLASS_DELETE(LockGuard);
 		~LockGuard();
 	};
