@@ -2,29 +2,37 @@
 #include "BasicTypes.h"
 #if _ZE_COMPILER_MSVC
 #   include <intrin.h>
-#   pragma intrinsic(__rdtsc, __faststorefence)
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 #   include <x86intrin.h>
+#	include <cpuid.h>
 #else
 #   error Unsupported compiler!
 #endif
 
 namespace ZE::Intrin
 {
+	inline void CPUID(U32& eax, U32& ebx, U32& ecx, U32& edx, U32 function) noexcept;
+	inline void CPUIDEX(U32& eax, U32& ebx, U32& ecx, U32& edx, U32 function, U32 subFunction) noexcept;
+	inline bool IsCPUIDFunctionSupported(U32 function) noexcept;
+
 	inline U64 Rdtsc() noexcept;
+
 	inline void FenceStore() noexcept;
 	inline void FenceLoad() noexcept;
 	inline void FenceMemory() noexcept;
+
 	// Returns number of bits set to 1 in 64 bit integer
 	inline U8 CountBitsSet(U64 val) noexcept;
 	// Returns number of bits set to 1 in 32 bit integer
 	inline U8 CountBitsSet(U32 val) noexcept;
+
 	// Scans U64 for index of first nonzero value from the Least Significant Bit (LSB).
 	// If mask is 0 then returns UINT8_MAX
 	inline U8 BitScanLSB(U64 mask) noexcept;
 	// Scans U32 for index of first nonzero value from the Least Significant Bit (LSB).
 	// If mask is 0 then returns UINT8_MAX
 	inline U8 BitScanLSB(U32 mask) noexcept;
+
 	// Scans U64 for index of first nonzero value from the Most Significant Bit (MSB).
 	// If mask is 0 then returns UINT8_MAX
 	inline U8 BitScanMSB(U64 mask) noexcept;
@@ -33,15 +41,77 @@ namespace ZE::Intrin
 	inline U8 BitScanMSB(U32 mask) noexcept;
 
 #pragma region Functions
+	inline void CPUID(U32& eax, U32& ebx, U32& ecx, U32& edx, U32 function) noexcept
+	{
+		ZE_ASSERT(IsCPUIDFunctionSupported(function), "Unsupported CPUID function!");
+
+#if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		int cpuInfo[4];
+		__cpuid(cpuInfo, function);
+
+		eax = static_cast<U32>(cpuInfo[0]);
+		ebx = static_cast<U32>(cpuInfo[1]);
+		ecx = static_cast<U32>(cpuInfo[2]);
+		edx = static_cast<U32>(cpuInfo[3]);
+#else
+#   error Unsupported compiler!
+#endif
+	}
+
+	inline void CPUIDEX(U32& eax, U32& ebx, U32& ecx, U32& edx, U32 function, U32 subFunction) noexcept
+	{
+		ZE_ASSERT(IsCPUIDFunctionSupported(function), "Unsupported CPUID function!");
+		ZE_ASSERT(IsCPUIDFunctionSupported(subFunction), "Unsupported CPUID extended function!");
+
+#if _ZE_COMPILER_MSVC
+		int cpuInfo[4];
+		__cpuidex(cpuInfo, static_cast<int>(function), static_cast<int>(subFunction));
+
+		eax = static_cast<U32>(cpuInfo[0]);
+		ebx = static_cast<U32>(cpuInfo[1]);
+		ecx = static_cast<U32>(cpuInfo[2]);
+		edx = static_cast<U32>(cpuInfo[3]);
+#elif  _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		__cpuid_count(function, subFunction, eax, ebx, ecx, edx);
+#else
+#   error Unsupported compiler!
+#endif
+	}
+
+	inline bool IsCPUIDFunctionSupported(U32 function) noexcept
+	{
+#if _ZE_COMPILER_MSVC
+		int cpuInfo[4];
+		__cpuid(cpuInfo, static_cast<int>(function & 0x80000000));
+
+		if (cpuInfo[0] == 0 || static_cast<U32>(cpuInfo[0]) < function)
+			return false;
+#elif  _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		const U32 maxFunction = static_cast<U32>(__get_cpuid_max(function & 0x80000000, nullptr));
+
+		if (cpuInfo[0] == 0 || cpuInfo[0] < function)
+			return false;
+#else
+#   error Unsupported compiler!
+#endif
+		return true;
+	}
+
 	inline U64 Rdtsc() noexcept
 	{
+#if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		return __rdtsc();
+#else
+#   error Unsupported compiler!
+#endif
 	}
 
 	inline void FenceStore() noexcept
 	{
 #if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		_mm_sfence();
+#else
+#   error Unsupported compiler!
 #endif
 	}
 
@@ -49,6 +119,8 @@ namespace ZE::Intrin
 	{
 #if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		_mm_lfence();
+#else
+#   error Unsupported compiler!
 #endif
 	}
 
@@ -58,6 +130,8 @@ namespace ZE::Intrin
 		__faststorefence();
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		_mm_mfence();
+#else
+#   error Unsupported compiler!
 #endif
 	}
 
