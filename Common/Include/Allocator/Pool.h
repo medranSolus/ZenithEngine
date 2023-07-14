@@ -1,11 +1,11 @@
 #pragma once
-#include "Types.h"
+#include "BasicTypes.h"
 #include <vector>
 
 namespace ZE::Allocator
 {
 	// Allocator for objects of type T using a list of arrays to speed up allocation.
-	// Number of elements that can be allocated is not bounded because allocator can create multiple blocks.
+	// Number of elements that can be allocated is not bounded because allocator can create multiple blocks
 	template<typename T>
 	class Pool final
 	{
@@ -30,13 +30,14 @@ namespace ZE::Allocator
 
 	public:
 		Pool(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
-		ZE_CLASS_DEFAULT(Pool);
+		ZE_CLASS_MOVE(Pool);
 		~Pool() { Clear(); }
 
 		template<typename... Types>
 		T* Alloc(Types&&... args) noexcept;
 		void Free(T* ptr) noexcept;
-		void Clear() noexcept;
+		// Use fast clears with POD that don't need invocation of destructor
+		void Clear(bool fastClear = false) noexcept;
 	};
 
 #pragma region Functions
@@ -47,9 +48,9 @@ namespace ZE::Allocator
 		ItemBlock& newBlock = itemBlocks.emplace_back(new Item[newBlockCapacity], newBlockCapacity, 0);
 		--newBlockCapacity;
 
-		// Setup singly-linked list of all free items in this block.
-		for (U64 i = 0; i < newBlockCapacity; ++i)
-			newBlock.Items[i].NextFreeIndex = i + 1;
+		// Setup singly-linked list of all free items in this block
+		for (U64 i = 1; i < newBlockCapacity; ++i)
+			newBlock.Items[i - 1].NextFreeIndex = i;
 
 		newBlock.Items[newBlockCapacity].NextFreeIndex = UINT64_MAX;
 		freeBlock = false;
@@ -91,11 +92,13 @@ namespace ZE::Allocator
 	template<typename T>
 	void Pool<T>::Free(T* ptr) noexcept
 	{
+		ZE_ASSERT(ptr, "Invalid pointer!");
+
+		Item* item = reinterpret_cast<Item*>(ptr);
 		// Search all memory blocks to find ptr
 		for (U64 i = itemBlocks.size(); i;)
 		{
 			ItemBlock& block = itemBlocks.at(--i);
-			Item* item = reinterpret_cast<Item*>(ptr);
 
 			// Check if item is in address range of this block
 			if (item >= block.Items && item < block.Items + block.Capacity)
@@ -119,10 +122,40 @@ namespace ZE::Allocator
 	}
 
 	template<typename T>
-	void Pool<T>::Clear() noexcept
+	void Pool<T>::Clear(bool fastClear) noexcept
 	{
-		for (auto& block : itemBlocks)
-			delete[] block.Items;
+		if (fastClear)
+		{
+			for (auto& block : itemBlocks)
+				delete[] block.Items;
+		}
+		else
+		{
+			for (auto& block : itemBlocks)
+			{
+				// No need to gather free elements
+				if (block.FirstFreeIndex == UINT64_MAX)
+				{
+					for (U64 i = 0; i < block.Capacity; ++i)
+						reinterpret_cast<T*>(block.Items[i].Data)->~T();
+				}
+				else
+				{
+					// Traverse free list to know which element to delete
+					std::vector<bool> isInUse(block.Capacity, true);
+					do
+					{
+						isInUse.at(block.FirstFreeIndex) = false;
+						block.FirstFreeIndex = block.Items[block.FirstFreeIndex].NextFreeIndex;
+					} while (block.FirstFreeIndex != UINT64_MAX);
+
+					// Delete remaining elements
+					for (U64 i = 0; i < block.Capacity; ++i)
+						if (isInUse.at(i))
+							reinterpret_cast<T*>(block.Items[i].Data)->~T();
+				}
+			}
+		}
 		itemBlocks.clear();
 	}
 #pragma endregion
