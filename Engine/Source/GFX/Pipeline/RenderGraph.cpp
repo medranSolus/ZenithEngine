@@ -325,7 +325,7 @@ namespace ZE::GFX::Pipeline
 			U64 depLevel = dependencyLevels.at(i);
 			auto& node = nodes.at(i);
 			// Check all inputs by resources connected to them from dependent nodes
-			for (U64 j = 0; const std::string& input : node.GetInputs())
+			for (RID j = 0; const std::string& input : node.GetInputs())
 			{
 				auto splitInput = Utils::SplitString(input, ".");
 				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
@@ -339,7 +339,7 @@ namespace ZE::GFX::Pipeline
 				{
 					if (it->GetOutputs().at(k) == input)
 					{
-						const U64 rid = it->GetOutputResources().at(k);
+						const RID rid = it->GetOutputResources().at(k);
 						if (rid >= frameBufferDesc.ResourceInfo.size())
 							throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "], RID out of range [" + std::to_string(rid) + "]!");
 
@@ -347,10 +347,10 @@ namespace ZE::GFX::Pipeline
 						Resource::State currentState = node.GetInputState(j);
 						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
-						if (lifetime.contains(depLevel))
-							AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
+						if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
+							AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
 						else
-							lifetime[depLevel] = currentState;
+							lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
 						break;
 					}
 					else if (++k == it->GetOutputs().size())
@@ -359,7 +359,7 @@ namespace ZE::GFX::Pipeline
 				++j;
 			}
 			// Check all output resources
-			for (U64 j = 0; const U64 rid : node.GetOutputResources())
+			for (RID j = 0; const RID rid : node.GetOutputResources())
 			{
 				if (rid >= frameBufferDesc.ResourceInfo.size())
 					throw ZE_RGC_EXCEPT("RID out of range [" + std::to_string(rid) + "] for output + [" + node.GetOutputs().at(j) + "]!");
@@ -367,17 +367,17 @@ namespace ZE::GFX::Pipeline
 				Resource::State currentState = node.GetOutputState(j);
 				auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
-				if (lifetime.contains(depLevel))
-					AssignState(lifetime.at(depLevel), currentState, rid, depLevel);
+				if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
+					AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
 				else
-					lifetime[depLevel] = currentState;
+					lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
 				++j;
 			}
 			// Check temporary inner resources
 			for (auto& innerBuffer : node.GetInnerBuffers())
 			{
 				node.AddInnerBufferResource(frameBufferDesc.AddResource(std::move(innerBuffer.Info)));
-				frameBufferDesc.ResourceLifetimes.back()[depLevel] = innerBuffer.InitState;
+				frameBufferDesc.ResourceLifetimes.back()[Utils::SafeCast<RID>(depLevel)] = innerBuffer.InitState;
 			}
 		}
 

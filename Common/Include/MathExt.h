@@ -52,14 +52,14 @@ namespace ZE::Math
 		return a <= b - FLT_EPSILON || a >= b + FLT_EPSILON;
 	}
 
-	inline float Wrap2Pi(float x) noexcept
-	{
-		return static_cast<float>(fmod(x, 2.0f * M_PI));
-	}
-
 	inline float Wrap(float x, float wrap) noexcept
 	{
 		return static_cast<float>(fmod(x, wrap));
+	}
+
+	inline float Wrap2Pi(float x) noexcept
+	{
+		return Wrap(x, 2.0f * M_PI);
 	}
 
 	inline float Wrap2PiRand(std::mt19937_64& eng) noexcept

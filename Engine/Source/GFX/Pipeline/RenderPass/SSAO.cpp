@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		U16* buffer = reinterpret_cast<U16*>(surfaces.front().GetBuffer());
 		for (U32 x = 0; x < XE_HILBERT_WIDTH; ++x)
 			for (U32 y = 0; y < XE_HILBERT_WIDTH; ++y)
-				buffer[x + y * XE_HILBERT_WIDTH] = XeGTAO::HilbertIndex(x, y);
+				buffer[x + y * XE_HILBERT_WIDTH] = Utils::SafeCast<U16>(XeGTAO::HilbertIndex(x, y));
 
 		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
@@ -93,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
 		renderData.Buffers.SetSRV(list, prefilterCtx, ids.Depth);
 		renderData.SettingsBuffer.Bind(list, prefilterCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.x, 16U), Math::DivideRoundUp(size.y, 16U), 1);
+		list.Compute(dev, Math::DivideRoundUp(size.X, 16U), Math::DivideRoundUp(size.Y, 16U), 1);
 
 		renderData.Buffers.BarrierTransition(list, ids.ViewspaceDepth, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS);
 
@@ -107,8 +107,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		data.HilbertLUT.Bind(list, mainCtx);
 		renderData.BindRendererDynamicData(list, mainCtx);
 		renderData.SettingsBuffer.Bind(list, mainCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.x, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
-			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
+		list.Compute(dev, Math::DivideRoundUp(size.X, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
+			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
 		renderData.Buffers.BarrierTransition(list,
 			std::array
@@ -127,8 +127,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		renderData.Buffers.SetSRV(list, denoiseCtx, ids.ScratchSSAO);
 		renderData.Buffers.SetSRV(list, denoiseCtx, ids.DepthEdges);
 		renderData.SettingsBuffer.Bind(list, denoiseCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.x, XE_GTAO_NUMTHREADS_X * 2U),
-			Math::DivideRoundUp(size.y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
+		list.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
+			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
 		renderData.Buffers.BarrierTransition(list,
 			std::array

@@ -37,7 +37,7 @@ namespace ZE::GFX::API::DX
 
 #if _ZE_DEBUG_GFX_API
 // Enables useage of ZE_DX_*_INFO macros in current scope
-#define ZE_DX_ENABLE_INFO(device) auto& ZE_DX_EXCEPT_MANAGER = device.GetInfoManager()
+#define ZE_DX_ENABLE_INFO(device) [[maybe_unused]] auto& ZE_DX_EXCEPT_MANAGER = device.GetInfoManager()
 
 // Before using needs call to ZE_DX_ENABLE()
 // To get accurate debug info first call ZE_DX_SET_DEBUG_WATCH() to catch only important messages
@@ -90,7 +90,7 @@ namespace ZE::GFX::API::DX
 
 // Before using needs call to ZE_DX_ENABLE_ID()
 // Sets debug name for GPU object with given id
-#define ZE_DX_SET_ID(child, id) ZE_DX_DEBUG_ID = id; ZE_DX_THROW_FAILED(child->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(ZE_DX_DEBUG_ID.size()), ZE_DX_DEBUG_ID.c_str()))
+#define ZE_DX_SET_ID(child, id) ZE_DX_DEBUG_ID = id; ZE_DX_THROW_FAILED(child->SetPrivateData(WKPDID_D3DDebugObjectName, Utils::SafeCast<UINT>(ZE_DX_DEBUG_ID.size()), ZE_DX_DEBUG_ID.c_str()))
 
 #else
 // Enables useage of ZE_DX_SET_ID macros in current scope

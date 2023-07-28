@@ -8,7 +8,7 @@ namespace ZE::GFX::API::DX12::Binding
 
 		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc = {};
 		signatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
-		signatureDesc.Desc_1_1.NumStaticSamplers = static_cast<U32>(desc.Samplers.size());
+		signatureDesc.Desc_1_1.NumStaticSamplers = Utils::SafeCast<U32>(desc.Samplers.size());
 		std::unique_ptr < D3D12_STATIC_SAMPLER_DESC[] > staticSamplers = nullptr;
 		if (signatureDesc.Desc_1_1.NumStaticSamplers)
 		{
@@ -172,7 +172,7 @@ namespace ZE::GFX::API::DX12::Binding
 		{
 			ZE_ASSERT(parameters[table.first].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
 				"Trying to setup ranges for non descriptor table type!");
-			parameters[table.first].DescriptorTable.NumDescriptorRanges = static_cast<UINT>(table.second.size());
+			parameters[table.first].DescriptorTable.NumDescriptorRanges = Utils::SafeCast<UINT>(table.second.size());
 			parameters[table.first].DescriptorTable.pDescriptorRanges = table.second.data();
 		}
 

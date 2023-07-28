@@ -19,8 +19,8 @@ namespace ZE::GFX::API::DX11::Pipeline
 	void FrameBuffer::SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept
 	{
 		const UInt2 size = resources[rid].Size;
-		viewport.Width = static_cast<float>(size.x);
-		viewport.Height = static_cast<float>(size.y);
+		viewport.Width = Utils::SafeCast<float>(size.X);
+		viewport.Height = Utils::SafeCast<float>(size.Y);
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
 		viewport.TopLeftX = 0.0f;
@@ -40,7 +40,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 		ZE_DX_ENABLE_ID(dev.Get().dx11);
 		auto* device = dev.Get().dx11.GetDevice();
 
-		resourceCount = desc.ResourceInfo.size();
+		resourceCount = Utils::SafeCast<RID>(desc.ResourceInfo.size());
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
 
 		resources = new BufferData[resourceCount];

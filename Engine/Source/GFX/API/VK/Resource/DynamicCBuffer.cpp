@@ -45,7 +45,7 @@ namespace ZE::GFX::API::VK::Resource
 
 	DynamicCBuffer::~DynamicCBuffer()
 	{
-		for (auto& res : resInfo)
+		for ([[maybe_unused]] auto& res : resInfo)
 		{
 			ZE_ASSERT(res.IsFree(), "Resource not freed before deletion!");
 		}
@@ -56,7 +56,7 @@ namespace ZE::GFX::API::VK::Resource
 		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
 		ZE_ASSERT(bytes <= BLOCK_SIZE, "Structure too large for dynamic buffer!");
 
-		const U32 newBlock = Math::AlignUp(bytes, static_cast<U32>(dev.Get().vk.GetLimits().minUniformBufferOffsetAlignment));
+		const U32 newBlock = Math::AlignUp(bytes, Utils::SafeCast<U32>(dev.Get().vk.GetLimits().minUniformBufferOffsetAlignment));
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		const std::lock_guard<std::mutex> lock(allocLock);
 #endif

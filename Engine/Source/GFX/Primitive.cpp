@@ -21,7 +21,7 @@ namespace std
 			h1 ^= h2;
 			h1 = Rotate(h1, 13);
 			h1 = h1 * 5 + 0xE6546B64;
-			return h1 ^ (static_cast<size_t>(h2) << 1);
+			return h1 ^ (ZE::Utils::SafeCast<size_t>(h2) << 1);
 		}
 	};
 }
@@ -247,21 +247,21 @@ namespace ZE::GFX::Primitive
 		density *= 3;
 
 		Data<Float3> data;
-		data.Vertices.resize(static_cast<U64>(density) + 1);
+		data.Vertices.resize(Utils::SafeCast<U64>(density) + 1);
 
 		data.Vertices.at(0) = { 0.0f, 1.0f, 0.0f };
 		data.Vertices.at(1) = { 0.0f, 0.0f, 1.0f }; // Base of circle
 
-		const float angle = 2.0f * static_cast<float>(M_PI / density);
+		const float angle = 2.0f * Utils::SafeCast<float>(M_PI / density);
 		const Vector base = Math::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
 		for (U64 i = 1; i < density; ++i)
 		{
 			Math::XMStoreFloat3(&data.Vertices.at(i + 1),
-				Math::XMVector3Transform(base, Math::XMMatrixRotationY(angle * static_cast<float>(i))));
+				Math::XMVector3Transform(base, Math::XMMatrixRotationY(angle * Utils::SafeCast<float>(i))));
 		}
 
-		data.Indices.reserve(static_cast<U64>(density - 1) * 6);
+		data.Indices.reserve(Utils::SafeCast<U64>(density - 1) * 6);
 		for (U32 i = 2; i < density; ++i)
 		{
 			// Cone wall
@@ -354,19 +354,19 @@ namespace ZE::GFX::Primitive
 				auto i1 = lookup.find({ data.Indices.at(j), data.Indices.at(j + 1) });
 				if (i1 == lookup.end())
 				{
-					i1 = lookup.emplace(std::make_pair(data.Indices.at(j), data.Indices.at(j + 1)), static_cast<U32>(data.Vertices.size())).first;
+					i1 = lookup.emplace(std::make_pair(data.Indices.at(j), data.Indices.at(j + 1)), Utils::SafeCast<U32>(data.Vertices.size())).first;
 					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j)], data.Vertices[data.Indices.at(j + 1)]));
 				}
 				auto i2 = lookup.find({ data.Indices.at(j + 1), data.Indices.at(j + 2) });
 				if (i2 == lookup.end())
 				{
-					i2 = lookup.emplace(std::make_pair(data.Indices.at(j + 1), data.Indices.at(j + 2)), static_cast<U32>(data.Vertices.size())).first;
+					i2 = lookup.emplace(std::make_pair(data.Indices.at(j + 1), data.Indices.at(j + 2)), Utils::SafeCast<U32>(data.Vertices.size())).first;
 					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j + 1)], data.Vertices[data.Indices.at(j + 2)]));
 				}
 				auto i3 = lookup.find({ data.Indices.at(j + 2), data.Indices.at(j) });
 				if (i3 == lookup.end())
 				{
-					i3 = lookup.emplace(std::make_pair(data.Indices.at(j + 2), data.Indices.at(j)), static_cast<U32>(data.Vertices.size())).first;
+					i3 = lookup.emplace(std::make_pair(data.Indices.at(j + 2), data.Indices.at(j)), Utils::SafeCast<U32>(data.Vertices.size())).first;
 					data.Vertices.emplace_back(Math::AddNormal(data.Vertices[data.Indices.at(j + 2)], data.Vertices[data.Indices.at(j)]));
 				}
 				// Left

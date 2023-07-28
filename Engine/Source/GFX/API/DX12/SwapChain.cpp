@@ -56,7 +56,7 @@ namespace ZE::GFX::API::DX12
 				rtvSrv[i].second = srvHandle.second;
 			}
 			else
-				rtvSrv[i].second.ptr = -1;
+				rtvSrv[i].second.ptr = UINT64_MAX;
 			rtvHandle.ptr += rtvDescSize;
 			srvHandle.first.ptr += srvDescSize;
 			srvHandle.second.ptr += srvDescSize;

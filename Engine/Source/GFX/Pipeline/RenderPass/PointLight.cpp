@@ -49,8 +49,8 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		passData->State.Init(dev, psoDesc, schema);
 
 		const auto volume = Primitive::MakeSphereIcoSolid(3);
-		passData->VolumeVB.Init(dev, { static_cast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
-		passData->VolumeIB.Init(dev, { static_cast<U32>(volume.Indices.size()), sizeof(U32), volume.Indices.data() });
+		passData->VolumeVB.Init(dev, { ZE::Utils::SafeCast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
+		passData->VolumeIB.Init(dev, { ZE::Utils::SafeCast<U32>(volume.Indices.size()), sizeof(U32), volume.Indices.data() });
 
 		return passData;
 	}

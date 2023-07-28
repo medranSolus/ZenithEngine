@@ -89,7 +89,7 @@ namespace ZE::GFX::API::VK
 #define	ZE_VK_EXCEPT(result) ZE::GFX::API::VK::VulkanException(__LINE__, __FILENAME__, result)
 
 // Enables useage of ZE_VK_* macros in current scope
-#define ZE_VK_ENABLE() VkResult ZE_VK_EXCEPT_RESULT
+#define ZE_VK_ENABLE() [[maybe_unused]] VkResult ZE_VK_EXCEPT_RESULT
 
 // Before using needs call to ZE_VK_ENABLE()
 // Checks VkResult returned via function and throws on error

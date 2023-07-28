@@ -95,9 +95,10 @@
 /*
 *** Types.h (defined by CmdParser.h)
 * PixelFormat.h
+* deque
+* limits
 * string
 * vector
-* deque
 */
 #include "Utils.h"
 

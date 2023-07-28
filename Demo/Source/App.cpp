@@ -34,8 +34,8 @@ void App::ProcessInput()
 			const auto& value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
 				Data::RotateCamera(engine.GetData(), currentCamera,
-					rotateSpeed * static_cast<float>(value.GetDY()) / static_cast<float>(engine.Reneder().GetFrameHeight()),
-					rotateSpeed * static_cast<float>(value.GetDX()) / static_cast<float>(engine.Reneder().GetFrameHeight()), cameraType);
+					rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()),
+					rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()), cameraType);
 
 			switch (value.GetType())
 			{
@@ -55,8 +55,8 @@ void App::ProcessInput()
 			{
 				if (!window.IsCursorEnabled())
 					Data::RotateCamera(engine.GetData(), currentCamera,
-						rotateSpeed * static_cast<float>(value.GetDY()) / static_cast<float>(engine.Reneder().GetFrameHeight()),
-						rotateSpeed * static_cast<float>(value.GetDX()) / static_cast<float>(engine.Reneder().GetFrameHeight()), cameraType);
+						rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()),
+						rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()), cameraType);
 				break;
 			}
 			default:
@@ -620,7 +620,7 @@ App::App(const CmdParser& params)
 		{
 			APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), EngineParams::GetParsedApi(params),
 			params.GetNumber("backbuffers"), params.GetNumber("width"), params.GetNumber("height"),
-			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"), static_cast<U8>(params.GetNumber("threadsCount")),
+			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"), Utils::SafeCast<U8>(params.GetNumber("threadsCount")),
 			{ "Skybox/Space", ".png", params.GetOption("minPassDist"), params.GetNumber("shadowMapSize") }
 		})
 {

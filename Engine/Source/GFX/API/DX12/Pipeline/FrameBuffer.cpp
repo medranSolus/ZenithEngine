@@ -72,7 +72,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			if (notFoundInLevel)
 				break;
 		}
-		return static_cast<U64>(lastChunk + 1) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		return Utils::SafeCast<U64>(lastChunk + 1) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	}
 
 	bool FrameBuffer::CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
@@ -106,7 +106,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				break;
 		// Indicate that this memory will be occupied by single resource
 		for (U32 chunk = 0; chunk < chunks; ++chunk)
-			memory.at(static_cast<U64>(foundOffset + chunk) * levelCount) = id;
+			memory.at(Utils::SafeCast<U64>(foundOffset + chunk) * levelCount) = id;
 #else
 		// Search through whole memory
 		for (U32 offset = 0, chunksFound = 0; offset < maxChunks; ++offset)
@@ -139,7 +139,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				"] Last level: [" + std::to_string(lastLevel) + "]");
 		// Reserve space in memory
 		for (U32 chunk = 0; chunk < chunks; ++chunk)
-			std::fill_n(memory.begin() + static_cast<U64>(foundOffset + chunk) * levelCount + startLevel, lastLevel - startLevel + 1, id);
+			std::fill_n(memory.begin() + Utils::SafeCast<U64>(foundOffset + chunk) * levelCount + startLevel, lastLevel - startLevel + 1, id);
 		return foundOffset;
 	}
 
@@ -159,10 +159,10 @@ namespace ZE::GFX::API::DX12::Pipeline
 		viewport.TopLeftY = 0.0f;
 
 		const UInt2 size = resources[rid].Size;
-		scissorRect.right = size.x;
-		scissorRect.bottom = size.y;
-		viewport.Width = static_cast<float>(scissorRect.right);
-		viewport.Height = static_cast<float>(scissorRect.bottom);
+		scissorRect.right = size.X;
+		scissorRect.bottom = size.Y;
+		viewport.Width = Utils::SafeCast<float>(scissorRect.right);
+		viewport.Height = Utils::SafeCast<float>(scissorRect.bottom);
 
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
@@ -181,16 +181,16 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 
-		resourceCount = desc.ResourceInfo.size();
+		resourceCount = Utils::SafeCast<RID>(desc.ResourceInfo.size());
 		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
 
 		auto* device = dev.Get().dx12.GetDevice();
 		std::vector<ResourceInfo> resourcesInfo;
 		resourcesInfo.reserve(resourceCount - 1);
-		U32 rtvCount = 0, rtvAdditionalMipsCount = 0;
-		U32 dsvCount = 0, dsvAdditionalMipsCount = 0;
-		U32 srvUavCount = 0;
-		U32 uavCount = 0, uavAdditionalMipsCount = 0;
+		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
+		RID dsvCount = 0, dsvAdditionalMipsCount = 0;
+		RID srvUavCount = 0;
+		RID uavCount = 0, uavAdditionalMipsCount = 0;
 		bool rtvDsvMipsPresent = false;
 		bool uavMipsPresent = false;
 
@@ -290,7 +290,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 
 			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
 				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
-			resourcesInfo.emplace_back(i, 0, static_cast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
+			resourcesInfo.emplace_back(i, 0, Utils::SafeCast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
 				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
 				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4)
 				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::StencilView) << 5));
@@ -323,9 +323,9 @@ namespace ZE::GFX::API::DX12::Pipeline
 		if (uavMipsPresent)
 			uavMips = new Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>[resourceCount - 1];
 		const U64 levelCount = desc.TransitionsPerLevel.size() / 2;
-		const U64 invalidID = desc.ResourceInfo.size();
+		const RID invalidID = resourceCount;
 		const D3D12_RESIDENCY_PRIORITY residencyPriority = D3D12_RESIDENCY_PRIORITY_MAXIMUM;
-		U64 rt_dsCount;
+		RID rt_dsCount;
 		U32 maxChunks = 0;
 		std::vector<RID> memory;
 		D3D12_HEAP_DESC heapDesc = {};
@@ -373,7 +373,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				}
 
 #if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-				heapDesc.SizeInBytes = static_cast<U64>(maxChunksUAV) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+				heapDesc.SizeInBytes = Utils::SafeCast<U64>(maxChunksUAV) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 #else
 				// Check resource aliasing
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
@@ -435,7 +435,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		else
 		{
 			// Sort resources descending by size
-			rt_dsCount = resourcesInfo.size();
+			rt_dsCount = Utils::SafeCast<RID>(resourcesInfo.size());
 			for (const auto& res : resourcesInfo)
 				maxChunks += res.Chunks;
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
@@ -454,7 +454,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		}
 
 #if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-		heapDesc.SizeInBytes = static_cast<U64>(maxChunks) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		heapDesc.SizeInBytes = Utils::SafeCast<U64>(maxChunks) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 #else
 		// Check resource aliasing
 		for (RID i = 0; i < rt_dsCount; ++i)
@@ -516,7 +516,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 		{
 			mainList.Get().dx12.Open(dev);
 			ZE_DRAW_TAG_BEGIN(dev, mainList.Get().dx12, "DX12 Wrapping Transitions", PixelVal::Gray);
-			mainList.Get().dx12.GetList()->ResourceBarrier(static_cast<U32>(startingTransitions.size()), startingTransitions.data());
+			mainList.Get().dx12.GetList()->ResourceBarrier(Utils::SafeCast<U32>(startingTransitions.size()), startingTransitions.data());
 			ZE_DRAW_TAG_END(dev, mainList.Get().dx12);
 			mainList.Get().dx12.Close(dev);
 			dev.Get().dx12.ExecuteMain(mainList);
@@ -538,15 +538,15 @@ namespace ZE::GFX::API::DX12::Pipeline
 		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new BufferData[invalidID];
 		resources[0].Resource = nullptr;
-		resources[0].Size.x = desc.ResourceInfo.at(0).Width;
-		resources[0].Size.y = desc.ResourceInfo.at(0).Height;
+		resources[0].Size.X = desc.ResourceInfo.at(0).Width;
+		resources[0].Size.Y = desc.ResourceInfo.at(0).Height;
 		for (RID i = 1; auto& res : resourcesInfo)
 		{
 			aliasingResources[i - 1] = res.IsAliasing();
 			auto& data = resources[i];
 			data.Resource = std::move(res.Resource);
-			data.Size.x = desc.ResourceInfo.at(i).Width;
-			data.Size.y = desc.ResourceInfo.at(i).Height;
+			data.Size.X = desc.ResourceInfo.at(i).Width;
+			data.Size.Y = desc.ResourceInfo.at(i).Height;
 			++i;
 		}
 

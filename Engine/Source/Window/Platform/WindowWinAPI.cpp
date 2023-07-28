@@ -92,21 +92,21 @@ namespace ZE::Window::WinAPI
 				if ((KF_ALTDOWN & HIWORD(lParam)) && wParam == VK_RETURN)
 					SwitchFullscreen();
 				else
-					keyboard.OnKeyDown(static_cast<U8>(wParam));
+					keyboard.OnKeyDown(Utils::SafeCast<U8>(wParam));
 			}
 			break;
 		}
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 		{
-			keyboard.OnKeyUp(static_cast<U8>(wParam));
+			keyboard.OnKeyUp(Utils::SafeCast<U8>(wParam));
 			break;
 		}
 		case WM_CHAR:
 		{
 			if (ImGui::GetIO().WantCaptureKeyboard)
 				break;
-			keyboard.OnChar(static_cast<char>(wParam));
+			keyboard.OnChar(Utils::SafeCast<char>(wParam));
 			break;
 		}
 #pragma endregion
@@ -162,8 +162,8 @@ namespace ZE::Window::WinAPI
 				break;
 			const POINTS point = MAKEPOINTS(lParam);
 			// Allow window to capture mouse input when left/righ/middle button are pressed when escaping client area
-			if (point.x >= 0 && static_cast<U32>(point.x) < GetWidth()
-				&& point.y >= 0 && static_cast<U32>(point.y) < GetHeight())
+			if (point.x >= 0 && Utils::SafeCast<U32>(point.x) < GetWidth()
+				&& point.y >= 0 && Utils::SafeCast<U32>(point.y) < GetHeight())
 			{
 				mouse.OnMouseMove(point.x, point.y);
 				if (!mouse.IsInWindow())
@@ -325,7 +325,7 @@ namespace ZE::Window::WinAPI
 		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
-				return { true, static_cast<int>(msg.wParam) };
+				return { true, Utils::SafeCast<int>(msg.wParam) };
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}

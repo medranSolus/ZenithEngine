@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
 		while (stateCount--)
 		{
 			execData->StatesSolid[stateCount].Free(dev);
@@ -54,7 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
 		const std::string shaderName = "PhongPS";
-		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(-1) + 1;
+		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
@@ -109,7 +109,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		auto& cbuffer = renderData.DynamicBuffers.Get();
 
 		EID currentMaterial = INVALID_EID;
-		U8 currentState = -1;
+		U8 currentState = UINT8_MAX;
 		if (solidCount)
 		{
 			Utils::ViewSortAscending(solidGroup, cameraPos);
@@ -198,7 +198,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			}
 			ZE_DRAW_TAG_END(dev, cl);
 			currentMaterial = INVALID_EID;
-			currentState = -1;
+			currentState = UINT8_MAX;
 		}
 
 		// Transparent pass

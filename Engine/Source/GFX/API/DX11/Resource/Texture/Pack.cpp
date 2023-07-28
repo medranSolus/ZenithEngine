@@ -7,7 +7,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 		Device& device = dev.Get().dx11;
 		ZE_DX_ENABLE_ID(device);
 
-		count = static_cast<U32>(desc.Textures.size());
+		count = Utils::SafeCast<U32>(desc.Textures.size());
 		srvs = new DX::ComPtr<IShaderResourceView>[count];
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
@@ -16,9 +16,9 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 			else if (tex.Type == GFX::Resource::Texture::Type::Tex3D)
 			{
 				D3D11_TEXTURE3D_DESC1 texDesc = {};
-				texDesc.Width = static_cast<U32>(tex.Surfaces.front().GetWidth());
-				texDesc.Height = static_cast<U32>(tex.Surfaces.front().GetHeight());
-				texDesc.Depth = static_cast<U32>(tex.Surfaces.size());
+				texDesc.Width = Utils::SafeCast<U32>(tex.Surfaces.front().GetWidth());
+				texDesc.Height = Utils::SafeCast<U32>(tex.Surfaces.front().GetHeight());
+				texDesc.Depth = Utils::SafeCast<U32>(tex.Surfaces.size());
 				texDesc.MipLevels = 1;
 				texDesc.Format = DX::GetDXFormat(tex.Surfaces.front().GetFormat());
 				texDesc.Usage = D3D11_USAGE_IMMUTABLE;
@@ -35,7 +35,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					ZE_ASSERT(surface.GetHeight() == texDesc.Height, "Every surface should have same height!");
 
 					data[j].pSysMem = surface.GetBuffer();
-					data[j].SysMemPitch = static_cast<U32>(surface.GetRowByteSize());
+					data[j].SysMemPitch = Utils::SafeCast<U32>(surface.GetRowByteSize());
 					data[j].SysMemSlicePitch = 0;
 					++j;
 				}
@@ -54,10 +54,10 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 			else
 			{
 				D3D11_TEXTURE2D_DESC1 texDesc = {};
-				texDesc.Width = static_cast<U32>(tex.Surfaces.front().GetWidth());
-				texDesc.Height = static_cast<U32>(tex.Surfaces.front().GetHeight());
+				texDesc.Width = Utils::SafeCast<U32>(tex.Surfaces.front().GetWidth());
+				texDesc.Height = Utils::SafeCast<U32>(tex.Surfaces.front().GetHeight());
 				texDesc.MipLevels = 1; // TODO: Add mip generation module
-				texDesc.ArraySize = static_cast<U32>(tex.Surfaces.size());
+				texDesc.ArraySize = Utils::SafeCast<U32>(tex.Surfaces.size());
 				texDesc.Format = DX::GetDXFormat(tex.Surfaces.front().GetFormat());
 				texDesc.SampleDesc.Count = 1;
 				texDesc.SampleDesc.Quality = 0;
@@ -106,7 +106,7 @@ namespace ZE::GFX::API::DX11::Resource::Texture
 					ZE_ASSERT(surface.GetHeight() == texDesc.Height, "Every surface should have same height!");
 
 					data[j].pSysMem = surface.GetBuffer();
-					data[j].SysMemPitch = static_cast<U32>(surface.GetRowByteSize());
+					data[j].SysMemPitch = Utils::SafeCast<U32>(surface.GetRowByteSize());
 					data[j].SysMemSlicePitch = 0;
 					++j;
 				}

@@ -29,7 +29,7 @@ namespace ZE::GFX::API::DX12::Resource
 
 	DynamicCBuffer::~DynamicCBuffer()
 	{
-		for (auto& res : resInfo)
+		for ([[maybe_unused]] auto& res : resInfo)
 		{
 			ZE_ASSERT(res.first.IsFree(), "Resource not freed before deletion!");
 		}

@@ -87,7 +87,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			RID id = rid[i];
 			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-			handles[i] = reinterpret_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
+			handles[i] = static_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
 			ZE_ASSERT(handles[i], "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], id);
 		}
@@ -109,7 +109,7 @@ namespace ZE::GFX::API::DX11::Pipeline
 			RID id = rtv[i];
 			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-			handles[i] = reinterpret_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
+			handles[i] = static_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
 			ZE_ASSERT(handles[i], "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], id);
 		}

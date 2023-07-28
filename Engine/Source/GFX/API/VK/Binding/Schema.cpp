@@ -35,9 +35,9 @@ namespace ZE::GFX::API::VK::Binding
 		{
 			if (currentBindings.size())
 			{
-				descLayoutFlags.bindingCount = static_cast<U32>(currentFlags.size());
+				descLayoutFlags.bindingCount = Utils::SafeCast<U32>(currentFlags.size());
 				descLayoutFlags.pBindingFlags = currentFlags.data();
-				descLayoutInfo.bindingCount = static_cast<U32>(currentBindings.size());
+				descLayoutInfo.bindingCount = Utils::SafeCast<U32>(currentBindings.size());
 				descLayoutInfo.pBindings = currentBindings.data();
 
 				VkDescriptorSetLayout descLayout = VK_NULL_HANDLE;
@@ -116,7 +116,7 @@ namespace ZE::GFX::API::VK::Binding
 
 						for (U32 j = 0; j < entry.Count; ++j)
 						{
-							bindings[i++] = { type, static_cast<U8>(entry.RangeSlot + j) };
+							bindings[i++] = { type, Utils::SafeCast<U8>(entry.RangeSlot + j) };
 							VkDescriptorSetLayout descLayout = VK_NULL_HANDLE;
 							ZE_VK_THROW_NOSUCC(vkCreateDescriptorSetLayout(device, &descLayoutInfo, nullptr, &descLayout));
 
@@ -141,7 +141,7 @@ namespace ZE::GFX::API::VK::Binding
 			}
 		}
 
-		samplersCount = static_cast<U32>(desc.Samplers.size());
+		samplersCount = Utils::SafeCast<U32>(desc.Samplers.size());
 		if (samplersCount)
 		{
 			VkDescriptorSetLayoutBinding samplerBindings = {};
@@ -170,7 +170,7 @@ namespace ZE::GFX::API::VK::Binding
 				samplerInfo.addressModeW = GetTextureAddressMode(samplerDesc.Address.W);
 				samplerInfo.mipLodBias = samplerDesc.MipLevelBias;
 				samplerInfo.anisotropyEnable = GetFilterTypeIsAnisotropic(samplerDesc.Type);
-				samplerInfo.maxAnisotropy = static_cast<float>(samplerDesc.MaxAnisotropy);
+				samplerInfo.maxAnisotropy = Utils::SafeCast<float>(samplerDesc.MaxAnisotropy);
 				samplerInfo.compareOp = GetComparisonFunc(samplerDesc.Comparison);
 				samplerInfo.minLod = samplerDesc.MinLOD;
 				samplerInfo.maxLod = samplerDesc.MaxLOD;
@@ -194,9 +194,9 @@ namespace ZE::GFX::API::VK::Binding
 		// Create final layout
 		VkPipelineLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr };
 		layoutInfo.flags = 0;
-		layoutInfo.setLayoutCount = static_cast<U32>(sets.size());
+		layoutInfo.setLayoutCount = Utils::SafeCast<U32>(sets.size());
 		layoutInfo.pSetLayouts = sets.data();
-		layoutInfo.pushConstantRangeCount = static_cast<U32>(constants.size());
+		layoutInfo.pushConstantRangeCount = Utils::SafeCast<U32>(constants.size());
 		layoutInfo.pPushConstantRanges = constants.data();
 		ZE_VK_THROW_NOSUCC(vkCreatePipelineLayout(device, &layoutInfo, nullptr, &layout));
 	}

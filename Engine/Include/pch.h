@@ -32,6 +32,7 @@
 *** functional
 *** future
 *** intrin.h/x86intrin.h + cpuid.h
+*** limits
 *** map
 *** memory
 *** random

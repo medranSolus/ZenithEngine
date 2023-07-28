@@ -109,6 +109,8 @@ namespace ZE::GFX::API::DX12
 			Settings::SetGpuVendor(VendorGPU::Unknown);
 			break;
 		}
+		default:
+			break;
 		}
 
 		// Failed to create GPU specific device
@@ -222,6 +224,8 @@ namespace ZE::GFX::API::DX12
 			agsDeInitialize(gpuCtxAMD);
 			break;
 		}
+		default:
+			break;
 		}
 	}
 
@@ -438,7 +442,7 @@ namespace ZE::GFX::API::DX12
 			device->GetResourceAllocationInfo2(0, 1, &desc, &info);
 		}
 
-		return { desc, static_cast<U32>(info.SizeInBytes) };
+		return { desc, Utils::SafeCast<U32>(info.SizeInBytes) };
 	}
 
 	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic)
@@ -515,7 +519,7 @@ namespace ZE::GFX::API::DX12
 
 		copyList.GetList()->CopyTextureRegion(&dest, 0, 0, 0, &source, nullptr);
 		if (dest.SubresourceIndex == 0)
-			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, reinterpret_cast<IResource*>(dest.pResource), reinterpret_cast<IResource*>(source.pResource)));
+			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, static_cast<IResource*>(dest.pResource), static_cast<IResource*>(source.pResource)));
 	}
 
 	void Device::UpdateBuffer(IResource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
@@ -540,7 +544,7 @@ namespace ZE::GFX::API::DX12
 			"Prepared too small range for static descriptors, increase pool size!");
 
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> rangeStart;
-		U64 offest = static_cast<U64>(dynamicDescStart) * descriptorSize;
+		U64 offest = Utils::SafeCast<U64>(dynamicDescStart) * descriptorSize;
 		rangeStart.first.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;
 		rangeStart.second.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
 		dynamicDescStart += count;
@@ -558,7 +562,7 @@ namespace ZE::GFX::API::DX12
 			"Invalid location for normal descs! Resources created before RenderGraph finalization \
 			should always be created with PackOption::StaticCreation!");
 
-		U64 offest = static_cast<U64>(rangeStart.ID) * descriptorSize;
+		U64 offest = Utils::SafeCast<U64>(rangeStart.ID) * descriptorSize;
 		rangeStart.GPU.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
 		rangeStart.CPU.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;
 		dynamicDescCount += count;

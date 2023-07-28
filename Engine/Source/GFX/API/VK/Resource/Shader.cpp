@@ -14,7 +14,7 @@ namespace ZE::GFX::API::VK::Resource
 		if (!fin.good())
 			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + name);
 
-		std::vector<char> bytecode(Math::AlignUp(static_cast<U64>(fin.tellg()), 4ULL));
+		std::vector<char> bytecode(Math::AlignUp(Utils::SafeCast<U64>(fin.tellg()), 4ULL));
 		fin.seekg(0);
 		fin.read(bytecode.data(), bytecode.size());
 		fin.close();

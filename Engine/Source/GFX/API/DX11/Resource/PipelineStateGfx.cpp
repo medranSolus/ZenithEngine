@@ -30,7 +30,7 @@ namespace ZE::GFX::API::DX11::Resource
 				element.InstanceDataStepRate = 0;
 			}
 
-			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements.get(), static_cast<UINT>(desc.InputLayout.size()),
+			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements.get(), Utils::SafeCast<UINT>(desc.InputLayout.size()),
 				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
 			ZE_DX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
 		}

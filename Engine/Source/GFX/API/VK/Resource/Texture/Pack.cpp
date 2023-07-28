@@ -8,7 +8,7 @@ namespace ZE::GFX::API::VK::Resource::Texture
 		ZE_VK_ENABLE_ID();
 		Device& device = dev.Get().vk;
 
-		count = static_cast<U32>(desc.Textures.size());
+		count = Utils::SafeCast<U32>(desc.Textures.size());
 		// Something about descriptors
 		images = new VkImage[count];
 		resources = new Allocation[count];
@@ -24,13 +24,13 @@ namespace ZE::GFX::API::VK::Resource::Texture
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			U16 surfaces = static_cast<U16>(tex.Surfaces.size());
+			U16 surfaces = Utils::SafeCast<U16>(tex.Surfaces.size());
 			if (surfaces)
 			{
 				auto& startSurface = tex.Surfaces.front();
 				imageInfo.format = GetVkFormat(startSurface.GetFormat());
-				imageInfo.extent.width = static_cast<U32>(startSurface.GetWidth());
-				imageInfo.extent.height = static_cast<U32>(startSurface.GetHeight());
+				imageInfo.extent.width = Utils::SafeCast<U32>(startSurface.GetWidth());
+				imageInfo.extent.height = Utils::SafeCast<U32>(startSurface.GetHeight());
 
 				switch (tex.Type)
 				{

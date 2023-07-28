@@ -263,14 +263,18 @@ namespace ZE::GFX::API::VK
 
 	void Device::InitVolk()
 	{
+		ZE_WARNING_PUSH
+		ZE_WARNING_DISABLE_MSVC(4191) // GetProcAddress() call causes this
+		ZE_WARNING_DISABLE_MSVC(5039) // MSVC don't like volkInitializeCustom()
+
 		// Custom way of initializing Vulkan in order to correctly unload library
-		PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+		PFN_vkGetInstanceProcAddr getInstanceAddr;
 #if _ZE_PLATFORM_WINDOWS
 		HMODULE lib = LoadLibraryW(L"vulkan-1.dll");
 		if (!lib)
 			throw ZE_CMP_EXCEPT("Vulkan library missing! Cannot find [vulkan-1.dll]!");
 
-		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(lib, "vkGetInstanceProcAddr"));
+		getInstanceAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(lib, "vkGetInstanceProcAddr"));
 #else
 		void* lib = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
 		if (!lib)
@@ -278,10 +282,11 @@ namespace ZE::GFX::API::VK
 		if (!lib)
 			throw ZE_CMP_EXCEPT("Vulkan library missing! Cannot find [libvulkan.so.1] or [libvulkan.so]!");
 
-		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(lib, "vkGetInstanceProcAddr"));
+		getInstanceAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(lib, "vkGetInstanceProcAddr"));
 #endif
 		vulkanLibModule = static_cast<LibraryHandle>(lib);
-		volkInitializeCustom(vkGetInstanceProcAddr);
+		volkInitializeCustom(getInstanceAddr);
+		ZE_WARNING_POP
 	}
 
 	void Device::CreateInstance()
@@ -425,7 +430,7 @@ namespace ZE::GFX::API::VK
 		VkInstanceCreateInfo instanceInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr };
 		instanceInfo.flags = 0;
 		instanceInfo.pApplicationInfo = &appInfo;
-		instanceInfo.enabledExtensionCount = static_cast<U32>(enabledExtensions.size());
+		instanceInfo.enabledExtensionCount = Utils::SafeCast<U32>(enabledExtensions.size());
 		instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
 
 		// Check for desired layers
@@ -590,9 +595,9 @@ namespace ZE::GFX::API::VK
 				}
 
 				// Favor lower memory granularity
-				rank += properties.properties.limits.bufferImageGranularity / 100;
+				rank += Utils::SafeCast<U16>(properties.properties.limits.bufferImageGranularity / 100);
 				// Smaller coherent memory chunks are better for aligning of mappable memory (HOST_VISIBLE without HOST_COHERENT)
-				rank += properties.properties.limits.nonCoherentAtomSize / 50;
+				rank += Utils::SafeCast<U16>(properties.properties.limits.nonCoherentAtomSize / 50);
 
 				// Handle GPU memory as one of the main indicators of performance
 				VkPhysicalDeviceMemoryProperties2 memoryProps = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, nullptr };
@@ -600,7 +605,7 @@ namespace ZE::GFX::API::VK
 				for (U32 i = 0; i < memoryProps.memoryProperties.memoryHeapCount; ++i)
 				{
 					if (memoryProps.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
-						rank += Math::DivideRoundUp(memoryProps.memoryProperties.memoryHeaps[i].size, Math::GIGABYTE) * 100;
+						rank += Utils::SafeCast<U16>(Math::DivideRoundUp(memoryProps.memoryProperties.memoryHeaps[i].size, Math::GIGABYTE) * 100);
 				}
 				deviceRank.emplace(rank, std::make_pair(dev, familyInfo));
 			}
@@ -780,7 +785,7 @@ namespace ZE::GFX::API::VK
 		deviceInfo.pQueueCreateInfos = queueInfos;
 		deviceInfo.enabledLayerCount = 0;
 		deviceInfo.ppEnabledLayerNames = nullptr;
-		deviceInfo.enabledExtensionCount = static_cast<U32>(enabledExtensions.size());
+		deviceInfo.enabledExtensionCount = Utils::SafeCast<U32>(enabledExtensions.size());
 		deviceInfo.ppEnabledExtensionNames = enabledExtensions.data();
 		deviceInfo.pEnabledFeatures = nullptr;
 
@@ -830,7 +835,7 @@ namespace ZE::GFX::API::VK
 #if _ZE_PLATFORM_WINDOWS
 		if (vulkanLibModule)
 		{
-			const BOOL status = FreeLibrary(vulkanLibModule.CastPtr<HMODULE>());
+			[[maybe_unused]] const BOOL status = FreeLibrary(vulkanLibModule.CastPtr<HMODULE>());
 			ZE_ASSERT(status, "Error unloading Vulkan library!");
 		}
 #else
@@ -894,9 +899,9 @@ namespace ZE::GFX::API::VK
 					barrier.subresourceRange;
 				}
 			}
-			depInfo.bufferMemoryBarrierCount = bufferBarriers.size();
+			depInfo.bufferMemoryBarrierCount = Utils::SafeCast<U32>(bufferBarriers.size());
 			depInfo.pBufferMemoryBarriers = bufferBarriers.data();
-			depInfo.imageMemoryBarrierCount = imageBarriers.size();
+			depInfo.imageMemoryBarrierCount = Utils::SafeCast<U32>(imageBarriers.size());
 			depInfo.pImageMemoryBarriers = imageBarriers.data();
 
 			copyOffset = copyResInfo.Size;
@@ -1083,7 +1088,6 @@ namespace ZE::GFX::API::VK
 
 	void Device::UploadBindTexture(UploadInfoTexture& uploadInfo)
 	{
-		ZE_VK_ENABLE_ID();
 		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
 	}
 

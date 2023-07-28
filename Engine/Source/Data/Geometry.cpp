@@ -1,9 +1,11 @@
 #include "Data/Tags.h"
 #include "GFX/Vertex.h"
 #if _ZE_MODEL_LOADING
+ZE_WARNING_PUSH
 #	include "assimp/Importer.hpp"
 #	include "assimp/scene.h"
 #	include "assimp/postprocess.h"
+ZE_WARNING_POP
 #endif
 
 namespace ZE::Data
@@ -16,9 +18,9 @@ namespace ZE::Data
 			const aiFace& face = mesh.mFaces[i];
 			ZE_ASSERT(face.mNumIndices == 3, "Mesh face is not a triangle!");
 
-			indices[index++] = face.mIndices[0];
-			indices[index++] = face.mIndices[1];
-			indices[index++] = face.mIndices[2];
+			indices.at(index++) = Utils::SafeCast<Index>(face.mIndices[0]);
+			indices.at(index++) = Utils::SafeCast<Index>(face.mIndices[1]);
+			indices.at(index++) = Utils::SafeCast<Index>(face.mIndices[2]);
 		}
 	}
 
@@ -172,7 +174,7 @@ namespace ZE::Data
 		if (material.Get(AI_MATKEY_SHININESS, data.SpecularPower) != aiReturn_SUCCESS)
 			data.SpecularPower = 0.409f;
 		else if (data.SpecularPower > 1.0f)
-			data.SpecularPower = static_cast<float>(log(static_cast<double>(data.SpecularPower)) / log(8192.0));
+			data.SpecularPower = Utils::SafeCast<float>(log(static_cast<double>(data.SpecularPower)) / log(8192.0));
 
 		if (material.Get(AI_MATKEY_BUMPSCALING, data.ParallaxScale) != aiReturn_SUCCESS)
 			data.ParallaxScale = 0.1f;

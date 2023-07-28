@@ -53,7 +53,7 @@ namespace ZE::GUI
 		case GfxApiType::DX12:
 		{
 			auto handles = dev.Get().dx12.AddStaticDescs(1);
-			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), static_cast<int>(Settings::GetBackbufferCount()),
+			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Utils::SafeCast<int>(Settings::GetBackbufferCount()),
 				GFX::API::DX::GetDXFormat(Settings::GetBackbufferFormat()),
 				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
 			break;

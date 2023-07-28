@@ -14,7 +14,7 @@ namespace ZE::GFX::API::DX11::Resource
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = static_cast<UINT>(count * data.IndexSize);
+		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(count * data.IndexSize);
 		bufferDesc.StructureByteStride = data.IndexSize;
 
 		D3D11_SUBRESOURCE_DATA resData = {};

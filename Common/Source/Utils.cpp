@@ -54,12 +54,12 @@ namespace ZE::Utils
 
 			// Encode unicode character as UTF-16
 			if (unicode <= 0xFFFF)
-				str.push_back(static_cast<wchar_t>(unicode));
+				str.push_back(Utils::SafeCast<wchar_t>(unicode));
 			else
 			{
 				unicode -= 0x10000;
-				str.push_back(static_cast<wchar_t>((unicode >> 10) + 0xD800));
-				str.push_back(static_cast<wchar_t>((unicode & 0x3FF) + 0xDC00));
+				str.push_back(Utils::SafeCast<wchar_t>((unicode >> 10) + 0xD800));
+				str.push_back(Utils::SafeCast<wchar_t>((unicode & 0x3FF) + 0xDC00));
 			}
 		}
 		return str;
@@ -79,26 +79,26 @@ namespace ZE::Utils
 				unicode = ((unicode - 0xD800) << 10) + s[++i] + 0x2400;
 
 			if (unicode <= 0x7F)
-				str.push_back(static_cast<char>(unicode));
+				str.push_back(Utils::SafeCast<char>(unicode));
 			else if (unicode <= 0x7FF)
 			{
-				str.push_back(static_cast<char>(0xC0 + (unicode >> 6)));
-				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0xC0 + (unicode >> 6)));
+				str.push_back(Utils::SafeCast<char>(0x80 + (unicode & 0x3F)));
 			}
 			else if (unicode <= 0xFFFF)
 			{
 				// 3 bytes
-				str.push_back(static_cast<char>(0xE0 + (unicode >> 12)));
-				str.push_back(static_cast<char>(0x80 + ((unicode >> 6) & 0x3F)));
-				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0xE0 + (unicode >> 12)));
+				str.push_back(Utils::SafeCast<char>(0x80 + ((unicode >> 6) & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0x80 + (unicode & 0x3F)));
 			}
 			else if (unicode <= 0x10FFFF)
 			{
 				//4 bytes
-				str.push_back(static_cast<char>(0xF0 + (unicode >> 18)));
-				str.push_back(static_cast<char>(0x80 + ((unicode >> 12) & 0x3F)));
-				str.push_back(static_cast<char>(0x80 + ((unicode >> 6) & 0x3F)));
-				str.push_back(static_cast<char>(0x80 + (unicode & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0xF0 + (unicode >> 18)));
+				str.push_back(Utils::SafeCast<char>(0x80 + ((unicode >> 12) & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0x80 + ((unicode >> 6) & 0x3F)));
+				str.push_back(Utils::SafeCast<char>(0x80 + (unicode & 0x3F)));
 			}
 			else
 				return ERROR_STR;

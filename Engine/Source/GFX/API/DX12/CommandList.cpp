@@ -81,6 +81,8 @@ namespace ZE::GFX::API::DX12
 			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), tag.data());
 			break;
 		}
+		default:
+			break;
 		}
 		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data());
 	}
@@ -94,6 +96,8 @@ namespace ZE::GFX::API::DX12
 			agsDriverExtensionsDX12_PopMarker(dev.Get().dx12.GetAGSContext(), commands.Get());
 			break;
 		}
+		default:
+			break;
 		}
 		PIXEndEvent(commands.Get());
 	}

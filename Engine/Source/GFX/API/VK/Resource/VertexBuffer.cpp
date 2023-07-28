@@ -11,7 +11,7 @@ namespace ZE::GFX::API::VK::Resource
 		uploadInfo.InitData = data.Vertices;
 		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
 		uploadInfo.CreateInfo.flags = 0;
-		uploadInfo.CreateInfo.size = static_cast<VkDeviceSize>(data.Count) * data.VertexSize;
+		uploadInfo.CreateInfo.size = Utils::SafeCast<VkDeviceSize>(data.Count) * data.VertexSize;
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		uploadInfo.CreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		uploadInfo.CreateInfo.queueFamilyIndexCount = 0;

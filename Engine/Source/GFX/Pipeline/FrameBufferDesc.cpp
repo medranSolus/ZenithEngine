@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline
 	{
 		ZE_ASSERT(!((info.Flags & FrameResourceFlags::ForceDSV) && (info.Flags & FrameResourceFlags::SimultaneousAccess)),
 			"Cannot use depth stencil with simultaneous access resource!");
-		RID id = ResourceInfo.size();
+		RID id = Utils::SafeCast<RID>(ResourceInfo.size());
 		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
 		ResourceLifetimes.emplace_back(std::map<RID, Resource::State>({}));
 		return id;
@@ -31,11 +31,11 @@ namespace ZE::GFX::Pipeline
 		TransitionsPerLevel.resize(dependencyLevels * 2);
 		if (backbuffer.begin()->first != 0)
 		{
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Begin, Resource::StatePresent, backbuffer.begin()->second);
-			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(0, BarrierType::End, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(static_cast<RID>(0), BarrierType::Begin, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.at(2 * backbuffer.begin()->first).emplace_back(static_cast<RID>(0), BarrierType::End, Resource::StatePresent, backbuffer.begin()->second);
 		}
 		else
-			TransitionsPerLevel.front().emplace_back(0, BarrierType::Immediate, Resource::StatePresent, backbuffer.begin()->second);
+			TransitionsPerLevel.front().emplace_back(static_cast<RID>(0), BarrierType::Immediate, Resource::StatePresent, backbuffer.begin()->second);
 
 		// Cull same states between dependency levels and compute types of barriers per resource
 		for (U64 i = 0; i < ResourceLifetimes.size(); ++i)
@@ -65,11 +65,11 @@ namespace ZE::GFX::Pipeline
 					{
 						if (next->first - first->first > 1)
 						{
-							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Begin, first->second, next->second);
-							TransitionsPerLevel.at(2 * static_cast<U64>(next->first)).emplace_back(static_cast<RID>(i), BarrierType::End, first->second, next->second);
+							TransitionsPerLevel.at(2 * Utils::SafeCast<U64>(first->first) + 1).emplace_back(Utils::SafeCast<RID>(i), BarrierType::Begin, first->second, next->second);
+							TransitionsPerLevel.at(2 * Utils::SafeCast<U64>(next->first)).emplace_back(Utils::SafeCast<RID>(i), BarrierType::End, first->second, next->second);
 						}
 						else
-							TransitionsPerLevel.at(2 * static_cast<U64>(first->first) + 1).emplace_back(static_cast<RID>(i), BarrierType::Immediate, first->second, next->second);
+							TransitionsPerLevel.at(2 * Utils::SafeCast<U64>(first->first) + 1).emplace_back(Utils::SafeCast<RID>(i), BarrierType::Immediate, first->second, next->second);
 						first = next++;
 					}
 				}

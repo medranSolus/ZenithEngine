@@ -48,7 +48,7 @@ namespace ZE::GFX::API::VK::Resource
 		vertexInputInfo.flags = 0;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
 		vertexInputInfo.pVertexBindingDescriptions = &vertexBinding;
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<U32>(desc.InputLayout.size());
+		vertexInputInfo.vertexAttributeDescriptionCount = Utils::SafeCast<U32>(desc.InputLayout.size());
 
 		std::vector<VkVertexInputAttributeDescription> vertexAttributes(vertexInputInfo.vertexAttributeDescriptionCount);
 		if (vertexInputInfo.vertexAttributeDescriptionCount)
@@ -299,7 +299,7 @@ namespace ZE::GFX::API::VK::Resource
 		// Create final pipeline (check if any of the states is needed for sure when creating, otherwise leave to nullptr)
 		VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, &renderInfo };
 		pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-		pipelineInfo.stageCount = static_cast<U32>(shaderStages.size());
+		pipelineInfo.stageCount = Utils::SafeCast<U32>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputInfo;

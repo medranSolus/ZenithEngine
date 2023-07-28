@@ -7,7 +7,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
 
-		count = static_cast<U32>(desc.Textures.size());
+		count = Utils::SafeCast<U32>(desc.Textures.size());
 		if (desc.Options & GFX::Resource::Texture::PackOption::StaticCreation)
 		{
 			auto descs = device.AddStaticDescs(count);
@@ -71,13 +71,13 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 			}
 
 			copyInfo.emplace_back(0, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>());
-			U16 surfaces = static_cast<U16>(tex.Surfaces.size());
+			U16 surfaces = Utils::SafeCast<U16>(tex.Surfaces.size());
 			if (surfaces)
 			{
 				auto& startSurface = tex.Surfaces.front();
 				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
-				auto texDesc = device.GetTextureDesc(static_cast<U32>(startSurface.GetWidth()),
-					static_cast<U32>(startSurface.GetHeight()), surfaces, srv.Format, tex.Type);
+				auto texDesc = device.GetTextureDesc(Utils::SafeCast<U32>(startSurface.GetWidth()),
+					Utils::SafeCast<U32>(startSurface.GetHeight()), surfaces, srv.Format, tex.Type);
 
 				switch (tex.Type)
 				{
@@ -90,14 +90,14 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
 					footprint.Format = srv.Format;
-					footprint.Width = static_cast<U32>(texDesc.first.Width);
+					footprint.Width = Utils::SafeCast<U32>(texDesc.first.Width);
 					footprint.Height = texDesc.first.Height;
 					footprint.Depth = 1;
-					footprint.RowPitch = static_cast<U32>(Math::AlignUp(texDesc.first.Width * startSurface.GetPixelSize(),
+					footprint.RowPitch = Utils::SafeCast<U32>(Math::AlignUp(texDesc.first.Width * startSurface.GetPixelSize(),
 						static_cast<U64>(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
 
 					copyInfo.back().second.emplace_back(0, std::move(footprint));
-					copyInfo.back().first = Math::AlignUp(static_cast<U64>(footprint.Height) * footprint.RowPitch,
+					copyInfo.back().first = Math::AlignUp(Utils::SafeCast<U64>(footprint.Height) * footprint.RowPitch,
 						static_cast<U64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT));
 					break;
 				}
@@ -107,14 +107,14 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 
 					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
 					footprint.Format = srv.Format;
-					footprint.Width = static_cast<U32>(texDesc.first.Width);
+					footprint.Width = Utils::SafeCast<U32>(texDesc.first.Width);
 					footprint.Height = texDesc.first.Height;
 					footprint.Depth = texDesc.first.DepthOrArraySize;
-					footprint.RowPitch = static_cast<U32>(Math::AlignUp(texDesc.first.Width * startSurface.GetPixelSize(),
+					footprint.RowPitch = Utils::SafeCast<U32>(Math::AlignUp(texDesc.first.Width * startSurface.GetPixelSize(),
 						static_cast<U64>(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
 
 					copyInfo.back().second.emplace_back(0, std::move(footprint));
-					copyInfo.back().first = Math::AlignUp(static_cast<U64>(footprint.Height) * footprint.RowPitch,
+					copyInfo.back().first = Math::AlignUp(Utils::SafeCast<U64>(footprint.Height) * footprint.RowPitch,
 						static_cast<U64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT)) * texDesc.first.DepthOrArraySize;
 					break;
 				}
@@ -146,7 +146,7 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 				srv.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
-			handle.ptr += static_cast<U64>(i++) * device.GetDescriptorSize();
+			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
 			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
 
@@ -181,12 +181,12 @@ namespace ZE::GFX::API::DX12::Resource::Texture
 						for (U32 z = 0; z < region.Footprint.Depth; ++z)
 						{
 							U8* dest = uploadBuffer + z * depthSlice + region.Offset;
-							const Surface& surface = tex.Surfaces.at(static_cast<U64>(j) + z);
+							const Surface& surface = tex.Surfaces.at(Utils::SafeCast<U64>(j) + z);
 							const U8* src = reinterpret_cast<const U8*>(surface.GetBuffer());
 							for (U32 y = 0; y < region.Footprint.Height; ++y)
 							{
-								U64 destRowOffset = static_cast<U64>(y) * region.Footprint.RowPitch;
-								U64 srcRowOffset = static_cast<U64>(y) * surface.GetRowByteSize();
+								U64 destRowOffset = Utils::SafeCast<U64>(y) * region.Footprint.RowPitch;
+								U64 srcRowOffset = Utils::SafeCast<U64>(y) * surface.GetRowByteSize();
 								memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
 							}
 						}

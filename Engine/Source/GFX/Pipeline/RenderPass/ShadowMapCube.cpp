@@ -127,7 +127,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			const U64 transparentCount = transparentGroup.size();
 
 			EID currentMaterial = INVALID_EID;
-			U8 currentState = -1;
+			U8 currentState = UINT8_MAX;
 			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
 			if (solidCount)
 			{
@@ -222,7 +222,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				}
 				ZE_DRAW_TAG_END(dev, cl);
 				currentMaterial = INVALID_EID;
-				currentState = -1;
+				currentState = UINT8_MAX;
 			}
 
 			// Transparent pass

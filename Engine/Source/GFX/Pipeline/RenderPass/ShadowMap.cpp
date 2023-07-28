@@ -93,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 
 			EID currentMaterial = INVALID_EID;
-			U8 currentState = -1;
+			U8 currentState = UINT8_MAX;
 			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
 			if (solidCount)
 			{
@@ -105,7 +105,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetDSV(cl, ids.Depth);
 
-				ctx.SetFromEnd(2);
+				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
 				ctx.Reset();
 				for (U64 i = 0; i < solidCount; ++i)
@@ -187,7 +187,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				}
 				ZE_DRAW_TAG_END(dev, cl);
 				currentMaterial = INVALID_EID;
-				currentState = -1;
+				currentState = UINT8_MAX;
 			}
 
 			// Transparent pass

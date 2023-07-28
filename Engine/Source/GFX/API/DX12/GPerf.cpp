@@ -60,10 +60,10 @@ namespace ZE::GFX::API::DX12
 			break;
 		}
 		}
-		long double megaFrequency = static_cast<long double>(frequency) / 1000000.0L;
+		long double megaFrequency = Utils::SafeCast<long double>(frequency) / 1000000.0L;
 		U64* timestamps = nullptr;
 		data->Map(0, nullptr, reinterpret_cast<void**>(&timestamps));
-		megaFrequency = static_cast<long double>(timestamps[1] - timestamps[0]) / megaFrequency;
+		megaFrequency = Utils::SafeCast<long double>(timestamps[1] - timestamps[0]) / megaFrequency;
 		data->Unmap(0, nullptr);
 		return megaFrequency;
 	}

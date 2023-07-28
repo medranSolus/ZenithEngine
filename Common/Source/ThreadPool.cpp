@@ -88,7 +88,7 @@ namespace ZE
 				if (coresIdSize == 0)
 					logicalCoresCount = coresCount;
 				else
-					logicalCoresCount = static_cast<U8>(std::pow(2U, coresIdSize));
+					logicalCoresCount = Utils::SafeCast<U8>(std::pow(2U, coresIdSize));
 			}
 			else if (strcmp(vendor, "GenuineIntel") == 0)
 			{
@@ -98,7 +98,7 @@ namespace ZE
 				{
 					// Currently hard to detect correctly without OS dependet code
 					currentCPU = VendorCPU::IntelHybrid;
-					coresCount = logicalCoresCount = static_cast<U8>(std::thread::hardware_concurrency());
+					coresCount = logicalCoresCount = Utils::SafeCast<U8>(std::thread::hardware_concurrency());
 				}
 				else
 				{
@@ -113,13 +113,14 @@ namespace ZE
 				}
 			}
 			else
-				coresCount = logicalCoresCount = static_cast<U8>(std::thread::hardware_concurrency());
+				coresCount = logicalCoresCount = Utils::SafeCast<U8>(std::thread::hardware_concurrency());
 		}
 	}
 
 	ThreadPool::~ThreadPool()
 	{
 		runControl = false;
+		signaler.notify_all();
 		for (std::thread& worker : threads)
 			worker.join();
 		if (threadRunControls)

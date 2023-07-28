@@ -149,7 +149,7 @@ namespace ZE::GFX::API::DX12
 
 	void DREDRecovery::SaveDeviceRemovedData(Device& dev, const std::string& filename)
 	{
-		ZE_DX_ENABLE(dev);
+		ZE_WIN_ENABLE_EXCEPT();
 
 		bool fileOutput = true;
 		std::string loggerOutput = "";
@@ -170,7 +170,7 @@ namespace ZE::GFX::API::DX12
 
 		ZE_WIN_EXCEPT_RESULT = dev.GetDevice()->GetDeviceRemovedReason();
 		{
-			writeString(std::format("[HRESULT]  0x{:x}", static_cast<U64>(ZE_WIN_EXCEPT_RESULT)).c_str());
+			writeString(std::format("[HRESULT]  0x{:x}", Utils::SafeCast<U64>(ZE_WIN_EXCEPT_RESULT)).c_str());
 			const char* errorName = DecodeDxgiError(ZE_WIN_EXCEPT_RESULT);
 			if (errorName)
 			{
@@ -184,7 +184,7 @@ namespace ZE::GFX::API::DX12
 
 			LPSTR msgBuffer = nullptr;
 			DWORD msgLen = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL, static_cast<DWORD>(ZE_WIN_EXCEPT_RESULT), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&msgBuffer), 0, NULL);
+				NULL, Utils::SafeCast<DWORD>(ZE_WIN_EXCEPT_RESULT), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&msgBuffer), 0, NULL);
 			if (msgLen)
 			{
 				writeString(msgBuffer);
@@ -207,7 +207,7 @@ namespace ZE::GFX::API::DX12
 			if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&pageFault)))
 			{
 				if (pageFault.PageFaultVA != 0)
-					writeString(std::format("\n[PAGE FAULT ADDRESS]  0x{:x}\n", static_cast<U64>(pageFault.PageFaultVA)).c_str());
+					writeString(std::format("\n[PAGE FAULT ADDRESS]  0x{:x}\n", Utils::SafeCast<U64>(pageFault.PageFaultVA)).c_str());
 
 				auto getAllocInfo = [&](std::string& info, const D3D12_DRED_ALLOCATION_NODE1* node, const char* tag)
 				{
@@ -221,7 +221,7 @@ namespace ZE::GFX::API::DX12
 						else
 							info += "UNKNOWN";
 
-						info += std::format("(0x{:x})\n\tAllocation type:", static_cast<U64>(reinterpret_cast<uintptr_t>(node->pObject)));
+						info += std::format("(0x{:x})\n\tAllocation type:", Utils::SafeCast<U64>(reinterpret_cast<uintptr_t>(node->pObject)));
 						info += DecodeAllocation(node->AllocationType);
 						info += "\n\n";
 

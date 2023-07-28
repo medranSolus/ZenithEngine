@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline
 		float sum = 0.0f;
 		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
 		{
-			const float g = Math::Gauss(static_cast<float>(i), blurSigma);
+			const float g = Math::Gauss(Utils::SafeCast<float>(i), blurSigma);
 			sum += g;
 			settingsData.BlurCoefficients[i].x = g;
 		}
@@ -116,7 +116,7 @@ namespace ZE::GFX::Pipeline
 	constexpr void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
 	{
 		ssaoSettings.DenoisePasses = 1;
-		settingsData.SsaoData.ViewportSize = { static_cast<int>(width), static_cast<int>(height) };
+		settingsData.SsaoData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
 		SetupSsaoQuality();
 	}
 
@@ -166,8 +166,8 @@ namespace ZE::GFX::Pipeline
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
 		settingsData.HDRExposure = params.HDRExposure;
-		settingsData.ShadowMapSize = static_cast<float>(params.ShadowMapSize);
-		settingsData.ShadowBias = static_cast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
+		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
+		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
 		SetupSsaoData(width, height);
@@ -412,11 +412,11 @@ namespace ZE::GFX::Pipeline
 			ImGui::Columns(2, "##shadow_options", false);
 			ImGui::Text("Depth bias");
 			ImGui::SetNextItemWidth(-1.0f);
-			S32 bias = static_cast<S32>(settingsData.ShadowBias * settingsData.ShadowMapSize);
+			S32 bias = Utils::SafeCast<S32>(settingsData.ShadowBias * settingsData.ShadowMapSize);
 			if (ImGui::InputInt("##depth_bias", &bias))
 			{
 				change = true;
-				settingsData.ShadowBias = static_cast<float>(bias) / settingsData.ShadowMapSize;
+				settingsData.ShadowBias = Utils::SafeCast<float>(bias) / settingsData.ShadowMapSize;
 			}
 			ImGui::NextColumn();
 			ImGui::Text("Normal offset");

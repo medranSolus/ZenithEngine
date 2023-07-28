@@ -6,26 +6,26 @@ namespace ZE::GFX::API::DX11::Binding
 	{
 		ZE_DX_ENABLE(dev.Get().dx11);
 
-		samplersCount = desc.Samplers.size();
+		samplersCount = Utils::SafeCast<U32>(desc.Samplers.size());
 		if (samplersCount)
 		{
 			samplers = new std::pair<U32, DX::ComPtr<ISamplerState>>[desc.Samplers.size()];
 			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
 			{
-				D3D11_SAMPLER_DESC desc = {};
-				desc.Filter = GetFilterType(samplerDesc.Type);
-				desc.AddressU = GetTextureAddressMode(samplerDesc.Address.U);
-				desc.AddressV = GetTextureAddressMode(samplerDesc.Address.V);
-				desc.AddressW = GetTextureAddressMode(samplerDesc.Address.W);
-				desc.MipLODBias = samplerDesc.MipLevelBias;
-				desc.MaxAnisotropy = samplerDesc.MaxAnisotropy;
-				desc.ComparisonFunc = GetComparisonFunc(samplerDesc.Comparison);
-				*reinterpret_cast<ColorF4*>(desc.BorderColor) = GetStaticBorderColor(samplerDesc.EdgeColor);
-				desc.MinLOD = samplerDesc.MinLOD;
-				desc.MaxLOD = samplerDesc.MaxLOD;
+				D3D11_SAMPLER_DESC splrDesc = {};
+				splrDesc.Filter = GetFilterType(samplerDesc.Type);
+				splrDesc.AddressU = GetTextureAddressMode(samplerDesc.Address.U);
+				splrDesc.AddressV = GetTextureAddressMode(samplerDesc.Address.V);
+				splrDesc.AddressW = GetTextureAddressMode(samplerDesc.Address.W);
+				splrDesc.MipLODBias = samplerDesc.MipLevelBias;
+				splrDesc.MaxAnisotropy = samplerDesc.MaxAnisotropy;
+				splrDesc.ComparisonFunc = GetComparisonFunc(samplerDesc.Comparison);
+				*reinterpret_cast<ColorF4*>(splrDesc.BorderColor) = GetStaticBorderColor(samplerDesc.EdgeColor);
+				splrDesc.MinLOD = samplerDesc.MinLOD;
+				splrDesc.MaxLOD = samplerDesc.MaxLOD;
 
 				samplers[i].first = samplerDesc.Slot;
-				ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateSamplerState(&desc, &samplers[i++].second));
+				ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateSamplerState(&splrDesc, &samplers[i++].second));
 			}
 		}
 

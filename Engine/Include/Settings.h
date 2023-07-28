@@ -58,8 +58,8 @@ namespace ZE
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
 		static constexpr void SetBackbufferSize(U32 width, U32 height) noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainSize = { width, height }; }
 		static constexpr UInt2 GetBackbufferSize() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize; }
-		static constexpr U32 GetBackbufferWidth() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.x; }
-		static constexpr U32 GetBackbufferHeight() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.y; }
+		static constexpr U32 GetBackbufferWidth() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.X; }
+		static constexpr U32 GetBackbufferHeight() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.Y; }
 
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
 		static constexpr U32 GetChainResourceCount() noexcept;

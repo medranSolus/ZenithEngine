@@ -121,7 +121,8 @@ namespace ZE::GFX::API::VK
 		// Go over memory types to find best suited one
 		AllocParams params = { dev };
 		U32 memoryCost = UINT32_MAX;
-		for (U32 memTypeCount = allocators.size() / (1 + IsSingleBufferImageHeap()), memoryIndex = 0, memTypeBit = 1; memoryIndex < memTypeCount; ++memoryIndex, memTypeBit <<= 1)
+		for (U32 memTypeCount = Utils::SafeCast<U32>(allocators.size() / (1 + IsSingleBufferImageHeap())), memoryIndex = 0, memTypeBit = 1;
+			memoryIndex < memTypeCount; ++memoryIndex, memTypeBit <<= 1)
 		{
 			if (memoryReq.memoryTypeBits & memTypeBit)
 			{
@@ -225,14 +226,14 @@ namespace ZE::GFX::API::VK
 			// On small sizes just round up allocation size, otherwise separate pools for buffers and images
 			if (dev.GetLimits().bufferImageGranularity <= 256)
 			{
-				minimalAlignment = dev.GetLimits().bufferImageGranularity;
+				minimalAlignment = Utils::SafeCast<U16>(dev.GetLimits().bufferImageGranularity);
 				deviceHeapSize += Settings::GetHeapSizeTextures();
 				SetSingleBufferImageHeap(true);
 			}
 			else
 			{
 				// Offset all textures further into allocators
-				texturesStartIndex = allocatorCount;
+				texturesStartIndex = Utils::SafeCast<U8>(allocatorCount);
 				allocatorCount *= 2;
 				hostHeapSize /= 2;
 				stagingHeapSize /= 2;
@@ -244,7 +245,7 @@ namespace ZE::GFX::API::VK
 		bool localHeapFound = false, localTexturesHeapFound = false;
 		for (U32 i = 0; i < allocatorCount; ++i)
 		{
-			const VkMemoryPropertyFlags flags = memoryProps.memoryProperties.memoryTypes[i % memoryProps.memoryProperties.memoryTypeCount].propertyFlags;
+			const VkMemoryPropertyFlags memFlags = memoryProps.memoryProperties.memoryTypes[i % memoryProps.memoryProperties.memoryTypeCount].propertyFlags;
 			U64 heapSize = hostHeapSize;
 			if (dev.IsIntegratedGPU())
 			{
@@ -253,7 +254,7 @@ namespace ZE::GFX::API::VK
 				else
 					heapSize += Settings::GetHeapSizeTextures();
 			}
-			else if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			else if (memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
 			{
 				if (i < memoryProps.memoryProperties.memoryTypeCount)
 				{
@@ -266,7 +267,7 @@ namespace ZE::GFX::API::VK
 					localTexturesHeapFound = true;
 				}
 			}
-			allocators.emplace_back(blockAllocator, chunkAllocator).Init(IsReBAREnabled() || (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ? MemoryFlag::HostVisible : MemoryFlag::None, heapSize, 1, 2);
+			allocators.emplace_back(blockAllocator, chunkAllocator).Init(IsReBAREnabled() || (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ? MemoryFlag::HostVisible : MemoryFlag::None, heapSize, 1, 2);
 		}
 	}
 

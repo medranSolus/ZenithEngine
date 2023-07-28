@@ -1,12 +1,17 @@
 #pragma once
 #include "Types.h"
 #include "PixelFormat.h"
+#include <deque>
+#include <limits>
 #include <string>
 #include <vector>
-#include <deque>
 
 namespace ZE::Utils
 {
+	// Safe static cast that performs check wheter destination type can hold source value
+	template<typename C, typename T>
+	constexpr C SafeCast(T&& val) noexcept;
+
 	// Encode app version in format 'major.minor.patch' into single U32
 	constexpr U32 MakeVersion(U16 major, U16 minor, U16 patch) noexcept { return (static_cast<U32>(major & 0x3FF) << 22) | static_cast<U32>(minor & 0x3FF) << 12 | (patch & 0xFFF); }
 	// Extract major part from encoded version
@@ -53,6 +58,15 @@ namespace ZE::Utils
 	void AlignedFree(void* ptr) noexcept;
 
 #pragma region Functions
+	template<typename C, typename T>
+	constexpr C SafeCast(T&& val) noexcept
+	{
+		ZE_WARNING_PUSH
+			ZE_ASSERT(std::numeric_limits<C>::max() >= val, "Casting value that exceedes maximal size of destination type!");
+		ZE_WARNING_POP
+			return static_cast<C>(val);
+	}
+
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept
 	{
 		switch (f1)
@@ -581,10 +595,10 @@ namespace ZE::Utils
 			 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 		};
 
-		U32 crc = static_cast<U32>(-1);
+		U32 crc = UINT32_MAX;
 		for (U64 i = 0; i < size; ++i)
 			crc = (crc >> 8) ^ lookupTable[(crc ^ str[i]) & 0xFF];
-		return crc ^ static_cast<U32>(-1);
+		return crc ^ UINT32_MAX;
 	}
 
 	constexpr U64 CalculateCRC64(const char str[], U64 size) noexcept
@@ -625,10 +639,10 @@ namespace ZE::Utils
 			0x14DEA25F3AF9026D, 0x562E43B4931334FE, 0x913F6188692D6F4B, 0xD3CF8063C0C759D8, 0x5DEDC41A34BBEEB2, 0x1F1D25F19D51D821, 0xD80C07CD676F8394, 0x9AFCE626CE85B507
 		};
 
-		U64 crc = static_cast<U64>(-1);
+		U64 crc = UINT64_MAX;
 		for (U64 i = 0; i < size; ++i)
 			crc = (crc << 8) ^ lookupTable[((crc >> 56) ^ str[i]) & 0xFF];
-		return crc ^ static_cast<U64>(-1);
+		return crc ^ UINT64_MAX;
 	}
 
 	constexpr U64 CalculateFNV(const char str[], U64 size) noexcept
