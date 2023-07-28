@@ -1,10 +1,14 @@
 set(ZE_CMAKE_VERSION 3.22)
 cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
+cmake_policy(SET CMP0091 NEW) # Setting of MSVC runtime library
 
 ######### PROJECT CONFIGURATION #########
 
 set(PROJECT_NAME "Zenith Engine")
-project(${PROJECT_NAME} VERSION 0.3)
+set(PROJECT_VER_MAJOR 0)
+set(PROJECT_VER_MINOR 3)
+set(PROJECT_VER_PATCH 0)
+project(${PROJECT_NAME} VERSION ${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH})
 
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
@@ -29,6 +33,8 @@ option(ZE_CI_JOB "Build engine for CI job" OFF)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
 include(External)
+include(FlagsDisplay)
+include(FlagsPass)
 include(CheckTypeSize)
 
 # Architecture check, only x64
@@ -39,13 +45,17 @@ endif()
 
 # Check current configuration
 if(${ZE_BUILD_DEBUG})
+	set(ZE_EXTERNAL_BUILD_DEBUG_INFO TRUE)
+	set(ZE_EXTERNAL_BUILD_DEBUG_POSTFIX TRUE)
 	set(ZE_EXTERNAL_BUILD_TYPE "Debug")
-	set(ZE_EXTERNAL_BUILD_DEBUG TRUE)
-	set(ZE_EXTERNAL_BUILD_RELEASE FALSE)
-elseif(${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE} OR ${ZE_BUILD_RELEASE})
+elseif(${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
+	set(ZE_EXTERNAL_BUILD_DEBUG_INFO TRUE)
+	set(ZE_EXTERNAL_BUILD_DEBUG_POSTFIX FALSE)
+	set(ZE_EXTERNAL_BUILD_TYPE "RelWithDebInfo")
+elseif(${ZE_BUILD_RELEASE})
+	set(ZE_EXTERNAL_BUILD_DEBUG_INFO FALSE)
+	set(ZE_EXTERNAL_BUILD_DEBUG_POSTFIX FALSE)
 	set(ZE_EXTERNAL_BUILD_TYPE "Release")
-	set(ZE_EXTERNAL_BUILD_DEBUG FALSE)
-	set(ZE_EXTERNAL_BUILD_RELEASE TRUE)
 else()
 	message(FATAL_ERROR "Unsupported build type [${CMAKE_BUILD_TYPE}]!")
 endif()
@@ -54,6 +64,11 @@ if(NOT (${ZE_PLATFORM_WINDOWS}))
 endif()
 if(NOT (${ZE_COMPILER_MSVC} OR ${ZE_COMPILER_CLANG} OR ${ZE_COMPILER_GCC}))
 	message(FATAL_ERROR "Using unsupported compiler [${CMAKE_CXX_COMPILER}]!")
+endif()
+
+# Check flags provided to CMake by toolchains
+if(FALSE)
+	display_cmake_flags()
 endif()
 
 
@@ -169,8 +184,8 @@ if(${ZE_PLATFORM_WINDOWS} AND NOT ${ZE_BUILD_RELEASE})
 endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
-# Inject debug suffix if library use it
-if(${ZE_EXTERNAL_BUILD_DEBUG})
+# Inject debug postfix if library use it
+if(${ZE_EXTERNAL_BUILD_DEBUG_POSTFIX})
 	if(${ZE_MODEL_LOADING})
 		set(ASSIMP_TARGET "${ASSIMP_TARGET}d")
 	endif()
@@ -189,67 +204,83 @@ link_directories(${EXTERNAL_BIN_DIR})
 
 # Platform specific flags
 if(${ZE_PLATFORM_WINDOWS})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_UNICODE -DUNICODE -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport) -DVK_USE_PLATFORM_WIN32_KHR")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DUSE_PIX")
-	set(CMAKE_CXX_FLAGS_DEVELOPMENT "${CMAKE_CXX_FLAGS_DEBUG} -DUSE_PIX")
-	set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_PROFILE} -DUSE_PIX")
+	add_definition_flags(
+		"-DWIN32 -DWIN64 -D_WINDOWS -D_UNICODE -DUNICODE -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport) -DVK_USE_PLATFORM_WIN32_KHR"
+		"-DUSE_PIX"
+		"-DUSE_PIX"
+		"-DUSE_PIX"
+		"")
 elseif(${ZE_PLATFORM_LINUX})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WAYLAND_KHR -DVK_USE_PLATFORM_XCB_KHR -DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_DIRECTFB_EXT -DVK_USE_PLATFORM_XLIB_XRANDR_EXT")
+	add_definitions("-DVK_USE_PLATFORM_WAYLAND_KHR -DVK_USE_PLATFORM_XCB_KHR -DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_DIRECTFB_EXT -DVK_USE_PLATFORM_XLIB_XRANDR_EXT")
 	message(FATAL_ERROR "Building for unsupported platform!")
 else()
 	message(FATAL_ERROR "Building for unsupported platform!")
 endif()
-
+ 
 # Compiler specific flags
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Development,Profile>:ProgramDatabase>")
+
 if(${ZE_COMPILER_MSVC})
-	# /MP not compatibile with /Yc (pch), option not found on gcc/clang
-	# Move to /EHsc when exceptions will be replaced with error codes
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /sdl /MP /GF /fp:fast /permissive- /Zc:inline /Zc:rvalueCast /nologo /DYNAMICBASE")
-	# C4265 - class with virtual functions does not have virutal destructor
-	# C4061 - not all enums are explicitly handled in switch where `default` is present
-	# C4668 - not defined as preprocessor macro in #if/#elif
-	# C4820 - X bytes padding added after data member
-	# C4514 - unreferenced inline function has been removed
-	# C5045 - compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
-	# C4100 - unreferenced formal parameter
-	# C4582 - constructor is not implicitly called
-	# C4583 - destructor is not implicitly called
-	# C4623 - default constructor was implicitly defined as deleted
-	# C4625 - copy constructor was implicitly defined as deleted
-	# C4626 - assignment operator was implicitly defined as deleted
-	# C5026 - move constructor was implicitly defined as deleted
-	# C5027 - move assignment operator was implicitly defined as deleted
-	# C4365 - signed/unsigned mismatch
-	# C4652 - compiler option inconsistent with precompiled header; current command-line option will override that defined in the precompiled header
-	#	Note: Caused by removing /Wall from CXX_FLAGS and then setting it for specific files, due to ImGui warnings, maybe /W4 would suffice?
-	# C4868 - compiler may not enforce left-to-right evaluation order in braced initializer list
-	#	Note: Caused by entt::dense_map, just hide it.
-	# C4710 - function not inlined
-	# C4711 - function selected for automatic inline expansion
-	# C4355 - 'this' used in base member initializer list
-	# C5246 - the initialization of a subobject should be wrapped in braces
-	#	Note: Caused by not respecing newer initializations aggregate, bug in MSVC
-	# C4464 - relative include path contains '..'
-	# C5262 - currently MSVC standard library uses a lot of unguarded fall-through switch cases
-	#	Note: Enable when fixed by Microsoft since it's bloating output beyond measure.
-	# C5264 - currently MSVC standard library contains a lot of unsused variables
-	#	Note: Enable when fixed by Microsoft since it's bloating output beyond measure.
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /wd4061 /wd4668 /wd4820 /wd4514 /wd5045 /wd4100 /wd4582 /wd4583 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027 /wd4365 /wd4652 /wd4868 /wd4710 /wd4711 /wd4355 /wd5246 /wd4464 /wd5262 /wd5264")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /JMC /Od /Oy- /Zi /RTC1")
-	set(CMAKE_CXX_FLAGS_DEVELOPMENT "${CMAKE_CXX_FLAGS_DEVELOPMENT} /MD /Ot /Oi /Oy /GL /GS /Gy")
-	set(CXX_PERFORMANCE_FLAGS "/MD /Ot /Oi /Oy /GL /GS /Gy")
+	set(LINKER_DEBUG_ENABLE_FLAGS "/DEBUG /DEBUGTYPE:CV")
+	set(LINKER_DEVELOPMENT_FLAGS "/INCREMENTAL /LTCG:OFF /OPT:NOICF")
+	add_linker_flags(
+		"/MACHINE:x64 /CETCOMPAT:NO /DYNAMICBASE /HIGHENTROPYVA /LARGEADDRESSAWARE /GUARD:NO /MANIFEST:NO /NOLOGO /NXCOMPAT /SAFESEH:NO /SUBSYSTEM:WINDOWS /VERSION:${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}"
+		"${LINKER_DEBUG_ENABLE_FLAGS} ${LINKER_DEVELOPMENT_FLAGS} /OPT:NOREF"
+		"${LINKER_DEBUG_ENABLE_FLAGS} ${LINKER_DEVELOPMENT_FLAGS} /OPT:REF"
+		"${LINKER_DEBUG_ENABLE_FLAGS} /INCREMENTAL:NO /LTCG /OPT:REF,NOICF"
+		"/DEBUG:NONE /INCREMENTAL:NO /LTCG /OPT:REF,ICF=8 /RELEASE")
+
+	set(CXX_DEBUG_ENABLE_FLAGS "/Zi /Zf")
+	set(CXX_DEVELOPMENT_FLAGS "/GL- /Gw- /sdl")
+	set(CXX_OPTIMIZATION_FLAGS "/O2 /GL /Gw /Gy /MD /Ob2 /Oi /Ot /Oy /QIntel-jcc-erratum") # Maybe consider /Ob3, TODO: profile
+	add_compilation_flags(
+		"/arch:AVX2 /await /favor:blend /EHsc /fp:fast /fpcvt:IA /GA /GF /GR- /GS /guard:cf- /guard:ehcont- /J /JMC- /MP /nologo /openmp:experimental /permissive- /volatile:iso /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:referenceBinding /Zc:rvalueCast /Zc:wchar_t"
+		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MDd /Gy- /Od /Oi- /Oy-"
+		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MD /Gy /Ob1 /Oi /Oy"
+		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_OPTIMIZATION_FLAGS}"
+		"${CXX_OPTIMIZATION_FLAGS}")
+	add_compile_options(/Wall
+		/wd4061 # Not all enums are explicitly handled in switch where `default` is present
+		/wd4100 # Unreferenced formal parameter
+		/wd4191 # Using GetProcAddress() causes this and type casting Vulkan functions in volk
+		/wd4255 # Would otherwise force declaration of func(void) when no arguments are specified
+		/wd4263 # A class function definition has the same name as a virtual function in a base class but not the same number or type of arguments
+		/wd4265 # Class with virtual functions does not have virutal destructor
+		/wd4355 # 'this' used in base member initializer list
+		/wd4365 # Signed/unsigned mismatch
+		/wd4464 # Relative include path contains '..'
+		/wd4514 # Unreferenced inline function has been removed
+		/wd4582 # Constructor is not implicitly called
+		/wd4583 # Destructor is not implicitly called
+		/wd4623 # Default constructor was implicitly defined as deleted
+		/wd4625 # Copy constructor was implicitly defined as deleted
+		/wd4626 # Assignment operator was implicitly defined as deleted
+		/wd4668 # Not defined as preprocessor macro in #if/#elif
+		/wd4710 # Function not inlined
+		/wd4711 # Function selected for automatic inline expansion
+		/wd4800 # Implicit conversion from 'type' to bool
+		/wd4820 # X bytes padding added after data member
+		/wd4868 # Compiler may not enforce left-to-right evaluation order in braced initializer list, caused by entt::dense_map, just hide it
+		/wd5026 # Move constructor was implicitly defined as deleted
+		/wd5045 # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+		/wd5027 # Move assignment operator was implicitly defined as deleted
+		/wd5246 # The initialization of a subobject should be wrapped in braces
+		#		Note: Caused by not respecing newer initializations aggregate, bug in MSVC
+		/wd5262 # Currently MSVC standard library uses a lot of unguarded fall-through switch cases
+		#		Note: Enable when fixed by Microsoft since it's bloating output beyond measure
+		/wd5264 # Currently MSVC standard library contains a lot of unsused variables
+		#		Note: Enable when fixed by Microsoft since it's bloating output beyond measure
+	)
 elseif(${ZE_COMPILER_CLANG} OR ${ZE_COMPILER_GCC})
 	# GCC asumed although they should work on Clang too
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -pedantic -ffast-math")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
-	set(CMAKE_CXX_FLAGS_DEVELOPMENT "${CMAKE_CXX_FLAGS_DEVELOPMENT} -O2 -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
-	set(CXX_PERFORMANCE_FLAGS "-O3 -flto -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
+	set(ZE_CXX_FLAGS "${ZE_CXX_FLAGS} -Wall -Wextra -Wpessimizing-move -Wredundant-move -pedantic -ffast-math")
+	set(ZE_CXX_FLAGS_DEBUG "${ZE_CXX_FLAGS_DEBUG} -Og")
+	set(ZE_CXX_FLAGS_DEVELOPMENT "${ZE_CXX_FLAGS_DEVELOPMENT} -O2 -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
+	#set(CXX_PERFORMANCE_FLAGS "-O3 -flto -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=2")
 else()
 	message(FATAL_ERROR "Using unsupported compiler!")
 endif()
-# Same set of flags for PROFILE and RELEASE builds with max optimizations
-set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_PROFILE} ${CXX_PERFORMANCE_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_PERFORMANCE_FLAGS}")
 
 # General flags
 add_definitions(-DENTT_NOEXCEPTION)
@@ -275,6 +306,12 @@ add_definitions(-D_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> -D_ZE_PLAT
 add_definitions(-D_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> -D_ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> -D_ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # Build type
 add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> -D_ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> -D_ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
+add_definition_flags(
+	""
+	"-D_DEBUG"
+	"-DNDEBUG"
+	"-DNDEBUG"
+	"-DNDEBUG")
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
