@@ -2,7 +2,6 @@
 #include "API/DX11/CommandList.h"
 #include "API/DX12/CommandList.h"
 #include "API/VK/CommandList.h"
-#include "API/Backend.h"
 #include "Device.h"
 
 namespace ZE::GFX

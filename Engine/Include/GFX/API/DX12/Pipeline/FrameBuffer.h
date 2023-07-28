@@ -153,7 +153,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 	{
 		static_assert(BarrierCount > 1, "For performance reasons FrameBuffer::BarrierTransition() should be only used for multiple barriers!");
 
-		D3D12_RESOURCE_BARRIER transitions[BarrierCount];
+		D3D12_RESOURCE_BARRIER resBarriers[BarrierCount];
 		for (U32 i = 0; i < BarrierCount; ++i)
 		{
 			const GFX::Pipeline::TransitionInfo& info = barriers.at(i);
@@ -184,7 +184,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 				info.BeforeState == GFX::Resource::StateShaderResourceNonPS && srv[info.RID].ptr != -1,
 				"Current resource is not suitable for being shader resource!");
 
-			D3D12_RESOURCE_BARRIER& barrier = transitions[i];
+			D3D12_RESOURCE_BARRIER& barrier = resBarriers[i];
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 			barrier.Transition.pResource = resources[info.RID].Resource.Get();
@@ -192,7 +192,7 @@ namespace ZE::GFX::API::DX12::Pipeline
 			barrier.Transition.StateBefore = GetResourceState(info.BeforeState);
 			barrier.Transition.StateAfter = GetResourceState(info.AfterState);
 		}
-		cl.Get().dx12.GetList()->ResourceBarrier(BarrierCount, transitions);
+		cl.Get().dx12.GetList()->ResourceBarrier(BarrierCount, resBarriers);
 	}
 #pragma endregion
 }

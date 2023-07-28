@@ -7,6 +7,10 @@ namespace ZE::GFX::API::VK::Resource::Texture
 {
 	class Pack final
 	{
+		U32 count;
+		Ptr<VkImage> images;
+		Ptr<Allocation> resources;
+
 	public:
 		Pack() = default;
 		Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc);

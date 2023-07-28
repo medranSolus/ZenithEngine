@@ -1,6 +1,5 @@
 #pragma once
 #include "GFX/Resource/SamplerDesc.h"
-#include "GFX/Resource/ShaderType.h"
 #include "Range.h"
 
 namespace ZE::GFX::Binding

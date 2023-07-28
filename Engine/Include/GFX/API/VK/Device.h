@@ -125,8 +125,8 @@ namespace ZE::GFX::API::VK
 		static void BeingTag(VkQueue queue, std::string_view tag, Pixel color) noexcept;
 #endif
 
-		bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
-		GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
+		static bool FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR testSurface, QueueFamilyInfo& familyInfo) noexcept;
+		static GpuFitness CheckGpuFitness(VkPhysicalDevice device, const VkPhysicalDeviceSurfaceInfo2KHR& testSurfaceInfo,
 			const std::vector<const char*>& requiredExt, RequiredExtensionFeatures& features, QueueFamilyInfo& familyInfo);
 
 		void SetIntegratedGPU(bool present) noexcept { flags[0] = present; }

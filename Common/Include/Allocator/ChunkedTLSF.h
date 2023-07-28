@@ -18,12 +18,12 @@ namespace ZE::Allocator
 	template<typename Memory>
 	struct TLSFMemoryChunk
 	{
-		Memory Memory;
+		Memory MemChunk;
 
 		// Required static method for creation of memory: void Init(Memory&, TLSFMemoryChunkFlags, U64, void*)
-		static void InitMemory(TLSFMemoryChunk* chunk, TLSFMemoryChunkFlags flags, U64 size, void* userData) { typename Memory::Init(chunk->Memory, flags, size, userData); }
+		static void InitMemory(TLSFMemoryChunk* chunk, TLSFMemoryChunkFlags flags, U64 size, void* userData) { typename Memory::Init(chunk->MemChunk, flags, size, userData); }
 		// Required static method for freeing memory: void Destroy(Memory&, void*)
-		static void DestroyMemory(TLSFMemoryChunk* chunk, void* userData) noexcept { typename Memory::Destroy(chunk->Memory, userData); }
+		static void DestroyMemory(TLSFMemoryChunk* chunk, void* userData) noexcept { typename Memory::Destroy(chunk->MemChunk, userData); }
 	};
 
 	// TLSF algorithm with distinction between regions of memory (chunk) that aren't continuous in adress space.
@@ -105,7 +105,7 @@ namespace ZE::Allocator
 
 		constexpr U64 GetOffset(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->Offset * chunkSizeDivisor; }
 		constexpr U64 GetSize(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->Size * chunkSizeDivisor; }
-		constexpr Memory GetMemory(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->ChunkHandle->Memory; }
+		constexpr Memory GetMemory(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->ChunkHandle->MemChunk; }
 
 		constexpr U64 GetChunkSize() const noexcept { return chunkSize * GetChunkSizeGranularity(); }
 		constexpr U32 GetChunkSizeGranularity() const noexcept { return chunkSizeDivisor; }
@@ -146,9 +146,9 @@ namespace ZE::Allocator
 	constexpr U16 ZE_CHUNKED_TLSF_TYPE::SizeToSecondIndex(U64 size, U8 memoryClass) const noexcept
 	{
 		if (memoryClass == 0)
-			return static_cast<U16>(((size - 1) * firstListSize) / SMALL_BUFFER_SIZE);
+			return Utils::SafeCast<U16>(((size - 1) * firstListSize) / SMALL_BUFFER_SIZE);
 
-		return static_cast<U16>((size >> (memoryClass + MEMORY_CLASS_SHIFT - SECOND_LEVEL_INDEX)) ^ (1U << SECOND_LEVEL_INDEX));
+		return Utils::SafeCast<U16>((size >> (memoryClass + MEMORY_CLASS_SHIFT - SECOND_LEVEL_INDEX)) ^ (1U << SECOND_LEVEL_INDEX));
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
