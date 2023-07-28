@@ -63,21 +63,14 @@ if(${ZE_PLATFORM_WINDOWS})
         "${IMGUI_DIR}/backends/*vulkan.cpp"
         "${IMGUI_DIR}/backends/*vulkan.h")
     set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
-        "${IMGUI_BACKEND_LIST}")
+        "${IMGUI_BACKEND_LIST}"
+        "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
 else()
 	message(FATAL_ERROR "Building ImGui for unsupported platform!")
 endif()
+# Disable warnings for ImGui
 if(${ZE_COMPILER_MSVC})
-    # Disable high warnings for ImGui
-    if(CMAKE_CXX_FLAGS MATCHES "/Wall")
-        string(REPLACE "/Wall" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-        set_source_files_properties(${IMGUI_SRC_LIST} PROPERTIES COMPILE_FLAGS /W4)
-        set_source_files_properties(${SRC_LIST} PROPERTIES COMPILE_FLAGS /Wall)
-        set_source_files_properties(${PCH} PROPERTIES COMPILE_FLAGS /Wall)
-    endif()
-
-    set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
-        "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
+    set_source_files_properties(${IMGUI_SRC_LIST} PROPERTIES COMPILE_FLAGS "/wd5219 /wd5019 /wd5039 /wd4774 /wd4245")
 endif()
 
 # Target setup
