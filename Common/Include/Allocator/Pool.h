@@ -49,8 +49,8 @@ namespace ZE::Allocator
 		--newBlockCapacity;
 
 		// Setup singly-linked list of all free items in this block
-		for (U64 i = 1; i < newBlockCapacity; ++i)
-			newBlock.Items[i - 1].NextFreeIndex = i;
+		for (U64 i = 0; i < newBlockCapacity; ++i)
+			newBlock.Items[i].NextFreeIndex = i + 1;
 
 		newBlock.Items[newBlockCapacity].NextFreeIndex = UINT64_MAX;
 		freeBlock = false;
@@ -67,6 +67,7 @@ namespace ZE::Allocator
 			// This block has some free items, use first one
 			if (block.FirstFreeIndex != UINT64_MAX)
 			{
+				ZE_ASSERT(block.FirstFreeIndex < block.Capacity, "Incorrect index!");
 				if (block.FirstFreeIndex == 0)
 					freeBlock = false;
 
@@ -145,6 +146,8 @@ namespace ZE::Allocator
 					std::vector<bool> isInUse(block.Capacity, true);
 					do
 					{
+						ZE_ASSERT(block.FirstFreeIndex < block.Capacity, "Incorrect index!");
+
 						isInUse.at(block.FirstFreeIndex) = false;
 						block.FirstFreeIndex = block.Items[block.FirstFreeIndex].NextFreeIndex;
 					} while (block.FirstFreeIndex != UINT64_MAX);
@@ -154,6 +157,7 @@ namespace ZE::Allocator
 						if (isInUse.at(i))
 							reinterpret_cast<T*>(block.Items[i].Data)->~T();
 				}
+				delete[] block.Items;
 			}
 		}
 		itemBlocks.clear();
