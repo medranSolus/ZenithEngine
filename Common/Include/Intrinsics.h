@@ -17,6 +17,9 @@ namespace ZE::Intrin
 
 	U64 Rdtsc() noexcept;
 
+	// Raises breakpoint on any given compiler, regardless of the current build type
+	void DebugBreak() noexcept;
+
 	void FenceStore() noexcept;
 	void FenceLoad() noexcept;
 	void FenceMemory() noexcept;

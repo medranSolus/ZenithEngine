@@ -1,4 +1,7 @@
 #include "Utils.h"
+#if _ZE_COMPILER_GCC
+#	include <signal.h>
+#endif
 
 namespace ZE::Intrin
 {
@@ -62,6 +65,19 @@ namespace ZE::Intrin
 	{
 #if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
 		return __rdtsc();
+#else
+#   error Unsupported compiler!
+#endif
+	}
+
+	void DebugBreak() noexcept
+	{
+#if _ZE_COMPILER_MSVC
+		__debugbreak();
+#elif _ZE_COMPILER_CLANG
+		__builtin_debugtrap();
+#elif _ZE_COMPILER_GCC
+		raise(SIGTRAP);
 #else
 #   error Unsupported compiler!
 #endif

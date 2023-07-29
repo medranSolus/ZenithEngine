@@ -1,8 +1,18 @@
 #pragma once
-#include <cassert>
+#include "Intrinsics.h"
+#include "Logger.h"
 
+#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
 // Regular debug assert
-#define ZE_ASSERT(condition, message) assert((condition) && (message))
+#	define ZE_ASSERT(condition, message) do { if (!(condition)) { ZE::Logger::Error(message, true); ZE::Intrin::DebugBreak(); } } while (false)
+#elif _ZE_MODE_PROFILE
+// Regular debug assert
+#	define ZE_ASSERT(condition, message) do { if (!(condition)) ZE::Logger::Error(message, true); } while (false)
+#elif _ZE_MODE_RELEASE
+// Regular debug assert
+#	define ZE_ASSERT(condition, message) ((void)0)
+#endif
+
 // Always failing debug assert, indicating wrong code path that shouldn't occur
 #define ZE_FAIL(message) ZE_ASSERT(false, message)
 // Assert allowing debug break
@@ -10,7 +20,7 @@
 // Failing assert indicating not correctly handled enum value in switch-case
 #define ZE_ENUM_UNHANDLED() ZE_FAIL("Unhandled enum value!"); [[fallthrough]]
 // Check if quaternion vector is unit length
-#define ZE_ASSERT_Q_UNIT_V(rotor) assert(ZE::Math::Internal::XMQuaternionIsUnit(rotor))
+#define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT(ZE::Math::Internal::XMQuaternionIsUnit(rotor), "Quaternion is not unit quaternion!")
 // Check if stored quaternion is unit length
 #define ZE_ASSERT_Q_UNIT(rotor) ZE_ASSERT_Q_UNIT_V(ZE::Math::XMLoadFloat4(&rotor))
 

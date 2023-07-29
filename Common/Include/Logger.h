@@ -1,5 +1,5 @@
 #pragma once
-#include "Types.h"
+#include "BasicTypes.h"
 #include <string>
 
 namespace ZE

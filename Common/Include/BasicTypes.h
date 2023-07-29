@@ -1,5 +1,4 @@
 #pragma once
-#include "Ptr.h"
 #include <atomic>
 #include <cstdint>
 
@@ -39,17 +38,17 @@
 #pragma endregion
 
 #pragma region Vector operators
-	constexpr bool operator==(const UInt2& i1, const UInt2& i2) noexcept { return i1.X == i2.X && i1.Y == i2.Y; }
-	constexpr bool operator==(const UInt3& i1, const UInt3& i2) noexcept { return i1.Z == i2.Z && static_cast<const UInt2&>(i1) == static_cast<const UInt2&>(i2); }
-	constexpr bool operator==(const UInt4& i1, const UInt4& i2) noexcept { return i1.W == i2.W && static_cast<const UInt3&>(i1) == static_cast<const UInt3&>(i2); }
-	constexpr bool operator==(const SInt2& i1, const SInt2& i2) noexcept { return i1.X == i2.X && i1.Y == i2.Y; }
-	constexpr bool operator==(const SInt3& i1, const SInt3& i2) noexcept { return i1.Z == i2.Z && static_cast<const SInt2&>(i1) == static_cast<const SInt2&>(i2); }
-	constexpr bool operator==(const SInt4& i1, const SInt4& i2) noexcept { return i1.W == i2.W && static_cast<const SInt3&>(i1) == static_cast<const SInt3&>(i2); }
+constexpr bool operator==(const UInt2& i1, const UInt2& i2) noexcept { return i1.X == i2.X && i1.Y == i2.Y; }
+constexpr bool operator==(const UInt3& i1, const UInt3& i2) noexcept { return i1.Z == i2.Z && static_cast<const UInt2&>(i1) == static_cast<const UInt2&>(i2); }
+constexpr bool operator==(const UInt4& i1, const UInt4& i2) noexcept { return i1.W == i2.W && static_cast<const UInt3&>(i1) == static_cast<const UInt3&>(i2); }
+constexpr bool operator==(const SInt2& i1, const SInt2& i2) noexcept { return i1.X == i2.X && i1.Y == i2.Y; }
+constexpr bool operator==(const SInt3& i1, const SInt3& i2) noexcept { return i1.Z == i2.Z && static_cast<const SInt2&>(i1) == static_cast<const SInt2&>(i2); }
+constexpr bool operator==(const SInt4& i1, const SInt4& i2) noexcept { return i1.W == i2.W && static_cast<const SInt3&>(i1) == static_cast<const SInt3&>(i2); }
 
-	constexpr bool operator!=(const UInt2& i1, const UInt2& i2) noexcept { return i1.X != i2.X || i1.Y != i2.Y; }
-	constexpr bool operator!=(const UInt3& i1, const UInt3& i2) noexcept { return i1.Z != i2.Z || static_cast<const UInt2&>(i1) != static_cast<const UInt2&>(i2); }
-	constexpr bool operator!=(const UInt4& i1, const UInt4& i2) noexcept { return i1.W != i2.W || static_cast<const UInt3&>(i1) != static_cast<const UInt3&>(i2); }
-	constexpr bool operator!=(const SInt2& i1, const SInt2& i2) noexcept { return i1.X != i2.X || i1.Y != i2.Y; }
-	constexpr bool operator!=(const SInt3& i1, const SInt3& i2) noexcept { return i1.Z != i2.Z || static_cast<const SInt2&>(i1) != static_cast<const SInt2&>(i2); }
-	constexpr bool operator!=(const SInt4& i1, const SInt4& i2) noexcept { return i1.W != i2.W || static_cast<const SInt3&>(i1) != static_cast<const SInt3&>(i2); }
+constexpr bool operator!=(const UInt2& i1, const UInt2& i2) noexcept { return i1.X != i2.X || i1.Y != i2.Y; }
+constexpr bool operator!=(const UInt3& i1, const UInt3& i2) noexcept { return i1.Z != i2.Z || static_cast<const UInt2&>(i1) != static_cast<const UInt2&>(i2); }
+constexpr bool operator!=(const UInt4& i1, const UInt4& i2) noexcept { return i1.W != i2.W || static_cast<const UInt3&>(i1) != static_cast<const UInt3&>(i2); }
+constexpr bool operator!=(const SInt2& i1, const SInt2& i2) noexcept { return i1.X != i2.X || i1.Y != i2.Y; }
+constexpr bool operator!=(const SInt3& i1, const SInt3& i2) noexcept { return i1.Z != i2.Z || static_cast<const SInt2&>(i1) != static_cast<const SInt2&>(i2); }
+constexpr bool operator!=(const SInt4& i1, const SInt4& i2) noexcept { return i1.W != i2.W || static_cast<const SInt3&>(i1) != static_cast<const SInt3&>(i2); }
 #pragma endregion

@@ -12,14 +12,17 @@
 */
 
 /*
-*********** cassert
-********* Macros.h
-******* Ptr.h
-******* atomic
-******* cstdint
-***** BasicTypes.h
-***** intrin.h/x86intrin.h + cpuid.h
-*** Intrinsics.h
+********* BasicTypes.h (defined by CmdParser.h)
+********* intrin.h / x86intrin.h + cpuid.h
+******* Intrinsics.h
+*********** atomic
+*********** cstdint
+********* BasicTypes.h
+********* string
+******* Logger.h
+***** Macros.h
+***** memory
+*** Ptr.h
 *** cmath
 *** cstddef
 *** cfloat
@@ -37,11 +40,6 @@
 * utility
 */
 #include "ColorF3.h"
-
-/*
-* string
-*/
-#include "Logger.h"
 
 /*
 *** Types.h (defined by CmdParser.h)
@@ -93,7 +91,8 @@
 #include "ThreadPool.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
+* Types.h (defined by CmdParser.h)
+*** BasicTypes.h (defined by CmdParser.h)
 * PixelFormat.h
 * deque
 * limits
@@ -144,11 +143,17 @@
 #if _ZE_PLATFORM_WINDOWS
 /*
 * Exception/GenericException.h (defined by platform agnostic headers)
-*** Exception/BasicException.h (defined by Exception/ImageException.h)
+*** Exception/BasicException.h (defined by Exception/GenericException.h)
 ***** sdkddkver.h
 ***** Windows.h
 *** Platform/WinAPI/WinAPI.h
 * Platform/WinAPI/WinApiException.h
 */
 #	include "Platform/WinAPI/DirectXTexException.h"
+
+/*
+* Platform/WinAPI/WinAPI.h (defined by Platform/WinAPI/DirectXTexException.h)
+* Utils.h (defined by platform agnostic headers)
+*/
+#	include "Platform/WinAPI/Perf.h"
 #endif

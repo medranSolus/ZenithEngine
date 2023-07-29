@@ -1,16 +1,16 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include "Intrinsics.h"
+#include "Ptr.h"
 #include <cmath>
 #include <cstddef>
 #include <cfloat>
 
 namespace ZE::External
 {
-ZE_WARNING_PUSH
+	ZE_WARNING_PUSH
 #include "DirectXMath.h"
 #include "DirectXCollision.h"
-ZE_WARNING_POP
+	ZE_WARNING_POP
 }
 namespace ZE::Math
 {
