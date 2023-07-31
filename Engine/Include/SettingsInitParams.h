@@ -10,6 +10,7 @@ namespace ZE
 		U32 BackbufferCount;
 		const char* AppName;
 		U32 AppVersion;
+		U8 StaticThreadsCount;
 		U8 CustomThreadPoolThreadsCount;
 	};
 }

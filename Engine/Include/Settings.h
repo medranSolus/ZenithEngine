@@ -113,7 +113,7 @@ namespace ZE
 		swapChainBufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;
-		threadPool.Init(params.CustomThreadPoolThreadsCount);
+		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
 	}
 #pragma endregion
 }

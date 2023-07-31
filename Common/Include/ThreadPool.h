@@ -23,6 +23,7 @@ namespace ZE
 		static inline U8 logicalCoresCount = 0;
 
 		U8 threadsCountOverride = 0;
+		U8 allocatedThreads = 0;
 		U8 maxThreadsCount = UINT8_MAX;
 		bool useMultiThreading = true;
 
@@ -37,7 +38,7 @@ namespace ZE
 		void Worker(const BoolAtom& run) const noexcept;
 
 	public:
-		ThreadPool(U8 customThreadCount = 0) noexcept;
+		ThreadPool() noexcept;
 		ZE_CLASS_MOVE(ThreadPool);
 		~ThreadPool();
 
@@ -45,16 +46,18 @@ namespace ZE
 		static constexpr U8 GetCoresCount() noexcept { return coresCount; }
 		static constexpr U8 GetLogicalCoresCount() noexcept { return logicalCoresCount; }
 
-		constexpr void ResetThreadsCount() noexcept { ClampThreadsCount(UINT8_MAX); }
 		void Stop() noexcept { runControl = false; }
 
 		template <typename Func, typename... Args>
 		constexpr auto Schedule(ThreadPriority priority, Func&& f, Args&&... args) const noexcept -> Task<decltype(f(args...))>;
 
 		constexpr U8 GetThreadsCount() const noexcept;
+		constexpr void ResetThreadsCount() noexcept;
 		constexpr void ClampThreadsCount(U8 maxThreads) noexcept;
 		constexpr void SetSMT(bool val) noexcept;
-		constexpr void Init(U8 customThreadCount = 0) noexcept;
+		// allocThreadsCount: decrease threadpool count by X for static threads that will not be managed by this pool
+		// customThreadCount: set custom override to number of threads (no function will change this number)
+		constexpr void Init(U8 allocThreadsCount = 0, U8 customThreadCount = 0) noexcept;
 	};
 
 #pragma region Functions
@@ -103,7 +106,14 @@ namespace ZE
 			count = logicalCoresCount;
 			break;
 		}
-		return Math::Clamp(static_cast<U8>(count - 1), static_cast<U8>(0), maxThreadsCount);
+		return Math::Clamp(static_cast<U8>(count - allocatedThreads - 1), static_cast<U8>(0), maxThreadsCount);
+	}
+
+	constexpr void ThreadPool::ResetThreadsCount() noexcept
+	{
+		const U8 oldCount = GetThreadsCount();
+		maxThreadsCount = UINT8_MAX;
+		ResizeThreads(oldCount, GetThreadsCount());
 	}
 
 	constexpr void ThreadPool::ClampThreadsCount(U8 maxThreads) noexcept
@@ -120,11 +130,12 @@ namespace ZE
 		ResizeThreads(oldCount, GetThreadsCount());
 	}
 
-	constexpr void ThreadPool::Init(U8 customThreadCount) noexcept
+	constexpr void ThreadPool::Init(U8 allocThreadsCount, U8 customThreadCount) noexcept
 	{
 		if (customThreadCount != UINT8_MAX)
 		{
 			threadsCountOverride = customThreadCount;
+			allocatedThreads = allocThreadsCount;
 
 			// Create worker threads that will sleep waiting for new job to execute
 			const U8 count = GetThreadsCount();

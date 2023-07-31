@@ -34,15 +34,15 @@ namespace ZE
 			std::unique_lock lock(mutex);
 			// Wait for new task and try obtain it (more important jobs first)
 			signaler.wait(lock, [this, &run, &newItem, &task]() -> bool
-			{
-				for (auto& queue : taskQueues)
 				{
-					newItem = queue.TryPopFront(task);
-					if (newItem)
-						break;
-				}
-				return newItem || !(run && runControl);
-			});
+					for (auto& queue : taskQueues)
+					{
+						newItem = queue.TryPopFront(task);
+						if (newItem)
+							break;
+					}
+					return newItem || !(run && runControl);
+				});
 
 			// Don't stop when task queue is not empty
 			if ((run || runControl) && !newItem)
@@ -51,7 +51,7 @@ namespace ZE
 		}
 	}
 
-	ThreadPool::ThreadPool(U8 customThreadCount) noexcept
+	ThreadPool::ThreadPool() noexcept
 	{
 		// CPU cores detection
 		// AMD recomendations https://github.com/GPUOpen-LibrariesAndSDKs/cpu-core-counts/blob/master/windows/AMDCoreCount.cpp

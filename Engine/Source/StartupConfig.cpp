@@ -9,6 +9,7 @@ namespace ZE
 		init.BackbufferCount = params.BackbufferCount;
 		init.AppName = params.AppName;
 		init.AppVersion = params.AppVersion;
+		init.StaticThreadsCount = params.StaticThreadsCount;
 		init.CustomThreadPoolThreadsCount = params.CustomThreadPoolThreadsCount;
 		Settings::Init(init);
 	}
