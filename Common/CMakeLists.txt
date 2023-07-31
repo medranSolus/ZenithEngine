@@ -6,6 +6,7 @@ set(PCH "${COMMON_INC_DIR}/pch.h")
 file(GLOB_RECURSE SRC_LIST
     "${SRC_DIR}/*.cpp"
     "${COMMON_INC_DIR}/*.h")
+current_config_compile_filter(SRC_LIST ${COMMON_INC_DIR} ${SRC_DIR})
 
 # Target setup
 add_library(${COMMON_TARGET} STATIC ${SRC_LIST})

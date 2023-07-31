@@ -1,31 +1,37 @@
 #pragma once
-#include "GFX/API/DX11/Resource/IndexBuffer.h"
-#include "GFX/API/DX12/Resource/IndexBuffer.h"
-#include "GFX/API/VK/Resource/IndexBuffer.h"
+#if _ZE_RHI_DX11
+#	include "RHI/DX11/Resource/IndexBuffer.h"
+#endif
+#if _ZE_RHI_DX12
+#	include "RHI/DX12/Resource/IndexBuffer.h"
+#endif
+#if _ZE_RHI_VK
+#	include "RHI/VK/Resource/IndexBuffer.h"
+#endif
 
 namespace ZE::GFX::Resource
 {
 	// Buffer holding indices into VertexBuffer
 	class IndexBuffer final
 	{
-		ZE_API_BACKEND(Resource::IndexBuffer);
+		ZE_RHI_BACKEND(Resource::IndexBuffer);
 
 	public:
 		IndexBuffer() = default;
-		constexpr IndexBuffer(Device& dev, const IndexData& data) { ZE_API_BACKEND_VAR.Init(dev, data); }
+		constexpr IndexBuffer(Device& dev, const IndexData& data) { ZE_RHI_BACKEND_VAR.Init(dev, data); }
 		ZE_CLASS_MOVE(IndexBuffer);
 		~IndexBuffer() = default;
 
 		constexpr void Init(Device& dev, const IndexData& data);
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
-		ZE_API_BACKEND_GET(Resource::IndexBuffer);
+		ZE_RHI_BACKEND_GET(Resource::IndexBuffer);
 
 		// Main Gfx API
 
-		constexpr U32 GetCount() const noexcept { U32 count = 0; ZE_API_BACKEND_CALL_RET(count, GetCount); return count; }
-		constexpr void Bind(CommandList& cl) const noexcept { ZE_API_BACKEND_CALL(Bind, cl); }
+		constexpr U32 GetCount() const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetCount); return count; }
+		constexpr void Bind(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl); }
 		// Before destroying buffer you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 
 #pragma region Functions
@@ -33,14 +39,14 @@ namespace ZE::GFX::Resource
 	{
 		ZE_ASSERT(data.Indices != nullptr && data.Count != 0 && data.Count % 3 == 0,
 			"Indices cannot be empty and they have to be multiple of 3!");
-		ZE_API_BACKEND_VAR.Init(dev, data);
+		ZE_RHI_BACKEND_VAR.Init(dev, data);
 	}
 
 	constexpr void IndexBuffer::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
 	{
 		IndexData data;
-		ZE_API_BACKEND_CALL_RET(data, GetData, dev, cl);
-		ZE_API_BACKEND_VAR.Switch(nextApi, dev, data);
+		ZE_RHI_BACKEND_CALL_RET(data, GetData, dev, cl);
+		ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, data);
 	}
 #pragma endregion
 }

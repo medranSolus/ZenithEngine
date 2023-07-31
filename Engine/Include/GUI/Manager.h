@@ -10,7 +10,9 @@ namespace ZE::GUI
 	{
 		Ptr<U8> backendData;
 
+#if _ZE_RHI_VK
 		void RebuildFontsVK(GFX::Device& dev, GFX::CommandList& cl) const;
+#endif
 
 	public:
 		Manager();

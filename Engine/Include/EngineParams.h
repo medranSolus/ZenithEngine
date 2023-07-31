@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/API/ApiType.h"
+#include "RHI/ApiType.h"
 #include "GFX/Pipeline/ParamsPBR.h"
 #include "CmdParser.h"
 

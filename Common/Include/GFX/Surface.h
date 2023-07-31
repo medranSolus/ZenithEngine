@@ -1,6 +1,6 @@
 #pragma once
 #include "Pixel.h"
-#include "DX.h"
+#include "RHI/DX/DX.h"
 #include <utility>
 #include <vector>
 
@@ -22,7 +22,7 @@ namespace ZE::GFX
 
 		static bool IsImage(const std::string& ext) noexcept;
 
-		constexpr PixelFormat GetFormat() const noexcept { return API::DX::GetFormatFromDX(image->format); }
+		constexpr PixelFormat GetFormat() const noexcept { return RHI::DX::GetFormatFromDX(image->format); }
 		constexpr U64 GetWidth() const noexcept { return image->width; }
 		constexpr U64 GetHeight() const noexcept { return image->height; }
 		constexpr U64 GetRowByteSize() const noexcept { return image->rowPitch; }

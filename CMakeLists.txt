@@ -18,6 +18,10 @@ set(ZE_BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}" CACHE STRING
 set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
 
+option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" ON)
+option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
+option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
+option(ZE_ENABLE_VK "Enable Vulkan API usage" ON)
 option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
@@ -32,6 +36,7 @@ option(ZE_CI_JOB "Build engine for CI job" OFF)
 # CMake modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
+include(CompileFilter)
 include(External)
 include(FlagsDisplay)
 include(FlagsPass)
@@ -59,11 +64,17 @@ elseif(${ZE_BUILD_RELEASE})
 else()
 	message(FATAL_ERROR "Unsupported build type [${CMAKE_BUILD_TYPE}]!")
 endif()
-if(NOT (${ZE_PLATFORM_WINDOWS}))
+if(${ZE_PLATFORM_LINUX})
+	set(ZE_ENABLE_DX11 OFF CACHE BOOL "DirectX 11 not supported for Linux" FORCE)
+	set(ZE_ENABLE_DX12 OFF CACHE BOOL "DirectX 12 not supported for Linux" FORCE)
+elseif(NOT (${ZE_PLATFORM_WINDOWS}))
 	message(FATAL_ERROR "Building for unsupported platform [${CMAKE_SYSTEM_NAME}]!")
 endif()
 if(NOT (${ZE_COMPILER_MSVC} OR ${ZE_COMPILER_CLANG} OR ${ZE_COMPILER_GCC}))
 	message(FATAL_ERROR "Using unsupported compiler [${CMAKE_CXX_COMPILER}]!")
+endif()
+if(NOT (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK}))
+	message(FATAL_ERROR "No RHI backend enabled, at least one must be active!")
 endif()
 
 # Check flags provided to CMake by toolchains
@@ -304,6 +315,8 @@ add_definitions(-D_ZE_PLATFORM_WINDOWS=$<BOOL:${ZE_PLATFORM_WINDOWS}> -D_ZE_PLAT
 add_definitions(-D_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> -D_ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}>)
 # Compiler type
 add_definitions(-D_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> -D_ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> -D_ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
+# RHI type
+add_definitions(-D_ZE_RHI_DX11=$<BOOL:${ZE_ENABLE_DX11}> -D_ZE_RHI_DX12=$<BOOL:${ZE_ENABLE_DX12}> -D_ZE_RHI_GL=$<BOOL:${ZE_ENABLE_GL}> -D_ZE_RHI_VK=$<BOOL:${ZE_ENABLE_VK}>)
 # Build type
 add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> -D_ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> -D_ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
 add_definition_flags(

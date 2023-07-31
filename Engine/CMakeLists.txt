@@ -44,6 +44,12 @@ file(GLOB_RECURSE SRC_LIST
     "${ZE_BUILD_INC_DIR}/*.h"
     "${AGILITY_INC_DIR}/*.h"
     "${EXT_INC_DIR}/*.h")
+# Enable only current OS+RHI
+current_config_compile_filter(SRC_LIST ${ENGINE_INC_DIR} ${SRC_DIR})
+# Manually specify RHI agnostic headers
+list(APPEND SRC_LIST
+    "${ENGINE_INC_DIR}/RHI/ApiType.h"
+    "${ENGINE_INC_DIR}/RHI/Backend.h")
 
 file(GLOB IMGUI_SRC_LIST
     "${IMGUI_DIR}/*.cpp"
@@ -53,21 +59,35 @@ file(GLOB IMGUI_SRC_LIST
     "${IMGUI_DIR}/misc/freetype/*.cpp"
     "${IMGUI_INC_DIR}/misc/freetype/*.h")
 if(${ZE_PLATFORM_WINDOWS})
-    file(GLOB IMGUI_BACKEND_LIST
+    file(GLOB IMGUI_OS_LIST
         "${IMGUI_DIR}/backends/*win32.cpp"
-        "${IMGUI_DIR}/backends/*win32.h"
-        "${IMGUI_DIR}/backends/*dx11.cpp"
-        "${IMGUI_DIR}/backends/*dx11.h"
-        "${IMGUI_DIR}/backends/*dx12.cpp"
-        "${IMGUI_DIR}/backends/*dx12.h"
-        "${IMGUI_DIR}/backends/*vulkan.cpp"
-        "${IMGUI_DIR}/backends/*vulkan.h")
-    set(IMGUI_SRC_LIST "${IMGUI_SRC_LIST}"
-        "${IMGUI_BACKEND_LIST}"
-        "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
+        "${IMGUI_DIR}/backends/*win32.h")
 else()
 	message(FATAL_ERROR "Building ImGui for unsupported platform!")
 endif()
+if(${ZE_ENABLE_DX11})
+    file(GLOB IMGUI_DX11_LIST
+        "${IMGUI_DIR}/backends/*dx11.cpp"
+        "${IMGUI_DIR}/backends/*dx11.h")
+endif()
+if(${ZE_ENABLE_DX12})
+    file(GLOB IMGUI_DX12_LIST
+        "${IMGUI_DIR}/backends/*dx12.cpp"
+        "${IMGUI_DIR}/backends/*dx12.h")
+endif()
+if(${ZE_ENABLE_VK})
+    file(GLOB IMGUI_VK_LIST
+        "${IMGUI_DIR}/backends/*vulkan.cpp"
+        "${IMGUI_DIR}/backends/*vulkan.h")
+endif()
+
+list(APPEND IMGUI_SRC_LIST
+    ${IMGUI_OS_LIST}
+    ${IMGUI_DX11_LIST}
+    ${IMGUI_DX12_LIST}
+    ${IMGUI_VK_LIST}
+    "${IMGUI_DIR}/misc/debuggers/imgui.natvis")
+
 # Disable warnings for ImGui
 if(${ZE_COMPILER_MSVC})
     set_source_files_properties(${IMGUI_SRC_LIST} PROPERTIES COMPILE_FLAGS "/wd5219 /wd5019 /wd5039 /wd4774 /wd4245")

@@ -1,7 +1,13 @@
 #pragma once
-#include "API/DX11/CommandList.h"
-#include "API/DX12/CommandList.h"
-#include "API/VK/CommandList.h"
+#if _ZE_RHI_DX11
+#	include "RHI/DX11/CommandList.h"
+#endif
+#if _ZE_RHI_DX12
+#	include "RHI/DX12/CommandList.h"
+#endif
+#if _ZE_RHI_VK
+#	include "RHI/VK/CommandList.h"
+#endif
 #include "Device.h"
 
 namespace ZE::GFX
@@ -9,36 +15,36 @@ namespace ZE::GFX
 	// Storing commands for GPU
 	class CommandList final
 	{
-		ZE_API_BACKEND(CommandList);
+		ZE_RHI_BACKEND(CommandList);
 
 	public:
 		CommandList() = default;
-		constexpr CommandList(Device& dev, QueueType type) { ZE_API_BACKEND_VAR.Init(dev, type); }
+		constexpr CommandList(Device& dev, QueueType type) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
-		constexpr void InitMain(Device& dev) { ZE_API_BACKEND_VAR.Init(dev); }
-		constexpr void Init(Device& dev, QueueType type = QueueType::Main) { ZE_API_BACKEND_VAR.Init(dev, type); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, QueueType type) { ZE_API_BACKEND_VAR.Switch(nextApi, dev, type); }
-		ZE_API_BACKEND_GET(CommandList);
+		constexpr void InitMain(Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
+		constexpr void Init(Device& dev, QueueType type = QueueType::Main) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, QueueType type) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, type); }
+		ZE_RHI_BACKEND_GET(CommandList);
 
 		// Main Gfx API
 
-		constexpr void Open(Device& dev) { ZE_API_BACKEND_CALL(Open, dev); }
-		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
-		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_API_BACKEND_CALL(Open, dev, pso); }
+		constexpr void Open(Device& dev) { ZE_RHI_BACKEND_CALL(Open, dev); }
+		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
+		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
 
-		constexpr void Close(Device& dev) { ZE_API_BACKEND_CALL(Close, dev); }
-		constexpr void Reset(Device& dev) { ZE_API_BACKEND_CALL(Reset, dev); }
+		constexpr void Close(Device& dev) { ZE_RHI_BACKEND_CALL(Close, dev); }
+		constexpr void Reset(Device& dev) { ZE_RHI_BACKEND_CALL(Reset, dev); }
 
-		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Draw, dev, vertexCount); }
-		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(DrawIndexed, dev, indexCount); }
-		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(DrawFullscreen, dev); }
+		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Draw, dev, vertexCount); }
+		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(DrawIndexed, dev, indexCount); }
+		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
-		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_API_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
+		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 
 		// Before destroying command list you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 
 #if _ZE_GFX_MARKERS
 		constexpr void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept;
@@ -52,7 +58,7 @@ namespace ZE::GFX
 	{
 		if (Settings::IsEnabledGfxTags())
 		{
-			ZE_API_BACKEND_CALL(TagBegin, dev, tag, color);
+			ZE_RHI_BACKEND_CALL(TagBegin, dev, tag, color);
 		}
 	}
 
@@ -60,7 +66,7 @@ namespace ZE::GFX
 	{
 		if (Settings::IsEnabledGfxTags())
 		{
-			ZE_API_BACKEND_CALL(TagEnd, dev);
+			ZE_RHI_BACKEND_CALL(TagEnd, dev);
 		}
 	}
 #endif

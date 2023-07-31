@@ -101,6 +101,15 @@ namespace ZE
 		ZE_ASSERT(params.BackbufferCount > 1 && params.BackbufferCount < 17, "Incorrect params!");
 
 		gfxApi = params.Type;
+		ZE_ASSERT(gfxApi == GfxApiType::DX11 && _ZE_RHI_DX11 || gfxApi != GfxApiType::DX11,
+			"DirectX 11 API is not enabled in current build!");
+		ZE_ASSERT(gfxApi == GfxApiType::DX12 && _ZE_RHI_DX12 || gfxApi != GfxApiType::DX12,
+			"DirectX 12 API is not enabled in current build!");
+		ZE_ASSERT(gfxApi == GfxApiType::OpenGL && _ZE_RHI_GL || gfxApi != GfxApiType::OpenGL,
+			"OpenGL API is not enabled in current build!");
+		ZE_ASSERT(gfxApi == GfxApiType::Vulkan && _ZE_RHI_VK || gfxApi != GfxApiType::Vulkan,
+			"Vulkan API is not enabled in current build!");
+
 		swapChainBufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;

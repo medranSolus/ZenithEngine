@@ -1,28 +1,32 @@
 #pragma once
-#include "GFX/API/DX/Shader.h"
-#include "GFX/API/VK/Resource/Shader.h"
-#include "GFX/API/Backend.h"
+#if _ZE_RHI_DX11 || _ZE_RHI_DX12
+#	include "RHI/DX/Shader.h"
+#endif
+#if _ZE_RHI_VK
+#	include "RHI/VK/Resource/Shader.h"
+#endif
+#include "RHI/Backend.h"
 
 namespace ZE::GFX::Resource
 {
 	// Data of single shader to load by pipeline
 	class Shader
 	{
-		ZE_API_BACKEND(Resource::Shader);
+		ZE_RHI_BACKEND(Resource::Shader);
 
 	public:
-		constexpr Shader(GFX::Device& dev, const std::string& name) { ZE_API_BACKEND_VAR.Init(dev, name); }
+		constexpr Shader(GFX::Device& dev, const std::string& name) { ZE_RHI_BACKEND_VAR.Init(dev, name); }
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
-		ZE_API_BACKEND_GET(Resource::Shader);
+		ZE_RHI_BACKEND_GET(Resource::Shader);
 
 		// Main Gfx API
 
 		// Before destroying shader you have to call this function for proper memory freeing
-		constexpr void Free(GFX::Device& dev) noexcept { ZE_API_BACKEND_CALL(Free, dev); }
+		constexpr void Free(GFX::Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 #if _ZE_DEBUG_GFX_NAMES
-		const std::string& GetName() const noexcept { ZE_API_BACKEND_CALL(GetName); }
+		const std::string& GetName() const noexcept { ZE_RHI_BACKEND_CALL(GetName); }
 #endif
 	};
 }

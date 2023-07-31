@@ -5,7 +5,7 @@ namespace ZE::GFX
 {
 	Surface::Surface(const std::string& name)
 	{
-		constexpr DXGI_FORMAT API_PIXEL_FORMAT = API::DX::GetDXFormat(PIXEL_FORMAT);
+		constexpr DXGI_FORMAT API_PIXEL_FORMAT = RHI::DX::GetDXFormat(PIXEL_FORMAT);
 		ZE_DXT_ENABLE_EXCEPT();
 		const std::filesystem::path path(name);
 		std::string ext = path.extension().string();
@@ -61,7 +61,7 @@ namespace ZE::GFX
 	Surface::Surface(U64 width, U64 height, PixelFormat format)
 	{
 		ZE_DXT_ENABLE_EXCEPT();
-		ZE_DXT_THROW_FAILED(scratch.Initialize2D(API::DX::GetDXFormat(format), width, height, 1U, 1U),
+		ZE_DXT_THROW_FAILED(scratch.Initialize2D(RHI::DX::GetDXFormat(format), width, height, 1U, 1U),
 			"Creating image " + std::to_string(width) + "x" + std::to_string(height) + ": failed.");
 		image = scratch.GetImage(0, 0, 0);
 	}

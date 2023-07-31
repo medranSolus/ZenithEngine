@@ -1,22 +1,18 @@
 #pragma once
+#include "WindowPlatform.h"
 #include "Types.h"
 #include <optional>
 
 namespace ZE::Window
 {
-#if _ZE_PLATFORM_WINDOWS
-	namespace WinAPI
-	{
-		class WindowWinAPI;
-	}
-#else
-#	error Missing platform specific window forward declaration for Mouse!
-#endif
-
 	// Keyboard events controller
 	class Mouse final
 	{
-		friend class WinAPI::WindowWinAPI;
+#if _ZE_PLATFORM_WINDOWS
+		friend class WinAPI::Window;
+#else
+#	error Missing platform specific window friend declaration for Mouse!
+#endif
 
 	public:
 		class Event final

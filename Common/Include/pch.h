@@ -123,7 +123,7 @@
 * Pixel.h
 *** PixelFormat.h (defined by Utils.h)
 *** DirectXTex.h
-* GFX/DX.h
+* RHI/DX/DX.h
 * utility
 * vector
 */

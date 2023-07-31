@@ -1,13 +1,20 @@
 #include "GUI/Manager.h"
-#include "GFX/API/VK/VulkanException.h"
 ZE_WARNING_PUSH
-#include "backends/imgui_impl_dx11.h"
-#include "backends/imgui_impl_dx12.h"
-#include "backends/imgui_impl_vulkan.h"
+#if _ZE_RHI_DX11
+#	include "backends/imgui_impl_dx11.h"
+#endif
+#if _ZE_RHI_DX12
+#	include "backends/imgui_impl_dx12.h"
+#endif
+#if _ZE_RHI_VK
+#	include "RHI/VK/VulkanException.h"
+#	include "backends/imgui_impl_vulkan.h"
+#endif
 ZE_WARNING_POP
 
 namespace ZE::GUI
 {
+#if _ZE_RHI_VK
 	struct CustomDataVK
 	{
 		VkRenderPass RenderPass;
@@ -25,6 +32,7 @@ namespace ZE::GUI
 		dev.WaitMain(dev.SetMainFence());
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
+#endif
 
 	Manager::Manager()
 	{
@@ -45,19 +53,24 @@ namespace ZE::GUI
 		GFX::Device& dev = gfx.GetDevice();
 		switch (Settings::GetGfxApi())
 		{
+#if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
 			ImGui_ImplDX11_Init(dev.Get().dx11.GetDevice(), dev.Get().dx11.GetMainContext());
 			break;
 		}
+#endif
+#if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
 			auto handles = dev.Get().dx12.AddStaticDescs(1);
 			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Utils::SafeCast<int>(Settings::GetBackbufferCount()),
-				GFX::API::DX::GetDXFormat(Settings::GetBackbufferFormat()),
+				RHI::DX::GetDXFormat(Settings::GetBackbufferFormat()),
 				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
 			break;
 		}
+#endif
+#if _ZE_RHI_VK
 		case GfxApiType::Vulkan:
 		{
 			ZE_VK_ENABLE();
@@ -68,7 +81,7 @@ namespace ZE::GUI
 			attachmentInfo.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
 			attachmentInfo.pNext = nullptr;
 			attachmentInfo.flags = 0;
-			attachmentInfo.format = GFX::API::VK::GetVkFormat(Settings::GetBackbufferFormat());
+			attachmentInfo.format = RHI::VK::GetVkFormat(Settings::GetBackbufferFormat());
 			attachmentInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 			attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 			attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -129,7 +142,7 @@ namespace ZE::GUI
 			ZE_VK_THROW_NOSUCC(vkCreateRenderPass2(device.GetDevice(), &passInfo, nullptr, &renderPass));
 
 			// Create framebuffer for swapchain attachment
-			const VkFormat backbufferFormat = GFX::API::VK::GetVkFormat(Settings::GetBackbufferFormat());
+			const VkFormat backbufferFormat = RHI::VK::GetVkFormat(Settings::GetBackbufferFormat());
 			VkFramebufferAttachmentImageInfo attachmentImageInfo;
 			attachmentImageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
 			attachmentImageInfo.pNext = nullptr;
@@ -198,6 +211,7 @@ namespace ZE::GUI
 			RebuildFontsVK(dev, gfx.GetMainList());
 			break;
 		}
+#endif
 		default:
 		{
 			ZE_FAIL("GUI not supported under current API!");
@@ -210,16 +224,21 @@ namespace ZE::GUI
 	{
 		switch (Settings::GetGfxApi())
 		{
+#if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
 			ImGui_ImplDX11_Shutdown();
 			break;
 		}
+#endif
+#if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
 			ImGui_ImplDX12_Shutdown();
 			return;
 		}
+#endif
+#if _ZE_RHI_VK
 		case GfxApiType::Vulkan:
 		{
 			ImGui_ImplVulkan_Shutdown();
@@ -229,6 +248,7 @@ namespace ZE::GUI
 			backendData.Delete();
 			break;
 		}
+#endif
 		default:
 		{
 			ZE_FAIL("GUI not supported under current API!");
@@ -241,21 +261,27 @@ namespace ZE::GUI
 	{
 		switch (Settings::GetGfxApi())
 		{
+#if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
 			ImGui_ImplDX11_NewFrame();
 			break;
 		}
+#endif
+#if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
 			ImGui_ImplDX12_NewFrame();
 			break;
 		}
+#endif
+#if _ZE_RHI_VK
 		case GfxApiType::Vulkan:
 		{
 			ImGui_ImplVulkan_NewFrame();
 			break;
 		}
+#endif
 		default:
 		{
 			ZE_FAIL("GUI not supported under current API!");
@@ -272,6 +298,7 @@ namespace ZE::GUI
 		auto& mainList = gfx.GetMainList();
 		switch (Settings::GetGfxApi())
 		{
+#if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
 			ZE_DRAW_TAG_BEGIN(gfx.GetDevice(), mainList.Get().dx11, "ImGui", PixelVal::Cobalt);
@@ -281,6 +308,8 @@ namespace ZE::GUI
 			ZE_DRAW_TAG_END(gfx.GetDevice(), mainList.Get().dx11);
 			break;
 		}
+#endif
+#if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
 			auto& dev = gfx.GetDevice().Get().dx12;
@@ -299,6 +328,8 @@ namespace ZE::GUI
 			dev.ExecuteMain(mainList);
 			break;
 		}
+#endif
+#if _ZE_RHI_VK
 		case GfxApiType::Vulkan:
 		{
 			ZE_ASSERT(backendData != nullptr, "GUI not initialized properly!");
@@ -337,6 +368,7 @@ namespace ZE::GUI
 			swapChain.ExecutePresentTransition(dev, list);
 			break;
 		}
+#endif
 		default:
 		{
 			ZE_FAIL("GUI not supported under current API!");
@@ -351,8 +383,10 @@ namespace ZE::GUI
 		if (atlas->Fonts.size())
 		{
 			atlas->Clear();
+#if _ZE_RHI_VK
 			if (Settings::GetGfxApi() == GfxApiType::Vulkan)
 				RebuildFontsVK(gfx.GetDevice(), gfx.GetMainList());
+#endif
 		}
 		atlas->AddFontFromFileTTF(font.c_str(), size);
 	}
