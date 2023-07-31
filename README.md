@@ -23,6 +23,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - [Render Pipeline Shaders](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders) - [AMD Internal Evaluation License](Doc/License/ThirdParty/RenderPipelineShaders.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
  - [AgilitySDK 1.610.4](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
+ - [DirectStorage 1.2.1](https://devblogs.microsoft.com/directx/directstorage-api-downloads/) - [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/DirectStorage.txt), Code: [MIT License](Doc/License/ThirdParty/DirectStorage-code.txt), [Third Party Notices](Doc/License/ThirdParty/DirectStorageThirdPartyNotices.rtf)
  - [DirectXShaderCompiler 1.7.2212.1](https://github.com/microsoft/DirectXShaderCompiler) - [LLVM Release License](Doc/License/ThirdParty/DirectXShaderCompiler.txt)
  - [EnTT 3.11.x](https://github.com/skypjack/entt) - [The MIT License (MIT)](Doc/License/ThirdParty/EnTT.txt)
  - [FXC shader compiler 10.0.20348.1](https://docs.microsoft.com/en-us/windows/win32/direct3dtools/fxc) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/WindowsSdk.rtf), [Third Party Notices](Doc/License/ThirdParty/WindowsSdkThirdPartyNotices.rtf)

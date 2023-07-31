@@ -23,13 +23,15 @@ if(NOT (${ZE_NO_DATA} OR ${ZE_CI_JOB}))
 endif()
 
 # DirectX 12 debug library and AgilitySDK
-if(${ZE_PLATFORM_WINDOWS})
+if(${ZE_ENABLE_DX12})
     if(NOT ${ZE_BUILD_RELEASE})
         copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll" "")
         copy_runtime_data(ENGINE_AGILITY_DEBUG "${AGILITY_DIR}/bin/x64" "" "d3d12SDKLayers.dll" "D3D12/")
         copy_runtime_data(ENGINE_AGILITY_SYMBOLS "${AGILITY_DIR}/bin/x64" "" ".pdb" "D3D12/")
     endif()
+
     copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "D3D12/")
+    copy_runtime_data(ENGINE_DSTORE "${DSTORE_DIR}/bin/x64" "" "*.dll" "")
 endif()
 
 # Hardware specific lib
@@ -96,12 +98,24 @@ endif()
 # Target setup
 add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADER})
 
+# Link targets for DirectX
+if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
+    set(DX_TARGETS dxgi dxguid uuid)
+
+    if(${ZE_ENABLE_DX11})
+        set(DX_TARGETS ${DX_TARGETS} D3DCompiler d3d11)
+    endif()
+    if(${ZE_ENABLE_DX12})
+        set(DX_TARGETS ${DX_TARGETS} d3d12)
+    endif()
+endif()
+
 target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET} PUBLIC ${ZE_INC_DIRS})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PUBLIC D3DCompiler dxgi dxguid d3d11 d3d12 ${COMMON_TARGET} ${ZLIB_TARGET} ${ASSIMP_TARGET} ${FTYPE_TARGET} ${PIX_TARGET} ${ENTT_TARGET} ${AGS_TARGET} ${VOLK_TARGET} ${LIBPNG_TARGET})
-add_dependencies(${ENGINE_TARGET} ${SHADER_TARGET} ${ENGINE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET})
+    PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${AGS_TARGET} ${ASSIMP_TARGET} ${DSTORE_TARGET} ${ENTT_TARGET} ${FTYPE_TARGET} ${LIBPNG_TARGET} ${PIX_TARGET} ${VOLK_TARGET} ${ZLIB_TARGET})
+add_dependencies(${ENGINE_TARGET}  ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
 
 # Icon definition
 if(${ZE_PLATFORM_WINDOWS})
