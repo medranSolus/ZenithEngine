@@ -336,8 +336,10 @@ namespace ZE::RHI::DX12::Pipeline
 		heapDesc.Properties.VisibleNodeMask = 0;
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		heapDesc.Flags = D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 		std::vector<D3D12_RESOURCE_BARRIER> startingTransitions;
 		std::vector<std::pair<U64, D3D12_RESOURCE_BARRIER>> wrappingTransitions;
+#endif
 
 		// Handle resource types (Non RT/DS) depending on present tier level
 		if (dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1)
@@ -402,16 +404,19 @@ namespace ZE::RHI::DX12::Pipeline
 					GFX::Resource::State lastState = lifetime.rbegin()->second;
 					ZE_DX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
 						res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-						&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
+						&res.Desc, GetResourceState(_ZE_RENDERER_NO_SPLIT_BARRIERS || res.IsAliasing() ? firstState : lastState),
 						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 					ZE_DX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
 					if (lastState != firstState)
 					{
 						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 						if (res.IsAliasing())
 						{
+#endif
 							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 								GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 						}
 						else
 						{
@@ -428,6 +433,7 @@ namespace ZE::RHI::DX12::Pipeline
 							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 							wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
 						}
+#endif
 					}
 				}
 			}
@@ -481,16 +487,19 @@ namespace ZE::RHI::DX12::Pipeline
 			GFX::Resource::State lastState = lifetime.rbegin()->second;
 			ZE_DX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
 				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-				&res.Desc, GetResourceState(res.IsAliasing() ? firstState : lastState),
+				&res.Desc, GetResourceState(_ZE_RENDERER_NO_SPLIT_BARRIERS || res.IsAliasing() ? firstState : lastState),
 				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
 			ZE_DX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
 			if (lastState != firstState)
 			{
 				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 				if (res.IsAliasing())
 				{
+#endif
 					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
 						GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 				}
 				else
 				{
@@ -507,9 +516,11 @@ namespace ZE::RHI::DX12::Pipeline
 					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 					wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
 				}
+#endif
 			}
 		}
 
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 		// Perform initial transitions for wrapping consistency
 		U64 transitionFence = 0;
 		if (startingTransitions.size() > 0)
@@ -528,6 +539,7 @@ namespace ZE::RHI::DX12::Pipeline
 			{
 				return t1.first > t2.first;
 			});
+#endif
 
 		// Sort resources for increasing RID
 		std::sort(resourcesInfo.begin(), resourcesInfo.end(),
@@ -772,17 +784,36 @@ namespace ZE::RHI::DX12::Pipeline
 		for (const auto& level : desc.TransitionsPerLevel)
 		{
 			for (const auto& transition : level)
+			{
+#if _ZE_RENDERER_NO_SPLIT_BARRIERS
+				if (transition.Barrier == GFX::Pipeline::BarrierType::End)
+					continue;
+				++barrierCount;
+#endif
 				if (transition.RID == 0)
 					++backbufferBarriersLocationsCount;
+			}
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 			barrierCount += level.size();
+#endif
 		}
-		backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
-		backbufferBarriersLocations[0] = 0;
+		if (backbufferBarriersLocationsCount > 1)
+		{
+			backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
+			backbufferBarriersLocations[0] = 0;
+		}
+		else
+			backbufferBarriersLocationsCount = 0;
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 		barrierCount += wrappingTransitions.size();
+#endif
 		initTransitions.Barriers = new D3D12_RESOURCE_BARRIER[barrierCount];
 		initTransitions.BarrierCount = 0;
 		D3D12_RESOURCE_BARRIER barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+#if _ZE_RENDERER_NO_SPLIT_BARRIERS
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+#endif
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		// Compute barriers before first render passes
 		U64 backbufferBarrierIndex = 0;
@@ -790,7 +821,12 @@ namespace ZE::RHI::DX12::Pipeline
 		{
 			for (const auto& transition : desc.TransitionsPerLevel.at(level))
 			{
+#if _ZE_RENDERER_NO_SPLIT_BARRIERS
+				if (transition.Barrier == GFX::Pipeline::BarrierType::End)
+					continue;
+#else
 				barrier.Flags = GetTransitionType(transition.Barrier);
+#endif
 				barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
 				barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
 				barrier.Transition.pResource = resources[transition.RID].Resource.Get();
@@ -807,15 +843,19 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 				}
 			}
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 			while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
 			{
 				transitions.Barriers[transitions.BarrierCount++] = wrappingTransitions.back().second;
 				wrappingTransitions.pop_back();
 			}
+#endif
 		};
 		computeBarriers(initTransitions, 0, 0);
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 		for (auto& wrap : wrappingTransitions)
 			--wrap.first;
+#endif
 		transitions[0].Barriers = initTransitions.Barriers + initTransitions.BarrierCount;
 		transitions[0].BarrierCount = 0;
 		// Compute normal barriers between passes
@@ -882,6 +922,7 @@ namespace ZE::RHI::DX12::Pipeline
 		for (U64 i = 0; i < levelCount; ++i)
 			computeBarrierSyncs(transitions[i], transitionSyncs + i);
 
+#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
 		// Finish initial transitions
 		if (startingTransitions.size() > 0)
 		{
@@ -889,6 +930,7 @@ namespace ZE::RHI::DX12::Pipeline
 			mainList.Get().dx12.Reset(dev);
 			startingTransitions.clear();
 		}
+#endif
 	}
 
 	FrameBuffer::~FrameBuffer()
