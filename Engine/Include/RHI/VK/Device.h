@@ -1,5 +1,4 @@
 #pragma once
-#include "VK.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
 #include "UploadInfo.h"

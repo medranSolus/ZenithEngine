@@ -10,12 +10,13 @@ namespace ZE::RHI::DX12
 
 		if (fence->GetCompletedValue() < val)
 		{
-			HANDLE fenceEvent;
-			fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-			assert(fenceEvent && "Cannot create fence event!");
+			HANDLE fenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+			ZE_ASSERT(fenceEvent, "Cannot create fence event!");
 
 			ZE_DX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
 			if (WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0)
+				throw ZE_WIN_EXCEPT_LAST();
+			if (CloseHandle(fenceEvent) == 0)
 				throw ZE_WIN_EXCEPT_LAST();
 		}
 	}
@@ -129,20 +130,21 @@ namespace ZE::RHI::DX12
 
 		// Suppress non important messages
 		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-		D3D12_MESSAGE_ID denyIds[3] =
+		D3D12_MESSAGE_ID denyIds[4] =
 		{
 			// D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
 			// Bug in Visual Studio Graphics Debugger while capturing frame
 			D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
 			D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
 			// When asking for smaller alignment error is generated, silence it
-			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT
+			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT,
+			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT_SMALLRESOURCE
 		};
 
 		D3D12_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumSeverities = 1;
 		filter.DenyList.pSeverityList = severities;
-		filter.DenyList.NumIDs = 3;
+		filter.DenyList.NumIDs = sizeof(denyIds) / sizeof(D3D12_MESSAGE_ID);
 		filter.DenyList.pIDList = denyIds;
 
 		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
@@ -434,7 +436,7 @@ namespace ZE::RHI::DX12
 		desc.SamplerFeedbackMipRegion.Height = 0;
 		desc.SamplerFeedbackMipRegion.Depth = 0;
 
-		D3D12_RESOURCE_ALLOCATION_INFO1 info;
+		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
 		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
 		if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
 		{

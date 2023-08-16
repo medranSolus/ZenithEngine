@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/QueueType.h"
-#include "D3D11.h"
+#include "DX11.h"
 
 namespace ZE::GFX
 {

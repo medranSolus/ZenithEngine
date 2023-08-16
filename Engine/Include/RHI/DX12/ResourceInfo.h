@@ -1,5 +1,5 @@
 #pragma once
-#include "D3D12.h"
+#include "DX12.h"
 
 namespace ZE::RHI::DX12
 {

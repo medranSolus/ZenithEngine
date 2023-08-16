@@ -9,7 +9,7 @@
 #include "GFX/ShaderPresence.h"
 #include "GFX/QueueType.h"
 ZE_WARNING_PUSH
-#include <d3d12.h>
+#include "d3d12.h"
 ZE_WARNING_POP
 #include <bitset>
 
@@ -20,13 +20,13 @@ namespace ZE::RHI::DX12
 	typedef ID3D12CommandList                        ICommandList;
 	typedef ID3D12CommandQueue                       ICommandQueue;
 	typedef ID3D12DescriptorHeap                     IDescriptorHeap;
-	typedef ID3D12Debug1                             IDebug;
+	typedef ID3D12Debug6                             IDebug;
 	typedef ID3D12DebugDevice2                       IDebugDevice;
-	typedef ID3D12Device8                            IDevice;
+	typedef ID3D12Device12                           IDevice;
 	typedef ID3D12DeviceRemovedExtendedData1         IDeviceRemovedExtendedData;
 	typedef ID3D12DeviceRemovedExtendedDataSettings1 IDeviceRemovedExtendedDataSettings;
 	typedef ID3D12Fence1                             IFence;
-	typedef ID3D12GraphicsCommandList6               IGraphicsCommandList;
+	typedef ID3D12GraphicsCommandList9               IGraphicsCommandList;
 	typedef ID3D12Heap1                              IHeap;
 	typedef ID3D12InfoQueue                          IInfoQueue;
 	typedef ID3D12Pageable                           IPageable;

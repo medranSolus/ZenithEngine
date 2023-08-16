@@ -1,6 +1,5 @@
 #pragma once
 #include "Allocator/ChunkedTLSF.h"
-#include "D3D12.h"
 #include "ResourceInfo.h"
 
 namespace ZE::RHI::DX12

@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Resource/Texture/Type.h"
 #include "Window/MainWindow.h"
-#include "D3D12.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
 #include "DescriptorInfo.h"
@@ -18,7 +17,7 @@ namespace ZE::RHI::DX12
 	class Device final
 	{
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
-		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_1;
+		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_2;
 
 		struct UploadInfo
 		{

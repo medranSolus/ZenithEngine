@@ -30,7 +30,7 @@ if(${ZE_ENABLE_DX12})
         copy_runtime_data(ENGINE_AGILITY_SYMBOLS "${AGILITY_DIR}/bin/x64" "" ".pdb" "D3D12/")
     endif()
 
-    copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "D3D12/")
+    copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "AgilitySDK/")
     copy_runtime_data(ENGINE_DSTORE "${DSTORE_DIR}/bin/x64" "" "*.dll" "")
 endif()
 
@@ -100,10 +100,10 @@ add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADE
 
 # Link targets for DirectX
 if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
-    set(DX_TARGETS dxgi dxguid uuid)
+    set(DX_TARGETS D3DCompiler dxgi dxguid uuid)
 
     if(${ZE_ENABLE_DX11})
-        set(DX_TARGETS ${DX_TARGETS} D3DCompiler d3d11)
+        set(DX_TARGETS ${DX_TARGETS} d3d11)
     endif()
     if(${ZE_ENABLE_DX12})
         set(DX_TARGETS ${DX_TARGETS} d3d12)
@@ -115,7 +115,7 @@ target_include_directories(${ENGINE_TARGET} PUBLIC ${ZE_INC_DIRS})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
     PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${AGS_TARGET} ${ASSIMP_TARGET} ${DSTORE_TARGET} ${ENTT_TARGET} ${FTYPE_TARGET} ${LIBPNG_TARGET} ${PIX_TARGET} ${VOLK_TARGET} ${ZLIB_TARGET})
-add_dependencies(${ENGINE_TARGET}  ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
+add_dependencies(${ENGINE_TARGET} ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
 
 # Icon definition
 if(${ZE_PLATFORM_WINDOWS})

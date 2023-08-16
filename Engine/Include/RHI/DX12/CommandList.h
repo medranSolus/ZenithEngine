@@ -1,5 +1,5 @@
 #pragma once
-#include "D3D12.h"
+#include "DX12.h"
 #include "Table.h"
 ZE_WARNING_PUSH
 #include "WinPixEventRuntime/pix3.h"
