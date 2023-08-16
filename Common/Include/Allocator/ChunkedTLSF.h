@@ -573,7 +573,7 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	void ZE_CHUNKED_TLSF_TYPE::DestroyFreeChunks(void* memoryUserData) noexcept
 	{
-		if (nullBlock->ChunkHandle)
+		if (chunkSizeDivisor != 0 && nullBlock->ChunkHandle)
 		{
 			TLSFMemoryChunk<Memory>::DestroyMemory(nullBlock->ChunkHandle, memoryUserData);
 			chunkAllocator.Free(nullBlock->ChunkHandle);
