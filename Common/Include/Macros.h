@@ -3,24 +3,34 @@
 #include "Logger.h"
 
 #if _ZE_MODE_DEBUG || _ZE_MODE_DEV
-// Regular debug assert
-#	define ZE_ASSERT(condition, message) do { if (!(condition)) { ZE::Logger::Error(message, true); ZE::Intrin::DebugBreak(); } } while (false)
+// Debug assert with ability to specify level of log entry
+#	define ZE_ASSERT_LVL(lvl, condition, message) do { if (!(condition)) { ZE::Logger::##lvl##(message, true); ZE::Intrin::DebugBreak(); } } while (false)
 #elif _ZE_MODE_PROFILE
-// Regular debug assert
-#	define ZE_ASSERT(condition, message) do { if (!(condition)) ZE::Logger::Error(message, true); } while (false)
+// Debug assert with ability to specify level of log entry
+#	define ZE_ASSERT_LVL(lvl, condition, message) do { if (!(condition)) ZE::Logger::##lvl##(message, true); } while (false)
 #elif _ZE_MODE_RELEASE
-// Regular debug assert
-#	define ZE_ASSERT(condition, message) ((void)0)
+// Debug assert with ability to specify level of log entry
+#	define ZE_ASSERT_LVL(lvl, condition, message) ((void)0)
 #endif
 
-// Always failing debug assert, indicating wrong code path that shouldn't occur
-#define ZE_FAIL(message) ZE_ASSERT(false, message)
+#if !_ZE_MODE_RELEASE
 // Assert allowing debug break
-#define ZE_BREAK() ZE_FAIL("Debug break")
+#	define ZE_BREAK() ZE::Intrin::DebugBreak()
+#else
+// Assert allowing debug break
+#	define ZE_BREAK() ((void)0)
+#endif
+
+// Regular debug assert
+#define ZE_ASSERT(condition, message) ZE_ASSERT_LVL(Error, condition, message)
+// Assert for checking whether resource was freed before deletion
+#define ZE_ASSERT_FREED(condition) ZE_ASSERT_LVL(Error, condition, "Resource not freed before deletion!")
+// Always failing debug assert, indicating wrong code path that shouldn't occur
+#define ZE_FAIL(message) ZE_ASSERT_LVL(Error, false, message)
 // Failing assert indicating not correctly handled enum value in switch-case
-#define ZE_ENUM_UNHANDLED() ZE_FAIL("Unhandled enum value!"); [[fallthrough]]
+#define ZE_ENUM_UNHANDLED() ZE_ASSERT_LVL(Warning, false, "Unhandled enum value!"); [[fallthrough]]
 // Check if quaternion vector is unit length
-#define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT(ZE::Math::Internal::XMQuaternionIsUnit(rotor), "Quaternion is not unit quaternion!")
+#define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT_LVL(Warning, ZE::Math::Internal::XMQuaternionIsUnit(rotor), "Quaternion is not unit quaternion!")
 // Check if stored quaternion is unit length
 #define ZE_ASSERT_Q_UNIT(rotor) ZE_ASSERT_Q_UNIT_V(ZE::Math::XMLoadFloat4(&rotor))
 
