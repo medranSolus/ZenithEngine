@@ -10,8 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->State.Free(dev);
-		execData->VolumeVB.Free(dev);
-		execData->VolumeIB.Free(dev);
+		execData->VolumeMesh.Free(dev);
 		ShadowMapCube::Clean(dev, execData->ShadowData);
 		delete execData;
 	}
@@ -49,8 +48,13 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		passData->State.Init(dev, psoDesc, schema);
 
 		const auto volume = Primitive::MakeSphereIcoSolid(3);
-		passData->VolumeVB.Init(dev, { ZE::Utils::SafeCast<U32>(volume.Vertices.size()), sizeof(Float3), volume.Vertices.data() });
-		passData->VolumeIB.Init(dev, { ZE::Utils::SafeCast<U32>(volume.Indices.size()), sizeof(U32), volume.Indices.data() });
+		passData->VolumeMesh.Init(dev,
+			{
+				volume.Vertices.data(), volume.Indices.data(),
+				ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
+				ZE::Utils::SafeCast<U32>(volume.Indices.size()),
+				sizeof(Float3), sizeof(U32)
+			});
 
 		return passData;
 	}
@@ -113,10 +117,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
 
-				data.VolumeVB.Bind(cl);
-				data.VolumeIB.Bind(cl);
-
-				cl.DrawIndexed(dev, data.VolumeIB.GetCount());
+				data.VolumeMesh.Draw(dev, cl);
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(dev, cl);
 			}

@@ -21,8 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		ShadowMapCube::ExecuteData ShadowData;
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		Resource::VertexBuffer VolumeVB;
-		Resource::IndexBuffer VolumeIB;
+		Resource::Mesh VolumeMesh;
 	};
 
 	void Clean(Device& dev, void* data) noexcept;

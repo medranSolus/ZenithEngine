@@ -8,8 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->State.Free(dev);
 		execData->SkyTexture.Free(dev);
-		execData->VertexBuffer.Free(dev);
-		execData->IndexBuffer.Free(dev);
+		execData->MeshData.Free(dev);
 		delete execData;
 	}
 
@@ -38,9 +37,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		passData->SkyTexture.Init(dev, texDesc);
 
 		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
-		passData->VertexBuffer.Init(dev, { Utils::SafeCast<U32>(vertices.size()), sizeof(Float3), vertices.data() });
 		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
-		passData->IndexBuffer.Init(dev, { Utils::SafeCast<U32>(indices.size()), sizeof(U32), indices.data() });
+		passData->MeshData.Init(dev,
+			{
+				vertices.data(), indices.data(),
+				Utils::SafeCast<U32>(vertices.size()),
+				Utils::SafeCast<U32>(indices.size()),
+				sizeof(Float3), sizeof(U32)
+			});
 		dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;
@@ -73,9 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		data.SkyTexture.Bind(cl, ctx);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		data.VertexBuffer.Bind(cl);
-		data.IndexBuffer.Bind(cl);
-		cl.DrawIndexed(dev, data.IndexBuffer.GetCount());
+		data.MeshData.Draw(dev, cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
 		cl.Close(dev);

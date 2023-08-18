@@ -2,8 +2,6 @@
 #include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/IndexBuffer.h"
-#include "GFX/Resource/VertexBuffer.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
@@ -18,8 +16,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
 		Resource::Texture::Pack SkyTexture;
-		Resource::VertexBuffer VertexBuffer;
-		Resource::IndexBuffer IndexBuffer;
+		Resource::Mesh MeshData;
 	};
 
 	void Clean(Device& dev, void* data) noexcept;

@@ -275,13 +275,13 @@ void App::ShowObjectWindow()
 				ImGui::Separator();
 				ImGui::NewLine();
 				EID materialId = engine.GetData().get<Data::MaterialID>(selected).ID;
-				auto& material = engine.GetResourceData().get<Data::MaterialPBR>(materialId);
+				auto& material = engine.GetAssetsStreamer().GetResources().get<Data::MaterialPBR>(materialId);
 
 				ImGui::Text("Material ID: %llu", materialId);
-				if (engine.GetResourceData().all_of<std::string>(materialId))
+				if (engine.GetAssetsStreamer().GetResources().all_of<std::string>(materialId))
 				{
 					ImGui::SameLine();
-					ImGui::Text("Name: %s", engine.GetResourceData().get<std::string>(materialId).c_str());
+					ImGui::Text("Name: %s", engine.GetAssetsStreamer().GetResources().get<std::string>(materialId).c_str());
 				}
 
 				change = ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&material.Color),
@@ -318,7 +318,7 @@ void App::ShowObjectWindow()
 
 				if (change)
 				{
-					auto& buffers = engine.GetResourceData().get<Data::MaterialBuffersPBR>(materialId);
+					auto& buffers = engine.GetAssetsStreamer().GetResources().get<Data::MaterialBuffersPBR>(materialId);
 					auto& dev = engine.Gfx().GetDevice();
 
 					dev.BeginUploadRegion();
@@ -533,8 +533,7 @@ EID App::AddModel(std::string&& name, Float3&& position,
 		engine.GetData().emplace<Data::Transform>(model,
 			Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale)));
 
-	Data::LoadGeometryFromModel(engine.Gfx().GetDevice(), engine.GetTextureLibrary(),
-		engine.GetData(), engine.GetResourceData(), model, file, true);
+	engine.GetAssetsStreamer().LoadModelData(engine.Gfx().GetDevice(), engine.GetData(), model, file, true);
 	return model;
 }
 
@@ -656,6 +655,7 @@ App::App(const CmdParser& params)
 	AddModel("Sting sword", { -20.0f, 0.0f, -6.0f }, { 35.0f, 270.0f, 110.0f }, 0.2f, "Models/Sting_Sword/Sting_Sword.obj");
 	AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
 #endif
+	engine.Gfx().GetDevice().StartUpload();
 	engine.Gfx().GetDevice().EndUploadRegion();
 }
 

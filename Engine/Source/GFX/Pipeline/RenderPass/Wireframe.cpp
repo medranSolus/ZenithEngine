@@ -45,7 +45,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			// Compute visibility of objects inside camera view
 			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), Math::XMLoadFloat3(&dynamicData.CameraPos));
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Resources, group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>(renderData.Registry);
 			count = visibleGroup.size();
 
@@ -77,11 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 				ctx.Reset();
 
-				const auto& geometry = renderData.Resources.get<Data::Geometry>(visibleGroup.get<Data::MeshID>(entity).ID);
-				geometry.Vertices.Bind(cl);
-				geometry.Indices.Bind(cl);
-
-				cl.DrawIndexed(dev, geometry.Indices.GetCount());
+				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_DRAW_TAG_END(dev, cl);
