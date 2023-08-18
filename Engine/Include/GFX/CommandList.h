@@ -37,8 +37,6 @@ namespace ZE::GFX
 		constexpr void Close(Device& dev) { ZE_RHI_BACKEND_CALL(Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_RHI_BACKEND_CALL(Reset, dev); }
 
-		constexpr void Draw(Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Draw, dev, vertexCount); }
-		constexpr void DrawIndexed(Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(DrawIndexed, dev, indexCount); }
 		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }

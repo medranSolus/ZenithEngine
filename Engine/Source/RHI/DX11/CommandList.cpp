@@ -51,18 +51,6 @@ namespace ZE::RHI::DX11
 		}
 	}
 
-	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx11);
-		ZE_DX_THROW_FAILED_INFO(context->Draw(vertexCount, 0));
-	}
-
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx11);
-		ZE_DX_THROW_FAILED_INFO(context->DrawIndexed(indexCount, 0, 0));
-	}
-
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx11);

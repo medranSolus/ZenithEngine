@@ -44,18 +44,6 @@ namespace ZE::RHI::DX12
 		Reset(dev.Get().dx12);
 	}
 
-	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(vertexCount, 1, 0, 0));
-	}
-
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-		ZE_DX_THROW_FAILED_INFO(commands->DrawIndexedInstanced(indexCount, 1, 0, 0, 0));
-	}
-
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		ZE_DX_ENABLE_INFO(dev.Get().dx12);

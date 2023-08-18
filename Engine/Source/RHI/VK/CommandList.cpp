@@ -29,16 +29,6 @@ namespace ZE::RHI::VK
 		Reset(dev.Get().vk);
 	}
 
-	void CommandList::Draw(GFX::Device& dev, U32 vertexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		vkCmdDraw(commands, vertexCount, 1, 0, 0);
-	}
-
-	void CommandList::DrawIndexed(GFX::Device& dev, U32 indexCount) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		vkCmdDrawIndexed(commands, indexCount, 1, 0, 0, 0);
-	}
-
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		//commands->IASetVertexBuffers(0, 0, nullptr);
