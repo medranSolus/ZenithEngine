@@ -191,6 +191,7 @@ namespace ZE::Math
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept;
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept;
 	bool IsNearEqual(const Vector& v1, const Vector& v2) noexcept;
+	bool IsUnitQuaternion(const Vector& rotor) noexcept;
 	Matrix GetVectorRotation(const Vector& baseDirection, const Vector& newDirection,
 		bool targetGeometry = false, float geometryOffsetY = 0.0f) noexcept;
 	Matrix GetTransform(const Float3& position, const Float4& rotor, const Float3& scale) noexcept;

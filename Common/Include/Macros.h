@@ -30,7 +30,7 @@
 // Failing assert indicating not correctly handled enum value in switch-case
 #define ZE_ENUM_UNHANDLED() ZE_ASSERT_LVL(Warning, false, "Unhandled enum value!"); [[fallthrough]]
 // Check if quaternion vector is unit length
-#define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT_LVL(Warning, ZE::Math::Internal::XMQuaternionIsUnit(rotor), "Quaternion is not unit quaternion!")
+#define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT_LVL(Warning, ZE::Math::IsUnitQuaternion(rotor), "Quaternion is not unit quaternion!")
 // Check if stored quaternion is unit length
 #define ZE_ASSERT_Q_UNIT(rotor) ZE_ASSERT_Q_UNIT_V(ZE::Math::XMLoadFloat4(&rotor))
 

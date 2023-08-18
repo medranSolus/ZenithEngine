@@ -53,6 +53,14 @@ namespace ZE::Math
 		return std::isnan(XMVectorGetX(equality)) && std::isnan(XMVectorGetY(equality)) && std::isnan(XMVectorGetZ(equality));
 	}
 
+	bool IsUnitQuaternion(const Vector& rotor) noexcept
+	{
+		constexpr Vector EPSILON = { 1.0e-4f, 1.0e-4f, 1.0e-4f, 1.0e-4f };
+
+		Vector diff = XMVectorSubtract(XMVector4Length(rotor), XMVectorSplatOne());
+		return XMVector4Less(XMVectorAbs(diff), EPSILON);
+	}
+
 	Matrix GetVectorRotation(const Vector& baseDirection, const Vector& newDirection,
 		bool targetGeometry, float geometryOffsetY) noexcept
 	{
