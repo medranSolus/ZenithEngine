@@ -12,7 +12,6 @@ namespace ZE
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Pipeline::RendererPBR renderer;
-		GFX::Resource::Texture::Library textureLib;
 		bool guiEnabled = true;
 
 	public:
@@ -25,8 +24,7 @@ namespace ZE
 		constexpr void SetGui(bool enabled) noexcept { guiEnabled = enabled; }
 
 		constexpr Data::Storage& GetData() noexcept { return renderer.GetRegistry(); }
-		constexpr Data::Storage& GetResourceData() noexcept { return renderer.GetResources(); }
-		constexpr GFX::Resource::Texture::Library& GetTextureLibrary() noexcept { return textureLib; }
+		constexpr Data::AssetsStreamer& GetAssetsStreamer() noexcept { return renderer.GetAssetsStreamer(); }
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
 		constexpr GUI::Manager& Gui() noexcept { return gui; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }

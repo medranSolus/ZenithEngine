@@ -120,8 +120,7 @@ namespace ZE::GFX::Pipeline
 		SetupSsaoQuality();
 	}
 
-	void RendererPBR::Init(Device& dev, CommandList& mainList, Resource::Texture::Library& texLib,
-		U32 width, U32 height, const ParamsPBR& params)
+	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, const ParamsPBR& params)
 	{
 		const U32 outlineBuffWidth = width / 2;
 		const U32 outlineBuffHeight = height / 2;
@@ -158,7 +157,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
-		RendererBuildData buildData = { execData.Bindings, texLib };
+		RendererBuildData buildData = { execData.Bindings, execData.Assets.GetSchemaLibrary() };
 		SetupRenderSlots(buildData);
 
 		blurSigma = params.Sigma;

@@ -14,6 +14,7 @@ namespace ZE::Data
 		ZE_CLASS_MOVE(Library);
 		~Library() = default;
 
+		void Transform(std::function<void(T&)> func) noexcept { for (T& item : data) func(item); }
 		void Clear() noexcept { data.clear(); }
 		bool Contains(const KEY& name) const noexcept { return data.contains(name); }
 		const T& Get(const KEY& name) const noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.at(name); }

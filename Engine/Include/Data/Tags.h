@@ -1,9 +1,9 @@
 #pragma once
 #include "Camera.h"
-#include "Geometry.h"
 #include "Light.h"
 #include "MaterialPBR.h"
 #include "Transform.h"
+#include "GFX/Resource/Mesh.h"
 
 namespace ZE::Data
 {

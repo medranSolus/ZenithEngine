@@ -22,7 +22,7 @@ option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" ON)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
 option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
 option(ZE_ENABLE_VK "Enable Vulkan API usage" ON)
-option(ZE_MODEL_LOADING "Enable external model loading module of engine" ON)
+option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
 option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" OFF)
@@ -188,7 +188,7 @@ set(ZLIB_LIB "zlibstatic")
 if(${ZE_ENABLE_DX12})
 	set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
 endif()
-if(${ZE_MODEL_LOADING})
+if(${ZE_EXTERNAL_MODEL_LOADING})
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
 endif()
 if(${ZE_ENABLE_DX12})
@@ -209,7 +209,7 @@ set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # Inject debug postfix if library use it
 if(${ZE_EXTERNAL_BUILD_DEBUG_POSTFIX})
-	if(${ZE_MODEL_LOADING})
+	if(${ZE_EXTERNAL_MODEL_LOADING})
 		set(ASSIMP_TARGET "${ASSIMP_TARGET}d")
 	endif()
 	set(FTYPE_TARGET "${FTYPE_TARGET}d")
@@ -314,7 +314,7 @@ add_definitions(-DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>)
 # EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
 add_definitions(-D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # General flags with project options
-add_definitions(-D_ZE_MODEL_LOADING=$<BOOL:${ZE_MODEL_LOADING}>)
+add_definitions(-D_ZE_EXTERNAL_MODEL_LOADING=$<BOOL:${ZE_EXTERNAL_MODEL_LOADING}>)
 add_definitions(-D_ZE_RENDERER_NO_SPLIT_BARRIERS=$<BOOL:${ZE_RENDERER_NO_SPLIT_BARRIERS}>)
 add_definitions(-D_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SINGLE_THREAD}>)
 add_definitions(-D_ZE_DEBUG_FRAME_MEMORY_PRINT=$<BOOL:${ZE_DEBUG_FRAME_MEMORY_PRINT}>)
@@ -408,7 +408,7 @@ if(NOT EXISTS "${LIBPNG_OUT_LIB}")
 endif()
 
 # Assimp
-if(${ZE_MODEL_LOADING})
+if(${ZE_EXTERNAL_MODEL_LOADING})
 	# No exports set
 	set(ASSIMP_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
 		"-DASSIMP_BUILD_ASSIMP_TOOLS:BOOL=OFF"
