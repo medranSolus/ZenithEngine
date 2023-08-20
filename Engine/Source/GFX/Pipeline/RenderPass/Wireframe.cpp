@@ -61,7 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
-			ctx.SetFromEnd(1);
+			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 1.0f }); // Can be taken from mesh later
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();

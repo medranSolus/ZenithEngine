@@ -24,7 +24,6 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		psoDesc.SetShader(dev, psoDesc.PS, "DirectionalLightPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
-		psoDesc.Culling = Resource::CullMode::Front;
 		psoDesc.SetDepthClip(false);
 		psoDesc.RenderTargetsCount = 2;
 		psoDesc.FormatsRT[0] = formatColor;
@@ -55,7 +54,6 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Directional Light", Pixel(0xF5, 0xF5, 0xD1));
-
 			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
