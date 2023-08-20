@@ -51,8 +51,10 @@
 
 /*
 * Types.h (defined by CmdParser.h)
-* string
+* bitset
 * map
+* shared_mutex
+* string
 */
 #include "Perf.h"
 

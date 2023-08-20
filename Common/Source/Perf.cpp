@@ -11,9 +11,19 @@ namespace ZE
 			ZE_FAIL("Cannot open perf output file!");
 			return;
 		}
-		for (auto& x : data)
+		if (IsSingleLineLogEntry())
 		{
-			fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
+			for (auto& x : data)
+				fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
+		}
+		else
+		{
+			for (auto& x : data)
+			{
+				fout << '[' << x.first << ']' << std::endl
+					<< "    Avg time: " << x.second.AvgMicroseconds << " us" << std::endl
+					<< "    Tests:    " << x.second.Count << std::endl;
+			}
 		}
 		fout.close();
 		data.clear();
@@ -50,11 +60,13 @@ namespace ZE
 
 	void Perf::Start(const std::string& sectionTag) noexcept
 	{
+		LockGuardRW lock(mutex);
 		CreateStartStamp(sectionTag) = platformImpl.GetCurrentTimestamp();
 	}
 
 	void Perf::StartShort(const std::string& sectionTag) noexcept
 	{
+		LockGuardRW lock(mutex);
 		U64& stamp = CreateStartStamp(sectionTag);
 		Intrin::FenceMemory();
 		Intrin::FenceLoad();
@@ -63,18 +75,24 @@ namespace ZE
 
 	long double Perf::Stop() noexcept
 	{
-		return SaveStopStamp(platformImpl.GetFrequency(), platformImpl.GetCurrentTimestamp());
+		const U64 stamp = platformImpl.GetCurrentTimestamp();
+
+		LockGuardRW lock(mutex);
+		return SaveStopStamp(platformImpl.GetFrequency(), stamp);
 	}
 
 	long double Perf::StopShort() noexcept
 	{
 		U64 stamp = Intrin::Rdtsc();
 		Intrin::FenceLoad();
+
+		LockGuardRW lock(mutex);
 		return SaveStopStamp(1.0L, stamp);
 	}
 
 	U64 Perf::GetSectionCallCount(const std::string& sectionTag) noexcept
 	{
+		LockGuardRW lock(mutex);
 		auto it = data.find(sectionTag);
 		if (it == data.end())
 			return 0;

@@ -38,14 +38,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		U64 count = group.size();
 		if (count)
 		{
+			ZE_PERF_START("Wireframe - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
 
 			// Compute visibility of objects inside camera view
+			ZE_PERF_START("Wireframe - frustum culling");
 			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), Math::XMLoadFloat3(&dynamicData.CameraPos));
 			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
+			ZE_PERF_STOP();
+
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>(renderData.Registry);
 			count = visibleGroup.size();
 
@@ -63,8 +67,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ctx.Reset();
 
 			auto& cbuffer = renderData.DynamicBuffers.Get();
+			ZE_PERF_START("Wireframe - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
+				ZE_PERF_START("Wireframe - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
 				auto entity = visibleGroup[i];
@@ -79,12 +85,19 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
+
 			// Remove current visibility
+			ZE_PERF_START("Wireframe - visibility clear");
 			renderData.Registry.clear<InsideFrustum>();
+			ZE_PERF_STOP();
+
+			ZE_PERF_STOP();
 		}
 	}
 }

@@ -34,6 +34,8 @@ namespace ZE
 		// When set to 0 leaves calculation of optimal thread count to the pool.
 		// Set to UINT8_MAX to disable thread pool completly.
 		U8 CustomThreadPoolThreadsCount;
+		// Set to true if required to have performance measurements entries in single line each.
+		bool SingleLinePerfEntry;
 		// Parameters for used render pipeline
 		GFX::Pipeline::ParamsPBR Renderer;
 

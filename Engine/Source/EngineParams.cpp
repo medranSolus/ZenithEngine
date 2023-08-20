@@ -15,6 +15,7 @@ namespace ZE
 		parser.AddNumber("threadsCount", 0);
 		parser.AddOption("minPassDist");
 		parser.AddNumber("shadowMapSize", 1024);
+		parser.AddOption("singleLinePerfEntry");
 	}
 
 	GfxApiType EngineParams::GetParsedApi(const CmdParser& parser, GfxApiType defApi) noexcept

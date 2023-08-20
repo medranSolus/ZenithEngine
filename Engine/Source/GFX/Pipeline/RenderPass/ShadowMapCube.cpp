@@ -77,6 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		if (group.size())
 		{
+			ZE_PERF_START("Shadow Map Cube - present");
 			// Prepare view-projections for casting onto 6 faces
 			CubeViewBuffer viewBuffer;
 			const Vector position = Math::XMLoadFloat3(&lightPos);
@@ -105,9 +106,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			auto cubeBufferInfo = cbuffer.Alloc(dev, &viewBuffer, sizeof(CubeViewBuffer));
 
 			// Split into groups based on materials and if inside light volume
+			ZE_PERF_START("Shadow Map Cube - visibility group split loop");
 			const Math::BoundingSphere lightSphere(lightPos, lightVolume);
 			for (EID entity : group)
 			{
+				ZE_PERF_START("Shadow Map Cube - visibility group split single loop item");
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 
 				Math::BoundingBox box = renderData.Assets.GetResources().get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
@@ -120,7 +123,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					else
 						renderData.Registry.emplace<Solid>(entity);
 				}
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
+
 			auto solidGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Solid>(renderData.Registry);
 			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Transparent>(renderData.Registry);
 			const U64 solidCount = solidGroup.size();
@@ -220,8 +226,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			// Transparent pass
 			if (transparentCount)
 			{
-				Utils::ViewSortDescending(transparentGroup, position);
+				ZE_PERF_START("Shadow Map Cube - transparent present");
 
+				ZE_PERF_START("Shadow Map Cube - transparent view sort");
+				Utils::ViewSortDescending(transparentGroup, position);
+				ZE_PERF_STOP();
+
+				ZE_PERF_START("Shadow Map Cube Transparent");
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
@@ -231,8 +242,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				renderData.BindRendererDynamicData(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
+
+				ZE_PERF_START("Shadow Map Cube Transparent - main loop");
 				for (U64 i = 0; i < transparentCount; ++i)
 				{
+					ZE_PERF_START("Shadow Map Cube Transparent - single loop item");
 					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = transparentGroup[i];
@@ -263,11 +277,21 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 					renderData.Assets.GetResources().get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
+					ZE_PERF_STOP();
 				}
+				ZE_PERF_STOP();
+
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
+
+				ZE_PERF_STOP();
 			}
 			// Remove current material indication
+			ZE_PERF_START("Shadow Map Cube - visibility clear");
 			renderData.Registry.clear<Solid, Transparent>();
+			ZE_PERF_STOP();
+
+			ZE_PERF_STOP();
 		}
 	}
 }

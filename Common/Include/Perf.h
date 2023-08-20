@@ -1,7 +1,9 @@
 #pragma once
 #include "Types.h"
-#include <string>
+#include <bitset>
 #include <map>
+#include <shared_mutex>
+#include <string>
 
 #if _ZE_PLATFORM_WINDOWS
 #include "Platform/WinAPI/Perf.h"
@@ -21,11 +23,20 @@ namespace ZE
 			U64 Count;
 		};
 
+		enum Flags : U8
+		{
+			SingleLineLogEntry,
+			FlagsCount,
+		};
+
 		static constexpr const char* LOG_FILE = "perf_log.txt";
+		static constexpr bool MULTITHREADED = true;
 
 		std::map<std::string, Data> data;
 		std::vector<std::pair<U64, std::string>> lastTags;
+		std::shared_mutex mutex;
 		PlatformPerf platformImpl;
+		std::bitset<Flags::FlagsCount> flags = 0;
 
 		void Save();
 		U64& CreateStartStamp(const std::string& sectionTag) noexcept;
@@ -39,6 +50,9 @@ namespace ZE
 
 		static Perf& Get() noexcept { static Perf perf; return perf; }
 
+		constexpr void SetSingleLineLogEntry(bool val) noexcept { flags[Flags::SingleLineLogEntry] = val; }
+		constexpr bool IsSingleLineLogEntry() const noexcept { return flags[Flags::SingleLineLogEntry]; }
+
 		void Start(const std::string& sectionTag) noexcept;
 		// Use for measuring short periods of time as it gets raw data based on RDTSC
 		void StartShort(const std::string& sectionTag) noexcept;
@@ -49,10 +63,20 @@ namespace ZE
 	};
 }
 
-#define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
+#if !_ZE_MODE_RELEASE
+#	define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
-#define ZE_PERF_START_SHORT(sectionTag) ZE::Perf::Get().StartShort(sectionTag)
-#define ZE_PERF_STOP() ZE::Perf::Get().Stop()
+#	define ZE_PERF_START_SHORT(sectionTag) ZE::Perf::Get().StartShort(sectionTag)
+#	define ZE_PERF_STOP() ZE::Perf::Get().Stop()
 // Use for measuring short periods of time as it gets raw data based on RDTSC
-#define ZE_PERF_STOP_SHORT() ZE::Perf::Get().StopShort()
-#define ZE_PERF_COUNT(sectionTag) ZE::Perf::Get().GetSectionCallCount(sectionTag)
+#	define ZE_PERF_STOP_SHORT() ZE::Perf::Get().StopShort()
+#	define ZE_PERF_COUNT(sectionTag) ZE::Perf::Get().GetSectionCallCount(sectionTag)
+#else
+#	define ZE_PERF_START(sectionTag)
+// Use for measuring short periods of time as it gets raw data based on RDTSC
+#	define ZE_PERF_START_SHORT(sectionTag)
+#	define ZE_PERF_STOP()
+// Use for measuring short periods of time as it gets raw data based on RDTSC
+#	define ZE_PERF_STOP_SHORT()
+#	define ZE_PERF_COUNT(sectionTag)
+#endif

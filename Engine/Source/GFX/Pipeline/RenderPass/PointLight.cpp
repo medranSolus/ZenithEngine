@@ -67,6 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		const U64 count = group.size();
 		if (count)
 		{
+			ZE_PERF_START("Point Light - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
@@ -80,8 +81,10 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 			auto& cbuffer = renderData.DynamicBuffers.Get();
 			cl.Open(dev);
+			ZE_PERF_START("Point Light - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
+				ZE_PERF_START("Point Light - single loop item");
 				EID entity = group[i];
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 				const auto& light = group.get<Data::PointLightBuffer>(entity);
@@ -91,9 +94,12 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				if (!frustum.Intersects(lightSphere))
 					continue;
 
+				ZE_PERF_START("Point Light - shadow map");
 				ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData,
 					*reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume);
+				ZE_PERF_STOP();
 
+				ZE_PERF_START("Point Light - after shadow map");
 				TransformBuffer transformBuffer;
 				transformBuffer.Transform = viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(light.Volume, light.Volume, light.Volume) *
@@ -120,9 +126,13 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				data.VolumeMesh.Draw(dev, cl);
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
+
+				ZE_PERF_STOP();
 			}
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
+			ZE_PERF_STOP();
 		}
 	}
 }

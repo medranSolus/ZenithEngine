@@ -79,6 +79,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		ZE_PERF_START("SSAO");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
@@ -110,13 +111,12 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		list.Compute(dev, Math::DivideRoundUp(size.X, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
 			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		renderData.Buffers.BarrierTransition(list,
-			std::array
-		{
-			TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-				TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-				TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-		});
+		renderData.Buffers.BarrierTransition(list, std::array
+			{
+				TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
+					TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
+					TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
+			});
 
 		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
 		data.StateDenoise.Bind(list);
@@ -130,15 +130,15 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		list.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
 			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		renderData.Buffers.BarrierTransition(list,
-			std::array
-		{
-			TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
-				TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-		});
+		renderData.Buffers.BarrierTransition(list, std::array
+			{
+				TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
+					TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
+			});
 
 		ZE_DRAW_TAG_END(dev, list);
 		list.Close(dev);
 		dev.ExecuteCompute(list);
+		ZE_PERF_STOP();
 	}
 }

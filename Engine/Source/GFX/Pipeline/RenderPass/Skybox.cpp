@@ -64,6 +64,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		ZE_PERF_START("Skybox");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
@@ -82,5 +83,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		ZE_DRAW_TAG_END(dev, cl);
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
+		ZE_PERF_STOP();
 	}
 }

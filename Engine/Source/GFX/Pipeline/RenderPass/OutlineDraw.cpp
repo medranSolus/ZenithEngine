@@ -44,6 +44,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		ZE_PERF_START("Outline Draw");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
@@ -58,19 +59,25 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		U64 count = group.size();
 		if (count)
 		{
+			ZE_PERF_START("Outline Draw - outline present");
+
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 			// Compute visibility of objects inside camera view and sort them front-back
+			ZE_PERF_START("Outline Draw - frustum culling");
 			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
+			ZE_PERF_STOP();
 
+			ZE_PERF_START("Outline Draw - view sort");
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderOutline, InsideFrustum>(renderData.Registry);
 			count = visibleGroup.size();
 			Utils::ViewSortAscending(visibleGroup, cameraPos);
+			ZE_PERF_STOP();
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			auto& cbuffer = renderData.DynamicBuffers.Get();
@@ -80,8 +87,11 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ctx.BindingSchema.SetGraphics(cl);
 			data.StateStencil.SetStencilRef(cl, 0xFF);
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+
+			ZE_PERF_START("Outline Draw Stencil - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
+				ZE_PERF_START("Outline Draw Stencil - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
 				EID entity = visibleGroup[i];
@@ -98,7 +108,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 
 			// Separate calls due to different RT/DS sizes
@@ -111,8 +123,11 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();
+
+			ZE_PERF_START("Outline Draw - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
+				ZE_PERF_START("Outline Draw - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
 
 				EID entity = visibleGroup[i];
@@ -121,13 +136,20 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 
 			// Remove current visibility
+			ZE_PERF_START("Outline Draw - visibility clear");
 			renderData.Registry.clear<InsideFrustum>();
+			ZE_PERF_STOP();
+
+			ZE_PERF_STOP();
 		}
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
+		ZE_PERF_STOP();
 	}
 }

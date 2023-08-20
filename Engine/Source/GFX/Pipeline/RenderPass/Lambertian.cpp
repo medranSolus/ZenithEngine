@@ -76,6 +76,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		ZE_PERF_START("Lambertian");
 		const Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
@@ -94,10 +95,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 		// Compute visibility of objects inside camera view
+		ZE_PERF_START("Lambertian - frustum culling");
 		Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
 		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Assets.GetResources(),
 			Data::GetRenderGroup<Data::RenderLambertian>(renderData.Registry), frustum);
+		ZE_PERF_STOP();
 
 		// Use new group visible only in current frustum and sort
 		auto solidGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumSolid>(renderData.Registry);
@@ -112,15 +115,23 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		U8 currentState = UINT8_MAX;
 		if (solidCount)
 		{
+			ZE_PERF_START("Lambertian - solid present");
+
+			ZE_PERF_START("Lambertian - solid view sorting");
 			Utils::ViewSortAscending(solidGroup, cameraPos);
+			ZE_PERF_STOP();
 
 			// Depth pre-pass
+			ZE_PERF_START("Lambertian Depth");
 			data.StateDepth.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+
+			ZE_PERF_START("Lambertian Depth - main loop");
 			for (U64 i = 0; i < solidCount; ++i)
 			{
+				ZE_PERF_START("Lambertian Depth - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), PixelVal::Gray);
 
 				EID entity = solidGroup[i];
@@ -138,10 +149,15 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
+
 			ZE_DRAW_TAG_END(dev, cl);
+			ZE_PERF_STOP();
 
 			// Sort by pipeline state
+			ZE_PERF_START("Lambertian - solid material sort");
 			solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 				{
 					const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID));
@@ -149,8 +165,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					return state1 < state2;
 				});
 			currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
+			ZE_PERF_STOP();
 
 			// Solid pass
+			ZE_PERF_START("Lambertian Solid");
 			data.StatesSolid[currentState].Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
@@ -160,8 +178,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
+
+			ZE_PERF_START("Lambertian Solid - main loop");
 			for (U64 i = 0; i < solidCount; ++i)
 			{
+				ZE_PERF_START("Lambertian Solid - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xAD, 0xAD, 0xC9));
 
 				EID entity = solidGroup[i];
@@ -187,17 +208,28 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
+
 			ZE_DRAW_TAG_END(dev, cl);
+			ZE_PERF_STOP();
+
 			currentMaterial = INVALID_EID;
 			currentState = UINT8_MAX;
+			ZE_PERF_STOP();
 		}
 
 		// Transparent pass
 		if (transparentCount)
 		{
-			Utils::ViewSortDescending(transparentGroup, cameraPos);
+			ZE_PERF_START("Lambertian - transparent present");
 
+			ZE_PERF_START("Lambertian - transparent view sorting");
+			Utils::ViewSortDescending(transparentGroup, cameraPos);
+			ZE_PERF_STOP();
+
+			ZE_PERF_START("Lambertian Transparent");
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
 			ctx.BindingSchema.SetGraphics(cl);
 			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
@@ -206,8 +238,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
+
+			ZE_PERF_START("Lambertian Transparent - main loop");
 			for (U64 i = 0; i < transparentCount; ++i)
 			{
+				ZE_PERF_START("Lambertian Transparent - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xD6, 0xD6, 0xE4));
 
 				EID entity = transparentGroup[i];
@@ -238,13 +273,22 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 			}
+			ZE_PERF_STOP();
+
 			ZE_DRAW_TAG_END(dev, cl);
+			ZE_PERF_STOP();
+			ZE_PERF_STOP();
 		}
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
 
+		ZE_PERF_START("Lambertian - visibility clear");
 		// Remove current visibility
 		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
+		ZE_PERF_STOP();
+
+		ZE_PERF_STOP();
 	}
 }
