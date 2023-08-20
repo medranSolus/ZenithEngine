@@ -17,9 +17,10 @@ namespace ZE::Allocator
 		};
 		struct ItemBlock
 		{
-			Item* Items;
+			std::unique_ptr<Item[]> Items;
 			U64 Capacity;
 			U64 FirstFreeIndex;
+			U64 Allocated;
 		};
 
 		const U64 firstBlockCapacity;
@@ -45,7 +46,7 @@ namespace ZE::Allocator
 	typename Pool<T>::ItemBlock& Pool<T>::CreateNewBlock() noexcept
 	{
 		U64 newBlockCapacity = itemBlocks.size() ? itemBlocks.back().Capacity * 3 / 2 : firstBlockCapacity;
-		ItemBlock& newBlock = itemBlocks.emplace_back(new Item[newBlockCapacity], newBlockCapacity, 0);
+		ItemBlock& newBlock = itemBlocks.emplace_back(std::make_unique<Item[]>(newBlockCapacity), newBlockCapacity, 0, 0);
 		--newBlockCapacity;
 
 		// Setup singly-linked list of all free items in this block
@@ -68,7 +69,8 @@ namespace ZE::Allocator
 			if (block.FirstFreeIndex != UINT64_MAX)
 			{
 				ZE_ASSERT(block.FirstFreeIndex < block.Capacity, "Incorrect index!");
-				if (block.FirstFreeIndex == 0)
+				ZE_ASSERT(block.Allocated < block.Capacity, "Block is already full!");
+				if (block.Allocated++ == 0)
 					freeBlock = false;
 
 				Item* item = &block.Items[block.FirstFreeIndex];
@@ -84,6 +86,7 @@ namespace ZE::Allocator
 		ItemBlock& newBlock = CreateNewBlock();
 		Item* item = &newBlock.Items[0];
 		newBlock.FirstFreeIndex = item->NextFreeIndex;
+		++newBlock.Allocated;
 
 		T* result = reinterpret_cast<T*>(&item->Data);
 		new(result) T(std::forward<Types>(args)...);
@@ -102,14 +105,15 @@ namespace ZE::Allocator
 			ItemBlock& block = itemBlocks.at(--i);
 
 			// Check if item is in address range of this block
-			if (item >= block.Items && item < block.Items + block.Capacity)
+			if (item >= block.Items.get() && item < block.Items.get() + block.Capacity)
 			{
 				ptr->~T();
 
 				item->NextFreeIndex = block.FirstFreeIndex;
-				block.FirstFreeIndex = static_cast<U64>(item - block.Items);
+				block.FirstFreeIndex = static_cast<U64>(item - block.Items.get());
 
-				if (block.FirstFreeIndex == 0)
+				ZE_ASSERT(block.Allocated > 0, "Trying to dealocate on empty list!");
+				if (--block.Allocated == 0)
 				{
 					if (freeBlock)
 						itemBlocks.erase(itemBlocks.begin() + i, itemBlocks.begin() + i + 1);
@@ -125,12 +129,7 @@ namespace ZE::Allocator
 	template<typename T>
 	void Pool<T>::Clear(bool fastClear) noexcept
 	{
-		if (fastClear)
-		{
-			for (auto& block : itemBlocks)
-				delete[] block.Items;
-		}
-		else
+		if (!fastClear)
 		{
 			for (auto& block : itemBlocks)
 			{
@@ -157,7 +156,6 @@ namespace ZE::Allocator
 						if (isInUse.at(i))
 							reinterpret_cast<T*>(block.Items[i].Data)->~T();
 				}
-				delete[] block.Items;
 			}
 		}
 		itemBlocks.clear();
