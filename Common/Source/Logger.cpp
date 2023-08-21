@@ -3,7 +3,7 @@
 
 namespace ZE
 {
-	void Logger::Log(Level type, const std::string& log, bool flush, bool logToFile)
+	void Logger::Log(Level type, const std::string& log, bool flush, bool logToFile) noexcept
 	{
 		std::string_view banner;
 		bool error = false;
@@ -11,49 +11,71 @@ namespace ZE
 		{
 		case Logger::Level::Info:
 		{
-			banner = "[INFO] ";
+			banner = "> [INFO] ";
 			break;
 		}
 		case Logger::Level::Warning:
 		{
-			banner = "[WARNING] ";
+			banner = "> [WARNING] ";
 			break;
 		}
 		case Logger::Level::Error:
 		{
-			banner = "[ERROR] ";
+			banner = "> [ERROR] ";
 			error = true;
 			break;
 		}
 		}
 		auto writeLog = [&](std::ostream& out)
-		{
-			out << banner << log << std::endl;
-			if (flush)
-				out << std::flush;
-		};
+			{
+				out << '<' << Utils::GetCurrentTimestamp() << banner << log << std::endl;
+				if (flush)
+					out << std::flush;
+			};
 
+		bool fileError = false;
 		if (logToFile)
 		{
-			std::ofstream fout;
-			if (firstUse)
+			LockGuardRW lock(fileMutex);
+			if (CreateLogDir(true))
 			{
-				firstUse = false;
-				fout.open("log.txt", std::ofstream::trunc);
+				std::ofstream fout;
+				if (firstUse)
+				{
+					firstUse = false;
+					fout.open(LOG_FILE, std::ofstream::trunc);
+				}
+				else
+					fout.open(LOG_FILE, std::ofstream::app);
+
+				if (fout.good())
+				{
+					writeLog(fout);
+					fout.close();
+				}
+				else
+					fileError = true;
 			}
 			else
-				fout.open("log.txt", std::ofstream::app);
-			if (!fout.good())
-			{
-				std::cerr << "[ERROR] Cannot open log file! Inner log:\n\t";
-				error = true;
-			}
-			else
-			{
-				writeLog(fout);
-				fout.close();
-			}
+				fileError = true;
+		}
+
+		LockGuardRW lock(consoleMutex);
+		if (fileError)
+		{
+			std::cerr << '<' << Utils::GetCurrentTimestamp() << "> [ERROR] Cannot open log file \"" << LOG_FILE << "\"! Inner log:\n\t";
+			error = true;
 		}
 		writeLog(error ? std::cerr : std::cout);
+	}
+
+	bool Logger::CreateLogDir(bool noLock) noexcept
+	{
+		if (!std::filesystem::exists(LOG_DIR))
+		{
+			LockGuardRW lock(fileMutex, !noLock);
+			return !std::filesystem::create_directories(LOG_DIR);
+		}
+		return true;
 	}
 }

@@ -29,7 +29,8 @@ namespace ZE
 			FlagsCount,
 		};
 
-		static constexpr const char* LOG_FILE = "perf_log.txt";
+		static constexpr const char* LOG_FILE = "perf_log_";
+		static constexpr const char* LOG_FILE_EXT = ".txt";
 		static constexpr bool MULTITHREADED = true;
 
 		std::map<std::string, Data> data;
@@ -63,7 +64,7 @@ namespace ZE
 	};
 }
 
-#if !_ZE_MODE_RELEASE
+#if _ZE_MODE_PROFILE
 // Use to configure tool behavior with given function
 #	define ZE_PERF_CONFIGURE(function, val) ZE::Perf::Get().##function##(val)
 #	define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)

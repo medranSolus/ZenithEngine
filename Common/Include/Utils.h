@@ -57,6 +57,9 @@ namespace ZE::Utils
 	// Free aligned memory
 	void AlignedFree(void* ptr) noexcept;
 
+	// Returns formated timestamp of current time
+	std::string GetCurrentTimestamp(bool fileFormatting = false) noexcept;
+
 #pragma region Functions
 	template<typename C, typename T>
 	constexpr C SafeCast(T&& val) noexcept

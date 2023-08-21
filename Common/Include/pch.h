@@ -18,6 +18,7 @@
 *********** atomic
 *********** cstdint
 ********* BasicTypes.h
+********* shared_mutex
 ********* string
 ******* Logger.h
 ***** Macros.h

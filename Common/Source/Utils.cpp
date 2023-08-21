@@ -182,4 +182,19 @@ namespace ZE::Utils
 		free(ptr);
 #endif
 	}
+
+	std::string GetCurrentTimestamp(bool fileFormatting) noexcept
+	{
+		time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		tm tstruct = {};
+#if _ZE_COMPILER_MSVC
+		localtime_s(&tstruct, &now);
+#else
+		localtime_r(&now, &tstruct);
+#endif
+		std::string buff(20, '\0');
+		strftime(buff.data(), buff.size(), fileFormatting ? "%Y_%m_%d_%H_%M_%S" : "%Y-%m-%d %H:%M:%S", &tstruct);
+		buff.pop_back();
+		return buff;
+	}
 }
