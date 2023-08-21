@@ -1,4 +1,5 @@
 #include "App.h"
+#include "GFX/Primitive.h"
 
 template<typename T>
 void App::EnableProperty(EID entity)
@@ -628,38 +629,115 @@ App::App(const CmdParser& params)
 
 	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
 
+	engine.Gfx().GetDevice().BeginUploadRegion();
+	if (params.GetOption("cubePerfTest"))
+	{
+		currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+
+		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
+
+		Data::Storage& assets = engine.GetAssetsStreamer().GetResources();
+
+		// Create mesh for all the cubes
+		EID meshId = assets.create();
+		assets.emplace<std::string>(meshId, "Cube");
+		assets.emplace<Math::BoundingBox>(meshId, GFX::Primitive::MakeCubeBoundingBox());
+
+		std::vector<U32> indices = GFX::Primitive::MakeCubeIndex();
+		std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
+		GFX::MeshData meshData =
+		{
+			vertices.data(), indices.data(),
+			Utils::SafeCast<U32>(vertices.size()),
+			Utils::SafeCast<U32>(indices.size()),
+			sizeof(GFX::Vertex), sizeof(U32)
+		};
+		assets.emplace<GFX::Resource::Mesh>(meshId).Init(engine.Gfx().GetDevice(), meshData);
+
+		// And some materials for them all
+		std::array<EID, 255> materialIds;
+		for (U32 i = 0; EID & materialId : materialIds)
+		{
+			materialId = assets.create();
+			assets.emplace<std::string>(materialId, "Cube_mat_" + std::to_string(i++));
+
+			Data::MaterialPBR& data = assets.emplace<Data::MaterialPBR>(materialId);
+			Data::MaterialBuffersPBR& buffers = assets.emplace<Data::MaterialBuffersPBR>(materialId);
+			assets.emplace<Data::PBRFlags>(materialId);
+
+			const float seed = static_cast<float>(i) / static_cast<float>(materialIds.size());
+			data.Color = { seed, seed * 0.8f, 1.0f - seed, 1.0f };
+			data.Specular = { seed * 0.35f, seed, 1.0f };
+			data.SpecularIntensity = 0.1f + seed;
+			data.SpecularPower = 0.409f;
+			data.ParallaxScale = 0.1f;
+
+			const GFX::Resource::Texture::Schema& texSchema = engine.GetAssetsStreamer().GetSchemaLibrary().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
+			GFX::Resource::Texture::PackDesc texDesc;
+			texDesc.Init(texSchema);
+			buffers.Init(engine.Gfx().GetDevice(), data, texDesc);
+		}
+		engine.Gfx().GetDevice().StartUpload();
+
+		// Create test cube entities
+		std::mt19937_64 randEngine;
+		for (U32 i = 0, size = params.GetNumber("cubePerfTestSize"); i < size; ++i)
+		{
+			EID model = engine.GetData().create();
+			engine.GetData().emplace<std::string>(model, "Cube_" + std::to_string(i));
+
+			const float angleX = Math::Rand(0.0f, 360.0f, randEngine);
+			const float angleY = Math::Rand(0.0f, 360.0f, randEngine);
+			const float angleZ = Math::Rand(0.0f, 360.0f, randEngine);
+			const float scale = Math::Rand(0.5f, 5.0f, randEngine);
+
+			engine.GetData().emplace<Data::TransformGlobal>(model,
+				engine.GetData().emplace<Data::Transform>(model,
+					Math::GetQuaternion(angleX, angleY, angleZ),
+					Math::RandPosition(-200.0f, 200.0f, randEngine),
+					Float3(scale, scale, scale)));
+
+			engine.GetData().emplace<Data::RenderLambertian>(model);
+			engine.GetData().emplace<Data::ShadowCaster>(model);
+			engine.GetData().emplace<Data::MeshID>(model, meshId);
+			engine.GetData().emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
+		}
+	}
+	else
+	{
+		// Sample Scene
 		currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+
+		AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
+		AddModel("Nanosuit", { 0.0f, -8.2f, 6.0f }, Math::NoRotationAngles(), 0.7f, "Models/nanosuit/nanosuit.obj");
+		AddModel("Brick wall", { -5.0f, -2.0f, 7.0f }, Math::NoRotationAngles(), 2.0f, "Models/bricks/brick_wall.obj");
+
+#if !_ZE_MODE_DEBUG
+		AddCamera("Camera #2", 2.0f, 15.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
+		AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
+		AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);
+		AddPointLight("Torch", { 21.95f, -1.9f, 9.9f }, { 1.0f, 0.0f, 0.2f }, 5.0f, 70);
+
+		AddSpotLight("Space light", { 7.5f, 60.0f, -5.0f }, { 1.3f, 2.3f, 1.3f }, 8.0f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f });
+		AddSpotLight("Lion flare", { -61.0f, -6.0f, 5.0f }, { 0.8f, 0.0f, 0.8f }, 9.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f });
+		AddSpotLight("Dragon flame", { -35.0f, -8.0f, 2.0f }, { 0.04f, 0.0f, 0.52f }, 9.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 });
+
+		AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
+
+		AddModel("Sponza", { 0.0f, -8.0f, 0.0f }, Math::NoRotationAngles(), 0.045f, "Models/Sponza/sponza.obj");
+		AddModel("Jack'O'Lantern", { 13.5f, -8.2f, -5.0f }, Math::NoRotationAngles(), 13.0f, "Models/Jack/Jack_O_Lantern.3ds");
+		AddModel("Black dragon", { -39.0f, -8.1f, 2.0f }, { 0.0f, 290.0f, 0.0f }, 0.15f, "Models/Black Dragon/Dragon 2.5.fbx");
+		AddModel("Sting sword", { -20.0f, 0.0f, -6.0f }, { 35.0f, 270.0f, 110.0f }, 0.2f, "Models/Sting_Sword/Sting_Sword.obj");
+		AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
+#endif
+	}
+	engine.Gfx().GetDevice().StartUpload();
+	engine.Gfx().GetDevice().EndUploadRegion();
+
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
 	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
 		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
 			camData.Projection.NearClip, camData.Projection.FarClip));
-
-	engine.Gfx().GetDevice().BeginUploadRegion();
-	AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
-	AddModel("Nanosuit", { 0.0f, -8.2f, 6.0f }, Math::NoRotationAngles(), 0.7f, "Models/nanosuit/nanosuit.obj");
-	AddModel("Brick wall", { -5.0f, -2.0f, 7.0f }, Math::NoRotationAngles(), 2.0f, "Models/bricks/brick_wall.obj");
-
-	// Sample Scene
-#if !_ZE_MODE_DEBUG
-	AddCamera("Camera #2", 2.0f, 15.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
-	AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
-	AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);
-	AddPointLight("Torch", { 21.95f, -1.9f, 9.9f }, { 1.0f, 0.0f, 0.2f }, 5.0f, 70);
-
-	AddSpotLight("Space light", { 7.5f, 60.0f, -5.0f }, { 1.3f, 2.3f, 1.3f }, 8.0f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f });
-	AddSpotLight("Lion flare", { -61.0f, -6.0f, 5.0f }, { 0.8f, 0.0f, 0.8f }, 9.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f });
-	AddSpotLight("Dragon flame", { -35.0f, -8.0f, 2.0f }, { 0.04f, 0.0f, 0.52f }, 9.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 });
-
-	AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
-
-	AddModel("Sponza", { 0.0f, -8.0f, 0.0f }, Math::NoRotationAngles(), 0.045f, "Models/Sponza/sponza.obj");
-	AddModel("Jack'O'Lantern", { 13.5f, -8.2f, -5.0f }, Math::NoRotationAngles(), 13.0f, "Models/Jack/Jack_O_Lantern.3ds");
-	AddModel("Black dragon", { -39.0f, -8.1f, 2.0f }, { 0.0f, 290.0f, 0.0f }, 0.15f, "Models/Black Dragon/Dragon 2.5.fbx");
-	AddModel("Sting sword", { -20.0f, 0.0f, -6.0f }, { 35.0f, 270.0f, 110.0f }, 0.2f, "Models/Sting_Sword/Sting_Sword.obj");
-	AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
-#endif
-	engine.Gfx().GetDevice().StartUpload();
-	engine.Gfx().GetDevice().EndUploadRegion();
 }
 
 int App::Run()

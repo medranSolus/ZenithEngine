@@ -8,9 +8,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	{
 		srand(static_cast<unsigned int>(time(nullptr)));
 		CmdParser parser;
+
 		SettingsInitParams::SetupParser(parser);
 		EngineParams::SetupParser(parser);
+
+		parser.AddOption("cubePerfTest");
+		parser.AddNumber("cubePerfTestSize", 16384);
 		parser.Parse(lpCmdLine);
+
 		return App(parser).Run();
 	}
 	catch (const ZE::Exception::BasicException& e)
