@@ -12,6 +12,7 @@ namespace ZE
 		{
 			GfxTags,
 			IndexBufferU8,
+			AttachPIX,
 			Count,
 		};
 
@@ -80,6 +81,7 @@ namespace ZE
 #endif
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
+		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT(Initialized(), "Not initialized!");  return flags[Flags::AttachPIX]; }
 
 		static constexpr ThreadPool& GetThreadPool() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return threadPool; }
 	};
@@ -117,6 +119,7 @@ namespace ZE
 		ZE_ASSERT(gfxApi == GfxApiType::Vulkan && _ZE_RHI_VK || gfxApi != GfxApiType::Vulkan,
 			"Vulkan API is not enabled in current build!");
 
+		flags[Flags::AttachPIX] = params.AllowPIXAttach;
 		swapChainBufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;

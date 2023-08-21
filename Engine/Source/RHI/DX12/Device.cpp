@@ -62,6 +62,38 @@ namespace ZE::RHI::DX12
 		// No support for 8 bit indices on DirectX
 		Settings::SetU8IndexBuffers(false);
 
+#if !_ZE_MODE_RELEASE
+		// Load WinPixGpuCapturer.dll
+		if (Settings::IsEnabledPIXAttaching() && GetModuleHandleW(L"WinPixGpuCapturer.dll") == 0)
+		{
+			// Find latest WinPixGpuCapturer.dll path
+			LPWSTR programFilesPath = nullptr;
+			SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+
+			std::filesystem::path pixInstallationPath = programFilesPath;
+			pixInstallationPath /= "Microsoft PIX";
+
+			std::wstring newestVersionFound;
+			for (const auto& entry : std::filesystem::directory_iterator(pixInstallationPath))
+			{
+				if (entry.is_directory())
+				{
+					if (newestVersionFound.empty() || newestVersionFound < entry.path().filename().c_str())
+						newestVersionFound = entry.path().filename().c_str();
+				}
+			}
+
+			if (newestVersionFound.empty())
+				Logger::Warning("Cannot load requested \"WinPixGpuCapturer.dll\"!");
+			else
+			{
+				pixCapturer = LoadLibraryW((pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll").c_str());
+				if (pixCapturer == nullptr)
+					Logger::Warning("Error loading \"WinPixGpuCapturer.dll\"! Error message:\n    " + WinAPI::WinApiException::TranslateErrorCode(GetLastError()));
+			}
+		}
+#endif
+
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands
 		DX::ComPtr<IDebug> debugInterface = nullptr;
@@ -229,6 +261,14 @@ namespace ZE::RHI::DX12
 		default:
 			break;
 		}
+
+#if !_ZE_MODE_RELEASE
+		if (pixCapturer)
+		{
+			const BOOL res = FreeLibrary(pixCapturer);
+			ZE_ASSERT(res, "Error unloading WinPixGpuCapturer.dll!");
+		}
+#endif
 	}
 
 	void Device::BeginUploadRegion()

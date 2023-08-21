@@ -63,6 +63,9 @@ namespace ZE::RHI::DX12
 		{
 			AGSContext* gpuCtxAMD;
 		};
+#if !_ZE_MODE_RELEASE
+		HMODULE pixCapturer = nullptr;
+#endif
 
 		void WaitCPU(IFence* fence, U64 val);
 		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);

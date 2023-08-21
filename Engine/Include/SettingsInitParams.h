@@ -21,6 +21,8 @@ namespace ZE
 		// When set to 0 leaves calculation of optimal thread count to the pool.
 		// Set to UINT8_MAX to disable thread pool completly.
 		U8 CustomThreadPoolThreadsCount;
+		// Loads for DirectX 12 targets WinPixGpuCapturer.dll allowing for attaching PIX for GPU capture.
+		bool AllowPIXAttach;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi = GfxApiType::DX12) noexcept;

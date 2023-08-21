@@ -9,6 +9,7 @@ namespace ZE
 		parser.AddOption("vulkan");
 		parser.AddNumber("backbuffers", 2);
 		parser.AddNumber("threadsCount", 0);
+		parser.AddOption("pixAttach");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -21,6 +22,7 @@ namespace ZE
 		params.BackbufferCount = parser.GetNumber("backbuffers");
 		params.StaticThreadsCount = staticThreadsCount;
 		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threadsCount"));
+		params.AllowPIXAttach = parser.GetOption("pixAttach");
 
 		return params;
 	}
