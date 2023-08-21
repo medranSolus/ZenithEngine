@@ -13,7 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		EngineParams::SetupParser(parser);
 
 		parser.AddOption("cubePerfTest");
-		parser.AddNumber("cubePerfTestSize", 16384);
+		parser.AddNumber("cubePerfTestSize", 300000);
 		parser.Parse(lpCmdLine);
 
 		return App(parser).Run();

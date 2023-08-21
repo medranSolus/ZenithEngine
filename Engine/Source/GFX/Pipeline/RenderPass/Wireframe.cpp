@@ -38,7 +38,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		U64 count = group.size();
 		if (count)
 		{
-			ZE_PERF_START("Wireframe - present");
+			ZE_PERF_GUARD("Wireframe - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
@@ -70,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_START("Wireframe - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_PERF_START("Wireframe - single loop item");
+				ZE_PERF_GUARD("Wireframe - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
 				auto entity = visibleGroup[i];
@@ -85,7 +85,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
@@ -95,8 +94,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			// Remove current visibility
 			ZE_PERF_START("Wireframe - visibility clear");
 			renderData.Registry.clear<InsideFrustum>();
-			ZE_PERF_STOP();
-
 			ZE_PERF_STOP();
 		}
 	}

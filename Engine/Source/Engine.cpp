@@ -56,10 +56,12 @@ namespace ZE
 		ZE_PERF_START("Execute render graph");
 		renderer.Execute(graphics);
 		ZE_PERF_STOP();
+
 		if (IsGuiActive())
 			gui.EndFrame(graphics);
 		else
 			graphics.GetSwapChain().PrepareBackbuffer(graphics.GetDevice(), graphics.GetMainList());
+
 		ZE_PERF_START("Swapchain present");
 		graphics.Present();
 		ZE_PERF_STOP();

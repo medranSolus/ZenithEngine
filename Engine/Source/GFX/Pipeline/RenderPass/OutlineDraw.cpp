@@ -44,7 +44,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
-		ZE_PERF_START("Outline Draw");
+		ZE_PERF_GUARD("Outline Draw");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
@@ -59,7 +59,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		U64 count = group.size();
 		if (count)
 		{
-			ZE_PERF_START("Outline Draw - outline present");
+			ZE_PERF_GUARD("Outline Draw - outline present");
 
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
@@ -91,7 +91,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw Stencil - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_PERF_START("Outline Draw Stencil - single loop item");
+				ZE_PERF_GUARD("Outline Draw Stencil - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
 				EID entity = visibleGroup[i];
@@ -108,7 +108,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
@@ -127,7 +126,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_PERF_START("Outline Draw - single loop item");
+				ZE_PERF_GUARD("Outline Draw - single loop item");
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
 
 				EID entity = visibleGroup[i];
@@ -136,7 +135,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
@@ -145,11 +143,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - visibility clear");
 			renderData.Registry.clear<InsideFrustum>();
 			ZE_PERF_STOP();
-
-			ZE_PERF_STOP();
 		}
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
-		ZE_PERF_STOP();
 	}
 }

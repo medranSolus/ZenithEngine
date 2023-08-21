@@ -72,7 +72,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		const U64 count = group.size();
 		if (count)
 		{
-			ZE_PERF_START("Spot Light - present");
+			ZE_PERF_GUARD("Spot Light - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 			const Matrix viewProjection = dynamicData.ViewProjection;
@@ -89,7 +89,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			ZE_PERF_START("Spot Light - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{
-				ZE_PERF_START("Spot Light - single loop item");
+				ZE_PERF_GUARD("Spot Light - single loop item");
 				EID entity = group[i];
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 				const auto& lightData = group.get<Data::SpotLight>(entity);
@@ -144,14 +144,11 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
-
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 
 			cl.Close(dev);
 			dev.ExecuteMain(cl);
-			ZE_PERF_STOP();
 		}
 	}
 }

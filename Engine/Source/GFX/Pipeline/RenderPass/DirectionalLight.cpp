@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
-		ZE_PERF_START("Directional Light");
+		ZE_PERF_GUARD("Directional Light");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		cl.Open(dev, data.State);
@@ -50,7 +50,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		auto group = Data::GetDirectionalLightGroup(renderData.Registry);
 		if (group.size())
 		{
-			ZE_PERF_START("Directional Light - light present");
+			ZE_PERF_GUARD("Directional Light - light present");
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Directional Light", Pixel(0xF5, 0xF5, 0xD1));
@@ -71,22 +71,19 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			ZE_PERF_START("Directional Light - main loop");
 			for (EID entity : group)
 			{
-				ZE_PERF_START("Directional Light - single loop item");
+				ZE_PERF_GUARD("Directional Light - single loop item");
 				Resource::Constant<Float3> direction(dev, group.get<Data::Direction>(entity).Direction);
 				direction.Bind(cl, ctx);
 				group.get<Data::DirectionalLightBuffer>(entity).Buffer.Bind(cl, ctx);
 				ctx.Reset();
 
 				cl.DrawFullscreen(dev);
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 			ZE_DRAW_TAG_END(dev, cl);
-			ZE_PERF_STOP();
 		}
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
-		ZE_PERF_STOP();
 	}
 }

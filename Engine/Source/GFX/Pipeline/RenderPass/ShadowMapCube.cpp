@@ -77,7 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
 		if (group.size())
 		{
-			ZE_PERF_START("Shadow Map Cube - present");
+			ZE_PERF_GUARD("Shadow Map Cube - present");
 			// Prepare view-projections for casting onto 6 faces
 			CubeViewBuffer viewBuffer;
 			const Vector position = Math::XMLoadFloat3(&lightPos);
@@ -110,7 +110,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			const Math::BoundingSphere lightSphere(lightPos, lightVolume);
 			for (EID entity : group)
 			{
-				ZE_PERF_START("Shadow Map Cube - visibility group split single loop item");
+				ZE_PERF_GUARD("Shadow Map Cube - visibility group split single loop item");
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 
 				Math::BoundingBox box = renderData.Assets.GetResources().get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
@@ -123,7 +123,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					else
 						renderData.Registry.emplace<Solid>(entity);
 				}
-				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
 
@@ -137,9 +136,14 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
 			if (solidCount)
 			{
+				ZE_PERF_GUARD("Shadow Map Cube - solid present");
+
+				ZE_PERF_START("Shadow Map Cube - solid view sort");
 				Utils::ViewSortAscending(solidGroup, position);
+				ZE_PERF_STOP();
 
 				// Depth pre-pass
+				ZE_PERF_START("Shadow Map Cube Depth");
 				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
 				ctx.BindingSchema.SetGraphics(cl);
@@ -149,8 +153,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
 				renderData.BindRendererDynamicData(cl, ctx);
 				ctx.Reset();
+
+				ZE_PERF_START("Shadow Map Cube Depth - main loop");
 				for (U64 i = 0; i < solidCount; ++i)
 				{
+					ZE_PERF_GUARD("Shadow Map Cube Depth - single loop item");
 					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), PixelVal::Gray);
 
 					EID entity = solidGroup[i];
@@ -167,9 +174,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
+				ZE_PERF_STOP();
+
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
 
 				// Sort by pipeline state
+				ZE_PERF_START("Shadow Map Cube - solid material sort");
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
 						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular);
@@ -177,8 +188,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						return state1 < state2;
 					});
 				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
+				ZE_PERF_STOP();
 
 				// Solid pass
+				ZE_PERF_START("Shadow Map Cube Solid");
 				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
@@ -189,8 +202,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				renderData.BindRendererDynamicData(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();
+
+				ZE_PERF_START("Shadow Map Cube Solid - main loop");
 				for (U64 i = 0; i < solidCount; ++i)
 				{
+					ZE_PERF_GUARD("Shadow Map Cube Solid - single loop item");
 					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = solidGroup[i];
@@ -218,7 +234,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
+				ZE_PERF_STOP();
+
 				ZE_DRAW_TAG_END(dev, cl);
+				ZE_PERF_STOP();
+
 				currentMaterial = INVALID_EID;
 				currentState = UINT8_MAX;
 			}
@@ -226,7 +246,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			// Transparent pass
 			if (transparentCount)
 			{
-				ZE_PERF_START("Shadow Map Cube - transparent present");
+				ZE_PERF_GUARD("Shadow Map Cube - transparent present");
 
 				ZE_PERF_START("Shadow Map Cube - transparent view sort");
 				Utils::ViewSortDescending(transparentGroup, position);
@@ -246,7 +266,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ZE_PERF_START("Shadow Map Cube Transparent - main loop");
 				for (U64 i = 0; i < transparentCount; ++i)
 				{
-					ZE_PERF_START("Shadow Map Cube Transparent - single loop item");
+					ZE_PERF_GUARD("Shadow Map Cube Transparent - single loop item");
 					ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0x01, 0x60, 0x64));
 
 					EID entity = transparentGroup[i];
@@ -277,20 +297,15 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 					renderData.Assets.GetResources().get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
-					ZE_PERF_STOP();
 				}
 				ZE_PERF_STOP();
 
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
-
-				ZE_PERF_STOP();
 			}
 			// Remove current material indication
 			ZE_PERF_START("Shadow Map Cube - visibility clear");
 			renderData.Registry.clear<Solid, Transparent>();
-			ZE_PERF_STOP();
-
 			ZE_PERF_STOP();
 		}
 	}

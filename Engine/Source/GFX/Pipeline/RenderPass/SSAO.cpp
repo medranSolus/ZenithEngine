@@ -79,7 +79,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
-		ZE_PERF_START("SSAO");
+		ZE_PERF_GUARD("SSAO");
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
@@ -139,6 +139,5 @@ namespace ZE::GFX::Pipeline::RenderPass::SSAO
 		ZE_DRAW_TAG_END(dev, list);
 		list.Close(dev);
 		dev.ExecuteCompute(list);
-		ZE_PERF_STOP();
 	}
 }

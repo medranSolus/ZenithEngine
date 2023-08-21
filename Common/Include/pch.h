@@ -51,13 +51,14 @@
 #include "MathExt.h"
 
 /*
-* Types.h (defined by CmdParser.h)
-* bitset
-* map
-* shared_mutex
-* string
+*** Types.h (defined by CmdParser.h)
+*** bitset
+*** map
+*** shared_mutex
+*** string
+* Perf.h
 */
-#include "Perf.h"
+#include "PerfGuard.h"
 
 /*
 * Types.h (defined by CmdParser.h)

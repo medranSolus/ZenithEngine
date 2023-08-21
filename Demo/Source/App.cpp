@@ -608,10 +608,9 @@ void App::MakeFrame()
 	//ImGui::ShowDemoWindow();
 	if (engine.IsGuiActive())
 	{
-		ZE_PERF_START("GUI");
+		ZE_PERF_GUARD("GUI");
 		ShowOptionsWindow();
 		ShowObjectWindow();
-		ZE_PERF_STOP();
 	}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 	engine.EndFrame();
@@ -744,7 +743,7 @@ int App::Run()
 {
 	while (run)
 	{
-		ZE_PERF_START("Frame");
+		ZE_PERF_GUARD("Frame");
 
 		ZE_PERF_START("Input gather");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
@@ -762,7 +761,6 @@ int App::Run()
 		ZE_PERF_STOP();
 
 		//scene.UpdateTransforms();
-		ZE_PERF_STOP();
 	}
 	return 0;
 }

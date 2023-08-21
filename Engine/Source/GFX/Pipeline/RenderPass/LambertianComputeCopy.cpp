@@ -4,8 +4,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 {
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
-		ZE_PERF_START("Lambertian Compute Copy");
-
+		ZE_PERF_GUARD("Lambertian Compute Copy");
 		const Resources ids = *passData.Buffers.CastConst<Resources>();
 		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Copy gbuffer for SSAO", PixelVal::White);
@@ -15,6 +14,5 @@ namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 
 		cl.Close(dev);
 		dev.ExecuteMain(cl);
-		ZE_PERF_STOP();
 	}
 }
