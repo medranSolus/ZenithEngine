@@ -738,7 +738,7 @@ namespace ZE::RHI::VK
 		extensionSupport[GetExtensionIndex(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)] = coherentMemory.deviceCoherentMemory;
 		extensionSupport[GetExtensionIndex(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)] = memPriority.memoryPriority;
 		extensionSupport[GetExtensionIndex(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)] = pageableMemory.pageableDeviceLocalMemory;
-		Settings::SetU8IndexSets(extensionSupport[GetExtensionIndex(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)] = indicesU8.indexTypeUint8);
+		Settings::SetU8IndexBuffers(extensionSupport[GetExtensionIndex(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)] = indicesU8.indexTypeUint8);
 		if (extensionSupport[GetExtensionIndex(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)] = subgroupControl.subgroupSizeControl)
 			SetFullComputeSubgroupSupport(subgroupControl.computeFullSubgroups);
 		if (extensionSupport[GetExtensionIndex(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)] = memoryModel.vulkanMemoryModel)

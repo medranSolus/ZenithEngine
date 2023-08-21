@@ -607,26 +607,28 @@ void App::MakeFrame()
 	//ImGui::ShowDemoWindow();
 	if (engine.IsGuiActive())
 	{
+		ZE_PERF_START("GUI");
 		ShowOptionsWindow();
 		ShowObjectWindow();
+		ZE_PERF_STOP();
 	}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 	engine.EndFrame();
 }
 
 App::App(const CmdParser& params)
-	: engine(EngineParams
-		{
-			APP_NAME, WINDOW_TITLE, Settings::GetEngineVersion(), EngineParams::GetParsedApi(params),
-			params.GetNumber("backbuffers"), params.GetNumber("width"), params.GetNumber("height"),
-			params.GetNumber("descPoolSize"), params.GetNumber("descScratchCount"), 0,
-			Utils::SafeCast<U8>(params.GetNumber("threadsCount")), params.GetOption("singleLinePerfEntry"),
-			{ "Skybox/Space", ".png", params.GetOption("minPassDist"), params.GetNumber("shadowMapSize") }
-		})
+	: engine(SettingsInitParams::GetParsedParams(params, APP_NAME, Settings::GetEngineVersion(), 0))
 {
+	EngineParams engineParams = {};
+	EngineParams::SetParsedParams(params, engineParams);
+	engineParams.WindowName = WINDOW_TITLE;
+	engineParams.Renderer.SkyboxPath = "Skybox/Space";
+	engineParams.Renderer.SkyboxExt = ".png";
+	engine.Init(engineParams);
+
 	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
 
-	currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
 	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
 		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
@@ -664,12 +666,25 @@ int App::Run()
 {
 	while (run)
 	{
+		ZE_PERF_START("Frame");
+
+		ZE_PERF_START("Input gather");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
+		ZE_PERF_STOP();
+
 		if (status.first)
 			return status.second;
+
+		ZE_PERF_START("Input processing");
 		ProcessInput();
+		ZE_PERF_STOP();
+
+		ZE_PERF_START("Frame rendering");
 		MakeFrame();
+		ZE_PERF_STOP();
+
 		//scene.UpdateTransforms();
+		ZE_PERF_STOP();
 	}
 	return 0;
 }

@@ -110,7 +110,7 @@ namespace ZE::Data
 			meshData.Indices = indicesU32.get();
 			ParseIndices(indicesU32, mesh);
 		}
-		else if (!Settings::IsEnabledU8IndexSets() || meshData.IndexCount >= UINT8_MAX)
+		else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
 		{
 			indicesU16 = std::make_unique<U16[]>(meshData.IndexCount);
 			meshData.IndexSize = sizeof(U16);

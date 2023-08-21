@@ -60,7 +60,7 @@ namespace ZE::RHI::DX12
 		std::string ZE_DX_DEBUG_ID;
 #endif
 		// No support for 8 bit indices on DirectX
-		Settings::SetU8IndexSets(false);
+		Settings::SetU8IndexBuffers(false);
 
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands

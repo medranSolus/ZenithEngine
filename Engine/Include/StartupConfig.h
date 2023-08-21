@@ -8,7 +8,7 @@ namespace ZE
 	class StartupConfig
 	{
 	public:
-		StartupConfig(const EngineParams& params) noexcept;
+		constexpr StartupConfig(const SettingsInitParams& params) noexcept { Settings::Init(params); }
 		ZE_CLASS_DEFAULT(StartupConfig);
 		virtual ~StartupConfig() { Settings::Destroy(); }
 	};

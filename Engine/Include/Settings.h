@@ -8,6 +8,13 @@ namespace ZE
 	// Global engine settings
 	class Settings final
 	{
+		enum Flags : U8
+		{
+			GfxTags,
+			IndexBufferU8,
+			Count,
+		};
+
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(0, 3, 0);
 
@@ -24,7 +31,7 @@ namespace ZE
 		static inline GfxApiType gfxApi;
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
-		static inline std::bitset<2> flags = 0;
+		static inline std::bitset<Flags::Count> flags = 0;
 		static inline ThreadPool threadPool;
 
 		static constexpr bool Initialized() noexcept { return swapChainBufferCount != 0; }
@@ -68,11 +75,11 @@ namespace ZE
 		static constexpr void Init(const SettingsInitParams& params) noexcept;
 
 #if _ZE_GFX_MARKERS
-		static constexpr void SetGfxTags(bool enabled) noexcept { flags[0] = enabled; }
-		static constexpr bool IsEnabledGfxTags() noexcept { return flags[0]; }
+		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
+		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
 #endif
-		static constexpr void SetU8IndexSets(bool enabled) noexcept { flags[1] = enabled; }
-		static constexpr bool IsEnabledU8IndexSets() noexcept { return flags[1]; }
+		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
+		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 
 		static constexpr ThreadPool& GetThreadPool() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return threadPool; }
 	};
@@ -100,7 +107,7 @@ namespace ZE
 		ZE_ASSERT(!Initialized(), "Already initialized!");
 		ZE_ASSERT(params.BackbufferCount > 1 && params.BackbufferCount < 17, "Incorrect params!");
 
-		gfxApi = params.Type;
+		gfxApi = params.GraphicsAPI;
 		ZE_ASSERT(gfxApi == GfxApiType::DX11 && _ZE_RHI_DX11 || gfxApi != GfxApiType::DX11,
 			"DirectX 11 API is not enabled in current build!");
 		ZE_ASSERT(gfxApi == GfxApiType::DX12 && _ZE_RHI_DX12 || gfxApi != GfxApiType::DX12,

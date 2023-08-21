@@ -2,8 +2,12 @@
 
 namespace ZE
 {
-	Engine::Engine(const EngineParams& params) : StartupConfig(params)
+	void Engine::Init(const EngineParams& params)
 	{
+		SetGui(true);
+		flags[Flags::Initialized] = true;
+		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
+
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
 		Settings::SetBackbufferSize(window.GetWidth(), window.GetHeight());
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
@@ -19,23 +23,26 @@ namespace ZE
 
 	Engine::~Engine()
 	{
-		// Wait till all GPU operations are done
-		graphics.GetDevice().WaitMain(graphics.GetDevice().SetMainFence());
+		if (flags[Flags::Initialized])
+		{
+			// Wait till all GPU operations are done
+			graphics.GetDevice().WaitMain(graphics.GetDevice().SetMainFence());
 
-		// Free all remaining gpu data
-		for (auto& buffer : GetData().view<Data::DirectionalLightBuffer>())
-			GetData().get<Data::DirectionalLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
-		for (auto& buffer : GetData().view<Data::SpotLightBuffer>())
-			GetData().get<Data::SpotLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
-		for (auto& buffer : GetData().view<Data::PointLightBuffer>())
-			GetData().get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			// Free all remaining gpu data
+			for (auto& buffer : GetData().view<Data::DirectionalLightBuffer>())
+				GetData().get<Data::DirectionalLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			for (auto& buffer : GetData().view<Data::SpotLightBuffer>())
+				GetData().get<Data::SpotLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			for (auto& buffer : GetData().view<Data::PointLightBuffer>())
+				GetData().get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
 
-		for (auto& buffer : GetAssetsStreamer().GetResources().view<Data::MaterialBuffersPBR>())
-			GetAssetsStreamer().GetResources().get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
-		for (auto& buffer : GetAssetsStreamer().GetResources().view<GFX::Resource::Mesh>())
-			GetAssetsStreamer().GetResources().get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
-		renderer.Free(graphics.GetDevice());
-		gui.Destroy(graphics.GetDevice());
+			for (auto& buffer : GetAssetsStreamer().GetResources().view<Data::MaterialBuffersPBR>())
+				GetAssetsStreamer().GetResources().get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
+			for (auto& buffer : GetAssetsStreamer().GetResources().view<GFX::Resource::Mesh>())
+				GetAssetsStreamer().GetResources().get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
+			renderer.Free(graphics.GetDevice());
+			gui.Destroy(graphics.GetDevice());
+		}
 	}
 
 	void Engine::BeginFrame()
@@ -46,11 +53,15 @@ namespace ZE
 
 	void Engine::EndFrame()
 	{
+		ZE_PERF_START("Execute render graph");
 		renderer.Execute(graphics);
+		ZE_PERF_STOP();
 		if (IsGuiActive())
 			gui.EndFrame(graphics);
 		else
 			graphics.GetSwapChain().PrepareBackbuffer(graphics.GetDevice(), graphics.GetMainList());
+		ZE_PERF_START("Swapchain present");
 		graphics.Present();
+		ZE_PERF_STOP();
 	}
 }

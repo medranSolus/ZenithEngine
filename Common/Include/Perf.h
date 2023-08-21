@@ -64,6 +64,8 @@ namespace ZE
 }
 
 #if !_ZE_MODE_RELEASE
+// Use to configure tool behavior with given function
+#	define ZE_PERF_CONFIGURE(function, val) ZE::Perf::Get().##function##(val)
 #	define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
 #	define ZE_PERF_START_SHORT(sectionTag) ZE::Perf::Get().StartShort(sectionTag)
@@ -72,11 +74,13 @@ namespace ZE
 #	define ZE_PERF_STOP_SHORT() ZE::Perf::Get().StopShort()
 #	define ZE_PERF_COUNT(sectionTag) ZE::Perf::Get().GetSectionCallCount(sectionTag)
 #else
+// Use to configure tool behavior with given function
+#	define ZE_PERF_CONFIGURE(function, val)
 #	define ZE_PERF_START(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
 #	define ZE_PERF_START_SHORT(sectionTag)
-#	define ZE_PERF_STOP()
+#	define ZE_PERF_STOP() 0.0L
 // Use for measuring short periods of time as it gets raw data based on RDTSC
-#	define ZE_PERF_STOP_SHORT()
-#	define ZE_PERF_COUNT(sectionTag)
+#	define ZE_PERF_STOP_SHORT() 0.0L
+#	define ZE_PERF_COUNT(sectionTag) 0ULL
 #endif

@@ -8,20 +8,22 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
+		enum Flags : U8 { Initialized, GuiEnable, Count };
+
 		GFX::Graphics graphics;
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Pipeline::RendererPBR renderer;
-		bool guiEnabled = true;
+		std::bitset<Flags::Count> flags;
 
 	public:
-		Engine(const EngineParams& params);
+		Engine(const SettingsInitParams& params) noexcept : StartupConfig(params) {}
 		ZE_CLASS_DELETE(Engine);
 		virtual ~Engine();
 
-		constexpr bool IsGuiActive() const noexcept { return guiEnabled; }
-		constexpr void ToggleGui() noexcept { guiEnabled = !guiEnabled; }
-		constexpr void SetGui(bool enabled) noexcept { guiEnabled = enabled; }
+		constexpr bool IsGuiActive() const noexcept { return flags[Flags::GuiEnable]; }
+		constexpr void ToggleGui() noexcept { SetGui(!IsGuiActive()); }
+		constexpr void SetGui(bool enabled) noexcept { flags[Flags::GuiEnable] = enabled; }
 
 		constexpr Data::Storage& GetData() noexcept { return renderer.GetRegistry(); }
 		constexpr Data::AssetsStreamer& GetAssetsStreamer() noexcept { return renderer.GetAssetsStreamer(); }
@@ -30,6 +32,8 @@ namespace ZE
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }
 
+		// Initialization method that must be called before using engine
+		void Init(const EngineParams& params);
 		void BeginFrame();
 		void EndFrame();
 	};
