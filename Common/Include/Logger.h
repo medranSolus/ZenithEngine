@@ -14,7 +14,7 @@ namespace ZE
 	private:
 		enum class Level : U8 { Info, Warning, Error };
 
-		static constexpr const char* LOG_FILE = "./Logs/log_.txt";
+		static constexpr const char* LOG_FILE = "./Logs/log.txt";
 
 		static inline bool firstUse = true;
 		static inline std::shared_mutex consoleMutex;
