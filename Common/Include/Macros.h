@@ -27,6 +27,8 @@
 #define ZE_ASSERT_FREED(condition) ZE_ASSERT_LVL(Error, condition, "Resource not freed before deletion!")
 // Always failing debug assert, indicating wrong code path that shouldn't occur
 #define ZE_FAIL(message) ZE_ASSERT_LVL(Error, false, message)
+// Always failing debug assert, indicating warning condition that shouldn't occur but allows for ruther program execution
+#define ZE_WARNING(message) ZE_ASSERT_LVL(Warning, false, message)
 // Failing assert indicating not correctly handled enum value in switch-case
 #define ZE_ENUM_UNHANDLED() ZE_ASSERT_LVL(Warning, false, "Unhandled enum value!"); [[fallthrough]]
 // Check if quaternion vector is unit length

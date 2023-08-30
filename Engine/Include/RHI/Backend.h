@@ -291,28 +291,28 @@ namespace ZE::RHI
 #	define ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.dx11.##function##(__VA_ARGS__); break
 #else
 #	define ZE_GET_DX11_RHI_TYPE(type)
-#	define ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, ...)
+#	define ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("DirectX 11 has been disabled!")
 #endif
 #if _ZE_RHI_DX12
 #	define ZE_GET_DX12_RHI_TYPE(type) ZE::RHI::DX12::##type ZE_RHI_DX12_COMMA
 #	define ZE_RHI_DX12_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.dx12.##function##(__VA_ARGS__); break
 #else
 #	define ZE_GET_DX12_RHI_TYPE(type)
-#	define ZE_RHI_DX12_SWITCH_CALL(variable, ret, function, ...)
+#	define ZE_RHI_DX12_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("DirectX 12 has been disabled!")
 #endif
 #if _ZE_RHI_GL
 #	define ZE_GET_GL_RHI_TYPE(type) ZE::RHI::GL::##type ZE_RHI_GL_COMMA
 #	define ZE_RHI_GL_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.gl.##function##(__VA_ARGS__); break
 #else
 #	define ZE_GET_GL_RHI_TYPE(type)
-#	define ZE_RHI_GL_SWITCH_CALL(variable, ret, function, ...)
+#	define ZE_RHI_GL_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("OpenGL has been disabled!")
 #endif
 #if _ZE_RHI_VK
 #	define ZE_GET_VK_RHI_TYPE(type) ZE::RHI::VK::##type ZE_RHI_VK_COMMA
 #	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.vk.##function##(__VA_ARGS__); break
 #else
 #	define ZE_GET_VK_RHI_TYPE(type)
-#	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...)
+#	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("Vulkan has been disabled!")
 #endif
 
 // Type for proper graphics API implementations for all current APIs

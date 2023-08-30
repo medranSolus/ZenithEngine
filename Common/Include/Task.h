@@ -27,6 +27,7 @@ namespace ZE
 			: data(std::make_shared<ExecutionData>(std::move(task))) {}
 
 	public:
+		Task() = default;
 		ZE_CLASS_DEFAULT(Task);
 		~Task() = default;
 
@@ -38,12 +39,16 @@ namespace ZE
 	template <typename R>
 	constexpr R Task<R>::Get() noexcept
 	{
-		std::future<R> future = data->task.get_future();
-		const bool status = std::atomic_exchange_explicit(&data->processing, true, std::memory_order::memory_order_acq_rel);
-		// Check if some thread already started working on this task, if not do it yourself
-		if (!status)
-			data->task();
-		return future.get();
+		if (data)
+		{
+			std::future<R> future = data->task.get_future();
+			const bool status = std::atomic_exchange_explicit(&data->processing, true, std::memory_order::memory_order_acq_rel);
+			// Check if some thread already started working on this task, if not do it yourself
+			if (!status)
+				data->task();
+			return future.get();
+		}
+		return R();
 	}
 
 #pragma endregion

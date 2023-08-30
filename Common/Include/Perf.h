@@ -80,8 +80,8 @@ namespace ZE
 #	define ZE_PERF_START(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
 #	define ZE_PERF_START_SHORT(sectionTag)
-#	define ZE_PERF_STOP() 0.0L
+#	define ZE_PERF_STOP()
 // Use for measuring short periods of time as it gets raw data based on RDTSC
-#	define ZE_PERF_STOP_SHORT() 0.0L
-#	define ZE_PERF_COUNT(sectionTag) 0ULL
+#	define ZE_PERF_STOP_SHORT()
+#	define ZE_PERF_COUNT(sectionTag)
 #endif
