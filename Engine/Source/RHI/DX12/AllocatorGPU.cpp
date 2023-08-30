@@ -46,6 +46,11 @@ namespace ZE::RHI::DX12
 			ZE_DX_SET_ID(chunk.Heap, "Custom heap");
 			break;
 		}
+		case D3D12_HEAP_TYPE_GPU_UPLOAD:
+		{
+			ZE_DX_SET_ID(chunk.Heap, "GPU Upload heap");
+			break;
+		}
 		}
 #endif
 	}
@@ -57,7 +62,7 @@ namespace ZE::RHI::DX12
 
 	constexpr D3D12_HEAP_TYPE AllocatorGPU::GetHeapType(HeapFlags flags) noexcept
 	{
-		return flags & HeapFlag::Dynamic ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT;
+		return flags & HeapFlag::Dynamic ? D3D12_HEAP_TYPE_UPLOAD : (flags & HeapFlag::GpuUploadHeap ? D3D12_HEAP_TYPE_GPU_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
 	}
 
 	constexpr D3D12_HEAP_FLAGS AllocatorGPU::GetHeapFlags(HeapFlags flags) noexcept
@@ -159,26 +164,27 @@ namespace ZE::RHI::DX12
 		dynamicBuffersAllocator.DestroyFreeChunks(nullptr);
 	}
 
-	void AllocatorGPU::Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier)
+	void AllocatorGPU::Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported)
 	{
 		allocTier = heapTier == D3D12_RESOURCE_HEAP_TIER_2 ? AllocTier::Tier2 : AllocTier::Tier1;
+		const HeapFlags flags = gpuUploadHeapSupported ? HeapFlag::GpuUploadHeap : HeapFlag::None;
 		switch (allocTier)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
 		case AllocTier::Tier1:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS, Settings::GetHeapSizeBuffers(), NORMAL_CHUNK, 3);
-			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS, Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | flags, Settings::GetHeapSizeBuffers(), NORMAL_CHUNK, 3);
+			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS | flags, Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
 			break;
 		}
 		case AllocTier::Tier2:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS, Settings::GetHeapSizeBuffers() + Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS | flags, Settings::GetHeapSizeBuffers() + Settings::GetHeapSizeTextures(), SMALL_CHUNK, 3);
 			break;
 		}
 		}
-		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS, Settings::GetHeapSizeHost(), NORMAL_CHUNK, 3);
+		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::GetHeapSizeHost(), NORMAL_CHUNK, 3);
 	}
 
 	ResourceInfo AllocatorGPU::AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)

@@ -14,7 +14,7 @@ namespace ZE::RHI::DX12
 
 	private:
 		typedef Allocator::TLSFMemoryChunkFlags HeapFlags;
-		enum HeapFlag : HeapFlags { Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, AllowTexturesRTDS = 8, NoMSAA = 16, CommittedAlloc = 32 };
+		enum HeapFlag : HeapFlags { None = 0, Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, AllowTexturesRTDS = 8, NoMSAA = 16, CommittedAlloc = 32, GpuUploadHeap = 64 };
 
 		struct Memory
 		{
@@ -72,12 +72,13 @@ namespace ZE::RHI::DX12
 		~AllocatorGPU();
 
 		constexpr AllocTier GetCurrentTier() const noexcept { return allocTier; }
+		constexpr bool IsGpuUploadHeap() const noexcept { return mainAllocator.GetChunkCreationFlags() & HeapFlag::GpuUploadHeap; }
 
 		void RemoveBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, mainAllocator); }
 		void RemoveDynamicBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, dynamicBuffersAllocator); }
 		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
-		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier);
+		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported);
 
 		ResourceInfo AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 		// Buffers that can be written fast into from CPU

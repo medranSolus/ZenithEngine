@@ -10,7 +10,7 @@ namespace ZE::RHI::DX12
 
 		if (fence->GetCompletedValue() < val)
 		{
-			HANDLE fenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+			HANDLE fenceEvent = CreateEventW(nullptr, false, false, nullptr);
 			ZE_ASSERT(fenceEvent, "Cannot create fence event!");
 
 			ZE_DX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
@@ -236,7 +236,10 @@ namespace ZE::RHI::DX12
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
-		allocator.Init(*this, options.ResourceHeapTier);
+		D3D12_FEATURE_DATA_D3D12_OPTIONS16 options16 = {};
+		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &options16, sizeof(options16)));
+
+		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported);
 	}
 
 	Device::~Device()
