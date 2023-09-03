@@ -23,6 +23,8 @@
 
 // Regular debug assert
 #define ZE_ASSERT(condition, message) ZE_ASSERT_LVL(Error, condition, message)
+// Regular debug assert for warnings
+#define ZE_ASSERT_WARN(condition, message) ZE_ASSERT_LVL(Warning, condition, message)
 // Assert for checking whether resource was freed before deletion
 #define ZE_ASSERT_FREED(condition) ZE_ASSERT_LVL(Error, condition, "Resource not freed before deletion!")
 // Always failing debug assert, indicating wrong code path that shouldn't occur
