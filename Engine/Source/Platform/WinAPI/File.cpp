@@ -20,7 +20,7 @@ namespace ZE::WinAPI
 	}
 
 	template<bool IS_READ>
-	bool File::PerformSyncOperation(U8* buffer, U32 size, U64 offset) const noexcept
+	bool File::PerformSyncOperation(void* buffer, U32 size, U64 offset) const noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{
@@ -55,7 +55,7 @@ namespace ZE::WinAPI
 	}
 
 	template<bool IS_READ>
-	std::future<U32> File::PerformAsyncOperation(U8* buffer, U32 size, U64 offset) const noexcept
+	std::future<U32> File::PerformAsyncOperation(void* buffer, U32 size, U64 offset) const noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{

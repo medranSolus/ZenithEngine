@@ -13,9 +13,9 @@ namespace ZE::WinAPI
 		static void AsyncCompletionCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) noexcept;
 
 		template<bool IS_READ>
-		bool PerformSyncOperation(U8* buffer, U32 size, U64 offset) const noexcept;
+		bool PerformSyncOperation(void* buffer, U32 size, U64 offset) const noexcept;
 		template<bool IS_READ>
-		std::future<U32> PerformAsyncOperation(U8* buffer, U32 size, U64 offset) const noexcept;
+		std::future<U32> PerformAsyncOperation(void* buffer, U32 size, U64 offset) const noexcept;
 
 	public:
 		File() = default;
@@ -25,11 +25,11 @@ namespace ZE::WinAPI
 		bool Open(IO::DiskManager& disk, std::string_view fileName, IO::FileFlags flags) noexcept { return Open(Utils::ToUTF16(fileName), flags); }
 		void Close(IO::DiskManager& disk) noexcept { Close(); }
 
-		bool Read(U8* buffer, U32 size, U64 offset) const noexcept { return PerformSyncOperation<true>(buffer, size, offset); }
-		bool Write(U8* buffer, U32 size, U64 offset) const noexcept { return PerformSyncOperation<false>(buffer, size, offset); }
+		bool Read(void* buffer, U32 size, U64 offset) const noexcept { return PerformSyncOperation<true>(buffer, size, offset); }
+		bool Write(void* buffer, U32 size, U64 offset) const noexcept { return PerformSyncOperation<false>(buffer, size, offset); }
 
-		std::future<U32> ReadAsync(U8* buffer, U32 size, U64 offset) const noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
-		std::future<U32> WriteAsync(U8* buffer, U32 size, U64 offset) const noexcept { return PerformAsyncOperation<false>(buffer, size, offset); }
+		std::future<U32> ReadAsync(void* buffer, U32 size, U64 offset) const noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
+		std::future<U32> WriteAsync(void* buffer, U32 size, U64 offset) const noexcept { return PerformAsyncOperation<false>(buffer, size, offset); }
 
 		// IO API Internal
 
