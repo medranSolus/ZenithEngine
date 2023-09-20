@@ -306,6 +306,7 @@ else()
 endif()
 
 # General flags
+add_definitions(-DZLIB_CONST)
 add_definitions(-DENTT_NOEXCEPTION)
 add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
 add_definitions(-DVK_NO_PROTOTYPES)
