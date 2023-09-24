@@ -217,6 +217,9 @@ if(${ZE_ENABLE_DX12} AND NOT ${ZE_BUILD_RELEASE})
 endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
+# FidelityFX SDK effects
+add_fidelityfx_target(FSR2)
+
 # Inject debug postfix if library use it
 if(${ZE_EXTERNAL_BUILD_DEBUG_POSTFIX})
 	if(${ZE_EXTERNAL_MODEL_LOADING})
@@ -362,6 +365,18 @@ if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 endif()
 
 
+############## SUBPROJECTS ##############
+
+add_subdirectory(${COMMON_DIR})
+add_subdirectory(${ENGINE_DIR})
+if(${ZE_BUILD_TOOL})
+	add_subdirectory(${TOOL_DIR})
+endif()
+if(${ZE_BUILD_DEMO})
+	add_subdirectory(${DEMO_DIR})
+endif()
+
+
 ########### EXTERNAL PROJECTS ###########
 
 if(${ZE_PLATFORM_WINDOWS})
@@ -436,6 +451,11 @@ endif()
 # HarfBuzz
 set(HARFBUZZ_CACHE_ARGS "-DBUILD_FRAMEWORK:BOOL=OFF"
 	"-DHB_HAVE_DIRECTWRITE:BOOL=ON")
+if(${ZE_COMPILER_MSVC})
+	# Fix for compilation error due to too big files
+	set(HARFBUZZ_CACHE_ARGS ${HARFBUZZ_CACHE_ARGS}
+		"-DCMAKE_CXX_FLAGS:STRING=/bigobj")
+endif()
 add_external_project(HARFBUZZ "" "" "")
 
 # FreeType
@@ -478,16 +498,4 @@ if(${ZE_ENABLE_VK})
 		message(FATAL_ERROR "Building for unsupported platform!")
 	endif()
 	add_subdirectory(${VOLK_DIR})
-endif()
-
-
-############## SUBPROJECTS ##############
-
-add_subdirectory(${COMMON_DIR})
-add_subdirectory(${ENGINE_DIR})
-if(${ZE_BUILD_TOOL})
-	add_subdirectory(${TOOL_DIR})
-endif()
-if(${ZE_BUILD_DEMO})
-	add_subdirectory(${DEMO_DIR})
 endif()
