@@ -27,6 +27,8 @@
 #define ZE_ASSERT_WARN(condition, message) ZE_ASSERT_LVL(Warning, condition, message)
 // Assert for checking whether resource was freed before deletion
 #define ZE_ASSERT_FREED(condition) ZE_ASSERT_LVL(Error, condition, "Resource not freed before deletion!")
+// Assert for checking whether selected code path has been initialized before
+#define ZE_ASSERT_INIT(condition) ZE_ASSERT_LVL(Error, condition, "Accessing not properly initialized code path!")
 // Always failing debug assert, indicating wrong code path that shouldn't occur
 #define ZE_FAIL(message) ZE_ASSERT_LVL(Error, false, message)
 // Always failing debug assert, indicating warning condition that shouldn't occur but allows for ruther program execution

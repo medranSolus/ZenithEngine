@@ -99,6 +99,7 @@ namespace ZE::RHI::VK
 		float conservativeRasterOverestimateSize = 0.0f;
 
 		AllocatorGPU allocator;
+		FfxInterface ffxInterface;
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -153,6 +154,7 @@ namespace ZE::RHI::VK
 		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { 0, 0 }; }
+		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
 
 		U64 GetMainFence() const noexcept { return gfxFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

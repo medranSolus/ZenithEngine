@@ -51,17 +51,17 @@ namespace ZE::RHI::DX
 			{
 			case 0x10DE:
 			{
-				Settings::SetGpuVendor(GFX::VendorGPU::Nvidia);
+				Settings::GpuVendor = GFX::VendorGPU::Nvidia;
 				break;
 			}
 			case 0x1002:
 			{
-				Settings::SetGpuVendor(GFX::VendorGPU::AMD);
+				Settings::GpuVendor = GFX::VendorGPU::AMD;
 				break;
 			}
 			case 0x8086:
 			{
-				Settings::SetGpuVendor(GFX::VendorGPU::Intel);
+				Settings::GpuVendor = GFX::VendorGPU::Intel;
 				break;
 			}
 			}
@@ -81,7 +81,7 @@ namespace ZE::RHI::DX
 		DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
 		swapDesc.Width = 0; // Use window sizes
 		swapDesc.Height = 0;
-		swapDesc.Format = GetDXFormat(Settings::GetBackbufferFormat());
+		swapDesc.Format = GetDXFormat(Settings::BackbufferFormat);
 		swapDesc.Stereo = FALSE;
 		swapDesc.SampleDesc.Count = 1; // Used only in bitblt swap model
 		swapDesc.SampleDesc.Quality = 0;

@@ -65,7 +65,7 @@ namespace ZE::GUI
 		{
 			auto handles = dev.Get().dx12.AddStaticDescs(1);
 			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Utils::SafeCast<int>(Settings::GetBackbufferCount()),
-				RHI::DX::GetDXFormat(Settings::GetBackbufferFormat()),
+				RHI::DX::GetDXFormat(Settings::BackbufferFormat),
 				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
 			break;
 		}
@@ -81,7 +81,7 @@ namespace ZE::GUI
 			attachmentInfo.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
 			attachmentInfo.pNext = nullptr;
 			attachmentInfo.flags = 0;
-			attachmentInfo.format = RHI::VK::GetVkFormat(Settings::GetBackbufferFormat());
+			attachmentInfo.format = RHI::VK::GetVkFormat(Settings::BackbufferFormat);
 			attachmentInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 			attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 			attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -142,15 +142,15 @@ namespace ZE::GUI
 			ZE_VK_THROW_NOSUCC(vkCreateRenderPass2(device.GetDevice(), &passInfo, nullptr, &renderPass));
 
 			// Create framebuffer for swapchain attachment
-			const VkFormat backbufferFormat = RHI::VK::GetVkFormat(Settings::GetBackbufferFormat());
+			const VkFormat backbufferFormat = RHI::VK::GetVkFormat(Settings::BackbufferFormat);
 			VkFramebufferAttachmentImageInfo attachmentImageInfo;
 			attachmentImageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
 			attachmentImageInfo.pNext = nullptr;
 			attachmentImageInfo.flags = 0;
 			attachmentImageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 				| (backbufferSRV ? VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : 0);
-			attachmentImageInfo.width = Settings::GetBackbufferWidth();
-			attachmentImageInfo.height = Settings::GetBackbufferHeight();
+			attachmentImageInfo.width = Settings::DisplaySize.X;
+			attachmentImageInfo.height = Settings::DisplaySize.Y;
 			attachmentImageInfo.layerCount = 1;
 			attachmentImageInfo.viewFormatCount = 1;
 			attachmentImageInfo.pViewFormats = &backbufferFormat;
@@ -355,7 +355,7 @@ namespace ZE::GUI
 			passBeginInfo.pNext = &attachmentInfo;
 			passBeginInfo.renderPass = backendData.CastConst<CustomDataVK>()->RenderPass;
 			passBeginInfo.framebuffer = backendData.CastConst<CustomDataVK>()->Framebuffer;
-			passBeginInfo.renderArea = { { 0, 0 }, { Settings::GetBackbufferWidth(), Settings::GetBackbufferHeight() } };
+			passBeginInfo.renderArea = { { 0, 0 }, { Settings::DisplaySize.X, Settings::DisplaySize.Y } };
 			passBeginInfo.clearValueCount = 0;
 			passBeginInfo.pClearValues = nullptr;
 

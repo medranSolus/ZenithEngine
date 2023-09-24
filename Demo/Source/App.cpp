@@ -617,7 +617,7 @@ void App::MakeFrame()
 }
 
 App::App(const CmdParser& params)
-	: engine(SettingsInitParams::GetParsedParams(params, APP_NAME, Settings::GetEngineVersion(), 0))
+	: engine(SettingsInitParams::GetParsedParams(params, APP_NAME, Settings::ENGINE_VERSION, 0))
 {
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);

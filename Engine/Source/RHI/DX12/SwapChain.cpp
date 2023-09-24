@@ -32,7 +32,7 @@ namespace ZE::RHI::DX12
 		auto srvHandle = dev.Get().dx12.AddStaticDescs(descHeapDesc.NumDescriptors);
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
+		rtvDesc.Format = DX::GetDXFormat(Settings::BackbufferFormat);
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;

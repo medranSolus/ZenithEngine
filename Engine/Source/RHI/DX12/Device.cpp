@@ -115,7 +115,7 @@ namespace ZE::RHI::DX12
 		);
 
 		// Initialize via hardware specific functions
-		switch (Settings::GetGpuVendor())
+		switch (Settings::GpuVendor)
 		{
 		case GFX::VendorGPU::AMD:
 		{
@@ -139,7 +139,7 @@ namespace ZE::RHI::DX12
 				agsDeInitialize(gpuCtxAMD);
 				gpuCtxAMD = nullptr;
 			}
-			Settings::SetGpuVendor(GFX::VendorGPU::Unknown);
+			Settings::GpuVendor = GFX::VendorGPU::Unknown;
 			break;
 		}
 		default:
@@ -252,7 +252,7 @@ namespace ZE::RHI::DX12
 		if (copyResList != nullptr)
 			Table::Clear(copyResInfo.Size, copyResList);
 
-		switch (Settings::GetGpuVendor())
+		switch (Settings::GpuVendor)
 		{
 		case GFX::VendorGPU::AMD:
 		{

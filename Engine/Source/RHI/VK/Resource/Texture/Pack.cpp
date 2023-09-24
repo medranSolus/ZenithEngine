@@ -75,7 +75,7 @@ namespace ZE::RHI::VK::Resource::Texture
 			}
 			else
 			{
-				imageInfo.format = GetVkFormat(Settings::GetBackbufferFormat());
+				imageInfo.format = GetVkFormat(Settings::BackbufferFormat);
 			}
 			++i;
 		}

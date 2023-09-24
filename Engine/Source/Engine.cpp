@@ -9,7 +9,9 @@ namespace ZE
 		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
 
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
-		Settings::SetBackbufferSize(window.GetWidth(), window.GetHeight());
+		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
+		Settings::RenderSize = GFX::CalculateRenderSize(Settings::DisplaySize, Settings::GetUpscaler());
+
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, params.ScratchDescriptorCount, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		gui.Init(graphics, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), window.GetWidth(), window.GetHeight(), params.Renderer);

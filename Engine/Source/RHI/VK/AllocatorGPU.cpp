@@ -217,9 +217,9 @@ namespace ZE::RHI::VK
 		}
 
 		U32 allocatorCount = memoryProps.memoryProperties.memoryTypeCount;
-		U64 deviceHeapSize = Settings::GetHeapSizeBuffers();
-		U64 hostHeapSize = Settings::GetHeapSizeHost();
-		U64 stagingHeapSize = Settings::GetHeapSizeStaging();
+		U64 deviceHeapSize = Settings::BUFFERS_HEAP_SIZE;
+		U64 hostHeapSize = Settings::HOST_HEAP_SIZE;
+		U64 stagingHeapSize = Settings::STAGING_HEAP_SIZE;
 		// Chek alignment rules between images and buffers
 		if (dev.GetLimits().bufferImageGranularity != 1)
 		{
@@ -227,7 +227,7 @@ namespace ZE::RHI::VK
 			if (dev.GetLimits().bufferImageGranularity <= 256)
 			{
 				minimalAlignment = Utils::SafeCast<U16>(dev.GetLimits().bufferImageGranularity);
-				deviceHeapSize += Settings::GetHeapSizeTextures();
+				deviceHeapSize += Settings::TEXTURES_HEAP_SIZE;
 				SetSingleBufferImageHeap(true);
 			}
 			else
@@ -252,7 +252,7 @@ namespace ZE::RHI::VK
 				if (i < memoryProps.memoryProperties.memoryTypeCount)
 					heapSize += deviceHeapSize;
 				else
-					heapSize += Settings::GetHeapSizeTextures();
+					heapSize += Settings::TEXTURES_HEAP_SIZE;
 			}
 			else if (memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
 			{
@@ -263,7 +263,7 @@ namespace ZE::RHI::VK
 				}
 				else
 				{
-					heapSize = localTexturesHeapFound ? stagingHeapSize : Settings::GetHeapSizeTextures();
+					heapSize = localTexturesHeapFound ? stagingHeapSize : Settings::TEXTURES_HEAP_SIZE;
 					localTexturesHeapFound = true;
 				}
 			}

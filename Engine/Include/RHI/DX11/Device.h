@@ -18,6 +18,7 @@ namespace ZE::RHI::DX11
 #endif
 		DX::ComPtr<IDevice> device;
 		DX::ComPtr<IDeviceContext> context;
+		FfxInterface ffxInterface;
 
 		U32 descriptorCount;
 		U32 scratchDescriptorCount;
@@ -35,6 +36,7 @@ namespace ZE::RHI::DX11
 		~Device() = default;
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, scratchDescriptorCount }; }
+		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
 
 		constexpr U64 GetMainFence() const noexcept { return 0; }
 		constexpr U64 GetComputeFence() const noexcept { return 0; }

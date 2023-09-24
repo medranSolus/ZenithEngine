@@ -35,7 +35,7 @@ namespace ZE::RHI::VK
 		do
 		{
 			const PixelFormat format = GetFormatFromVk(supportedFormats.at(--count).surfaceFormat.format);
-			if (!Utils::IsSameFormatFamily(format, Settings::GetBackbufferFormat()))
+			if (!Utils::IsSameFormatFamily(format, Settings::BackbufferFormat))
 				supportedFormats.erase(supportedFormats.begin() + count);
 		} while (count > 0);
 		ZE_ASSERT(supportedFormats.size() > 0, "For selected surface there should be at least one suitable format!");
@@ -47,7 +47,7 @@ namespace ZE::RHI::VK
 		// When more than one format then select first one that matches the backbuffer
 		for (const VkSurfaceFormat2KHR& format : supportedFormats)
 		{
-			if (GetFormatFromVk(format.surfaceFormat.format) == Settings::GetBackbufferFormat())
+			if (GetFormatFromVk(format.surfaceFormat.format) == Settings::BackbufferFormat)
 				return format;
 		}
 		// Otherwise just go with first one
@@ -77,9 +77,7 @@ namespace ZE::RHI::VK
 		// Find surface format and select it if different from desired
 		// Ignore color space for now until HDR is used
 		const VkSurfaceFormat2KHR surfaceFormat = FindSurfaceFormat(phyDevice);
-		const PixelFormat swapChainFormat = GetFormatFromVk(surfaceFormat.surfaceFormat.format);
-		if (swapChainFormat != Settings::GetBackbufferFormat())
-			Settings::SetBackbufferFormat(swapChainFormat);
+		Settings::BackbufferFormat = GetFormatFromVk(surfaceFormat.surfaceFormat.format);
 
 		VkDeviceGroupSwapchainCreateInfoKHR deviceGroupInfo = { VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR, nullptr };
 		deviceGroupInfo.modes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;

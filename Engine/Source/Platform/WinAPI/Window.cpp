@@ -9,7 +9,7 @@ namespace ZE::WinAPI
 {
 	Window::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
 	{
-		const std::wstring className = Utils::ToUTF16(Settings::GetEngineName());
+		const std::wstring className = Utils::ToUTF16(Settings::ENGINE_NAME);
 
 		WNDCLASSEX wndClassEx = { 0 };
 		wndClassEx.cbClsExtra = 0;
@@ -293,7 +293,7 @@ namespace ZE::WinAPI
 			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
 		}
 
-		wndHandle = CreateWindowExW(WIN_STYLE_EX, Utils::ToUTF16(Settings::GetEngineName()).c_str(),
+		wndHandle = CreateWindowExW(WIN_STYLE_EX, Utils::ToUTF16(Settings::ENGINE_NAME).c_str(),
 			Utils::ToUTF16(name).c_str(), WIN_STYLE, windowRect.left, windowRect.top,
 			GetWidth(), GetHeight(), nullptr, nullptr, wndClass.GetInstance(), this);
 		if (wndHandle == nullptr)

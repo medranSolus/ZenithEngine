@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline
 		AddResource(
 			{
 				backbufferWidth, backbufferHeight, 1, FrameResourceFlags::None,
-				Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 1.0f)
+				Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 1.0f)
 			});
 	}
 

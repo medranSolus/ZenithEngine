@@ -16,64 +16,50 @@ namespace ZE
 			Count,
 		};
 
+	public:
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
-		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(0, 3, 0);
+		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 
 		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
 		static constexpr U64 TEXTURES_HEAP_SIZE = 512 * Math::MEGABYTE;
 		static constexpr U64 HOST_HEAP_SIZE = 64 * Math::MEGABYTE;
 		static constexpr U64 STAGING_HEAP_SIZE = 64 * Math::MEGABYTE;
 
-		static inline U64 frameIndex = 0;
-		static inline U32 swapChainBufferCount = 0;
-		static inline UInt2 swapChainSize = { 0, 0 };
-		static inline PixelFormat backbufferFormat = PixelFormat::R8G8B8A8_UNorm;
-		static inline GFX::VendorGPU gpuVendor = GFX::VendorGPU::Unknown;
-		static inline GfxApiType gfxApi;
+		static inline GFX::VendorGPU GpuVendor = GFX::VendorGPU::Unknown;
+		static inline PixelFormat BackbufferFormat = PixelFormat::R8G8B8A8_UNorm;
+
+		static inline UInt2 DisplaySize = { 0, 0 };
+		static inline UInt2 RenderSize = { 0, 0 };
+
+	private:
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
-		static inline std::bitset<Flags::Count> flags = 0;
-		static inline ThreadPool threadPool;
+		static inline GfxApiType gfxApi;
+		static inline GFX::UpscalerType upscaler;
 
-		static constexpr bool Initialized() noexcept { return swapChainBufferCount != 0; }
+		static inline ThreadPool threadPool;
+		static inline std::bitset<Flags::Count> flags = 0;
+		static inline U64 frameIndex = 0;
+		static inline U32 backbufferCount = 0;
+
+		static constexpr bool Initialized() noexcept { return backbufferCount != 0; }
 
 	public:
 		ZE_CLASS_DELETE(Settings);
 		~Settings() = default;
 
-		static constexpr const char* GetEngineName() noexcept { return ENGINE_NAME; }
-		static constexpr U32 GetEngineVersion() noexcept { return ENGINE_VERSION; }
-
-		static constexpr U64 GetHeapSizeBuffers() noexcept { return BUFFERS_HEAP_SIZE; }
-		static constexpr U64 GetHeapSizeTextures() noexcept { return TEXTURES_HEAP_SIZE; }
-		static constexpr U64 GetHeapSizeHost() noexcept { return HOST_HEAP_SIZE; }
-		static constexpr U64 GetHeapSizeStaging() noexcept { return STAGING_HEAP_SIZE; }
+		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
+		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
+		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized()); return gfxApi; }
+		static constexpr GFX::UpscalerType GetUpscaler() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
 
-		static constexpr void SetBackbufferFormat(PixelFormat format) noexcept { backbufferFormat = format; }
-		static constexpr PixelFormat GetBackbufferFormat() noexcept { return backbufferFormat; }
-
-		static constexpr void SetGpuVendor(GFX::VendorGPU vendor) noexcept { gpuVendor = vendor; }
-		static constexpr GFX::VendorGPU GetGpuVendor() noexcept { return gpuVendor; }
-		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return gfxApi; }
-
-		static constexpr const char* GetAppName() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationName; }
-		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return applicationVersion; }
-
-		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % swapChainBufferCount; }
-		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainBufferCount; }
-		static constexpr void SetBackbufferSize(U32 width, U32 height) noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainSize = { width, height }; }
-		static constexpr UInt2 GetBackbufferSize() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize; }
-		static constexpr U32 GetBackbufferWidth() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.X; }
-		static constexpr U32 GetBackbufferHeight() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return swapChainSize.Y; }
-
-		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return frameIndex % GetChainResourceCount(); }
-		static constexpr U32 GetChainResourceCount() noexcept;
-
-		static constexpr void Destroy() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); swapChainBufferCount = 0; }
-		static constexpr void Init(const SettingsInitParams& params) noexcept;
+		static constexpr ThreadPool& GetThreadPool() noexcept { ZE_ASSERT_INIT(Initialized()); return threadPool; }
+		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT_INIT(Initialized()); return backbufferCount; }
+		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetBackbufferCount(); }
+		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
 #if _ZE_GFX_MARKERS
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
@@ -81,15 +67,18 @@ namespace ZE
 #endif
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
-		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT(Initialized(), "Not initialized!");  return flags[Flags::AttachPIX]; }
+		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized());  return flags[Flags::AttachPIX]; }
 
-		static constexpr ThreadPool& GetThreadPool() noexcept { ZE_ASSERT(Initialized(), "Not initialized!"); return threadPool; }
+		static constexpr U32 GetChainResourceCount() noexcept;
+
+		static constexpr void Init(const SettingsInitParams& params) noexcept;
+		static void Destroy() noexcept;
 	};
 
 #pragma region Functions
 	constexpr U32 Settings::GetChainResourceCount() noexcept
 	{
-		ZE_ASSERT(Initialized(), "Not initialized!");
+		ZE_ASSERT_INIT(Initialized());
 
 		switch (GetGfxApi())
 		{
@@ -100,7 +89,7 @@ namespace ZE
 			return 1;
 		case GfxApiType::DX12:
 		case GfxApiType::Vulkan:
-			return swapChainBufferCount;
+			return GetBackbufferCount();
 		}
 	}
 
@@ -120,9 +109,10 @@ namespace ZE
 			"Vulkan API is not enabled in current build!");
 
 		flags[Flags::AttachPIX] = params.AllowPIXAttach;
-		swapChainBufferCount = params.BackbufferCount;
+		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;
+		upscaler = params.Upscaler;
 		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
 	}
 #pragma endregion

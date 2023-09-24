@@ -28,6 +28,8 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
+		constexpr const FfxInterface& GetFfxInterface() const noexcept { const FfxInterface* ffx = nullptr; ZE_RHI_BACKEND_CALL_RET(ffx, GetFfxInterface); return *ffx; }
+
 		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
 		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }
 		constexpr U64 GetCopyFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetCopyFence); return val; }

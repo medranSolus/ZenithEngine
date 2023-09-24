@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/UpscalerType.h"
 #include "RHI/ApiType.h"
 #include "CmdParser.h"
 
@@ -23,6 +24,8 @@ namespace ZE
 		U8 CustomThreadPoolThreadsCount;
 		// Loads for DirectX 12 targets WinPixGpuCapturer.dll allowing for attaching PIX for GPU capture.
 		bool AllowPIXAttach;
+		// Type of upscaler to be used in graphics pipeline.
+		GFX::UpscalerType Upscaler;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi = GfxApiType::DX12) noexcept;

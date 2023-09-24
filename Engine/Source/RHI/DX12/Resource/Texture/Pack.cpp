@@ -143,7 +143,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				uploadRegionSize += copyInfo.back().first;
 			}
 			else
-				srv.Format = DX::GetDXFormat(Settings::GetBackbufferFormat());
+				srv.Format = DX::GetDXFormat(Settings::BackbufferFormat);
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();

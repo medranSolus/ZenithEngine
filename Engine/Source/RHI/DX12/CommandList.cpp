@@ -62,7 +62,7 @@ namespace ZE::RHI::DX12
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
-		switch (Settings::GetGpuVendor())
+		switch (Settings::GpuVendor)
 		{
 		case GFX::VendorGPU::AMD:
 		{
@@ -77,7 +77,7 @@ namespace ZE::RHI::DX12
 
 	void CommandList::TagEnd(GFX::Device& dev) const noexcept
 	{
-		switch (Settings::GetGpuVendor())
+		switch (Settings::GpuVendor)
 		{
 		case GFX::VendorGPU::AMD:
 		{

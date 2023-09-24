@@ -45,6 +45,7 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IFence> copyFence;
 
 		AllocatorGPU allocator;
+		FfxInterface ffxInterface;
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -80,6 +81,7 @@ namespace ZE::RHI::DX12
 		~Device();
 
 		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
+		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void EndFrame() noexcept {}
 
@@ -139,7 +141,7 @@ namespace ZE::RHI::DX12
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ICommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 		IDescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
-		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GetGpuVendor() == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
+		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GpuVendor == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
 
 		void FreeBuffer(ResourceInfo& info) { allocator.RemoveBuffer(info); }
 		void FreeDynamicBuffer(ResourceInfo& info) { allocator.RemoveDynamicBuffer(info); }

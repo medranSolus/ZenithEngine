@@ -224,7 +224,7 @@ namespace ZE::RHI::VK
 		bool notSupported = true;
 		for (const VkSurfaceFormat2KHR& format : supportedFormats)
 		{
-			if (Utils::IsSameFormatFamily(GetFormatFromVk(format.surfaceFormat.format), Settings::GetBackbufferFormat()))
+			if (Utils::IsSameFormatFamily(GetFormatFromVk(format.surfaceFormat.format), Settings::BackbufferFormat))
 			{
 				notSupported = false;
 				break;
@@ -296,8 +296,8 @@ namespace ZE::RHI::VK
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO, nullptr };
 		appInfo.pApplicationName = Settings::GetAppName();
 		appInfo.applicationVersion = Settings::GetAppVersion();
-		appInfo.pEngineName = Settings::GetEngineName();
-		appInfo.engineVersion = Settings::GetEngineVersion();
+		appInfo.pEngineName = Settings::ENGINE_NAME;
+		appInfo.engineVersion = Settings::ENGINE_VERSION;
 		appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 
 		// Check for supported API version
@@ -324,12 +324,12 @@ namespace ZE::RHI::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -340,12 +340,12 @@ namespace ZE::RHI::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -539,7 +539,7 @@ namespace ZE::RHI::VK
 				case GpuFitness::Status::NoPixelFormats:
 					throw ZE_CMP_EXCEPT("Window surface doesn't support any pixel formats on GPU [" + std::string(properties.properties.deviceName) + "]!");
 				case GpuFitness::Status::BackbufferFormatNotSupported:
-					throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer formaton GPU [" + std::string(properties.properties.deviceName) + "]! Format: [" + std::string(Utils::FormatToString(Settings::GetBackbufferFormat())) + "]");
+					throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer formaton GPU [" + std::string(properties.properties.deviceName) + "]! Format: [" + std::string(Utils::FormatToString(Settings::BackbufferFormat)) + "]");
 				case GpuFitness::Status::QueuesInsufficient:
 					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support all of the graphics, compute and copy queues!");
 				case GpuFitness::Status::NoExtensions:
@@ -631,7 +631,7 @@ namespace ZE::RHI::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+				ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
@@ -657,7 +657,7 @@ namespace ZE::RHI::VK
 		VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicatedAllocAliasing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV, nullptr, VK_FALSE };
 		VkPhysicalDeviceCoherentMemoryFeaturesAMD coherentMemory = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD, nullptr, VK_FALSE };
 		VkPhysicalDeviceMemoryPriorityFeaturesEXT memPriority = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT };
-		switch (Settings::GetGpuVendor())
+		switch (Settings::GpuVendor)
 		{
 		case GFX::VendorGPU::AMD:
 		{
@@ -699,7 +699,7 @@ namespace ZE::RHI::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-			ZE_VK_EXT_LIST_DEVICE_REQUIRED
+				ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		FindPhysicalDevice(enabledExtensions, window, requiredFeatures);

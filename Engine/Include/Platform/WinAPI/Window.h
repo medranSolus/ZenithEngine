@@ -16,7 +16,7 @@ namespace ZE::WinAPI
 		public:
 			WindowClass() noexcept;
 			ZE_CLASS_DELETE(WindowClass);
-			~WindowClass() { UnregisterClassW(Utils::ToUTF16(Settings::GetEngineName()).c_str(), hInstance); }
+			~WindowClass() { UnregisterClassW(Utils::ToUTF16(Settings::ENGINE_NAME).c_str(), hInstance); }
 
 			constexpr HINSTANCE GetInstance() const noexcept { return hInstance; }
 		};

@@ -149,9 +149,9 @@ namespace ZE::GFX::Pipeline
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID outline = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineBlur = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::GetBackbufferFormat(), ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineDepth = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 #pragma endregion
@@ -311,7 +311,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::GetBackbufferFormat());
+			ZE_MAKE_NODE("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::BackbufferFormat);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourcePS);
 			node.AddOutput("RT", Resource::StateRenderTarget, BACKBUFFER_RID);
 			nodes.emplace_back(std::move(node));
