@@ -1,12 +1,11 @@
 ﻿cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
-include(PostBuild)
 
 # Resource embedding
 if(${ZE_PLATFORM_WINDOWS})
     enable_language(RC)
     set(RES_FILE "${ZE_BUILD_DIR}/resource.rc")
     file(WRITE ${RES_FILE}
-            "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Data/icon.ico\"")
+        "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Data/icon.ico\"")
 endif()
 
 # Post build data copy

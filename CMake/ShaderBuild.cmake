@@ -70,7 +70,7 @@ macro(add_shader_type SD_TYPE)
             set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.${SD_EXT}")
             list(APPEND SD_LIST ${SD_OUT})
             add_custom_command(OUTPUT ${SD_OUT}
-                COMMAND "${SD_COMPILER}" ${SD_FLAGS} ${API_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
+                COMMAND "${SD_COMPILER}" ${SD_FLAGS} ${API_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /I "${SD_INC_DIR}" /I "${FFXSDK_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
                 MAIN_DEPENDENCY "${SD}"
                 DEPENDS "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${SD_COMPILER}" VERBATIM)
         endforeach()

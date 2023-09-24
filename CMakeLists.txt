@@ -4,11 +4,11 @@ cmake_policy(SET CMP0091 NEW) # Setting of MSVC runtime library
 
 ######### PROJECT CONFIGURATION #########
 
-set(PROJECT_NAME "Zenith Engine")
-set(PROJECT_VER_MAJOR 0)
-set(PROJECT_VER_MINOR 3)
-set(PROJECT_VER_PATCH 0)
-project(${PROJECT_NAME} VERSION ${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH})
+set(ZE_PROJECT_NAME "Zenith Engine")
+set(ZE_VER_MAJOR 0)
+set(ZE_VER_MINOR 3)
+set(ZE_VER_PATCH 0)
+project(${ZE_PROJECT_NAME} VERSION ${ZE_VER_MAJOR}.${ZE_VER_MINOR}.${ZE_VER_PATCH})
 
 # Project options
 set(ZE_BIN_DIR "${PROJECT_SOURCE_DIR}/Bin/${CMAKE_BUILD_TYPE}" CACHE STRING
@@ -35,12 +35,7 @@ option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
 
 # CMake modules
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
 include(ExternalProject)
-include(CompileFilter)
-include(External)
-include(FlagsDisplay)
-include(FlagsPass)
 include(CheckTypeSize)
 
 # Architecture check, only x64
@@ -102,6 +97,7 @@ set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
+set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK/sdk")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
@@ -127,12 +123,25 @@ set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
+set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
+
+
+############# CUSTOM CMAKE MODULES ##############
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
+include(CompileFilter)
+include(External)
+include(FidelityFX)
+include(FlagsDisplay)
+include(FlagsPass)
+include(ShaderBuild)
+include(PostBuild)
 
 
 ############# USING ENGINE ##############
@@ -155,6 +164,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${DXTEX_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${FTYPE_INC_DIR}"
+	"${FFXSDK_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
@@ -248,7 +258,7 @@ if(${ZE_COMPILER_MSVC})
 	set(LINKER_DEBUG_ENABLE_FLAGS "/DEBUG /DEBUGTYPE:CV")
 	set(LINKER_DEVELOPMENT_FLAGS "/INCREMENTAL /LTCG:OFF /OPT:NOICF")
 	add_linker_flags(
-		"/MACHINE:x64 /CETCOMPAT:NO /DYNAMICBASE /HIGHENTROPYVA /LARGEADDRESSAWARE /GUARD:NO /MANIFEST:NO /NOLOGO /NXCOMPAT /SAFESEH:NO /SUBSYSTEM:WINDOWS /VERSION:${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}"
+		"/MACHINE:x64 /CETCOMPAT:NO /DYNAMICBASE /HIGHENTROPYVA /LARGEADDRESSAWARE /GUARD:NO /MANIFEST:NO /NOLOGO /NXCOMPAT /SAFESEH:NO /SUBSYSTEM:WINDOWS /VERSION:${ZE_VER_MAJOR}.${ZE_VER_MINOR}"
 		"${LINKER_DEBUG_ENABLE_FLAGS} ${LINKER_DEVELOPMENT_FLAGS} /OPT:NOREF"
 		"${LINKER_DEBUG_ENABLE_FLAGS} ${LINKER_DEVELOPMENT_FLAGS} /OPT:REF"
 		"${LINKER_DEBUG_ENABLE_FLAGS} /INCREMENTAL:NO /LTCG /OPT:REF,NOICF"
@@ -331,6 +341,8 @@ add_definitions(-D_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> -D_ZE_PLAT
 add_definitions(-D_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> -D_ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> -D_ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # RHI type
 add_definitions(-D_ZE_RHI_DX11=$<BOOL:${ZE_ENABLE_DX11}> -D_ZE_RHI_DX12=$<BOOL:${ZE_ENABLE_DX12}> -D_ZE_RHI_GL=$<BOOL:${ZE_ENABLE_GL}> -D_ZE_RHI_VK=$<BOOL:${ZE_ENABLE_VK}>)
+# Engine version
+add_definitions(-D_ZE_VERSION_MAJOR=${ZE_VER_MAJOR} -D_ZE_VERSION_MINOR=${ZE_VER_MINOR} -D_ZE_VERSION_PATCH=${ZE_VER_PATCH})
 # Build type
 add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> -D_ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> -D_ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
 add_definition_flags(
@@ -347,18 +359,6 @@ if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	if(NOT ${ZE_BUILD_PROFILE})
 		set(SHADER_FLAGS "${SHADER_FLAGS} /Od")
 	endif()
-endif()
-
-
-############## SUBPROJECTS ##############
-
-add_subdirectory(${COMMON_DIR})
-add_subdirectory(${ENGINE_DIR})
-if(${ZE_BUILD_TOOL})
-	add_subdirectory(${TOOL_DIR})
-endif()
-if(${ZE_BUILD_DEMO})
-	add_subdirectory(${DEMO_DIR})
 endif()
 
 
@@ -458,6 +458,9 @@ set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
 	"-DBUILD_SAMPLE:BOOL=OFF")
 add_external_project(DXTEX "bin/CMake/" "" "")
 
+# FidelityFX SDK
+add_external_fidelityfx_effect(FSR2)
+
 # EnTT
 if(${ZE_COMPILER_MSVC})
 	set(ENTT_INCLUDE_NATVIS ON CACHE BOOL "Use debug natvis files" FORCE)
@@ -475,4 +478,16 @@ if(${ZE_ENABLE_VK})
 		message(FATAL_ERROR "Building for unsupported platform!")
 	endif()
 	add_subdirectory(${VOLK_DIR})
+endif()
+
+
+############## SUBPROJECTS ##############
+
+add_subdirectory(${COMMON_DIR})
+add_subdirectory(${ENGINE_DIR})
+if(${ZE_BUILD_TOOL})
+	add_subdirectory(${TOOL_DIR})
+endif()
+if(${ZE_BUILD_DEMO})
+	add_subdirectory(${DEMO_DIR})
 endif()
