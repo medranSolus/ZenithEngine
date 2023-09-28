@@ -1,5 +1,6 @@
 #pragma once
 #include "BasicTypes.h"
+#include <type_traits>
 #include <vector>
 
 namespace ZE::Allocator
@@ -25,11 +26,14 @@ namespace ZE::Allocator
 		Ptr<Item> items;
 
 		constexpr void RestoreFullFreeList() noexcept;
+		constexpr void DeleteAllElements(bool forceFastClear) noexcept;
 
 	public:
 		FixedPool() = default;
 		ZE_CLASS_DEFAULT(FixedPool);
 		~FixedPool();
+
+		constexpr U64 GetMaxElements() const noexcept { return maxCount; }
 
 		constexpr void Init(U64 maxItems) noexcept;
 
@@ -39,8 +43,8 @@ namespace ZE::Allocator
 		template<typename... Types>
 		constexpr T* Alloc(Types&&... args) noexcept;
 		constexpr void Free(T* ptr) noexcept;
-		// Use fast clears with POD that don't need invocation of destructor
-		constexpr void Clear(bool fastClear = false) noexcept;
+		// Fast clear will be used with POD that don't need destructor invocation but you can force this behavior
+		constexpr void Clear(bool forceFastClear = false) noexcept;
 	};
 
 #pragma region Functions
@@ -58,11 +62,40 @@ namespace ZE::Allocator
 	}
 
 	template<typename T>
+	constexpr void FixedPool<T>::DeleteAllElements(bool forceFastClear) noexcept
+	{
+		if (!std::is_trivial_v<T> || forceFastClear)
+		{
+			// No need to gather free elements
+			if (firstFreeIndex == UINT64_MAX)
+			{
+				for (U64 i = 0; i < maxCount; ++i)
+					reinterpret_cast<T*>(items[i].Data)->~T();
+			}
+			else
+			{
+				// Traverse free list to know which element to delete
+				std::vector<bool> isFree(maxCount, false);
+				do
+				{
+					isFree.at(firstFreeIndex) = true;
+					firstFreeIndex = items[firstFreeIndex].NextFreeIndex;
+				} while (firstFreeIndex != UINT64_MAX);
+
+				// Delete remaining elements
+				for (U64 i = 0; i < maxCount; ++i)
+					if (!isFree.at(i))
+						reinterpret_cast<T*>(items[i].Data)->~T();
+			}
+		}
+	}
+
+	template<typename T>
 	FixedPool<T>::~FixedPool()
 	{
 		if (maxCount)
 		{
-			Clear();
+			DeleteAllElements(false);
 			items.DeleteArray();
 		}
 	}
@@ -118,32 +151,9 @@ namespace ZE::Allocator
 	}
 
 	template<typename T>
-	constexpr void FixedPool<T>::Clear(bool fastClear) noexcept
+	constexpr void FixedPool<T>::Clear(bool forceFastClear) noexcept
 	{
-		if (!fastClear)
-		{
-			// No need to gather free elements
-			if (firstFreeIndex == UINT64_MAX)
-			{
-				for (U64 i = 0; i < maxCount; ++i)
-					reinterpret_cast<T*>(items[i].Data)->~T();
-			}
-			else
-			{
-				// Traverse free list to know which element to delete
-				std::vector<bool> isFree(maxCount, false);
-				do
-				{
-					isFree.at(firstFreeIndex) = true;
-					firstFreeIndex = items[firstFreeIndex].NextFreeIndex;
-				} while (firstFreeIndex != UINT64_MAX);
-
-				// Delete remaining elements
-				for (U64 i = 0; i < maxCount; ++i)
-					if (!isFree.at(i))
-						reinterpret_cast<T*>(items[i].Data)->~T();
-			}
-		}
+		DeleteAllElements(forceFastClear);
 		RestoreFullFreeList();
 	}
 #pragma endregion

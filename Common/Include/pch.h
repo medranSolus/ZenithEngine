@@ -81,6 +81,7 @@
 *** memory
 * Allocator/BlockingQueue.h
 *** BasicTypes.h (defined by CmdParser.h)
+*** type_traits
 *** vector
 * Allocator/FixedPool.h
 *** BasicTypes.h (defined by CmdParser.h)
