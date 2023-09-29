@@ -13,7 +13,7 @@ namespace ZE::RHI::VK::Resource
 		PipelineStateGfx() = default;
 		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() { ZE_ASSERT(state == VK_NULL_HANDLE, "Pipeline not freed before deletion!"); }
+		~PipelineStateGfx() { ZE_ASSERT_FREED(state == VK_NULL_HANDLE); }
 
 		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { vkCmdSetStencilReference(cl.Get().vk.GetBuffer(), stencilFace, refValue); }
 

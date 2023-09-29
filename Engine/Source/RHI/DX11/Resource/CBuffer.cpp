@@ -25,10 +25,10 @@ namespace ZE::RHI::DX11::Resource
 		// If aligned size is greater than actual data then create new region
 		const void* data = values;
 		std::unique_ptr<U8[]> buffData = nullptr;
-		if (bufferDesc.ByteWidth > bytes)
+		if (values && bufferDesc.ByteWidth > bytes)
 		{
 			buffData = std::make_unique<U8[]>(bufferDesc.ByteWidth);
-			memcpy(buffData.get(), values, bytes);
+			std::memcpy(buffData.get(), values, bytes);
 			data = buffData.get();
 		}
 

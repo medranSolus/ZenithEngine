@@ -17,7 +17,7 @@ namespace ZE::RHI::VK::Resource
 		CBuffer() = default;
 		CBuffer(GFX::Device& dev, const void* values, U32 bytes);
 		ZE_CLASS_MOVE(CBuffer);
-		~CBuffer() { ZE_ASSERT(buffer == VK_NULL_HANDLE && alloc.IsFree(), "Resource not freed before deletion!"); }
+		~CBuffer() { ZE_ASSERT_FREED(buffer == VK_NULL_HANDLE && alloc.IsFree()); }
 
 		void Free(GFX::Device& dev) noexcept { dev.Get().vk.GetMemory().Remove(dev.Get().vk, alloc); }
 

@@ -11,7 +11,7 @@ namespace ZE::RHI::DX12::Resource
 		PipelineStateCompute() = default;
 		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
-		~PipelineStateCompute() { ZE_ASSERT(state == nullptr, "Pipeline not freed before deletion!"); }
+		~PipelineStateCompute() { ZE_ASSERT_FREED(state == nullptr); }
 
 		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->SetPipelineState(GetState()); }
 		void Free(GFX::Device& dev) noexcept { state = nullptr; }

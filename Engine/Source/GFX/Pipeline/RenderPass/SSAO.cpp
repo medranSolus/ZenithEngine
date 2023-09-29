@@ -1,6 +1,8 @@
 #include "GFX/Pipeline/RenderPass/SSAO.h"
 #include "GFX/Resource/Constant.h"
+ZE_WARNING_PUSH
 #include "XeGTAO.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::SSAO
 {

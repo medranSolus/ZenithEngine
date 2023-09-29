@@ -20,7 +20,7 @@ namespace ZE::RHI::DX
 		Shader() = default;
 		Shader(GFX::Device& dev, const std::string& name);
 		ZE_CLASS_MOVE(Shader);
-		~Shader() { ZE_ASSERT(bytecode == nullptr, "Shader not freed before deletion!"); }
+		~Shader() { ZE_ASSERT_FREED(bytecode == nullptr); }
 
 		constexpr void Free(GFX::Device& dev) noexcept { bytecode = nullptr; }
 #if _ZE_DEBUG_GFX_NAMES

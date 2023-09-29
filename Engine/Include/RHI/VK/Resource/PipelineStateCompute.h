@@ -11,7 +11,7 @@ namespace ZE::RHI::VK::Resource
 		PipelineStateCompute() = default;
 		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
-		~PipelineStateCompute() { ZE_ASSERT(state == VK_NULL_HANDLE, "Pipeline not freed before deletion!"); }
+		~PipelineStateCompute() { ZE_ASSERT_FREED(state == VK_NULL_HANDLE); }
 
 		void Bind(GFX::CommandList& cl) const noexcept { vkCmdBindPipeline(cl.Get().vk.GetBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, state); }
 		void Free(GFX::Device& dev) noexcept;

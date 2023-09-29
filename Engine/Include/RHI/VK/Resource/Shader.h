@@ -20,7 +20,7 @@ namespace ZE::RHI::VK::Resource
 		Shader(Shader&& shdr) noexcept;
 		Shader& operator=(Shader&& shdr) noexcept;
 		ZE_CLASS_NO_COPY(Shader);
-		~Shader() { ZE_ASSERT(shader == VK_NULL_HANDLE, "Shader not freed before deletion!"); }
+		~Shader() { ZE_ASSERT_FREED(shader == VK_NULL_HANDLE); }
 
 #if _ZE_DEBUG_GFX_NAMES
 		constexpr const std::string& GetName() const noexcept { return shaderName; }

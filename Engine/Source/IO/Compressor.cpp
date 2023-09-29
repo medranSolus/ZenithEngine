@@ -1,5 +1,7 @@
 #include "IO/Compressor.h"
+ZE_WARNING_PUSH
 #include "zlib.h"
+ZE_WARNING_POP
 
 namespace ZE::IO
 {

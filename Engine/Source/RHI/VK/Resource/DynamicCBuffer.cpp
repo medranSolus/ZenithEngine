@@ -47,7 +47,7 @@ namespace ZE::RHI::VK::Resource
 	{
 		for ([[maybe_unused]] auto& res : resInfo)
 		{
-			ZE_ASSERT(res.IsFree(), "Resource not freed before deletion!");
+			ZE_ASSERT_FREED(res.IsFree());
 		}
 	}
 

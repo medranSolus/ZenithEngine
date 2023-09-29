@@ -125,7 +125,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 		{
 			for (U32 i = 0; i < count; ++i)
 			{
-				ZE_ASSERT(srvs[i] == nullptr, "Resource not freed before deletion!");
+				ZE_ASSERT_FREED(srvs[i] == nullptr);
 			}
 			srvs.DeleteArray();
 		}
