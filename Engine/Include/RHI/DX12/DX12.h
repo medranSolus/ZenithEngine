@@ -3,6 +3,7 @@
 #include "RHI/DX/DXGI.h"
 #include "GFX/Binding/Range.h"
 #include "GFX/Pipeline/BarrierType.h"
+#include "GFX/Resource/GenericResourceDesc.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
 #include "GFX/Resource/State.h"
@@ -43,6 +44,8 @@ namespace ZE::RHI::DX12
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
 	// Get DirectX 12 version of filter type
 	constexpr D3D12_FILTER GetFilterType(GFX::Resource::SamplerFilter samplerType) noexcept;
+	// Get DirectX12 version of resource flags for Generic resource
+	constexpr D3D12_RESOURCE_FLAGS GetGenericResourceFlags(GFX::Resource::GenericResourceFlags flags) noexcept;
 	// Get register space for given shader type
 	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept;
 	// Get DirectX 12 version of resource states
@@ -217,6 +220,20 @@ namespace ZE::RHI::DX12
 			return D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT; // 010
 		}
 		return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // 001
+	}
+
+	constexpr D3D12_RESOURCE_FLAGS GetGenericResourceFlags(GFX::Resource::GenericResourceFlags flags) noexcept
+	{
+		D3D12_RESOURCE_FLAGS resFlags = D3D12_RESOURCE_FLAG_NONE;
+
+		if (flags & GFX::Resource::GenericResourceFlag::RenderTarget)
+			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (flags & GFX::Resource::GenericResourceFlag::UnorderedAccess)
+			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		if (flags & GFX::Resource::GenericResourceFlag::DepthBuffer)
+			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+		return resFlags;
 	}
 
 	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept
