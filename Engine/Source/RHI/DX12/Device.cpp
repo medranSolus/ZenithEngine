@@ -4,6 +4,20 @@
 
 namespace ZE::RHI::DX12
 {
+	void Device::DescHeap::Init(DescHeap& chunk, Allocator::TLSFMemoryChunkFlags flags, U64 size, void* userData)
+	{
+		ZE_ASSERT(userData, "Empty device data!");
+		Device& dev = *reinterpret_cast<Device*>(userData);
+		ZE_DX_ENABLE(dev);
+
+		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
+		descHeapDesc.NodeMask = 0;
+		descHeapDesc.Flags = static_cast<D3D12_DESCRIPTOR_HEAP_FLAGS>(flags);
+		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		descHeapDesc.NumDescriptors = Utils::SafeCast<U32>(size);
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&chunk.Heap)));
+	}
+
 	void Device::WaitCPU(IFence* fence, U64 val)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
@@ -50,11 +64,11 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
 	}
 
-	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
-		: scratchDescStart(descriptorCount - scratchDescriptorCount), descriptorCount(descriptorCount)
+	Device::Device(const Window::MainWindow& window, U32 descriptorCount)
+		: blockDescAllocator(BLOCK_DESCRIPTOR_ALLOC_CAPACITY), chunkDescAllocator(CHUNK_DESCRIPTOR_ALLOC_CAPACITY),
+		descriptorGpuAllocator(blockDescAllocator, chunkDescAllocator, true),
+		descriptorCpuAllocator(blockDescAllocator, chunkDescAllocator)
 	{
-		ZE_ASSERT(descriptorCount > scratchDescriptorCount, "Descriptor count has to be greater than scratch descriptor count!");
-
 		ZE_WIN_ENABLE_EXCEPT();
 #if _ZE_DEBUG_GFX_NAMES
 		std::string ZE_DX_DEBUG_ID;
@@ -68,7 +82,7 @@ namespace ZE::RHI::DX12
 		{
 			// Find latest WinPixGpuCapturer.dll path
 			LPWSTR programFilesPath = nullptr;
-			SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+			SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, nullptr, &programFilesPath);
 
 			std::filesystem::path pixInstallationPath = programFilesPath;
 			pixInstallationPath /= "Microsoft PIX";
@@ -226,18 +240,33 @@ namespace ZE::RHI::DX12
 		copyResInfo.Size = 0;
 		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 
-		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
-		descHeapDesc.NodeMask = 0;
-		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		descHeapDesc.NumDescriptors = descriptorCount;
-		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descHeap)));
+		descriptorGpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, descriptorCount, 1, 3, this);
+		descriptorCpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_NONE, CPU_DESCRIPTOR_CHUNK_SIZE, 1, 3);
 		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+		// Query feature support
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
+		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
 		D3D12_FEATURE_DATA_D3D12_OPTIONS16 options16 = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &options16, sizeof(options16)));
+
+		// Check for RT
+		switch (options5.RaytracingTier)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
+			Settings::RayTracingTier = GFX::RayTracingTier::None;
+			break;
+		case D3D12_RAYTRACING_TIER_1_0:
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_0;
+			break;
+		case D3D12_RAYTRACING_TIER_1_1:
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
+			break;
+		}
 
 		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported);
 	}
@@ -264,6 +293,8 @@ namespace ZE::RHI::DX12
 		default:
 			break;
 		}
+		descriptorGpuAllocator.DestroyFreeChunks(nullptr);
+		descriptorCpuAllocator.DestroyFreeChunks(nullptr);
 
 #if !_ZE_MODE_RELEASE
 		if (pixCapturer)
@@ -272,6 +303,58 @@ namespace ZE::RHI::DX12
 			ZE_ASSERT(res, "Error unloading WinPixGpuCapturer.dll!");
 		}
 #endif
+	}
+
+	GFX::ShaderModel Device::GetMaxShaderModel() const noexcept
+	{
+		D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_6 };
+		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(D3D12_FEATURE_DATA_SHADER_MODEL))))
+		{
+			switch (shaderModel.HighestShaderModel)
+			{
+			case D3D_SHADER_MODEL_5_1:
+				return GFX::ShaderModel::V5_1;
+			case D3D_SHADER_MODEL_6_0:
+				return GFX::ShaderModel::V6_0;
+			case D3D_SHADER_MODEL_6_1:
+				return GFX::ShaderModel::V6_1;
+			case D3D_SHADER_MODEL_6_2:
+				return GFX::ShaderModel::V6_2;
+			case D3D_SHADER_MODEL_6_3:
+				return GFX::ShaderModel::V6_3;
+			case D3D_SHADER_MODEL_6_4:
+				return GFX::ShaderModel::V6_4;
+			case D3D_SHADER_MODEL_6_5:
+				return GFX::ShaderModel::V6_5;
+			case D3D_SHADER_MODEL_6_6:
+				return GFX::ShaderModel::V6_6;
+			case D3D_SHADER_MODEL_6_7:
+				return GFX::ShaderModel::V6_7;
+			default:
+				ZE_WARNING("Shader model reported outside max known version 6.8, newer hardware detected!");
+				[[fallthrough]];
+			case D3D_SHADER_MODEL_6_8:
+				return GFX::ShaderModel::V6_8;
+			}
+		}
+		return GFX::ShaderModel::V6_0;
+	}
+
+	std::pair<U32, U32> Device::GetWaveLaneCountRange() const noexcept
+	{
+		D3D12_FEATURE_DATA_D3D12_OPTIONS1 options1 = {};
+		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1, &options1, sizeof(options1))))
+			return { options1.WaveLaneCountMin, options1.WaveLaneCountMax };
+		// Minimal known wave size is 32
+		return { 32, 32 };
+	}
+
+	bool Device::IsShaderFloat16Supported() const noexcept
+	{
+		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
+		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))))
+			return options.MinPrecisionSupport & D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT;
+		return false;
 	}
 
 	void Device::BeginUploadRegion()
@@ -582,35 +665,35 @@ namespace ZE::RHI::DX12
 		UploadBuffer(res, desc, data, size, currentState);
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> Device::AddStaticDescs(U32 count) noexcept
+	DescriptorInfo Device::AllocDescs(U32 count, bool gpuHeap) noexcept
 	{
-		ZE_ASSERT(dynamicDescCount == 0, "Cannot add dynamic descs before all static ones are created!");
-		ZE_ASSERT(dynamicDescStart + count < scratchDescStart,
-			"Prepared too small range for static descriptors, increase pool size!");
+		ZE_ASSERT(count > 0, "Cannot allocate empty descriptors!");
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> rangeStart;
-		U64 offest = Utils::SafeCast<U64>(dynamicDescStart) * descriptorSize;
-		rangeStart.first.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;
-		rangeStart.second.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
-		dynamicDescStart += count;
+		DescriptorAllocator& descAlloc = gpuHeap ? descriptorGpuAllocator : descriptorCpuAllocator;
+
+		DescriptorInfo rangeStart = {};
+		rangeStart.Handle = descAlloc.Alloc(count, 1, this);
+		rangeStart.GpuSide = gpuHeap;
+
+		if (rangeStart.Handle != nullptr)
+		{
+			const U64 offset = descAlloc.GetOffset(rangeStart.Handle) * descriptorSize;
+			rangeStart.GPU.ptr = gpuHeap ? descAlloc.GetMemory(nullptr).Heap->GetGPUDescriptorHandleForHeapStart().ptr + offset : 0;
+			rangeStart.CPU.ptr = descAlloc.GetMemory(rangeStart.Handle).Heap->GetCPUDescriptorHandleForHeapStart().ptr + offset;
+		}
+		else
+		{
+			ZE_FAIL("Run out of descriptors, make sure to configure engine with correct number of descriptors at the start!");
+		}
 		return rangeStart;
 	}
 
-	DescriptorInfo Device::AllocDescs(U32 count) noexcept
+	void Device::FreeDescs(DescriptorInfo& descInfo) noexcept
 	{
-		ZE_ASSERT(dynamicDescStart + dynamicDescCount + count < scratchDescStart,
-			"Prepared too small range for dynamic descriptors, increase pool size!");
+		(descInfo.GpuSide ? descriptorGpuAllocator : descriptorCpuAllocator).Free(descInfo.Handle, this);
 
-		DescriptorInfo rangeStart = {};
-		rangeStart.ID = dynamicDescStart + dynamicDescCount;
-		ZE_ASSERT(rangeStart.ID != 0,
-			"Invalid location for normal descs! Resources created before RenderGraph finalization \
-			should always be created with PackOption::StaticCreation!");
-
-		U64 offest = Utils::SafeCast<U64>(rangeStart.ID) * descriptorSize;
-		rangeStart.GPU.ptr = descHeap->GetGPUDescriptorHandleForHeapStart().ptr + offest;
-		rangeStart.CPU.ptr = descHeap->GetCPUDescriptorHandleForHeapStart().ptr + offest;
-		dynamicDescCount += count;
-		return rangeStart;
+		descInfo.Handle = nullptr;
+		descInfo.GPU.ptr = 0;
+		descInfo.CPU.ptr = 0;
 	}
 }

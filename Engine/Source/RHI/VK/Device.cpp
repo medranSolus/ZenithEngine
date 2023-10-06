@@ -350,12 +350,12 @@ namespace ZE::RHI::VK
 #undef X
 
 		auto isExtSupported = [&supportedExtensions](const char* name) -> bool
-		{
-			for (const VkExtensionProperties& ext : supportedExtensions)
-				if (strcmp(ext.extensionName, name) == 0)
-					return true;
-			return false;
-		};
+			{
+				for (const VkExtensionProperties& ext : supportedExtensions)
+					if (strcmp(ext.extensionName, name) == 0)
+						return true;
+				return false;
+			};
 		// Sometimes validation features extension is not reported but is present when enabled with validation layer
 		for (U32 i = _ZE_DEBUG_GFX_API; i < enabledExtensions.size(); ++i)
 		{
@@ -648,9 +648,13 @@ namespace ZE::RHI::VK
 		SetPresentFromComputeSupport(familyInfo.PresentFromCompute);
 	}
 
-	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
+	Device::Device(const Window::MainWindow& window, U32 descriptorCount)
 	{
 		ZE_VK_ENABLE_ID();
+
+		// TODO: create support for RT later
+		Settings::RayTracingTier = GFX::RayTracingTier::None;
+
 		InitVolk();
 		CreateInstance();
 
@@ -991,26 +995,26 @@ namespace ZE::RHI::VK
 
 		// Execute lists
 		auto submitQueue = [&](U32 count, U32 queueIndex, VkQueue queue)
-		{
-			if (count)
 			{
-				ZE_VK_ENABLE();
-
-				submitInfo.commandBufferInfoCount = count;
-				U32 i = 0, j = 0;
-				do
+				if (count)
 				{
-					if (cls[i].Get().vk.GetFamily() == queueIndex)
+					ZE_VK_ENABLE();
+
+					submitInfo.commandBufferInfoCount = count;
+					U32 i = 0, j = 0;
+					do
 					{
-						commandLists[i] = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
-						commandLists[i].commandBuffer = cls[j].Get().vk.GetBuffer();
-						commandLists[i++].deviceMask = 0;
-					}
-					++j;
-				} while (i < count);
-				ZE_VK_THROW_NOSUCC(vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE));
-			}
-		};
+						if (cls[i].Get().vk.GetFamily() == queueIndex)
+						{
+							commandLists[i] = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr };
+							commandLists[i].commandBuffer = cls[j].Get().vk.GetBuffer();
+							commandLists[i++].deviceMask = 0;
+						}
+						++j;
+					} while (i < count);
+					ZE_VK_THROW_NOSUCC(vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE));
+				}
+			};
 		submitQueue(gfxCount, gfxQueueIndex, gfxQueue);
 		submitQueue(computeCount, computeQueueIndex, computeQueue);
 		submitQueue(copyCount, copyQueueIndex, copyQueue);

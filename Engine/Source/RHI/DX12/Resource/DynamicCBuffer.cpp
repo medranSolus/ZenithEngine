@@ -31,7 +31,7 @@ namespace ZE::RHI::DX12::Resource
 	{
 		for ([[maybe_unused]] auto& res : resInfo)
 		{
-			ZE_ASSERT(res.first.IsFree(), "Resource not freed before deletion!");
+			ZE_ASSERT_FREED(res.first.IsFree());
 		}
 	}
 

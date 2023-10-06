@@ -15,7 +15,7 @@ namespace ZE::GFX::Resource::Texture
 	typedef U8 PackOptions;
 	enum PackOption : PackOptions
 	{
-		// Textures are created as static pipeline resources during engine initializaion
+		// Textures are created as static pipeline resources during engine initializaion, currently not used
 		StaticCreation = 1
 	};
 

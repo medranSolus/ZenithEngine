@@ -10,6 +10,7 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
 		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> rtvSrv;
 		D3D12_RESOURCE_BARRIER presentBarrier;
+		DescriptorInfo srvHandle;
 
 	public:
 		SwapChain() = default;
@@ -18,10 +19,10 @@ namespace ZE::RHI::DX12
 		~SwapChain();
 
 		constexpr void StartFrame(GFX::Device& dev) {}
-		void Free(GFX::Device& dev) noexcept { rtvDescHeap = nullptr; swapChain = nullptr; }
 
 		void Present(GFX::Device& dev) const;
 		void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const;
+		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal
 

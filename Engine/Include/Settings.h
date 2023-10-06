@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/RayTracingTier.h"
 #include "GFX/VendorGPU.h"
 #include "SettingsInitParams.h"
 #include "ThreadPool.h"
@@ -26,6 +27,7 @@ namespace ZE
 		static constexpr U64 STAGING_HEAP_SIZE = 64 * Math::MEGABYTE;
 
 		static inline GFX::VendorGPU GpuVendor = GFX::VendorGPU::Unknown;
+		static inline GFX::RayTracingTier RayTracingTier = GFX::RayTracingTier::None;
 		static inline PixelFormat BackbufferFormat = PixelFormat::R8G8B8A8_UNorm;
 
 		static inline UInt2 DisplaySize = { 0, 0 };

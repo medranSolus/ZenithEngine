@@ -11,12 +11,14 @@ namespace ZE::RHI::DX11
 		}
 	}
 
-	Device::Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount)
-		: descriptorCount(descriptorCount), scratchDescriptorCount(scratchDescriptorCount)
+	Device::Device(const Window::MainWindow& window, U32 descriptorCount)
+		: descriptorCount(descriptorCount)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 		// No support for 8 bit indices on DirectX
 		Settings::SetU8IndexBuffers(false);
+		// No RT on DX11
+		Settings::RayTracingTier = GFX::RayTracingTier::None;
 
 		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API

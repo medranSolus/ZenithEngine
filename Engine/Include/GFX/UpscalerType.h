@@ -1,5 +1,7 @@
 #pragma once
+ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr2.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX
 {

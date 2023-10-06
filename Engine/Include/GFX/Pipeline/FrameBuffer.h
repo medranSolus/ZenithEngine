@@ -92,5 +92,8 @@ namespace ZE::GFX::Pipeline
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
 		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_RHI_BACKEND_CALL(InitTransitions, dev, cl); }
 		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const { ZE_RHI_BACKEND_CALL(ExitTransitions, dev, cl, level); }
+		
+		// Before destroying FrameBuffer you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 }

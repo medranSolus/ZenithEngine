@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Resource/Texture/Type.h"
+#include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
@@ -18,6 +19,9 @@ namespace ZE::RHI::DX12
 	{
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
 		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_2;
+		static constexpr U64 BLOCK_DESCRIPTOR_ALLOC_CAPACITY = 1000;
+		static constexpr U64 CHUNK_DESCRIPTOR_ALLOC_CAPACITY = 20;
+		static constexpr U32 CPU_DESCRIPTOR_CHUNK_SIZE = 1000;
 
 		struct UploadInfo
 		{
@@ -25,6 +29,14 @@ namespace ZE::RHI::DX12
 			IResource* Destination;
 			DX::ComPtr<IResource> UploadRes;
 		};
+		struct DescHeap
+		{
+			DX::ComPtr<IDescriptorHeap> Heap = nullptr;
+
+			static void Init(DescHeap& chunk, Allocator::TLSFMemoryChunkFlags flags, U64 size, void* userData);
+			static void Destroy(DescHeap& chunk, void* userData) noexcept { chunk.Heap = nullptr; }
+		};
+		typedef Allocator::ChunkedTLSF<DescHeap, 4, 2> DescriptorAllocator;
 
 #if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;
@@ -52,12 +64,11 @@ namespace ZE::RHI::DX12
 		U16 copyOffset = 0;
 		Ptr<UploadInfo> copyResList = nullptr;
 
-		U32 dynamicDescStart = 0;
-		U32 dynamicDescCount = 0;
-		U32 scratchDescStart;
-		U32 descriptorCount;
-		U32 descriptorSize;
-		DX::ComPtr<IDescriptorHeap> descHeap;
+		DescriptorAllocator::BlockAllocator blockDescAllocator;
+		DescriptorAllocator::ChunkAllocator chunkDescAllocator;
+		DescriptorAllocator descriptorGpuAllocator;
+		DescriptorAllocator descriptorCpuAllocator;
+		U32 descriptorSize = 0;
 
 		// Hardware specific data
 		union
@@ -75,12 +86,15 @@ namespace ZE::RHI::DX12
 		void Execute(ICommandQueue* queue, CommandList& cl);
 
 	public:
-		Device() noexcept {}
-		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
+		Device() noexcept
+			: blockDescAllocator(BLOCK_DESCRIPTOR_ALLOC_CAPACITY), chunkDescAllocator(CHUNK_DESCRIPTOR_ALLOC_CAPACITY),
+			descriptorGpuAllocator(blockDescAllocator, chunkDescAllocator, true),
+			descriptorCpuAllocator(blockDescAllocator, chunkDescAllocator) {}
+		Device(const Window::MainWindow& window, U32 descriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();
 
-		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, descriptorCount - scratchDescStart }; }
+		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
 		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void EndFrame() noexcept {}
@@ -118,6 +132,10 @@ namespace ZE::RHI::DX12
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
 
+		GFX::ShaderModel GetMaxShaderModel() const noexcept;
+		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
+		bool IsShaderFloat16Supported() const noexcept;
+
 		void BeginUploadRegion();
 		void StartUpload();
 		void EndUploadRegion();
@@ -133,6 +151,7 @@ namespace ZE::RHI::DX12
 		constexpr DX::DebugInfoManager& GetInfoManager() noexcept { return debugManager; }
 #endif
 		constexpr AllocatorGPU::AllocTier GetCurrentAllocTier() const noexcept { return allocator.GetCurrentTier(); }
+		constexpr bool IsGpuUploadHeap() const noexcept { return allocator.IsGpuUploadHeap(); }
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 
@@ -140,7 +159,7 @@ namespace ZE::RHI::DX12
 		ICommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ICommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
-		IDescriptorHeap* GetDescHeap() const noexcept { return descHeap.Get(); }
+		IDescriptorHeap* GetDescHeap() const noexcept { return descriptorGpuAllocator.GetMemory(nullptr).Heap.Get(); }
 		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GpuVendor == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
 
 		void FreeBuffer(ResourceInfo& info) { allocator.RemoveBuffer(info); }
@@ -163,7 +182,7 @@ namespace ZE::RHI::DX12
 		void UpdateBuffer(IResource* res, const void* data,
 			U64 size, D3D12_RESOURCE_STATES currentState);
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> AddStaticDescs(U32 count) noexcept;
-		DescriptorInfo AllocDescs(U32 count) noexcept;
+		DescriptorInfo AllocDescs(U32 count, bool gpuHeap = true) noexcept;
+		void FreeDescs(DescriptorInfo& descInfo) noexcept;
 	};
 }

@@ -72,6 +72,8 @@ namespace ZE::RHI::DX11::Pipeline
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const noexcept {}
 		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
+
+		constexpr void Free(GFX::Device& dev) noexcept {}
 	};
 
 #pragma region Functions

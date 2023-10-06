@@ -41,6 +41,7 @@ namespace ZE::RHI::DX12::Pipeline
 		DX::ComPtr<IDescriptorHeap> uavDescHeap;
 		DX::ComPtr<IHeap> mainHeap;
 		DX::ComPtr<IHeap> uavHeap;
+		DescriptorInfo descInfo;
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
@@ -99,6 +100,8 @@ namespace ZE::RHI::DX12::Pipeline
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 		void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const;
 		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const;
+
+		void Free(GFX::Device& dev) noexcept;
 	};
 
 #pragma region Functions

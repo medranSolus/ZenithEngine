@@ -29,7 +29,7 @@ namespace ZE::RHI::DX12
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 srvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-		auto srvHandle = dev.Get().dx12.AddStaticDescs(descHeapDesc.NumDescriptors);
+		srvHandle = dev.Get().dx12.AllocDescs(descHeapDesc.NumDescriptors);
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DX::GetDXFormat(Settings::BackbufferFormat);
@@ -52,14 +52,14 @@ namespace ZE::RHI::DX12
 			rtvSrv[i].first = rtvHandle;
 			if (shaderInput)
 			{
-				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.first));
-				rtvSrv[i].second = srvHandle.second;
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.CPU));
+				rtvSrv[i].second = srvHandle.GPU;
 			}
 			else
 				rtvSrv[i].second.ptr = UINT64_MAX;
 			rtvHandle.ptr += rtvDescSize;
-			srvHandle.first.ptr += srvDescSize;
-			srvHandle.second.ptr += srvDescSize;
+			srvHandle.CPU.ptr += srvDescSize;
+			srvHandle.GPU.ptr += srvDescSize;
 		}
 
 		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -71,6 +71,7 @@ namespace ZE::RHI::DX12
 
 	SwapChain::~SwapChain()
 	{
+		ZE_ASSERT_FREED(rtvDescHeap == nullptr && swapChain == nullptr && srvHandle.Handle == nullptr);
 		if (rtvSrv)
 			rtvSrv.DeleteArray();
 	}
@@ -99,6 +100,14 @@ namespace ZE::RHI::DX12
 		cl.Get().dx12.GetList()->ResourceBarrier(1, &presentBarrier);
 		cl.Get().dx12.Close(dev.Get().dx12);
 		dev.Get().dx12.ExecuteMain(cl);
+	}
+
+	void SwapChain::Free(GFX::Device& dev) noexcept
+	{
+		rtvDescHeap = nullptr;
+		swapChain = nullptr;
+		if (srvHandle.Handle)
+			dev.Get().dx12.FreeDescs(srvHandle);
 	}
 
 	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer)

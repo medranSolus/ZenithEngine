@@ -22,8 +22,8 @@ namespace ZE::GFX
 		ZE_CLASS_DELETE(Device);
 		~Device() = default;
 
-		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount) { ZE_RHI_BACKEND_VAR.Init(window, descriptorCount, scratchDescriptorCount); }
-		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window);
+		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount) { ZE_RHI_BACKEND_VAR.Init(window, descriptorCount); }
+		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window) { U32 data; ZE_RHI_BACKEND_VAR.Switch(nextApi, window, data); }
 		ZE_RHI_BACKEND_GET(Device);
 
 		// Main Gfx API
@@ -68,6 +68,10 @@ namespace ZE::GFX
 		// GPU side signal from copy queue for it's fence
 		constexpr U64 SetCopyFence() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetCopyFence); return val; }
 
+		constexpr ShaderModel GetMaxShaderModel() const noexcept { ShaderModel model; ZE_RHI_BACKEND_CALL_RET(model, GetMaxShaderModel); return model; }
+		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { std::pair<U32, U32> minMax; ZE_RHI_BACKEND_CALL_RET(minMax, GetWaveLaneCountRange); return minMax; }
+		constexpr bool IsShaderFloat16Supported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsShaderFloat16Supported); return val; }
+
 		// Start sequence after which new resources can be created/updated and uploaded to GPU
 		constexpr void BeginUploadRegion() { ZE_RHI_BACKEND_CALL(BeginUploadRegion); }
 		// Send current resources to GPU resources to GPU
@@ -92,15 +96,6 @@ namespace ZE::GFX
 		constexpr void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_RHI_BACKEND_CALL(TagEndCopy); } }
 #endif
 	};
-
-#pragma region Functions
-	constexpr void Device::SwitchApi(GfxApiType nextApi, const Window::MainWindow& window)
-	{
-		std::pair<U32, U32> data;
-		ZE_RHI_BACKEND_CALL_RET(data, GetData);
-		ZE_RHI_BACKEND_VAR.Switch(nextApi, window, data.first, data.second);
-	}
-#pragma endregion
 }
 
 #if _ZE_GFX_MARKERS

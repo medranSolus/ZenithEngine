@@ -26,7 +26,7 @@ namespace ZE::GFX
 		constexpr void WaitForFrame() { swapChain.StartFrame(device); device.WaitMain(fenceChain.Get()); }
 		constexpr void Present();
 
-		void Init(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount, bool backbufferSRV);
+		void Init(const Window::MainWindow& window, U32 descriptorCount, bool backbufferSRV);
 	};
 
 #pragma region Functions

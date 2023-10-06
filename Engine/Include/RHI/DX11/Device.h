@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
 #include "CommandList.h"
 
@@ -21,7 +22,6 @@ namespace ZE::RHI::DX11
 		FfxInterface ffxInterface;
 
 		U32 descriptorCount;
-		U32 scratchDescriptorCount;
 
 #if _ZE_GFX_MARKERS
 		void TagBegin(std::string_view tag) const noexcept { tagManager->BeginEvent(Utils::ToUTF16(tag).c_str()); }
@@ -31,12 +31,13 @@ namespace ZE::RHI::DX11
 
 	public:
 		Device() = default;
-		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
+		Device(const Window::MainWindow& window, U32 descriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device() = default;
 
-		constexpr std::pair<U32, U32> GetData() const noexcept { return { descriptorCount, scratchDescriptorCount }; }
+		constexpr U32 GetData() const noexcept { return descriptorCount; }
 		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
+		constexpr bool IsShaderFloat16Supported() const noexcept { return false; }
 
 		constexpr U64 GetMainFence() const noexcept { return 0; }
 		constexpr U64 GetComputeFence() const noexcept { return 0; }
@@ -60,6 +61,9 @@ namespace ZE::RHI::DX11
 		constexpr U64 SetMainFence() { return 0; }
 		constexpr U64 SetComputeFence() { return 0; }
 		constexpr U64 SetCopyFence() { return 0; }
+
+		constexpr GFX::ShaderModel GetMaxShaderModel() const noexcept { return GFX::ShaderModel::V5_0; }
+		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { return { 32, 32 }; }
 
 		constexpr void BeginUploadRegion() {}
 		constexpr void StartUpload() {}

@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/ShaderModel.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
 #include "UploadInfo.h"
@@ -149,12 +150,15 @@ namespace ZE::RHI::VK
 
 	public:
 		Device() = default;
-		Device(const Window::MainWindow& window, U32 descriptorCount, U32 scratchDescriptorCount);
+		Device(const Window::MainWindow& window, U32 descriptorCount);
 		ZE_CLASS_DELETE(Device);
 		~Device();
 
-		constexpr std::pair<U32, U32> GetData() const noexcept { return { 0, 0 }; }
+		constexpr U32 GetData() const noexcept { return 0; }
 		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
+		constexpr GFX::ShaderModel GetMaxShaderModel() const noexcept { return GFX::ShaderModel::V6_0; }
+		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { return { 32, 32 }; }
+		constexpr bool IsShaderFloat16Supported() const noexcept { return false; }
 
 		U64 GetMainFence() const noexcept { return gfxFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

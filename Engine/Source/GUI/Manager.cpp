@@ -34,6 +34,13 @@ namespace ZE::GUI
 	}
 #endif
 
+#if _ZE_RHI_DX12
+	struct CustomDataDX12
+	{
+		RHI::DX12::DescriptorInfo Desc;
+	};
+#endif
+
 	Manager::Manager()
 	{
 		if (!std::filesystem::exists("imgui.ini") && std::filesystem::exists("imgui_default.ini"))
@@ -56,6 +63,7 @@ namespace ZE::GUI
 #if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
+			backendData = reinterpret_cast<U8*>(1);
 			ImGui_ImplDX11_Init(dev.Get().dx11.GetDevice(), dev.Get().dx11.GetMainContext());
 			break;
 		}
@@ -63,10 +71,11 @@ namespace ZE::GUI
 #if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
-			auto handles = dev.Get().dx12.AddStaticDescs(1);
+			backendData = new U8[sizeof(CustomDataDX12)];
+			*backendData.Cast<CustomDataDX12>() = { dev.Get().dx12.AllocDescs(1) };
 			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Utils::SafeCast<int>(Settings::GetBackbufferCount()),
-				RHI::DX::GetDXFormat(Settings::BackbufferFormat),
-				dev.Get().dx12.GetDescHeap(), handles.first, handles.second);
+				RHI::DX::GetDXFormat(Settings::BackbufferFormat), dev.Get().dx12.GetDescHeap(),
+				backendData.Cast<CustomDataDX12>()->Desc.CPU, backendData.Cast<CustomDataDX12>()->Desc.GPU);
 			break;
 		}
 #endif
@@ -227,25 +236,34 @@ namespace ZE::GUI
 #if _ZE_RHI_DX11
 		case GfxApiType::DX11:
 		{
-			ImGui_ImplDX11_Shutdown();
+			if (backendData)
+				ImGui_ImplDX11_Shutdown();
 			break;
 		}
 #endif
 #if _ZE_RHI_DX12
 		case GfxApiType::DX12:
 		{
-			ImGui_ImplDX12_Shutdown();
+			if (backendData)
+			{
+				dev.Get().dx12.FreeDescs(backendData.Cast<CustomDataDX12>()->Desc);
+				ImGui_ImplDX12_Shutdown();
+				backendData.Delete();
+			}
 			return;
 		}
 #endif
 #if _ZE_RHI_VK
 		case GfxApiType::Vulkan:
 		{
-			ImGui_ImplVulkan_Shutdown();
-			vkDestroyDescriptorPool(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->DescPool, nullptr);
-			vkDestroyFramebuffer(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->Framebuffer, nullptr);
-			vkDestroyRenderPass(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->RenderPass, nullptr);
-			backendData.Delete();
+			if (backendData)
+			{
+				ImGui_ImplVulkan_Shutdown();
+				vkDestroyDescriptorPool(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->DescPool, nullptr);
+				vkDestroyFramebuffer(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->Framebuffer, nullptr);
+				vkDestroyRenderPass(dev.Get().vk.GetDevice(), backendData.Cast<CustomDataVK>()->RenderPass, nullptr);
+				backendData.Delete();
+			}
 			break;
 		}
 #endif
@@ -255,6 +273,7 @@ namespace ZE::GUI
 			break;
 		}
 		}
+		backendData = nullptr;
 	}
 
 	void Manager::StartFrame(const Window::MainWindow& window) const noexcept

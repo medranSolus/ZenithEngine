@@ -8,6 +8,7 @@ namespace ZE::RHI::DX12
 	{
 		D3D12_GPU_DESCRIPTOR_HANDLE GPU;
 		D3D12_CPU_DESCRIPTOR_HANDLE CPU;
-		U32 ID;
+		AllocHandle Handle;
+		bool GpuSide;
 	};
 }

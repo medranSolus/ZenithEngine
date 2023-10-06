@@ -8,15 +8,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		ZE_DX_ENABLE_ID(device);
 
 		count = Utils::SafeCast<U32>(desc.Textures.size());
-		if (desc.Options & GFX::Resource::Texture::PackOption::StaticCreation)
-		{
-			auto descs = device.AddStaticDescs(count);
-			descInfo.GPU = descs.second;
-			descInfo.CPU = descs.first;
-			descInfo.ID = 0; // Invalid ID
-		}
-		else
-			descInfo = device.AllocDescs(count);
+		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
 		std::vector<std::pair<U64, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>>> copyInfo;
@@ -215,6 +207,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 	Pack::~Pack()
 	{
+		ZE_ASSERT_FREED(descInfo.Handle == nullptr);
 		if (resources)
 		{
 			for (U32 i = 0; i < count; ++i)
@@ -240,6 +233,8 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 	void Pack::Free(GFX::Device& dev) noexcept
 	{
+		if (descInfo.Handle)
+			dev.Get().dx12.FreeDescs(descInfo);
 		for (U32 i = 0; i < count; ++i)
 			if (resources[i].Resource != nullptr)
 				dev.Get().dx12.FreeTexture(resources[i]);

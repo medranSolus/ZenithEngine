@@ -16,10 +16,6 @@ namespace ZE
 		// Number of descriptors to be created for supported graphics backend to use.
 		// Determines maximal number of objects and materials
 		U32 GraphicsDescriptorPoolSize;
-		// Number of descriptors in pool to use for objects rendering,
-		// higher number means less possible materials but more objects can be rendered.
-		// Have to be smaller than GraphicsDescriptorPoolSize!
-		U32 ScratchDescriptorCount;
 		// Set to true if required to have performance measurements entries in single line each.
 		bool SingleLinePerfEntry;
 		// Parameters for used render pipeline

@@ -586,7 +586,9 @@ namespace ZE::RHI::DX12::Pipeline
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = uavDescHeap->GetCPUDescriptorHandleForHeapStart();
-		auto srvUavHandle = dev.Get().dx12.AddStaticDescs(srvUavCount + uavCount + uavAdditionalMipsCount);
+		descInfo = dev.Get().dx12.AllocDescs(srvUavCount + uavCount + uavAdditionalMipsCount);
+		D3D12_CPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandle = descInfo.CPU;
+		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
 		// Create demanded views for each resource
 		for (RID i = 1; const auto & res : resourcesInfo)
 		{
@@ -692,11 +694,11 @@ namespace ZE::RHI::DX12::Pipeline
 					uavDesc.Texture2D.PlaneSlice = 0;
 				}
 				ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
-				device->CopyDescriptorsSimple(1, srvUavHandle.first, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				uav[i - 1] = { uavHandle, srvUavHandle.second };
+				device->CopyDescriptorsSimple(1, srvUavShaderVisibleHandle, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				uav[i - 1] = { uavHandle, srvUavShaderVisibleHandleGpu };
 				uavHandle.ptr += srvUavDescSize;
-				srvUavHandle.first.ptr += srvUavDescSize;
-				srvUavHandle.second.ptr += srvUavDescSize;
+				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
+				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
 
 				// Generate views for proper mips
 				if (res.Desc.MipLevels > 1)
@@ -705,7 +707,7 @@ namespace ZE::RHI::DX12::Pipeline
 					targetResourceMip = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[res.Desc.MipLevels];
 					targetResourceMip[0] = uav[i - 1];
 
-					D3D12_CPU_DESCRIPTOR_HANDLE dstStart = srvUavHandle.first;
+					D3D12_CPU_DESCRIPTOR_HANDLE dstStart = srvUavShaderVisibleHandle;
 					D3D12_CPU_DESCRIPTOR_HANDLE srcStart = uavHandle;
 					for (U16 j = 1; j < res.Desc.MipLevels; ++j)
 					{
@@ -715,10 +717,10 @@ namespace ZE::RHI::DX12::Pipeline
 							uavDesc.Texture2D.MipSlice = j;
 
 						ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
-						targetResourceMip[j] = { uavHandle, srvUavHandle.second };
+						targetResourceMip[j] = { uavHandle, srvUavShaderVisibleHandleGpu };
 						uavHandle.ptr += srvUavDescSize;
-						srvUavHandle.first.ptr += srvUavDescSize;
-						srvUavHandle.second.ptr += srvUavDescSize;
+						srvUavShaderVisibleHandle.ptr += srvUavDescSize;
+						srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
 					}
 					device->CopyDescriptorsSimple(res.Desc.MipLevels - 1, dstStart, srcStart, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				}
@@ -767,10 +769,10 @@ namespace ZE::RHI::DX12::Pipeline
 					srvDesc.Texture2D.PlaneSlice = 0;
 					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavHandle.first));
-				srv[i] = srvUavHandle.second;
-				srvUavHandle.first.ptr += srvUavDescSize;
-				srvUavHandle.second.ptr += srvUavDescSize;
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
+				srv[i] = srvUavShaderVisibleHandleGpu;
+				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
+				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
 			}
 			else
 				srv[i].ptr = UINT64_MAX;
@@ -935,6 +937,10 @@ namespace ZE::RHI::DX12::Pipeline
 
 	FrameBuffer::~FrameBuffer()
 	{
+		ZE_ASSERT_FREED(descInfo.Handle == nullptr && rtvDescHeap == nullptr
+			&& dsvDescHeap == nullptr && uavDescHeap == nullptr
+			&& mainHeap == nullptr && uavHeap == nullptr);
+
 		if (initTransitions.Barriers)
 			initTransitions.Barriers.DeleteArray();
 		if (transitionSyncs)
@@ -1301,5 +1307,16 @@ namespace ZE::RHI::DX12::Pipeline
 				break;
 			}
 		}
+	}
+
+	void FrameBuffer::Free(GFX::Device& dev) noexcept
+	{
+		rtvDescHeap = nullptr;
+		dsvDescHeap = nullptr;
+		uavDescHeap = nullptr;
+		mainHeap = nullptr;
+		uavHeap = nullptr;
+		if (descInfo.Handle)
+			dev.Get().dx12.FreeDescs(descInfo);
 	}
 }
