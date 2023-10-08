@@ -18,6 +18,8 @@ namespace ZE::Data
 		void Clear() noexcept { data.clear(); }
 		bool Contains(const Key& name) const noexcept { return data.contains(name); }
 		const T& Get(const Key& name) const noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.at(name); }
+		T& Get(const Key& name) noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.at(name); }
+		void Remove(const Key& name) noexcept { ZE_ASSERT(Contains(name), "Element not present!"); data.erase(name); }
 
 		template<typename ...P>
 		void Add(const Key& name, P&&... params) noexcept { ZE_ASSERT(!Contains(name), "Element already present!"); data.emplace(name, T{ std::forward<P>(params)... }); }
