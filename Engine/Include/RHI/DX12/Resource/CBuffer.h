@@ -1,6 +1,8 @@
 #pragma once
 #include "GFX/Binding/Context.h"
+#include "GFX/Resource/CBufferData.h"
 #include "GFX/CommandList.h"
+#include "IO/File.h"
 
 namespace ZE::RHI::DX12::Resource
 {
@@ -11,7 +13,8 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		CBuffer() = default;
-		CBuffer(GFX::Device& dev, const void* values, U32 bytes);
+		CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data);
+		CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file);
 		ZE_CLASS_MOVE(CBuffer);
 		~CBuffer() { ZE_ASSERT_FREED(resInfo.IsFree()); }
 

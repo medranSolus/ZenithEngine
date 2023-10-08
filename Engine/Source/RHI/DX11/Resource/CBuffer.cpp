@@ -23,22 +23,26 @@ namespace ZE::RHI::DX11::Resource
 		bufferDesc.StructureByteStride = 0;
 
 		// If aligned size is greater than actual data then create new region
-		const void* data = values;
+		const void* srcData = values;
 		std::unique_ptr<U8[]> buffData = nullptr;
-		if (values && bufferDesc.ByteWidth > bytes)
+		if (bufferDesc.ByteWidth > bytes)
 		{
 			buffData = std::make_unique<U8[]>(bufferDesc.ByteWidth);
-			std::memcpy(buffData.get(), values, bytes);
-			data = buffData.get();
+			std::memcpy(buffData.get(), srcData, bytes);
+			srcData = buffData.get();
 		}
 
 		D3D11_SUBRESOURCE_DATA resData = {};
-		resData.pSysMem = data;
+		resData.pSysMem = srcData;
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, values ? &resData : nullptr, &buffer));
+		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
 		ZE_DX_SET_ID(buffer, "CBuffer");
+	}
+
+	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file)
+	{
 	}
 
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const

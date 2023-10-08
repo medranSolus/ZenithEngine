@@ -18,7 +18,7 @@ namespace ZE::RHI::VK::Resource
 		}
 	}
 
-	Mesh::Mesh(GFX::Device& dev, const GFX::MeshData& data)
+	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data)
 		: vertexCount(data.VertexCount)
 	{
 		ZE_VK_ENABLE_ID();
@@ -104,6 +104,11 @@ namespace ZE::RHI::VK::Resource
 		}
 	}
 
+	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file)
+		: vertexCount(data.VertexCount)
+	{
+	}
+
 	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API)
 	{
 		VkCommandBuffer cmd = cl.Get().vk.GetBuffer();
@@ -119,8 +124,8 @@ namespace ZE::RHI::VK::Resource
 			vkCmdDraw(cmd, vertexCount, 1, 0, 0);
 	}
 
-	GFX::MeshData Mesh::GetData(GFX::Device& dev, GFX::CommandList& cl) const
+	GFX::Resource::MeshData Mesh::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		return { nullptr, nullptr, 0, 0, 0, 0 };
+		return { INVALID_EID, nullptr, nullptr, 0, 0, 0, 0 };
 	}
 }

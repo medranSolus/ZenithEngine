@@ -1,6 +1,7 @@
 #pragma once
+#include "GFX/Resource/MeshData.h"
 #include "GFX/CommandList.h"
-#include "GFX/MeshData.h"
+#include "IO/File.h"
 
 namespace ZE::RHI::VK::Resource
 {
@@ -17,7 +18,8 @@ namespace ZE::RHI::VK::Resource
 
 	public:
 		Mesh() = default;
-		Mesh(GFX::Device& dev, const GFX::MeshData& data);
+		Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data);
+		Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file);
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(alloc.IsFree() && buffer == VK_NULL_HANDLE); }
 
@@ -26,6 +28,6 @@ namespace ZE::RHI::VK::Resource
 		void Free(GFX::Device& dev) noexcept { dev.Get().vk.GetMemory().Remove(dev.Get().vk, alloc); }
 
 		void Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API);
-		GFX::MeshData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
+		GFX::Resource::MeshData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
 	};
 }

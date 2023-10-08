@@ -1,21 +1,45 @@
 #include "RHI/DX12/Resource/CBuffer.h"
+#include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX12::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes)
+	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data)
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx12);
+		Device& device = dev.Get().dx12;
+		ZE_DX_ENABLE_ID(device);
 
-		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(bytes);
-		resInfo = dev.Get().dx12.CreateBuffer(desc, false);
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.Bytes);
+		resInfo = device.CreateBuffer(desc, false);
 		ZE_DX_SET_ID(resInfo.Resource, "CBuffer");
 		address = resInfo.Resource->GetGPUVirtualAddress();
 
-		if (values)
+		if (device.IsGpuUploadHeap())
 		{
-			dev.Get().dx12.UploadBuffer(resInfo.Resource.Get(), desc, values,
-				bytes, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+			// Only memcpy will suffice
+			D3D12_RANGE range = {};
+			void* uploadBuffer = nullptr;
+			ZE_DX_THROW_FAILED(resInfo.Resource->Map(0, &range, &uploadBuffer));
+			std::memcpy(uploadBuffer, data.Data, data.Bytes);
+			resInfo.Resource->Unmap(0, nullptr);
+			// Indicate that resource is already on GPU
+			if (data.ResourceID != INVALID_EID)
+				Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
 		}
+		else
+			disk.Get().dx12.AddMemoryBufferRequest(data.ResourceID, resInfo.Resource.Get(), data.Data, data.Bytes);
+	}
+
+	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file)
+	{
+		Device& device = dev.Get().dx12;
+		ZE_DX_ENABLE_ID(device);
+
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.SourceBytes);
+		resInfo = device.CreateBuffer(desc, false);
+		ZE_DX_SET_ID(resInfo.Resource, "CBuffer from file");
+		address = resInfo.Resource->GetGPUVirtualAddress();
+
+		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, file, resInfo.Resource.Get(), data.BufferDataOffset, data.SourceBytes);
 	}
 
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const

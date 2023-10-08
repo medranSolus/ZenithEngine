@@ -168,7 +168,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 					copyDest.SubresourceIndex = 0;
 
 					// Memcpy according to resource structure
-					for (U16 j = 0; const auto & region : info.second)
+					for (U16 j = 0; const auto& region : info.second)
 					{
 						for (U32 z = 0; z < region.Footprint.Depth; ++z)
 						{
@@ -179,7 +179,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 							{
 								U64 destRowOffset = Utils::SafeCast<U64>(y) * region.Footprint.RowPitch;
 								U64 srcRowOffset = Utils::SafeCast<U64>(y) * surface.GetRowByteSize();
-								memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
+								std::memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
 							}
 						}
 						copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;

@@ -18,12 +18,14 @@ namespace ZE::GFX::Resource
 
 	public:
 		Mesh() = default;
-		constexpr Mesh(Device& dev, const MeshData& data) { ZE_RHI_BACKEND_VAR.Init(dev, data); }
+		constexpr Mesh(Device& dev, IO::DiskManager& disk, const MeshData& data) { Init(dev, disk, data); }
+		Mesh(Device& dev, IO::DiskManager& disk, const MeshFileData& data, IO::File& file) { Init(dev, disk, data, file); }
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() = default;
 
-		constexpr void Init(Device& dev, const MeshData& data);
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl);
+		constexpr void Init(Device& dev, IO::DiskManager& disk, const MeshData& data);
+		constexpr void Init(Device& dev, IO::DiskManager& disk, const MeshFileData& data, IO::File& file);
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, IO::DiskManager& disk, CommandList& cl);
 		ZE_RHI_BACKEND_GET(Resource::Mesh);
 
 		// Main Gfx API
@@ -36,19 +38,28 @@ namespace ZE::GFX::Resource
 	};
 
 #pragma region Functions
-	constexpr void Mesh::Init(Device& dev, const MeshData& data)
+	constexpr void Mesh::Init(Device& dev, IO::DiskManager& disk, const MeshData& data)
 	{
 		ZE_ASSERT(data.Vertices && data.VertexCount && data.VertexSize, "Empty vertex data!");
 		ZE_ASSERT(data.Indices == nullptr || (data.Indices && data.IndexCount && data.IndexSize && data.IndexCount % 3 == 0),
 			"Indices have to be multiple of 3!");
-		ZE_RHI_BACKEND_VAR.Init(dev, data);
+		ZE_RHI_BACKEND_VAR.Init(dev, disk, data);
 	}
 
-	constexpr void Mesh::SwitchApi(GfxApiType nextApi, Device& dev, CommandList& cl)
+	constexpr void Mesh::Init(Device& dev, IO::DiskManager& disk, const MeshFileData& data, IO::File& file)
+	{
+		ZE_ASSERT(data.SourceBytes && data.VertexCount && data.VertexSize, "Empty vertex data!");
+		ZE_ASSERT(data.IndexCount % 3 == 0 && (data.IndexFormat == PixelFormat::Unknown
+			|| data.IndexFormat == PixelFormat::R8_UInt || data.IndexFormat == PixelFormat::R16_UInt || data.IndexFormat == PixelFormat::R32_UInt),
+			"Indices have to be multiple of 3 and one of the following formats: R8_UInt, R16_UInt or R32_UInt!");
+		ZE_RHI_BACKEND_VAR.Init(dev, disk, data, file);
+	}
+
+	constexpr void Mesh::SwitchApi(GfxApiType nextApi, Device& dev, IO::DiskManager& disk, CommandList& cl)
 	{
 		MeshData data = {};
 		ZE_RHI_BACKEND_CALL_RET(data, GetData, dev, cl);
-		ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, data);
+		ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, disk, data);
 	}
 #pragma endregion
 }
