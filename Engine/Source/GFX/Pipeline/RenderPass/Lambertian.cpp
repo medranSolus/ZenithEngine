@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
+		U8 stateCount = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
 		while (stateCount--)
 		{
 			execData->StatesSolid[stateCount].Free(dev);
@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			if (isReactive)
 				shaderName += "R";
 		}
-		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
+		U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
@@ -121,13 +121,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PERF_START("Lambertian - frustum culling");
 		Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
-		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Assets.GetResources(),
-			Data::GetRenderGroup<Data::RenderLambertian>(renderData.Registry), frustum);
+		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(Settings::Data, renderData.Assets.GetResources(),
+			Data::GetRenderGroup<Data::RenderLambertian>(), frustum);
 		ZE_PERF_STOP();
 
 		// Use new group visible only in current frustum and sort
-		auto solidGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumSolid>(renderData.Registry);
-		auto transparentGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumNotSolid>(renderData.Registry);
+		auto solidGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumSolid>();
+		auto transparentGroup = Data::GetVisibleRenderGroup<Data::RenderLambertian, InsideFrustumNotSolid>();
 		const U64 solidCount = solidGroup.size();
 		const U64 transparentCount = transparentGroup.size();
 
@@ -345,7 +345,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		ZE_PERF_START("Lambertian - visibility clear");
 		// Remove current visibility
-		renderData.Registry.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
+		Settings::Data.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 		ZE_PERF_STOP();
 	}
 }

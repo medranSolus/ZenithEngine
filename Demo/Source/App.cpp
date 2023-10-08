@@ -4,24 +4,24 @@
 template<typename T>
 void App::EnableProperty(EID entity)
 {
-	if (!engine.GetData().all_of<T>(entity))
-		engine.GetData().emplace<T>(entity);
+	if (!Settings::Data.all_of<T>(entity))
+		Settings::Data.emplace<T>(entity);
 
 	// Process childs
-	if (engine.GetData().all_of<Children>(entity))
-		for (EID child : engine.GetData().get<Children>(entity).Childs)
+	if (Settings::Data.all_of<Children>(entity))
+		for (EID child : Settings::Data.get<Children>(entity).Childs)
 			EnableProperty<T>(child);
 }
 
 template<typename T>
 void App::DisableProperty(EID entity)
 {
-	if (engine.GetData().all_of<T>(entity))
-		engine.GetData().remove<T>(entity);
+	if (Settings::Data.all_of<T>(entity))
+		Settings::Data.remove<T>(entity);
 
 	// Process childs
-	if (engine.GetData().all_of<Children>(entity))
-		for (EID child : engine.GetData().get<Children>(entity).Childs)
+	if (Settings::Data.all_of<Children>(entity))
+		for (EID child : Settings::Data.get<Children>(entity).Childs)
 			DisableProperty<T>(child);
 }
 
@@ -35,7 +35,7 @@ void App::ProcessInput()
 		{
 			const auto& value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
-				Data::RotateCamera(engine.GetData(), currentCamera,
+				Data::RotateCamera(currentCamera,
 					rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
 					rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
 
@@ -56,7 +56,7 @@ void App::ProcessInput()
 			case Window::Mouse::Event::Type::RawMove:
 			{
 				if (!window.IsCursorEnabled())
-					Data::RotateCamera(engine.GetData(), currentCamera,
+					Data::RotateCamera(currentCamera,
 						rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
 						rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
 				break;
@@ -92,21 +92,21 @@ void App::ProcessInput()
 	}
 
 	if (keyboard.IsKeyDown('W'))
-		Data::MoveCameraZ(engine.GetData(), currentCamera, moveSpeed, cameraType);
+		Data::MoveCameraZ(currentCamera, moveSpeed, cameraType);
 	if (keyboard.IsKeyDown('S'))
-		Data::MoveCameraZ(engine.GetData(), currentCamera, -moveSpeed, cameraType);
+		Data::MoveCameraZ(currentCamera, -moveSpeed, cameraType);
 	if (keyboard.IsKeyDown('A'))
-		Data::MoveCameraX(engine.GetData(), currentCamera, -moveSpeed, cameraType);
+		Data::MoveCameraX(currentCamera, -moveSpeed, cameraType);
 	if (keyboard.IsKeyDown('D'))
-		Data::MoveCameraX(engine.GetData(), currentCamera, moveSpeed, cameraType);
+		Data::MoveCameraX(currentCamera, moveSpeed, cameraType);
 	if (keyboard.IsKeyDown(VK_SPACE))
-		Data::MoveCameraY(engine.GetData(), currentCamera, moveSpeed, cameraType);
+		Data::MoveCameraY(currentCamera, moveSpeed, cameraType);
 	if (keyboard.IsKeyDown('C'))
-		Data::MoveCameraY(engine.GetData(), currentCamera, -moveSpeed, cameraType);
+		Data::MoveCameraY(currentCamera, -moveSpeed, cameraType);
 	if (keyboard.IsKeyDown('Q'))
-		Data::RollCamera(engine.GetData(), currentCamera, rollSpeed, cameraType);
+		Data::RollCamera(currentCamera, rollSpeed, cameraType);
 	if (keyboard.IsKeyDown('E'))
-		Data::RollCamera(engine.GetData(), currentCamera, -rollSpeed, cameraType);
+		Data::RollCamera(currentCamera, -rollSpeed, cameraType);
 }
 
 void App::ShowOptionsWindow()
@@ -148,12 +148,12 @@ void App::ShowOptionsWindow()
 
 void App::BuiltObjectTree(EID currentEntity, EID& selected)
 {
-	const bool children = engine.GetData().all_of<Children>(currentEntity);
+	const bool children = Settings::Data.all_of<Children>(currentEntity);
 	const bool expanded = ImGui::TreeNodeEx(reinterpret_cast<void*>(currentEntity),
 		ImGuiTreeNodeFlags_OpenOnArrow |
 		(children ? 0 : ImGuiTreeNodeFlags_Leaf) |
 		(currentEntity == selected ? ImGuiTreeNodeFlags_Selected : 0),
-		engine.GetData().get<std::string>(currentEntity).c_str());
+		Settings::Data.get<std::string>(currentEntity).c_str());
 
 	if (ImGui::IsItemClicked() && selected != currentEntity)
 	{
@@ -166,7 +166,7 @@ void App::BuiltObjectTree(EID currentEntity, EID& selected)
 	if (expanded)
 	{
 		if (children)
-			for (EID child : engine.GetData().get<Children>(currentEntity).Childs)
+			for (EID child : Settings::Data.get<Children>(currentEntity).Childs)
 				BuiltObjectTree(child, selected);
 		ImGui::TreePop();
 	}
@@ -180,7 +180,7 @@ void App::ShowObjectWindow()
 	{
 		ImGui::Columns(2);
 		ImGui::BeginChild("##node_tree", { 0.0f, 231.5f }, false, ImGuiWindowFlags_HorizontalScrollbar);
-		for (EID parent : engine.GetData().view<std::string>(entt::exclude<ParentID>))
+		for (EID parent : Settings::Data.view<std::string>(entt::exclude<ParentID>))
 		{
 			BuiltObjectTree(parent, selected);
 		}
@@ -196,7 +196,7 @@ void App::ShowObjectWindow()
 			ImGui::BeginChild("##node_options");
 			ImGui::Columns(2, "##model_node_options", false);
 
-			bool change = engine.GetData().all_of<Data::RenderOutline>(selected);
+			bool change = Settings::Data.all_of<Data::RenderOutline>(selected);
 			if (ImGui::Checkbox("Model outline", &change))
 			{
 				if (change)
@@ -204,7 +204,7 @@ void App::ShowObjectWindow()
 				else
 					DisableProperty<Data::RenderOutline>(selected);
 			}
-			change = engine.GetData().all_of<Data::RenderWireframe>(selected);
+			change = Settings::Data.all_of<Data::RenderWireframe>(selected);
 			if (ImGui::Checkbox("Wireframe", &change))
 			{
 				if (change)
@@ -213,7 +213,7 @@ void App::ShowObjectWindow()
 					DisableProperty<Data::RenderWireframe>(selected);
 			}
 			ImGui::NextColumn();
-			change = engine.GetData().all_of<Data::RenderLambertian>(selected);
+			change = Settings::Data.all_of<Data::RenderLambertian>(selected);
 			if (ImGui::Checkbox("Render mesh", &change))
 			{
 				if (change)
@@ -221,7 +221,7 @@ void App::ShowObjectWindow()
 				else
 					DisableProperty<Data::RenderLambertian>(selected);
 			}
-			change = engine.GetData().all_of<Data::ShadowCaster>(selected);
+			change = Settings::Data.all_of<Data::ShadowCaster>(selected);
 			if (ImGui::Checkbox("Shadows", &change))
 			{
 				if (change)
@@ -231,11 +231,11 @@ void App::ShowObjectWindow()
 			}
 			ImGui::Columns(1);
 
-			if (engine.GetData().all_of<Data::Transform>(selected))
+			if (Settings::Data.all_of<Data::Transform>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& transform = engine.GetData().get<Data::Transform>(selected);
+				auto& transform = Settings::Data.get<Data::Transform>(selected);
 
 				ImGui::InputFloat3("Scale [X|Y|Z]", reinterpret_cast<float*>(&transform.Scale));
 				if (transform.Scale.x < 0.001f)
@@ -272,11 +272,11 @@ void App::ShowObjectWindow()
 				ImGui::Columns(1);
 			}
 
-			if (engine.GetData().all_of<Data::MaterialID>(selected))
+			if (Settings::Data.all_of<Data::MaterialID>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				EID materialId = engine.GetData().get<Data::MaterialID>(selected).ID;
+				EID materialId = Settings::Data.get<Data::MaterialID>(selected).ID;
 				auto& material = engine.GetAssetsStreamer().GetResources().get<Data::MaterialPBR>(materialId);
 
 				ImGui::Text("Material ID: %llu", materialId);
@@ -330,11 +330,11 @@ void App::ShowObjectWindow()
 				}
 			}
 
-			if (engine.GetData().all_of<Data::PointLight>(selected))
+			if (Settings::Data.all_of<Data::PointLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = engine.GetData().get<Data::PointLight>(selected);
+				auto& light = Settings::Data.get<Data::PointLight>(selected);
 
 				ImGui::Text("Point Light Intensity");
 				change = ImGui::InputFloat("##point_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -351,7 +351,7 @@ void App::ShowObjectWindow()
 
 				if (change)
 				{
-					auto& buffer = engine.GetData().get<Data::PointLightBuffer>(selected);
+					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
 					auto& dev = engine.Gfx().GetDevice();
 
 					dev.BeginUploadRegion();
@@ -362,11 +362,11 @@ void App::ShowObjectWindow()
 				}
 			}
 
-			if (engine.GetData().all_of<Data::SpotLight>(selected))
+			if (Settings::Data.all_of<Data::SpotLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = engine.GetData().get<Data::SpotLight>(selected);
+				auto& light = Settings::Data.get<Data::SpotLight>(selected);
 
 				ImGui::Text("Spot Light Intensity");
 				change = ImGui::InputFloat("##spot_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -406,7 +406,7 @@ void App::ShowObjectWindow()
 
 				if (change)
 				{
-					auto& buffer = engine.GetData().get<Data::SpotLightBuffer>(selected);
+					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
 					auto& dev = engine.Gfx().GetDevice();
 
 					dev.BeginUploadRegion();
@@ -417,11 +417,11 @@ void App::ShowObjectWindow()
 				}
 			}
 
-			if (engine.GetData().all_of<Data::DirectionalLight>(selected))
+			if (Settings::Data.all_of<Data::DirectionalLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = engine.GetData().get<Data::DirectionalLight>(selected);
+				auto& light = Settings::Data.get<Data::DirectionalLight>(selected);
 
 				ImGui::Text("Directional Light Intensity");
 				change = ImGui::InputFloat("##dir_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -434,15 +434,15 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Direction [X|Y|Z]");
 				ImGui::SetNextItemWidth(-5.0f);
-				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&engine.GetData().get<Data::Direction>(selected).Direction), -1.0f, 1.0f, "%.2f"))
+				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&Settings::Data.get<Data::Direction>(selected).Direction), -1.0f, 1.0f, "%.2f"))
 				{
-					Math::NormalizeStore(engine.GetData().get<Data::Direction>(selected).Direction);
+					Math::NormalizeStore(Settings::Data.get<Data::Direction>(selected).Direction);
 					change = true;
 				}
 
 				if (change)
 				{
-					auto& buffer = engine.GetData().get<Data::DirectionalLightBuffer>(selected);
+					auto& buffer = Settings::Data.get<Data::DirectionalLightBuffer>(selected);
 					auto& dev = engine.Gfx().GetDevice();
 
 					dev.BeginUploadRegion();
@@ -452,11 +452,11 @@ void App::ShowObjectWindow()
 				}
 			}
 
-			if (engine.GetData().all_of<Data::Camera>(selected))
+			if (Settings::Data.all_of<Data::Camera>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& camera = engine.GetData().get<Data::Camera>(selected);
+				auto& camera = Settings::Data.get<Data::Camera>(selected);
 
 				ImGui::Text("FOV");
 				ImGui::SetNextItemWidth(-1.0f);
@@ -485,8 +485,8 @@ void App::ShowObjectWindow()
 EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Float3&& position, const Float3& angle)
 {
-	EID camera = engine.GetData().create();
-	engine.GetData().emplace<std::string>(camera, std::move(name));
+	EID camera = Settings::Data.create();
+	Settings::Data.emplace<std::string>(camera, std::move(name));
 
 	const Vector rotor = Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(angle.x), Math::ToRadians(angle.y), Math::ToRadians(angle.z));
 
@@ -496,7 +496,7 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	XMStoreFloat3(&upVector, Math::XMVector3Rotate({ 0.0f, 1.0f, 0.0f, 0.0f }, rotor));
 	XMStoreFloat4(&roation, rotor);
 
-	engine.GetData().emplace<Data::Camera>(camera,
+	Settings::Data.emplace<Data::Camera>(camera,
 		Data::Camera(std::move(eyeVector), std::move(upVector),
 			{
 				Math::ToRadians(60.0f),
@@ -504,8 +504,8 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 				nearZ
 			}));
 
-	engine.GetData().emplace<Data::TransformGlobal>(camera,
-		engine.GetData().emplace<Data::Transform>(camera,
+	Settings::Data.emplace<Data::TransformGlobal>(camera,
+		Settings::Data.emplace<Data::Transform>(camera,
 			std::move(roation), std::move(position), Math::UnitScale()));
 
 	return camera;
@@ -514,35 +514,35 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 EID App::AddModel(std::string&& name, Float3&& position,
 	const Float3& angle, float scale, const std::string& file)
 {
-	EID model = engine.GetData().create();
-	engine.GetData().emplace<std::string>(model, std::move(name));
+	EID model = Settings::Data.create();
+	Settings::Data.emplace<std::string>(model, std::move(name));
 
-	auto& transform = engine.GetData().emplace<Data::TransformGlobal>(model,
-		engine.GetData().emplace<Data::Transform>(model,
+	auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
+		Settings::Data.emplace<Data::Transform>(model,
 			Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale)));
 	if (Settings::ComputeMotionVectors())
-		engine.GetData().emplace<Data::TransformPrevious>(model, transform);
+		Settings::Data.emplace<Data::TransformPrevious>(model, transform);
 
-	engine.GetAssetsStreamer().LoadModelData(engine.Gfx().GetDevice(), engine.GetData(), model, file, true);
+	engine.GetAssetsStreamer().LoadModelData(engine.Gfx().GetDevice(), Settings::Data, model, file, true);
 	return model;
 }
 
 EID App::AddPointLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range)
 {
-	EID light = engine.GetData().create();
-	engine.GetData().emplace<std::string>(light, std::move(name));
-	engine.GetData().emplace<Data::LightPoint>(light);
+	EID light = Settings::Data.create();
+	Settings::Data.emplace<std::string>(light, std::move(name));
+	Settings::Data.emplace<Data::LightPoint>(light);
 
-	engine.GetData().emplace<Data::TransformGlobal>(light,
-		engine.GetData().emplace<Data::Transform>(light, Math::NoRotation(), std::move(position), Math::UnitScale()));
+	Settings::Data.emplace<Data::TransformGlobal>(light,
+		Settings::Data.emplace<Data::Transform>(light, Math::NoRotation(), std::move(position), Math::UnitScale()));
 
-	Data::PointLight& pointLight = engine.GetData().emplace<Data::PointLight>(light, std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f));
+	Data::PointLight& pointLight = Settings::Data.emplace<Data::PointLight>(light, std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f));
 	pointLight.SetAttenuationRange(range);
 
-	Data::PointLightBuffer& buffer = engine.GetData().emplace<Data::PointLightBuffer>(light,
+	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
 		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight));
+	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -552,22 +552,22 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range,
 	float innerAngle, float outerAngle, const Float3& direction)
 {
-	EID light = engine.GetData().create();
-	engine.GetData().emplace<std::string>(light, std::move(name));
-	engine.GetData().emplace<Data::LightSpot>(light);
+	EID light = Settings::Data.create();
+	Settings::Data.emplace<std::string>(light, std::move(name));
+	Settings::Data.emplace<Data::LightSpot>(light);
 
-	engine.GetData().emplace<Data::TransformGlobal>(light,
-		engine.GetData().emplace<Data::Transform>(light,
+	Settings::Data.emplace<Data::TransformGlobal>(light,
+		Settings::Data.emplace<Data::Transform>(light,
 			Math::NoRotation(), std::move(position), Math::UnitScale()));
 
-	Data::SpotLight& spotLight = engine.GetData().emplace<Data::SpotLight>(light,
+	Data::SpotLight& spotLight = Settings::Data.emplace<Data::SpotLight>(light,
 		std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f), Math::ToRadians(innerAngle),
 		Math::NormalizeReturn(direction), Math::ToRadians(outerAngle));
 	spotLight.SetAttenuationRange(range);
 
-	Data::SpotLightBuffer& buffer = engine.GetData().emplace<Data::SpotLightBuffer>(light,
+	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
 		Math::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &spotLight, sizeof(Data::SpotLight));
+	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &spotLight, sizeof(Data::SpotLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -576,16 +576,16 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 EID App::AddDirectionalLight(std::string&& name,
 	ColorF3&& color, float intensity, const Float3& direction)
 {
-	EID light = engine.GetData().create();
-	engine.GetData().emplace<std::string>(light, std::move(name));
-	engine.GetData().emplace<Data::LightDirectional>(light);
+	EID light = Settings::Data.create();
+	Settings::Data.emplace<std::string>(light, std::move(name));
+	Settings::Data.emplace<Data::LightDirectional>(light);
 
-	Data::DirectionalLight& dirLight = engine.GetData().emplace<Data::DirectionalLight>(light,
+	Data::DirectionalLight& dirLight = Settings::Data.emplace<Data::DirectionalLight>(light,
 		std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f));
-	engine.GetData().emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
+	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
-	Data::DirectionalLightBuffer& buffer = engine.GetData().emplace<Data::DirectionalLightBuffer>(light);
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), &dirLight, sizeof(Data::DirectionalLight));
+	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);
+	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &dirLight, sizeof(Data::DirectionalLight));
 
 	engine.Gfx().GetDevice().StartUpload();
 	return light;
@@ -632,14 +632,15 @@ App::App(const CmdParser& params)
 
 		std::vector<U32> indices = GFX::Primitive::MakeCubeIndex();
 		std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
-		GFX::MeshData meshData =
+		GFX::Resource::MeshData meshData =
 		{
+			meshId,
 			vertices.data(), indices.data(),
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(GFX::Vertex), sizeof(U32)
 		};
-		assets.emplace<GFX::Resource::Mesh>(meshId).Init(engine.Gfx().GetDevice(), meshData);
+		assets.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Resources().GetDisk(), meshData);
 
 		// And some materials for them all
 		std::array<EID, 255> materialIds;
@@ -662,7 +663,7 @@ App::App(const CmdParser& params)
 			const GFX::Resource::Texture::Schema& texSchema = engine.GetAssetsStreamer().GetSchemaLibrary().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
 			GFX::Resource::Texture::PackDesc texDesc;
 			texDesc.Init(texSchema);
-			buffers.Init(engine.Gfx().GetDevice(), data, texDesc);
+			buffers.Init(engine.Gfx().GetDevice(), engine.Resources().GetDisk(), data, texDesc);
 		}
 		engine.Gfx().GetDevice().StartUpload();
 
@@ -670,26 +671,26 @@ App::App(const CmdParser& params)
 		std::mt19937_64 randEngine;
 		for (U32 i = 0, size = params.GetNumber("cubePerfTestSize"); i < size; ++i)
 		{
-			EID model = engine.GetData().create();
-			engine.GetData().emplace<std::string>(model, "Cube_" + std::to_string(i));
+			EID model = Settings::Data.create();
+			Settings::Data.emplace<std::string>(model, "Cube_" + std::to_string(i));
 
 			const float angleX = Math::Rand(0.0f, 360.0f, randEngine);
 			const float angleY = Math::Rand(0.0f, 360.0f, randEngine);
 			const float angleZ = Math::Rand(0.0f, 360.0f, randEngine);
 			const float scale = Math::Rand(0.5f, 5.0f, randEngine);
 
-			auto& transform = engine.GetData().emplace<Data::TransformGlobal>(model,
+			auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
 				engine.GetData().emplace<Data::Transform>(model,
 					Math::GetQuaternion(angleX, angleY, angleZ),
 					Math::RandPosition(-200.0f, 200.0f, randEngine),
 					Float3(scale, scale, scale)));
 			if (Settings::ComputeMotionVectors())
-				engine.GetData().emplace<Data::TransformPrevious>(model, transform);
+				Settings::Data.emplace<Data::TransformPrevious>(model, transform);
 
-			engine.GetData().emplace<Data::RenderLambertian>(model);
-			engine.GetData().emplace<Data::ShadowCaster>(model);
-			engine.GetData().emplace<Data::MeshID>(model, meshId);
-			engine.GetData().emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
+			Settings::Data.emplace<Data::RenderLambertian>(model);
+			Settings::Data.emplace<Data::ShadowCaster>(model);
+			Settings::Data.emplace<Data::MeshID>(model, meshId);
+			Settings::Data.emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
 		}
 	}
 	else
@@ -722,6 +723,11 @@ App::App(const CmdParser& params)
 	}
 	engine.Gfx().GetDevice().StartUpload();
 	engine.Gfx().GetDevice().EndUploadRegion();
+
+	Data::Camera& camData = Settings::Data.get<Data::Camera>(currentCamera);
+	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
+		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
+			camData.Projection.NearClip, camData.Projection.FarClip));
 }
 
 int App::Run()

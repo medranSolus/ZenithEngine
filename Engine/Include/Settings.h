@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/RayTracingTier.h"
 #include "GFX/VendorGPU.h"
+#include "Data/Entity.h"
 #include "SettingsInitParams.h"
 #include "ThreadPool.h"
 
@@ -38,6 +39,9 @@ namespace ZE
 		// Time in miliseconds elapsed since last frame
 		static inline double FrameTime = 0.0;
 
+		// When creating new entities concurrently use CreateEntity() for thread-safe method
+		static inline Data::Storage Data;
+
 	private:
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
@@ -45,6 +49,7 @@ namespace ZE
 		static inline GFX::UpscalerType upscaler;
 		static inline GFX::AOType aoType;
 
+		static inline std::shared_mutex dataCreationMutex;
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
 		static inline U64 frameIndex = 0;
@@ -86,6 +91,9 @@ namespace ZE
 
 		static constexpr void Init(const SettingsInitParams& params) noexcept;
 		static void Destroy() noexcept;
+
+		static EID CreateEntity() noexcept { LockGuardRW lock(dataCreationMutex); return Data.create(); }
+		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(dataCreationMutex); for (EID& e : entities) e = Data.create(); }
 	};
 
 #pragma region Functions

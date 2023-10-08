@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
 		ZE_DRAW_TAG_END(dev, cl);
 
-		auto group = Data::GetRenderGroup<Data::RenderOutline>(renderData.Registry);
+		auto group = Data::GetRenderGroup<Data::RenderOutline>();
 		U64 count = group.size();
 		if (count)
 		{
@@ -70,11 +70,11 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(Settings::Data, renderData.Assets.GetResources(), group, frustum);
 			ZE_PERF_STOP();
 
 			ZE_PERF_START("Outline Draw - view sort");
-			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderOutline, InsideFrustum>(renderData.Registry);
+			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderOutline, InsideFrustum>();
 			count = visibleGroup.size();
 			Utils::ViewSortAscending(visibleGroup, cameraPos);
 			ZE_PERF_STOP();
@@ -141,7 +141,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			// Remove current visibility
 			ZE_PERF_START("Outline Draw - visibility clear");
-			renderData.Registry.clear<InsideFrustum>();
+			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
 		}
 		cl.Close(dev);

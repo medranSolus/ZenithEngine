@@ -47,14 +47,14 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		ZE_PSO_SET_NAME(psoDesc, "PointLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		const auto volume = Primitive::MakeSphereIcoSolid(3);
-		passData->VolumeMesh.Init(dev,
-			{
-				volume.Vertices.data(), volume.Indices.data(),
-				ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
-				ZE::Utils::SafeCast<U32>(volume.Indices.size()),
-				sizeof(Float3), sizeof(U32)
-			});
+		//const auto volume = Primitive::MakeSphereIcoSolid(3);
+		//passData->VolumeMesh.Init(dev,
+		//	{
+		//		volume.Vertices.data(), volume.Indices.data(),
+		//		ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
+		//		ZE::Utils::SafeCast<U32>(volume.Indices.size()),
+		//		sizeof(Float3), sizeof(U32)
+		//	});
 
 		return passData;
 	}
@@ -63,7 +63,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
-		auto group = Data::GetPointLightGroup(renderData.Registry);
+		auto group = Data::GetPointLightGroup();
 		const U64 count = group.size();
 		if (count)
 		{

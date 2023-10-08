@@ -8,7 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	void Clean(Device& dev, ExecuteData& data) noexcept
 	{
 		data.StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber({ Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax }) + 1;
 		while (stateCount--)
 		{
 			data.StatesSolid[stateCount].Free(dev);
@@ -45,7 +45,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			psoDesc.FormatsRT[i] = formatRT;
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
-		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax) + 1;
+		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber({ Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax }) + 1;
 		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
@@ -74,7 +74,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
-		auto group = Data::GetRenderGroup<Data::ShadowCaster>(renderData.Registry);
+		auto group = Data::GetRenderGroup<Data::ShadowCaster>();
 		if (group.size())
 		{
 			ZE_PERF_GUARD("Shadow Map Cube - present");
@@ -119,15 +119,15 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				if (box.Intersects(lightSphere))
 				{
 					if (renderData.Assets.GetResources().all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
-						renderData.Registry.emplace<Transparent>(entity);
+						Settings::Data.emplace<Transparent>(entity);
 					else
-						renderData.Registry.emplace<Solid>(entity);
+						Settings::Data.emplace<Solid>(entity);
 				}
 			}
 			ZE_PERF_STOP();
 
-			auto solidGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Solid>(renderData.Registry);
-			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Transparent>(renderData.Registry);
+			auto solidGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Solid>();
+			auto transparentGroup = Data::GetVisibleRenderGroup<Data::ShadowCaster, Transparent>();
 			const U64 solidCount = solidGroup.size();
 			const U64 transparentCount = transparentGroup.size();
 
@@ -183,11 +183,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ZE_PERF_START("Shadow Map Cube - solid material sort");
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
-						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular);
-						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular);
+						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular) });
 						return state1 < state2;
 					});
-				currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular);
+				currentState = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular) });
 				ZE_PERF_STOP();
 
 				// Solid pass
@@ -222,7 +222,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						shadowData.Bind(cl, ctx);
 						renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
 						if (currentState != state)
 						{
 							currentState = state;
@@ -286,7 +286,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						shadowData.Bind(cl, ctx);
 						renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular);
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
 						if (currentState != state)
 						{
 							currentState = state;
@@ -305,7 +305,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			}
 			// Remove current material indication
 			ZE_PERF_START("Shadow Map Cube - visibility clear");
-			renderData.Registry.clear<Solid, Transparent>();
+			Settings::Data.clear<Solid, Transparent>();
 			ZE_PERF_STOP();
 		}
 	}

@@ -102,7 +102,7 @@ namespace ZE::Data
 		std::unique_ptr<U16[]> indicesU16;
 		std::unique_ptr<U8[]> indicesU8;
 
-		GFX::MeshData meshData = {};
+		GFX::Resource::MeshData meshData = {};
 		meshData.VertexCount = mesh.mNumVertices;
 		meshData.IndexCount = mesh.mNumFaces * 3;
 		meshData.VertexSize = sizeof(GFX::Vertex);
@@ -178,8 +178,7 @@ namespace ZE::Data
 		assets.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
 
 		// Load parsed mesh data into correct asset
-		GFX::Resource::Mesh& geometry = assets.emplace<GFX::Resource::Mesh>(meshId);
-		geometry.Init(dev, meshData);
+		//assets.emplace<GFX::Resource::Mesh>(meshId).Init(dev, meshData);
 
 		return meshId;
 	}
@@ -263,7 +262,7 @@ namespace ZE::Data
 		if (notSolid)
 			assets.emplace<MaterialNotSolid>(materialId);
 
-		buffers.Init(dev, data, texDesc);
+		//buffers.Init(dev, data, texDesc);
 		return materialId;
 	}
 

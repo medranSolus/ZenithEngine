@@ -3,7 +3,7 @@
 #include "Light.h"
 #include "MaterialPBR.h"
 #include "Transform.h"
-#include "GFX/Resource/Mesh.h"
+#include "ResourceManager.h"
 
 namespace ZE::Data
 {
@@ -31,11 +31,11 @@ namespace ZE::Data
 	struct MaterialNotSolid {};
 
 	template<EmptyType T>
-	constexpr auto GetRenderGroup(Storage& registry) noexcept { return registry.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
+	constexpr auto GetRenderGroup() noexcept { return Settings::Data.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
 	template<EmptyType T, typename Visibility>
-	constexpr auto GetVisibleRenderGroup(Storage& registry) noexcept { return registry.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
+	constexpr auto GetVisibleRenderGroup() noexcept { return Settings::Data.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
 
-	inline auto GetDirectionalLightGroup(Storage& registry) noexcept { return registry.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
-	inline auto GetSpotLightGroup(Storage& registry) noexcept { return registry.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
-	inline auto GetPointLightGroup(Storage& registry) noexcept { return registry.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }
+	inline auto GetDirectionalLightGroup() noexcept { return Settings::Data.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
+	inline auto GetSpotLightGroup() noexcept { return Settings::Data.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
+	inline auto GetPointLightGroup() noexcept { return Settings::Data.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }
 }

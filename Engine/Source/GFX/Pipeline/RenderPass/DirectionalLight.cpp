@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
 		ZE_DRAW_TAG_END(dev, cl);
 
-		auto group = Data::GetDirectionalLightGroup(renderData.Registry);
+		auto group = Data::GetDirectionalLightGroup();
 		if (group.size())
 		{
 			ZE_PERF_GUARD("Directional Light - light present");

@@ -52,14 +52,14 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		ZE_PSO_SET_NAME(psoDesc, "SpotLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		const auto volume = Primitive::MakeConeSolid(8);
-		passData->VolumeMesh.Init(dev,
-			{
-				volume.Vertices.data(), volume.Indices.data(),
-				ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
-				ZE::Utils::SafeCast<U32>(volume.Indices.size()),
-				sizeof(Float3), sizeof(U32)
-			});
+		//const auto volume = Primitive::MakeConeSolid(8);
+		//passData->VolumeMesh.Init(dev,
+		//	{
+		//		volume.Vertices.data(), volume.Indices.data(),
+		//		ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
+		//		ZE::Utils::SafeCast<U32>(volume.Indices.size()),
+		//		sizeof(Float3), sizeof(U32)
+		//	});
 
 		return passData;
 	}
@@ -68,7 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
-		auto group = Data::GetSpotLightGroup(renderData.Registry);
+		auto group = Data::GetSpotLightGroup();
 		const U64 count = group.size();
 		if (count)
 		{

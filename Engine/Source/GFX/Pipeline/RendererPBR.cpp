@@ -227,7 +227,7 @@ namespace ZE::GFX::Pipeline
 		SetupSSAOData();
 
 		dev.BeginUploadRegion();
-		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
+		//execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
 
 #pragma region Geometry
@@ -473,11 +473,11 @@ namespace ZE::GFX::Pipeline
 
 	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
 	{
-		ZE_ASSERT((GetRegistry().all_of<Data::TransformGlobal, Data::Camera>(camera)),
+		ZE_ASSERT((Settings::Data.all_of<Data::TransformGlobal, Data::Camera>(camera)),
 			"Current camera does not have all required components!");
 
-		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
-		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
+		const auto& currentCamera = Settings::Data.get<Data::Camera>(camera);
+		const auto& transform = Settings::Data.get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
 		cameraRotation = transform.Rotation;
 
 		// Setup shader world data

@@ -34,7 +34,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 	{
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
 
-		auto group = Data::GetRenderGroup<Data::RenderWireframe>(renderData.Registry);
+		auto group = Data::GetRenderGroup<Data::RenderWireframe>();
 		U64 count = group.size();
 		if (count)
 		{
@@ -47,10 +47,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_START("Wireframe - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), Math::XMLoadFloat3(&dynamicData.CameraPos));
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(Settings::Data, renderData.Assets.GetResources(), group, frustum);
 			ZE_PERF_STOP();
 
-			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>(renderData.Registry);
+			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>();
 			count = visibleGroup.size();
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
@@ -93,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 			// Remove current visibility
 			ZE_PERF_START("Wireframe - visibility clear");
-			renderData.Registry.clear<InsideFrustum>();
+			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
 		}
 	}

@@ -15,8 +15,6 @@ namespace ZE::GFX::Pipeline
 		// Alloc inside DynamicBuffers corresponding to DynamicData of the renderer
 		static constexpr Resource::DynamicBufferAlloc RENDERER_DYNAMIC_BUFFER = { 0, 0 };
 
-		// Registry containing all the scene data
-		Data::Storage Registry;
 		// Registry containing material and geometry data
 		Data::AssetsStreamer Assets;
 		// Buffers used for rendering. Initialized by RenderGraph

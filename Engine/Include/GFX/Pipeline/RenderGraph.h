@@ -46,7 +46,6 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(RenderGraph);
 		virtual ~RenderGraph() { ZE_ASSERT(passes == nullptr, "Render graph not freed before deletion!"); }
 
-		constexpr Data::Storage& GetRegistry() noexcept { return execData.Registry; }
 		constexpr Data::AssetsStreamer& GetAssetsStreamer() noexcept { return execData.Assets; }
 
 		void Execute(Graphics& gfx);
