@@ -15,6 +15,7 @@ namespace ZE
 		GUI::Manager gui;
 		Window::MainWindow window;
 		GFX::Pipeline::RendererPBR renderer;
+		Data::ResourceManager resources;
 		std::bitset<Flags::Count> flags;
 
 	public:
@@ -26,12 +27,12 @@ namespace ZE
 		constexpr void ToggleGui() noexcept { SetGui(!IsGuiActive()); }
 		constexpr void SetGui(bool enabled) noexcept { flags[Flags::GuiEnable] = enabled; }
 
-		constexpr Data::Storage& GetData() noexcept { return renderer.GetRegistry(); }
 		constexpr Data::AssetsStreamer& GetAssetsStreamer() noexcept { return renderer.GetAssetsStreamer(); }
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
 		constexpr GUI::Manager& Gui() noexcept { return gui; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }
+		constexpr Data::ResourceManager& Resources() noexcept { return resources; }
 
 		// Initialization method that must be called before using engine
 		void Init(const EngineParams& params);
