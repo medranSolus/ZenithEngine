@@ -169,6 +169,11 @@ namespace ZE::RHI::DX12
 			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), MINIMAL_D3D_LEVEL, IID_PPV_ARGS(&device)));
 		}
 
+		D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
+		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12)));
+		if (!options12.EnhancedBarriersSupported)
+			throw ZE_CMP_EXCEPT("DX12 error: Ehanced Barriers not supported by current driver!");
+
 #if _ZE_DEBUG_GFX_API
 		DX::ComPtr<IInfoQueue> infoQueue = nullptr;
 		ZE_DX_THROW_FAILED(device.As(&infoQueue));

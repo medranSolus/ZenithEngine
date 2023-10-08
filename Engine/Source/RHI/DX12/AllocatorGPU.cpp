@@ -74,12 +74,8 @@ namespace ZE::RHI::DX12
 			| (flags & HeapFlag::AllowTexturesRTDS ? 0 : D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES));
 	}
 
-	constexpr D3D12_RESOURCE_STATES AllocatorGPU::GetResourceState(HeapFlags flags) noexcept
-	{
-		return flags & HeapFlag::Dynamic ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COPY_DEST;
-	}
-
-	DX::ComPtr<IResource> AllocatorGPU::CreateCommittedResource(Device& dev, const D3D12_RESOURCE_DESC1& desc, HeapFlags flags)
+	DX::ComPtr<IResource> AllocatorGPU::CreateCommittedResource(Device& dev,
+		const D3D12_RESOURCE_DESC1& desc, D3D12_BARRIER_LAYOUT layout, HeapFlags flags)
 	{
 		ZE_DX_ENABLE(dev);
 
@@ -91,45 +87,45 @@ namespace ZE::RHI::DX12
 		heapProp.VisibleNodeMask = 0;
 
 		DX::ComPtr<IResource> res = nullptr;
-		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommittedResource2(&heapProp, GetHeapFlags(flags | HeapFlag::CommittedAlloc),
-			&desc, GetResourceState(flags), nullptr, nullptr, IID_PPV_ARGS(&res)));
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommittedResource3(&heapProp, GetHeapFlags(flags | HeapFlag::CommittedAlloc),
+			&desc, layout, nullptr, nullptr, 0, nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}
 
-	DX::ComPtr<IResource> AllocatorGPU::CreateResource(Device& dev,
-		const D3D12_RESOURCE_DESC1& desc, U64 offset, IHeap* heap, HeapFlags flags)
+	DX::ComPtr<IResource> AllocatorGPU::CreateResource(Device& dev, const D3D12_RESOURCE_DESC1& desc,
+		D3D12_BARRIER_LAYOUT layout, U64 offset, IHeap* heap, HeapFlags flags)
 	{
 		ZE_DX_ENABLE(dev);
 
 		DX::ComPtr<IResource> res = nullptr;
-		ZE_DX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource1(heap, offset,
-			&desc, GetResourceState(flags), nullptr, IID_PPV_ARGS(&res)));
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreatePlacedResource2(heap, offset,
+			&desc, layout, nullptr, 0, nullptr, IID_PPV_ARGS(&res)));
 		return res;
 	}
 
-	ResourceInfo AllocatorGPU::Alloc(Device& dev, U64 bytes,
-		const D3D12_RESOURCE_DESC1& desc, U64 alignment, HeapAllocator& allocator)
+	ResourceInfo AllocatorGPU::Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+		D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator)
 	{
 		if (bytes >= allocator.GetChunkSize())
-			return { CreateCommittedResource(dev, desc, allocator.GetChunkCreationFlags()), 0 };
+			return { CreateCommittedResource(dev, desc, layout, allocator.GetChunkCreationFlags()), 0 };
 
 		AllocHandle alloc = allocator.Alloc(bytes, alignment, &dev);
 		ZE_ASSERT(alloc != nullptr, "Should always find some blocks or at least create new heap!");
 
-		return { CreateResource(dev, desc, allocator.GetOffset(alloc),
+		return { CreateResource(dev, desc, layout, allocator.GetOffset(alloc),
 			allocator.GetMemory(alloc).Heap.Get(), allocator.GetChunkCreationFlags()), alloc };
 	}
 
-	ResourceInfo AllocatorGPU::AllocBigChunks(Device& dev, U64 bytes,
-		const D3D12_RESOURCE_DESC1& desc, U64 alignment, HeapAllocator& allocator)
+	ResourceInfo AllocatorGPU::AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+		D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator)
 	{
-		return Alloc(dev, bytes, desc, alignment / allocator.GetChunkSizeGranularity(), allocator);
+		return Alloc(dev, bytes, desc, layout, alignment / allocator.GetChunkSizeGranularity(), allocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocMinimalChunks(Device& dev, U64 bytes,
-		const D3D12_RESOURCE_DESC1& desc, HeapAllocator& allocator)
+		const D3D12_RESOURCE_DESC1& desc, D3D12_BARRIER_LAYOUT layout, HeapAllocator& allocator)
 	{
-		return Alloc(dev, bytes, desc, 1, allocator);
+		return Alloc(dev, bytes, desc, layout, 1, allocator);
 	}
 
 	void AllocatorGPU::Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept
@@ -194,29 +190,35 @@ namespace ZE::RHI::DX12
 		default:
 			ZE_ENUM_UNHANDLED();
 		case AllocTier::Tier1:
-			return AllocMinimalChunks(dev, desc.Width, desc, mainAllocator);
+			return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, mainAllocator);
 		case AllocTier::Tier2:
-			return AllocBigChunks(dev, desc.Width, desc, NORMAL_CHUNK, mainAllocator);
+			return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, NORMAL_CHUNK, mainAllocator);
 		}
 	}
 
 	ResourceInfo AllocatorGPU::AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
-		return AllocMinimalChunks(dev, desc.Width, desc, dynamicBuffersAllocator);
+		return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, dynamicBuffersAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
-		return AllocMinimalChunks(dev, bytes, desc, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
+		return AllocMinimalChunks(dev, bytes, desc,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_64KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
-		return AllocBigChunks(dev, bytes, desc, NORMAL_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
+		return AllocBigChunks(dev, bytes, desc,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			NORMAL_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_4MB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
-		return AllocBigChunks(dev, bytes, desc, HUGE_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
+		return AllocBigChunks(dev, bytes, desc,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			HUGE_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 }

@@ -49,18 +49,20 @@ namespace ZE::RHI::DX12
 		static constexpr U64 GetHeapAlignment(HeapFlags flags) noexcept;
 		static constexpr D3D12_HEAP_TYPE GetHeapType(HeapFlags flags) noexcept;
 		static constexpr D3D12_HEAP_FLAGS GetHeapFlags(HeapFlags flags) noexcept;
-		static constexpr D3D12_RESOURCE_STATES GetResourceState(HeapFlags flags) noexcept;
 
 		static DX::ComPtr<IResource> CreateCommittedResource(Device& dev,
-			const D3D12_RESOURCE_DESC1& desc, HeapFlags flags);
-		static DX::ComPtr<IResource> CreateResource(Device& dev,
-			const D3D12_RESOURCE_DESC1& desc, U64 offset, IHeap* heap, HeapFlags flags);
+			const D3D12_RESOURCE_DESC1& desc, D3D12_BARRIER_LAYOUT layout, HeapFlags flags);
+		static DX::ComPtr<IResource> CreateResource(Device& dev, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 offset, IHeap* heap, HeapFlags flags);
 
-		static ResourceInfo Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc, U64 alignment, HeapAllocator& allocator);
+		static ResourceInfo Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator);
 		// Find and allocate smallest memory region in heap at given boundary (assuming boundary bigger than smallest chunk)
-		static ResourceInfo AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc, U64 alignment, HeapAllocator& allocator);
+		static ResourceInfo AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator);
 		// Find and allocate smallest memory region in heap at minimal boundary (given chunk size is smallest possible)
-		static ResourceInfo AllocMinimalChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc, HeapAllocator& allocator);
+		static ResourceInfo AllocMinimalChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, HeapAllocator& allocator);
 
 		// Remove allocated memory and return it to free pool merging whenever possible with nerby free regions
 		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept;
