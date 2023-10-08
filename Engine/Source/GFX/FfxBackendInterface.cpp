@@ -7,25 +7,38 @@
 
 namespace ZE::GFX
 {
-	struct FfxBackendInterface
+	struct FfxResourceName
 	{
-		S32 NextResourceIndex = 0;
-		Data::Library<S32, Resource::Generic> InternalResources;
+		wchar_t Name[FFX_RESOURCE_NAME_SIZE];
+	};
+	struct FfxDynamicResource {};
+
+	struct FfxBackendContext
+	{
+		entt::basic_registry<S32> Resources;
+		std::vector<Resource::GenericResourceBarrier> Barriers;
 	};
 
 	// Interface functions used by FFX SDK backend
-	FfxUInt32 GetSDKVersion(FfxInterface* backendInterface);
-	FfxErrorCode CreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId);
-	FfxErrorCode GetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities);
-	FfxErrorCode DestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId);
-	FfxErrorCode CreateResource(FfxInterface* backendInterface,
+	FfxUInt32 ffxGetSDKVersion(FfxInterface* backendInterface);
+	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId);
+	FfxErrorCode ffxGetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities);
+	FfxErrorCode ffxDestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId);
+	FfxErrorCode ffxCreateResource(FfxInterface* backendInterface,
 		const FfxCreateResourceDescription* createResourceDescription,
 		FfxUInt32 effectContextId, FfxResourceInternal* outTexture);
-	FfxErrorCode ExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList);
+	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource);
+	FfxResource ffxGetResource(FfxInterface* backendInterface, FfxResourceInternal resource);
+	FfxErrorCode ffxRegisterResource(FfxInterface* backendInterface, const FfxResource* inResource,
+		FfxUInt32 effectContextId, FfxResourceInternal* outResourceInternal);
+	FfxErrorCode ffxUnregisterResources(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId);
+	FfxResourceDescription ffxGetResourceDescriptor(FfxInterface* backendInterface, FfxResourceInternal resource);
+	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList);
 
 	// Utility functions for working with FFX SDK
-	constexpr FfxBackendInterface& GetFfxCtx(FfxInterface* backendInterface) noexcept;
+	constexpr FfxBackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept;
 	constexpr Device& GetDevice(FfxInterface* backendInterface) noexcept;
+	constexpr CommandList& GetCommandList(FfxCommandList commandList) noexcept;
 	constexpr Resource::GenericResourceType GetResourceType(FfxResourceType type) noexcept;
 	constexpr Resource::GenericResourceHeap GetHeapType(FfxHeapType type) noexcept;
 	constexpr Resource::GenericResourceFlags GetResourceFlags(FfxResourceUsage usage) noexcept;
@@ -34,23 +47,23 @@ namespace ZE::GFX
 
 	void ffxGetInterface(FfxInterface& backendInterface, Device& dev) noexcept
 	{
-		backendInterface.fpGetSDKVersion = GetSDKVersion;
-		backendInterface.fpCreateBackendContext = CreateBackendContext;
-		backendInterface.fpGetDeviceCapabilities = GetDeviceCapabilities;
-		backendInterface.fpDestroyBackendContext = DestroyBackendContext;
-		backendInterface.fpCreateResource = CreateResource;
-		//backendInterface->fpDestroyResource = DestroyResourceDX12;
-		//backendInterface->fpGetResource = GetResourceDX12;
-		//backendInterface->fpRegisterResource = RegisterResourceDX12;
-		//backendInterface->fpUnregisterResources = UnregisterResourcesDX12;
-		//backendInterface->fpGetResourceDescription = GetResourceDescriptorDX12;
+		backendInterface.fpGetSDKVersion = ffxGetSDKVersion;
+		backendInterface.fpCreateBackendContext = ffxCreateBackendContext;
+		backendInterface.fpGetDeviceCapabilities = ffxGetDeviceCapabilities;
+		backendInterface.fpDestroyBackendContext = ffxDestroyBackendContext;
+		backendInterface.fpCreateResource = ffxCreateResource;
+		backendInterface.fpDestroyResource = ffxDestroyResource;
+		backendInterface.fpGetResource = ffxGetResource;
+		backendInterface.fpRegisterResource = ffxRegisterResource;
+		backendInterface.fpUnregisterResources = ffxUnregisterResources;
+		backendInterface.fpGetResourceDescription = ffxGetResourceDescriptor;
 		//backendInterface->fpCreatePipeline = CreatePipelineDX12;
 		//backendInterface->fpDestroyPipeline = DestroyPipelineDX12;
 		//backendInterface->fpScheduleGpuJob = ScheduleGpuJobDX12;
 		//backendInterface->fpExecuteGpuJobs = ExecuteGpuJobsDX12;
 
 		// Memory assignments
-		backendInterface.scratchBufferSize = sizeof(FfxBackendInterface);
+		backendInterface.scratchBufferSize = sizeof(FfxBackendContext);
 		backendInterface.scratchBuffer = new U8[backendInterface.scratchBufferSize];
 
 		// Set the device
@@ -58,12 +71,12 @@ namespace ZE::GFX
 	}
 
 #pragma region FFX backend functions
-	FfxUInt32 GetSDKVersion(FfxInterface* backendInterface)
+	FfxUInt32 ffxGetSDKVersion(FfxInterface* backendInterface)
 	{
 		return FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH);
 	}
 
-	FfxErrorCode CreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId)
+	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId)
 	{
 		ZE_CHECK_FFX_BACKEND();
 		ZE_ASSERT(backendInterface->scratchBuffer, "Empty FFX backend context memory!");
@@ -72,14 +85,14 @@ namespace ZE::GFX
 		if (effectContextId)
 			*effectContextId = 0;
 
-		FfxBackendInterface* ctx = reinterpret_cast<FfxBackendInterface*>(backendInterface->scratchBuffer);
-		std::memset(ctx, 0, sizeof(FfxBackendInterface));
-		new(ctx) FfxBackendInterface;
+		FfxBackendContext* ctx = reinterpret_cast<FfxBackendContext*>(backendInterface->scratchBuffer);
+		std::memset(ctx, 0, sizeof(FfxBackendContext));
+		new(ctx) FfxBackendContext;
 
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities)
+	FfxErrorCode ffxGetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities)
 	{
 		ZE_CHECK_FFX_BACKEND();
 		ZE_ASSERT(deviceCapabilities, "Empty FFX device capabilities!");
@@ -129,21 +142,23 @@ namespace ZE::GFX
 		return FFX_OK;
 	}
 
-	FfxErrorCode DestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId)
+	FfxErrorCode ffxDestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId)
 	{
 		ZE_ASSERT(backendInterface, "Empty FFX backend interface!");
 
-		FfxBackendInterface& ctx = GetFfxCtx(backendInterface);
+		Device& dev = GetDevice(backendInterface);
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
 
 		// Free all remaining resources
-		Device& dev = GetDevice(backendInterface);
-		ctx.InternalResources.Transform([&dev](Resource::Generic& res) { res.Free(dev); });
+		for (S32 res : ctx.Resources.view<Resource::Generic>())
+			ctx.Resources.get<Resource::Generic>(res).Free(dev);
+		ctx.Resources.clear();
 
-		ctx.~FfxBackendInterface();
+		ctx.~FfxBackendContext();
 		return FFX_OK;
 	}
 
-	FfxErrorCode CreateResource(FfxInterface* backendInterface,
+	FfxErrorCode ffxCreateResource(FfxInterface* backendInterface,
 		const FfxCreateResourceDescription* createResourceDescription,
 		FfxUInt32 effectContextId, FfxResourceInternal* outTexture)
 	{
@@ -151,18 +166,13 @@ namespace ZE::GFX
 		ZE_ASSERT(createResourceDescription, "Empty FFX resource description");
 		ZE_ASSERT(outTexture, "Empty FFX out texture!");
 
-		// FFX_RESOURCE_FLAGS_ALIASABLE -> make use of it somewhere here or rework Framebuffer to make use of this resource
+		// FFX_RESOURCE_FLAGS_ALIASABLE -> make0 use of it somewhere here or rework Framebuffer to make use of this resource
 		// FFX_RESOURCE_FLAGS_UNDEFINED -> only for Vulkan meaning that there is no source data and first barrier must provide layout as undefined (maybe for new DX12 barriers too)
 
 		Device& dev = GetDevice(backendInterface);
-		FfxBackendInterface& ctx = GetFfxCtx(backendInterface);
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
 
-		outTexture->internalIndex = ++ctx.NextResourceIndex;
-		if (ctx.NextResourceIndex == 0)
-		{
-			ZE_FAIL("FFX resource index wrap around!");
-			return FFX_ERROR_OUT_OF_MEMORY;
-		}
+		outTexture->internalIndex = ctx.Resources.create();
 
 		Resource::GenericResourceDesc resDesc = {};
 		resDesc.Type = GetResourceType(createResourceDescription->resourceDescription.type);
@@ -186,27 +196,132 @@ namespace ZE::GFX
 		resDesc.InitData = createResourceDescription->initData;
 		ZE_GEN_RES_SET_NAME(resDesc, Utils::ToUTF8(createResourceDescription->name));
 
-		ctx.InternalResources.Add(outTexture->internalIndex, dev, resDesc);
+		ctx.Resources.emplace<Resource::Generic>(outTexture->internalIndex, dev, resDesc);
+		ctx.Resources.emplace<FfxResourceStates>(outTexture->internalIndex, createResourceDescription->initalState); // Current state
+		ctx.Resources.emplace<Resource::State>(outTexture->internalIndex, resDesc.InitState); // Initial state (read-only)
+		ctx.Resources.emplace<FfxResourceDescription>(outTexture->internalIndex, createResourceDescription->resourceDescription);
+#if _ZE_DEBUG_GFX_NAMES
+		if (createResourceDescription->name)
+			wcscpy_s(ctx.Resources.emplace<FfxResourceName>(outTexture->internalIndex).Name, createResourceDescription->name);
+#endif
+		return FFX_OK;
+	}
+
+	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource)
+	{
+		ZE_CHECK_FFX_BACKEND();
+		ZE_ASSERT(resource.internalIndex, "Invalid FFX resource index");
+
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+		ctx.Resources.get<Resource::Generic>(resource.internalIndex).Free(GetDevice(backendInterface));
+		ctx.Resources.destroy(resource.internalIndex);
 
 		return FFX_OK;
 	}
 
-	FfxErrorCode ExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList)
+	FfxResource ffxGetResource(FfxInterface* backendInterface, FfxResourceInternal resource)
+	{
+		ZE_CHECK_FFX_BACKEND();
+		ZE_ASSERT(resource.internalIndex, "Invalid FFX resource index");
+
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+
+		FfxResource res = {};
+		res.resource = reinterpret_cast<void*>(&ctx.Resources.get<Resource::Generic>(resource.internalIndex));
+		res.state = ctx.Resources.get<FfxResourceStates>(resource.internalIndex);
+		res.description = GetResourceDescriptor(backendInterface, resource);
+#if _ZE_DEBUG_GFX_NAMES
+		if (FfxResourceName* name = ctx.Resources.try_get<FfxResourceName>(resource.internalIndex))
+			wcscpy_s(res.name, name->Name);
+#endif
+		return res;
+	}
+
+	FfxErrorCode ffxRegisterResource(FfxInterface* backendInterface, const FfxResource* inResource,
+		FfxUInt32 effectContextId, FfxResourceInternal* outResourceInternal)
+	{
+		ZE_CHECK_FFX_BACKEND();
+		ZE_ASSERT(inResource, "Empty FFX input resource!");
+		ZE_ASSERT(outResourceInternal, "Empty FFX out resource!");
+
+		if (inResource->resource)
+		{
+			Device& dev = GetDevice(backendInterface);
+			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+
+			outResourceInternal->internalIndex = ctx.Resources.create();
+
+			ctx.Resources.emplace<Resource::Generic>(outResourceInternal->internalIndex, std::move(*reinterpret_cast<Resource::Generic*>(inResource->resource)));
+			ctx.Resources.emplace<FfxResourceStates>(outResourceInternal->internalIndex, inResource->state); // Current state
+			ctx.Resources.emplace<Resource::State>(outResourceInternal->internalIndex, GetState(inResource->state)); // Initial state (read-only)
+			ctx.Resources.emplace<FfxResourceDescription>(outResourceInternal->internalIndex, inResource->description);
+#if _ZE_DEBUG_GFX_NAMES
+			if (inResource->name)
+				wcscpy_s(ctx.Resources.emplace<FfxResourceName>(outResourceInternal->internalIndex).Name, inResource->name);
+#endif
+			ctx.Resources.emplace<FfxDynamicResource>(outResourceInternal->internalIndex); // Tag as dynamic per-frame resource
+		}
+		else
+			outResourceInternal->internalIndex = 0;
+		return FFX_OK;
+	}
+
+	FfxErrorCode ffxUnregisterResources(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId)
+	{
+		ZE_CHECK_FFX_BACKEND();
+
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+		Device& dev = GetDevice(backendInterface);
+
+		// Walk back all the resources that don't belong to FFX and reset them to their initial state
+		for (S32 res : ctx.Resources.view<FfxDynamicResource>())
+		{
+			ctx.Barriers.emplace_back(false, &ctx.Resources.get<Resource::Generic>(res),
+				GetState(ctx.Resources.get<FfxResourceStates>(res)), // Current state
+				ctx.Resources.get<Resource::State>(res)); // Initial state
+		}
+
+		if (ctx.Barriers.size())
+			GetCommandList(commandList).Barrier(dev, ctx.Barriers.data(), Utils::SafeCast<U32>(ctx.Barriers.size()));
+
+		// Clear dynamic resources
+		for (S32 res : ctx.Resources.view<FfxDynamicResource>())
+			ctx.Resources.get<Resource::Generic>(res).Free(dev);
+		ctx.Resources.destroy(ctx.Resources.view<FfxDynamicResource>().begin(), ctx.Resources.view<FfxDynamicResource>().end());
+		return FFX_OK;
+	}
+
+	FfxResourceDescription ffxGetResourceDescriptor(FfxInterface* backendInterface, FfxResourceInternal resource)
+	{
+		ZE_CHECK_FFX_BACKEND();
+		ZE_ASSERT(resource.internalIndex, "Invalid FFX resource index");
+
+		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+		return ctx.Resources.get<FfxResourceDescription>(resource.internalIndex);
+	}
+
+	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList)
 	{
 		return FFX_OK;
 	}
 #pragma endregion
 #pragma region FFX utility functions
-	constexpr FfxBackendInterface& GetFfxCtx(FfxInterface* backendInterface) noexcept
+	constexpr FfxBackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept
 	{
 		ZE_ASSERT(backendInterface->scratchBuffer, "Empty FFX backend context!");
-		return *((FfxBackendInterface*)backendInterface->scratchBuffer);
+		return *((FfxBackendContext*)backendInterface->scratchBuffer);
 	}
 
 	constexpr Device& GetDevice(FfxInterface* backendInterface) noexcept
 	{
 		ZE_ASSERT(backendInterface->device, "Empty FFX device!");
 		return *((Device*)backendInterface->device);
+	}
+
+	constexpr CommandList& GetCommandList(FfxCommandList commandList) noexcept
+	{
+		ZE_ASSERT(commandList, "Empty FFX command list!");
+		return *((CommandList*)commandList);
 	}
 
 	constexpr Resource::GenericResourceType GetResourceType(FfxResourceType type) noexcept
