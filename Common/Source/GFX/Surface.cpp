@@ -66,25 +66,7 @@ namespace ZE::GFX
 		image = scratch.GetImage(0, 0, 0);
 	}
 
-	bool Surface::IsImage(const std::string& ext) noexcept
-	{
-		return ext == ".png" ||
-			ext == ".jpg" ||
-			ext == ".jpeg" ||
-			ext == ".bmp" ||
-			ext == ".tif" ||
-			ext == ".tiff" ||
-			ext == ".ico" ||
-			ext == ".gif" ||
-			ext == ".hdp" ||
-			ext == ".jxr" ||
-			ext == ".wdp" ||
-			ext == ".dds" ||
-			ext == ".hdr" ||
-			ext == ".tga";
-	}
-
-	void Surface::Save(const std::string& filename) const
+	void Surface::Save(std::string_view filename) const
 	{
 		ZE_DXT_ENABLE_EXCEPT();
 		const std::filesystem::path path = filename;
@@ -95,17 +77,17 @@ namespace ZE::GFX
 		{
 			ZE_DXT_THROW_FAILED(Tex::SaveToDDSFile(image, scratch.GetImageCount(), scratch.GetMetadata(),
 				Tex::DDS_FLAGS::DDS_FLAGS_FORCE_DX10_EXT, Utils::ToUTF16(filename).c_str()),
-				"Saving surface to \"" + filename + "\": failed to save.");
+				"Saving surface to \"" + std::string(filename) + "\": failed to save.");
 		}
 		else if (ext == ".hdr")
 		{
 			ZE_DXT_THROW_FAILED(Tex::SaveToHDRFile(*image, Utils::ToUTF16(filename).c_str()),
-				"Saving surface to \"" + filename + "\": failed to save.");
+				"Saving surface to \"" + std::string(filename) + "\": failed to save.");
 		}
 		else if (ext == ".tga")
 		{
 			ZE_DXT_THROW_FAILED(Tex::SaveToTGAFile(*image, Utils::ToUTF16(filename).c_str()),
-				"Saving surface to \"" + filename + "\": failed to save.");
+				"Saving surface to \"" + std::string(filename) + "\": failed to save.");
 		}
 		else
 		{
@@ -125,10 +107,10 @@ namespace ZE::GFX
 			else if (ext == ".hdp" || ext == ".jxr" || ext == ".wdp")
 				codedID = Tex::WICCodecs::WIC_CODEC_WMP;
 			else
-				throw ZE_IMG_EXCEPT("Saving surface to \"" + filename + "\": not supported file extension.");
+				throw ZE_IMG_EXCEPT("Saving surface to \"" + std::string(filename) + "\": not supported file extension.");
 
 			ZE_DXT_THROW_FAILED(Tex::SaveToWICFile(*image, Tex::WIC_FLAGS::WIC_FLAGS_NONE, Tex::GetWICCodec(codedID), Utils::ToUTF16(filename).c_str()),
-				"Saving surface to \"" + filename + "\": failed to save.");
+				"Saving surface to \"" + std::string(filename) + "\": failed to save.");
 		}
 	}
 }

@@ -22,8 +22,6 @@ namespace ZE::GUI
 	public:
 		DialogWindow() = delete;
 
-		static std::vector<std::filesystem::directory_entry> GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType) noexcept;
-		static std::optional<std::string> FileBrowserButton(const std::string& title, const std::string& startDir, FileType searchType = FileType::Model) noexcept;
 		static Result GetModelParams(GFX::Shape::ModelParams& params) noexcept;
 		static Result GetLightParams(GFX::Light::LightParams& params) noexcept;
 		static Result GetCameraParams(Camera::CameraParams& params) noexcept;

@@ -20,8 +20,6 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(Surface);
 		~Surface() = default;
 
-		static bool IsImage(const std::string& ext) noexcept;
-
 		constexpr PixelFormat GetFormat() const noexcept { return RHI::DX::GetFormatFromDX(image->format); }
 		constexpr U64 GetWidth() const noexcept { return image->width; }
 		constexpr U64 GetHeight() const noexcept { return image->height; }
@@ -39,7 +37,7 @@ namespace ZE::GFX
 		bool HasAlpha() const noexcept { return !scratch.IsAlphaAllOpaque(); }
 		void Clear(const Pixel& color) noexcept { memset(GetBuffer(), static_cast<int>(color), GetSize() * sizeof(Pixel)); }
 
-		void Save(const std::string& filename) const;
+		void Save(std::string_view filename) const;
 	};
 
 #pragma region Functions
