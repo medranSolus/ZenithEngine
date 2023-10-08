@@ -5,7 +5,13 @@
 namespace ZE::Data
 {
 	// CPU side flags of PBR material
-	typedef U8 PBRFlags;
+	struct PBRFlags
+	{
+		U8 Flags;
+
+		constexpr operator U8& () noexcept { return Flags; }
+		constexpr operator const U8& () const noexcept { return Flags; }
+	};
 
 	// PBR material parameters
 	struct MaterialPBR
@@ -16,7 +22,7 @@ namespace ZE::Data
 		static constexpr const char TEX_SPECULAR_NAME[] = "specular";
 		static constexpr const char TEX_HEIGHT_NAME[] = "height";
 
-		enum Flag : PBRFlags { None = 0, UseSpecularPowerAlpha = 1, UseSpecular = 16, UseTexture = 8, UseNormal = 4, UseParallax = 2 };
+		enum Flag : U8 { None = 0, UseSpecularPowerAlpha = 1, UseSpecular = 16, UseTexture = 8, UseNormal = 4, UseParallax = 2 };
 
 		ColorF4 Color;
 		ColorF3 Specular;
@@ -28,7 +34,8 @@ namespace ZE::Data
 		float SpecularPower;
 		float ParallaxScale;
 
-		// Describes ordering of pipeline states enforced by the flags, pass -1 to get last index for PSO
+		static constexpr U8 GetLastPipelineStateNumber() noexcept { return GetPipelineStateNumber({ UINT8_MAX }); }
+		// Describes ordering of pipeline states enforced by the flags, pass UINT8_MAX to get last index for PSO
 		static constexpr U8 GetPipelineStateNumber(PBRFlags flags) noexcept;
 		static constexpr PBRFlags GetShaderFlagsForState(U8 stateNumber) noexcept;
 		static constexpr const char* DecodeShaderSuffix(PBRFlags flags) noexcept;
@@ -36,8 +43,6 @@ namespace ZE::Data
 
 	// Component containing graphics material data for meshes
 	typedef GFX::Material<MaterialPBR, MaterialPBR::TEX_SCHEMA_NAME> MaterialBuffersPBR;
-	// Identifier of single material data
-	struct MaterialID { EID ID; };
 
 #pragma region Functions
 	constexpr U8 MaterialPBR::GetPipelineStateNumber(PBRFlags flags) noexcept
@@ -46,19 +51,19 @@ namespace ZE::Data
 		//
 		// Ordering based on bitfield: Specular|Texture|Normal|Parallax
 		// Eg: Texture|Specular -> 0b1010 -> 10
-		return static_cast<U8>(flags & (UseSpecular | UseTexture | UseNormal | UseParallax)) >> 1;
+		return static_cast<U8>(flags.Flags & (UseSpecular | UseTexture | UseNormal | UseParallax)) >> 1;
 	}
 
 	constexpr PBRFlags MaterialPBR::GetShaderFlagsForState(U8 stateNumber) noexcept
 	{
 		// Retrieve original position of flags
-		return stateNumber << 1;
+		return { static_cast<U8>(stateNumber << 1) };
 	}
 
 	constexpr const char* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept
 	{
-		flags &= ~UseSpecularPowerAlpha;
-		switch (flags)
+		flags.Flags &= ~UseSpecularPowerAlpha;
+		switch (flags.Flags)
 		{
 		case None:
 			return "";

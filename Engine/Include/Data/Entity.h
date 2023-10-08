@@ -22,9 +22,6 @@ namespace ZE
 
 	namespace Data
 	{
-		// Identifier of single geometry data
-		struct MeshID { EID ID; };
-
 		// Main component data storage object
 		typedef entt::registry Storage;
 	}
