@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/GenericResourceBarrier.h"
 #include "DX12.h"
 #include "Table.h"
 ZE_WARNING_PUSH
@@ -41,6 +42,7 @@ namespace ZE::RHI::DX12
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);
 
+		void Barrier(GFX::Device& dev, GFX::Resource::GenericResourceBarrier* barriers, U32 count) const noexcept(!_ZE_DEBUG_GFX_API);
 		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
@@ -51,7 +53,7 @@ namespace ZE::RHI::DX12
 
 		// Gfx API Internal
 
-		IGraphicsCommandList* GetList() noexcept { return commands.Get(); }
+		IGraphicsCommandList* GetList() const noexcept { return commands.Get(); }
 		void Open(Device& dev) { Open(dev, nullptr); }
 		void Free() noexcept { commands = nullptr; allocator = nullptr; }
 

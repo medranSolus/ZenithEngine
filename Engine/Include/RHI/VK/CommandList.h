@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/GenericResourceBarrier.h"
 #include "GFX/QueueType.h"
 #include "VK.h"
 
@@ -35,6 +36,7 @@ namespace ZE::RHI::VK
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
 		void Reset(GFX::Device& dev);
 
+		constexpr void Barrier(GFX::Device& dev, GFX::Resource::GenericResourceBarrier* barriers, U32 count) const noexcept(!_ZE_DEBUG_GFX_API) {}
 		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 

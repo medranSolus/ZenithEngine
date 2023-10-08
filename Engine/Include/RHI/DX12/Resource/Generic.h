@@ -20,7 +20,11 @@ namespace ZE::RHI::DX12::Resource
 
 		constexpr U8* GetBuffer() noexcept { return buffer; }
 
-		void Free(GFX::Device& dev) noexcept;
 		bool IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept;
+		void Free(GFX::Device& dev) noexcept;
+
+		// Gfx API Internal
+
+		IResource* GetResource() const noexcept { return resource.Get(); }
 	};
 }

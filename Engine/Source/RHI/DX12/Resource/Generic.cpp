@@ -326,18 +326,6 @@ namespace ZE::RHI::DX12::Resource
 		}
 	}
 
-
-	void Generic::Free(GFX::Device& dev) noexcept
-	{
-		resource = nullptr;
-		buffer = nullptr;
-		dev.Get().dx12.FreeDescs(srvDescriptor);
-		if (uavDescriptorCpu.Handle)
-			dev.Get().dx12.FreeDescs(uavDescriptorCpu);
-		if (uavDescriptorGpu.Handle)
-			dev.Get().dx12.FreeDescs(uavDescriptorGpu);
-	}
-
 	bool Generic::IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept
 	{
 		if (desc.InitData)
@@ -352,5 +340,17 @@ namespace ZE::RHI::DX12::Resource
 			}
 		}
 		return false;
+	}
+
+	void Generic::Free(GFX::Device& dev) noexcept
+	{
+		resource = nullptr;
+		buffer = nullptr;
+		if (srvDescriptor.Handle)
+			dev.Get().dx12.FreeDescs(srvDescriptor);
+		if (uavDescriptorCpu.Handle)
+			dev.Get().dx12.FreeDescs(uavDescriptorCpu);
+		if (uavDescriptorGpu.Handle)
+			dev.Get().dx12.FreeDescs(uavDescriptorGpu);
 	}
 }

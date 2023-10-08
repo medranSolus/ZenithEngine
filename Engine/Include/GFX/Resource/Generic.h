@@ -11,6 +11,8 @@
 
 namespace ZE::GFX::Resource
 {
+	// TODO: Make lightweight ctor from FrameBuffer internal resources via RID
+	//
 	// Custom generic resource that can hold various types of data inside, depending on requested params
 	class Generic final
 	{
@@ -29,7 +31,7 @@ namespace ZE::GFX::Resource
 		// Main Gfx API
 
 		constexpr U8* GetBuffer() noexcept { U8* ptr = nullptr; ZE_RHI_BACKEND_CALL_RET(ptr, GetBuffer); return ptr; }
-		constexpr bool IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept { bool val = true; ZE_RHI_BACKEND_CALL_RET(val, IsStagingCopyRequired, dev, desc); return val; }
+		constexpr bool IsStagingCopyRequired(Device& dev, const GenericResourceDesc& desc) const noexcept { bool val = true; ZE_RHI_BACKEND_CALL_RET(val, IsStagingCopyRequired, dev, desc); return val; }
 		// Before destroying buffer you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};

@@ -15,7 +15,7 @@ namespace ZE::RHI::VK::Resource
 		~Generic() {  }
 
 		constexpr U8* GetBuffer() noexcept { return buffer; }
-		void Free(GFX::Device& dev) noexcept {  }
-		bool IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept { return true; }
+		constexpr bool IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept { return true; }
+		constexpr void Free(GFX::Device& dev) noexcept {}
 	};
 }
