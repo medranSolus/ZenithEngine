@@ -1,4 +1,6 @@
 #include "RHI/DX12/DiskManager.h"
+#include "Data/ResourceLocation.h"
+#include "IO/File.h"
 ZE_WARNING_PUSH
 #include <winioctl.h>
 ZE_WARNING_POP
@@ -168,12 +170,152 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED(factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&memoryQueue)));
 		ZE_DX_THROW_FAILED(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&compressCodecGDeflate)));
 
-		cpuDecompressionThread = std::thread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
+		cpuDecompressionThread = std::jthread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
 	}
 
 	DiskManager::~DiskManager()
 	{
 		checkForDecompression = false;
-		cpuDecompressionThread.join();
+		if (fenceEvents[0])
+			CloseHandle(fenceEvents[0]);
+		if (fenceEvents[1])
+			CloseHandle(fenceEvents[1]);
 	}
+
+	void DiskManager::StartUploadGPU(bool waitable) noexcept
+	{
+		if (waitable)
+		{
+			fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
+			ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
+			fileQueue->EnqueueSetEvent(fenceEvents[0]);
+
+			fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
+			ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage file queue fence event!");
+			memoryQueue->EnqueueSetEvent(fenceEvents[1]);
+		}
+		fileQueue->Submit();
+		memoryQueue->Submit();
+
+		LockGuardRW lock(queueMutex);
+		submitQueue.reserve(submitQueue.size() + uploadQueue.size());
+		submitQueue.insert(submitQueue.end(), uploadQueue.begin(), uploadQueue.end());
+		uploadQueue.clear();
+	}
+
+	bool DiskManager::WaitForUploadGPU()
+	{
+		ZE_ASSERT(fenceEvents[0] != nullptr && fenceEvents[1] != nullptr,
+			"Cannot wait for upload to complete when it hasn't been started in waitable mode!");
+
+		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
+			throw ZE_WIN_EXCEPT_LAST();
+		if (CloseHandle(fenceEvents[0]) == 0)
+			throw ZE_WIN_EXCEPT_LAST();
+		if (CloseHandle(fenceEvents[1]) == 0)
+			throw ZE_WIN_EXCEPT_LAST();
+		fenceEvents[0] = nullptr;
+		fenceEvents[1] = nullptr;
+
+		DSTORAGE_ERROR_RECORD errorRecord = {};
+		fileQueue->RetrieveErrorRecord(&errorRecord);
+
+		if (SUCCEEDED(errorRecord.FirstFailure.HResult))
+		{
+			// Set all resources location to GPU
+			for (EID id : submitQueue)
+				Settings::Data.get<Data::ResourceLocationAtom>(id) = Data::ResourceLocation::GPU;
+			return true;
+		}
+		ZE_WARNING("The DirectStorage request failed!");
+		return false;
+	}
+
+	void DiskManager::AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset, U32 bytes)
+	{
+		ZE_VALID_EID(resourceID);
+
+		DSTORAGE_REQUEST request = {};
+		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
+		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_BUFFER;
+
+		request.Source.File.Source = file.Get().dx12.GetStorageFile();
+		request.Source.File.Offset = sourceOffset;
+		request.Source.File.Size = bytes;
+
+		request.Destination.Buffer.Resource = dest;
+		request.Destination.Buffer.Offset = 0;
+		request.Destination.Buffer.Size = bytes;
+
+		request.UncompressedSize = bytes;
+		request.CancellationTag = 0;
+
+		fileQueue->EnqueueRequest(&request);
+		if (resourceID != INVALID_EID)
+		{
+			LockGuardRW lock(queueMutex);
+			uploadQueue.emplace_back(resourceID);
+		}
+	}
+
+	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes)
+	{
+		ZE_VALID_EID(resourceID);
+
+		DSTORAGE_REQUEST request = {};
+		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
+		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_BUFFER;
+
+		request.Source.Memory.Source = src;
+		request.Source.Memory.Size = bytes;
+
+		request.Destination.Buffer.Resource = dest;
+		request.Destination.Buffer.Offset = 0;
+		request.Destination.Buffer.Size = bytes;
+
+		request.UncompressedSize = bytes;
+		request.CancellationTag = 0;
+
+		memoryQueue->EnqueueRequest(&request);
+		if (resourceID != INVALID_EID)
+		{
+			LockGuardRW lock(queueMutex);
+			uploadQueue.emplace_back(resourceID);
+		}
+	}
+
+	//void AddMemoryTextureRequest(EID resourceID, IResource* dest, const void* src, U32 bytes)
+	//{
+	//	ZE_VALID_EID(resourceID);
+
+	//	DSTORAGE_REQUEST request = {};
+	//	request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+	//	request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
+	//	request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_TEXTURE_REGION;
+
+	//	// SRC data must by in GetCopyableFootprints1() layout, need to decide if copying data to match it is required or not.
+	//	// And what about disk data, how to save the textures so they would be in friendly format and layout for all the APIs?
+	//	// Does regular DXGI_FORMAT rules would be enough for such case??
+	//	// If necessary during custom decompression step it would be okay to re-arange data to fit it's needs but what about something like GDeflate?
+	//	// Some common layout that won't require copies and would just suffice to point to textre buffer is really needed
+	//	// Maybe ask on discord...
+	//	request.Source.Memory.Source = src;
+	//	request.Source.Memory.Size = bytes;
+
+	//	request.Destination.Texture.Resource = dest;
+	//	request.Destination.Texture.SubresourceIndex = 0;
+	//	request.Destination.Texture.Region;
+
+	//	request.UncompressedSize = bytes;
+	//	request.CancellationTag = 0;
+
+	//	memoryQueue->EnqueueRequest(&request);
+	//	if (resourceID != INVALID_EID)
+	//	{
+	//		LockGuardRW lock(queueMutex);
+	//		uploadQueue.emplace_back(resourceID);
+	//	}
+	//}
 }

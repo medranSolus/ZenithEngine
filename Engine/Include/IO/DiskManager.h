@@ -38,11 +38,17 @@ namespace ZE::IO
 
 	public:
 		DiskManager() = default;
+		constexpr DiskManager(GFX::Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
 		ZE_CLASS_MOVE(DiskManager);
 		~DiskManager() = default;
 
 		constexpr void Init(GFX::Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
 		constexpr void SwitchApi(GfxApiType nextApi, GFX::Device& dev) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev); }
 		ZE_RHI_BACKEND_GET(DiskManager);
+
+		// Main IO API
+
+		void StartUploadGPU(bool waitable) noexcept { ZE_RHI_BACKEND_CALL(StartUploadGPU, waitable); }
+		bool WaitForUploadGPU() { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, WaitForUploadGPU); return status; }
 	};
 }

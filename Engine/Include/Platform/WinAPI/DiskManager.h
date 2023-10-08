@@ -11,5 +11,8 @@ namespace ZE::WinAPI
 		constexpr DiskManager(GFX::Device& dev) noexcept {}
 		ZE_CLASS_MOVE(DiskManager);
 		~DiskManager() = default;
+
+		constexpr void StartUploadGPU(bool waitable) noexcept {}
+		constexpr bool WaitForUploadGPU() { return true; }
 	};
 }
