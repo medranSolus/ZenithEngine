@@ -19,7 +19,7 @@ namespace ZE::RHI::VK::Resource
 	}
 
 	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data)
-		: vertexCount(data.VertexCount)
+		: vertexCount(data.VertexCount), vertexSize(data.VertexSize)
 	{
 		ZE_VK_ENABLE_ID();
 		Device& device = dev.Get().vk;

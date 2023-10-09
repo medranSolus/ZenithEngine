@@ -87,13 +87,13 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 
+		static EID CreateEntity() noexcept { LockGuardRW lock(dataCreationMutex); return Data.create(); }
+		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(dataCreationMutex); for (EID& e : entities) e = Data.create(); }
+
 		static constexpr U32 GetChainResourceCount() noexcept;
 
 		static constexpr void Init(const SettingsInitParams& params) noexcept;
 		static void Destroy() noexcept;
-
-		static EID CreateEntity() noexcept { LockGuardRW lock(dataCreationMutex); return Data.create(); }
-		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(dataCreationMutex); for (EID& e : entities) e = Data.create(); }
 	};
 
 #pragma region Functions

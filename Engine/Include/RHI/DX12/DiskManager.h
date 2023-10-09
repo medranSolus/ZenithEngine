@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/WinAPI/DiskManager.h"
 #include "GFX/Device.h"
+#include "IO/CompressionFormat.h"
 ZE_WARNING_PUSH
 #include "dstorage.h"
 ZE_WARNING_POP
@@ -21,6 +22,8 @@ namespace ZE::RHI::DX12
 	class DiskManager final
 	{
 		static constexpr U32 MAX_DECOMPRESSION_WAIT = 2000; // Number of miliseconds to wait for new decompression request to come
+		// Custom decompression formats
+		static constexpr DSTORAGE_COMPRESSION_FORMAT COMPRESSION_FORMAT_ZLIB = static_cast<DSTORAGE_COMPRESSION_FORMAT>(DSTORAGE_CUSTOM_COMPRESSION_0 + 1);
 
 		WinAPI::DiskManager osDiskManager;
 
@@ -39,6 +42,7 @@ namespace ZE::RHI::DX12
 		BoolAtom checkForDecompression = true;
 		std::jthread cpuDecompressionThread;
 
+		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
 		void DecompressAssets(Device& dev) const;
 
@@ -55,7 +59,8 @@ namespace ZE::RHI::DX12
 
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 
-		void AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset, U32 bytes);
+		void AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset,
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize);
 		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes);
 	};
 }

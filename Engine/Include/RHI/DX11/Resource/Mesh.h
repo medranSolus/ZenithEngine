@@ -23,8 +23,11 @@ namespace ZE::RHI::DX11::Resource
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(buffer == nullptr); }
 
+		constexpr U32 GetSize() const noexcept { return indexCount * GetIndexSize() + vertexCount * vertexSize; }
 		constexpr U32 GetVertexCount() const noexcept { return vertexCount; }
 		constexpr U32 GetIndexCount() const noexcept { return indexCount; }
+		constexpr U16 GetVertexSize() const noexcept { return Utils::SafeCast<U16>(vertexSize); }
+		constexpr PixelFormat GetIndexFormat() const noexcept { return is16bitIndices ? PixelFormat::R16_UInt : PixelFormat::R32_UInt; }
 		void Free(GFX::Device& dev) noexcept { buffer = nullptr; vertexCount = indexCount = 0; }
 
 		void Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API);

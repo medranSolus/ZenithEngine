@@ -10,6 +10,7 @@ namespace ZE::RHI::VK::Resource
 		VkBuffer buffer = VK_NULL_HANDLE;
 		U32 vertexCount = 0;
 		U32 indexCount = 0;
+		U16 vertexSize = 0;
 		VkIndexType indexType = VK_INDEX_TYPE_NONE_KHR;
 		Allocation alloc;
 
@@ -23,11 +24,31 @@ namespace ZE::RHI::VK::Resource
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(alloc.IsFree() && buffer == VK_NULL_HANDLE); }
 
+		constexpr U32 GetSize() const noexcept { return indexCount * GetIndexSize() + vertexCount * vertexSize; }
 		constexpr U32 GetVertexCount() const noexcept { return vertexCount; }
 		constexpr U32 GetIndexCount() const noexcept { return indexCount; }
+		constexpr U16 GetVertexSize() const noexcept { return vertexSize; }
+		constexpr PixelFormat GetIndexFormat() const noexcept;
 		void Free(GFX::Device& dev) noexcept { dev.Get().vk.GetMemory().Remove(dev.Get().vk, alloc); }
 
 		void Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API);
 		GFX::Resource::MeshData GetData(GFX::Device& dev, GFX::CommandList& cl) const;
 	};
+
+#pragma region Functions
+	constexpr PixelFormat Mesh::GetIndexFormat() const noexcept
+	{
+		switch (indexType)
+		{
+		default:
+			ZE_FAIL("Unknown type of index format!");
+		case VK_INDEX_TYPE_UINT32:
+			return PixelFormat::R32_UInt;
+		case VK_INDEX_TYPE_UINT16:
+			return PixelFormat::R16_UInt;
+		case VK_INDEX_TYPE_UINT8_EXT:
+			return PixelFormat::R8_UInt;
+		}
+	}
+#pragma endregion
 }

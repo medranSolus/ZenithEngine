@@ -196,13 +196,13 @@ namespace ZE::Data
 						entry.Type = IO::Format::ResourcePackEntryType::Geometry;
 						entry.Geometry.Offset = dataOffset;
 						entry.Geometry.Bytes; // TODO NOW: Currently no compression, add simple zlib ones
-						//entry.Geometry.UncompressedSize = mesh->GetSize();
+						entry.Geometry.UncompressedSize = mesh->GetSize();
 						entry.Geometry.BoxCenter = assets.get<Math::BoundingBox>(entity).Center;
 						entry.Geometry.BoxExtents = assets.get<Math::BoundingBox>(entity).Extents;
 						entry.Geometry.VertexCount = mesh->GetVertexCount();
 						entry.Geometry.IndexCount = mesh->GetIndexCount();
-						//entry.Geometry.VertexSize = mesh->GetVertexSize();
-						//entry.Geometry.IndexBufferFormat = mesh->GetIndexFormat();
+						entry.Geometry.VertexSize = mesh->GetVertexSize();
+						entry.Geometry.IndexBufferFormat = mesh->GetIndexFormat();
 
 						// If custom compression specified then use this one
 						auto* compression = assets.try_get<IO::CompressionFormat>(entity);

@@ -12,9 +12,8 @@ namespace ZE::RHI::DX12::Resource
 		bool is16bitIndices;
 		ResourceInfo info;
 
-		constexpr bool IsIndexBufferPresent() const noexcept { return vertexView.SizeInBytes != indexView.SizeInBytes; }
+		constexpr bool IsIndexBufferPresent() const noexcept { return indexView.SizeInBytes != 0; }
 		constexpr U32 GetIndexSize() const noexcept { return is16bitIndices ? sizeof(U16) : sizeof(U32); }
-		constexpr U32 GetIndexBytesOffset() const noexcept { return Math::AlignUp(vertexView.SizeInBytes, GetIndexSize()); }
 
 	public:
 		Mesh() = default;
@@ -23,8 +22,11 @@ namespace ZE::RHI::DX12::Resource
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(info.IsFree()); }
 
+		constexpr U32 GetSize() const noexcept { return indexView.SizeInBytes + vertexView.SizeInBytes; }
 		constexpr U32 GetVertexCount() const noexcept { return vertexView.SizeInBytes / vertexView.StrideInBytes; }
-		constexpr U32 GetIndexCount() const noexcept { return IsIndexBufferPresent() ? (indexView.SizeInBytes - GetIndexBytesOffset()) / GetIndexSize() : 0; }
+		constexpr U32 GetIndexCount() const noexcept { return indexView.SizeInBytes / GetIndexSize(); }
+		constexpr U16 GetVertexSize() const noexcept { return Utils::SafeCast<U16>(vertexView.StrideInBytes); }
+		constexpr PixelFormat GetIndexFormat() const noexcept { return is16bitIndices ? PixelFormat::R16_UInt : PixelFormat::R32_UInt; }
 		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(info); }
 
 		void Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API);

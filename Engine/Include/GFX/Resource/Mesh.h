@@ -30,8 +30,12 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
+		constexpr U32 GetSize() const noexcept { U32 size = 0; ZE_RHI_BACKEND_CALL_RET(size, GetSize); return size; }
 		constexpr U32 GetVertexCount() const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetVertexCount); return count; }
 		constexpr U32 GetIndexCount() const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetIndexCount); return count; }
+		constexpr U16 GetVertexSize() const noexcept { U16 size = 0; ZE_RHI_BACKEND_CALL_RET(size, GetVertexSize); return size; }
+		constexpr PixelFormat GetIndexFormat() const noexcept { PixelFormat format = PixelFormat::Unknown; ZE_RHI_BACKEND_CALL_RET(format, GetIndexFormat); return format; }
+
 		constexpr void Draw(Device& dev, CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Draw, dev, cl); }
 		// Before destroying buffer you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }

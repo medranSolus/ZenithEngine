@@ -1,5 +1,6 @@
 #include "RHI/DX12/DiskManager.h"
 #include "Data/ResourceLocation.h"
+#include "IO/Compressor.h"
 #include "IO/File.h"
 ZE_WARNING_PUSH
 #include <winioctl.h>
@@ -7,6 +8,19 @@ ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
+	constexpr DSTORAGE_COMPRESSION_FORMAT DiskManager::GetCompressionFormat(IO::CompressionFormat compression) noexcept
+	{
+		switch (compression)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case IO::CompressionFormat::None:
+			return DSTORAGE_CUSTOM_COMPRESSION_0;
+		case IO::CompressionFormat::ZLib:
+			return COMPRESSION_FORMAT_ZLIB;
+		}
+	}
+
 	bool DiskManager::IsFileOnSSD(std::wstring_view path) noexcept
 	{
 		wchar_t volumePath[MAX_PATH];
@@ -85,6 +99,21 @@ namespace ZE::RHI::DX12
 						req.DstBuffer, req.SrcBuffer, req.DstSize);
 					break;
 				}
+				ZE_WARNING_PUSH;
+				ZE_WARNING_DISABLE_MSVC(4063);
+				case COMPRESSION_FORMAT_ZLIB:
+				{
+					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
+						[](const void* src, U32 srcSize, void* dst, U32 dstSize)
+						{
+							IO::Compressor codec(IO::CompressionFormat::ZLib);
+							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
+							codec.Decompress(src, srcSize, dst, dstSize);
+						},
+						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
+					break;
+				}
+				ZE_WARNING_POP;
 				default:
 					ZE_FAIL("Unknown type of custom decompression request!");
 					break;
@@ -231,24 +260,25 @@ namespace ZE::RHI::DX12
 		return false;
 	}
 
-	void DiskManager::AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset, U32 bytes)
+	void DiskManager::AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset,
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize)
 	{
 		ZE_VALID_EID(resourceID);
 
 		DSTORAGE_REQUEST request = {};
-		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.CompressionFormat = GetCompressionFormat(compression);
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
 		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_BUFFER;
 
 		request.Source.File.Source = file.Get().dx12.GetStorageFile();
 		request.Source.File.Offset = sourceOffset;
-		request.Source.File.Size = bytes;
+		request.Source.File.Size = sourceBytes;
 
 		request.Destination.Buffer.Resource = dest;
 		request.Destination.Buffer.Offset = 0;
-		request.Destination.Buffer.Size = bytes;
+		request.Destination.Buffer.Size = uncompressedSize;
 
-		request.UncompressedSize = bytes;
+		request.UncompressedSize = uncompressedSize;
 		request.CancellationTag = 0;
 
 		fileQueue->EnqueueRequest(&request);

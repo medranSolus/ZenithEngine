@@ -34,12 +34,12 @@ namespace ZE::RHI::DX12::Resource
 		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
 
-		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.SourceBytes);
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
 		resInfo = device.CreateBuffer(desc, false);
 		ZE_DX_SET_ID(resInfo.Resource, "CBuffer from file");
 		address = resInfo.Resource->GetGPUVirtualAddress();
 
-		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, file, resInfo.Resource.Get(), data.BufferDataOffset, data.SourceBytes);
+		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, file, resInfo.Resource.Get(), data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 	}
 
 	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const

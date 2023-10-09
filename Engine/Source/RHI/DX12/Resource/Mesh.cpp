@@ -83,7 +83,7 @@ namespace ZE::RHI::DX12::Resource
 		indexView.BufferLocation = vertexView.BufferLocation = info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(info.Resource, "Mesh geometry buffer from file");
 
-		disk.Get().dx12.AddFileBufferRequest(data.MeshID, file, info.Resource.Get(), data.MeshDataOffset, data.SourceBytes);
+		disk.Get().dx12.AddFileBufferRequest(data.MeshID, file, info.Resource.Get(), data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 	}
 
 	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API)
