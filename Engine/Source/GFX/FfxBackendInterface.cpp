@@ -15,7 +15,7 @@ namespace ZE::GFX
 
 	struct FfxBackendContext
 	{
-		entt::basic_registry<S32> Resources;
+		entt::basic_registry<U32> Resources;
 		std::vector<Resource::GenericResourceBarrier> Barriers;
 	};
 
@@ -229,7 +229,7 @@ namespace ZE::GFX
 		FfxResource res = {};
 		res.resource = reinterpret_cast<void*>(&ctx.Resources.get<Resource::Generic>(resource.internalIndex));
 		res.state = ctx.Resources.get<FfxResourceStates>(resource.internalIndex);
-		res.description = GetResourceDescriptor(backendInterface, resource);
+		res.description = ffxGetResourceDescriptor(backendInterface, resource);
 #if _ZE_DEBUG_GFX_NAMES
 		if (FfxResourceName* name = ctx.Resources.try_get<FfxResourceName>(resource.internalIndex))
 			wcscpy_s(res.name, name->Name);
@@ -246,9 +246,7 @@ namespace ZE::GFX
 
 		if (inResource->resource)
 		{
-			Device& dev = GetDevice(backendInterface);
 			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
-
 			outResourceInternal->internalIndex = ctx.Resources.create();
 
 			ctx.Resources.emplace<Resource::Generic>(outResourceInternal->internalIndex, std::move(*reinterpret_cast<Resource::Generic*>(inResource->resource)));

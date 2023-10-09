@@ -6,7 +6,7 @@ namespace ZE::RHI::DX11::Resource
 {
 	class Generic final
 	{
-		DX::ComPtr<ID3D11Resource> resource;
+		DX::ComPtr<IResource> resource;
 		Ptr<U8> buffer;
 
 	public:

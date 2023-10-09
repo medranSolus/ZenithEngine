@@ -1,4 +1,5 @@
 #include "RHI/DX12/CommandList.h"
+#include "GFX/Resource/Generic.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Generic.h"
+#include "State.h"
 
 namespace ZE::GFX::Resource
 {
@@ -7,7 +7,7 @@ namespace ZE::GFX::Resource
 	struct GenericResourceBarrier
 	{
 		bool IsUAV;
-		Generic* Resource;
+		class Generic* Resource;
 		State Before;
 		State After;
 	};
