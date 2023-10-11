@@ -219,6 +219,7 @@ set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # FidelityFX SDK effects
 add_fidelityfx_target(FSR2)
+add_fidelityfx_target(CACAO)
 
 # Inject debug postfix if library use it
 if(${ZE_EXTERNAL_BUILD_DEBUG_POSTFIX})
@@ -480,6 +481,7 @@ add_external_project(DXTEX "bin/CMake/" "" "")
 
 # FidelityFX SDK
 add_external_fidelityfx_effect(FSR2)
+add_external_fidelityfx_effect(CACAO)
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
