@@ -5,26 +5,26 @@
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/ChainPool.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::SSAO
+namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 {
 	struct Resources
 	{
 		RID Depth;
 		RID Normal;
 		RID ViewspaceDepth;
-		RID ScratchSSAO;
+		RID ScratchAO;
 		RID DepthEdges;
-		RID SSAO;
+		RID AO;
 	};
 
 	struct ExecuteData
 	{
 		ChainPool<CommandList> ListChain;
 		U32 BindingIndexPrefilter;
-		U32 BindingIndexSSAO;
+		U32 BindingIndexAO;
 		U32 BindingIndexDenoise;
 		Resource::PipelineStateCompute StatePrefilter;
-		Resource::PipelineStateCompute StateSSAO;
+		Resource::PipelineStateCompute StateAO;
 		Resource::PipelineStateCompute StateDenoise;
 		Resource::Texture::Pack HilbertLUT;
 	};

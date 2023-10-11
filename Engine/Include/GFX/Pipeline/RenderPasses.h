@@ -10,6 +10,6 @@
 #include "RenderPass/PointLight.h"
 #include "RenderPass/Skybox.h"
 #include "RenderPass/SpotLight.h"
-#include "RenderPass/SSAO.h"
 #include "RenderPass/VerticalBlur.h"
 #include "RenderPass/Wireframe.h"
+#include "RenderPass/XeGTAO.h"

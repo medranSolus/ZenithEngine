@@ -246,7 +246,7 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE("ssao", QueueType::Compute, SSAO, dev, buildData);
+			ZE_MAKE_NODE("xegtao", QueueType::Compute, XeGTAO, dev, buildData);
 			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
@@ -260,7 +260,7 @@ namespace ZE::GFX::Pipeline
 		}
 		{
 			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
-			node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
+			node.AddInput("xegtao.SB", Resource::StateShaderResourcePS);
 			node.AddInput("lambertian.GB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::StateShaderResourcePS);
