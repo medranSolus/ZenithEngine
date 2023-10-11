@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RenderPass/CACAO.h"
 #include "RenderPass/DirectionalLight.h"
 #include "RenderPass/HDRGammaCorrection.h"
 #include "RenderPass/HorizontalBlur.h"

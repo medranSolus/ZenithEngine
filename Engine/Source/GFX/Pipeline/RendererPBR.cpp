@@ -274,6 +274,15 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 			break;
 		}
+		case AOType::CACAO:
+		{
+			ZE_MAKE_NODE("ssao", QueueType::Compute, CACAO, dev, buildData, width, height);
+			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
+			node.AddOutput("SB", Resource::StateUnorderedAccess, ssao);
+			nodes.emplace_back(std::move(node));
+			break;
+		}
 		}
 		{
 			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
