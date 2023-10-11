@@ -19,6 +19,7 @@ namespace ZE::RHI::DX12
 	// Wrappers for DirectX 12 interfaces (to avoid using multiple different versions)
 	typedef ID3D12CommandAllocator                   ICommandAllocator;
 	typedef ID3D12CommandList                        ICommandList;
+	typedef ID3D12CommandSignature                   ICommandSignature;
 	typedef ID3D12CommandQueue                       ICommandQueue;
 	typedef ID3D12DescriptorHeap                     IDescriptorHeap;
 	typedef ID3D12Debug6                             IDebug;

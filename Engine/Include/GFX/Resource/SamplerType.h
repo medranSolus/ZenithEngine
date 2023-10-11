@@ -19,7 +19,6 @@ namespace ZE::GFX::Resource
 		Default = 0b00,
 		// Only for identyfication of operation flags
 		OperationType = 0b11,
-		Filter        = 0b00,
 		Comparison    = 0b01,
 		Minimum       = 0b10,
 		Maximum       = 0b11,
