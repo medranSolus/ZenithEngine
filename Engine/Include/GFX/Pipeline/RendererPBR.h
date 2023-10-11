@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline
 		DataPBR settingsData;
 		CameraPBR dynamicData;
 		float blurSigma;
-		XeGTAO::GTAOSettings ssaoSettings = {};
+		XeGTAO::GTAOSettings xegtaoSettings = {};
 		Float4x4 currentProjection;
 		Float4 cameraRotation;
 
@@ -20,16 +20,16 @@ namespace ZE::GFX::Pipeline
 		constexpr void SetupBlurKernel() noexcept;
 		constexpr void SetupBlurIntensity() noexcept;
 		constexpr void SetupBlurData(U32 width, U32 height) noexcept;
-		constexpr void SetupSsaoQuality() noexcept;
-		constexpr void SetupSsaoData(U32 width, U32 height) noexcept;
+		constexpr void SetupXeGTAOQuality() noexcept;
+		constexpr void SetupXeGTAOData(U32 width, U32 height) noexcept;
 
 	public:
 		RendererPBR() noexcept : RenderGraph(this, &settingsData, &dynamicData, sizeof(CameraPBR)) {}
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
-		constexpr U32 GetFrameWidth() const noexcept { return Utils::SafeCast<U32>(settingsData.SsaoData.ViewportSize.x); }
-		constexpr U32 GetFrameHeight() const noexcept { return Utils::SafeCast<U32>(settingsData.SsaoData.ViewportSize.y); }
+		constexpr U32 GetFrameWidth() const noexcept { return Utils::SafeCast<U32>(settingsData.XeGTAOData.ViewportSize.x); }
+		constexpr U32 GetFrameHeight() const noexcept { return Utils::SafeCast<U32>(settingsData.XeGTAOData.ViewportSize.y); }
 		constexpr float GetFrameRation() const noexcept { return Utils::SafeCast<float>(GetFrameWidth()) / Utils::SafeCast<float>(GetFrameHeight()); }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }

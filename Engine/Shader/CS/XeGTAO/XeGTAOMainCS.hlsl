@@ -2,7 +2,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
-#include "Utils/SSAO.hlsli"
+#include "Utils/XeGTAO.hlsli"
 
 UAV2D(ssaoMap,    uint,	       0, 2);
 UAV2D(depthEdges, unorm float, 1, 3);
@@ -31,8 +31,8 @@ lpfloat2 SpatioTemporalNoise(const in uint2 pixCoord, uniform uint temporalIndex
 void main(const uint2 pixCoord : SV_DispatchThreadID)
 {
 	XeGTAO_MainPass(pixCoord,
-		cb_pbrData.SsaoSliceCount, cb_pbrData.SsaoStepsPerSlice,
-		SpatioTemporalNoise(pixCoord, cb_pbrData.SsaoData.NoiseIndex),
-		LoadNormal(pixCoord), cb_pbrData.SsaoData,
+		cb_pbrData.XeGTAOSliceCount, cb_pbrData.XeGTAOStepsPerSlice,
+		SpatioTemporalNoise(pixCoord, cb_pbrData.XeGTAOData.NoiseIndex),
+		LoadNormal(pixCoord), cb_pbrData.XeGTAOData,
 		tx_viewDepth, splr_PE, ua_ssaoMap, ua_depthEdges);
 }

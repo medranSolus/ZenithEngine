@@ -80,44 +80,44 @@ namespace ZE::GFX::Pipeline
 		SetupBlurKernel();
 	}
 
-	constexpr void RendererPBR::SetupSsaoQuality() noexcept
+	constexpr void RendererPBR::SetupXeGTAOQuality() noexcept
 	{
-		switch (ssaoSettings.QualityLevel)
+		switch (xegtaoSettings.QualityLevel)
 		{
 		default:
-			ZE_FAIL("Unknown SSAO quality level!");
+			ZE_FAIL("Unknown XeGTAO quality level!");
 		case 0: // Low
 		{
-			settingsData.SsaoSliceCount = 1.0f;
-			settingsData.SsaoStepsPerSlice = 2.0f;
+			settingsData.XeGTAOSliceCount = 1.0f;
+			settingsData.XeGTAOStepsPerSlice = 2.0f;
 			break;
 		}
 		case 1: // Medium
 		{
-			settingsData.SsaoSliceCount = 2.0f;
-			settingsData.SsaoStepsPerSlice = 2.0f;
+			settingsData.XeGTAOSliceCount = 2.0f;
+			settingsData.XeGTAOStepsPerSlice = 2.0f;
 			break;
 		}
 		case 2: // High
 		{
-			settingsData.SsaoSliceCount = 3.0f;
-			settingsData.SsaoStepsPerSlice = 3.0f;
+			settingsData.XeGTAOSliceCount = 3.0f;
+			settingsData.XeGTAOStepsPerSlice = 3.0f;
 			break;
 		}
 		case 3: // Ultra
 		{
-			settingsData.SsaoSliceCount = 9.0f;
-			settingsData.SsaoStepsPerSlice = 3.0f;
+			settingsData.XeGTAOSliceCount = 9.0f;
+			settingsData.XeGTAOStepsPerSlice = 3.0f;
 			break;
 		}
 		}
 	}
 
-	constexpr void RendererPBR::SetupSsaoData(U32 width, U32 height) noexcept
+	constexpr void RendererPBR::SetupXeGTAOData(U32 width, U32 height) noexcept
 	{
-		ssaoSettings.DenoisePasses = 1;
-		settingsData.SsaoData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
-		SetupSsaoQuality();
+		xegtaoSettings.DenoisePasses = 1;
+		settingsData.XeGTAOData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
+		SetupXeGTAOQuality();
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, const ParamsPBR& params)
@@ -169,7 +169,16 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
-		SetupSsaoData(width, height);
+
+		switch (Settings::GetAOType())
+		{
+		default:
+			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
+			[[fallthrough]];
+		case AOType::XeGTAO:
+			SetupXeGTAOData(width, height);
+			break;
+		}
 
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
@@ -245,8 +254,14 @@ namespace ZE::GFX::Pipeline
 			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
+		switch (Settings::GetAOType())
 		{
-			ZE_MAKE_NODE("xegtao", QueueType::Compute, XeGTAO, dev, buildData);
+		default:
+			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
+			[[fallthrough]];
+		case AOType::XeGTAO:
+		{
+			ZE_MAKE_NODE("ssao", QueueType::Compute, XeGTAO, dev, buildData);
 			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
@@ -257,10 +272,12 @@ namespace ZE::GFX::Pipeline
 				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
 			node.AddOutput("SB", Resource::StateUnorderedAccess, ssao);
 			nodes.emplace_back(std::move(node));
+			break;
+		}
 		}
 		{
 			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
-			node.AddInput("xegtao.SB", Resource::StateShaderResourcePS);
+			node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
 			node.AddInput("lambertian.GB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::StateShaderResourcePS);
@@ -324,10 +341,10 @@ namespace ZE::GFX::Pipeline
 	void RendererPBR::UpdateSettingsData(Device& dev, const Matrix& projection)
 	{
 		Math::XMStoreFloat4x4(&currentProjection, projection);
-		XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
-			settingsData.SsaoData.ViewportSize.x,
-			settingsData.SsaoData.ViewportSize.y,
-			ssaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+		XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
+			settingsData.XeGTAOData.ViewportSize.x,
+			settingsData.XeGTAOData.ViewportSize.y,
+			xegtaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
@@ -434,21 +451,31 @@ namespace ZE::GFX::Pipeline
 			change |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&settingsData.AmbientLight),
 				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
 		}
-		if (ImGui::CollapsingHeader("SSAO"))
+		switch (Settings::GetAOType())
 		{
-			// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
-			const int quality = ssaoSettings.QualityLevel;
-			const int denoise = ssaoSettings.DenoisePasses;
-			change |= XeGTAO::GTAOImGuiSettings(ssaoSettings);
-			change |= quality != ssaoSettings.QualityLevel || denoise != ssaoSettings.DenoisePasses;
-			if (change)
+		default:
+			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
+			[[fallthrough]];
+		case AOType::XeGTAO:
+		{
+			if (ImGui::CollapsingHeader("XeGTAO"))
 			{
-				SetupSsaoQuality();
-				XeGTAO::GTAOUpdateConstants(settingsData.SsaoData,
-					settingsData.SsaoData.ViewportSize.x,
-					settingsData.SsaoData.ViewportSize.y,
-					ssaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+				// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
+				const int quality = xegtaoSettings.QualityLevel;
+				const int denoise = xegtaoSettings.DenoisePasses;
+				change |= XeGTAO::GTAOImGuiSettings(xegtaoSettings);
+				change |= quality != xegtaoSettings.QualityLevel || denoise != xegtaoSettings.DenoisePasses;
+				if (change)
+				{
+					SetupXeGTAOQuality();
+					XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
+						settingsData.XeGTAOData.ViewportSize.x,
+						settingsData.XeGTAOData.ViewportSize.y,
+						xegtaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+				}
 			}
+			break;
+		}
 		}
 		// If any settings data updated then upload new buffer
 		if (change)

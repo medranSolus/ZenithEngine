@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/AOType.h"
 #include "GFX/UpscalerType.h"
 #include "RHI/ApiType.h"
 #include "CmdParser.h"
@@ -26,6 +27,8 @@ namespace ZE
 		bool AllowPIXAttach;
 		// Type of upscaler to be used in graphics pipeline.
 		GFX::UpscalerType Upscaler;
+		// Type of ambient occlusion to be used in graphics pipeline.
+		GFX::AOType AmbientOcclusion;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi = GfxApiType::DX12) noexcept;

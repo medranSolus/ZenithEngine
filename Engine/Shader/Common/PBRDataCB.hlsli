@@ -8,7 +8,7 @@
 struct PBRData
 {
 	// Should be multiple of 16 B (alignment restrictions)
-	GTAOConstants SsaoData;
+	GTAOConstants XeGTAOData;
 
 	float3 AmbientLight;
 	float HDRExposure;
@@ -19,10 +19,10 @@ struct PBRData
 	int BlurRadius;
 	float BlurIntensity;
 
-	// LOW - 1, MEDIUM - 2, HIGH - 3, ULTRA - 9 (MAX is 9, otherwise change loop unroll value according to "CS/Utils/SSAO.hlsli")
-	float SsaoSliceCount;
-	// LOW - 2, MEDIUM - 2, HIGH - 3, ULTRA - 3 (MAX is 3, otherwise change loop unroll value according to "CS/Utils/SSAO.hlsli")
-	float SsaoStepsPerSlice;
+	// LOW - 1, MEDIUM - 2, HIGH - 3, ULTRA - 9 (MAX is 9, otherwise change loop unroll value according to "CS/Utils/XeGTAO.hlsli")
+	float XeGTAOSliceCount;
+	// LOW - 2, MEDIUM - 2, HIGH - 3, ULTRA - 3 (MAX is 3, otherwise change loop unroll value according to "CS/Utils/XeGTAO.hlsli")
+	float XeGTAOStepsPerSlice;
 	float Gamma;
 	float GammaInverse;
 

@@ -1,5 +1,5 @@
-#ifndef SSAO_CS_HLSLI
-#define SSAO_CS_HLSLI
+#ifndef XEGTAO_CS_HLSLI
+#define XEGTAO_CS_HLSLI
 
 #define VA_SATURATE saturate
 #define XE_GTAO_USE_HALF_FLOAT_PRECISION 0
@@ -12,6 +12,6 @@
 * Specified unroll for loop with sliceCount (line 370): //[unroll] -> [unroll(9)]
 * For DX11 in XeGTAO_Denoise() replaced GatherRed with texture fetches
 */
-#include "XeGTAO.hlsli"
+#include "IntelXeGTAO.hlsli"
 
-#endif // SSAO_CS_HLSLI
+#endif // XEGTAO_CS_HLSLI

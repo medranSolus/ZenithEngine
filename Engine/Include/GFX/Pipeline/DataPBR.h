@@ -1,6 +1,8 @@
 #pragma once
 #include "GUI/DearImGui.h"
+ZE_WARNING_PUSH
 #include "XeGTAO.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline
 {
@@ -10,7 +12,7 @@ namespace ZE::GFX::Pipeline
 		static constexpr S32 BLUR_KERNEL_RADIUS = 7;
 
 		// Should be multiple of 16 B (alignment restrictions)
-		XeGTAO::GTAOConstants SsaoData;
+		XeGTAO::GTAOConstants XeGTAOData;
 
 		Float3 AmbientLight;
 		float HDRExposure;
@@ -21,8 +23,8 @@ namespace ZE::GFX::Pipeline
 		S32 BlurRadius;
 		float BlurIntensity;
 
-		float SsaoSliceCount;
-		float SsaoStepsPerSlice;
+		float XeGTAOSliceCount;
+		float XeGTAOStepsPerSlice;
 
 		float Gamma;
 		float GammaInverse;

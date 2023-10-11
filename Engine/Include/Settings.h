@@ -38,6 +38,7 @@ namespace ZE
 		static inline U32 applicationVersion;
 		static inline GfxApiType gfxApi;
 		static inline GFX::UpscalerType upscaler;
+		static inline GFX::AOType aoType;
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
@@ -54,6 +55,7 @@ namespace ZE
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized()); return gfxApi; }
 		static constexpr GFX::UpscalerType GetUpscaler() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler; }
+		static constexpr GFX::AOType GetAOType() noexcept { ZE_ASSERT_INIT(Initialized()); return aoType; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
@@ -115,6 +117,7 @@ namespace ZE
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;
 		upscaler = params.Upscaler;
+		aoType = params.AmbientOcclusion;
 		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
 	}
 #pragma endregion

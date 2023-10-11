@@ -11,6 +11,8 @@ namespace ZE
 		parser.AddNumber("threadsCount", 0);
 		parser.AddOption("pixAttach");
 		parser.AddOption("fsr2");
+		parser.AddOption("xegtao");
+		parser.AddOption("cacao");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -25,6 +27,12 @@ namespace ZE
 		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threadsCount"));
 		params.AllowPIXAttach = parser.GetOption("pixAttach");
 		params.Upscaler = parser.GetOption("fsr2") ? GFX::UpscalerType::Fsr2 : GFX::UpscalerType::None;
+		if (parser.GetOption("xegtao"))
+			params.AmbientOcclusion = GFX::AOType::XeGTAO;
+		else if (parser.GetOption("cacao"))
+			params.AmbientOcclusion = GFX::AOType::CACAO;
+		else
+			params.AmbientOcclusion = GFX::AOType::None;
 
 		return params;
 	}
