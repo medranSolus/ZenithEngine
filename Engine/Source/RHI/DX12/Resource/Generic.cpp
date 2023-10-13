@@ -108,7 +108,8 @@ namespace ZE::RHI::DX12::Resource
 
 		ZE_DX_THROW_FAILED(device.GetDevice()->CreateCommittedResource2(&heapProp,
 			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &resDesc, initState,
-			resDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER ? nullptr : &clearVal,
+			resDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER
+			|| (resDesc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) == 0 ? nullptr : &clearVal,
 			nullptr, IID_PPV_ARGS(&resource)));
 		ZE_DX_SET_ID(resource, desc.DebugName.c_str());
 
