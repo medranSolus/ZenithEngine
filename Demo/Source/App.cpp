@@ -35,8 +35,8 @@ void App::ProcessInput()
 			const auto& value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
 				Data::RotateCamera(engine.GetData(), currentCamera,
-					rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()),
-					rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()), cameraType);
+					rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
+					rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
 
 			switch (value.GetType())
 			{
@@ -56,8 +56,8 @@ void App::ProcessInput()
 			{
 				if (!window.IsCursorEnabled())
 					Data::RotateCamera(engine.GetData(), currentCamera,
-						rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()),
-						rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(engine.Reneder().GetFrameHeight()), cameraType);
+						rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
+						rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
 				break;
 			}
 			default:
@@ -513,7 +513,7 @@ EID App::AddCamera(std::string&& name, float nearZ, float farZ, float fov,
 		Data::Camera(std::move(eyeVector), std::move(upVector),
 			{
 				Math::ToRadians(60.0f),
-				engine.Reneder().GetFrameRation(),
+				Settings::GetDisplayRatio(),
 				nearZ, farZ
 			}));
 

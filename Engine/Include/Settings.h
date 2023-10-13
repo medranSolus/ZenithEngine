@@ -59,6 +59,7 @@ namespace ZE
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
+		static constexpr float GetDisplayRatio() noexcept { ZE_ASSERT(DisplaySize.Y != 0, "Incorrect sizes!"); return Utils::SafeCast<float>(DisplaySize.X) / Utils::SafeCast<float>(DisplaySize.Y); }
 
 		static constexpr ThreadPool& GetThreadPool() noexcept { ZE_ASSERT_INIT(Initialized()); return threadPool; }
 		static constexpr U32 GetBackbufferCount() noexcept { ZE_ASSERT_INIT(Initialized()); return backbufferCount; }
