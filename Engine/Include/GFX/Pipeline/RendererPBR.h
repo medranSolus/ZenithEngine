@@ -2,6 +2,9 @@
 #include "DataPBR.h"
 #include "ParamsPBR.h"
 #include "RenderGraph.h"
+ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_cacao.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline
 {
@@ -10,10 +13,14 @@ namespace ZE::GFX::Pipeline
 	{
 		DataPBR settingsData;
 		CameraPBR dynamicData;
-		float blurSigma;
-		XeGTAO::GTAOSettings xegtaoSettings = {};
-		Float4x4 currentProjection;
-		Float4 cameraRotation;
+		float blurSigma = 0.0f;
+		union
+		{
+			XeGTAO::GTAOSettings xegtao;
+			FfxCacaoSettings cacao;
+		} ssaoSettings;
+		Float4x4 currentProjection = {};
+		Float4 cameraRotation = {};
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
 
@@ -21,16 +28,14 @@ namespace ZE::GFX::Pipeline
 		constexpr void SetupBlurIntensity() noexcept;
 		constexpr void SetupBlurData(U32 width, U32 height) noexcept;
 		constexpr void SetupXeGTAOQuality() noexcept;
-		constexpr void SetupXeGTAOData(U32 width, U32 height) noexcept;
+		constexpr void SetupSSAOData(U32 width, U32 height) noexcept;
 
 	public:
-		RendererPBR() noexcept : RenderGraph(this, &settingsData, &dynamicData, sizeof(CameraPBR)) {}
+		RendererPBR() noexcept : RenderGraph(this, &settingsData, &dynamicData, sizeof(CameraPBR)), ssaoSettings({}) {}
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
-		constexpr U32 GetFrameWidth() const noexcept { return Utils::SafeCast<U32>(settingsData.XeGTAOData.ViewportSize.x); }
-		constexpr U32 GetFrameHeight() const noexcept { return Utils::SafeCast<U32>(settingsData.XeGTAOData.ViewportSize.y); }
-		constexpr float GetFrameRation() const noexcept { return Utils::SafeCast<float>(GetFrameWidth()) / Utils::SafeCast<float>(GetFrameHeight()); }
+		constexpr const FfxCacaoSettings& GetCacaoSettings() const noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
 

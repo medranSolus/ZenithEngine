@@ -47,6 +47,8 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 
+		ZE_FFX_CHECK(ffxCacaoUpdateSettings(&data.Ctx, &renderer.GetCacaoSettings(), false), "Error updating CACAO settings!");
+
 		FfxCacaoDispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(list);
 		desc.depthBuffer = ffxGetResource(ids.Depth);

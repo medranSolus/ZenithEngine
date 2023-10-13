@@ -82,10 +82,11 @@ namespace ZE::GFX::Pipeline
 
 	constexpr void RendererPBR::SetupXeGTAOQuality() noexcept
 	{
-		switch (xegtaoSettings.QualityLevel)
+		switch (ssaoSettings.xegtao.QualityLevel)
 		{
 		default:
 			ZE_FAIL("Unknown XeGTAO quality level!");
+			[[fallthrough]];
 		case 0: // Low
 		{
 			settingsData.XeGTAOSliceCount = 1.0f;
@@ -113,11 +114,26 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	constexpr void RendererPBR::SetupXeGTAOData(U32 width, U32 height) noexcept
+	constexpr void RendererPBR::SetupSSAOData(U32 width, U32 height) noexcept
 	{
-		xegtaoSettings.DenoisePasses = 1;
-		settingsData.XeGTAOData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
-		SetupXeGTAOQuality();
+		switch (Settings::GetAOType())
+		{
+		default:
+		case AOType::XeGTAO:
+		{
+			ssaoSettings.xegtao = {};
+			ssaoSettings.xegtao.DenoisePasses = 1;
+			settingsData.XeGTAOData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
+			SetupXeGTAOQuality();
+			break;
+		}
+		case AOType::CACAO:
+		{
+			ssaoSettings.cacao = FFX_CACAO_DEFAULT_SETTINGS;
+			ssaoSettings.cacao.generateNormals = false;
+			break;
+		}
+		}
 	}
 
 	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, const ParamsPBR& params)
@@ -169,16 +185,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
-
-		switch (Settings::GetAOType())
-		{
-		default:
-			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
-			[[fallthrough]];
-		case AOType::XeGTAO:
-			SetupXeGTAOData(width, height);
-			break;
-		}
+		SetupSSAOData(width, height);
 
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
@@ -350,10 +357,13 @@ namespace ZE::GFX::Pipeline
 	void RendererPBR::UpdateSettingsData(Device& dev, const Matrix& projection)
 	{
 		Math::XMStoreFloat4x4(&currentProjection, projection);
-		XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
-			settingsData.XeGTAOData.ViewportSize.x,
-			settingsData.XeGTAOData.ViewportSize.y,
-			xegtaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+		if (Settings::GetAOType() == AOType::XeGTAO)
+		{
+			XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
+				settingsData.XeGTAOData.ViewportSize.x,
+				settingsData.XeGTAOData.ViewportSize.y,
+				ssaoSettings.xegtao, reinterpret_cast<const float*>(&currentProjection), true, 0);
+		}
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
 		dev.StartUpload();
@@ -381,6 +391,12 @@ namespace ZE::GFX::Pipeline
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
+
+		if (Settings::GetAOType() == AOType::CACAO)
+		{
+			ssaoSettings.cacao.temporalSupersamplingAngleOffset = Math::PI * Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) / 3.0f;
+			ssaoSettings.cacao.temporalSupersamplingRadiusOffset = 1.0f + 0.1f * (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 3.0f;
+		}
 	}
 
 	void RendererPBR::ShowWindow(Device& dev)
@@ -389,72 +405,72 @@ namespace ZE::GFX::Pipeline
 		if (ImGui::CollapsingHeader("Outline"))
 		{
 			ImGui::Columns(2, "##outline_options", false);
-			ImGui::Text("Blur radius");
-			ImGui::SetNextItemWidth(-1.0f);
-			change |= ImGui::SliderInt("##blur_radius", &settingsData.BlurRadius, 1, DataPBR::BLUR_KERNEL_RADIUS);
-			ImGui::NextColumn();
-			ImGui::Text("Outline range");
-			ImGui::SetNextItemWidth(-1.0f);
-			if (ImGui::InputFloat("##blur_sigma", &blurSigma, 0.1f, 0.0f, "%.1f"))
 			{
-				change = true;
-				if (blurSigma < 0.1f)
-					blurSigma = 0.1f;
-				else if (blurSigma > 25.0f)
-					blurSigma = 25.0f;
-				SetupBlurKernel();
+				ImGui::Text("Blur radius");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= ImGui::SliderInt("##blur_radius", &settingsData.BlurRadius, 1, DataPBR::BLUR_KERNEL_RADIUS);
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Text("Outline range");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(0.1f, 25.0f, blurSigma,
+					ImGui::InputFloat("##blur_sigma", &blurSigma, 0.1f, 0.0f, "%.1f")))
+				{
+					change = true;
+					SetupBlurKernel();
+				}
 			}
 			ImGui::Columns(1);
 		}
 		if (ImGui::CollapsingHeader("Display"))
 		{
 			ImGui::Columns(2, "##display_options", false);
-			ImGui::Text("Gamma correction");
-			ImGui::SetNextItemWidth(-1.0f);
-			if (ImGui::InputFloat("##gamma", &settingsData.Gamma, 0.1f, 0.0f, "%.1f"))
 			{
-				change = true;
-				if (settingsData.Gamma < 1.0f)
-					settingsData.Gamma = 1.0f;
-				else if (settingsData.Gamma > 10.0f)
-					settingsData.Gamma = 10.0f;
-				settingsData.GammaInverse = 1.0f / settingsData.Gamma;
+				ImGui::Text("Gamma correction");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(1.0f, 10.0f, settingsData.Gamma,
+					ImGui::InputFloat("##gamma", &settingsData.Gamma, 0.1f, 0.0f, "%.1f")))
+				{
+					change = true;
+					settingsData.GammaInverse = 1.0f / settingsData.Gamma;
+				}
 			}
 			ImGui::NextColumn();
-			ImGui::Text("HDR exposure");
-			ImGui::SetNextItemWidth(-1.0f);
-			if (ImGui::InputFloat("##hdr", &settingsData.HDRExposure, 0.1f, 0.0f, "%.1f"))
 			{
-				change = true;
-				if (settingsData.HDRExposure < 0.1f)
-					settingsData.HDRExposure = 0.1f;
-				SetupBlurIntensity();
+				ImGui::Text("HDR exposure");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(0.1f, FLT_MAX, settingsData.HDRExposure,
+					ImGui::InputFloat("##hdr", &settingsData.HDRExposure, 0.1f, 0.0f, "%.1f")))
+				{
+					change = true;
+					SetupBlurIntensity();
+				}
 			}
 			ImGui::Columns(1);
 		}
 		if (ImGui::CollapsingHeader("Shadows"))
 		{
 			ImGui::Columns(2, "##shadow_options", false);
-			ImGui::Text("Depth bias");
-			ImGui::SetNextItemWidth(-1.0f);
-			S32 bias = Utils::SafeCast<S32>(settingsData.ShadowBias * settingsData.ShadowMapSize);
-			if (ImGui::InputInt("##depth_bias", &bias))
 			{
-				change = true;
-				settingsData.ShadowBias = Utils::SafeCast<float>(bias) / settingsData.ShadowMapSize;
+				ImGui::Text("Depth bias");
+				ImGui::SetNextItemWidth(-1.0f);
+				S32 bias = Utils::SafeCast<S32>(settingsData.ShadowBias * settingsData.ShadowMapSize);
+				if (ImGui::InputInt("##depth_bias", &bias))
+				{
+					change = true;
+					settingsData.ShadowBias = Utils::SafeCast<float>(bias) / settingsData.ShadowMapSize;
+				}
 			}
 			ImGui::NextColumn();
-			ImGui::Text("Normal offset");
-			ImGui::SetNextItemWidth(-1.0f);
-			if (ImGui::InputFloat("##normal_offset", &settingsData.ShadowNormalOffset, 0.001f, 0.0f, "%.3f"))
 			{
-				change = true;
-				if (settingsData.ShadowNormalOffset < 0.0f)
-					settingsData.ShadowNormalOffset = 0.0f;
-				else if (settingsData.ShadowNormalOffset > 1.0f)
-					settingsData.ShadowNormalOffset = 1.0f;
+				ImGui::Text("Normal offset");
+				ImGui::SetNextItemWidth(-1.0f);
+				change |= GUI::InputClamp(0.0f, 1.0f, settingsData.ShadowNormalOffset,
+					ImGui::InputFloat("##normal_offset", &settingsData.ShadowNormalOffset, 0.001f, 0.0f, "%.3f"));
 			}
 			ImGui::Columns(1);
+
 			ImGui::Text("Ambient color");
 			ImGui::SetNextItemWidth(-5.0f);
 			change |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&settingsData.AmbientLight),
@@ -462,29 +478,155 @@ namespace ZE::GFX::Pipeline
 		}
 		switch (Settings::GetAOType())
 		{
-		default:
-			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
-			[[fallthrough]];
 		case AOType::XeGTAO:
 		{
 			if (ImGui::CollapsingHeader("XeGTAO"))
 			{
 				// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
-				const int quality = xegtaoSettings.QualityLevel;
-				const int denoise = xegtaoSettings.DenoisePasses;
-				change |= XeGTAO::GTAOImGuiSettings(xegtaoSettings);
-				change |= quality != xegtaoSettings.QualityLevel || denoise != xegtaoSettings.DenoisePasses;
+				const int quality = ssaoSettings.xegtao.QualityLevel;
+				const int denoise = ssaoSettings.xegtao.DenoisePasses;
+				change |= XeGTAO::GTAOImGuiSettings(ssaoSettings.xegtao);
+				change |= quality != ssaoSettings.xegtao.QualityLevel || denoise != ssaoSettings.xegtao.DenoisePasses;
 				if (change)
 				{
 					SetupXeGTAOQuality();
 					XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
 						settingsData.XeGTAOData.ViewportSize.x,
 						settingsData.XeGTAOData.ViewportSize.y,
-						xegtaoSettings, reinterpret_cast<const float*>(&currentProjection), true, 0);
+						ssaoSettings.xegtao, reinterpret_cast<const float*>(&currentProjection), true, 0);
 				}
 			}
 			break;
 		}
+		case AOType::CACAO:
+		{
+			if (ImGui::CollapsingHeader("CACAO"))
+			{
+				constexpr std::array<const char*, 5> LEVELS = { "Lowest", "Low", "Medium", "High", "Highest" };
+				if (ImGui::BeginCombo("Quality level", LEVELS.at(ssaoSettings.cacao.qualityLevel)))
+				{
+					for (FfxCacaoQuality i = FFX_CACAO_QUALITY_LOWEST; const char* level : LEVELS)
+					{
+						const bool selected = i == ssaoSettings.cacao.qualityLevel;
+						if (ImGui::Selectable(level, selected))
+							ssaoSettings.cacao.qualityLevel = i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::Columns(2, "##cacao_options", false);
+				{
+					ImGui::Text("Blur radius");
+					ImGui::SetNextItemWidth(-1.0f);
+					GUI::InputClamp(0.1f, FLT_MAX, ssaoSettings.cacao.radius,
+						ImGui::InputFloat("##cacao_blur_radius", &ssaoSettings.cacao.radius, 0.1f, 1.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Size of the occlusion sphere");
+				}
+				ImGui::NextColumn();
+				{
+					ImGui::Text("Blur pass count");
+					ImGui::SetNextItemWidth(-1.0f);
+					ImGui::SliderInt("##cacao_blur_count", reinterpret_cast<int*>(&ssaoSettings.cacao.blurPassCount), 0, 8);
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Number of edge-sensitive smart blur passes to apply");
+				}
+				ImGui::Columns(1);
+
+				if (ssaoSettings.cacao.qualityLevel != FFX_CACAO_QUALITY_HIGHEST)
+					ImGui::BeginDisabled(true);
+				ImGui::Text("Adaptative quality limit");
+				ImGui::InputFloat("##cacao_adapt_limit", &ssaoSettings.cacao.adaptiveQualityLimit, 0.01f, 0.1f, "%.2f");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Only for highest quality level");
+				if (ssaoSettings.cacao.qualityLevel != FFX_CACAO_QUALITY_HIGHEST)
+					ImGui::EndDisabled();
+
+				if (ImGui::CollapsingHeader("Advanced"))
+				{
+					ImGui::Columns(2, "##cacao_advanced", false);
+					{
+						ImGui::Text("Sharpness");
+						GUI::InputClamp(0.0f, 1.0f, ssaoSettings.cacao.sharpness,
+							ImGui::InputFloat("##cacao_sharpness", &ssaoSettings.cacao.sharpness, 0.01f, 0.1f, "%.2f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("How much to bleed over edges; 1: not at all, 0.5: half-half; 0.0: completely ignore edges");
+						ImGui::Text("Fade out start");
+						GUI::InputClamp(0.0f, ssaoSettings.cacao.fadeOutTo, ssaoSettings.cacao.fadeOutFrom,
+							ImGui::InputFloat("##cacao_fade_from", &ssaoSettings.cacao.fadeOutFrom, 1.0f, 5.0f, "%.1f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Distance to start fading out the effect");
+					}
+					ImGui::NextColumn();
+					{
+						ImGui::Text("Horizontal angle treshold");
+						GUI::InputClamp(0.0f, 0.2f, ssaoSettings.cacao.horizonAngleThreshold,
+							ImGui::InputFloat("##cacao_horizon_angle", &ssaoSettings.cacao.horizonAngleThreshold, 0.01f, 0.0f, "%.2f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Limits self-shadowing (makes the sampling area less of a hemisphere, more of a spherical cone, to avoid self-shadowing and various artifacts due to low tessellation and depth buffer imprecision, etc.)");
+						ImGui::Text("Fade out end");
+						GUI::InputClamp(ssaoSettings.cacao.fadeOutFrom, FLT_MAX, ssaoSettings.cacao.fadeOutTo,
+							ImGui::InputFloat("##cacao_fade_to", &ssaoSettings.cacao.fadeOutTo, 1.0f, 5.0f, "%.1f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Distance at which the effect is faded out");
+					}
+					ImGui::Columns(1);
+
+					ImGui::Text("Shadow controls");
+					ImGui::Columns(2, "##cacao_shadows", false);
+					{
+						ImGui::Text("Shadow multipler");
+						GUI::InputClamp(0.0f, 5.0f, ssaoSettings.cacao.shadowMultiplier,
+							ImGui::InputFloat("##cacao_shadow_mult", &ssaoSettings.cacao.shadowMultiplier, 0.1f, 1.0f, "%.1f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Effect strength linear multiplier");
+						ImGui::Text("Shadow clamp");
+						GUI::InputClamp(0.0f, 1.0f, ssaoSettings.cacao.shadowClamp,
+							ImGui::InputFloat("##cacao_shadow_clamp", &ssaoSettings.cacao.shadowClamp, 0.01f, 0.1f, "%.2f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Effect max limit (applied after multiplier but before blur)");
+					}
+					ImGui::NextColumn();
+					{
+						ImGui::Text("Shadow power");
+						GUI::InputClamp(0.5f, 5.0f, ssaoSettings.cacao.shadowPower,
+							ImGui::InputFloat("##cacao_shadow_pow", &ssaoSettings.cacao.shadowPower, 0.01f, 0.1f, "%.2f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Effect strength modifier");
+						ImGui::Text("Shadow detail");
+						GUI::InputClamp(0.5f, 5.0f, ssaoSettings.cacao.detailShadowStrength,
+							ImGui::InputFloat("##cacao_shadow_det", &ssaoSettings.cacao.detailShadowStrength, 0.1f, 1.0f, "%.1f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Used for high-res detail AO using neighboring depth pixels: adds a lot of detail but also reduces temporal stability (adds aliasing)");
+					}
+					ImGui::Columns(1);
+
+					ImGui::Text("Bilateral sigma");
+					ImGui::Columns(2, "##cacao_bilateral", false);
+					{
+						ImGui::Text("Blur term");
+						GUI::InputClamp(0.0f, FLT_MAX, ssaoSettings.cacao.bilateralSigmaSquared,
+							ImGui::InputFloat("##cacao_bil_sigma", &ssaoSettings.cacao.bilateralSigmaSquared, 0.1f, 1.0f, "%.1f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Sigma squared value for use in bilateral upsampler giving Gaussian blur term");
+					}
+					ImGui::NextColumn();
+					{
+						ImGui::Text("Similarity weight");
+						GUI::InputClamp(0.0f, FLT_MAX, ssaoSettings.cacao.bilateralSimilarityDistanceSigma,
+							ImGui::InputFloat("##cacao_bil_similarity", &ssaoSettings.cacao.bilateralSimilarityDistanceSigma, 0.01f, 0.1f, "%.2f"));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Sigma squared value for use in bilateral upsampler giving similarity weighting for neighbouring pixels");
+					}
+					ImGui::Columns(1);
+				}
+			}
+			break;
+		}
+		default:
+			break;
 		}
 		// If any settings data updated then upload new buffer
 		if (change)
