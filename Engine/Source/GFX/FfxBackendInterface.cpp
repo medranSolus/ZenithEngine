@@ -59,8 +59,9 @@ namespace ZE::GFX
 	constexpr Resource::SamplerFilter GetFilter(FfxFilterType filter) noexcept;
 	constexpr U64 GetPipelineID(FfxEffect effect, FfxPass passId, U32 permutationOptions) noexcept;
 
-	void ffxGetInterface(FfxInterface& backendInterface, Device& dev) noexcept
+	void ffxGetInterface(Device& dev) noexcept
 	{
+		FfxInterface& backendInterface = dev.GetFfxInterface();
 		backendInterface.fpGetSDKVersion = ffxGetSDKVersion;
 		backendInterface.fpCreateBackendContext = ffxCreateBackendContext;
 		backendInterface.fpGetDeviceCapabilities = ffxGetDeviceCapabilities;
@@ -321,7 +322,7 @@ namespace ZE::GFX
 		ZE_CHECK_FFX_BACKEND();
 		ZE_ASSERT(desc, "Empty FFX pipeline desc!");
 		ZE_ASSERT(outPipeline, "Empty FFX pipeline state!");
-		ZE_ASSERT(desc->stage == FFX_BIND_COMPUTE_SHADER_STAGE, "Pipeline not for the compute shader!");
+		ZE_ASSERT(desc->stage == FFX_BIND_COMPUTE_SHADER_STAGE || desc->stage == 0, "Pipeline not for the compute shader!");
 
 		Device& dev = GetDevice(backendInterface);
 		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
@@ -337,7 +338,7 @@ namespace ZE::GFX
 			return FFX_ERROR_INVALID_ENUM;
 		case FFX_EFFECT_CACAO:
 		{
-			shader.Init(dev, "name");
+			//shader.Init(dev, "name");
 			//ffxGetPermutationBlobByIndex(effect, passId, permutationOptions, &shaderBlob);
 
 			break;
@@ -379,7 +380,7 @@ namespace ZE::GFX
 		for (U32 i = 0; i < desc->rootConstantBufferCount; ++i)
 		{
 			ZE_ASSERT(desc->rootConstants[i].stage == FFX_BIND_COMPUTE_SHADER_STAGE, "Binding not for the compute shader!");
-			schemaDesc.AddRange({ desc->rootConstants[i].size, i, static_cast<U8>(schemaDesc.Ranges.size()), Resource::ShaderType::Compute, Binding::RangeFlag::CBV | Binding::RangeFlag::Constant });
+			schemaDesc.AddRange({ desc->rootConstants[i].size, i, static_cast<U8>(schemaDesc.Ranges.size()), Resource::ShaderType::Compute, Binding::RangeFlag::Constant });
 		}
 		// TODO: cache binding based on input parameters
 		ctx.Bindings.Add(id, dev, schemaDesc);

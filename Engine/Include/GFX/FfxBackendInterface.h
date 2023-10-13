@@ -13,5 +13,5 @@ namespace ZE::GFX
 	constexpr FfxPipeline ffxGetPipeline(Resource::PipelineStateCompute& pipeline) noexcept { return (FfxPipeline)&pipeline; }
 	constexpr FfxResource ffxGetResource(RID rid) noexcept { return {}; }
 
-	void ffxGetInterface(FfxInterface& backendInterface, Device& dev) noexcept;
+	void ffxGetInterface(Device& dev) noexcept;
 }

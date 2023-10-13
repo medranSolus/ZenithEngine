@@ -36,7 +36,7 @@ namespace ZE::RHI::DX11
 		~Device() = default;
 
 		constexpr U32 GetData() const noexcept { return descriptorCount; }
-		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
+		constexpr FfxInterface* GetFfxInterface() noexcept { return &ffxInterface; }
 		constexpr bool IsShaderFloat16Supported() const noexcept { return false; }
 
 		constexpr U64 GetMainFence() const noexcept { return 0; }

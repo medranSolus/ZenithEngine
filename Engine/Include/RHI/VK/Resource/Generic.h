@@ -10,7 +10,7 @@ namespace ZE::RHI::VK::Resource
 
 	public:
 		Generic() = default;
-		Generic(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc);
+		Generic(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) {}
 		ZE_CLASS_MOVE(Generic);
 		~Generic() {  }
 

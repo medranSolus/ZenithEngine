@@ -95,7 +95,7 @@ namespace ZE::RHI::DX12
 		~Device();
 
 		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
-		constexpr const FfxInterface* GetFfxInterface() const noexcept { return &ffxInterface; }
+		constexpr FfxInterface* GetFfxInterface() noexcept { return &ffxInterface; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void EndFrame() noexcept {}
 
