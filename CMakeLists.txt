@@ -357,7 +357,7 @@ add_definition_flags(
 	"-DNDEBUG")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /I \"${EXT_SHADER_INC_DIR}\"")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DFFX_GPU=1 /DFFX_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\"")
 if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
 	if(NOT ${ZE_BUILD_PROFILE})
