@@ -222,7 +222,11 @@ namespace ZE::RHI::DX12::Binding
 		ZE_DX_SET_DEBUG_WATCH();
 		ZE_WIN_EXCEPT_RESULT = D3D12SerializeVersionedRootSignature(&signatureDesc, &serializedSignature, &errors);
 		if (FAILED(ZE_WIN_EXCEPT_RESULT))
-			throw Exception::GenericException(__LINE__, __FILENAME__, reinterpret_cast<char*>(errors->GetBufferPointer()), "Root Signature Invalid Parameter");
+		{
+			const char* errorBuffer = reinterpret_cast<const char*>(errors->GetBufferPointer());
+			ZE_BREAK();
+			throw Exception::GenericException(__LINE__, __FILENAME__, errorBuffer, "Root Signature Invalid Parameter");
+		}
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
 			serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature)));
 	}

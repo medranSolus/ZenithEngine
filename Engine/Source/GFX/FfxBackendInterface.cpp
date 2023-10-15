@@ -2,8 +2,8 @@
 #include "GFX/Binding/Schema.h"
 #include "GFX/Resource/Generic.h"
 #include "GFX/Resource/PipelineStateCompute.h"
-#include "GFX/Resource/Shader.h"
 #include "GFX/CommandSignature.h"
+#include "GFX/FfxEffects.h"
 #include "Data/Library.h"
 
 // Assert for FFX backend interface pointer
@@ -16,17 +16,22 @@ namespace ZE::GFX
 		wchar_t Name[FFX_RESOURCE_NAME_SIZE];
 	};
 	struct FfxDynamicResource {};
+	typedef U32 ResID;
 
 	struct FfxBackendContext
 	{
-		entt::basic_registry<U32> Resources;
+		entt::basic_registry<ResID> Resources;
 		Data::Library<U64, Resource::PipelineStateCompute> Pipelines;
+		Data::Library<U64, U64> PipelinesReferences;
 		Data::Library<U64, Binding::Schema> Bindings;
+		Data::Library<U64, U64> BindingsReferences;
 		Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
+		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
 		std::vector<Resource::GenericResourceBarrier> Barriers;
 	};
 
 	// Interface functions used by FFX SDK backend
+	void ffxAssertCallback(const char* message) noexcept;
 	FfxUInt32 ffxGetSDKVersion(FfxInterface* backendInterface);
 	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId);
 	FfxErrorCode ffxGetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities);
@@ -57,7 +62,6 @@ namespace ZE::GFX
 	constexpr Resource::State GetState(FfxResourceStates state) noexcept;
 	constexpr Resource::Texture::AddressMode GetAddressMode(FfxAddressMode mode) noexcept;
 	constexpr Resource::SamplerFilter GetFilter(FfxFilterType filter) noexcept;
-	constexpr U64 GetPipelineID(FfxEffect effect, FfxPass passId, U32 permutationOptions) noexcept;
 
 	void ffxGetInterface(Device& dev) noexcept
 	{
@@ -83,9 +87,16 @@ namespace ZE::GFX
 
 		// Set the device
 		backendInterface.device = ffxGetDevice(dev);
+		// Set assert printing
+		ffxAssertSetPrintingCallback(ffxAssertCallback);
 	}
 
 #pragma region FFX backend functions
+	void ffxAssertCallback(const char* message) noexcept
+	{
+		ZE_FAIL(message);
+	}
+
 	FfxUInt32 ffxGetSDKVersion(FfxInterface* backendInterface)
 	{
 		return FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH);
@@ -165,7 +176,7 @@ namespace ZE::GFX
 		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
 
 		// Free all remaining resources
-		for (S32 res : ctx.Resources.view<Resource::Generic>())
+		for (ResID res : ctx.Resources.view<Resource::Generic>())
 			ctx.Resources.get<Resource::Generic>(res).Free(dev);
 		ctx.Resources.clear();
 
@@ -291,7 +302,7 @@ namespace ZE::GFX
 		Device& dev = GetDevice(backendInterface);
 
 		// Walk back all the resources that don't belong to FFX and reset them to their initial state
-		for (S32 res : ctx.Resources.view<FfxDynamicResource>())
+		for (ResID res : ctx.Resources.view<FfxDynamicResource>())
 		{
 			ctx.Barriers.emplace_back(false, &ctx.Resources.get<Resource::Generic>(res),
 				GetState(ctx.Resources.get<FfxResourceStates>(res)), // Current state
@@ -302,7 +313,7 @@ namespace ZE::GFX
 			GetCommandList(commandList).Barrier(dev, ctx.Barriers.data(), Utils::SafeCast<U32>(ctx.Barriers.size()));
 
 		// Clear dynamic resources
-		for (S32 res : ctx.Resources.view<FfxDynamicResource>())
+		for (ResID res : ctx.Resources.view<FfxDynamicResource>())
 			ctx.Resources.get<Resource::Generic>(res).Free(dev);
 		ctx.Resources.destroy(ctx.Resources.view<FfxDynamicResource>().begin(), ctx.Resources.view<FfxDynamicResource>().end());
 		return FFX_OK;
@@ -326,75 +337,118 @@ namespace ZE::GFX
 
 		Device& dev = GetDevice(backendInterface);
 		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
-		const U64 id = GetPipelineID(effect, passId, permutationOptions);
+		const U64 id = FFX::GetPipelineID(effect, passId, permutationOptions);
 
-		// Fill out for every shader that is created when needed by effect
 		FfxShaderBlob shaderBlob = {};
-		Resource::Shader shader;
-		switch (effect)
+		if (!ctx.Pipelines.Contains(id))
 		{
-		default:
-			ZE_FAIL("Selected effect has not been implemented yet!");
-			return FFX_ERROR_INVALID_ENUM;
-		case FFX_EFFECT_CACAO:
-		{
-			//shader.Init(dev, "name");
-			//ffxGetPermutationBlobByIndex(effect, passId, permutationOptions, &shaderBlob);
+			// Fill out for every shader that is created when needed by effect
+			Resource::Shader shader;
+			const FfxErrorCode code = FFX::GetShaderInfo(dev, effect, passId, permutationOptions, shaderBlob, &shader);
+			if (code != FFX_OK)
+				return code;
 
-			break;
-		}
-		}
+			// Create binding description
+			Binding::SchemaDesc schemaDesc = {};
+			schemaDesc.Options = Binding::SchemaOption::NoVertexBuffer;
 
-		// Create binding description
-		Binding::SchemaDesc schemaDesc = {};
-		schemaDesc.Options = Binding::SchemaOption::NoVertexBuffer;
-
-		// Setup samplers
-		for (U32 i = 0; i < desc->samplerCount; ++i)
-		{
-			// Stage member is currently unused
-			ZE_ASSERT(desc->samplers[i].stage == FFX_BIND_COMPUTE_SHADER_STAGE, "Binding not for the compute shader!");
-			schemaDesc.AddSampler(
-				{
-					GetFilter(desc->samplers[i].filter),
+			// Setup samplers
+			for (U32 i = 0; i < desc->samplerCount; ++i)
+			{
+				// Stage member is currently unused
+				ZE_ASSERT(desc->samplers[i].stage == FFX_BIND_COMPUTE_SHADER_STAGE, "Binding not for the compute shader!");
+				schemaDesc.AddSampler(
 					{
-						GetAddressMode(desc->samplers[i].addressModeU),
-						GetAddressMode(desc->samplers[i].addressModeV),
-						GetAddressMode(desc->samplers[i].addressModeW)
-					},
-					0.0f,
-					16,
-					Resource::CompareMethod::Never,
-					Resource::Texture::EdgeColor::TransparentBlack,
-					0.0f,
-					FLT_MAX,
-					i
-				});
-		}
+						GetFilter(desc->samplers[i].filter),
+						{
+							GetAddressMode(desc->samplers[i].addressModeU),
+							GetAddressMode(desc->samplers[i].addressModeV),
+							GetAddressMode(desc->samplers[i].addressModeW)
+						},
+						0.0f,
+						16,
+						Resource::CompareMethod::Never,
+						Resource::Texture::EdgeColor::TransparentBlack,
+						0.0f,
+						FLT_MAX,
+						i
+					});
+			}
 
-		// Set bindings
-		if (shaderBlob.uavBufferCount || shaderBlob.uavTextureCount)
-			schemaDesc.AddRange({ shaderBlob.uavBufferCount + shaderBlob.uavTextureCount, 0, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-		if (shaderBlob.srvBufferCount || shaderBlob.srvTextureCount)
-			schemaDesc.AddRange({ shaderBlob.srvBufferCount + shaderBlob.srvTextureCount, 0, static_cast<U8>(schemaDesc.Ranges.size()), Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-		for (U32 i = 0; i < desc->rootConstantBufferCount; ++i)
-		{
-			ZE_ASSERT(desc->rootConstants[i].stage == FFX_BIND_COMPUTE_SHADER_STAGE, "Binding not for the compute shader!");
-			schemaDesc.AddRange({ desc->rootConstants[i].size, i, static_cast<U8>(schemaDesc.Ranges.size()), Resource::ShaderType::Compute, Binding::RangeFlag::Constant });
-		}
-		// TODO: cache binding based on input parameters
-		ctx.Bindings.Add(id, dev, schemaDesc);
-		outPipeline->rootSignature = reinterpret_cast<FfxPipeline>(id);
+			// Set bindings (UAV, SRV, CBV)
+			U32 slotOffset = 0;
+			U8 rangeOffset = 0;
+			ZE_ASSERT(rangeOffset + shaderBlob.uavBufferCount <= UINT8_MAX, "Buffers outside possible range!");
+			for (U32 i = 0; i < shaderBlob.uavBufferCount; ++i)
+			{
+				schemaDesc.AddRange({ shaderBlob.boundUAVBufferCounts[i], slotOffset, rangeOffset,
+					Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
 
-		// Only set the command signature if this is setup as an indirect workload
-		if (desc->indirectWorkload)
-		{
-			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
-				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, dev, IndirectCommandType::Dispatch);
-			outPipeline->cmdSignature = reinterpret_cast<FfxCommandSignature>(IndirectCommandType::Dispatch);
+				slotOffset += shaderBlob.boundUAVBufferCounts[i];
+				++rangeOffset;
+			}
+
+			ZE_ASSERT(rangeOffset + shaderBlob.uavTextureCount <= UINT8_MAX, "Buffers outside possible range!");
+			for (U32 i = 0; i < shaderBlob.uavTextureCount; ++i)
+			{
+				schemaDesc.AddRange({ shaderBlob.boundUAVTextureCounts[i], slotOffset, rangeOffset,
+					Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
+
+				slotOffset += shaderBlob.boundUAVTextureCounts[i];
+				++rangeOffset;
+			}
+
+			slotOffset = 0;
+			ZE_ASSERT(rangeOffset + shaderBlob.srvBufferCount <= UINT8_MAX, "Buffers outside possible range!");
+			for (U32 i = 0; i < shaderBlob.srvBufferCount; ++i)
+			{
+				schemaDesc.AddRange({ shaderBlob.boundSRVBufferCounts[i], slotOffset, rangeOffset,
+					Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+
+				slotOffset += shaderBlob.boundSRVBufferCounts[i];
+				++rangeOffset;
+			}
+
+			ZE_ASSERT(rangeOffset + shaderBlob.srvTextureCount <= UINT8_MAX, "Buffers outside possible range!");
+			for (U32 i = 0; i < shaderBlob.srvTextureCount; ++i)
+			{
+				schemaDesc.AddRange({ shaderBlob.boundSRVTextureCounts[i], slotOffset, rangeOffset,
+					Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
+
+				slotOffset += shaderBlob.boundSRVTextureCounts[i];
+				++rangeOffset;
+			}
+
+			slotOffset = 0;
+			for (U32 i = 0; i < shaderBlob.cbvCount; ++i)
+			{
+				schemaDesc.AddRange({ shaderBlob.boundConstantBufferCounts[i], slotOffset, rangeOffset,
+					Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
+
+				slotOffset += shaderBlob.boundConstantBufferCounts[i];
+				rangeOffset += Utils::SafeCast<U8>(shaderBlob.boundConstantBufferCounts[i]);
+			}
+			// TODO: cache binding based on input parameters
+			ctx.Bindings.Add(id, dev, schemaDesc);
+			ctx.BindingsReferences.Add(id, 0ULL);
+
+			// Create pipeline
+			ctx.Pipelines.Add(id, dev, shader, ctx.Bindings.Get(id));
+			ctx.PipelinesReferences.Add(id, 0ULL);
+			shader.Free(dev);
 		}
 		else
-			outPipeline->cmdSignature = nullptr;
+		{
+			// Shader already loaded but resource info still needed
+			const FfxErrorCode code = FFX::GetShaderInfo(dev, effect, passId, permutationOptions, shaderBlob, nullptr);
+			if (code != FFX_OK)
+				return code;
+		}
+		outPipeline->rootSignature = reinterpret_cast<FfxPipeline>(id);
+		outPipeline->pipeline = reinterpret_cast<FfxPipeline>(id);
+
+		++ctx.BindingsReferences.Get(id);
+		++ctx.PipelinesReferences.Get(id);
 
 		// Fill out bindings
 		outPipeline->uavTextureCount = shaderBlob.uavTextureCount;
@@ -434,9 +488,19 @@ namespace ZE::GFX
 			wcscpy_s(outPipeline->constantBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundConstantBufferNames[i]).c_str());
 		}
 
-		// Create pipeline
-		ctx.Pipelines.Add(id, dev, shader, ctx.Bindings.Get(id));
-		outPipeline->pipeline = reinterpret_cast<FfxPipeline>(id);
+		// Only set the command signature if this is setup as an indirect workload
+		if (desc->indirectWorkload)
+		{
+			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
+			{
+				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, dev, IndirectCommandType::Dispatch);
+				ctx.CommandSignaturesReferences.Add(IndirectCommandType::Dispatch, 0ULL);
+			}
+			outPipeline->cmdSignature = reinterpret_cast<FfxCommandSignature>(IndirectCommandType::Dispatch);
+			++ctx.CommandSignaturesReferences.Get(IndirectCommandType::Dispatch);
+		}
+		else
+			outPipeline->cmdSignature = nullptr;
 
 		return FFX_OK;
 	}
@@ -452,15 +516,35 @@ namespace ZE::GFX
 
 			if (pipeline->rootSignature)
 			{
-				ctx.Bindings.Get(reinterpret_cast<U64>(pipeline->rootSignature)).Free(dev);
-				ctx.Bindings.Remove(reinterpret_cast<U64>(pipeline->rootSignature));
+				const U64 id = reinterpret_cast<U64>(pipeline->rootSignature);
+				ZE_ASSERT(ctx.BindingsReferences.Get(id) > 0, "Incorrect FFX binding reference count!");
+				if (--ctx.BindingsReferences.Get(id) == 0)
+				{
+					ctx.Bindings.Get(id).Free(dev);
+					ctx.Bindings.Remove(id);
+				}
 				pipeline->rootSignature = nullptr;
 			}
-			pipeline->cmdSignature = nullptr;
+			if (pipeline->cmdSignature)
+			{
+				const IndirectCommandType id = static_cast<IndirectCommandType>(reinterpret_cast<U64>(pipeline->cmdSignature));
+				ZE_ASSERT(ctx.CommandSignaturesReferences.Get(id) > 0, "Incorrect FFX command signature reference count!");
+				if (--ctx.CommandSignaturesReferences.Get(id) == 0)
+				{
+					ctx.CommandSignatures.Get(id).Free(dev);
+					ctx.CommandSignatures.Remove(id);
+				}
+				pipeline->cmdSignature = nullptr;
+			}
 			if (pipeline->pipeline)
 			{
-				ctx.Pipelines.Get(reinterpret_cast<U64>(pipeline->pipeline)).Free(dev);
-				ctx.Pipelines.Remove(reinterpret_cast<U64>(pipeline->pipeline));
+				const U64 id = reinterpret_cast<U64>(pipeline->pipeline);
+				ZE_ASSERT(ctx.PipelinesReferences.Get(id) > 0, "Incorrect FFX pipeline reference count!");
+				if (--ctx.PipelinesReferences.Get(id) == 0)
+				{
+					ctx.Pipelines.Get(id).Free(dev);
+					ctx.Pipelines.Remove(id);
+				}
 				pipeline->pipeline = nullptr;
 			}
 		}
@@ -657,13 +741,6 @@ namespace ZE::GFX
 		case FFX_FILTER_TYPE_MINMAGLINEARMIP_POINT:
 			return Resource::SamplerType::LinearMinification | Resource::SamplerType::LinearMagnification;
 		}
-	}
-
-	constexpr U64 GetPipelineID(FfxEffect effect, FfxPass passId, U32 permutationOptions) noexcept
-	{
-		ZE_ASSERT(effect <= UINT8_MAX, "FFX effect id outside of cast range!");
-		ZE_ASSERT(passId <= UINT8_MAX, "FFX pass id outside of cast range!");
-		return static_cast<U64>(effect) | (static_cast<U64>(passId) << 8) | (static_cast<U64>(permutationOptions) << 16);
 	}
 #pragma endregion
 }

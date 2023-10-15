@@ -3,7 +3,7 @@
 #include "CommandList.h"
 #include "FfxException.h"
 ZE_WARNING_PUSH
-#include "FidelityFX/host/ffx_interface.h"
+#include "FidelityFX/host/ffx_types.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
