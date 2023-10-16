@@ -46,6 +46,9 @@ namespace ZE::RHI::DX11::Pipeline
 		resources = new BufferData[resourceCount];
 		resources[0].Resource = nullptr;
 		resources[0].Size = { desc.ResourceInfo.front().Width, desc.ResourceInfo.front().Height };
+		resources[0].Array = desc.ResourceInfo.front().ArraySize;
+		resources[0].Mips = desc.ResourceInfo.front().MipLevels;
+		resources[0].Format = desc.ResourceInfo.front().Format;
 		bool rtvMipsPresent = false;
 		bool dsvMipsPresent = false;
 		bool uavMipsPresent = false;
@@ -63,6 +66,9 @@ namespace ZE::RHI::DX11::Pipeline
 		{
 			const auto& res = desc.ResourceInfo.at(i);
 			resources[i].Size = { res.Width, res.Height };
+			resources[i].Array = res.ArraySize;
+			resources[i].Mips = res.MipLevels;
+			resources[i].Format = res.Format;
 
 			texDesc.Width = res.Width;
 			texDesc.Height = res.Height;
@@ -75,6 +81,7 @@ namespace ZE::RHI::DX11::Pipeline
 			{
 				texDesc.ArraySize *= 6;
 				texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+				resources[i].SetCube();
 			}
 			else
 				texDesc.MiscFlags = 0;
@@ -168,7 +175,7 @@ namespace ZE::RHI::DX11::Pipeline
 			uavMips = new Ptr<DX::ComPtr<IUnorderedAccessView>>[resourceCount - 1];
 
 		// Create views
-		for (RID i = 1; auto & info : resourcesInfo)
+		for (RID i = 1; const auto& info : resourcesInfo)
 		{
 			if (info.IsRTV())
 			{
@@ -181,6 +188,7 @@ namespace ZE::RHI::DX11::Pipeline
 					rtvDesc.Texture2DArray.FirstArraySlice = 0;
 					rtvDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
 					rtvDesc.Texture2DArray.PlaneSlice = 0;
+					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -218,6 +226,7 @@ namespace ZE::RHI::DX11::Pipeline
 					dsvDesc.Texture2DArray.MipSlice = 0;
 					dsvDesc.Texture2DArray.FirstArraySlice = 0;
 					dsvDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
+					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -254,6 +263,7 @@ namespace ZE::RHI::DX11::Pipeline
 					uavDesc.Texture2DArray.FirstArraySlice = 0;
 					uavDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
 					uavDesc.Texture2DArray.PlaneSlice = 0;
+					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -294,6 +304,7 @@ namespace ZE::RHI::DX11::Pipeline
 						srvDesc.TextureCubeArray.MipLevels = info.Desc.MipLevels;
 						srvDesc.TextureCubeArray.First2DArrayFace = 0;
 						srvDesc.TextureCubeArray.NumCubes = info.Desc.ArraySize / 6;
+						resources[i].SetArrayView();
 					}
 					else
 					{
@@ -310,6 +321,7 @@ namespace ZE::RHI::DX11::Pipeline
 					srvDesc.Texture2DArray.FirstArraySlice = 0;
 					srvDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
 					srvDesc.Texture2DArray.PlaneSlice = 0;
+					resources[i].SetArrayView();
 				}
 				else
 				{

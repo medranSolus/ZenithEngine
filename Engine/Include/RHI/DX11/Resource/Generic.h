@@ -1,6 +1,6 @@
 #pragma once
+#include "GFX/Pipeline/FrameBuffer.h"
 #include "GFX/Resource/GenericResourceDesc.h"
-#include "GFX/CommandList.h"
 
 namespace ZE::RHI::DX11::Resource
 {
@@ -12,6 +12,7 @@ namespace ZE::RHI::DX11::Resource
 	public:
 		Generic() = default;
 		Generic(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc);
+		Generic(GFX::Pipeline::FrameBuffer& framebuffer, RID rid) noexcept {}
 		ZE_CLASS_MOVE(Generic);
 		~Generic() { ZE_ASSERT_FREED(resource == nullptr); }
 

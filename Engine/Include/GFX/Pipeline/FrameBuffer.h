@@ -29,6 +29,12 @@ namespace ZE::GFX::Pipeline
 
 		// Get width and height of the resource
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { UInt2 dimm; ZE_RHI_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
+		constexpr U16 GetArraySize(RID rid) const noexcept { U16 arraySize; ZE_RHI_BACKEND_CALL_RET(arraySize, GetArraySize, rid); return arraySize; }
+		constexpr U16 GetMipCount(RID rid) const noexcept { U16 mips; ZE_RHI_BACKEND_CALL_RET(mips, GetMipCount, rid); return mips; }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCubeTexture, rid); return val; }
+		constexpr bool IsArrayView(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsArrayView, rid); return val; }
+		constexpr bool IsUAV(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUAV, rid); return val; }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { PixelFormat format; ZE_RHI_BACKEND_CALL_RET(format, GetFormat, rid); return format; }
 
 		// Render target before first use must be initialized, cleared or overwritten by full resource copy (except backbuffer)
 		constexpr void InitRTV(CommandList& cl, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(InitRTV, cl, rid); }
@@ -92,7 +98,7 @@ namespace ZE::GFX::Pipeline
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
 		constexpr void InitTransitions(Device& dev, CommandList& cl) const { ZE_RHI_BACKEND_CALL(InitTransitions, dev, cl); }
 		constexpr void ExitTransitions(Device& dev, CommandList& cl, U64 level) const { ZE_RHI_BACKEND_CALL(ExitTransitions, dev, cl, level); }
-		
+
 		// Before destroying FrameBuffer you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};

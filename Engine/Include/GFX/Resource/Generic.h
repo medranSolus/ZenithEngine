@@ -11,8 +11,6 @@
 
 namespace ZE::GFX::Resource
 {
-	// TODO: Make lightweight ctor from FrameBuffer internal resources via RID
-	//
 	// Custom generic resource that can hold various types of data inside, depending on requested params
 	class Generic final
 	{
@@ -21,10 +19,12 @@ namespace ZE::GFX::Resource
 	public:
 		Generic() = default;
 		constexpr Generic(Device& dev, const GenericResourceDesc& desc) { Init(dev, desc); }
+		constexpr Generic(Pipeline::FrameBuffer& framebuffer, RID rid) noexcept { Init(framebuffer, rid); }
 		ZE_CLASS_MOVE(Generic);
 		~Generic() = default;
 
 		constexpr void Init(Device& dev, const GenericResourceDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
+		constexpr void Init(Pipeline::FrameBuffer& framebuffer, RID rid) noexcept { ZE_RHI_BACKEND_VAR.Init(framebuffer, rid); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const GenericResourceDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
 		ZE_RHI_BACKEND_GET(Resource::Generic);
 

@@ -24,7 +24,7 @@ namespace ZE::RHI::DX12
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = Settings::GetBackbufferCount();
 		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
-		rtvSrv = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[descHeapDesc.NumDescriptors];
+		rtvSrv = new DescEntry[descHeapDesc.NumDescriptors];
 
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 srvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -49,14 +49,15 @@ namespace ZE::RHI::DX12
 			DX::ComPtr<IResource> buffer = nullptr;
 			ZE_DX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
-			rtvSrv[i].first = rtvHandle;
+			rtvSrv[i].RTV = rtvHandle;
 			if (shaderInput)
 			{
 				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(buffer.Get(), &srvDesc, srvHandle.CPU));
-				rtvSrv[i].second = srvHandle.GPU;
+				rtvSrv[i].SRVCpu = srvHandle.CPU;
+				rtvSrv[i].SRVGpu = srvHandle.GPU;
 			}
 			else
-				rtvSrv[i].second.ptr = UINT64_MAX;
+				rtvSrv[i].SRVCpu.ptr = rtvSrv[i].SRVGpu.ptr = UINT64_MAX;
 			rtvHandle.ptr += rtvDescSize;
 			srvHandle.CPU.ptr += srvDescSize;
 			srvHandle.GPU.ptr += srvDescSize;
@@ -110,7 +111,7 @@ namespace ZE::RHI::DX12
 			dev.Get().dx12.FreeDescs(srvHandle);
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer)
+	SwapChain::DescEntry SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer)
 	{
 		ZE_DX_ENABLE(dev.Get().dx12);
 		const U32 current = Settings::GetCurrentBackbufferIndex();

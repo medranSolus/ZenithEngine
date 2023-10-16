@@ -11,6 +11,15 @@ namespace ZE::RHI::DX11::Pipeline
 		{
 			DX::ComPtr<IResource> Resource;
 			UInt2 Size;
+			U16 Array;
+			U16 Mips;
+			PixelFormat Format;
+			std::bitset<2> Flags;
+
+			constexpr bool IsCube() const noexcept { return Flags[0]; }
+			constexpr void SetCube() noexcept { Flags[0] = true; }
+			constexpr bool IsArrayView() const noexcept { return Flags[1]; }
+			constexpr void SetArrayView() noexcept { Flags[1] = true; }
 		};
 
 		RID resourceCount;
@@ -38,6 +47,12 @@ namespace ZE::RHI::DX11::Pipeline
 		~FrameBuffer();
 
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
+		constexpr U16 GetArraySize(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Array; }
+		constexpr U16 GetMipCount(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Mips; }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsCube(); }
+		constexpr bool IsArrayView(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsArrayView(); }
+		constexpr bool IsUAV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); if (rid == 0) return false; return uavs[rid - 1] != nullptr; }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Format; }
 
 		constexpr void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
 		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}

@@ -51,9 +51,10 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 		FfxCacaoDispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(list);
-		desc.depthBuffer = ffxGetResource(ids.Depth);
-		desc.normalBuffer = ffxGetResource(ids.Normal);
-		desc.outputBuffer = ffxGetResource(ids.AO);
+		Resource::Generic depth, normal, ao;
+		desc.depthBuffer = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
+		desc.normalBuffer = ffxGetResource(renderData.Buffers, normal, ids.Normal, Resource::StateShaderResourceNonPS);
+		desc.outputBuffer = ffxGetResource(renderData.Buffers, ao, ids.AO, Resource::StateUnorderedAccess);
 		// Matrix data is not modified inside callbacks, missing const specifier in header
 		desc.proj = const_cast<FfxCacaoMat4x4*>(reinterpret_cast<const FfxCacaoMat4x4*>(&renderer.GetProjection()));
 		desc.normalsToView = const_cast<FfxCacaoMat4x4*>(reinterpret_cast<const FfxCacaoMat4x4*>(&dynamicData.View));

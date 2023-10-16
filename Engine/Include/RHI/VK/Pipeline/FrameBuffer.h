@@ -15,6 +15,12 @@ namespace ZE::RHI::VK::Pipeline
 		~FrameBuffer();
 
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { return { 0, 0 }; }
+		constexpr U16 GetArraySize(RID rid) const noexcept { return 0; }
+		constexpr U16 GetMipCount(RID rid) const noexcept { return 0; }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { return false; }
+		constexpr bool IsArrayView(RID rid) const noexcept { return false; }
+		constexpr bool IsUAV(RID rid) const noexcept { return false; }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { return PixelFormat::Unknown; }
 
 		constexpr void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
 		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}

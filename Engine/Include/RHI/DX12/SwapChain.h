@@ -5,10 +5,19 @@ namespace ZE::RHI::DX12
 {
 	class SwapChain final
 	{
+	public:
+		struct DescEntry
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE RTV;
+			D3D12_CPU_DESCRIPTOR_HANDLE SRVCpu;
+			D3D12_GPU_DESCRIPTOR_HANDLE SRVGpu;
+		};
+
+	private:
 		UINT presentFlags = 0;
 		DX::ComPtr<DX::ISwapChain> swapChain;
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
-		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> rtvSrv;
+		Ptr<DescEntry> rtvSrv;
 		D3D12_RESOURCE_BARRIER presentBarrier;
 		DescriptorInfo srvHandle;
 
@@ -27,8 +36,8 @@ namespace ZE::RHI::DX12
 		// Gfx API Internal
 
 		constexpr const D3D12_RESOURCE_BARRIER& GetPresentBarrier() const noexcept { return presentBarrier; }
-		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[Settings::GetCurrentBackbufferIndex()].first; }
+		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[Settings::GetCurrentBackbufferIndex()].RTV; }
 
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer);
+		DescEntry SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer);
 	};
 }

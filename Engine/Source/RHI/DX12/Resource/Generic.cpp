@@ -327,6 +327,18 @@ namespace ZE::RHI::DX12::Resource
 		}
 	}
 
+	Generic::Generic(GFX::Pipeline::FrameBuffer& framebuffer, RID rid) noexcept
+	{
+		auto& buffers = framebuffer.Get().dx12;
+		resource = buffers.GetResource(rid);
+		buffer = nullptr;
+		auto srv = buffers.GetSRV(rid);
+		srvDescriptor = { srv.second, srv.first, nullptr, true };
+		auto uav = buffers.GetUAV(rid);
+		uavDescriptorGpu = { uav.second.second, uav.second.first, nullptr, true };
+		uavDescriptorCpu = { 0, uav.first, nullptr, false };
+	}
+
 	bool Generic::IsStagingCopyRequired(GFX::Device& dev, const GFX::Resource::GenericResourceDesc& desc) const noexcept
 	{
 		if (desc.InitData)

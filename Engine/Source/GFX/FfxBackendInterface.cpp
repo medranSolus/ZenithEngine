@@ -1,6 +1,5 @@
 #include "GFX/FfxBackendInterface.h"
 #include "GFX/Binding/Schema.h"
-#include "GFX/Resource/Generic.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/CommandSignature.h"
 #include "GFX/FfxEffects.h"
@@ -59,9 +58,35 @@ namespace ZE::GFX
 	constexpr Resource::GenericResourceHeap GetHeapType(FfxHeapType type) noexcept;
 	constexpr Resource::GenericResourceFlags GetResourceFlags(FfxResourceUsage usage) noexcept;
 	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept;
+	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept;
 	constexpr Resource::State GetState(FfxResourceStates state) noexcept;
+	constexpr FfxResourceStates GetState(Resource::State state) noexcept;
 	constexpr Resource::Texture::AddressMode GetAddressMode(FfxAddressMode mode) noexcept;
 	constexpr Resource::SamplerFilter GetFilter(FfxFilterType filter) noexcept;
+
+	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, Resource::Generic& res, RID rid, Resource::State state) noexcept
+	{
+		// Create proxy resource
+		res.Init(buffers, rid);
+
+		FfxResource desc = {};
+		desc.resource = &res;
+		desc.description.type = buffers.IsCubeTexture(rid) ? FFX_RESOURCE_TYPE_TEXTURE_CUBE : FFX_RESOURCE_TYPE_TEXTURE2D;
+		desc.description.format = GetSurfaceFormat(buffers.GetFormat(rid));
+		auto sizes = buffers.GetDimmensions(rid);
+		desc.description.width = sizes.X;
+		desc.description.height = sizes.Y;
+		desc.description.depth = buffers.GetArraySize(rid);
+		desc.description.mipCount = buffers.GetMipCount(rid);
+		desc.description.flags = FFX_RESOURCE_FLAGS_NONE;
+		desc.description.usage = FFX_RESOURCE_USAGE_READ_ONLY;
+		if (buffers.IsUAV(rid))
+			desc.description.usage = static_cast<FfxResourceUsage>(desc.description.usage | FFX_RESOURCE_USAGE_UAV);
+		if (buffers.IsArrayView(rid))
+			desc.description.usage = static_cast<FfxResourceUsage>(desc.description.usage | FFX_RESOURCE_USAGE_ARRAYVIEW);
+		desc.state = GetState(state);
+		return desc;
+	}
 
 	void ffxGetInterface(Device& dev) noexcept
 	{
@@ -220,7 +245,7 @@ namespace ZE::GFX
 			resDesc.WidthOrBufferSize = createResourceDescription->resourceDescription.width;
 			resDesc.HeightOrBufferStride = createResourceDescription->resourceDescription.height;
 		}
-		resDesc.DepthOrArraySize = Utils::SafeCast<U16>(createResourceDescription->resourceDescription.depth);;
+		resDesc.DepthOrArraySize = Utils::SafeCast<U16>(createResourceDescription->resourceDescription.depth);
 		resDesc.InitState = GetState(createResourceDescription->initalState);
 		resDesc.InitDataSize = createResourceDescription->initDataSize;
 		resDesc.InitData = createResourceDescription->initData;
@@ -279,7 +304,10 @@ namespace ZE::GFX
 			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
 			outResourceInternal->internalIndex = ctx.Resources.create();
 
-			ctx.Resources.emplace<Resource::Generic>(outResourceInternal->internalIndex, std::move(*reinterpret_cast<Resource::Generic*>(inResource->resource)));
+			Resource::Generic& res = *reinterpret_cast<Resource::Generic*>(inResource->resource);
+			ctx.Resources.emplace<Resource::Generic>(outResourceInternal->internalIndex, std::move(res));
+			res.Free(GetDevice(backendInterface)); // Free resource as it's only proxy one
+
 			ctx.Resources.emplace<FfxResourceStates>(outResourceInternal->internalIndex, inResource->state); // Current state
 			ctx.Resources.emplace<Resource::State>(outResourceInternal->internalIndex, GetState(inResource->state)); // Initial state (read-only)
 			ctx.Resources.emplace<FfxResourceDescription>(outResourceInternal->internalIndex, inResource->description);
@@ -551,8 +579,15 @@ namespace ZE::GFX
 		return FFX_OK;
 	}
 
+	FfxErrorCode ffxScheduleGpuJob(FfxInterface* backendInterface, const FfxGpuJobDescription* job)
+	{
+		ZE_CHECK_FFX_BACKEND();
+		return FFX_OK;
+	}
+
 	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList)
 	{
+		ZE_CHECK_FFX_BACKEND();
 		return FFX_OK;
 	}
 #pragma endregion
@@ -626,6 +661,62 @@ namespace ZE::GFX
 		return flags;
 	}
 
+	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		default:
+			ZE_FAIL("Format not yet supported by FidelityFX SDK!");
+			[[fallthrough]];
+		case PixelFormat::Unknown:
+			return FFX_SURFACE_FORMAT_UNKNOWN;
+		case PixelFormat::R32G32B32A32_UInt:
+			return FFX_SURFACE_FORMAT_R32G32B32A32_UINT;
+		case PixelFormat::R32G32B32A32_Float:
+			return FFX_SURFACE_FORMAT_R32G32B32A32_FLOAT;
+		case PixelFormat::R16G16B16A16_Float:
+			return FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT;
+		case PixelFormat::R32G32_Float:
+			return FFX_SURFACE_FORMAT_R32G32_FLOAT;
+		case PixelFormat::R8_UInt:
+			return FFX_SURFACE_FORMAT_R8_UINT;
+		case PixelFormat::R32_UInt:
+			return FFX_SURFACE_FORMAT_R32_UINT;
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+			ZE_WARNING("FidelityFX SDK is not supporting plain R8G8B8A8_UInt so falling back to typeless version!");
+			return FFX_SURFACE_FORMAT_R8G8B8A8_TYPELESS;
+		case PixelFormat::R8G8B8A8_UNorm:
+			return FFX_SURFACE_FORMAT_R8G8B8A8_UNORM;
+		case PixelFormat::R8G8B8A8_SNorm:
+			return FFX_SURFACE_FORMAT_R8G8B8A8_SNORM;
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+			return FFX_SURFACE_FORMAT_R8G8B8A8_SRGB;
+		case PixelFormat::R11G11B10_Float:
+			return FFX_SURFACE_FORMAT_R11G11B10_FLOAT;
+		case PixelFormat::R16G16_Float:
+			return FFX_SURFACE_FORMAT_R16G16_FLOAT;
+		case PixelFormat::R16G16_UInt:
+			return FFX_SURFACE_FORMAT_R16G16_UINT;
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_Depth:
+			return FFX_SURFACE_FORMAT_R16_FLOAT;
+		case PixelFormat::R16_UInt:
+			return FFX_SURFACE_FORMAT_R16_UINT;
+		case PixelFormat::R16_UNorm:
+			return FFX_SURFACE_FORMAT_R16_UNORM;
+		case PixelFormat::R16_SNorm:
+			return FFX_SURFACE_FORMAT_R16_SNORM;
+		case PixelFormat::R8_UNorm:
+			return FFX_SURFACE_FORMAT_R8_UNORM;
+		case PixelFormat::R8G8_UNorm:
+			return FFX_SURFACE_FORMAT_R8G8_UNORM;
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+			return FFX_SURFACE_FORMAT_R32_FLOAT;
+		}
+	}
+
 	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept
 	{
 		switch (format)
@@ -663,7 +754,7 @@ namespace ZE::GFX
 		case FFX_SURFACE_FORMAT_R16G16_FLOAT:
 			return PixelFormat::R16G16_Float;
 		case FFX_SURFACE_FORMAT_R16G16_UINT:
-			return PixelFormat::R16G16_Float;
+			return PixelFormat::R16G16_UInt;
 		case FFX_SURFACE_FORMAT_R16_FLOAT:
 			return PixelFormat::R16_Float;
 		case FFX_SURFACE_FORMAT_R16_UINT:
@@ -705,6 +796,34 @@ namespace ZE::GFX
 		{
 			ZE_FAIL("Unhandled resource state!");
 			return Resource::State::StateCommon;
+		}
+		}
+	}
+
+	constexpr FfxResourceStates GetState(Resource::State state) noexcept
+	{
+		switch (state)
+		{
+		case Resource::State::StateUnorderedAccess:
+			return FFX_RESOURCE_STATE_UNORDERED_ACCESS;
+		case Resource::State::StateShaderResourceNonPS:
+			return FFX_RESOURCE_STATE_COMPUTE_READ;
+		case Resource::State::StateShaderResourcePS:
+			return FFX_RESOURCE_STATE_PIXEL_READ;
+		case Resource::State::StateShaderResourceAll:
+			return FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ;
+		case Resource::State::StateCopySource:
+			return FFX_RESOURCE_STATE_COPY_SRC;
+		case Resource::State::StateCopyDestination:
+			return FFX_RESOURCE_STATE_COPY_DEST;
+		case Resource::State::StateGenericRead:
+			return FFX_RESOURCE_STATE_GENERIC_READ;
+		case Resource::State::StateIndirect:
+			return FFX_RESOURCE_STATE_INDIRECT_ARGUMENT;
+		default:
+		{
+			ZE_FAIL("Unhandled resource state!");
+			return FFX_RESOURCE_STATE_GENERIC_READ;
 		}
 		}
 	}

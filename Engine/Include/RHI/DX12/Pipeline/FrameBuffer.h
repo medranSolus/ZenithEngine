@@ -18,6 +18,15 @@ namespace ZE::RHI::DX12::Pipeline
 		{
 			DX::ComPtr<IResource> Resource;
 			UInt2 Size;
+			U16 Array;
+			U16 Mips;
+			PixelFormat Format;
+			std::bitset<2> Flags;
+
+			constexpr bool IsCube() const noexcept { return Flags[0]; }
+			constexpr void SetCube() noexcept { Flags[0] = true; }
+			constexpr bool IsArrayView() const noexcept { return Flags[1]; }
+			constexpr void SetArrayView() noexcept { Flags[1] = true; }
 		};
 
 		TransitionPoint initTransitions;
@@ -32,16 +41,16 @@ namespace ZE::RHI::DX12::Pipeline
 		RID resourceCount;
 		Ptr<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDsv;
 		Ptr<Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>> rtvDsvMips; // No backbuffer
-		Ptr<D3D12_GPU_DESCRIPTOR_HANDLE> srv;
-		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> uav; // No backbuffer
-		Ptr<Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>> uavMips; // No backbuffer
+		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> srv;
+		Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>> uav; // No backbuffer
+		Ptr<Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>>> uavMips; // No backbuffer
 
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
 		DX::ComPtr<IDescriptorHeap> dsvDescHeap;
-		DX::ComPtr<IDescriptorHeap> uavDescHeap;
 		DX::ComPtr<IHeap> mainHeap;
 		DX::ComPtr<IHeap> uavHeap;
 		DescriptorInfo descInfo;
+		DescriptorInfo descInfoCpu;
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
 		static void PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
@@ -66,6 +75,12 @@ namespace ZE::RHI::DX12::Pipeline
 		~FrameBuffer();
 
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
+		constexpr U16 GetArraySize(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Array; }
+		constexpr U16 GetMipCount(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Mips; }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsCube(); }
+		constexpr bool IsArrayView(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsArrayView(); }
+		constexpr bool IsUAV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); if (rid == 0) return false; return uav[rid - 1].first.ptr != UINT64_MAX; }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Format; }
 
 		void InitRTV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
 		void InitDSV(GFX::CommandList& cl, RID rid) const noexcept { InitResource(cl.Get().dx12, rid); }
@@ -102,6 +117,12 @@ namespace ZE::RHI::DX12::Pipeline
 		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const;
 
 		void Free(GFX::Device& dev) noexcept;
+
+		// Gfx API Internal
+
+		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Resource; }
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> GetSRV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return srv[rid]; }
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> GetUAV(RID rid) { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return uav[rid]; }
 	};
 
 #pragma region Functions
@@ -119,7 +140,7 @@ namespace ZE::RHI::DX12::Pipeline
 			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
 			handles[i] = rtvDsv[id];
-			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
+			ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
@@ -132,7 +153,7 @@ namespace ZE::RHI::DX12::Pipeline
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetOutput() should be only used for multiple render targets!");
 		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[dsv].ptr != -1, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(rtvDsv[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
 		D3D12_VIEWPORT vieports[RTVCount];
@@ -143,7 +164,7 @@ namespace ZE::RHI::DX12::Pipeline
 			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
 			handles[i] = rtvDsv[id];
-			ZE_ASSERT(handles[i].ptr != -1, "Current resource is not suitable for being render target!");
+			ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
@@ -163,28 +184,28 @@ namespace ZE::RHI::DX12::Pipeline
 			ZE_ASSERT(info.RID < resourceCount, "Resource ID outside available range!");
 
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateUnorderedAccess ||
-				info.BeforeState == GFX::Resource::StateUnorderedAccess && uav[info.RID - 1].first.ptr != -1,
+				info.BeforeState == GFX::Resource::StateUnorderedAccess && uav[info.RID - 1].first.ptr != UINT64_MAX,
 				"Current resource is not suitable for being unnordered access!");
 
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateRenderTarget ||
-				info.BeforeState == GFX::Resource::StateRenderTarget && rtvDsv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateRenderTarget && rtvDsv[info.RID].ptr != UINT64_MAX,
 				"Current resource is not suitable for being render target!");
 
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateDepthRead ||
-				info.BeforeState == GFX::Resource::StateDepthRead && rtvDsv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateDepthRead && rtvDsv[info.RID].ptr != UINT64_MAX,
 				"Current resource is not suitable for being depth stencil!");
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateDepthWrite ||
-				info.BeforeState == GFX::Resource::StateDepthWrite && rtvDsv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateDepthWrite && rtvDsv[info.RID].ptr != UINT64_MAX,
 				"Current resource is not suitable for being depth stencil!");
 
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourceAll ||
-				info.BeforeState == GFX::Resource::StateShaderResourceAll && srv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateShaderResourceAll && srv[info.RID].first.ptr != UINT64_MAX,
 				"Current resource is not suitable for being shader resource!");
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourcePS ||
-				info.BeforeState == GFX::Resource::StateShaderResourcePS && srv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateShaderResourcePS && srv[info.RID].first.ptr != UINT64_MAX,
 				"Current resource is not suitable for being shader resource!");
 			ZE_ASSERT(info.BeforeState != GFX::Resource::StateShaderResourceNonPS ||
-				info.BeforeState == GFX::Resource::StateShaderResourceNonPS && srv[info.RID].ptr != -1,
+				info.BeforeState == GFX::Resource::StateShaderResourceNonPS && srv[info.RID].first.ptr != UINT64_MAX,
 				"Current resource is not suitable for being shader resource!");
 
 			D3D12_RESOURCE_BARRIER& barrier = resBarriers[i];
