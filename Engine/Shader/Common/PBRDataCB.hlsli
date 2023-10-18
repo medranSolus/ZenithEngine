@@ -9,6 +9,9 @@ struct PBRData
 {
 	// Should be multiple of 16 B (alignment restrictions)
 	GTAOConstants XeGTAOData;
+	
+	uint2 DisplaySize;
+	uint2 RenderSize;
 
 	float3 AmbientLight;
 	float HDRExposure;

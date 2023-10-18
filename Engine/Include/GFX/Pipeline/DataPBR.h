@@ -6,6 +6,7 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline
 {
+#pragma pack(push, 1)
 	// Global constant buffer data used by RendererPBR
 	struct DataPBR
 	{
@@ -13,6 +14,9 @@ namespace ZE::GFX::Pipeline
 
 		// Should be multiple of 16 B (alignment restrictions)
 		XeGTAO::GTAOConstants XeGTAOData;
+
+		UInt2 DisplaySize;
+		UInt2 RenderSize;
 
 		Float3 AmbientLight;
 		float HDRExposure;
@@ -49,4 +53,5 @@ namespace ZE::GFX::Pipeline
 		float NearClip;
 		float FarClip;
 	};
+#pragma pack(pop)
 }

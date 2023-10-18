@@ -177,6 +177,8 @@ namespace ZE::GFX::Pipeline
 		SetupRenderSlots(buildData);
 
 		blurSigma = params.Sigma;
+		settingsData.DisplaySize = Settings::DisplaySize;
+		settingsData.RenderSize = Settings::RenderSize;
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.AmbientLight = { 0.05f, 0.05f, 0.05f };
@@ -512,6 +514,7 @@ namespace ZE::GFX::Pipeline
 							ssaoSettings.cacao.qualityLevel = i;
 						if (selected)
 							ImGui::SetItemDefaultFocus();
+						i = static_cast<FfxCacaoQuality>(i + 1);
 					}
 					ImGui::EndCombo();
 				}
