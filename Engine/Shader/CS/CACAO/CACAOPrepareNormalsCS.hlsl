@@ -3,6 +3,22 @@
 #include "CommonUtils.hlsli"
 
 UAV_EX(deinterleavedNormals, RWTexture2DArray<FfxFloat32x4>, 0, 0);
+
+void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32x3 normal)
+{
+	ua_deinterleavedNormals[FfxInt32x3(coord, index)] = FfxFloat32x4(normal, 1.0f);
+}
+
+// Stubs not used in this shader version
+FfxFloat32x4 FFX_CACAO_Prepare_SampleDepthOffsets(const in FfxFloat32x2 uv) { return 0.0f; }
+FfxFloat32x4 FFX_CACAO_Prepare_GatherDepth(const in FfxFloat32x2 uv) { return 0.0f; }
+FfxFloat32 FFX_CACAO_Prepare_LoadDepth(const in FfxUInt32x2 coord) { return 0.0f; }
+void FFX_CACAO_Prepare_StoreDepthMip0(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
+void FFX_CACAO_Prepare_StoreDepthMip1(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
+void FFX_CACAO_Prepare_StoreDepthMip2(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
+void FFX_CACAO_Prepare_StoreDepthMip3(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
+void FFX_CACAO_Prepare_StoreDepth(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
+
 #ifdef _CACAO_PREPARE_NORMALS_INPUT
 TEXTURE_EX(normals, Texture2D<float2>, 0, 1);
 
@@ -14,15 +30,9 @@ FfxFloat32x3 FFX_CACAO_Prepare_LoadNormal(const in FfxUInt32x2 coord)
 	return normal;
 }
 
-FfxFloat32 FFX_CACAO_Prepare_LoadDepthOffset(const in FfxUInt32x2 coord, const in FfxInt32x2 offset)
-{
-	return 0.0f;
-}
-
-FfxFloat32x4 FFX_CACAO_Prepare_GatherDepthOffset(const in FfxFloat32x2 uv, const in FfxInt32x2 offset)
-{
-	return 0.0f;
-}
+// Stubs not used in this shader version
+FfxFloat32 FFX_CACAO_Prepare_LoadDepthOffset(const in FfxUInt32x2 coord, const in FfxInt32x2 offset) { return 0.0f; }
+FfxFloat32x4 FFX_CACAO_Prepare_GatherDepthOffset(const in FfxFloat32x2 uv, const in FfxInt32x2 offset) { return 0.0f; }
 #else
 TEXTURE_EX(depth, Texture2D<float>, 0, 1);
 
@@ -36,52 +46,9 @@ FfxFloat32x4 FFX_CACAO_Prepare_GatherDepthOffset(const in FfxFloat32x2 uv, const
 	return tx_depth.GatherRed(splr_PointClamp, uv, offset);
 }
 
-FfxFloat32x3 FFX_CACAO_Prepare_LoadNormal(const in FfxUInt32x2 coord)
-{
-	return 0.0f;
-}
-#endif
-
-void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32x3 normal)
-{
-	ua_deinterleavedNormals[FfxInt32x3(coord, index)] = FfxFloat32x4(normal, 1.0f);
-}
-
 // Stubs not used in this shader version
-FfxFloat32x4 FFX_CACAO_Prepare_SampleDepthOffsets(const in FfxFloat32x2 uv)
-{
-	return 0.0f;
-}
-
-FfxFloat32x4 FFX_CACAO_Prepare_GatherDepth(const in FfxFloat32x2 uv)
-{
-	return 0.0f;
-}
-
-FfxFloat32 FFX_CACAO_Prepare_LoadDepth(const in FfxUInt32x2 coord)
-{
-	return 0.0f;
-}
-
-void FFX_CACAO_Prepare_StoreDepthMip0(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val)
-{
-}
-
-void FFX_CACAO_Prepare_StoreDepthMip1(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val)
-{
-}
-
-void FFX_CACAO_Prepare_StoreDepthMip2(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val)
-{
-}
-
-void FFX_CACAO_Prepare_StoreDepthMip3(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val)
-{
-}
-
-void FFX_CACAO_Prepare_StoreDepth(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val)
-{
-}
+FfxFloat32x3 FFX_CACAO_Prepare_LoadNormal(const in FfxUInt32x2 coord) { return 0.0f; }
+#endif
 
 #include "cacao/ffx_cacao_prepare.h"
 #ifdef _CACAO_PREPARE_NORMALS_INPUT

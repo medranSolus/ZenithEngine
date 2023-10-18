@@ -99,28 +99,28 @@ namespace ZE::GFX::FFX
 			|| pass == FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS_FROM_INPUT_NORMALS;
 
 		auto getPermutation = [](bool fp16, bool wave64) -> std::string
-		{
-			if (fp16)
 			{
-				if (wave64)
-					return "_HW";
-				return "_H";
-			}
-			else if (wave64)
-				return "_W";
-			return "";
-		};
+				if (fp16)
+				{
+					if (wave64)
+						return "_HW";
+					return "_H";
+				}
+				else if (wave64)
+					return "_W";
+				return "";
+			};
 		auto getPreparePermutation = [](bool downsampled, bool half, bool wave64) -> std::string
-		{
-			std::string suffix = downsampled || half || wave64 ? "_" : "";
-			if (downsampled)
-				suffix += "D";
-			if (half)
-				suffix += "F";
-			if (wave64)
-				suffix += "W";
-			return suffix;
-		};
+			{
+				std::string suffix = downsampled || half || wave64 ? "_" : "";
+				if (downsampled)
+					suffix += "D";
+				if (half)
+					suffix += "F";
+				if (wave64)
+					suffix += "W";
+				return suffix;
+			};
 
 		bool applyNonSmart = false;
 		bool half = false;
@@ -220,7 +220,7 @@ namespace ZE::GFX::FFX
 			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwDeinterleavedNormals" };
 			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 4 };
+			static const U32 uavCounts[] = { 1 };
 			static const char* samplerNames[] = { "g_PointClampSampler" };
 			static const U32 samplerSlots[] = { 0 };
 			static const U32 samplerCounts[] = { 1 };
@@ -250,7 +250,7 @@ namespace ZE::GFX::FFX
 			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwDeinterleavedNormals" };
 			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 4 };
+			static const U32 uavCounts[] = { 1 };
 			static const char* samplerNames[] = { "g_PointClampSampler" };
 			static const U32 samplerSlots[] = { 0 };
 			static const U32 samplerCounts[] = { 1 };
@@ -278,7 +278,7 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_GENERATE_Q3:
 		case FFX_CACAO_PASS_GENERATE_Q3_BASE:
 		{
-			static const char* srvNames[] = { "g_LoadCounter", "g_DeinterleavedDepth", "g_DeinterleavedNormals", "g_SsaoBufferPong", "g_ImportanceMap" };
+			static const char* srvNames[] = { "g_DeinterleavedDepth", "g_DeinterleavedNormals", "g_LoadCounter", "g_SsaoBufferPong", "g_ImportanceMap" };
 			static const U32 srvSlots[] = { 0, 1, 2, 3, 4 };
 			static const U32 srvCounts[] = { 1, 1, 1, 1, 1 };
 			static const char* uavNames[] = { "g_RwSsaoBufferPing" };
@@ -290,6 +290,18 @@ namespace ZE::GFX::FFX
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
+				1, 2, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, cbvSlots, cbvCounts, // CBV
+				srvNames, srvSlots, srvCounts, // SRV tex
+				uavNames, uavSlots, uavCounts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, samplerSlots, samplerCounts, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			static constexpr FfxShaderBlob BLOB_Q3 =
+			{
+				nullptr, 0, // Blob, data
 				1, 5, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, cbvSlots, cbvCounts, // CBV
 				srvNames, srvSlots, srvCounts, // SRV tex
@@ -299,7 +311,7 @@ namespace ZE::GFX::FFX
 				samplerNames, samplerSlots, samplerCounts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
-			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+			std::memcpy(&shaderBlob, pass == FFX_CACAO_PASS_GENERATE_Q3 ? &BLOB_Q3 : &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
 			{
