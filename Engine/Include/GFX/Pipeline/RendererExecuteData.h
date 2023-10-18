@@ -3,7 +3,6 @@
 #include "GFX/Resource/CBuffer.h"
 #include "GFX/Resource/DynamicCBuffer.h"
 #include "GFX/Resource/PipelineStateGfx.h"
-#include "GFX/ChainPool.h"
 #include "Data/AssetsStreamer.h"
 #include "Data/Tags.h"
 #include "FrameBuffer.h"
@@ -24,7 +23,8 @@ namespace ZE::GFX::Pipeline
 		FrameBuffer Buffers;
 		Binding::Library Bindings;
 		Resource::CBuffer SettingsBuffer;
-		ChainPool<Resource::DynamicCBuffer> DynamicBuffers;
+		// Current dynamic constant buffer used for uploading data to GPU. Initialized by RenderGraph
+		Ptr<Resource::DynamicCBuffer> DynamicBuffer;
 		// Global settings of the renderer. Initialized by RenderGraph
 		void* SettingsData;
 		// Per-frame changing data of the renderer. Initialized by RenderGraph
@@ -35,6 +35,6 @@ namespace ZE::GFX::Pipeline
 		Ptr<Resource::PipelineStateGfx> SharedStates;
 		U64 SharedStatesCount = 0;
 
-		void BindRendererDynamicData(CommandList& cl, Binding::Context& bindCtx) const noexcept { DynamicBuffers.Get().Bind(cl, bindCtx, RENDERER_DYNAMIC_BUFFER); }
+		void BindRendererDynamicData(CommandList& cl, Binding::Context& bindCtx) const noexcept { DynamicBuffer->Bind(cl, bindCtx, RENDERER_DYNAMIC_BUFFER); }
 	};
 }

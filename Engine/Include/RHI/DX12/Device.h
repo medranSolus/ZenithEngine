@@ -152,6 +152,7 @@ namespace ZE::RHI::DX12
 #endif
 		constexpr AllocatorGPU::AllocTier GetCurrentAllocTier() const noexcept { return allocator.GetCurrentTier(); }
 		constexpr bool IsGpuUploadHeap() const noexcept { return allocator.IsGpuUploadHeap(); }
+		// Get size of CBV/SRV/UAV descriptor
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 

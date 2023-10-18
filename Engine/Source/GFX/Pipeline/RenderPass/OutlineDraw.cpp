@@ -80,7 +80,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_STOP();
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			auto& cbuffer = renderData.DynamicBuffers.Get();
+			auto& cbuffer = *renderData.DynamicBuffer;
 
 			data.StateStencil.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));

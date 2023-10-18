@@ -66,7 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();
 
-			auto& cbuffer = renderData.DynamicBuffers.Get();
+			auto& cbuffer = *renderData.DynamicBuffer;
 			ZE_PERF_START("Wireframe - main loop");
 			for (U64 i = 0; i < count; ++i)
 			{

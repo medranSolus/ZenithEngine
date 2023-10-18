@@ -109,7 +109,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		const U64 transparentCount = transparentGroup.size();
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-		auto& cbuffer = renderData.DynamicBuffers.Get();
+		auto& cbuffer = *renderData.DynamicBuffer;
 
 		EID currentMaterial = INVALID_EID;
 		U8 currentState = UINT8_MAX;

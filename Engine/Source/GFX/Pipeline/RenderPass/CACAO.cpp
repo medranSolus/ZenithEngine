@@ -59,8 +59,8 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		desc.proj = const_cast<FfxCacaoMat4x4*>(reinterpret_cast<const FfxCacaoMat4x4*>(&renderer.GetProjection()));
 		desc.normalsToView = const_cast<FfxCacaoMat4x4*>(reinterpret_cast<const FfxCacaoMat4x4*>(&dynamicData.View));
 		// Custom way of loading normals is chosen so no need to perform any unpacking from SDK (custom callbacks provided)
-		desc.normalUnpackMul = 1;
-		desc.normalUnpackAdd = 0;
+		desc.normalUnpackMul = 1.0f;
+		desc.normalUnpackAdd = 0.0f;
 		ZE_FFX_THROW_FAILED(ffxCacaoContextDispatch(&data.Ctx, &desc), "Error performing CACAO!");
 
 		ZE_DRAW_TAG_END(dev, list);

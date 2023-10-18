@@ -79,7 +79,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			Resources ids = *passData.Buffers.CastConst<Resources>();
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
-			auto& cbuffer = renderData.DynamicBuffers.Get();
+			auto& cbuffer = *renderData.DynamicBuffer;
 			cl.Open(dev);
 			ZE_PERF_START("Point Light - main loop");
 			for (U64 i = 0; i < count; ++i)

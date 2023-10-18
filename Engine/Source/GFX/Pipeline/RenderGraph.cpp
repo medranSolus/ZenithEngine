@@ -192,8 +192,6 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::Finalize(Device& dev, CommandList& mainList, std::vector<RenderNode>& nodes,
 		FrameBufferDesc& frameBufferDesc, RendererBuildData& buildData, bool minimizeDistances)
 	{
-		execData.DynamicBuffers.Exec([&dev](auto& x) { x.Init(dev); });
-
 		// Create graph via adjacency list
 		std::vector<std::vector<U64>> graphList(nodes.size());
 		std::vector<std::vector<U64>> syncList(nodes.size());
@@ -645,6 +643,12 @@ namespace ZE::GFX::Pipeline
 		Device& dev = gfx.GetDevice();
 		CommandList& mainList = gfx.GetMainList();
 
+		gfx.WaitForFrame();
+		gfx.GetDynamicBuffer().Alloc(dev, execData.DynamicData, dynamicDataSize);
+
+		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+		execData.DynamicBuffer = &gfx.GetDynamicBuffer();
+
 		switch (Settings::GetGfxApi())
 		{
 		default:
@@ -652,10 +656,6 @@ namespace ZE::GFX::Pipeline
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
 		{
-			execData.DynamicBuffers.Get().StartFrame(dev);
-			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
-			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
-
 			for (U64 i = 0; i < levelCount; ++i)
 			{
 				ZE_DRAW_TAG_BEGIN_MAIN(dev, ("Level " + std::to_string(i + 1)).c_str(), PixelVal::White);
@@ -683,12 +683,6 @@ namespace ZE::GFX::Pipeline
 		case GfxApiType::DX12:
 		case GfxApiType::Vulkan:
 		{
-			gfx.WaitForFrame();
-			execData.DynamicBuffers.Get().StartFrame(dev);
-			execData.DynamicBuffers.Get().Alloc(dev, execData.DynamicData, dynamicDataSize);
-			execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
-
-			mainList.Reset(dev);
 #if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 			for (U64 i = 0; i < workersCount; ++i)
 				workerThreads[i].second.Get().Reset(dev);
@@ -719,6 +713,7 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		}
+		execData.DynamicBuffer = nullptr;
 	}
 
 	void RenderGraph::Free(Device& dev) noexcept
@@ -757,7 +752,6 @@ namespace ZE::GFX::Pipeline
 		execData.Buffers.Free(dev);
 		execData.Bindings.Free(dev);
 		execData.SettingsBuffer.Free(dev);
-		execData.DynamicBuffers.Exec([&dev](Resource::DynamicCBuffer& x) { x.Free(dev); });
 		if (execData.SharedStates)
 		{
 			for (U64 i = 0; i < execData.SharedStatesCount; ++i)

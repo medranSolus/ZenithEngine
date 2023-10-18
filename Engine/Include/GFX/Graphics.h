@@ -1,4 +1,5 @@
 #pragma once
+#include "Resource/DynamicCBuffer.h"
 #include "ChainPool.h"
 #include "CommandList.h"
 #include "Device.h"
@@ -14,22 +15,32 @@ namespace ZE::GFX
 		// TODO: Move chainPool inside CL
 		ChainPool<CommandList> mainList;
 		ChainPool<U64> fenceChain;
+		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
 
 	public:
 		Graphics() = default;
 		ZE_CLASS_DELETE(Graphics);
-		~Graphics() { swapChain.Free(device); mainList.Exec([&dev = device](CommandList& cl) { cl.Free(dev); }); }
+		~Graphics();
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
-		constexpr void WaitForFrame() { swapChain.StartFrame(device); device.WaitMain(fenceChain.Get()); }
+		constexpr Resource::DynamicCBuffer& GetDynamicBuffer() noexcept { return dynamicBuffers.Get(); }
+		constexpr void WaitForFrame();
 		constexpr void Present();
 
 		void Init(const Window::MainWindow& window, U32 descriptorCount, bool backbufferSRV);
 	};
 
 #pragma region Functions
+	constexpr void Graphics::WaitForFrame()
+	{
+		swapChain.StartFrame(device);
+		device.WaitMain(fenceChain.Get());
+		dynamicBuffers.Get().StartFrame(device);
+		mainList.Get().Reset(device);
+	}
+
 	constexpr void Graphics::Present()
 	{
 		fenceChain.Get() = device.SetMainFence();

@@ -102,7 +102,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				{ 0.0f, 0.0f, -1.0f, 0.0f }, up) * data.Projection);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-			auto& cbuffer = renderData.DynamicBuffers.Get();
+			auto& cbuffer = *renderData.DynamicBuffer;
 			auto cubeBufferInfo = cbuffer.Alloc(dev, &viewBuffer, sizeof(CubeViewBuffer));
 
 			// Split into groups based on materials and if inside light volume

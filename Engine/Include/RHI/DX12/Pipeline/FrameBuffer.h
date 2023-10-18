@@ -122,7 +122,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Resource; }
 		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> GetSRV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return srv[rid]; }
-		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> GetUAV(RID rid) { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return uav[rid]; }
+		std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>> GetUAV(RID rid) { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return uav[rid - 1]; }
 	};
 
 #pragma region Functions
