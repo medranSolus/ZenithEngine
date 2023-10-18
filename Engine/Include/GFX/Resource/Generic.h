@@ -32,6 +32,10 @@ namespace ZE::GFX::Resource
 
 		constexpr U8* GetBuffer() noexcept { U8* ptr = nullptr; ZE_RHI_BACKEND_CALL_RET(ptr, GetBuffer); return ptr; }
 		constexpr bool IsStagingCopyRequired(Device& dev, const GenericResourceDesc& desc) const noexcept { bool val = true; ZE_RHI_BACKEND_CALL_RET(val, IsStagingCopyRequired, dev, desc); return val; }
+		constexpr void ClearUAV(CommandList& cl, const ColorF4& color) const noexcept { ZE_RHI_BACKEND_CALL(ClearUAV, cl, color); }
+		constexpr void Copy(Device& dev, CommandList& cl, Generic& dest) const noexcept { ZE_RHI_BACKEND_CALL(Copy, dev, cl, dest); }
+		constexpr void Bind(Device& dev, CommandList& cl, Binding::Context& bindCtx, bool uav, U16 uavMipLevel = 0) const noexcept { ZE_RHI_BACKEND_CALL(Bind, dev, cl, bindCtx, uav, uavMipLevel); }
+		constexpr void ExecuteIndirectCommands(CommandList& cl, CommandSignature& signature, U32 commandOffset) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteIndirectCommands, cl, signature, commandOffset); }
 		// Before destroying buffer you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};

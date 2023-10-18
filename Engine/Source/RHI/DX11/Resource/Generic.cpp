@@ -1,4 +1,4 @@
-#include "RHI/DX11/Resource/Generic.h"
+#include "GFX/Resource/Generic.h"
 
 namespace ZE::RHI::DX11::Resource
 {
@@ -59,7 +59,7 @@ namespace ZE::RHI::DX11::Resource
 			}
 
 			DX::ComPtr<IBuffer> res;
-			ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, desc.InitData ? &resData : nullptr, &res));
+			ZE_DX_THROW_FAILED(device.GetDevice()->CreateBuffer(&bufferDesc, desc.InitData ? &resData : nullptr, &res));
 			ZE_DX_SET_ID(res, desc.DebugName);
 			ZE_DX_THROW_FAILED(res.As(&resource));
 			break;
@@ -90,5 +90,9 @@ namespace ZE::RHI::DX11::Resource
 			break;
 		}
 		}
+	}
+
+	void Generic::Copy(GFX::Device& dev, GFX::CommandList& cl, GFX::Resource::Generic& dest) const noexcept
+	{
 	}
 }

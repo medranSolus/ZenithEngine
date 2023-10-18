@@ -1,4 +1,4 @@
-#include "RHI/DX12/Resource/Generic.h"
+#include "GFX/Resource/Generic.h"
 
 namespace ZE::RHI::DX12::Resource
 {
@@ -292,7 +292,7 @@ namespace ZE::RHI::DX12::Resource
 					default:
 					{
 						ZE_FAIL("Incorrect dimmension for UAV view!");
-						resDesc.MipLevels = 0;
+						resDesc.MipLevels = 1;
 						break;
 					}
 					case D3D12_UAV_DIMENSION_TEXTURE1D:
@@ -353,6 +353,79 @@ namespace ZE::RHI::DX12::Resource
 			}
 		}
 		return false;
+	}
+
+	void Generic::ClearUAV(GFX::CommandList& cl, const ColorF4& color) const noexcept
+	{
+		ZE_ASSERT(uavDescriptorGpu.GPU.ptr != UINT64_MAX && uavDescriptorCpu.CPU.ptr != UINT64_MAX, "Incorrect descriptors!");
+
+		cl.Get().dx12.GetList()->ClearUnorderedAccessViewFloat(uavDescriptorGpu.GPU, uavDescriptorCpu.CPU,
+			resource.Get(), reinterpret_cast<const float*>(&color), 0, nullptr);
+	}
+
+	void Generic::Copy(GFX::Device& dev, GFX::CommandList& cl, GFX::Resource::Generic& dest) const noexcept
+	{
+		auto* list = cl.Get().dx12.GetList();
+		D3D12_RESOURCE_DESC1 srcDesc = resource->GetDesc1();
+		D3D12_RESOURCE_DESC1 destDesc = resource->GetDesc1();
+
+		if (destDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || srcDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
+		{
+			D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+			srcLocation.pResource = resource.Get();
+			if (srcDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
+			{
+				srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				srcLocation.SubresourceIndex = 0;
+			}
+			else
+			{
+				srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+				dev.Get().dx12.GetDevice()->GetCopyableFootprints1(&srcDesc, 0, 1, 0, &srcLocation.PlacedFootprint, nullptr, nullptr, nullptr);
+			}
+
+			D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+			destLocation.pResource = dest.Get().dx12.resource.Get();
+			if (destDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
+			{
+				destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				destLocation.SubresourceIndex = 0;
+			}
+			else
+			{
+				destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+				dev.Get().dx12.GetDevice()->GetCopyableFootprints1(&destDesc, 0, 1, 0, &destLocation.PlacedFootprint, nullptr, nullptr, nullptr);
+			}
+			list->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
+		}
+		else
+			list->CopyBufferRegion(dest.Get().dx12.resource.Get(), 0, resource.Get(), 0, destDesc.Width);
+	}
+
+	void Generic::Bind(GFX::Device& dev, GFX::CommandList& cl, GFX::Binding::Context& bindCtx, bool uav, U16 uavMipLevel) const noexcept
+	{
+		const auto& schema = bindCtx.BindingSchema.Get().dx12;
+		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
+			"Bind slot is not a descriptor table! Wrong root signature or order of bindings!");
+
+		auto* list = cl.Get().dx12.GetList();
+		D3D12_GPU_DESCRIPTOR_HANDLE handle;
+		if (uav)
+		{
+			handle = uavDescriptorGpu.GPU;
+			handle.ptr += uavMipLevel * dev.Get().dx12.GetDescriptorSize();
+		}
+		else
+			handle = srvDescriptor.GPU;
+		if (schema.IsCompute())
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, handle);
+		else
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, handle);
+	}
+
+	void Generic::ExecuteIndirectCommands(GFX::CommandList& cl, GFX::CommandSignature& signature, U32 commandOffset) const noexcept
+	{
+		cl.Get().dx12.GetList()->ExecuteIndirect(signature.Get().dx12.GetSignature(), 1, resource.Get(), commandOffset, nullptr, 0);
 	}
 
 	void Generic::Free(GFX::Device& dev) noexcept
