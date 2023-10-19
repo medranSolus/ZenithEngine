@@ -590,8 +590,10 @@ namespace ZE::RHI::DX12::Pipeline
 		const U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
-		descInfo = dev.Get().dx12.AllocDescs(srvUavCount + uavCount + uavAdditionalMipsCount);
-		descInfoCpu = dev.Get().dx12.AllocDescs(uavCount + uavAdditionalMipsCount, false);
+		const RID uavDescCount = uavCount + uavAdditionalMipsCount;
+		descInfo = dev.Get().dx12.AllocDescs(srvUavCount + uavDescCount);
+		if (uavDescCount)
+			descInfoCpu = dev.Get().dx12.AllocDescs(uavDescCount, false);
 		D3D12_CPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandle = descInfo.CPU;
 		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = descInfoCpu.CPU;

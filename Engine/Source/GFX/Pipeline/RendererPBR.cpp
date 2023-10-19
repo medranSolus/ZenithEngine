@@ -119,6 +119,9 @@ namespace ZE::GFX::Pipeline
 		switch (Settings::GetAOType())
 		{
 		default:
+			ZE_ENUM_UNHANDLED();
+		case AOType::None:
+			break;
 		case AOType::XeGTAO:
 		{
 			ssaoSettings.xegtao = {};
@@ -148,8 +151,6 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffDepthCompute = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
-		const RID ssao = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
@@ -162,6 +163,11 @@ namespace ZE::GFX::Pipeline
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID lightbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+		RID ssao;
+		if (Settings::GetAOType() != AOType::None)
+			ssao = frameBufferDesc.AddResource({ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
+		else
+			ssao = 0;
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID outline = frameBufferDesc.AddResource(
@@ -266,8 +272,9 @@ namespace ZE::GFX::Pipeline
 		switch (Settings::GetAOType())
 		{
 		default:
-			ZE_WARNING("Currently Ambient Occlusion is always present, defaulting to XeGTAO.");
-			[[fallthrough]];
+			ZE_ENUM_UNHANDLED();
+		case AOType::None:
+			break;
 		case AOType::XeGTAO:
 		{
 			ZE_MAKE_NODE("ssao", QueueType::Compute, XeGTAO, dev, buildData);
@@ -295,10 +302,11 @@ namespace ZE::GFX::Pipeline
 		}
 		{
 			ZE_MAKE_NODE("lightCombine", QueueType::Main, LightCombine, dev, buildData, frameBufferDesc.GetFormat(rawScene));
-			node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
 			node.AddInput("lambertian.GB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::StateShaderResourcePS);
+			if (Settings::GetAOType() != AOType::None)
+				node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
 			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}
@@ -480,6 +488,10 @@ namespace ZE::GFX::Pipeline
 		}
 		switch (Settings::GetAOType())
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case AOType::None:
+			break;
 		case AOType::XeGTAO:
 		{
 			if (ImGui::CollapsingHeader("XeGTAO"))
@@ -628,8 +640,6 @@ namespace ZE::GFX::Pipeline
 			}
 			break;
 		}
-		default:
-			break;
 		}
 		// If any settings data updated then upload new buffer
 		if (change)
