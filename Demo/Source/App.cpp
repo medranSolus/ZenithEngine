@@ -469,25 +469,11 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Near clip");
 				ImGui::SetNextItemWidth(-1.0f);
-				change |= ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f");
-				if (camera.Projection.NearClip < 0.01f)
-					camera.Projection.NearClip = 0.01f;
-				else if (camera.Projection.NearClip > 10.0f)
-					camera.Projection.NearClip = 10.0f;
-				ImGui::NextColumn();
-
-				ImGui::Text("Far clip");
-				ImGui::SetNextItemWidth(-1.0f);
-				change |= ImGui::InputFloat("##far_clip", &camera.Projection.FarClip, 0.1f, 0.0f, "%.1f");
-				if (camera.Projection.FarClip < camera.Projection.NearClip + 0.01f)
-					camera.Projection.FarClip = camera.Projection.NearClip + 0.01f;
-				else if (camera.Projection.FarClip > 50000.0f)
-					camera.Projection.FarClip = 50000.0f;
+				change |= GUI::InputClamp(0.1f, 20.0f, camera.Projection.NearClip,
+					ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f"));
 
 				if (selected == currentCamera && change)
-					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
-						Math::XMMatrixPerspectiveFovLH(camera.Projection.FOV, camera.Projection.ViewRatio,
-							camera.Projection.NearClip, camera.Projection.FarClip));
+					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), Data::GetProjectionMatrix(camera.Projection));
 			}
 			ImGui::EndChild();
 		}
@@ -495,7 +481,7 @@ void App::ShowObjectWindow()
 	ImGui::End();
 }
 
-EID App::AddCamera(std::string&& name, float nearZ, float farZ, float fov,
+EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Float3&& position, const Float3& angle)
 {
 	EID camera = engine.GetData().create();
@@ -514,7 +500,7 @@ EID App::AddCamera(std::string&& name, float nearZ, float farZ, float fov,
 			{
 				Math::ToRadians(60.0f),
 				Settings::GetDisplayRatio(),
-				nearZ, farZ
+				nearZ
 			}));
 
 	engine.GetData().emplace<Data::TransformGlobal>(camera,
@@ -631,7 +617,7 @@ App::App(const CmdParser& params)
 	engine.Gfx().GetDevice().BeginUploadRegion();
 	if (params.GetOption("cubePerfTest"))
 	{
-		currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.01f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 
 		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
 
@@ -705,14 +691,14 @@ App::App(const CmdParser& params)
 	else
 	{
 		// Sample Scene
-		currentCamera = AddCamera("Main camera", 0.01f, 1000.0f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.01f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 
 		AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
 		AddModel("Nanosuit", { 0.0f, -8.2f, 6.0f }, Math::NoRotationAngles(), 0.7f, "Models/nanosuit/nanosuit.obj");
 		AddModel("Brick wall", { -5.0f, -2.0f, 7.0f }, Math::NoRotationAngles(), 2.0f, "Models/bricks/brick_wall.obj");
 
 #if !_ZE_MODE_DEBUG
-		AddCamera("Camera #2", 2.0f, 15.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
+		AddCamera("Camera #2", 2.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
 		AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
 		AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);
 		AddPointLight("Torch", { 21.95f, -1.9f, 9.9f }, { 1.0f, 0.0f, 0.2f }, 5.0f, 70);
@@ -734,9 +720,7 @@ App::App(const CmdParser& params)
 	engine.Gfx().GetDevice().EndUploadRegion();
 
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
-	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
-		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
-			camData.Projection.NearClip, camData.Projection.FarClip));
+	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), Data::GetProjectionMatrix(camData.Projection));
 }
 
 int App::Run()

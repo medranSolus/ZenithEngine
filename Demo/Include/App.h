@@ -30,7 +30,7 @@ class App final
 	void ChangeBackgroundButton();
 	void AddLightButton();
 
-	EID AddCamera(std::string&& name, float nearZ, float farZ, float fov,
+	EID AddCamera(std::string&& name, float nearZ, float fov,
 		Float3&& position, const Float3& angle);
 	EID AddModel(std::string&& name, Float3&& position,
 		const Float3& angle, float scale, const std::string& file);

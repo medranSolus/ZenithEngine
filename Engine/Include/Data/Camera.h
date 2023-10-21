@@ -9,7 +9,6 @@ namespace ZE::Data
 		float FOV;
 		float ViewRatio;
 		float NearClip;
-		float FarClip;
 	};
 
 	// Component describing camera params
@@ -33,6 +32,8 @@ namespace ZE::Data
 	};
 
 #pragma region Functions
+	// Get symetrical vertical FOV projection matrix with infinite far plane
+	Matrix GetProjectionMatrix(const Projection& proj) noexcept;
 	// Move any camera in Right-Left axis (dX < 0 - movement left, dX > 0 - movement right)
 	void MoveCameraX(Storage& registry, EID camera, float dX, CameraType type) noexcept;
 	// Move any camera in Up-Down axis (dY < 0 - movement down, dY > 0 - movement up)

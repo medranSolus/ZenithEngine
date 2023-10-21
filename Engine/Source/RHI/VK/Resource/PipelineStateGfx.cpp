@@ -153,7 +153,7 @@ namespace ZE::RHI::VK::Resource
 		depthStencilStateInfo.flags = 0;
 		depthStencilStateInfo.depthTestEnable = VK_TRUE;
 		depthStencilStateInfo.depthWriteEnable = VK_FALSE;
-		depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_GREATER;
 		depthStencilStateInfo.depthBoundsTestEnable = VK_FALSE;
 		depthStencilStateInfo.stencilTestEnable = VK_FALSE;
 		depthStencilStateInfo.front.failOp = depthStencilStateInfo.back.failOp = VK_STENCIL_OP_KEEP;
@@ -168,6 +168,8 @@ namespace ZE::RHI::VK::Resource
 
 		switch (desc.DepthStencil)
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::DepthStencilMode::StencilOff:
 		{
 			depthStencilStateInfo.depthWriteEnable = VK_TRUE;
@@ -198,12 +200,12 @@ namespace ZE::RHI::VK::Resource
 		case GFX::Resource::DepthStencilMode::DepthReverse:
 		{
 			depthStencilStateInfo.depthWriteEnable = VK_TRUE;
-			depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_GREATER;
+			depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
 			break;
 		}
 		case GFX::Resource::DepthStencilMode::DepthBefore:
 		{
-			depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+			depthStencilStateInfo.depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL;
 			break;
 		}
 		}

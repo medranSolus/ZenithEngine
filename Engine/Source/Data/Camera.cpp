@@ -3,6 +3,75 @@
 
 namespace ZE::Data
 {
+	Matrix GetProjectionMatrix(const Projection& proj) noexcept
+	{
+		constexpr float F_RANGE = 0.0f;
+		// Based on XMMatrixPerspectiveFovLH
+		ZE_ASSERT(proj.NearClip > 0.0f, "Near Z must be greater than 0!");
+		ZE_ASSERT(!Math::XMScalarNearEqual(proj.FOV, 0.0f, 0.00001f * 2.0f), "FOV must be greater than 0!");
+		ZE_ASSERT(!Math::XMScalarNearEqual(proj.ViewRatio, 0.0f, 0.00001f), "Aspect ration must be greater than 0!");
+
+		float sinFov, cosFov;
+		Math::XMScalarSinCos(&sinFov, &cosFov, 0.5f * proj.FOV);
+		const float height = cosFov / sinFov;
+		const float width = height / proj.ViewRatio;
+		const float nearRange = proj.NearClip;
+
+		Matrix m;
+#if defined(_XM_NO_INTRINSICS_)
+		m.m[0][0] = width;
+		m.m[0][1] = 0.0f;
+		m.m[0][2] = 0.0f;
+		m.m[0][3] = 0.0f;
+
+		m.m[1][0] = 0.0f;
+		m.m[1][1] = height;
+		m.m[1][2] = 0.0f;
+		m.m[1][3] = 0.0f;
+
+		m.m[2][0] = 0.0f;
+		m.m[2][1] = 0.0f;
+		m.m[2][2] = F_RANGE;
+		m.m[2][3] = 1.0f;
+
+		m.m[3][0] = 0.0f;
+		m.m[3][1] = 0.0f;
+		m.m[3][2] = nearRange;
+		m.m[3][3] = 0.0f;
+#elif defined(_XM_ARM_NEON_INTRINSICS_)
+		const float32x4_t zero = vdupq_n_f32(0);
+
+		m.r[0] = vsetq_lane_f32(width, zero, 0);
+		m.r[1] = vsetq_lane_f32(height, zero, 1);
+		m.r[2] = vsetq_lane_f32(F_RANGE, Math::g_XMIdentityR3.v, 2);
+		m.r[3] = vsetq_lane_f32(nearRange, zero, 2);
+#elif defined(_XM_SSE_INTRINSICS_)
+		// Note: This is recorded on the stack
+		Vector rMem = { width, height, F_RANGE, nearRange };
+		// Copy from memory to SSE register
+		Vector vValues = rMem;
+		Vector vTemp = _mm_setzero_ps();
+		// Copy x only
+		vTemp = _mm_move_ss(vTemp, vValues);
+		// width,0,0,0
+		m.r[0] = vTemp;
+		// 0,height,0,0
+		vTemp = vValues;
+		vTemp = _mm_and_ps(vTemp, Math::g_XMMaskY);
+		m.r[1] = vTemp;
+		// x=F_RANGE,y=nearRange,0,1.0f
+		vTemp = _mm_setzero_ps();
+		vValues = _mm_shuffle_ps(vValues, Math::g_XMIdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
+		// 0,0,F_RANGE,1.0f
+		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 0, 0, 0));
+		m.r[2] = vTemp;
+		// 0,0,nearRange,0.0f
+		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(2, 1, 0, 0));
+		m.r[3] = vTemp;
+#endif
+		return m;
+	}
+
 	void MoveCameraX(Storage& registry, EID camera, float dX, CameraType type) noexcept
 	{
 		switch (type)

@@ -70,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Clear", PixelVal::Gray);
-		renderData.Buffers.ClearDSV(cl, ids.Depth, 1.0f, 0);
+		renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 

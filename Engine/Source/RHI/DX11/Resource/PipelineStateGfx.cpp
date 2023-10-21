@@ -89,9 +89,27 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_THROW_FAILED(device->CreateBlendState1(&blendDesc, &blendState));
 		ZE_DX_SET_ID(blendState, "Blender_" + desc.DebugName);
 
-		D3D11_DEPTH_STENCIL_DESC stencilDesc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT{});
+		D3D11_DEPTH_STENCIL_DESC stencilDesc = {};
+		stencilDesc.DepthEnable = TRUE;
+		stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		stencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
+		stencilDesc.StencilEnable = FALSE;
+		stencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+		stencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+		stencilDesc.FrontFace.StencilFailOp =
+			stencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		stencilDesc.FrontFace.StencilDepthFailOp =
+			stencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		stencilDesc.FrontFace.StencilPassOp =
+			stencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		stencilDesc.FrontFace.StencilFunc =
+			stencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 		switch (desc.DepthStencil)
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::DepthStencilMode::StencilOff:
+			break;
 		case GFX::Resource::DepthStencilMode::StencilWrite:
 		{
 			stencilDesc.DepthEnable = FALSE;
@@ -121,22 +139,23 @@ namespace ZE::RHI::DX11::Resource
 		}
 		case GFX::Resource::DepthStencilMode::DepthReverse:
 		{
-			stencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
+			stencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 			break;
 		}
 		case GFX::Resource::DepthStencilMode::DepthBefore:
 		{
-			stencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+			stencilDesc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
 			stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 			break;
 		}
-		default:
-			break;
 		}
 		ZE_DX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
 		ZE_DX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
 
 		D3D11_RASTERIZER_DESC2 rasterDesc = CD3D11_RASTERIZER_DESC2(CD3D11_DEFAULT{});
+		rasterDesc.DepthBias = 0;
+		rasterDesc.DepthBiasClamp = 0.0f;
+		rasterDesc.SlopeScaledDepthBias = 0.0f;
 		rasterDesc.FillMode = desc.IsWireframe() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 		rasterDesc.CullMode = GetCulling(desc.Culling);
 		rasterDesc.DepthClipEnable = desc.IsDepthClip();

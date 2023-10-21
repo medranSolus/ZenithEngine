@@ -23,7 +23,7 @@ VSOut main(float3 pos : POSITION,
 	vso.tc = tc;
 	vso.worldTan = mul(tangent, (float3x3)cb_transform.M);
 
-	vso.cameraDir = (cb_worldData.CameraPos - vso.worldPos) * -1.0f;
+	vso.cameraDir = vso.worldPos - cb_worldData.CameraPos;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.MVP);
 
 	return vso;

@@ -147,10 +147,15 @@ namespace ZE::GFX::Pipeline
 		frameBufferDesc.Init(11, width, height);
 
 #pragma region Framebuffer definition
-		const RID gbuffNormalCompute = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
-		const RID gbuffDepthCompute = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
+		RID gbuffNormalCompute = 0;
+		RID gbuffDepthCompute = 0;
+		if (Settings::GetAOType() != AOType::None)
+		{
+			gbuffNormalCompute = frameBufferDesc.AddResource(
+				{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
+			gbuffDepthCompute = frameBufferDesc.AddResource(
+				{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+		}
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
@@ -158,16 +163,14 @@ namespace ZE::GFX::Pipeline
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
+			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 		const RID lightbuffColor = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID lightbuffSpecular = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
-		RID ssao;
+		RID ssao = 0;
 		if (Settings::GetAOType() != AOType::None)
 			ssao = frameBufferDesc.AddResource({ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
-		else
-			ssao = 0;
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID outline = frameBufferDesc.AddResource(
@@ -210,6 +213,7 @@ namespace ZE::GFX::Pipeline
 			node.AddOutput("GB_S", Resource::StateRenderTarget, gbuffSpecular);
 			nodes.emplace_back(std::move(node));
 		}
+		if (Settings::GetAOType() != AOType::None)
 		{
 			RenderNode node("lambertianComputeCopy", QueueType::Main, RenderPass::LambertianComputeCopy::Execute);
 			node.AddInput("lambertian.GB_N", Resource::StateCopySource);
@@ -392,7 +396,6 @@ namespace ZE::GFX::Pipeline
 		dynamicData.CameraPos = transform.Position;
 		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
 		dynamicData.NearClip = currentCamera.Projection.NearClip;
-		dynamicData.FarClip = currentCamera.Projection.FarClip;
 		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));

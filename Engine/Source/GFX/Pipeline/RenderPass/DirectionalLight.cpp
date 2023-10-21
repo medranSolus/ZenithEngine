@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Directional Light", Pixel(0xF5, 0xF5, 0xD1));
 			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
-			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 1.0f, 0);
+			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 0.0f, 0);
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 			ctx.BindingSchema.SetGraphics(cl);

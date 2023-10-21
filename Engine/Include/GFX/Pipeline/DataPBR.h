@@ -51,7 +51,6 @@ namespace ZE::GFX::Pipeline
 		Matrix ViewProjectionInverse;
 		Float3 CameraPos;
 		float NearClip;
-		float FarClip;
 	};
 #pragma pack(pop)
 }

@@ -83,7 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		// Clearing data on first usage
 		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Clear", PixelVal::White);
-		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
+		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 0.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Normal, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());

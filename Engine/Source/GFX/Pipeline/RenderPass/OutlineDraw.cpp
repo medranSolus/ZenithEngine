@@ -51,7 +51,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		// Clearing data on first usage
 		cl.Open(dev);
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw Clear", PixelVal::White);
-		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 1.0f, 0);
+		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 0.0f, 0);
 		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
 		ZE_DRAW_TAG_END(dev, cl);
 
