@@ -309,8 +309,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertian.GB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_C", Resource::StateShaderResourcePS);
 			node.AddInput("pointLight.LB_S", Resource::StateShaderResourcePS);
-			if (Settings::GetAOType() != AOType::None)
-				node.AddInput("ssao.SB", Resource::StateShaderResourcePS);
+			node.AddInput("ssao.SB", Resource::StateShaderResourcePS, false);
 			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			nodes.emplace_back(std::move(node));
 		}

@@ -323,36 +323,43 @@ namespace ZE::GFX::Pipeline
 			U64 depLevel = dependencyLevels.at(i);
 			auto& node = nodes.at(i);
 			// Check all inputs by resources connected to them from dependent nodes
-			for (RID j = 0; const std::string& input : node.GetInputs())
+			for (RID j = 0; const auto& input : node.GetInputs())
 			{
-				auto splitInput = Utils::SplitString(input, ".");
+				auto splitInput = Utils::SplitString(input.first, ".");
 				auto it = std::find_if(nodes.begin(), nodes.end(), [&splitInput](const RenderNode& n)
 					{
 						return n.GetName() == splitInput.front();
 					});
 				if (it == nodes.end())
-					throw ZE_RGC_EXCEPT("Cannot find source node [" + std::string(splitInput.front()) + "] for pass [" + node.GetName() + "]!");
-
-				for (U64 k = 0; k < it->GetOutputs().size();)
 				{
-					if (it->GetOutputs().at(k) == input)
+					if (input.second)
+						throw ZE_RGC_EXCEPT("Cannot find source node [" + std::string(splitInput.front()) + "] for pass [" + node.GetName() + "]!");
+					else
+						node.AddInputResource(INVALID_RID); // Indicate that input resource is not provided
+				}
+				else
+				{
+					for (U64 k = 0; k < it->GetOutputs().size();)
 					{
-						const RID rid = it->GetOutputResources().at(k);
-						if (rid >= frameBufferDesc.ResourceInfo.size())
-							throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input + "], RID out of range [" + std::to_string(rid) + "]!");
+						if (it->GetOutputs().at(k) == input.first)
+						{
+							const RID rid = it->GetOutputResources().at(k);
+							if (rid >= frameBufferDesc.ResourceInfo.size())
+								throw ZE_RGC_EXCEPT("Cannot find resource for input [" + input.first + "], RID out of range [" + std::to_string(rid) + "]!");
 
-						node.AddInputResource(rid);
-						Resource::State currentState = node.GetInputState(j);
-						auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+							node.AddInputResource(rid);
+							Resource::State currentState = node.GetInputState(j);
+							auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
-						if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
-							AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
-						else
-							lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
-						break;
+							if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
+								AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
+							else
+								lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
+							break;
+						}
+						else if (++k == it->GetOutputs().size())
+							throw ZE_RGC_EXCEPT("Cannot find source for input [" + input.first + "]!");
 					}
-					else if (++k == it->GetOutputs().size())
-						throw ZE_RGC_EXCEPT("Cannot find source for input [" + input + "]!");
 				}
 				++j;
 			}

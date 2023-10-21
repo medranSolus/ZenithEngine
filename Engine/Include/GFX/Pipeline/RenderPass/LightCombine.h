@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
-	struct ResourcesAO
+	struct Resources
 	{
 		RID GBufferColor;
 		RID LightColor;
@@ -12,22 +12,16 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		RID SSAO;
 		RID RenderTarget;
 	};
-	struct ResourcesNoAO
-	{
-		RID GBufferColor;
-		RID LightColor;
-		RID LightSpecular;
-		RID RenderTarget;
-	};
 
 	struct ExecuteData
 	{
-		U32 BindingIndex;
-		Resource::PipelineStateGfx State;
+		U32 BindingIndexAO;
+		U32 BindingIndexNoAO;
+		Resource::PipelineStateGfx StateAO;
+		Resource::PipelineStateGfx StateNoAO;
 	};
 
-	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
-
+	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

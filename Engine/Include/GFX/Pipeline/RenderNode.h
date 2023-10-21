@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline
 		PassCleanCallback passClean;
 		void* executeData;
 		// Input info
-		std::vector<std::string> inputNames;
+		std::vector<std::pair<std::string, bool>> inputNames;
 		std::vector<Resource::State> inputStates;
 		std::vector<RID> inputRIDs;
 		// Inner buffer info
@@ -44,18 +44,18 @@ namespace ZE::GFX::Pipeline
 		constexpr PassCleanCallback GetCleanCallback() const noexcept { return passClean; }
 		constexpr void* GetExecuteData() const noexcept { return executeData; }
 
-		constexpr const std::vector<std::string>& GetInputs() const noexcept { return inputNames; }
+		constexpr const std::vector<std::pair<std::string, bool>>& GetInputs() const noexcept { return inputNames; }
 		constexpr std::vector<InnerBuffer>& GetInnerBuffers() noexcept { return innerBuffers; }
 		constexpr const std::vector<std::string>& GetOutputs() const noexcept { return outputNames; }
 		constexpr const std::vector<RID>& GetOutputResources() const noexcept { return outputRIDs; }
 		constexpr Resource::State GetInputState(RID i) const noexcept { return inputStates.at(i); }
 		constexpr Resource::State GetOutputState(RID i) const noexcept { return outputStates.at(i); }
 
-		bool ContainsInput(const std::string& name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
+		bool ContainsInput(const std::string& name) const noexcept { return std::find_if(inputNames.begin(), inputNames.end(), [&name](const auto& input) { return input.first == name; }) != inputNames.end(); }
 		void AddInputResource(RID rid) noexcept { inputRIDs.emplace_back(rid); }
 		void AddInnerBufferResource(RID rid) noexcept { innerRIDs.emplace_back(rid); }
 
-		void AddInput(std::string&& name, Resource::State state);
+		void AddInput(std::string&& name, Resource::State state, bool required = true);
 		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
 		void AddOutput(std::string&& name, Resource::State state, RID rid);
 
