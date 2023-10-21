@@ -114,6 +114,9 @@ namespace ZE
 			"Vulkan API is not enabled in current build!");
 
 		flags[Flags::AttachPIX] = params.AllowPIXAttach;
+#if _ZE_GFX_MARKERS
+		flags[Flags::GfxTags] = true;
+#endif
 		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;

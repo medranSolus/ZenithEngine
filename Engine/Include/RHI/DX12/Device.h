@@ -18,7 +18,7 @@ namespace ZE::RHI::DX12
 	class Device final
 	{
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
-		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_2;
+		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_1;
 		static constexpr U64 BLOCK_DESCRIPTOR_ALLOC_CAPACITY = 1000;
 		static constexpr U64 CHUNK_DESCRIPTOR_ALLOC_CAPACITY = 20;
 		static constexpr U32 CPU_DESCRIPTOR_CHUNK_SIZE = 1000;
