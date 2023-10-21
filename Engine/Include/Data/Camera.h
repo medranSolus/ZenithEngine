@@ -32,7 +32,9 @@ namespace ZE::Data
 	};
 
 #pragma region Functions
-	// Get symetrical vertical FOV projection matrix with infinite far plane
+	// Get frustum from infinite far plan reversed clip space projection
+	Math::BoundingFrustum GetFrustum(Matrix proj, float maxDistance) noexcept;
+	// Get symetrical vertical FOV projection matrix with infinite far plane for reversed clip space
 	Matrix GetProjectionMatrix(const Projection& proj) noexcept;
 	// Move any camera in Right-Left axis (dX < 0 - movement left, dX > 0 - movement right)
 	void MoveCameraX(Storage& registry, EID camera, float dX, CameraType type) noexcept;

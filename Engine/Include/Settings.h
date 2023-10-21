@@ -32,6 +32,7 @@ namespace ZE
 
 		static inline UInt2 DisplaySize = { 0, 0 };
 		static inline UInt2 RenderSize = { 0, 0 };
+		static inline float MaxRenderDistance = 10000.0f;
 
 	private:
 		static inline const char* applicationName;

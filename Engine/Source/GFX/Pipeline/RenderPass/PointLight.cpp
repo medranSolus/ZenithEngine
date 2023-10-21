@@ -73,7 +73,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			const Matrix viewProjection = dynamicData.ViewProjection;
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
-			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();

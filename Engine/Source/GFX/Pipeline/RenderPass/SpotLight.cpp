@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	{
 		ExecuteData* passData = new ExecuteData;
 		ShadowMap::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow,
-			Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f));
+			Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
 
 		if (buildData.BindingLib.FetchBinding("light", passData->BindingIndex))
 		{
@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			const Matrix viewProjection = dynamicData.ViewProjection;
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
-			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 
 			Resources ids = *passData.Buffers.CastConst<Resources>();
@@ -93,9 +93,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				EID entity = group[i];
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 				const auto& lightData = group.get<Data::SpotLight>(entity);
+				const auto& light = group.get<Data::SpotLightBuffer>(entity);
 
 				// Check if light will be visible in current view
-				Math::BoundingFrustum lightFrustum(data.ShadowData.Projection, false);
+				Math::BoundingFrustum lightFrustum = Data::GetFrustum(data.ShadowData.Projection, light.Volume);
 				lightFrustum.Transform(lightFrustum, 1.0f,
 					Math::XMQuaternionRotationMatrix(Math::GetVectorRotation({ 0.0f, 0.0f, 1.0f, 0.0f },
 						Math::XMLoadFloat3(&lightData.Direction))), Math::XMLoadFloat3(&transform.Position));
@@ -117,7 +118,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				ctx.BindingSchema.SetGraphics(cl);
 				renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
 
-				const auto& light = group.get<Data::SpotLightBuffer>(entity);
 				Float3 translation = transform.Position;
 				translation.y -= light.Volume;
 				const float circleScale = light.Volume * tanf(lightData.OuterAngle + 0.22f);

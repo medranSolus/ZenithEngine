@@ -62,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
-		passData.Projection = Math::XMMatrixPerspectiveFovLH(static_cast<float>(M_PI_2), 1.0f, 0.01f, 1000.0f);
+		passData.Projection = Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f });
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,

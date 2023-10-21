@@ -1,8 +1,41 @@
 #include "Data/Camera.h"
 #include "Data/Transform.h"
+#include "Settings.h"
 
 namespace ZE::Data
 {
+	Math::BoundingFrustum GetFrustum(Matrix proj, float maxDistance) noexcept
+	{
+		// Re-reverse near and far planes for correct frustum tests and disable infinite depth
+#if defined(_XM_NO_INTRINSICS_)
+		proj.m[2][2] = maxDistance / (maxDistance - proj.m[3][2]);
+		proj.m[3][2] *= -proj.m[2][2];
+#elif defined(_XM_ARM_NEON_INTRINSICS_)
+		const float nearClip = Math::XMVectorGetZ(proj.r[3]);
+		const float fRange = maxDistance / (maxDistance - nearClip);
+
+		const float32x4_t zero = vdupq_n_f32(0);
+		proj.r[2] = vsetq_lane_f32(fRange, Math::g_XMIdentityR3.v, 2);
+		proj.r[3] = vsetq_lane_f32(-fRange * nearClip, zero, 2);
+#elif defined(_XM_SSE_INTRINSICS_)
+		const float nearClip = Math::XMVectorGetZ(proj.r[3]);
+		const float fRange = maxDistance / (maxDistance - nearClip);
+		// Note: This is recorded on the stack
+		Vector rMem = { 0.0f, 0.0f, fRange, -fRange * nearClip };
+		// Copy from memory to SSE register
+		Vector vValues = rMem;
+		Vector vTemp = _mm_setzero_ps();
+		vValues = _mm_shuffle_ps(vValues, Math::g_XMIdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
+		// 0,0,fRange,1.0f
+		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 0, 0, 0));
+		proj.r[2] = vTemp;
+		// 0,0,nearRange,0.0f
+		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(2, 1, 0, 0));
+		proj.r[3] = vTemp;
+#endif
+		return Math::BoundingFrustum{ proj, false };
+	}
+
 	Matrix GetProjectionMatrix(const Projection& proj) noexcept
 	{
 		constexpr float F_RANGE = 0.0f;

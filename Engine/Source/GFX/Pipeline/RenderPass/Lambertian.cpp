@@ -96,7 +96,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		// Compute visibility of objects inside camera view
 		ZE_PERF_START("Lambertian - frustum culling");
-		Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+		Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(renderData.Registry, renderData.Assets.GetResources(),
 			Data::GetRenderGroup<Data::RenderLambertian>(renderData.Registry), frustum);

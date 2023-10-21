@@ -68,7 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			// Compute visibility of objects inside camera view and sort them front-back
 			ZE_PERF_START("Outline Draw - frustum culling");
-			Math::BoundingFrustum frustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), false);
+			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
 			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(renderData.Registry, renderData.Assets.GetResources(), group, frustum);
 			ZE_PERF_STOP();

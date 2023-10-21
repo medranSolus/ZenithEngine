@@ -18,7 +18,7 @@ VSOut main(uint id : SV_VertexID)
 	* Y:  0  -> -3, 1,2 -> 1
 	*/
 	const float2 offset = vso.tc * 2.0f;
-	vso.pos = float4(-1.0f + offset.x, 1.0f - offset.y, 0.0f, 1.0f);
+	vso.pos = float4(-1.0f + offset.x, 1.0f - offset.y, 1.0f, 1.0f);
 
 	return vso;
 }
