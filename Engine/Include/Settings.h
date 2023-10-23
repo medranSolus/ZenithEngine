@@ -33,6 +33,8 @@ namespace ZE
 		static inline UInt2 DisplaySize = { 0, 0 };
 		static inline UInt2 RenderSize = { 0, 0 };
 		static inline float MaxRenderDistance = 10000.0f;
+		// Time in miliseconds elapsed since last frame
+		static inline double FrameTime = 0.0;
 
 	private:
 		static inline const char* applicationName;
@@ -67,13 +69,14 @@ namespace ZE
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetBackbufferCount(); }
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
+		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None; }
 #if _ZE_GFX_MARKERS
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
 #endif
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
-		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized());  return flags[Flags::AttachPIX]; }
+		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 
 		static constexpr U32 GetChainResourceCount() noexcept;
 

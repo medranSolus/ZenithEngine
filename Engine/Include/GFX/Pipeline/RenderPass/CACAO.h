@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/ChainPool.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"

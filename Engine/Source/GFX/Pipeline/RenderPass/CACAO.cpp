@@ -1,6 +1,5 @@
 #include "GFX/Pipeline/RenderPass/CACAO.h"
 #include "GFX/Pipeline/RendererPBR.h"
-#include "GFX/Resource/Constant.h"
 #include "GFX/FfxBackendInterface.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO

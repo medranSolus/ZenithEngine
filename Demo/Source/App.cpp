@@ -27,6 +27,7 @@ void App::DisableProperty(EID entity)
 
 void App::ProcessInput()
 {
+	ZE_PERF_GUARD("Input processing");
 	Window::MainWindow& window = engine.Window();
 	while (window.Mouse().IsInput())
 	{
@@ -473,7 +474,7 @@ void App::ShowObjectWindow()
 					ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f"));
 
 				if (selected == currentCamera && change)
-					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), Data::GetProjectionMatrix(camera.Projection));
+					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), camera.Projection);
 			}
 			ImGui::EndChild();
 		}
@@ -590,16 +591,15 @@ EID App::AddDirectionalLight(std::string&& name,
 
 void App::MakeFrame()
 {
-	engine.BeginFrame();
-	//ImGui::ShowDemoWindow();
-	if (engine.IsGuiActive())
-	{
-		ZE_PERF_GUARD("GUI");
-		ShowOptionsWindow();
-		ShowObjectWindow();
-	}
+	ZE_PERF_GUARD("Frame rendering")
+		//ImGui::ShowDemoWindow();
+		if (engine.IsGuiActive())
+		{
+			ZE_PERF_GUARD("GUI");
+			ShowOptionsWindow();
+			ShowObjectWindow();
+		}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
-	engine.EndFrame();
 }
 
 App::App(const CmdParser& params)
@@ -720,14 +720,18 @@ App::App(const CmdParser& params)
 	engine.Gfx().GetDevice().EndUploadRegion();
 
 	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
-	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), Data::GetProjectionMatrix(camData.Projection));
+	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), camData.Projection);
 }
 
 int App::Run()
 {
+	constexpr double DELTA_TIME = 0.01;
+
+	engine.SetStartTime();
+	double accumulator = 0.0;
 	while (run)
 	{
-		ZE_PERF_GUARD("Frame");
+		accumulator += engine.BeginFrame(DELTA_TIME, 25);
 
 		ZE_PERF_START("Input gather");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
@@ -736,15 +740,19 @@ int App::Run()
 		if (status.first)
 			return status.second;
 
-		ZE_PERF_START("Input processing");
 		ProcessInput();
-		ZE_PERF_STOP();
-
-		ZE_PERF_START("Frame rendering");
-		MakeFrame();
-		ZE_PERF_STOP();
-
 		//scene.UpdateTransforms();
+
+		while (accumulator >= DELTA_TIME)
+		{
+			// Physics
+			accumulator -= DELTA_TIME;
+		}
+		const double alpha = accumulator / DELTA_TIME;
+
+		MakeFrame();
+
+		engine.EndFrame();
 	}
 	return 0;
 }

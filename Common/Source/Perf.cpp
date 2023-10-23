@@ -3,6 +3,7 @@
 
 namespace ZE
 {
+#if _ZE_MODE_PROFILE
 	void Perf::Save()
 	{
 		if (!Logger::CreateLogDir())
@@ -48,22 +49,31 @@ namespace ZE
 
 		// Get timestamp and convert to microseconds elapsed time
 		stamp = (stamp - lastTags.back().first) * 1000000ULL;
-		const long double time = static_cast<long double>(stamp) / frequency;
+		const long double time = Utils::SafeCast<long double>(stamp) / frequency;
 
 		// Combine with rest of data
 		Data& dataPoint = data.at(lastTags.back().second);
-		dataPoint.AvgMicroseconds += (time - dataPoint.AvgMicroseconds) / static_cast<long double>(++dataPoint.Count);
+		dataPoint.AvgMicroseconds += (time - dataPoint.AvgMicroseconds) / Utils::SafeCast<long double>(++dataPoint.Count);
 
 		lastTags.pop_back();
 		return time;
 	}
+#endif
 
 	Perf::~Perf()
 	{
+#if _ZE_MODE_PROFILE
 		if (data.size() > 0)
 			Save();
+#endif
 	}
 
+	double Perf::GetNow() noexcept
+	{
+		return Utils::SafeCast<double>(platformImpl.GetCurrentTimestamp()) * 1000000.0 / Utils::SafeCast<double>(platformImpl.GetFrequency());
+	}
+
+#if _ZE_MODE_PROFILE
 	void Perf::Start(const std::string& sectionTag) noexcept
 	{
 		LockGuardRW lock(mutex);
@@ -104,4 +114,5 @@ namespace ZE
 			return 0;
 		return it->second.Count;
 	}
+#endif
 }

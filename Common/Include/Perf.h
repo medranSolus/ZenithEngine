@@ -17,6 +17,7 @@ namespace ZE
 	// CPU performance measurement tool
 	class Perf final
 	{
+#if _ZE_MODE_PROFILE
 		struct Data
 		{
 			long double AvgMicroseconds;
@@ -36,12 +37,15 @@ namespace ZE
 		std::map<std::string, Data> data;
 		std::vector<std::pair<U64, std::string>> lastTags;
 		std::shared_mutex mutex;
-		PlatformPerf platformImpl;
 		std::bitset<Flags::FlagsCount> flags = 0;
+#endif
+		PlatformPerf platformImpl;
 
+#if _ZE_MODE_PROFILE
 		void Save();
 		U64& CreateStartStamp(const std::string& sectionTag) noexcept;
 		long double SaveStopStamp(long double frequency, U64 stamp) noexcept;
+#endif
 
 		Perf() = default;
 
@@ -51,6 +55,9 @@ namespace ZE
 
 		static Perf& Get() noexcept { static Perf perf; return perf; }
 
+		double GetNow() noexcept;
+
+#if _ZE_MODE_PROFILE
 		constexpr void SetSingleLineLogEntry(bool val) noexcept { flags[Flags::SingleLineLogEntry] = val; }
 		constexpr bool IsSingleLineLogEntry() const noexcept { return flags[Flags::SingleLineLogEntry]; }
 
@@ -61,6 +68,7 @@ namespace ZE
 		// Use for measuring short periods of time as it gets raw data based on RDTSC
 		long double StopShort() noexcept;
 		U64 GetSectionCallCount(const std::string& sectionTag) noexcept;
+#endif
 	};
 }
 
