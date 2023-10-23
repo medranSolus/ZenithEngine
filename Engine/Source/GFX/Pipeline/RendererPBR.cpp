@@ -401,6 +401,8 @@ namespace ZE::GFX::Pipeline
 	void RendererPBR::UpdateSettingsData(Device& dev, const Data::Projection& projection)
 	{
 		currentProjectionData = projection;
+		// No need to create new projection as it's data is always changing with jitter
+		if (!Settings::ApplyJitter())
 			Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
 		// Not uploading now since it's uploaded every frame
 		dynamicData.NearClip = currentProjectionData.NearClip;
@@ -411,6 +413,16 @@ namespace ZE::GFX::Pipeline
 		ZE_ASSERT((GetRegistry().all_of<Data::TransformGlobal, Data::Camera>(camera)),
 			"Current camera does not have all required components!");
 
+		Matrix projection;
+		if (Settings::ApplyJitter())
+		{
+			CalculateJitter(jitterIndex, currentProjectionData.JitterX, currentProjectionData.JitterY, Settings::RenderSize, Settings::GetUpscaler());
+			projection = Data::GetProjectionMatrix(currentProjectionData);
+			Math::XMStoreFloat4x4(&currentProjection, projection);
+		}
+		else
+			projection = Math::XMLoadFloat4x4(&currentProjection);
+
 		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
 		cameraRotation = transform.Rotation;
 
@@ -420,7 +432,7 @@ namespace ZE::GFX::Pipeline
 		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));
-		dynamicData.ViewProjection = dynamicData.View * Math::XMLoadFloat4x4(&currentProjection);
+		dynamicData.ViewProjection = dynamicData.View * projection;
 
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));

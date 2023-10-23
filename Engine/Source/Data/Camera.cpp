@@ -62,8 +62,16 @@ namespace ZE::Data
 		m.m[1][2] = 0.0f;
 		m.m[1][3] = 0.0f;
 
-		m.m[2][0] = 0.0f;
-		m.m[2][1] = 0.0f;
+		if (Settings::ApplyJitter())
+		{
+			m.m[2][0] = proj.JitterX;
+			m.m[2][1] = proj.JitterY;
+		}
+		else
+		{
+			m.m[2][0] = 0.0f;
+			m.m[2][1] = 0.0f;
+		}
 		m.m[2][2] = F_RANGE;
 		m.m[2][3] = 1.0f;
 
@@ -76,7 +84,10 @@ namespace ZE::Data
 
 		m.r[0] = vsetq_lane_f32(width, zero, 0);
 		m.r[1] = vsetq_lane_f32(height, zero, 1);
-		m.r[2] = vsetq_lane_f32(F_RANGE, Math::g_XMIdentityR3.v, 2);
+		if (Settings::ApplyJitter())
+			m.r[2] = Math::XMVectorSet(proj.JitterX, proj.JitterY, F_RANGE, 1.0f);
+		else
+			m.r[2] = vsetq_lane_f32(F_RANGE, Math::g_XMIdentityR3.v, 2);
 		m.r[3] = vsetq_lane_f32(nearRange, zero, 2);
 #elif defined(_XM_SSE_INTRINSICS_)
 		// Note: This is recorded on the stack
@@ -97,7 +108,12 @@ namespace ZE::Data
 		vValues = _mm_shuffle_ps(vValues, Math::g_XMIdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
 		// 0,0,F_RANGE,1.0f
 		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 0, 0, 0));
-		m.r[2] = vTemp;
+
+		if (Settings::ApplyJitter())
+			m.r[2] = Math::XMVectorSet(proj.JitterX, proj.JitterY, F_RANGE, 1.0f);
+		else
+			m.r[2] = vTemp;
+
 		// 0,0,nearRange,0.0f
 		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(2, 1, 0, 0));
 		m.r[3] = vTemp;

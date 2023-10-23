@@ -24,6 +24,7 @@ namespace ZE::GFX::Pipeline
 		Float4x4 currentProjection = {};
 		Float4 cameraRotation = {};
 		float sharpness = 0.5f;
+		U32 jitterIndex = 0;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
 

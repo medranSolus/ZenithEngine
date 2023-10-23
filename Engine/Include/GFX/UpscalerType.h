@@ -13,6 +13,7 @@ namespace ZE::GFX
 	};
 
 	constexpr UInt2 CalculateRenderSize(UInt2 targetSize, UpscalerType upscaling) noexcept;
+	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept;
 
 #pragma region Functions
 	constexpr UInt2 CalculateRenderSize(UInt2 targetSize, UpscalerType upscaling) noexcept
@@ -28,6 +29,32 @@ namespace ZE::GFX
 			UInt2 renderSize = {};
 			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, FFX_FSR2_QUALITY_MODE_QUALITY);
 			return renderSize;
+		}
+		}
+	}
+
+	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept
+	{
+		switch (upscaling)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case UpscalerType::None:
+		{
+			phaseIndex = 0;
+			jitterX = 0.0f;
+			jitterY = 0.0f;
+			break;
+		}
+		case UpscalerType::Fsr2:
+		{
+			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, renderSize.X);
+			float x, y;
+			ffxFsr2GetJitterOffset(&x, &y, phaseIndex, phaseCount);
+			jitterX = 2.0f * x / Utils::SafeCast<float>(renderSize.X);
+			jitterY = -2.0f * y / Utils::SafeCast<float>(renderSize.Y);
+			phaseIndex = (phaseIndex + 1) % phaseCount;
+			break;
 		}
 		}
 	}

@@ -9,6 +9,9 @@ namespace ZE::Data
 		float FOV;
 		float ViewRatio;
 		float NearClip;
+		// Projection space jitter offsets
+		float JitterX;
+		float JitterY;
 	};
 
 	// Component describing camera params

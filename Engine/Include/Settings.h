@@ -70,6 +70,8 @@ namespace ZE
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
 		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None; }
+		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None; }
+
 #if _ZE_GFX_MARKERS
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
