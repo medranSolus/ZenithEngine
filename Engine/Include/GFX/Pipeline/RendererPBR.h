@@ -19,8 +19,10 @@ namespace ZE::GFX::Pipeline
 			XeGTAO::GTAOSettings xegtao;
 			FfxCacaoSettings cacao;
 		} ssaoSettings;
+		Data::Projection currentProjectionData = {};
 		Float4x4 currentProjection = {};
 		Float4 cameraRotation = {};
+		float sharpness = 0.5f;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
 
@@ -36,13 +38,15 @@ namespace ZE::GFX::Pipeline
 		virtual ~RendererPBR() = default;
 
 		constexpr const FfxCacaoSettings& GetCacaoSettings() const noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
+		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
+		constexpr float GetSharpness() const noexcept { return sharpness; }
 
-		void Init(Device& dev, CommandList& mainList, U32 width, U32 height, const ParamsPBR& params);
+		void Init(Device& dev, CommandList& mainList, const ParamsPBR& params);
 
 		// Need to be called when data in parameters changed (also after creation of renderer)
-		void UpdateSettingsData(Device& dev, const Matrix& projection);
+		void UpdateSettingsData(Device& dev, const Data::Projection& projection);
 		// Need to be called before ending every frame
 		void UpdateWorldData(Device& dev, EID camera) noexcept;
 		void ShowWindow(Device& dev);

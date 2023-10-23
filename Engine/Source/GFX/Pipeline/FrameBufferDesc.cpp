@@ -3,13 +3,13 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void FrameBufferDesc::Init(U64 resourceCount, U32 backbufferWidth, U32 backbufferHeight)
+	void FrameBufferDesc::Init(U64 resourceCount)
 	{
 		ResourceInfo.reserve(++resourceCount);
 		ResourceLifetimes.reserve(resourceCount);
 		AddResource(
 			{
-				backbufferWidth, backbufferHeight, 1, FrameResourceFlags::None,
+				Settings::DisplaySize, 1, FrameResourceFlags::None,
 				Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 1.0f)
 			});
 	}

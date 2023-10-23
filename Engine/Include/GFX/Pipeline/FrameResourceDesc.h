@@ -20,8 +20,7 @@ namespace ZE::GFX::Pipeline
 	// Description of single resource in FrameBuffer
 	struct FrameResourceDesc
 	{
-		U32 Width;
-		U32 Height;
+		UInt2 Sizes;
 		U16 ArraySize;
 		U8 Flags;
 		PixelFormat Format;

@@ -45,7 +45,7 @@ namespace ZE::RHI::DX11::Pipeline
 
 		resources = new BufferData[resourceCount];
 		resources[0].Resource = nullptr;
-		resources[0].Size = { desc.ResourceInfo.front().Width, desc.ResourceInfo.front().Height };
+		resources[0].Size = desc.ResourceInfo.front().Sizes;
 		resources[0].Array = desc.ResourceInfo.front().ArraySize;
 		resources[0].Mips = desc.ResourceInfo.front().MipLevels;
 		resources[0].Format = desc.ResourceInfo.front().Format;
@@ -65,13 +65,13 @@ namespace ZE::RHI::DX11::Pipeline
 		for (RID i = 1; i < resourceCount; ++i)
 		{
 			const auto& res = desc.ResourceInfo.at(i);
-			resources[i].Size = { res.Width, res.Height };
+			resources[i].Size = res.Sizes;
 			resources[i].Array = res.ArraySize;
 			resources[i].Mips = res.MipLevels;
 			resources[i].Format = res.Format;
 
-			texDesc.Width = res.Width;
-			texDesc.Height = res.Height;
+			texDesc.Width = res.Sizes.X;
+			texDesc.Height = res.Sizes.Y;
 			texDesc.ArraySize = res.ArraySize;
 			texDesc.MipLevels = res.MipLevels;
 			texDesc.Format = DX::GetNonDepthDXFormat(res.Format);

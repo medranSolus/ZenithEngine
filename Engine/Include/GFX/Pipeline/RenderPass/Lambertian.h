@@ -18,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		RID Color;
 		RID Normal;
 		RID Specular;
+		RID Motion;
 	};
 
 	struct ExecuteData

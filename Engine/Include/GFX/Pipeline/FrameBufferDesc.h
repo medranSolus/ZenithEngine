@@ -16,7 +16,7 @@ namespace ZE::GFX::Pipeline
 
 		PixelFormat GetFormat(RID id) const noexcept { return ResourceInfo.at(id).Format; }
 
-		void Init(U64 resourceCount, U32 backbufferWidth, U32 backbufferHeight);
+		void Init(U64 resourceCount);
 		RID AddResource(FrameResourceDesc&& info) noexcept;
 		void ComputeWorkflowTransitions(U64 dependencyLevels) noexcept;
 	};

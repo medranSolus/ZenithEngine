@@ -139,46 +139,58 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RendererPBR::Init(Device& dev, CommandList& mainList, U32 width, U32 height, const ParamsPBR& params)
+	void RendererPBR::Init(Device& dev, CommandList& mainList, const ParamsPBR& params)
 	{
-		const U32 outlineBuffWidth = width / 2;
-		const U32 outlineBuffHeight = height / 2;
+		const UInt2 outlineBuffSizes = { Settings::DisplaySize.X / 2, Settings::DisplaySize.Y / 2 };
 		FrameBufferDesc frameBufferDesc;
-		frameBufferDesc.Init(11, width, height);
+		frameBufferDesc.Init(15);
 
 #pragma region Framebuffer definition
+		// GBuffer related resources
 		RID gbuffNormalCompute = 0;
 		RID gbuffDepthCompute = 0;
 		if (Settings::GetAOType() != AOType::None)
 		{
 			gbuffNormalCompute = frameBufferDesc.AddResource(
-				{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
+				{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 			gbuffDepthCompute = frameBufferDesc.AddResource(
-				{ width, height, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+				{ Settings::RenderSize, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 		}
 		const RID gbuffColor = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+		RID gbuffMotion = INVALID_RID;
+		if (Settings::ComputeMotionVectors())
+			gbuffMotion = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_SNorm, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+			{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+
+		// Light buffer related resources
 		const RID lightbuffColor = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID lightbuffSpecular = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
-		RID ssao = 0;
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+		RID ssao = INVALID_RID;
 		if (Settings::GetAOType() != AOType::None)
-			ssao = frameBufferDesc.AddResource({ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
+			ssao = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UInt, ColorF4() });
+
+		// Combined scene related resources
 		const RID rawScene = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+		RID upscaledScene = rawScene;
+		if (Settings::GetUpscaler() != UpscalerType::None)
+			upscaledScene = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4() });
+
+		// Outline related resources
 		const RID outline = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+			{ outlineBuffSizes, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineBlur = frameBufferDesc.AddResource(
-			{ outlineBuffWidth, outlineBuffHeight, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
+			{ outlineBuffSizes, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineDepth = frameBufferDesc.AddResource(
-			{ width, height, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
+			{ Settings::DisplaySize, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
@@ -195,8 +207,8 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-		SetupBlurData(outlineBuffWidth, outlineBuffHeight);
-		SetupSSAOData(width, height);
+		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
+		SetupSSAOData(Settings::RenderSize.X, Settings::RenderSize.Y);
 
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
@@ -211,6 +223,7 @@ namespace ZE::GFX::Pipeline
 			node.AddOutput("GB_C", Resource::StateRenderTarget, gbuffColor);
 			node.AddOutput("GB_N", Resource::StateRenderTarget, gbuffNormal);
 			node.AddOutput("GB_S", Resource::StateRenderTarget, gbuffSpecular);
+			node.AddOutput("GB_M", Resource::StateRenderTarget, gbuffMotion);
 			nodes.emplace_back(std::move(node));
 		}
 		if (Settings::GetAOType() != AOType::None)
@@ -285,18 +298,18 @@ namespace ZE::GFX::Pipeline
 			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
-				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
+				{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 });
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
-				{ width, height, 1, FrameResourceFlags::ForceSRV, frameBufferDesc.GetFormat(ssao), ColorF4() });
+				{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, frameBufferDesc.GetFormat(ssao), ColorF4() });
 			node.AddInnerBuffer(Resource::StateUnorderedAccess,
-				{ width, height, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
+				{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R8_UNorm, ColorF4() });
 			node.AddOutput("SB", Resource::StateUnorderedAccess, ssao);
 			nodes.emplace_back(std::move(node));
 			break;
 		}
 		case AOType::CACAO:
 		{
-			ZE_MAKE_NODE("ssao", QueueType::Compute, CACAO, dev, buildData, width, height);
+			ZE_MAKE_NODE("ssao", QueueType::Compute, CACAO, dev, buildData, Settings::RenderSize.X, Settings::RenderSize.Y);
 			node.AddInput("lambertianComputeCopy.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertianComputeCopy.GB_N", Resource::StateShaderResourceNonPS);
 			node.AddOutput("SB", Resource::StateUnorderedAccess, ssao);
@@ -314,7 +327,46 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
-#pragma region Geometry effects
+#pragma region Render size post process
+		{
+			ZE_MAKE_NODE("skybox", QueueType::Main, Skybox, dev, buildData,
+				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
+				params.SkyboxPath, params.SkyboxExt);
+			node.AddInput("lightCombine.RT", Resource::StateRenderTarget);
+			node.AddInput("lambertian.DS", Resource::StateDepthRead);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
+			node.AddOutput("DS", Resource::StateDepthRead, gbuffDepth);
+			nodes.emplace_back(std::move(node));
+		}
+		{
+			ZE_MAKE_NODE("wireframe", QueueType::Main, Wireframe, dev, buildData,
+				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
+			node.AddInput("skybox.RT", Resource::StateRenderTarget);
+			node.AddInput("skybox.DS", Resource::StateDepthWrite);
+			node.AddOutput("RT", Resource::StateRenderTarget, upscaledScene);
+			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
+			nodes.emplace_back(std::move(node));
+		}
+#pragma endregion
+#pragma region Upscaling
+		switch (Settings::GetUpscaler())
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case UpscalerType::None:
+			break;
+		case UpscalerType::Fsr2:
+		{
+			ZE_MAKE_NODE("upscale", QueueType::Compute, UpscaleFSR2, dev, buildData);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
+			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
+			nodes.emplace_back(std::move(node));
+			break;
+		}
+		}
+#pragma endregion
+#pragma region Display size post process
 		{
 			ZE_MAKE_NODE("outlineDraw", QueueType::Main, OutlineDraw, dev, buildData,
 				frameBufferDesc.GetFormat(outline), frameBufferDesc.GetFormat(outlineDepth));
@@ -329,36 +381,16 @@ namespace ZE::GFX::Pipeline
 			nodes.emplace_back(std::move(node));
 		}
 		{
-			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(outlineDepth));
+			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(upscaledScene), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddInput("horizontalBlur.RT", Resource::StateShaderResourcePS);
-			node.AddInput("skybox.RT", Resource::StateRenderTarget);
+			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.RT" : "wireframe.RT", Resource::StateRenderTarget);
 			node.AddInput("outlineDraw.DS", Resource::StateDepthRead);
-			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
-			nodes.emplace_back(std::move(node));
-		}
-		{
-			ZE_MAKE_NODE("wireframe", QueueType::Main, Wireframe, dev, buildData,
-				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
-			node.AddInput("verticalBlur.RT", Resource::StateRenderTarget);
-			node.AddInput("skybox.DS", Resource::StateDepthWrite);
-			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
-			nodes.emplace_back(std::move(node));
-		}
-#pragma endregion
-#pragma region Post processing
-		{
-			ZE_MAKE_NODE("skybox", QueueType::Main, Skybox, dev, buildData,
-				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth),
-				params.SkyboxPath, params.SkyboxExt);
-			node.AddInput("lightCombine.RT", Resource::StateRenderTarget);
-			node.AddInput("lambertian.DS", Resource::StateDepthRead);
-			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
-			node.AddOutput("DS", Resource::StateDepthRead, gbuffDepth);
+			node.AddOutput("RT", Resource::StateRenderTarget, upscaledScene);
 			nodes.emplace_back(std::move(node));
 		}
 		{
 			ZE_MAKE_NODE("hdrGamma", QueueType::Main, HDRGammaCorrection, dev, buildData, Settings::BackbufferFormat);
-			node.AddInput("wireframe.RT", Resource::StateShaderResourcePS);
+			node.AddInput("verticalBlur.RT", Resource::StateShaderResourcePS);
 			node.AddOutput("RT", Resource::StateRenderTarget, BACKBUFFER_RID);
 			nodes.emplace_back(std::move(node));
 		}
@@ -367,9 +399,13 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateSettingsData(Device& dev, const Matrix& projection)
+	void RendererPBR::UpdateSettingsData(Device& dev, const Data::Projection& projection)
 	{
-		Math::XMStoreFloat4x4(&currentProjection, projection);
+		currentProjectionData = projection;
+		Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
+		// Not uploading now since it's uploaded every frame
+		dynamicData.NearClip = currentProjectionData.NearClip;
+
 		if (Settings::GetAOType() == AOType::XeGTAO)
 		{
 			XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
@@ -394,7 +430,6 @@ namespace ZE::GFX::Pipeline
 		// Setup shader world data
 		dynamicData.CameraPos = transform.Position;
 		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
-		dynamicData.NearClip = currentCamera.Projection.NearClip;
 		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));

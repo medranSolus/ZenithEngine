@@ -204,8 +204,8 @@ namespace ZE::RHI::DX12::Pipeline
 		for (RID i = 1; i < resourceCount; ++i)
 		{
 			const auto& res = desc.ResourceInfo.at(i);
-			resDesc.Width = res.Width;
-			resDesc.Height = res.Height;
+			resDesc.Width = res.Sizes.X;
+			resDesc.Height = res.Sizes.Y;
 			resDesc.DepthOrArraySize = res.ArraySize;
 			resDesc.MipLevels = res.MipLevels;
 			if (!resDesc.MipLevels)
@@ -550,18 +550,16 @@ namespace ZE::RHI::DX12::Pipeline
 		aliasingResources = new bool[resourcesInfo.size()];
 		resources = new BufferData[invalidID];
 		resources[0].Resource = nullptr;
-		resources[0].Size.X = desc.ResourceInfo.at(0).Width;
-		resources[0].Size.Y = desc.ResourceInfo.at(0).Height;
-		resources[0].Array = desc.ResourceInfo.at(0).ArraySize;
-		resources[0].Mips = desc.ResourceInfo.at(0).MipLevels;
-		resources[0].Format = desc.ResourceInfo.at(0).Format;
+		resources[0].Size = desc.ResourceInfo.front().Sizes;
+		resources[0].Array = desc.ResourceInfo.front().ArraySize;
+		resources[0].Mips = desc.ResourceInfo.front().MipLevels;
+		resources[0].Format = desc.ResourceInfo.front().Format;
 		for (RID i = 1; auto & res : resourcesInfo)
 		{
 			aliasingResources[i - 1] = res.IsAliasing();
 			auto& data = resources[i];
 			data.Resource = std::move(res.Resource);
-			data.Size.X = desc.ResourceInfo.at(i).Width;
-			data.Size.Y = desc.ResourceInfo.at(i).Height;
+			data.Size = desc.ResourceInfo.at(i).Sizes;
 			data.Array = desc.ResourceInfo.at(i).ArraySize;
 			data.Mips = desc.ResourceInfo.at(i).MipLevels;
 			data.Format = desc.ResourceInfo.at(i).Format;

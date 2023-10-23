@@ -366,16 +366,20 @@ namespace ZE::GFX::Pipeline
 			// Check all output resources
 			for (RID j = 0; const RID rid : node.GetOutputResources())
 			{
-				if (rid >= frameBufferDesc.ResourceInfo.size())
-					throw ZE_RGC_EXCEPT("RID out of range [" + std::to_string(rid) + "] for output + [" + node.GetOutputs().at(j) + "]!");
+				// Check if not optional output
+				if (rid != INVALID_RID)
+				{
+					if (rid >= frameBufferDesc.ResourceInfo.size())
+						throw ZE_RGC_EXCEPT("RID out of range [" + std::to_string(rid) + "] for output + [" + node.GetOutputs().at(j) + "]!");
 
-				Resource::State currentState = node.GetOutputState(j);
-				auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
+					Resource::State currentState = node.GetOutputState(j);
+					auto& lifetime = frameBufferDesc.ResourceLifetimes.at(rid);
 
-				if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
-					AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
-				else
-					lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
+					if (lifetime.contains(Utils::SafeCast<RID>(depLevel)))
+						AssignState(lifetime.at(Utils::SafeCast<RID>(depLevel)), currentState, rid, depLevel);
+					else
+						lifetime[Utils::SafeCast<RID>(depLevel)] = currentState;
+				}
 				++j;
 			}
 			// Check temporary inner resources
