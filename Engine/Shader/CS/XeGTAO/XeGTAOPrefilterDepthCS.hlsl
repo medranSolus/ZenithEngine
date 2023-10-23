@@ -1,6 +1,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
-#include "Utils/XeGTAO.hlsli"
+#define ZE_XEGTAO_CB_RANGE 3
+#include "CB/ConstantsXeGTAO.hlsli"
 
 UAV2D(viewDepthMip0, lpfloat, 0, 1);
 UAV2D(viewDepthMip1, lpfloat, 1, 1);
@@ -16,7 +17,7 @@ TEXTURE_EX(sourceDepthMap, Texture2D<float>, 0, 2);
 void main(const uint2 dispatchID : SV_DispatchThreadID, const uint2 groupID : SV_GroupThreadID)
 {
 	XeGTAO_PrefilterDepths16x16(dispatchID, groupID,
-		cb_pbrData.XeGTAOData, tx_sourceDepthMap, splr_PE,
+		cb_xegtaoConsts.XeGTAOData, tx_sourceDepthMap, splr_PE,
 		ua_viewDepthMip0, ua_viewDepthMip1, ua_viewDepthMip2,
 		ua_viewDepthMip3, ua_viewDepthMip4);
 }

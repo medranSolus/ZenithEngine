@@ -2,6 +2,7 @@
 #include "DataPBR.h"
 #include "ParamsPBR.h"
 #include "RenderGraph.h"
+#include "XeGTAOSettings.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
 ZE_WARNING_POP
@@ -16,7 +17,7 @@ namespace ZE::GFX::Pipeline
 		float blurSigma = 0.0f;
 		union
 		{
-			XeGTAO::GTAOSettings xegtao;
+			XeGTAOSettings xegtao;
 			FfxCacaoSettings cacao;
 		} ssaoSettings;
 		Data::Projection currentProjectionData = {};
@@ -37,7 +38,9 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
-		constexpr const FfxCacaoSettings& GetCacaoSettings() const noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
+		constexpr XeGTAOSettings& GetXeGTAOSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::XeGTAO, "XeGTAO is not active!"); return ssaoSettings.xegtao; }
+		constexpr FfxCacaoSettings& GetCacaoSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
+
 		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }

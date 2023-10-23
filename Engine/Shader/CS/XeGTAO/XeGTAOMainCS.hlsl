@@ -2,7 +2,8 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
-#include "Utils/XeGTAO.hlsli"
+#define ZE_XEGTAO_CB_RANGE 7
+#include "CB/ConstantsXeGTAO.hlsli"
 
 UAV2D(ssaoMap,    uint,	       0, 2);
 UAV2D(depthEdges, unorm float, 1, 3);
@@ -21,7 +22,7 @@ lpfloat2 SpatioTemporalNoise(const in uint2 pixCoord, uniform uint temporalIndex
 {
 	// Hilbert curve driving R2 (see https://www.shadertoy.com/view/3tB3z3),
 	// why 288? tried out a few and that's the best so far (with XE_HILBERT_LEVEL 6U) - but there's probably better :)
-	const uint index = tx_hilbertLUT[pixCoord % 64] + 288 * (temporalIndex % 64);
+	const uint index = tx_hilbertLUT[pixCoord % 64] + 288 * temporalIndex;
 	// R2 sequence - see http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 	return (lpfloat2)frac(0.5 + index * float2(0.75487766624669276005, 0.5698402909980532659114));
 }
@@ -31,8 +32,8 @@ lpfloat2 SpatioTemporalNoise(const in uint2 pixCoord, uniform uint temporalIndex
 void main(const uint2 pixCoord : SV_DispatchThreadID)
 {
 	XeGTAO_MainPass(pixCoord,
-		cb_pbrData.XeGTAOSliceCount, cb_pbrData.XeGTAOStepsPerSlice,
-		SpatioTemporalNoise(pixCoord, cb_pbrData.XeGTAOData.NoiseIndex),
-		LoadNormal(pixCoord), cb_pbrData.XeGTAOData,
+		cb_xegtaoConsts.SliceCount, cb_xegtaoConsts.StepsPerSlice,
+		SpatioTemporalNoise(pixCoord, cb_xegtaoConsts.XeGTAOData.NoiseIndex),
+		LoadNormal(pixCoord), cb_xegtaoConsts.XeGTAOData,
 		tx_viewDepth, splr_PE, ua_ssaoMap, ua_depthEdges);
 }

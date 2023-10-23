@@ -591,14 +591,14 @@ EID App::AddDirectionalLight(std::string&& name,
 
 void App::MakeFrame()
 {
-	ZE_PERF_GUARD("Frame rendering")
-		//ImGui::ShowDemoWindow();
-		if (engine.IsGuiActive())
-		{
-			ZE_PERF_GUARD("GUI");
-			ShowOptionsWindow();
-			ShowObjectWindow();
-		}
+	ZE_PERF_GUARD("Frame rendering");
+	//ImGui::ShowDemoWindow();
+	if (engine.IsGuiActive())
+	{
+		ZE_PERF_GUARD("GUI");
+		ShowOptionsWindow();
+		ShowObjectWindow();
+	}
 	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 }
 

@@ -82,33 +82,33 @@ namespace ZE::GFX::Pipeline
 
 	constexpr void RendererPBR::SetupXeGTAOQuality() noexcept
 	{
-		switch (ssaoSettings.xegtao.QualityLevel)
+		switch (ssaoSettings.xegtao.Settings.QualityLevel)
 		{
 		default:
 			ZE_FAIL("Unknown XeGTAO quality level!");
 			[[fallthrough]];
 		case 0: // Low
 		{
-			settingsData.XeGTAOSliceCount = 1.0f;
-			settingsData.XeGTAOStepsPerSlice = 2.0f;
+			ssaoSettings.xegtao.SliceCount = 1.0f;
+			ssaoSettings.xegtao.StepsPerSlice = 2.0f;
 			break;
 		}
 		case 1: // Medium
 		{
-			settingsData.XeGTAOSliceCount = 2.0f;
-			settingsData.XeGTAOStepsPerSlice = 2.0f;
+			ssaoSettings.xegtao.SliceCount = 2.0f;
+			ssaoSettings.xegtao.StepsPerSlice = 2.0f;
 			break;
 		}
 		case 2: // High
 		{
-			settingsData.XeGTAOSliceCount = 3.0f;
-			settingsData.XeGTAOStepsPerSlice = 3.0f;
+			ssaoSettings.xegtao.SliceCount = 3.0f;
+			ssaoSettings.xegtao.StepsPerSlice = 3.0f;
 			break;
 		}
 		case 3: // Ultra
 		{
-			settingsData.XeGTAOSliceCount = 9.0f;
-			settingsData.XeGTAOStepsPerSlice = 3.0f;
+			ssaoSettings.xegtao.SliceCount = 9.0f;
+			ssaoSettings.xegtao.StepsPerSlice = 3.0f;
 			break;
 		}
 		}
@@ -125,8 +125,7 @@ namespace ZE::GFX::Pipeline
 		case AOType::XeGTAO:
 		{
 			ssaoSettings.xegtao = {};
-			ssaoSettings.xegtao.DenoisePasses = 1;
-			settingsData.XeGTAOData.ViewportSize = { Utils::SafeCast<int>(width), Utils::SafeCast<int>(height) };
+			ssaoSettings.xegtao.Settings.DenoisePasses = 1;
 			SetupXeGTAOQuality();
 			break;
 		}
@@ -190,7 +189,7 @@ namespace ZE::GFX::Pipeline
 		const RID outlineBlur = frameBufferDesc.AddResource(
 			{ outlineBuffSizes, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f) });
 		const RID outlineDepth = frameBufferDesc.AddResource(
-			{ Settings::DisplaySize, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 1.0f, 0 }); // TODO: Inverse depth
+			{ Settings::DisplaySize, 1, FrameResourceFlags::None, PixelFormat::DepthStencil, ColorF4(), 0.0f, 0 });
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
@@ -402,21 +401,9 @@ namespace ZE::GFX::Pipeline
 	void RendererPBR::UpdateSettingsData(Device& dev, const Data::Projection& projection)
 	{
 		currentProjectionData = projection;
-		Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
+			Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
 		// Not uploading now since it's uploaded every frame
 		dynamicData.NearClip = currentProjectionData.NearClip;
-
-		if (Settings::GetAOType() == AOType::XeGTAO)
-		{
-			XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
-				settingsData.XeGTAOData.ViewportSize.x,
-				settingsData.XeGTAOData.ViewportSize.y,
-				ssaoSettings.xegtao, reinterpret_cast<const float*>(&currentProjection), true, 0);
-		}
-		dev.BeginUploadRegion();
-		execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
-		dev.StartUpload();
-		dev.EndUploadRegion();
 	}
 
 	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
@@ -438,12 +425,6 @@ namespace ZE::GFX::Pipeline
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
-
-		if (Settings::GetAOType() == AOType::CACAO)
-		{
-			ssaoSettings.cacao.temporalSupersamplingAngleOffset = Math::PI * Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) / 3.0f;
-			ssaoSettings.cacao.temporalSupersamplingRadiusOffset = 1.0f + 0.1f * (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 3.0f;
-		}
 	}
 
 	void RendererPBR::ShowWindow(Device& dev)
@@ -534,18 +515,12 @@ namespace ZE::GFX::Pipeline
 			if (ImGui::CollapsingHeader("XeGTAO"))
 			{
 				// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
-				const int quality = ssaoSettings.xegtao.QualityLevel;
-				const int denoise = ssaoSettings.xegtao.DenoisePasses;
-				change |= XeGTAO::GTAOImGuiSettings(ssaoSettings.xegtao);
-				change |= quality != ssaoSettings.xegtao.QualityLevel || denoise != ssaoSettings.xegtao.DenoisePasses;
+				const int quality = ssaoSettings.xegtao.Settings.QualityLevel;
+				const int denoise = ssaoSettings.xegtao.Settings.DenoisePasses;
+				XeGTAO::GTAOImGuiSettings(ssaoSettings.xegtao.Settings);
+				change |= quality != ssaoSettings.xegtao.Settings.QualityLevel || denoise != ssaoSettings.xegtao.Settings.DenoisePasses;
 				if (change)
-				{
 					SetupXeGTAOQuality();
-					XeGTAO::GTAOUpdateConstants(settingsData.XeGTAOData,
-						settingsData.XeGTAOData.ViewportSize.x,
-						settingsData.XeGTAOData.ViewportSize.y,
-						ssaoSettings.xegtao, reinterpret_cast<const float*>(&currentProjection), true, 0);
-				}
 			}
 			break;
 		}

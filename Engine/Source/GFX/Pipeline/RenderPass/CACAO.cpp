@@ -43,10 +43,13 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		list.Open(dev);
 		ZE_DRAW_TAG_BEGIN(dev, list, "CACAO", Pixel(0x89, 0xCF, 0xF0));
 
-		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+		RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 
-		ZE_FFX_CHECK(ffxCacaoUpdateSettings(&data.Ctx, &renderer.GetCacaoSettings(), false), "Error updating CACAO settings!");
+		FfxCacaoSettings& settings = renderer.GetCacaoSettings();
+		settings.temporalSupersamplingAngleOffset = Math::PI * Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) / 3.0f;
+		settings.temporalSupersamplingRadiusOffset = 1.0f + 0.1f * (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 3.0f;
+		ZE_FFX_CHECK(ffxCacaoUpdateSettings(&data.Ctx, &settings, false), "Error updating CACAO settings!");
 
 		FfxCacaoDispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(list);

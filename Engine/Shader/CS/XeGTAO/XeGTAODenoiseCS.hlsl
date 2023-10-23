@@ -1,7 +1,8 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "CB/Denoise.hlsli"
-#include "Utils/XeGTAO.hlsli"
+#define ZE_XEGTAO_CB_RANGE 4
+#include "CB/ConstantsXeGTAO.hlsli"
 
 UAV2D(ssaoMapOutput, uint, 0, 2);
 TEXTURE_EX(ssaoMapPrevious, Texture2D<uint>,    0, 3);
@@ -13,5 +14,5 @@ void main(const uint2 dispatchThreadID : SV_DispatchThreadID)
 {
 	// Computing 2 horizontal pixels at a time (performance optimization)
 	const uint2 pixCoordBase = dispatchThreadID * uint2(2, 1);
-	XeGTAO_Denoise(pixCoordBase, cb_pbrData.XeGTAOData, tx_ssaoMapPrevious, tx_depthEdges, splr_PE, ua_ssaoMapOutput, ct_denoise.IsLast);
+	XeGTAO_Denoise(pixCoordBase, cb_xegtaoConsts.XeGTAOData, tx_ssaoMapPrevious, tx_depthEdges, splr_PE, ua_ssaoMapOutput, ct_denoise.IsLast);
 }

@@ -12,9 +12,6 @@ namespace ZE::GFX::Pipeline
 	{
 		static constexpr S32 BLUR_KERNEL_RADIUS = 7;
 
-		// Should be multiple of 16 B (alignment restrictions)
-		XeGTAO::GTAOConstants XeGTAOData;
-
 		UInt2 DisplaySize;
 		UInt2 RenderSize;
 
@@ -27,17 +24,15 @@ namespace ZE::GFX::Pipeline
 		S32 BlurRadius;
 		float BlurIntensity;
 
-		float XeGTAOSliceCount;
-		float XeGTAOStepsPerSlice;
-
 		float Gamma;
 		float GammaInverse;
 
 		float ShadowMapSize;
 		float ShadowBias;
+
 		float ShadowNormalOffset;
 
-		float _Padding;
+		float _Padding[3];
 
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];

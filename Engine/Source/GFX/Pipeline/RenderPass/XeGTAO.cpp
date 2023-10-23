@@ -1,11 +1,16 @@
 #include "GFX/Pipeline/RenderPass/XeGTAO.h"
+#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
-ZE_WARNING_PUSH
-#include "XeGTAO.h"
-ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 {
+	struct ConstantsXeGTAO
+	{
+		::XeGTAO::GTAOConstants Constants;
+		float SliceCount;
+		float StepsPerSlice;
+	};
+
 	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
@@ -24,6 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 		// Prefilter pass
 		Binding::SchemaDesc desc;
+		desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // XeGTAO constants
 		desc.AddRange({ 5, 0, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
 		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
@@ -35,6 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 		// Main pass
 		desc.Clear();
+		desc.AddRange({ 1, 1, 7, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // XeGTAO constants
 		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // AO map
 		desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
@@ -51,9 +58,10 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		// Denoise passes
 		desc.Clear();
 		desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant }); // Is last denoise
-		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // AO map out
-		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev AO map
-		desc.AddRange({ 1, 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
+		desc.AddRange({ 1, 1, 4, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // XeGTAO constants
+		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // AO map out
+		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev AO map
+		desc.AddRange({ 1, 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
 		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -91,8 +99,20 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		list.Open(dev, data.StatePrefilter);
 		ZE_DRAW_TAG_BEGIN(dev, list, "XeGTAO", Pixel(0x89, 0xCF, 0xF0));
 
+		RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+		auto& cbuffer = *renderData.DynamicBuffer;
+
+		XeGTAOSettings& settings = renderer.GetXeGTAOSettings();
+		ConstantsXeGTAO constants = {};
+		constants.SliceCount = settings.SliceCount;
+		constants.StepsPerSlice = settings.StepsPerSlice;
+		::XeGTAO::GTAOUpdateConstants(constants.Constants, size.X, size.Y, settings.Settings,
+			reinterpret_cast<const float*>(&renderer.GetProjection()), true, static_cast<U32>(Settings::GetFrameIndex()));
+		auto cbufferInfo = cbuffer.Alloc(dev, &constants, sizeof(ConstantsXeGTAO));
+
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(list);
+		cbuffer.Bind(list, prefilterCtx, cbufferInfo);
 		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
 		renderData.Buffers.SetSRV(list, prefilterCtx, ids.Depth);
 		renderData.SettingsBuffer.Bind(list, prefilterCtx);
@@ -103,6 +123,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexAO) };
 		data.StateAO.Bind(list);
 		mainCtx.BindingSchema.SetCompute(list);
+		cbuffer.Bind(list, mainCtx, cbufferInfo);
 		renderData.Buffers.SetUAV(list, mainCtx, ids.ScratchAO);
 		renderData.Buffers.SetUAV(list, mainCtx, ids.DepthEdges);
 		renderData.Buffers.SetSRV(list, mainCtx, ids.ViewspaceDepth);
@@ -125,6 +146,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		denoiseCtx.BindingSchema.SetCompute(list);
 		Resource::Constant<U32> lastDenoise(dev, true);
 		lastDenoise.Bind(list, denoiseCtx);
+		cbuffer.Bind(list, denoiseCtx, cbufferInfo);
 		renderData.Buffers.SetUAV(list, denoiseCtx, ids.AO);
 		renderData.Buffers.SetSRV(list, denoiseCtx, ids.ScratchAO);
 		renderData.Buffers.SetSRV(list, denoiseCtx, ids.DepthEdges);
