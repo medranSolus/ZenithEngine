@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	}
 
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS,
-		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular)
+		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatAlpha)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -49,10 +49,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		passData->StateDepth.Init(dev, psoDesc, schema);
 
 		psoDesc.SetShader(dev, psoDesc.VS, "PhongVS", buildData.ShaderCache);
-		psoDesc.RenderTargetsCount = 3;
+		psoDesc.RenderTargetsCount = 4;
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
+		psoDesc.FormatsRT[3] = formatAlpha;
 		const std::string shaderName = "PhongPS";
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];

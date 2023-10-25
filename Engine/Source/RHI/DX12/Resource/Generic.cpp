@@ -52,7 +52,7 @@ namespace ZE::RHI::DX12::Resource
 		resDesc.Width = desc.WidthOrBufferSize;
 		resDesc.Height = desc.HeightOrBufferStride;
 		resDesc.DepthOrArraySize = desc.DepthOrArraySize;
-		resDesc.MipLevels = desc.MipCount;
+		resDesc.MipLevels = desc.MipCount == 0 ? Math::GetMipLevels(Utils::SafeCast<U32>(resDesc.Width), resDesc.Height) : desc.MipCount;
 		resDesc.Format = DX::GetDXFormat(desc.Format);
 		resDesc.SampleDesc.Count = 1;
 		resDesc.SampleDesc.Quality = 0;

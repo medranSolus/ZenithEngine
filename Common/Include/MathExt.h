@@ -53,6 +53,11 @@ namespace ZE::Math
 		return a <= b - FLT_EPSILON || a >= b + FLT_EPSILON;
 	}
 
+	inline U16 GetMipLevels(U32 width, U32 height) noexcept
+	{
+		return std::floor(std::log2(std::max(width, height))) + 1;
+	}
+
 	inline float Wrap(float x, float wrap) noexcept
 	{
 		return static_cast<float>(fmod(x, wrap));

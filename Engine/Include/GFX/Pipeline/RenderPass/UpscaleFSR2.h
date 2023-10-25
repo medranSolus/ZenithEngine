@@ -1,32 +1,28 @@
 #pragma once
-#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/ChainPool.h"
+ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_fsr2.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 {
 	struct Resources
 	{
+		RID Color;
 		RID Depth;
+		RID MotionVectors;
+		RID AlphaMask;
+		RID Output;
 	};
 
 	struct ExecuteData
 	{
 		FfxFsr2Context Ctx;
-
 		ChainPool<CommandList> ListChain;
-		U32 BindingIndexPrefilter;
-		U32 BindingIndexSSAO;
-		U32 BindingIndexDenoise;
-		Resource::PipelineStateCompute StatePrefilter;
-		Resource::PipelineStateCompute StateSSAO;
-		Resource::PipelineStateCompute StateDenoise;
-		Resource::Texture::Pack HilbertLUT;
 	};
 
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData);
+	ExecuteData* Setup(Device& dev);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

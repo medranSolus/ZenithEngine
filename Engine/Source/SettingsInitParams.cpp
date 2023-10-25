@@ -9,7 +9,7 @@ namespace ZE
 		parser.AddOption("vulkan");
 		parser.AddNumber("backbuffers", 2);
 		parser.AddNumber("threadsCount", 0);
-		parser.AddOption("pixAttach");
+		parser.AddOption("pix");
 		parser.AddOption("fsr2");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
@@ -25,7 +25,7 @@ namespace ZE
 		params.BackbufferCount = parser.GetNumber("backbuffers");
 		params.StaticThreadsCount = staticThreadsCount;
 		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threadsCount"));
-		params.AllowPIXAttach = parser.GetOption("pixAttach");
+		params.AllowPIXAttach = parser.GetOption("pix");
 		params.Upscaler = parser.GetOption("fsr2") ? GFX::UpscalerType::Fsr2 : GFX::UpscalerType::None;
 		if (parser.GetOption("xegtao"))
 			params.AmbientOcclusion = GFX::AOType::XeGTAO;

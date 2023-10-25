@@ -21,6 +21,7 @@ struct PSOut
 	float4 color : SV_TARGET0;    // RGB - color, A = 0.0f
 	float2 normal : SV_TARGET1;
 	float4 specular : SV_TARGET2; // RGB - color, A - power
+	float alpha : SV_TARGET3;
 };
 
 PSOut main(float3 worldPos : POSITION,
@@ -31,22 +32,24 @@ PSOut main(float3 worldPos : POSITION,
 {
 #if defined(_USE_NORMAL) || defined(_USE_PARALLAX)
 	const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
-#ifdef _USE_PARALLAX
+#	ifdef _USE_PARALLAX
 	tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, tx_parallax, splr_AR);
 	[branch]
 	if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 		discard;
-#endif
+#	endif
 #endif
 
 	PSOut pso;
-
+	
 #ifdef _USE_TEXTURE
 	pso.color = tx_tex.Sample(splr_AR, tc);
 	clip(pso.color.a - 0.0039f);
+	pso.alpha = clamp(pso.color.a, 0.0f, 0.9f);
 	pso.color.a = 0.0f;
 #else
 	pso.color = float4(cb_material.Color.rgb, 0.0f);
+	pso.alpha = 0.0f;
 #endif
 
 #ifdef _USE_NORMAL

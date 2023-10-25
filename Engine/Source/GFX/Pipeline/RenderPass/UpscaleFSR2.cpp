@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/UpscaleFSR2.h"
-#include "GFX/Resource/Constant.h"
+#include "GFX/Pipeline/RendererPBR.h"
+#include "GFX/FfxBackendInterface.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 {
@@ -20,153 +21,81 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 
 	void Clean(Device& dev, void* data) noexcept
 	{
+		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		[[maybe_unused]] FfxErrorCode code = ffxFsr2ContextDestroy(&execData->Ctx);
-		ZE_ASSERT(code == FFX_OK, "Error destroying FSR2 context!");
-
+		ZE_FFX_CHECK(ffxFsr2ContextDestroy(&execData->Ctx), "Error destroying FSR2 context!");
 		execData->ListChain.Exec([&dev](CommandList& cl) { cl.Free(dev); });
-		execData->StatePrefilter.Free(dev);
-		execData->StateSSAO.Free(dev);
-		execData->StateDenoise.Free(dev);
-		execData->HilbertLUT.Free(dev);
 		delete execData;
 	}
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData)
+	ExecuteData* Setup(Device& dev)
 	{
+		ZE_FFX_ENABLE();
 		ExecuteData* passData = new ExecuteData;
 
 		FfxFsr2ContextDescription ctxDesc = {};
-		ctxDesc.flags = _ZE_DEBUG_GFX_API ? FFX_FSR2_ENABLE_DEBUG_CHECKING : 0;
+		ctxDesc.flags = FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE
+			| FFX_FSR2_ENABLE_AUTO_EXPOSURE | FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE
+			| (_ZE_DEBUG_GFX_API ? FFX_FSR2_ENABLE_DEBUG_CHECKING : 0);
 		ctxDesc.maxRenderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
 		ctxDesc.displaySize = { Settings::DisplaySize.X, Settings::DisplaySize.Y };
 		ctxDesc.backendInterface = dev.GetFfxInterface();
 		ctxDesc.fpMessage = MessageHandler;
-		[[maybe_unused]] FfxErrorCode code = ffxFsr2ContextCreate(&passData->Ctx, &ctxDesc);
-		ZE_ASSERT(code == FFX_OK, "Error creating FSR2 context!");
+		ZE_FFX_THROW_FAILED(ffxFsr2ContextCreate(&passData->Ctx, &ctxDesc), "Error creating FSR2 context!");
 
-		/*
-				passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, QueueType::Compute); });
+		passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, QueueType::Compute); });
 
-				// Prefilter pass
-				Binding::SchemaDesc desc;
-				desc.AddRange({ 5, 0, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
-				desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
-				desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
-				passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
-
-				Resource::Shader prefilter(dev, "SSAOPrefilterDepthCS");
-				passData->StatePrefilter.Init(dev, prefilter, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter));
-				prefilter.Free(dev);
-
-				// Main pass
-				desc.Clear();
-				desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map
-				desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
-				desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
-				desc.AddRange({ 1, 1, 5, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
-				desc.AddRange({ 1, 2, 6, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
-				desc.AddRange({ 1, 12, 1, Resource::ShaderType::Compute, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
-				desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
-				passData->BindingIndexSSAO = buildData.BindingLib.AddDataBinding(dev, desc);
-
-				Resource::Shader ssao(dev, "SSAOMainCS");
-				passData->StateSSAO.Init(dev, ssao, buildData.BindingLib.GetSchema(passData->BindingIndexSSAO));
-				ssao.Free(dev);
-
-				// Denoise passes
-				desc.Clear();
-				desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Compute, Binding::RangeFlag::Constant }); // Is last denoise
-				desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // SSAO map out
-				desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev SSAO map
-				desc.AddRange({ 1, 1, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
-				desc.Append(buildData.RendererSlots, Resource::ShaderType::Compute);
-				passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
-
-				Resource::Shader denoise(dev, "SSAODenoiseCS");
-				passData->StateDenoise.Init(dev, denoise, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise));
-				denoise.Free(dev);
-
-				// Create Hilbert look-up texture
-				Resource::Texture::PackDesc hilbertDesc;
-				std::vector<Surface> surfaces;
-				surfaces.emplace_back(XE_HILBERT_WIDTH, XE_HILBERT_WIDTH, PixelFormat::R16_UInt);
-
-				U16* buffer = reinterpret_cast<U16*>(surfaces.front().GetBuffer());
-				for (U32 x = 0; x < XE_HILBERT_WIDTH; ++x)
-					for (U32 y = 0; y < XE_HILBERT_WIDTH; ++y)
-						buffer[x + y * XE_HILBERT_WIDTH] = Utils::SafeCast<U16>(XeGTAO::HilbertIndex(x, y));
-
-				hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
-				hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
-				passData->HilbertLUT.Init(dev, hilbertDesc);
-				dev.StartUpload();
-				*/
 		return passData;
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("Upscale FSR2");
-		/*
+
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
+
+		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
+		const Data::Projection& projection = renderer.GetProjectionData();
 
 		CommandList& list = data.ListChain.Get();
 		list.Reset(dev);
-		list.Open(dev, data.StatePrefilter);
-		ZE_DRAW_TAG_BEGIN(dev, list, "SSAO", Pixel(0x89, 0xCF, 0xF0));
+		list.Open(dev);
+		ZE_DRAW_TAG_BEGIN(dev, list, "Upscale FSR2", Pixel(0xB2, 0x22, 0x22));
 
-		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
-		prefilterCtx.BindingSchema.SetCompute(list);
-		renderData.Buffers.SetUAV(list, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
-		renderData.Buffers.SetSRV(list, prefilterCtx, ids.Depth);
-		renderData.SettingsBuffer.Bind(list, prefilterCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.X, 16U), Math::DivideRoundUp(size.Y, 16U), 1);
-
-		renderData.Buffers.BarrierTransition(list, ids.ViewspaceDepth, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS);
-
-		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexSSAO) };
-		data.StateSSAO.Bind(list);
-		mainCtx.BindingSchema.SetCompute(list);
-		renderData.Buffers.SetUAV(list, mainCtx, ids.ScratchSSAO);
-		renderData.Buffers.SetUAV(list, mainCtx, ids.DepthEdges);
-		renderData.Buffers.SetSRV(list, mainCtx, ids.ViewspaceDepth);
-		renderData.Buffers.SetSRV(list, mainCtx, ids.Normal);
-		data.HilbertLUT.Bind(list, mainCtx);
-		renderData.BindRendererDynamicData(list, mainCtx);
-		renderData.SettingsBuffer.Bind(list, mainCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.X, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
-			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
-
-		renderData.Buffers.BarrierTransition(list, std::array
-		{
-			TransitionInfo(ids.ScratchSSAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-				TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-				TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-		});
-
-		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
-		data.StateDenoise.Bind(list);
-		denoiseCtx.BindingSchema.SetCompute(list);
-		Resource::Constant<U32> lastDenoise(dev, true);
-		lastDenoise.Bind(list, denoiseCtx);
-		renderData.Buffers.SetUAV(list, denoiseCtx, ids.SSAO);
-		renderData.Buffers.SetSRV(list, denoiseCtx, ids.ScratchSSAO);
-		renderData.Buffers.SetSRV(list, denoiseCtx, ids.DepthEdges);
-		renderData.SettingsBuffer.Bind(list, denoiseCtx);
-		list.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
-			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
-
-		renderData.Buffers.BarrierTransition(list, std::array
-		{
-			TransitionInfo(ids.ScratchSSAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
-				TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
-		});
+		FfxFsr2DispatchDescription desc = {};
+		desc.commandList = ffxGetCommandList(list);
+		Resource::Generic color, depth, motion, alphaMask, output;
+		desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
+		desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
+		desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);
+		desc.exposure.resource = nullptr;
+		desc.reactive = ffxGetResource(renderData.Buffers, alphaMask, ids.AlphaMask, Resource::StateShaderResourceNonPS);
+		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
+		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
+		desc.jitterOffset = { Utils::SafeCast<float>(Settings::RenderSize.X) * projection.JitterX / 2.0f, Utils::SafeCast<float>(Settings::RenderSize.Y) * projection.JitterY / -2.0f };
+		desc.motionVectorScale = { Utils::SafeCast<float>(Settings::RenderSize.X), Utils::SafeCast<float>(Settings::RenderSize.Y) };
+		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
+		desc.enableSharpening = true;
+		desc.sharpness = renderer.GetSharpness();
+		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
+		desc.preExposure = 1.0f;
+		desc.reset = false; // TODO: check conditions for that
+		desc.cameraNear = FLT_MAX;
+		desc.cameraFar = projection.NearClip;
+		desc.cameraFovAngleVertical = projection.FOV;
+		desc.viewSpaceToMetersFactor = 1.0f;
+		desc.enableAutoReactive = false;
+		desc.colorOpaqueOnly.resource = nullptr;
+		desc.autoTcThreshold = 0.05f; // Setting this value too small will cause visual instability. Larger values can cause ghosting
+		desc.autoTcScale = 1.0f; // Smaller values will increase stability at hard edges of translucent objects
+		desc.autoReactiveScale = 5.00f; // Larger values result in more reactive pixels
+		desc.autoReactiveMax = 0.90f; // Maximum value reactivity can reach
+		ZE_FFX_THROW_FAILED(ffxFsr2ContextDispatch(&data.Ctx, &desc), "Error performing FSR2!");
 
 		ZE_DRAW_TAG_END(dev, list);
 		list.Close(dev);
-		dev.ExecuteCompute(list);*/
+		dev.ExecuteCompute(list);
 	}
 }
