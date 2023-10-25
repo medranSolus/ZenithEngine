@@ -12,7 +12,7 @@ namespace ZE::RHI::DX12::Pipeline
 		D3D12_RESOURCE_DESC Desc;
 		D3D12_CLEAR_VALUE ClearVal;
 		DX::ComPtr<IResource> Resource;
-		std::bitset<7> Flags;
+		std::bitset<8> Flags;
 
 		constexpr bool IsRTV() const noexcept { return Flags[0]; }
 		constexpr bool IsDSV() const noexcept { return Flags[1]; }
@@ -22,6 +22,8 @@ namespace ZE::RHI::DX12::Pipeline
 		constexpr bool UseStencilView() const noexcept { return Flags[5]; }
 		constexpr bool IsAliasing() const noexcept { return Flags[6]; }
 		void SetAliasing() noexcept { Flags[6] = true; }
+		constexpr bool IsTemporal() const noexcept { return Flags[7]; }
+		void SetTemporal() noexcept { Flags[7] = true; }
 	};
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
@@ -33,7 +35,7 @@ namespace ZE::RHI::DX12::Pipeline
 		if (separatorPixels < 2)
 			separatorPixels = 2;
 		const U64 chunkPixels = pixelsPerLevel - separatorPixels;
-		Surface print(levelCount * pixelsPerLevel, maxChunks);
+		GFX::Surface print(levelCount * pixelsPerLevel, maxChunks);
 		for (U32 chunk = 0; chunk < maxChunks; ++chunk)
 		{
 			for (U64 level = 0; level < levelCount; ++level)
@@ -226,6 +228,7 @@ namespace ZE::RHI::DX12::Pipeline
 					rtvDsvMipsPresent = true;
 			}
 
+			// Check required flags based on lifetime
 			const auto& lifetime = desc.ResourceLifetimes.at(i);
 			for (const auto& state : lifetime)
 			{
@@ -290,10 +293,12 @@ namespace ZE::RHI::DX12::Pipeline
 
 			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
 				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
-			resourcesInfo.emplace_back(i, 0, Utils::SafeCast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
+			auto& info = resourcesInfo.emplace_back(i, 0, Utils::SafeCast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
 				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
 				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4)
 				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::StencilView) << 5));
+			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Temporal)
+				info.SetTemporal();
 
 			if (isRT)
 			{
@@ -371,7 +376,10 @@ namespace ZE::RHI::DX12::Pipeline
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
 					auto& res = resourcesInfo.at(i);
-					res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunksUAV, levelCount, invalidID, memory);
+					res.Offset = AllocResource(i, res.Chunks,
+						res.IsTemporal() ? 0 : res.StartLevel,
+						res.IsTemporal() ? levelCount : res.LastLevel,
+						maxChunksUAV, levelCount, invalidID, memory);
 				}
 
 #if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
@@ -381,7 +389,7 @@ namespace ZE::RHI::DX12::Pipeline
 				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
 				{
 					auto& res = resourcesInfo.at(i);
-					if (CheckResourceAliasing(res.Offset, res.Chunks, res.StartLevel,
+					if (!res.IsTemporal() && CheckResourceAliasing(res.Offset, res.Chunks, res.StartLevel,
 						res.LastLevel, maxChunksUAV, levelCount, invalidID, memory))
 						res.SetAliasing();
 				}
@@ -456,7 +464,10 @@ namespace ZE::RHI::DX12::Pipeline
 		for (RID i = 0; i < rt_dsCount; ++i)
 		{
 			auto& res = resourcesInfo.at(i);
-			res.Offset = AllocResource(i, res.Chunks, res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory);
+			res.Offset = AllocResource(i, res.Chunks,
+				res.IsTemporal() ? 0 : res.StartLevel,
+				res.IsTemporal() ? levelCount : res.LastLevel,
+				maxChunks, levelCount, invalidID, memory);
 		}
 
 #if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
@@ -466,7 +477,7 @@ namespace ZE::RHI::DX12::Pipeline
 		for (RID i = 0; i < rt_dsCount; ++i)
 		{
 			auto& res = resourcesInfo.at(i);
-			if (CheckResourceAliasing(res.Offset, res.Chunks,
+			if (!res.IsTemporal() && CheckResourceAliasing(res.Offset, res.Chunks,
 				res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory))
 				res.SetAliasing();
 		}
@@ -477,7 +488,7 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
 #if _ZE_DEBUG_FRAME_MEMORY_PRINT
-		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == Device::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
+		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
 #endif
 		for (U64 i = 0; i < rt_dsCount; ++i)
 		{

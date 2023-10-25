@@ -161,11 +161,19 @@ namespace ZE::GFX::Pipeline
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		RID gbuffMotion = INVALID_RID;
-		if (Settings::ComputeMotionVectors())
-			gbuffMotion = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_SNorm, ColorF4() });
+		const RID gbuffAlpha = frameBufferDesc.AddResource(
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+
+		// Temporal related resources
+		RID velocity = INVALID_RID;
+		RID prevDepth = INVALID_RID;
+		if (Settings::ComputeMotionVectors())
+		{
+			velocity = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_SNorm, ColorF4() });
+			prevDepth = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::Temporal, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
+		}
 
 		// Light buffer related resources
 		const RID lightbuffColor = frameBufferDesc.AddResource(
@@ -215,14 +223,14 @@ namespace ZE::GFX::Pipeline
 
 #pragma region Geometry
 		{
-			ZE_MAKE_NODE("lambertian", QueueType::Main, Lambertian, dev, buildData,
-				frameBufferDesc.GetFormat(gbuffDepth), frameBufferDesc.GetFormat(gbuffColor),
-				frameBufferDesc.GetFormat(gbuffNormal), frameBufferDesc.GetFormat(gbuffSpecular));
+			ZE_MAKE_NODE("lambertian", QueueType::Main, Lambertian, dev, buildData, frameBufferDesc.GetFormat(gbuffDepth),
+				frameBufferDesc.GetFormat(gbuffColor), frameBufferDesc.GetFormat(gbuffNormal),
+				frameBufferDesc.GetFormat(gbuffSpecular), frameBufferDesc.GetFormat(gbuffAlpha));
 			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
 			node.AddOutput("GB_C", Resource::StateRenderTarget, gbuffColor);
 			node.AddOutput("GB_N", Resource::StateRenderTarget, gbuffNormal);
 			node.AddOutput("GB_S", Resource::StateRenderTarget, gbuffSpecular);
-			node.AddOutput("GB_M", Resource::StateRenderTarget, gbuffMotion);
+			node.AddOutput("GB_A", Resource::StateRenderTarget, gbuffAlpha);
 			nodes.emplace_back(std::move(node));
 		}
 		if (Settings::GetAOType() != AOType::None)
@@ -348,6 +356,14 @@ namespace ZE::GFX::Pipeline
 		}
 #pragma endregion
 #pragma region Upscaling
+		if (Settings::ComputeMotionVectors())
+		{
+			ZE_MAKE_NODE("velocity", QueueType::Main, Velocity, dev, buildData, frameBufferDesc.GetFormat(velocity));
+			node.AddInput("wireframe.DS", Resource::StateShaderResourceAll);
+			node.AddOutput("MV", Resource::StateRenderTarget, velocity);
+			node.AddOutput("PrevDepth", Resource::StateShaderResourcePS, prevDepth);
+			nodes.emplace_back(std::move(node));
+		}
 		switch (Settings::GetUpscaler())
 		{
 		default:
@@ -356,13 +372,23 @@ namespace ZE::GFX::Pipeline
 			break;
 		case UpscalerType::Fsr2:
 		{
-			ZE_MAKE_NODE("upscale", QueueType::Compute, UpscaleFSR2, dev, buildData);
+			ZE_MAKE_NODE("upscale", QueueType::Compute, UpscaleFSR2, dev);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
-			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("velocity.DS", Resource::StateShaderResourceAll);
+			node.AddInput("velocity.MV", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_A", Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
+			node.AddOutput("DS", Resource::StateShaderResourceAll, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 			break;
 		}
+		}
+		if (Settings::ComputeMotionVectors())
+		{
+			RenderNode node("copyDepthTemporal", QueueType::Main, RenderPass::CopyDepthTemporal::Execute);
+			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.DS" : "wireframe.DS", Resource::StateCopySource);
+			node.AddInput("velocity.PrevDepth", Resource::StateCopyDestination);
+			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
 #pragma region Display size post process
@@ -398,7 +424,7 @@ namespace ZE::GFX::Pipeline
 		dev.EndUploadRegion();
 	}
 
-	void RendererPBR::UpdateSettingsData(Device& dev, const Data::Projection& projection)
+	void RendererPBR::UpdateSettingsData(const Data::Projection& projection) noexcept
 	{
 		currentProjectionData = projection;
 		// No need to create new projection as it's data is always changing with jitter
@@ -408,10 +434,37 @@ namespace ZE::GFX::Pipeline
 		dynamicData.NearClip = currentProjectionData.NearClip;
 	}
 
+	void RendererPBR::SetInverseViewProjection(EID camera) noexcept
+	{
+		Data::Camera& camData = GetRegistry().get<Data::Camera>(camera);
+		UpdateSettingsData(camData.Projection);
+
+		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
+		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
+			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
+				Math::XMLoadFloat3(&camData.EyeDirection),
+				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection)));
+	}
+
 	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
 	{
 		ZE_ASSERT((GetRegistry().all_of<Data::TransformGlobal, Data::Camera>(camera)),
 			"Current camera does not have all required components!");
+
+		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
+		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
+		cameraRotation = transform.Rotation;
+
+		// Setup shader world data
+		dynamicData.CameraPos = transform.Position;
+		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
+			Math::XMLoadFloat3(&currentCamera.EyeDirection),
+			Math::XMLoadFloat3(&currentCamera.UpVector));
+
+		dynamicData.PrevViewProjection = dynamicData.ViewProjection;
+		dynamicData.PrevViewProjectionInverse = dynamicData.ViewProjectionInverse;
+		dynamicData.PrevJitterX = currentProjectionData.JitterX;
+		dynamicData.PrevJitterY = currentProjectionData.JitterY;
 
 		Matrix projection;
 		if (Settings::ApplyJitter())
@@ -423,19 +476,13 @@ namespace ZE::GFX::Pipeline
 		else
 			projection = Math::XMLoadFloat4x4(&currentProjection);
 
-		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
-		cameraRotation = transform.Rotation;
+		dynamicData.JitterX = currentProjectionData.JitterX;
+		dynamicData.JitterY = currentProjectionData.JitterY;
 
-		// Setup shader world data
-		dynamicData.CameraPos = transform.Position;
-		const auto& currentCamera = GetRegistry().get<Data::Camera>(camera);
-		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
-			Math::XMLoadFloat3(&currentCamera.EyeDirection),
-			Math::XMLoadFloat3(&currentCamera.UpVector));
 		dynamicData.ViewProjection = dynamicData.View * projection;
+		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 
 		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
-		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
 	}
 

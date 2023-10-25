@@ -14,7 +14,9 @@ namespace ZE::GFX::Pipeline
 		// Cannot be used together with ForceDSV
 		SimultaneousAccess = 8,
 		// When creating SRV over depth stencil choose to use stencil instead of depth
-		StencilView = 16
+		StencilView = 16,
+		// Resource have to preserve it's content's over the frame
+		Temporal = 32
 	};
 
 	// Description of single resource in FrameBuffer

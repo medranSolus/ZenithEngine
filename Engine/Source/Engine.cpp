@@ -48,6 +48,12 @@ namespace ZE
 		}
 	}
 
+	void Engine::Start(EID camera) noexcept
+	{
+		prevTime = Perf::Get().GetNow();
+		renderer.SetInverseViewProjection(camera);
+	}
+
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
 	{
 		ZE_PERF_START("Frame");

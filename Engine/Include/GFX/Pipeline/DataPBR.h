@@ -43,9 +43,15 @@ namespace ZE::GFX::Pipeline
 	{
 		Matrix View;
 		Matrix ViewProjection;
+		Matrix PrevViewProjection;
 		Matrix ViewProjectionInverse;
+		Matrix PrevViewProjectionInverse;
 		Float3 CameraPos;
 		float NearClip;
+		float JitterX;
+		float JitterY;
+		float PrevJitterX;
+		float PrevJitterY;
 	};
 #pragma pack(pop)
 }

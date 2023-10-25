@@ -24,5 +24,6 @@ namespace ZE::GFX::Binding
 		void AddSampler(Resource::SamplerDesc&& sampler) noexcept { Samplers.emplace_back(std::forward<Resource::SamplerDesc>(sampler)); }
 
 		void Append(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept;
+		void AppendSamplers(const SchemaDesc& binding) noexcept;
 	};
 }

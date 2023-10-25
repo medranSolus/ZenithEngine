@@ -20,6 +20,11 @@ namespace ZE::GFX::Binding
 				}
 			}
 		}
+		AppendSamplers(binding);
+	}
+
+	void SchemaDesc::AppendSamplers(const SchemaDesc& binding) noexcept
+	{
 		Samplers.reserve(Samplers.size() + binding.Samplers.size());
 		Samplers.insert(Samplers.end(), binding.Samplers.begin(), binding.Samplers.end());
 	}

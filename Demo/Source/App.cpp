@@ -474,7 +474,7 @@ void App::ShowObjectWindow()
 					ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f"));
 
 				if (selected == currentCamera && change)
-					engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), camera.Projection);
+					engine.Reneder().UpdateSettingsData(camera.Projection);
 			}
 			ImGui::EndChild();
 		}
@@ -718,16 +718,13 @@ App::App(const CmdParser& params)
 	}
 	engine.Gfx().GetDevice().StartUpload();
 	engine.Gfx().GetDevice().EndUploadRegion();
-
-	Data::Camera& camData = engine.GetData().get<Data::Camera>(currentCamera);
-	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(), camData.Projection);
 }
 
 int App::Run()
 {
 	constexpr double DELTA_TIME = 0.01;
 
-	engine.SetStartTime();
+	engine.Start(currentCamera);
 	double accumulator = 0.0;
 	while (run)
 	{

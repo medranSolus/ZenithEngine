@@ -6,9 +6,13 @@ struct WorldData
 {
 	matrix View;
 	matrix ViewProjection;
+	matrix PrevViewProjection;
 	matrix ViewProjectionInverse;
+	matrix PrevViewProjectionInverse;
 	float3 CameraPos;
 	float NearClip;
+	float2 Jitter;
+	float2 PrevJitter;
 };
 CBUFFER_GLOBAL(worldData, WorldData, 12, 1);
 

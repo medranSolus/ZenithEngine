@@ -50,7 +50,8 @@ namespace ZE::GFX::Pipeline
 		void Init(Device& dev, CommandList& mainList, const ParamsPBR& params);
 
 		// Need to be called when data in parameters changed (also after creation of renderer)
-		void UpdateSettingsData(Device& dev, const Data::Projection& projection);
+		void UpdateSettingsData(const Data::Projection& projection) noexcept;
+		void SetInverseViewProjection(EID camera) noexcept;
 		// Need to be called before ending every frame
 		void UpdateWorldData(Device& dev, EID camera) noexcept;
 		void ShowWindow(Device& dev);

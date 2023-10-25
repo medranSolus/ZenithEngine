@@ -33,10 +33,10 @@ namespace ZE
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }
 
-		void SetStartTime() noexcept { prevTime = Perf::Get().GetNow(); }
-
 		// Initialization method that must be called before using engine
 		void Init(const EngineParams& params);
+		// Need to be called before starting first frame
+		void Start(EID camera) noexcept;
 		// Returns number of update steps that have to be taken by simulations multiplied by delta time
 		double BeginFrame(double deltaTime, U64 maxUpdateSteps);
 		void EndFrame();
