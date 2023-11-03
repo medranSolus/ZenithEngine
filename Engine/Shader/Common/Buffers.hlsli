@@ -3,30 +3,36 @@
 #ifndef BUFFERS_HLSLI
 #define BUFFERS_HLSLI
 
+// API agnostic macros used for proper expansion of any passed arguments from macros, not to be used directly
+#ifdef _DX11
+#	define _CONSTANT_EX(name, dataType, slot, spaceSlot) cbuffer dataType##Constant : register(b##slot) { dataType ct_##name; }
+#	define _CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot) { dataType cb_##name; }
+#	define _TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot)
+#	define _UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot)
+#elif defined(_DX12)
+#	define _CONSTANT_EX(name, dataType, slot, spaceSlot) cbuffer dataType##Constant : register(b##slot, space##spaceSlot) { dataType ct_##name; }
+#	define _CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot, space##spaceSlot) { dataType cb_##name; }
+#	define _TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot)
+#	define _UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot)
+#elif defined(_VK)
+#	define _CONSTANT_EX(name, dataType, slot, spaceSlot) [[vk::push_constant]] dataType ct_##name
+#	define _CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot, space##rangeSlot) { dataType cb_##name; }
+#	define _TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot, space##rangeSlot)
+#	define _UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot, space##rangeSlot)
+#else
+#	error Wrong type of graphics API used!
+#endif
+
 // API agnostic macro for accessed buffers
 // All names are given corresponding prefixes:
 // - Constant: ct_
 // - CBuffer: cb_
 // - Texture: tx_
 // - UAV: ua_
-#ifdef _DX11
-#	define CONSTANT_EX(name, dataType, slot, spaceSlot) cbuffer dataType##Constant : register(b##slot) { dataType ct_##name; }
-#	define CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot) { dataType cb_##name; }
-#	define TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot)
-#	define UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot)
-#elif defined(_DX12)
-#	define CONSTANT_EX(name, dataType, slot, spaceSlot) cbuffer dataType##Constant : register(b##slot, space##spaceSlot) { dataType ct_##name; }
-#	define CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot, space##spaceSlot) { dataType cb_##name; }
-#	define TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot)
-#	define UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot)
-#elif defined(_VK)
-#	define CONSTANT_EX(name, dataType, slot, spaceSlot) [[vk::push_constant]] dataType ct_##name
-#	define CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) cbuffer dataType##Buffer : register(b##slot, space##rangeSlot) { dataType cb_##name; }
-#	define TEXTURE_EX(name, texType, slot, rangeSlot) texType tx_##name : register(t##slot, space##rangeSlot)
-#	define UAV_EX(name, uavType, slot, rangeSlot) uavType ua_##name : register(u##slot, space##rangeSlot)
-#else
-#	error Wrong type of graphics API used!
-#endif
+#define CONSTANT_EX(name, dataType, slot, spaceSlot) _CONSTANT_EX(name, dataType, slot, spaceSlot)
+#define CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot) _CBUFFER_EX(name, dataType, slot, rangeSlot, spaceSlot)
+#define TEXTURE_EX(name, texType, slot, rangeSlot) _TEXTURE_EX(name, texType, slot, rangeSlot)
+#define UAV_EX(name, uavType, slot, rangeSlot) _UAV_EX(name, uavType, slot, rangeSlot)
 
 // Global CBuffer accessible from multiple shader types
 #define CBUFFER_GLOBAL(name, dataType, slot, rangeSlot) CBUFFER_EX(name, dataType, slot, rangeSlot, 0)
