@@ -1,4 +1,0 @@
-#define FFX_PREFER_WAVE64
-#define _CACAO_NORMAL_TILE
-#define _CACAO_GENERATE_METHOD FFX_CACAO_GenerateQ2
-#include "CACAO/CACAOGenerateQ0CS.hlsl"

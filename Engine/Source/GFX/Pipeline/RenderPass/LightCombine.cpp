@@ -32,11 +32,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;
-		psoDesc.SetShader(dev, psoDesc.PS, "LightCombinePS", buildData.ShaderCache);
-		ZE_PSO_SET_NAME(psoDesc, "LightCombineNoAO");
+		psoDesc.SetShader(dev, psoDesc.PS, "LightCombinePS_A", buildData.ShaderCache);
+		ZE_PSO_SET_NAME(psoDesc, "LightCombinePS_A");
 		passData->StateAO.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndexAO));
 
-		psoDesc.SetShader(dev, psoDesc.PS, "LightCombineNoAOPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "LightCombinePS", buildData.ShaderCache);
 		ZE_PSO_SET_NAME(psoDesc, "LightCombine");
 		passData->StateNoAO.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndexNoAO));
 

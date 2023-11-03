@@ -5,6 +5,82 @@
 set(SHADER_TARGET "Shaders")
 setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} ${SHADER_FLAGS})
 
+# Add permutations
+add_shader_permutation("CACAOApplyCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOApplyNonSmartCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOApplyNonSmartHalfCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOBlur1CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur1CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur2CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur2CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur3CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur3CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur4CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur4CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur5CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur5CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur6CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur6CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur7CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur7CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlur8CS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlur8CS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOGenerateQ0CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOGenerateQ1CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOGenerateQ2CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOGenerateQ3CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOGenerateQ3BaseCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOImportanceMapGenerateCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOImportanceMapProcessACS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOImportanceMapProcessBCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOPrepareDepthCS" "_CACAO_PREPARE_DEPTH_HALF:F")
+add_shader_permutation("CACAOPrepareDepthCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareDepthCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOPrepareDepthMipsCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareDepthMipsCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOPrepareNormalsCS" "_CACAO_PREPARE_NORMALS_INPUT:I")
+add_shader_permutation("CACAOPrepareNormalsCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareNormalsCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("CACAOUpscaleCS" "FFX_CACAO_OPTION_APPLY_SMART=1:S")
+add_shader_permutation("CACAOUpscaleCS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOUpscaleCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_APPLY_SHARPENING=1:S")
+add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE=1:L")
+add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
+add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
+add_shader_permutation("FSR2AccumulateCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2AccumulateCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2AutoReactiveCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR2AutoReactiveCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2AutoReactiveCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2LuminancePyramidCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2LuminancePyramidCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2RCasCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2RCasCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("PhongPS" "_USE_TEXTURE:T")
+add_shader_permutation("PhongPS" "_USE_NORMAL:N")
+add_shader_permutation("PhongPS" "_USE_SPECULAR:S")
+add_shader_permutation("PhongPS" "_USE_PARALLAX:P")
+
+add_shader_permutation("ShadowPS" "_USE_TEXTURE:T")
+add_shader_permutation("ShadowPS" "_USE_NORMAL:N")
+add_shader_permutation("ShadowPS" "_USE_PARALLAX:P")
+
+add_shader_permutation("LightCombinePS" "_LIGHT_COMBINE_AO:A")
+
 # Shader compilation
 add_shader_type(VS)
 add_shader_type(GS)
