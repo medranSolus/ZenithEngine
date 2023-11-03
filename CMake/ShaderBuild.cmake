@@ -2,6 +2,7 @@ include_guard(DIRECTORY)
 
 # Order of macros calls:
 #   setup_shader - for creation of variables
+#   add_shader_permutation - add any required shader permutations
 #   add_shader_type - multiple calls for each wanted shader type
 #   add_shader_target - final call wrapping all previous rules
 
@@ -11,6 +12,8 @@ include_guard(DIRECTORY)
 #   BIN_DIR = binary directory
 #   FLAGS = flags used for compilation
 macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
+    set(SD_LIST "")
+    set(SD_DIR_TARGET "GenerateShaderOutDir")
     set(SD_CSO_DIR "${BIN_DIR}/Shaders")
     set(SD_DIR "${SHADER_DIR}/Shader")
     set(SD_INC_DIR "${SD_DIR}/Common")
@@ -23,8 +26,19 @@ macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
     else()
         message(FATAL_ERROR "Unsupporder platform for shader compiling!")
     endif()
+    foreach(API IN LISTS SD_APIS)
+        file(MAKE_DIRECTORY "${SD_CSO_DIR}/${API}")
+    endforeach()
 endmacro()
  
+# Add permutation to given shader
+#   SHADER = name of the shader without extension
+#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX"
+# Every given permutation will result in passed define into shader with additional suffix added to name
+macro(add_shader_permutation SHADER PERMUTATION)
+    list(APPEND ${SHADER}_PERMUTATIONS "${PERMUTATION}")
+endmacro()
+
 # Creates commands for shader compilation
 #   SD_TYPE = prefix type of shader (VS, GS, PS, CS)
 macro(add_shader_type SD_TYPE)
@@ -69,11 +83,10 @@ macro(add_shader_type SD_TYPE)
         foreach(SD IN LISTS ${SD_TYPE}_SRC_LIST)
             get_filename_component(SD_NAME ${SD} NAME_WE)
             set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.${SD_EXT}")
-            list(APPEND SD_LIST ${SD_OUT})
-            add_custom_command(OUTPUT ${SD_OUT}
-                COMMAND "${SD_COMPILER}" ${SD_FLAGS} ${API_FLAGS} /T ${${SD_TYPE}_TYPE_FLAG} /I "${${SD_TYPE}_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
-                MAIN_DEPENDENCY "${SD}"
-                DEPENDS "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${SD_COMPILER}" VERBATIM)
+            _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${SD_OUT}" "${SD_NAME}.${SD_EXT}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
+              
+            _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
+                "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
         endforeach()
     endforeach()
 endmacro()
@@ -81,5 +94,62 @@ endmacro()
 # Create target containing rules for all shaders
 #   SD_TARGET = name of target to create
 macro(add_shader_target SD_TARGET)
-    add_custom_target(${SD_TARGET} ALL DEPENDS ${SD_LIST} VERBATIM)
+    add_custom_target(${SD_TARGET} DEPENDS ${SD_LIST} VERBATIM)
 endmacro()
+
+# Internal function for compiling shader
+function(_add_shader_compile_command SD_COMPILER SD SD_OUT SD_TARGET SD_FLAGS SHADER_MODEL SD_TYPE SD_TYPE_INC_DIR SD_INC_DIR SD_TYPE_INC_LIST SD_INC_LIST API)
+    set(SD_LIST "${SD_LIST};${SD_TARGET}" PARENT_SCOPE)
+    add_custom_command(OUTPUT "${SD_OUT}"
+        COMMAND "${SD_COMPILER}"
+        ARGS ${SD_FLAGS} /T ${SHADER_MODEL} /I "${SD_TYPE_INC_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
+        DEPENDS "${SD}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}"
+        COMMENT "Compiling ${API} shader: ${SD_TARGET}" VERBATIM)
+    add_custom_target("${SD_TARGET}" ALL
+        DEPENDS "${SD_COMPILER}"
+        SOURCES "${SD_OUT}" VERBATIM)
+endfunction()
+
+# Internal function for compiling shader permutations
+function(_compile_shader_permutations OUT_DIR SD_NAME SD_EXT PERMUTATIONS CURRENT_NAME CURRENT_PERMUTATIONS CURRENT_MASK CURRENT_FLAGS INNER_CALL
+    SD_COMPILER SD SD_FLAGS SHADER_MODEL SD_TYPE SD_TYPE_INC_DIR SD_INC_DIR SD_TYPE_INC_LIST SD_INC_LIST API)
+    # Only traverse when there are any perumutations
+    list(LENGTH PERMUTATIONS LIST_LEN)
+    if(NOT (${LIST_LEN} EQUAL 0))
+        # Don't add new permutation on first call since it's default one
+        if(${INNER_CALL})
+            set(PERM_OUT "${OUT_DIR}/${CURRENT_NAME}.${SD_EXT}")
+            _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${PERM_OUT}" "${CURRENT_NAME}.${SD_EXT}" "${SD_FLAGS}${CURRENT_FLAGS}" "${SHADER_MODEL}" "${SD_TYPE}" "${SD_TYPE_INC_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+        endif()
+        # Go through all permutation variants
+        foreach(PERM IN LISTS CURRENT_PERMUTATIONS)
+            # Only proceed when there is correct formatting in the permutation
+            string(FIND "${PERM}" ":" POS REVERSE)
+            if (NOT (${POS} EQUAL -1))
+                # Get shader define part and resulting suffix
+                string(SUBSTRING "${PERM}" 0 "${POS}" PERM_DEFINE)
+                math(EXPR POS "${POS}+1")
+                string(SUBSTRING "${PERM}" "${POS}" -1 PERM_SUFFIX)
+
+                # Copy list before passing into deeper level and remove current permutation
+                set(INNER_PERM ${CURRENT_PERMUTATIONS})
+                list(REMOVE_ITEM INNER_PERM "${PERM}")
+                list(FIND PERMUTATIONS "${PERM}" CURRENT_POS)
+
+                # Set mask for visited perumtations based on position inside the original list
+                math(EXPR NEW_MASK "${CURRENT_MASK} | (1 << ${CURRENT_POS})")
+                get_source_file_property(VISITED "${SD}" "${NEW_MASK}${SD_EXT}")
+                if(${VISITED} EQUAL NOTFOUND)
+                    set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" FALSE)
+                endif()
+
+                # Only visit when given permutation has not been found yet (ignore duplicates)
+                if(NOT ${VISITED})
+                    set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" TRUE)
+                    _compile_shader_permutations("${OUT_DIR}" "${SD_NAME}" "${SD_EXT}" "${PERMUTATIONS}" "${CURRENT_NAME}${PERM_SUFFIX}" "${INNER_PERM}" "${NEW_MASK}" "${CURRENT_FLAGS};/D${PERM_DEFINE}" TRUE
+                        "${SD_COMPILER}" "${SD}" "${SD_FLAGS}" "${SHADER_MODEL}" "${SD_TYPE}" "${SD_TYPE_INC_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+endfunction()
