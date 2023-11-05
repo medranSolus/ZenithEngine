@@ -137,27 +137,26 @@ namespace ZE::GFX::FFX
 			|| pass == FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS_FROM_INPUT_NORMALS;
 
 		auto getPreparePermutation = [](bool normalsInput, bool half, bool downsampled, bool wave64) -> std::string
-		{
-			std::string suffix = "";
-			if (normalsInput || half || downsampled || wave64)
 			{
-				suffix = "_";
-				if (normalsInput)
-					suffix += "I";
-				if (half)
-					suffix += "F";
-				if (downsampled)
-					suffix += "D";
-				if (wave64)
-					suffix += "W";
-			}
-			return suffix;
-		};
+				std::string suffix = "";
+				if (normalsInput || half || downsampled || wave64)
+				{
+					suffix = "_";
+					if (normalsInput)
+						suffix += "I";
+					if (half)
+						suffix += "F";
+					if (downsampled)
+						suffix += "D";
+					if (wave64)
+						suffix += "W";
+				}
+				return suffix;
+			};
 
 		bool applyNonSmart = false;
 		bool half = false;
 		bool inputNormals = false;
-		bool isQ3Base = false;
 		switch (pass)
 		{
 		case FFX_CACAO_PASS_CLEAR_LOAD_COUNTER:
@@ -263,7 +262,7 @@ namespace ZE::GFX::FFX
 			static const char* samplerNames[] = { "g_PointClampSampler" };
 			static const U32 samplerSlots[] = { 0 };
 			static const U32 samplerCounts[] = { 1 };
-			FfxShaderBlob BLOB =
+			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -275,19 +274,17 @@ namespace ZE::GFX::FFX
 				samplerNames, samplerSlots, samplerCounts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
-			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
 				shader->Init(dev, "CACAOPrepareNormalsCS" + getPreparePermutation(inputNormals, false, prepareDownsampled, wave64));
 			break;
 		}
-		case FFX_CACAO_PASS_GENERATE_Q3_BASE:
-			isQ3Base = true;
-			[[fallthrough]];
 		case FFX_CACAO_PASS_GENERATE_Q0:
 		case FFX_CACAO_PASS_GENERATE_Q1:
 		case FFX_CACAO_PASS_GENERATE_Q2:
 		case FFX_CACAO_PASS_GENERATE_Q3:
+		case FFX_CACAO_PASS_GENERATE_Q3_BASE:
 		{
 			static const char* srvNames[] = { "g_DeinterleavedDepth", "g_DeinterleavedNormals", "g_LoadCounter", "g_SsaoBufferPong", "g_ImportanceMap" };
 			static const U32 srvSlots[] = { 0, 1, 2, 3, 4 };
@@ -298,10 +295,12 @@ namespace ZE::GFX::FFX
 			static const char* samplerNames[] = { "g_PointMirrorSampler", "g_LinearClampSampler", "g_ViewspaceDepthTapSampler" };
 			static const U32 samplerSlots[] = { 1, 2, 3 };
 			static const U32 samplerCounts[] = { 1, 1, 1 };
-			FfxShaderBlob blob =
+
+			const U8 generateVersion = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_GENERATE_Q0);
+			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
-				1, isQ3Base ? 5U : 2U, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, generateVersion == 3 ? 5U : 2U, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, cbvSlots, cbvCounts, // CBV
 				srvNames, srvSlots, srvCounts, // SRV tex
 				uavNames, uavSlots, uavCounts, // UAV tex
@@ -315,14 +314,13 @@ namespace ZE::GFX::FFX
 			if (shader)
 			{
 				std::string name = "CACAOGenerateCS";
-				const U8 generateVersion = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_GENERATE_Q0);
 				if (generateVersion > 1 || wave64)
 				{
 					name += "_";
 					if (generateVersion > 1)
 					{
 						name += "Q";
-						if (isQ3Base)
+						if (generateVersion == 4)
 							name += "3B";
 						else
 							name += std::to_string(generateVersion);
@@ -583,30 +581,30 @@ namespace ZE::GFX::FFX
 
 		auto getPermutation = [](bool depthInverted, bool sharpen, bool lut, bool lowResMotionVectors,
 			bool jitteredMotionVectors, bool hdr, bool fp16, bool wave64) -> std::string
-		{
-			std::string suffix = "";
-			if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
 			{
-				suffix = "_";
-				if (depthInverted)
-					suffix += "I";
-				if (sharpen)
-					suffix += "S";
-				if (lut)
-					suffix += "L";
-				if (lowResMotionVectors)
-					suffix += "R";
-				if (jitteredMotionVectors)
-					suffix += "J";
-				if (hdr)
-					suffix += "D";
-				if (fp16)
-					suffix += "H";
-				if (wave64)
-					suffix += "W";
-			}
-			return suffix;
-		};
+				std::string suffix = "";
+				if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
+				{
+					suffix = "_";
+					if (depthInverted)
+						suffix += "I";
+					if (sharpen)
+						suffix += "S";
+					if (lut)
+						suffix += "L";
+					if (lowResMotionVectors)
+						suffix += "R";
+					if (jitteredMotionVectors)
+						suffix += "J";
+					if (hdr)
+						suffix += "D";
+					if (fp16)
+						suffix += "H";
+					if (wave64)
+						suffix += "W";
+				}
+				return suffix;
+			};
 
 		switch (pass)
 		{
@@ -640,7 +638,7 @@ namespace ZE::GFX::FFX
 			static const char* samplerNames[] = { "s_LinearClamp" };
 			static const U32 samplerSlots[] = { 2 };
 			static const U32 samplerCounts[] = { 1 };
-			FfxShaderBlob blob =
+			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
 				1, 8 + static_cast<U32>(lut), 4 + static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
