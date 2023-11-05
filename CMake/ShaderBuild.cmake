@@ -33,7 +33,7 @@ endmacro()
  
 # Add permutation to given shader
 #   SHADER = name of the shader without extension
-#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX"
+#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX" or "DEFINE_OPT1:SUFFIX1|DEFINE_OPT2:SUFFIX2" when multi-value permutation is needed
 # Every given permutation will result in passed define into shader with additional suffix added to name
 macro(add_shader_permutation SHADER PERMUTATION)
     list(APPEND ${SHADER}_PERMUTATIONS "${PERMUTATION}")
@@ -84,8 +84,10 @@ macro(add_shader_type SD_TYPE)
             get_filename_component(SD_NAME ${SD} NAME_WE)
             set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.${SD_EXT}")
             _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${SD_OUT}" "${SD_NAME}.${SD_EXT}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
-              
-            _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
+            
+            # Flatten whole original list of permutations into for correct mask indexing
+            string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATIONS}")
+            _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
                 "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
         endforeach()
     endforeach()
@@ -123,33 +125,40 @@ function(_compile_shader_permutations OUT_DIR SD_NAME SD_EXT PERMUTATIONS CURREN
         endif()
         # Go through all permutation variants
         foreach(PERM IN LISTS CURRENT_PERMUTATIONS)
-            # Only proceed when there is correct formatting in the permutation
-            string(FIND "${PERM}" ":" POS REVERSE)
-            if (NOT (${POS} EQUAL -1))
-                # Get shader define part and resulting suffix
-                string(SUBSTRING "${PERM}" 0 "${POS}" PERM_DEFINE)
-                math(EXPR POS "${POS}+1")
-                string(SUBSTRING "${PERM}" "${POS}" -1 PERM_SUFFIX)
+            # Copy list before passing into deeper level and remove current permutation
+            set(INNER_PERM ${CURRENT_PERMUTATIONS})
+            list(REMOVE_ITEM INNER_PERM "${PERM}")
+            
+            # Go over every mutli-value permutation (or just one if not present)
+            string(REPLACE "|" ";" PERM_LIST "${PERM}")
+            list(LENGTH PERM_LIST PERM_LIST_LEN)
+            foreach(PERM_ELEMENT IN LISTS PERM_LIST)
+                # Only proceed when there is correct formatting in the permutation
+                string(FIND "${PERM_ELEMENT}" ":" POS REVERSE)
+                if (NOT (${POS} EQUAL -1))
+                    # Set mask for visited permutations based on position inside the original list
+                    list(FIND PERMUTATIONS "${PERM_ELEMENT}" CURRENT_POS)
+                    math(EXPR NEW_MASK "${CURRENT_MASK} | (1 << ${CURRENT_POS})")
+                    get_source_file_property(VISITED "${SD}" "${NEW_MASK}${SD_EXT}")
+                    if(${VISITED} EQUAL NOTFOUND)
+                        set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" FALSE)
+                    endif()
 
-                # Copy list before passing into deeper level and remove current permutation
-                set(INNER_PERM ${CURRENT_PERMUTATIONS})
-                list(REMOVE_ITEM INNER_PERM "${PERM}")
-                list(FIND PERMUTATIONS "${PERM}" CURRENT_POS)
+                    # Only visit when given permutation has not been found yet (ignore duplicates)
+                    if(NOT ${VISITED})
+                        set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" TRUE)
 
-                # Set mask for visited perumtations based on position inside the original list
-                math(EXPR NEW_MASK "${CURRENT_MASK} | (1 << ${CURRENT_POS})")
-                get_source_file_property(VISITED "${SD}" "${NEW_MASK}${SD_EXT}")
-                if(${VISITED} EQUAL NOTFOUND)
-                    set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" FALSE)
+                        # Get shader define part and resulting suffix
+                        string(SUBSTRING "${PERM_ELEMENT}" 0 "${POS}" PERM_DEFINE)
+                        math(EXPR POS "${POS} + 1")
+                        string(SUBSTRING "${PERM_ELEMENT}" "${POS}" -1 PERM_SUFFIX)
+
+                        # Process other permutations
+                        _compile_shader_permutations("${OUT_DIR}" "${SD_NAME}" "${SD_EXT}" "${PERMUTATIONS}" "${CURRENT_NAME}${PERM_SUFFIX}" "${INNER_PERM}" "${NEW_MASK}" "${CURRENT_FLAGS};/D${PERM_DEFINE}" TRUE
+                            "${SD_COMPILER}" "${SD}" "${SD_FLAGS}" "${SHADER_MODEL}" "${SD_TYPE}" "${SD_TYPE_INC_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+                    endif()
                 endif()
-
-                # Only visit when given permutation has not been found yet (ignore duplicates)
-                if(NOT ${VISITED})
-                    set_source_files_properties("${SD}" PROPERTIES "${NEW_MASK}${SD_EXT}" TRUE)
-                    _compile_shader_permutations("${OUT_DIR}" "${SD_NAME}" "${SD_EXT}" "${PERMUTATIONS}" "${CURRENT_NAME}${PERM_SUFFIX}" "${INNER_PERM}" "${NEW_MASK}" "${CURRENT_FLAGS};/D${PERM_DEFINE}" TRUE
-                        "${SD_COMPILER}" "${SD}" "${SD_FLAGS}" "${SHADER_MODEL}" "${SD_TYPE}" "${SD_TYPE_INC_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
-                endif()
-            endif()
+            endforeach()
         endforeach()
     endif()
 endfunction()

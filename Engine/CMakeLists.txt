@@ -6,32 +6,26 @@ set(SHADER_TARGET "Shaders")
 setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} ${SHADER_FLAGS})
 
 # Add permutations
+add_shader_permutation("CACAOApplyCS" "_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartApply:NS|_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartHalfApply:NSF")
 add_shader_permutation("CACAOApplyCS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOApplyNonSmartCS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOApplyNonSmartHalfCS" "FFX_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOBlur1CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur1CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur2CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur2CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur3CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur3CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur4CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur4CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur5CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur5CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur6CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur6CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur7CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur7CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOBlur8CS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlur8CS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOBlurCS"
+"_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur2:2\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur3:3\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur4:4\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur5:5\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur6:6\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur7:7\
+|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur8:8")
+add_shader_permutation("CACAOBlurCS" "FFX_HALF=1:H")
+add_shader_permutation("CACAOBlurCS" "FFX_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOGenerateQ0CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOGenerateQ1CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOGenerateQ2CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOGenerateQ3CS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOGenerateQ3BaseCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOGenerateCS"
+"_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ1:Q1\
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ2:Q2\
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3:Q3\
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3Base:Q3B")
+add_shader_permutation("CACAOGenerateCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOImportanceMapGenerateCS" "FFX_PREFER_WAVE64:W")
 add_shader_permutation("CACAOImportanceMapProcessACS" "FFX_PREFER_WAVE64:W")

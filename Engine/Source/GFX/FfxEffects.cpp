@@ -137,22 +137,22 @@ namespace ZE::GFX::FFX
 			|| pass == FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS_FROM_INPUT_NORMALS;
 
 		auto getPreparePermutation = [](bool normalsInput, bool half, bool downsampled, bool wave64) -> std::string
+		{
+			std::string suffix = "";
+			if (normalsInput || half || downsampled || wave64)
 			{
-				std::string suffix = "";
-				if (normalsInput || half || downsampled || wave64)
-				{
-					suffix = "_";
-					if (normalsInput)
-						suffix += "I";
-					if (half)
-						suffix += "F";
-					if (downsampled)
-						suffix += "D";
-					if (wave64)
-						suffix += "W";
-				}
-				return suffix;
-			};
+				suffix = "_";
+				if (normalsInput)
+					suffix += "I";
+				if (half)
+					suffix += "F";
+				if (downsampled)
+					suffix += "D";
+				if (wave64)
+					suffix += "W";
+			}
+			return suffix;
+		};
 
 		bool applyNonSmart = false;
 		bool half = false;
@@ -314,10 +314,23 @@ namespace ZE::GFX::FFX
 
 			if (shader)
 			{
-				if (isQ3Base)
-					shader->Init(dev, "CACAOGenerateQ3BaseCS" + GetGeneralPermutation(false, wave64));
-				else
-					shader->Init(dev, "CACAOGenerateQ" + std::to_string(pass - FFX_CACAO_PASS_GENERATE_Q0) + "CS" + GetGeneralPermutation(false, wave64));
+				std::string name = "CACAOGenerateCS";
+				const U8 generateVersion = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_GENERATE_Q0);
+				if (generateVersion > 1 || wave64)
+				{
+					name += "_";
+					if (generateVersion > 1)
+					{
+						name += "Q";
+						if (isQ3Base)
+							name += "3B";
+						else
+							name += std::to_string(generateVersion);
+					}
+					if (wave64)
+						name += "W";
+				}
+				shader->Init(dev, name);
 			}
 			break;
 		}
@@ -441,7 +454,21 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(dev, "CACAOBlur" + std::to_string(pass - FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_1 + 1) + "CS" + GetGeneralPermutation(fp16, wave64));
+			{
+				std::string name = "CACAOBlurCS";
+				const U8 blurCount = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_1 + 1);
+				if (blurCount > 1 || fp16 || wave64)
+				{
+					name += "_";
+					if (blurCount > 1)
+						name += std::to_string(blurCount);
+					if (fp16)
+						name += "H";
+					if (wave64)
+						name += "W";
+				}
+				shader->Init(dev, name);
+			}
 			break;
 		}
 		case FFX_CACAO_PASS_APPLY_NON_SMART_HALF:
@@ -477,10 +504,20 @@ namespace ZE::GFX::FFX
 
 			if (shader)
 			{
-				if (applyNonSmart)
-					shader->Init(dev, (half ? "CACAOApplyNonSmartHalfCS" : "CACAOApplyNonSmartCS") + GetGeneralPermutation(false, wave64));
-				else
-					shader->Init(dev, "CACAOApplyCS" + GetGeneralPermutation(false, wave64));
+				std::string name = "CACAOApplyCS";
+				if (applyNonSmart || wave64)
+				{
+					name += "_";
+					if (applyNonSmart)
+					{
+						name += "NS";
+						if (half)
+							name += "F";
+					}
+					if (wave64)
+						name += "W";
+				}
+				shader->Init(dev, name);
 			}
 			break;
 		}
@@ -510,7 +547,20 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(dev, (upscaleSmartApply ? "CACAOUpscaleCS_S" : "CACAOUpscaleCS") + GetGeneralPermutation(fp16, wave64));
+			{
+				std::string name = "CACAOUpscaleCS";
+				if (upscaleSmartApply || fp16 || wave64)
+				{
+					name += "_";
+					if (upscaleSmartApply)
+						name += "S";
+					if (fp16)
+						name += "H";
+					if (wave64)
+						name += "W";
+				}
+				shader->Init(dev, name);
+			}
 			break;
 		}
 		default:
@@ -533,30 +583,30 @@ namespace ZE::GFX::FFX
 
 		auto getPermutation = [](bool depthInverted, bool sharpen, bool lut, bool lowResMotionVectors,
 			bool jitteredMotionVectors, bool hdr, bool fp16, bool wave64) -> std::string
+		{
+			std::string suffix = "";
+			if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
 			{
-				std::string suffix = "";
-				if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
-				{
-					suffix = "_";
-					if (depthInverted)
-						suffix += "I";
-					if (sharpen)
-						suffix += "S";
-					if (lut)
-						suffix += "L";
-					if (lowResMotionVectors)
-						suffix += "R";
-					if (jitteredMotionVectors)
-						suffix += "J";
-					if (hdr)
-						suffix += "D";
-					if (fp16)
-						suffix += "H";
-					if (wave64)
-						suffix += "W";
-				}
-				return suffix;
-			};
+				suffix = "_";
+				if (depthInverted)
+					suffix += "I";
+				if (sharpen)
+					suffix += "S";
+				if (lut)
+					suffix += "L";
+				if (lowResMotionVectors)
+					suffix += "R";
+				if (jitteredMotionVectors)
+					suffix += "J";
+				if (hdr)
+					suffix += "D";
+				if (fp16)
+					suffix += "H";
+				if (wave64)
+					suffix += "W";
+			}
+			return suffix;
+		};
 
 		switch (pass)
 		{

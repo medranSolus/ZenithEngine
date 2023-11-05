@@ -25,8 +25,8 @@ FfxFloat32x3 FFX_CACAO_SSAOGeneration_GetNormalPass(const in FfxUInt32x2 coord, 
 	return tx_deinterleavedNormals[FfxInt32x3(coord, passId)].xyz;
 }
 
-#ifdef _CACAO_ADDITIONAL_RESOURCES
-#define ZE_CACAO_CB_RANGE 6
+#if defined(_CACAO_GENERATE_METHOD) && _CACAO_GENERATE_METHOD == FFX_CACAO_GenerateQ3
+#	define ZE_CACAO_CB_RANGE 6
 
 TEXTURE_EX(loadCounter, Texture1D<FfxUInt32> , 2, 3);
 TEXTURE_EX(pong, Texture2DArray<FfxFloat32x2>, 3, 4);
@@ -47,7 +47,7 @@ FfxFloat32 FFX_CACAO_SSAOGeneration_SampleImportance(const in FfxFloat32x2 uv)
 	return tx_importanceMap.SampleLevel(splr_LinearClamp, uv, 0.0f);
 }
 #else
-#define ZE_CACAO_CB_RANGE 3
+#	define ZE_CACAO_CB_RANGE 3
 
 // Stubs not used in this shader version
 FfxUInt32 FFX_CACAO_SSAOGeneration_GetLoadCounter() { return 0; }
@@ -60,12 +60,12 @@ FfxFloat32 FFX_CACAO_SSAOGeneration_SampleImportance(const in FfxFloat32x2 uv) {
 #ifndef _CACAO_GENERATE_METHOD
 #	define _CACAO_GENERATE_METHOD FFX_CACAO_GenerateQ0
 #endif
-#ifndef _CACAO_NORMAL_TILE
-#	define THREAD_WIDTH FFX_CACAO_GENERATE_SPARSE_WIDTH
-#	define THREAD_HEIGHT FFX_CACAO_GENERATE_SPARSE_HEIGHT
-#else
+#if _CACAO_GENERATE_METHOD == FFX_CACAO_GenerateQ0 || _CACAO_GENERATE_METHOD == FFX_CACAO_GenerateQ1
 #	define THREAD_WIDTH FFX_CACAO_GENERATE_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_GENERATE_HEIGHT
+#else
+#	define THREAD_WIDTH FFX_CACAO_GENERATE_SPARSE_WIDTH
+#	define THREAD_HEIGHT FFX_CACAO_GENERATE_SPARSE_HEIGHT
 #endif
 
 FFX_PREFER_WAVE64
