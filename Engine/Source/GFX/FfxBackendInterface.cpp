@@ -313,8 +313,12 @@ namespace ZE::GFX
 			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
 			const ResID id = GetResID(resource.internalIndex);
 
-			ctx.Resources.get<Resource::Generic>(id).Free(GetDevice(backendInterface));
-			ctx.Resources.destroy(id);
+			// Due to different handling of internal resources sometimes there can be request to delete resource that is not present (eg. FSR2 copy resources)
+			if (ctx.Resources.valid(id))
+			{
+				ctx.Resources.get<Resource::Generic>(id).Free(GetDevice(backendInterface));
+				ctx.Resources.destroy(id);
+			}
 		}
 		return FFX_OK;
 	}

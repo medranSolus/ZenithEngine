@@ -70,9 +70,16 @@ namespace ZE::GFX::FFX
 		{
 			switch (passId)
 			{
-			case FFX_FSR2_PASS_DEPTH_CLIP: // TODO
-			case FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH: // TODO
-			case FFX_FSR2_PASS_LOCK: // TODO
+			case FFX_FSR2_PASS_DEPTH_CLIP:
+				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED
+					| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+				break;
+			case FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH:
+				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT
+					| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+				break;
+			case FFX_FSR2_PASS_LOCK:
+				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
 				break;
 			case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
 				permutationOptions |= FSR2_SHADER_PERMUTATION_ENABLE_SHARPENING; // Indicate that sharpening will always happen here
@@ -82,11 +89,12 @@ namespace ZE::GFX::FFX
 					| FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT | FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS
 					| FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
 				break;
-			case FFX_FSR2_PASS_RCAS:
 			case FFX_FSR2_PASS_COMPUTE_LUMINANCE_PYRAMID:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16;
+				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64;
 				break;
-			case FFX_FSR2_PASS_GENERATE_REACTIVE: // TODO
+			case FFX_FSR2_PASS_RCAS:
+			case FFX_FSR2_PASS_GENERATE_REACTIVE:
+				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16;
 				break;
 			case FFX_FSR2_PASS_TCR_AUTOGENERATE:
 				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
@@ -124,8 +132,17 @@ namespace ZE::GFX::FFX
 	FfxErrorCode GetShaderInfoCACAO(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
 	{
 		static const char* cbvNames[] = { "SSAOConstantsBuffer_t" };
-		static const U32 cbvSlots[] = { 0 };
-		static const U32 cbvCounts[] = { 1 };
+		static const char* samplerNames[] = { "g_PointClampSampler", "g_PointMirrorSampler", "g_LinearClampSampler", "g_ViewspaceDepthTapSampler" };
+		static const U32 slots[] = { 0, 1, 2, 3, 4 };
+		static const U32 counts[] = { 1, 1, 1, 1, 1 };
+		static constexpr const char** POINT_CLAMP_SAMPLER_NAME = samplerNames;
+		static constexpr const char** POINT_MIRROR_SAMPLER_NAME = samplerNames + 1;
+		static constexpr const char** LINEAR_CLAMP_SAMPLER_NAME = samplerNames + 2;
+		static constexpr const char** GENERATE_SAMPLER_NAMES = samplerNames + 1;
+		static constexpr const U32* POINT_CLAMP_SAMPLER_SLOT = slots;
+		static constexpr const U32* POINT_MIRROR_SAMPLER_SLOT = slots + 1;
+		static constexpr const U32* LINEAR_CLAMP_SAMPLER_SLOT = slots + 2;
+		static constexpr const U32* GENERATE_SAMPLER_SLOTS = slots + 1;
 
 		const bool fp16 = permutationOptions & CACAO_SHADER_PERMUTATION_ALLOW_FP16;
 		const bool wave64 = permutationOptions & CACAO_SHADER_PERMUTATION_FORCE_WAVE64;
@@ -162,15 +179,13 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_CLEAR_LOAD_COUNTER:
 		{
 			static const char* uavNames[] = { "g_RwLoadCounter" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				0, 0, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				nullptr, nullptr, nullptr, // CBV
 				nullptr, nullptr, nullptr, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, // Samplers
@@ -189,24 +204,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS:
 		{
 			static const char* srvNames[] = { "g_DepthIn" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwDeinterleavedDepth" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointClampSampler" };
-			static const U32 samplerSlots[] = { 0 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -219,24 +227,18 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS_AND_MIPS:
 		{
 			static const char* srvNames[] = { "g_DepthIn" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwDepthMips" };
-			static const U32 uavSlots[] = { 0 };
 			static const U32 uavCounts[] = { 4 };
-			static const char* samplerNames[] = { "g_PointClampSampler" };
-			static const U32 samplerSlots[] = { 0 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, uavCounts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -254,24 +256,17 @@ namespace ZE::GFX::FFX
 		{
 			static const char* srvNames[] = { "g_DepthIn" };
 			static const char* srvNamesInputNormals[] = { "g_NormalIn" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwDeinterleavedNormals" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointClampSampler" };
-			static const U32 samplerSlots[] = { 0 };
-			static const U32 samplerCounts[] = { 1 };
 			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				inputNormals ? srvNamesInputNormals : srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				inputNormals ? srvNamesInputNormals : srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -287,26 +282,19 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_GENERATE_Q3_BASE:
 		{
 			static const char* srvNames[] = { "g_DeinterleavedDepth", "g_DeinterleavedNormals", "g_LoadCounter", "g_SsaoBufferPong", "g_ImportanceMap" };
-			static const U32 srvSlots[] = { 0, 1, 2, 3, 4 };
-			static const U32 srvCounts[] = { 1, 1, 1, 1, 1 };
 			static const char* uavNames[] = { "g_RwSsaoBufferPing" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointMirrorSampler", "g_LinearClampSampler", "g_ViewspaceDepthTapSampler" };
-			static const U32 samplerSlots[] = { 1, 2, 3 };
-			static const U32 samplerCounts[] = { 1, 1, 1 };
 
 			const U8 generateVersion = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_GENERATE_Q0);
 			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
 				1, generateVersion == 3 ? 5U : 2U, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				GENERATE_SAMPLER_NAMES, GENERATE_SAMPLER_SLOTS, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -314,10 +302,10 @@ namespace ZE::GFX::FFX
 			if (shader)
 			{
 				std::string name = "CACAOGenerateCS";
-				if (generateVersion > 1 || wave64)
+				if (generateVersion > 0 || wave64)
 				{
 					name += "_";
-					if (generateVersion > 1)
+					if (generateVersion > 0)
 					{
 						name += "Q";
 						if (generateVersion == 4)
@@ -335,24 +323,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_GENERATE_IMPORTANCE_MAP:
 		{
 			static const char* srvNames[] = { "g_SsaoBufferPong" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwImportanceMap" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointClampSampler" };
-			static const U32 samplerSlots[] = { 0 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -364,24 +345,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_POST_PROCESS_IMPORTANCE_MAP_A:
 		{
 			static const char* srvNames[] = { "g_ImportanceMap" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwImportanceMapPong" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_LinearClampSampler" };
-			static const U32 samplerSlots[] = { 2 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -393,24 +367,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_POST_PROCESS_IMPORTANCE_MAP_B:
 		{
 			static const char* srvNames[] = { "g_ImportanceMapPong" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwLoadCounter", "g_RwImportanceMap" };
-			static const U32 uavSlots[] = { 0, 1 };
-			static const U32 uavCounts[] = { 1, 1 };
-			static const char* samplerNames[] = { "g_LinearClampSampler" };
-			static const U32 samplerSlots[] = { 2 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -429,24 +396,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_8:
 		{
 			static const char* srvNames[] = { "g_SsaoBufferPing" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwSsaoBufferPong" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointMirrorSampler" };
-			static const U32 samplerSlots[] = { 1 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				POINT_MIRROR_SAMPLER_NAME, POINT_MIRROR_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -478,24 +438,17 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_APPLY:
 		{
 			static const char* srvNames[] = { "g_SsaoBufferPing" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "g_RwOutput" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_LinearClampSampler" };
-			static const U32 samplerSlots[] = { 2 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -522,24 +475,19 @@ namespace ZE::GFX::FFX
 		case FFX_CACAO_PASS_UPSCALE_BILATERAL_5X5:
 		{
 			static const char* srvNames[] = { "g_DepthIn", "g_DeinterleavedDepth", "g_SsaoBufferPing" };
-			static const U32 srvSlots[] = { 0, 1, 2 };
-			static const U32 srvCounts[] = { 1, 1, 1 };
 			static const char* uavNames[] = { "g_RwOutput" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
-			static const char* samplerNames[] = { "g_PointClampSampler", "g_LinearClampSampler" };
-			static const U32 samplerSlots[] = { 0, 2 };
-			static const U32 samplerCounts[] = { 1, 1 };
+			static const char* splrNames[] = { "g_PointClampSampler", "g_LinearClampSampler" };
+			static const U32 splrSlots[] = { 0, 2 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 3, 1, 0, 0, 2, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				splrNames, splrSlots, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -570,6 +518,12 @@ namespace ZE::GFX::FFX
 
 	FfxErrorCode GetShaderInfoFSR2(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
 	{
+		static const char* samplerNames[] = { "s_LinearClamp" };
+		static const char* cbvNamesReactive[] = { "cbFSR2", "cbGenerateReactive" };
+		static const U32 slots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+		static constexpr const U32* SAMPLER_SLOT = slots;
+
 		const bool depthInverted = permutationOptions & FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
 		const bool sharpen = permutationOptions & FSR2_SHADER_PERMUTATION_ENABLE_SHARPENING;
 		const bool lut = permutationOptions & FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE;
@@ -610,44 +564,88 @@ namespace ZE::GFX::FFX
 		{
 		case FFX_FSR2_PASS_DEPTH_CLIP:
 		{
+			static const char* srvNames[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_input_exposure", "r_reactive_mask", "r_transparency_and_composition_mask", "r_reconstructed_previous_nearest_depth", "r_dilated_motion_vectors", "r_previous_dilated_motion_vectors", "r_dilatedDepth", "r_input_depth" };
+			static const char* uavNames[] = { "rw_prepared_input_color", "rw_dilated_reactive_masks" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 10, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNamesReactive, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR2DepthClipCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, false, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH:
 		{
+			static const char* srvNames[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_input_depth", "r_input_exposure" };
+			static const char* uavNames[] = { "rw_reconstructed_previous_nearest_depth", "rw_dilated_motion_vectors", "rw_dilatedDepth", "rw_lock_input_luma" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 4, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNamesReactive, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR2ReconstructPrevDepthCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_LOCK:
 		{
+			static const char* srvNames[] = { "r_lock_input_luma" };
+			static const char* uavNames[] = { "rw_reconstructed_previous_nearest_depth", "rw_new_locks" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNamesReactive, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR2LockCS" + getPermutation(depthInverted, false, false, false, false, false, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_ACCUMULATE:
 		case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
 		{
-			static const char* cbvNames[] = { "cbFSR2" };
-			static const U32 cbvSlots[] = { 0 };
-			static const U32 cbvCounts[] = { 1 };
 			static const char* srvNames[] = { "r_input_exposure", "r_dilated_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks" };
 			static const char* srvNamesLut[] = { "r_input_exposure", "r_dilated_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks", "r_lanczos_lut" };
 			static const char* srvNamesLowRes[] = { "r_input_exposure", "r_input_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks" };
 			static const char* srvNamesLowResLut[] = { "r_input_exposure", "r_input_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks", "r_lanczos_lut" };
-			static const U32 srvSlots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-			static const U32 srvCounts[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 			static const char* uavNames[] = { "rw_internal_upscaled_color", "rw_lock_status", "rw_new_locks", "rw_luma_history", "rw_upscaled_output" };
-			static const U32 uavSlots[] = { 0, 1, 2, 3, 4 };
-			static const U32 uavCounts[] = { 1, 1, 1, 1, 1 };
-			static const char* samplerNames[] = { "s_LinearClamp" };
-			static const U32 samplerSlots[] = { 2 };
-			static const U32 samplerCounts[] = { 1 };
 			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
 				1, 8 + static_cast<U32>(lut), 4 + static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				lut ? (lowResMotionVectors ? srvNamesLowResLut : srvNamesLut) : (lowResMotionVectors ? srvNamesLowRes : srvNames) , srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNamesReactive, slots, counts, // CBV
+				lut ? (lowResMotionVectors ? srvNamesLowResLut : srvNamesLut) : (lowResMotionVectors ? srvNamesLowRes : srvNames), slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -659,21 +657,15 @@ namespace ZE::GFX::FFX
 		case FFX_FSR2_PASS_RCAS:
 		{
 			static const char* cbvNames[] = { "cbFSR2", "cbRCAS" };
-			static const U32 cbvSlots[] = { 0, 1 };
-			static const U32 cbvCounts[] = { 1, 1 };
 			static const char* srvNames[] = { "r_input_exposure", "r_rcas_input" };
-			static const U32 srvSlots[] = { 0, 1 };
-			static const U32 srvCounts[] = { 1, 1 };
 			static const char* uavNames[] = { "rw_upscaled_output" };
-			static const U32 uavSlots[] = { 0 };
-			static const U32 uavCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, // Samplers
@@ -688,57 +680,37 @@ namespace ZE::GFX::FFX
 		case FFX_FSR2_PASS_COMPUTE_LUMINANCE_PYRAMID:
 		{
 			static const char* cbvNames[] = { "cbFSR2", "cbSPD" };
-			static const U32 cbvSlots[] = { 0, 1 };
-			static const U32 cbvCounts[] = { 1, 1 };
 			static const char* srvNames[] = { "r_input_color_jittered" };
-			static const U32 srvSlots[] = { 0 };
-			static const U32 srvCounts[] = { 1 };
 			static const char* uavNames[] = { "rw_img_mip_shading_change", "rw_img_mip_5", "rw_auto_exposure", "rw_spd_global_atomic" };
-			static const U32 uavSlots[] = { 0, 1, 2, 3 };
-			static const U32 uavCounts[] = { 1, 1, 1, 1 };
-			static const char* samplerNames[] = { "s_LinearClamp" };
-			static const U32 samplerSlots[] = { 2 };
-			static const U32 samplerCounts[] = { 1 };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 1, 4, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, samplerSlots, samplerCounts, // Samplers
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
 				nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(dev, "FSR2LuminancePyramidCS" + GetGeneralPermutation(fp16, wave64));
+				shader->Init(dev, "FSR2LuminancePyramidCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_GENERATE_REACTIVE:
 		{
-			break;
-		}
-		case FFX_FSR2_PASS_TCR_AUTOGENERATE:
-		{
-			static const char* cbvNames[] = { "cbFSR2", "cbGenerateReactive" };
-			static const U32 cbvSlots[] = { 0, 1 };
-			static const U32 cbvCounts[] = { 1, 1 };
-			static const char* srvNames[] = { "r_input_color_jittered", "r_input_opaque_only", "r_input_motion_vectors", "r_reactive_mask", "r_transparency_and_composition_mask", "r_input_prev_color_pre_alpha", "r_input_prev_color_post_alpha" };
-			static const U32 srvSlots[] = { 0, 1, 2, 3, 4, 5, 6 };
-			static const U32 srvCounts[] = { 1, 1, 1, 1, 1, 1, 1 };
-			static const char* uavNames[] = { "rw_output_autoreactive", "rw_output_autocomposition", "rw_output_prev_color_pre_alpha", "rw_output_prev_color_post_alpha" };
-			static const U32 uavSlots[] = { 0, 1, 2, 3 };
-			static const U32 uavCounts[] = { 1, 1, 1, 1, };
+			static const char* srvNames[] = { "r_input_color_jittered", "r_input_opaque_only" };
+			static const char* uavNames[] = { "rw_output_autoreactive" };
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
-				2, 7, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, cbvSlots, cbvCounts, // CBV
-				srvNames, srvSlots, srvCounts, // SRV tex
-				uavNames, uavSlots, uavCounts, // UAV tex
+				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNamesReactive, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
 				nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, // Samplers
@@ -747,7 +719,29 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(dev, "FSR2AutoReactiveCS" + getPermutation(false, false, false, false, jitteredMotionVectors, false, fp16, wave64));
+				shader->Init(dev, "FSR2GenerateReactiveCS" + GetGeneralPermutation(fp16, wave64));
+			break;
+		}
+		case FFX_FSR2_PASS_TCR_AUTOGENERATE:
+		{
+			static const char* srvNames[] = { "r_input_color_jittered", "r_input_opaque_only", "r_input_motion_vectors", "r_reactive_mask", "r_transparency_and_composition_mask", "r_input_prev_color_pre_alpha", "r_input_prev_color_post_alpha" };
+			static const char* uavNames[] = { "rw_output_autoreactive", "rw_output_autocomposition", "rw_output_prev_color_pre_alpha", "rw_output_prev_color_post_alpha" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				2, 7, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNamesReactive, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR2GenerateTCRCS" + getPermutation(false, false, false, false, jitteredMotionVectors, false, fp16, wave64));
 			break;
 		}
 		default:

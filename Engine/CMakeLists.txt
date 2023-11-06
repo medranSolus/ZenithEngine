@@ -71,7 +71,6 @@ add_shader_permutation("FSR2LockCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
 add_shader_permutation("FSR2LockCS" "FFX_HALF=1:H")
 add_shader_permutation("FSR2LockCS" "FFX_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2LuminancePyramidCS" "FFX_HALF=1:H")
 add_shader_permutation("FSR2LuminancePyramidCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2RCasCS" "FFX_HALF=1:H")
