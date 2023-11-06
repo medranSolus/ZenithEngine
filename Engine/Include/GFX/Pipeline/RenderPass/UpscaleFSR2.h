@@ -19,7 +19,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 	struct ExecuteData
 	{
 		FfxFsr2Context Ctx;
-		ChainPool<CommandList> ListChain;
 	};
 
 	void Clean(Device& dev, void* data) noexcept;

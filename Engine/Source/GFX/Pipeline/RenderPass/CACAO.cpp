@@ -48,7 +48,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 		FfxCacaoSettings& settings = renderer.GetCacaoSettings();
 		settings.temporalSupersamplingAngleOffset = Math::PI * Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) / 3.0f;
-		settings.temporalSupersamplingRadiusOffset = 1.0f + 0.1f * (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 3.0f;
+		settings.temporalSupersamplingRadiusOffset = 1.0f + (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 30.0f;
 		ZE_FFX_CHECK(ffxCacaoUpdateSettings(&data.Ctx, &settings, false), "Error updating CACAO settings!");
 
 		FfxCacaoDispatchDescription desc = {};

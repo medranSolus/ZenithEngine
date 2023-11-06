@@ -24,7 +24,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		ZE_FFX_CHECK(ffxFsr2ContextDestroy(&execData->Ctx), "Error destroying FSR2 context!");
-		execData->ListChain.Exec([&dev](CommandList& cl) { cl.Free(dev); });
 		delete execData;
 	}
 
@@ -43,8 +42,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		ctxDesc.fpMessage = MessageHandler;
 		ZE_FFX_THROW_FAILED(ffxFsr2ContextCreate(&passData->Ctx, &ctxDesc), "Error creating FSR2 context!");
 
-		passData->ListChain.Exec([&dev](auto& x) { x.Init(dev, QueueType::Compute); });
-
 		return passData;
 	}
 
@@ -59,16 +56,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const Data::Projection& projection = renderer.GetProjectionData();
 
-		CommandList& list = data.ListChain.Get();
-		list.Reset(dev);
-		list.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, list, "Upscale FSR2", Pixel(0xB2, 0x22, 0x22));
+		cl.Open(dev);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale FSR2", Pixel(0xB2, 0x22, 0x22));
 
 		FfxFsr2DispatchDescription desc = {};
-		desc.commandList = ffxGetCommandList(list);
+		desc.commandList = ffxGetCommandList(cl);
 		Resource::Generic color, depth, motion, alphaMask, output;
 		desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
-		desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
+		desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceAll);
 		desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);
 		desc.exposure.resource = nullptr;
 		desc.reactive = ffxGetResource(renderData.Buffers, alphaMask, ids.AlphaMask, Resource::StateShaderResourceNonPS);
@@ -94,8 +89,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.autoReactiveMax = 0.90f; // Maximum value reactivity can reach
 		ZE_FFX_THROW_FAILED(ffxFsr2ContextDispatch(&data.Ctx, &desc), "Error performing FSR2!");
 
-		ZE_DRAW_TAG_END(dev, list);
-		list.Close(dev);
-		dev.ExecuteCompute(list);
+		ZE_DRAW_TAG_END(dev, cl);
+		cl.Close(dev);
+		dev.ExecuteMain(cl);
 	}
 }

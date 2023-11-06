@@ -617,7 +617,7 @@ App::App(const CmdParser& params)
 	engine.Gfx().GetDevice().BeginUploadRegion();
 	if (params.GetOption("cubePerfTest"))
 	{
-		currentCamera = AddCamera("Main camera", 0.01f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 
 		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
 
@@ -691,7 +691,7 @@ App::App(const CmdParser& params)
 	else
 	{
 		// Sample Scene
-		currentCamera = AddCamera("Main camera", 0.01f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 
 		AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
 		AddModel("Nanosuit", { 0.0f, -8.2f, 6.0f }, Math::NoRotationAngles(), 0.7f, "Models/nanosuit/nanosuit.obj");

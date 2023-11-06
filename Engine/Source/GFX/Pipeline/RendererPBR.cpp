@@ -114,7 +114,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	constexpr void RendererPBR::SetupSSAOData(U32 width, U32 height) noexcept
+	constexpr void RendererPBR::SetupSSAOData() noexcept
 	{
 		switch (Settings::GetAOType())
 		{
@@ -155,14 +155,14 @@ namespace ZE::GFX::Pipeline
 			gbuffDepthCompute = frameBufferDesc.AddResource(
 				{ Settings::RenderSize, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 		}
+		const RID gbuffAlpha = frameBufferDesc.AddResource(
+			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		const RID gbuffSpecular = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
-		const RID gbuffAlpha = frameBufferDesc.AddResource(
-			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 
@@ -171,7 +171,7 @@ namespace ZE::GFX::Pipeline
 		RID prevDepth = INVALID_RID;
 		if (Settings::ComputeMotionVectors())
 		{
-			velocity = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_SNorm, ColorF4() });
+			velocity = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 			prevDepth = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::Temporal, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 		}
 
@@ -189,7 +189,7 @@ namespace ZE::GFX::Pipeline
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		RID upscaledScene = rawScene;
 		if (Settings::GetUpscaler() != UpscalerType::None)
-			upscaledScene = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, Settings::BackbufferFormat, ColorF4() });
+			upscaledScene = frameBufferDesc.AddResource({ Settings::DisplaySize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 
 		// Outline related resources
 		const RID outline = frameBufferDesc.AddResource(
@@ -215,7 +215,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
-		SetupSSAOData(Settings::RenderSize.X, Settings::RenderSize.Y);
+		SetupSSAOData();
 
 		dev.BeginUploadRegion();
 		execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
@@ -350,7 +350,7 @@ namespace ZE::GFX::Pipeline
 				frameBufferDesc.GetFormat(rawScene), frameBufferDesc.GetFormat(gbuffDepth));
 			node.AddInput("skybox.RT", Resource::StateRenderTarget);
 			node.AddInput("skybox.DS", Resource::StateDepthWrite);
-			node.AddOutput("RT", Resource::StateRenderTarget, upscaledScene);
+			node.AddOutput("RT", Resource::StateRenderTarget, rawScene);
 			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 		}
@@ -360,6 +360,7 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE("velocity", QueueType::Main, Velocity, dev, buildData, frameBufferDesc.GetFormat(velocity));
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceAll);
+			node.AddOutput("DS", Resource::StateShaderResourceAll, gbuffDepth);
 			node.AddOutput("MV", Resource::StateRenderTarget, velocity);
 			node.AddOutput("PrevDepth", Resource::StateShaderResourcePS, prevDepth);
 			nodes.emplace_back(std::move(node));
@@ -372,7 +373,7 @@ namespace ZE::GFX::Pipeline
 			break;
 		case UpscalerType::Fsr2:
 		{
-			ZE_MAKE_NODE("upscale", QueueType::Compute, UpscaleFSR2, dev);
+			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddInput("velocity.DS", Resource::StateShaderResourceAll);
 			node.AddInput("velocity.MV", Resource::StateShaderResourceNonPS);

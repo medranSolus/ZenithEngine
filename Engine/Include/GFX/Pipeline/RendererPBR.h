@@ -32,7 +32,7 @@ namespace ZE::GFX::Pipeline
 		constexpr void SetupBlurIntensity() noexcept;
 		constexpr void SetupBlurData(U32 width, U32 height) noexcept;
 		constexpr void SetupXeGTAOQuality() noexcept;
-		constexpr void SetupSSAOData(U32 width, U32 height) noexcept;
+		constexpr void SetupSSAOData() noexcept;
 
 	public:
 		RendererPBR() noexcept : RenderGraph(this, &settingsData, &dynamicData, sizeof(CameraPBR)), ssaoSettings({}) {}
