@@ -22,9 +22,9 @@ add_shader_permutation("CACAOBlurCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOGenerateCS"
 "_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ1:Q1\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ2:Q2\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3:Q3\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3Base:Q3B")
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ2,_CACAO_NORMAL_DIMMENSIONS:Q2\
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3,_CACAO_NORMAL_DIMMENSIONS,_CACAO_ADDITIONAL_INPUT:Q3\
+|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3Base,_CACAO_NORMAL_DIMMENSIONS:Q3B")
 add_shader_permutation("CACAOGenerateCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOImportanceMapGenerateCS" "FFX_PREFER_WAVE64:W")
@@ -46,6 +46,12 @@ add_shader_permutation("CACAOUpscaleCS" "FFX_CACAO_OPTION_APPLY_SMART=1:S")
 add_shader_permutation("CACAOUpscaleCS" "FFX_HALF=1:H")
 add_shader_permutation("CACAOUpscaleCS" "FFX_PREFER_WAVE64:W")
 
+add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
+add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
+add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR2DepthClipCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2DepthClipCS" "FFX_PREFER_WAVE64:W")
+
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_APPLY_SHARPENING=1:S")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE=1:L")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
@@ -54,15 +60,29 @@ add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
 add_shader_permutation("FSR2AccumulateCS" "FFX_HALF=1:H")
 add_shader_permutation("FSR2AccumulateCS" "FFX_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2AutoReactiveCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
-add_shader_permutation("FSR2AutoReactiveCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2AutoReactiveCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2GenerateReactiveCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2GenerateReactiveCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2GenerateTCRCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR2GenerateTCRCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2GenerateTCRCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2LockCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
+add_shader_permutation("FSR2LockCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2LockCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2LuminancePyramidCS" "FFX_HALF=1:H")
 add_shader_permutation("FSR2LuminancePyramidCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2RCasCS" "FFX_HALF=1:H")
 add_shader_permutation("FSR2RCasCS" "FFX_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_HALF=1:H")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_PREFER_WAVE64:W")
 
 add_shader_permutation("PhongPS" "_USE_TEXTURE:T")
 add_shader_permutation("PhongPS" "_USE_NORMAL:N")

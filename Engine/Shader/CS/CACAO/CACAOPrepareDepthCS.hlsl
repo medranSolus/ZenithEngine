@@ -44,17 +44,17 @@ void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt3
 #	define THREAD_WIDTH FFX_CACAO_PREPARE_DEPTHS_HALF_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_PREPARE_DEPTHS_HALF_HEIGHT
 #	ifdef _CACAO_PREPARE_DOWNSAMPLED
-#		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepths
+#		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepthsHalf
 #	else
-#		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepths
+#		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepthsHalf
 #	endif
 #else
 #	define THREAD_WIDTH FFX_CACAO_PREPARE_DEPTHS_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_PREPARE_DEPTHS_HEIGHT
 #	ifdef _CACAO_PREPARE_DOWNSAMPLED
-#		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepthsHalf
+#		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepths
 #	else
-#		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepthsHalf
+#		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepths
 #	endif
 #endif
 

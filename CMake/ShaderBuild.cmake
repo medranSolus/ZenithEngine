@@ -33,7 +33,7 @@ endmacro()
  
 # Add permutation to given shader
 #   SHADER = name of the shader without extension
-#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX" or "DEFINE_OPT1:SUFFIX1|DEFINE_OPT2:SUFFIX2" when multi-value permutation is needed
+#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX" or "DEFINE_OPT1_1,DEFINE_OPT1_2=VAL:SUFFIX1|DEFINE_OPT2:SUFFIX2" when multi-value permutation is needed
 # Every given permutation will result in passed define into shader with additional suffix added to name
 macro(add_shader_permutation SHADER PERMUTATION)
     list(APPEND ${SHADER}_PERMUTATIONS "${PERMUTATION}")
@@ -150,11 +150,12 @@ function(_compile_shader_permutations OUT_DIR SD_NAME SD_EXT PERMUTATIONS CURREN
 
                         # Get shader define part and resulting suffix
                         string(SUBSTRING "${PERM_ELEMENT}" 0 "${POS}" PERM_DEFINE)
+                        string(REPLACE "," ";/D" PERM_DEFINE_LIST "${PERM_DEFINE}")
                         math(EXPR POS "${POS} + 1")
                         string(SUBSTRING "${PERM_ELEMENT}" "${POS}" -1 PERM_SUFFIX)
 
                         # Process other permutations
-                        _compile_shader_permutations("${OUT_DIR}" "${SD_NAME}" "${SD_EXT}" "${PERMUTATIONS}" "${CURRENT_NAME}${PERM_SUFFIX}" "${INNER_PERM}" "${NEW_MASK}" "${CURRENT_FLAGS};/D${PERM_DEFINE}" TRUE
+                        _compile_shader_permutations("${OUT_DIR}" "${SD_NAME}" "${SD_EXT}" "${PERMUTATIONS}" "${CURRENT_NAME}${PERM_SUFFIX}" "${INNER_PERM}" "${NEW_MASK}" "${CURRENT_FLAGS};/D${PERM_DEFINE_LIST}" TRUE
                             "${SD_COMPILER}" "${SD}" "${SD_FLAGS}" "${SHADER_MODEL}" "${SD_TYPE}" "${SD_TYPE_INC_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
                     endif()
                 endif()
