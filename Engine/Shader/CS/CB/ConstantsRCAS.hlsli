@@ -3,13 +3,13 @@
 #include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
 
-// To correctly use this cbuffer, define 'ZE_AUTO_RCAS_CB_RANGE' to indicate binding range used for constant buffer
+// To correctly use this cbuffer, define 'ZE_RCAS_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsRCAS
 {
 	FfxUInt32x4 rcasConfig;
 };
 
-CBUFFER(rcasConsts, ConstantsRCAS, 1, ZE_AUTO_RCAS_CB_RANGE);
+CBUFFER(rcasConsts, ConstantsRCAS, 1, ZE_RCAS_CB_RANGE);
 
 FfxUInt32x4 RCASConfig()
 {

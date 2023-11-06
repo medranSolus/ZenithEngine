@@ -3,7 +3,7 @@
 #include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
 
-// To correctly use this cbuffer, define 'ZE_AUTO_REACTIVE_CB_RANGE' to indicate binding range used for constant buffer
+// To correctly use this cbuffer, define 'ZE_REACTIVE_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsReactive
 {
 	FfxFloat32 gen_reactive_scale;
@@ -12,7 +12,7 @@ struct ConstantsReactive
 	FfxUInt32 gen_reactive_flags;
 };
 
-CBUFFER(reactiveConsts, ConstantsReactive, 0, ZE_AUTO_REACTIVE_CB_RANGE);
+CBUFFER(reactiveConsts, ConstantsReactive, 0, ZE_REACTIVE_CB_RANGE);
 
 FfxFloat32 GenReactiveScale()
 {

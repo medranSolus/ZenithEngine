@@ -23,7 +23,7 @@ UAV2D(lumaHistory, FfxFloat32x4, 3, 3);
 #	define REACTIVE_MASK_RANGE 12
 #	define LANCZOS_RANGE 13
 
-UAV2D(upscaledOutput, FfxFloat32x4, 4, 4);
+UAV2D(upscaledOutput, float4, 4, 4); // External resource format
 
 void StoreUpscaledOutput(const in FfxUInt32x2 pxCoord, const in FfxFloat32x3 color)
 {
@@ -53,7 +53,7 @@ TEXTURE_EX(imgMips, Texture2D<FfxFloat32>, 6, IMG_MIPS_RANGE);
 TEXTURE_EX(dilatedReactiveMask, Texture2D<unorm FfxFloat32x2>, 7, REACTIVE_MASK_RANGE);
 
 #if FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS
-TEXTURE_EX(motionVectors, Texture2D<FfxFloat32x4>, 1, MOTION_VECTORS_RANGE);
+TEXTURE_EX(motionVectors, Texture2D<float2>, 1, MOTION_VECTORS_RANGE); // External resource format
 
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos)
 {

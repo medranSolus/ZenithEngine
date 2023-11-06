@@ -48,11 +48,4 @@
 #define FFX_FSR2_OPTION_REPROJECT_SAMPLERS_USE_DATA_HALF 1
 #define FFX_FSR2_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
 
-// Common samplers
-SamplerState splr_PointClamp : register(s0);
-SamplerState splr_PointMirror : register(s1);
-SamplerState splr_LinearClamp : register(s2);
-SamplerState splr_ViewspaceDepthTap : register(s3);
-SamplerState splr_RealPointClamp : register(s4);
-
 #endif // FFX_CS_HLSLI

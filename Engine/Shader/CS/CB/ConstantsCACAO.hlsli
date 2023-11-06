@@ -2,6 +2,8 @@
 #define CONSTANTS_CACAO_CS_HLSLI
 #include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
+#define _CACAO
+#include "Utils/FfxSamplers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_CACAO_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsCACAO

@@ -1,11 +1,11 @@
 #define ZE_FSR2_CB_RANGE 3
-#define ZE_AUTO_RCAS_CB_RANGE 4
+#define ZE_RCAS_CB_RANGE 4
 #include "CB/ConstantsFSR2.hlsli"
 #include "CB/ConstantsRCAS.hlsli"
 
-UAV2D(upscaled, FfxFloat32x4, 0, 0);
-TEXTURE_EX(rcasInput, Texture2D<FfxFloat32x4>, 0, 1);
-TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 1, 2);
+UAV2D(upscaled, float4, 0, 0); // External resource format
+TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 0, 1);
+TEXTURE_EX(rcasInput, Texture2D<FfxFloat32x4>, 1, 2);
 
 void StoreUpscaledOutput(const in FfxUInt32x2 pxCoord, const in FfxFloat32x3 color)
 {
