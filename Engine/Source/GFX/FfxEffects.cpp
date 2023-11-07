@@ -81,10 +81,8 @@ namespace ZE::GFX::FFX
 			case FFX_FSR2_PASS_LOCK:
 				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
 				break;
-			case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
-				permutationOptions |= FSR2_SHADER_PERMUTATION_ENABLE_SHARPENING; // Indicate that sharpening will always happen here
-				[[fallthrough]];
 			case FFX_FSR2_PASS_ACCUMULATE:
+			case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
 				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16
 					| FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT | FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS
 					| FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
@@ -525,7 +523,6 @@ namespace ZE::GFX::FFX
 		static constexpr const U32* SAMPLER_SLOT = slots;
 
 		const bool depthInverted = permutationOptions & FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
-		const bool sharpen = permutationOptions & FSR2_SHADER_PERMUTATION_ENABLE_SHARPENING;
 		const bool lut = permutationOptions & FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE;
 		const bool lowResMotionVectors = permutationOptions & FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS;
 		const bool jitteredMotionVectors = permutationOptions & FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
@@ -560,6 +557,7 @@ namespace ZE::GFX::FFX
 				return suffix;
 			};
 
+		bool sharpen = false;
 		switch (pass)
 		{
 		case FFX_FSR2_PASS_DEPTH_CLIP:
@@ -628,8 +626,10 @@ namespace ZE::GFX::FFX
 				shader->Init(dev, "FSR2LockCS" + getPermutation(depthInverted, false, false, false, false, false, fp16, wave64));
 			break;
 		}
-		case FFX_FSR2_PASS_ACCUMULATE:
 		case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
+			sharpen = true;
+			[[fallthrough]];
+		case FFX_FSR2_PASS_ACCUMULATE:
 		{
 			static const char* srvNames[] = { "r_input_exposure", "r_dilated_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks" };
 			static const char* srvNamesLut[] = { "r_input_exposure", "r_dilated_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks", "r_lanczos_lut" };
@@ -639,7 +639,7 @@ namespace ZE::GFX::FFX
 			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
-				1, 8 + static_cast<U32>(lut), 4 + static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, 8 + static_cast<U32>(lut), 4 + static_cast<U32>(!sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNamesReactive, slots, counts, // CBV
 				lut ? (lowResMotionVectors ? srvNamesLowResLut : srvNamesLut) : (lowResMotionVectors ? srvNamesLowRes : srvNames), slots, counts, // SRV tex
 				uavNames, slots, counts, // UAV tex

@@ -69,10 +69,10 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.reactive = ffxGetResource(renderData.Buffers, alphaMask, ids.AlphaMask, Resource::StateShaderResourceNonPS);
 		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
 		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
-		desc.jitterOffset = { Utils::SafeCast<float>(Settings::RenderSize.X) * projection.JitterX / 2.0f, Utils::SafeCast<float>(Settings::RenderSize.Y) * projection.JitterY / -2.0f };
+		desc.jitterOffset = { projection.JitterX, projection.JitterY };
 		desc.motionVectorScale = { Utils::SafeCast<float>(Settings::RenderSize.X), Utils::SafeCast<float>(Settings::RenderSize.Y) };
 		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
-		desc.enableSharpening = true;
+		desc.enableSharpening = renderer.IsSharpeningEnabled();
 		desc.sharpness = renderer.GetSharpness();
 		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
 		desc.preExposure = 1.0f;

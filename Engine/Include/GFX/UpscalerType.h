@@ -13,6 +13,7 @@ namespace ZE::GFX
 	};
 
 	constexpr UInt2 CalculateRenderSize(UInt2 targetSize, UpscalerType upscaling) noexcept;
+	// Get jitter subpixel offsets in UV space
 	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept;
 
 #pragma region Functions
@@ -49,10 +50,7 @@ namespace ZE::GFX
 		case UpscalerType::Fsr2:
 		{
 			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, renderSize.X);
-			float x, y;
-			ffxFsr2GetJitterOffset(&x, &y, phaseIndex, phaseCount);
-			jitterX = 2.0f * x / Utils::SafeCast<float>(renderSize.X);
-			jitterY = -2.0f * y / Utils::SafeCast<float>(renderSize.Y);
+			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
 			phaseIndex = (phaseIndex + 1) % phaseCount;
 			break;
 		}

@@ -444,7 +444,7 @@ namespace ZE::GFX::Pipeline
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
 			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
 				Math::XMLoadFloat3(&camData.EyeDirection),
-				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection)));
+				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection, Settings::RenderSize)));
 	}
 
 	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
@@ -471,7 +471,7 @@ namespace ZE::GFX::Pipeline
 		if (Settings::ApplyJitter())
 		{
 			CalculateJitter(jitterIndex, currentProjectionData.JitterX, currentProjectionData.JitterY, Settings::RenderSize, Settings::GetUpscaler());
-			projection = Data::GetProjectionMatrix(currentProjectionData);
+			projection = Data::GetProjectionMatrix(currentProjectionData, Settings::RenderSize);
 			Math::XMStoreFloat4x4(&currentProjection, projection);
 		}
 		else
@@ -709,6 +709,40 @@ namespace ZE::GFX::Pipeline
 					}
 					ImGui::Columns(1);
 				}
+			}
+			break;
+		}
+		}
+		switch (Settings::GetUpscaler())
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case UpscalerType::None:
+			break;
+		case UpscalerType::Fsr2:
+		{
+			if (ImGui::CollapsingHeader("FSR2"))
+			{
+				ImGui::Columns(2, "##fsr2_sharpness_settings", false);
+				{
+					ImGui::Text("Sharpness");
+				}
+				ImGui::NextColumn();
+				{
+					ImGui::Checkbox("##fsr2_enable_sharpness", &enableSharpening);
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Enable an additional sharpening pass");
+				}
+				ImGui::Columns(1);
+
+				if (!enableSharpening)
+					ImGui::BeginDisabled(true);
+				GUI::InputClamp(0.0f, 1.0f, sharpness,
+					ImGui::InputFloat("##fsr2_sharpness", &sharpness, 0.01f, 0.1f, "%.2f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
+				if (!enableSharpening)
+					ImGui::EndDisabled();
 			}
 			break;
 		}

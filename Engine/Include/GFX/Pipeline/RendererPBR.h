@@ -24,6 +24,7 @@ namespace ZE::GFX::Pipeline
 		Float4x4 currentProjection = {};
 		Float4 cameraRotation = {};
 		float sharpness = 0.5f;
+		bool enableSharpening = true;
 		U32 jitterIndex = 0;
 
 		static void SetupRenderSlots(RendererBuildData& buildData) noexcept;
@@ -46,6 +47,7 @@ namespace ZE::GFX::Pipeline
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
 		constexpr float GetSharpness() const noexcept { return sharpness; }
+		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }
 
 		void Init(Device& dev, CommandList& mainList, const ParamsPBR& params);
 

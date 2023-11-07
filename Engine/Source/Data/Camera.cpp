@@ -36,7 +36,7 @@ namespace ZE::Data
 		return Math::BoundingFrustum{ proj, false };
 	}
 
-	Matrix GetProjectionMatrix(const Projection& proj) noexcept
+	Matrix GetProjectionMatrix(const Projection& proj, UInt2 viewportSize) noexcept
 	{
 		constexpr float F_RANGE = 0.0f;
 		// Based on XMMatrixPerspectiveFovLH
@@ -49,6 +49,13 @@ namespace ZE::Data
 		const float height = cosFov / sinFov;
 		const float width = height / proj.ViewRatio;
 		const float nearRange = proj.NearClip;
+		float jitterX = 0.0f;
+		float jitterY = 0.0f;
+		if (Settings::ApplyJitter() && viewportSize.X && viewportSize.Y)
+		{
+			jitterX = 2.0f * proj.JitterX / Utils::SafeCast<float>(viewportSize.X);
+			jitterY = -2.0f * proj.JitterY / Utils::SafeCast<float>(viewportSize.Y);
+		}
 
 		Matrix m;
 #if defined(_XM_NO_INTRINSICS_)
@@ -62,16 +69,8 @@ namespace ZE::Data
 		m.m[1][2] = 0.0f;
 		m.m[1][3] = 0.0f;
 
-		if (Settings::ApplyJitter())
-		{
-			m.m[2][0] = proj.JitterX;
-			m.m[2][1] = proj.JitterY;
-		}
-		else
-		{
-			m.m[2][0] = 0.0f;
-			m.m[2][1] = 0.0f;
-		}
+		m.m[2][0] = jitterX;
+		m.m[2][1] = jitterY;
 		m.m[2][2] = F_RANGE;
 		m.m[2][3] = 1.0f;
 
@@ -85,7 +84,7 @@ namespace ZE::Data
 		m.r[0] = vsetq_lane_f32(width, zero, 0);
 		m.r[1] = vsetq_lane_f32(height, zero, 1);
 		if (Settings::ApplyJitter())
-			m.r[2] = Math::XMVectorSet(proj.JitterX, proj.JitterY, F_RANGE, 1.0f);
+			m.r[2] = Math::XMVectorSet(jitterX, jitterY, F_RANGE, 1.0f);
 		else
 			m.r[2] = vsetq_lane_f32(F_RANGE, Math::g_XMIdentityR3.v, 2);
 		m.r[3] = vsetq_lane_f32(nearRange, zero, 2);
@@ -110,7 +109,7 @@ namespace ZE::Data
 		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 0, 0, 0));
 
 		if (Settings::ApplyJitter())
-			m.r[2] = Math::XMVectorSet(proj.JitterX, proj.JitterY, F_RANGE, 1.0f);
+			m.r[2] = Math::XMVectorSet(jitterX, jitterY, F_RANGE, 1.0f);
 		else
 			m.r[2] = vTemp;
 
