@@ -18,7 +18,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		RID Color;
 		RID Normal;
 		RID Specular;
-		RID AlphaMask;
+		RID MotionVectors;
+		RID ReactiveMask;
 	};
 
 	struct ExecuteData
@@ -30,7 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	};
 
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS,
-		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatAlpha);
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatColor,
+		PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatMotion, PixelFormat formatReactive);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

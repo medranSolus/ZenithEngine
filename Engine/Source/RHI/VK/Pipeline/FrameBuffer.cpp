@@ -35,6 +35,14 @@ namespace ZE::RHI::VK::Pipeline
 	{
 	}
 
+	void FrameBuffer::SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept
+	{
+	}
+
+	void FrameBuffer::SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
+	{
+	}
+
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
 	}

@@ -52,7 +52,7 @@ namespace ZE::GFX::Resource
 		constexpr bool IsRelaxedRasterOrder() const noexcept { return Flags[2]; }
 		constexpr bool IsConservativeRaster() const noexcept { return Flags[3]; }
 
-		static void SetShader(Device& dev, Shader*& shader, const char* name,
+		static void SetShader(Device& dev, Shader*& shader, std::string_view name,
 			std::unordered_map<std::string, Resource::Shader>& shaders) noexcept;
 	};
 }

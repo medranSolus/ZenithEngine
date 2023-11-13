@@ -155,8 +155,13 @@ namespace ZE::GFX::Pipeline
 			gbuffDepthCompute = frameBufferDesc.AddResource(
 				{ Settings::RenderSize, 1, FrameResourceFlags::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 		}
-		const RID gbuffAlpha = frameBufferDesc.AddResource(
-			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
+		RID gbuffMotion = INVALID_RID;
+		if (Settings::ComputeMotionVectors())
+			gbuffMotion = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
+		RID gbuffReactive = INVALID_RID;
+		if (Settings::GetUpscaler() == UpscalerType::Fsr2)
+			gbuffReactive = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
+
 		const RID gbuffColor = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8G8B8A8_UNorm, ColorF4() });
 		const RID gbuffNormal = frameBufferDesc.AddResource(
@@ -165,15 +170,6 @@ namespace ZE::GFX::Pipeline
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		const RID gbuffDepth = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
-
-		// Temporal related resources
-		RID velocity = INVALID_RID;
-		RID prevDepth = INVALID_RID;
-		if (Settings::ComputeMotionVectors())
-		{
-			velocity = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
-			prevDepth = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::Temporal, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
-		}
 
 		// Light buffer related resources
 		const RID lightbuffColor = frameBufferDesc.AddResource(
@@ -214,6 +210,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
+		settingsData.MipBias = Settings::GetUpscaler() != UpscalerType::None ? log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f : 0.0f;
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
 
@@ -224,13 +221,14 @@ namespace ZE::GFX::Pipeline
 #pragma region Geometry
 		{
 			ZE_MAKE_NODE("lambertian", QueueType::Main, Lambertian, dev, buildData, frameBufferDesc.GetFormat(gbuffDepth),
-				frameBufferDesc.GetFormat(gbuffColor), frameBufferDesc.GetFormat(gbuffNormal),
-				frameBufferDesc.GetFormat(gbuffSpecular), frameBufferDesc.GetFormat(gbuffAlpha));
+				frameBufferDesc.GetFormat(gbuffColor), frameBufferDesc.GetFormat(gbuffNormal), frameBufferDesc.GetFormat(gbuffSpecular),
+				frameBufferDesc.GetFormat(gbuffMotion), frameBufferDesc.GetFormat(gbuffReactive));
 			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
 			node.AddOutput("GB_C", Resource::StateRenderTarget, gbuffColor);
 			node.AddOutput("GB_N", Resource::StateRenderTarget, gbuffNormal);
 			node.AddOutput("GB_S", Resource::StateRenderTarget, gbuffSpecular);
-			node.AddOutput("GB_A", Resource::StateRenderTarget, gbuffAlpha);
+			node.AddOutput("GB_MV", Resource::StateRenderTarget, gbuffMotion);
+			node.AddOutput("GB_R", Resource::StateRenderTarget, gbuffReactive);
 			nodes.emplace_back(std::move(node));
 		}
 		if (Settings::GetAOType() != AOType::None)
@@ -356,15 +354,6 @@ namespace ZE::GFX::Pipeline
 		}
 #pragma endregion
 #pragma region Upscaling
-		if (Settings::ComputeMotionVectors())
-		{
-			ZE_MAKE_NODE("velocity", QueueType::Main, Velocity, dev, buildData, frameBufferDesc.GetFormat(velocity));
-			node.AddInput("wireframe.DS", Resource::StateShaderResourceAll);
-			node.AddOutput("DS", Resource::StateShaderResourceAll, gbuffDepth);
-			node.AddOutput("MV", Resource::StateRenderTarget, velocity);
-			node.AddOutput("PrevDepth", Resource::StateShaderResourcePS, prevDepth);
-			nodes.emplace_back(std::move(node));
-		}
 		switch (Settings::GetUpscaler())
 		{
 		default:
@@ -375,21 +364,13 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
-			node.AddInput("velocity.DS", Resource::StateShaderResourceAll);
-			node.AddInput("velocity.MV", Resource::StateShaderResourceNonPS);
-			node.AddInput("lambertian.GB_A", Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
-			node.AddOutput("DS", Resource::StateShaderResourceAll, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 			break;
 		}
-		}
-		if (Settings::ComputeMotionVectors())
-		{
-			RenderNode node("copyDepthTemporal", QueueType::Main, RenderPass::CopyDepthTemporal::Execute);
-			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.DS" : "wireframe.DS", Resource::StateCopySource);
-			node.AddInput("velocity.PrevDepth", Resource::StateCopyDestination);
-			nodes.emplace_back(std::move(node));
 		}
 #pragma endregion
 #pragma region Display size post process
@@ -431,6 +412,7 @@ namespace ZE::GFX::Pipeline
 		// No need to create new projection as it's data is always changing with jitter
 		if (!Settings::ApplyJitter())
 			Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
+		dynamicData.JitterCurrent = { 0.0f, 0.0f };
 		// Not uploading now since it's uploaded every frame
 		dynamicData.NearClip = currentProjectionData.NearClip;
 	}
@@ -444,7 +426,10 @@ namespace ZE::GFX::Pipeline
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
 			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
 				Math::XMLoadFloat3(&camData.EyeDirection),
-				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection, Settings::RenderSize)));
+				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection)));
+
+		if (Settings::ApplyJitter())
+			CalculateJitter(jitterIndex, dynamicData.JitterCurrent.x, dynamicData.JitterCurrent.y, Settings::RenderSize, Settings::GetUpscaler());
 	}
 
 	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
@@ -462,23 +447,21 @@ namespace ZE::GFX::Pipeline
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));
 
-		dynamicData.PrevViewProjection = dynamicData.ViewProjection;
-		dynamicData.PrevViewProjectionInverse = dynamicData.ViewProjectionInverse;
-		dynamicData.PrevJitterX = currentProjectionData.JitterX;
-		dynamicData.PrevJitterY = currentProjectionData.JitterY;
+		if (Settings::ComputeMotionVectors())
+			Math::XMStoreFloat4x4(&prevViewProjection, dynamicData.ViewProjection);
 
 		Matrix projection;
 		if (Settings::ApplyJitter())
 		{
 			CalculateJitter(jitterIndex, currentProjectionData.JitterX, currentProjectionData.JitterY, Settings::RenderSize, Settings::GetUpscaler());
-			projection = Data::GetProjectionMatrix(currentProjectionData, Settings::RenderSize);
+			dynamicData.JitterPrev = dynamicData.JitterCurrent;
+			dynamicData.JitterCurrent = { currentProjectionData.JitterX, currentProjectionData.JitterY };
+
+			projection = Data::GetProjectionMatrix(currentProjectionData);
 			Math::XMStoreFloat4x4(&currentProjection, projection);
 		}
 		else
 			projection = Math::XMLoadFloat4x4(&currentProjection);
-
-		dynamicData.JitterX = currentProjectionData.JitterX;
-		dynamicData.JitterY = currentProjectionData.JitterY;
 
 		dynamicData.ViewProjection = dynamicData.View * projection;
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));

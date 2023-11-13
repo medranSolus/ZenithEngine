@@ -65,6 +65,9 @@ namespace ZE::RHI::DX11::Pipeline
 		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
 		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept;
 
+		void SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept;
+		void SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept;
+
 		template<U32 RTVCount>
 		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept;
 		template<U32 RTVCount>

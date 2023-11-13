@@ -24,15 +24,15 @@ namespace ZE::GFX::Pipeline
 		S32 BlurRadius;
 		float BlurIntensity;
 
+		float ShadowMapSize;
+		float ShadowBias;
+		float ShadowNormalOffset;
+		float MipBias;
+
 		float Gamma;
 		float GammaInverse;
 
-		float ShadowMapSize;
-		float ShadowBias;
-
-		float ShadowNormalOffset;
-
-		float _Padding[3];
+		float _Padding[2];
 
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];
@@ -43,15 +43,11 @@ namespace ZE::GFX::Pipeline
 	{
 		Matrix View;
 		Matrix ViewProjection;
-		Matrix PrevViewProjection;
 		Matrix ViewProjectionInverse;
-		Matrix PrevViewProjectionInverse;
 		Float3 CameraPos;
 		float NearClip;
-		float JitterX;
-		float JitterY;
-		float PrevJitterX;
-		float PrevJitterY;
+		Float2 JitterCurrent;
+		Float2 JitterPrev;
 	};
 #pragma pack(pop)
 }

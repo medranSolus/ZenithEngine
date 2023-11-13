@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RenderPass/CACAO.h"
-#include "RenderPass/CopyDepthTemporal.h"
 #include "RenderPass/DirectionalLight.h"
 #include "RenderPass/HDRGammaCorrection.h"
 #include "RenderPass/HorizontalBlur.h"
@@ -13,7 +12,6 @@
 #include "RenderPass/Skybox.h"
 #include "RenderPass/SpotLight.h"
 #include "RenderPass/UpscaleFSR2.h"
-#include "RenderPass/Velocity.h"
 #include "RenderPass/VerticalBlur.h"
 #include "RenderPass/Wireframe.h"
 #include "RenderPass/XeGTAO.h"

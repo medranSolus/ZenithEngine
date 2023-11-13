@@ -36,7 +36,7 @@ namespace ZE::Data
 		return Math::BoundingFrustum{ proj, false };
 	}
 
-	Matrix GetProjectionMatrix(const Projection& proj, UInt2 viewportSize) noexcept
+	Matrix GetProjectionMatrix(const Projection& proj) noexcept
 	{
 		constexpr float F_RANGE = 0.0f;
 		// Based on XMMatrixPerspectiveFovLH
@@ -51,10 +51,10 @@ namespace ZE::Data
 		const float nearRange = proj.NearClip;
 		float jitterX = 0.0f;
 		float jitterY = 0.0f;
-		if (Settings::ApplyJitter() && viewportSize.X && viewportSize.Y)
+		if (Settings::ApplyJitter())
 		{
-			jitterX = 2.0f * proj.JitterX / Utils::SafeCast<float>(viewportSize.X);
-			jitterY = -2.0f * proj.JitterY / Utils::SafeCast<float>(viewportSize.Y);
+			jitterX = proj.JitterX;
+			jitterY = proj.JitterY;
 		}
 
 		Matrix m;

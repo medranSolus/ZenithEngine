@@ -435,6 +435,58 @@ namespace ZE::RHI::DX11::Pipeline
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, reinterpret_cast<ID3D11RenderTargetView* const*>(rtvs[rtv].GetAddressOf()), dsvs[dsv - 1].Get());
 	}
 
+	void FrameBuffer::SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept
+	{
+		ZE_ASSERT(count <= D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
+
+		ID3D11RenderTargetView* handles[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D11_VIEWPORT vieports[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		U8 realCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			RID id = rid[i];
+			if (id != INVALID_RID)
+			{
+				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
+				handles[realCount] = static_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
+				ZE_ASSERT(handles[realCount], "Current resource is not suitable for being render target!");
+
+				SetupViewport(vieports[realCount], id);
+				++realCount;
+			}
+		}
+		cl.Get().dx11.GetContext()->RSSetViewports(realCount, vieports);
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(realCount, handles, nullptr);
+	}
+
+	void FrameBuffer::SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
+	{
+		ZE_ASSERT(count <= D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
+		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(dsvs[dsv - 1], "Current resource is not suitable for being depth stencil!");
+
+		ID3D11RenderTargetView* handles[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D11_VIEWPORT vieports[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		U8 realCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			RID id = rtv[i];
+			if (id != INVALID_RID)
+			{
+				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
+				handles[realCount] = static_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
+				ZE_ASSERT(handles[realCount], "Current resource is not suitable for being render target!");
+
+				SetupViewport(vieports[realCount], id);
+				++realCount;
+			}
+		}
+		cl.Get().dx11.GetContext()->RSSetViewports(realCount, vieports);
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(realCount, handles, dsvs[dsv - 1].Get());
+	}
+
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");

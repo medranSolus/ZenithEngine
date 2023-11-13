@@ -4,15 +4,15 @@
 
 namespace ZE::RHI::VK::Resource
 {
-	Shader::Shader(GFX::Device& dev, const std::string& name)
+	Shader::Shader(GFX::Device& dev, std::string_view name)
 	{
 		ZE_VK_ENABLE_ID();
 #if _ZE_DEBUG_GFX_NAMES
 		shaderName = name;
 #endif
-		std::ifstream fin("Shaders/Vk/" + name + ".spv", std::ios::ate | std::ios::binary);
+		std::ifstream fin("Shaders/Vk/" + std::string(name) + ".spv", std::ios::ate | std::ios::binary);
 		if (!fin.good())
-			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + name);
+			throw ZE_IO_EXCEPT("Cannot load Vulkan shader: " + std::string(name));
 
 		std::vector<char> bytecode(Math::AlignUp(Utils::SafeCast<U64>(fin.tellg()), 4ULL));
 		fin.seekg(0);

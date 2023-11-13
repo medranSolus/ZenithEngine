@@ -9,6 +9,14 @@ namespace ZE::GFX
 		Matrix ModelViewProjection;
 	};
 
+	// Single transform data for model with previous MVP matrix for motion computation
+	struct ModelTransformBufferMotion
+	{
+		Matrix Model;
+		Matrix ModelViewProjection;
+		Matrix PrevModelViewProjection;
+	};
+
 	// Typical simple transform buffer needed by most shaders
 	struct TransformBuffer
 	{

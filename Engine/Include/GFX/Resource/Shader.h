@@ -16,12 +16,12 @@ namespace ZE::GFX::Resource
 
 	public:
 		Shader() = default;
-		constexpr Shader(GFX::Device& dev, const std::string& name) { Init(dev, name); }
+		constexpr Shader(GFX::Device& dev, std::string_view name) { Init(dev, name); }
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
-		constexpr void Init(Device& dev, const std::string& name) { ZE_RHI_BACKEND_VAR.Init(dev, name); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const std::string& name) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, name); }
+		constexpr void Init(Device& dev, std::string_view name) { ZE_RHI_BACKEND_VAR.Init(dev, name); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, std::string_view name) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, name); }
 		ZE_RHI_BACKEND_GET(Resource::Shader);
 
 		// Main Gfx API

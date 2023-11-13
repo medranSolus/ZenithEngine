@@ -20,8 +20,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		delete execData;
 	}
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS,
-		PixelFormat formatColor, PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatAlpha)
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatColor,
+		PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatMotion, PixelFormat formatReactive)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular, parallax
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
+		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -48,27 +48,42 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		passData->StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(dev, psoDesc.VS, "PhongVS", buildData.ShaderCache);
-		psoDesc.RenderTargetsCount = 4;
+		const bool isMotion = formatMotion != PixelFormat::Unknown;
+		const bool isReactive = formatReactive != PixelFormat::Unknown;
+		psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "PhongVS_M" : "PhongVS", buildData.ShaderCache);
+		psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
 		psoDesc.FormatsRT[0] = formatColor;
 		psoDesc.FormatsRT[1] = formatNormal;
 		psoDesc.FormatsRT[2] = formatSpecular;
-		psoDesc.FormatsRT[3] = formatAlpha;
-		const std::string shaderName = "PhongPS";
+		psoDesc.FormatsRT[3] = isMotion ? formatMotion : formatReactive;
+		psoDesc.FormatsRT[4] = formatReactive;
+
+		std::string shaderName = "PhongPS";
+		if (isMotion || isReactive)
+		{
+			shaderName += "_";
+			if (isMotion)
+				shaderName += "M";
+			if (isReactive)
+				shaderName += "R";
+		}
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(UINT8_MAX) + 1;
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
 		{
-			const char* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			std::string suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
+			if ((isMotion || isReactive) && suffix.size())
+				suffix.erase(suffix.begin());
+
+			psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + std::string(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid_" + suffix);
 			passData->StatesSolid[stateIndex].Init(dev, psoDesc, schema);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + std::string(suffix));
+			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent_" + suffix);
 			passData->StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
@@ -88,11 +103,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Normal, ColorF4());
 		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4());
+		const bool isMotion = ids.MotionVectors != INVALID_RID;
+		const bool isReactive = ids.ReactiveMask != INVALID_RID;
+		if (isMotion)
+			renderData.Buffers.ClearRTV(cl, ids.MotionVectors, ColorF4());
+		if (isReactive)
+			renderData.Buffers.ClearRTV(cl, ids.ReactiveMask, ColorF4());
 		ZE_DRAW_TAG_END(dev, cl);
 
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
 		const Matrix viewProjection = dynamicData.ViewProjection;
+		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderer.GetPrevViewProjection());
 		const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 		// Compute visibility of objects inside camera view
@@ -138,14 +160,32 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				EID entity = solidGroup[i];
 				const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
 
-				ModelTransformBuffer transformBuffer;
-				transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-				transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
+				Matrix m = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				Matrix mvp = viewProjection * m;
+				Resource::DynamicBufferAlloc transformAlloc;
+				if (Settings::ComputeMotionVectors())
+				{
+					const auto& transformPrev = renderData.Registry.get<Data::TransformPrevious>(entity);
+
+					ModelTransformBufferMotion transformBuffer;
+					transformBuffer.Model = m;
+					transformBuffer.ModelViewProjection = mvp;
+					transformBuffer.PrevModelViewProjection = prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale));
+
+					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion));
+				}
+				else
+				{
+					ModelTransformBuffer transformBuffer;
+					transformBuffer.Model = m;
+					transformBuffer.ModelViewProjection = mvp;
+
+					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
+				}
 
 				auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
-				transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
-
-				cbuffer.Bind(cl, ctx, transformInfo.Transform);
+				transformInfo.Transform = transformAlloc;
+				cbuffer.Bind(cl, ctx, transformAlloc);
 				ctx.Reset();
 
 				renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
@@ -172,7 +212,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			data.StatesSolid[currentState].Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
+			if (isMotion || isReactive)
+				renderData.Buffers.SetOutputSparse(cl, &ids.Color, ids.DepthStencil, 3 + isMotion + isReactive);
+			else
+				renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
@@ -230,7 +273,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ZE_PERF_START("Lambertian Transparent");
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
+			if (isMotion || isReactive)
+				renderData.Buffers.SetOutputSparse(cl, &ids.Color, ids.DepthStencil, 3 + isMotion + isReactive);
+			else
+				renderData.Buffers.SetOutput<3>(cl, &ids.Color, ids.DepthStencil, true);
 
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
@@ -246,10 +292,27 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				EID entity = transparentGroup[i];
 				const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
 
-				ModelTransformBuffer transformBuffer;
-				transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-				transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
-				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
+				Matrix m = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				Matrix mvp = viewProjection * m;
+				if (Settings::ComputeMotionVectors())
+				{
+					const auto& transformPrev = renderData.Registry.get<Data::TransformPrevious>(entity);
+
+					ModelTransformBufferMotion transformBuffer;
+					transformBuffer.Model = m;
+					transformBuffer.ModelViewProjection = mvp;
+					transformBuffer.PrevModelViewProjection = prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale));
+
+					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion));
+				}
+				else
+				{
+					ModelTransformBuffer transformBuffer;
+					transformBuffer.Model = m;
+					transformBuffer.ModelViewProjection = mvp;
+
+					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
+				}
 
 				const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
 				if (currentMaterial != material.ID)

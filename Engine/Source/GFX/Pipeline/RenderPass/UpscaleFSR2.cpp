@@ -63,18 +63,20 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.commandList = ffxGetCommandList(cl);
 		Resource::Generic color, depth, motion, alphaMask, output;
 		desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
-		desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceAll);
+		desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
 		desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);
 		desc.exposure.resource = nullptr;
 		desc.reactive = ffxGetResource(renderData.Buffers, alphaMask, ids.AlphaMask, Resource::StateShaderResourceNonPS);
 		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
 		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
-		desc.jitterOffset = { projection.JitterX, projection.JitterY };
-		desc.motionVectorScale = { Utils::SafeCast<float>(Settings::RenderSize.X), Utils::SafeCast<float>(Settings::RenderSize.Y) };
+		desc.jitterOffset.x = 0.5f * projection.JitterX * Utils::SafeCast<float>(Settings::RenderSize.X);
+		desc.jitterOffset.y = -0.5f * projection.JitterY * Utils::SafeCast<float>(Settings::RenderSize.Y);
+		desc.motionVectorScale.x = -Utils::SafeCast<float>(Settings::RenderSize.X);
+		desc.motionVectorScale.y = -Utils::SafeCast<float>(Settings::RenderSize.Y);
 		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
 		desc.enableSharpening = renderer.IsSharpeningEnabled();
-		desc.sharpness = renderer.GetSharpness();
 		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
+		desc.sharpness = renderer.GetSharpness();
 		desc.preExposure = 1.0f;
 		desc.reset = false; // TODO: check conditions for that
 		desc.cameraNear = FLT_MAX;

@@ -18,7 +18,7 @@ namespace ZE::RHI::DX
 
 	public:
 		Shader() = default;
-		Shader(GFX::Device& dev, const std::string& name);
+		Shader(GFX::Device& dev, std::string_view name);
 		ZE_CLASS_MOVE(Shader);
 		~Shader() { ZE_ASSERT_FREED(bytecode == nullptr); }
 
@@ -34,7 +34,7 @@ namespace ZE::RHI::DX
 
 #pragma region Functions
 	template<bool IS_DX12>
-	Shader<IS_DX12>::Shader(GFX::Device& dev, const std::string& name)
+	Shader<IS_DX12>::Shader(GFX::Device& dev, std::string_view name)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 #if _ZE_DEBUG_GFX_NAMES

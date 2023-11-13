@@ -51,6 +51,11 @@ namespace ZE::GFX::Pipeline
 		constexpr void SetDSV(CommandList& cl, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetDSV, cl, rid, mipLevel); }
 		constexpr void SetOutput(CommandList& cl, RID rtv, RID dsv) const noexcept { ZE_RHI_BACKEND_CALL(SetOutput, cl, rtv, dsv); }
 
+		// Bind RTV when resource list is not adjanced in memory or may contain not present resources
+		void SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept { ZE_RHI_BACKEND_CALL(SetRTVSparse, cl, rid, count); }
+		// Specify output when resource list is not adjanced in memory or may contain not present resources
+		void SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept { ZE_RHI_BACKEND_CALL(SetOutputSparse, cl, rtv, dsv, count); }
+
 		// When render targets have been created one after one without any depth stencil between them
 		// they are considered adjacent which can speed-up their setting in the pipeline.
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!

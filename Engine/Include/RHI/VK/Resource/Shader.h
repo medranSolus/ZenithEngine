@@ -16,7 +16,7 @@ namespace ZE::RHI::VK::Resource
 
 	public:
 		Shader() = default;
-		Shader(GFX::Device& dev, const std::string& name);
+		Shader(GFX::Device& dev, std::string_view name);
 		Shader(Shader&& shdr) noexcept;
 		Shader& operator=(Shader&& shdr) noexcept;
 		ZE_CLASS_NO_COPY(Shader);

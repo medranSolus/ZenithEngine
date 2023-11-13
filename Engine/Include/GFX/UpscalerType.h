@@ -50,8 +50,10 @@ namespace ZE::GFX
 		case UpscalerType::Fsr2:
 		{
 			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, renderSize.X);
-			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
 			phaseIndex = (phaseIndex + 1) % phaseCount;
+			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
+			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
+			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
 			break;
 		}
 		}

@@ -607,7 +607,7 @@ namespace ZE::RHI::DX12::Pipeline
 		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = descInfoCpu.CPU;
 		// Create demanded views for each resource
-		for (RID i = 1; const auto& res : resourcesInfo)
+		for (RID i = 1; const auto & res : resourcesInfo)
 		{
 			if (res.IsRTV())
 			{
@@ -1012,7 +1012,7 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
 		SetViewport(cl.Get().dx12, rid);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rid, TRUE, nullptr);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rid, true, nullptr);
 	}
 
 	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
@@ -1058,6 +1058,62 @@ namespace ZE::RHI::DX12::Pipeline
 
 		SetViewport(cl.Get().dx12, rtv);
 		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rtv, TRUE, rtvDsv + dsv);
+	}
+
+	void FrameBuffer::SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept
+	{
+		ZE_ASSERT(count <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
+
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_VIEWPORT vieports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_RECT scissorRects[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		U8 realCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			RID id = rid[i];
+			if (id != INVALID_RID)
+			{
+				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
+				handles[realCount] = rtvDsv[id];
+				ZE_ASSERT(handles[realCount].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+
+				SetupViewport(vieports[realCount], scissorRects[realCount], id);
+				++realCount;
+			}
+		}
+		cl.Get().dx12.GetList()->RSSetViewports(realCount, vieports);
+		cl.Get().dx12.GetList()->RSSetScissorRects(realCount, scissorRects);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(realCount, handles, false, nullptr);
+	}
+
+	void FrameBuffer::SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
+	{
+		ZE_ASSERT(count <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
+		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsv[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_VIEWPORT vieports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_RECT scissorRects[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		U8 realCount = 0;
+		for (U32 i = 0; i < count; ++i)
+		{
+			RID id = rtv[i];
+			if (id != INVALID_RID)
+			{
+				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
+
+				handles[realCount] = rtvDsv[id];
+				ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+
+				SetupViewport(vieports[realCount], scissorRects[realCount], id);
+				++realCount;
+			}
+		}
+		cl.Get().dx12.GetList()->RSSetViewports(count, vieports);
+		cl.Get().dx12.GetList()->RSSetScissorRects(count, scissorRects);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(count, handles, false, rtvDsv + dsv);
 	}
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept

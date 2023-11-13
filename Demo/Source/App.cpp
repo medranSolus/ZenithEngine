@@ -517,9 +517,11 @@ EID App::AddModel(std::string&& name, Float3&& position,
 	EID model = engine.GetData().create();
 	engine.GetData().emplace<std::string>(model, std::move(name));
 
-	engine.GetData().emplace<Data::TransformGlobal>(model,
+	auto& transform = engine.GetData().emplace<Data::TransformGlobal>(model,
 		engine.GetData().emplace<Data::Transform>(model,
 			Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale)));
+	if (Settings::ComputeMotionVectors())
+		engine.GetData().emplace<Data::TransformPrevious>(model, transform);
 
 	engine.GetAssetsStreamer().LoadModelData(engine.Gfx().GetDevice(), engine.GetData(), model, file, true);
 	return model;
@@ -676,11 +678,13 @@ App::App(const CmdParser& params)
 			const float angleZ = Math::Rand(0.0f, 360.0f, randEngine);
 			const float scale = Math::Rand(0.5f, 5.0f, randEngine);
 
-			engine.GetData().emplace<Data::TransformGlobal>(model,
+			auto& transform = engine.GetData().emplace<Data::TransformGlobal>(model,
 				engine.GetData().emplace<Data::Transform>(model,
 					Math::GetQuaternion(angleX, angleY, angleZ),
 					Math::RandPosition(-200.0f, 200.0f, randEngine),
 					Float3(scale, scale, scale)));
+			if (Settings::ComputeMotionVectors())
+				engine.GetData().emplace<Data::TransformPrevious>(model, transform);
 
 			engine.GetData().emplace<Data::RenderLambertian>(model);
 			engine.GetData().emplace<Data::ShadowCaster>(model);

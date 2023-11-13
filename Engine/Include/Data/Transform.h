@@ -12,4 +12,5 @@ namespace ZE::Data
 		Float3 Scale;
 	};
 	struct TransformGlobal : public Transform {};
+	struct TransformPrevious : public TransformGlobal {};
 }

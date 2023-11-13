@@ -22,6 +22,7 @@ namespace ZE::GFX::Pipeline
 		} ssaoSettings;
 		Data::Projection currentProjectionData = {};
 		Float4x4 currentProjection = {};
+		Float4x4 prevViewProjection = {};
 		Float4 cameraRotation = {};
 		float sharpness = 0.5f;
 		bool enableSharpening = true;
@@ -45,6 +46,7 @@ namespace ZE::GFX::Pipeline
 
 		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
+		constexpr const Float4x4& GetPrevViewProjection() const noexcept { return prevViewProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
 		constexpr float GetSharpness() const noexcept { return sharpness; }
 		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }

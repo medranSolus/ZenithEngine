@@ -53,6 +53,8 @@ namespace ZE::Data
 
 				registry.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
 				registry.emplace<TransformGlobal>(child, transform);
+				if (Settings::ComputeMotionVectors())
+					registry.emplace<TransformPrevious>(child, transform);
 				registry.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
 				registry.emplace<MaterialID>(child, materials.at(meshes.at(node.mMeshes[i]).second));
 				registry.get<Children>(currentEntity).Childs.emplace_back(child);
@@ -83,6 +85,8 @@ namespace ZE::Data
 			Math::XMStoreFloat4(&global.Rotation, Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(globalRotation, rotation)));
 			Math::XMStoreFloat3(&global.Position, Math::XMVectorAdd(globalPosition, translation));
 			Math::XMStoreFloat3(&global.Scale, Math::XMVectorMultiply(globalScale, scaling));
+			if (Settings::ComputeMotionVectors())
+				registry.emplace<TransformPrevious>(child, global);
 
 			ParseNode(*node.mChildren[i], child, meshes, materials, registry, loadNames);
 		}
