@@ -84,9 +84,11 @@ FfxFloat32 LoadInputDepth(const in FfxUInt32x2 pxCoord)
 	return tx_depth[pxCoord];
 }
 
+#include "WarningGuardOn.hlsli"
 #include "fsr2/ffx_fsr2_depth_clip.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(8, 8, 1)]
 void main(const uint2 dtid : SV_DispatchThreadID)
 {

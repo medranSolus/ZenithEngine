@@ -72,9 +72,11 @@ void StorePrevPostAlpha(const in uint2 pxCoord, const in FFX_MIN16_F3 color)
 	ua_prevColorPospAlpha[pxCoord] = color;
 }
 
+#include "WarningGuardOn.hlsli"
 #include "fsr2/ffx_fsr2_tcr_autogen.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(8, 8, 1)]
 void main(const uint2 dtid : SV_DispatchThreadID)
 {

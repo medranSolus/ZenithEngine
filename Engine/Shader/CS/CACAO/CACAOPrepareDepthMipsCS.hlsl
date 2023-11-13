@@ -50,13 +50,15 @@ FfxFloat32x3 FFX_CACAO_Prepare_LoadNormal(const in FfxUInt32x2 coord) { return 0
 void FFX_CACAO_Prepare_StoreDepth(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
 void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32x3 normal) {}
 
+#include "WarningGuardOn.hlsli"
 #include "cacao/ffx_cacao_prepare.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(FFX_CACAO_PREPARE_DEPTHS_AND_MIPS_WIDTH, FFX_CACAO_PREPARE_DEPTHS_AND_MIPS_HEIGHT, 1)]
 void main(const uint2 tid : SV_DispatchThreadID, const uint2 gtid : SV_GroupThreadID)
 {
-#ifdef _CACAO_PREPARE_DOWNSAMPLED
+#ifdef _ZE_CACAO_PREPARE_DOWNSAMPLED
 	FFX_CACAO_PrepareDownsampledDepthsAndMips(tid, gtid);
 #else
 	FFX_CACAO_PrepareNativeDepthsAndMips(tid, gtid);

@@ -10,7 +10,7 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	float3 maxColor = 0.0f;
 	float alpha = 0.0f;
 
-	[unroll(BLUR_KERNEL_MAX_SIZE * 2 + 1)]
+	[unroll(ZE_BLUR_KERNEL_MAX_SIZE * 2 + 1)]
 	for (int i = -cb_pbrData.BlurRadius; i <= cb_pbrData.BlurRadius; ++i)
 	{
 		const float4 color = tx_image.Sample(splr_LM, tc + delta * i);

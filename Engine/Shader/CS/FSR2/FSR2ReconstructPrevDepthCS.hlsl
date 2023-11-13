@@ -67,9 +67,11 @@ FfxFloat32 Exposure()
 	return exposure;
 }
 
+#include "WarningGuardOn.hlsli"
 #include "fsr2/ffx_fsr2_reconstruct_dilated_velocity_and_previous_depth.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(8, 8, 1)]
 void main(const uint2 dtid : SV_DispatchThreadID)
 {

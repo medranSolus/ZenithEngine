@@ -2,7 +2,7 @@
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
-#define TRANSFORM_RANGE 6
+#define ZE_TRANSFORM_CB_RANGE 6
 #include "TransformCB.hlsli"
 #include "Utils/LightUtils.hlsli"
 #include "CB/SpotLight.hlsli"

@@ -50,12 +50,12 @@ macro(add_shader_type SD_TYPE)
         if(${API} STREQUAL "DX11")
             string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
             set(SD_COMPILER "${EXTERNAL_DIR}/fxc.exe")
-            set(API_FLAGS "")
+            set(API_FLAGS "/D _ZE_COMPILER_FXC")
             set(SD_EXT "dxbc")
         elseif(${API} STREQUAL "DX12")
             string(TOLOWER "${SD_TYPE}_6_6" ${SD_TYPE}_TYPE_FLAG)
             set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
-            set(API_FLAGS "-enable-16bit-types -DFFX_HLSL_6_2=1")
+            set(API_FLAGS "/D _ZE_COMPILER_DXC -enable-16bit-types -DFFX_HLSL_6_2=1")
             if(NOT ${ZE_BUILD_RELEASE})
                 set(API_FLAGS "${API_FLAGS} -Qembed_debug")
             else()
@@ -65,7 +65,7 @@ macro(add_shader_type SD_TYPE)
         elseif(${API} STREQUAL "VK")
             # https://github.com/microsoft/DirectXShaderCompiler/blob/main/docs/SPIR-V.rst#introduction
             set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
-            set(API_FLAGS "-spirv -fvk-stage-io-order=decl -fvk-use-dx-layout -fvk-use-dx-position-w -fspv-target-env=vulkan1.3 -fspv-flatten-resource-arrays")
+            set(API_FLAGS "/D _ZE_COMPILER_DXC -spirv -fvk-stage-io-order=decl -fvk-use-dx-layout -fvk-use-dx-position-w -fspv-target-env=vulkan1.3 -fspv-flatten-resource-arrays")
             if(${SD_TYPE} STREQUAL "VS" OR ${SD_TYPE} STREQUAL "GS")
                 set(API_FLAGS "${API_FLAGS} -fvk-invert-y")
             endif()
@@ -104,7 +104,7 @@ function(_add_shader_compile_command SD_COMPILER SD SD_OUT SD_TARGET SD_FLAGS SH
     set(SD_LIST "${SD_LIST};${SD_TARGET}" PARENT_SCOPE)
     add_custom_command(OUTPUT "${SD_OUT}"
         COMMAND "${SD_COMPILER}"
-        ARGS ${SD_FLAGS} /T ${SHADER_MODEL} /I "${SD_TYPE_INC_DIR}" /I "${SD_INC_DIR}" /D _${API} /D _${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
+        ARGS ${SD_FLAGS} /T ${SHADER_MODEL} /I "${SD_TYPE_INC_DIR}" /I "${SD_INC_DIR}" /D _ZE_API_${API} /D _ZE_STAGE_${SD_TYPE} /Fo "${SD_OUT}" "${SD}"
         DEPENDS "${SD}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}"
         COMMENT "Compiling ${API} shader: ${SD_TARGET}" VERBATIM)
     add_custom_target("${SD_TARGET}" ALL

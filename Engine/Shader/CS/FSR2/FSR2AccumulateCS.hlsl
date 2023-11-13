@@ -101,7 +101,7 @@ void StoreInternalColorAndWeight(const in FfxUInt32x2 pxCoord, const in FfxFloat
 	ua_upscaledColor[pxCoord] = colorAndWeight;
 }
 
-void StoreLockStatus(const in FfxUInt32x2 pxCoord, FfxFloat32x2 lockStatus)
+void StoreLockStatus(const in FfxUInt32x2 pxCoord, const in FfxFloat32x2 lockStatus)
 {
 	ua_lockStatus[pxCoord] = lockStatus;
 }
@@ -175,15 +175,17 @@ FfxFloat32x2 SampleDilatedReactiveMasks(const in FfxFloat32x2 uv)
 	return tx_dilatedReactiveMask.SampleLevel(splr_LinearClamp, uv, 0);
 }
 
+#include "WarningGuardOn.hlsli"
 #include "fsr2/ffx_fsr2_sample.h"
 #include "fsr2/ffx_fsr2_upsample.h"
 #include "fsr2/ffx_fsr2_postprocess_lock_status.h"
 #include "fsr2/ffx_fsr2_reproject.h"
 #include "fsr2/ffx_fsr2_accumulate.h"
+#include "WarningGuardOff.hlsli"
 #define THREAD_WIDTH 8
 #define THREAD_HEIGHT 8
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(THREAD_WIDTH, THREAD_HEIGHT, 1)]
 void main(uint2 gid : SV_GroupID, const uint2 gtid : SV_GroupThreadID)
 {

@@ -57,9 +57,11 @@ FfxFloat32x3 SampleInputColor(const in FfxFloat32x2 uv)
 	return tx_color.SampleLevel(splr_LinearClamp, uv, 0).rgb;
 }
 
+#include "WarningGuardOn.hlsli"
 #include "fsr2/ffx_fsr2_compute_luminance_pyramid.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(256, 1, 1)]
 void main(const uint3 wgid : SV_GroupID, const uint ltid : SV_GroupIndex)
 {

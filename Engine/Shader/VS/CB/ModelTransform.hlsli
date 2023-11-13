@@ -6,6 +6,9 @@ struct ModelTransform
 {
 	matrix M;
 	matrix MVP;
+#ifdef _ZE_OUTPUT_MOTION
+	matrix PrevMVP;
+#endif
 };
 
 CBUFFER(transform, ModelTransform, 0, 3);

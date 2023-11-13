@@ -17,7 +17,7 @@ FfxFloat32x3 LoadInputColor(const in FfxUInt32x2 pxCoord)
 	return tx_colorJittered[pxCoord].rgb;
 }
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(8, 8, 1)]
 void main(const uint2 dtid : SV_DispatchThreadID)
 {

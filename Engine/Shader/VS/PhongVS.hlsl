@@ -8,6 +8,10 @@ struct VSOut
 	float2 tc : TEXCOORD;
 	float3 worldTan : TANGENT;
 	float3 cameraDir : CAMERADIR;
+#ifdef _ZE_OUTPUT_MOTION
+	float4 prevPos : PREVPOSITION;
+	float4 currentPos : CURRPOSITION;
+#endif
 	float4 pos : SV_POSITION;
 };
 
@@ -25,6 +29,10 @@ VSOut main(float3 pos : POSITION,
 
 	vso.cameraDir = vso.worldPos - cb_worldData.CameraPos;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.MVP);
+#ifdef _ZE_OUTPUT_MOTION
+	vso.prevPos = mul(float4(pos, 1.0f), cb_transform.PrevMVP);
+	vso.currentPos = vso.pos;
+#endif
 
 	return vso;
 }

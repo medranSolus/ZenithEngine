@@ -12,6 +12,8 @@
 * Specified unroll for loop with sliceCount (line 370): //[unroll] -> [unroll(9)]
 * For DX11 in XeGTAO_Denoise() replaced GatherRed with texture fetches
 */
+#include "WarningGuardOn.hlsli"
 #include "IntelXeGTAO.hlsli"
+#include "WarningGuardOff.hlsli"
 
 #endif // XEGTAO_CS_HLSLI

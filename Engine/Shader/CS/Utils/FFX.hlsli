@@ -1,27 +1,21 @@
 #ifndef FFX_CS_HLSLI
 #define FFX_CS_HLSLI
 #define FFX_CORE_H
-#include "ffx_common_types.h"
-// Changed how 'FFX_GROUP_MEMORY_BARRIER' is defined to avoid problems with FXC incorrect preprocessor
-#include "ffx_core_hlsl.hlsli"
-#include "ffx_core_gpu_common.h"
-#include "ffx_core_gpu_common_half.h"
-#include "ffx_core_portability.h"
 
-#ifndef FFX_HALF
+#ifdef _ZE_HALF_PRECISION
+#	define FFX_HALF 1
+#else
 #	define FFX_HALF 0
 #endif
+
 // Cannot set wave size for DX11
-#if defined(FFX_PREFER_WAVE64) && !defined(_DX11)
-#	undef FFX_PREFER_WAVE64
-#	define FFX_PREFER_WAVE64 [WaveSize(64)]
+#if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11)
+#	define ZE_CS_WAVE64 [WaveSize(64)]
 #else
-// Undef in case it's expanded to number by cmd line
-#	undef FFX_PREFER_WAVE64
-#	define FFX_PREFER_WAVE64
+#	define ZE_CS_WAVE64
 #endif
 // No WaveReadLaneAt() function present below SM6.0
-#ifdef _DX11
+#ifdef _ZE_API_DX11
 #	define FFX_SPD_NO_WAVE_OPERATIONS
 #endif
 
@@ -47,5 +41,14 @@
 #define FFX_FSR2_OPTION_ACCUMULATE_SAMPLERS_USE_DATA_HALF 0
 #define FFX_FSR2_OPTION_REPROJECT_SAMPLERS_USE_DATA_HALF 1
 #define FFX_FSR2_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
+
+#include "WarningGuardOn.hlsli"
+#include "ffx_common_types.h"
+// Changed how 'FFX_GROUP_MEMORY_BARRIER' is defined to avoid problems with FXC incorrect preprocessor
+#include "ffx_core_hlsl.hlsli"
+#include "ffx_core_gpu_common.h"
+#include "ffx_core_gpu_common_half.h"
+#include "ffx_core_portability.h"
+#include "WarningGuardOff.hlsli"
 
 #endif // FFX_CS_HLSLI

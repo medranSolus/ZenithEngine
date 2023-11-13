@@ -2,6 +2,7 @@
 #define TRANSFORM_CB_HLSLI
 #include "Buffers.hlsli"
 
-CBUFFER(transform, matrix, 0, TRANSFORM_RANGE);
+// To correctly use this cbuffer, define 'ZE_TRANSFORM_CB_RANGE' to indicate binding range used for constant buffer
+CBUFFER(transform, matrix, 0, ZE_TRANSFORM_CB_RANGE);
 
 #endif // TRANSFORM_CB_HLSLI

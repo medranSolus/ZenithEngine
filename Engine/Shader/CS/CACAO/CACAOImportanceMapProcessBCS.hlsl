@@ -26,9 +26,11 @@ void FFX_CACAO_Importance_StoreImportance(const in FfxUInt32x2 coord, const in F
 FfxFloat32 FFX_CACAO_Importance_SampleImportanceA(const in FfxFloat32x2 uv) { return 0.0f; }
 void FFX_CACAO_Importance_StoreImportanceA(const in FfxUInt32x2 coord, const in FfxFloat32 val) {}
 
+#include "WarningGuardOn.hlsli"
 #include "cacao/ffx_cacao_importance_map.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(IMPORTANCE_MAP_B_WIDTH, IMPORTANCE_MAP_B_HEIGHT, 1)]
 void main(const uint2 tid : SV_DispatchThreadID)
 {

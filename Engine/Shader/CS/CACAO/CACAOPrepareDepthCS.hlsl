@@ -39,11 +39,14 @@ void FFX_CACAO_Prepare_StoreDepthMip2(const in FfxUInt32x2 coord, const in FfxUI
 void FFX_CACAO_Prepare_StoreDepthMip3(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
 void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32x3 normal) {}
 
+#include "WarningGuardOn.hlsli"
 #include "cacao/ffx_cacao_prepare.h"
-#ifdef _CACAO_PREPARE_DEPTH_HALF
+#include "WarningGuardOff.hlsli"
+
+#ifdef _ZE_CACAO_PREPARE_DEPTH_HALF
 #	define THREAD_WIDTH FFX_CACAO_PREPARE_DEPTHS_HALF_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_PREPARE_DEPTHS_HALF_HEIGHT
-#	ifdef _CACAO_PREPARE_DOWNSAMPLED
+#	ifdef _ZE_CACAO_PREPARE_DOWNSAMPLED
 #		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepthsHalf
 #	else
 #		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepthsHalf
@@ -51,14 +54,14 @@ void FFX_CACAO_Prepare_StoreNormal(const in FfxUInt32x2 coord, const in FfxUInt3
 #else
 #	define THREAD_WIDTH FFX_CACAO_PREPARE_DEPTHS_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_PREPARE_DEPTHS_HEIGHT
-#	ifdef _CACAO_PREPARE_DOWNSAMPLED
+#	ifdef _ZE_CACAO_PREPARE_DOWNSAMPLED
 #		define PREPARE_METHOD FFX_CACAO_PrepareDownsampledDepths
 #	else
 #		define PREPARE_METHOD FFX_CACAO_PrepareNativeDepths
 #	endif
 #endif
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(THREAD_WIDTH, THREAD_HEIGHT, 1)]
 void main(const uint2 tid : SV_DispatchThreadID)
 {

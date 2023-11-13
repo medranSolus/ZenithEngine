@@ -1,4 +1,4 @@
-#define TRANSFORM_RANGE 0
+#define ZE_TRANSFORM_CB_RANGE 0
 #include "TransformCB.hlsli"
 
 float4 main(float3 pos : POSITION) : SV_POSITION

@@ -6,93 +6,98 @@ set(SHADER_TARGET "Shaders")
 setup_shader(${ZE_BIN_DIR} ${ENGINE_DIR} ${SHADER_FLAGS})
 
 # Add permutations
-add_shader_permutation("CACAOApplyCS" "_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartApply:NS|_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartHalfApply:NSF")
-add_shader_permutation("CACAOApplyCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOApplyCS" "ZE_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartApply:NS|ZE_CACAO_APPLY_METHOD=FFX_CACAO_NonSmartHalfApply:NSF")
+add_shader_permutation("CACAOApplyCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOBlurCS"
-"_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur2:2\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur3:3\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur4:4\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur5:5\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur6:6\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur7:7\
-|_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur8:8")
-add_shader_permutation("CACAOBlurCS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOBlurCS" "FFX_PREFER_WAVE64:W")
+"ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur2:2\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur3:3\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur4:4\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur5:5\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur6:6\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur7:7\
+|ZE_CACAO_BLUR_METHOD=FFX_CACAO_EdgeSensitiveBlur8:8")
+add_shader_permutation("CACAOBlurCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("CACAOBlurCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOGenerateCS"
-"_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ1:Q1\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ2,_CACAO_NORMAL_DIMMENSIONS:Q2\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3,_CACAO_NORMAL_DIMMENSIONS,_CACAO_ADDITIONAL_INPUT:Q3\
-|_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3Base,_CACAO_NORMAL_DIMMENSIONS:Q3B")
-add_shader_permutation("CACAOGenerateCS" "FFX_PREFER_WAVE64:W")
+"ZE_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ1:Q1\
+|ZE_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ2,_ZE_CACAO_NORMAL_DIMMENSIONS:Q2\
+|ZE_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3,_ZE_CACAO_NORMAL_DIMMENSIONS,_ZE_CACAO_ADDITIONAL_INPUT:Q3\
+|ZE_CACAO_GENERATE_METHOD=FFX_CACAO_GenerateQ3Base,_ZE_CACAO_NORMAL_DIMMENSIONS:Q3B")
+add_shader_permutation("CACAOGenerateCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOImportanceMapGenerateCS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOImportanceMapProcessACS" "FFX_PREFER_WAVE64:W")
-add_shader_permutation("CACAOImportanceMapProcessBCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOImportanceMapGenerateCS" "_ZE_PREFER_WAVE64:W")
+add_shader_permutation("CACAOImportanceMapProcessACS" "_ZE_PREFER_WAVE64:W")
+add_shader_permutation("CACAOImportanceMapProcessBCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOPrepareDepthCS" "_CACAO_PREPARE_DEPTH_HALF:F")
-add_shader_permutation("CACAOPrepareDepthCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
-add_shader_permutation("CACAOPrepareDepthCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOPrepareDepthCS" "_ZE_CACAO_PREPARE_DEPTH_HALF:F")
+add_shader_permutation("CACAOPrepareDepthCS" "_ZE_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareDepthCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOPrepareDepthMipsCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
-add_shader_permutation("CACAOPrepareDepthMipsCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOPrepareDepthMipsCS" "_ZE_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareDepthMipsCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("CACAOPrepareNormalsCS" "_CACAO_PREPARE_NORMALS_INPUT:I")
-add_shader_permutation("CACAOPrepareNormalsCS" "_CACAO_PREPARE_DOWNSAMPLED:D")
-add_shader_permutation("CACAOPrepareNormalsCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOPrepareNormalsCS" "_ZE_CACAO_PREPARE_NORMALS_INPUT:I")
+add_shader_permutation("CACAOPrepareNormalsCS" "_ZE_CACAO_PREPARE_DOWNSAMPLED:D")
+add_shader_permutation("CACAOPrepareNormalsCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("CACAOUpscaleCS" "FFX_CACAO_OPTION_APPLY_SMART=1:S")
-add_shader_permutation("CACAOUpscaleCS" "FFX_HALF=1:H")
-add_shader_permutation("CACAOUpscaleCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("CACAOUpscaleCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("CACAOUpscaleCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
-add_shader_permutation("FSR2DepthClipCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2DepthClipCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2DepthClipCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2DepthClipCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_APPLY_SHARPENING=1:S")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE=1:L")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
 add_shader_permutation("FSR2AccumulateCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
-add_shader_permutation("FSR2AccumulateCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2AccumulateCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2AccumulateCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2AccumulateCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2GenerateReactiveCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2GenerateReactiveCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2GenerateReactiveCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2GenerateReactiveCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2GenerateTCRCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
-add_shader_permutation("FSR2GenerateTCRCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2GenerateTCRCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2GenerateTCRCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2GenerateTCRCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2LockCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
-add_shader_permutation("FSR2LockCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2LockCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2LockCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2LockCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2LuminancePyramidCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2LuminancePyramidCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2RCasCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2RCasCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2RCasCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2RCasCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
-add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_HALF=1:H")
-add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_PREFER_WAVE64:W")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("PhongPS" "_USE_TEXTURE:T")
-add_shader_permutation("PhongPS" "_USE_NORMAL:N")
-add_shader_permutation("PhongPS" "_USE_SPECULAR:S")
-add_shader_permutation("PhongPS" "_USE_PARALLAX:P")
+add_shader_permutation("PhongVS" "_ZE_OUTPUT_MOTION:M")
+add_shader_permutation("PhongDepthVS" "_ZE_OUTPUT_MOTION:M")
 
-add_shader_permutation("ShadowPS" "_USE_TEXTURE:T")
-add_shader_permutation("ShadowPS" "_USE_NORMAL:N")
-add_shader_permutation("ShadowPS" "_USE_PARALLAX:P")
+add_shader_permutation("PhongPS" "_ZE_OUTPUT_MOTION:M")
+add_shader_permutation("PhongPS" "_ZE_OUTPUT_REACTIVE:R")
+add_shader_permutation("PhongPS" "_ZE_USE_TEXTURE:T")
+add_shader_permutation("PhongPS" "_ZE_USE_NORMAL:N")
+add_shader_permutation("PhongPS" "_ZE_USE_SPECULAR:S")
+add_shader_permutation("PhongPS" "_ZE_USE_PARALLAX:P")
 
-add_shader_permutation("LightCombinePS" "_LIGHT_COMBINE_AO:A")
+add_shader_permutation("ShadowPS" "_ZE_USE_TEXTURE:T")
+add_shader_permutation("ShadowPS" "_ZE_USE_NORMAL:N")
+add_shader_permutation("ShadowPS" "_ZE_USE_PARALLAX:P")
+
+add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_AO:A")
 
 # Shader compilation
 add_shader_type(VS)

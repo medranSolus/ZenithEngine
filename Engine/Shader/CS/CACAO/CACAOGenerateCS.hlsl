@@ -1,6 +1,6 @@
 #include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
-#define _CACAO
+#define _ZE_FFX_CACAO
 #include "Utils/FfxSamplers.hlsli"
 
 UAV_EX(ping, RWTexture2DArray<FfxFloat32x2>, 0, 0);
@@ -27,7 +27,7 @@ FfxFloat32x3 FFX_CACAO_SSAOGeneration_GetNormalPass(const in FfxUInt32x2 coord, 
 	return tx_deinterleavedNormals[FfxInt32x3(coord, passId)].xyz;
 }
 
-#ifdef _CACAO_ADDITIONAL_INPUT
+#ifdef _ZE_CACAO_ADDITIONAL_INPUT
 #	define ZE_CACAO_CB_RANGE 6
 
 TEXTURE_EX(loadCounter, Texture1D<FfxUInt32> , 2, 3);
@@ -58,11 +58,14 @@ FfxFloat32 FFX_CACAO_SSAOGeneration_SampleImportance(const in FfxFloat32x2 uv) {
 #endif
 
 #include "CB/ConstantsCACAO.hlsli"
+#include "WarningGuardOn.hlsli"
 #include "cacao/ffx_cacao_ssao_generation.h"
-#ifndef _CACAO_GENERATE_METHOD
-#	define _CACAO_GENERATE_METHOD FFX_CACAO_GenerateQ0
+#include "WarningGuardOff.hlsli"
+
+#ifndef ZE_CACAO_GENERATE_METHOD
+#	define ZE_CACAO_GENERATE_METHOD FFX_CACAO_GenerateQ0
 #endif
-#ifdef _CACAO_NORMAL_DIMMENSIONS
+#ifdef _ZE_CACAO_NORMAL_DIMMENSIONS
 #	define THREAD_WIDTH FFX_CACAO_GENERATE_WIDTH
 #	define THREAD_HEIGHT FFX_CACAO_GENERATE_HEIGHT
 #else
@@ -70,9 +73,9 @@ FfxFloat32 FFX_CACAO_SSAOGeneration_SampleImportance(const in FfxFloat32x2 uv) {
 #	define THREAD_HEIGHT FFX_CACAO_GENERATE_SPARSE_HEIGHT
 #endif
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(THREAD_WIDTH, THREAD_HEIGHT, 1)]
 void main(const uint3 tid : SV_DispatchThreadID)
 {
-	_CACAO_GENERATE_METHOD(tid);
+	ZE_CACAO_GENERATE_METHOD(tid);
 }

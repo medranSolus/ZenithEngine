@@ -2,7 +2,7 @@
 #define CONSTANTS_FSR2_CS_HLSLI
 #include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
-#define _FSR2
+#define _ZE_FFX_FSR2
 #include "Utils/FfxSamplers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_FSR2_CB_RANGE' to indicate binding range used for constant buffer

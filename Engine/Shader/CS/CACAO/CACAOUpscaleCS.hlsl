@@ -41,9 +41,11 @@ FfxFloat32x2 FFX_CACAO_BilateralUpscale_LoadSSAO(const in FfxUInt32x2 coord, con
 	return tx_ping.Load(FfxInt32x4(coord, index, 0));
 }
 
+#include "WarningGuardOn.hlsli"
 #include "cacao/ffx_cacao_upscale.h"
+#include "WarningGuardOff.hlsli"
 
-FFX_PREFER_WAVE64
+ZE_CS_WAVE64
 [numthreads(FFX_CACAO_BILATERAL_UPSCALE_WIDTH, FFX_CACAO_BILATERAL_UPSCALE_HEIGHT, 1)]
 void main(const uint2 tid : SV_DispatchThreadID, const uint2 gtid : SV_GroupThreadID, const uint2 gid : SV_GroupID)
 {
