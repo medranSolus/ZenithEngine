@@ -89,7 +89,7 @@ PSOut main(float3 worldPos : POSITION,
 	prev -= cb_worldData.JitterPrev;
 	current -= cb_worldData.JitterCurrent;
 	// To UV motion
-	pso.motion = current - prev;
+	pso.motion = (current - prev) * float2(0.5f, -0.5f);
 #endif
 
 	return pso;

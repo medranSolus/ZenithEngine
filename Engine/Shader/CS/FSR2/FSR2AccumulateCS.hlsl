@@ -160,12 +160,12 @@ FfxFloat32x4 SampleLumaHistory(const in FfxFloat32x2 uv)
 	return tx_lumaHistory.SampleLevel(splr_LinearClamp, uv, 0);
 }
 
-FfxFloat32 LoadMipLuma(const in FfxUInt32x2 pxCoord, FfxUInt32 mipLevel)
+FfxFloat32 LoadMipLuma(const in FfxUInt32x2 pxCoord, const in FfxUInt32 mipLevel)
 {
 	return tx_imgMips.mips[mipLevel][pxCoord];
 }
 
-FfxFloat32 SampleMipLuma(const in FfxFloat32x2 uv, FfxUInt32 mipLevel)
+FfxFloat32 SampleMipLuma(const in FfxFloat32x2 uv, const in FfxUInt32 mipLevel)
 {
 	return tx_imgMips.SampleLevel(splr_LinearClamp, uv, mipLevel);
 }

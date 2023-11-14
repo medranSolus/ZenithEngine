@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		RID Color;
 		RID Depth;
 		RID MotionVectors;
-		RID AlphaMask;
+		RID ReactiveMask;
 		RID Output;
 	};
 
