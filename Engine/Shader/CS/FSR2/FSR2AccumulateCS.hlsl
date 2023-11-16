@@ -57,6 +57,13 @@ TEXTURE_EX(imgMips, Texture2D<FfxFloat32>, 6, IMG_MIPS_RANGE);
 TEXTURE_EX(dilatedReactiveMask, Texture2D<unorm FfxFloat32x2>, 7, REACTIVE_MASK_RANGE);
 
 #if FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS
+TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 1, MOTION_VECTORS_RANGE);
+
+FfxFloat32x2 LoadDilatedMotionVector(const in FfxUInt32x2 pxCoord)
+{
+	return tx_dilatedMotionVectors[pxCoord].xy;
+}
+#else
 TEXTURE_EX(motionVectors, Texture2D<float2>, 1, MOTION_VECTORS_RANGE); // External resource format
 
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos)
@@ -69,19 +76,6 @@ FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos
 #endif
 	return uvMotionVector;
 }
-
-// Stub not used in this shader version
-FfxFloat32x2 LoadDilatedMotionVector(const in FfxUInt32x2 pxCoord) { return 0.0f; }
-#else
-TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 1, MOTION_VECTORS_RANGE);
-
-FfxFloat32x2 LoadDilatedMotionVector(const in FfxUInt32x2 pxCoord)
-{
-	return tx_dilatedMotionVectors[pxCoord].xy;
-}
-
-// Stub not used in this shader version
-FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos) { return 0.0f; }
 #endif
 
 #if FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE == 1

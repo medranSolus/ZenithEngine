@@ -447,56 +447,43 @@ namespace ZE::GFX
 			}
 
 			// Set bindings (UAV, SRV, CBV)
-			U32 slotOffset = 0;
 			U8 rangeOffset = 0;
 			ZE_ASSERT(rangeOffset + shaderBlob.uavBufferCount <= UINT8_MAX, "Buffers outside possible range!");
 			for (U32 i = 0; i < shaderBlob.uavBufferCount; ++i)
 			{
-				schemaDesc.AddRange({ shaderBlob.boundUAVBufferCounts[i], slotOffset, rangeOffset,
+				schemaDesc.AddRange({ shaderBlob.boundUAVBufferCounts[i], shaderBlob.boundUAVBuffers[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-
-				slotOffset += shaderBlob.boundUAVBufferCounts[i];
 				++rangeOffset;
 			}
 
 			ZE_ASSERT(rangeOffset + shaderBlob.uavTextureCount <= UINT8_MAX, "Buffers outside possible range!");
 			for (U32 i = 0; i < shaderBlob.uavTextureCount; ++i)
 			{
-				schemaDesc.AddRange({ shaderBlob.boundUAVTextureCounts[i], slotOffset, rangeOffset,
+				schemaDesc.AddRange({ shaderBlob.boundUAVTextureCounts[i], shaderBlob.boundUAVTextures[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
-
-				slotOffset += shaderBlob.boundUAVTextureCounts[i];
 				++rangeOffset;
 			}
 
-			slotOffset = 0;
 			ZE_ASSERT(rangeOffset + shaderBlob.srvBufferCount <= UINT8_MAX, "Buffers outside possible range!");
 			for (U32 i = 0; i < shaderBlob.srvBufferCount; ++i)
 			{
-				schemaDesc.AddRange({ shaderBlob.boundSRVBufferCounts[i], slotOffset, rangeOffset,
+				schemaDesc.AddRange({ shaderBlob.boundSRVBufferCounts[i], shaderBlob.boundSRVBuffers[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-
-				slotOffset += shaderBlob.boundSRVBufferCounts[i];
 				++rangeOffset;
 			}
 
 			ZE_ASSERT(rangeOffset + shaderBlob.srvTextureCount <= UINT8_MAX, "Buffers outside possible range!");
 			for (U32 i = 0; i < shaderBlob.srvTextureCount; ++i)
 			{
-				schemaDesc.AddRange({ shaderBlob.boundSRVTextureCounts[i], slotOffset, rangeOffset,
+				schemaDesc.AddRange({ shaderBlob.boundSRVTextureCounts[i], shaderBlob.boundSRVTextures[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack });
-
-				slotOffset += shaderBlob.boundSRVTextureCounts[i];
 				++rangeOffset;
 			}
 
-			slotOffset = 0;
 			for (U32 i = 0; i < shaderBlob.cbvCount; ++i)
 			{
-				schemaDesc.AddRange({ shaderBlob.boundConstantBufferCounts[i], slotOffset, rangeOffset,
+				schemaDesc.AddRange({ shaderBlob.boundConstantBufferCounts[i], shaderBlob.boundConstantBuffers[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::CBV });
-
-				slotOffset += shaderBlob.boundConstantBufferCounts[i];
 				rangeOffset += Utils::SafeCast<U8>(shaderBlob.boundConstantBufferCounts[i]);
 			}
 			// TODO: cache binding based on input parameters
