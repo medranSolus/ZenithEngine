@@ -78,8 +78,6 @@ namespace ZE::GFX
 	constexpr Resource::GenericResourceType GetResourceType(FfxResourceType type) noexcept;
 	constexpr Resource::GenericResourceHeap GetHeapType(FfxHeapType type) noexcept;
 	constexpr Resource::GenericResourceFlags GetResourceFlags(FfxResourceUsage usage) noexcept;
-	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept;
-	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept;
 	constexpr Resource::State GetState(FfxResourceStates state) noexcept;
 	constexpr FfxResourceStates GetState(Resource::State state) noexcept;
 	constexpr Resource::Texture::AddressMode GetAddressMode(FfxAddressMode mode) noexcept;
@@ -98,7 +96,7 @@ namespace ZE::GFX
 		FfxResource desc = {};
 		desc.resource = &res;
 		desc.description.type = buffers.IsCubeTexture(rid) ? FFX_RESOURCE_TYPE_TEXTURE_CUBE : FFX_RESOURCE_TYPE_TEXTURE2D;
-		desc.description.format = GetSurfaceFormat(buffers.GetFormat(rid));
+		desc.description.format = GetFfxSurfaceFormat(buffers.GetFormat(rid));
 		auto sizes = buffers.GetDimmensions(rid);
 		desc.description.width = sizes.X;
 		desc.description.height = sizes.Y;
@@ -276,7 +274,7 @@ namespace ZE::GFX
 		resDesc.Type = GetResourceType(createResourceDescription->resourceDescription.type);
 		resDesc.Heap = GetHeapType(createResourceDescription->heapType);
 		resDesc.Flags = GetResourceFlags(createResourceDescription->resourceDescription.usage);
-		resDesc.Format = GetPixelFormat(createResourceDescription->resourceDescription.format);
+		resDesc.Format = GetPixelFormatFfx(createResourceDescription->resourceDescription.format);
 		resDesc.MipCount = Utils::SafeCast<U16>(createResourceDescription->resourceDescription.mipCount);
 		if (resDesc.Type == Resource::GenericResourceType::Buffer)
 		{
@@ -741,117 +739,6 @@ namespace ZE::GFX
 				flags |= Resource::GenericResourceFlag::ArrayView;
 		}
 		return flags;
-	}
-
-	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-		default:
-			ZE_FAIL("Format not yet supported by FidelityFX SDK!");
-			[[fallthrough]];
-		case PixelFormat::Unknown:
-			return FFX_SURFACE_FORMAT_UNKNOWN;
-		case PixelFormat::R32G32B32A32_UInt:
-			return FFX_SURFACE_FORMAT_R32G32B32A32_UINT;
-		case PixelFormat::R32G32B32A32_Float:
-			return FFX_SURFACE_FORMAT_R32G32B32A32_FLOAT;
-		case PixelFormat::R16G16B16A16_Float:
-			return FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT;
-		case PixelFormat::R32G32_Float:
-			return FFX_SURFACE_FORMAT_R32G32_FLOAT;
-		case PixelFormat::R8_UInt:
-			return FFX_SURFACE_FORMAT_R8_UINT;
-		case PixelFormat::R32_UInt:
-			return FFX_SURFACE_FORMAT_R32_UINT;
-		case PixelFormat::R8G8B8A8_UInt:
-		case PixelFormat::R8G8B8A8_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R8G8B8A8_UInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R8G8B8A8_TYPELESS;
-		case PixelFormat::R8G8B8A8_UNorm:
-			return FFX_SURFACE_FORMAT_R8G8B8A8_UNORM;
-		case PixelFormat::R8G8B8A8_SNorm:
-			return FFX_SURFACE_FORMAT_R8G8B8A8_SNORM;
-		case PixelFormat::R8G8B8A8_UNorm_SRGB:
-			return FFX_SURFACE_FORMAT_R8G8B8A8_SRGB;
-		case PixelFormat::R11G11B10_Float:
-			return FFX_SURFACE_FORMAT_R11G11B10_FLOAT;
-		case PixelFormat::R16G16_Float:
-			return FFX_SURFACE_FORMAT_R16G16_FLOAT;
-		case PixelFormat::R16G16_UInt:
-			return FFX_SURFACE_FORMAT_R16G16_UINT;
-		case PixelFormat::R16_Float:
-		case PixelFormat::R16_Depth:
-			return FFX_SURFACE_FORMAT_R16_FLOAT;
-		case PixelFormat::R16_UInt:
-			return FFX_SURFACE_FORMAT_R16_UINT;
-		case PixelFormat::R16_UNorm:
-			return FFX_SURFACE_FORMAT_R16_UNORM;
-		case PixelFormat::R16_SNorm:
-			return FFX_SURFACE_FORMAT_R16_SNORM;
-		case PixelFormat::R8_UNorm:
-			return FFX_SURFACE_FORMAT_R8_UNORM;
-		case PixelFormat::R8G8_UNorm:
-			return FFX_SURFACE_FORMAT_R8G8_UNORM;
-		case PixelFormat::R32_Float:
-		case PixelFormat::R32_Depth:
-			return FFX_SURFACE_FORMAT_R32_FLOAT;
-		}
-	}
-
-	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept
-	{
-		switch (format)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case FFX_SURFACE_FORMAT_UNKNOWN:
-			return PixelFormat::Unknown;
-		case FFX_SURFACE_FORMAT_R32G32B32A32_TYPELESS:
-			ZE_WARNING("Typeless format detected, falling back to corresponding R32G32B32A32_UInt!");
-			[[fallthrough]];
-		case FFX_SURFACE_FORMAT_R32G32B32A32_UINT:
-			return PixelFormat::R32G32B32A32_UInt;
-		case FFX_SURFACE_FORMAT_R32G32B32A32_FLOAT:
-			return PixelFormat::R32G32B32A32_Float;
-		case FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT:
-			return PixelFormat::R16G16B16A16_Float;
-		case FFX_SURFACE_FORMAT_R32G32_FLOAT:
-			return PixelFormat::R32G32_Float;
-		case FFX_SURFACE_FORMAT_R8_UINT:
-			return PixelFormat::R8_UInt;
-		case FFX_SURFACE_FORMAT_R32_UINT:
-			return PixelFormat::R32_UInt;
-		case FFX_SURFACE_FORMAT_R8G8B8A8_TYPELESS:
-			ZE_WARNING("Typeless format detected, falling back to corresponding R8G8B8A8_UInt!");
-			return PixelFormat::R8G8B8A8_UInt;
-		case FFX_SURFACE_FORMAT_R8G8B8A8_UNORM:
-			return PixelFormat::R8G8B8A8_UNorm;
-		case FFX_SURFACE_FORMAT_R8G8B8A8_SNORM:
-			return PixelFormat::R8G8B8A8_SNorm;
-		case FFX_SURFACE_FORMAT_R8G8B8A8_SRGB:
-			return PixelFormat::R8G8B8A8_UNorm_SRGB;
-		case FFX_SURFACE_FORMAT_R11G11B10_FLOAT:
-			return PixelFormat::R11G11B10_Float;
-		case FFX_SURFACE_FORMAT_R16G16_FLOAT:
-			return PixelFormat::R16G16_Float;
-		case FFX_SURFACE_FORMAT_R16G16_UINT:
-			return PixelFormat::R16G16_UInt;
-		case FFX_SURFACE_FORMAT_R16_FLOAT:
-			return PixelFormat::R16_Float;
-		case FFX_SURFACE_FORMAT_R16_UINT:
-			return PixelFormat::R16_UInt;
-		case FFX_SURFACE_FORMAT_R16_UNORM:
-			return PixelFormat::R16_UNorm;
-		case FFX_SURFACE_FORMAT_R16_SNORM:
-			return PixelFormat::R16_SNorm;
-		case FFX_SURFACE_FORMAT_R8_UNORM:
-			return PixelFormat::R8_UNorm;
-		case FFX_SURFACE_FORMAT_R8G8_UNORM:
-			return PixelFormat::R8G8_UNorm;
-		case FFX_SURFACE_FORMAT_R32_FLOAT:
-			return PixelFormat::R32_Float;
-		}
 	}
 
 	constexpr Resource::State GetState(FfxResourceStates state) noexcept

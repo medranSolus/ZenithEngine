@@ -1,5 +1,6 @@
 #pragma once
 ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
 ZE_WARNING_POP
 
@@ -9,6 +10,7 @@ namespace ZE::GFX
 	enum class UpscalerType : U8
 	{
 		None,
+		Fsr1,
 		Fsr2
 	};
 
@@ -25,6 +27,12 @@ namespace ZE::GFX
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
 			return targetSize;
+		case UpscalerType::Fsr1:
+		{
+			UInt2 renderSize = {};
+			ffxFsr1GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, FFX_FSR1_QUALITY_MODE_ULTRA_QUALITY);
+			return renderSize;
+		}
 		case UpscalerType::Fsr2:
 		{
 			UInt2 renderSize = {};
@@ -41,6 +49,7 @@ namespace ZE::GFX
 		default:
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
+		case UpscalerType::Fsr1:
 		{
 			phaseIndex = 0;
 			jitterX = 0.0f;

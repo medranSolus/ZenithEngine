@@ -46,6 +46,15 @@ add_shader_permutation("CACAOUpscaleCS" "FFX_CACAO_OPTION_APPLY_SMART=1:S")
 add_shader_permutation("CACAOUpscaleCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("CACAOUpscaleCS" "_ZE_PREFER_WAVE64:W")
 
+add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_APPLY_RCAS=1:S")
+add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_SRGB_CONVERSIONS=1:R")
+add_shader_permutation("FSR1EasuCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR1EasuCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR1RCasCS" "FFX_FSR1_OPTION_RCAS_PASSTHROUGH_ALPHA=1:A")
+add_shader_permutation("FSR1RCasCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR1RCasCS" "_ZE_PREFER_WAVE64:W")
+
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
 add_shader_permutation("FSR2DepthClipCS" "FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS=1:J")

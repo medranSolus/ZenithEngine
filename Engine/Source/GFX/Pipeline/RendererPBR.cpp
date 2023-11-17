@@ -210,7 +210,7 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-		settingsData.MipBias = Settings::GetUpscaler() != UpscalerType::None ? log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f : 0.0f;
+		settingsData.MipBias = Settings::GetUpscaler() == UpscalerType::Fsr2 ? log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f : 0.0f;
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
 
@@ -360,6 +360,14 @@ namespace ZE::GFX::Pipeline
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
 			break;
+		case UpscalerType::Fsr1:
+		{
+			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR1, dev, frameBufferDesc.GetFormat(upscaledScene));
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
+			nodes.emplace_back(std::move(node));
+			break;
+		}
 		case UpscalerType::Fsr2:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
@@ -702,17 +710,19 @@ namespace ZE::GFX::Pipeline
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
 			break;
+		case UpscalerType::Fsr1:
 		case UpscalerType::Fsr2:
 		{
-			if (ImGui::CollapsingHeader("FSR2"))
+			const bool fsr2 = Settings::GetUpscaler() == UpscalerType::Fsr2;
+			if (ImGui::CollapsingHeader(fsr2 ? "FSR2" : "FSR1"))
 			{
-				ImGui::Columns(2, "##fsr2_sharpness_settings", false);
+				ImGui::Columns(2, "##fsr_sharpness_settings", false);
 				{
 					ImGui::Text("Sharpness");
 				}
 				ImGui::NextColumn();
 				{
-					ImGui::Checkbox("##fsr2_enable_sharpness", &enableSharpening);
+					ImGui::Checkbox("##fsr_enable_sharpness", &enableSharpening);
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Enable an additional sharpening pass");
 				}
@@ -721,7 +731,7 @@ namespace ZE::GFX::Pipeline
 				if (!enableSharpening)
 					ImGui::BeginDisabled(true);
 				GUI::InputClamp(0.0f, 1.0f, sharpness,
-					ImGui::InputFloat("##fsr2_sharpness", &sharpness, 0.01f, 0.1f, "%.2f"));
+					ImGui::InputFloat("##fsr_sharpness", &sharpness, 0.01f, 0.1f, "%.2f"));
 				if (ImGui::IsItemHovered())
 					ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
 				if (!enableSharpening)

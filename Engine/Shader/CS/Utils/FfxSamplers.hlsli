@@ -10,7 +10,7 @@ SamplerState splr_ViewspaceDepthTap : register(s3);
 SamplerState splr_RealPointClamp : register(s4);
 #endif
 
-#ifdef _ZE_FFX_FSR2
+#if defined(_ZE_FFX_FSR2) || defined(_ZE_FFX_FSR1)
 SamplerState splr_LinearClamp : register(s0);
 #endif
 

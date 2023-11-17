@@ -218,6 +218,7 @@ endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # FidelityFX SDK effects
+add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
 add_fidelityfx_target(CACAO)
 
@@ -480,6 +481,7 @@ set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
 add_external_project(DXTEX "bin/CMake/" "" "")
 
 # FidelityFX SDK
+add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
 add_external_fidelityfx_effect(CACAO)
 

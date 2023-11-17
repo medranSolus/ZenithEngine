@@ -1,14 +1,17 @@
 #include "GFX/FfxEffects.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
+#include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
 #include "../src/components/cacao/ffx_cacao_private.h"
+#include "../src/components/fsr1/ffx_fsr1_private.h"
 #include "../src/components/fsr2/ffx_fsr2_private.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX::FFX
 {
 	FfxErrorCode GetShaderInfoCACAO(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
+	FfxErrorCode GetShaderInfoFSR1(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoFSR2(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	std::string GetGeneralPermutation(bool fp16, bool wave64) noexcept;
 
@@ -66,6 +69,25 @@ namespace ZE::GFX::FFX
 			}
 			break;
 		}
+		case FFX_EFFECT_FSR1:
+		{
+			switch (passId)
+			{
+			case FFX_FSR1_PASS_EASU:
+			case FFX_FSR1_PASS_EASU_RCAS:
+				permutationOptions &= FSR1_SHADER_PERMUTATION_SRGB_CONVERSIONS
+					| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
+				break;
+			case FFX_FSR1_PASS_RCAS:
+				permutationOptions &= FSR1_SHADER_PERMUTATION_RCAS_PASSTHROUGH_ALPHA
+					| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
+				break;
+			default:
+				ZE_FAIL("Invalid pass for FSR1!");
+				break;
+			}
+			break;
+		}
 		case FFX_EFFECT_FSR2:
 		{
 			switch (passId)
@@ -117,6 +139,9 @@ namespace ZE::GFX::FFX
 		default:
 			ZE_FAIL("Selected effect has not been implemented yet!");
 			return FFX_ERROR_INVALID_ENUM;
+		case FFX_EFFECT_FSR1:
+			code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR2:
 			code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
@@ -510,6 +535,99 @@ namespace ZE::GFX::FFX
 		default:
 			ZE_FAIL("Invalid pass for CACAO!");
 			return FFX_ERROR_INVALID_ENUM;
+		}
+		return FFX_OK;
+	}
+
+	FfxErrorCode GetShaderInfoFSR1(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	{
+		static const char* cbvNames[] = { "cbFSR1" };
+		static const char* samplerNames[] = { "s_LinearClamp" };
+		static const U32 slots[] = { 0, 1 };
+		static const U32 counts[] = { 1 };
+		static constexpr const U32* SAMPLER_SLOT = slots;
+
+		const bool passAlpha = permutationOptions & FSR1_SHADER_PERMUTATION_RCAS_PASSTHROUGH_ALPHA;
+		const bool srgbConversion = permutationOptions & FSR1_SHADER_PERMUTATION_SRGB_CONVERSIONS;
+		const bool fp16 = permutationOptions & FSR1_SHADER_PERMUTATION_ALLOW_FP16;
+		const bool wave64 = permutationOptions & FSR1_SHADER_PERMUTATION_FORCE_WAVE64;
+
+		auto getPermutation = [](bool passAlpha, bool sharpen, bool srgbConversion, bool fp16, bool wave64) -> std::string
+			{
+				std::string suffix = "";
+				if (passAlpha || sharpen || srgbConversion || fp16 || wave64)
+				{
+					suffix = "_";
+					if (passAlpha)
+						suffix += "A";
+					if (sharpen)
+						suffix += "S";
+					if (srgbConversion)
+						suffix += "R";
+					if (fp16)
+						suffix += "H";
+					if (wave64)
+						suffix += "W";
+				}
+				return suffix;
+			};
+
+		bool sharpen = false;
+		switch (pass)
+		{
+		case FFX_FSR1_PASS_EASU_RCAS:
+			sharpen = true;
+			[[fallthrough]];
+		case FFX_FSR1_PASS_EASU:
+		{
+			static const char* srvNames[] = { "r_input_color" };
+			static const char* uavNames[] = { "rw_upscaled_output" };
+			static const char* uavNamesSharpen[] = { "rw_internal_upscaled_color" };
+			const FfxShaderBlob blob =
+			{
+				nullptr, 0, // Blob, data
+				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				sharpen ? uavNamesSharpen : uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR1EasuCS" + getPermutation(false, sharpen, srgbConversion, fp16, wave64));
+			break;
+		}
+		case FFX_FSR1_PASS_RCAS:
+		{
+			static const char* srvNames[] = { "r_internal_upscaled_color" };
+			static const char* uavNames[] = { "rw_upscaled_output" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "FSR1RCasCS" + getPermutation(passAlpha, false, false, fp16, wave64));
+			break;
+		}
+		default:
+		{
+			ZE_FAIL("Invalid pass for FSR1!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}

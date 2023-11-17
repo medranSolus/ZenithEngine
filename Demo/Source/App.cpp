@@ -749,7 +749,7 @@ int App::Run()
 			// Physics
 			accumulator -= DELTA_TIME;
 		}
-		const double alpha = accumulator / DELTA_TIME;
+		//const double alpha = accumulator / DELTA_TIME;
 
 		MakeFrame();
 
