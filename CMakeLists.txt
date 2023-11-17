@@ -103,6 +103,7 @@ set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
+set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 
 
@@ -129,6 +130,7 @@ set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
+set(XESS_INC_DIR "${XESS_DIR}/inc")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
 
 
@@ -170,6 +172,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${LIBPNG_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
+	"${XESS_INC_DIR}"
 	"${ZLIB_INC_DIR}")
 
 
@@ -193,9 +196,10 @@ set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
+set(XESS_LIB "libxess")
 set(ZLIB_LIB "zlibstatic")
 
-if(${ZE_ENABLE_DX12})
+if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 	set(AGS_TARGET "${AGS_DIR}/ags_lib/lib/${AGS_LIB}.lib")
 endif()
 if(${ZE_EXTERNAL_MODEL_LOADING})
@@ -214,6 +218,9 @@ if(${ZE_ENABLE_VK})
 endif()
 if(${ZE_ENABLE_DX12} AND NOT ${ZE_BUILD_RELEASE})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
+endif()
+if(${ZE_ENABLE_DX12})
+	set(XESS_TARGET "${XESS_DIR}/lib/${XESS_LIB}.lib")
 endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 

@@ -12,3 +12,6 @@ Build/
 
 # Intel profiler
 **/VTune*
+
+# Allow different external binary files
+!External/*/Bin

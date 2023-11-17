@@ -33,6 +33,7 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - [volk 1.3.250](https://github.com/zeux/volk) - [MIT License](Doc/License/ThirdParty/volk.txt)
  - [WinPixEventRuntime 1.0.231030001](https://www.nuget.org/packages/WinPixEventRuntime) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/WinPixEventRuntime.txt), [Third Party Notices](Doc/License/ThirdParty/WinPixEventRuntimeThirdPartyNotices.txt)
  - [XeGTAO 1.30](https://github.com/GameTechDev/XeGTAO) - [MIT LICENSE](Doc/License/ThirdParty/XeGTAO.txt)
+ - [XeSS 1.2.0](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.pdf), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
 
 ## License
 

@@ -123,20 +123,23 @@ if(NOT (${ZE_NO_DATA} OR ${ZE_CI_JOB}))
     copy_runtime_data(ENGINE "Data" "" "" "")
 endif()
 
-# DirectX 12 debug library and AgilitySDK
+# Copy DirectX 12 libraries
 if(${ZE_ENABLE_DX12})
     if(NOT ${ZE_BUILD_RELEASE})
         copy_runtime_data(ENGINE_PIX "${PIX_DIR}/bin/x64" "" ".dll" "")
         copy_runtime_data(ENGINE_AGILITY_DEBUG "${AGILITY_DIR}/bin/x64" "" "d3d12SDKLayers.dll" "AgilitySDK/")
         copy_runtime_data(ENGINE_AGILITY_SYMBOLS "${AGILITY_DIR}/bin/x64" "" ".pdb" "AgilitySDK/")
     endif()
-
+    
+    copy_runtime_data(ENGINE_XESS "${XESS_DIR}/bin" "" "libxess.dll" "")
     copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "AgilitySDK/")
     copy_runtime_data(ENGINE_DSTORE "${DSTORE_DIR}/bin/x64" "" "*.dll" "")
 endif()
 
 # Hardware specific lib
-copy_runtime_data(ENGINE_AGS "${AGS_DIR}/ags_lib/lib" "${AGS_LIB}" ".dll" "")
+if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
+    copy_runtime_data(ENGINE_AGS "${AGS_DIR}/ags_lib/lib" "${AGS_LIB}" ".dll" "")
+endif()
 
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
@@ -215,8 +218,8 @@ target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET} PUBLIC ${ZE_INC_DIRS})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${AGS_TARGET} ${ASSIMP_TARGET} ${DSTORE_TARGET} ${ENTT_TARGET} ${FFXSDK_TARGETS} ${FTYPE_TARGET} ${LIBPNG_TARGET} ${PIX_TARGET} ${VOLK_TARGET} ${ZLIB_TARGET})
-add_dependencies(${ENGINE_TARGET} ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET})
+    PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${AGS_TARGET} ${ASSIMP_TARGET} ${DSTORE_TARGET} ${ENTT_TARGET} ${FFXSDK_TARGETS} ${FTYPE_TARGET} ${LIBPNG_TARGET} ${PIX_TARGET} ${XESS_TARGET} ${VOLK_TARGET} ${ZLIB_TARGET})
+add_dependencies(${ENGINE_TARGET} ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET} ${ENGINE_XESS_COPY_TARGET})
 
 # Icon definition
 if(${ZE_PLATFORM_WINDOWS})
