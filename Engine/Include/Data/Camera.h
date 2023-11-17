@@ -35,6 +35,11 @@ namespace ZE::Data
 	};
 
 #pragma region Functions
+	// Convert projection space jitter into unit pixel space (range [-0.5,0.5]) in X axis
+	constexpr float GetUnitPixelJitterX(float jitterX, U32 renderWidth) noexcept { return 0.5f * jitterX * Utils::SafeCast<float>(renderWidth); }
+	// Convert projection space jitter into unit pixel space (range [-0.5,0.5]) in Y axis
+	constexpr float GetUnitPixelJitterY(float jitterY, U32 renderHeight) noexcept { return -0.5f * jitterY * Utils::SafeCast<float>(renderHeight); }
+
 	// Get frustum from infinite far plan reversed clip space projection
 	Math::BoundingFrustum GetFrustum(Matrix proj, float maxDistance) noexcept;
 	// Get symetrical vertical FOV projection matrix with infinite far plane for reversed clip space

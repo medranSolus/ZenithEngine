@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 {
-	void MessageHandler(FfxMsgType type, const wchar_t* msg)
+	void MessageHandler(FfxMsgType type, const wchar_t* msg) noexcept
 	{
 		switch (type)
 		{
@@ -69,8 +69,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.reactive = ffxGetResource(renderData.Buffers, reactiveMask, ids.ReactiveMask, Resource::StateShaderResourceNonPS);
 		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
 		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
-		desc.jitterOffset.x = 0.5f * projection.JitterX * Utils::SafeCast<float>(Settings::RenderSize.X);
-		desc.jitterOffset.y = -0.5f * projection.JitterY * Utils::SafeCast<float>(Settings::RenderSize.Y);
+		desc.jitterOffset.x = Data::GetUnitPixelJitterX(projection.JitterX, Settings::RenderSize.X);
+		desc.jitterOffset.y = Data::GetUnitPixelJitterY(projection.JitterY, Settings::RenderSize.Y);
 		desc.motionVectorScale.x = -Utils::SafeCast<float>(Settings::RenderSize.X);
 		desc.motionVectorScale.y = -Utils::SafeCast<float>(Settings::RenderSize.Y);
 		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
