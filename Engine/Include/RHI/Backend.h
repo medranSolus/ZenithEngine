@@ -312,7 +312,7 @@ namespace ZE::RHI
 #	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.vk.##function##(__VA_ARGS__); break
 #else
 #	define ZE_GET_VK_RHI_TYPE(type)
-#	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("Vulkan has been disabled!")
+#	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("Vulkan has been disabled!"); [[fallthrough]]
 #endif
 
 // Type for proper graphics API implementations for all current APIs

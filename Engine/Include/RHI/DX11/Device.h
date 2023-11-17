@@ -6,6 +6,10 @@
 namespace ZE::GFX
 {
 	class CommandList;
+	namespace Resource
+	{
+		class Generic;
+	}
 }
 namespace ZE::RHI::DX11
 {
@@ -69,6 +73,12 @@ namespace ZE::RHI::DX11
 		constexpr void StartUpload() {}
 		constexpr void EndUploadRegion() {}
 		constexpr void EndFrame() noexcept {}
+
+		xess_context_handle_t GetXeSSCtx() { ZE_FAIL("XeSS no supported for DirectX 11!"); return nullptr; }
+		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags) { ZE_FAIL("XeSS not supported for DirectX 11!"); }
+		void ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
+			GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
+			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset) { ZE_FAIL("XeSS not supported for DirectX 11!"); }
 
 		void ExecuteMain(GFX::CommandList& cl) { Execute(cl); }
 		void ExecuteCompute(GFX::CommandList& cl) { Execute(cl); }

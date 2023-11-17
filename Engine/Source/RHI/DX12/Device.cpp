@@ -1,6 +1,9 @@
 #include "RHI/DX12/Device.h"
 #include "RHI/DX12/DREDRecovery.h"
+#include "GFX/Resource/Generic.h"
 #include "GFX/CommandList.h"
+#include "GFX/XeSSException.h"
+#include "Data/Camera.h"
 
 namespace ZE::RHI::DX12
 {
@@ -275,6 +278,12 @@ namespace ZE::RHI::DX12
 	{
 		ZE_ASSERT(copyResInfo.Size == 0, "Copying data not finished before destroying Device!");
 
+		if (xessCtx)
+		{
+			ZE_XESS_ENABLE();
+			ZE_XESS_CHECK(xessDestroyContext(xessCtx), "Error destroying XeSS context!");
+		}
+
 		copyList.Free();
 		if (commandLists)
 			commandLists.Free();
@@ -305,9 +314,73 @@ namespace ZE::RHI::DX12
 #endif
 	}
 
+	xess_context_handle_t Device::GetXeSSCtx()
+	{
+		ZE_XESS_ENABLE();
+		if (xessCtx == nullptr)
+		{
+			ZE_XESS_THROW_FAILED(xessD3D12CreateContext(device.Get(), &xessCtx), "Error creating XeSS D3D12 context!");
+			if (xessIsOptimalDriver(xessCtx) == XESS_RESULT_WARNING_OLD_DRIVER)
+				Logger::Warning("Outdated Intel driver!");
+		}
+		return xessCtx;
+	}
+
+	void Device::InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags)
+	{
+		ZE_XESS_ENABLE();
+
+		xess_d3d12_init_params_t initParams = {};
+		initParams.outputResolution = { targetRes.X, targetRes.Y };
+		initParams.qualitySetting = quality;
+		// TODO: Add XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP when integration with frame buffer possible
+		// and use xessGetProperties() for sizes to reserve inside heaps for aliasable memory
+		initParams.initFlags = initFlags;
+		ZE_XESS_THROW_FAILED(xessD3D12BuildPipelines(xessCtx, nullptr, false, initParams.initFlags), "Error creating XeSS D3D12 pipelines!");
+
+		initParams.creationNodeMask = 0;
+		initParams.visibleNodeMask = 0;
+		initParams.pTempBufferHeap = nullptr;
+		initParams.bufferHeapOffset = 0;
+		initParams.pTempTextureHeap = nullptr;
+		initParams.textureHeapOffset = 0;
+		initParams.pPipelineLibrary = nullptr;
+		ZE_XESS_THROW_FAILED(xessD3D12Init(xessCtx, &initParams), "Error initializing XeSS D3D12 context!");
+	}
+
+	void Device::ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
+		GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
+		GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset)
+	{
+		ZE_XESS_ENABLE();
+
+		xess_d3d12_execute_params_t execParams = {};
+		execParams.pColorTexture = color.Get().dx12.GetResource();
+		execParams.pVelocityTexture = motionVectors.Get().dx12.GetResource();
+		execParams.pDepthTexture = depth ? depth->Get().dx12.GetResource() : nullptr;
+		execParams.pExposureScaleTexture = exposure ? exposure->Get().dx12.GetResource() : nullptr;
+		execParams.pResponsivePixelMaskTexture = responsive ? responsive->Get().dx12.GetResource() : nullptr;
+		execParams.pOutputTexture = output.Get().dx12.GetResource();
+
+		execParams.jitterOffsetX = Data::GetUnitPixelJitterX(jitterX, renderSize.X);
+		execParams.jitterOffsetY = Data::GetUnitPixelJitterY(jitterY, renderSize.Y);
+		execParams.exposureScale = 1.0f;
+		execParams.resetHistory = static_cast<U32>(reset);
+		execParams.inputWidth = renderSize.X;
+		execParams.inputHeight = renderSize.Y;
+		execParams.inputColorBase = { 0, 0 };
+		execParams.inputMotionVectorBase = { 0, 0 };
+		execParams.inputDepthBase = { 0, 0 };
+		execParams.inputResponsiveMaskBase = { 0, 0 };
+		execParams.outputColorBase = { 0, 0 };
+		execParams.pDescriptorHeap = nullptr; // TODO: When external heap, specify allocated descriptors here
+		execParams.descriptorHeapOffset = 0;
+		ZE_XESS_THROW_FAILED(xessD3D12Execute(xessCtx, cl.Get().dx12.GetList(), &execParams), "Error performing XeSS!");
+	}
+
 	GFX::ShaderModel Device::GetMaxShaderModel() const noexcept
 	{
-		D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_6 };
+		D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_8 };
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(D3D12_FEATURE_DATA_SHADER_MODEL))))
 		{
 			switch (shaderModel.HighestShaderModel)

@@ -79,7 +79,7 @@ PSOut main(float3 worldPos : POSITION,
 #endif
 	
 #ifdef _ZE_OUTPUT_REACTIVE
-	pso.reactive = clamp(abs(pso.color.a - 1.0f), 0.0f, 0.9f);
+	pso.reactive = clamp(abs(pso.color.a - 1.0f), 0.0f, cb_pbrData.ReactiveMaskClamp);
 #endif
 #ifdef _ZE_OUTPUT_MOTION
 	// Motion vectors in NDC space

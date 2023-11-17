@@ -24,14 +24,6 @@ namespace ZE::GFX
 	// Handle for resources used by FfxBackendContext
 	typedef U32 ResID;
 
-	// Interface data setup when filling FfxInterface
-	struct FfxBackendInterface
-	{
-		Device& Dev;
-		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
-		U32 ContextRefCount = 0;
-	};
-
 	// Main context used by FFX SDK
 	struct FfxBackendContext
 	{
@@ -44,6 +36,15 @@ namespace ZE::GFX
 		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
 		std::vector<Resource::GenericResourceBarrier> Barriers;
 		std::vector<FfxGpuJobDescription> Jobs;
+	};
+
+	// Interface data setup when filling FfxInterface
+	struct FfxBackendInterface
+	{
+		Device& Dev;
+		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
+		U32 ContextRefCount = 0;
+		FfxBackendContext* Ctx = nullptr;
 	};
 
 	// Interface functions used by FFX SDK backend
@@ -130,9 +131,9 @@ namespace ZE::GFX
 		backendInterface.fpScheduleGpuJob = ffxScheduleGpuJob;
 		backendInterface.fpExecuteGpuJobs = ffxExecuteGpuJobs;
 
-		// Memory assignments
+		// Memory assignments will be performed later on
 		backendInterface.scratchBufferSize = sizeof(FfxBackendContext);
-		backendInterface.scratchBuffer = new U8[backendInterface.scratchBufferSize];
+		backendInterface.scratchBuffer = nullptr;
 
 		// Set the device and dynamic buffers
 		backendInterface.device = new FfxBackendInterface{ dev, dynamicBuffers };
@@ -164,7 +165,6 @@ namespace ZE::GFX
 	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId)
 	{
 		ZE_CHECK_FFX_BACKEND();
-		ZE_ASSERT(backendInterface->scratchBuffer, "Empty FFX backend context memory!");
 
 		// Not using effect IDs anyway
 		if (effectContextId)
@@ -172,9 +172,11 @@ namespace ZE::GFX
 
 		if (GetFfxCtxRefCount(backendInterface)++ == 0)
 		{
-			FfxBackendContext* ctx = reinterpret_cast<FfxBackendContext*>(backendInterface->scratchBuffer);
-			std::memset(ctx, 0, sizeof(FfxBackendContext));
-			new(ctx) FfxBackendContext;
+			U8* buffer = new U8[sizeof(FfxBackendContext)];
+			std::memset(buffer, 0, sizeof(FfxBackendContext));
+			reinterpret_cast<FfxBackendInterface*>(backendInterface->device)->Ctx = reinterpret_cast<FfxBackendContext*>(buffer);
+
+			new(reinterpret_cast<FfxBackendContext*>(buffer)) FfxBackendContext;
 		}
 
 		return FFX_OK;
@@ -249,6 +251,7 @@ namespace ZE::GFX
 			ctx.CommandSignatures.Transform([&dev](CommandSignature& signature) { signature.Free(dev); });
 
 			ctx.~FfxBackendContext();
+			delete[] reinterpret_cast<U8*>(reinterpret_cast<FfxBackendInterface*>(backendInterface->device)->Ctx);
 		}
 		return FFX_OK;
 	}
@@ -662,8 +665,8 @@ namespace ZE::GFX
 #pragma region FFX utility functions
 	constexpr FfxBackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept
 	{
-		ZE_ASSERT(backendInterface->scratchBuffer, "Empty FFX backend context!");
-		return *((FfxBackendContext*)backendInterface->scratchBuffer);
+		ZE_ASSERT(((FfxBackendInterface*)backendInterface->device)->Ctx, "Empty FFX backend context!");
+		return *((FfxBackendInterface*)backendInterface->device)->Ctx;
 	}
 
 	constexpr Device& GetDevice(FfxInterface* backendInterface) noexcept

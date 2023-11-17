@@ -7,11 +7,16 @@
 #include "DescriptorInfo.h"
 ZE_WARNING_PUSH
 #include "amd_ags.h"
+#include "xess/xess_d3d12.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
 {
 	class CommandList;
+	namespace Resource
+	{
+		class Generic;
+	}
 }
 namespace ZE::RHI::DX12
 {
@@ -58,6 +63,7 @@ namespace ZE::RHI::DX12
 
 		AllocatorGPU allocator;
 		FfxInterface ffxInterface;
+		xess_context_handle_t xessCtx = nullptr;
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -132,6 +138,11 @@ namespace ZE::RHI::DX12
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
 
+		xess_context_handle_t GetXeSSCtx();
+		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);
+		void ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
+			GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
+			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset);
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
 		bool IsShaderFloat16Supported() const noexcept;

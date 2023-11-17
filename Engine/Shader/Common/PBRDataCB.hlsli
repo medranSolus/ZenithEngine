@@ -26,6 +26,7 @@ struct PBRData
 	
 	float Gamma;
 	float GammaInverse;
+	float ReactiveMaskClamp;
 	
 	// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 	float BlurCoefficients[ZE_BLUR_KERNEL_MAX_SIZE];

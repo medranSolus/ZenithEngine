@@ -31,8 +31,9 @@ namespace ZE::GFX::Pipeline
 
 		float Gamma;
 		float GammaInverse;
+		float ReactiveMaskClamp;
 
-		float _Padding[2];
+		float _Padding[1];
 
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];

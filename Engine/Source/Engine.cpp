@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include "GFX/Pipeline/RenderPass/UpscaleXeSS.h"
 
 namespace ZE
 {
@@ -10,9 +11,10 @@ namespace ZE
 
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
-		Settings::RenderSize = GFX::CalculateRenderSize(Settings::DisplaySize, Settings::GetUpscaler());
 
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler());
+
 		gui.Init(graphics, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), params.Renderer);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/

@@ -159,7 +159,7 @@ namespace ZE::GFX::Pipeline
 		if (Settings::ComputeMotionVectors())
 			gbuffMotion = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16_Float, ColorF4() });
 		RID gbuffReactive = INVALID_RID;
-		if (Settings::GetUpscaler() == UpscalerType::Fsr2)
+		if (Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS)
 			gbuffReactive = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R8_UNorm, ColorF4() });
 
 		const RID gbuffColor = frameBufferDesc.AddResource(
@@ -210,7 +210,27 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-		settingsData.MipBias = Settings::GetUpscaler() == UpscalerType::Fsr2 ? log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f : 0.0f;
+		switch (Settings::GetUpscaler())
+		{
+		case UpscalerType::Fsr2:
+		{
+			settingsData.MipBias = log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f;
+			settingsData.ReactiveMaskClamp = 0.9f;
+			break;
+		}
+		case UpscalerType::XeSS:
+		{
+			settingsData.MipBias = log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X));
+			settingsData.ReactiveMaskClamp = 1.0f;
+			break;
+		}
+		default:
+		{
+			settingsData.MipBias = 0.0f;
+			settingsData.ReactiveMaskClamp = 0.0f;
+			break;
+		}
+		}
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
 
@@ -369,6 +389,17 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 		case UpscalerType::Fsr2:
+		{
+			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
+			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
+			nodes.emplace_back(std::move(node));
+			break;
+		}
+		case UpscalerType::XeSS:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
@@ -709,6 +740,7 @@ namespace ZE::GFX::Pipeline
 		default:
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
+		case UpscalerType::XeSS: // At the moment not options for XeSS since only quality mode can be chosen
 			break;
 		case UpscalerType::Fsr1:
 		case UpscalerType::Fsr2:

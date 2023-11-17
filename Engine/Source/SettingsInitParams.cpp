@@ -12,6 +12,7 @@ namespace ZE
 		parser.AddOption("pix");
 		parser.AddOption("fsr2");
 		parser.AddOption("fsr1");
+		parser.AddOption("xess");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
 	}
@@ -30,6 +31,8 @@ namespace ZE
 
 		if (parser.GetOption("fsr2"))
 			params.Upscaler = GFX::UpscalerType::Fsr2;
+		else if (parser.GetOption("xess"))
+			params.Upscaler = GFX::UpscalerType::XeSS;
 		else if (parser.GetOption("fsr1"))
 			params.Upscaler = GFX::UpscalerType::Fsr1;
 		else
