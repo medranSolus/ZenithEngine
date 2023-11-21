@@ -82,13 +82,15 @@ namespace ZE
 					currentCPU = VendorCPU::AMD;
 
 				Intrin::CPUID(eax, ebx, ecx, edx, 0x80000008);
-				coresCount = (edx & 0xFF) + 1;
 
-				const U8 coresIdSize = ecx & 0x0F;
+				const U8 coresIdSize = (ecx >> 12) & 0x0F;
 				if (coresIdSize == 0)
-					logicalCoresCount = coresCount;
+					logicalCoresCount = (ecx & 0xFF) + 1;
 				else
 					logicalCoresCount = Utils::SafeCast<U8>(std::pow(2U, coresIdSize));
+
+				Intrin::CPUID(eax, ebx, ecx, edx, 0x8000001E);
+				coresCount = logicalCoresCount / (((ebx >> 8) & 0xFF) + 1);
 			}
 			else if (strcmp(vendor, "GenuineIntel") == 0)
 			{
