@@ -2,7 +2,7 @@
 #define CONSTANTS_NIS_CS_HLSLI
 #include "Buffers.hlsli"
 
-
+// Variables with underscore are not used right now
 struct ConstantsNIS
 {
 	float DetectRatio;
@@ -42,7 +42,7 @@ struct ConstantsNIS
 	float _reserved1;
 };
 
-CBUFFER(nisConsts, ConstantsNIS, 0, 4);
+CBUFFER(nisConsts, ConstantsNIS, 0, 3);
 
 // Defines fixing names of cbuffer variables used directly in the shader
 #define kDetectRatio cb_nisConsts.DetectRatio

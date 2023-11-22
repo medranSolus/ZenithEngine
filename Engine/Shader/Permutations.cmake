@@ -93,10 +93,7 @@ add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_PREFER_WAVE64:W")
 
 # NIS
 add_shader_permutation("NVImageScalingCS" "NIS_HDR_MODE=1:L|NIS_HDR_MODE=2:P")
-add_shader_permutation("NVImageScalingCS" "NIS_CLAMP_OUTPUT=1:C")
-add_shader_permutation("NVImageScalingCS" "NIS_NV12_SUPPORT=1:V12")
-add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H")
-add_shader_permutation("NVImageScalingCS" "NIS_THREAD_GROUP_SIZE=128,NIS_BLOCK_HEIGHT=32:NV16|NIS_THREAD_GROUP_SIZE=128:NV")
+add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H|NIS_USE_HALF_PRECISION=1,NIS_BLOCK_HEIGHT=32,NIS_THREAD_GROUP_SIZE=128:NVH|NIS_THREAD_GROUP_SIZE=128:NV")
 
 ############# PS PERMUTATIONS ##############
 
