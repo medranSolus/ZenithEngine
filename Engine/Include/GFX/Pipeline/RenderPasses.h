@@ -14,6 +14,7 @@
 #include "RenderPass/UpscaleFSR1.h"
 #include "RenderPass/UpscaleFSR2.h"
 #include "RenderPass/UpscaleXeSS.h"
+#include "RenderPass/UpscaleNIS.h"
 #include "RenderPass/VerticalBlur.h"
 #include "RenderPass/Wireframe.h"
 #include "RenderPass/XeGTAO.h"

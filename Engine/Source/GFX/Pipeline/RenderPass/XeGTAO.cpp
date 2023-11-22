@@ -75,8 +75,8 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		surfaces.emplace_back(XE_HILBERT_WIDTH, XE_HILBERT_WIDTH, PixelFormat::R16_UInt);
 
 		U16* buffer = reinterpret_cast<U16*>(surfaces.front().GetBuffer());
-		for (U32 x = 0; x < XE_HILBERT_WIDTH; ++x)
-			for (U32 y = 0; y < XE_HILBERT_WIDTH; ++y)
+		for (U32 y = 0; y < XE_HILBERT_WIDTH; ++y)
+			for (U32 x = 0; x < XE_HILBERT_WIDTH; ++x)
 				buffer[x + y * XE_HILBERT_WIDTH] = Utils::SafeCast<U16>(::XeGTAO::HilbertIndex(x, y));
 
 		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;

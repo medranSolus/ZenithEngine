@@ -15,8 +15,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		RID Output;
 	};
 
-	constexpr void Clean(Device& dev, void* data) noexcept {}
-
 	void* Setup(Device& dev);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

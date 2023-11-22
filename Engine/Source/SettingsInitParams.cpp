@@ -13,6 +13,7 @@ namespace ZE
 		parser.AddOption("fsr2");
 		parser.AddOption("fsr1");
 		parser.AddOption("xess");
+		parser.AddOption("nis");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
 	}
@@ -35,6 +36,8 @@ namespace ZE
 			params.Upscaler = GFX::UpscalerType::XeSS;
 		else if (parser.GetOption("fsr1"))
 			params.Upscaler = GFX::UpscalerType::Fsr1;
+		else if (parser.GetOption("nis"))
+			params.Upscaler = GFX::UpscalerType::NIS;
 		else
 			params.Upscaler = GFX::UpscalerType::None;
 

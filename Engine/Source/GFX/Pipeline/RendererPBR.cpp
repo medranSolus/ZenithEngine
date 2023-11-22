@@ -210,26 +210,18 @@ namespace ZE::GFX::Pipeline
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
+		settingsData.MipBias = CalculateMipBias(Settings::RenderSize.X, Settings::DisplaySize.X, Settings::GetUpscaler());
 		switch (Settings::GetUpscaler())
 		{
 		case UpscalerType::Fsr2:
-		{
-			settingsData.MipBias = log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X)) - 1.0f;
 			settingsData.ReactiveMaskClamp = 0.9f;
 			break;
-		}
 		case UpscalerType::XeSS:
-		{
-			settingsData.MipBias = log2f(Utils::SafeCast<float>(Settings::RenderSize.X) / Utils::SafeCast<float>(Settings::DisplaySize.X));
 			settingsData.ReactiveMaskClamp = 1.0f;
 			break;
-		}
 		default:
-		{
-			settingsData.MipBias = 0.0f;
 			settingsData.ReactiveMaskClamp = 0.0f;
 			break;
-		}
 		}
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
@@ -401,11 +393,19 @@ namespace ZE::GFX::Pipeline
 		}
 		case UpscalerType::XeSS:
 		{
-			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
+			RenderNode node("upscale", QueueType::Main, RenderPass::UpscaleXeSS::Execute, nullptr, RenderPass::UpscaleXeSS::Setup(dev));
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
+			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
+			nodes.emplace_back(std::move(node));
+			break;
+		}
+		case UpscalerType::NIS:
+		{
+			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleNIS, dev, buildData);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
 			nodes.emplace_back(std::move(node));
 			break;
@@ -744,17 +744,19 @@ namespace ZE::GFX::Pipeline
 			break;
 		case UpscalerType::Fsr1:
 		case UpscalerType::Fsr2:
+		case UpscalerType::NIS:
 		{
 			const bool fsr2 = Settings::GetUpscaler() == UpscalerType::Fsr2;
-			if (ImGui::CollapsingHeader(fsr2 ? "FSR2" : "FSR1"))
+			const bool nis = Settings::GetUpscaler() == UpscalerType::NIS;
+			if (ImGui::CollapsingHeader(nis ? "NIS" : (fsr2 ? "FSR2" : "FSR1")))
 			{
-				ImGui::Columns(2, "##fsr_sharpness_settings", false);
+				ImGui::Columns(2, "##sharpness_settings", false);
 				{
 					ImGui::Text("Sharpness");
 				}
 				ImGui::NextColumn();
 				{
-					ImGui::Checkbox("##fsr_enable_sharpness", &enableSharpening);
+					ImGui::Checkbox("##enable_sharpness", &enableSharpening);
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Enable an additional sharpening pass");
 				}

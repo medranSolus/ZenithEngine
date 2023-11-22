@@ -48,7 +48,7 @@ namespace ZE::GFX::Pipeline
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4x4& GetPrevViewProjection() const noexcept { return prevViewProjection; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
-		constexpr float GetSharpness() const noexcept { return sharpness; }
+		constexpr float GetSharpness() const noexcept { return enableSharpening ? sharpness : 0.0f; }
 		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }
 
 		void Init(Device& dev, CommandList& mainList, const ParamsPBR& params);
