@@ -39,3 +39,9 @@
 [submodule "External/FidelityFXSDK"]
 	path = External/FidelityFXSDK
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git
+[submodule "External/DLSS"]
+	path = External/DLSS
+	url = https://github.com/NVIDIA/DLSS.git
+[submodule "External/NvidiaImageScaling"]
+	path = External/NvidiaImageScaling
+	url = https://github.com/NVIDIAGameWorks/NVIDIAImageScaling.git

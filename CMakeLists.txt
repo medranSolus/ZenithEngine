@@ -92,6 +92,7 @@ set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
 set(AGS_DIR "${EXTERNAL_DIR}/AGS")
 set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
+set(DLSS_DIR "${EXTERNAL_DIR}/DLSS")
 set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
@@ -101,6 +102,7 @@ set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK/sdk")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
+set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
@@ -119,6 +121,7 @@ set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
 set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
+set(DLSS_INC_DIR "${DLSS_DIR}/include")
 set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
@@ -128,6 +131,7 @@ set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
+set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(XESS_INC_DIR "${XESS_DIR}/inc")
@@ -161,6 +165,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${AGILITY_INC_DIR}"
 	"${AGS_INC_DIR}"
 	"${ASSIMP_INC_DIR}"
+	"${DLSS_INC_DIR}"
 	"${DSTORE_INC_DIR}"
 	"${DXMATH_INC_DIR}"
 	"${DXTEX_INC_DIR}"
@@ -170,6 +175,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${HARFBUZZ_INC_DIR}"
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
+	"${NIS_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XESS_INC_DIR}"
@@ -188,6 +194,7 @@ set(ENGINE_TARGET "zenith")
 # External libraries
 set(AGS_LIB "amd_ags_x64")
 set(ASSIMP_LIB "assimp")
+set(DLSS_LIB "nvsdk_ngx")
 set(DSTORE_LIB "dstorage")
 set(DXTEX_LIB "DirectXTex")
 set(ENTT_LIB "EnTT::EnTT")
@@ -204,6 +211,13 @@ if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 endif()
 if(${ZE_EXTERNAL_MODEL_LOADING})
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
+endif()
+if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK})
+	if(${ZE_PLATFORM_WINDOWS})
+		set(DLSS_TARGET "${DLSS_DIR}/lib/Windows_x86_64/x86_64/${DLSS_LIB}_s.lib")
+	elseif(${ZE_PLATFORM_LINUX})
+		set(DLSS_TARGET "${DLSS_DIR}/lib/Linux_x86_64/lib${DLSS_LIB}.a")
+	endif()
 endif()
 if(${ZE_ENABLE_DX12})
 	set(DSTORE_TARGET "${DSTORE_DIR}/lib/x64/${DSTORE_LIB}.lib")
@@ -365,7 +379,7 @@ add_definition_flags(
 	"-DNDEBUG")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DFFX_GPU=1 /DFFX_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\"")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DFFX_GPU=1 /DFFX_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${NIS_INC_DIR}\"")
 if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
 	if(NOT ${ZE_BUILD_PROFILE})
