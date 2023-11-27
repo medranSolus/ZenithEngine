@@ -680,7 +680,7 @@ App::App(const CmdParser& params)
 			const float scale = Math::Rand(0.5f, 5.0f, randEngine);
 
 			auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
-				engine.GetData().emplace<Data::Transform>(model,
+				Settings::Data.emplace<Data::Transform>(model,
 					Math::GetQuaternion(angleX, angleY, angleZ),
 					Math::RandPosition(-200.0f, 200.0f, randEngine),
 					Float3(scale, scale, scale)));
@@ -723,11 +723,6 @@ App::App(const CmdParser& params)
 	}
 	engine.Gfx().GetDevice().StartUpload();
 	engine.Gfx().GetDevice().EndUploadRegion();
-
-	Data::Camera& camData = Settings::Data.get<Data::Camera>(currentCamera);
-	engine.Reneder().UpdateSettingsData(engine.Gfx().GetDevice(),
-		Math::XMMatrixPerspectiveFovLH(camData.Projection.FOV, camData.Projection.ViewRatio,
-			camData.Projection.NearClip, camData.Projection.FarClip));
 }
 
 int App::Run()

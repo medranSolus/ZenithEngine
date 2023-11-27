@@ -458,10 +458,10 @@ namespace ZE::GFX::Pipeline
 
 	void RendererPBR::SetInverseViewProjection(EID camera) noexcept
 	{
-		Data::Camera& camData = GetRegistry().get<Data::Camera>(camera);
+		Data::Camera& camData = Settings::Data.get<Data::Camera>(camera);
 		UpdateSettingsData(camData.Projection);
 
-		const auto& transform = GetRegistry().get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
+		const auto& transform = Settings::Data.get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
 		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
 			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
 				Math::XMLoadFloat3(&camData.EyeDirection),

@@ -165,7 +165,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				Resource::DynamicBufferAlloc transformAlloc;
 				if (Settings::ComputeMotionVectors())
 				{
-					const auto& transformPrev = renderData.Registry.get<Data::TransformPrevious>(entity);
+					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
 					ModelTransformBufferMotion transformBuffer;
 					transformBuffer.Model = m;
@@ -296,7 +296,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				Matrix mvp = viewProjection * m;
 				if (Settings::ComputeMotionVectors())
 				{
-					const auto& transformPrev = renderData.Registry.get<Data::TransformPrevious>(entity);
+					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
 					ModelTransformBufferMotion transformBuffer;
 					transformBuffer.Model = m;
