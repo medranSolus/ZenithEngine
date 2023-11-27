@@ -16,8 +16,8 @@ namespace ZE
 		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler());
 
 		gui.Init(graphics, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
-		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), params.Renderer);
-		resources.Init(graphics.GetDevice());
+		assets.Init(graphics.GetDevice());
+		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), assets, params.Renderer);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
 		// Reverse depth: https://www.gamedev.net/forums/topic/693404-reverse-depth-buffer/
@@ -42,12 +42,12 @@ namespace ZE
 			for (auto& buffer : Settings::Data.view<Data::PointLightBuffer>())
 				Settings::Data.get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
 
-			for (auto& buffer : GetAssetsStreamer().GetResources().view<Data::MaterialBuffersPBR>())
-				GetAssetsStreamer().GetResources().get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
-			for (auto& buffer : GetAssetsStreamer().GetResources().view<GFX::Resource::Mesh>())
-				GetAssetsStreamer().GetResources().get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
+			for (auto& buffer : Settings::Data.view<Data::MaterialBuffersPBR>())
+				Settings::Data.get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
+			for (auto& buffer : Settings::Data.view<GFX::Resource::Mesh>())
+				Settings::Data.get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
 			renderer.Free(graphics.GetDevice());
-			resources.Free(graphics.GetDevice());
+			assets.Free(graphics.GetDevice());
 			gui.Destroy(graphics.GetDevice());
 		}
 	}
@@ -74,7 +74,7 @@ namespace ZE
 		if (IsGuiActive())
 		{
 			gui.StartFrame(window);
-			resources.ShowWindow(graphics.GetDevice());
+			assets.ShowWindow(graphics.GetDevice());
 		}
 		return frameTime;
 	}

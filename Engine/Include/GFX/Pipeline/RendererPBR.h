@@ -51,7 +51,7 @@ namespace ZE::GFX::Pipeline
 		constexpr float GetSharpness() const noexcept { return enableSharpening ? sharpness : 0.0f; }
 		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }
 
-		void Init(Device& dev, CommandList& mainList, const ParamsPBR& params);
+		void Init(Device& dev, CommandList& mainList, Data::AssetsStreamer& assets, const ParamsPBR& params);
 
 		// Need to be called when data in parameters changed (also after creation of renderer)
 		void UpdateSettingsData(const Data::Projection& projection) noexcept;

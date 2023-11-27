@@ -1,8 +1,10 @@
 #include "Data/AssetsStreamer.h"
 #include "Data/MaterialPBR.h"
 #include "Data/Tags.h"
-#include "Data/Transform.h"
 #include "GFX/Vertex.h"
+#include "GUI/DialogWindow.h"
+#include "IO/Format/ResourcePackFile.h"
+#include "IO/File.h"
 
 namespace ZE::Data
 {
@@ -20,319 +22,439 @@ namespace ZE::Data
 			indices[index++] = Utils::SafeCast<Index>(face.mIndices[2]);
 		}
 	}
+#endif
 
-	void AssetsStreamer::ParseNode(const aiNode& node, EID currentEntity, const std::vector<std::pair<EID, U32>>& meshes,
-		const std::vector<EID>& materials, Storage& registry, bool loadNames) noexcept
+	void AssetsStreamer::Init(GFX::Device& dev)
 	{
-		if (loadNames && !registry.all_of<std::string>(currentEntity))
-			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
+		diskManager.Init(dev);
 
-		TransformGlobal& transform = registry.get<TransformGlobal>(currentEntity);
-		const Vector globalRotation = Math::XMLoadFloat4(&transform.Rotation);
-		const Vector globalPosition = Math::XMLoadFloat3(&transform.Position);
-		const Vector globalScale = Math::XMLoadFloat3(&transform.Scale);
-
-		if (!registry.all_of<Children>(currentEntity))
-			registry.emplace<Children>(currentEntity);
-
-		if (node.mNumMeshes)
-		{
-			registry.emplace<RenderLambertian>(currentEntity);
-			registry.emplace<ShadowCaster>(currentEntity);
-			registry.emplace<MeshID>(currentEntity, meshes.at(node.mMeshes[0]).first);
-			registry.emplace<MaterialID>(currentEntity, materials.at(meshes.at(node.mMeshes[0]).second));
-			// Create child entities for every multiple instances of meshes in this node
-			for (U32 i = 1; i < node.mNumMeshes; ++i)
-			{
-				EID child = registry.create();
-				registry.emplace<ParentID>(child, currentEntity);
-				registry.emplace<RenderLambertian>(child);
-				registry.emplace<ShadowCaster>(child);
-				if (loadNames)
-					registry.emplace<std::string>(child, registry.get<std::string>(currentEntity) + "_" + std::to_string(i));
-
-				registry.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
-				registry.emplace<TransformGlobal>(child, transform);
-				if (Settings::ComputeMotionVectors())
-					registry.emplace<TransformPrevious>(child, transform);
-				registry.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
-				registry.emplace<MaterialID>(child, materials.at(meshes.at(node.mMeshes[i]).second));
-				registry.get<Children>(currentEntity).Childs.emplace_back(child);
-			}
-		}
-
-		for (U32 i = 0; i < node.mNumChildren; ++i)
-		{
-			EID child = registry.create();
-			registry.emplace<ParentID>(child, currentEntity);
-			registry.get<Children>(currentEntity).Childs.emplace_back(child);
-
-			Vector translation, rotation, scaling;
-			if (!Math::XMMatrixDecompose(&scaling, &rotation, &translation,
-				Math::XMMatrixTranspose(Math::XMLoadFloat4x4(reinterpret_cast<const Float4x4*>(&node.mTransformation)))))
-			{
-				translation = { 0.0f, 0.0f, 0.0f, 0.0f };
-				rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
-				scaling = { 1.0f, 1.0f, 1.0f, 0.0f };
-			}
-
-			Transform& local = registry.emplace<Transform>(child);
-			Math::XMStoreFloat4(&local.Rotation, rotation);
-			Math::XMStoreFloat3(&local.Position, translation);
-			Math::XMStoreFloat3(&local.Scale, scaling);
-
-			Transform& global = registry.emplace<TransformGlobal>(child);
-			Math::XMStoreFloat4(&global.Rotation, Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(globalRotation, rotation)));
-			Math::XMStoreFloat3(&global.Position, Math::XMVectorAdd(globalPosition, translation));
-			Math::XMStoreFloat3(&global.Scale, Math::XMVectorMultiply(globalScale, scaling));
-			if (Settings::ComputeMotionVectors())
-				registry.emplace<TransformPrevious>(child, global);
-
-			ParseNode(*node.mChildren[i], child, meshes, materials, registry, loadNames);
-		}
-
-		if (registry.get<Children>(currentEntity).Childs.size() == 0)
-			registry.remove<Children>(currentEntity);
+		// Initialize schema for known materials
+		GFX::Resource::Texture::Schema pbrTextureSchema;
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_COLOR_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_NORMAL_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_SPECULAR_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
+		texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 	}
 
-	EID AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh, bool loadNames)
+	void AssetsStreamer::Free(GFX::Device& dev)
 	{
-		// Gather index data and parse it into continuous array
-		std::unique_ptr<U32[]> indicesU32;
-		std::unique_ptr<U16[]> indicesU16;
-		std::unique_ptr<U8[]> indicesU8;
-
-		GFX::Resource::MeshData meshData = {};
-		meshData.VertexCount = mesh.mNumVertices;
-		meshData.IndexCount = mesh.mNumFaces * 3;
-		meshData.VertexSize = sizeof(GFX::Vertex);
-
-		if (meshData.IndexCount >= UINT16_MAX)
-		{
-			indicesU32 = std::make_unique<U32[]>(meshData.IndexCount);
-			meshData.IndexSize = sizeof(U32);
-			meshData.Indices = indicesU32.get();
-			ParseIndices(indicesU32, mesh);
-		}
-		else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
-		{
-			indicesU16 = std::make_unique<U16[]>(meshData.IndexCount);
-			meshData.IndexSize = sizeof(U16);
-			meshData.Indices = indicesU16.get();
-			ParseIndices(indicesU16, mesh);
-		}
-		else
-		{
-			indicesU8 = std::make_unique<U8[]>(meshData.IndexCount);
-			meshData.IndexSize = sizeof(U8);
-			meshData.Indices = indicesU8.get();
-			ParseIndices(indicesU8, mesh);
-		}
-
-		// Parse vertex data into structured format
-		Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
-		Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
-
-		std::unique_ptr<GFX::Vertex[]> vertices = std::make_unique<GFX::Vertex[]>(mesh.mNumVertices);
-		meshData.Vertices = vertices.get();
-		for (U32 i = 0; i < mesh.mNumVertices; ++i)
-		{
-			GFX::Vertex& vertex = vertices[i];
-
-			vertex.Position = *reinterpret_cast<Float3*>(mesh.mVertices + i);
-			ZE_ASSERT(vertex.Position.x == mesh.mVertices[i].x
-				&& vertex.Position.y == mesh.mVertices[i].y
-				&& vertex.Position.z == mesh.mVertices[i].z,
-				"Position data is incorrect, type of aiMesh::mVertices changed!");
-			// Find min/max position values to determine bounding box
-			const Vector pos = Math::XMLoadFloat3(&vertex.Position);
-			min = Math::XMVectorMin(min, pos);
-			max = Math::XMVectorMax(max, pos);
-
-			vertex.Normal = *reinterpret_cast<Float3*>(mesh.mNormals + i);
-			ZE_ASSERT(vertex.Normal.x == mesh.mNormals[i].x
-				&& vertex.Normal.y == mesh.mNormals[i].y
-				&& vertex.Normal.z == mesh.mNormals[i].z,
-				"Normal data is incorrect, type of aiMesh::mNormals changed!");
-
-			if (mesh.HasTextureCoords(0))
-			{
-				vertex.UV = *reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i);
-				ZE_ASSERT(vertex.UV.x == mesh.mTextureCoords[0][i].x
-					&& vertex.UV.y == mesh.mTextureCoords[0][i].y,
-					"UV data is incorrect, type of aiMesh::mTextureCoords changed!");
-			}
-			if (mesh.HasTangentsAndBitangents())
-			{
-				vertex.Tangent.x = mesh.mTangents[i].x;
-				vertex.Tangent.y = mesh.mTangents[i].y;
-				vertex.Tangent.z = mesh.mTangents[i].z;
-				//vertex.Tangent.w = -1.0f; // TODO: Check somehow
-			}
-		}
-
-		// Create main mesh data
-		EID meshId = assets.create();
-		if (loadNames)
-			assets.emplace<std::string>(meshId, mesh.mName.length != 0 ? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
-		assets.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
-
-		// Load parsed mesh data into correct asset
-		//assets.emplace<GFX::Resource::Mesh>(meshId).Init(dev, meshData);
-
-		return meshId;
 	}
 
-	EID AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material,
-		const GFX::Resource::Texture::Schema& texSchema, const std::string& path, bool loadNames)
+	Task<IO::FileStatus> AssetsStreamer::LoadResourcePack(GFX::Device& dev, std::string_view packFile)
 	{
-		EID materialId = assets.create();
-		if (loadNames)
-			assets.emplace<std::string>(materialId, material.GetName().length != 0 ?
-				material.GetName().C_Str() : "material_" + std::to_string(static_cast<U64>(materialId)));
+		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+			[&]() -> IO::FileStatus
+			{
+				IO::File file;
+				if (!file.Open(diskManager, packFile, IO::FileFlag::GpuReading))
+					return IO::FileStatus::ErrorOpeningFile;
 
-		MaterialPBR& data = assets.emplace<MaterialPBR>(materialId);
-		MaterialBuffersPBR& buffers = assets.emplace<MaterialBuffersPBR>(materialId);
-		PBRFlags& flags = assets.emplace<PBRFlags>(materialId);
+				IO::Format::ResourcePackFileHeader header = {};
+				if (!file.Read(&header, sizeof(header), 0))
+					return IO::FileStatus::ErrorReading;
+				// Check if signature is correct first and resources are present
+				if (std::memcmp(header.Signature, IO::Format::ResourcePackFileHeader::SIGNATURE_STR, 4) != 0)
+					return IO::FileStatus::ErrorBadSignature;
+				if (header.ResourceCount == 0)
+					return IO::FileStatus::ErrorNoResources;
 
-		GFX::Resource::Texture::PackDesc texDesc;
-		texDesc.Init(texSchema);
+				// Prepare IDs for all created entities
+				std::vector<EID> resourceIds(header.ResourceCount);
+				Settings::CreateEntities(resourceIds);
+				Storage& assets = Settings::Data;
 
-		std::vector<GFX::Surface> surfaces;
-		aiString texFile;
-		bool notSolid = false;
+				// Handle files according to version
+				IO::FileStatus result = IO::FileStatus::Ok;
+				switch (header.Version)
+				{
+				case Utils::MakeVersion(1, 0, 0):
+				{
+					const U32 infoSectionSize = header.ResourceCount * sizeof(IO::Format::ResourcePackEntry)
+						+ header.TexturesCount * sizeof(IO::Format::ResourcePackTextureEntry) + header.NameSectionSize;
+					std::unique_ptr<U8[]> infoSection = std::make_unique<U8[]>(infoSectionSize);
+					auto tableWait = file.ReadAsync(infoSection.get(), infoSectionSize, sizeof(header));
 
-		// Get diffuse texture
-		if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
-		{
-			surfaces.emplace_back(path + texFile.C_Str());
-			notSolid |= surfaces.back().HasAlpha();
+					const IO::Format::ResourcePackEntry* resourceTable = reinterpret_cast<const IO::Format::ResourcePackEntry*>(infoSection.get() + sizeof(header));
+					const IO::Format::ResourcePackTextureEntry* textureTable = reinterpret_cast<const IO::Format::ResourcePackTextureEntry*>(resourceTable + header.ResourceCount);
+					const char* nameTable = reinterpret_cast<const char*>(textureTable + header.TexturesCount);
 
-			texDesc.AddTexture(texSchema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
-			flags |= MaterialPBR::Flag::UseTexture;
-		}
+					// Wait for last read and check if correct numer of bytes are read
+					if (tableWait.get() != infoSectionSize)
+					{
+						result = IO::FileStatus::ErrorReading;
+						break;
+					}
 
-		// Get normal map texture
-		if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
-		{
-			surfaces.emplace_back(path + texFile.C_Str());
-			texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
-			flags |= MaterialPBR::Flag::UseNormal;
-		}
+					// First check for integrity of resources and loading of CPU only data
+					U32 resIdIndex = 0;
+					for (U32 i = 0; i < header.ResourceCount; ++i)
+					{
+						auto& entry = resourceTable[i];
 
-		// Get specular data
-		if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
-		{
-			surfaces.emplace_back(path + texFile.C_Str());
-			if (surfaces.back().HasAlpha())
-				data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
-			texDesc.AddTexture(texSchema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
-			flags |= MaterialPBR::Flag::UseSpecular;
-		}
+						EID resId = resourceIds.at(resIdIndex++);
+						assets.emplace<PackID>(resId, header.ID);
+						assets.emplace<ResourceLocationAtom>(resId, ResourceLocation::UploadingToGPU);
 
-		// Get parallax map texture
-		if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
-		{
-			surfaces.emplace_back(path + texFile.C_Str());
-			texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
-			flags |= MaterialPBR::Flag::UseParallax;
-			notSolid = true;
-		}
+						std::string& name = assets.emplace<std::string>(resId);
+						name.resize(entry.NameSize);
+						std::memcpy(name.data(), nameTable + entry.NameIndex, entry.NameSize);
 
-		if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Color)) != aiReturn_SUCCESS)
-			data.Color = { 0.0f, 0.8f, 1.0f };
-		else if (data.Color.RGBA.w != 1.0f)
-			notSolid = true;
+						// Check for correct type of resource pack entry
+						switch (entry.Type)
+						{
+						case IO::Format::ResourcePackEntryType::Geometry:
+						{
+							assets.emplace<Math::BoundingBox>(resId, entry.Geometry.BoxCenter, entry.Geometry.BoxExtents);
+							break;
+						}
+						case IO::Format::ResourcePackEntryType::Material:
+						case IO::Format::ResourcePackEntryType::Buffer:
+						case IO::Format::ResourcePackEntryType::Textures:
+						default:
+						{
+							result = IO::FileStatus::ErrorUnknownResourceEntry;
+							i = header.ResourceCount;
+							break;
+						}
+						}
+					}
+					// If integrity check failed then abort resource pack
+					if (result != IO::FileStatus::Ok)
+						break;
 
-		if (material.Get(AI_MATKEY_COLOR_SPECULAR, reinterpret_cast<aiColor3D&>(data.Specular)) != aiReturn_SUCCESS)
-			data.Specular = { 1.0f, 1.0f, 1.0f };
+					// Final processing of GPU resources
+					resIdIndex = 0;
+					for (U32 i = 0; i < header.ResourceCount; ++i)
+					{
+						auto& entry = resourceTable[i];
+						EID resId = resourceIds.at(resIdIndex++);
 
-		if (material.Get(AI_MATKEY_SHININESS_STRENGTH, data.SpecularIntensity) != aiReturn_SUCCESS)
-			data.SpecularIntensity = 0.9f;
+						switch (entry.Type)
+						{
+						case IO::Format::ResourcePackEntryType::Geometry:
+						{
+							// Load and parse mesh data into correct asset
+							GFX::Resource::MeshFileData data = {};
+							data.MeshID = resId;
+							data.MeshDataOffset = entry.Geometry.Offset;
+							data.VertexCount = entry.Geometry.VertexCount;
+							data.IndexCount = entry.Geometry.IndexCount;
+							data.SourceBytes = entry.Geometry.Bytes;
+							data.UncompressedSize = entry.Geometry.UncompressedSize;
+							data.VertexSize = entry.Geometry.VertexSize;
+							data.IndexFormat = entry.Geometry.IndexBufferFormat;
+							data.Compression = entry.Geometry.Compression;
+							assets.emplace<GFX::Resource::Mesh>(resId, dev, diskManager, data, file);
+							break;
+						}
+						case IO::Format::ResourcePackEntryType::Material:
+						case IO::Format::ResourcePackEntryType::Buffer:
+						case IO::Format::ResourcePackEntryType::Textures:
+						default:
+							break;
+						}
+					}
+					break;
+				}
+				default:
+				{
+					result = IO::FileStatus::ErrorUnknowVersion;
+					break;
+				}
+				}
+				// If error occured abort all resources
+				if (result != IO::FileStatus::Ok)
+					assets.destroy(resourceIds.begin(), resourceIds.end());
 
-		if (material.Get(AI_MATKEY_SHININESS, data.SpecularPower) != aiReturn_SUCCESS)
-			data.SpecularPower = 0.409f;
-		else if (data.SpecularPower > 1.0f)
-			data.SpecularPower = Utils::SafeCast<float>(log(static_cast<double>(data.SpecularPower)) / log(8192.0));
-
-		if (material.Get(AI_MATKEY_BUMPSCALING, data.ParallaxScale) != aiReturn_SUCCESS)
-			data.ParallaxScale = 0.1f;
-
-		// Indicate that material require special handling
-		if (notSolid)
-			assets.emplace<MaterialNotSolid>(materialId);
-
-		//buffers.Init(dev, data, texDesc);
-		return materialId;
+				return result;
+			});
 	}
 
-	void AssetsStreamer::LoadModelData(GFX::Device& dev, Storage& registry, EID root, const std::string& file, bool loadNames)
+	Task<IO::FileStatus> AssetsStreamer::SaveResourcePack(GFX::Device& dev, std::string_view packFile, U16 packId, IO::CompressionFormat defaultCompression)
 	{
-		ZE_VALID_EID(root);
-		ZE_ASSERT(registry.all_of<Transform>(root), "Entity should contain Transform component!");
-		ZE_ASSERT(registry.all_of<TransformGlobal>(root), "Entity should contain TransformGlobal component!");
+		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+			[&]() -> IO::FileStatus
+			{
+				Storage& assets = Settings::Data;
 
-		Assimp::Importer importer;
-		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
-		importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
-			aiComponent_COLORS | aiComponent_CAMERAS | aiComponent_ANIMATIONS | aiComponent_LIGHTS);
-		// aiProcess_FindInstances <- takes a while??
-		// aiProcess_GenBoundingBoxes ??? No info
-		const aiScene* scene = importer.ReadFile(file,
-			aiProcess_ConvertToLeftHanded |
-			aiProcess_Triangulate |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_RemoveComponent |
-			aiProcess_GenSmoothNormals |
-			aiProcess_CalcTangentSpace |
-			aiProcess_GenUVCoords |
-			aiProcess_TransformUVCoords |
-			aiProcess_SortByPType |
-			aiProcess_ImproveCacheLocality |
-			aiProcess_FindInvalidData |
-			aiProcess_RemoveRedundantMaterials |
-			aiProcess_ValidateDataStructure |
-			//aiProcess_OptimizeGraph | // Use when disabling all scene edition, for almost 2x performance hit
-			aiProcess_OptimizeMeshes);
+				// Gather all resources for given group
+				std::vector<EID> resourceIds;
+				for (EID entity : assets.view<PackID>())
+					if (assets.get<PackID>(entity).ID == packId)
+						resourceIds.emplace_back(entity);
 
-		const char* error = importer.GetErrorString();
-		if (!scene || std::strlen(error))
-			throw ZE_MDL_EXCEPT(error);
+				if (resourceIds.size() == 0)
+					return IO::FileStatus::ErrorNoResources;
 
-		std::filesystem::path filePath(file);
-		bool flipYZ = filePath.extension().string() == ".3ds";
-		if (flipYZ)
-		{
-			// Fix for incorrect format with YZ coords
-			float temp = scene->mRootNode->mTransformation.b2;
-			scene->mRootNode->mTransformation.b2 = -scene->mRootNode->mTransformation.b3;
-			scene->mRootNode->mTransformation.b3 = temp;
-			std::swap(scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.c3);
-		}
-		if (flipYZ || filePath.extension().string() == ".fbx")
-		{
-			// Fix for model rotated by 90 degrees in X axis
-			Float4& rotation = registry.get<TransformGlobal>(root).Rotation;
-			Math::XMStoreFloat4(&rotation,
-				Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(90.0f), 0.0f, 0.0f),
-					Math::XMLoadFloat4(&rotation))));
-		}
+				IO::File file;
+				if (!file.Open(diskManager, packFile, IO::FileFlag::WriteOnly))
+					return IO::FileStatus::ErrorOpeningFile;
 
-		// Load geometry
-		std::vector<std::pair<EID, U32>> meshes;
-		meshes.reserve(scene->mNumMeshes);
-		for (U32 i = 0; i < scene->mNumMeshes; ++i)
-			meshes.emplace_back(ParseMesh(dev, *scene->mMeshes[i], loadNames), scene->mMeshes[i]->mMaterialIndex);
+				// Save general header info
+				IO::Format::ResourcePackFileHeader header = {};
+				header.Signature[0] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[0];
+				header.Signature[1] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[1];
+				header.Signature[2] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[2];
+				header.Signature[3] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[3];
+				header.Version = Utils::MakeVersion(1, 0, 0);
+				header.ResourceCount = Utils::SafeCast<U32>(resourceIds.size());
+				header.TexturesCount = 0;
+				header.NameSectionSize = 0;
+				header.ID = packId;
+				header.Flags = IO::Format::ResourcePackFlag::None;
 
-		// Load materials
-		std::vector<EID> materials;
-		materials.reserve(scene->mNumMaterials);
-		const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
-		for (U32 i = 0; i < scene->mNumMaterials; ++i)
-			materials.emplace_back(ParseMaterial(dev, *scene->mMaterials[i], texSchema, filePath.remove_filename().string(), loadNames));
+				std::vector<std::pair<U32, std::future<U32>>> results;
+				results.emplace_back(Utils::SafeCast<U32>(sizeof(header)), file.WriteAsync(&header, sizeof(header), 0));
 
-		// Load model structure
-		ParseNode(*scene->mRootNode, root, meshes, materials, registry, loadNames);
+				// Prepare resource table
+				auto resourceInfoTable = std::make_unique<IO::Format::ResourcePackEntry[]>(header.ResourceCount);
+				// Offset for files that will be written into disk
+				U64 dataOffset = 0;
+				U32 nameOffset = 0;
+				for (U32 i = 0; EID entity : resourceIds)
+				{
+					auto& entry = resourceInfoTable[i++];
+					entry.NameIndex = nameOffset;
+					entry.NameSize = Utils::SafeCast<U16>(assets.get<std::string>(entity).size());
+					nameOffset += entry.NameSize;
+
+					if (auto* mesh = assets.try_get<GFX::Resource::Mesh>(entity))
+					{
+						entry.Type = IO::Format::ResourcePackEntryType::Geometry;
+						entry.Geometry.Offset = dataOffset;
+						entry.Geometry.Bytes = mesh->GetSize(); // TODO NOW: Currently no compression, add simple zlib ones
+						entry.Geometry.UncompressedSize = mesh->GetSize();
+						entry.Geometry.BoxCenter = assets.get<Math::BoundingBox>(entity).Center;
+						entry.Geometry.BoxExtents = assets.get<Math::BoundingBox>(entity).Extents;
+						entry.Geometry.VertexCount = mesh->GetVertexCount();
+						entry.Geometry.IndexCount = mesh->GetIndexCount();
+						entry.Geometry.VertexSize = mesh->GetVertexSize();
+						entry.Geometry.IndexBufferFormat = mesh->GetIndexFormat();
+
+						// If custom compression specified then use this one
+						auto* compression = assets.try_get<IO::CompressionFormat>(entity);
+						entry.Geometry.Compression = compression ? *compression : defaultCompression;
+
+						if (entry.Geometry.IndexBufferFormat == PixelFormat::R8_UInt)
+						{
+							// TODO: save index buffer as R16 format due to compatibility with other RHI
+						}
+						// TODO: load data from GPU and write to file
+					}
+
+					// TODO: handle other types of resources
+				}
+				return IO::FileStatus::Ok;
+			});
+	}
+
+#if _ZE_EXTERNAL_MODEL_LOADING
+	Task<MeshID> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh)
+	{
+		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+			[&]() -> MeshID
+			{
+				// Gather index data and parse it into continuous array
+				std::unique_ptr<U32[]> indicesU32;
+				std::unique_ptr<U16[]> indicesU16;
+				std::unique_ptr<U8[]> indicesU8;
+
+				GFX::Resource::MeshData meshData = {};
+				meshData.VertexCount = mesh.mNumVertices;
+				meshData.IndexCount = mesh.mNumFaces * 3;
+				meshData.VertexSize = sizeof(GFX::Vertex);
+
+				if (meshData.IndexCount >= UINT16_MAX)
+				{
+					indicesU32 = std::make_unique<U32[]>(meshData.IndexCount);
+					meshData.IndexSize = sizeof(U32);
+					meshData.Indices = indicesU32.get();
+					ParseIndices(indicesU32, mesh);
+				}
+				else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
+				{
+					indicesU16 = std::make_unique<U16[]>(meshData.IndexCount);
+					meshData.IndexSize = sizeof(U16);
+					meshData.Indices = indicesU16.get();
+					ParseIndices(indicesU16, mesh);
+				}
+				else
+				{
+					indicesU8 = std::make_unique<U8[]>(meshData.IndexCount);
+					meshData.IndexSize = sizeof(U8);
+					meshData.Indices = indicesU8.get();
+					ParseIndices(indicesU8, mesh);
+				}
+
+				// Parse vertex data into structured format
+				Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+				Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+				std::unique_ptr<GFX::Vertex[]> vertices = std::make_unique<GFX::Vertex[]>(mesh.mNumVertices);
+				//meshData.Vertices = vertices.get();
+				for (U32 i = 0; i < mesh.mNumVertices; ++i)
+				{
+					GFX::Vertex& vertex = vertices[i];
+
+					vertex.Position = *reinterpret_cast<Float3*>(mesh.mVertices + i);
+					ZE_ASSERT(vertex.Position.x == mesh.mVertices[i].x
+						&& vertex.Position.y == mesh.mVertices[i].y
+						&& vertex.Position.z == mesh.mVertices[i].z,
+						"Position data is incorrect, type of aiMesh::mVertices changed!");
+					// Find min/max position values to determine bounding box
+					const Vector pos = Math::XMLoadFloat3(&vertex.Position);
+					min = Math::XMVectorMin(min, pos);
+					max = Math::XMVectorMax(max, pos);
+
+					vertex.Normal = *reinterpret_cast<Float3*>(mesh.mNormals + i);
+					ZE_ASSERT(vertex.Normal.x == mesh.mNormals[i].x
+						&& vertex.Normal.y == mesh.mNormals[i].y
+						&& vertex.Normal.z == mesh.mNormals[i].z,
+						"Normal data is incorrect, type of aiMesh::mNormals changed!");
+
+					if (mesh.HasTextureCoords(0))
+					{
+						vertex.UV = *reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i);
+						ZE_ASSERT(vertex.UV.x == mesh.mTextureCoords[0][i].x
+							&& vertex.UV.y == mesh.mTextureCoords[0][i].y,
+							"UV data is incorrect, type of aiMesh::mTextureCoords changed!");
+					}
+					if (mesh.HasTangentsAndBitangents())
+					{
+						vertex.Tangent.x = mesh.mTangents[i].x;
+						vertex.Tangent.y = mesh.mTangents[i].y;
+						vertex.Tangent.z = mesh.mTangents[i].z;
+						//vertex.Tangent.w = -1.0f; // TODO: Check somehow
+					}
+				}
+
+				// Create main mesh data
+				EID meshId = Settings::CreateEntity();
+				Storage& assets = Settings::Data;
+				meshData.MeshID = meshId;
+
+				// Load custom data by default to resource pack 0
+				assets.emplace<PackID>(meshId).ID = 0;
+				assets.emplace<ResourceLocationAtom>(meshId, ResourceLocation::UploadingToGPU);
+				assets.emplace<std::string>(meshId, mesh.mName.length != 0
+					? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
+				assets.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
+
+				// Load parsed mesh data into correct mesh and start it's upload to GPU
+				assets.emplace<GFX::Resource::Mesh>(meshId, dev, diskManager, meshData);
+				return { meshId };
+			});
+	}
+
+	Task<MaterialID> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path)
+	{
+		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+			[&]() -> MaterialID
+			{
+				EID materialId = Settings::CreateEntity();
+				Storage& assets = Settings::Data;
+
+				assets.emplace<std::string>(materialId, material.GetName().length != 0
+					? material.GetName().C_Str() : "material_" + std::to_string(static_cast<U64>(materialId)));
+
+				MaterialPBR& data = assets.emplace<MaterialPBR>(materialId);
+				PBRFlags& flags = assets.emplace<PBRFlags>(materialId);
+
+				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
+				GFX::Resource::Texture::PackDesc texDesc;
+				texDesc.Init(texSchema);
+
+				std::vector<GFX::Surface> surfaces;
+				aiString texFile;
+				bool notSolid = false;
+
+				// Get diffuse texture
+				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					surfaces.emplace_back(path + texFile.C_Str());
+					notSolid |= surfaces.back().HasAlpha();
+
+					texDesc.AddTexture(texSchema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
+					flags |= MaterialPBR::Flag::UseTexture;
+				}
+
+				// Get normal map texture
+				if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					surfaces.emplace_back(path + texFile.C_Str());
+					texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
+					flags |= MaterialPBR::Flag::UseNormal;
+				}
+
+				// Get specular data
+				if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					surfaces.emplace_back(path + texFile.C_Str());
+					if (surfaces.back().HasAlpha())
+						data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
+					texDesc.AddTexture(texSchema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
+					flags |= MaterialPBR::Flag::UseSpecular;
+				}
+
+				// Get parallax map texture
+				if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					surfaces.emplace_back(path + texFile.C_Str());
+					texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
+					flags |= MaterialPBR::Flag::UseParallax;
+					notSolid = true;
+				}
+
+				if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Color)) != aiReturn_SUCCESS)
+					data.Color = { 0.0f, 0.8f, 1.0f };
+				else if (data.Color.RGBA.w != 1.0f)
+					notSolid = true;
+
+				if (material.Get(AI_MATKEY_COLOR_SPECULAR, reinterpret_cast<aiColor3D&>(data.Specular)) != aiReturn_SUCCESS)
+					data.Specular = { 1.0f, 1.0f, 1.0f };
+
+				if (material.Get(AI_MATKEY_SHININESS_STRENGTH, data.SpecularIntensity) != aiReturn_SUCCESS)
+					data.SpecularIntensity = 0.9f;
+
+				if (material.Get(AI_MATKEY_SHININESS, data.SpecularPower) != aiReturn_SUCCESS)
+					data.SpecularPower = 0.409f;
+				else if (data.SpecularPower > 1.0f)
+					data.SpecularPower = Utils::SafeCast<float>(log(static_cast<double>(data.SpecularPower)) / log(8192.0));
+
+				if (material.Get(AI_MATKEY_BUMPSCALING, data.ParallaxScale) != aiReturn_SUCCESS)
+					data.ParallaxScale = 0.1f;
+
+				// Indicate that material require special handling
+				if (notSolid)
+					assets.emplace<MaterialNotSolid>(materialId);
+
+				// Load custom data by default to resource pack 0
+				assets.emplace<PackID>(materialId).ID = 0;
+				assets.emplace<ResourceLocationAtom>(materialId, ResourceLocation::UploadingToGPU);
+
+				// Start upload of buffer data and textures to GPU
+				assets.emplace<MaterialBuffersPBR>(materialId, dev, diskManager, data, texDesc);
+				return { materialId };
+			});
 	}
 #endif
+
+	void AssetsStreamer::ShowWindow(GFX::Device& dev)
+	{
+		if (ImGui::Begin("Resource Manager"))
+		{
+			if (ImGui::CollapsingHeader("Resource packs"))
+			{
+				if (auto path = GUI::DialogWindow::FileBrowserButton("Load pack", RESOURCE_DIR, GUI::DialogWindow::FileType::ResourcePack))
+				{
+					auto result = LoadResourcePack(dev, path.value());
+					auto val = result.Get();
+					if (val != IO::FileStatus::Ok)
+						throw ZE_IO_EXCEPT(("Cannot load resource pack \"" + path.value() + "\"! Error: ") + IO::GetFileStatusString(val));
+				}
+			}
+			ImGui::End();
+		}
+	}
 }

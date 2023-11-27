@@ -3,7 +3,7 @@
 #include "Light.h"
 #include "MaterialPBR.h"
 #include "Transform.h"
-#include "ResourceManager.h"
+#include "AssetsStreamer.h"
 
 namespace ZE::Data
 {

@@ -70,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(Settings::Data, renderData.Assets.GetResources(), group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
 			ZE_PERF_STOP();
 
 			ZE_PERF_START("Outline Draw - view sort");
@@ -106,7 +106,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				cbuffer.Bind(cl, ctx, transformInfo.Transform);
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();
@@ -133,7 +133,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				cbuffer.Bind(cl, ctx, visibleGroup.get<InsideFrustum>(entity).Transform);
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();

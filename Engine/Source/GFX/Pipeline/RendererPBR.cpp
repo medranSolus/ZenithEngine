@@ -138,7 +138,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RendererPBR::Init(Device& dev, CommandList& mainList, const ParamsPBR& params)
+	void RendererPBR::Init(Device& dev, CommandList& mainList, Data::AssetsStreamer& assets, const ParamsPBR& params)
 	{
 		const UInt2 outlineBuffSizes = { Settings::DisplaySize.X / 2, Settings::DisplaySize.Y / 2 };
 		FrameBufferDesc frameBufferDesc;
@@ -197,7 +197,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
-		RendererBuildData buildData = { execData.Bindings, execData.Assets.GetSchemaLibrary() };
+		RendererBuildData buildData = { execData.Bindings, assets.GetSchemaLib() };
 		SetupRenderSlots(buildData);
 
 		blurSigma = params.Sigma;

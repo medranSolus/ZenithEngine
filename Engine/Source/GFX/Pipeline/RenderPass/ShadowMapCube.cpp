@@ -113,12 +113,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ZE_PERF_GUARD("Shadow Map Cube - visibility group split single loop item");
 				const auto& transform = group.get<Data::TransformGlobal>(entity);
 
-				Math::BoundingBox box = renderData.Assets.GetResources().get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
+				Math::BoundingBox box = Settings::Data.get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
 				box.Transform(box, Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
 				if (box.Intersects(lightSphere))
 				{
-					if (renderData.Assets.GetResources().all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
+					if (Settings::Data.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
 						Settings::Data.emplace<Transparent>(entity);
 					else
 						Settings::Data.emplace<Solid>(entity);
@@ -171,7 +171,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					cbuffer.Bind(cl, ctx, transformInfo.Transform);
 					ctx.Reset();
 
-					renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					Settings::Data.get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();
@@ -183,11 +183,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ZE_PERF_START("Shadow Map Cube - solid material sort");
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
-						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular) });
-						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular) });
 						return state1 < state2;
 					});
-				currentState = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular) });
+				currentState = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular) });
 				ZE_PERF_STOP();
 
 				// Solid pass
@@ -217,12 +217,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					{
 						currentMaterial = material.ID;
 
-						const auto& matData = renderData.Assets.GetResources().get<Data::MaterialPBR>(currentMaterial);
+						const auto& matData = Settings::Data.get<Data::MaterialPBR>(currentMaterial);
 						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
 						shadowData.Bind(cl, ctx);
-						renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
+						Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
 						if (currentState != state)
 						{
 							currentState = state;
@@ -231,7 +231,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					}
 					ctx.Reset();
 
-					renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					Settings::Data.get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();
@@ -281,12 +281,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					{
 						currentMaterial = material.ID;
 
-						const auto& matData = renderData.Assets.GetResources().get<Data::MaterialPBR>(material.ID);
+						const auto& matData = Settings::Data.get<Data::MaterialPBR>(material.ID);
 						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
 						shadowData.Bind(cl, ctx);
-						renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
+						Settings::Data.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
 						if (currentState != state)
 						{
 							currentState = state;
@@ -295,7 +295,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					}
 					ctx.Reset();
 
-					renderData.Assets.GetResources().get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					Settings::Data.get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();

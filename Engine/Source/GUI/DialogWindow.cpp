@@ -1,6 +1,6 @@
 #include "GUI/DialogWindow.h"
 #include "GUI/DearImGui.h"
-#include "Data/ResourceManager.h"
+#include "Data/AssetsStreamer.h"
 
 namespace ZE::GUI::DialogWindow
 {
@@ -34,7 +34,7 @@ namespace ZE::GUI::DialogWindow
 			break;
 		}
 		case ZE::GUI::DialogWindow::FileType::ResourcePack:
-			return entry.path().has_extension() && !entry.path().extension().compare(Data::ResourceManager::RESOURCE_FILE_EXT);
+			return entry.path().has_extension() && !entry.path().extension().compare(Data::AssetsStreamer::RESOURCE_FILE_EXT);
 		case ZE::GUI::DialogWindow::FileType::Model:
 		{
 			if (entry.path().has_extension())
@@ -62,17 +62,17 @@ namespace ZE::GUI::DialogWindow
 				dirContent.emplace_back(e);
 
 		std::sort(dirContent.begin(), dirContent.end(), [searchType](const std::filesystem::directory_entry& e1, const std::filesystem::directory_entry& e2)
-		{
-			// Ascending
-			if (searchType != FileType::Directory)
 			{
-				if (e1.is_directory() && !e2.is_directory())
-					return true;
-				else if (!e1.is_directory() && e2.is_directory())
-					return false;
-			}
-			return e1.path().filename() < e2.path().filename();
-		});
+				// Ascending
+				if (searchType != FileType::Directory)
+				{
+					if (e1.is_directory() && !e2.is_directory())
+						return true;
+					else if (!e1.is_directory() && e2.is_directory())
+						return false;
+				}
+				return e1.path().filename() < e2.path().filename();
+			});
 		return dirContent;
 	}
 
@@ -81,10 +81,10 @@ namespace ZE::GUI::DialogWindow
 		static std::filesystem::directory_entry currentDir;
 		static U64 selected = UINT64_MAX;
 		auto setCurrentDir = [](const std::filesystem::path& newPath)
-		{
-			currentDir.assign(newPath);
-			selected = UINT64_MAX;
-		};
+			{
+				currentDir.assign(newPath);
+				selected = UINT64_MAX;
+			};
 
 		// Button for opening pop-up window
 		if (ImGui::Button(title.data()))

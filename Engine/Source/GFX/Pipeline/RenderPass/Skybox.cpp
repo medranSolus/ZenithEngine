@@ -45,7 +45,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		//		Utils::SafeCast<U32>(indices.size()),
 		//		sizeof(Float3), sizeof(U32)
 		//	});
-		dev.StartUpload();
+		//dev.StartUpload();
 
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(dev, psoDesc.VS, "SkyboxVS", buildData.ShaderCache);

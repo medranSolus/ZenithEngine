@@ -13,8 +13,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	// `VisibilitySolid` component is added only to entities which material is not transparent,
 	// to other ones `VisibilityTransparent` is added. Specify both as same component to avoid whole material check.
 	template<typename VisibilitySolid, typename VisibilityTransparent>
-	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
-		const auto& group, const Math::BoundingFrustum& frustum) noexcept;
+	constexpr void FrustumCulling(const auto& group, const Math::BoundingFrustum& frustum) noexcept;
 
 	// Sort entities according to distance from camera
 	template<Sort ORDER>
@@ -26,27 +25,26 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 
 #pragma region Functions
 	template<typename VisibilitySolid, typename VisibilityTransparent>
-	constexpr void FrustumCulling(Data::Storage& registry, const Data::Storage& resources,
-		const auto& group, const Math::BoundingFrustum& frustum) noexcept
+	constexpr void FrustumCulling(const auto& group, const Math::BoundingFrustum& frustum) noexcept
 	{
 		for (EID entity : group)
 		{
 			const auto& transform = group.get<Data::TransformGlobal>(entity);
 
-			Math::BoundingBox box = resources.get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
+			Math::BoundingBox box = Settings::Data.get<Math::BoundingBox>(group.get<Data::MeshID>(entity).ID);
 			box.Transform(box, Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
 			// Mark entity as visible
 			if (frustum.Intersects(box))
 			{
 				if constexpr (std::is_same_v<VisibilitySolid, VisibilityTransparent>)
-					registry.emplace<VisibilitySolid>(entity);
+					Settings::Data.emplace<VisibilitySolid>(entity);
 				else
 				{
-					if (resources.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
-						registry.emplace<VisibilityTransparent>(entity);
+					if (Settings::Data.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
+						Settings::Data.emplace<VisibilityTransparent>(entity);
 					else
-						registry.emplace<VisibilitySolid>(entity);
+						Settings::Data.emplace<VisibilitySolid>(entity);
 				}
 			}
 		}

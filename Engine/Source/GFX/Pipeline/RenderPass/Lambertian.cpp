@@ -121,8 +121,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PERF_START("Lambertian - frustum culling");
 		Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
-		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(Settings::Data, renderData.Assets.GetResources(),
-			Data::GetRenderGroup<Data::RenderLambertian>(), frustum);
+		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(Data::GetRenderGroup<Data::RenderLambertian>(), frustum);
 		ZE_PERF_STOP();
 
 		// Use new group visible only in current frustum and sort
@@ -188,7 +187,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				cbuffer.Bind(cl, ctx, transformAlloc);
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();
@@ -200,11 +199,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ZE_PERF_START("Lambertian - solid material sort");
 			solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 				{
-					const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m1.ID));
-					const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(m2.ID));
+					const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber(Settings::Data.get<Data::PBRFlags>(m1.ID));
+					const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber(Settings::Data.get<Data::PBRFlags>(m2.ID));
 					return state1 < state2;
 				});
-			currentState = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
+			currentState = Data::MaterialPBR::GetPipelineStateNumber(Settings::Data.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID));
 			ZE_PERF_STOP();
 
 			// Solid pass
@@ -236,11 +235,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				{
 					currentMaterial = material.ID;
 
-					const auto& buffers = renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(currentMaterial);
+					const auto& buffers = Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial);
 					buffers.BindBuffer(cl, ctx);
 					buffers.BindTextures(cl, ctx);
 
-					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial));
+					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(Settings::Data.get<Data::PBRFlags>(currentMaterial));
 					if (currentState != state)
 					{
 						currentState = state;
@@ -249,7 +248,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				}
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();
@@ -319,11 +318,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				{
 					currentMaterial = material.ID;
 
-					const auto& buffers = renderData.Assets.GetResources().get<Data::MaterialBuffersPBR>(material.ID);
+					const auto& buffers = Settings::Data.get<Data::MaterialBuffersPBR>(material.ID);
 					buffers.BindBuffer(cl, ctx);
 					buffers.BindTextures(cl, ctx);
 
-					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(renderData.Assets.GetResources().get<Data::PBRFlags>(currentMaterial));
+					const U8 state = Data::MaterialPBR::GetPipelineStateNumber(Settings::Data.get<Data::PBRFlags>(currentMaterial));
 					if (currentState != state)
 					{
 						currentState = state;
@@ -332,7 +331,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				}
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();

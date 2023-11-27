@@ -1,5 +1,6 @@
 #include "App.h"
 #include "GFX/Primitive.h"
+#include "Data/SceneManager.h"
 
 template<typename T>
 void App::EnableProperty(EID entity)
@@ -277,13 +278,13 @@ void App::ShowObjectWindow()
 				ImGui::Separator();
 				ImGui::NewLine();
 				EID materialId = Settings::Data.get<Data::MaterialID>(selected).ID;
-				auto& material = engine.GetAssetsStreamer().GetResources().get<Data::MaterialPBR>(materialId);
+				auto& material = Settings::Data.get<Data::MaterialPBR>(materialId);
 
 				ImGui::Text("Material ID: %llu", materialId);
-				if (engine.GetAssetsStreamer().GetResources().all_of<std::string>(materialId))
+				if (Settings::Data.all_of<std::string>(materialId))
 				{
 					ImGui::SameLine();
-					ImGui::Text("Name: %s", engine.GetAssetsStreamer().GetResources().get<std::string>(materialId).c_str());
+					ImGui::Text("Name: %s", Settings::Data.get<std::string>(materialId).c_str());
 				}
 
 				change = ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&material.Color),
@@ -320,7 +321,7 @@ void App::ShowObjectWindow()
 
 				if (change)
 				{
-					auto& buffers = engine.GetAssetsStreamer().GetResources().get<Data::MaterialBuffersPBR>(materialId);
+					auto& buffers = Settings::Data.get<Data::MaterialBuffersPBR>(materialId);
 					auto& dev = engine.Gfx().GetDevice();
 
 					dev.BeginUploadRegion();
@@ -523,7 +524,7 @@ EID App::AddModel(std::string&& name, Float3&& position,
 	if (Settings::ComputeMotionVectors())
 		Settings::Data.emplace<Data::TransformPrevious>(model, transform);
 
-	engine.GetAssetsStreamer().LoadModelData(engine.Gfx().GetDevice(), Settings::Data, model, file, true);
+	Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, file);
 	return model;
 }
 
@@ -623,7 +624,7 @@ App::App(const CmdParser& params)
 
 		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
 
-		Data::Storage& assets = engine.GetAssetsStreamer().GetResources();
+		Data::Storage& assets = Settings::Data;
 
 		// Create mesh for all the cubes
 		EID meshId = assets.create();
@@ -640,7 +641,7 @@ App::App(const CmdParser& params)
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(GFX::Vertex), sizeof(U32)
 		};
-		assets.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Resources().GetDisk(), meshData);
+		assets.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
 
 		// And some materials for them all
 		std::array<EID, 255> materialIds;
@@ -660,10 +661,10 @@ App::App(const CmdParser& params)
 			data.SpecularPower = 0.409f;
 			data.ParallaxScale = 0.1f;
 
-			const GFX::Resource::Texture::Schema& texSchema = engine.GetAssetsStreamer().GetSchemaLibrary().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
+			const GFX::Resource::Texture::Schema& texSchema = engine.Assets().GetSchemaLib().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
 			GFX::Resource::Texture::PackDesc texDesc;
 			texDesc.Init(texSchema);
-			buffers.Init(engine.Gfx().GetDevice(), engine.Resources().GetDisk(), data, texDesc);
+			buffers.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc);
 		}
 		engine.Gfx().GetDevice().StartUpload();
 

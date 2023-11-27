@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_START("Wireframe - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
 			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), Math::XMLoadFloat3(&dynamicData.CameraPos));
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(Settings::Data, renderData.Assets.GetResources(), group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
 			ZE_PERF_STOP();
 
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>();
@@ -83,7 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 				ctx.Reset();
 
-				renderData.Assets.GetResources().get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();

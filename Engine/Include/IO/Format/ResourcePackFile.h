@@ -13,12 +13,12 @@ namespace ZE::IO::Format
 	* Data[]
 	*/
 
-	typedef U8 ResourcePackFlags;
+	typedef U16 ResourcePackFlags;
 	// Flags describing resource pack file
 	enum ResourcePackFlag : ResourcePackFlags { None = 0 };
 
 	// Type of single entry in resource pack
-	enum class ResourcePackEntryType : U8 { Geometry, Material, Textures };
+	enum class ResourcePackEntryType : U8 { Geometry, Material, Buffer, Textures };
 
 #pragma pack(push, 1)
 	// Header of resource pack file
@@ -70,6 +70,14 @@ namespace ZE::IO::Format
 				GFX::Resource::Texture::PackOptions Options;
 				CompressionFormat BufferCompression;
 			} Material;
+			struct
+			{
+				// Offset from start of file
+				U64 Offset;
+				U32 Bytes;
+				U32 UncompressedSize;
+				CompressionFormat Compression;
+			} Buffer;
 			struct
 			{
 				// Index from start of texture section

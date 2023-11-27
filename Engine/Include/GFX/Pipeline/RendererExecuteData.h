@@ -3,7 +3,6 @@
 #include "GFX/Resource/CBuffer.h"
 #include "GFX/Resource/DynamicCBuffer.h"
 #include "GFX/Resource/PipelineStateGfx.h"
-#include "Data/AssetsStreamer.h"
 #include "Data/Tags.h"
 #include "FrameBuffer.h"
 
@@ -15,8 +14,6 @@ namespace ZE::GFX::Pipeline
 		// Alloc inside DynamicBuffers corresponding to DynamicData of the renderer
 		static constexpr Resource::DynamicBufferAlloc RENDERER_DYNAMIC_BUFFER = { 0, 0 };
 
-		// Registry containing material and geometry data
-		Data::AssetsStreamer Assets;
 		// Buffers used for rendering. Initialized by RenderGraph
 		FrameBuffer Buffers;
 		Binding::Library Bindings;
