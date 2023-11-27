@@ -52,6 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const Data::Projection& projection = renderer.GetProjectionData();
@@ -71,9 +72,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
 		desc.jitterOffset.x = Data::GetUnitPixelJitterX(projection.JitterX, Settings::RenderSize.X);
 		desc.jitterOffset.y = Data::GetUnitPixelJitterY(projection.JitterY, Settings::RenderSize.Y);
-		desc.motionVectorScale.x = -Utils::SafeCast<float>(Settings::RenderSize.X);
-		desc.motionVectorScale.y = -Utils::SafeCast<float>(Settings::RenderSize.Y);
-		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
+		desc.motionVectorScale.x = -Utils::SafeCast<float>(inputSize.X);
+		desc.motionVectorScale.y = -Utils::SafeCast<float>(inputSize.Y);
+		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.enableSharpening = renderer.IsSharpeningEnabled();
 		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
 		desc.sharpness = renderer.GetSharpness();

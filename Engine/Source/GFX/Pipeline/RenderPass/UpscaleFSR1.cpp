@@ -35,6 +35,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 		Resources ids = *passData.Buffers.CastConst<Resources>();
 		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 
@@ -46,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		Resource::Generic color, output;
 		desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
 		desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
-		desc.renderSize = { Settings::RenderSize.X, Settings::RenderSize.Y };
+		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.enableSharpening = renderer.IsSharpeningEnabled();
 		desc.sharpness = renderer.GetSharpness();
 		ZE_FFX_THROW_FAILED(ffxFsr1ContextDispatch(&data.Ctx, &desc), "Error performing FSR1!");

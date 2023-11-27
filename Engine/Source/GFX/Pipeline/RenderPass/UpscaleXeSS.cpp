@@ -60,7 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 			responsive(renderData.Buffers, ids.ResponsiveMask),
 			output(renderData.Buffers, ids.Output);
 
-		dev.ExecuteXeSS(cl, color, motionVectors, &depth, nullptr, &responsive, output, projection.JitterX, projection.JitterY, Settings::RenderSize, false);
+		dev.ExecuteXeSS(cl, color, motionVectors, &depth, nullptr, &responsive, output, projection.JitterX, projection.JitterY, renderData.Buffers.GetDimmensions(ids.Color), false);
 
 		// Free proxy resources
 		color.Free(dev);
