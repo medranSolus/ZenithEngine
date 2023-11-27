@@ -3,6 +3,7 @@ ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
 #include "xess/xess.h"
+#include "nvsdk_ngx_defs.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -14,7 +15,8 @@ namespace ZE::GFX
 		Fsr1,
 		Fsr2,
 		XeSS,
-		NIS
+		NIS,
+		DLSS
 	};
 
 	// Configuration of possible quality modes for NIS upsacler
@@ -24,6 +26,7 @@ namespace ZE::GFX
 	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept;
 	UInt2 CalculateRenderSize(class Device& dev, UInt2 targetSize, UpscalerType upscaling) noexcept;
 	float CalculateMipBias(U32 renderWidth, U32 targetWidth, UpscalerType upscaling) noexcept;
+	bool IsUpscalerSupported(class Device& dev, UpscalerType upscaling) noexcept;
 
 #pragma region Functions
 	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept
@@ -42,7 +45,8 @@ namespace ZE::GFX
 			break;
 		}
 		case UpscalerType::Fsr2:
-		case UpscalerType::XeSS: // XeSS can use same jitter as FSR2
+		case UpscalerType::XeSS: // XeSS and DLSS can use same jitter as FSR2
+		case UpscalerType::DLSS:
 		{
 			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, renderSize.X);
 			phaseIndex = (phaseIndex + 1) % phaseCount;

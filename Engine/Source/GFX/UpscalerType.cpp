@@ -24,6 +24,7 @@ namespace ZE::GFX
 			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, FFX_FSR2_QUALITY_MODE_QUALITY);
 			return renderSize;
 		}
+#if _ZE_RHI_DX12
 		case UpscalerType::XeSS:
 		{
 			ZE_XESS_ENABLE();
@@ -32,6 +33,7 @@ namespace ZE::GFX
 			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, XESS_QUALITY_SETTING_ULTRA_QUALITY, &renderSize), "Error retrieving XeSS render resolution!");
 			return { renderSize.x, renderSize.y };
 		}
+#endif
 		case UpscalerType::NIS:
 		{
 			const NISQualityMode qualityMode = NISQualityMode::UltraQuality;
@@ -59,6 +61,12 @@ namespace ZE::GFX
 				Utils::SafeCast<U32>(Utils::SafeCast<float>(targetSize.Y) / ratio)
 			};
 		}
+#if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
+		case UpscalerType::DLSS:
+		{
+			return { 0, 0 };
+		}
+#endif
 		}
 	}
 
@@ -77,6 +85,27 @@ namespace ZE::GFX
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth));
 		case UpscalerType::NIS:
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth)) + 1e-4f;
+		case UpscalerType::DLSS:
+			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth)) - 1.0f + 1e-4f;
+		}
+	}
+
+	bool IsUpscalerSupported(Device& dev, UpscalerType upscaling) noexcept
+	{
+		switch (upscaling)
+		{
+		case UpscalerType::None:
+		case UpscalerType::Fsr1:
+		case UpscalerType::Fsr2:
+		case UpscalerType::NIS:
+			return true;
+		case UpscalerType::XeSS:
+			return static_cast<bool>(_ZE_RHI_DX12);
+		case UpscalerType::DLSS:
+		{
+		}
+		default:
+			return false;
 		}
 	}
 }

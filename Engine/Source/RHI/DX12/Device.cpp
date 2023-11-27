@@ -123,7 +123,7 @@ namespace ZE::RHI::DX12
 		DREDRecovery::Enable(debugManager);
 #endif
 
-		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
+		adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif

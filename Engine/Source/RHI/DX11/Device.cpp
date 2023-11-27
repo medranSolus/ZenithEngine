@@ -3,6 +3,14 @@
 
 namespace ZE::RHI::DX11
 {
+	bool Device::IsDLSSSupported() const noexcept
+	{
+		if (Settings::GpuVendor == GFX::VendorGPU::Nvidia)
+		{
+		}
+		return false;
+	}
+
 	void Device::Execute(GFX::CommandList& cl)
 	{
 		if (cl.Get().dx11.GetList() != nullptr)
@@ -20,7 +28,7 @@ namespace ZE::RHI::DX11
 		// No RT on DX11
 		Settings::RayTracingTier = GFX::RayTracingTier::None;
 
-		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
+		adapter = DX::CreateAdapter(
 #if _ZE_DEBUG_GFX_API
 			debugManager
 #endif

@@ -23,6 +23,7 @@ namespace ZE::RHI::DX11
 #endif
 		DX::ComPtr<IDevice> device;
 		DX::ComPtr<IDeviceContext> context;
+		DX::ComPtr<DX::IAdapter> adapter;
 		FfxInterface ffxInterface;
 
 		U32 descriptorCount;
@@ -75,7 +76,9 @@ namespace ZE::RHI::DX11
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags) { ZE_FAIL("XeSS not supported for DirectX 11!"); }
 		void ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
 			GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
-			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset) { ZE_FAIL("XeSS not supported for DirectX 11!"); }
+			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset) {
+			ZE_FAIL("XeSS not supported for DirectX 11!");
+		}
 
 		void ExecuteMain(GFX::CommandList& cl) { Execute(cl); }
 		void ExecuteCompute(GFX::CommandList& cl) { Execute(cl); }
@@ -91,6 +94,7 @@ namespace ZE::RHI::DX11
 		void TagEndCopy() const noexcept { tagManager->EndEvent(); }
 #endif
 
+		bool IsDLSSSupported() const noexcept;
 		void Execute(GFX::CommandList* cls, U32 count);
 
 		// Gfx API Internal
@@ -101,5 +105,6 @@ namespace ZE::RHI::DX11
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 		IDevice* GetDevice() const noexcept { return device.Get(); }
 		IDeviceContext* GetMainContext() const noexcept { return context.Get(); }
+		DX::IAdapter* GetAdapter() const noexcept { return adapter.Get(); }
 	};
 }

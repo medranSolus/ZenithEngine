@@ -1,7 +1,26 @@
 #include "Engine.h"
+ZE_WARNING_PUSH
+#include "nvsdk_ngx_helpers.h"
+ZE_WARNING_POP
 
 namespace ZE
 {
+	void NVSDK_CONV AllocNGXResourceD3D12(D3D12_RESOURCE_DESC* InDesc, int InState, CD3DX12_HEAP_PROPERTIES* InHeap, ID3D12Resource** OutResource) noexcept
+	{
+	}
+
+	void NVSDK_CONV AllocNGXBufferD3D11(D3D11_BUFFER_DESC* InDesc, ID3D11Buffer** OutResource) noexcept
+	{
+	}
+
+	void NVSDK_CONV AllocNGXTexture2DD3D11(D3D11_TEXTURE2D_DESC* InDesc, ID3D11Texture2D** OutResource) noexcept
+	{
+	}
+
+	void NVSDK_CONV ReleaseNGXResourceD3D(IUnknown* InResource) noexcept
+	{
+	}
+
 	void Engine::Init(const EngineParams& params)
 	{
 		SetGui(true);
@@ -61,6 +80,83 @@ namespace ZE
 		  - check out https://research.nvidia.com/publication/2017-02_hashed-alpha-testing, http://www.ludicon.com/castano/blog/articles/computing-alpha-mipmaps/
 		  - bigger concern, maybe create offline module to handle creation of mipmaps since they can be computed manually by artist?
 		*/
+
+		NVSDK_NGX_FeatureDiscoveryInfo info = {};
+		info.SDKVersion = NVSDK_NGX_Version_API;
+		info.ApplicationDataPath = Logger::LOG_DIR_W;
+		info.FeatureInfo = &featureInfo;
+#if ZE_NGX_ID
+		info.Identifier.IdentifierType = NVSDK_NGX_Application_Identifier_Type_Application_Id;
+		info.Identifier.v.ApplicationId = ZE_NGX_ID;
+#else
+		info.Identifier.IdentifierType = NVSDK_NGX_Application_Identifier_Type_Project_Id;
+		info.Identifier.v.ProjectDesc.ProjectId = Settings::ENGINE_UUID;
+		info.Identifier.v.ProjectDesc.EngineType = NVSDK_NGX_ENGINE_TYPE_CUSTOM;
+		info.Identifier.v.ProjectDesc.EngineVersion = Settings::ENGINE_VERSION_STR;
+#endif
+
+		NVSDK_NGX_Parameter* dlssParams = nullptr;
+
+		// After successful check for given feature, put job on different thread to update it for next run (if possible)
+		{
+			NVSDK_NGX_Result resUpdate = NVSDK_NGX_UpdateFeature(&info.Identifier, info.FeatureID);
+			int a = 0;
+		}
+		// Initialize DLSS
+		NVSDK_NGX_Handle* featureHandle = nullptr;
+		// Execute DLSS
+		if (false)
+		{
+			dlssParams->Set(NVSDK_NGX_Parameter_Color, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_Output, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_Depth, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_MotionVectors, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_TransparencyMask, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_ExposureTexture, (ID3D12Resource*)nullptr); // Using auto exposure, but give as option
+			// Use on animated textures, small particles, thin objects, huge or missing motion vectors (only after encountering problems after integration)
+			dlssParams->Set(NVSDK_NGX_Parameter_DLSS_Input_Bias_Current_Color_Mask, (ID3D12Resource*)nullptr);
+
+			dlssParams->Set(NVSDK_NGX_Parameter_Jitter_Offset_X, Data::GetUnitPixelJitterX(renderer.GetProjectionData().JitterX, Settings::RenderSize.X));
+			dlssParams->Set(NVSDK_NGX_Parameter_Jitter_Offset_Y, Data::GetUnitPixelJitterY(renderer.GetProjectionData().JitterY, Settings::RenderSize.Y));
+			dlssParams->Set(NVSDK_NGX_Parameter_Reset, 0U); // TODO: Check conditions for that
+			dlssParams->Set(NVSDK_NGX_Parameter_MV_Scale_X, -Utils::SafeCast<float>(Settings::RenderSize.X));
+			dlssParams->Set(NVSDK_NGX_Parameter_MV_Scale_Y, -Utils::SafeCast<float>(Settings::RenderSize.Y));
+			dlssParams->Set(NVSDK_NGX_Parameter_DLSS_Render_Subrect_Dimensions_Width, Settings::RenderSize.X);
+			dlssParams->Set(NVSDK_NGX_Parameter_DLSS_Render_Subrect_Dimensions_Height, Settings::RenderSize.Y);
+			dlssParams->Set(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, Settings::FrameTime);
+
+			// Optional future parameters if engine can expose them
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Albedo, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Roughness, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Metallic, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Specular, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Subsurface, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Normals, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_ShadingModelId, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_MaterialId, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_8, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_9, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_10, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_11, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_12, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_13, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_14, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_GBuffer_Atrrib_15, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_TonemapperType, NVSDK_NGX_TONEMAPPER_STRING);
+			dlssParams->Set(NVSDK_NGX_Parameter_MotionVectors3D, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_IsParticleMask, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_AnimatedTextureMask, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_DepthHighRes, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_Position_ViewSpace, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_RayTracingHitDistance, (ID3D12Resource*)nullptr);
+			dlssParams->Set(NVSDK_NGX_Parameter_MotionVectorsReflection, (ID3D12Resource*)nullptr);
+
+			// Render
+			graphics.GetMainList().Open(graphics.GetDevice());
+			NVSDK_NGX_Result resExec = NVSDK_NGX_D3D12_EvaluateFeature(graphics.GetMainList().Get().dx12.GetList(), featureHandle, dlssParams, nullptr);
+			graphics.GetMainList().Close(graphics.GetDevice());
+			graphics.GetDevice().ExecuteMain(graphics.GetMainList());
+		}
 	}
 
 	Engine::~Engine()

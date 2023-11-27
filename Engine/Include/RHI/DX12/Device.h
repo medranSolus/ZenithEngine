@@ -23,7 +23,7 @@ namespace ZE::RHI::DX12
 	class Device final
 	{
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
-		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_1;
+		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_2;
 		static constexpr U64 BLOCK_DESCRIPTOR_ALLOC_CAPACITY = 1000;
 		static constexpr U64 CHUNK_DESCRIPTOR_ALLOC_CAPACITY = 20;
 		static constexpr U32 CPU_DESCRIPTOR_CHUNK_SIZE = 1000;
@@ -44,6 +44,7 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<ICommandQueue> mainQueue;
 		DX::ComPtr<ICommandQueue> computeQueue;
 		DX::ComPtr<ICommandQueue> copyQueue;
+		DX::ComPtr<DX::IAdapter> adapter;
 
 		U32 commandListsCount = 0;
 		Ptr<ICommandList*> commandLists = nullptr;
@@ -152,6 +153,7 @@ namespace ZE::RHI::DX12
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 
+		DX::IAdapter* GetAdapter() const noexcept { return adapter.Get(); }
 		IDevice* GetDevice() const noexcept { return device.Get(); }
 		ICommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }

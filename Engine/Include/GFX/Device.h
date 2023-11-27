@@ -34,6 +34,7 @@ namespace ZE::GFX
 		constexpr void ExecuteXeSS(CommandList& cl, Resource::Generic& color, Resource::Generic& motionVectors,
 			Resource::Generic* depth, Resource::Generic* exposure, Resource::Generic* responsive, Resource::Generic& output,
 			float jitterX, float jitterY, UInt2 renderSize, bool reset) { ZE_RHI_BACKEND_CALL(ExecuteXeSS, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, renderSize, reset); }
+		constexpr bool IsDLSSSupported() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsDLSSSupported); return val; }
 
 		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
 		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }
