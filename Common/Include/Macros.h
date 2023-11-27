@@ -78,6 +78,10 @@
 	className(className&&) = delete; \
 	className& operator=(className&&) = delete;
 
+// Macro for turning literal values into strings
+#define ZE_XSTRINGIFY(x) #x
+// Macro for turning values into strings
+#define ZE_STRINGIFY(x) ZE_XSTRINGIFY(x)
 // Compiler agnostic way of handling pragma directive
 #define ZE_PRAGMA(X) _Pragma(#X)
 
