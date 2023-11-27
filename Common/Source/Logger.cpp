@@ -3,7 +3,7 @@
 
 namespace ZE
 {
-	void Logger::Log(Level type, const std::string& log, bool flush, bool logToFile) noexcept
+	void Logger::Log(Level type, const std::string& log, bool newLine, bool flush, bool logToFile) noexcept
 	{
 		std::string_view banner;
 		bool error = false;
@@ -19,6 +19,8 @@ namespace ZE
 			banner = "> [WARNING] ";
 			break;
 		}
+		default:
+			ZE_ENUM_UNHANDLED();
 		case Logger::Level::Error:
 		{
 			banner = "> [ERROR] ";
@@ -28,7 +30,9 @@ namespace ZE
 		}
 		auto writeLog = [&](std::ostream& out)
 			{
-				out << '<' << Utils::GetCurrentTimestamp() << banner << log << std::endl;
+				out << '<' << Utils::GetCurrentTimestamp() << banner << log;
+				if (newLine)
+					out << std::endl;
 				if (flush)
 					out << std::flush;
 			};

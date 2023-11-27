@@ -10,6 +10,7 @@ namespace ZE
 	{
 	public:
 		static constexpr const char* LOG_DIR = "./Logs/";
+		static constexpr const wchar_t* LOG_DIR_W = L"./Logs/";
 
 	private:
 		enum class Level : U8 { Info, Warning, Error };
@@ -20,15 +21,15 @@ namespace ZE
 		static inline std::shared_mutex consoleMutex;
 		static inline std::shared_mutex fileMutex;
 
-		static void Log(Level type, const std::string& log, bool flush, bool logToFile = true) noexcept;
+		static void Log(Level type, const std::string& log, bool flush, bool newLine = true, bool logToFile = true) noexcept;
 
 	public:
 		Logger() = delete;
 
 		static bool CreateLogDir(bool noLock = false) noexcept;
-		static void InfoNoFile(const std::string& info, bool flush = false) noexcept { Log(Level::Info, info, flush, false); }
-		static void Info(const std::string& info, bool flush = false) noexcept { Log(Level::Info, info, flush); }
-		static void Warning(const std::string& warning, bool flush = false) noexcept { Log(Level::Warning, warning, flush); }
-		static void Error(const std::string& error, bool flush = false) noexcept { Log(Level::Error, error, flush); }
+		static void InfoNoFile(const std::string& info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine, false); }
+		static void Info(const std::string& info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine); }
+		static void Warning(const std::string& warning, bool flush = false, bool newLine = true) noexcept { Log(Level::Warning, warning, flush, newLine); }
+		static void Error(const std::string& error, bool flush = false, bool newLine = true) noexcept { Log(Level::Error, error, flush, newLine); }
 	};
 }
