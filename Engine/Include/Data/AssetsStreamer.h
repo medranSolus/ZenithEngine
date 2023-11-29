@@ -73,7 +73,6 @@ namespace ZE::Data
 			EID materialId = Settings::CreateEntity();
 			Storage& data = Settings::Data;
 
-			data.emplace<ResourceLocationAtom>(materialId, ResourceLocation::UploadingToGPU);
 			data.emplace<Material>(materialId, materialData);
 			data.emplace<MaterialFlags>(materialId, materialFlags);
 

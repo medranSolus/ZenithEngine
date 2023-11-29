@@ -28,12 +28,6 @@ namespace ZE::RHI::DX12
 		static constexpr U64 CHUNK_DESCRIPTOR_ALLOC_CAPACITY = 20;
 		static constexpr U32 CPU_DESCRIPTOR_CHUNK_SIZE = 1000;
 
-		struct UploadInfo
-		{
-			D3D12_RESOURCE_STATES FinalState;
-			IResource* Destination;
-			DX::ComPtr<IResource> UploadRes;
-		};
 		struct DescHeap
 		{
 			DX::ComPtr<IDescriptorHeap> Heap = nullptr;
@@ -64,11 +58,6 @@ namespace ZE::RHI::DX12
 		AllocatorGPU allocator;
 		FfxInterface ffxInterface;
 		xess_context_handle_t xessCtx = nullptr;
-
-		CommandList copyList;
-		TableInfo<U16> copyResInfo;
-		U16 copyOffset = 0;
-		Ptr<UploadInfo> copyResList = nullptr;
 
 		DescriptorAllocator::BlockAllocator blockDescAllocator;
 		DescriptorAllocator::ChunkAllocator chunkDescAllocator;
@@ -147,10 +136,6 @@ namespace ZE::RHI::DX12
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
 		bool IsShaderFloat16Supported() const noexcept;
 
-		void BeginUploadRegion();
-		void StartUpload();
-		void EndUploadRegion();
-
 		void Execute(GFX::CommandList* cls, U32 count);
 		void ExecuteMain(GFX::CommandList& cl);
 		void ExecuteCompute(GFX::CommandList& cl);
@@ -184,15 +169,6 @@ namespace ZE::RHI::DX12
 
 		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic);
 		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC1, U32>& desc);
-		DX::ComPtr<IResource> CreateTextureUploadBuffer(U64 size);
-
-		void UploadBuffer(IResource* dest, const D3D12_RESOURCE_DESC1& desc,
-			const void* data, U64 size, D3D12_RESOURCE_STATES finalState);
-		void UploadTexture(const D3D12_TEXTURE_COPY_LOCATION& dest,
-			const D3D12_TEXTURE_COPY_LOCATION& source, D3D12_RESOURCE_STATES finalState);
-
-		void UpdateBuffer(IResource* res, const void* data,
-			U64 size, D3D12_RESOURCE_STATES currentState);
 
 		DescriptorInfo AllocDescs(U32 count, bool gpuHeap = true) noexcept;
 		void FreeDescs(DescriptorInfo& descInfo) noexcept;

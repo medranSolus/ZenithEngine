@@ -20,7 +20,7 @@ namespace ZE::RHI::DX12::Resource
 
 		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(resInfo); }
 
-		void Update(GFX::Device& dev, const void* values, U32 bytes) const;
+		void Update(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 		void GetData(GFX::Device& dev, void* values, U32 bytes) const;
 	};

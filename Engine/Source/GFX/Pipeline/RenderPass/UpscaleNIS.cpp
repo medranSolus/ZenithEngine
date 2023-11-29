@@ -77,7 +77,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesScale));
 		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesUSM));
 		passData->Coefficients.Init(dev, coeffDesc);
-		dev.StartUpload();
 
 		return passData;
 	}

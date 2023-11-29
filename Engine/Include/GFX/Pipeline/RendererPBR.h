@@ -58,6 +58,6 @@ namespace ZE::GFX::Pipeline
 		void SetInverseViewProjection(EID camera) noexcept;
 		// Need to be called before ending every frame
 		void UpdateWorldData(Device& dev, EID camera) noexcept;
-		void ShowWindow(Device& dev);
+		void ShowWindow(Device& dev, Data::AssetsStreamer& assets);
 	};
 }

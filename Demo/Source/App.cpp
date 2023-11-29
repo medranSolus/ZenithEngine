@@ -142,7 +142,7 @@ void App::ShowOptionsWindow()
 		}
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
-		engine.Reneder().ShowWindow(engine.Gfx().GetDevice());
+		engine.Reneder().ShowWindow(engine.Gfx().GetDevice(), engine.Assets());
 	}
 	ImGui::End();
 }
@@ -320,15 +320,7 @@ void App::ShowObjectWindow()
 					material.ParallaxScale = 0.0f;
 
 				if (change)
-				{
-					auto& buffers = Settings::Data.get<Data::MaterialBuffersPBR>(materialId);
-					auto& dev = engine.Gfx().GetDevice();
-
-					dev.BeginUploadRegion();
-					buffers.UpdateData(dev, material);
-					dev.StartUpload();
-					dev.EndUploadRegion();
-				}
+					Settings::Data.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), materialId, material);
 			}
 
 			if (Settings::Data.all_of<Data::PointLight>(selected))
@@ -353,13 +345,9 @@ void App::ShowObjectWindow()
 				if (change)
 				{
 					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
-					auto& dev = engine.Gfx().GetDevice();
 
-					dev.BeginUploadRegion();
-					buffer.Buffer.Update(dev, &light, sizeof(light));
-					dev.StartUpload();
+					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
 					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
-					dev.EndUploadRegion();
 				}
 			}
 
@@ -408,13 +396,9 @@ void App::ShowObjectWindow()
 				if (change)
 				{
 					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
-					auto& dev = engine.Gfx().GetDevice();
 
-					dev.BeginUploadRegion();
-					buffer.Buffer.Update(dev, &light, sizeof(light));
-					dev.StartUpload();
+					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
 					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
-					dev.EndUploadRegion();
 				}
 			}
 
@@ -442,15 +426,7 @@ void App::ShowObjectWindow()
 				}
 
 				if (change)
-				{
-					auto& buffer = Settings::Data.get<Data::DirectionalLightBuffer>(selected);
-					auto& dev = engine.Gfx().GetDevice();
-
-					dev.BeginUploadRegion();
-					buffer.Buffer.Update(dev, &light, sizeof(light));
-					dev.StartUpload();
-					dev.EndUploadRegion();
-				}
+					Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
 			}
 
 			if (Settings::Data.all_of<Data::Camera>(selected))
@@ -524,7 +500,11 @@ EID App::AddModel(std::string&& name, Float3&& position,
 	if (Settings::ComputeMotionVectors())
 		Settings::Data.emplace<Data::TransformPrevious>(model, transform);
 
-	Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, file);
+	if (!Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, file).Get())
+	{
+		// TODO: correct error handling
+		ZE_FAIL("Error loading model!");
+	}
 	return model;
 }
 
@@ -543,9 +523,8 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 
 	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
 		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &pointLight, sizeof(Data::PointLight));
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, sizeof(Data::PointLight) });
 
-	engine.Gfx().GetDevice().StartUpload();
 	return light;
 }
 
@@ -568,9 +547,8 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 
 	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
 		Math::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &spotLight, sizeof(Data::SpotLight));
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, sizeof(Data::SpotLight) });
 
-	engine.Gfx().GetDevice().StartUpload();
 	return light;
 }
 
@@ -586,9 +564,8 @@ EID App::AddDirectionalLight(std::string&& name,
 	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
 	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);
-	//buffer.Buffer.Init(engine.Gfx().GetDevice(), &dirLight, sizeof(Data::DirectionalLight));
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, sizeof(Data::DirectionalLight) });
 
-	engine.Gfx().GetDevice().StartUpload();
 	return light;
 }
 
@@ -617,7 +594,6 @@ App::App(const CmdParser& params)
 
 	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
 
-	engine.Gfx().GetDevice().BeginUploadRegion();
 	if (params.GetOption("cubePerfTest"))
 	{
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
@@ -666,7 +642,6 @@ App::App(const CmdParser& params)
 			texDesc.Init(texSchema);
 			buffers.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc);
 		}
-		engine.Gfx().GetDevice().StartUpload();
 
 		// Create test cube entities
 		std::mt19937_64 randEngine;
@@ -722,8 +697,7 @@ App::App(const CmdParser& params)
 		AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
 #endif
 	}
-	engine.Gfx().GetDevice().StartUpload();
-	engine.Gfx().GetDevice().EndUploadRegion();
+	engine.Assets().GetDisk().StartUploadGPU(true);
 }
 
 int App::Run()

@@ -82,7 +82,6 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
 		passData->HilbertLUT.Init(dev, hilbertDesc);
-		dev.StartUpload();
 
 		return passData;
 	}

@@ -36,16 +36,16 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		texDesc.AddTexture(Resource::Texture::Type::Cube, Resource::Texture::Usage::PixelShader, std::move(textures));
 		passData->SkyTexture.Init(dev, texDesc);
 
-		//const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
-		//const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
-		//passData->MeshData.Init(dev,
-		//	{
-		//		vertices.data(), indices.data(),
-		//		Utils::SafeCast<U32>(vertices.size()),
-		//		Utils::SafeCast<U32>(indices.size()),
-		//		sizeof(Float3), sizeof(U32)
-		//	});
-		//dev.StartUpload();
+		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
+		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
+		passData->MeshData.Init(dev, buildData.Assets.GetDisk(),
+			{
+				INVALID_EID,
+				vertices.data(), indices.data(),
+				Utils::SafeCast<U32>(vertices.size()),
+				Utils::SafeCast<U32>(indices.size()),
+				sizeof(Float3), sizeof(U32)
+			});
 
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(dev, psoDesc.VS, "SkyboxVS", buildData.ShaderCache);

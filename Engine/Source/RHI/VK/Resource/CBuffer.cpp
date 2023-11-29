@@ -53,18 +53,18 @@ namespace ZE::RHI::VK::Resource
 	{
 	}
 
-	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
+	void CBuffer::Update(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data) const
 	{
 		U8* memory = dev.Get().vk.GetMemory().GetMappedMemory(alloc);
 		if (memory)
-			memcpy(memory, values, bytes);
+			memcpy(memory, data.Data, data.Bytes);
 		else
 		{
 			UploadInfoBufferUpdate updateInfo = {};
 			updateInfo.Buffer = buffer;
 			updateInfo.LastUsedQueue = lastUsedQueue;
-			updateInfo.Data = values;
-			updateInfo.Bytes = bytes;
+			updateInfo.Data = data.Data;
+			updateInfo.Bytes = data.Bytes;
 			updateInfo.DestStage = USAGE_STAGE;
 			updateInfo.DestAccess = USAGE_ACCESS;
 			dev.Get().vk.UpdateBuffer(updateInfo);

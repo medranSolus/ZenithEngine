@@ -145,7 +145,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		if (uploadRegionSize)
 		{
 			// Create one big committed buffer and copy data into it
-			DX::ComPtr<IResource> uploadRes = device.CreateTextureUploadBuffer(uploadRegionSize);
+			DX::ComPtr<IResource> uploadRes;// = device.CreateTextureUploadBuffer(uploadRegionSize);
 			ZE_DX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
 			D3D12_TEXTURE_COPY_LOCATION copySource = {};
 			copySource.pResource = uploadRes.Get();
@@ -192,7 +192,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 						if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
 							endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 
-						device.UploadTexture(copyDest, copySource, endState);
+						//device.UploadTexture(copyDest, copySource, endState);
 						++copyDest.SubresourceIndex;
 						++j;
 					}

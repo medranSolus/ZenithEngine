@@ -94,7 +94,6 @@ namespace ZE::Data
 
 						EID resId = resourceIds.at(resIdIndex++);
 						assets.emplace<PackID>(resId, header.ID);
-						assets.emplace<ResourceLocationAtom>(resId, ResourceLocation::UploadingToGPU);
 
 						std::string& name = assets.emplace<std::string>(resId);
 						name.resize(entry.NameSize);
@@ -336,7 +335,6 @@ namespace ZE::Data
 
 				// Load custom data by default to resource pack 0
 				assets.emplace<PackID>(meshId).ID = 0;
-				assets.emplace<ResourceLocationAtom>(meshId, ResourceLocation::UploadingToGPU);
 				assets.emplace<std::string>(meshId, mesh.mName.length != 0
 					? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
 				assets.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
@@ -431,8 +429,6 @@ namespace ZE::Data
 
 				// Load custom data by default to resource pack 0
 				assets.emplace<PackID>(materialId).ID = 0;
-				assets.emplace<ResourceLocationAtom>(materialId, ResourceLocation::UploadingToGPU);
-
 				// Start upload of buffer data and textures to GPU
 				assets.emplace<MaterialBuffersPBR>(materialId, dev, diskManager, data, texDesc);
 				return { materialId };

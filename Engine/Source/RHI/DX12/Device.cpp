@@ -244,10 +244,6 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
 		ZE_DX_SET_ID(copyFence, "copy_fence");
 
-		copyList.Init(*this, GFX::QueueType::Main);
-		copyResInfo.Size = 0;
-		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
-
 		descriptorGpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, descriptorCount, 1, 3, this);
 		descriptorCpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_NONE, CPU_DESCRIPTOR_CHUNK_SIZE, 1, 3);
 		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -281,19 +277,13 @@ namespace ZE::RHI::DX12
 
 	Device::~Device()
 	{
-		ZE_ASSERT(copyResInfo.Size == 0, "Copying data not finished before destroying Device!");
-
 		if (xessCtx)
 		{
 			ZE_XESS_ENABLE();
 			ZE_XESS_CHECK(xessDestroyContext(xessCtx), "Error destroying XeSS context!");
 		}
-
-		copyList.Free();
 		if (commandLists)
 			commandLists.Free();
-		if (copyResList != nullptr)
-			Table::Clear(copyResInfo.Size, copyResList);
 
 		switch (Settings::GpuVendor)
 		{
@@ -433,58 +423,6 @@ namespace ZE::RHI::DX12
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))))
 			return options.MinPrecisionSupport & D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT;
 		return false;
-	}
-
-	void Device::BeginUploadRegion()
-	{
-		ZE_ASSERT(copyResList == nullptr, "Finish previous upload first!");
-		copyList.Open(*this);
-		copyResList = Table::Create<UploadInfo>(COPY_LIST_GROW_SIZE);
-	}
-
-	void Device::StartUpload()
-	{
-		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
-
-		U16 size = copyResInfo.Size - copyOffset;
-		if (size)
-		{
-			auto barriers = std::make_unique<D3D12_RESOURCE_BARRIER[]>(size);
-			for (U16 i = 0; i < size; ++i)
-			{
-				auto& barrier = barriers[i];
-				auto& copyInfo = copyResList[copyOffset + i];
-				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-				barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-				barrier.Transition.StateAfter = copyInfo.FinalState;
-				barrier.Transition.pResource = copyInfo.Destination;
-			}
-			copyOffset = copyResInfo.Size;
-			copyList.GetList()->ResourceBarrier(size, barriers.get());
-
-			copyList.Close(*this);
-			Execute(mainQueue.Get(), copyList);
-			copyList.Open(*this);
-		}
-	}
-
-	void Device::EndUploadRegion()
-	{
-		ZE_ASSERT(copyResList != nullptr, "Start upload region first!");
-		ZE_WIN_ENABLE_EXCEPT();
-
-		copyList.Close(*this);
-		U64 fenceVal = ++mainFenceVal;
-		ZE_DX_THROW_FAILED(mainQueue->Signal(mainFence.Get(), fenceVal));
-		WaitMain(fenceVal);
-		copyList.Reset(*this);
-
-		Table::Clear(copyResInfo.Size, copyResList);
-		copyOffset = 0;
-		copyResInfo.Size = 0;
-		copyResInfo.Allocated = COPY_LIST_GROW_SIZE;
 	}
 
 	void Device::Execute(GFX::CommandList* cls, U32 count)
@@ -665,82 +603,6 @@ namespace ZE::RHI::DX12
 		else if (desc.first.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
 			return allocator.AllocTexture_4KB(*this, desc.second, desc.first);
 		return allocator.AllocTexture_4MB(*this, desc.second, desc.first);
-	}
-
-	DX::ComPtr<IResource> Device::CreateTextureUploadBuffer(U64 size)
-	{
-		ZE_WIN_ENABLE_EXCEPT();
-
-		auto desc = GetBufferDesc(size);
-		D3D12_HEAP_PROPERTIES tempHeap = {};
-		tempHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
-		tempHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		tempHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		tempHeap.CreationNodeMask = 0;
-		tempHeap.VisibleNodeMask = 0;
-
-		DX::ComPtr<IResource> uploadRes = nullptr;
-		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
-			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
-		return uploadRes;
-	}
-
-	void Device::UploadBuffer(IResource* dest, const D3D12_RESOURCE_DESC1& desc,
-		const void* data, U64 size, D3D12_RESOURCE_STATES finalState)
-	{
-		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
-		ZE_ASSERT(desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER, "Wrong resource type!");
-		ZE_WIN_ENABLE_EXCEPT();
-
-		// Create upload heap and temporary resource
-		D3D12_HEAP_PROPERTIES tempHeap = {};
-		tempHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
-		tempHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		tempHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		tempHeap.CreationNodeMask = 0;
-		tempHeap.VisibleNodeMask = 0;
-
-		DX::ComPtr<IResource> uploadRes = nullptr;
-		ZE_DX_THROW_FAILED(device->CreateCommittedResource2(&tempHeap,
-			D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr, nullptr, IID_PPV_ARGS(&uploadRes)));
-
-		// Map and copy data into upload buffer
-		D3D12_RANGE range = {};
-		void* uploadBuffer = nullptr;
-		ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, &uploadBuffer));
-		memcpy(uploadBuffer, data, size);
-		uploadRes->Unmap(0, nullptr);
-
-		// Perform copy and save upload resource till FinishUpload is called
-		copyList.GetList()->CopyResource(dest, uploadRes.Get());
-		Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, dest, std::move(uploadRes)));
-	}
-
-	void Device::UploadTexture(const D3D12_TEXTURE_COPY_LOCATION& dest,
-		const D3D12_TEXTURE_COPY_LOCATION& source, D3D12_RESOURCE_STATES finalState)
-	{
-		ZE_ASSERT(copyResList != nullptr, "Empty upload list!");
-
-		copyList.GetList()->CopyTextureRegion(&dest, 0, 0, 0, &source, nullptr);
-		if (dest.SubresourceIndex == 0)
-			Table::Append<COPY_LIST_GROW_SIZE>(copyResInfo, copyResList, UploadInfo(finalState, static_cast<IResource*>(dest.pResource), static_cast<IResource*>(source.pResource)));
-	}
-
-	void Device::UpdateBuffer(IResource* res, const void* data, U64 size, D3D12_RESOURCE_STATES currentState)
-	{
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = res;
-		barrier.Transition.Subresource = 0;
-		barrier.Transition.StateBefore = currentState;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-
-		copyList.GetList()->ResourceBarrier(1, &barrier);
-		D3D12_RESOURCE_DESC1 desc = GetBufferDesc(size);
-		UploadBuffer(res, desc, data, size, currentState);
 	}
 
 	DescriptorInfo Device::AllocDescs(U32 count, bool gpuHeap) noexcept

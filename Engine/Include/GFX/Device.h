@@ -77,13 +77,6 @@ namespace ZE::GFX
 		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { std::pair<U32, U32> minMax; ZE_RHI_BACKEND_CALL_RET(minMax, GetWaveLaneCountRange); return minMax; }
 		constexpr bool IsShaderFloat16Supported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsShaderFloat16Supported); return val; }
 
-		// Start sequence after which new resources can be created/updated and uploaded to GPU
-		constexpr void BeginUploadRegion() { ZE_RHI_BACKEND_CALL(BeginUploadRegion); }
-		// Send current resources to GPU resources to GPU
-		constexpr void StartUpload() { ZE_RHI_BACKEND_CALL(StartUpload); }
-		// Flushes all the upload data to GPU
-		constexpr void EndUploadRegion() { ZE_RHI_BACKEND_CALL(EndUploadRegion); }
-
 		constexpr void Execute(CommandList* cls, U32 count) { ZE_RHI_BACKEND_CALL(Execute, cls, count); }
 		constexpr void ExecuteMain(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteMain, cl); }
 		constexpr void ExecuteCompute(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteCompute, cl); }

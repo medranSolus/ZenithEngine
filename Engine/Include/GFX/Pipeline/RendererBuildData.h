@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Resource/Texture/Schema.h"
+#include "Data/AssetsStreamer.h"
 #include "GFX/Binding/Library.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/Shader.h"
@@ -11,8 +11,8 @@ namespace ZE::GFX::Pipeline
 	{
 		// Allows creation of materials and data bindings. Always save only index as Schema address may change during setup
 		Binding::Library& BindingLib;
-		// Holds descriptions for TexturePack's internal structure to be used later during their creation and accesses
-		Resource::Texture::Library& TextureLib;
+		// Allows creation of resources in render passes
+		Data::AssetsStreamer& Assets;
 		// If pass require global renderer data in shaders just simply append this SchemaDesc
 		Binding::SchemaDesc RendererSlots;
 		std::unordered_map<std::string, Resource::Shader> ShaderCache;

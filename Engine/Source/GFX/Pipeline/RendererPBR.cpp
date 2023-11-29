@@ -197,7 +197,7 @@ namespace ZE::GFX::Pipeline
 #pragma endregion
 
 		std::vector<GFX::Pipeline::RenderNode> nodes;
-		RendererBuildData buildData = { execData.Bindings, assets.GetSchemaLib() };
+		RendererBuildData buildData = { execData.Bindings, assets };
 		SetupRenderSlots(buildData);
 
 		blurSigma = params.Sigma;
@@ -225,10 +225,7 @@ namespace ZE::GFX::Pipeline
 		}
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
-
-		dev.BeginUploadRegion();
-		//execData.SettingsBuffer.Init(dev, &settingsData, sizeof(DataPBR));
-		dev.StartUpload();
+		execData.SettingsBuffer.Init(dev, assets.GetDisk(), { INVALID_EID, &settingsData, sizeof(DataPBR) });
 
 #pragma region Geometry
 		{
@@ -442,7 +439,6 @@ namespace ZE::GFX::Pipeline
 		}
 #pragma endregion
 		Finalize(dev, mainList, nodes, frameBufferDesc, buildData, params.MinimizeRenderPassDistances);
-		dev.EndUploadRegion();
 	}
 
 	void RendererPBR::UpdateSettingsData(const Data::Projection& projection) noexcept
@@ -509,7 +505,7 @@ namespace ZE::GFX::Pipeline
 		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
 	}
 
-	void RendererPBR::ShowWindow(Device& dev)
+	void RendererPBR::ShowWindow(Device& dev, Data::AssetsStreamer& assets)
 	{
 		bool change = false;
 		if (ImGui::CollapsingHeader("Outline"))
@@ -776,11 +772,6 @@ namespace ZE::GFX::Pipeline
 		}
 		// If any settings data updated then upload new buffer
 		if (change)
-		{
-			dev.BeginUploadRegion();
-			execData.SettingsBuffer.Update(dev, &settingsData, sizeof(DataPBR));
-			dev.StartUpload();
-			dev.EndUploadRegion();
-		}
+			execData.SettingsBuffer.Update(dev, assets.GetDisk(), { INVALID_EID, &settingsData, sizeof(DataPBR) });
 	}
 }

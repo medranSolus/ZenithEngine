@@ -1,10 +1,11 @@
 #include "RHI/DX11/Resource/CBuffer.h"
+#include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX11::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, const void* values, U32 bytes, bool dynamic) : dynamic(dynamic)
+	CBuffer::CBuffer(Device& dev, const void* values, U32 bytes, bool dynamic) : dynamic(dynamic)
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx11);
+		ZE_DX_ENABLE_ID(dev);
 
 		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -37,27 +38,19 @@ namespace ZE::RHI::DX11::Resource
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
+		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
 		ZE_DX_SET_ID(buffer, "CBuffer");
+	}
+
+	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data)
+		: CBuffer(dev.Get().dx11, data.Data, data.Bytes, false)
+	{
+		if (data.ResourceID != INVALID_EID)
+			Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
 	}
 
 	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file)
 	{
-	}
-
-	void CBuffer::Update(GFX::Device& dev, const void* values, U32 bytes) const
-	{
-		if (dynamic)
-		{
-			ZE_DX_ENABLE(dev.Get().dx11);
-
-			D3D11_MAPPED_SUBRESOURCE subres;
-			ZE_DX_THROW_FAILED(dev.Get().dx11.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
-			memcpy(subres.pData, values, bytes);
-			dev.Get().dx11.GetMainContext()->Unmap(buffer.Get(), 0);
-		}
-		else
-			dev.Get().dx11.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, values, 0, 0);
 	}
 
 	void CBuffer::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
@@ -110,5 +103,25 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_THROW_FAILED(ctx->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &subres));
 		memcpy(values, subres.pData, bytes);
 		ctx->Unmap(stagingBuffer.Get(), 0);
+	}
+
+	void CBuffer::Update(Device& dev, const GFX::Resource::CBufferData& data) const
+	{
+		if (dynamic)
+		{
+			ZE_DX_ENABLE(dev);
+
+			D3D11_MAPPED_SUBRESOURCE subres;
+			ZE_DX_THROW_FAILED(dev.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
+			memcpy(subres.pData, data.Data, data.Bytes);
+			dev.GetMainContext()->Unmap(buffer.Get(), 0);
+		}
+		else
+		{
+			dev.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, data.Data, 0, 0);
+
+			if (data.ResourceID != INVALID_EID)
+				Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
+		}
 	}
 }

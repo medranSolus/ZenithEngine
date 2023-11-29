@@ -69,9 +69,6 @@ namespace ZE::RHI::DX11
 		constexpr GFX::ShaderModel GetMaxShaderModel() const noexcept { return GFX::ShaderModel::V5_0; }
 		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { return { 32, 32 }; }
 
-		constexpr void BeginUploadRegion() {}
-		constexpr void StartUpload() {}
-		constexpr void EndUploadRegion() {}
 		constexpr void EndFrame() noexcept {}
 
 		xess_context_handle_t GetXeSSCtx() { ZE_FAIL("XeSS no supported for DirectX 11!"); return nullptr; }
