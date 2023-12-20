@@ -95,17 +95,18 @@ set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
 set(DLSS_DIR "${EXTERNAL_DIR}/DLSS")
 set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
-set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK/sdk")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
+set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
+set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 
 
@@ -124,17 +125,18 @@ set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
 set(DLSS_INC_DIR "${DLSS_DIR}/include")
 set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
-set(DXTEX_INC_DIR "${DXTEX_DIR}/DirectXTex")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
+set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(XESS_INC_DIR "${XESS_DIR}/inc")
+set(QOI_INC_DIR "${QOI_DIR}/include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
 
 
@@ -175,10 +177,12 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${HARFBUZZ_INC_DIR}"
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
+	"${LIBSPNG_INC_DIR}"
 	"${NIS_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XESS_INC_DIR}"
+	"${QOI_INC_DIR}"
 	"${ZLIB_INC_DIR}")
 
 
@@ -196,11 +200,11 @@ set(AGS_LIB "amd_ags_x64")
 set(ASSIMP_LIB "assimp")
 set(DLSS_LIB "nvsdk_ngx")
 set(DSTORE_LIB "dstorage")
-set(DXTEX_LIB "DirectXTex")
 set(ENTT_LIB "EnTT::EnTT")
 set(FTYPE_LIB "freetype")
 set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
+set(LIBSPNG_LIB "spng_static")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
 set(XESS_LIB "libxess")
@@ -222,11 +226,11 @@ endif()
 if(${ZE_ENABLE_DX12})
 	set(DSTORE_TARGET "${DSTORE_DIR}/lib/x64/${DSTORE_LIB}.lib")
 endif()
-set(DXTEX_TARGET "${DXTEX_LIB}")
 set(ENTT_TARGET "${ENTT_LIB}")
 set(FTYPE_TARGET "${FTYPE_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
+set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
 if(${ZE_ENABLE_VK})
 	set(VOLK_TARGET "${VOLK_LIB}")
 endif()
@@ -294,7 +298,7 @@ if(${ZE_COMPILER_MSVC})
 	set(CXX_DEVELOPMENT_FLAGS "/GL- /Gw- /sdl")
 	set(CXX_OPTIMIZATION_FLAGS "/O2 /GL /Gw /Gy /MD /Ob2 /Oi /Ot /Oy /QIntel-jcc-erratum") # Maybe consider /Ob3, TODO: profile
 	add_compilation_flags(
-		"/arch:AVX2 /await /favor:blend /EHsc /fp:fast /fpcvt:IA /GA /GF /GR- /GS /guard:cf- /guard:ehcont- /J /JMC- /MP /nologo /openmp:experimental /permissive- /volatile:iso /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:referenceBinding /Zc:rvalueCast /Zc:wchar_t"
+		"/arch:AVX2 /await /favor:blend /EHsc /fp:fast /fpcvt:IA /GA /GF /GR- /GS /guard:cf- /guard:ehcont- /J /JMC- /MP /nologo /openmp:experimental /permissive- /volatile:iso /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:referenceBinding /Zc:rvalueCast /Zc:wchar_t /D_CRT_SECURE_NO_WARNINGS"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MDd /Gy- /Od /Oi- /Oy-"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MD /Gy /Ob1 /Oi /Oy"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_OPTIMIZATION_FLAGS}"
@@ -342,6 +346,8 @@ else()
 endif()
 
 # General flags
+add_definitions(-DSPNG_SSE=2)
+add_definitions(-DSPNG_STATIC)
 add_definitions(-DZLIB_CONST)
 add_definitions(-DENTT_NOEXCEPTION)
 add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
@@ -422,6 +428,17 @@ if(NOT EXISTS "${EXTERNAL_BIN_DIR}/zconf.h")
 		"${EXTERNAL_BIN_DIR}")
 endif()
 
+ # libspng
+set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
+	"-DSPNG_SHARED:BOOL=OFF"
+	"-DSPNG_STATIC:BOOL=ON"
+	"-DBUILD_EXAMPLES:BOOL=OFF"
+	"-DZLIB_INCLUDE_DIRS:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
+	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
+	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
+	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
+add_external_project(LIBSPNG "" "" "ZLIB")
+
  # libpng
 set(LIBPNG_CACHE_ARGS "-DPNG_BUILD_ZLIB:BOOL=OFF"
 	"-DZLIB_FOUND:BOOL=ON"
@@ -495,11 +512,6 @@ set(FTYPE_CACHE_ARGS "-DFT_DISABLE_ZLIB:BOOL=ON"
 	"-DPNG_LIBRARIES:STRING=${LIBPNG_TARGET}"
 	"-DPNG_LIBRARY:STRING=${LIBPNG_TARGET}")
 add_external_project(FTYPE "" "" "LIBPNG;HARFBUZZ")
-
- # DirectXTex
-set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=OFF"
-	"-DBUILD_SAMPLE:BOOL=OFF")
-add_external_project(DXTEX "bin/CMake/" "" "")
 
 # FidelityFX SDK
 add_external_fidelityfx_effect(FSR1)
