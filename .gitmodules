@@ -45,3 +45,9 @@
 [submodule "External/NvidiaImageScaling"]
 	path = External/NvidiaImageScaling
 	url = https://github.com/NVIDIAGameWorks/NVIDIAImageScaling.git
+[submodule "External/libspng"]
+	path = External/libspng
+	url = https://github.com/randy408/libspng.git
+[submodule "External/qoixx"]
+	path = External/qoixx
+	url = https://github.com/wx257osn2/qoixx.git
