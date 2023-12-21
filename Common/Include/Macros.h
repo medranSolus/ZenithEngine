@@ -109,3 +109,21 @@
 #else
 #	error Compiler not supported!
 #endif
+
+// Allow for classic bit operations on enum class type of enumeration
+#define ZE_ENUM_OPERATORS(Type, BaseType) \
+	inline constexpr BaseType operator&(Type e1, Type e2) { return static_cast<BaseType>(e1) & static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator|(Type e1, Type e2) { return static_cast<BaseType>(e1) | static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator^(Type e1, Type e2) { return static_cast<BaseType>(e1) ^ static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator&(Type e1, BaseType e2) { return static_cast<BaseType>(e1) & e2; } \
+	inline constexpr BaseType operator|(Type e1, BaseType e2) { return static_cast<BaseType>(e1) | e2; } \
+	inline constexpr BaseType operator^(Type e1, BaseType e2) { return static_cast<BaseType>(e1) ^ e2; } \
+	inline constexpr BaseType operator&(BaseType e1, Type e2) { return e1 & static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator|(BaseType e1, Type e2) { return e1 | static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator^(BaseType e1, Type e2) { return e1 ^ static_cast<BaseType>(e2); } \
+	inline constexpr BaseType operator~(Type e) { return ~static_cast<BaseType>(e); } \
+	inline constexpr BaseType& operator&=(BaseType& e1, Type e2) { e1 = e1 & e2; return e1; } \
+	inline constexpr BaseType& operator|=(BaseType& e1, Type e2) { e1 = e1 | e2; return e1; } \
+	inline constexpr BaseType& operator^=(BaseType& e1, Type e2) { e1 = e1 ^ e2; return e1; } \
+	inline constexpr bool operator==(BaseType e1, Type e2) { return e1 == static_cast<BaseType>(e2); } \
+	inline constexpr bool operator!=(BaseType e1, Type e2) { return e1 != static_cast<BaseType>(e2); }

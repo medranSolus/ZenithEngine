@@ -3,6 +3,15 @@
 
 namespace ZE
 {
+	// Typical pixel values
+	enum class PixelVal : U32
+	{
+		White = 0xFFFFFFFF,
+		Gray = 0xFF808080,
+		Black = 0xFF000000,
+		Cobalt = 0xFFC22000
+	};
+
 	// RGBA 4 byte pixel
 	class Pixel final
 	{
@@ -14,6 +23,7 @@ namespace ZE
 
 		Pixel() = default;
 		constexpr Pixel(U32 rgba) noexcept;
+		constexpr Pixel(PixelVal rgba) noexcept : Pixel(static_cast<U32>(rgba)) {}
 		constexpr Pixel(U8 r, U8 g, U8 b, U8 a = 255) noexcept : Red(r), Green(g), Blue(b), Alpha(a) {}
 		ZE_CLASS_DEFAULT(Pixel);
 		~Pixel() = default;
@@ -33,15 +43,6 @@ namespace ZE
 		constexpr Pixel operator-() const noexcept;
 		constexpr Pixel operator+(const Pixel& c) const noexcept;
 		constexpr Pixel operator*(float x) const noexcept;
-	};
-
-	// Typical pixel values
-	enum PixelVal : U32
-	{
-		White = 0xFFFFFFFF,
-		Gray = 0xFF808080,
-		Black = 0xFF000000,
-		Cobalt = 0xFFC22000
 	};
 
 #pragma region Functions

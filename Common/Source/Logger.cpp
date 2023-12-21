@@ -3,7 +3,7 @@
 
 namespace ZE
 {
-	void Logger::Log(Level type, const std::string& log, bool newLine, bool flush, bool logToFile) noexcept
+	void Logger::Log(Level type, const std::string& log, bool flush, bool newLine, bool logToFile) noexcept
 	{
 		std::string_view banner;
 		bool error = false;
