@@ -62,6 +62,11 @@
 
 /*
 * Types.h (defined by CmdParser.h)
+*/
+#include "Pixel.h"
+
+/*
+* Types.h (defined by CmdParser.h)
 * type_traits
 * cstdlib
 * cstring
@@ -116,6 +121,18 @@
 #include "Allocator/ChunkedTLSF.h"
 
 /*
+***** Macros.h (defined by CmdParser.h)
+*** DDS/PixelFormatDDS.h
+* DDS/Header.h
+***** BasicTypes.h (defined by CmdParser.h)
+*** DDS/FormatDDS.h
+*** Macros.h (defined by CmdParser.h)
+* DDS/HeaderDXT10.h
+* PixelFormat.h (defined by Utils.h)
+*/
+#include "DDS/Utils.h"
+
+/*
 *** Types.h (defined by CmdParser.h)
 *** exception
 *** string
@@ -124,11 +141,8 @@
 #include "Exception/GenericException.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
-* Pixel.h
-*** PixelFormat.h (defined by Utils.h)
-*** DirectXTex.h
-* RHI/DX/DX.h
+* PixelFormat.h (defined by Utils.h)
+* filesystem
 * utility
 * vector
 */
@@ -139,7 +153,6 @@
 */
 #include <algorithm>
 #include <sstream>
-#include <filesystem>
 #include <fstream>
 
 /*
@@ -147,17 +160,15 @@
 */
 #if _ZE_PLATFORM_WINDOWS
 /*
-* Exception/GenericException.h (defined by platform agnostic headers)
-*** Exception/BasicException.h (defined by Exception/GenericException.h)
-***** sdkddkver.h
-***** Windows.h
-*** Platform/WinAPI/WinAPI.h
-* Platform/WinAPI/WinApiException.h
+* Exception/BasicException.h (defined by Exception/GenericException.h)
+*** sdkddkver.h
+*** Windows.h
+* Platform/WinAPI/WinAPI.h
 */
-#	include "Platform/WinAPI/DirectXTexException.h"
+#	include "Platform/WinAPI/WinApiException.h"
 
 /*
-* Platform/WinAPI/WinAPI.h (defined by Platform/WinAPI/DirectXTexException.h)
+* Platform/WinAPI/WinAPI.h (defined by Platform/WinAPI/WinApiException.h)
 * Utils.h (defined by platform agnostic headers)
 */
 #	include "Platform/WinAPI/Perf.h"

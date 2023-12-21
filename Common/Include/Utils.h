@@ -27,8 +27,12 @@ namespace ZE::Utils
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept;
 	// Get string representation of PixelFormat
 	constexpr const char* FormatToString(PixelFormat format) noexcept;
-	// Get bytes that pixel is occupying
-	constexpr U8 GetFormatSize(PixelFormat format) noexcept;
+	// Get number of bits that pixel is occupying
+	constexpr U8 GetFormatBitCount(PixelFormat format) noexcept;
+	// Get bytes that single channel in pixel is occupying
+	constexpr U8 GetChannelSize(PixelFormat format) noexcept;
+	// Get number of channels in format
+	constexpr U8 GetChannelCount(PixelFormat format) noexcept;
 
 	// Calculace CRC32 hash over given buffer in compile time
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept;
@@ -467,96 +471,277 @@ namespace ZE::Utils
 #undef DECODE
 	}
 
-	constexpr U8 GetFormatSize(PixelFormat format) noexcept
+	constexpr U8 GetFormatBitCount(PixelFormat format) noexcept
 	{
 		switch (format)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
-		case ZE::PixelFormat::Unknown:
+		case PixelFormat::Unknown:
 			return 0;
-		case ZE::PixelFormat::R32G32B32A32_Float:
-		case ZE::PixelFormat::R32G32B32A32_UInt:
-		case ZE::PixelFormat::R32G32B32A32_SInt:
-		case ZE::PixelFormat::BC2_UNorm:
-		case ZE::PixelFormat::BC2_UNorm_SRGB:
-		case ZE::PixelFormat::BC3_UNorm:
-		case ZE::PixelFormat::BC3_UNorm_SRGB:
-		case ZE::PixelFormat::BC5_UNorm:
-		case ZE::PixelFormat::BC5_SNorm:
-		case ZE::PixelFormat::BC6H_UF16:
-		case ZE::PixelFormat::BC6H_SF16:
-		case ZE::PixelFormat::BC7_UNorm:
-		case ZE::PixelFormat::BC7_UNorm_SRGB:
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+			return 128;
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+			return 96;
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16B16A16_SNorm:
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		case PixelFormat::R32G8_DepthStencil: // In fact second component of depth stencil takes 32 bits of real memory
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+			return 64;
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::R8G8B8A8_SNorm:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		case PixelFormat::R24G8_DepthStencil:
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		case PixelFormat::R11G11B10_Float:
+		case PixelFormat::R9G9B9E5_SharedExp:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_YUY2:
+			return 32;
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		case PixelFormat::B4G4R4A4_UNorm:
+		case PixelFormat::B5G5R5A1_UNorm:
+		case PixelFormat::B5G6R5_UNorm:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
 			return 16;
-		case ZE::PixelFormat::R32G32B32_Float:
-		case ZE::PixelFormat::R32G32B32_UInt:
-		case ZE::PixelFormat::R32G32B32_SInt:
-			return 12;
-		case ZE::PixelFormat::R16G16B16A16_Float:
-		case ZE::PixelFormat::R16G16B16A16_UInt:
-		case ZE::PixelFormat::R16G16B16A16_SInt:
-		case ZE::PixelFormat::R16G16B16A16_UNorm:
-		case ZE::PixelFormat::R16G16B16A16_SNorm:
-		case ZE::PixelFormat::R32G32_Float:
-		case ZE::PixelFormat::R32G32_UInt:
-		case ZE::PixelFormat::R32G32_SInt:
-		case ZE::PixelFormat::BC1_UNorm:
-		case ZE::PixelFormat::BC1_UNorm_SRGB:
-		case ZE::PixelFormat::BC4_UNorm:
-		case ZE::PixelFormat::BC4_SNorm:
-		case ZE::PixelFormat::YUV_Y216:
-		case ZE::PixelFormat::YUV_Y210:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_NV12:
 			return 8;
-		case ZE::PixelFormat::R32G8_DepthStencil:
-			return 5;
-		case ZE::PixelFormat::R8G8B8A8_UInt:
-		case ZE::PixelFormat::R8G8B8A8_SInt:
-		case ZE::PixelFormat::R8G8B8A8_UNorm:
-		case ZE::PixelFormat::R8G8B8A8_UNorm_SRGB:
-		case ZE::PixelFormat::R8G8B8A8_SNorm:
-		case ZE::PixelFormat::B8G8R8A8_UNorm:
-		case ZE::PixelFormat::B8G8R8A8_UNorm_SRGB:
-		case ZE::PixelFormat::R16G16_Float:
-		case ZE::PixelFormat::R16G16_UInt:
-		case ZE::PixelFormat::R16G16_SInt:
-		case ZE::PixelFormat::R16G16_UNorm:
-		case ZE::PixelFormat::R16G16_SNorm:
-		case ZE::PixelFormat::R32_Float:
-		case ZE::PixelFormat::R32_Depth:
-		case ZE::PixelFormat::R32_UInt:
-		case ZE::PixelFormat::R32_SInt:
-		case ZE::PixelFormat::R24G8_DepthStencil:
-		case ZE::PixelFormat::R10G10B10A2_UInt:
-		case ZE::PixelFormat::R10G10B10A2_UNorm:
-		case ZE::PixelFormat::R11G11B10_Float:
-		case ZE::PixelFormat::R9G9B9E5_SharedExp:
-		case ZE::PixelFormat::YUV_Y410:
-		case ZE::PixelFormat::YUV_YUY2:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
 			return 4;
-		case ZE::PixelFormat::R8G8_UInt:
-		case ZE::PixelFormat::R8G8_SInt:
-		case ZE::PixelFormat::R8G8_UNorm:
-		case ZE::PixelFormat::R8G8_SNorm:
-		case ZE::PixelFormat::R16_Float:
-		case ZE::PixelFormat::R16_UInt:
-		case ZE::PixelFormat::R16_SInt:
-		case ZE::PixelFormat::R16_UNorm:
-		case ZE::PixelFormat::R16_SNorm:
-		case ZE::PixelFormat::R16_Depth:
-		case ZE::PixelFormat::B4G4R4A4_UNorm:
-		case ZE::PixelFormat::B5G5R5A1_UNorm:
-		case ZE::PixelFormat::B5G6R5_UNorm:
-		case ZE::PixelFormat::YUV_P016:
-		case ZE::PixelFormat::YUV_P010:
+		}
+	}
+
+	constexpr U8 GetChannelSize(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+			return 4;
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16B16A16_SNorm:
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
 			return 2;
-		case ZE::PixelFormat::R8_UInt:
-		case ZE::PixelFormat::R8_SInt:
-		case ZE::PixelFormat::R8_UNorm:
-		case ZE::PixelFormat::R8_SNorm:
-		case ZE::PixelFormat::YUV_P208:
-		case ZE::PixelFormat::YUV_NV12:
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::R8G8B8A8_SNorm:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
 			return 1;
+			// Non-standard formats that require special handling
+		default:
+			ZE_ENUM_UNHANDLED();
+		case PixelFormat::Unknown:
+		case PixelFormat::R24G8_DepthStencil:
+		case PixelFormat::R32G8_DepthStencil:
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		case PixelFormat::R11G11B10_Float:
+		case PixelFormat::R9G9B9E5_SharedExp:
+		case PixelFormat::B4G4R4A4_UNorm:
+		case PixelFormat::B5G5R5A1_UNorm:
+		case PixelFormat::B5G6R5_UNorm:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+		case PixelFormat::YUV_YUY2:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
+		case PixelFormat::YUV_NV12:
+			return 0;
+		}
+	}
+
+	constexpr U8 GetChannelCount(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16B16A16_SNorm:
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::R8G8B8A8_SNorm:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		case PixelFormat::R9G9B9E5_SharedExp:
+		case PixelFormat::B4G4R4A4_UNorm:
+		case PixelFormat::B5G5R5A1_UNorm:
+			return 4;
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		case PixelFormat::R11G11B10_Float:
+		case PixelFormat::B5G6R5_UNorm:
+			return 3;
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		case PixelFormat::R24G8_DepthStencil:
+		case PixelFormat::R32G8_DepthStencil:
+			return 2;
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+			return 1;
+			// Non-standard formats that require special handling
+		default:
+			ZE_ENUM_UNHANDLED();
+		case PixelFormat::Unknown:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+		case PixelFormat::YUV_YUY2:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
+		case PixelFormat::YUV_NV12:
+			return 0;
 		}
 	}
 
