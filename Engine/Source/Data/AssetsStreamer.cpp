@@ -370,38 +370,46 @@ namespace ZE::Data
 				// Get diffuse texture
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 				{
-					surfaces.emplace_back(path + texFile.C_Str());
-					notSolid |= surfaces.back().HasAlpha();
+					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+					{
+						notSolid |= surfaces.back().HasAlpha();
 
-					texDesc.AddTexture(texSchema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
-					flags |= MaterialPBR::Flag::UseTexture;
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseTexture;
+					}
 				}
 
 				// Get normal map texture
 				if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
 				{
-					surfaces.emplace_back(path + texFile.C_Str());
-					texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
-					flags |= MaterialPBR::Flag::UseNormal;
+					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+					{
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseNormal;
+					}
 				}
 
 				// Get specular data
 				if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 				{
-					surfaces.emplace_back(path + texFile.C_Str());
-					if (surfaces.back().HasAlpha())
-						data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
-					texDesc.AddTexture(texSchema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
-					flags |= MaterialPBR::Flag::UseSpecular;
+					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+					{
+						if (surfaces.back().HasAlpha())
+							data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseSpecular;
+					}
 				}
 
 				// Get parallax map texture
 				if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 				{
-					surfaces.emplace_back(path + texFile.C_Str());
-					texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
-					flags |= MaterialPBR::Flag::UseParallax;
-					notSolid = true;
+					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+					{
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseParallax;
+						notSolid = true;
+					}
 				}
 
 				if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Color)) != aiReturn_SUCCESS)

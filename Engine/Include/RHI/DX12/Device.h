@@ -164,11 +164,11 @@ namespace ZE::RHI::DX12
 		void FreeTexture(ResourceInfo& info) { allocator.RemoveTexture(info); }
 
 		D3D12_RESOURCE_DESC1 GetBufferDesc(U64 size) const noexcept;
-		std::pair<D3D12_RESOURCE_DESC1, U32> GetTextureDesc(U32 width, U32 height, U16 count,
+		D3D12_RESOURCE_DESC1 GetTextureDesc(U32 width, U32 height, U16 count,
 			DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept;
 
 		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic);
-		ResourceInfo CreateTexture(const std::pair<D3D12_RESOURCE_DESC1, U32>& desc);
+		ResourceInfo CreateTexture(const D3D12_RESOURCE_DESC1& desc);
 
 		DescriptorInfo AllocDescs(U32 count, bool gpuHeap = true) noexcept;
 		void FreeDescs(DescriptorInfo& descInfo) noexcept;

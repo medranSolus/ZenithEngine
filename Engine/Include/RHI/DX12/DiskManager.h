@@ -38,6 +38,8 @@ namespace ZE::RHI::DX12
 		std::shared_mutex queueMutex;
 		std::vector<EID> uploadQueue;
 		std::vector<EID> submitQueue;
+		std::vector<std::shared_ptr<U8[]>> uploadSrcMemoryQueue;
+		std::vector<std::shared_ptr<U8[]>> submitSrcMemoryQueue;
 
 		BoolAtom checkForDecompression = true;
 		std::jthread cpuDecompressionThread;
@@ -60,7 +62,8 @@ namespace ZE::RHI::DX12
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 
 		void AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset,
-			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize);
-		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes);
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
+		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes) noexcept;
+		void AddMemorySingleTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept;
 	};
 }

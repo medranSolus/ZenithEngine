@@ -230,6 +230,10 @@ namespace ZE::RHI::DX12
 		submitQueue.reserve(submitQueue.size() + uploadQueue.size());
 		submitQueue.insert(submitQueue.end(), uploadQueue.begin(), uploadQueue.end());
 		uploadQueue.clear();
+
+		submitSrcMemoryQueue.reserve(submitSrcMemoryQueue.size() + uploadSrcMemoryQueue.size());
+		submitSrcMemoryQueue.insert(submitSrcMemoryQueue.end(), uploadSrcMemoryQueue.begin(), uploadSrcMemoryQueue.end());
+		uploadSrcMemoryQueue.clear();
 	}
 
 	bool DiskManager::WaitForUploadGPU()
@@ -245,6 +249,7 @@ namespace ZE::RHI::DX12
 			throw ZE_WIN_EXCEPT_LAST();
 		fenceEvents[0] = nullptr;
 		fenceEvents[1] = nullptr;
+		submitSrcMemoryQueue.clear();
 
 		DSTORAGE_ERROR_RECORD errorRecord = {};
 		fileQueue->RetrieveErrorRecord(&errorRecord);
@@ -261,10 +266,8 @@ namespace ZE::RHI::DX12
 	}
 
 	void DiskManager::AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset,
-		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize)
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
 	{
-		ZE_VALID_EID(resourceID);
-
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = GetCompressionFormat(compression);
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
@@ -284,15 +287,15 @@ namespace ZE::RHI::DX12
 		fileQueue->EnqueueRequest(&request);
 		if (resourceID != INVALID_EID)
 		{
+			Settings::Data.get<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+
 			LockGuardRW lock(queueMutex);
 			uploadQueue.emplace_back(resourceID);
 		}
 	}
 
-	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes)
+	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes) noexcept
 	{
-		ZE_VALID_EID(resourceID);
-
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
@@ -311,41 +314,38 @@ namespace ZE::RHI::DX12
 		memoryQueue->EnqueueRequest(&request);
 		if (resourceID != INVALID_EID)
 		{
+			Settings::Data.get<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+
 			LockGuardRW lock(queueMutex);
 			uploadQueue.emplace_back(resourceID);
 		}
 	}
 
-	//void AddMemoryTextureRequest(EID resourceID, IResource* dest, const void* src, U32 bytes)
-	//{
-	//	ZE_VALID_EID(resourceID);
+	void DiskManager::AddMemorySingleTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept
+	{
+		DSTORAGE_REQUEST request = {};
+		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
+		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_TEXTURE_REGION;
 
-	//	DSTORAGE_REQUEST request = {};
-	//	request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
-	//	request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
-	//	request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_TEXTURE_REGION;
+		request.Source.Memory.Source = src.get();
+		request.Source.Memory.Size = bytes;
 
-	//	// SRC data must by in GetCopyableFootprints1() layout, need to decide if copying data to match it is required or not.
-	//	// And what about disk data, how to save the textures so they would be in friendly format and layout for all the APIs?
-	//	// Does regular DXGI_FORMAT rules would be enough for such case??
-	//	// If necessary during custom decompression step it would be okay to re-arange data to fit it's needs but what about something like GDeflate?
-	//	// Some common layout that won't require copies and would just suffice to point to textre buffer is really needed
-	//	// Maybe ask on discord...
-	//	request.Source.Memory.Source = src;
-	//	request.Source.Memory.Size = bytes;
+		request.Destination.Texture.Resource = dest;
+		request.Destination.Texture.SubresourceIndex = 0;
+		request.Destination.Texture.Region;
 
-	//	request.Destination.Texture.Resource = dest;
-	//	request.Destination.Texture.SubresourceIndex = 0;
-	//	request.Destination.Texture.Region;
+		request.UncompressedSize = bytes;
+		request.CancellationTag = 0;
 
-	//	request.UncompressedSize = bytes;
-	//	request.CancellationTag = 0;
+		memoryQueue->EnqueueRequest(&request);
 
-	//	memoryQueue->EnqueueRequest(&request);
-	//	if (resourceID != INVALID_EID)
-	//	{
-	//		LockGuardRW lock(queueMutex);
-	//		uploadQueue.emplace_back(resourceID);
-	//	}
-	//}
+		LockGuardRW lock(queueMutex);
+		uploadSrcMemoryQueue.emplace_back(std::move(src));
+		if (resourceID != INVALID_EID)
+		{
+			uploadQueue.emplace_back(resourceID);
+			Settings::Data.get<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+		}
+	}
 }

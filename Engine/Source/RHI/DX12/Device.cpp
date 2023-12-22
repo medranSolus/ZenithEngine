@@ -555,7 +555,7 @@ namespace ZE::RHI::DX12
 		return desc;
 	}
 
-	std::pair<D3D12_RESOURCE_DESC1, U32> Device::GetTextureDesc(U32 width, U32 height, U16 count,
+	D3D12_RESOURCE_DESC1 Device::GetTextureDesc(U32 width, U32 height, U16 count,
 		DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept
 	{
 		ZE_ASSERT(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
@@ -581,12 +581,9 @@ namespace ZE::RHI::DX12
 		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
 		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
 		if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
-		{
 			desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-			device->GetResourceAllocationInfo2(0, 1, &desc, &info);
-		}
 
-		return { desc, Utils::SafeCast<U32>(info.SizeInBytes) };
+		return desc;
 	}
 
 	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic)
@@ -596,13 +593,16 @@ namespace ZE::RHI::DX12
 		return allocator.AllocBuffer(*this, desc);
 	}
 
-	ResourceInfo Device::CreateTexture(const std::pair<D3D12_RESOURCE_DESC1, U32>& desc)
+	ResourceInfo Device::CreateTexture(const D3D12_RESOURCE_DESC1& desc)
 	{
-		if (desc.first.Alignment == D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
-			return allocator.AllocTexture_64KB(*this, desc.second, desc.first);
-		else if (desc.first.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
-			return allocator.AllocTexture_4KB(*this, desc.second, desc.first);
-		return allocator.AllocTexture_4MB(*this, desc.second, desc.first);
+		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
+
+		if (desc.Alignment == D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
+			return allocator.AllocTexture_64KB(*this, info.SizeInBytes, desc);
+		else if (desc.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+			return allocator.AllocTexture_4KB(*this, info.SizeInBytes, desc);
+		return allocator.AllocTexture_4MB(*this, info.SizeInBytes, desc);
 	}
 
 	DescriptorInfo Device::AllocDescs(U32 count, bool gpuHeap) noexcept
