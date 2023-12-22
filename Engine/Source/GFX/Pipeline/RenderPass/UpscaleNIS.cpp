@@ -53,30 +53,27 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		upscale.Free(dev);
 
 		// Create coefficients textures
-		constexpr U64 COEFF_WIDTH = kFilterSize / 4;
+		constexpr U32 COEFF_WIDTH = kFilterSize / 4;
+		constexpr U32 COEFF_HEIGHT = Utils::SafeCast<U32>(kPhaseCount);
 		std::vector<Surface> surfacesScale;
 		std::vector<Surface> surfacesUSM;
 
 		if (dev.IsShaderFloat16Supported())
 		{
-			surfacesScale.emplace_back(COEFF_WIDTH, kPhaseCount, PixelFormat::R16G16B16A16_Float);
-			std::memcpy(surfacesScale.front().GetBuffer(), coef_scale_fp16, kPhaseCount * kFilterSize * sizeof(U16));
-			surfacesUSM.emplace_back(COEFF_WIDTH, kPhaseCount, PixelFormat::R16G16B16A16_Float);
-			std::memcpy(surfacesUSM.front().GetBuffer(), coef_usm_fp16, kPhaseCount * kFilterSize * sizeof(U16));
+			surfacesScale.emplace_back(COEFF_WIDTH, COEFF_HEIGHT, PixelFormat::R16G16B16A16_Float, coef_scale_fp16);
+			surfacesUSM.emplace_back(COEFF_WIDTH, COEFF_HEIGHT, PixelFormat::R16G16B16A16_Float, coef_usm_fp16);
 		}
 		else
 		{
-			surfacesScale.emplace_back(COEFF_WIDTH, kPhaseCount, PixelFormat::R32G32B32A32_Float);
-			std::memcpy(surfacesScale.front().GetBuffer(), coef_scale, kPhaseCount * kFilterSize * sizeof(float));
-			surfacesUSM.emplace_back(COEFF_WIDTH, kPhaseCount, PixelFormat::R32G32B32A32_Float);
-			std::memcpy(surfacesUSM.front().GetBuffer(), coef_usm, kPhaseCount * kFilterSize * sizeof(float));
+			surfacesScale.emplace_back(COEFF_WIDTH, COEFF_HEIGHT, PixelFormat::R32G32B32A32_Float, coef_scale);
+			surfacesUSM.emplace_back(COEFF_WIDTH, COEFF_HEIGHT, PixelFormat::R32G32B32A32_Float, coef_usm);
 		}
 
 		Resource::Texture::PackDesc coeffDesc;
 		coeffDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesScale));
 		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesUSM));
-		passData->Coefficients.Init(dev, coeffDesc);
+		passData->Coefficients.Init(dev, buildData.Assets.GetDisk(), coeffDesc);
 
 		return passData;
 	}

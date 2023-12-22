@@ -61,7 +61,7 @@ namespace ZE::RHI::VK::Resource
 				element.location = i;
 				element.binding = 0;
 				element.format = GetVkFormat(format);
-				element.offset = Utils::GetFormatSize(format);
+				element.offset = Utils::GetFormatBitCount(format) / 8;
 				vertexBinding.stride += element.offset;
 			}
 		}

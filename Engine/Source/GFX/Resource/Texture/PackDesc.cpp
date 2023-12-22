@@ -20,6 +20,19 @@ namespace ZE::GFX::Resource::Texture
 	{
 		ZE_ASSERT(schema.Location.contains(name), "Specified texture not present in current schema!");
 
+		// Check for correct Surface sizes
+#if !_ZE_MODE_RELEASE
+		if (surfaces.size())
+		{
+			for (const Surface& surf : surfaces)
+			{
+				ZE_ASSERT(surf.GetWidth() == surfaces.front().GetWidth() && surf.GetHeight() == surfaces.front().GetHeight(),
+					"When given more than single surface for texture, all others must match first surface dimmensions!");
+				ZE_ASSERT(surf.GetFormat() == surfaces.front().GetFormat(),
+					"All surfaces need to have same pixel format!");
+			}
+		}
+#endif
 		Textures.at(schema.Location.at(name)).Surfaces = std::forward<std::vector<Surface>>(surfaces);
 	}
 

@@ -2,6 +2,7 @@
 #include "GFX/Resource/Texture/PackDesc.h"
 #include "GFX/Binding/Context.h"
 #include "GFX/CommandList.h"
+#include "IO/File.h"
 
 namespace ZE::RHI::VK::Resource::Texture
 {
@@ -13,7 +14,7 @@ namespace ZE::RHI::VK::Resource::Texture
 
 	public:
 		Pack() = default;
-		Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc);
+		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();
 

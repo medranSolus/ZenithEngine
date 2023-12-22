@@ -27,14 +27,17 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		texDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		std::vector<Surface> textures;
 		textures.reserve(6);
-		textures.emplace_back(cubemapPath + "/px" + cubemapExt); // Right
-		textures.emplace_back(cubemapPath + "/nx" + cubemapExt); // Left
-		textures.emplace_back(cubemapPath + "/py" + cubemapExt); // Up
-		textures.emplace_back(cubemapPath + "/ny" + cubemapExt); // Down
-		textures.emplace_back(cubemapPath + "/pz" + cubemapExt); // Front
-		textures.emplace_back(cubemapPath + "/nz" + cubemapExt); // Back
+		bool result = true;
+		result &= textures.emplace_back().Load(cubemapPath + "/px" + cubemapExt); // Right
+		result &= textures.emplace_back().Load(cubemapPath + "/nx" + cubemapExt); // Left
+		result &= textures.emplace_back().Load(cubemapPath + "/py" + cubemapExt); // Up
+		result &= textures.emplace_back().Load(cubemapPath + "/ny" + cubemapExt); // Down
+		result &= textures.emplace_back().Load(cubemapPath + "/pz" + cubemapExt); // Front
+		result &= textures.emplace_back().Load(cubemapPath + "/nz" + cubemapExt); // Back
+		if (!result)
+			throw ZE_RGC_EXCEPT("Error loading cubemap!");
 		texDesc.AddTexture(Resource::Texture::Type::Cube, Resource::Texture::Usage::PixelShader, std::move(textures));
-		passData->SkyTexture.Init(dev, texDesc);
+		passData->SkyTexture.Init(dev, buildData.Assets.GetDisk(), texDesc);
 
 		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
 		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();

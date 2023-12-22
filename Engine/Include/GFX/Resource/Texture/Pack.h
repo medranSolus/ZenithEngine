@@ -18,12 +18,12 @@ namespace ZE::GFX::Resource::Texture
 
 	public:
 		Pack() = default;
-		constexpr Pack(Device& dev, const PackDesc& desc) { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_VAR.Init(dev, desc); }
+		constexpr Pack(Device& dev, IO::DiskManager& disk, const PackDesc& desc) { Init(dev, disk, desc); }
 		ZE_CLASS_MOVE(Pack);
 		~Pack() = default;
 
-		constexpr void Init(Device& dev, const PackDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PackDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
+		constexpr void Init(Device& dev, IO::DiskManager& disk, const PackDesc& desc) { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_VAR.Init(dev, disk, desc); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, IO::DiskManager& disk, const PackDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, disk, desc); }
 		ZE_RHI_BACKEND_GET(Resource::Texture::Pack);
 
 		// Main Gfx API

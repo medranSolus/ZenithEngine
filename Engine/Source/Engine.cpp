@@ -1,5 +1,4 @@
 #include "Engine.h"
-#include "GFX/Pipeline/RenderPass/UpscaleXeSS.h"
 
 namespace ZE
 {
@@ -19,11 +18,6 @@ namespace ZE
 		assets.Init(graphics.GetDevice());
 		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), assets, params.Renderer);
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
-		// Mipmaps generation and alpha test: https://asawicki.info/articles/alpha_test.php5
-		// - (texture prepare) remap alpha values to following formula: max(alpha, alpha * 1/3 + shader_clamp_value * 2/3). Shader clamping value to be changed to 0.5 for tests
-		// - (texture prepare) apply Dilation or Solidify filter to change object edges in texture
-		// - different types of filters during mip map generation, ex. https://en.wikipedia.org/wiki/Kaiser_window
-		// - check out https://research.nvidia.com/publication/2017-02_hashed-alpha-testing, http://www.ludicon.com/castano/blog/articles/computing-alpha-mipmaps/
 		// Check for optimization UB code: https://github.com/xiw/stack/
 		prevTime = Perf::Get().GetNow();
 		assets.GetDisk().StartUploadGPU(true);
@@ -38,9 +32,6 @@ namespace ZE
 		Backend of resource managment is DiskManager, request is created for upload to GPU, after succesful upload resource location is changed to GPU
 		  - what if resource if freed before upload finishes? Have to postpone (delete queue till resource is not access anyway)
 		  - add support for Textures (what about their initial layout between other APIs, does assets need to be created per API in this topic??)
-		  - also textures after uploading to GPU need to have MIP map generation performed (maybe use SPD with technique provided above in links on async compute), only then they can be marked as on GPU
-			(but in theory we could use them with worse performance and quality till mip levels are computed, so maybe better to create second resource
-			that will be used during computations of MIPs while first one will only have single MIP level and after that switch will happen in the background and single level texture will be deleted)
 		  - textures before copy have to be in GetCopyableFootprints1() layout which may include some padding for rows BUT to fix that we can use bufferRowLength in Vulkan to have one single layout for every API! row pitch have to be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT
 		  - separate queue for textures when handling their post upload setup steps
 
@@ -53,6 +44,17 @@ namespace ZE
 
 		Proper error handling with pop-ups when anything from above fails, try to remove as many possible sources of exceptions as possible. Prioritize especially in DiskManager continuity of execution with reporting error than shutdown.
 		If resource failed to upload or something then mark it as on disk/memory and log it accordingly + maybe pop-up.
+
+		MIP generation:
+		  - textures after uploading to GPU can have MIP map generation performed (maybe use SPD with technique provided above in links on async compute) as additional step to be triggered in editor
+			(but in theory we could use them with worse performance and quality till mip levels are computed, so maybe better to create second resource
+			that will be used during computations of MIPs while first one will only have single MIP level and after that switch will happen in the background and single level texture will be deleted)
+		  - alpha test: https://asawicki.info/articles/alpha_test.php5
+		  - (texture prepare) remap alpha values to following formula: max(alpha, alpha * 1/3 + shader_clamp_value * 2/3). Shader clamping value to be changed to 0.5 for tests
+		  - (texture prepare) apply Dilation or Solidify filter to change object edges in texture
+		  - different types of filters during mip map generation, ex. https://en.wikipedia.org/wiki/Kaiser_window
+		  - check out https://research.nvidia.com/publication/2017-02_hashed-alpha-testing, http://www.ludicon.com/castano/blog/articles/computing-alpha-mipmaps/
+		  - bigger concern, maybe create offline module to handle creation of mipmaps since they can be computed manually by artist?
 		*/
 	}
 

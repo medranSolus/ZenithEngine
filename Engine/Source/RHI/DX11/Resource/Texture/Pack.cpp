@@ -2,7 +2,7 @@
 
 namespace ZE::RHI::DX11::Resource::Texture
 {
-	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
+	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		Device& device = dev.Get().dx11;
 		ZE_DX_ENABLE_ID(device);

@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::VK::Resource::Texture
 {
-	Pack::Pack(GFX::Device& dev, const GFX::Resource::Texture::PackDesc& desc)
+	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		ZE_VK_ENABLE_ID();
 		Device& device = dev.Get().vk;

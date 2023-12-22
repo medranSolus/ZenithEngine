@@ -33,7 +33,7 @@ namespace ZE::GFX
 		const T& initData, const Resource::Texture::PackDesc& desc)
 	{
 		buffer.Init(dev, disk, { INVALID_EID, &initData, sizeof(T) });
-		textures.Init(dev, desc);
+		textures.Init(dev, disk, desc);
 	}
 #pragma endregion
 }
