@@ -87,8 +87,21 @@ namespace ZE
 	{
 		prevTime = Perf::Get().GetNow();
 		renderer.SetInverseViewProjection(camera);
-		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU();
+
+		GFX::Device& dev = graphics.GetDevice();
+		GFX::CommandList& cl = graphics.GetMainList();
+		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
+		if (gpuWorkPending)
+			cl.Open(dev);
+
+		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, cl);
 		ZE_ASSERT(status, "Error uploading engine GPU data!");
+
+		if (gpuWorkPending)
+		{
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+		}
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)

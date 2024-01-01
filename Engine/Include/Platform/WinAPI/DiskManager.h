@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 
 namespace ZE::WinAPI
 {
@@ -13,6 +13,7 @@ namespace ZE::WinAPI
 		~DiskManager() = default;
 
 		constexpr void StartUploadGPU(bool waitable) noexcept {}
-		constexpr bool WaitForUploadGPU() { return true; }
+		constexpr bool IsGPUWorkPending() const noexcept { return false; }
+		constexpr bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl) { return true; }
 	};
 }

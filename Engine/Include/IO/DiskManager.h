@@ -48,7 +48,10 @@ namespace ZE::IO
 
 		// Main IO API
 
-		void StartUploadGPU(bool waitable) noexcept { ZE_RHI_BACKEND_CALL(StartUploadGPU, waitable); }
-		bool WaitForUploadGPU() { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, WaitForUploadGPU); return status; }
+		constexpr void StartUploadGPU(bool waitable) noexcept { ZE_RHI_BACKEND_CALL(StartUploadGPU, waitable); }
+		// Check if command list passed to `WaitForUploadGPU()` will need to perform any work (if needs to be open before passing to function and later executed)
+		constexpr bool IsGPUWorkPending() const noexcept { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, IsGPUWorkPending); return status; }
+		// Before passing in command list, check `IsGPUWorkPending()`
+		constexpr bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl) { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, WaitForUploadGPU, dev, cl); return status; }
 	};
 }

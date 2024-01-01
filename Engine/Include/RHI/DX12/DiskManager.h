@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/WinAPI/DiskManager.h"
-#include "GFX/Device.h"
+#include "GFX/CommandList.h"
 #include "IO/CompressionFormat.h"
 ZE_WARNING_PUSH
 #include "dstorage.h"
@@ -38,6 +38,8 @@ namespace ZE::RHI::DX12
 		std::shared_mutex queueMutex;
 		std::vector<EID> uploadQueue;
 		std::vector<EID> submitQueue;
+		std::vector<IResource*> uploadDestTextureQueue;
+		std::vector<IResource*> submitDestTextureQueue;
 		std::vector<std::shared_ptr<U8[]>> uploadSrcMemoryQueue;
 		std::vector<std::shared_ptr<U8[]>> submitSrcMemoryQueue;
 
@@ -47,6 +49,7 @@ namespace ZE::RHI::DX12
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
 		void DecompressAssets(Device& dev) const;
+		void AddRequest(EID resourceID, std::shared_ptr<U8[]> src, IResource* texture) noexcept;
 
 	public:
 		DiskManager() = default;
@@ -54,16 +57,21 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(DiskManager);
 		~DiskManager();
 
+		constexpr bool IsGPUWorkPending() const noexcept { return submitDestTextureQueue.size(); }
+
 		void StartUploadGPU(bool waitable) noexcept;
-		bool WaitForUploadGPU();
+		bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl);
 
 		// IO API Internal
 
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 
-		void AddFileBufferRequest(EID resourceID, IO::File& file, IResource* dest, U64 sourceOffset,
+		void AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
-		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* src, U32 bytes) noexcept;
-		void AddMemorySingleTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept;
+		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
+		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<U8[]> srcCopy, U32 bytes) noexcept;
+		void AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept;
+		void AddMemoryTextureArrayRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src,
+			U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept;
 	};
 }
