@@ -56,7 +56,7 @@ namespace ZE::GFX
 		}
 	}
 
-	Surface::Surface(U32 width, U32 height, PixelFormat format = PixelFormat::R8G8B8A8_UNorm, const void* srcImage = nullptr) noexcept
+	Surface::Surface(U32 width, U32 height, PixelFormat format, const void* srcImage) noexcept
 		: format(format), width(width), height(height), memory(std::make_shared<U8[]>(GetSliceByteSize()))
 	{
 		if (srcImage)
@@ -497,30 +497,30 @@ namespace ZE::GFX
 
 		// Complex path, move by specified mip levels and to selected depth
 		auto getMipOffset = [&](U16 mipLevels, U16 depthLevel) -> U64
+		{
+			U64 offset = 0;
+			U32 currentWidth = width;
+			U32 currentHeight = height;
+			U16 currentDepth = depth;
+			for (U16 mip = 0; mip < mipLevels; )
 			{
-				U64 offset = 0;
-				U32 currentWidth = width;
-				U32 currentHeight = height;
-				U16 currentDepth = depth;
-				for (U16 mip = 0; mip < mipLevels; )
-				{
-					offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+				offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
 
-					if (++mip < mipLevels)
-					{
-						currentWidth >>= 1;
-						if (currentWidth == 0)
-							currentWidth = 1;
-						currentHeight >>= 1;
-						if (currentHeight == 0)
-							currentHeight = 1;
-						currentDepth >>= 1;
-						if (currentDepth == 0)
-							currentDepth = 1;
-					}
+				if (++mip < mipLevels)
+				{
+					currentWidth >>= 1;
+					if (currentWidth == 0)
+						currentWidth = 1;
+					currentHeight >>= 1;
+					if (currentHeight == 0)
+						currentHeight = 1;
+					currentDepth >>= 1;
+					if (currentDepth == 0)
+						currentDepth = 1;
 				}
-				return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
-			};
+			}
+			return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
+		};
 		U8* image = memory.get();
 		for (U16 a = 0; a < arrayIndex; ++a)
 			image += getMipOffset(mipCount, 0);

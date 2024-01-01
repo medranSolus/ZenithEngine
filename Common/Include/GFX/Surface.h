@@ -37,6 +37,9 @@ namespace ZE::GFX
 		constexpr PixelFormat GetFormat() const noexcept { return format; }
 		constexpr U32 GetWidth() const noexcept { return width; }
 		constexpr U32 GetHeight() const noexcept { return height; }
+		constexpr U16 GetDepth() const noexcept { return depth; }
+		constexpr U16 GetMipCount() const noexcept { return mipCount; }
+		constexpr U16 GetArraySize() const noexcept { return arraySize; }
 		constexpr U32 GetRowByteSize() const noexcept { return Math::AlignUp((width * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
 		constexpr U32 GetSliceByteSize() const noexcept { return Math::AlignUp(GetRowByteSize() * height, SLICE_PITCH_ALIGNMENT); }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
