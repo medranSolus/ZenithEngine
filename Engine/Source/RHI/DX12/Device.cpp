@@ -568,7 +568,7 @@ namespace ZE::RHI::DX12
 		desc.Width = width;
 		desc.Height = height;
 		desc.DepthOrArraySize = count;
-		desc.MipLevels = 1; // TODO: Create mip generation module
+		desc.MipLevels = 1;
 		desc.Format = format; // Maybe not all formats supported on given hardware, if strange formats to be used check D3D12_FORMAT_SUPPORT1
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;

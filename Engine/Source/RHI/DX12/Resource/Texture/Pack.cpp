@@ -15,7 +15,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		copyInfo.reserve(count);
 		U64 uploadRegionSize = 0;
 		// Create destination textures and SRVs for them. Gather info for uploading data
-		for (U32 i = 0; const auto & tex : desc.Textures)
+		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			auto& resInfo = resources[i];
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
@@ -95,7 +95,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 			U8* uploadBuffer;
 			ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
 			// Copy all regions upload heap
-			for (U32 i = 0; const auto & info : copyInfo)
+			for (U32 i = 0; const auto& info : copyInfo)
 			{
 				auto& tex = desc.Textures.at(i);
 				if (tex.Surfaces.size())
@@ -107,7 +107,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 					copyDest.SubresourceIndex = 0;
 
 					// Memcpy according to resource structure
-					for (U16 j = 0; const auto & region : info.second)
+					for (U16 j = 0; const auto& region : info.second)
 					{
 						for (U32 z = 0; z < region.Footprint.Depth; ++z)
 						{
@@ -143,9 +143,9 @@ namespace ZE::RHI::DX12::Resource::Texture
 			uploadRes->Unmap(0, nullptr);
 		}
 
-		for (U32 i = 0; const auto & tex : desc.Textures)
+		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
+			ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage not initialized!");
 			ResourceInfo& resInfo = resources[i];
 
 			// Specify default SRV desc
@@ -207,19 +207,22 @@ namespace ZE::RHI::DX12::Resource::Texture
 				// Create texture based on format of first surface (other surfaces are constrained to be of same size as previous ones)
 				const GFX::Surface& startSurface = tex.Surfaces.front();
 				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(Utils::SafeCast<U32>(startSurface.GetWidth()),
-					Utils::SafeCast<U32>(startSurface.GetHeight()), surfaces, srv.Format, tex.Type);
+					Utils::SafeCast<U32>(startSurface.GetHeight()),
+					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : (surfaces > 1 ? surfaces : startSurface.GetArraySize()),
+					srv.Format, tex.Type);
 
 				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || tex.Type != GFX::Resource::Texture::Type::Tex2D, "Single texture cannot hold multiple surfaces!");
 				ZE_ASSERT(texDesc.DepthOrArraySize == 6 || tex.Type != GFX::Resource::Texture::Type::Cube, "Cube texture should contain 6 surfaces!");
 				if (tex.Type == GFX::Resource::Texture::Type::Array)
 					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
 				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
-				*mipLevels = texDesc.MipLevels;
+				texDesc.MipLevels = startSurface.GetMipCount();
+				*mipLevels = startSurface.GetMipCount();
 
 				resInfo = device.CreateTexture(texDesc);
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i));
 
-				// BIGGER TODO: now all surface data is aligned properly so not copying should be needed. But there can be difference between how
+				// BIGGER TODO: now all surface data is aligned properly so no copying should be needed. But there can be difference between how
 				//   this surfaces are provided. Depth textures will be only from single source (providing multiple should be treated as error)
 				//   but arrays of textures can be from multiple surfaces or from single one if DDS texture was loaded. Options:
 				//   - check array size of first Surface and act accordingly
@@ -227,8 +230,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				//     beforehand (or place that burden on user by removing surfaces as vector)
 				//     or b) create multiple texture requests if possible. Will have to perform additional
 				//     checks during PackDesc creation to see whether there is only single complex array surface or whole vector of them if option b) is chosen.
-
-
 
 				// TODO: needed only when computing MIP inside final resource
 				// Compute offset of mip levels into final resource
@@ -258,7 +259,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
 					endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 
-				disk.Get().dx12.AddMemorySingleTextureRequest(INVALID_EID, resInfo.Resource.Get(), std::move(data), slicePitch * texDesc.DepthOrArraySize);
+				//disk.Get().dx12.AddMemorySingleTextureRequest(INVALID_EID, resInfo.Resource.Get(), std::move(data), slicePitch * texDesc.DepthOrArraySize);
 			}
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;

@@ -24,12 +24,18 @@ namespace ZE::GFX::Resource::Texture
 #if !_ZE_MODE_RELEASE
 		if (surfaces.size())
 		{
+			ZE_ASSERT(surfaces.front().GetDepth() > 1 && surfaces.size() == 1,
+				"When providing Surface with depth levels it must be the single one in the chain!");
+			ZE_ASSERT(surfaces.front().GetMipCount() > 1 && surfaces.size() == 1,
+				"Texture arrays with provided mip map chain should be coming from single Surface!");
 			for (const Surface& surf : surfaces)
 			{
 				ZE_ASSERT(surf.GetWidth() == surfaces.front().GetWidth() && surf.GetHeight() == surfaces.front().GetHeight(),
 					"When given more than single surface for texture, all others must match first surface dimmensions!");
 				ZE_ASSERT(surf.GetFormat() == surfaces.front().GetFormat(),
 					"All surfaces need to have same pixel format!");
+				ZE_ASSERT(surfaces.size() == 1 || surf.GetArraySize() == 1,
+					"Multiple array layers are not available when using multiple input Surfaces!");
 			}
 		}
 #endif
