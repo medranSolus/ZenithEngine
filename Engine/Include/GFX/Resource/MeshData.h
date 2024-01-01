@@ -8,8 +8,8 @@ namespace ZE::GFX::Resource
 	struct MeshData
 	{
 		EID MeshID = INVALID_EID;
-		const void* Vertices = nullptr;
-		const void* Indices = nullptr;
+		// Packed vertex and index data in tight order: indices + vertices
+		std::shared_ptr<U8[]> PackedMesh = nullptr;
 		U32 VertexCount = 0;
 		U32 IndexCount = 0;
 		U16 VertexSize = 0;

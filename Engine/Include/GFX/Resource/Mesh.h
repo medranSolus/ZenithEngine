@@ -19,7 +19,7 @@ namespace ZE::GFX::Resource
 	public:
 		Mesh() = default;
 		constexpr Mesh(Device& dev, IO::DiskManager& disk, const MeshData& data) { Init(dev, disk, data); }
-		Mesh(Device& dev, IO::DiskManager& disk, const MeshFileData& data, IO::File& file) { Init(dev, disk, data, file); }
+		constexpr Mesh(Device& dev, IO::DiskManager& disk, const MeshFileData& data, IO::File& file) { Init(dev, disk, data, file); }
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() = default;
 
@@ -44,8 +44,8 @@ namespace ZE::GFX::Resource
 #pragma region Functions
 	constexpr void Mesh::Init(Device& dev, IO::DiskManager& disk, const MeshData& data)
 	{
-		ZE_ASSERT(data.Vertices && data.VertexCount && data.VertexSize, "Empty vertex data!");
-		ZE_ASSERT(data.Indices == nullptr || (data.Indices && data.IndexCount && data.IndexSize && data.IndexCount % 3 == 0),
+		ZE_ASSERT(data.VertexCount && data.VertexSize, "Empty vertex data!");
+		ZE_ASSERT(data.IndexCount == 0 || (data.IndexCount && data.IndexSize && data.IndexCount % 3 == 0),
 			"Indices have to be multiple of 3!");
 		ZE_RHI_BACKEND_VAR.Init(dev, disk, data);
 	}

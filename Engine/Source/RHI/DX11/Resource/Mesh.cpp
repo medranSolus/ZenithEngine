@@ -13,16 +13,16 @@ namespace ZE::RHI::DX11::Resource
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(data.VertexCount * data.VertexSize);
+		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(data.IndexCount * data.IndexSize + data.VertexCount * data.VertexSize);
 		bufferDesc.StructureByteStride = 0;
 
 		D3D11_SUBRESOURCE_DATA resData = {};
-		resData.pSysMem = data.Indices;
+		resData.pSysMem = data.PackedMesh.get();
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
 		std::unique_ptr<U8[]> dataBuffer = nullptr;
-		if (data.Indices)
+		if (data.IndexCount)
 		{
 			// Pack mesh data into single buffer: index + vertex data
 			ZE_ASSERT(data.IndexSize == sizeof(U16) || data.IndexSize == sizeof(U32),
@@ -30,19 +30,8 @@ namespace ZE::RHI::DX11::Resource
 
 			indexCount = data.IndexCount;
 			is16bitIndices = data.IndexSize == sizeof(U16);
-
-			const U32 vertexOffset = data.IndexCount * data.IndexSize;
 			bufferDesc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
-			bufferDesc.ByteWidth += vertexOffset;
-
-			dataBuffer = std::make_unique<U8[]>(bufferDesc.ByteWidth);
-			memcpy(dataBuffer.get(), data.Indices, vertexOffset);
-			memcpy(dataBuffer.get() + vertexOffset, data.Vertices, bufferDesc.ByteWidth - vertexOffset);
-
-			resData.pSysMem = dataBuffer.get();
 		}
-		else
-			resData.pSysMem = data.Vertices;
 
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
 		ZE_DX_SET_ID(buffer, "Mesh geometry buffer");
@@ -75,6 +64,6 @@ namespace ZE::RHI::DX11::Resource
 
 	GFX::Resource::MeshData Mesh::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		return { INVALID_EID, nullptr, nullptr, 0, 0, 0, 0 };
+		return { INVALID_EID, nullptr, 0, 0, 0, 0 };
 	}
 }

@@ -25,54 +25,45 @@ namespace ZE::RHI::VK::Resource
 		Device& device = dev.Get().vk;
 
 		UploadInfoBuffer uploadInfo = {};
+		uploadInfo.InitData = data.PackedMesh.get();
 		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
 		uploadInfo.CreateInfo.flags = 0;
-		uploadInfo.CreateInfo.size = Utils::SafeCast<VkDeviceSize>(data.VertexCount * data.VertexSize);
+		uploadInfo.CreateInfo.size = Utils::SafeCast<VkDeviceSize>(data.IndexCount * data.IndexSize + data.VertexCount * data.VertexSize);
 		uploadInfo.CreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		uploadInfo.CreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		uploadInfo.CreateInfo.queueFamilyIndexCount = 0;
 		uploadInfo.CreateInfo.pQueueFamilyIndices = nullptr;
 
 		std::unique_ptr<U8[]> dataBuffer = nullptr;
-		if (data.Indices)
+		if (data.IndexCount)
 		{
 			// Pack mesh data into single buffer: index + vertex data
 			indexCount = data.IndexCount;
 			switch (data.IndexSize)
 			{
-			case sizeof(U8):
-			{
-				indexType = VK_INDEX_TYPE_UINT8_EXT;
-				break;
+				case sizeof(U8) :
+				{
+					indexType = VK_INDEX_TYPE_UINT8_EXT;
+					break;
+				}
+				case sizeof(U16) :
+				{
+					indexType = VK_INDEX_TYPE_UINT16;
+					break;
+				}
+				case sizeof(U32) :
+				{
+					indexType = VK_INDEX_TYPE_UINT32;
+					break;
+				}
+				default:
+				{
+					ZE_FAIL("Only 8, 16 and 32 bit indices are supported for Vulkan!");
+					break;
+				}
 			}
-			case sizeof(U16):
-			{
-				indexType = VK_INDEX_TYPE_UINT16;
-				break;
-			}
-			case sizeof(U32):
-			{
-				indexType = VK_INDEX_TYPE_UINT32;
-				break;
-			}
-			default:
-			{
-				ZE_FAIL("Only 8, 16 and 32 bit indices are supported for Vulkan!");
-				break;
-			}
-			}
-
-			const U32 vertexOffset = data.IndexCount * data.IndexSize;
-			uploadInfo.InitData = data.Indices;
-			uploadInfo.CreateInfo.size += vertexOffset;
 			uploadInfo.CreateInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-
-			dataBuffer = std::make_unique<U8[]>(uploadInfo.CreateInfo.size);
-			memcpy(dataBuffer.get(), data.Indices, vertexOffset);
-			memcpy(dataBuffer.get() + vertexOffset, data.Vertices, uploadInfo.CreateInfo.size - vertexOffset);
 		}
-		else
-			uploadInfo.InitData = data.Vertices;
 
 		ZE_VK_THROW_NOSUCC(vkCreateBuffer(device.GetDevice(), &uploadInfo.CreateInfo, nullptr, &buffer));
 		ZE_VK_SET_ID(device.GetDevice(), buffer, VK_OBJECT_TYPE_BUFFER,
@@ -126,6 +117,6 @@ namespace ZE::RHI::VK::Resource
 
 	GFX::Resource::MeshData Mesh::GetData(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		return { INVALID_EID, nullptr, nullptr, 0, 0, 0, 0 };
+		return { INVALID_EID, nullptr, 0, 0, 0, 0 };
 	}
 }

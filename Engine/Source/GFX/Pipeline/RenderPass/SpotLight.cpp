@@ -55,8 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		const auto volume = Primitive::MakeConeSolid(8);
 		passData->VolumeMesh.Init(dev, buildData.Assets.GetDisk(),
 			{
-				INVALID_EID,
-				volume.Vertices.data(), volume.Indices.data(),
+				INVALID_EID, Primitive::GetPackedMesh(volume.Vertices, volume.Indices),
 				ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
 				ZE::Utils::SafeCast<U32>(volume.Indices.size()),
 				sizeof(Float3), sizeof(U32)

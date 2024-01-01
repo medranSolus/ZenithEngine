@@ -10,7 +10,7 @@ namespace ZE::Data
 {
 #if _ZE_EXTERNAL_MODEL_LOADING
 	template<typename Index>
-	void AssetsStreamer::ParseIndices(std::unique_ptr<Index[]>& indices, const aiMesh& mesh) noexcept
+	void AssetsStreamer::ParseIndices(Index* indices, const aiMesh& mesh) noexcept
 	{
 		for (U32 i = 0, index = 0; i < mesh.mNumFaces; ++i)
 		{
@@ -254,44 +254,36 @@ namespace ZE::Data
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
 			[&]() -> MeshID
 			{
-				// Gather index data and parse it into continuous array
-				std::unique_ptr<U32[]> indicesU32;
-				std::unique_ptr<U16[]> indicesU16;
-				std::unique_ptr<U8[]> indicesU8;
-
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
 				meshData.IndexCount = mesh.mNumFaces * 3;
 				meshData.VertexSize = sizeof(GFX::Vertex);
 
+				// Gather index data and parse it into continuous array
 				if (meshData.IndexCount >= UINT16_MAX)
 				{
-					indicesU32 = std::make_unique<U32[]>(meshData.IndexCount);
 					meshData.IndexSize = sizeof(U32);
-					meshData.Indices = indicesU32.get();
-					ParseIndices(indicesU32, mesh);
+					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount * sizeof(U32) + meshData.VertexCount * sizeof(GFX::Vertex));
+					ParseIndices(reinterpret_cast<U32*>(meshData.PackedMesh.get()), mesh);
 				}
 				else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
 				{
-					indicesU16 = std::make_unique<U16[]>(meshData.IndexCount);
 					meshData.IndexSize = sizeof(U16);
-					meshData.Indices = indicesU16.get();
-					ParseIndices(indicesU16, mesh);
+					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount * sizeof(U16) + meshData.VertexCount * sizeof(GFX::Vertex));
+					ParseIndices(reinterpret_cast<U16*>(meshData.PackedMesh.get()), mesh);
 				}
 				else
 				{
-					indicesU8 = std::make_unique<U8[]>(meshData.IndexCount);
 					meshData.IndexSize = sizeof(U8);
-					meshData.Indices = indicesU8.get();
-					ParseIndices(indicesU8, mesh);
+					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount + meshData.VertexCount * sizeof(GFX::Vertex));
+					ParseIndices(meshData.PackedMesh.get(), mesh);
 				}
 
-				// Parse vertex data into structured format
+				// Parse vertex data into structured format just after index array
 				Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
 				Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
-				std::unique_ptr<GFX::Vertex[]> vertices = std::make_unique<GFX::Vertex[]>(mesh.mNumVertices);
-				//meshData.Vertices = vertices.get();
+				GFX::Vertex* vertices = reinterpret_cast<GFX::Vertex*>(meshData.PackedMesh.get() + meshData.IndexCount * meshData.IndexSize);
 				for (U32 i = 0; i < mesh.mNumVertices; ++i)
 				{
 					GFX::Vertex& vertex = vertices[i];

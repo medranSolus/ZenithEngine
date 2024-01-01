@@ -3,12 +3,17 @@
 
 namespace ZE::GFX::Primitive
 {
+	// Generic mesh data
 	template<typename T>
 	struct Data
 	{
 		std::vector<T> Vertices;
 		std::vector<U32> Indices;
 	};
+
+	// Convert generic mesh data into format accepted by GPU resorces
+	template<typename V, typename I>
+	constexpr std::shared_ptr<U8[]> GetPackedMesh(const std::vector<V>& vertices, const std::vector<I>& indices) noexcept;
 
 	// Compute simple normals based on normal vector of the surface and tangent vectors
 	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept;
@@ -35,4 +40,20 @@ namespace ZE::GFX::Primitive
 
 	// Generate simple Ico sphere vertex and index data
 	Data<Float3> MakeSphereIcoSolid(U32 density) noexcept;
+
+#pragma region Functions
+	template<typename V, typename I>
+	constexpr std::shared_ptr<U8[]> GetPackedMesh(const std::vector<V>& vertices, const std::vector<I>& indices) noexcept
+	{
+		ZE_ASSERT(vertices.size(), "Empty vertex data!");
+		ZE_ASSERT(indices.size(), "Empty index data!");
+
+		// Pack into consecutive index and vertex arrays
+		std::shared_ptr<U8[]> mesh = std::make_shared<U8[]>(indices.size() * sizeof(I) + vertices.size() * sizeof(V));
+		const U64 vertexOffset = indices.size() * sizeof(I);
+		std::memcpy(mesh.get(), indices.data(), vertexOffset);
+		std::memcpy(mesh.get() + vertexOffset, vertices.data(), vertices.size() * sizeof(V));
+		return mesh;
+	}
+#pragma endregion
 }
