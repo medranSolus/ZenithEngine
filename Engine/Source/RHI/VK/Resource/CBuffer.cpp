@@ -9,7 +9,7 @@ namespace ZE::RHI::VK::Resource
 		lastUsedQueue = dev.Get().vk.GetGfxQueueIndex();
 
 		UploadInfoBuffer uploadInfo = {};
-		uploadInfo.InitData = data.Data;
+		uploadInfo.InitData = data.DataRef.get() ? data.DataRef.get() : data.DataStatic;
 		uploadInfo.CreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr };
 		uploadInfo.CreateInfo.flags = 0;
 		uploadInfo.CreateInfo.size = data.Bytes;
@@ -38,7 +38,7 @@ namespace ZE::RHI::VK::Resource
 		if (mappedMemory != nullptr)
 		{
 			ZE_VK_THROW_NOSUCC(vkBindBufferMemory2(dev.Get().vk.GetDevice(), 1, &uploadInfo.Dest));
-			std::memcpy(mappedMemory, data.Data, data.Bytes);
+			std::memcpy(mappedMemory, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes);
 		}
 		else
 		{
@@ -57,13 +57,13 @@ namespace ZE::RHI::VK::Resource
 	{
 		U8* memory = dev.Get().vk.GetMemory().GetMappedMemory(alloc);
 		if (memory)
-			memcpy(memory, data.Data, data.Bytes);
+			std::memcpy(memory, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes);
 		else
 		{
 			UploadInfoBufferUpdate updateInfo = {};
 			updateInfo.Buffer = buffer;
 			updateInfo.LastUsedQueue = lastUsedQueue;
-			updateInfo.Data = data.Data;
+			updateInfo.Data = data.DataRef.get() ? data.DataRef.get() : data.DataStatic;
 			updateInfo.Bytes = data.Bytes;
 			updateInfo.DestStage = USAGE_STAGE;
 			updateInfo.DestAccess = USAGE_ACCESS;

@@ -40,7 +40,7 @@ namespace ZE::Data
 
 #if _ZE_EXTERNAL_MODEL_LOADING
 		template<typename Index>
-		static void ParseIndices(std::unique_ptr<Index[]>& indices, const aiMesh& mesh) noexcept;
+		static void ParseIndices(Index* indices, const aiMesh& mesh) noexcept;
 #endif
 
 	public:

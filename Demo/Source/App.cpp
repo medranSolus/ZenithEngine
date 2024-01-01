@@ -346,7 +346,7 @@ void App::ShowObjectWindow()
 				{
 					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
 
-					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
+					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
 					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
@@ -397,7 +397,7 @@ void App::ShowObjectWindow()
 				{
 					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
 
-					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
+					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
 					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
@@ -426,7 +426,8 @@ void App::ShowObjectWindow()
 				}
 
 				if (change)
-					Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, sizeof(light) });
+					Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(),
+						engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
 			}
 
 			if (Settings::Data.all_of<Data::Camera>(selected))
@@ -523,7 +524,7 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 
 	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
 		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, sizeof(Data::PointLight) });
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, nullptr, sizeof(Data::PointLight) });
 
 	return light;
 }
@@ -547,7 +548,7 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 
 	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
 		Math::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, sizeof(Data::SpotLight) });
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, nullptr, sizeof(Data::SpotLight) });
 
 	return light;
 }
@@ -564,7 +565,7 @@ EID App::AddDirectionalLight(std::string&& name,
 	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
 	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, sizeof(Data::DirectionalLight) });
+	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, nullptr, sizeof(Data::DirectionalLight) });
 
 	return light;
 }
@@ -611,8 +612,7 @@ App::App(const CmdParser& params)
 		std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
 		GFX::Resource::MeshData meshData =
 		{
-			meshId,
-			vertices.data(), indices.data(),
+			meshId, GFX::Primitive::GetPackedMesh(vertices, indices),
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(GFX::Vertex), sizeof(U32)

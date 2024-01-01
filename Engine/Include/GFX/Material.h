@@ -5,6 +5,9 @@
 namespace ZE::GFX
 {
 	// Base class for creation of material types
+	//
+	// NOTE: When creating new material with initial data or updating it,
+	// source data must be static - it's content must be preserved for whole upload process
 	template<typename T, const char* TEXTURE_SCHEMA_NAME>
 	class Material final
 	{
@@ -19,7 +22,7 @@ namespace ZE::GFX
 
 		static constexpr const char* GetTextureSchemaName() noexcept { return TEXTURE_SCHEMA_NAME; }
 
-		constexpr void UpdateData(Device& dev, IO::DiskManager& disk, EID materialId, const T& data) const { ZE_VALID_EID(materialId); buffer.Update(dev, disk, { materialId, &data, sizeof(T) }); }
+		constexpr void UpdateData(Device& dev, IO::DiskManager& disk, EID materialId, const T& data) const { ZE_VALID_EID(materialId); buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
 		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 		constexpr void BindTextures(CommandList& cl, Binding::Context& bindCtx) const noexcept { textures.Bind(cl, bindCtx); }
 		constexpr void Free(Device& dev) noexcept { buffer.Free(dev); textures.Free(dev); }
@@ -32,7 +35,7 @@ namespace ZE::GFX
 	constexpr void Material<T, TEXTURE_SCHEMA_NAME>::Init(Device& dev, IO::DiskManager& disk,
 		const T& initData, const Resource::Texture::PackDesc& desc)
 	{
-		buffer.Init(dev, disk, { INVALID_EID, &initData, sizeof(T) });
+		buffer.Init(dev, disk, { INVALID_EID, &initData, nullptr, sizeof(T) });
 		textures.Init(dev, disk, desc);
 	}
 #pragma endregion

@@ -225,7 +225,7 @@ namespace ZE::GFX::Pipeline
 		}
 		SetupBlurData(outlineBuffSizes.X, outlineBuffSizes.Y);
 		SetupSSAOData();
-		execData.SettingsBuffer.Init(dev, assets.GetDisk(), { INVALID_EID, &settingsData, sizeof(DataPBR) });
+		execData.SettingsBuffer.Init(dev, assets.GetDisk(), { INVALID_EID, &settingsData, nullptr, sizeof(DataPBR) });
 
 #pragma region Geometry
 		{
@@ -772,6 +772,6 @@ namespace ZE::GFX::Pipeline
 		}
 		// If any settings data updated then upload new buffer
 		if (change)
-			execData.SettingsBuffer.Update(dev, assets.GetDisk(), { INVALID_EID, &settingsData, sizeof(DataPBR) });
+			execData.SettingsBuffer.Update(dev, assets.GetDisk(), { INVALID_EID, &settingsData, nullptr, sizeof(DataPBR) });
 	}
 }

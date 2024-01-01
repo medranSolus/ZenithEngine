@@ -43,7 +43,7 @@ namespace ZE::RHI::DX11::Resource
 	}
 
 	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data)
-		: CBuffer(dev.Get().dx11, data.Data, data.Bytes, false)
+		: CBuffer(dev.Get().dx11, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes, false)
 	{
 		if (data.ResourceID != INVALID_EID)
 			Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
@@ -113,12 +113,12 @@ namespace ZE::RHI::DX11::Resource
 
 			D3D11_MAPPED_SUBRESOURCE subres;
 			ZE_DX_THROW_FAILED(dev.GetMainContext()->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subres));
-			memcpy(subres.pData, data.Data, data.Bytes);
+			std::memcpy(subres.pData, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes);
 			dev.GetMainContext()->Unmap(buffer.Get(), 0);
 		}
 		else
 		{
-			dev.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, data.Data, 0, 0);
+			dev.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, 0, 0);
 
 			if (data.ResourceID != INVALID_EID)
 				Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;

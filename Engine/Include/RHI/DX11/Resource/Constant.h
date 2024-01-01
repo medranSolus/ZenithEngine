@@ -14,7 +14,7 @@ namespace ZE::RHI::DX11::Resource
 		ZE_CLASS_MOVE(Constant);
 		~Constant() { buffer.Free(); }
 
-		constexpr void Set(GFX::Device& dev, const T& value) const { buffer.Update(dev.Get().dx11, { INVALID_EID, &value, sizeof(T) }); }
+		constexpr void Set(GFX::Device& dev, const T& value) const { buffer.Update(dev.Get().dx11, { INVALID_EID, &value, nullptr, sizeof(T) }); }
 		constexpr T GetData(GFX::Device& dev) const { T data; buffer.GetData(dev, &data, sizeof(T)); return data; }
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }

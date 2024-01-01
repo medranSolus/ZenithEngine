@@ -8,8 +8,11 @@ namespace ZE::GFX::Resource
 	struct CBufferData
 	{
 		EID ResourceID = INVALID_EID;
-		const void* Data = nullptr;
-		U32 Bytes;
+		// Use this data source when original buffer lifetime is longer than upload time
+		const void* DataStatic = nullptr;
+		// Use this data source when original buffer lifetime ends before waiting for upload to finish
+		std::shared_ptr<U8[]> DataRef = nullptr;
+		U32 Bytes = 0;
 	};
 
 	// Data for cbuffer from file buffer
