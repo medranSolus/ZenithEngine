@@ -322,6 +322,7 @@ namespace ZE::DDS
 		destData.Depth = depth;
 		destData.MipCount = mipCount;
 		destData.ArraySize = arraySize;
+		destData.ImageMemorySize = Utils::SafeCast<U32>(destImageSize);
 		destData.ImageMemory = image;
 		return FileResult::Ok;
 #undef ZE_IS_FOURCC

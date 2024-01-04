@@ -51,7 +51,7 @@ namespace ZE
 		template <typename Func, typename... Args>
 		constexpr auto Schedule(ThreadPriority priority, Func&& f, Args&&... args) const noexcept -> Task<decltype(f(args...))>;
 
-		constexpr U8 GetThreadsCount() const noexcept;
+		constexpr U8 GetWorkerThreadsCount() const noexcept;
 		constexpr void ResetThreadsCount() noexcept;
 		constexpr void ClampThreadsCount(U8 maxThreads) noexcept;
 		constexpr void SetSMT(bool val) noexcept;
@@ -69,13 +69,13 @@ namespace ZE
 		std::packaged_task<Return()> taskPackage(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
 		Task<Return> task(std::move(taskPackage));
 		auto workerFunc = [execData = task.GetData()]() -> void
-		{
-			const bool status = std::atomic_exchange_explicit(&execData->processing, true, std::memory_order::memory_order_acq_rel);
-			if (!status)
-				execData->task();
-		};
+			{
+				const bool status = std::atomic_exchange_explicit(&execData->processing, true, std::memory_order::memory_order_acq_rel);
+				if (!status)
+					execData->task();
+			};
 		// When pool is stopped don't delegate new tasks to it, only run them in single thread
-		if (GetThreadsCount() > 0 && runControl)
+		if (GetWorkerThreadsCount() > 0 && runControl)
 		{
 			taskQueues[static_cast<U8>(priority)].EmplaceBack(std::move(workerFunc));
 			signaler.notify_one();
@@ -85,7 +85,7 @@ namespace ZE
 		return task;
 	}
 
-	constexpr U8 ThreadPool::GetThreadsCount() const noexcept
+	constexpr U8 ThreadPool::GetWorkerThreadsCount() const noexcept
 	{
 		if (threadsCountOverride != 0)
 			return threadsCountOverride == UINT8_MAX ? 0 : threadsCountOverride;
@@ -111,34 +111,34 @@ namespace ZE
 
 	constexpr void ThreadPool::ResetThreadsCount() noexcept
 	{
-		const U8 oldCount = GetThreadsCount();
+		const U8 oldCount = GetWorkerThreadsCount();
 		maxThreadsCount = UINT8_MAX;
-		ResizeThreads(oldCount, GetThreadsCount());
+		ResizeThreads(oldCount, GetWorkerThreadsCount());
 	}
 
 	constexpr void ThreadPool::ClampThreadsCount(U8 maxThreads) noexcept
 	{
-		const U8 oldCount = GetThreadsCount();
+		const U8 oldCount = GetWorkerThreadsCount();
 		maxThreadsCount = maxThreads;
-		ResizeThreads(oldCount, GetThreadsCount());
+		ResizeThreads(oldCount, GetWorkerThreadsCount());
 	}
 
 	constexpr void ThreadPool::SetSMT(bool val) noexcept
 	{
-		const U8 oldCount = GetThreadsCount();
+		const U8 oldCount = GetWorkerThreadsCount();
 		useMultiThreading = val;
-		ResizeThreads(oldCount, GetThreadsCount());
+		ResizeThreads(oldCount, GetWorkerThreadsCount());
 	}
 
 	constexpr void ThreadPool::Init(U8 allocThreadsCount, U8 customThreadCount) noexcept
 	{
+		threadsCountOverride = customThreadCount;
 		if (customThreadCount != UINT8_MAX)
 		{
-			threadsCountOverride = customThreadCount;
 			allocatedThreads = allocThreadsCount;
 
 			// Create worker threads that will sleep waiting for new job to execute
-			const U8 count = GetThreadsCount();
+			const U8 count = GetWorkerThreadsCount();
 			threadRunControls = new BoolAtom[count];
 			threads.reserve(count);
 			for (U8 i = 0; i < count; ++i)

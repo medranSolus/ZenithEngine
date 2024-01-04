@@ -20,12 +20,13 @@ namespace ZE::GFX
 	template<Surface::CopySource SRC_FORMAT, typename T>
 	void Surface::CopyLoadedImage(T* destImage, const T* srcImage, U32 width, U32 height, U32 destRowSize) noexcept
 	{
+		constexpr U32 SRC_PIXEL_SIZE = 2 + (SRC_FORMAT == CopySource::RGB) * sizeof(T);
 		for (U32 y = 0; y < height; ++y)
 		{
 			for (U32 x = 0; x < width; ++x)
 			{
-				const U32 destOffset = x * 4;
-				const U32 srcOffset = x * (2 + (SRC_FORMAT == CopySource::GrayscaleAlpha));
+				const U32 destOffset = x * 4 * sizeof(T);
+				const U32 srcOffset = x * SRC_PIXEL_SIZE;
 				destImage[destOffset] = srcImage[srcOffset];
 
 				if constexpr (SRC_FORMAT == CopySource::GrayscaleAlpha)
@@ -53,11 +54,13 @@ namespace ZE::GFX
 			}
 			// Move to next row with correct padding
 			destImage = reinterpret_cast<T*>(reinterpret_cast<U8*>(destImage) + destRowSize);
+			srcImage = reinterpret_cast<const T*>(reinterpret_cast<const U8*>(srcImage) + width * SRC_PIXEL_SIZE);
 		}
 	}
 
 	Surface::Surface(U32 width, U32 height, PixelFormat format, const void* srcImage) noexcept
-		: format(format), width(width), height(height), memory(std::make_shared<U8[]>(GetSliceByteSize()))
+		: format(format), width(width), height(height), depth(1), mipCount(1), arraySize(1),
+		memorySize(GetSliceByteSize()), memory(std::make_shared<U8[]>(memorySize))
 	{
 		if (srcImage)
 		{
@@ -89,10 +92,11 @@ namespace ZE::GFX
 		depth = 1;
 		mipCount = 1;
 		arraySize = 1;
-		bool success = true;
+		bool success = false;
+		bool tryStbi = true;
 		if (ext == ".dds")
 		{
-			success = false;
+			tryStbi = false;
 			DDS::FileData ddsData = {};
 			switch (DDS::ParseFile(file, ddsData, ROW_PITCH_ALIGNMENT, SLICE_PITCH_ALIGNMENT))
 			{
@@ -105,6 +109,7 @@ namespace ZE::GFX
 				depth = ddsData.Depth;
 				mipCount = ddsData.MipCount;
 				arraySize = ddsData.ArraySize;
+				memorySize = ddsData.ImageMemorySize;
 				memory = ddsData.ImageMemory;
 				break;
 			}
@@ -169,7 +174,7 @@ namespace ZE::GFX
 
 					const U32 destRowSize = GetRowByteSize();
 					const U32 srcRowSize = width * GetPixelSize();
-					size_t memorySize = GetSliceByteSize();
+					memorySize = GetSliceByteSize();
 					memory = std::make_shared<U8[]>(memorySize);
 
 					// Write directly to the buffer as padding is not required
@@ -197,12 +202,16 @@ namespace ZE::GFX
 			spng_ctx_free(ctx);
 			if (result)
 			{
-				Logger::Error("Error loading file \"" + path.string() + "\", SPNG error: " + std::string(spng_strerror(result)));
-				success = false;
+				Logger::Error("Error loading file \"" + path.string() + "\", trying fallback to STB Image, SPNG error: " + std::string(spng_strerror(result)));
+				memory = nullptr;
+				rewind(file);
 			}
+			else
+				success = true;
 		}
 		else if (ext == ".qoi")
 		{
+			tryStbi = false;
 			const U64 fileSize = std::filesystem::file_size(path);
 			if (fileSize)
 			{
@@ -217,7 +226,8 @@ namespace ZE::GFX
 						format = PixelFormat::R8G8B8A8_UNorm_SRGB;
 					else
 						format = PixelFormat::R8G8B8A8_UNorm;
-					memory = std::make_shared<U8[]>(GetSliceByteSize());
+					memorySize = GetSliceByteSize();
+					memory = std::make_shared<U8[]>(memorySize);
 
 					const U32 destRowSize = GetRowByteSize();
 					if (result.second.channels == 3)
@@ -252,9 +262,11 @@ namespace ZE::GFX
 				success = false;
 			}
 		}
-		else
+
+		// Last resort method to try loading image file
+		if (!success && tryStbi)
 		{
-			if (ext != ".jpeg" && ext != ".jpg" && ext != ".bmp" && ext != ".psd" && ext != ".tga"
+			if (ext != ".jpeg" && ext != ".jpg" && ext != ".bmp" && ext != ".psd" && ext != ".tga" && ext != ".png"
 				&& ext != ".gif" && ext != ".hdr" && ext != ".pic" && ext != ".pgm" && ext != ".ppm")
 				Logger::Warning("Unknown format for file \"" + path.string() + "\"! Trying to load via STB Image anyway.");
 
@@ -330,7 +342,8 @@ namespace ZE::GFX
 				format = imageFormat;
 				width = static_cast<U32>(srcWidth);
 				height = static_cast<U32>(srcHeight);
-				memory = std::make_shared<U8[]>(GetSliceByteSize());
+				memorySize = GetSliceByteSize();
+				memory = std::make_shared<U8[]>(memorySize);
 
 				const U32 destRowSize = GetRowByteSize();
 				if (expandAlpha)
@@ -388,12 +401,10 @@ namespace ZE::GFX
 					}
 				}
 				stbi_image_free(srcImage);
+				success = true;
 			}
 			else
-			{
 				Logger::Error("Error loading file \"" + path.string() + "\", STB Image error: " + std::string(stbi_failure_reason()));
-				success = false;
-			}
 		}
 
 		fclose(file);
@@ -497,30 +508,30 @@ namespace ZE::GFX
 
 		// Complex path, move by specified mip levels and to selected depth
 		auto getMipOffset = [&](U16 mipLevels, U16 depthLevel) -> U64
-		{
-			U64 offset = 0;
-			U32 currentWidth = width;
-			U32 currentHeight = height;
-			U16 currentDepth = depth;
-			for (U16 mip = 0; mip < mipLevels; )
 			{
-				offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
-
-				if (++mip < mipLevels)
+				U64 offset = 0;
+				U32 currentWidth = width;
+				U32 currentHeight = height;
+				U16 currentDepth = depth;
+				for (U16 mip = 0; mip < mipLevels; )
 				{
-					currentWidth >>= 1;
-					if (currentWidth == 0)
-						currentWidth = 1;
-					currentHeight >>= 1;
-					if (currentHeight == 0)
-						currentHeight = 1;
-					currentDepth >>= 1;
-					if (currentDepth == 0)
-						currentDepth = 1;
+					offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+
+					if (++mip < mipLevels)
+					{
+						currentWidth >>= 1;
+						if (currentWidth == 0)
+							currentWidth = 1;
+						currentHeight >>= 1;
+						if (currentHeight == 0)
+							currentHeight = 1;
+						currentDepth >>= 1;
+						if (currentDepth == 0)
+							currentDepth = 1;
+					}
 				}
-			}
-			return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
-		};
+				return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
+			};
 		U8* image = memory.get();
 		for (U16 a = 0; a < arrayIndex; ++a)
 			image += getMipOffset(mipCount, 0);

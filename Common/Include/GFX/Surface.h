@@ -23,6 +23,7 @@ namespace ZE::GFX
 		U16 depth = 0;
 		U16 mipCount = 0;
 		U16 arraySize = 0;
+		U32 memorySize = 0;
 		std::shared_ptr<U8[]> memory = nullptr;
 
 		template<CopySource SRC_FORMAT, typename T>
@@ -42,9 +43,11 @@ namespace ZE::GFX
 		constexpr U16 GetArraySize() const noexcept { return arraySize; }
 		constexpr U32 GetRowByteSize() const noexcept { return Math::AlignUp((width * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
 		constexpr U32 GetSliceByteSize() const noexcept { return Math::AlignUp(GetRowByteSize() * height, SLICE_PITCH_ALIGNMENT); }
+		constexpr U32 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
 
 		std::shared_ptr<U8[]> GetMemory() noexcept { return memory; }
+		std::shared_ptr<const U8[]> GetMemory() const noexcept { return memory; }
 		U8* GetBuffer() noexcept { return memory.get(); }
 		const U8* GetBuffer() const noexcept { return memory.get(); }
 
