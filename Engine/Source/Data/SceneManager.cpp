@@ -10,7 +10,8 @@ namespace ZE::Data
 	void ParseNode(const aiNode& node, EID currentEntity, const std::vector<std::pair<MeshID, MaterialID>>& meshes) noexcept
 	{
 		Storage& registry = Settings::Data;
-		registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
+		if (!registry.try_get<std::string>(currentEntity))
+			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
 
 		TransformGlobal& transform = registry.get<TransformGlobal>(currentEntity);
 		const Vector globalRotation = Math::XMLoadFloat4(&transform.Rotation);
@@ -28,7 +29,7 @@ namespace ZE::Data
 			registry.emplace<MaterialID>(currentEntity, meshes.at(node.mMeshes[0]).second);
 
 			// Create child entities for every multiple instances of meshes in this node
-			std::vector<EID> childrenEntities(node.mNumChildren);
+			std::vector<EID> childrenEntities(node.mNumMeshes);
 			Settings::CreateEntities(childrenEntities);
 			for (U32 i = 1; i < node.mNumMeshes; ++i)
 			{

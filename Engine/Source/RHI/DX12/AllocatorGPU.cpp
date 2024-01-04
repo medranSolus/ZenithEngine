@@ -204,21 +204,21 @@ namespace ZE::RHI::DX12
 	ResourceInfo AllocatorGPU::AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
 		return AllocMinimalChunks(dev, bytes, desc,
-			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COMMON,
 			allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_64KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
 		return AllocBigChunks(dev, bytes, desc,
-			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COMMON,
 			NORMAL_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_4MB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
 	{
 		return AllocBigChunks(dev, bytes, desc,
-			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COPY_DEST,
+			IsGpuUploadHeap() ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_COMMON,
 			HUGE_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
 	}
 }
