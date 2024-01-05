@@ -174,7 +174,7 @@ namespace ZE::RHI::DX12
 			}
 #endif
 			uploadQueue.emplace_back(resourceID);
-			Settings::GetOrCreateElement<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
 		}
 	}
 

@@ -49,7 +49,6 @@ namespace ZE
 		static inline GFX::UpscalerType upscaler;
 		static inline GFX::AOType aoType;
 
-		static inline std::shared_mutex dataCreationMutex;
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
 		static inline U64 frameIndex = 0;
@@ -60,6 +59,9 @@ namespace ZE
 	public:
 		ZE_CLASS_DELETE(Settings);
 		~Settings() = default;
+
+		template<typename T>
+		static constexpr std::shared_mutex& GetEntityMutex() noexcept { static std::shared_mutex mutex; return mutex; }
 
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
@@ -87,8 +89,8 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 
-		static EID CreateEntity() noexcept { LockGuardRW lock(dataCreationMutex); return Data.create(); }
-		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(dataCreationMutex); for (EID& e : entities) e = Data.create(); }
+		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
+		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
 
 		static constexpr U32 GetChainResourceCount() noexcept;
 
