@@ -24,13 +24,7 @@ namespace ZE::GUI
 
 	void Manager::RebuildFontsVK(GFX::Device& dev, GFX::CommandList& cl) const
 	{
-		cl.Open(dev);
-		ImGui_ImplVulkan_CreateFontsTexture(cl.Get().vk.GetBuffer());
-		cl.Close(dev);
-
-		dev.ExecuteMain(cl);
-		dev.WaitMain(dev.SetMainFence());
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
+		ImGui_ImplVulkan_CreateFontsTexture();
 	}
 #endif
 
