@@ -72,11 +72,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid_" + suffix);
+			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + suffix);
 			passData->StatesSolid[stateIndex].Init(dev, psoDesc, schema);
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent_" + suffix);
+			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + suffix);
 			passData->StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 

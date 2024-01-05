@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		result &= textures.emplace_back().Load(cubemapPath + "/nz" + cubemapExt); // Back
 		if (!result)
 			throw ZE_RGC_EXCEPT("Error loading cubemap!");
-		texDesc.AddTexture(Resource::Texture::Type::Cube, Resource::Texture::Usage::PixelShader, std::move(textures));
+		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
 		passData->SkyTexture.Init(dev, buildData.Assets.GetDisk(), texDesc);
 
 		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();

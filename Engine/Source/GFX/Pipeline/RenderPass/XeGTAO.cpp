@@ -80,7 +80,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 				buffer[x + y * Math::AlignUp(static_cast<U64>(XE_HILBERT_WIDTH), Surface::ROW_PITCH_ALIGNMENT / sizeof(U16))] = Utils::SafeCast<U16>(::XeGTAO::HilbertIndex(x, y));
 
 		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
-		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfaces));
+		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfaces));
 		passData->HilbertLUT.Init(dev, buildData.Assets.GetDisk(), hilbertDesc);
 
 		return passData;

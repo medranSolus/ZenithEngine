@@ -99,7 +99,6 @@ namespace ZE::IO::Format
 		U32 Height;
 		PixelFormat Format;
 		GFX::Resource::Texture::Type Type;
-		GFX::Resource::Texture::Usages Usage;
 		CompressionFormat Compression;
 	};
 #pragma pack(pop)

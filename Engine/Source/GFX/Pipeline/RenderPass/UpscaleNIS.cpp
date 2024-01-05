@@ -71,8 +71,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 		Resource::Texture::PackDesc coeffDesc;
 		coeffDesc.Options = Resource::Texture::PackOption::StaticCreation;
-		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesScale));
-		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, Resource::Texture::Usage::NonPixelShader, std::move(surfacesUSM));
+		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesScale));
+		coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesUSM));
 		passData->Coefficients.Init(dev, buildData.Assets.GetDisk(), coeffDesc);
 
 		return passData;

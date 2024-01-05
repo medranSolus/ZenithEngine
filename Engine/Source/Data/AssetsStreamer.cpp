@@ -30,10 +30,10 @@ namespace ZE::Data
 
 		// Initialize schema for known materials
 		GFX::Resource::Texture::Schema pbrTextureSchema;
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_COLOR_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_NORMAL_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_SPECULAR_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D, GFX::Resource::Texture::Usage::PixelShader);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_COLOR_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_NORMAL_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_SPECULAR_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
 		texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 	}
 
@@ -269,13 +269,13 @@ namespace ZE::Data
 				else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
 				{
 					meshData.IndexSize = sizeof(U16);
-					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount * sizeof(U16) + meshData.VertexCount * sizeof(GFX::Vertex));
+					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount * sizeof(U16), static_cast<U64>(GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT)) + meshData.VertexCount * sizeof(GFX::Vertex));
 					ParseIndices(reinterpret_cast<U16*>(meshData.PackedMesh.get()), mesh);
 				}
 				else
 				{
 					meshData.IndexSize = sizeof(U8);
-					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount + meshData.VertexCount * sizeof(GFX::Vertex));
+					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + meshData.VertexCount * sizeof(GFX::Vertex));
 					ParseIndices(meshData.PackedMesh.get(), mesh);
 				}
 
@@ -283,7 +283,7 @@ namespace ZE::Data
 				Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
 				Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
-				GFX::Vertex* vertices = reinterpret_cast<GFX::Vertex*>(meshData.PackedMesh.get() + meshData.IndexCount * meshData.IndexSize);
+				GFX::Vertex* vertices = reinterpret_cast<GFX::Vertex*>(meshData.PackedMesh.get() + Math::AlignUp(meshData.IndexCount * meshData.IndexSize, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT));
 				for (U32 i = 0; i < mesh.mNumVertices; ++i)
 				{
 					GFX::Vertex& vertex = vertices[i];
@@ -340,7 +340,7 @@ namespace ZE::Data
 	Task<MaterialID> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path)
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() -> MaterialID
+			[&, path = path]() -> MaterialID
 			{
 				EID materialId = Settings::CreateEntity();
 				Storage& assets = Settings::Data;
@@ -354,14 +354,15 @@ namespace ZE::Data
 				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 				GFX::Resource::Texture::PackDesc texDesc;
 				texDesc.Init(texSchema);
+				texDesc.ResourceID = materialId;
 
-				std::vector<GFX::Surface> surfaces;
 				aiString texFile;
 				bool notSolid = false;
 
 				// Get diffuse texture
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 				{
+					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						notSolid |= surfaces.back().HasAlpha();
@@ -374,6 +375,7 @@ namespace ZE::Data
 				// Get normal map texture
 				if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
 				{
+					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
@@ -384,6 +386,7 @@ namespace ZE::Data
 				// Get specular data
 				if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
 				{
+					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						if (surfaces.back().HasAlpha())
@@ -396,6 +399,7 @@ namespace ZE::Data
 				// Get parallax map texture
 				if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 				{
+					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));

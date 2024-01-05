@@ -11,141 +11,9 @@ namespace ZE::RHI::DX12::Resource::Texture
 		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
-		std::vector<std::pair<U64, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>>> copyInfo;
-		copyInfo.reserve(count);
-		U64 uploadRegionSize = 0;
-		// Create destination textures and SRVs for them. Gather info for uploading data
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			auto& resInfo = resources[i];
-			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
-
-			copyInfo.emplace_back(0, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>());
-			U16 surfaces = Utils::SafeCast<U16>(tex.Surfaces.size());
-			if (surfaces)
-			{
-				auto& startSurface = tex.Surfaces.front();
-				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(Utils::SafeCast<U32>(startSurface.GetWidth()),
-					Utils::SafeCast<U32>(startSurface.GetHeight()), surfaces, srv.Format, tex.Type);
-
-				switch (tex.Type)
-				{
-				default:
-					ZE_ENUM_UNHANDLED();
-				case GFX::Resource::Texture::Type::Tex2D:
-				{
-					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
-					footprint.Format = srv.Format;
-					footprint.Width = Utils::SafeCast<U32>(texDesc.Width);
-					footprint.Height = texDesc.Height;
-					footprint.Depth = 1;
-					footprint.RowPitch = Utils::SafeCast<U32>(Math::AlignUp(texDesc.Width * startSurface.GetPixelSize(),
-						static_cast<U64>(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
-
-					copyInfo.back().second.emplace_back(0, std::move(footprint));
-					copyInfo.back().first = Math::AlignUp(Utils::SafeCast<U64>(footprint.Height) * footprint.RowPitch,
-						static_cast<U64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT));
-					break;
-				}
-				case GFX::Resource::Texture::Type::Tex3D:
-				{
-					D3D12_SUBRESOURCE_FOOTPRINT footprint = {};
-					footprint.Format = srv.Format;
-					footprint.Width = Utils::SafeCast<U32>(texDesc.Width);
-					footprint.Height = texDesc.Height;
-					footprint.Depth = texDesc.DepthOrArraySize;
-					footprint.RowPitch = Utils::SafeCast<U32>(Math::AlignUp(texDesc.Width * startSurface.GetPixelSize(),
-						static_cast<U64>(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
-
-					copyInfo.back().second.emplace_back(0, std::move(footprint));
-					copyInfo.back().first = Math::AlignUp(Utils::SafeCast<U64>(footprint.Height) * footprint.RowPitch,
-						static_cast<U64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT)) * texDesc.DepthOrArraySize;
-					break;
-				}
-				case GFX::Resource::Texture::Type::Cube:
-				{
-					copyInfo.back().second.resize(surfaces);
-					device.GetDevice()->GetCopyableFootprints1(&texDesc, 0, 6, 0,
-						copyInfo.back().second.data(), nullptr, nullptr, &copyInfo.back().first);
-					break;
-				}
-				case GFX::Resource::Texture::Type::Array:
-				{
-					copyInfo.back().second.resize(surfaces);
-					device.GetDevice()->GetCopyableFootprints1(&texDesc, 0, surfaces, 0,
-						copyInfo.back().second.data(), nullptr, nullptr, &copyInfo.back().first);
-					break;
-				}
-				}
-				uploadRegionSize += copyInfo.back().first;
-			}
-		}
-
-		if (uploadRegionSize)
-		{
-			// Create one big committed buffer and copy data into it
-			DX::ComPtr<IResource> uploadRes;// = device.CreateTextureUploadBuffer(uploadRegionSize);
-			ZE_DX_SET_ID(uploadRes, "Upload texture buffer: " + std::to_string(uploadRegionSize) + " B");
-			D3D12_TEXTURE_COPY_LOCATION copySource = {};
-			copySource.pResource = uploadRes.Get();
-			copySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-			U64 bufferOffset = 0;
-
-			D3D12_RANGE range = {};
-			U8* uploadBuffer;
-			ZE_DX_THROW_FAILED(uploadRes->Map(0, &range, reinterpret_cast<void**>(&uploadBuffer)));
-			// Copy all regions upload heap
-			for (U32 i = 0; const auto& info : copyInfo)
-			{
-				auto& tex = desc.Textures.at(i);
-				if (tex.Surfaces.size())
-				{
-					U64 depthSlice = info.first / info.second.size();
-					D3D12_TEXTURE_COPY_LOCATION copyDest = {};
-					copyDest.pResource = resources[i].Resource.Get();
-					copyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-					copyDest.SubresourceIndex = 0;
-
-					// Memcpy according to resource structure
-					for (U16 j = 0; const auto& region : info.second)
-					{
-						for (U32 z = 0; z < region.Footprint.Depth; ++z)
-						{
-							U8* dest = uploadBuffer + z * depthSlice + region.Offset;
-							const GFX::Surface& surface = tex.Surfaces.at(Utils::SafeCast<U64>(j) + z);
-							const U8* src = reinterpret_cast<const U8*>(surface.GetBuffer());
-							for (U32 y = 0; y < region.Footprint.Height; ++y)
-							{
-								U64 destRowOffset = Utils::SafeCast<U64>(y) * region.Footprint.RowPitch;
-								U64 srcRowOffset = Utils::SafeCast<U64>(y) * surface.GetRowByteSize();
-								std::memcpy(dest + destRowOffset, src + srcRowOffset, surface.GetRowByteSize());
-							}
-						}
-						copySource.PlacedFootprint.Offset = bufferOffset + region.Offset;
-						copySource.PlacedFootprint.Footprint = region.Footprint;
-
-						ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage no initialized!");
-						D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
-						if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
-							endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-						if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
-							endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-
-						//device.UploadTexture(copyDest, copySource, endState);
-						++copyDest.SubresourceIndex;
-						++j;
-					}
-					bufferOffset += info.first;
-					uploadBuffer += info.first;
-				}
-				++i;
-			}
-			uploadRes->Unmap(0, nullptr);
-		}
-
-		for (U32 i = 0; const auto& tex : desc.Textures)
-		{
-			ZE_ASSERT(tex.Usage != GFX::Resource::Texture::Usage::Invalid, "Texture usage not initialized!");
+			const bool lastTexture = i + 1 == desc.Textures.size();
 			ResourceInfo& resInfo = resources[i];
 
 			// Specify default SRV desc
@@ -206,6 +74,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 			{
 				// Create texture based on format of first surface (other surfaces are constrained to be of same size as previous ones)
 				const GFX::Surface& startSurface = tex.Surfaces.front();
+				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
 				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(Utils::SafeCast<U32>(startSurface.GetWidth()),
 					Utils::SafeCast<U32>(startSurface.GetHeight()),
 					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : (surfaces > 1 ? surfaces : startSurface.GetArraySize()),
@@ -215,51 +84,24 @@ namespace ZE::RHI::DX12::Resource::Texture
 				ZE_ASSERT(texDesc.DepthOrArraySize == 6 || tex.Type != GFX::Resource::Texture::Type::Cube, "Cube texture should contain 6 surfaces!");
 				if (tex.Type == GFX::Resource::Texture::Type::Array)
 					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
-				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
 				texDesc.MipLevels = startSurface.GetMipCount();
 				*mipLevels = startSurface.GetMipCount();
 
 				resInfo = device.CreateTexture(texDesc);
-				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i));
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
-				// BIGGER TODO: now all surface data is aligned properly so no copying should be needed. But there can be difference between how
-				//   this surfaces are provided. Depth textures will be only from single source (providing multiple should be treated as error)
-				//   but arrays of textures can be from multiple surfaces or from single one if DDS texture was loaded. Options:
-				//   - check array size of first Surface and act accordingly
-				//   - if multiple surfaces provided (they have to contain only single texture with mips) then a) copy them to single buffer
-				//     beforehand (or place that burden on user by removing surfaces as vector)
-				//     or b) create multiple texture requests if possible. Will have to perform additional
-				//     checks during PackDesc creation to see whether there is only single complex array surface or whole vector of them if option b) is chosen.
-
-				// TODO: needed only when computing MIP inside final resource
-				// Compute offset of mip levels into final resource
-				const U32 rowPitch = Math::AlignUp(Utils::SafeCast<U32>(texDesc.Width) * startSurface.GetPixelSize(), GFX::Surface::ROW_PITCH_ALIGNMENT);
-				U32 slicePitch = Math::AlignUp(texDesc.Height * rowPitch, static_cast<U32>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT));
-				//for (U16 mip = 1; mip < texDesc.MipLevels; ++mip)
-				//{
-				//	const U32 mipRowPitch = Utils::SafeCast<U32>(Math::AlignUp((texDesc.Width >> mip) * startSurface.GetPixelSize(), Settings::ROW_PITCH_ALIGNMENT));
-				//	slicePitch += Math::AlignUp((texDesc.Height >> 1) * mipRowPitch, static_cast<U32>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT));
-				//}
-
-				// Copy resources according to their alignment requirements
-				std::shared_ptr<U8[]> data = std::make_shared<U8[]>(slicePitch * texDesc.DepthOrArraySize);
-				for (U16 z = 0; z < texDesc.DepthOrArraySize; ++z)
+				auto& diskManager = disk.Get().dx12;
+				if (surfaces > 1)
 				{
-					const GFX::Surface& surf = tex.Surfaces.at(z);
-					const U8* srcBuffer = reinterpret_cast<const U8*>(surf.GetBuffer());
-					U8* destBuffer = data.get() + z * slicePitch;
-
-					for (U32 y = 0; y < texDesc.Height; ++y)
-						std::memcpy(destBuffer + y * rowPitch, srcBuffer + y * surf.GetRowByteSize(), surf.GetRowByteSize());
+					for (U16 arrayIndex = 0; const auto& surface : tex.Surfaces)
+					{
+						const U16 index = arrayIndex++;
+						diskManager.AddMemoryTextureArrayRequest(lastTexture ? desc.ResourceID : INVALID_EID, resInfo.Resource.Get(),
+							surface.GetMemory(), surface.GetMemorySize(), index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces);
+					}
 				}
-
-				D3D12_RESOURCE_STATES endState = D3D12_RESOURCE_STATE_COMMON;
-				if (tex.Usage & GFX::Resource::Texture::Usage::PixelShader)
-					endState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-				if (tex.Usage & GFX::Resource::Texture::Usage::NonPixelShader)
-					endState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-
-				//disk.Get().dx12.AddMemorySingleTextureRequest(INVALID_EID, resInfo.Resource.Get(), std::move(data), slicePitch * texDesc.DepthOrArraySize);
+				else
+					diskManager.AddMemoryTextureRequest(lastTexture ? desc.ResourceID : INVALID_EID, resInfo.Resource.Get(), startSurface.GetMemory(), startSurface.GetMemorySize());
 			}
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;

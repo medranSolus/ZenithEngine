@@ -4,7 +4,7 @@
 
 namespace ZE::GFX
 {
-	// Base class for creation of material types
+	// Base class for creation of material types, EID of material is the same as the one from Texture::PackDesc
 	//
 	// NOTE: When creating new material with initial data or updating it,
 	// source data must be static - it's content must be preserved for whole upload process
