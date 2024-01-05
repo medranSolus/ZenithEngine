@@ -46,7 +46,7 @@ namespace ZE::RHI::DX11::Resource
 		: CBuffer(dev.Get().dx11, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes, false)
 	{
 		if (data.ResourceID != INVALID_EID)
-			Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
+			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
 	}
 
 	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file)

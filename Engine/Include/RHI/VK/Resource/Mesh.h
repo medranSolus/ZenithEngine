@@ -24,7 +24,7 @@ namespace ZE::RHI::VK::Resource
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(alloc.IsFree() && buffer == VK_NULL_HANDLE); }
 
-		constexpr U32 GetSize() const noexcept { return indexCount * GetIndexSize() + vertexCount * vertexSize; }
+		constexpr U32 GetSize() const noexcept { return Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + vertexCount * vertexSize; }
 		constexpr U32 GetVertexCount() const noexcept { return vertexCount; }
 		constexpr U32 GetIndexCount() const noexcept { return indexCount; }
 		constexpr U16 GetVertexSize() const noexcept { return vertexSize; }
@@ -36,6 +36,21 @@ namespace ZE::RHI::VK::Resource
 	};
 
 #pragma region Functions
+	constexpr U32 Mesh::GetIndexSize() const noexcept
+	{
+		switch (indexType)
+		{
+		case VK_INDEX_TYPE_UINT8_EXT:
+			return sizeof(U8);
+		case VK_INDEX_TYPE_UINT16:
+			return sizeof(U16);
+		case VK_INDEX_TYPE_UINT32:
+			return sizeof(U32);
+		default:
+			return 0;
+		}
+	}
+
 	constexpr PixelFormat Mesh::GetIndexFormat() const noexcept
 	{
 		switch (indexType)

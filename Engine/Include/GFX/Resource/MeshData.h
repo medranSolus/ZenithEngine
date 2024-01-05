@@ -7,8 +7,10 @@ namespace ZE::GFX::Resource
 	// Geometry data for mesh
 	struct MeshData
 	{
+		static constexpr U32 VERTEX_BUFFER_ALIGNMENT = 4;
+
 		EID MeshID = INVALID_EID;
-		// Packed vertex and index data in tight order: indices + vertices
+		// Packed vertex and index data in tight order: indices + vertices (aligned to `MeshData::VERTEX_BUFFER_ALIGNMENT`)
 		std::shared_ptr<U8[]> PackedMesh = nullptr;
 		U32 VertexCount = 0;
 		U32 IndexCount = 0;

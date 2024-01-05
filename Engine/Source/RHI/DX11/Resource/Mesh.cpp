@@ -13,7 +13,7 @@ namespace ZE::RHI::DX11::Resource
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(data.IndexCount * data.IndexSize + data.VertexCount * data.VertexSize);
+		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(Math::AlignUp(data.IndexCount * data.IndexSize, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + data.VertexCount * data.VertexSize);
 		bufferDesc.StructureByteStride = 0;
 
 		D3D11_SUBRESOURCE_DATA resData = {};
@@ -36,7 +36,7 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
 		ZE_DX_SET_ID(buffer, "Mesh geometry buffer");
 		if (data.MeshID != INVALID_EID)
-			Settings::Data.get<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
+			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
 	}
 
 	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file)
@@ -49,7 +49,7 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_ENABLE_INFO(dev.Get().dx11);
 
 		IDeviceContext* ctx = cl.Get().dx11.GetContext();
-		const U32 offset = indexCount * GetIndexSize();
+		const U32 offset = Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
 		ctx->IASetVertexBuffers(0, 1, buffer.GetAddressOf(), &vertexSize, &offset);
 		if (IsIndexBufferPresent())
 		{

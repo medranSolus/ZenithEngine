@@ -3,21 +3,6 @@
 
 namespace ZE::RHI::VK::Resource
 {
-	constexpr U32 Mesh::GetIndexSize() const noexcept
-	{
-		switch (indexType)
-		{
-		case VK_INDEX_TYPE_UINT8_EXT:
-			return sizeof(U8);
-		case VK_INDEX_TYPE_UINT16:
-			return sizeof(U16);
-		case VK_INDEX_TYPE_UINT32:
-			return sizeof(U32);
-		default:
-			return 0;
-		}
-	}
-
 	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data)
 		: vertexCount(data.VertexCount), vertexSize(data.VertexSize)
 	{
@@ -104,7 +89,7 @@ namespace ZE::RHI::VK::Resource
 	{
 		VkCommandBuffer cmd = cl.Get().vk.GetBuffer();
 
-		const VkDeviceSize offset = Utils::SafeCast<VkDeviceSize>(indexCount * GetIndexSize());
+		const VkDeviceSize offset = Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
 		vkCmdBindVertexBuffers(cmd, 0, 1, &buffer, &offset);
 		if (IsIndexBufferPresent())
 		{

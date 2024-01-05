@@ -1,4 +1,5 @@
 #pragma once
+#include "Resource/MeshData.h"
 #include "Vertex.h"
 
 namespace ZE::GFX::Primitive
@@ -52,7 +53,7 @@ namespace ZE::GFX::Primitive
 		std::shared_ptr<U8[]> mesh = std::make_shared<U8[]>(indices.size() * sizeof(I) + vertices.size() * sizeof(V));
 		const U64 vertexOffset = indices.size() * sizeof(I);
 		std::memcpy(mesh.get(), indices.data(), vertexOffset);
-		std::memcpy(mesh.get() + vertexOffset, vertices.data(), vertices.size() * sizeof(V));
+		std::memcpy(mesh.get() + Math::AlignUp(vertexOffset, static_cast<U64>(Resource::MeshData::VERTEX_BUFFER_ALIGNMENT)), vertices.data(), vertices.size() * sizeof(V));
 		return mesh;
 	}
 #pragma endregion

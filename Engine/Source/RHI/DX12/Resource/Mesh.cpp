@@ -26,10 +26,11 @@ namespace ZE::RHI::DX12::Resource
 			indexView.SizeInBytes = 0;
 		}
 
-		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(indexView.SizeInBytes + vertexView.SizeInBytes);
+		const U32 vertexOffset = Math::AlignUp(indexView.SizeInBytes, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + vertexView.SizeInBytes);
 		info = device.CreateBuffer(desc, false);
 		indexView.BufferLocation = info.Resource->GetGPUVirtualAddress();
-		vertexView.BufferLocation = indexView.BufferLocation + indexView.SizeInBytes;
+		vertexView.BufferLocation = indexView.BufferLocation + vertexOffset;
 		ZE_DX_SET_ID(info.Resource, "Mesh geometry buffer");
 
 		if (device.IsGpuUploadHeap())
@@ -42,10 +43,10 @@ namespace ZE::RHI::DX12::Resource
 			info.Resource->Unmap(0, nullptr);
 			// Indicate that resource is already on GPU
 			if (data.MeshID != INVALID_EID)
-				Settings::Data.get<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
+				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
 		}
 		else
-			disk.Get().dx12.AddMemoryBufferRequest(data.MeshID, info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width));
+			disk.Get().dx12.AddMemoryBufferRequest(data.MeshID, info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width), true);
 	}
 
 	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file)
@@ -67,7 +68,7 @@ namespace ZE::RHI::DX12::Resource
 		indexView.BufferLocation = vertexView.BufferLocation = info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(info.Resource, "Mesh geometry buffer from file");
 
-		disk.Get().dx12.AddFileBufferRequest(data.MeshID, info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
+		disk.Get().dx12.AddFileBufferRequest(data.MeshID, info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, true);
 	}
 
 	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API)

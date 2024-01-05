@@ -22,7 +22,7 @@ namespace ZE::RHI::DX12::Resource
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(info.IsFree()); }
 
-		constexpr U32 GetSize() const noexcept { return indexView.SizeInBytes + vertexView.SizeInBytes; }
+		constexpr U32 GetSize() const noexcept { return Math::AlignUp(indexView.SizeInBytes, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + vertexView.SizeInBytes; }
 		constexpr U32 GetVertexCount() const noexcept { return vertexView.SizeInBytes / vertexView.StrideInBytes; }
 		constexpr U32 GetIndexCount() const noexcept { return indexView.SizeInBytes / GetIndexSize(); }
 		constexpr U16 GetVertexSize() const noexcept { return Utils::SafeCast<U16>(vertexView.StrideInBytes); }
