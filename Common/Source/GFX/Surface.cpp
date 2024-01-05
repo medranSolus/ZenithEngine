@@ -185,11 +185,11 @@ namespace ZE::GFX
 
 					// Write directly to the buffer as padding is not required
 					if (destRowSize == srcRowSize)
-						result = spng_decode_image(ctx, memory.get(), memorySize, conversionFormat, SPNG_DECODE_TRNS | SPNG_DECODE_GAMMA);
+						result = spng_decode_image(ctx, memory.get(), memorySize, conversionFormat, SPNG_DECODE_TRNS);
 					else
 					{
 						// Read image progressively row by row into final buffer
-						result = spng_decode_image(ctx, nullptr, 0, conversionFormat, SPNG_DECODE_TRNS | SPNG_DECODE_GAMMA | SPNG_DECODE_PROGRESSIVE);
+						result = spng_decode_image(ctx, nullptr, 0, conversionFormat, SPNG_DECODE_TRNS | SPNG_DECODE_PROGRESSIVE);
 						if (!result)
 						{
 							spng_row_info rowInfo;

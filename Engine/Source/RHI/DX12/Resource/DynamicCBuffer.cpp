@@ -107,7 +107,6 @@ namespace ZE::RHI::DX12::Resource
 	{
 		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
 
-		resInfo.back().first.Resource->Unmap(0, nullptr);
 		buffer = nullptr;
 		for (auto& res : resInfo)
 			dev.Get().dx12.FreeDynamicBuffer(res.first);
