@@ -83,79 +83,79 @@ namespace ZE::RHI::DX12
 				throw ZE_WIN_EXCEPT_LAST();
 			}
 #else
-		{
+			{
 #endif
 
-			// Process custom formats first (with well known implementation of decompression)
-			U32 requestCount = 0;
-			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
-			for (U32 i = 0; i < requestCount; ++i)
-			{
-				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i];
-				DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i];
-				switch (req.CompressionFormat)
+				// Process custom formats first (with well known implementation of decompression)
+				U32 requestCount = 0;
+				ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
+				for (U32 i = 0; i < requestCount; ++i)
 				{
-				case DSTORAGE_CUSTOM_COMPRESSION_0: // Custom format is currently with no compression
+					DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i];
+					DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i];
+					switch (req.CompressionFormat)
+					{
+					case DSTORAGE_CUSTOM_COMPRESSION_0: // Custom format is currently with no compression
+					{
+						ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
+						decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
+							[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
+							req.DstBuffer, req.SrcBuffer, req.DstSize);
+						break;
+					}
+					ZE_WARNING_PUSH;
+					ZE_WARNING_DISABLE_MSVC(4063);
+					case COMPRESSION_FORMAT_ZLIB:
+					{
+						decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
+							[](const void* src, U32 srcSize, void* dst, U32 dstSize)
+							{
+								IO::Compressor codec(IO::CompressionFormat::ZLib);
+								ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
+								codec.Decompress(src, srcSize, dst, dstSize);
+							},
+							req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
+						break;
+					}
+					ZE_WARNING_POP;
+					default:
+						ZE_FAIL("Unknown type of custom decompression request!");
+						break;
+					}
+					res.Id = req.Id;
+					res.Result = S_OK;
+				}
+
+				// Process built-in formats with codecs
+				U32 builtInRequestCount = 0;
+				ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
+					maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount));
+				for (U32 i = 0; i < builtInRequestCount; ++i)
 				{
-					ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
-					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
-						req.DstBuffer, req.SrcBuffer, req.DstSize);
-					break;
+					DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i + requestCount];
+					DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i + requestCount];
+					switch (req.CompressionFormat)
+					{
+					case DSTORAGE_COMPRESSION_FORMAT_GDEFLATE:
+					{
+						size_t dataWritten = 0;
+						ZE_DX_THROW_FAILED(compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten));
+						break;
+					}
+					default:
+						ZE_FAIL("Unknown type of built-in decompression request!");
+						break;
+					}
+					res.Id = req.Id;
+					res.Result = S_OK;
 				}
-				ZE_WARNING_PUSH;
-				ZE_WARNING_DISABLE_MSVC(4063);
-				case COMPRESSION_FORMAT_ZLIB:
-				{
-					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](const void* src, U32 srcSize, void* dst, U32 dstSize)
-						{
-							IO::Compressor codec(IO::CompressionFormat::ZLib);
-							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
-							codec.Decompress(src, srcSize, dst, dstSize);
-						},
-						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
-					break;
-				}
-				ZE_WARNING_POP;
-				default:
-					ZE_FAIL("Unknown type of custom decompression request!");
-					break;
-				}
-				res.Id = req.Id;
-				res.Result = S_OK;
+
+				// Wait for custom requests to complete
+				for (U32 i = 0; i < requestCount; ++i)
+					decompresionTasks[i].Get();
+
+				ZE_DX_THROW_FAILED(decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get()));
 			}
-
-			// Process built-in formats with codecs
-			U32 builtInRequestCount = 0;
-			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
-				maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount));
-			for (U32 i = 0; i < builtInRequestCount; ++i)
-			{
-				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i + requestCount];
-				DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i + requestCount];
-				switch (req.CompressionFormat)
-				{
-				case DSTORAGE_COMPRESSION_FORMAT_GDEFLATE:
-				{
-					size_t dataWritten = 0;
-					ZE_DX_THROW_FAILED(compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten));
-					break;
-				}
-				default:
-					ZE_FAIL("Unknown type of built-in decompression request!");
-					break;
-				}
-				res.Id = req.Id;
-				res.Result = S_OK;
-			}
-
-			// Wait for custom requests to complete
-			for (U32 i = 0; i < requestCount; ++i)
-				decompresionTasks[i].Get();
-
-			ZE_DX_THROW_FAILED(decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get()));
-		}
 	}
 
 	void DiskManager::AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
@@ -412,7 +412,7 @@ namespace ZE::RHI::DX12
 		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
 	}
 
-	void DiskManager::AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept
+	void DiskManager::AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -433,11 +433,11 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, dest, ResourceType::Texture, src);
+		AddRequest(INVALID_EID, dest, ResourceType::Texture, src);
 	}
 
-	void DiskManager::AddMemoryTextureArrayRequest(EID resourceID, IResource* dest,
-		std::shared_ptr<const U8[]> src, U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept
+	void DiskManager::AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,
+		U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -465,6 +465,6 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(lastElement ? resourceID : INVALID_EID, lastElement ? dest : nullptr, ResourceType::Texture, src);
+		AddRequest(INVALID_EID, lastElement ? dest : nullptr, ResourceType::Texture, src);
 	}
 }

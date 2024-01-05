@@ -5,6 +5,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		Device& device = dev.Get().dx12;
+		DiskManager& diskManager = disk.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
 
 		count = Utils::SafeCast<U32>(desc.Textures.size());
@@ -13,7 +14,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			const bool lastTexture = i + 1 == desc.Textures.size();
 			ResourceInfo& resInfo = resources[i];
 
 			// Specify default SRV desc
@@ -90,24 +90,24 @@ namespace ZE::RHI::DX12::Resource::Texture
 				resInfo = device.CreateTexture(texDesc);
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
-				auto& diskManager = disk.Get().dx12;
 				if (surfaces > 1)
 				{
 					for (U16 arrayIndex = 0; const auto& surface : tex.Surfaces)
 					{
 						const U16 index = arrayIndex++;
-						diskManager.AddMemoryTextureArrayRequest(lastTexture ? desc.ResourceID : INVALID_EID, resInfo.Resource.Get(),
-							surface.GetMemory(), surface.GetMemorySize(), index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces);
+						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), surface.GetMemorySize(),
+							index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces);
 					}
 				}
 				else
-					diskManager.AddMemoryTextureRequest(lastTexture ? desc.ResourceID : INVALID_EID, resInfo.Resource.Get(), startSurface.GetMemory(), startSurface.GetMemorySize());
+					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), startSurface.GetMemorySize());
 			}
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
 			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
+		diskManager.AddTexturePackID(desc.ResourceID);
 	}
 
 	Pack::~Pack()

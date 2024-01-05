@@ -71,13 +71,14 @@ namespace ZE::RHI::DX12
 		// IO API Internal
 
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
+		void AddTexturePackID(EID resourceID) noexcept { AddRequest(resourceID, nullptr, ResourceType::Texture, nullptr); }
 
 		void AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept;
 		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
 		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
-		void AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept;
-		void AddMemoryTextureArrayRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src,
+		void AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept;
+		void AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,
 			U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept;
 	};
 }
