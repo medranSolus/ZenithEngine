@@ -33,6 +33,8 @@ namespace ZE::Utils
 	constexpr U8 GetChannelSize(PixelFormat format) noexcept;
 	// Get number of channels in format
 	constexpr U8 GetChannelCount(PixelFormat format) noexcept;
+	// Extract alpha value [0..1] from opaque alpha channel with given format
+	constexpr float GetAlpha(U32 alphaChannel, PixelFormat format) noexcept;
 
 	// Calculace CRC32 hash over given buffer in compile time
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept;
@@ -742,6 +744,118 @@ namespace ZE::Utils
 		case PixelFormat::YUV_P010:
 		case PixelFormat::YUV_NV12:
 			return 0;
+		}
+	}
+
+	constexpr float GetAlpha(U32 alphaChannel, PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		case PixelFormat::R32G32B32A32_Float:
+			return std::bit_cast<float>(alphaChannel);
+		case PixelFormat::R32G32B32A32_UInt:
+			return static_cast<float>(alphaChannel);
+		case PixelFormat::R32G32B32A32_SInt:
+			return static_cast<float>(static_cast<S32>(alphaChannel));
+		case PixelFormat::R16G16B16A16_Float:
+		{
+			S32 fpInt32 = ((alphaChannel & 0x8000) << 16);
+			fpInt32 |= ((alphaChannel & 0x7fff) << 13) + 0x38000000;
+
+			float f32 = 0.0f;
+			std::memcpy(&f32, &fpInt32, sizeof(float));
+			return f32;
+		}
+		case PixelFormat::R16G16B16A16_UInt:
+			return static_cast<float>(alphaChannel & UINT16_MAX);
+		case PixelFormat::R16G16B16A16_SInt:
+			return static_cast<float>(static_cast<S16>(alphaChannel & UINT16_MAX));
+		case PixelFormat::R16G16B16A16_UNorm:
+			return static_cast<float>(alphaChannel & UINT16_MAX) / UINT16_MAX;
+		case PixelFormat::R16G16B16A16_SNorm:
+			return static_cast<float>(static_cast<S16>(alphaChannel & UINT16_MAX)) / INT16_MAX;
+		case PixelFormat::R8G8B8A8_UInt:
+			return static_cast<float>(alphaChannel & UINT8_MAX);
+		case PixelFormat::R8G8B8A8_SInt:
+			return static_cast<float>(static_cast<S8>(alphaChannel & UINT8_MAX));
+		case PixelFormat::R8G8B8A8_SNorm:
+			return static_cast<float>(static_cast<S8>(alphaChannel & UINT8_MAX)) / INT8_MAX;
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+			return static_cast<float>(alphaChannel & UINT8_MAX) / UINT8_MAX;
+		case PixelFormat::R10G10B10A2_UInt:
+			return static_cast<float>(alphaChannel & 3);
+		case PixelFormat::R10G10B10A2_UNorm:
+			return static_cast<float>(alphaChannel & 3) / 3;
+		case PixelFormat::B4G4R4A4_UNorm:
+			return static_cast<float>(alphaChannel & 15) / 15;
+		case PixelFormat::B5G5R5A1_UNorm:
+			return alphaChannel ? 1.0f : 0.0f;
+
+			// Formats with no alpha channel so return just 1.0f
+		default:
+			// TODO: Decode BC formats
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+			ZE_ENUM_UNHANDLED();
+		case PixelFormat::Unknown:
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+		case PixelFormat::R24G8_DepthStencil:
+		case PixelFormat::R32G8_DepthStencil:
+		case PixelFormat::R11G11B10_Float:
+		case PixelFormat::R9G9B9E5_SharedExp:
+		case PixelFormat::B5G6R5_UNorm:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+		case PixelFormat::YUV_YUY2:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
+		case PixelFormat::YUV_NV12:
+			return 1.0f;
 		}
 	}
 

@@ -19,6 +19,7 @@ namespace ZE::DDS
 	struct FileData
 	{
 		PixelFormat Format;
+		bool Alpha;
 		U32 Width;
 		U32 Height;
 		U16 Depth;

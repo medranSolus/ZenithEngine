@@ -184,6 +184,7 @@ namespace ZE::DDS
 
 		// Read DXT10 header and perform integrity checks
 		PixelFormat format = PixelFormat::Unknown;
+		bool alpha = false;
 		U16 arraySize = 1;
 		U16 depth = 1;
 		if (ZE_IS_FOURCC('D', 'X', '1', '0'))
@@ -195,6 +196,7 @@ namespace ZE::DDS
 				return FileResult::IncorrectArraySize;
 			arraySize = Utils::SafeCast<U16>(dxt10Header.ArraySize);
 			format = GetFormatFromDDS(dxt10Header.Format);
+			alpha = !(dxt10Header.MiscFlags2 & MiscFlag2DXT10::AlphaOpaque);
 
 			if (dxt10Header.Dimension & ResourceDimension::Texture3D)
 			{
@@ -218,6 +220,7 @@ namespace ZE::DDS
 		else
 		{
 			format = GetFormatFromDDS(ParseDDSFormat(header.Format));
+			alpha = header.Format.Flags & (PixelFlag::AlphaPixels | PixelFlag::Alpha);
 			if (header.Caps2 & HeaderCap2::Volume)
 				depth = Utils::SafeCast<U16>(header.Depth);
 			else if (header.Caps2 & HeaderCap2::Cubemap)
@@ -317,6 +320,7 @@ namespace ZE::DDS
 		}
 
 		destData.Format = format;
+		destData.Alpha = alpha;
 		destData.Width = header.Width;
 		destData.Height = header.Height;
 		destData.Depth = depth;

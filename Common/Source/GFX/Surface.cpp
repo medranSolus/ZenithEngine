@@ -94,6 +94,7 @@ namespace ZE::GFX
 		arraySize = 1;
 		bool success = false;
 		bool tryStbi = true;
+		bool checkForAlpha = false;
 		if (ext == ".dds")
 		{
 			tryStbi = false;
@@ -104,6 +105,8 @@ namespace ZE::GFX
 			{
 				success = true;
 				format = ddsData.Format;
+				// Don't investigate further, trust the loader till support for BC textures implemented
+				alpha = ddsData.Alpha;
 				width = ddsData.Width;
 				height = ddsData.Height;
 				depth = ddsData.Depth;
@@ -169,8 +172,11 @@ namespace ZE::GFX
 						format = PixelFormat::R8G8B8A8_UNorm;
 						conversionFormat = SPNG_FMT_RGBA8;
 					}
+
 					width = header.width;
 					height = header.height;
+					alpha = header.color_type == SPNG_COLOR_TYPE_TRUECOLOR_ALPHA || header.color_type == SPNG_COLOR_TYPE_GRAYSCALE_ALPHA;
+					checkForAlpha = alpha;
 
 					const U32 destRowSize = GetRowByteSize();
 					const U32 srcRowSize = width * GetPixelSize();
@@ -220,6 +226,7 @@ namespace ZE::GFX
 				{
 					auto result = qoixx::qoi::decode<std::vector<U8>>(srcImage);
 
+					alpha = result.second.channels == 4;
 					width = result.second.width;
 					height = result.second.height;
 					if (result.second.colorspace == qoixx::qoi::colorspace::srgb)
@@ -235,6 +242,7 @@ namespace ZE::GFX
 					else
 					{
 						ZE_ASSERT(result.second.channels == 4, "According to QOI spec, only allowed formats are RGB and RGBA!");
+						checkForAlpha = true;
 
 						// When rows don't require padding then copy it directly, otherwise row by row
 						const U32 srcRowSize = width * result.second.channels;
@@ -344,6 +352,8 @@ namespace ZE::GFX
 				height = static_cast<U32>(srcHeight);
 				memorySize = GetSliceByteSize();
 				memory = std::make_shared<U8[]>(memorySize);
+				alpha = components == 4;
+				checkForAlpha = alpha;
 
 				const U32 destRowSize = GetRowByteSize();
 				if (expandAlpha)
@@ -406,8 +416,28 @@ namespace ZE::GFX
 			else
 				Logger::Error("Error loading file \"" + path.string() + "\", STB Image error: " + std::string(stbi_failure_reason()));
 		}
-
 		fclose(file);
+
+		// When original file contains alpha then check if it's not all opaque
+		// to avoid setting this texture as source of transparency (only for basic types)
+		if (checkForAlpha)
+		{
+			for (U32 y = 0; y < height; ++y)
+			{
+				const U32 rowOffset = y * GetRowByteSize();
+				for (U32 x = 0; x < width; ++x)
+				{
+					const U32 offset = rowOffset + (x * 4 + 3) * GetPixelSize();
+					U32 pixel = 0;
+					for (U8 p = 0; p < GetPixelSize(); ++p)
+						pixel |= static_cast<U32>(memory[offset + p]) << p;
+
+					if (Utils::GetAlpha(pixel, format) != 1.0f)
+						return success;
+				}
+			}
+			alpha = false;
+		}
 		return success;
 	}
 
@@ -536,10 +566,5 @@ namespace ZE::GFX
 		for (U16 a = 0; a < arrayIndex; ++a)
 			image += getMipOffset(mipCount, 0);
 		return image + getMipOffset(mipIndex, depthLevel);
-	}
-
-	bool Surface::HasAlpha() const noexcept
-	{
-		return false;
 	}
 }

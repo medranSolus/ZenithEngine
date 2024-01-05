@@ -18,6 +18,7 @@ namespace ZE::GFX
 		enum class CopySource : bool { GrayscaleAlpha, RGB };
 
 		PixelFormat format = PixelFormat::Unknown;
+		bool alpha = false;
 		U32 width = 0;
 		U32 height = 0;
 		U16 depth = 0;
@@ -36,6 +37,7 @@ namespace ZE::GFX
 		~Surface() = default;
 
 		constexpr PixelFormat GetFormat() const noexcept { return format; }
+		constexpr bool HasAlpha() const noexcept { return alpha; }
 		constexpr U32 GetWidth() const noexcept { return width; }
 		constexpr U32 GetHeight() const noexcept { return height; }
 		constexpr U16 GetDepth() const noexcept { return depth; }
@@ -54,6 +56,5 @@ namespace ZE::GFX
 		bool Load(std::string_view filename) noexcept;
 		bool Save(std::string_view filename) const noexcept;
 		U8* GetImage(U16 arrayIndex, U16 mipIndex, U16 depthLevel) noexcept;
-		bool HasAlpha() const noexcept;
 	};
 }
