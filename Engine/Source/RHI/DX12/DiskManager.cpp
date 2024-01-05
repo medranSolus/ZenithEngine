@@ -62,25 +62,29 @@ namespace ZE::RHI::DX12
 		ZE_DX_ENABLE(dev);
 
 		ThreadPool& pool = Settings::GetThreadPool();
-		const U8 maxRequestCount = pool.GetThreadsCount();
+		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(1));
 		auto requests = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST[]>(maxRequestCount);
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
 		auto decompresionTasks = std::make_unique<Task<void>[]>(maxRequestCount);
 
+#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		while (checkForDecompression)
 		{
 			// Check if any requests ready with timeout for checking of program end
-			switch (WaitForSingleObject(decompressQueue->GetEvent(), MAX_DECOMPRESSION_WAIT))
+			switch (WaitForSingleObject(decompressionEvent, MAX_DECOMPRESSION_WAIT))
 			{
 			case WAIT_TIMEOUT:
 				continue;
 			case WAIT_OBJECT_0:
 				break;
 			case WAIT_ABANDONED:
-				ZE_FAIL("Error occured by thread releasing DirectStorage decompression queue mutex!");
+				ZE_FAIL("Error occured in thread releasing DirectStorage decompression queue mutex!");
 			default:
 				throw ZE_WIN_EXCEPT_LAST();
 			}
+#else
+		{
+#endif
 
 			// Process custom formats first (with well known implementation of decompression)
 			U32 requestCount = 0;
@@ -95,7 +99,7 @@ namespace ZE::RHI::DX12
 				{
 					ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](void* dst, const void* src, U64 size) { memcpy(dst, src, size); },
+						[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
 						req.DstBuffer, req.SrcBuffer, req.DstSize);
 					break;
 				}
@@ -154,17 +158,23 @@ namespace ZE::RHI::DX12
 		}
 	}
 
-	void DiskManager::AddRequest(EID resourceID, std::shared_ptr<U8[]> src, IResource* texture) noexcept
+	void DiskManager::AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
 	{
-		LockGuardRW lock(queueMutex, texture || src || resourceID != INVALID_EID);
-		if (texture)
-			uploadDestTextureQueue.emplace_back(texture);
+		LockGuardRW lock(queueMutex, resourceID != INVALID_EID || dest || src);
+		if (dest)
+			uploadDestResourceQueue.emplace_back(type, dest);
 		if (src)
 			uploadSrcMemoryQueue.emplace_back(src);
 		if (resourceID != INVALID_EID)
 		{
+#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
+			for (EID id : uploadQueue)
+			{
+				ZE_ASSERT(id != resourceID, "Same resource EID added twice as request for DirectStorage upload!");
+			}
+#endif
 			uploadQueue.emplace_back(resourceID);
-			Settings::Data.get<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+			Settings::GetOrCreateElement<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
 		}
 	}
 
@@ -196,6 +206,7 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED(DStorageSetConfiguration1(&dsConfig));
 		ZE_DX_THROW_FAILED(DStorageGetFactory(IID_PPV_ARGS(&factory)));
 		ZE_DX_THROW_FAILED(factory.As(&decompressQueue));
+		decompressionEvent = decompressQueue->GetEvent();
 
 		DSTORAGE_QUEUE_DESC queueDesc = {};
 		queueDesc.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
@@ -214,28 +225,34 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED(factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&memoryQueue)));
 		ZE_DX_THROW_FAILED(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&compressCodecGDeflate)));
 
+		fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
+		ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
+		fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
+		ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage memory queue fence event!");
+
+#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		cpuDecompressionThread = std::jthread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
+#endif
 	}
 
 	DiskManager::~DiskManager()
 	{
+#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		checkForDecompression = false;
+#endif
 		if (fenceEvents[0])
 			CloseHandle(fenceEvents[0]);
 		if (fenceEvents[1])
 			CloseHandle(fenceEvents[1]);
+		if (decompressionEvent)
+			CloseHandle(decompressionEvent);
 	}
 
 	void DiskManager::StartUploadGPU(bool waitable) noexcept
 	{
 		if (waitable)
 		{
-			fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
-			ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
 			fileQueue->EnqueueSetEvent(fenceEvents[0]);
-
-			fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
-			ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage file queue fence event!");
 			memoryQueue->EnqueueSetEvent(fenceEvents[1]);
 		}
 		fileQueue->Submit();
@@ -246,9 +263,9 @@ namespace ZE::RHI::DX12
 		submitQueue.insert(submitQueue.end(), uploadQueue.begin(), uploadQueue.end());
 		uploadQueue.clear();
 
-		submitDestTextureQueue.reserve(submitDestTextureQueue.size() + uploadDestTextureQueue.size());
-		submitDestTextureQueue.insert(submitDestTextureQueue.end(), uploadDestTextureQueue.begin(), uploadDestTextureQueue.end());
-		uploadDestTextureQueue.clear();
+		submitDestResourceQueue.reserve(submitDestResourceQueue.size() + uploadDestResourceQueue.size());
+		submitDestResourceQueue.insert(submitDestResourceQueue.end(), uploadDestResourceQueue.begin(), uploadDestResourceQueue.end());
+		uploadDestResourceQueue.clear();
 
 		submitSrcMemoryQueue.reserve(submitSrcMemoryQueue.size() + uploadSrcMemoryQueue.size());
 		submitSrcMemoryQueue.insert(submitSrcMemoryQueue.end(), uploadSrcMemoryQueue.begin(), uploadSrcMemoryQueue.end());
@@ -257,18 +274,11 @@ namespace ZE::RHI::DX12
 
 	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl)
 	{
-		ZE_ASSERT(fenceEvents[0] != nullptr && fenceEvents[1] != nullptr,
-			"Cannot wait for upload to complete when it hasn't been started in waitable mode!");
-
+#if _ZE_NO_ASYNC_GPU_UPLOAD
+		DecompressAssets(dev.Get().dx12);
+#endif
 		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
 			throw ZE_WIN_EXCEPT_LAST();
-		if (CloseHandle(fenceEvents[0]) == 0)
-			throw ZE_WIN_EXCEPT_LAST();
-		if (CloseHandle(fenceEvents[1]) == 0)
-			throw ZE_WIN_EXCEPT_LAST();
-		fenceEvents[0] = nullptr;
-		fenceEvents[1] = nullptr;
-		submitSrcMemoryQueue.clear();
 
 		DSTORAGE_ERROR_RECORD errorRecord = {};
 		fileQueue->RetrieveErrorRecord(&errorRecord);
@@ -277,38 +287,71 @@ namespace ZE::RHI::DX12
 		{
 			ZE_DX_ENABLE_INFO(dev.Get().dx12);
 
+			LockGuardRW lock(queueMutex);
+			submitSrcMemoryQueue.clear();
+
 			// Set all resources location to GPU
 			for (EID id : submitQueue)
 				Settings::Data.get<Data::ResourceLocationAtom>(id) = Data::ResourceLocation::GPU;
+			submitQueue.clear();
 
-			// Transition all textures to SRV
-			D3D12_BARRIER_GROUP barrierGroup = {};
-			barrierGroup.Type = D3D12_BARRIER_TYPE_TEXTURE;
-			barrierGroup.NumBarriers = Utils::SafeCast<U32>(submitDestTextureQueue.size());
-
-			std::unique_ptr<D3D12_TEXTURE_BARRIER[]> textureBarriers = std::make_unique<D3D12_TEXTURE_BARRIER[]>(barrierGroup.NumBarriers);
-			barrierGroup.pTextureBarriers = textureBarriers.get();
-			for (U32 i = 0; IResource * res : submitDestTextureQueue)
+			// Transition all textures to SRV and perform buffer barriers
+			std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
+			std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
+			for (auto& res : submitDestResourceQueue)
 			{
-				D3D12_TEXTURE_BARRIER& barrier = textureBarriers[i++];
-				barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
-				barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
-				barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
-				barrier.AccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
-				barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_COMMON;
-				barrier.LayoutAfter = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
-				barrier.pResource = res;
-				barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
-				barrier.Subresources.NumMipLevels = 0;
-				barrier.Subresources.FirstArraySlice = 0;
-				barrier.Subresources.NumArraySlices = 0;
-				barrier.Subresources.FirstPlane = 0;
-				barrier.Subresources.NumPlanes = 0;
-				barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
+				if (res.first == ResourceType::Texture)
+				{
+					D3D12_TEXTURE_BARRIER& barrier = textureBarriers.emplace_back();
+					barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
+					barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
+					barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+					barrier.AccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+					barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_COMMON;
+					barrier.LayoutAfter = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+					barrier.pResource = res.second;
+					barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
+					barrier.Subresources.NumMipLevels = 0;
+					barrier.Subresources.FirstArraySlice = 0;
+					barrier.Subresources.NumArraySlices = 0;
+					barrier.Subresources.FirstPlane = 0;
+					barrier.Subresources.NumPlanes = 0;
+					barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
+				}
+				else
+				{
+					D3D12_BUFFER_BARRIER& barrier = bufferBarriers.emplace_back();
+					barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
+					barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
+					barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+					barrier.AccessAfter = res.first == ResourceType::Buffer ? D3D12_BARRIER_ACCESS_CONSTANT_BUFFER : D3D12_BARRIER_ACCESS_INDEX_BUFFER | D3D12_BARRIER_ACCESS_VERTEX_BUFFER;
+					barrier.pResource = res.second;
+					barrier.Offset = 0;
+					barrier.Size = UINT64_MAX;
+				}
 			}
-			submitDestTextureQueue.clear();
+			submitDestResourceQueue.clear();
 
-			ZE_DX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->Barrier(1, &barrierGroup));
+			U8 index = 0;
+			D3D12_BARRIER_GROUP barrierGroups[2];
+			if (textureBarriers.size())
+			{
+				barrierGroups[0].Type = D3D12_BARRIER_TYPE_TEXTURE;
+				barrierGroups[0].NumBarriers = Utils::SafeCast<U32>(textureBarriers.size());
+				barrierGroups[0].pTextureBarriers = textureBarriers.data();
+				++index;
+			}
+			if (bufferBarriers.size())
+			{
+				barrierGroups[index].Type = D3D12_BARRIER_TYPE_BUFFER;
+				barrierGroups[index].NumBarriers = Utils::SafeCast<U32>(bufferBarriers.size());
+				barrierGroups[index].pBufferBarriers = bufferBarriers.data();
+				++index;
+			}
+			if (index)
+			{
+				ZE_DX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->Barrier(index, barrierGroups));
+			}
 			return true;
 		}
 		ZE_WARNING("The DirectStorage request failed!");
@@ -316,7 +359,7 @@ namespace ZE::RHI::DX12
 	}
 
 	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
-		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(sourceBytes, "Zero sized source buffer!");
@@ -339,10 +382,11 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		fileQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, nullptr, nullptr);
+		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, nullptr);
 	}
 
-	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<U8[]> srcCopy, U32 bytes) noexcept
+	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic,
+		std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(srcStatic || srcCopy, "Empty source buffer!");
@@ -365,10 +409,10 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, srcCopy, nullptr);
+		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
 	}
 
-	void DiskManager::AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept
+	void DiskManager::AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -389,11 +433,11 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, src, dest);
+		AddRequest(resourceID, dest, ResourceType::Texture, src);
 	}
 
 	void DiskManager::AddMemoryTextureArrayRequest(EID resourceID, IResource* dest,
-		std::shared_ptr<U8[]> src, U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept
+		std::shared_ptr<const U8[]> src, U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -421,6 +465,6 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, src, lastElement ? dest : nullptr);
+		AddRequest(lastElement ? resourceID : INVALID_EID, lastElement ? dest : nullptr, ResourceType::Texture, src);
 	}
 }

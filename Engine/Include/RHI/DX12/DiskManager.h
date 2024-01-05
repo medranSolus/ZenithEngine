@@ -21,14 +21,18 @@ namespace ZE::RHI::DX12
 
 	class DiskManager final
 	{
-		static constexpr U32 MAX_DECOMPRESSION_WAIT = 2000; // Number of miliseconds to wait for new decompression request to come
+		// Number of miliseconds to wait for new decompression request to come
+		static constexpr U32 MAX_DECOMPRESSION_WAIT = 2000;
 		// Custom decompression formats
 		static constexpr DSTORAGE_COMPRESSION_FORMAT COMPRESSION_FORMAT_ZLIB = static_cast<DSTORAGE_COMPRESSION_FORMAT>(DSTORAGE_CUSTOM_COMPRESSION_0 + 1);
+
+		enum class ResourceType : U8 { Buffer, Mesh, Texture };
 
 		WinAPI::DiskManager osDiskManager;
 
 		DX::ComPtr<IStorageFactory> factory;
 		DX::ComPtr<IStorageCustomDecompressionQueue> decompressQueue;
+		HANDLE decompressionEvent;
 		DX::ComPtr<IStorageCompressionCodec> compressCodecGDeflate;
 
 		DX::ComPtr<IStorageQueue> fileQueue;
@@ -38,18 +42,20 @@ namespace ZE::RHI::DX12
 		std::shared_mutex queueMutex;
 		std::vector<EID> uploadQueue;
 		std::vector<EID> submitQueue;
-		std::vector<IResource*> uploadDestTextureQueue;
-		std::vector<IResource*> submitDestTextureQueue;
-		std::vector<std::shared_ptr<U8[]>> uploadSrcMemoryQueue;
-		std::vector<std::shared_ptr<U8[]>> submitSrcMemoryQueue;
+		std::vector<std::pair<ResourceType, IResource*>> uploadDestResourceQueue;
+		std::vector<std::pair<ResourceType, IResource*>> submitDestResourceQueue;
+		std::vector<std::shared_ptr<const U8[]>> uploadSrcMemoryQueue;
+		std::vector<std::shared_ptr<const U8[]>> submitSrcMemoryQueue;
 
+#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		BoolAtom checkForDecompression = true;
 		std::jthread cpuDecompressionThread;
+#endif
 
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
 		void DecompressAssets(Device& dev) const;
-		void AddRequest(EID resourceID, std::shared_ptr<U8[]> src, IResource* texture) noexcept;
+		void AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept;
 
 	public:
 		DiskManager() = default;
@@ -57,7 +63,7 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(DiskManager);
 		~DiskManager();
 
-		constexpr bool IsGPUWorkPending() const noexcept { return submitDestTextureQueue.size(); }
+		constexpr bool IsGPUWorkPending() const noexcept { return submitDestResourceQueue.size(); }
 
 		void StartUploadGPU(bool waitable) noexcept;
 		bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl);
@@ -67,11 +73,11 @@ namespace ZE::RHI::DX12
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 
 		void AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
-			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept;
 		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
-		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<U8[]> srcCopy, U32 bytes) noexcept;
-		void AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src, U32 bytes) noexcept;
-		void AddMemoryTextureArrayRequest(EID resourceID, IResource* dest, std::shared_ptr<U8[]> src,
+		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
+		void AddMemoryTextureRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept;
+		void AddMemoryTextureArrayRequest(EID resourceID, IResource* dest, std::shared_ptr<const U8[]> src,
 			U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept;
 	};
 }

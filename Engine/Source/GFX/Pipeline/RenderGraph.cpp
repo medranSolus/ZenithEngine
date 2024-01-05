@@ -654,9 +654,7 @@ namespace ZE::GFX::Pipeline
 		Device& dev = gfx.GetDevice();
 		CommandList& mainList = gfx.GetMainList();
 
-		gfx.WaitForFrame();
 		gfx.GetDynamicBuffer().Alloc(dev, execData.DynamicData, dynamicDataSize);
-
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 		execData.DynamicBuffer = &gfx.GetDynamicBuffer();
 

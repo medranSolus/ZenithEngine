@@ -20,7 +20,6 @@ namespace ZE
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Check for optimization UB code: https://github.com/xiw/stack/
 		prevTime = Perf::Get().GetNow();
-		assets.GetDisk().StartUploadGPU(true);
 
 		/*
 		Frontend of resource managment done in AssetsStreamer (all resource pack functions to be filled later, now let's focus on data that is being uploaded from assimp)
@@ -31,8 +30,6 @@ namespace ZE
 
 		Backend of resource managment is DiskManager, request is created for upload to GPU, after succesful upload resource location is changed to GPU
 		  - what if resource if freed before upload finishes? Have to postpone (delete queue till resource is not access anyway)
-		  - add support for Textures (what about their initial layout between other APIs, does assets need to be created per API in this topic??)
-		  - textures before copy have to be in GetCopyableFootprints1() layout which may include some padding for rows BUT to fix that we can use bufferRowLength in Vulkan to have one single layout for every API! row pitch have to be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT
 		  - separate queue for textures when handling their post upload setup steps
 
 		Processing of resources have to be updated to account for their current location. It's impossible to use resource that is still being uploaded. For now sufficient enough should be to call wait
@@ -68,15 +65,21 @@ namespace ZE
 			// Free all remaining gpu data
 			for (auto& buffer : Settings::Data.view<Data::DirectionalLightBuffer>())
 				Settings::Data.get<Data::DirectionalLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			Settings::Data.clear<Data::DirectionalLightBuffer>();
 			for (auto& buffer : Settings::Data.view<Data::SpotLightBuffer>())
 				Settings::Data.get<Data::SpotLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			Settings::Data.clear<Data::SpotLightBuffer>();
 			for (auto& buffer : Settings::Data.view<Data::PointLightBuffer>())
 				Settings::Data.get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
+			Settings::Data.clear<Data::PointLightBuffer>();
 
 			for (auto& buffer : Settings::Data.view<Data::MaterialBuffersPBR>())
 				Settings::Data.get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
+			Settings::Data.clear<Data::MaterialBuffersPBR>();
 			for (auto& buffer : Settings::Data.view<GFX::Resource::Mesh>())
 				Settings::Data.get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
+			Settings::Data.clear<GFX::Resource::Mesh>();
+
 			renderer.Free(graphics.GetDevice());
 			assets.Free(graphics.GetDevice());
 			gui.Destroy(graphics.GetDevice());
@@ -87,21 +90,6 @@ namespace ZE
 	{
 		prevTime = Perf::Get().GetNow();
 		renderer.SetInverseViewProjection(camera);
-
-		GFX::Device& dev = graphics.GetDevice();
-		GFX::CommandList& cl = graphics.GetMainList();
-		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
-		if (gpuWorkPending)
-			cl.Open(dev);
-
-		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, cl);
-		ZE_ASSERT(status, "Error uploading engine GPU data!");
-
-		if (gpuWorkPending)
-		{
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
-		}
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
@@ -122,11 +110,31 @@ namespace ZE
 			gui.StartFrame(window);
 			assets.ShowWindow(graphics.GetDevice());
 		}
+		assets.GetDisk().StartUploadGPU(true);
 		return frameTime;
 	}
 
 	void Engine::EndFrame()
 	{
+		graphics.WaitForFrame();
+		GFX::Device& dev = graphics.GetDevice();
+		GFX::CommandList& cl = graphics.GetMainList();
+
+		ZE_PERF_START("Update upload data status");
+		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
+		if (gpuWorkPending)
+			cl.Open(dev);
+
+		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, cl);
+		ZE_ASSERT(status, "Error uploading engine GPU data!");
+
+		if (gpuWorkPending)
+		{
+			cl.Close(dev);
+			dev.ExecuteMain(cl);
+		}
+		ZE_PERF_STOP();
+
 		ZE_PERF_START("Execute render graph");
 		renderer.Execute(graphics);
 		ZE_PERF_STOP();
@@ -134,7 +142,7 @@ namespace ZE
 		if (IsGuiActive())
 			gui.EndFrame(graphics);
 		else
-			graphics.GetSwapChain().PrepareBackbuffer(graphics.GetDevice(), graphics.GetMainList());
+			graphics.GetSwapChain().PrepareBackbuffer(dev, cl);
 
 		ZE_PERF_START("Swapchain present");
 		graphics.Present();

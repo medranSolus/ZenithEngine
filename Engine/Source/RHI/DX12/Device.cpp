@@ -184,7 +184,7 @@ namespace ZE::RHI::DX12
 
 		// Suppress non important messages
 		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-		D3D12_MESSAGE_ID denyIds[4] =
+		D3D12_MESSAGE_ID denyIds[] =
 		{
 			// D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
 			// Bug in Visual Studio Graphics Debugger while capturing frame
@@ -192,7 +192,9 @@ namespace ZE::RHI::DX12
 			D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
 			// When asking for smaller alignment error is generated, silence it
 			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT,
-			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT_SMALLRESOURCE
+			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT_SMALLRESOURCE,
+			// When performing initial upload of data from DirectStorage, barrier is required for proper initialization
+			D3D12_MESSAGE_ID_NON_OPTIMAL_BARRIER_ONLY_EXECUTE_COMMAND_LISTS
 		};
 
 		D3D12_INFO_QUEUE_FILTER filter = {};
