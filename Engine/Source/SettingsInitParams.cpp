@@ -10,6 +10,7 @@ namespace ZE
 		parser.AddNumber("backbuffers", 2);
 		parser.AddNumber("threadsCount", 0);
 		parser.AddOption("pix");
+		parser.AddOption("gpuValidation");
 		parser.AddOption("fsr2");
 		parser.AddOption("fsr1");
 		parser.AddOption("xess");
@@ -28,7 +29,10 @@ namespace ZE
 		params.BackbufferCount = parser.GetNumber("backbuffers");
 		params.StaticThreadsCount = staticThreadsCount;
 		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threadsCount"));
-		params.AllowPIXAttach = parser.GetOption("pix");
+		if (parser.GetOption("pix"))
+			params.Flags |= SettingsInitFlag::AllowPIXAttach;
+		if (parser.GetOption("gpuValidation"))
+			params.Flags |= SettingsInitFlag::EnableGPUValidation;
 
 		if (parser.GetOption("fsr2"))
 			params.Upscaler = GFX::UpscalerType::Fsr2;

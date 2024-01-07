@@ -23,6 +23,8 @@ namespace ZE::RHI::DX12
 	{
 		// Number of miliseconds to wait for new decompression request to come
 		static constexpr U32 MAX_DECOMPRESSION_WAIT = 2000;
+		// Number of objects that can be processed in single query to DirectStorage at once
+		static constexpr U32 MINIMAL_DECOPRESSED_OBJECTS_PER_TURN = 4;
 		// Custom decompression formats
 		static constexpr DSTORAGE_COMPRESSION_FORMAT COMPRESSION_FORMAT_ZLIB = static_cast<DSTORAGE_COMPRESSION_FORMAT>(DSTORAGE_CUSTOM_COMPRESSION_0 + 1);
 
@@ -37,7 +39,6 @@ namespace ZE::RHI::DX12
 
 		DX::ComPtr<IStorageQueue> fileQueue;
 		DX::ComPtr<IStorageQueue> memoryQueue;
-		HANDLE fenceEvents[2] = { nullptr, nullptr };
 
 		std::shared_mutex queueMutex;
 		std::vector<EID> uploadQueue;
@@ -47,10 +48,9 @@ namespace ZE::RHI::DX12
 		std::vector<std::shared_ptr<const U8[]>> uploadSrcMemoryQueue;
 		std::vector<std::shared_ptr<const U8[]>> submitSrcMemoryQueue;
 
-#if !_ZE_NO_ASYNC_GPU_UPLOAD
+		HANDLE fenceEvents[2] = { nullptr, nullptr };
 		BoolAtom checkForDecompression = true;
 		std::jthread cpuDecompressionThread;
-#endif
 
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;

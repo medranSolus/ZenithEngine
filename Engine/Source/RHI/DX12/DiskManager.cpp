@@ -62,12 +62,11 @@ namespace ZE::RHI::DX12
 		ZE_DX_ENABLE(dev);
 
 		ThreadPool& pool = Settings::GetThreadPool();
-		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(1));
+		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(MINIMAL_DECOPRESSED_OBJECTS_PER_TURN));
 		auto requests = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST[]>(maxRequestCount);
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
 		auto decompresionTasks = std::make_unique<Task<void>[]>(maxRequestCount);
 
-#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		while (checkForDecompression)
 		{
 			// Check if any requests ready with timeout for checking of program end
@@ -82,80 +81,77 @@ namespace ZE::RHI::DX12
 			default:
 				throw ZE_WIN_EXCEPT_LAST();
 			}
-#else
+
+			// Process custom formats first (with well known implementation of decompression)
+			U32 requestCount = 0;
+			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
+			for (U32 i = 0; i < requestCount; ++i)
 			{
-#endif
-
-				// Process custom formats first (with well known implementation of decompression)
-				U32 requestCount = 0;
-				ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
-				for (U32 i = 0; i < requestCount; ++i)
+				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i];
+				DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i];
+				switch (req.CompressionFormat)
 				{
-					DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i];
-					DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i];
-					switch (req.CompressionFormat)
-					{
-					case DSTORAGE_CUSTOM_COMPRESSION_0: // Custom format is currently with no compression
-					{
-						ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
-						decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-							[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
-							req.DstBuffer, req.SrcBuffer, req.DstSize);
-						break;
-					}
-					ZE_WARNING_PUSH;
-					ZE_WARNING_DISABLE_MSVC(4063);
-					case COMPRESSION_FORMAT_ZLIB:
-					{
-						decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-							[](const void* src, U32 srcSize, void* dst, U32 dstSize)
-							{
-								IO::Compressor codec(IO::CompressionFormat::ZLib);
-								ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
-								codec.Decompress(src, srcSize, dst, dstSize);
-							},
-							req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
-						break;
-					}
-					ZE_WARNING_POP;
-					default:
-						ZE_FAIL("Unknown type of custom decompression request!");
-						break;
-					}
-					res.Id = req.Id;
-					res.Result = S_OK;
-				}
-
-				// Process built-in formats with codecs
-				U32 builtInRequestCount = 0;
-				ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
-					maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount));
-				for (U32 i = 0; i < builtInRequestCount; ++i)
+				case DSTORAGE_CUSTOM_COMPRESSION_0: // Custom format is currently with no compression
 				{
-					DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i + requestCount];
-					DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i + requestCount];
-					switch (req.CompressionFormat)
-					{
-					case DSTORAGE_COMPRESSION_FORMAT_GDEFLATE:
-					{
-						size_t dataWritten = 0;
-						ZE_DX_THROW_FAILED(compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten));
-						break;
-					}
-					default:
-						ZE_FAIL("Unknown type of built-in decompression request!");
-						break;
-					}
-					res.Id = req.Id;
-					res.Result = S_OK;
+					ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
+					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
+						[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
+						req.DstBuffer, req.SrcBuffer, req.DstSize);
+					break;
 				}
-
-				// Wait for custom requests to complete
-				for (U32 i = 0; i < requestCount; ++i)
-					decompresionTasks[i].Get();
-
-				ZE_DX_THROW_FAILED(decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get()));
+				ZE_WARNING_PUSH;
+				ZE_WARNING_DISABLE_MSVC(4063);
+				case COMPRESSION_FORMAT_ZLIB:
+				{
+					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
+						[](const void* src, U32 srcSize, void* dst, U32 dstSize)
+						{
+							IO::Compressor codec(IO::CompressionFormat::ZLib);
+							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
+							codec.Decompress(src, srcSize, dst, dstSize);
+						},
+						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
+					break;
+				}
+				ZE_WARNING_POP;
+				default:
+					ZE_FAIL("Unknown type of custom decompression request!");
+					break;
+				}
+				res.Id = req.Id;
+				res.Result = S_OK;
 			}
+
+			// Process built-in formats with codecs
+			U32 builtInRequestCount = 0;
+			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
+				maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount));
+			for (U32 i = 0; i < builtInRequestCount; ++i)
+			{
+				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i + requestCount];
+				DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i + requestCount];
+				switch (req.CompressionFormat)
+				{
+				case DSTORAGE_COMPRESSION_FORMAT_GDEFLATE:
+				{
+					size_t dataWritten = 0;
+					ZE_DX_THROW_FAILED(compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten));
+					break;
+				}
+				default:
+					ZE_FAIL("Unknown type of built-in decompression request!");
+					break;
+				}
+				res.Id = req.Id;
+				res.Result = S_OK;
+			}
+
+			// Wait for custom requests to complete
+			for (U32 i = 0; i < requestCount; ++i)
+				decompresionTasks[i].Get();
+
+			ZE_DX_THROW_FAILED(decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get()));
+		}
 	}
 
 	void DiskManager::AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
@@ -229,17 +225,12 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
 		fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
 		ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage memory queue fence event!");
-
-#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		cpuDecompressionThread = std::jthread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
-#endif
 	}
 
 	DiskManager::~DiskManager()
 	{
-#if !_ZE_NO_ASYNC_GPU_UPLOAD
 		checkForDecompression = false;
-#endif
 		if (fenceEvents[0])
 			CloseHandle(fenceEvents[0]);
 		if (fenceEvents[1])
@@ -274,9 +265,6 @@ namespace ZE::RHI::DX12
 
 	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl)
 	{
-#if _ZE_NO_ASYNC_GPU_UPLOAD
-		DecompressAssets(dev.Get().dx12);
-#endif
 		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
 			throw ZE_WIN_EXCEPT_LAST();
 
@@ -394,7 +382,7 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(bytes, "Zero sized source buffer!");
 
 		DSTORAGE_REQUEST request = {};
-		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
 		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_BUFFER;
 
@@ -419,7 +407,7 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(bytes, "Zero sized source texture buffer!");
 
 		DSTORAGE_REQUEST request = {};
-		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
 		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_MULTIPLE_SUBRESOURCES;
 
@@ -445,7 +433,7 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(width && height, "Empty texture dimensions!");
 
 		DSTORAGE_REQUEST request = {};
-		request.Options.CompressionFormat = DSTORAGE_COMPRESSION_FORMAT_NONE;
+		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
 		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_TEXTURE_REGION;
 

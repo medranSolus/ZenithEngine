@@ -263,12 +263,12 @@ namespace ZE::RHI::VK
 
 	void Device::InitVolk()
 	{
-		ZE_WARNING_PUSH
-			ZE_WARNING_DISABLE_MSVC(4191) // GetProcAddress() call causes this
-			ZE_WARNING_DISABLE_MSVC(5039) // MSVC don't like volkInitializeCustom()
+		ZE_WARNING_PUSH;
+		ZE_WARNING_DISABLE_MSVC(4191); // GetProcAddress() call causes this
+		ZE_WARNING_DISABLE_MSVC(5039); // MSVC don't like volkInitializeCustom()
 
-			// Custom way of initializing Vulkan in order to correctly unload library
-			PFN_vkGetInstanceProcAddr getInstanceAddr;
+		// Custom way of initializing Vulkan in order to correctly unload library
+		PFN_vkGetInstanceProcAddr getInstanceAddr;
 #if _ZE_PLATFORM_WINDOWS
 		HMODULE lib = LoadLibraryW(L"vulkan-1.dll");
 		if (!lib)
@@ -483,16 +483,13 @@ namespace ZE::RHI::VK
 
 		const VkValidationFeatureEnableEXT enabledValidations[] =
 		{
-#if _ZE_DEBUG_GPU_VALIDATION
+			VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+			VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
 			VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
 			VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
-#else
-			VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
-#endif
-			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-			VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
 		};
-		validationFeatures.enabledValidationFeatureCount = sizeof(enabledValidations) / sizeof(VkValidationFeatureEnableEXT);
+		validationFeatures.enabledValidationFeatureCount = sizeof(enabledValidations) / sizeof(VkValidationFeatureEnableEXT) - (Settings::IsEnabledGPUValidation() ? 0 : 2);
 		validationFeatures.pEnabledValidationFeatures = enabledValidations;
 #endif
 

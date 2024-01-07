@@ -261,7 +261,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::StateDepthWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -278,7 +278,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::StateDepthWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::None, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
@@ -295,7 +295,7 @@ namespace ZE::GFX::Pipeline
 			node.AddInnerBuffer(Resource::StateRenderTarget,
 				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube | FrameResourceFlags::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } });
 			node.AddInnerBuffer(Resource::StateDepthWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 1.0f, 0 });
+				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlags::Cube, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0 });
 			node.AddOutput("LB_C", Resource::StateRenderTarget, lightbuffColor);
 			node.AddOutput("LB_S", Resource::StateRenderTarget, lightbuffSpecular);
 			nodes.emplace_back(std::move(node));
