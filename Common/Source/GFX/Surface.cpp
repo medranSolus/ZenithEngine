@@ -208,7 +208,7 @@ namespace ZE::GFX
 			spng_ctx_free(ctx);
 			if (result)
 			{
-				Logger::Error("Error loading file \"" + path.string() + "\", trying fallback to STB Image, SPNG error: " + std::string(spng_strerror(result)));
+				Logger::Warning("Error loading file \"" + path.string() + "\", trying fallback to STB Image, SPNG error: " + std::string(spng_strerror(result)));
 				memory = nullptr;
 				rewind(file);
 			}

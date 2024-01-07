@@ -25,10 +25,16 @@ namespace ZE
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY(_ZE_VERSION_MAJOR) "." ZE_STRINGIFY(_ZE_VERSION_MINOR) "." ZE_STRINGIFY(_ZE_VERSION_PATCH);
 
+		// GPU heap for buffers only
 		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
+		// GPU heap for textures only
 		static constexpr U64 TEXTURES_HEAP_SIZE = 512 * Math::MEGABYTE;
+		// CPU side heap for frequently uploaded buffers
 		static constexpr U64 HOST_HEAP_SIZE = 64 * Math::MEGABYTE;
-		static constexpr U64 STAGING_HEAP_SIZE = 64 * Math::MEGABYTE;
+		// CPU-mappable heap for upload data
+		static constexpr U64 UPLOAD_HEAP_SIZE = 64 * Math::MEGABYTE;
+		// Single CPU stating buffer for preparing data before upload to GPU
+		static constexpr U32 STAGING_BUFFER_SIZE = 128 * Math::MEGABYTE;
 
 		static inline GFX::VendorGPU GpuVendor = GFX::VendorGPU::Unknown;
 		static inline GFX::RayTracingTier RayTracingTier = GFX::RayTracingTier::None;

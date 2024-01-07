@@ -219,7 +219,7 @@ namespace ZE::RHI::VK
 		U32 allocatorCount = memoryProps.memoryProperties.memoryTypeCount;
 		U64 deviceHeapSize = Settings::BUFFERS_HEAP_SIZE;
 		U64 hostHeapSize = Settings::HOST_HEAP_SIZE;
-		U64 stagingHeapSize = Settings::STAGING_HEAP_SIZE;
+		U64 uploadHeapSize = Settings::UPLOAD_HEAP_SIZE;
 		// Chek alignment rules between images and buffers
 		if (dev.GetLimits().bufferImageGranularity != 1)
 		{
@@ -236,7 +236,7 @@ namespace ZE::RHI::VK
 				texturesStartIndex = Utils::SafeCast<U8>(allocatorCount);
 				allocatorCount *= 2;
 				hostHeapSize /= 2;
-				stagingHeapSize /= 2;
+				uploadHeapSize /= 2;
 			}
 		}
 
@@ -258,12 +258,12 @@ namespace ZE::RHI::VK
 			{
 				if (i < memoryProps.memoryProperties.memoryTypeCount)
 				{
-					heapSize = localHeapFound ? stagingHeapSize : deviceHeapSize;
+					heapSize = localHeapFound ? uploadHeapSize : deviceHeapSize;
 					localHeapFound = true;
 				}
 				else
 				{
-					heapSize = localTexturesHeapFound ? stagingHeapSize : Settings::TEXTURES_HEAP_SIZE;
+					heapSize = localTexturesHeapFound ? uploadHeapSize : Settings::TEXTURES_HEAP_SIZE;
 					localTexturesHeapFound = true;
 				}
 			}
