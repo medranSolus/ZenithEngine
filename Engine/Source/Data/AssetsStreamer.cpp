@@ -29,7 +29,7 @@ namespace ZE::Data
 		diskManager.Init(dev);
 
 		// Initialize schema for known materials
-		GFX::Resource::Texture::Schema pbrTextureSchema;
+		GFX::Resource::Texture::Schema pbrTextureSchema = {};
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_COLOR_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_NORMAL_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_SPECULAR_NAME, GFX::Resource::Texture::Type::Tex2D);
@@ -56,11 +56,11 @@ namespace ZE::Data
 				// Check if signature is correct first and resources are present
 				if (std::memcmp(header.Signature, IO::Format::ResourcePackFileHeader::SIGNATURE_STR, 4) != 0)
 					return IO::FileStatus::ErrorBadSignature;
-				if (header.ResourceCount == 0)
+				if (header.ResourcesCount == 0)
 					return IO::FileStatus::ErrorNoResources;
 
 				// Prepare IDs for all created entities
-				std::vector<EID> resourceIds(header.ResourceCount);
+				std::vector<EID> resourceIds(header.ResourcesCount);
 				Settings::CreateEntities(resourceIds);
 				Storage& assets = Settings::Data;
 
@@ -70,13 +70,14 @@ namespace ZE::Data
 				{
 				case Utils::MakeVersion(1, 0, 0):
 				{
-					const U32 infoSectionSize = header.ResourceCount * sizeof(IO::Format::ResourcePackEntry)
-						+ header.TexturesCount * sizeof(IO::Format::ResourcePackTextureEntry) + header.NameSectionSize;
+					const U32 infoSectionSize = header.ResourcesCount * sizeof(IO::Format::ResourcePackEntry)
+						+ header.TexturesCount * sizeof(IO::Format::ResourcePackTextureEntry)
+						+ header.NameSectionSize;
 					std::unique_ptr<U8[]> infoSection = std::make_unique<U8[]>(infoSectionSize);
 					auto tableWait = file.ReadAsync(infoSection.get(), infoSectionSize, sizeof(header));
 
 					const IO::Format::ResourcePackEntry* resourceTable = reinterpret_cast<const IO::Format::ResourcePackEntry*>(infoSection.get() + sizeof(header));
-					const IO::Format::ResourcePackTextureEntry* textureTable = reinterpret_cast<const IO::Format::ResourcePackTextureEntry*>(resourceTable + header.ResourceCount);
+					const IO::Format::ResourcePackTextureEntry* textureTable = reinterpret_cast<const IO::Format::ResourcePackTextureEntry*>(resourceTable + header.ResourcesCount);
 					const char* nameTable = reinterpret_cast<const char*>(textureTable + header.TexturesCount);
 
 					// Wait for last read and check if correct numer of bytes are read
@@ -88,9 +89,11 @@ namespace ZE::Data
 
 					// First check for integrity of resources and loading of CPU only data
 					U32 resIdIndex = 0;
-					for (U32 i = 0; i < header.ResourceCount; ++i)
+					U32 materialEntryCount = 0;
+					U32 textureSchemaMaterialPBRIndex = UINT32_MAX;
+					for (U32 i = 0; i < header.ResourcesCount; ++i)
 					{
-						auto& entry = resourceTable[i];
+						const auto& entry = resourceTable[i];
 
 						EID resId = resourceIds.at(resIdIndex++);
 						assets.emplace<PackID>(resId, header.ID);
@@ -108,12 +111,74 @@ namespace ZE::Data
 							break;
 						}
 						case IO::Format::ResourcePackEntryType::Material:
-						case IO::Format::ResourcePackEntryType::Buffer:
+						{
+							++materialEntryCount;
+							// Material entry is composed of 2 entries, one holding buffer info and second holding textures info
+							bool correctEntries = false;
+							if (++i < header.ResourcesCount)
+							{
+								correctEntries = resourceTable[i].Type == IO::Format::ResourcePackEntryType::Textures;
+								correctEntries &= resourceTable[i].NameIndex == UINT32_MAX;
+								correctEntries &= resourceTable[i].NameSize == UINT16_MAX;
+								correctEntries &= resourceTable[i].Textures.SchemaNameIndex != UINT32_MAX;
+								correctEntries &= resourceTable[i].Textures.SchemaNameSize != 0;
+							}
+							if (!correctEntries)
+							{
+								result = IO::FileStatus::ErrorMissingMaterialEntries;
+								i = header.ResourcesCount;
+							}
+							break;
+						}
 						case IO::Format::ResourcePackEntryType::Textures:
+						{
+							if (resourceTable[i].Textures.TexturesCount == 0)
+							{
+								result = IO::FileStatus::ErrorUnknownTextureSchema;
+								i = header.ResourcesCount;
+							}
+							else if (resourceTable[i].Textures.SchemaNameIndex != UINT32_MAX && resourceTable[i].Textures.SchemaNameSize)
+							{
+								std::string schemaName(resourceTable[i].Textures.SchemaNameSize, '\0');
+								std::memcpy(schemaName.data(), nameTable + resourceTable[i].Textures.SchemaNameIndex, resourceTable[i].Textures.SchemaNameSize);
+
+								// Save known schema indexes to avoid string comparison later on
+								if (schemaName == MaterialBuffersPBR::GetTextureSchemaName())
+								{
+									if (textureSchemaMaterialPBRIndex == UINT32_MAX)
+										textureSchemaMaterialPBRIndex = resourceTable[i].Textures.SchemaNameIndex;
+								}
+								// Validation for texture pack layout
+								if (texSchemaLib.Contains(schemaName))
+								{
+									const auto& schema = texSchemaLib.Get(schemaName);
+									for (U16 j = 0; j < resourceTable[j].Textures.TexturesCount; ++j)
+									{
+										const auto& texture = textureTable[resourceTable[i].Textures.TextureIndex + j];
+										if (texture.Type != schema.TypeInfo.at(j)
+											|| texture.Width == 0 || texture.Height == 0
+											|| texture.DepthArraySize == 0 || texture.MipLevels == 0)
+										{
+											result = IO::FileStatus::ErrorIncorrectTextureEntry;
+											i = header.ResourcesCount;
+											break;
+										}
+									}
+								}
+								else
+								{
+									result = IO::FileStatus::ErrorUnknownTextureSchema;
+									i = header.ResourcesCount;
+								}
+							}
+							break;
+						}
+						case IO::Format::ResourcePackEntryType::Buffer:
+							break;
 						default:
 						{
 							result = IO::FileStatus::ErrorUnknownResourceEntry;
-							i = header.ResourceCount;
+							i = header.ResourcesCount;
 							break;
 						}
 						}
@@ -122,13 +187,24 @@ namespace ZE::Data
 					if (result != IO::FileStatus::Ok)
 						break;
 
+					// When loading material entities, single resource is composed of 2 entries, so remove unneeded ones
+					if (materialEntryCount)
+					{
+						Settings::DestroyEntities(resourceIds.end() - materialEntryCount, resourceIds.end());
+						resourceIds.erase(resourceIds.end() - materialEntryCount, resourceIds.end());
+					}
+
 					// Final processing of GPU resources
 					resIdIndex = 0;
-					for (U32 i = 0; i < header.ResourceCount; ++i)
+					const GFX::Resource::Texture::Schema& pbrMaterialSchema = texSchemaLib.Get(MaterialBuffersPBR::GetTextureSchemaName());
+					for (U32 i = 0; i < header.ResourcesCount; ++i)
 					{
-						auto& entry = resourceTable[i];
+						const auto& entry = resourceTable[i];
+						const auto* entryPtr = &entry;
 						EID resId = resourceIds.at(resIdIndex++);
 
+						bool isMaterial = false;
+						GFX::Resource::CBufferFileData bufferData = {};
 						switch (entry.Type)
 						{
 						case IO::Format::ResourcePackEntryType::Geometry:
@@ -148,10 +224,73 @@ namespace ZE::Data
 							break;
 						}
 						case IO::Format::ResourcePackEntryType::Material:
+							isMaterial = true;
+							[[fallthrough]];
 						case IO::Format::ResourcePackEntryType::Buffer:
+						{
+							bufferData.ResourceID = isMaterial ? INVALID_EID : resId;
+							bufferData.BufferDataOffset = entry.Buffer.Offset;
+							bufferData.SourceBytes = entry.Buffer.Bytes;
+							bufferData.UncompressedSize = entry.Buffer.UncompressedSize;
+							bufferData.Compression = entry.Buffer.Compression;
+
+							if (!isMaterial)
+							{
+								assets.emplace<GFX::Resource::CBuffer>(resId, dev, diskManager, bufferData, file);
+								break;
+							}
+							entryPtr = resourceTable + ++i;
+							[[fallthrough]];
+						}
 						case IO::Format::ResourcePackEntryType::Textures:
-						default:
+						{
+							GFX::Resource::Texture::PackFileDesc desc = {};
+							desc.ResourceID = resId;
+							desc.Options = 0;
+							if (entryPtr->Textures.SchemaNameIndex != UINT32_MAX && entryPtr->Textures.SchemaNameSize)
+							{
+								if (entryPtr->Textures.SchemaNameIndex == textureSchemaMaterialPBRIndex)
+									desc.Init(pbrMaterialSchema);
+								else
+								{
+									std::string schemaName(resourceTable[i].Textures.SchemaNameSize, '\0');
+									std::memcpy(schemaName.data(), nameTable + entryPtr->Textures.SchemaNameIndex, entryPtr->Textures.SchemaNameSize);
+									desc.Init(texSchemaLib.Get(schemaName));
+								}
+							}
+
+							// Gather texture data from file and fill texture pack description
+							for (U16 j = 0; j < entryPtr->Textures.TexturesCount; ++j)
+							{
+								const auto& textureEntry = textureTable[entryPtr->Textures.TextureIndex + j];
+
+								GFX::Resource::Texture::FileDesc texDesc = {};
+								texDesc.Type = textureEntry.Type;
+								// Check for indication that on this field there is no texture data
+								// (can happen when texture pack with given schema doesn't contain all textures)
+								if (textureEntry.Offset != UINT64_MAX && textureEntry.Bytes && textureEntry.UncompressedSize)
+								{
+									texDesc.Width = textureEntry.Width;
+									texDesc.Height = textureEntry.Height;
+									texDesc.DepthArraySize = textureEntry.DepthArraySize;
+									texDesc.MipLevels = textureEntry.MipLevels;
+									texDesc.Format = textureEntry.Format;
+									texDesc.DataOffset = textureEntry.Offset;
+									texDesc.SourceBytes = textureEntry.Bytes;
+									texDesc.UncompressedSize = textureEntry.UncompressedSize;
+									texDesc.Compression = textureEntry.Compression;
+								}
+								else
+									texDesc.Format = PixelFormat::Unknown;
+								desc.AddTexture(j, texDesc);
+							}
+
+							if (isMaterial)
+								assets.emplace<MaterialBuffersPBR>(resId, dev, diskManager, bufferData, desc, file);
+							else
+								assets.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, file);
 							break;
+						}
 						}
 					}
 					break;
@@ -164,7 +303,7 @@ namespace ZE::Data
 				}
 				// If error occured abort all resources
 				if (result != IO::FileStatus::Ok)
-					assets.destroy(resourceIds.begin(), resourceIds.end());
+					Settings::DestroyEntities(resourceIds.begin(), resourceIds.end());
 
 				return result;
 			});
@@ -197,7 +336,7 @@ namespace ZE::Data
 				header.Signature[2] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[2];
 				header.Signature[3] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[3];
 				header.Version = Utils::MakeVersion(1, 0, 0);
-				header.ResourceCount = Utils::SafeCast<U32>(resourceIds.size());
+				header.ResourcesCount = Utils::SafeCast<U32>(resourceIds.size());
 				header.TexturesCount = 0;
 				header.NameSectionSize = 0;
 				header.ID = packId;
@@ -207,7 +346,7 @@ namespace ZE::Data
 				results.emplace_back(Utils::SafeCast<U32>(sizeof(header)), file.WriteAsync(&header, sizeof(header), 0));
 
 				// Prepare resource table
-				auto resourceInfoTable = std::make_unique<IO::Format::ResourcePackEntry[]>(header.ResourceCount);
+				auto resourceInfoTable = std::make_unique<IO::Format::ResourcePackEntry[]>(header.ResourcesCount);
 				// Offset for files that will be written into disk
 				U64 dataOffset = 0;
 				U32 nameOffset = 0;

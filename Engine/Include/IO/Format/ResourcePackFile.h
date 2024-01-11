@@ -28,7 +28,7 @@ namespace ZE::IO::Format
 
 		char Signature[4];
 		U32 Version;
-		U32 ResourceCount;
+		U32 ResourcesCount;
 		U32 TexturesCount;
 		U32 NameSectionSize;
 		U16 ID;
@@ -61,18 +61,6 @@ namespace ZE::IO::Format
 			struct
 			{
 				// Offset from start of file
-				U64 BufferOffset;
-				U32 BufferSize;
-				U32 UncompressedBufferSize;
-				// Index from start of texture section
-				U32 TextureIndex;
-				U16 TexturesCount;
-				GFX::Resource::Texture::PackOptions Options;
-				CompressionFormat BufferCompression;
-			} Material;
-			struct
-			{
-				// Offset from start of file
 				U64 Offset;
 				U32 Bytes;
 				U32 UncompressedSize;
@@ -80,9 +68,12 @@ namespace ZE::IO::Format
 			} Buffer;
 			struct
 			{
-				// Index from start of texture section
+				// Index from start of ResourcePackTextureEntry section
 				U32 TextureIndex;
 				U16 TexturesCount;
+				// Index from start of name section, only valid for known texture schemas and when not UINT32_MAX and size is not zero
+				U32 SchemaNameIndex;
+				U16 SchemaNameSize;
 				GFX::Resource::Texture::PackOptions Options;
 			} Textures;
 		};
@@ -97,6 +88,8 @@ namespace ZE::IO::Format
 		U32 UncompressedSize;
 		U32 Width;
 		U32 Height;
+		U16 DepthArraySize;
+		U16 MipLevels;
 		PixelFormat Format;
 		GFX::Resource::Texture::Type Type;
 		CompressionFormat Compression;

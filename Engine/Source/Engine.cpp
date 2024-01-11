@@ -22,11 +22,9 @@ namespace ZE
 		prevTime = Perf::Get().GetNow();
 
 		/*
-		Frontend of resource managment done in AssetsStreamer (all resource pack functions to be filled later, now let's focus on data that is being uploaded from assimp)
+		Frontend of resource managment done in AssetsStreamer
 		  - finish saving of resource packs (retrieval of GPU data + saving to disk + compression)
-		  - finish loading of other types of data: Materials, Buffers, Textures
 		  - display window for managing resource packs and inspecting details about them + resources inside
-		  - support for input data that is not static (will be removed before finishing upload, ex. provide normal pointer and shared_ptr as option to the input data)
 
 		Backend of resource managment is DiskManager, request is created for upload to GPU, after succesful upload resource location is changed to GPU
 		  - what if resource if freed before upload finishes? Have to postpone (delete queue till resource is not access anyway)
