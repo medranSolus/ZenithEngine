@@ -16,7 +16,7 @@ namespace ZE::Data
 	// PBR material parameters
 	struct MaterialPBR
 	{
-		static constexpr const char TEX_SCHEMA_NAME[] = "PBR";
+		static constexpr const char TEX_SCHEMA_NAME[] = "PHONG";
 		static constexpr const char TEX_COLOR_NAME[] = "texture";
 		static constexpr const char TEX_NORMAL_NAME[] = "normal";
 		static constexpr const char TEX_SPECULAR_NAME[] = "specular";

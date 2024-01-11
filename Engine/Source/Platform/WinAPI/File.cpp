@@ -16,7 +16,9 @@ namespace ZE::WinAPI
 	{
 		ZE_ASSERT(lpOverlapped->hEvent != nullptr, "Empty file promise handle!");
 
-		reinterpret_cast<std::promise<U32>*>(lpOverlapped->hEvent)->set_value(dwErrorCode == 0 ? dwNumberOfBytesTransfered : 0);
+		std::promise<U32>* promise = reinterpret_cast<std::promise<U32>*>(lpOverlapped->hEvent);
+		promise->set_value(dwErrorCode == 0 ? dwNumberOfBytesTransfered : 0);
+		delete promise;
 	}
 
 	bool File::Open(std::wstring_view fileName, IO::FileFlags flags) noexcept

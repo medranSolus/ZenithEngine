@@ -447,7 +447,7 @@ namespace ZE::GFX
 		std::string ext = path.extension().string();
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
-		FILE* file = fopen(filename.data(), "rw");
+		FILE* file = fopen(filename.data(), "rwb");
 		if (!file)
 		{
 			Logger::Error("Error creating \"" + path.string() + "\" file!");
