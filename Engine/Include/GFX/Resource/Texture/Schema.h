@@ -8,7 +8,7 @@ namespace ZE::GFX::Resource::Texture
 	struct Schema
 	{
 		std::unordered_map<std::string, U32> Location;
-		std::unordered_map<std::string, Type> Info;
+		std::vector<Type> TypeInfo;
 
 		void AddTexture(const std::string& name, Type type) noexcept;
 	};

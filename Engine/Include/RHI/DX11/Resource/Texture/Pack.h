@@ -14,6 +14,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 	public:
 		Pack() = default;
 		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
+		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();
 

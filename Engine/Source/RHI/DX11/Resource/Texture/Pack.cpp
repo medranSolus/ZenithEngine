@@ -9,7 +9,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 
 		count = Utils::SafeCast<U32>(desc.Textures.size());
 		srvs = new DX::ComPtr<IShaderResourceView>[count];
-		for (U32 i = 0; const auto & tex : desc.Textures)
+		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			if (tex.Surfaces.size() == 0)
 				srvs[i] = nullptr;
@@ -28,7 +28,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 				texDesc.TextureLayout = D3D11_TEXTURE_LAYOUT_UNDEFINED;
 
 				auto data = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(texDesc.Depth);
-				for (U32 j = 0; const auto & surface : tex.Surfaces)
+				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(DX::GetDXFormat(surface.GetFormat()) == texDesc.Format, "Every surface should have same format!");
 					ZE_ASSERT(surface.GetWidth() == texDesc.Width, "Every surface should have same width!");
@@ -99,7 +99,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 				}
 
 				auto data = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(texDesc.ArraySize);
-				for (U32 j = 0; const auto & surface : tex.Surfaces)
+				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(DX::GetDXFormat(surface.GetFormat()) == texDesc.Format, "Every surface should have same format!");
 					ZE_ASSERT(surface.GetWidth() == texDesc.Width, "Every surface should have same width!");
@@ -117,6 +117,10 @@ namespace ZE::RHI::DX11::Resource::Texture
 			}
 			++i;
 		}
+	}
+
+	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file)
+	{
 	}
 
 	Pack::~Pack()

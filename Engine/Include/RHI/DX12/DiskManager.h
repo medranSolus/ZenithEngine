@@ -77,6 +77,9 @@ namespace ZE::RHI::DX12
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept;
 		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
 		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
+
+		void AddFileTextureRequest(IResource* dest, IO::File& file, U64 sourceOffset,
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
 		void AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept;
 		void AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,
 			U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept;

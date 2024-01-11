@@ -5,8 +5,8 @@ namespace ZE::GFX::Resource::Texture
 	void PackDesc::Init(const Schema& schema) noexcept
 	{
 		Textures.resize(schema.Location.size());
-		for (const auto& lookup : schema.Location)
-			Textures.at(lookup.second).Type = schema.Info.at(lookup.first);
+		for (U32 i = 0; i < schema.TypeInfo.size(); ++i)
+			Textures.at(i).Type = schema.TypeInfo.at(i);
 	}
 
 	void PackDesc::AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept
@@ -38,5 +38,20 @@ namespace ZE::GFX::Resource::Texture
 	void PackDesc::AddTexture(Type type, std::vector<Surface>&& surfaces) noexcept
 	{
 		Textures.emplace_back(type, std::forward<std::vector<Surface>>(surfaces));
+	}
+
+	void PackFileDesc::Init(const Schema& schema) noexcept
+	{
+		Textures.resize(schema.Location.size());
+		for (U32 i = 0; i < schema.TypeInfo.size(); ++i)
+			Textures.at(i).Type = schema.TypeInfo.at(i);
+	}
+
+	void PackFileDesc::AddTexture(U16 requestedlocation, const FileDesc& textureDesc) noexcept
+	{
+		if (requestedlocation < Textures.size())
+			Textures.at(requestedlocation) = textureDesc;
+		else
+			Textures.emplace_back(textureDesc);
 	}
 }

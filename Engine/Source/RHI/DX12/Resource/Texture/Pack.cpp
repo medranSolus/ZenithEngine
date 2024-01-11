@@ -29,7 +29,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				mipLevels = &srv.Texture2D.MipLevels;
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 				srv.Texture2D.MostDetailedMip = 0;
-				srv.Texture2D.MipLevels = 1;
 				srv.Texture2D.PlaneSlice = 0;
 				srv.Texture2D.ResourceMinLODClamp = 0.0f;
 				break;
@@ -39,7 +38,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				mipLevels = &srv.Texture3D.MipLevels;
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 				srv.Texture3D.MostDetailedMip = 0;
-				srv.Texture3D.MipLevels = 1;
 				srv.Texture3D.ResourceMinLODClamp = 0.0f;
 				break;
 			}
@@ -48,7 +46,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				mipLevels = &srv.TextureCube.MipLevels;
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 				srv.TextureCube.MostDetailedMip = 0;
-				srv.TextureCube.MipLevels = 1;
 				srv.TextureCube.ResourceMinLODClamp = 0.0f;
 				break;
 			}
@@ -57,7 +54,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				mipLevels = &srv.Texture2DArray.MipLevels;
 				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 				srv.Texture2DArray.MostDetailedMip = 0;
-				srv.Texture2DArray.MipLevels = 1;
 				srv.Texture2DArray.FirstArraySlice = 0;
 				srv.Texture2DArray.ArraySize = 1;
 				srv.Texture2DArray.PlaneSlice = 0;
@@ -68,15 +64,12 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 			// Check actual provided surface count for given texture
 			const U16 surfaces = Utils::SafeCast<U16>(tex.Surfaces.size());
-			if (!surfaces)
-				srv.Format = DX::GetDXFormat(Settings::BackbufferFormat);
-			else
+			if (surfaces)
 			{
 				// Create texture based on format of first surface (other surfaces are constrained to be of same size as previous ones)
 				const GFX::Surface& startSurface = tex.Surfaces.front();
 				srv.Format = DX::GetDXFormat(startSurface.GetFormat());
-				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(Utils::SafeCast<U32>(startSurface.GetWidth()),
-					Utils::SafeCast<U32>(startSurface.GetHeight()),
+				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(startSurface.GetWidth(), startSurface.GetHeight(),
 					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : (surfaces > 1 ? surfaces : startSurface.GetArraySize()),
 					srv.Format, tex.Type);
 
@@ -101,6 +94,102 @@ namespace ZE::RHI::DX12::Resource::Texture
 				}
 				else
 					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), startSurface.GetMemorySize());
+			}
+			else
+			{
+				srv.Format = DX::GetDXFormat(Settings::BackbufferFormat);
+				*mipLevels = 1;
+			}
+
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
+			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
+			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
+		}
+		diskManager.AddTexturePackID(desc.ResourceID);
+	}
+
+	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file)
+	{
+		Device& device = dev.Get().dx12;
+		DiskManager& diskManager = disk.Get().dx12;
+		ZE_DX_ENABLE_ID(device);
+
+		count = Utils::SafeCast<U32>(desc.Textures.size());
+		descInfo = device.AllocDescs(count);
+		resources = new ResourceInfo[count];
+
+		for (U32 i = 0; const auto& tex : desc.Textures)
+		{
+			ResourceInfo& resInfo = resources[i];
+
+			// Specify default SRV desc
+			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
+			UINT* mipLevels = nullptr;
+			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			switch (tex.Type)
+			{
+			default:
+				ZE_ENUM_UNHANDLED();
+			case GFX::Resource::Texture::Type::Tex2D:
+			{
+				mipLevels = &srv.Texture2D.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+				srv.Texture2D.MostDetailedMip = 0;
+				srv.Texture2D.PlaneSlice = 0;
+				srv.Texture2D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Tex3D:
+			{
+				mipLevels = &srv.Texture3D.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+				srv.Texture3D.MostDetailedMip = 0;
+				srv.Texture3D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Cube:
+			{
+				mipLevels = &srv.TextureCube.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+				srv.TextureCube.MostDetailedMip = 0;
+				srv.TextureCube.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Array:
+			{
+				mipLevels = &srv.Texture2DArray.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				srv.Texture2DArray.MostDetailedMip = 0;
+				srv.Texture2DArray.FirstArraySlice = 0;
+				srv.Texture2DArray.ArraySize = 1;
+				srv.Texture2DArray.PlaneSlice = 0;
+				srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			}
+
+			// Check actual provided surface count for given texture
+			if (tex.Format != PixelFormat::Unknown)
+			{
+				srv.Format = DX::GetDXFormat(tex.Format);
+				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(tex.Width, tex.Height, tex.DepthArraySize, srv.Format, tex.Type);
+
+				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || tex.Type != GFX::Resource::Texture::Type::Tex2D, "Single texture cannot hold multiple surfaces!");
+				ZE_ASSERT(texDesc.DepthOrArraySize == 6 || tex.Type != GFX::Resource::Texture::Type::Cube, "Cube texture should contain 6 surfaces!");
+				if (tex.Type == GFX::Resource::Texture::Type::Array)
+					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
+				texDesc.MipLevels = tex.MipLevels;
+				*mipLevels = tex.MipLevels;
+
+				resInfo = device.CreateTexture(texDesc);
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_from_file_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
+
+				diskManager.AddFileTextureRequest(resInfo.Resource.Get(), file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize);
+			}
+			else
+			{
+				srv.Format = DX::GetDXFormat(Settings::BackbufferFormat);
+				*mipLevels = 1;
 			}
 
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;

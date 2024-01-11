@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/Surface.h"
+#include "IO/CompressionFormat.h"
 #include "Schema.h"
 
 namespace ZE::GFX::Resource::Texture
@@ -9,6 +10,22 @@ namespace ZE::GFX::Resource::Texture
 	{
 		Type Type;
 		std::vector<Surface> Surfaces;
+	};
+
+	// Info about single texture from file
+	struct FileDesc
+	{
+		U32 Width = 0;
+		U32 Height = 0;
+		U16 DepthArraySize = 0;
+		U16 MipLevels = 0;
+		// To indicate empty texture entry, fill only Type field and set Format to Unknown
+		PixelFormat Format = PixelFormat::Unknown;
+		Type Type;
+		U64 DataOffset = 0;
+		U32 SourceBytes = 0;
+		U32 UncompressedSize = 0;
+		IO::CompressionFormat Compression = IO::CompressionFormat::None;
 	};
 
 	typedef U8 PackOptions;
@@ -28,5 +45,16 @@ namespace ZE::GFX::Resource::Texture
 		void Init(const Schema& schema) noexcept;
 		void AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept;
 		void AddTexture(Type type, std::vector<Surface>&& surfaces) noexcept;
+	};
+
+	// Set of textures description from file source
+	struct PackFileDesc
+	{
+		EID ResourceID = INVALID_EID;
+		PackOptions Options = 0;
+		std::vector<FileDesc> Textures;
+
+		void Init(const Schema& schema) noexcept;
+		void AddTexture(U16 requestedlocation, const FileDesc& textureDesc) noexcept;
 	};
 }

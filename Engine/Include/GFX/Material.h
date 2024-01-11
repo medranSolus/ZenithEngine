@@ -17,6 +17,7 @@ namespace ZE::GFX
 	public:
 		Material() = default;
 		Material(Device& dev, IO::DiskManager& disk, const T& data, const Resource::Texture::PackDesc& desc) { Init(dev, disk, data, desc); }
+		Material(Device& dev, IO::DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, IO::File& file) { Init(dev, disk, data, pack, file); }
 		ZE_CLASS_MOVE(Material);
 		~Material() = default;
 
@@ -28,6 +29,7 @@ namespace ZE::GFX
 		constexpr void Free(Device& dev) noexcept { buffer.Free(dev); textures.Free(dev); }
 
 		constexpr void Init(Device& dev, IO::DiskManager& disk, const T& initData, const Resource::Texture::PackDesc& desc);
+		constexpr void Init(Device& dev, IO::DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, IO::File& file);
 	};
 
 #pragma region Functions
@@ -37,6 +39,14 @@ namespace ZE::GFX
 	{
 		buffer.Init(dev, disk, { INVALID_EID, &initData, nullptr, sizeof(T) });
 		textures.Init(dev, disk, desc);
+	}
+
+	template<typename T, const char* TEXTURE_SCHEMA_NAME>
+	constexpr void Material<T, TEXTURE_SCHEMA_NAME>::Init(Device& dev, IO::DiskManager& disk,
+		const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, IO::File& file)
+	{
+		buffer.Init(dev, disk, data, file);
+		textures.Init(dev, disk, pack, file);
 	}
 #pragma endregion
 }

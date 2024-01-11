@@ -409,6 +409,34 @@ namespace ZE::RHI::DX12
 		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
 	}
 
+	void DiskManager::AddFileTextureRequest(IResource* dest, IO::File& file, U64 sourceOffset,
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
+	{
+		ZE_ASSERT(dest, "Empty destination resource!");
+		ZE_ASSERT(sourceBytes, "Zero sized source buffer!");
+		ZE_ASSERT(uncompressedSize, "Zero sized destination buffer!");
+		ZE_ASSERT(sourceBytes <= Settings::STAGING_BUFFER_SIZE, "Size of file texture exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(sourceBytes / Math::MEGABYTE));
+
+		DSTORAGE_REQUEST request = {};
+		request.Options.CompressionFormat = GetCompressionFormat(compression);
+		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
+		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_MULTIPLE_SUBRESOURCES;
+
+		request.Source.File.Source = file.Get().dx12.GetStorageFile();
+		request.Source.File.Offset = sourceOffset;
+		request.Source.File.Size = sourceBytes;
+
+		request.Destination.MultipleSubresources.Resource = dest;
+		request.Destination.MultipleSubresources.FirstSubresource = 0;
+
+		request.UncompressedSize = uncompressedSize;
+		request.CancellationTag = 0;
+
+		fileQueue->EnqueueRequest(&request);
+		AddRequest(INVALID_EID, dest, ResourceType::Texture, nullptr);
+	}
+
 	void DiskManager::AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");

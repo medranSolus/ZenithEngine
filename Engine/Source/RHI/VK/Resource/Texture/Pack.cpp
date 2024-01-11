@@ -81,6 +81,10 @@ namespace ZE::RHI::VK::Resource::Texture
 		}
 	}
 
+	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file)
+	{
+	}
+
 	Pack::~Pack()
 	{
 	}
