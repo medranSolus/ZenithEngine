@@ -13,6 +13,7 @@ namespace ZE::Data
 		constexpr operator const U8& () const noexcept { return Flags; }
 	};
 
+#pragma pack(push, 1)
 	// PBR material parameters
 	struct MaterialPBR
 	{
@@ -40,6 +41,7 @@ namespace ZE::Data
 		static constexpr PBRFlags GetShaderFlagsForState(U8 stateNumber) noexcept;
 		static constexpr const char* DecodeShaderSuffix(PBRFlags flags) noexcept;
 	};
+#pragma pack(pop)
 
 	// Component containing graphics material data for meshes
 	typedef GFX::Material<MaterialPBR, MaterialPBR::TEX_SCHEMA_NAME> MaterialBuffersPBR;

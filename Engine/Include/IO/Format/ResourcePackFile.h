@@ -64,6 +64,7 @@ namespace ZE::IO::Format
 				U64 Offset;
 				U32 Bytes;
 				U32 UncompressedSize;
+				U64 CustomFlags;
 				CompressionFormat Compression;
 			} Buffer;
 			struct

@@ -4,6 +4,7 @@
 #include "GFX/Vertex.h"
 #include "GUI/DialogWindow.h"
 #include "IO/Format/ResourcePackFile.h"
+#include "IO/Compressor.h"
 #include "IO/File.h"
 
 namespace ZE::Data
@@ -91,6 +92,8 @@ namespace ZE::Data
 					U32 resIdIndex = 0;
 					U32 materialEntryCount = 0;
 					U32 textureSchemaMaterialPBRIndex = UINT32_MAX;
+					std::vector<DecompressionEntry> materialBuffers;
+					std::vector<std::future<U32>> materialBufferWait;
 					for (U32 i = 0; i < header.ResourcesCount; ++i)
 					{
 						const auto& entry = resourceTable[i];
@@ -122,8 +125,41 @@ namespace ZE::Data
 								correctEntries &= resourceTable[i].NameSize == UINT16_MAX;
 								correctEntries &= resourceTable[i].Textures.SchemaNameIndex != UINT32_MAX;
 								correctEntries &= resourceTable[i].Textures.SchemaNameSize != 0;
+
+								if (textureSchemaMaterialPBRIndex == UINT32_MAX)
+								{
+									std::string schemaName(resourceTable[i].Textures.SchemaNameSize, '\0');
+									std::memcpy(schemaName.data(), nameTable + resourceTable[i].Textures.SchemaNameIndex, resourceTable[i].Textures.SchemaNameSize);
+									if (schemaName == MaterialBuffersPBR::GetTextureSchemaName())
+										textureSchemaMaterialPBRIndex = resourceTable[i].Textures.SchemaNameIndex;
+								}
+								correctEntries &= resourceTable[i].Textures.SchemaNameIndex == textureSchemaMaterialPBRIndex;
 							}
-							if (!correctEntries)
+							if (correctEntries)
+							{
+								// Check for material buffer correct size
+								if ((entry.Buffer.Compression == IO::CompressionFormat::None && entry.Buffer.Bytes != sizeof(MaterialPBR))
+									|| entry.Buffer.UncompressedSize != sizeof(MaterialPBR))
+								{
+									result = IO::FileStatus::ErrorIncorrectMaterialBufferSize;
+									i = header.ResourcesCount;
+								}
+								else
+								{
+									// Load CPU side of material data
+									if (entry.Buffer.Compression == IO::CompressionFormat::None)
+										materialBufferWait.emplace_back(file.ReadAsync(&assets.emplace<MaterialPBR>(resId), sizeof(MaterialPBR), entry.Buffer.Offset));
+									else
+									{
+										U8* dest = materialBuffers.emplace_back(resId, entry.Buffer.Compression,
+											std::make_unique<U8[]>(entry.Buffer.Bytes), entry.Buffer.Bytes).CompressedBuffer.get();
+										materialBufferWait.emplace_back(file.ReadAsync(dest, entry.Buffer.Bytes, entry.Buffer.Offset));
+									}
+									// Load CPU material flags entry from opaque flags field
+									assets.emplace<PBRFlags>(resId).Flags = Utils::SafeCast<U8>(entry.Buffer.CustomFlags);
+								}
+							}
+							else
 							{
 								result = IO::FileStatus::ErrorMissingMaterialEntries;
 								i = header.ResourcesCount;
@@ -249,8 +285,12 @@ namespace ZE::Data
 							desc.Options = 0;
 							if (entryPtr->Textures.SchemaNameIndex != UINT32_MAX && entryPtr->Textures.SchemaNameSize)
 							{
-								if (entryPtr->Textures.SchemaNameIndex == textureSchemaMaterialPBRIndex)
+								if (isMaterial)
+								{
+									ZE_ASSERT(entryPtr->Textures.SchemaNameIndex == textureSchemaMaterialPBRIndex,
+										"At this point texture schema for material should only contain valid material index!");
 									desc.Init(pbrMaterialSchema);
+								}
 								else
 								{
 									std::string schemaName(resourceTable[i].Textures.SchemaNameSize, '\0');
@@ -291,6 +331,25 @@ namespace ZE::Data
 								assets.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, file);
 							break;
 						}
+						}
+					}
+
+					// Finish loading of material CPU data
+					for (auto& wait : materialBufferWait)
+					{
+						if (wait.get() != sizeof(MaterialPBR))
+						{
+							result = IO::FileStatus::ErrorReading;
+							break;
+						}
+					}
+					materialBufferWait.clear();
+					if (result == IO::FileStatus::Ok)
+					{
+						for (auto& buffer : materialBuffers)
+						{
+							IO::Compressor codec(buffer.Format);
+							codec.Decompress(buffer.CompressedBuffer.get(), buffer.CompressedSize, &assets.emplace<MaterialPBR>(buffer.ResID), sizeof(MaterialPBR));
 						}
 					}
 					break;
@@ -336,7 +395,7 @@ namespace ZE::Data
 				header.Signature[2] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[2];
 				header.Signature[3] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[3];
 				header.Version = Utils::MakeVersion(1, 0, 0);
-				header.ResourcesCount = Utils::SafeCast<U32>(resourceIds.size());
+				header.ResourcesCount = Utils::SafeCast<U32>(resourceIds.size()); // TODO: Material entries count as 2
 				header.TexturesCount = 0;
 				header.NameSectionSize = 0;
 				header.ID = packId;

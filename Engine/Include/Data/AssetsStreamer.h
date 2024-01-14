@@ -31,6 +31,13 @@ namespace ZE::Data
 
 	private:
 		struct PackID { U16 ID; };
+		struct DecompressionEntry
+		{
+			EID ResID;
+			IO::CompressionFormat Format;
+			std::unique_ptr<U8[]> CompressedBuffer;
+			U32 CompressedSize;
+		};
 
 		static constexpr const char* RESOURCE_DIR = "Resources";
 		static constexpr const char* RESOURCE_FILE = "Resources/respack";

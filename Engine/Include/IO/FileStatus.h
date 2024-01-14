@@ -17,6 +17,7 @@ namespace ZE::IO
 		ErrorUnknownTextureSchema,
 		ErrorEmptyTextureCount,
 		ErrorIncorrectTextureEntry,
+		ErrorIncorrectMaterialBufferSize,
 	};
 
 	// Convert enum code to string representation for display
@@ -49,6 +50,8 @@ namespace ZE::IO
 			return "Texture pack does not contain any textures";
 		case FileStatus::ErrorIncorrectTextureEntry:
 			return "Texture on given position does not match the expected texture type on this schema location or contains ill-formed data";
+		case FileStatus::ErrorIncorrectMaterialBufferSize:
+			return "Material data does not match expected size of the material buffer";
 		default:
 			return "UNKNOWN";
 		}
