@@ -42,9 +42,9 @@ namespace ZE::GFX::Pipeline
 	// Dynamic constant buffer data used by RendererPBR
 	struct CameraPBR
 	{
-		Matrix View;
-		Matrix ViewProjection;
-		Matrix ViewProjectionInverse;
+		Float4x4 ViewTps;
+		Float4x4 ViewProjectionTps;
+		Float4x4 ViewProjectionInverseTps;
 		Float3 CameraPos;
 		float NearClip;
 		Float2 JitterCurrent;

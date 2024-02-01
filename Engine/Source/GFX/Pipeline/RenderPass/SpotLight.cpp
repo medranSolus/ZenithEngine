@@ -74,7 +74,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			ZE_PERF_GUARD("Spot Light - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
+			const Matrix lightProjections = Math::XMLoadFloat4x4(&data.ShadowData.Projection);
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
@@ -95,7 +96,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				const auto& light = group.get<Data::SpotLightBuffer>(entity);
 
 				// Check if light will be visible in current view
-				Math::BoundingFrustum lightFrustum = Data::GetFrustum(data.ShadowData.Projection, light.Volume);
+				Math::BoundingFrustum lightFrustum = Data::GetFrustum(lightProjections, light.Volume);
 				lightFrustum.Transform(lightFrustum, 1.0f,
 					Math::XMQuaternionRotationMatrix(Math::GetVectorRotation({ 0.0f, 0.0f, 1.0f, 0.0f },
 						Math::XMLoadFloat3(&lightData.Direction))), Math::XMLoadFloat3(&transform.Position));
@@ -104,9 +105,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 				ZE_PERF_START("Spot Light - shadow map");
 				TransformBuffer transformBuffer;
-				transformBuffer.Transform = ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
+				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
 					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap),
-					transform.Position, lightData.Direction, lightFrustum);
+					transform.Position, lightData.Direction, lightFrustum));
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Spot Light - after shadow map");
@@ -126,11 +127,11 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				light.Buffer.Bind(cl, ctx);
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 
-				transformBuffer.Transform = viewProjection *
+				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
 						Math::GetVectorRotation({ 0.0f, -1.0f, 0.0f, 0.0f },
 							Math::XMLoadFloat3(&lightData.Direction), true, light.Volume) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation)));
+						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation))));
 
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);

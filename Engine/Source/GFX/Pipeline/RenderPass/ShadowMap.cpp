@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	}
 
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
-		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection)
+		PixelFormat formatDS, PixelFormat formatRT, Matrix projection)
 	{
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
@@ -59,7 +59,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
-		passData.Projection = std::move(projection);
+		Math::XMStoreFloat4x4(&passData.Projection, projection);
 	}
 
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
@@ -75,7 +75,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		// Prepare view-projection for shadow
 		const Vector position = Math::XMLoadFloat3(&lightPos);
 		const Vector direction = Math::XMLoadFloat3(&lightDir);
-		Matrix viewProjection = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position, direction, Math::XMVector3Orthogonal(direction)) * data.Projection);
+		const Matrix viewProjection = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position, direction, Math::XMVector3Orthogonal(direction)) * Math::XMLoadFloat4x4(&data.Projection));
 
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>();
 		if (group.size())
@@ -127,8 +127,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
 
 					ModelTransformBuffer transformBuffer;
-					transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
+					const Matrix modelTransform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, modelTransform);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, viewProjection * modelTransform);
 
 					auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
 					transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
@@ -232,8 +233,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
 
 					ModelTransformBuffer transformBuffer;
-					transformBuffer.Model = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
-					transformBuffer.ModelViewProjection = viewProjection * transformBuffer.Model;
+					const Matrix modelTransform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, modelTransform);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, viewProjection * modelTransform);
 					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
 
 					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);

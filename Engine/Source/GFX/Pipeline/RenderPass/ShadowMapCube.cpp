@@ -62,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 		}
 
-		passData.Projection = Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f });
+		Math::XMStoreFloat4x4(&passData.Projection, Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
@@ -82,24 +82,25 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			CubeViewBuffer viewBuffer;
 			const Vector position = Math::XMLoadFloat3(&lightPos);
 			const Vector up = { 0.0f, 1.0f, 0.0f, 0.0f };
+			const Matrix projection = Math::XMLoadFloat4x4(&data.Projection);
 			// +x
-			viewBuffer.ViewProjection[0] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ 1.0f, 0.0f, 0.0f, 0.0f }, up) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 1.0f, 0.0f, 0.0f, 0.0f }, up) * projection));
 			// -x
-			viewBuffer.ViewProjection[1] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ -1.0f, 0.0f, 0.0f, 0.0f }, up) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps + 1, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ -1.0f, 0.0f, 0.0f, 0.0f }, up) * projection));
 			// +y
-			viewBuffer.ViewProjection[2] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps + 2, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }) * projection));
 			// -y
-			viewBuffer.ViewProjection[3] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps + 3, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }) * projection));
 			// +z
-			viewBuffer.ViewProjection[4] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ 0.0f, 0.0f, 1.0f, 0.0f }, up) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps + 4, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 0.0f, 1.0f, 0.0f }, up) * projection));
 			// -z
-			viewBuffer.ViewProjection[5] = Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
-				{ 0.0f, 0.0f, -1.0f, 0.0f }, up) * data.Projection);
+			Math::XMStoreFloat4x4(viewBuffer.ViewProjectionTps + 5, Math::XMMatrixTranspose(Math::XMMatrixLookToLH(position,
+				{ 0.0f, 0.0f, -1.0f, 0.0f }, up) * projection));
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			auto& cbuffer = *renderData.DynamicBuffer;
@@ -164,7 +165,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
 
 					TransformBuffer transformBuffer;
-					transformBuffer.Transform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.TransformTps, Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 					auto& transformInfo = solidGroup.get<Solid>(entity);
 					transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer));
@@ -273,7 +274,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
 
 					TransformBuffer transformBuffer;
-					transformBuffer.Transform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.TransformTps, Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 
 					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);

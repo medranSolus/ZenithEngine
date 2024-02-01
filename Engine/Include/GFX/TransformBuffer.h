@@ -2,30 +2,32 @@
 
 namespace ZE::GFX
 {
+#pragma pack(push, 1)
 	// Single transform data for model
 	struct ModelTransformBuffer
 	{
-		Matrix Model;
-		Matrix ModelViewProjection;
+		Float4x4 ModelTps;
+		Float4x4 ModelViewProjectionTps;
 	};
 
 	// Single transform data for model with previous MVP matrix for motion computation
 	struct ModelTransformBufferMotion
 	{
-		Matrix Model;
-		Matrix ModelViewProjection;
-		Matrix PrevModelViewProjection;
+		Float4x4 ModelTps;
+		Float4x4 ModelViewProjectionTps;
+		Float4x4 PrevModelViewProjectionTps;
 	};
 
 	// Typical simple transform buffer needed by most shaders
 	struct TransformBuffer
 	{
-		Matrix Transform;
+		Float4x4 TransformTps;
 	};
 
 	// Single view data for cube map
 	struct CubeViewBuffer
 	{
-		Matrix ViewProjection[6];
+		Float4x4 ViewProjectionTps[6];
 	};
+#pragma pack(pop)
 }

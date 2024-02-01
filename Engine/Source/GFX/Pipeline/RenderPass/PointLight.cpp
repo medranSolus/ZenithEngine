@@ -69,7 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			ZE_PERF_GUARD("Point Light - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
@@ -100,9 +100,9 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 				ZE_PERF_START("Point Light - after shadow map");
 				TransformBuffer transformBuffer;
-				transformBuffer.Transform = viewProjection *
+				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(light.Volume, light.Volume, light.Volume) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position)));
+						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position))));
 
 				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Point Light nr_" + std::to_string(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));

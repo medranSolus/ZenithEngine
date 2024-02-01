@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_GUARD("Wireframe - present");
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
 
 			// Compute visibility of objects inside camera view
 			ZE_PERF_START("Wireframe - frustum culling");
@@ -77,8 +77,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
 
 				TransformBuffer transformBuffer;
-				transformBuffer.Transform = viewProjection *
-					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
+					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 				ctx.Reset();

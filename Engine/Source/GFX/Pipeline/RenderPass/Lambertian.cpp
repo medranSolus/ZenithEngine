@@ -106,8 +106,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-		const Matrix viewProjection = dynamicData.ViewProjection;
-		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderer.GetPrevViewProjection());
+		const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
+		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderer.GetPrevViewProjectionTps());
 		const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 		// Compute visibility of objects inside camera view
@@ -160,17 +160,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
 					ModelTransformBufferMotion transformBuffer;
-					transformBuffer.Model = m;
-					transformBuffer.ModelViewProjection = mvp;
-					transformBuffer.PrevModelViewProjection = prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
+					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
+						prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
 					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion));
 				}
 				else
 				{
 					ModelTransformBuffer transformBuffer;
-					transformBuffer.Model = m;
-					transformBuffer.ModelViewProjection = mvp;
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
 					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
 				}
@@ -291,17 +292,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
 					ModelTransformBufferMotion transformBuffer;
-					transformBuffer.Model = m;
-					transformBuffer.ModelViewProjection = mvp;
-					transformBuffer.PrevModelViewProjection = prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale));
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
+					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
+						prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
 					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion));
 				}
 				else
 				{
 					ModelTransformBuffer transformBuffer;
-					transformBuffer.Model = m;
-					transformBuffer.ModelViewProjection = mvp;
+					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
+					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
 					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
 				}

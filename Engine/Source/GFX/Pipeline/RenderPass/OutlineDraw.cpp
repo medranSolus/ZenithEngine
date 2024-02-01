@@ -63,7 +63,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
 			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = dynamicData.ViewProjection;
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
 			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
 
 			// Compute visibility of objects inside camera view and sort them front-back
@@ -98,8 +98,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
 
 				TransformBuffer transformBuffer;
-				transformBuffer.Transform = viewProjection *
-					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
+				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
+					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 				auto& transformInfo = visibleGroup.get<InsideFrustum>(entity);
 				transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer));

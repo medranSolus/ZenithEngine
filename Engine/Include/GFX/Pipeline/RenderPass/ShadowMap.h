@@ -24,12 +24,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Resource::PipelineStateGfx StateDepth;
 		Ptr<Resource::PipelineStateGfx> StatesSolid;
 		Ptr<Resource::PipelineStateGfx> StatesTransparent;
-		Matrix Projection;
+		Float4x4 Projection;
 	};
 
 	void Clean(Device& dev, ExecuteData& data) noexcept;
 	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
-		PixelFormat formatDS, PixelFormat formatRT, Matrix&& projection);
+		PixelFormat formatDS, PixelFormat formatRT, Matrix projection);
 	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
 		const Float3& lightDir, const Math::BoundingFrustum& frustum);

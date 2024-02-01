@@ -12,18 +12,21 @@ namespace ZE::GFX::Pipeline
 	// Physically Based Renderer
 	class RendererPBR final : public RenderGraph
 	{
-		DataPBR settingsData;
-		CameraPBR dynamicData;
+		DataPBR settingsData = {};
+		CameraPBR dynamicData = {};
 		float blurSigma = 0.0f;
+
 		union
 		{
 			XeGTAOSettings xegtao;
 			FfxCacaoSettings cacao;
 		} ssaoSettings;
+
 		Data::Projection currentProjectionData = {};
 		Float4x4 currentProjection = {};
-		Float4x4 prevViewProjection = {};
+		Float4x4 prevViewProjectionTps = {};
 		Float4 cameraRotation = {};
+
 		float sharpness = 0.5f;
 		bool enableSharpening = true;
 		U32 jitterIndex = 0;
@@ -43,10 +46,10 @@ namespace ZE::GFX::Pipeline
 
 		constexpr XeGTAOSettings& GetXeGTAOSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::XeGTAO, "XeGTAO is not active!"); return ssaoSettings.xegtao; }
 		constexpr FfxCacaoSettings& GetCacaoSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
-
+		
 		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
-		constexpr const Float4x4& GetPrevViewProjection() const noexcept { return prevViewProjection; }
+		constexpr const Float4x4& GetPrevViewProjectionTps() const noexcept { return prevViewProjectionTps; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
 		constexpr float GetSharpness() const noexcept { return enableSharpening ? sharpness : 0.0f; }
 		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }

@@ -458,10 +458,10 @@ namespace ZE::GFX::Pipeline
 		UpdateSettingsData(camData.Projection);
 
 		const auto& transform = Settings::Data.get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
-		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
+		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
 			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
 				Math::XMLoadFloat3(&camData.EyeDirection),
-				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection)));
+				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection))));
 
 		if (Settings::ApplyJitter())
 			CalculateJitter(jitterIndex, dynamicData.JitterCurrent.x, dynamicData.JitterCurrent.y, Settings::RenderSize, Settings::GetUpscaler());
@@ -478,12 +478,13 @@ namespace ZE::GFX::Pipeline
 
 		// Setup shader world data
 		dynamicData.CameraPos = transform.Position;
-		dynamicData.View = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
+		const Matrix view = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));
+		Math::XMStoreFloat4x4(&dynamicData.ViewTps, Math::XMMatrixTranspose(view));
 
 		if (Settings::ComputeMotionVectors())
-			Math::XMStoreFloat4x4(&prevViewProjection, dynamicData.ViewProjection);
+			prevViewProjectionTps = dynamicData.ViewProjectionTps;
 
 		Matrix projection;
 		if (Settings::ApplyJitter())
@@ -498,11 +499,9 @@ namespace ZE::GFX::Pipeline
 		else
 			projection = Math::XMLoadFloat4x4(&currentProjection);
 
-		dynamicData.ViewProjection = dynamicData.View * projection;
-		dynamicData.ViewProjectionInverse = Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, dynamicData.ViewProjection));
-
-		dynamicData.View = Math::XMMatrixTranspose(dynamicData.View);
-		dynamicData.ViewProjection = Math::XMMatrixTranspose(dynamicData.ViewProjection);
+		const Matrix viewProjection = view * projection;
+		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionTps, Math::XMMatrixTranspose(viewProjection));
+		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, viewProjection)));
 	}
 
 	void RendererPBR::ShowWindow(Device& dev, Data::AssetsStreamer& assets)

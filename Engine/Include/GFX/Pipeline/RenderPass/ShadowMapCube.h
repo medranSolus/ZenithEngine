@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Resource::PipelineStateGfx StateDepth;
 		Ptr<Resource::PipelineStateGfx> StatesSolid;
 		Ptr<Resource::PipelineStateGfx> StatesTransparent;
-		Matrix Projection;
+		Float4x4 Projection;
 	};
 
 	void Clean(Device& dev, ExecuteData& data) noexcept;
