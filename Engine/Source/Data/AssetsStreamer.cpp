@@ -377,9 +377,16 @@ namespace ZE::Data
 
 				// Gather all resources for given group
 				std::vector<EID> resourceIds;
+				U32 materialCount = 0;
 				for (EID entity : assets.view<PackID>())
+				{
 					if (assets.get<PackID>(entity).ID == packId)
+					{
 						resourceIds.emplace_back(entity);
+						if (assets.try_get<MaterialBuffersPBR>(entity))
+							++materialCount;
+					}
+				}
 
 				if (resourceIds.size() == 0)
 					return IO::FileStatus::ErrorNoResources;
@@ -395,7 +402,7 @@ namespace ZE::Data
 				header.Signature[2] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[2];
 				header.Signature[3] = IO::Format::ResourcePackFileHeader::SIGNATURE_STR[3];
 				header.Version = Utils::MakeVersion(1, 0, 0);
-				header.ResourcesCount = Utils::SafeCast<U32>(resourceIds.size()); // TODO: Material entries count as 2
+				header.ResourcesCount = Utils::SafeCast<U32>(resourceIds.size() + materialCount);
 				header.TexturesCount = 0;
 				header.NameSectionSize = 0;
 				header.ID = packId;

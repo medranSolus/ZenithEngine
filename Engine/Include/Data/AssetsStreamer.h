@@ -20,7 +20,7 @@ namespace ZE::Data
 	// Identifier of single material data
 	struct MaterialID { EID ID; };
 
-	// Management class forperforming dynamic load of data to GPU
+	// Management class for performing dynamic loading of data to GPU
 	class AssetsStreamer final
 	{
 	public:
