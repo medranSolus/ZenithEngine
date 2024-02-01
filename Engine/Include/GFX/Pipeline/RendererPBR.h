@@ -2,7 +2,7 @@
 #include "DataPBR.h"
 #include "ParamsPBR.h"
 #include "RenderGraph.h"
-#include "XeGTAOSettings.h"
+#include "EffectSettings.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
 ZE_WARNING_POP
@@ -21,12 +21,14 @@ namespace ZE::GFX::Pipeline
 			XeGTAOSettings xegtao;
 			FfxCacaoSettings cacao;
 		} ssaoSettings;
+		SSSRSettings sssrSettings = {};
 
 		Data::Projection currentProjectionData = {};
 		Float4x4 currentProjection = {};
 		Float4x4 prevViewProjectionTps = {};
 		Float4 cameraRotation = {};
 
+		float iblFactor = 1.0f;
 		float sharpness = 0.5f;
 		bool enableSharpening = true;
 		U32 jitterIndex = 0;
@@ -46,11 +48,13 @@ namespace ZE::GFX::Pipeline
 
 		constexpr XeGTAOSettings& GetXeGTAOSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::XeGTAO, "XeGTAO is not active!"); return ssaoSettings.xegtao; }
 		constexpr FfxCacaoSettings& GetCacaoSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
-		
+		constexpr SSSRSettings& GetSSSRSettings() noexcept { return sssrSettings; }
+
 		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }
 		constexpr const Float4x4& GetPrevViewProjectionTps() const noexcept { return prevViewProjectionTps; }
 		constexpr const Float4& GetCameraRotation() const noexcept { return cameraRotation; }
+		constexpr float GetIBLFactor() const noexcept { return iblFactor; }
 		constexpr float GetSharpness() const noexcept { return enableSharpening ? sharpness : 0.0f; }
 		constexpr bool IsSharpeningEnabled() const noexcept { return enableSharpening; }
 

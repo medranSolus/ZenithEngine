@@ -3,6 +3,7 @@ ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
 #include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
+#include "FidelityFX/host/ffx_sssr.h"
 #include "../src/components/cacao/ffx_cacao_private.h"
 #include "../src/components/fsr1/ffx_fsr1_private.h"
 #include "../src/components/fsr2/ffx_fsr2_private.h"
@@ -863,6 +864,21 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		default:
+			ZE_FAIL("Invalid pass for FSR2!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
+		return FFX_OK;
+	}
+
+	FfxErrorCode GetShaderInfoSSSR(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	{
+		switch (pass)
+		{
+		case FFX_SSSR_PASS_DEPTH_DOWNSAMPLE:
+		case FFX_SSSR_PASS_CLASSIFY_TILES:
+		case FFX_SSSR_PASS_PREPARE_BLUE_NOISE_TEXTURE:
+		case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
+		case FFX_SSSR_PASS_INTERSECTION:
 			ZE_FAIL("Invalid pass for FSR2!");
 			return FFX_ERROR_INVALID_ENUM;
 		}

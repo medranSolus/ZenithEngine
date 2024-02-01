@@ -245,6 +245,7 @@ set(ZLIB_TARGET "${ZLIB_LIB}")
 add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
 add_fidelityfx_target(CACAO)
+add_fidelityfx_target(SSSR)
 
 # Inject debug postfix if library use it
 if(${ZE_EXTERNAL_BUILD_DEBUG_POSTFIX})
@@ -515,6 +516,7 @@ add_external_project(FTYPE "" "" "LIBPNG;HARFBUZZ")
 add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
 add_external_fidelityfx_effect(CACAO)
+add_external_fidelityfx_effect(SSSR)
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
