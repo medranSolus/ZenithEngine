@@ -8,6 +8,8 @@
 #	define FFX_HALF 0
 #endif
 
+//#define FFX_WAVE 1
+
 // Cannot set wave size for DX11
 #if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11)
 #	define ZE_CS_WAVE64 [WaveSize(64)]
@@ -16,7 +18,7 @@
 #endif
 // No WaveReadLaneAt() function present below SM6.0
 #ifdef _ZE_API_DX11
-#	define FFX_SPD_NO_WAVE_OPERATIONS
+#	define FFX_SPD_NO_WAVE_OPERATIONS 1
 #endif
 
 // Default options

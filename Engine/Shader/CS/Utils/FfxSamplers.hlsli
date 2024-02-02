@@ -14,4 +14,8 @@ SamplerState splr_RealPointClamp : register(s4);
 SamplerState splr_LinearClamp : register(s0);
 #endif
 
+#ifdef _ZE_FFX_SSSR
+SamplerState splr_EnvironmentMap : register(s0);
+#endif
+
 #endif // FFX_SAMPLERS_CS_HLSLI

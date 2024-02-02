@@ -7,9 +7,9 @@ include_guard(DIRECTORY)
 #   add_shader_target - final call wrapping all previous rules
 
 # Setups variables needed by other shader macros
+#   BIN_DIR = binary directory
 #   SHADER_DIR = directory containing "Shader" folder with all shader code
 #       (each shader type in directory named: VS, GS, PS or CS)
-#   BIN_DIR = binary directory
 #   FLAGS = flags used for compilation
 macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
     set(SD_LIST "")
