@@ -15,6 +15,8 @@ namespace ZE
 		AllowPIXAttach = 1,
 		// Enable additional GPU validation for supported APIs on debug and development builds for more verbose checks. May slow rendering considerably.
 		EnableGPUValidation = 2,
+		// Enable Screen Space Reflections, only available for DirectX 12 or Vulkan RHI.
+		EnableSSSR = 4,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

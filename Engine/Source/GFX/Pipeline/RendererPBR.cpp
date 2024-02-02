@@ -183,6 +183,9 @@ namespace ZE::GFX::Pipeline
 		// Combined scene related resources
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
+		RID ssr = INVALID_RID;
+		if (Settings::IsEnabledSSSR())
+			ssr = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		RID upscaledScene = rawScene;
 		if (Settings::GetUpscaler() != UpscalerType::None)
 			upscaledScene = frameBufferDesc.AddResource({ Settings::DisplaySize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
@@ -361,6 +364,20 @@ namespace ZE::GFX::Pipeline
 			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 		}
+		if (Settings::IsEnabledSSSR())
+		{
+			ZE_MAKE_NODE("sssr", QueueType::Main, SSSR, dev, buildData, Settings::RenderSize.X, Settings::RenderSize.Y);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.DS", Resource::StateShaderResourceNonPS);
+			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
+			//node.AddInput("lambertian.GB_N", Resource::StateShaderResourceNonPS);
+			//node.AddInput("pointLight.LB_S", Resource::StateShaderResourceNonPS); // Roughness
+			//node.AddInput("ssao.SB", Resource::StateShaderResourceNonPS); // Env map
+			//node.AddInput("lambertian.GB_C", Resource::StateShaderResourceNonPS); // BRDF LUT
+			node.AddOutput("RT", Resource::StateShaderResourceNonPS, rawScene);
+			node.AddOutput("SSR", Resource::StateUnorderedAccess, ssr);
+			nodes.emplace_back(std::move(node));
+		}
 #pragma endregion
 #pragma region Upscaling
 		switch (Settings::GetUpscaler())
@@ -372,7 +389,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::Fsr1:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR1, dev, frameBufferDesc.GetFormat(upscaledScene));
-			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
 			nodes.emplace_back(std::move(node));
 			break;
@@ -380,7 +397,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::Fsr2:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
-			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
@@ -391,7 +408,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::XeSS:
 		{
 			RenderNode node("upscale", QueueType::Main, RenderPass::UpscaleXeSS::Execute, nullptr, RenderPass::UpscaleXeSS::Setup(dev));
-			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
@@ -402,7 +419,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::NIS:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleNIS, dev, buildData);
-			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
+			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
 			nodes.emplace_back(std::move(node));
 			break;
@@ -426,7 +443,7 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(upscaledScene), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddInput("horizontalBlur.RT", Resource::StateShaderResourcePS);
-			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.RT" : "wireframe.RT", Resource::StateRenderTarget);
+			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.RT" : (Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateRenderTarget);
 			node.AddInput("outlineDraw.DS", Resource::StateDepthRead);
 			node.AddOutput("RT", Resource::StateRenderTarget, upscaledScene);
 			nodes.emplace_back(std::move(node));
@@ -527,6 +544,7 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 			ImGui::Columns(1);
+			ImGui::NewLine();
 		}
 		if (ImGui::CollapsingHeader("Display"))
 		{
@@ -553,6 +571,7 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 			ImGui::Columns(1);
+			ImGui::NewLine();
 		}
 		if (ImGui::CollapsingHeader("Shadows"))
 		{
@@ -580,6 +599,7 @@ namespace ZE::GFX::Pipeline
 			ImGui::SetNextItemWidth(-5.0f);
 			change |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&settingsData.AmbientLight),
 				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
+			ImGui::NewLine();
 		}
 		switch (Settings::GetAOType())
 		{
@@ -598,6 +618,7 @@ namespace ZE::GFX::Pipeline
 				change |= quality != ssaoSettings.xegtao.Settings.QualityLevel || denoise != ssaoSettings.xegtao.Settings.DenoisePasses;
 				if (change)
 					SetupXeGTAOQuality();
+				ImGui::NewLine();
 			}
 			break;
 		}
@@ -725,6 +746,7 @@ namespace ZE::GFX::Pipeline
 							ImGui::SetTooltip("Sigma squared value for use in bilateral upsampler giving similarity weighting for neighbouring pixels");
 					}
 					ImGui::Columns(1);
+					ImGui::NewLine();
 				}
 			}
 			break;
@@ -735,7 +757,7 @@ namespace ZE::GFX::Pipeline
 		default:
 			ZE_ENUM_UNHANDLED();
 		case UpscalerType::None:
-		case UpscalerType::XeSS: // At the moment not options for XeSS since only quality mode can be chosen
+		case UpscalerType::XeSS: // At the moment no options for XeSS since only quality mode can be chosen
 			break;
 		case UpscalerType::Fsr1:
 		case UpscalerType::Fsr2:
@@ -765,9 +787,96 @@ namespace ZE::GFX::Pipeline
 					ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
 				if (!enableSharpening)
 					ImGui::EndDisabled();
+				ImGui::NewLine();
 			}
 			break;
 		}
+		}
+		if (Settings::IsEnabledSSSR())
+		{
+			if (ImGui::CollapsingHeader("SSSR"))
+			{
+				GUI::InputClamp(0.0f, 1.0f, iblFactor,
+					ImGui::InputFloat("##ibl_factor", &iblFactor, 0.01f, 0.1f, "%.2f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("A factor to control the intensity of the image based lighting. Set to 1 for an HDR probe.");
+
+				ImGui::Text("Temporal Stability");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0.0f, 1.0f, sssrSettings.TemporalStabilityFactor,
+					ImGui::InputFloat("##sssr_temp_stability", &sssrSettings.TemporalStabilityFactor, 0.01f, 0.1f, "%.2f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("A factor to control the accmulation of history values. Higher values reduce noise, but are more likely to exhibit ghosting artefacts.");
+
+				ImGui::Text("Depth Buffer Thickness");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0.0f, 0.03f, sssrSettings.DepthBufferThickness,
+					ImGui::InputFloat("##sssr_depth_thicc", &sssrSettings.DepthBufferThickness, 0.001f, 0.01f, "%.3f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("A bias for accepting hits. Larger values can cause streaks, lower values can cause holes.");
+
+				ImGui::Text("Roughness Threshold");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0.0f, 1.0f, sssrSettings.RoughnessThreshold,
+					ImGui::InputFloat("##sssr_rough_threshold", &sssrSettings.RoughnessThreshold, 0.01f, 0.1f, "%.2f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Regions with a roughness value greater than this threshold won't spawn rays.");
+
+				ImGui::Text("Temporal Variance Threshold");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0.0f, 0.01f, sssrSettings.VarianceThreshold,
+					ImGui::InputFloat("##sssr_variance_threshold", &sssrSettings.VarianceThreshold, 0.0001f, 0.001f, "%.4f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Luminance differences between history results will trigger an additional ray if they are greater than this threshold value.");
+
+				ImGui::Text("Max Traversal Iterations");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0U, 256U, sssrSettings.MaxTraversalIntersections,
+					ImGui::InputInt("##sssr_max_intersect", reinterpret_cast<int*>(&sssrSettings.MaxTraversalIntersections), 1, 50));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Caps the maximum number of lookups that are performed from the depth buffer hierarchy. Most rays should terminate after approximately 20 lookups.");
+
+				ImGui::Text("Min Traversal Occupancy");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0U, 32U, sssrSettings.MinTraversalOccupancy,
+					ImGui::InputInt("##sssr_min_occupancy", reinterpret_cast<int*>(&sssrSettings.MinTraversalOccupancy), 1, 10));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Exit the core loop early if less than this number of threads are running.");
+
+				ImGui::Text("Most Detailed Mip");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0U, 5U, sssrSettings.MostDetailedMip,
+					ImGui::InputInt("##sssr_mip_detail", reinterpret_cast<int*>(&sssrSettings.MostDetailedMip), 1, 1));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("The most detailed MIP map level in the depth hierarchy. Perfect mirrors always use 0 as the most detailed level.");
+
+				constexpr std::array<const char*, 3> SAMPLES = { "1", "2", "4" };
+				U8 sampleIndex = Utils::SafeCast<U8>(sssrSettings.SamplesPerQuad == 4 ? 2 : sssrSettings.SamplesPerQuad - 1);
+				ImGui::SetNextItemWidth(50.0f);
+				if (ImGui::BeginCombo("Samples per quad", SAMPLES.at(sampleIndex)))
+				{
+					for (U8 i = 0; const char* samples : SAMPLES)
+					{
+						const bool selected = i == sampleIndex;
+						if (ImGui::Selectable(samples, selected))
+						{
+							sampleIndex = i;
+							sssrSettings.SamplesPerQuad = sampleIndex == 2 ? 4 : sampleIndex + 1;
+						}
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+						++i;
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("The minimum number of rays per quad. Variance guided tracing can increase this up to a maximum of 4.");
+
+				ImGui::Checkbox("Enable Variance Guided Tracing##sssr_enable_variance", &sssrSettings.TemporalVarianceGuidedTracingEnabled);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("A boolean controlling whether a ray should be spawned on pixels where a temporal variance is detected or not.");
+				ImGui::NewLine();
+			}
 		}
 		// If any settings data updated then upload new buffer
 		if (change)

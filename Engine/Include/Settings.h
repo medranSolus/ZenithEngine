@@ -16,6 +16,7 @@ namespace ZE
 			IndexBufferU8,
 			AttachPIX,
 			GPUValidation,
+			SSSR,
 			Count,
 		};
 
@@ -85,7 +86,7 @@ namespace ZE
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetBackbufferCount(); }
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
-		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
+		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
 		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
 
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
@@ -94,6 +95,7 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
+		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SSSR]; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
@@ -148,6 +150,14 @@ namespace ZE
 #if _ZE_GFX_MARKERS
 		flags[Flags::GfxTags] = true;
 #endif
+		if (params.Flags & SettingsInitFlag::EnableSSSR)
+		{
+			if (gfxApi == GfxApiType::DX12 || gfxApi == GfxApiType::Vulkan)
+				flags[Flags::SSSR] = true;
+			else
+				Logger::Warning("Requested SSSR while using not supported GFX API! Disabling SSSR.");
+		}
+
 		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;

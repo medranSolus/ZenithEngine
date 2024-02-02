@@ -6,10 +6,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
 	void Clean(Device& dev, void* data) noexcept
 	{
-		ZE_FFX_ENABLE();
+		//ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		ZE_FFX_CHECK(ffxSssrContextDestroy(&execData->Ctx), "Error destroying SSSR context!");
-		execData->ListChain.Exec([&dev](CommandList& cl) { cl.Free(dev); });
+		//ZE_FFX_CHECK(ffxSssrContextDestroy(&execData->Ctx), "Error destroying SSSR context!");
+		//execData->ListChain.Exec([&dev](CommandList& cl) { cl.Free(dev); });
 		delete execData;
 	}
 
@@ -17,6 +17,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 	{
 		ZE_FFX_ENABLE();
 		ExecuteData* passData = new ExecuteData;
+		return passData;
 
 		FfxSssrContextDescription sssrDesc = {};
 		sssrDesc.flags = FFX_SSSR_ENABLE_DEPTH_INVERTED;
@@ -33,6 +34,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
 	{
+		return;
 		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("SSSR");
 

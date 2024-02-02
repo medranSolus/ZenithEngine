@@ -17,6 +17,7 @@ namespace ZE
 		parser.AddOption("nis");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
+		parser.AddOption("sssr");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -33,6 +34,8 @@ namespace ZE
 			params.Flags |= SettingsInitFlag::AllowPIXAttach;
 		if (parser.GetOption("gpuValidation"))
 			params.Flags |= SettingsInitFlag::EnableGPUValidation;
+		if (parser.GetOption("sssr"))
+			params.Flags |= SettingsInitFlag::EnableSSSR;
 
 		if (parser.GetOption("fsr2"))
 			params.Upscaler = GFX::UpscalerType::Fsr2;

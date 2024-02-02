@@ -28,7 +28,7 @@ namespace ZE::GFX::Pipeline
 		Float4x4 prevViewProjectionTps = {};
 		Float4 cameraRotation = {};
 
-		float iblFactor = 1.0f;
+		float iblFactor = 0.55f;
 		float sharpness = 0.5f;
 		bool enableSharpening = true;
 		U32 jitterIndex = 0;

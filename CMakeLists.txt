@@ -242,9 +242,10 @@ endif()
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # FidelityFX SDK effects
+add_fidelityfx_target(CACAO)
+add_fidelityfx_target(DENOISER)
 add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
-add_fidelityfx_target(CACAO)
 add_fidelityfx_target(SSSR)
 
 # Inject debug postfix if library use it
@@ -513,9 +514,10 @@ set(FTYPE_CACHE_ARGS "-DFT_DISABLE_ZLIB:BOOL=ON"
 add_external_project(FTYPE "" "" "LIBPNG;HARFBUZZ")
 
 # FidelityFX SDK
+add_external_fidelityfx_effect(CACAO)
+add_external_fidelityfx_effect(DENOISER)
 add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
-add_external_fidelityfx_effect(CACAO)
 add_external_fidelityfx_effect(SSSR)
 
 # EnTT
