@@ -427,12 +427,12 @@ namespace ZE::GFX
 				const U32 rowOffset = y * GetRowByteSize();
 				for (U32 x = 0; x < width; ++x)
 				{
-					const U32 offset = rowOffset + (x * 4 + 3) * GetPixelSize();
-					U32 pixel = 0;
-					for (U8 p = 0; p < GetPixelSize(); ++p)
-						pixel |= static_cast<U32>(memory[offset + p]) << p;
+					const U32 offset = rowOffset + x * GetPixelSize() + (Utils::GetChannelCount(format) - 1) * Utils::GetChannelSize(format);
+					U32 alphaChannel = 0;
+					for (U8 p = 0; p < Utils::GetChannelSize(format); ++p)
+						alphaChannel |= static_cast<U32>(memory[offset + p]) << p;
 
-					if (Utils::GetAlpha(pixel, format) != 1.0f)
+					if (Utils::GetAlpha(alphaChannel, format) != 1.0f)
 						return success;
 				}
 			}
