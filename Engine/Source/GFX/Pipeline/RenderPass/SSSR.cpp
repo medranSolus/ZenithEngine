@@ -79,8 +79,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		// Custom way of loading normals is chosen so no need to perform any unpacking from SDK (custom callbacks provided)
 		desc.normalUnPackMul = 1.0f;
 		desc.normalUnPackAdd = 0.0f;
-		desc.roughnessChannel = 1;
-		desc.isRoughnessPerceptual = true;
+		desc.roughnessChannel = 0; // Not used, specified directly in shader
+		desc.isRoughnessPerceptual = true; // Not used, all shaders assume roughness is linear
 		desc.temporalStabilityFactor = renderer.GetSSSRSettings().TemporalStabilityFactor;
 		desc.depthBufferThickness = renderer.GetSSSRSettings().DepthBufferThickness;
 		desc.roughnessThreshold = renderer.GetSSSRSettings().RoughnessThreshold;

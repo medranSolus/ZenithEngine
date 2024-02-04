@@ -8,8 +8,6 @@
 #	define FFX_HALF 0
 #endif
 
-//#define FFX_WAVE 1
-
 // Cannot set wave size for DX11
 #if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11)
 #	define ZE_CS_WAVE64 [WaveSize(64)]
@@ -19,6 +17,10 @@
 // No WaveReadLaneAt() function present below SM6.0
 #ifdef _ZE_API_DX11
 #	define FFX_SPD_NO_WAVE_OPERATIONS 1
+#endif
+// Wave operations only available for SM 6.6+
+#if defined(_ZE_API_DX12) || defined(_ZE_API_VK)
+#	define FFX_WAVE 1
 #endif
 
 // Default options
@@ -45,6 +47,7 @@
 #   define FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE 0
 #endif
 
+#define FFX_SSSR_OPTION_INVERTED_DEPTH 1
 // Upsample currently always uses approximation
 #define FFX_FSR2_OPTION_UPSAMPLE_USE_LANCZOS_TYPE 2
 // Controls which part of code should use half precission even when requested

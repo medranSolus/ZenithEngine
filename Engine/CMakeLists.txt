@@ -13,6 +13,7 @@ add_shader_type(VS)
 add_shader_type(GS)
 add_shader_type(PS)
 add_shader_type(CS)
+add_shader_exclusive_rhi(CS "SSSR" "DX12;VK")
 add_shader_target(${SHADER_TARGET})
 
 

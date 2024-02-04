@@ -39,6 +39,21 @@ macro(add_shader_permutation SHADER PERMUTATION)
     list(APPEND ${SHADER}_PERMUTATIONS "${PERMUTATION}")
 endmacro()
 
+# Creates commands for shader compilation for only exclusive RHI list
+#   SD_TYPE = prefix type of shader (VS, GS, PS, CS)
+#   SD_RHI_DIR = directory to compile files for given RHI list, relative to main shader dir
+#   RHI_TYPE_LIST = list of supported graphics APIs for given shaders to compile
+macro(add_shader_exclusive_rhi SD_TYPE SD_RHI_DIR RHI_TYPE_LIST)
+    file(GLOB_RECURSE ${SD_TYPE}_RHI_SRC_LIST "${SD_DIR}/ExclusiveRHI/${SD_TYPE}/${SD_RHI_DIR}/*.hlsl")
+    file(GLOB_RECURSE ${SD_TYPE}_RHI_INC_LIST
+        "${SD_DIR}/ExclusiveRHI/*.hlsli"
+        "${SD_DIR}/${SD_TYPE}/*.hlsli")
+        
+    foreach(RHI_TYPE ${RHI_TYPE_LIST})
+        _prepare_shader_compile_for_api("${RHI_TYPE}" "${SD_TYPE}" "${SD_DIR}/ExclusiveRHI/${SD_TYPE}" "${${SD_TYPE}_RHI_SRC_LIST}" "${${SD_TYPE}_RHI_INC_LIST}" "/I ${SD_DIR}/${SD_TYPE}")
+    endforeach()
+endmacro()
+
 # Creates commands for shader compilation
 #   SD_TYPE = prefix type of shader (VS, GS, PS, CS)
 macro(add_shader_type SD_TYPE)
@@ -47,49 +62,7 @@ macro(add_shader_type SD_TYPE)
     file(GLOB_RECURSE ${SD_TYPE}_INC_LIST "${${SD_TYPE}_DIR}/*.hlsli")
     
     foreach(API IN LISTS SD_APIS)
-        if(${API} STREQUAL "DX11")
-            string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
-            set(SD_COMPILER "${EXTERNAL_DIR}/fxc.exe")
-            set(API_FLAGS "/D_ZE_COMPILER_FXC")
-            set(SD_EXT "dxbc")
-        elseif(${API} STREQUAL "DX12")
-            string(TOLOWER "${SD_TYPE}_6_6" ${SD_TYPE}_TYPE_FLAG)
-            set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
-            set(API_FLAGS "/D_ZE_COMPILER_DXC -enable-16bit-types /DFFX_HLSL_6_2=1 /DNIS_DXC=1 /DNIS_HLSL_6_2=1")
-            if(NOT ${ZE_BUILD_RELEASE})
-                set(API_FLAGS "${API_FLAGS} -Qembed_debug")
-            else()
-                set(API_FLAGS "${API_FLAGS} -O3")
-            endif()
-            set(SD_EXT "dxil")
-        elseif(${API} STREQUAL "VK")
-            # https://github.com/microsoft/DirectXShaderCompiler/blob/main/docs/SPIR-V.rst#introduction
-            set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
-            set(API_FLAGS "/D_ZE_COMPILER_DXC /DNIS_DXC=1 -spirv -fvk-stage-io-order=decl -fvk-use-dx-layout -fvk-use-dx-position-w -fspv-target-env=vulkan1.3 -fspv-flatten-resource-arrays")
-            if(${SD_TYPE} STREQUAL "VS" OR ${SD_TYPE} STREQUAL "GS")
-                set(API_FLAGS "${API_FLAGS} -fvk-invert-y")
-            endif()
-            if(NOT ${ZE_BUILD_RELEASE})
-                set(API_FLAGS "${API_FLAGS} -Qembed_debug")
-            else()
-                set(API_FLAGS "${API_FLAGS} -O3")
-            endif()
-            set(SD_EXT "spv")
-        else()
-            message(FATAL_ERROR "API <${API}> not supported for shaders!")
-        endif()
-        
-        separate_arguments(API_FLAGS WINDOWS_COMMAND "${API_FLAGS}")
-        foreach(SD IN LISTS ${SD_TYPE}_SRC_LIST)
-            get_filename_component(SD_NAME ${SD} NAME_WE)
-            set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.${SD_EXT}")
-            _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${SD_OUT}" "${SD_NAME}.${SD_EXT}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
-            
-            # Flatten whole original list of permutations into for correct mask indexing
-            string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATIONS}")
-            _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
-                "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${SD_INC_DIR}" "${${SD_TYPE}_INC_LIST}" "${SD_INC_LIST}" "${API}")
-        endforeach()
+        _prepare_shader_compile_for_api("${API}" "${SD_TYPE}" "${${SD_TYPE}_DIR}" "${${SD_TYPE}_SRC_LIST}" "${${SD_TYPE}_INC_LIST}" "")
     endforeach()
 endmacro()
 
@@ -98,6 +71,54 @@ endmacro()
 macro(add_shader_target SD_TARGET)
     add_custom_target(${SD_TARGET} DEPENDS ${SD_LIST} VERBATIM)
 endmacro()
+
+# Internal function for preparing compilation of shader along with it's permutations for given API
+function(_prepare_shader_compile_for_api API SD_TYPE SD_TYPE_DIR SD_TYPE_SRC_LIST SD_TYPE_INC_LIST SD_CUSTOM_FLAGS)
+    if(${API} STREQUAL "DX11")
+        string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
+        set(SD_COMPILER "${EXTERNAL_DIR}/fxc.exe")
+        set(API_FLAGS "/D_ZE_COMPILER_FXC")
+        set(SD_EXT "dxbc")
+    elseif(${API} STREQUAL "DX12")
+        string(TOLOWER "${SD_TYPE}_6_6" ${SD_TYPE}_TYPE_FLAG)
+        set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
+        set(API_FLAGS "/D_ZE_COMPILER_DXC -enable-16bit-types /DFFX_HLSL_6_2=1 /DNIS_DXC=1 /DNIS_HLSL_6_2=1")
+        if(NOT ${ZE_BUILD_RELEASE})
+            set(API_FLAGS "${API_FLAGS} -Qembed_debug")
+        else()
+            set(API_FLAGS "${API_FLAGS} -O3")
+        endif()
+        set(SD_EXT "dxil")
+    elseif(${API} STREQUAL "VK")
+        # https://github.com/microsoft/DirectXShaderCompiler/blob/main/docs/SPIR-V.rst#introduction
+        string(TOLOWER "${SD_TYPE}_6_0" ${SD_TYPE}_TYPE_FLAG)
+        set(SD_COMPILER "${EXTERNAL_DIR}/dxc.exe")
+        set(API_FLAGS "/D_ZE_COMPILER_DXC /DNIS_DXC=1 -spirv -fvk-stage-io-order=decl -fvk-use-dx-layout -fvk-use-dx-position-w -fspv-target-env=vulkan1.3 -fspv-flatten-resource-arrays")
+        if(${SD_TYPE} STREQUAL "VS" OR ${SD_TYPE} STREQUAL "GS")
+            set(API_FLAGS "${API_FLAGS} -fvk-invert-y")
+        endif()
+        if(NOT ${ZE_BUILD_RELEASE})
+            set(API_FLAGS "${API_FLAGS} -Qembed_debug")
+        else()
+            set(API_FLAGS "${API_FLAGS} -O3")
+        endif()
+        set(SD_EXT "spv")
+    else()
+        message(FATAL_ERROR "API <${API}> not supported for shaders!")
+    endif()
+        
+    separate_arguments(API_FLAGS WINDOWS_COMMAND "${API_FLAGS}")
+    foreach(SD IN LISTS SD_TYPE_SRC_LIST)
+        get_filename_component(SD_NAME ${SD} NAME_WE)
+        set(SD_OUT "${SD_CSO_DIR}/${API}/${SD_NAME}.${SD_EXT}")
+        _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${SD_OUT}" "${SD_NAME}.${SD_EXT}" "${SD_FLAGS};${API_FLAGS};${SD_CUSTOM_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+            
+        # Flatten whole original list of permutations into for correct mask indexing
+        string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATIONS}")
+        _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
+            "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+    endforeach()
+endfunction()
 
 # Internal function for compiling shader
 function(_add_shader_compile_command SD_COMPILER SD SD_OUT SD_TARGET SD_FLAGS SHADER_MODEL SD_TYPE SD_TYPE_INC_DIR SD_INC_DIR SD_TYPE_INC_LIST SD_INC_LIST API)
