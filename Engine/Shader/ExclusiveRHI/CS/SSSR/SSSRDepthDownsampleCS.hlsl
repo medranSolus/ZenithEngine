@@ -74,6 +74,14 @@ void FFX_SSSR_WriteDepthHierarchy(const in FfxUInt32 index, const in FfxUInt32x2
 	}
 }
 
+#ifdef _ZE_HALF_PRECISION
+void SpdStoreH(FfxInt32x2 coord, FfxFloat16x4 outValue, FfxUInt32 index, FfxUInt32 slice)
+{
+    // + 1 as we store a copy of the depth buffer at index 0
+	FFX_SSSR_WriteDepthHierarchy(index + 1, coord, (FfxFloat32)outValue.x);
+}
+#endif
+
 void SpdStore(const in FfxInt32x2 coord, const in FfxFloat32x4 outValue, const in FfxUInt32 index, const in FfxUInt32 slice)
 {
 	// + 1 as we store a copy of the depth buffer at index 0

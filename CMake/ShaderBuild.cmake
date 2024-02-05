@@ -116,7 +116,7 @@ function(_prepare_shader_compile_for_api API SD_TYPE SD_TYPE_DIR SD_TYPE_SRC_LIS
         # Flatten whole original list of permutations into for correct mask indexing
         string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATIONS}")
         _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
-            "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
+            "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS};${SD_CUSTOM_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
     endforeach()
 endfunction()
 

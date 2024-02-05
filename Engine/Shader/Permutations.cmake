@@ -91,6 +91,16 @@ add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_HDR_COLOR_I
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_PREFER_WAVE64:W")
 
+# SSSR
+add_shader_permutation("SSSRClassifyTilesCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("SSSRClassifyTilesCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("SSSRDepthDownsampleCS" "_ZE_HALF_PRECISION:H")
+
+add_shader_permutation("SSSRIntersectCS" "_ZE_PREFER_WAVE64:W")
+add_shader_permutation("SSSRPrepareIndirectCS" "_ZE_PREFER_WAVE64:W")
+add_shader_permutation("SSSRPrepareNoiseCS" "_ZE_PREFER_WAVE64:W")
+
 # NIS
 add_shader_permutation("NVImageScalingCS" "NIS_HDR_MODE=1:L|NIS_HDR_MODE=2:P")
 add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H|NIS_USE_HALF_PRECISION=1,NIS_BLOCK_HEIGHT=32,NIS_THREAD_GROUP_SIZE=128:NVH|NIS_THREAD_GROUP_SIZE=128:NV")

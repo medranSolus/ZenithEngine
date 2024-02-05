@@ -7,6 +7,7 @@ ZE_WARNING_PUSH
 #include "../src/components/cacao/ffx_cacao_private.h"
 #include "../src/components/fsr1/ffx_fsr1_private.h"
 #include "../src/components/fsr2/ffx_fsr2_private.h"
+#include "../src/components/sssr/ffx_sssr_private.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX::FFX
@@ -14,6 +15,7 @@ namespace ZE::GFX::FFX
 	FfxErrorCode GetShaderInfoCACAO(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoFSR1(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoFSR2(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
+	FfxErrorCode GetShaderInfoSSSR(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	std::string GetGeneralPermutation(bool fp16, bool wave64) noexcept;
 
 	U64 GetPipelineID(FfxEffect effect, FfxPass passId, U32 permutationOptions) noexcept
@@ -126,6 +128,27 @@ namespace ZE::GFX::FFX
 			}
 			break;
 		}
+		case FFX_EFFECT_SSSR:
+		{
+			switch (passId)
+			{
+			case FFX_SSSR_PASS_DEPTH_DOWNSAMPLE:
+				permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16;
+				break;
+			case FFX_SSSR_PASS_CLASSIFY_TILES:
+				permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16 | SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			case FFX_SSSR_PASS_PREPARE_BLUE_NOISE_TEXTURE:
+			case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
+			case FFX_SSSR_PASS_INTERSECTION:
+				permutationOptions &= SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			default:
+				ZE_FAIL("Invalid pass for SSSR!");
+				break;
+			}
+			break;
+		}
 		default:
 			ZE_FAIL("Selected effect has not been implemented yet!");
 		}
@@ -140,14 +163,17 @@ namespace ZE::GFX::FFX
 		default:
 			ZE_FAIL("Selected effect has not been implemented yet!");
 			return FFX_ERROR_INVALID_ENUM;
+		case FFX_EFFECT_CACAO:
+			code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR1:
 			code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
 		case FFX_EFFECT_FSR2:
 			code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
-		case FFX_EFFECT_CACAO:
-			code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
+		case FFX_EFFECT_SSSR:
+			code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
 		}
 		return code;
@@ -872,14 +898,129 @@ namespace ZE::GFX::FFX
 
 	FfxErrorCode GetShaderInfoSSSR(Device& dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
 	{
+		static const char* cbvNames[] = { "cbSSSR" };
+		static const char* samplerNames[] = { "s_EnvironmentMapSampler" };
+		static const U32 slots[] = { 0, 1, 2, 3, 4 };
+		static const U32 counts[] = { 1, 1, 1, 1, 1, 13 };
+		static constexpr const U32* SAMPLER_SLOT = slots;
+		static constexpr const U32* DEPTH_DOWNSAMPLE_UAV_COUNTS = counts + 4;
+
+		const bool fp16 = permutationOptions & SSSR_SHADER_PERMUTATION_ALLOW_FP16;
+		const bool wave64 = permutationOptions & SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
+
 		switch (pass)
 		{
 		case FFX_SSSR_PASS_DEPTH_DOWNSAMPLE:
+		{
+			static const char* srvNames[] = { "r_input_depth" };
+			static const char* uavNames[] = { "rw_spd_global_atomic", "rw_depth_hierarchy" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				0, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				nullptr, nullptr, nullptr, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, DEPTH_DOWNSAMPLE_UAV_COUNTS, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "SSSRDepthDownsampleCS" + GetGeneralPermutation(fp16, false));
+			break;
+		}
 		case FFX_SSSR_PASS_CLASSIFY_TILES:
+		{
+			static const char* srvNames[] = { "r_depth_hierarchy", "r_variance", "r_input_normal", "r_input_environment_map", "r_input_material_parameters" };
+			static const char* uavNames[] = { "rw_ray_counter", "rw_ray_list", "rw_radiance", "rw_denoiser_tile_list", "rw_extracted_roughness" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 5, 5, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "SSSRClassifyTilesCS" + GetGeneralPermutation(fp16, wave64));
+			break;
+		}
 		case FFX_SSSR_PASS_PREPARE_BLUE_NOISE_TEXTURE:
+		{
+			static const char* srvNames[] = { "r_sobol_buffer", "r_scrambling_tile_buffer" };
+			static const char* uavNames[] = { "rw_blue_noise_texture" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "SSSRPrepareNoiseCS" + GetGeneralPermutation(false, wave64));
+			break;
+		}
 		case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
+		{
+			static const char* uavNames[] = { "rw_ray_counter", "rw_intersection_pass_indirect_args" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				0, 0, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				nullptr, nullptr, nullptr, // CBV
+				nullptr, nullptr, nullptr, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "SSSRPrepareIndirectCS" + GetGeneralPermutation(false, wave64));
+			break;
+		}
 		case FFX_SSSR_PASS_INTERSECTION:
-			ZE_FAIL("Invalid pass for FSR2!");
+		{
+			static const char* srvNames[] = { "r_blue_noise_texture", "r_depth_hierarchy", "r_input_normal", "r_extracted_roughness", "r_input_color", "r_input_environment_map" };
+			static const char* uavNames[] = { "rw_ray_counter", "rw_ray_list", "rw_radiance" };
+			static constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 6, 3, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, // CBV
+				srvNames, slots, counts, // SRV tex
+				uavNames, slots, counts, // UAV tex
+				nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, SAMPLER_SLOT, counts, // Samplers
+				nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(dev, "SSSRIntersectCS" + GetGeneralPermutation(false, wave64));
+			break;
+		}
+		default:
+			ZE_FAIL("Invalid pass for SSSR!");
 			return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
