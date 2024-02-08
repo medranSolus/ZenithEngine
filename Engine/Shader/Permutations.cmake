@@ -53,6 +53,16 @@ add_shader_permutation("DenoiserReflectionsReprojectCS" "_ZE_PREFER_WAVE64:W")
 add_shader_permutation("DenoiserReflectionsResolveCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("DenoiserReflectionsResolveCS" "_ZE_PREFER_WAVE64:W")
 
+add_shader_permutation("DenoiserShadowsClassificationCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserShadowsClassificationCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DenoiserShadowsFilterCS" "ZE_DENOISER_SHADOWS_FILTER_METHOD=DenoiserShadowsFilterPass1:1|ZE_DENOISER_SHADOWS_FILTER_METHOD=DenoiserShadowsFilterPass2:2")
+add_shader_permutation("DenoiserShadowsFilterCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserShadowsFilterCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_PREFER_WAVE64:W")
+
 # FSR1
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_APPLY_RCAS=1:S")
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_SRGB_CONVERSIONS=1:R")

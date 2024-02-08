@@ -6,7 +6,7 @@
 #include "Utils/FfxSamplers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_DENOISER_REFLECTIONS_CB_RANGE' to indicate binding range used for constant buffer
-struct ConstantsDenoiser
+struct ConstantsDenoiserReflections
 {
 	FfxFloat32Mat4 ProjectionInverse;
 	FfxFloat32Mat4 ViewInverse;
@@ -24,7 +24,7 @@ struct ConstantsDenoiser
 	FfxFloat32 RoughnessThreshold;
 };
 
-CBUFFER(denoiserReflectionsConsts, ConstantsDenoiser, 0, ZE_DENOISER_REFLECTIONS_CB_RANGE);
+CBUFFER(denoiserReflectionsConsts, ConstantsDenoiserReflections, 0, ZE_DENOISER_REFLECTIONS_CB_RANGE);
 
 FfxFloat32Mat4 InvProjection()
 {
