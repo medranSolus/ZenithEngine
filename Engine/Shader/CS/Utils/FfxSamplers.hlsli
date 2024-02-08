@@ -18,4 +18,12 @@ SamplerState splr_LinearClamp : register(s0);
 SamplerState splr_EnvironmentMap : register(s0);
 #endif
 
+#ifdef _ZE_FFX_DENOISER_REFLECTIONS
+SamplerState splr_Linear : register(s0);
+#endif
+
+#ifdef _ZE_FFX_DENOISER_SHADOWS
+SamplerState splr_trilinerClamp : register(s0);
+#endif
+
 #endif // FFX_SAMPLERS_CS_HLSLI

@@ -43,6 +43,16 @@ add_shader_permutation("CACAOUpscaleCS" "FFX_CACAO_OPTION_APPLY_SMART=1:S")
 add_shader_permutation("CACAOUpscaleCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("CACAOUpscaleCS" "_ZE_PREFER_WAVE64:W")
 
+# Denoiser
+add_shader_permutation("DenoiserReflectionsPrefilterCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserReflectionsPrefilterCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DenoiserReflectionsReprojectCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserReflectionsReprojectCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DenoiserReflectionsResolveCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DenoiserReflectionsResolveCS" "_ZE_PREFER_WAVE64:W")
+
 # FSR1
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_APPLY_RCAS=1:S")
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_SRGB_CONVERSIONS=1:R")

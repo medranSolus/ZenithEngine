@@ -16,7 +16,7 @@ UAV2D(depthHierarchy9, FfxFloat32, 10, 1);
 UAV2D(depthHierarchy10, FfxFloat32, 11, 1);
 UAV2D(depthHierarchy11, FfxFloat32, 12, 1);
 UAV2D(depthHierarchy12, FfxFloat32, 13, 1);
-TEXTURE_EX(depth, Texture2D<FfxFloat32>, 0, 2);
+TEXTURE_EX(depth, Texture2D<float>, 0, 2); // External resource format
 
 void FFX_SSSR_SPDIncreaseAtomicCounter(inout FfxUInt32 spdCounter)
 {
@@ -75,7 +75,7 @@ void FFX_SSSR_WriteDepthHierarchy(const in FfxUInt32 index, const in FfxUInt32x2
 }
 
 #ifdef _ZE_HALF_PRECISION
-void SpdStoreH(FfxInt32x2 coord, FfxFloat16x4 outValue, FfxUInt32 index, FfxUInt32 slice)
+void SpdStoreH(const in FfxInt32x2 coord, const in FfxFloat16x4 outValue, const in FfxUInt32 index, const in FfxUInt32 slice)
 {
     // + 1 as we store a copy of the depth buffer at index 0
 	FFX_SSSR_WriteDepthHierarchy(index + 1, coord, (FfxFloat32)outValue.x);

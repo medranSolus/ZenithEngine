@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		sssrDesc.flags = FFX_SSSR_ENABLE_DEPTH_INVERTED;
 		sssrDesc.renderSize.width = renderWidth;
 		sssrDesc.renderSize.height = renderHeight;
-		sssrDesc.normalsHistoryBufferFormat = FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT; // TODO ?
+		sssrDesc.normalsHistoryBufferFormat = GetFfxSurfaceFormat(PixelFormat::R16G16_Float);
 		sssrDesc.backendInterface = dev.GetFfxInterface();
 		ZE_FFX_THROW_FAILED(ffxSssrContextCreate(&passData->Ctx, &sssrDesc), "Error creating SSSR context!");
 
