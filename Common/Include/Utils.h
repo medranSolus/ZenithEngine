@@ -8,10 +8,6 @@
 
 namespace ZE::Utils
 {
-	// Safe static cast that performs check wheter destination type can hold source value
-	template<typename C, typename T>
-	constexpr C SafeCast(T&& val) noexcept;
-
 	// Encode app version in format 'major.minor.patch' into single U32
 	constexpr U32 MakeVersion(U16 major, U16 minor, U16 patch) noexcept { return (static_cast<U32>(major & 0x3FF) << 22) | static_cast<U32>(minor & 0x3FF) << 12 | (patch & 0xFFF); }
 	// Extract major part from encoded version
@@ -20,6 +16,10 @@ namespace ZE::Utils
 	constexpr U16 GetVersionMinor(U32 version) noexcept { return (version >> 12) & 0x3FF; }
 	// Extract patch part from encoded version
 	constexpr U16 GetVersionPatch(U32 version) noexcept { return version & 0xFFF; }
+
+	// Safe static cast that performs check wheter destination type can hold source value
+	template<typename C, typename T>
+	constexpr C SafeCast(T&& val) noexcept;
 
 	// Check whether formats come from same family with automatic conversion rules
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept;

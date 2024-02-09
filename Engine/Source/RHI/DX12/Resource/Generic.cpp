@@ -15,7 +15,7 @@ namespace ZE::RHI::DX12::Resource
 		heapProp.VisibleNodeMask = 0;
 
 		bool cpuAccess = true;
-		D3D12_RESOURCE_STATES initState = GetResourceState(desc.InitState);
+		D3D12_RESOURCE_STATES initState = desc.Type == GFX::Resource::GenericResourceType::Buffer ? D3D12_RESOURCE_STATE_COMMON : GetResourceState(desc.InitState);
 		switch (desc.Heap)
 		{
 		case GFX::Resource::GenericResourceHeap::GPU:
@@ -154,14 +154,12 @@ namespace ZE::RHI::DX12::Resource
 			uav.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 			uav.Buffer.FirstElement = 0;
 			uav.Buffer.NumElements = desc.WidthOrBufferSize;
+			uav.Buffer.StructureByteStride = desc.HeightOrBufferStride;
 			// View is not structured view so format is required
 			if (uav.Buffer.StructureByteStride == 0)
-			{
 				uav.Format = DX::GetDXFormat(desc.Format);
-			}
 			else
 				uav.Buffer.NumElements /= desc.HeightOrBufferStride;
-			uav.Buffer.StructureByteStride = desc.HeightOrBufferStride;
 			uav.Buffer.CounterOffsetInBytes = 0;
 			uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 

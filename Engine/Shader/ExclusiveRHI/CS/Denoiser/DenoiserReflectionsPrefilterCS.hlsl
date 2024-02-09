@@ -2,15 +2,20 @@
 #include "CB/ConstantsDenoiserReflections.hlsli"
 #include "CommonUtils.hlsli"
 
-UAV2D(radiance, FfxFloat32x4, 0, 0);
-UAV2D(variance, FfxFloat32, 1, 1);
-UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 2, 2);
+UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 0, 0);
+UAV2D(radiance, FfxFloat32x4, 1, 1);
+UAV2D(variance, FfxFloat32, 2, 2);
 TEXTURE_EX(radiance, Texture2D<FfxFloat32x4>, 0, 3);
 TEXTURE_EX(variance, Texture2D<FfxFloat32>, 1, 4);
 TEXTURE_EX(normals, Texture2D<float2>, 2, 5); // External resource format
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 3, 6);
 TEXTURE_EX(avgRadiance, Texture2D<FfxFloat32x3>, 4, 7);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 5, 8);
+
+FfxUInt32 GetDenoiserTile(const in FfxUInt32 gid)
+{
+	return ua_tileList[gid];
+}
 
 #ifdef _ZE_HALF_PRECISION
 void FFX_DNSR_Reflections_StorePrefilteredReflections(const in FfxInt32x2 coord, const in FfxFloat16x3 radiance, const in FfxFloat16 variance)
@@ -25,11 +30,6 @@ void FFX_DNSR_Reflections_StorePrefilteredReflections(const in FfxInt32x2 coord,
 	ua_variance[coord] = variance;
 }
 #endif
-
-FfxUInt32 GetDenoiserTile(const in FfxUInt32 gid)
-{
-	return ua_tileList[gid];
-}
 
 #ifdef _ZE_HALF_PRECISION
 FfxFloat16x3 LoadRadianceH(const in FfxInt32x3 coord)

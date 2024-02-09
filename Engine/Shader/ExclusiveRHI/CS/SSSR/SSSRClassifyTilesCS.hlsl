@@ -4,8 +4,8 @@
 
 UAV_EX(rayCounter, globallycoherent RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV_EX(rayList, RWStructuredBuffer<FfxUInt32>, 1, 1);
-UAV2D(radiance, FfxFloat32x4, 2, 2);
-UAV_EX(denoiserTileList, RWStructuredBuffer<FfxUInt32>, 3, 3);
+UAV_EX(denoiserTileList, RWStructuredBuffer<FfxUInt32>, 2, 2);
+UAV2D(radiance, FfxFloat32x4, 3, 3);
 UAV2D(roughness, FfxFloat32, 4, 4);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 0, 5);
 TEXTURE_EX(varianceHistory, Texture2D<FfxFloat32>, 1, 6);
@@ -33,14 +33,14 @@ void StoreRay(const in FfxInt32 index, const in FfxUInt32x2 rayCoord, const in F
 	ua_rayList[index] = packed;
 }
 
-void FFX_SSSR_StoreRadiance(const in FfxUInt32x2 coord, const in FfxFloat32x4 radiance)
-{
-	ua_radiance[coord] = radiance;
-}
-
 void StoreDenoiserTile(const in FfxInt32 index, const in FfxUInt32x2 tileCoord)
 {
 	ua_denoiserTileList[index] = ((tileCoord.y & 0xffffu) << 16) | ((tileCoord.x & 0xffffu) << 0); // Store out pixel to trace
+}
+
+void FFX_SSSR_StoreRadiance(const in FfxUInt32x2 coord, const in FfxFloat32x4 radiance)
+{
+	ua_radiance[coord] = radiance;
 }
 
 void StoreExtractedRoughness(const in FfxUInt32x2 coord, const in FfxFloat32 roughness)

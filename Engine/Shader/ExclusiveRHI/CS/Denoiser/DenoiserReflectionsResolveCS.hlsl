@@ -2,9 +2,9 @@
 #include "CB/ConstantsDenoiserReflections.hlsli"
 #include "CommonUtils.hlsli"
 
-UAV2D(radiance, FfxFloat32x4, 0, 0);
-UAV2D(variance, FfxFloat32, 1, 1);
-UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 2, 2);
+UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 0, 0);
+UAV2D(radiance, FfxFloat32x4, 1, 1);
+UAV2D(variance, FfxFloat32, 2, 2);
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 0, 3);
 TEXTURE_EX(radiance, Texture2D<FfxFloat32x4>, 1, 4);
 TEXTURE_EX(variance, Texture2D<FfxFloat32>, 2, 5);
@@ -12,26 +12,18 @@ TEXTURE_EX(sampleCount, Texture2D<FfxFloat32>, 3, 6);
 TEXTURE_EX(avgRadiance, Texture2D<FfxFloat32x3>, 4, 7);
 TEXTURE_EX(reprojectedRadiance, Texture2D<FfxFloat32x4>, 5, 8);
 
-#ifdef _ZE_HALF_PRECISION
-void FFX_DNSR_Reflections_StoreTemporalAccumulation(const in FfxInt32x2 coord, const in FfxFloat16x3 radiance, const in FfxFloat16 variance)
-{
-    ua_radiance[coord] = radiance.xyzz;
-    ua_variance[coord] = variance.x;
-}
-#else
-void FFX_DNSR_Reflections_StoreTemporalAccumulation(const in FfxInt32x2 coord, const in FfxFloat32x3 radiance, const in FfxFloat32 variance)
-{
-	ua_radiance[coord] = radiance.xyzz;
-	ua_variance[coord] = variance.x;
-}
-#endif
-
 FfxUInt32 GetDenoiserTile(const in FfxUInt32 gid)
 {
 	return ua_tileList[gid];
 }
 
 #ifdef _ZE_HALF_PRECISION
+void FFX_DNSR_Reflections_StoreTemporalAccumulation(const in FfxInt32x2 coord, const in FfxFloat16x3 radiance, const in FfxFloat16 variance)
+{
+    ua_radiance[coord] = radiance.xyzz;
+    ua_variance[coord] = variance.x;
+}
+
 FfxFloat16 FFX_DNSR_Reflections_LoadRoughness(const in FfxInt32x2 coord)
 {
     FfxFloat16 rawRoughness = (FfxFloat16)tx_roughness.Load(FfxInt32x3(coord, 0));
@@ -64,6 +56,12 @@ FfxFloat16x3 FFX_DNSR_Reflections_LoadRadianceReprojected(const in FfxInt32x2 co
     return (FfxFloat16x3)tx_reprojectedRadiance.Load(FfxInt32x3(coord, 0)).xyz;
 }
 #else
+void FFX_DNSR_Reflections_StoreTemporalAccumulation(const in FfxInt32x2 coord, const in FfxFloat32x3 radiance, const in FfxFloat32 variance)
+{
+	ua_radiance[coord] = radiance.xyzz;
+	ua_variance[coord] = variance.x;
+}
+
 FfxFloat32 FFX_DNSR_Reflections_LoadRoughness(const in FfxInt32x2 coord)
 {
 	FfxFloat32 rawRoughness = tx_roughness.Load(FfxInt32x3(coord, 0));
