@@ -184,7 +184,7 @@ namespace ZE::GFX::Pipeline
 		const RID rawScene = frameBufferDesc.AddResource(
 			{ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		RID ssr = INVALID_RID;
-		if (Settings::IsEnabledSSSR())
+		if (false && Settings::IsEnabledSSSR())
 			ssr = frameBufferDesc.AddResource({ Settings::RenderSize, 1, FrameResourceFlags::None, PixelFormat::R16G16B16A16_Float, ColorF4() });
 		RID upscaledScene = rawScene;
 		if (Settings::GetUpscaler() != UpscalerType::None)
@@ -364,7 +364,7 @@ namespace ZE::GFX::Pipeline
 			node.AddOutput("DS", Resource::StateDepthWrite, gbuffDepth);
 			nodes.emplace_back(std::move(node));
 		}
-		if (Settings::IsEnabledSSSR())
+		if (false && Settings::IsEnabledSSSR())
 		{
 			ZE_MAKE_NODE("sssr", QueueType::Main, SSSR, dev, buildData, Settings::RenderSize.X, Settings::RenderSize.Y);
 			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
@@ -389,7 +389,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::Fsr1:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR1, dev, frameBufferDesc.GetFormat(upscaledScene));
-			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
 			nodes.emplace_back(std::move(node));
 			break;
@@ -397,7 +397,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::Fsr2:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleFSR2, dev);
-			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
@@ -408,7 +408,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::XeSS:
 		{
 			RenderNode node("upscale", QueueType::Main, RenderPass::UpscaleXeSS::Execute, nullptr, RenderPass::UpscaleXeSS::Setup(dev));
-			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddInput("wireframe.DS", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_MV", Resource::StateShaderResourceNonPS);
 			node.AddInput("lambertian.GB_R", Resource::StateShaderResourceNonPS);
@@ -419,7 +419,7 @@ namespace ZE::GFX::Pipeline
 		case UpscalerType::NIS:
 		{
 			ZE_MAKE_NODE("upscale", QueueType::Main, UpscaleNIS, dev, buildData);
-			node.AddInput((Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateShaderResourceNonPS);
+			node.AddInput("wireframe.RT", Resource::StateShaderResourceNonPS);
 			node.AddOutput("RT", Resource::StateUnorderedAccess, upscaledScene);
 			nodes.emplace_back(std::move(node));
 			break;
@@ -443,7 +443,7 @@ namespace ZE::GFX::Pipeline
 		{
 			ZE_MAKE_NODE("verticalBlur", QueueType::Main, VerticalBlur, dev, buildData, frameBufferDesc.GetFormat(upscaledScene), frameBufferDesc.GetFormat(outlineDepth));
 			node.AddInput("horizontalBlur.RT", Resource::StateShaderResourcePS);
-			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.RT" : (Settings::IsEnabledSSSR() ? "sssr.RT" : "wireframe.RT"), Resource::StateRenderTarget);
+			node.AddInput(Settings::GetUpscaler() != UpscalerType::None ? "upscale.RT" : "wireframe.RT", Resource::StateRenderTarget);
 			node.AddInput("outlineDraw.DS", Resource::StateDepthRead);
 			node.AddOutput("RT", Resource::StateRenderTarget, upscaledScene);
 			nodes.emplace_back(std::move(node));

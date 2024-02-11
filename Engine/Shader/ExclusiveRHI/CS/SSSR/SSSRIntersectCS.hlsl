@@ -9,7 +9,7 @@ TEXTURE_EX(blueNoise, Texture2D<FfxFloat32x2>, 0, 3);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 1, 4);
 TEXTURE_EX(normals, Texture2D<float2>, 2, 5); // External resource format
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 3, 6);
-TEXTURE_EX(color, Texture2D<FfxFloat32x4>, 4, 7);
+TEXTURE_EX(color, Texture2D<float4>, 4, 7); // External resource format
 TEXTURE_EX(environmentMap, TextureCube, 5, 8); // External resource format
 
 FfxBoolean IsRayIndexValid(const in FfxUInt32 rayIndex)

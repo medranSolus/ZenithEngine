@@ -11,7 +11,7 @@ TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 0, 5);
 TEXTURE_EX(varianceHistory, Texture2D<FfxFloat32>, 1, 6);
 TEXTURE_EX(normals, Texture2D<float2>, 2, 7); // External resource format
 TEXTURE_EX(environmentMap, TextureCube, 3, 8); // External resource format
-TEXTURE_EX(materialParams, Texture2D<FfxFloat32x4>, 4, 9);
+TEXTURE_EX(materialParams, Texture2D<float4>, 4, 9); // External resource format
 
 void IncrementRayCounter(const in FfxUInt32 value, out FfxUInt32 orgVal)
 {
