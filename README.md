@@ -11,6 +11,15 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - Vulkan SDK 1.3.250.0
  - CMake 3.22
 
+## License
+
+Zenith Engine project is divided into 4 distinct parts, each with license on it's own.
+Details about each subproject's license can be found in [Doc/License](Doc/License) directory:
+ - `Engine` - [Engine.md](Doc/License/Engine.md), main engine static library.
+ - `Demo` - [Demo.md](Doc/License/Demo.md), technological demo.
+ - `EditTool` - [EditTool.md](Doc/License/EditTool.md), CLI utility tool.
+ - `Common` - unlicensed, usage outside of projects stated above is prohibited.
+ 
 **External libraries:**
  - [AMD GPU Services](https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK) - [MIT License](Doc/License/ThirdParty/AGS.txt)
  - [Assimp](https://github.com/assimp/assimp) - [Modified 3-clause BSD-License](Doc/License/ThirdParty/Assimp.txt)
@@ -40,11 +49,4 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - [XeGTAO v1.30](https://github.com/GameTechDev/XeGTAO) - [MIT LICENSE](Doc/License/ThirdParty/XeGTAO.txt)
  - [XeSS v1.2.0](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.pdf), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
 
-## License
-
-Zenith Engine project is divided into 4 distinct parts, each with license on it's own.
-Details about each subproject's license can be found in [Doc/License](Doc/License) directory:
- - `Engine` - [Engine.md](Doc/License/Engine.md), main engine static library.
- - `Demo` - [Demo.md](Doc/License/Demo.md), technological demo.
- - `EditTool` - [EditTool.md](Doc/License/EditTool.md), CLI utility tool.
- - `Common` - unlicensed, usage outside of projects stated above is prohibited.
+ ## [Changelog](Doc/Changelog.md)
