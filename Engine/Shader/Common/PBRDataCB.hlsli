@@ -5,7 +5,7 @@
 
 #define ZE_BLUR_KERNEL_MAX_SIZE 8
 
-struct PBRData
+struct PbrData
 {
 	uint2 DisplaySize;
 	uint2 RenderSize;
@@ -31,7 +31,7 @@ struct PBRData
 	// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 	float BlurCoefficients[ZE_BLUR_KERNEL_MAX_SIZE];
 };
-CBUFFER_GLOBAL(pbrData, PBRData, 13, 0);
+CBUFFER_GLOBAL(pbrData, PbrData, 13, 0);
 
 float3 DeleteGammaCorr(const in float3 srgb)
 {

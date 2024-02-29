@@ -90,32 +90,32 @@ namespace ZE::GFX::Primitive
 
 				if constexpr (GetSurfaceNormal)
 				{
-					Math::XMStoreFloat3(&v0.Tangent, Math::XMVector3Normalize(tangent));
-					Math::XMStoreFloat3(&v1.Tangent, Math::XMVector3Normalize(tangent));
-					Math::XMStoreFloat3(&v2.Tangent, Math::XMVector3Normalize(tangent));
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v0.Tangent), Math::XMVector3Normalize(tangent));
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v1.Tangent), Math::XMVector3Normalize(tangent));
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v2.Tangent), Math::XMVector3Normalize(tangent));
 				}
 				else
 				{
 					normal = Math::XMLoadFloat3(&v0.Normal);
-					Math::XMStoreFloat3(&v0.Tangent,
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v0.Tangent),
 						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
 							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
 
 					normal = Math::XMLoadFloat3(&v1.Normal);
-					Math::XMStoreFloat3(&v1.Tangent,
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v1.Tangent),
 						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
 							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
 
 					normal = Math::XMLoadFloat3(&v2.Normal);
-					Math::XMStoreFloat3(&v2.Tangent,
+					Math::XMStoreFloat3(reinterpret_cast<Float3*>(&v2.Tangent),
 						Math::XMVector3Normalize(Math::XMVectorSubtract(tangent,
 							Math::XMVectorMultiply(normal, Math::XMVector3Dot(tangent, normal)))));
 				}
 
 				// Store handness
-				//v0.Tangent.w = direction;
-				//v1.Tangent.w = direction;
-				//v2.Tangent.w = direction;
+				v0.Tangent.w = direction;
+				v1.Tangent.w = direction;
+				v2.Tangent.w = direction;
 			}
 		}
 	}
@@ -342,9 +342,9 @@ namespace ZE::GFX::Primitive
 		};
 
 		auto comparator = [](const Key& x, const Key& y) constexpr -> bool
-		{
-			return (x.first == y.first && x.second == y.second) || (x.first == y.second && x.second == y.first);
-		};
+			{
+				return (x.first == y.first && x.second == y.second) || (x.first == y.second && x.second == y.first);
+			};
 		for (U32 i = 0; i < density; ++i)
 		{
 			std::unordered_map<Key, U32, std::hash<Key>, decltype(comparator)> lookup(0, std::hash<Key>{}, comparator);

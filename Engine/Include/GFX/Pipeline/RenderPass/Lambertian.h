@@ -15,9 +15,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	struct Resources
 	{
 		RID DepthStencil;
-		RID Color;
 		RID Normal;
-		RID Specular;
+		RID Albedo;
+		RID MaterialParams;
 		RID MotionVectors;
 		RID ReactiveMask;
 	};
@@ -31,7 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	};
 
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatColor,
-		PixelFormat formatNormal, PixelFormat formatSpecular, PixelFormat formatMotion, PixelFormat formatReactive);
+	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

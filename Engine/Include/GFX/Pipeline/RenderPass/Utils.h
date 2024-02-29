@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 					Settings::Data.emplace<VisibilitySolid>(entity);
 				else
 				{
-					if (Settings::Data.all_of<Data::MaterialNotSolid>(group.get<Data::MaterialID>(entity).ID))
+					if (Settings::Data.all_of<Data::MaterialTransparent>(group.get<Data::MaterialID>(entity).ID))
 						Settings::Data.emplace<VisibilityTransparent>(entity);
 					else
 						Settings::Data.emplace<VisibilitySolid>(entity);

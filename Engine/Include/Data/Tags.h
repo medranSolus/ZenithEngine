@@ -28,7 +28,9 @@ namespace ZE::Data
 	struct LightPoint {};
 
 	// Indicates that material contains transparent or translucent elements
-	struct MaterialNotSolid {};
+	struct MaterialTransparent {};
+	// Indicates that material requires blending on already rendered geometry
+	struct MaterialBlend {};
 
 	template<EmptyType T>
 	constexpr auto GetRenderGroup() noexcept { return Settings::Data.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
