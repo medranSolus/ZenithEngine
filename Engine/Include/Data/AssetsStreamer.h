@@ -2,6 +2,7 @@
 #include "IO/CompressionFormat.h"
 #include "IO/DiskManager.h"
 #include "IO/FileStatus.h"
+#include "ExternalModelOptions.h"
 #include "MaterialPBR.h"
 #include "LOD.h"
 #include "ResourceLocation.h"
@@ -26,11 +27,11 @@ namespace ZE::Data
 	public:
 		typedef U8 ResourceFlags;
 		enum ResourceFlag : ResourceFlags { None = 0, Static = 1 };
+		struct PackID { U16 ID; };
 
 		static constexpr const char* RESOURCE_FILE_EXT = ".zeres";
 
 	private:
-		struct PackID { U16 ID; };
 		struct DecompressionEntry
 		{
 			EID ResID;
@@ -69,7 +70,7 @@ namespace ZE::Data
 
 #if _ZE_EXTERNAL_MODEL_LOADING
 		Task<MeshID> ParseMesh(GFX::Device& dev, const aiMesh& mesh);
-		Task<MaterialID> ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path);
+		Task<MaterialID> ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options);
 #endif
 		void ShowWindow(GFX::Device& dev);
 

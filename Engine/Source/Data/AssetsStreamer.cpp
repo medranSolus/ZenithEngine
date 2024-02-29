@@ -31,9 +31,10 @@ namespace ZE::Data
 
 		// Initialize schema for known materials
 		GFX::Resource::Texture::Schema pbrTextureSchema = {};
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_COLOR_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_ALBEDO_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_NORMAL_NAME, GFX::Resource::Texture::Type::Tex2D);
-		pbrTextureSchema.AddTexture(MaterialPBR::TEX_SPECULAR_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_METAL_NAME, GFX::Resource::Texture::Type::Tex2D);
+		pbrTextureSchema.AddTexture(MaterialPBR::TEX_ROUGH_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
 		texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 	}
@@ -521,7 +522,12 @@ namespace ZE::Data
 						vertex.Tangent.x = mesh.mTangents[i].x;
 						vertex.Tangent.y = mesh.mTangents[i].y;
 						vertex.Tangent.z = mesh.mTangents[i].z;
-						//vertex.Tangent.w = -1.0f; // TODO: Check somehow
+
+						// Get handedness of bitangent and store it in tangent W component to later multiply when recomputing bitangent
+						Vector tan = Math::XMLoadFloat3(reinterpret_cast<Float3*>(&vertex.Tangent));
+						Vector normal = Math::XMLoadFloat3(&vertex.Normal);
+						Vector bitan = Math::XMLoadFloat3(reinterpret_cast<Float3*>(mesh.mBitangents + i));
+						vertex.Tangent.w = Math::XMVectorGetX(Math::XMVector3Dot(Math::XMVector3Cross(tan, normal), bitan)) < 0.0f ? -1.0f : 1.0f;
 					}
 				}
 
@@ -542,7 +548,7 @@ namespace ZE::Data
 			});
 	}
 
-	Task<MaterialID> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path)
+	Task<MaterialID> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options)
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
 			[&, path = path]() -> MaterialID
@@ -563,6 +569,8 @@ namespace ZE::Data
 
 				aiString texFile;
 				bool notSolid = false;
+				// Emissive: aiTextureType_EMISSIVE
+				// Decals: $mat.gltf.alphaMode
 
 				// Get diffuse texture
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
@@ -572,8 +580,8 @@ namespace ZE::Data
 					{
 						notSolid |= surfaces.back().HasAlpha();
 
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_COLOR_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseTexture;
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_ALBEDO_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseAlbedoTex;
 					}
 				}
 
@@ -584,57 +592,150 @@ namespace ZE::Data
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseNormal;
+						flags |= MaterialPBR::Flag::UseNormalTex;
 					}
 				}
 
-				// Get specular data
-				if (material.GetTexture(aiTextureType_SPECULAR, 0, &texFile) == aiReturn_SUCCESS)
+				aiString metalTexFile;
+				aiReturn metalTexRet = material.GetTexture(aiTextureType_METALNESS, 0, &metalTexFile);
+				aiReturn roughTexRet = material.GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texFile);
+
+				// Check for metalness and roughness texture packed into 2 channels
+				if (roughTexRet == aiReturn_SUCCESS && metalTexRet == aiReturn_SUCCESS && texFile == metalTexFile)
 				{
-					std::vector<GFX::Surface> surfaces;
-					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+					if ((options & ExternalModelOption::ExtractRoughnessMask) == (options & ExternalModelOption::ExtractMetalnessMask))
 					{
-						if (surfaces.back().HasAlpha())
-							data.Flags |= MaterialPBR::Flag::UseSpecularPowerAlpha;
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_SPECULAR_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseSpecular;
+						ZE_WARNING("Same channel used for extracting packed roughness and metalness texture! Falling back to default R for metalness and G for roughness.");
+						options &= ~(ExternalModelOption::ExtractRoughnessMask | ExternalModelOption::ExtractMetalnessMask);
+						options |= ExternalModelOption::ExtractMetalnessChannelR | ExternalModelOption::ExtractRoughnessChannelG;
+					}
+					GFX::Surface packed;
+					if (packed.Load(path + texFile.C_Str()))
+					{
+						if (Utils::GetChannelCount(packed.GetFormat()) >= 2)
+						{
+							std::vector<GFX::Surface> metalness, roughness;
+							metalness.emplace_back();
+							roughness.emplace_back();
+							GFX::Surface* channelR = nullptr, * channelG = nullptr, * channelB = nullptr, * channelA = nullptr;
+
+							switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractMetalnessMask))
+							{
+							default:
+							case ExternalModelOption::ExtractMetalnessChannelR:
+							{
+								channelR = &metalness.front();
+								break;
+							}
+							case ExternalModelOption::ExtractMetalnessChannelG:
+							{
+								channelG = &metalness.front();
+								break;
+							}
+							case ExternalModelOption::ExtractMetalnessChannelB:
+							{
+								channelB = &metalness.front();
+								break;
+							}
+							case ExternalModelOption::ExtractMetalnessChannelA:
+							{
+								channelA = &metalness.front();
+								break;
+							}
+							}
+							switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractRoughnessMask))
+							{
+							case ExternalModelOption::ExtractRoughnessChannelR:
+							{
+								channelR = &roughness.front();
+								break;
+							}
+							default:
+							case ExternalModelOption::ExtractRoughnessChannelG:
+							{
+								channelG = &roughness.front();
+								break;
+							}
+							case ExternalModelOption::ExtractRoughnessChannelB:
+							{
+								channelB = &roughness.front();
+								break;
+							}
+							case ExternalModelOption::ExtractRoughnessChannelA:
+							{
+								channelA = &roughness.front();
+								break;
+							}
+							}
+
+							if (packed.ExtractChannel(channelR, channelG, channelB, channelA))
+							{
+								texDesc.AddTexture(texSchema, MaterialPBR::TEX_METAL_NAME, std::move(metalness));
+								texDesc.AddTexture(texSchema, MaterialPBR::TEX_ROUGH_NAME, std::move(roughness));
+								flags |= MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::UseRoughnessTex;
+							}
+						}
 					}
 				}
+				else
+				{
+					// Get metalness texture
+					if (metalTexRet == aiReturn_SUCCESS)
+					{
+						std::vector<GFX::Surface> surfaces;
+						if (surfaces.emplace_back().Load(path + metalTexFile.C_Str()))
+						{
+							texDesc.AddTexture(texSchema, MaterialPBR::TEX_METAL_NAME, std::move(surfaces));
+							flags |= MaterialPBR::Flag::UseMetalnessTex;
+						}
+					}
 
-				// Get parallax map texture
-				if (material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
+					// Get roughness texture
+					if (roughTexRet == aiReturn_SUCCESS)
+					{
+						std::vector<GFX::Surface> surfaces;
+						if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+						{
+							texDesc.AddTexture(texSchema, MaterialPBR::TEX_ROUGH_NAME, std::move(surfaces));
+							flags |= MaterialPBR::Flag::UseRoughnessTex;
+						}
+					}
+				}
+				metalTexFile.Clear();
+
+				// Get height texture
+				if (false && material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
 						texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseParallax;
+						flags |= MaterialPBR::Flag::UseParallaxTex;
 						notSolid = true;
 					}
 				}
 
-				if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Color)) != aiReturn_SUCCESS)
-					data.Color = { 0.0f, 0.8f, 1.0f };
-				else if (data.Color.RGBA.w != 1.0f)
+				if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Albedo)) != aiReturn_SUCCESS)
+					data.Albedo = { 0.0f, 0.8f, 1.0f };
+				else if (data.Albedo.RGBA.w != 1.0f)
 					notSolid = true;
 
-				if (material.Get(AI_MATKEY_COLOR_SPECULAR, reinterpret_cast<aiColor3D&>(data.Specular)) != aiReturn_SUCCESS)
-					data.Specular = { 1.0f, 1.0f, 1.0f };
+				if (material.Get(AI_MATKEY_METALLIC_FACTOR, data.Metalness) != aiReturn_SUCCESS)
+					data.Metalness = 0.0f;
 
-				if (material.Get(AI_MATKEY_SHININESS_STRENGTH, data.SpecularIntensity) != aiReturn_SUCCESS)
-					data.SpecularIntensity = 0.9f;
-
-				if (material.Get(AI_MATKEY_SHININESS, data.SpecularPower) != aiReturn_SUCCESS)
-					data.SpecularPower = 0.409f;
-				else if (data.SpecularPower > 1.0f)
-					data.SpecularPower = Utils::SafeCast<float>(log(static_cast<double>(data.SpecularPower)) / log(8192.0));
+				if (material.Get(AI_MATKEY_ROUGHNESS_FACTOR, data.Roughness) != aiReturn_SUCCESS)
+					data.Roughness = 0.7f;
 
 				if (material.Get(AI_MATKEY_BUMPSCALING, data.ParallaxScale) != aiReturn_SUCCESS)
 					data.ParallaxScale = 0.1f;
 
 				// Indicate that material require special handling
 				if (notSolid)
-					assets.emplace<MaterialNotSolid>(materialId);
+				{
+					flags |= MaterialPBR::Flag::IsTransparent;
+					assets.emplace<MaterialTransparent>(materialId);
+				}
+				data.Flags = flags;
 
 				// Load custom data by default to resource pack 0
 				assets.emplace<PackID>(materialId).ID = 0;
