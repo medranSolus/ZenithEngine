@@ -56,5 +56,6 @@ namespace ZE::GFX
 		bool Load(std::string_view filename) noexcept;
 		bool Save(std::string_view filename) const noexcept;
 		U8* GetImage(U16 arrayIndex, U16 mipIndex, U16 depthLevel) noexcept;
+		bool ExtractChannel(Surface* channelR, Surface* channelG, Surface* channelB, Surface* channelA) const noexcept;
 	};
 }

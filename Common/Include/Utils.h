@@ -35,6 +35,8 @@ namespace ZE::Utils
 	constexpr U8 GetChannelCount(PixelFormat format) noexcept;
 	// Extract alpha value [0..1] from opaque alpha channel with given format
 	constexpr float GetAlpha(U32 alphaChannel, PixelFormat format) noexcept;
+	// Extract format of single channel
+	constexpr PixelFormat GetSingleChannelFormat(PixelFormat format) noexcept;
 
 	// Calculace CRC32 hash over given buffer in compile time
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept;
@@ -856,6 +858,110 @@ namespace ZE::Utils
 		case PixelFormat::YUV_P010:
 		case PixelFormat::YUV_NV12:
 			return 1.0f;
+		}
+	}
+
+	constexpr PixelFormat GetSingleChannelFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32_Float:
+			return PixelFormat::R32_Float;
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32_UInt:
+			return PixelFormat::R32_UInt;
+		case PixelFormat::R32G32B32A32_SInt:
+		case PixelFormat::R32G32B32_SInt:
+		case PixelFormat::R32G32_SInt:
+			return PixelFormat::R32_SInt;
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16_Float:
+			return PixelFormat::R16_Float;
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16_UInt:
+			return PixelFormat::R16_UInt;
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16_SInt:
+			return PixelFormat::R16_SInt;
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16_UNorm:
+			return PixelFormat::R16_UNorm;
+		case PixelFormat::R16G16B16A16_SNorm:
+		case PixelFormat::R16G16_SNorm:
+			return PixelFormat::R16_SNorm;
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8_UInt:
+			return PixelFormat::R8_UInt;
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8_SInt:
+			return PixelFormat::R8_SInt;
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		case PixelFormat::R8G8_UNorm:
+			return PixelFormat::R8_UNorm;
+		case PixelFormat::R8G8B8A8_SNorm:
+		case PixelFormat::R8G8_SNorm:
+			return PixelFormat::R8_SNorm;
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+		{
+			ZE_FAIL("Extracting channel from single channel texture is pointless!");
+			return format;
+		}
+		case PixelFormat::Unknown:
+		case PixelFormat::R24G8_DepthStencil:
+		case PixelFormat::R32G8_DepthStencil:
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		case PixelFormat::R11G11B10_Float:
+		case PixelFormat::R9G9B9E5_SharedExp:
+		case PixelFormat::B4G4R4A4_UNorm:
+		case PixelFormat::B5G5R5A1_UNorm:
+		case PixelFormat::B5G6R5_UNorm:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+		case PixelFormat::YUV_YUY2:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
+		case PixelFormat::YUV_NV12:
+		default:
+		{
+			ZE_FAIL("Unsupported format to extract channels from!");
+			return PixelFormat::Unknown;
+		}
 		}
 	}
 

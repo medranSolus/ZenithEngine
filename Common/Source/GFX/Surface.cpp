@@ -543,22 +543,19 @@ namespace ZE::GFX
 				U32 currentWidth = width;
 				U32 currentHeight = height;
 				U16 currentDepth = depth;
-				for (U16 mip = 0; mip < mipLevels; )
+				for (U16 mip = 0; mip < mipLevels; ++mip)
 				{
 					offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
 
-					if (++mip < mipLevels)
-					{
-						currentWidth >>= 1;
-						if (currentWidth == 0)
-							currentWidth = 1;
-						currentHeight >>= 1;
-						if (currentHeight == 0)
-							currentHeight = 1;
-						currentDepth >>= 1;
-						if (currentDepth == 0)
-							currentDepth = 1;
-					}
+					currentWidth >>= 1;
+					if (currentWidth == 0)
+						currentWidth = 1;
+					currentHeight >>= 1;
+					if (currentHeight == 0)
+						currentHeight = 1;
+					currentDepth >>= 1;
+					if (currentDepth == 0)
+						currentDepth = 1;
 				}
 				return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
 			};
@@ -566,5 +563,152 @@ namespace ZE::GFX
 		for (U16 a = 0; a < arrayIndex; ++a)
 			image += getMipOffset(mipCount, 0);
 		return image + getMipOffset(mipIndex, depthLevel);
+	}
+
+	bool Surface::ExtractChannel(Surface* channelR, Surface* channelG, Surface* channelB, Surface* channelA) const noexcept
+	{
+		ZE_ASSERT(channelR || channelG || channelB || channelA, "No channels provided to copy memory to!");
+		if (memory == nullptr)
+		{
+			ZE_FAIL("Empty source image!");
+			return false;
+		}
+
+		PixelFormat singleChannelFormat = Utils::GetSingleChannelFormat(format);
+		if (singleChannelFormat == PixelFormat::Unknown || singleChannelFormat == format)
+			return false;
+		switch (Utils::GetChannelCount(format))
+		{
+		default:
+		case 4:
+			break;
+		case 2:
+		{
+			if (channelB)
+			{
+				ZE_FAIL("Provided blue channel to extract while texture don't have enough channels!");
+				return false;
+			}
+			[[fallthrough]];
+		}
+		case 3:
+		{
+			if (channelA)
+			{
+				ZE_FAIL("Provided alpha channel to extract while texture don't have enough channels!");
+				return false;
+			}
+			break;
+		}
+		case 1:
+		case 0:
+		{
+			ZE_FAIL("Incorrect number of source channels!");
+			return false;
+		}
+		}
+
+		// Compute final size of single channel. Ordering of layers:
+		// - array holding mips (or single array if depth > 1)
+		// - single mip level holding 3D texture with given depth
+		// - single depth level holding 2D texture
+		// - single texture with height of rows
+		// - Every mip level smaller in 3D dimmensions than previous one
+		U32 channelMemorySize = 0;
+		const U8 channelSize = Utils::GetFormatBitCount(singleChannelFormat) / 8;
+		for (U16 a = 0; a < arraySize; ++a)
+		{
+			U32 currentWidth = width;
+			U32 currentHeight = height;
+			U16 currentDepth = depth;
+			for (U16 mip = 0; mip < mipCount; ++mip)
+			{
+				channelMemorySize += Math::AlignUp(Math::AlignUp(currentWidth * channelSize, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+
+				currentWidth >>= 1;
+				if (currentWidth == 0)
+					currentWidth = 1;
+				currentHeight >>= 1;
+				if (currentHeight == 0)
+					currentHeight = 1;
+				currentDepth >>= 1;
+				if (currentDepth == 0)
+					currentDepth = 1;
+			}
+		}
+
+		// Init all destination textures
+		auto initSurface = [&](Surface& channel)
+			{
+				channel.format = singleChannelFormat;
+				channel.alpha = false;
+				channel.width = width;
+				channel.height = height;
+				channel.depth = depth;
+				channel.mipCount = mipCount;
+				channel.arraySize = arraySize;
+				channel.memorySize = channelMemorySize;
+				channel.memory = std::make_shared<U8[]>(channelMemorySize);
+			};
+		if (channelR)
+			initSurface(*channelR);
+		if (channelG)
+			initSurface(*channelG);
+		if (channelB)
+			initSurface(*channelB);
+		if (channelA)
+			initSurface(*channelA);
+
+		// Copy channel data
+		U8* srcMemory = memory.get();
+		U32 destMemoryOffset = 0;
+		for (U16 a = 0; a < arraySize; ++a)
+		{
+			U32 currentWidth = width;
+			U32 currentHeight = height;
+			U16 currentDepth = depth;
+			for (U16 mip = 0; mip < mipCount; ++mip)
+			{
+				for (U16 d = 0; d < currentDepth; ++d)
+				{
+					for (U32 y = 0; y < currentHeight; ++y)
+					{
+						// Only place with row alignment, everything above have slive alignment
+						for (U32 x = 0; x < currentWidth; ++x)
+						{
+							if (channelR)
+								std::memcpy(channelR->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
+							srcMemory += channelSize;
+							if (channelG)
+								std::memcpy(channelG->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
+							srcMemory += channelSize;
+							if (channelB)
+								std::memcpy(channelB->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
+							srcMemory += channelSize;
+							if (channelA)
+								std::memcpy(channelA->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
+							srcMemory += channelSize;
+
+							destMemoryOffset += channelSize;
+						}
+						destMemoryOffset = Math::AlignUp(destMemoryOffset, ROW_PITCH_ALIGNMENT);
+						srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(ROW_PITCH_ALIGNMENT)));
+					}
+					destMemoryOffset = Math::AlignUp(destMemoryOffset, SLICE_PITCH_ALIGNMENT);
+					srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(SLICE_PITCH_ALIGNMENT)));
+				}
+
+				currentWidth >>= 1;
+				if (currentWidth == 0)
+					currentWidth = 1;
+				currentHeight >>= 1;
+				if (currentHeight == 0)
+					currentHeight = 1;
+				currentDepth >>= 1;
+				if (currentDepth == 0)
+					currentDepth = 1;
+			}
+		}
+		return true;
 	}
 }
