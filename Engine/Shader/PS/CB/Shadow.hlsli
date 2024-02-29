@@ -7,6 +7,7 @@ struct ShadowBuffer
 {
 	float3 LightPos;
 	float ParallaxScale;
+	uint Flags;
 };
 
 CONSTANT(shadow, ShadowBuffer, 0);

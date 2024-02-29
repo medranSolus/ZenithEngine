@@ -8,7 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	void Clean(Device& dev, ExecuteData& data) noexcept
 	{
 		data.StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber({ Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax }) + 1;
+		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
 		while (stateCount--)
 		{
 			data.StatesSolid[stateCount].Free(dev);
@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	{
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
-		desc.AddRange({ sizeof(Float4), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
+		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
 		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer });  // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
@@ -31,18 +31,18 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "PhongDepthVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapDepth");
 		passData.StateDepth.Init(dev, psoDesc, schema);
 
-		psoDesc.SetShader(dev, psoDesc.VS, "PhongVS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.VS, "LambertVS", buildData.ShaderCache);
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
-		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber({ Data::MaterialPBR::UseTexture | Data::MaterialPBR::UseNormal | Data::MaterialPBR::UseParallax }) + 1;
+		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
 		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		while (stateIndex--)
@@ -98,7 +98,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 			EID currentMaterial = INVALID_EID;
 			U8 currentState = UINT8_MAX;
-			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
+			Resource::Constant<ShaderConstantData> shadowData(dev, { lightPos, 0.0f, 0 });
 			if (solidCount)
 			{
 				ZE_PERF_GUARD("Shadow Map - solid present");
@@ -146,11 +146,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ZE_PERF_START("Shadow Map - solid material sort");
 				solidGroup.sort<Data::MaterialID>([&](const auto& m1, const auto& m2) -> bool
 					{
-						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m1.ID) & ~Data::MaterialPBR::UseSpecular) });
-						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m2.ID) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state1 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m1.ID) & SHADOW_PERMUTATIONS) });
+						const U8 state2 = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(m2.ID) & SHADOW_PERMUTATIONS) });
 						return state1 < state2;
 					});
-				currentState = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & ~Data::MaterialPBR::UseSpecular) });
+				currentState = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(solidGroup.get<Data::MaterialID>(solidGroup[0]).ID) & SHADOW_PERMUTATIONS) });
 				ZE_PERF_STOP();
 
 				// Solid pass
@@ -180,11 +180,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(currentMaterial);
-						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags });
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & SHADOW_PERMUTATIONS) });
 						if (currentState != state)
 						{
 							currentState = state;
@@ -244,11 +244,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(material.ID);
-						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags });
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 
-						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & ~Data::MaterialPBR::UseSpecular) });
+						const U8 state = Data::MaterialPBR::GetPipelineStateNumber({ static_cast<U8>(Settings::Data.get<Data::PBRFlags>(currentMaterial) & SHADOW_PERMUTATIONS) });
 						if (currentState != state)
 						{
 							currentState = state;

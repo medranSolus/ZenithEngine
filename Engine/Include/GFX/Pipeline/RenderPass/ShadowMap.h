@@ -6,11 +6,21 @@
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
+	constexpr Data::PBRFlags SHADOW_PERMUTATIONS = { Data::MaterialPBR::IsTransparent | Data::MaterialPBR::UseParallaxTex };
 
 	// Indicates that entity is inside view frustum
 	struct InsideFrustumSolid { Resource::DynamicBufferAlloc Transform; };
 	// Indicates that entity is inside view frustum and is not opaque
 	struct InsideFrustumNotSolid {};
+
+#pragma pack(push, 1)
+	struct ShaderConstantData
+	{
+		Float3 LightPos;
+		float ParallaxScale;
+		U32 Flags;
+	};
+#pragma pack(pop)
 
 	struct Resources
 	{

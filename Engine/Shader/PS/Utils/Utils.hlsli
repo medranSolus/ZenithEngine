@@ -1,6 +1,5 @@
 #ifndef UTILS_PS_HLSLI
 #define UTILS_PS_HLSLI
-#include "CommonUtils.hlsli"
 
 float GetSampledSpecularPower(const in float specularPower)
 {
@@ -9,13 +8,13 @@ float GetSampledSpecularPower(const in float specularPower)
 }
 
 // Get tangent space rotation (normalized)
-float3x3 GetTangentToWorld(const in float3 tan, const in float3 normal)
+float3x3 GetTangentToWorld(const in float4 tan, const in float3 normal)
 {
 	// Make tangent again orthogonal to normal (Gramm-Schmidt process)
 	const float3 N = normalize(normal);
-	float3 T = normalize(tan);
+	float3 T = normalize(tan.xyz);
 	T = normalize(T - dot(T, N) * N);
-	return float3x3(T, normalize(cross(T, N)), N);
+	return float3x3(T, normalize(cross(T, N) * tan.w), N);
 }
 
 // Create offset texture coordinates (parallax occlussion mapping)
@@ -39,7 +38,7 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 	[unroll(MAX_LAYERS)]
 	for (uint i = 0; i < MAX_LAYERS; ++i)
 	{
-		currentDepthMapValue = depthMap.SampleBias(splr, currentUV, mipBias).r;
+		currentDepthMapValue = 1.0f - depthMap.SampleBias(splr, currentUV, mipBias).r;
 		[branch]
 		if (currentLayerDepth >= currentDepthMapValue)
 			break;
@@ -50,7 +49,7 @@ float2 GetParallaxMapping(const in float2 uv, const in float3 tangentViewDir,
 	// Get depth values before and after current point and interpolate them for smooth intersection
 	const float2 prevUV = currentUV + deltaTexCoords;
 	const float nextDepth = currentDepthMapValue - currentLayerDepth;
-	const float prevDepth = depthMap.SampleBias(splr, prevUV, mipBias).r - currentLayerDepth + layerDepth;
+	const float prevDepth = (1.0f - depthMap.SampleBias(splr, prevUV, mipBias).r) - currentLayerDepth + layerDepth;
 
 	return lerp(currentUV, prevUV, nextDepth / (nextDepth - prevDepth));
 }

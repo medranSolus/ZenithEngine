@@ -6,6 +6,7 @@
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
 	constexpr U64 BUFFER_SHRINK_STEP = 2;
+	constexpr Data::PBRFlags SHADOW_PERMUTATIONS = { Data::MaterialPBR::IsTransparent | Data::MaterialPBR::UseParallaxTex };
 
 	// Indicates that material of the geometry can be processed in depth pre-pass
 	struct Solid { Resource::DynamicBufferAlloc Transform; };

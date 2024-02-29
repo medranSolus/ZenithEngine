@@ -17,23 +17,31 @@ namespace ZE::Data
 	// PBR material parameters
 	struct MaterialPBR
 	{
-		static constexpr const char TEX_SCHEMA_NAME[] = "PHONG";
-		static constexpr const char TEX_COLOR_NAME[] = "texture";
+		static constexpr const char TEX_SCHEMA_NAME[] = "PBR";
+		static constexpr const char TEX_ALBEDO_NAME[] = "albedo";
 		static constexpr const char TEX_NORMAL_NAME[] = "normal";
-		static constexpr const char TEX_SPECULAR_NAME[] = "specular";
+		static constexpr const char TEX_METAL_NAME[] = "metalness";
+		static constexpr const char TEX_ROUGH_NAME[] = "roughness";
 		static constexpr const char TEX_HEIGHT_NAME[] = "height";
 
-		enum Flag : U8 { None = 0, UseSpecularPowerAlpha = 1, UseSpecular = 16, UseTexture = 8, UseNormal = 4, UseParallax = 2 };
+		enum Flag : U8
+		{
+			None = 0,
+			UseAlbedoTex = 1,
+			UseNormalTex = 2,
+			UseMetalnessTex = 4,
+			UseRoughnessTex = 8,
+			UseParallaxTex = 16,
+			IsTransparent = 32,
+			// Mask to indicate which flags contribute to physical permutations of shader
+			PermutationMask = UseParallaxTex | IsTransparent
+		};
 
-		ColorF4 Color;
-		ColorF3 Specular;
-		// Possible flags: None, UseSpecularPowerAlpha
-		U32 Flags;
-		// The bigger the brighter
-		float SpecularIntensity;
-		// The smaller the less focused in one point
-		float SpecularPower;
+		ColorF4 Albedo;
+		float Metalness;
+		float Roughness;
 		float ParallaxScale;
+		U32 Flags;
 
 		static constexpr U8 GetLastPipelineStateNumber() noexcept { return GetPipelineStateNumber({ UINT8_MAX }); }
 		// Describes ordering of pipeline states enforced by the flags, pass UINT8_MAX to get last index for PSO
@@ -51,54 +59,30 @@ namespace ZE::Data
 	{
 		// Remove UseSpecularPowerAlpha, as it's used in shader directly
 		//
-		// Ordering based on bitfield: Specular|Texture|Normal|Parallax
+		// Ordering based on bitfield: Parallax|Transparent
 		// Eg: Texture|Specular -> 0b1010 -> 10
-		return static_cast<U8>(flags.Flags & (UseSpecular | UseTexture | UseNormal | UseParallax)) >> 1;
+		return static_cast<U8>(flags.Flags & Flag::PermutationMask) >> 4;
 	}
 
 	constexpr PBRFlags MaterialPBR::GetShaderFlagsForState(U8 stateNumber) noexcept
 	{
 		// Retrieve original position of flags
-		return { static_cast<U8>(stateNumber << 1) };
+		return { static_cast<U8>(stateNumber << 4) };
 	}
 
 	constexpr const char* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept
 	{
-		flags.Flags &= ~UseSpecularPowerAlpha;
+		flags.Flags &= ~Flag::PermutationMask;
 		switch (flags.Flags)
 		{
-		case None:
+		case Flag::None:
 			return "";
-		case UseParallax:
-			return "_P";
-		case UseSpecular:
-			return "_S";
-		case UseSpecular | UseParallax:
-			return "_SP";
-		case UseNormal:
-			return "_N";
-		case UseNormal | UseParallax:
-			return "_NP";
-		case UseNormal | UseSpecular:
-			return "_NS";
-		case UseNormal | UseSpecular | UseParallax:
-			return "_NSP";
-		case UseTexture:
+		case Flag::IsTransparent:
 			return "_T";
-		case UseTexture | UseParallax:
+		case Flag::UseParallaxTex:
+			return "_P";
+		case Flag::IsTransparent | Flag::UseParallaxTex:
 			return "_TP";
-		case UseTexture | UseSpecular:
-			return "_TS";
-		case UseTexture | UseSpecular | UseParallax:
-			return "_TSP";
-		case UseTexture | UseNormal:
-			return "_TN";
-		case UseTexture | UseNormal | UseParallax:
-			return "_TNP";
-		case UseTexture | UseNormal | UseSpecular:
-			return "_TNS";
-		case UseTexture | UseNormal | UseSpecular | UseParallax:
-			return "_TNSP";
 		}
 		ZE_FAIL("Unknown set of flags!");
 		return "";
