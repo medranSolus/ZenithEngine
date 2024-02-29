@@ -20,6 +20,15 @@ namespace ZE
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Check for optimization UB code: https://github.com/xiw/stack/
 		prevTime = Perf::Get().GetNow();
+		// https://www.a23d.co/blog/different-maps-in-pbr-textures
+		// https://help.poliigon.com/en/articles/1712652-texture-maps-explained
+
+		// Scenes:
+		// Intel Sponza - https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+		// PBRT - https://pbrt.org/scenes-v3
+		// Benedikt - https://benedikt-bitterli.me/resources/
+		// NVidia - https://developer.nvidia.com/orca
+		// OBJ Sponza - https://www.alexandre-pestana.com/pbr-textures-sponza/
 
 		/*
 		Frontend of resource managment done in AssetsStreamer
