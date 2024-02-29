@@ -45,7 +45,7 @@ namespace ZE::WinAPI
 	{
 		if (file)
 		{
-			const BOOL status = CloseHandle(file);
+			[[maybe_unused]] const BOOL status = CloseHandle(file);
 			file = nullptr;
 			ZE_ASSERT(status, "Error closing file handle!");
 		}

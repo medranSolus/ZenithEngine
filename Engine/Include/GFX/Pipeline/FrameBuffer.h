@@ -69,18 +69,16 @@ namespace ZE::GFX::Pipeline
 
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.
-		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent.
-		// UAV resources are only adjacent in situation of following resources, ex:
-		// 1: SRV, 2: UAV/SRV, 3: SRV
-		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
+		// Resource adjacency is based on type of view type, SRV and UAV are grouped separately, ex:
+		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
+		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetSRV, cl, bindCtx, rid); }
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in FrameBufferDesc they have been specified one by one.
-		// In case of another resource between them that is not used as SRV or UAV then such resources are still adjacent.
-		// UAV resources are only adjacent in situation of following resources, ex:
-		// 1: SRV, 2: UAV/SRV, 3: SRV
-		// Resources 2 and 3 are adjacent and can be set in one call, but resources 1 and 2 are not and require separate BufferPacks.
+		// Resource adjacency is based on type of view type, SRV and UAV are grouped separately, ex:
+		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
+		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid, mipLevel); }

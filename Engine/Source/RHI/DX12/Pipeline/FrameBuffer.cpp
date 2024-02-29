@@ -607,7 +607,7 @@ namespace ZE::RHI::DX12::Pipeline
 		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = descInfoCpu.CPU;
 		// Create demanded views for each resource
-		for (RID i = 1; const auto & res : resourcesInfo)
+		for (RID i = 1; const auto& res : resourcesInfo)
 		{
 			if (res.IsRTV())
 			{
@@ -694,6 +694,62 @@ namespace ZE::RHI::DX12::Pipeline
 			}
 			else
 				rtvDsv[i].ptr = UINT64_MAX;
+			if (res.IsSRV())
+			{
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+				srvDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				if (res.IsCube())
+				{
+					if (res.Desc.DepthOrArraySize > 6)
+					{
+						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+						srvDesc.TextureCubeArray.MostDetailedMip = 0;
+						srvDesc.TextureCubeArray.MipLevels = res.Desc.MipLevels;
+						srvDesc.TextureCubeArray.First2DArrayFace = 0;
+						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize / 6;
+						srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+						resources[i].SetArrayView();
+					}
+					else
+					{
+						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+						srvDesc.TextureCube.MostDetailedMip = 0;
+						srvDesc.TextureCube.MipLevels = res.Desc.MipLevels;
+						srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+					}
+				}
+				else if (res.Desc.DepthOrArraySize > 1)
+				{
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+					srvDesc.Texture2DArray.MostDetailedMip = 0;
+					srvDesc.Texture2DArray.MipLevels = res.Desc.MipLevels;
+					srvDesc.Texture2DArray.FirstArraySlice = 0;
+					srvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
+					srvDesc.Texture2DArray.PlaneSlice = 0;
+					srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+					resources[i].SetArrayView();
+				}
+				else
+				{
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+					srvDesc.Texture2D.MostDetailedMip = 0;
+					srvDesc.Texture2D.MipLevels = res.Desc.MipLevels;
+					srvDesc.Texture2D.PlaneSlice = 0;
+					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+				}
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
+				srv[i] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
+				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
+				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
+			}
+			else
+				srv[i].first.ptr = srv[i].second.ptr = UINT64_MAX;
+			++i;
+		}
+		// Split processing so UAV and SRV descriptors are placed next to each other
+		for (RID i = 1; const auto& res : resourcesInfo)
+		{
 			if (res.IsUAV())
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -747,57 +803,6 @@ namespace ZE::RHI::DX12::Pipeline
 			}
 			else
 				uav[i - 1].first.ptr = uav[i - 1].second.first.ptr = uav[i - 1].second.second.ptr = UINT64_MAX;
-			if (res.IsSRV())
-			{
-				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-				srvDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
-				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-				if (res.IsCube())
-				{
-					if (res.Desc.DepthOrArraySize > 6)
-					{
-						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-						srvDesc.TextureCubeArray.MostDetailedMip = 0;
-						srvDesc.TextureCubeArray.MipLevels = res.Desc.MipLevels;
-						srvDesc.TextureCubeArray.First2DArrayFace = 0;
-						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize / 6;
-						srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
-						resources[i].SetArrayView();
-					}
-					else
-					{
-						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-						srvDesc.TextureCube.MostDetailedMip = 0;
-						srvDesc.TextureCube.MipLevels = res.Desc.MipLevels;
-						srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-					}
-				}
-				else if (res.Desc.DepthOrArraySize > 1)
-				{
-					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-					srvDesc.Texture2DArray.MostDetailedMip = 0;
-					srvDesc.Texture2DArray.MipLevels = res.Desc.MipLevels;
-					srvDesc.Texture2DArray.FirstArraySlice = 0;
-					srvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
-					srvDesc.Texture2DArray.PlaneSlice = 0;
-					srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-					resources[i].SetArrayView();
-				}
-				else
-				{
-					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-					srvDesc.Texture2D.MostDetailedMip = 0;
-					srvDesc.Texture2D.MipLevels = res.Desc.MipLevels;
-					srvDesc.Texture2D.PlaneSlice = 0;
-					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
-				srv[i] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
-				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
-				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
-			}
-			else
-				srv[i].first.ptr = srv[i].second.ptr = UINT64_MAX;
 			++i;
 		}
 

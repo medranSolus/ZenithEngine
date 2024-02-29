@@ -68,7 +68,7 @@ namespace ZE::WinAPI
 					success = true;
 			}
 		}
-		const BOOL status = CloseHandle(overlapped.hEvent);
+		[[maybe_unused]] const BOOL status = CloseHandle(overlapped.hEvent);
 		ZE_ASSERT(status, "Error closing file event handle!");
 		return success;
 	}
