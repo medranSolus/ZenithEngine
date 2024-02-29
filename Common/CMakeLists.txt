@@ -19,4 +19,4 @@ target_compile_features(${COMMON_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${COMMON_TARGET}
     PUBLIC ${COMMON_INC_DIR} ${EXT_INC_DIR} ${EXTERNAL_CONFIG_INC_DIR} ${DXMATH_INC_DIR} ${LIBSPNG_INC_DIR} ${QOI_INC_DIR})
 target_precompile_headers(${COMMON_TARGET} PUBLIC ${PCH})
-target_link_libraries(${COMMON_TARGET} PUBLIC ${LIBSPNG_TARGET})
+target_link_libraries(${COMMON_TARGET} PUBLIC ${LIBSPNG_TARGET} ${ZLIB_TARGET})
