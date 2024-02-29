@@ -181,7 +181,7 @@ void App::ShowObjectWindow()
 	{
 		ImGui::Columns(2);
 		ImGui::BeginChild("##node_tree", { 0.0f, 231.5f }, false, ImGuiWindowFlags_HorizontalScrollbar);
-		for (EID parent : Settings::Data.view<std::string>(entt::exclude<ParentID>))
+		for (EID parent : Settings::Data.view<std::string>(entt::exclude<ParentID, Data::AssetsStreamer::PackID>))
 		{
 			BuiltObjectTree(parent, selected);
 		}
@@ -238,7 +238,7 @@ void App::ShowObjectWindow()
 				ImGui::NewLine();
 				auto& transform = Settings::Data.get<Data::Transform>(selected);
 
-				ImGui::InputFloat3("Scale [X|Y|Z]", reinterpret_cast<float*>(&transform.Scale));
+				change = ImGui::InputFloat3("Scale [X|Y|Z]", reinterpret_cast<float*>(&transform.Scale));
 				if (transform.Scale.x < 0.001f)
 					transform.Scale.x = 0.001f;
 				if (transform.Scale.y < 0.001f)
@@ -249,11 +249,11 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Position");
 				ImGui::SetNextItemWidth(SLIDER_WIDTH);
-				ImGui::InputFloat("X##position", &transform.Position.x, 0.1f, 0.0f, "%.2f");
+				change |= ImGui::InputFloat("X##position", &transform.Position.x, 0.1f, 0.0f, "%.2f");
 				ImGui::SetNextItemWidth(SLIDER_WIDTH);
-				ImGui::InputFloat("Y##position", &transform.Position.y, 0.1f, 0.0f, "%.2f");
+				change |= ImGui::InputFloat("Y##position", &transform.Position.y, 0.1f, 0.0f, "%.2f");
 				ImGui::SetNextItemWidth(SLIDER_WIDTH);
-				ImGui::InputFloat("Z##position", &transform.Position.z, 0.1f, 0.0f, "%.2f");
+				change |= ImGui::InputFloat("Z##position", &transform.Position.z, 0.1f, 0.0f, "%.2f");
 				ImGui::NextColumn();
 
 				Float3 rotation = Math::ToDegrees(Math::GetEulerAngles(transform.Rotation));
@@ -266,11 +266,27 @@ void App::ShowObjectWindow()
 				angleSet |= ImGui::InputFloat("Z##angle", &rotation.z, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 				if (angleSet)
 				{
+					change = true;
 					rotation = Math::ToRadians(rotation);
 					Math::XMStoreFloat4(&transform.Rotation,
 						Math::XMQuaternionRotationRollPitchYawFromVector(Math::XMLoadFloat3(&rotation)));
 				}
 				ImGui::Columns(1);
+
+				if (change)
+				{
+					if (Settings::Data.try_get<ParentID>(selected))
+						PropagateTransformChange(selected);
+					else
+					{
+						Settings::Data.get<Data::TransformGlobal>(selected) = static_cast<Data::TransformGlobal>(transform);
+						if (Children* children = Settings::Data.try_get<Children>(selected))
+						{
+							for (EID child : children->Childs)
+								PropagateTransformChange(child);
+						}
+					}
+				}
 			}
 
 			if (Settings::Data.all_of<Data::MaterialID>(selected))
@@ -287,33 +303,21 @@ void App::ShowObjectWindow()
 					ImGui::Text("Name: %s", Settings::Data.get<std::string>(materialId).c_str());
 				}
 
-				change = ImGui::ColorEdit4("Material color", reinterpret_cast<float*>(&material.Color),
+				change = ImGui::ColorEdit4("Albedo", reinterpret_cast<float*>(&material.Albedo),
 					COLOR_FLAGS | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
-				change |= ImGui::ColorEdit3("Specular color", reinterpret_cast<float*>(&material.Specular), COLOR_FLAGS);
 
-				ImGui::Columns(2, "##specular", false);
-				ImGui::Text("Specular intensity");
+				ImGui::Columns(2, "##pbr_params", false);
+				ImGui::Text("Metalness");
 				ImGui::SetNextItemWidth(-1.0f);
-				change |= ImGui::InputFloat("##spec_int", &material.SpecularIntensity, 0.1f, 0.0f, "%.2f");
-				if (material.SpecularIntensity < 0.01f)
-					material.SpecularIntensity = 0.01f;
+				change |= GUI::InputClamp(0.0f, 1.0f, material.Metalness,
+					ImGui::InputFloat("##metalness", &material.Metalness, 0.1f, 0.0f, "%.3f"));
 				ImGui::NextColumn();
 
-				ImGui::Text("Specular power");
+				ImGui::Text("Roughness");
 				ImGui::SetNextItemWidth(-1.0f);
-				change |= ImGui::InputFloat("##spec_pow", &material.SpecularPower, 0.001f, 0.0f, "%.3f");
-				if (material.SpecularPower < 0.001f)
-					material.SpecularPower = 0.001f;
-				else if (material.SpecularPower > 1.0f)
-					material.SpecularPower = 1.0f;
+				change |= GUI::InputClamp(0.0f, 1.0f, material.Roughness,
+					ImGui::InputFloat("##roughness", &material.Roughness, 0.1f, 0.0f, "%.3f"));
 				ImGui::Columns(1);
-
-				bool useSpecularAlpha = material.Flags & Data::MaterialPBR::UseSpecularPowerAlpha;
-				change |= ImGui::Checkbox("Use specular map alpha", &useSpecularAlpha);
-				if (useSpecularAlpha)
-					material.Flags |= Data::MaterialPBR::UseSpecularPowerAlpha;
-				else
-					material.Flags &= ~Data::MaterialPBR::UseSpecularPowerAlpha;
 
 				change |= ImGui::InputFloat("Parallax scale", &material.ParallaxScale, 0.01f, 0.0f, "%.2f");
 				if (material.ParallaxScale < 0.0f)
@@ -460,6 +464,28 @@ void App::ShowObjectWindow()
 	ImGui::End();
 }
 
+void App::PropagateTransformChange(EID childEntity)
+{
+	ZE_VALID_EID(childEntity);
+	ZE_ASSERT(Settings::Data.try_get<ParentID>(childEntity), "Incorrect child-parent structure defined!");
+
+	auto& parent = Settings::Data.get<Data::TransformGlobal>(Settings::Data.get<ParentID>(childEntity).ID);
+	auto& global = Settings::Data.get<Data::TransformGlobal>(childEntity);
+	auto& local = Settings::Data.get<Data::Transform>(childEntity);
+	Math::XMStoreFloat4(&global.Rotation,
+		Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&parent.Rotation), Math::XMLoadFloat4(&local.Rotation))));
+	Math::XMStoreFloat3(&global.Position,
+		Math::XMVectorAdd(Math::XMLoadFloat3(&parent.Position), Math::XMLoadFloat3(&local.Position)));
+	Math::XMStoreFloat3(&global.Scale,
+		Math::XMVectorMultiply(Math::XMLoadFloat3(&parent.Scale), Math::XMLoadFloat3(&local.Scale)));
+
+	if (Children* children = Settings::Data.try_get<Children>(childEntity))
+	{
+		for (EID child : children->Childs)
+			PropagateTransformChange(child);
+	}
+}
+
 EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Float3&& position, const Float3& angle)
 {
@@ -490,18 +516,13 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 }
 
 EID App::AddModel(std::string&& name, Float3&& position,
-	const Float3& angle, float scale, const std::string& file)
+	const Float3& angle, float scale, const std::string& file, Data::ExternalModelOptions options)
 {
 	EID model = Settings::Data.create();
 	Settings::Data.emplace<std::string>(model, std::move(name));
+	Data::Transform transform = { Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale) };
 
-	auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
-		Settings::Data.emplace<Data::Transform>(model,
-			Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale)));
-	if (Settings::ComputeMotionVectors())
-		Settings::Data.emplace<Data::TransformPrevious>(model, transform);
-
-	if (!Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, file).Get())
+	if (!Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, file, options).Get())
 	{
 		// TODO: correct error handling
 		ZE_FAIL("Error loading model!");
@@ -631,10 +652,9 @@ App::App(const CmdParser& params)
 			assets.emplace<Data::PBRFlags>(materialId);
 
 			const float seed = static_cast<float>(i) / static_cast<float>(materialIds.size());
-			data.Color = { seed, seed * 0.8f, 1.0f - seed, 1.0f };
-			data.Specular = { seed * 0.35f, seed, 1.0f };
-			data.SpecularIntensity = 0.1f + seed;
-			data.SpecularPower = 0.409f;
+			data.Albedo = { seed, seed * 0.8f, 1.0f - seed, 1.0f };
+			data.Metalness = seed;
+			data.Roughness = 1.0f - seed;
 			data.ParallaxScale = 0.1f;
 
 			const GFX::Resource::Texture::Schema& texSchema = engine.Assets().GetSchemaLib().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
@@ -672,29 +692,26 @@ App::App(const CmdParser& params)
 	else
 	{
 		// Sample Scene
-		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { -8.0f, 0.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
+		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 2.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 
-		AddPointLight("Light bulb", { -20.0f, 2.0f, -4.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f, 50);
-		AddModel("Brick wall", { -5.0f, -2.0f, 7.0f }, Math::NoRotationAngles(), 2.0f, "Models/bricks/brick_wall.obj");
-		AddModel("Nanosuit", { 0.0f, -8.2f, 6.0f }, Math::NoRotationAngles(), 0.7f, "Models/nanosuit/nanosuit.obj");
+		AddPointLight("Light bulb", { -2.4f, 2.8f, -1.1f }, { 1.0f, 1.0f, 1.0f }, 0.5f, 50);
+		AddModel("Sting sword", { -1.9f, 2.1f, -2.3f }, { 35.0f, 270.0f, 110.0f }, 0.045f, "Models/Sting_Sword/Sting_Sword.obj",
+			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV));
 
 #if !_ZE_MODE_DEBUG
-		AddCamera("Camera #2", 2.0f, 60.0f, { 0.0f, 40.0f, -4.0f }, { 0.0f, 45.0f, 0.0f });
-		AddPointLight("Pumpkin candle", { 14.0f, -6.3f, -5.0f }, { 1.0f, 0.96f, 0.27f }, 5.0f, 85);
-		AddPointLight("Blue ilumination", { 43.0f, 27.0f, 1.8f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 70);
-		AddPointLight("Torch", { 21.95f, -1.9f, 9.9f }, { 1.0f, 0.0f, 0.2f }, 5.0f, 70);
+		AddPointLight("Blue ilumination", { 10.8f, 5.9f, -0.1f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 60);
+		AddPointLight("Torch", { 15.6f, 3.2f, 0.9f }, { 1.0f, 0.0f, 0.2f }, 3.2f, 70);
 
-		AddSpotLight("Space light", { 7.5f, 60.0f, -5.0f }, { 1.3f, 2.3f, 1.3f }, 8.0f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f });
-		AddSpotLight("Lion flare", { -61.0f, -6.0f, 5.0f }, { 0.8f, 0.0f, 0.8f }, 9.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f });
-		AddSpotLight("Dragon flame", { -35.0f, -8.0f, 2.0f }, { 0.04f, 0.0f, 0.52f }, 9.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 });
+		AddSpotLight("Space light", { 4.8f, 22.7f, -3.1f }, { 1.3f, 2.3f, 1.3f }, 3.5f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f });
+		AddSpotLight("Lion flare", { -14.0f, 0.5f, 2.2f }, { 0.8f, 0.0f, 0.8f }, 5.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f });
+		AddSpotLight("Dragon flame", { -6.5f, 0.0f, -2.9f }, { 0.04f, 0.0f, 0.52f }, 4.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 });
 
 		AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
 
-		AddModel("Sponza", { 0.0f, -8.0f, 0.0f }, Math::NoRotationAngles(), 0.045f, "Models/Sponza/sponza.obj");
-		AddModel("Jack'O'Lantern", { 13.5f, -8.2f, -5.0f }, Math::NoRotationAngles(), 13.0f, "Models/Jack/Jack_O_Lantern.3ds");
-		AddModel("Black dragon", { -39.0f, -8.1f, 2.0f }, { 0.0f, 290.0f, 0.0f }, 0.15f, "Models/Black Dragon/Dragon 2.5.fbx");
-		AddModel("Sting sword", { -20.0f, 0.0f, -6.0f }, { 35.0f, 270.0f, 110.0f }, 0.2f, "Models/Sting_Sword/Sting_Sword.obj");
-		AddModel("TIE", { 41.6f, 18.5f, 8.5f }, { 0.0f, 87.1f, 301.0f }, 3.6f, "Models/tie/tie.obj");
+		AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
+			Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV);
+		AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
+			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV));
 #endif
 	}
 }

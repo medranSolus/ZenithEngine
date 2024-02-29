@@ -63,7 +63,7 @@ float3 GetDiffuseLambert(const in float3 surfaceColor, const in float3 fresnel, 
 	return (float3(1.0f, 1.0f, 1.0f) - fresnel) * surfaceColor * ((1.0f - metalness) / PI);
 }
 
-float3 GetBRDFCookTorrance(uint flag, const in float3 directionToLight, const in float3 directionToCamera, const in float3 surfaceNormal, const in float3 surfaceColor, const in float metalness, const in float roughness)
+float3 GetBRDFCookTorrance(const in float3 directionToLight, const in float3 directionToCamera, const in float3 surfaceNormal, const in float3 surfaceColor, const in float metalness, const in float roughness)
 {
 	const float3 halfwayCameraLight = normalize(directionToCamera + directionToLight);
 	

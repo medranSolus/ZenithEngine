@@ -25,6 +25,7 @@ class App final
 	void ShowOptionsWindow();
 	void BuiltObjectTree(EID currentEntity, EID& selected);
 	void ShowObjectWindow();
+	void PropagateTransformChange(EID childEntity);
 
 	void AddModelButton();
 	void ChangeBackgroundButton();
@@ -33,7 +34,8 @@ class App final
 	EID AddCamera(std::string&& name, float nearZ, float fov,
 		Float3&& position, const Float3& angle);
 	EID AddModel(std::string&& name, Float3&& position,
-		const Float3& angle, float scale, const std::string& file);
+		const Float3& angle, float scale, const std::string& file,
+		Data::ExternalModelOptions options = static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::None));
 	EID AddPointLight(std::string&& name, Float3&& position,
 		ColorF3&& color, float intensity, U64 range);
 	EID AddSpotLight(std::string&& name, Float3&& position,
