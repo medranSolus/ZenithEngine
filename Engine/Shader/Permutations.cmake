@@ -127,20 +127,16 @@ add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H|NIS_USE_HA
 
 ############# PS PERMUTATIONS ##############
 
-add_shader_permutation("PhongPS" "_ZE_OUTPUT_MOTION:M")
-add_shader_permutation("PhongPS" "_ZE_OUTPUT_REACTIVE:R")
-add_shader_permutation("PhongPS" "_ZE_USE_TEXTURE:T")
-add_shader_permutation("PhongPS" "_ZE_USE_NORMAL:N")
-add_shader_permutation("PhongPS" "_ZE_USE_SPECULAR:S")
-add_shader_permutation("PhongPS" "_ZE_USE_PARALLAX:P")
+add_shader_permutation("PbrPS" "_ZE_TRANSPARENT:T")
+add_shader_permutation("PbrPS" "_ZE_USE_PARALLAX:P")
+add_shader_permutation("PbrPS" "_ZE_OUTPUT_MOTION:M")
+add_shader_permutation("PbrPS" "_ZE_OUTPUT_REACTIVE:R")
 
-add_shader_permutation("ShadowPS" "_ZE_USE_TEXTURE:T")
-add_shader_permutation("ShadowPS" "_ZE_USE_NORMAL:N")
+add_shader_permutation("ShadowPS" "_ZE_TRANSPARENT:T")
 add_shader_permutation("ShadowPS" "_ZE_USE_PARALLAX:P")
 
 add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_AO:A")
 
 ############# VS PERMUTATIONS ##############
 
-add_shader_permutation("PhongVS" "_ZE_OUTPUT_MOTION:M")
-add_shader_permutation("PhongDepthVS" "_ZE_OUTPUT_MOTION:M")
+add_shader_permutation("LambertVS" "_ZE_OUTPUT_MOTION:M")

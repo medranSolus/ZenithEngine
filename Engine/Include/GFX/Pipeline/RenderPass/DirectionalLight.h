@@ -6,13 +6,13 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 {
 	struct Resources
 	{
-		RID GBufferNormal;
-		RID GBufferSpecular;
 		RID GBufferDepth;
+		RID GBufferNormal;
+		RID GBufferAlbedo;
+		RID GBufferMaterialParams;
 		RID ShadowMap;
 		RID ShadowMapDepth;
-		RID Color;
-		RID Specular;
+		RID Lighting;
 	};
 
 	struct ExecuteData
@@ -24,7 +24,6 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
 
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
-		PixelFormat formatColor, PixelFormat formatSpecular,
-		PixelFormat formatShadow, PixelFormat formatShadowDepth);
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

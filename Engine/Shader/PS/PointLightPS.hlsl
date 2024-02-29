@@ -1,46 +1,41 @@
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
 #include "Utils/LightUtils.hlsli"
+#include "Utils/PbrUtils.hlsli"
 #include "CB/PointLight.hlsli"
 
-TEXTURE_EX(shadowMap, TextureCube, 0, 3);
-TEX2D(normalMap,   1, 2);
-TEX2D(specularMap, 2, 2); // RGB - color, A - power
-TEX2D(depthMap,    3, 2);
+TEXTURE_EX(shadowMap,      TextureCube,                 0, 3);
+TEX2D(depthMap,                                         1, 2);
+TEXTURE_EX(normalMap,      Texture2D<CodedNormalGB>,    2, 2);
+TEXTURE_EX(albedo,         Texture2D<AlbedoGB>,         3, 2);
+TEXTURE_EX(materialParams, Texture2D<PackedMaterialGB>, 4, 2);
 
-struct PSOut
-{
-	float4 color    : SV_TARGET0;
-	float4 specular : SV_TARGET1;
-};
-
-PSOut main(float3 texPos : TEX_POSITION)
+float4 main(float3 texPos : TEX_POSITION) : SV_TARGET0
 {
 	// Position depth reconstruction
 	const float2 tc = float2(0.5f, -0.5f) * (texPos.xy / texPos.z) + 0.5f;
 	const float3 position = GetWorldPosition(tc, tx_depthMap.Sample(splr_PR, tc).x, cb_worldData.ViewProjectionInverse);
-
-	// Compute main colors and direction
-	const float3 shadowColor = DeleteGammaCorr(cb_light.ShadowColor);
+	
+	// Compute direction vectors
+	const float3 directionToCamera = normalize(cb_worldData.CameraPos - position);
 	float3 directionToLight = ct_lightPos.Pos - position;
 	const float lightDistance = length(directionToLight);
-	const float3 lightColor = DeleteGammaCorr(cb_light.Color) * (cb_light.Intensity / GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance));
 	directionToLight /= lightDistance;
+	
+	// Main light colors
+	const float3 lightRadiance = DeleteGammaCorr(cb_light.Color) * (cb_light.Intensity / GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance));
+	const float3 shadowAmbientRadiance = DeleteGammaCorr(cb_light.ShadowColor);
+	
+	// Get GBuffer params
+	const float3 normal = DecodeNormal(tx_normalMap.Sample(splr_PR, tc));
+	const float3 albedo = tx_albedo.Sample(splr_PR, tc).rgb;
+	const PackedMaterialGB materialData = tx_materialParams.Sample(splr_PR, tc);
+	
+	// Get light level and shadow test
+	const float3 reflectance = GetBRDFCookTorrance(directionToLight, directionToCamera, normal, albedo, GetMetalness(materialData), GetRoughness(materialData));
+	const float shadowLevel = GetShadowLevel(directionToCamera, lightDistance, directionToLight, splr_AR, tx_shadowMap, cb_pbrData.ShadowMapSize);
 
-	// Shadow test
-	const float shadowLevel = GetShadowLevel(normalize(cb_worldData.CameraPos - position), lightDistance, directionToLight, splr_AR, tx_shadowMap, cb_pbrData.ShadowMapSize);
-
-	const float3 normal = DecodeNormal(tx_normalMap.Sample(splr_PR, tc).rg);
-	const float4 specularData = tx_specularMap.Sample(splr_PR, tc);
-
-	PSOut pso;
-
-	pso.color = float4(lerp(shadowColor, GetDiffuse(lightColor, directionToLight, normal), shadowLevel) * float(shadowLevel >= 0.001f), 0.0f);
-
-	pso.specular = float4(GetSpecular(cb_worldData.CameraPos, directionToLight, position, normal,
-		pso.color.rgb * specularData.rgb, specularData.a) * float(shadowLevel > 0.98f), 0.0f);
-
-	return pso;
+	return float4(GetRadiance(shadowAmbientRadiance, lightRadiance, reflectance, shadowLevel), 0.0f);
 }

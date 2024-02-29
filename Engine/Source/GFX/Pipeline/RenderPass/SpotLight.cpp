@@ -16,8 +16,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	}
 
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
-		PixelFormat formatColor, PixelFormat formatSpecular,
-		PixelFormat formatShadow, PixelFormat formatShadowDepth)
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
 		ExecuteData* passData = new ExecuteData;
 		ShadowMap::Setup(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow,
@@ -31,7 +30,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			desc.AddRange({ 1, 0, 6, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Shadow transform
 			desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 			desc.AddRange({ 1, 0, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Shadow map
-			desc.AddRange({ 3, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff normal, specular, depth
+			desc.AddRange({ 4, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
 			desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 			desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 			passData->BindingIndex = buildData.BindingLib.RegisterCommonBinding(dev, desc, "light");
@@ -45,9 +44,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;
 		psoDesc.SetDepthClip(false);
-		psoDesc.RenderTargetsCount = 2;
-		psoDesc.FormatsRT[0] = formatColor;
-		psoDesc.FormatsRT[1] = formatSpecular;
+		psoDesc.RenderTargetsCount = 1;
+		psoDesc.FormatsRT[0] = formatLighting;
 		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "SpotLight");
 		passData->State.Init(dev, psoDesc, schema);
@@ -116,7 +114,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
+				renderData.Buffers.SetRTV(cl, ids.Lighting);
 
 				Float3 translation = transform.Position;
 				translation.y -= light.Volume;
@@ -135,7 +133,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
 				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
+				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 				renderData.BindRendererDynamicData(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
 				ctx.Reset();

@@ -4,8 +4,7 @@
 namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 {
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
-		PixelFormat formatColor, PixelFormat formatSpecular,
-		PixelFormat formatShadow, PixelFormat formatShadowDepth)
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -13,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light direction
 		desc.AddRange({ 1, 1, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Directional light buffer
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Shadow map
-		desc.AddRange({ 3, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff normal, specular, depth
+		desc.AddRange({ 4, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
 		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
@@ -25,9 +24,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.SetDepthClip(false);
-		psoDesc.RenderTargetsCount = 2;
-		psoDesc.FormatsRT[0] = formatColor;
-		psoDesc.FormatsRT[1] = formatSpecular;
+		psoDesc.RenderTargetsCount = 1;
+		psoDesc.FormatsRT[0] = formatLighting;
 		ZE_PSO_SET_NAME(psoDesc, "DirectionalLight");
 		passData->State.Init(dev, psoDesc, schema);
 
@@ -43,8 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Lighting Clear", PixelVal::White);
-		renderData.Buffers.ClearRTV(cl, ids.Color, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
-		renderData.Buffers.ClearRTV(cl, ids.Specular, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
+		renderData.Buffers.ClearRTV(cl, ids.Lighting, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
 		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetDirectionalLightGroup();
@@ -59,11 +56,11 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetRTV<2>(cl, &ids.Color, true);
+			renderData.Buffers.SetRTV(cl, ids.Lighting);
 
 			ctx.SetFromEnd(3);
 			renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferNormal);
+			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();

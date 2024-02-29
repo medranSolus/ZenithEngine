@@ -7,11 +7,11 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 	struct Resources
 	{
-		RID GBufferNormal;
-		RID GBufferSpecular;
 		RID GBufferDepth;
-		RID Color;
-		RID Specular;
+		RID GBufferNormal;
+		RID GBufferAlbedo;
+		RID GBufferMaterialParams;
+		RID Lighting;
 		RID ShadowMap;
 		RID ShadowMapDepth;
 	};
@@ -26,7 +26,6 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 	void Clean(Device& dev, void* data) noexcept;
 	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
-		PixelFormat formatColor, PixelFormat formatSpecular,
-		PixelFormat formatShadow, PixelFormat formatShadowDepth);
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth);
 	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
 }

@@ -7,17 +7,9 @@ float GetAttenuation(uniform float attLinear, uniform float attQuad, const in fl
 	return 1.0f + (attLinear + attQuad * distanceToLight) * distanceToLight;
 }
 
-float3 GetDiffuse(const in float3 diffuseColor, const in float3 directionToLight, const in float3 normal)
+float3 GetRadiance(const in float3 shadowAmbientRadiance, const in float3 lightRadiance, const in float3 reflectanceBRDF, const in float shadowLevel)
 {
-	return diffuseColor * max(0.0f, dot(directionToLight, normal));
-}
-
-float3 GetSpecular(uniform float3 cameraPos, const in float3 directionToLight, const in float3 pos,
-	const in float3 normal, const in float3 specularColor, const in float specularPower)
-{
-	// Halfway vector between directionToLight and directionToCamera
-	const float3 H = normalize(normalize(cameraPos - pos) + directionToLight);
-	return specularColor * pow(max(dot(normal, H), 0.0f), specularPower);
+	return lerp(shadowAmbientRadiance, reflectanceBRDF * lightRadiance, shadowLevel) * float(shadowLevel >= 0.001f);
 }
 
 float2 GetShadowUV(const in float3 position, uniform matrix shadowViewProjection)
@@ -80,6 +72,15 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 		level += saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / mapSize).x)));
 
 	return (saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos).x))) + level) / 21.0f;
+}
+
+// Reconstruct pixel position from depth buffer
+float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform matrix inverseViewProjection)
+{
+	const float x = texCoord.x * 2.0f - 1.0f;
+	const float y = (1.0f - texCoord.y) * 2.0f - 1.0f;
+	const float4 pos = mul(float4(x, y, depth, 1.0f), inverseViewProjection);
+	return pos.xyz / pos.w;
 }
 
 #endif // LIGHT_UTILS_PS_HLSLI

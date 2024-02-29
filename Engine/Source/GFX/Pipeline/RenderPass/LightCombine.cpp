@@ -15,15 +15,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff color
-		desc.AddRange({ 2, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Light map, specular map
+		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Direct lighting
 		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
 		passData->BindingIndexNoAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		desc.Ranges.resize(2);
-		desc.Samplers.clear();
-		desc.AddRange({ 1, 3, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // SSAO
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		++desc.Ranges.front().Count; // Add SSAO
 		passData->BindingIndexAO = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
@@ -57,10 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ctx.BindingSchema.SetGraphics(cl);
 
 		renderData.Buffers.InitRTV(cl, ids.RenderTarget);
-		renderData.Buffers.SetSRV(cl, ctx, ids.GBufferColor);
-		renderData.Buffers.SetSRV(cl, ctx, ids.LightColor);
-		if (isAO)
-			renderData.Buffers.SetSRV(cl, ctx, ids.SSAO);
+		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 		cl.DrawFullscreen(dev);
