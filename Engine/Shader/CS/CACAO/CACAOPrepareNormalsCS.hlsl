@@ -1,6 +1,6 @@
 #define ZE_CACAO_CB_RANGE 2
 #include "CB/ConstantsCACAO.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(deinterleavedNormals, RWTexture2DArray<FfxFloat32x4>, 0, 0);
 
@@ -20,11 +20,11 @@ void FFX_CACAO_Prepare_StoreDepthMip3(const in FfxUInt32x2 coord, const in FfxUI
 void FFX_CACAO_Prepare_StoreDepth(const in FfxUInt32x2 coord, const in FfxUInt32 index, const in FfxFloat32 val) {}
 
 #ifdef _ZE_CACAO_PREPARE_NORMALS_INPUT
-TEXTURE_EX(normals, Texture2D<float2>, 0, 1);
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 0, 1);
 
 FfxFloat32x3 FFX_CACAO_Prepare_LoadNormal(const in FfxUInt32x2 coord)
 {
-	float3 normal = DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	float3 normal = DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 	normal = mul(normal, (float3x3) NormalsWorldToViewspaceMatrix()).xyz;
     // normal = normalize(normal);
 	return normal;

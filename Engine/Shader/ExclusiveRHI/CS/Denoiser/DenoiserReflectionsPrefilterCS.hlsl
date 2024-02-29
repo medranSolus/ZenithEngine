@@ -1,13 +1,13 @@
 #define ZE_DENOISER_REFLECTIONS_CB_RANGE 9
 #include "CB/ConstantsDenoiserReflections.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV2D(radiance, FfxFloat32x4, 1, 1);
 UAV2D(variance, FfxFloat32, 2, 2);
 TEXTURE_EX(radiance, Texture2D<FfxFloat32x4>, 0, 3);
 TEXTURE_EX(variance, Texture2D<FfxFloat32>, 1, 4);
-TEXTURE_EX(normals, Texture2D<float2>, 2, 5); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 2, 5); // External resource format
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 3, 6);
 TEXTURE_EX(avgRadiance, Texture2D<FfxFloat32x3>, 4, 7);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 5, 8);
@@ -44,7 +44,7 @@ FfxFloat16 LoadVarianceH(const in FfxInt32x3 coord)
 
 FfxFloat16x3 FFX_DENOISER_LoadWorldSpaceNormalH(const in FfxInt32x2 coord)
 {
-	return (FfxFloat16x3)DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return (FfxFloat16x3)DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat16 FFX_DNSR_Reflections_LoadRoughness(const in FfxInt32x2 coord)
@@ -71,7 +71,7 @@ FfxFloat32 LoadVariance(const in FfxInt32x3 coord)
 
 FfxFloat32x3 FFX_DENOISER_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat32 FFX_DNSR_Reflections_LoadRoughness(const in FfxInt32x2 coord)

@@ -1,14 +1,14 @@
 #define ZE_DENOISER_SHADOWS_1_CB_RANGE 10
 #include "CB/ConstantsDenoiserShadows1.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(raytracerResults, RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV_EX(tileMetadata, RWStructuredBuffer<FfxUInt32>, 1, 1);
 UAV2D(reprojectionResults, FfxFloat32x2, 2, 2);
 UAV2D(currentMoments, FfxFloat32x3, 3, 3);
-TEXTURE_EX(normals, Texture2D<float2>, 0, 4); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 0, 4); // External resource format
 TEXTURE_EX(prevDepth, Texture2D<FfxFloat32>, 1, 5);
-TEXTURE_EX(velocity, Texture2D<float2>, 2, 6); // External resource format
+TEXTURE_EX(velocity, Texture2D<MotionGB>, 2, 6); // External resource format
 TEXTURE_EX(depth, Texture2D<float>, 3, 7); // External resource format
 TEXTURE_EX(previousMoments, Texture2D<FfxFloat32x3>, 4, 8);
 TEXTURE_EX(history, Texture2D<FfxFloat32x2>, 5, 9);
@@ -35,7 +35,7 @@ void StoreMoments(const in FfxUInt32x2 coord, const in FfxFloat32x3 val)
 
 FfxFloat32x3 LoadNormals(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat32 LoadPreviousDepth(const in FfxInt32x2 coord)
@@ -45,7 +45,7 @@ FfxFloat32 LoadPreviousDepth(const in FfxInt32x2 coord)
 
 FfxFloat32x2 LoadVelocity(const in FfxInt32x2 coord)
 {
-	FfxFloat32x2 velocity = tx_velocity.Load(FfxInt32x3(coord, 0)).rg;
+	MotionGB velocity = tx_velocity.Load(FfxInt32x3(coord, 0)).rg;
     return velocity * MotionVectorScale();
 }
 

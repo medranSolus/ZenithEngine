@@ -1,13 +1,14 @@
 #define ZE_FSR2_CB_RANGE 8
 #include "CB/ConstantsFSR2.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV2D(reconstructedPrevNearestDepth, FfxUInt32, 0, 0);
 UAV2D(dilatedMotionVectors, FfxFloat32x2, 1, 1);
 UAV2D(dilatedDepth, FfxFloat32, 2, 2);
 UAV2D(lockLuma, FfxFloat32, 3, 3);
 TEXTURE_EX(colorJittered, Texture2D<float4>, 0, 4); // External resource format
-TEXTURE_EX(motionVectors, Texture2D<float2>, 1, 5); // External resource format
-TEXTURE_EX(depth, Texture2D<FfxFloat32>, 2, 6); // External resource format
+TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 1, 5); // External resource format
+TEXTURE_EX(depth, Texture2D<float>, 2, 6); // External resource format
 TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 3, 7);
 
 void StoreReconstructedDepth(const in FfxUInt32x2 pxCoord, const in FfxFloat32 depth)
@@ -44,7 +45,7 @@ FfxFloat32x3 LoadInputColor(const in FfxUInt32x2 pxCoord)
 
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos)
 {
-	FfxFloat32x2 srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
+	MotionGB srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
 	FfxFloat32x2 uvMotionVector = srcMotionVector * MotionVectorScale();
 
 #if FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS

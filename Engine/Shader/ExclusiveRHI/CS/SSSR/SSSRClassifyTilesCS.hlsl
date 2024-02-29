@@ -1,6 +1,6 @@
 #define ZE_SSSR_CB_RANGE 10
 #include "CB/ConstantsSSSR.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(rayCounter, globallycoherent RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV_EX(rayList, RWStructuredBuffer<FfxUInt32>, 1, 1);
@@ -9,9 +9,9 @@ UAV2D(radiance, FfxFloat32x4, 3, 3);
 UAV2D(roughness, FfxFloat32, 4, 4);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 0, 5);
 TEXTURE_EX(varianceHistory, Texture2D<FfxFloat32>, 1, 6);
-TEXTURE_EX(normals, Texture2D<float2>, 2, 7); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 2, 7); // External resource format
 TEXTURE_EX(environmentMap, TextureCube, 3, 8); // External resource format
-TEXTURE_EX(materialParams, Texture2D<float4>, 4, 9); // External resource format
+TEXTURE_EX(materialParams, Texture2D<PackedMaterialGB>, 4, 9); // External resource format
 
 void IncrementRayCounter(const in FfxUInt32 value, out FfxUInt32 orgVal)
 {
@@ -70,7 +70,7 @@ FfxFloat32 FFX_SSSR_LoadVarianceHistory(const in FfxInt32x3 coord)
 
 FfxFloat32x3 FFX_SSSR_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat32x3 FFX_SSSR_SampleEnvironmentMap(const in FfxFloat32x3 direction, const in FfxFloat32 preceptualRoughness)
@@ -87,7 +87,7 @@ FfxFloat32x3 FFX_SSSR_SampleEnvironmentMap(const in FfxFloat32x3 direction, cons
 
 FfxFloat32 LoadRoughnessFromMaterialParametersInput(const in FfxUInt32x3 coord)
 {
-	FfxFloat32 rawRoughness = tx_materialParams.Load(coord).x;
+	float rawRoughness = GetRoughness(tx_materialParams.Load(coord));
     // Roughness is always linear in internal storage
 	return rawRoughness * rawRoughness;
 }

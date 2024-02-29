@@ -1,6 +1,6 @@
 #define ZE_DENOISER_REFLECTIONS_CB_RANGE 16
 #include "CB/ConstantsDenoiserReflections.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV2D(reprojectedRadiance, FfxFloat32x3, 1, 1);
@@ -10,13 +10,13 @@ UAV2D(avgRadiance, FfxFloat32x3, 4, 4);
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 0, 5);
 TEXTURE_EX(radiance, Texture2D<FfxFloat32x4>, 1, 6);
 TEXTURE_EX(variance, Texture2D<FfxFloat32>, 2, 7);
-TEXTURE_EX(normals, Texture2D<float2>, 3, 8); // External resource format
-TEXTURE_EX(normalsHistory, Texture2D<float2>, 4, 9); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 3, 8); // External resource format
+TEXTURE_EX(normalsHistory, Texture2D<CodedNormalGB>, 4, 9); // External resource format
 TEXTURE_EX(radianceHistory, Texture2D<FfxFloat32x4>, 5, 10);
 TEXTURE_EX(roughnessHistory, Texture2D<FfxFloat32>, 6, 11);
 TEXTURE_EX(depthHistory, Texture2D<FfxFloat32>, 7, 12);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 8, 13);
-TEXTURE_EX(motionVectors, Texture2D<float2>, 9, 14); // External resource format
+TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 9, 14); // External resource format
 TEXTURE_EX(sampleCount, Texture2D<FfxFloat32>, 10, 15);
 
 FfxUInt32 GetDenoiserTile(const in FfxUInt32 gid)
@@ -91,12 +91,12 @@ FfxFloat16 FFX_DNSR_Reflections_SampleVarianceHistory(const in FfxFloat32x2 uv)
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 {
-	return (FfxFloat16x3)DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return (FfxFloat16x3)DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16x3)DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f).xy);
+    return (FfxFloat16x3)DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f));
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x2 coord)
@@ -150,12 +150,12 @@ FfxFloat32 FFX_DNSR_Reflections_SampleVarianceHistory(const in FfxFloat32x2 uv)
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(const in FfxFloat32x2 uv)
 {
-	return DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f).xy);
+	return DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f));
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x2 coord)

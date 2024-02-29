@@ -4,7 +4,7 @@
 #	define ZE_DENOISER_SHADOWS_2_CB_RANGE 4
 #endif
 #include "CB/ConstantsDenoiserShadows2.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 #ifndef ZE_DENOISER_SHADOWS_FILTER_METHOD
 #	define ZE_DENOISER_SHADOWS_FILTER_METHOD DenoiserShadowsFilterPass0
@@ -12,7 +12,7 @@
 
 UAV_EX(tileMetadata, RWStructuredBuffer<FfxUInt32>, 0, 0);
 TEXTURE_EX(depth, Texture2D<float>, 0, 2); // External resource format
-TEXTURE_EX(normals, Texture2D<float2>, 1, 3); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 1, 3); // External resource format
 #ifdef _ZE_HALF_PRECISION
 TEXTURE_EX(filterInput, Texture2D<FfxFloat16x2>, 2, 4);
 #endif
@@ -35,7 +35,7 @@ FfxBoolean IsShadowReciever(const in FfxUInt32x2 coord)
 
 FfxFloat32x3 LoadNormals(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 #ifdef _ZE_HALF_PRECISION

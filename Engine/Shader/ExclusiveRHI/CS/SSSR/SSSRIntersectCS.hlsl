@@ -1,13 +1,13 @@
 #define ZE_SSSR_CB_RANGE 9
 #include "CB/ConstantsSSSR.hlsli"
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV_EX(rayCounter, globallycoherent RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV_EX(rayList, RWStructuredBuffer<FfxUInt32>, 1, 1);
 UAV2D(radiance, FfxFloat32x4, 2, 2);
 TEXTURE_EX(blueNoise, Texture2D<FfxFloat32x2>, 0, 3);
 TEXTURE_EX(depthHierarchy, Texture2D<FfxFloat32>, 1, 4);
-TEXTURE_EX(normals, Texture2D<float2>, 2, 5); // External resource format
+TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 2, 5); // External resource format
 TEXTURE_EX(roughness, Texture2D<FfxFloat32>, 3, 6);
 TEXTURE_EX(color, Texture2D<float4>, 4, 7); // External resource format
 TEXTURE_EX(environmentMap, TextureCube, 5, 8); // External resource format
@@ -39,7 +39,7 @@ FfxFloat32 FFX_SSSR_LoadDepth(const in FfxInt32x2 coord, const in FfxInt32 mip)
 
 FfxFloat32x3 FFX_SSSR_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 {
-	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)).xy);
+	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
 FfxFloat32 FFX_SSSR_LoadExtractedRoughness(const in FfxInt32x3 coord)

@@ -1,4 +1,4 @@
-#include "CommonUtils.hlsli"
+#include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "PBRDataCB.hlsli"
 #include "WorldDataCB.hlsli"
@@ -7,9 +7,9 @@
 
 UAV2D(ssaoMap,    uint,	       0, 2);
 UAV2D(depthEdges, unorm float, 1, 3);
-TEXTURE_EX(viewDepth,  Texture2D<lpfloat>, 0, 4);
-TEXTURE_EX(normalMap,  Texture2D<float2>,  1, 5);
-TEXTURE_EX(hilbertLUT, Texture2D<uint>,    2, 6);
+TEXTURE_EX(viewDepth,  Texture2D<lpfloat>,       0, 4);
+TEXTURE_EX(normalMap,  Texture2D<CodedNormalGB>, 1, 5);
+TEXTURE_EX(hilbertLUT, Texture2D<uint>,          2, 6);
 
 // Load encoded normal and convert to viewspace
 lpfloat3 LoadNormal(const in uint2 pos)

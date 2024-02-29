@@ -1,6 +1,5 @@
 #define ZE_DENOISER_SHADOWS_0_CB_RANGE 2
 #include "CB/ConstantsDenoiserShadows0.hlsli"
-#include "CommonUtils.hlsli"
 #define TILE_SIZE_X 8
 #define TILE_SIZE_Y 4
 

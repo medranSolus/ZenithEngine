@@ -1,6 +1,5 @@
 #define ZE_DENOISER_REFLECTIONS_CB_RANGE 9
 #include "CB/ConstantsDenoiserReflections.hlsli"
-#include "CommonUtils.hlsli"
 
 UAV_EX(tileList, RWStructuredBuffer<FfxUInt32>, 0, 0);
 UAV2D(radiance, FfxFloat32x4, 1, 1);

@@ -10,6 +10,7 @@
 #	define ZE_FSR2_CB_RANGE 13
 #endif
 #include "CB/ConstantsFSR2.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV2D(upscaledColor, FfxFloat32x4, 0, 0);
 UAV2D(lockStatus, unorm FfxFloat32x2, 1, 1);
@@ -64,11 +65,11 @@ FfxFloat32x2 LoadDilatedMotionVector(const in FfxUInt32x2 pxCoord)
 	return tx_dilatedMotionVectors[pxCoord].xy;
 }
 #else
-TEXTURE_EX(motionVectors, Texture2D<float2>, 1, MOTION_VECTORS_RANGE); // External resource format
+TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 1, MOTION_VECTORS_RANGE); // External resource format
 
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos)
 {
-	FfxFloat32x2 srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
+	MotionGB srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
 	FfxFloat32x2 uvMotionVector = srcMotionVector * MotionVectorScale();
 
 #if FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS

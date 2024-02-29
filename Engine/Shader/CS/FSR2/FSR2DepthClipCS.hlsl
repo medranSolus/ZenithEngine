@@ -1,10 +1,11 @@
 #define ZE_FSR2_CB_RANGE 12
 #include "CB/ConstantsFSR2.hlsli"
+#include "GBufferUtils.hlsli"
 
 UAV2D(preparedColor, FfxFloat32x4, 0, 0);
 UAV2D(dilatedReactiveMask, unorm FfxFloat32x2, 1, 1);
-TEXTURE_EX(colorJittered, Texture2D<float4>, 0, 2); // External resource format
-TEXTURE_EX(motionVectors, Texture2D<float2>, 1, 3); // External resource format
+TEXTURE_EX(colorJittered, Texture2D<AlbedoGB>, 0, 2); // External resource format
+TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 1, 3); // External resource format
 TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 2, 4);
 TEXTURE_EX(reactiveMask, Texture2D<FfxFloat32>, 3, 5);
 TEXTURE_EX(transparencyCompositionMask, Texture2D<FfxFloat32>, 4, 6);
@@ -12,7 +13,7 @@ TEXTURE_EX(reconstructedPrevNearestDepth, Texture2D<FfxUInt32>, 5, 7);
 TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 6, 8);
 TEXTURE_EX(prevDilatedMotionVectors, Texture2D<FfxFloat32x2>, 7, 9);
 TEXTURE_EX(dilatedDepth, Texture2D<FfxFloat32>, 8, 10);
-TEXTURE_EX(depth, Texture2D<FfxFloat32>, 9, 11); // External resource format
+TEXTURE_EX(depth, Texture2D<float>, 9, 11); // External resource format
 
 void StorePreparedInputColor(const in FfxUInt32x2 pxCoord, const in FfxFloat32x4 tonemapped)
 {
@@ -31,7 +32,7 @@ FfxFloat32x3 LoadInputColor(const in FfxUInt32x2 pxCoord)
 
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxDilatedMotionVectorPos)
 {
-	FfxFloat32x2 srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
+	MotionGB srcMotionVector = tx_motionVectors[pxDilatedMotionVectorPos].xy;
 	FfxFloat32x2 uvMotionVector = srcMotionVector * MotionVectorScale();
 
 #if FFX_FSR2_OPTION_JITTERED_MOTION_VECTORS
