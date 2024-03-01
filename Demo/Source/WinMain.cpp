@@ -14,6 +14,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 		parser.AddOption("cubePerfTest");
 		parser.AddNumber("cubePerfTestSize", 300000);
+		parser.AddOption("noExternalAssets");
 		parser.Parse(lpCmdLine);
 
 		return App(parser).Run();

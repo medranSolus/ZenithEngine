@@ -20,6 +20,14 @@ Version currently in development.
   - CACAO
   - FSR 1
   - FSR 2
+- **[FTR]** Added upscalers:
+  - FSR 1
+  - FSR 2
+  - NIS
+  - XeSS v1.2.0
+- **[BUG]** All meshes inside nodes moves on command now.
+- **[ARCH] [FTR] [REL]** Changed pipeline into [PBR](https://learnopengl.com/PBR/Theory). Metalness workflow chosen, option to add support for specular in the future.
+
 ---
 
 ## v0.3 *[2022-09-29]*

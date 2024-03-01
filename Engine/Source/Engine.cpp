@@ -22,6 +22,7 @@ namespace ZE
 		prevTime = Perf::Get().GetNow();
 		// https://www.a23d.co/blog/different-maps-in-pbr-textures
 		// https://help.poliigon.com/en/articles/1712652-texture-maps-explained
+		// https://stackoverflow.com/questions/48494389/how-does-this-code-sample-from-a-spherical-map
 
 		// Scenes:
 		// Intel Sponza - https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html

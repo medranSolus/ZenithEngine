@@ -6,5 +6,8 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 map_Kd Sting_Base_Color.png
-map_Kn Sting_Normal_DirectX.png
-map_Ks Sting_Emissive.png
+norm Sting_Normal_DirectX.png
+map_Ke Sting_Emissive.png
+map_Pm Sting_Metallic.png
+map_Pr Sting_Roughness.png
+bump Sting_Height.png

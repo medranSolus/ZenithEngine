@@ -708,10 +708,14 @@ App::App(const CmdParser& params)
 
 		AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
 
-		AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
-			Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV);
 		AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
 			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV));
+
+		if (!params.GetOption("noExternalAssets"))
+		{
+			AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
+				Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV);
+		}
 #endif
 	}
 }
