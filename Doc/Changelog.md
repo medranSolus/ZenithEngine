@@ -11,9 +11,11 @@
 
 ---
 
-## v0.4 *[in-development]*
+## v0.4 *[2024-03-05]*
 
-Version currently in development.
+PBR update pre-release. Changed whole pipeline to PBR and introduced new FidelityFX SDK features, along with upscaling.
+As of this version only DirectX 12 is working correctly due to missing backends for other APIs.
+To correctly start technological demo it's needed to pass `/dx12 /threadsCount=255` command line arguments.
 
 **List of changes:**
 - **[FTR]** Added FidelityFX SDK 1.0 with effects:
@@ -26,7 +28,9 @@ Version currently in development.
   - NIS
   - XeSS v1.2.0
 - **[BUG]** All meshes inside nodes moves on command now.
-- **[ARCH] [FTR] [REL]** Changed pipeline into [PBR](https://learnopengl.com/PBR/Theory). Metalness workflow chosen, option to add support for specular in the future.
+- **[FTR]** Added usage of Direct Storage v1.2.2 for loading data from disk. For now only DirectX 12 version works since no backend created for DirectX 11 and Vulkan yet.
+  Multithreading disabled till better way of adding new components is introduced.
+- **[ARCH] [FTR] [REL-0.4]** Changed pipeline into [PBR](https://learnopengl.com/PBR/Theory). Metalness workflow chosen, option to add support for specular in the future.
 
 ---
 
