@@ -18,10 +18,10 @@ set(ZE_BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}" CACHE STRING
 set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
 
-option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" ON)
+option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" OFF)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
 option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
-option(ZE_ENABLE_VK "Enable Vulkan API usage" ON)
+option(ZE_ENABLE_VK "Enable Vulkan API usage" OFF)
 option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)

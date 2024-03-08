@@ -20,8 +20,18 @@ macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
     file(GLOB_RECURSE SD_INC_LIST
         "${SD_INC_DIR}/*.hlsli"
         "${EXT_SHADER_INC_DIR}/*.hlsli")
+
+    if(${ZE_ENABLE_DX11})
+        list(APPEND SD_APIS "DX11")
+    endif()
+    if(${ZE_ENABLE_DX12})
+        list(APPEND SD_APIS "DX12")
+    endif()
+    if(${ZE_ENABLE_VK})
+        list(APPEND SD_APIS "VK")
+    endif()
+
     if(${ZE_PLATFORM_WINDOWS})
-        set(SD_APIS "DX11;DX12;VK")
         separate_arguments(SD_FLAGS WINDOWS_COMMAND "${FLAGS}")
     else()
         message(FATAL_ERROR "Unsupporder platform for shader compiling!")
