@@ -12,7 +12,7 @@ namespace ZE
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
 
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
-		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler());
+		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
 
 		gui.Init(graphics, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		assets.Init(graphics.GetDevice());

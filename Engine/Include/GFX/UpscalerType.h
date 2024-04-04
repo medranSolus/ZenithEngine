@@ -18,14 +18,30 @@ namespace ZE::GFX
 	};
 
 	// Configuration of possible quality modes for NIS upsacler
-	enum class NISQualityMode : U8 { UltraQuality, Quality, Balanced, Performance };
+	enum class NISQualityMode : U8 { MegaQuality, UltraQuality, Quality, Balanced, Performance };
 
 	// Get jitter subpixel offsets in UV space
+	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept;
 	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept;
-	UInt2 CalculateRenderSize(class Device& dev, UInt2 targetSize, UpscalerType upscaling) noexcept;
+
+	// Pass UINT32_MAX for max quality regardles of upscaler
+	UInt2 CalculateRenderSize(class Device& dev, UInt2 targetSize, UpscalerType upscaling, U32 quality) noexcept;
 	float CalculateMipBias(U32 renderWidth, U32 targetWidth, UpscalerType upscaling) noexcept;
 
 #pragma region Functions
+	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept
+	{
+		switch (upscaling)
+		{
+		case UpscalerType::Fsr2:
+			return 0.9f;
+		case UpscalerType::XeSS:
+			return 1.0f;
+		default:
+			return 0.0f;
+		}
+	}
+
 	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept
 	{
 		switch (upscaling)

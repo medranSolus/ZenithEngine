@@ -85,6 +85,7 @@ namespace ZE
 		template<typename S>
 		constexpr const S CastPtrConst() const noexcept { return reinterpret_cast<const S>(ptr); }
 
+		constexpr operator void*& () noexcept { return ptr; }
 		constexpr operator void* () const noexcept { return ptr; }
 	};
 }

@@ -4,7 +4,7 @@
 
 namespace ZE::GFX
 {
-	UInt2 CalculateRenderSize(Device& dev, UInt2 targetSize, UpscalerType upscaling) noexcept
+	UInt2 CalculateRenderSize(Device& dev, UInt2 targetSize, UpscalerType upscaling, U32 quality) noexcept
 	{
 		switch (upscaling)
 		{
@@ -15,31 +15,37 @@ namespace ZE::GFX
 		case UpscalerType::Fsr1:
 		{
 			UInt2 renderSize = {};
-			ffxFsr1GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, FFX_FSR1_QUALITY_MODE_ULTRA_QUALITY);
+			const FfxFsr1QualityMode fsr1Quality = quality == UINT32_MAX ? FFX_FSR1_QUALITY_MODE_ULTRA_QUALITY : static_cast<FfxFsr1QualityMode>(quality);
+			ffxFsr1GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr1Quality);
 			return renderSize;
 		}
 		case UpscalerType::Fsr2:
 		{
 			UInt2 renderSize = {};
-			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, FFX_FSR2_QUALITY_MODE_QUALITY);
+			const FfxFsr2QualityMode fsr2Quality = quality == UINT32_MAX ? FFX_FSR2_QUALITY_MODE_QUALITY : static_cast<FfxFsr2QualityMode>(quality);
+			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr2Quality);
 			return renderSize;
 		}
 		case UpscalerType::XeSS:
 		{
 			ZE_XESS_ENABLE();
-			const xess_2d_t output = { targetSize.X, targetSize.Y };
 			xess_2d_t renderSize = {};
-			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, XESS_QUALITY_SETTING_ULTRA_QUALITY, &renderSize), "Error retrieving XeSS render resolution!");
+			const xess_2d_t output = { targetSize.X, targetSize.Y };
+			const xess_quality_settings_t xessQuality = quality == UINT32_MAX ? XESS_QUALITY_SETTING_ULTRA_QUALITY : static_cast<xess_quality_settings_t>(quality);
+			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, xessQuality, &renderSize), "Error retrieving XeSS render resolution!");
 			return { renderSize.x, renderSize.y };
 		}
 		case UpscalerType::NIS:
 		{
-			const NISQualityMode qualityMode = NISQualityMode::UltraQuality;
 			float ratio = 1.0f;
-			switch (qualityMode)
+			const NISQualityMode nisQuality = quality == UINT32_MAX ? NISQualityMode::MegaQuality : static_cast<NISQualityMode>(quality);
+			switch (nisQuality)
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case NISQualityMode::MegaQuality:
+				ratio = 1.176f;
+				break;
 			case NISQualityMode::UltraQuality:
 				ratio = 1.3f;
 				break;
