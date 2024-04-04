@@ -1,0 +1,15 @@
+{
+  "global": {
+    "attach_pix": false,
+    "gpu_validation": false,
+    "sssr": false,
+    "gfx_api": "dx12",
+    "upscaler": "fsr2",
+    "ao": "xegtao",
+    "backbuffer_count": 2,
+    "threads_count": 255
+  },
+  "passes": [
+
+  ]
+}

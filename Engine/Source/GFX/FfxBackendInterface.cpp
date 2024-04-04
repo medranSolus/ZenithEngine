@@ -166,6 +166,7 @@ namespace ZE::GFX
 	{
 		ZE_CHECK_FFX_BACKEND();
 
+		// TODO: give effectContextId as current pass, something like ffxInterface.PushPass(Pass::Type::CACAO) and then pop
 		// Not using effect IDs anyway
 		if (effectContextId)
 			*effectContextId = 0;
