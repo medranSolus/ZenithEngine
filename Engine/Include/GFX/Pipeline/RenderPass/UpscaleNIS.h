@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
+#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
@@ -17,9 +17,17 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		U32 BindingIndex;
 		Resource::PipelineStateCompute StateUpscale;
 		Resource::Texture::Pack Coefficients;
+		bool Float16Support;
+		UInt2 DisplaySize = { 0, 0 };
+		NISQualityMode Quality = NISQualityMode::MegaQuality;
+		float Sharpness = 0.5f;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetUpscaler() == UpscalerType::NIS; }
+
+	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	bool Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& execData, PassData& passData);
 }

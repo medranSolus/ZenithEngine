@@ -1,7 +1,5 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/ChainPool.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
 ZE_WARNING_POP
@@ -18,10 +16,15 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 	struct ExecuteData
 	{
 		FfxCacaoContext Ctx;
-		ChainPool<CommandList> ListChain;
+		FfxCacaoSettings Settings = FFX_CACAO_DEFAULT_SETTINGS;
+		UInt2 RenderSize = { 0, 0 };
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetAOType() == AOType::CACAO; }
+
+	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, U32 renderWidth, U32 renderHeight);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	void Update(Device& dev, ExecuteData& passData, bool firstUpdate = false);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

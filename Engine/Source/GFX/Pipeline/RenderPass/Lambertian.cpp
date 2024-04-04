@@ -1,10 +1,43 @@
 #include "GFX/Pipeline/RenderPass/Lambertian.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Vertex.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
+	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	{
+		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
+		Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.at(0), formats.at(1),
+			formats.at(2), formats.at(3), formats.at(4), formats.at(5));
+		return false;
+	}
+
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	{
+		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
+		return Initialize(dev, buildData, formats.at(0), formats.at(1),
+			formats.at(2), formats.at(3), formats.at(4), formats.at(5));
+	}
+
+	PassDesc GetDesc(PixelFormat formatDS, PixelFormat formatNormal, PixelFormat formatAlbedo,
+		PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::Lambertian) };
+		desc.InitializeFormats.reserve(6);
+		desc.InitializeFormats.emplace_back(formatDS);
+		desc.InitializeFormats.emplace_back(formatNormal);
+		desc.InitializeFormats.emplace_back(formatAlbedo);
+		desc.InitializeFormats.emplace_back(formatMaterialParams);
+		desc.InitializeFormats.emplace_back(formatMotion);
+		desc.InitializeFormats.emplace_back(formatReactive);
+		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
+		desc.Execute = Execute;
+		desc.Update = Update;
+		desc.Clean = Clean;
+		return desc;
+	}
+
 	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
@@ -20,7 +53,61 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		delete execData;
 	}
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+	void Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive)
+	{
+		const bool isMotion = Settings::ComputeMotionVectors();
+		const bool isReactive = Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS;
+		if (isMotion != passData.MotionEnabled || isReactive != passData.ReactiveEnabled)
+		{
+			passData.MotionEnabled = isMotion;
+			passData.ReactiveEnabled = isReactive;
+
+			const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
+
+			Resource::PipelineStateDesc psoDesc;
+			psoDesc.FormatDS = formatDS;
+			psoDesc.InputLayout = Vertex::GetLayout();
+			psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "LambertVS_M" : "LambertVS", buildData.ShaderCache);
+			psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
+			psoDesc.FormatsRT[0] = formatNormal;
+			psoDesc.FormatsRT[1] = formatAlbedo;
+			psoDesc.FormatsRT[2] = formatMaterialParams;
+			psoDesc.FormatsRT[3] = isMotion ? formatMotion : formatReactive;
+			psoDesc.FormatsRT[4] = formatReactive;
+
+			std::string shaderName = "PbrPS";
+			if (isMotion || isReactive)
+			{
+				shaderName += "_";
+				if (isMotion)
+					shaderName += "M";
+				if (isReactive)
+					shaderName += "R";
+			}
+			U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
+			while (stateIndex--)
+			{
+				std::string suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
+				if ((isMotion || isReactive) && suffix.size())
+					suffix.erase(suffix.begin());
+
+				psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache);
+
+				psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
+				ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + suffix);
+				passData.StatesSolid[stateIndex].Free(dev);
+				passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
+
+				psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
+				ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + suffix);
+				passData.StatesTransparent[stateIndex].Free(dev);
+				passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
+			}
+		}
+	}
+
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive)
 	{
 		ExecuteData* passData = new ExecuteData;
@@ -29,91 +116,47 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular, parallax
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
+		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
+		U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
+		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
+		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
+		passData->MotionEnabled = !Settings::ComputeMotionVectors();
+		passData->ReactiveEnabled = Settings::GetUpscaler() != UpscalerType::Fsr2 && Settings::GetUpscaler() != UpscalerType::XeSS;
+		Update(dev, buildData, *passData, formatDS, formatNormal, formatAlbedo, formatMaterialParams, formatMotion, formatReactive);
+
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache);
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
-		passData->StateDepth.Init(dev, psoDesc, schema);
-
-		const bool isMotion = formatMotion != PixelFormat::Unknown;
-		const bool isReactive = formatReactive != PixelFormat::Unknown;
-		psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "LambertVS_M" : "LambertVS", buildData.ShaderCache);
-		psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
-		psoDesc.FormatsRT[0] = formatNormal;
-		psoDesc.FormatsRT[1] = formatAlbedo;
-		psoDesc.FormatsRT[2] = formatMaterialParams;
-		psoDesc.FormatsRT[3] = isMotion ? formatMotion : formatReactive;
-		psoDesc.FormatsRT[4] = formatReactive;
-
-		std::string shaderName = "PbrPS";
-		if (isMotion || isReactive)
-		{
-			shaderName += "_";
-			if (isMotion)
-				shaderName += "M";
-			if (isReactive)
-				shaderName += "R";
-		}
-		U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
-		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
-		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
-		while (stateIndex--)
-		{
-			std::string suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			if ((isMotion || isReactive) && suffix.size())
-				suffix.erase(suffix.begin());
-
-			psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache);
-
-			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + suffix);
-			passData->StatesSolid[stateIndex].Init(dev, psoDesc, schema);
-
-			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
-			ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + suffix);
-			passData->StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
-		}
+		passData->StateDepth.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Lambertian");
-		const Resources ids = *passData.Buffers.CastConst<Resources>();
-		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		Resources ids = *passData.Resources.CastConst<Resources>();
+		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		// Clearing data on first usage
-		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Clear", PixelVal::White);
-		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 0.0f, 0);
-		renderData.Buffers.ClearRTV(cl, ids.Normal, ColorF4());
-		renderData.Buffers.ClearRTV(cl, ids.Albedo, ColorF4());
-		renderData.Buffers.ClearRTV(cl, ids.MaterialParams, ColorF4());
-		const bool isMotion = ids.MotionVectors != INVALID_RID;
-		const bool isReactive = ids.ReactiveMask != INVALID_RID;
-		if (isMotion)
-			renderData.Buffers.ClearRTV(cl, ids.MotionVectors, ColorF4());
-		if (isReactive)
-			renderData.Buffers.ClearRTV(cl, ids.ReactiveMask, ColorF4());
-		ZE_DRAW_TAG_END(dev, cl);
+		ZE_ASSERT(data.MotionEnabled == Settings::ComputeMotionVectors(),
+			"Lambertian pass not updated for changed motion vectors output settings!");
+		ZE_ASSERT(data.ReactiveEnabled == (Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS),
+			"Lambertian pass not updated for changed reactive mask output settings!");
 
-		const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
-		const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-		const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
-		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderer.GetPrevViewProjectionTps());
-		const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+		const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
+		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewProjectionTps);
+		const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 		// Compute visibility of objects inside camera view
 		ZE_PERF_START("Lambertian - frustum culling");
-		Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
-		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+		Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
+		frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
 		Utils::FrustumCulling<InsideFrustumSolid, InsideFrustumNotSolid>(Data::GetRenderGroup<Data::RenderLambertian>(), frustum);
 		ZE_PERF_STOP();
 
@@ -141,7 +184,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			data.StateDepth.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+			//renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 			ZE_PERF_START("Lambertian Depth - main loop");
 			for (U64 i = 0; i < solidCount; ++i)
@@ -205,11 +248,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			data.StatesSolid[currentState].Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
 			ctx.BindingSchema.SetGraphics(cl);
+			/*
 			if (isMotion || isReactive)
 				renderData.Buffers.SetOutputSparse(cl, &ids.Normal, ids.DepthStencil, 3 + isMotion + isReactive);
 			else
 				renderData.Buffers.SetOutput<3>(cl, &ids.Normal, ids.DepthStencil, true);
-
+			*/
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
@@ -266,11 +310,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ZE_PERF_START("Lambertian Transparent");
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
 			ctx.BindingSchema.SetGraphics(cl);
+			/*
 			if (isMotion || isReactive)
 				renderData.Buffers.SetOutputSparse(cl, &ids.Normal, ids.DepthStencil, 3 + isMotion + isReactive);
 			else
 				renderData.Buffers.SetOutput<3>(cl, &ids.Normal, ids.DepthStencil, true);
-
+			*/
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
@@ -334,8 +379,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			ZE_DRAW_TAG_END(dev, cl);
 			ZE_PERF_STOP();
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 
 		ZE_PERF_START("Lambertian - visibility clear");
 		// Remove current visibility

@@ -2,17 +2,22 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 {
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	PassDesc GetDesc() noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::LambertianComputeCopy) };
+		desc.Evaluate = Evaluate;
+		desc.Execute = Execute;
+		return desc;
+	}
+
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Lambertian Compute Copy");
-		const Resources ids = *passData.Buffers.CastConst<Resources>();
-		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Copy gbuffer for SSAO", PixelVal::White);
-		renderData.Buffers.Copy(cl, ids.SourceDepth, ids.CopyDepth);
-		renderData.Buffers.Copy(cl, ids.SourceNormal, ids.CopyNormal);
-		ZE_DRAW_TAG_END(dev, cl);
+		Resources ids = *passData.Resources.CastConst<Resources>();
 
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Copy gbuffer for SSAO", PixelVal::White);
+		//renderData.Buffers.Copy(cl, ids.SourceDepth, ids.CopyDepth);
+		//renderData.Buffers.Copy(cl, ids.SourceNormal, ids.CopyNormal);
+		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

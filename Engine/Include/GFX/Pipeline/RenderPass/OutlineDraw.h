@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/TransformBuffer.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 #
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
@@ -22,7 +21,10 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		Resource::PipelineStateGfx StateRender;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input data
+
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

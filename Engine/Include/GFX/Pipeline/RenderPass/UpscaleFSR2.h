@@ -18,9 +18,17 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 	struct ExecuteData
 	{
 		FfxFsr2Context Ctx;
+		UInt2 DisplaySize = { 0, 0 };
+		FfxFsr2QualityMode Quality = FFX_FSR2_QUALITY_MODE_QUALITY;
+		bool SharpeningEnabled = true;
+		float Sharpness = 0.7f;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2; }
+
+	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	bool Update(Device& dev, ExecuteData& passData, bool firstUpdate = false);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

@@ -1,11 +1,29 @@
 #include "GFX/Pipeline/RenderPass/Wireframe.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	{
+		ZE_ASSERT(formats.size() == 2, "Incorrect size for Wireframe initialization formats!");
+		return Initialize(dev, buildData, formats.at(0), formats.at(1));
+	}
+
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::Wireframe) };
+		desc.InitializeFormats.reserve(2);
+		desc.InitializeFormats.emplace_back(formatRT);
+		desc.InitializeFormats.emplace_back(formatDS);
+		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
+		desc.Execute = Execute;
+		desc.Clean = Clean;
+		return desc;
+	}
+
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -30,36 +48,34 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
-		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-
 		auto group = Data::GetRenderGroup<Data::RenderWireframe>();
 		U64 count = group.size();
 		if (count)
 		{
 			ZE_PERF_GUARD("Wireframe - present");
-			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
-			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
 
 			// Compute visibility of objects inside camera view
 			ZE_PERF_START("Wireframe - frustum culling");
-			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), Math::XMLoadFloat3(&dynamicData.CameraPos));
+			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation),
+				Math::XMLoadFloat3(&renderData.DynamicData.CameraPos));
 			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
 			ZE_PERF_STOP();
 
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>();
 			count = visibleGroup.size();
 
-			Resources ids = *passData.Buffers.CastConst<Resources>();
-			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+			Resources ids = *passData.Resources.CastConst<Resources>();
+			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-			cl.Open(dev, data.State);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Wireframe", Pixel(0xBC, 0x54, 0x4B));
+
+			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
+			//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 
 			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 1.0f }); // Can be taken from mesh later
@@ -88,8 +104,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			}
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
 
 			// Remove current visibility
 			ZE_PERF_START("Wireframe - visibility clear");

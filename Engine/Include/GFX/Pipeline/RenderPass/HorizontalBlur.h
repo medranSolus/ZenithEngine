@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
@@ -18,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 
 	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	PassDesc GetDesc(PixelFormat formatRT) noexcept;
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

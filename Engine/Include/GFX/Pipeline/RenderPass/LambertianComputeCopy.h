@@ -11,5 +11,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 		RID CopyNormal;
 	};
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	constexpr bool Evaluate(PassData& passData) noexcept { return passData.Resources.CastConst<Resources>()->CopyDepth != INVALID_RID; }
+
+	PassDesc GetDesc() noexcept;
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

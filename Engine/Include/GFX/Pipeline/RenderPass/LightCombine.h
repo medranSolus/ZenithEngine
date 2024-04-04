@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
@@ -13,13 +13,14 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 	struct ExecuteData
 	{
-		U32 BindingIndexAO;
-		U32 BindingIndexNoAO;
-		Resource::PipelineStateGfx StateAO;
-		Resource::PipelineStateGfx StateNoAO;
+		U32 BindingIndex;
+		Resource::PipelineStateGfx State;
+		bool AmbientOcclusionEnabled;
 	};
 
+	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat outputFormat);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	void Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

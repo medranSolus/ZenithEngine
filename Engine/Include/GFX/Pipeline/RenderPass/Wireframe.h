@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/TransformBuffer.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
@@ -20,8 +19,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		Resource::PipelineStateGfx State;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input element count
 	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

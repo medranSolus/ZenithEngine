@@ -1,9 +1,30 @@
 #include "GFX/Pipeline/RenderPass/DirectionalLight.h"
 #include "GFX/Resource/Constant.h"
+#include "Data/Tags.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 {
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData,
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	{
+		ZE_ASSERT(formats.size() == 3, "Incorrect size for DirectionalLight initialization formats!");
+		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
+	}
+
+	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::DirectionalLight) };
+		desc.InitializeFormats.reserve(3);
+		desc.InitializeFormats.emplace_back(formatLighting);
+		desc.InitializeFormats.emplace_back(formatShadow);
+		desc.InitializeFormats.emplace_back(formatShadowDepth);
+		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
+		desc.Execute = Execute;
+		desc.Clean = Clean;
+		return desc;
+	}
+
+	void* Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{
 		ExecuteData* passData = new ExecuteData;
@@ -13,8 +34,9 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		desc.AddRange({ 1, 1, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Directional light buffer
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Shadow map
 		desc.AddRange({ 4, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
@@ -32,35 +54,30 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Directional Light");
-		Resources ids = *passData.Buffers.CastConst<Resources>();
-		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-		cl.Open(dev, data.State);
-
-		// Clearing data on first usage
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Lighting Clear", PixelVal::White);
-		renderData.Buffers.ClearRTV(cl, ids.Lighting, ColorF4(0.0f, 0.0f, 0.0f, 0.0f));
-		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetDirectionalLightGroup();
 		if (group.size())
 		{
 			ZE_PERF_GUARD("Directional Light - light present");
+			Resources ids = *passData.Resources.CastConst<Resources>();
+			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Directional Light", Pixel(0xF5, 0xF5, 0xD1));
-			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
-			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 0.0f, 0);
-			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
+			//renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+			//renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 0.0f, 0);
+			//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetRTV(cl, ids.Lighting);
+			//renderData.Buffers.SetRTV(cl, ids.Lighting);
 
 			ctx.SetFromEnd(3);
-			renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+			//renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
+			//renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
@@ -77,10 +94,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 				cl.DrawFullscreen(dev);
 			}
 			ZE_PERF_STOP();
-			renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
+			//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
 			ZE_DRAW_TAG_END(dev, cl);
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 	}
 }

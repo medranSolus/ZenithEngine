@@ -18,15 +18,16 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		data.StatesTransparent.DeleteArray();
 	}
 
-	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT)
+	void Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT)
 	{
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(Float4), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Geometry);
+		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AppendSamplers(buildData.Samplers);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
@@ -65,13 +66,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Math::XMStoreFloat4x4(&passData.Projection, Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Clear", PixelVal::Gray);
-		renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
-		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+		//renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
+		//renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>();
@@ -148,7 +149,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetDSV(cl, ids.Depth);
+				//renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
@@ -196,7 +197,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
@@ -256,7 +257,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				ZE_PERF_START("Shadow Map Cube Transparent");
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);

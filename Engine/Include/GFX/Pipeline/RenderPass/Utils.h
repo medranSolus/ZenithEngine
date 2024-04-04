@@ -1,5 +1,4 @@
 #pragma once
-#include "GFX/Resource/CBuffer.h"
 #include "GFX/TransformBuffer.h"
 #include "Data/Tags.h"
 #include <type_traits>

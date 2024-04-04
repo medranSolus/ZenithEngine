@@ -1,12 +1,9 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/TransformBuffer.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
-	constexpr U64 BUFFER_SHRINK_STEP = 2;
-
 	// Indicates that entity is inside view frustum
 	struct InsideFrustumSolid { Resource::DynamicBufferAlloc Transform; };
 	// Indicates that entity is inside view frustum and is not opaque
@@ -28,10 +25,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Resource::PipelineStateGfx StateDepth;
 		Ptr<Resource::PipelineStateGfx> StatesSolid;
 		Ptr<Resource::PipelineStateGfx> StatesTransparent;
+		bool MotionEnabled;
+		bool ReactiveEnabled;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input element count
+
+	PassDesc GetDesc(PixelFormat formatDS, PixelFormat formatNormal, PixelFormat formatAlbedo,
+		PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+	void Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

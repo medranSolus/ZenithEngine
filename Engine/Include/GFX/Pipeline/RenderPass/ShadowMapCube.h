@@ -1,11 +1,9 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
-#include "GFX/TransformBuffer.h"
+#include "GFX/Resource/PipelineStateGfx.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
-	constexpr U64 BUFFER_SHRINK_STEP = 2;
 	constexpr Data::PBRFlags SHADOW_PERMUTATIONS = { Data::MaterialPBR::IsTransparent | Data::MaterialPBR::UseParallaxTex };
 
 	// Indicates that material of the geometry can be processed in depth pre-pass
@@ -29,8 +27,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	};
 
 	void Clean(Device& dev, ExecuteData& data) noexcept;
-	void Setup(Device& dev, RendererBuildData& buildData,
+	void Initialize(Device& dev, RendererPassBuildData& buildData,
 		ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume);
 }

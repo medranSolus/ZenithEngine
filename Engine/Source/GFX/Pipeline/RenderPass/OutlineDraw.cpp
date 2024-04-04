@@ -1,10 +1,28 @@
 #include "GFX/Pipeline/RenderPass/OutlineDraw.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
-#include "GFX/Pipeline/RendererPBR.h"
 #include "GFX/Resource/Constant.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	{
+		ZE_ASSERT(formats.size() == 2, "Incorrect size for OutlineDraw initialization formats!");
+		return Initialize(dev, buildData, formats.at(0), formats.at(1));
+	}
+
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::OutlineDraw) };
+		desc.InitializeFormats.reserve(2);
+		desc.InitializeFormats.emplace_back(formatRT);
+		desc.InitializeFormats.emplace_back(formatDS);
+		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
+		desc.Execute = Execute;
+		desc.Clean = Clean;
+		return desc;
+	}
+
 	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
@@ -13,7 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		delete execData;
 	}
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -42,34 +60,25 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Outline Draw");
-		Resources ids = *passData.Buffers.CastConst<Resources>();
-		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
-
-		// Clearing data on first usage
-		cl.Open(dev);
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw Clear", PixelVal::White);
-		renderData.Buffers.ClearDSV(cl, ids.DepthStencil, 0.0f, 0);
-		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { 0.0f, 0.0f, 0.0f, 0.0f });
-		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetRenderGroup<Data::RenderOutline>();
 		U64 count = group.size();
 		if (count)
 		{
 			ZE_PERF_GUARD("Outline Draw - outline present");
+			Resources ids = *passData.Resources.CastConst<Resources>();
+			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-			const RendererPBR& renderer = *reinterpret_cast<RendererPBR*>(renderData.Renderer);
-			const CameraPBR& dynamicData = *reinterpret_cast<CameraPBR*>(renderData.DynamicData);
-			const Matrix viewProjection = Math::XMLoadFloat4x4(&dynamicData.ViewProjectionTps);
-			const Vector cameraPos = Math::XMLoadFloat3(&dynamicData.CameraPos);
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
+			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 			// Compute visibility of objects inside camera view and sort them front-back
 			ZE_PERF_START("Outline Draw - frustum culling");
-			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderer.GetProjection()), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&renderer.GetCameraRotation()), cameraPos);
+			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
 			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
 			ZE_PERF_STOP();
 
@@ -86,7 +95,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
 			ctx.BindingSchema.SetGraphics(cl);
 			data.StateStencil.SetStencilRef(cl, 0xFF);
-			renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+			//renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 			ZE_PERF_START("Outline Draw Stencil - main loop");
 			for (U64 i = 0; i < count; ++i)
@@ -116,7 +125,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			data.StateRender.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
 			ctx.BindingSchema.SetGraphics(cl);
-			renderData.Buffers.SetRTV(cl, ids.RenderTarget);
+			//renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 
 			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
@@ -144,7 +153,5 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
 		}
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 	}
 }

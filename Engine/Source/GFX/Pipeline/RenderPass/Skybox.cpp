@@ -3,6 +3,33 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	{
+		ZE_ASSERT(initData, "Empty intialization data!");
+		ZE_ASSERT(formats.size() == 2, "Incorrect size for Skybox initialization formats!");
+
+		std::pair<std::string, std::string>* cubemapInfo = reinterpret_cast<std::pair<std::string, std::string>*>(initData);
+		void* passData = Initialize(dev, buildData, formats.at(0), formats.at(1), cubemapInfo->first, cubemapInfo->second);
+		delete cubemapInfo;
+		initData = nullptr;
+
+		return passData;
+	}
+
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
+		const std::string& cubemapPath, const std::string& cubemapExt) noexcept
+	{
+		PassDesc desc{ static_cast<PassType>(CorePassType::Skybox) };
+		desc.InitData = new std::pair<std::string, std::string>(cubemapPath, cubemapExt);
+		desc.InitializeFormats.reserve(2);
+		desc.InitializeFormats.emplace_back(formatRT);
+		desc.InitializeFormats.emplace_back(formatDS);
+		desc.Init = Initialize;
+		desc.Execute = Execute;
+		desc.Clean = Clean;
+		return desc;
+	}
+
 	void Clean(Device& dev, void* data) noexcept
 	{
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
@@ -12,15 +39,16 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		delete execData;
 	}
 
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData, PixelFormat formatRT,
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT,
 		PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt)
 	{
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Skybox
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer }); // Renderer dynamic data
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex);
+		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::Texture::PackDesc texDesc;
@@ -64,26 +92,23 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Skybox");
-		Resources ids = *passData.Buffers.CastConst<Resources>();
-		ExecuteData& data = *reinterpret_cast<ExecuteData*>(passData.OptData);
+		Resources ids = *passData.Resources.CastConst<Resources>();
+		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Skybox", Pixel(0x82, 0xCA, 0xFA));
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
-		cl.Open(dev, data.State);
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Skybox", Pixel(0x82, 0xCA, 0xFA));
 		ctx.BindingSchema.SetGraphics(cl);
 
-		renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
+		//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(cl, ctx);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		data.MeshData.Draw(dev, cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		cl.Close(dev);
-		dev.ExecuteMain(cl);
 	}
 }

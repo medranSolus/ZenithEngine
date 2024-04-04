@@ -1,9 +1,9 @@
 #pragma once
-#include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Pipeline/PassDesc.h"
-#include "GFX/Pipeline/RendererBuildData.h"
 #include "GFX/Resource/PipelineStateCompute.h"
-#include "GFX/ChainPool.h"
+ZE_WARNING_PUSH
+#include "../Include/XeGTAO.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 {
@@ -19,7 +19,6 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 	struct ExecuteData
 	{
-		ChainPool<CommandList> ListChain;
 		U32 BindingIndexPrefilter;
 		U32 BindingIndexAO;
 		U32 BindingIndexDenoise;
@@ -27,9 +26,16 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		Resource::PipelineStateCompute StateAO;
 		Resource::PipelineStateCompute StateDenoise;
 		Resource::Texture::Pack HilbertLUT;
+		::XeGTAO::GTAOSettings Settings;
+		float SliceCount;
+		float StepsPerSlice;
 	};
 
+	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetAOType() == AOType::XeGTAO; }
+
+	void UpdateQualityInfo(ExecuteData& passData) noexcept;
+	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	ExecuteData* Setup(Device& dev, RendererBuildData& buildData);
-	void Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData, PassData& passData);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

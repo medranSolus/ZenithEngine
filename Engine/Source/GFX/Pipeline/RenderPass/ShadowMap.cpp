@@ -5,6 +5,15 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 {
+#pragma pack(push, 1)
+	struct ShaderConstantData
+	{
+		Float3 LightPos;
+		float ParallaxScale;
+		U32 Flags;
+	};
+#pragma pack(pop)
+
 	void Clean(Device& dev, ExecuteData& data) noexcept
 	{
 		data.StateDepth.Free(dev);
@@ -18,15 +27,16 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		data.StatesTransparent.DeleteArray();
 	}
 
-	void Setup(Device& dev, RendererBuildData& buildData, ExecuteData& passData,
+	void Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData,
 		PixelFormat formatDS, PixelFormat formatRT, Matrix projection)
 	{
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
-		desc.AddRange({ 1, 12, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV | Binding::RangeFlag::GlobalBuffer });  // Renderer dynamic data
-		desc.Append(buildData.RendererSlots, Resource::ShaderType::Pixel);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex);
+		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AppendSamplers(buildData.Samplers);
 		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
@@ -62,14 +72,14 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Math::XMStoreFloat4x4(&passData.Projection, projection);
 	}
 
-	Matrix Execute(Device& dev, CommandList& cl, RendererExecuteData& renderData,
+	Matrix Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
 		const Float3& lightDir, const Math::BoundingFrustum& frustum)
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Clear", PixelVal::Gray);
-		renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
-		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+		//renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
+		//renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
 		// Prepare view-projection for shadow
@@ -111,7 +121,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Depth", Pixel(0x98, 0x9F, 0xA7));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetDSV(cl, ids.Depth);
+				//renderData.Buffers.SetDSV(cl, ids.Depth);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -158,7 +168,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Solid", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -216,7 +226,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Transparent", Pixel(0x79, 0x82, 0x8D));
 				ctx.BindingSchema.SetGraphics(cl);
-				renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
