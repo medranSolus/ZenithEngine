@@ -1,5 +1,5 @@
 #include "Samplers.hlsli"
-#include "PBRDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
 #define ZE_XEGTAO_CB_RANGE 3
 #include "CB/ConstantsXeGTAO.hlsli"
 

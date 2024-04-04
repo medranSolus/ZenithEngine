@@ -1,14 +1,11 @@
 #pragma once
-#include "GUI/DearImGui.h"
-ZE_WARNING_PUSH
-#include "XeGTAO.h"
-ZE_WARNING_POP
+#include "Types.h"
 
 namespace ZE::GFX::Pipeline
 {
 #pragma pack(push, 1)
-	// Global constant buffer data used by RendererPBR
-	struct DataPBR
+	// Global data in CBuffer used by all core passes
+	struct RendererSettingsData
 	{
 		static constexpr S32 BLUR_KERNEL_RADIUS = 7;
 
@@ -24,23 +21,22 @@ namespace ZE::GFX::Pipeline
 		S32 BlurRadius;
 		float BlurIntensity;
 
+		float BlurSigma;
 		float ShadowMapSize;
 		float ShadowBias;
 		float ShadowNormalOffset;
-		float MipBias;
 
+		float MipBias;
 		float Gamma;
 		float GammaInverse;
 		float ReactiveMaskClamp;
-
-		float _Padding[1];
 
 		// Should be 6 * sigma - 1, current sigma for best effect 1.3 (but with reduced render target can be 2.6)
 		Float4 BlurCoefficients[BLUR_KERNEL_RADIUS + 1];
 	};
 
-	// Dynamic constant buffer data used by RendererPBR
-	struct CameraPBR
+	// Main data used by core render passes for dynamic CBuffer
+	struct RendererDynamicData
 	{
 		Float4x4 ViewTps;
 		Float4x4 ViewProjectionTps;
@@ -51,4 +47,12 @@ namespace ZE::GFX::Pipeline
 		Float2 JitterPrev;
 	};
 #pragma pack(pop)
+
+	// Generic data used by render graph for all passes
+	struct RendererGraphData
+	{
+		EID CurrentCamera;
+		Float4x4 Projection;
+		Float4x4 PrevViewProjectionTps;
+	};
 }

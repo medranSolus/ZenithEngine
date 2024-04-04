@@ -1,5 +1,5 @@
 #include "Samplers.hlsli"
-#include "PBRDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
 
 TEXTURE_EX(sky, TextureCube, 0, 2);
 

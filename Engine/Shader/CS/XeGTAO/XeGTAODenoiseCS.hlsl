@@ -1,5 +1,5 @@
 #include "Samplers.hlsli"
-#include "PBRDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
 #include "CB/Denoise.hlsli"
 #define ZE_XEGTAO_CB_RANGE 4
 #include "CB/ConstantsXeGTAO.hlsli"

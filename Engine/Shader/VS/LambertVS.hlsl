@@ -1,5 +1,5 @@
 #include "CB/ModelTransform.hlsli"
-#include "WorldDataCB.hlsli"
+#include "DynamicDataCB.hlsli"
 
 struct VSOut
 {
@@ -27,7 +27,7 @@ VSOut main(float3 pos : POSITION,
 	vso.tc = tc;
 	vso.worldTan = float4(mul(tangent.xyz, (float3x3) cb_transform.M), tangent.w);
 
-	vso.cameraDir = vso.worldPos - cb_worldData.CameraPos;
+	vso.cameraDir = vso.worldPos - cb_dynamicData.CameraPos;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.MVP);
 #ifdef _ZE_OUTPUT_MOTION
 	vso.prevPos = mul(float4(pos, 1.0f), cb_transform.PrevMVP);

@@ -1,5 +1,5 @@
 #include "Samplers.hlsli"
-#include "PBRDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
 #include "Utils/Utils.hlsli"
 #include "CB/Shadow.hlsli"
 #include "CB/PbrFlags.hlsli"
@@ -24,12 +24,12 @@ float main(float3 worldPos : POSITION,
 	{
 		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 #ifdef _ZE_USE_PARALLAX
-		tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), ct_shadow.ParallaxScale, tx_height, splr_AR, cb_pbrData.MipBias);
+		tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), ct_shadow.ParallaxScale, tx_height, splr_AR, cb_settingsData.MipBias);
 		[branch]
 		if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 			discard;
 #endif
-		normal = GetMappedNormal(TBN, tc, tx_normalMap, splr_AR, cb_pbrData.MipBias);
+		normal = GetMappedNormal(TBN, tc, tx_normalMap, splr_AR, cb_settingsData.MipBias);
 	}
 #ifndef _ZE_USE_PARALLAX
 	else
@@ -43,7 +43,7 @@ float main(float3 worldPos : POSITION,
 	float3 lightToVertex = worldPos - ct_shadow.LightPos;
 	//float depth = 0.0f;
 	//if (dot(normal, lightToVertex) <= 0)
-	//	depth = GetParallaxDepth(tc, normalize(mul(TBN, -lightToVertex)), tx_height, splr_AW, cb_pbrData.MipBias);
-	lightToVertex -= cb_pbrData.ShadowNormalOffset * normal;
-	return length(lightToVertex) + cb_pbrData.ShadowBias;
+	//	depth = GetParallaxDepth(tc, normalize(mul(TBN, -lightToVertex)), tx_height, splr_AW, cb_settingsData.MipBias);
+	lightToVertex -= cb_settingsData.ShadowNormalOffset * normal;
+	return length(lightToVertex) + cb_settingsData.ShadowBias;
 }

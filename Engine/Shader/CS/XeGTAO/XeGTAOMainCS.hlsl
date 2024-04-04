@@ -1,7 +1,7 @@
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
-#include "PBRDataCB.hlsli"
-#include "WorldDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
+#include "DynamicDataCB.hlsli"
 #define ZE_XEGTAO_CB_RANGE 7
 #include "CB/ConstantsXeGTAO.hlsli"
 
@@ -14,7 +14,7 @@ TEXTURE_EX(hilbertLUT, Texture2D<uint>,          2, 6);
 // Load encoded normal and convert to viewspace
 lpfloat3 LoadNormal(const in uint2 pos)
 {
-	return (lpfloat3)mul(DecodeNormal(tx_normalMap[pos]), (float3x3)cb_worldData.View);
+	return (lpfloat3)mul(DecodeNormal(tx_normalMap[pos]), (float3x3)cb_dynamicData.View);
 }
 
 // Screen & temporal noise loader. Without TAA, temporalIndex is always 0

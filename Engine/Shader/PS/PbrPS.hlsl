@@ -1,7 +1,7 @@
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
-#include "WorldDataCB.hlsli"
-#include "PbrDataCB.hlsli"
+#include "DynamicDataCB.hlsli"
+#include "SettingsDataCB.hlsli"
 #include "Utils/Utils.hlsli"
 #include "CB/Pbr.hlsli"
 #include "Tex/PbrInputs.hlsli"
@@ -47,12 +47,12 @@ PSOut main(float3 worldPos : POSITION,
 	{
 		const float3x3 TBN = GetTangentToWorld(worldTan, worldNormal);
 #ifdef _ZE_USE_PARALLAX
-		tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, tx_height, splr_AR, cb_pbrData.MipBias);
+		tc = GetParallaxMapping(tc, normalize(mul(TBN, cameraDir)), cb_material.ParallaxScale, tx_height, splr_AR, cb_settingsData.MipBias);
 		[branch]
 		if (tc.x > 1.0f || tc.y > 1.0f || tc.x < 0.0f || tc.y < 0.0f)
 			discard;
 #endif
-		normal = GetMappedNormal(TBN, tc, tx_normalMap, splr_AR, cb_pbrData.MipBias);
+		normal = GetMappedNormal(TBN, tc, tx_normalMap, splr_AR, cb_settingsData.MipBias);
 	}
 #ifndef _ZE_USE_PARALLAX
 	else
@@ -62,7 +62,7 @@ PSOut main(float3 worldPos : POSITION,
 	float4 albedo;
 	if (cb_material.Flags & ZE_PBR_USE_ALBEDO_TEX)
 	{
-		albedo = tx_albedo.SampleBias(splr_AR, tc, cb_pbrData.MipBias);
+		albedo = tx_albedo.SampleBias(splr_AR, tc, cb_settingsData.MipBias);
 #ifdef _ZE_TRANSPARENT
 		clip(albedo.a - 0.5f);
 #endif
@@ -72,13 +72,13 @@ PSOut main(float3 worldPos : POSITION,
 	
 	float metalness;
 	if (cb_material.Flags & ZE_PBR_USE_METAL_TEX)
-		metalness = tx_metalness.SampleBias(splr_AR, tc, cb_pbrData.MipBias).r;
+		metalness = tx_metalness.SampleBias(splr_AR, tc, cb_settingsData.MipBias).r;
 	else
 		metalness = cb_material.Metalness;
 	
 	float roughness;
 	if (cb_material.Flags & ZE_PBR_USE_ROUGH_TEX)
-		roughness = tx_roughness.SampleBias(splr_AR, tc, cb_pbrData.MipBias).r;
+		roughness = tx_roughness.SampleBias(splr_AR, tc, cb_settingsData.MipBias).r;
 	else
 		roughness = cb_material.Roughness;
 	
@@ -89,15 +89,15 @@ PSOut main(float3 worldPos : POSITION,
 	pso.materialParams = PackMaterialParams(metalness, roughness);
 	
 #ifdef _ZE_OUTPUT_REACTIVE
-	pso.reactive = clamp(abs(pso.albedo.a - 1.0f), 0.0f, cb_pbrData.ReactiveMaskClamp);
+	pso.reactive = clamp(abs(pso.albedo.a - 1.0f), 0.0f, cb_settingsData.ReactiveMaskClamp);
 #endif
 #ifdef _ZE_OUTPUT_MOTION
 	// Motion vectors in NDC space
 	float2 prev = prevPos.xy / prevPos.w;
 	float2 current = currentPos.xy / currentPos.w;
 	// Cancel jitter
-	prev -= cb_worldData.JitterPrev;
-	current -= cb_worldData.JitterCurrent;
+	prev -= cb_dynamicData.JitterPrev;
+	current -= cb_dynamicData.JitterCurrent;
 	// To UV motion
 	pso.motion = (current - prev) * float2(0.5f, -0.5f);
 #endif

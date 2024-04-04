@@ -1,4 +1,4 @@
-#include "WorldDataCB.hlsli"
+#include "DynamicDataCB.hlsli"
 #include "CB/View.hlsli"
 
 struct GSIn
@@ -34,7 +34,7 @@ void main(triangle GSIn input[3], inout TriangleStream<GSOut> output)
 			element.worldNormal = input[j].worldNormal;
 			element.tc = input[j].tc;
 			element.worldTan = input[j].worldTan;
-			element.cameraDir = cb_worldData.CameraPos - input[j].worldPos;
+			element.cameraDir = cb_dynamicData.CameraPos - input[j].worldPos;
 			element.face = i;
 			element.pos = mul(float4(input[j].worldPos, 1.0f), cb_view.ViewProjection[i]);
 			output.Append(element);

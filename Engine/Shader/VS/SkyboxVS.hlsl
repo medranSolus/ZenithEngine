@@ -1,4 +1,4 @@
-#include "WorldDataCB.hlsli"
+#include "DynamicDataCB.hlsli"
 
 struct VSOut
 {
@@ -10,7 +10,7 @@ VSOut main(float3 pos : POSITION)
 {
 	VSOut vso;
 	vso.worldPos = pos;
-	vso.pos = mul(float4(pos, 0.0f), cb_worldData.ViewProjection); // .w = 0.0f so no translation, only rotation
+	vso.pos = mul(float4(pos, 0.0f), cb_dynamicData.ViewProjection); // .w = 0.0f so no translation, only rotation
 	vso.pos.z = 0.0f; // Depth as zero so far plane in reverse depth buffer
 	return vso;
 }
