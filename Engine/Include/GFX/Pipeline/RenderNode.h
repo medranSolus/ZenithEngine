@@ -1,65 +1,80 @@
 #pragma once
-#include "GFX/QueueType.h"
 #include "PassDesc.h"
+#include "TextureLayout.h"
 
 namespace ZE::GFX::Pipeline
 {
+	// How pass will execute based on input data, controls how it's evaluation will influence graph update
+	enum class PassExecutionType : U8
+	{
+		Producer,        // Always present if evaluation indicates so, otherwise removed (causing hard reset)
+		DynamicProducer, // Present in the graph if there is enough data to process
+		Processor,       // Only present if there is input data from other passes and if any further passes consume it's output data
+	};
+
 	// Description of single render pass in RenderGraph
 	class RenderNode final
 	{
-		struct InnerBuffer
-		{
-			Resource::State InitState;
-			FrameResourceDesc Info;
-		};
-
+		std::string graphName;
 		std::string passName;
-		QueueType passType;
-		PassExecuteCallback passExecute;
-		PassCleanCallback passClean;
-		void* executeData;
+		PassDesc desc;
+		bool async;
+		PassExecutionType execType;
+		// Just a hint if possible
+		std::string scheduleAfter = "";
 		// Input info
-		std::vector<std::pair<std::string, bool>> inputNames;
-		std::vector<Resource::State> inputStates;
+		std::vector<std::string> inputNames;
+		std::vector<bool> inputRequired;
+		std::vector<TextureLayout> inputLayouts;
 		std::vector<RID> inputRIDs;
 		// Inner buffer info
-		std::vector<InnerBuffer> innerBuffers;
+		std::vector<FrameResourceDesc> innerBuffers;
+		std::vector<TextureLayout> innerLayouts;
 		std::vector<RID> innerRIDs;
 		// Output info
 		std::vector<std::string> outputNames;
-		std::vector<Resource::State> outputStates;
+		std::vector<TextureLayout> outputLayouts;
 		std::vector<RID> outputRIDs;
+		std::vector<RID> replacementOutputRIDs;
 
 	public:
-		RenderNode(std::string&& name, QueueType passType, PassExecuteCallback passExecute,
-			PassCleanCallback passClean = nullptr, void* executeData = nullptr) noexcept
-			: passName(std::forward<std::string>(name)), passType(passType), passExecute(passExecute),
-			passClean(passClean), executeData(executeData) {}
+		constexpr RenderNode(std::string&& graphName, std::string&& passName, PassDesc&& desc, PassExecutionType execType, bool async = false) noexcept
+			: graphName(std::forward<std::string>(graphName)), passName(std::forward<std::string>(passName)), desc(std::forward<PassDesc>(desc)), async(async), execType(execType) {}
 		ZE_CLASS_DEFAULT(RenderNode);
 		~RenderNode() = default;
 
-		constexpr const std::string& GetName() const noexcept { return passName; }
-		constexpr QueueType GetPassType() const noexcept { return passType; }
-		constexpr PassExecuteCallback GetExecuteCallback() const noexcept { return passExecute; }
-		constexpr PassCleanCallback GetCleanCallback() const noexcept { return passClean; }
-		constexpr void* GetExecuteData() const noexcept { return executeData; }
+		constexpr const std::string& GetGraphConnectorName() const noexcept { return graphName; }
+		constexpr const std::string& GetPassName() const noexcept { return passName; }
+		constexpr std::string GetFullName() const noexcept { return graphName + (passName.size() ? "." + passName : ""); }
+		constexpr PassDesc& GetDesc() noexcept { return desc; }
+		constexpr bool IsAsync() const noexcept { return async; }
+		constexpr PassExecutionType GetExecType() const noexcept { return execType; }
+		constexpr void ScheduleAfter(const std::string& pass) noexcept { scheduleAfter = pass; }
+		constexpr const std::string& GetPreceedingPass() const noexcept { return scheduleAfter; }
 
-		constexpr const std::vector<std::pair<std::string, bool>>& GetInputs() const noexcept { return inputNames; }
-		constexpr std::vector<InnerBuffer>& GetInnerBuffers() noexcept { return innerBuffers; }
+		constexpr const std::vector<std::string>& GetInputs() const noexcept { return inputNames; }
+		constexpr const std::vector<FrameResourceDesc>& GetInnerBuffers() const noexcept { return innerBuffers; }
 		constexpr const std::vector<std::string>& GetOutputs() const noexcept { return outputNames; }
-		constexpr const std::vector<RID>& GetOutputResources() const noexcept { return outputRIDs; }
-		constexpr Resource::State GetInputState(RID i) const noexcept { return inputStates.at(i); }
-		constexpr Resource::State GetOutputState(RID i) const noexcept { return outputStates.at(i); }
 
-		bool ContainsInput(const std::string& name) const noexcept { return std::find_if(inputNames.begin(), inputNames.end(), [&name](const auto& input) { return input.first == name; }) != inputNames.end(); }
-		void AddInputResource(RID rid) noexcept { inputRIDs.emplace_back(rid); }
-		void AddInnerBufferResource(RID rid) noexcept { innerRIDs.emplace_back(rid); }
+		constexpr bool IsInputRequired(ResIndex index) const noexcept { return inputRequired.at(index); }
+		constexpr TextureLayout GetInputLayout(ResIndex index) const noexcept { return inputLayouts.at(index); }
+		constexpr TextureLayout GetInnerBufferLayout(ResIndex index) const noexcept { return innerLayouts.at(index); }
+		constexpr TextureLayout GetOutputLayout(ResIndex index) const noexcept { return outputLayouts.at(index); }
+		constexpr RID GetOutput(ResIndex index) const noexcept { return outputRIDs.at(index); }
+		constexpr RID GetOutputReplacement(ResIndex index) const noexcept { return replacementOutputRIDs.at(index); }
 
-		void AddInput(std::string&& name, Resource::State state, bool required = true);
-		void AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept;
-		void AddOutput(std::string&& name, Resource::State state, RID rid);
+		constexpr void SetInputResource(ResIndex index, RID rid) noexcept { inputRIDs.at(index) = rid; }
+		constexpr void SetInnerBuffer(ResIndex index, RID rid) noexcept { innerRIDs.at(index) = rid; }
+		bool ContainsInput(std::string_view name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
+
+		bool AddInput(std::string&& name, TextureLayout layout, bool required = true) noexcept;
+		void AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& desc) noexcept;
+		// In case of not running the pass you can provide a replacement buffer that will take over the output in graph data flow computation
+		// By default it will be searched via same RID but it's possible to specify other buffer instead
+		// so all further passes that reference same buffer in continuous flow will refer to the replacement buffer instead
+		bool AddOutput(std::string&& name, TextureLayout layout, RID rid, RID replacement = INVALID_RID) noexcept;
 
 		// Order: input, inner, output (without already present RIDs from inputs)
-		RID* GetNodeRIDs() const noexcept;
+		std::unique_ptr<RID[]> GetNodeRIDs() const noexcept;
 	};
 }

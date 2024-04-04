@@ -2,31 +2,48 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RenderNode::AddInput(std::string&& name, Resource::State state, bool required)
+	bool RenderNode::AddInput(std::string&& name, TextureLayout layout, bool required) noexcept
 	{
+#if _ZE_RENDERER_CREATION_VALIDATION
 		if (ContainsInput(name))
-			throw ZE_RGC_EXCEPT("Pass [" + passName + "] already contains input [" + name + "]!");
-		inputNames.emplace_back(std::forward<std::string>(name), required);
-		inputStates.emplace_back(state);
+		{
+			ZE_FAIL("Pass [" + passName + "] already contains input [" + name + "]!");
+			return false;
+		}
+#endif
+		inputNames.emplace_back(std::forward<std::string>(name));
+		inputRequired.emplace_back(required);
+		inputLayouts.emplace_back(layout);
+		inputRIDs.emplace_back(INVALID_RID);
+		return true;
 	}
 
-	void RenderNode::AddInnerBuffer(Resource::State initState, FrameResourceDesc&& desc) noexcept
+	void RenderNode::AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& desc) noexcept
 	{
-		desc.Flags |= FrameResourceFlags::ForceSRV;
-		innerBuffers.emplace_back(initState, std::forward<FrameResourceDesc>(desc));
+		desc.Flags |= FrameResourceFlag::ForceSRV;
+		innerBuffers.emplace_back(std::forward<FrameResourceDesc>(desc));
+		innerLayouts.emplace_back(layout);
+		innerRIDs.emplace_back(INVALID_RID);
 	}
 
-	void RenderNode::AddOutput(std::string&& name, Resource::State state, RID rid)
+	bool RenderNode::AddOutput(std::string&& name, TextureLayout layout, RID rid, RID replacement)
 	{
 		std::string outputName = passName + "." + std::forward<std::string>(name);
+#if _ZE_RENDERER_CREATION_VALIDATION
 		if (std::find(outputNames.begin(), outputNames.end(), outputName) != outputNames.end())
-			throw ZE_RGC_EXCEPT("Pass [" + passName + "] already contains output [" + name + "]!");
+		{
+			ZE_FAIL("Pass [" + passName + "] already contains output [" + name + "]!");
+			return false;
+		}
+#endif
 		outputNames.emplace_back(std::move(outputName));
-		outputStates.emplace_back(state);
+		outputLayouts.emplace_back(layout);
 		outputRIDs.emplace_back(rid);
+		replacementOutputRIDs.emplace_back(replacement);
+		return true;
 	}
 
-	RID* RenderNode::GetNodeRIDs() const noexcept
+	std::unique_ptr<RID[]> RenderNode::GetNodeRIDs() const noexcept
 	{
 		std::vector<RID> out = outputRIDs;
 		for (RID rid : inputRIDs)
@@ -36,7 +53,7 @@ namespace ZE::GFX::Pipeline
 				out.erase(it);
 		}
 
-		RID* rids = new RID[inputRIDs.size() + innerRIDs.size() + out.size()];
+		auto rids = std::make_unique<RID[]>(inputRIDs.size() + innerRIDs.size() + out.size());
 		RID i = 0;
 		for (RID rid : inputRIDs)
 			rids[i++] = rid;

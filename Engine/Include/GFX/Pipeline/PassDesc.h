@@ -1,59 +1,90 @@
 #pragma once
-#include "RendererExecuteData.h"
+#include "GFX/CommandList.h"
+#include "RendererPassData.h"
 #include "ResourceID.h"
-#include "SyncType.h"
 
 namespace ZE::GFX::Pipeline
 {
-	// Description of sync required for dependent RenderPass
-	struct ExitSync
-	{
-		SyncType Type;
-#if _ZE_RENDER_GRAPH_SINGLE_THREAD
-		U64* NextPassFence;
-#else
-		UA64* NextPassFence;
-#endif
-	};
-
-	// Info about sync to perform before and after RenderPass
-	struct PassSyncDesc
-	{
-		// Sync required before execution of RenderPass
-		SyncType EnterSync = SyncType::None;
-#if _ZE_RENDER_GRAPH_SINGLE_THREAD
-		U64 EnterFence1 = 0;
-		U64 EnterFence2 = 0;
-#else
-		UA64 EnterFence1 = 0;
-		UA64 EnterFence2 = 0;
-#endif
-		// Syncs required for dependent RenderPasses
-		SyncType AllExitSyncs = SyncType::None;
-		U8 DependentsCount = 0;
-		Ptr<ExitSync> ExitSyncs;
-	};
-
-	// Data needed for executing RenderPass
+	// Data unique to the given render pass with all needed information
 	struct PassData
 	{
-		// Resources used by RenderPass, appear in order they've been added during RenderNode construction,
-		// in respect to their usage: first input, then inner, lastly output resources (without already present input resources)
-		Ptr<const RID> Buffers = nullptr;
-		// Optional data used by RenderPass
-		void* OptData = nullptr;
+		Ptr<const RID> Resources;
+		PtrVoid ExecData;
 	};
 
-	// Callback for pass execution
-	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererExecuteData&, PassData&);
-	// Callback for cleaning optional pass data
+	// Create all needed data for render pass
+	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*&);
+	// Optional function that will be performing extended setup that needs GPU explicit work
+	typedef void (*PassSetupCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&, RendererPassBuildData&);
+	// Evaluate whether pass shall run and if it cause update of the render graph
+	typedef bool (*PassEvaluateExecutionCallback)(PassData&) noexcept;
+	// Main function that will be performing rendering, obligatory
+	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
+	// Optional function to handle pass data update after render graph got it's update.
+	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
+	typedef bool (*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);
+	// Optional function that will be freeing up data used by pass
 	typedef void (*PassCleanCallback)(Device&, void*) noexcept;
 
-	// Descriptor containing params for executing RenderPass
+	// Types of every render pass present, including custom ones created outside engine
+	typedef U32 PassType;
+	// Enum for every type of render pass present in the engine
+	enum class CorePassType : PassType
+	{
+		// Special type indicating that it's impossible to guess the type of the pass and it's related data
+		Invalid,
+
+		LambertianClear,
+		Lambertian,
+		LambertianComputeCopy,
+
+		LightClear,
+		DirectionalLight,
+		SpotLight,
+		PointLight,
+
+		CACAO,
+		XeGTAO,
+		SSSR,
+
+		LightCombine,
+		Skybox,
+
+		UpscaleFSR1,
+		UpscaleFSR2,
+		UpscaleNIS,
+		UpscaleXeSS,
+
+		OutlineClear,
+		OutlineDraw,
+		HorizontalBlur,
+		VerticalBlur,
+
+		Wireframe,
+		HDRGammaCorrection,
+		// Begining of the range that is possible for other custom passes to use their own
+		// enum values if they wish to create custom render graph definition
+		CustomStart = 0x80000000
+	};
+
+	// Information about given render pass
 	struct PassDesc
 	{
-		PassSyncDesc Syncs;
+		PassType Type = static_cast<PassType>(CorePassType::Invalid);
+		// Optional data for pass intialization
+		PtrVoid InitData = nullptr;
+		// Optional list of pixel formats for buffers used in pass
+		std::vector<PixelFormat> InitializeFormats;
+		PassInitCallback Init = nullptr;
+		// Optional for additional setup step with access to GPU commands
+		PassSetupCallback Setup = nullptr;
+		// Check whether pass should run, meaning it can be removed from execution otherwise with all further processing passes.
+		// If not provided then assume always returning true
+		PassEvaluateExecutionCallback Evaluate = nullptr;
+		// Only required callback for pass execution
 		PassExecuteCallback Execute = nullptr;
-		PassData Data;
+		PassUpdatetCallback Update = nullptr;
+		// Required if init callback returns pointer to arbitrary data
+		PassCleanCallback Clean = nullptr;
 	};
 }
