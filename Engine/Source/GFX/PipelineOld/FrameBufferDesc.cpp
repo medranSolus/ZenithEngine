@@ -1,29 +1,8 @@
-#include "GFX/Pipeline/FrameBufferDesc.h"
+#include "GFX/PipelineOld/FrameBufferDesc.h"
 #include "Settings.h"
 
 namespace ZE::GFX::Pipeline
 {
-	void FrameBufferDesc::Init(U64 resourceCount)
-	{
-		ResourceInfo.reserve(++resourceCount);
-		ResourceLifetimes.reserve(resourceCount);
-		AddResource(
-			{
-				Settings::DisplaySize, 1, FrameResourceFlags::None,
-				Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 1.0f)
-			});
-	}
-
-	RID FrameBufferDesc::AddResource(FrameResourceDesc&& info) noexcept
-	{
-		ZE_ASSERT(!((info.Flags & FrameResourceFlags::ForceDSV) && (info.Flags & FrameResourceFlags::SimultaneousAccess)),
-			"Cannot use depth stencil with simultaneous access resource!");
-		RID id = Utils::SafeCast<RID>(ResourceInfo.size());
-		ResourceInfo.emplace_back(std::forward<FrameResourceDesc>(info));
-		ResourceLifetimes.emplace_back(std::map<RID, Resource::State>({}));
-		return id;
-	}
-
 	void FrameBufferDesc::ComputeWorkflowTransitions(U64 dependencyLevels) noexcept
 	{
 		// Backbuffer states wrapping
