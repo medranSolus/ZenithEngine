@@ -1,9 +1,10 @@
 #pragma once
+#include "RenderGraphDesc.h"
 
-namespace ZE::GFX::Pipeline
+namespace ZE::GFX::Pipeline::CoreRenderer
 {
-	// Options to start RendererPBR with
-	struct ParamsPBR
+	// Options to start CoreRenderer with
+	struct Params
 	{
 		// Path to location of skybox textures
 		std::string SkyboxPath;
@@ -28,4 +29,12 @@ namespace ZE::GFX::Pipeline
 		// Gamma for current display
 		float Gamma = 2.2f;
 	};
+
+	// Setup only core buffers and samplers slots for given graph
+	void SetupRenderSlots(RenderGraphDesc& graphDesc) noexcept;
+	// Setup only core data members for given graph
+	void SetupData(RendererSettingsData& settingsData, const Params& params, UInt2 outlineBuffSize) noexcept;
+
+	// Get description of this render graph
+	RenderGraphDesc GetDesc(const Params& params) noexcept;
 }
