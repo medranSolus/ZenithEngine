@@ -2,16 +2,16 @@
 
 namespace ZE::GFX::Binding
 {
-	void SchemaDesc::Append(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept
+	void SchemaDesc::AppendRanges(const std::vector<Range>& ranges, Resource::ShaderTypes useShaders) noexcept
 	{
 		if (useShaders == Resource::ShaderType::All)
 		{
-			Ranges.reserve(Ranges.size() + binding.Ranges.size());
-			Ranges.insert(Ranges.end(), binding.Ranges.begin(), binding.Ranges.end());
+			Ranges.reserve(Ranges.size() + ranges.size());
+			Ranges.insert(Ranges.end(), ranges.begin(), ranges.end());
 		}
 		else
 		{
-			for (const auto& range : binding.Ranges)
+			for (const auto& range : ranges)
 			{
 				if (range.Shaders & useShaders)
 				{
@@ -20,12 +20,11 @@ namespace ZE::GFX::Binding
 				}
 			}
 		}
-		AppendSamplers(binding);
 	}
 
-	void SchemaDesc::AppendSamplers(const SchemaDesc& binding) noexcept
+	void SchemaDesc::AppendSamplers(const std::vector<Resource::SamplerDesc>& samplers) noexcept
 	{
-		Samplers.reserve(Samplers.size() + binding.Samplers.size());
-		Samplers.insert(Samplers.end(), binding.Samplers.begin(), binding.Samplers.end());
+		Samplers.reserve(Samplers.size() + samplers.size());
+		Samplers.insert(Samplers.end(), samplers.begin(), samplers.end());
 	}
 }

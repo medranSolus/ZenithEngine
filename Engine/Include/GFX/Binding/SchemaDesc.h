@@ -20,10 +20,15 @@ namespace ZE::GFX::Binding
 		std::vector<Resource::SamplerDesc> Samplers;
 
 		void Clear() noexcept { Options = 0; Ranges.clear(); Samplers.clear(); }
-		void AddRange(Range&& range) noexcept { Ranges.emplace_back(std::forward<Range>(range)); }
+		void AddRange(Range&& range, Resource::ShaderTypes useShaders = Resource::ShaderType::All) noexcept { Ranges.emplace_back(std::forward<Range>(range)).Shaders &= useShaders; }
+		void AddRange(const Range& range, Resource::ShaderTypes useShaders = Resource::ShaderType::All) noexcept { Ranges.emplace_back(range).Shaders &= useShaders; }
 		void AddSampler(Resource::SamplerDesc&& sampler) noexcept { Samplers.emplace_back(std::forward<Resource::SamplerDesc>(sampler)); }
 
-		void Append(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept;
-		void AppendSamplers(const SchemaDesc& binding) noexcept;
+		void Append(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept { AppendRanges(binding.Ranges, useShaders); AppendSamplers(binding.Samplers); }
+		void AppendRanges(const SchemaDesc& binding, Resource::ShaderTypes useShaders) noexcept { AppendRanges(binding.Ranges, useShaders); }
+		void AppendSamplers(const SchemaDesc& binding) noexcept { AppendSamplers(binding.Samplers); }
+
+		void AppendRanges(const std::vector<Range>& ranges, Resource::ShaderTypes useShaders) noexcept;
+		void AppendSamplers(const std::vector<Resource::SamplerDesc>& samplers) noexcept;
 	};
 }
