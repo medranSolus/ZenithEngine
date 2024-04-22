@@ -22,6 +22,9 @@ namespace ZE::GFX::Pipeline::RenderPass
 				U8 Stencil;
 			} DSV;
 		} ClearValue;
+
+		constexpr ClearBufferEntry() noexcept {}
+		~ClearBufferEntry() = default;
 	};
 
 	// Generic component for clearing resources
@@ -53,8 +56,8 @@ namespace ZE::GFX::Pipeline::RenderPass
 	PassDesc ClearBuffer<N>::GetDesc(PassType type, const ExecuteData& clearInfo) noexcept
 	{
 		PassDesc desc{ type };
-		desc.InitData = = new ExecuteData(clearInfo);
-		desc.Initialize = Initialize;
+		desc.InitData = new ExecuteData(clearInfo);
+		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
 		return desc;

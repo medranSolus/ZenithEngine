@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Pipeline/ParamsPBR.h"
+#include "GFX/Pipeline/CoreRenderer.h"
 #include "CmdParser.h"
 
 namespace ZE
@@ -18,8 +18,24 @@ namespace ZE
 		U32 GraphicsDescriptorPoolSize;
 		// Set to true if required to have performance measurements entries in single line each.
 		bool SingleLinePerfEntry;
-		// Parameters for used render pipeline
-		GFX::Pipeline::ParamsPBR Renderer;
+		// When computing render graph for passes minimize distances between dependant passes.
+		// Disables kicking off work earlier, trying to run pass as late as possible.
+		//
+		// WARNING: may result in higher or lower memory reservation for frame in some cases
+		//   but can sometimes leverage GPU consumption if most of heavy work is done early, measure it for specific use case
+		bool MinimizeRenderPassDistances = false;
+		// Set to true if custom render graph definition is needed, otherwise fill in CoreRenderer parameters
+		bool CustomRenderer;
+		union
+		{
+			// Parameters used by render pipeline
+			GFX::Pipeline::CoreRenderer::Params CoreRendererParams;
+			// Description of custom render graph to be used in the engine
+			GFX::Pipeline::RenderGraphDesc* RendererDesc;
+		};
+
+		EngineParams() noexcept {}
+		~EngineParams() = default;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static void SetParsedParams(const CmdParser& parser, EngineParams& params) noexcept;

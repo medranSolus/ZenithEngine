@@ -25,6 +25,7 @@ namespace ZE
 		constexpr Pixel(U32 rgba) noexcept;
 		constexpr Pixel(PixelVal rgba) noexcept : Pixel(static_cast<U32>(rgba)) {}
 		constexpr Pixel(U8 r, U8 g, U8 b, U8 a = 255) noexcept : Red(r), Green(g), Blue(b), Alpha(a) {}
+		constexpr Pixel& operator=(PixelVal rgba) noexcept { *this = Pixel(rgba); return *this; }
 		ZE_CLASS_DEFAULT(Pixel);
 		~Pixel() = default;
 

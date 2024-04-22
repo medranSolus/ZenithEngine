@@ -1,6 +1,4 @@
 #pragma once
-#include "DataPBR.h"
-#include "ParamsPBR.h"
 #include "RenderGraph.h"
 
 namespace ZE::GFX::Pipeline
@@ -34,10 +32,6 @@ namespace ZE::GFX::Pipeline
 		RendererPBR() noexcept : RenderGraph(this, &settingsData, &dynamicData, sizeof(CameraPBR)), ssaoSettings({}) {}
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
-
-		constexpr XeGTAOSettings& GetXeGTAOSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::XeGTAO, "XeGTAO is not active!"); return ssaoSettings.xegtao; }
-		constexpr FfxCacaoSettings& GetCacaoSettings() noexcept { ZE_ASSERT(Settings::GetAOType() == AOType::CACAO, "CACAO is not active!"); return ssaoSettings.cacao; }
-		constexpr SSSRSettings& GetSSSRSettings() noexcept { return sssrSettings; }
 
 		constexpr const Data::Projection& GetProjectionData() const noexcept { return currentProjectionData; }
 		constexpr const Float4x4& GetProjection() const noexcept { return currentProjection; }

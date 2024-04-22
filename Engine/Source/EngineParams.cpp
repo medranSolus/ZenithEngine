@@ -18,7 +18,8 @@ namespace ZE
 		params.Height = parser.GetNumber("height");
 		params.GraphicsDescriptorPoolSize = parser.GetNumber("descPoolSize");
 		params.SingleLinePerfEntry = parser.GetOption("singleLinePerfEntry");
-		params.Renderer.MinimizeRenderPassDistances = parser.GetOption("minPassDist");
-		params.Renderer.ShadowMapSize = parser.GetNumber("shadowMapSize");
+		params.MinimizeRenderPassDistances = parser.GetOption("minPassDist");
+		if (!params.CustomRenderer)
+			params.CoreRendererParams.ShadowMapSize = parser.GetNumber("shadowMapSize");
 	}
 }

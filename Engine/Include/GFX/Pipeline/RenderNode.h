@@ -68,7 +68,7 @@ namespace ZE::GFX::Pipeline
 		bool ContainsInput(std::string_view name) const noexcept { return std::find(inputNames.begin(), inputNames.end(), name) != inputNames.end(); }
 
 		bool AddInput(std::string&& name, TextureLayout layout, bool required = true) noexcept;
-		void AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& desc) noexcept;
+		void AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& resDesc) noexcept;
 		// In case of not running the pass you can provide a replacement buffer that will take over the output in graph data flow computation
 		// By default it will be searched via same RID but it's possible to specify other buffer instead
 		// so all further passes that reference same buffer in continuous flow will refer to the replacement buffer instead

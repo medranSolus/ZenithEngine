@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Pipeline/RendererPBR.h"
+#include "GFX/Pipeline/RenderGraph.h"
 #include "GUI/Manager.h"
 #include "StartupConfig.h"
 
@@ -14,7 +14,7 @@ namespace ZE
 		GFX::Graphics graphics;
 		GUI::Manager gui;
 		Window::MainWindow window;
-		GFX::Pipeline::RendererPBR renderer;
+		GFX::Pipeline::RenderGraph renderGraph;
 		Data::AssetsStreamer assets;
 		std::bitset<Flags::Count> flags;
 
@@ -30,7 +30,7 @@ namespace ZE
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
 		constexpr GUI::Manager& Gui() noexcept { return gui; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }
-		constexpr GFX::Pipeline::RendererPBR& Reneder() noexcept { return renderer; }
+		constexpr GFX::Pipeline::RenderGraph& RenderGraph() noexcept { return renderGraph; }
 		constexpr Data::AssetsStreamer& Assets() noexcept { return assets; }
 
 		// Initialization method that must be called before using engine
