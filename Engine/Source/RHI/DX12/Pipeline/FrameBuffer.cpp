@@ -187,7 +187,7 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.GetList()->RSSetScissorRects(1, &scissorRect);
 	}
 
-	void FrameBuffer::FillBarier(D3D12_TEXTURE_BARRIER& barrier, GFX::Pipeline::BarrierTransition& desc) const noexcept
+	void FrameBuffer::FillBarier(D3D12_TEXTURE_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept
 	{
 		ZE_ASSERT(desc.Resource < resourceCount, "Resource ID outside available range!");
 
@@ -1059,7 +1059,18 @@ namespace ZE::RHI::DX12::Pipeline
 			GetResource(src).Get(), srcOffset, bytes);
 	}
 
-	void FrameBuffer::Barrier(GFX::CommandList& cl, GFX::Pipeline::BarrierTransition& desc) const noexcept
+	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept
+	{
+		ZE_ASSERT(barriers, "Empty barriers to perform!");
+		ZE_ASSERT(count > 0, "No barriers to perform!");
+
+		std::unique_ptr<D3D12_TEXTURE_BARRIER[]> texBarriers = std::make_unique<D3D12_TEXTURE_BARRIER[]>(count);
+		for (U32 i = 0; i < count; ++i)
+			FillBarier(texBarriers[i], barriers[i]);
+		PerformBarrier(cl.Get().dx12, texBarriers.get(), count);
+	}
+
+	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept
 	{
 		D3D12_TEXTURE_BARRIER barrier;
 		FillBarier(barrier, desc);

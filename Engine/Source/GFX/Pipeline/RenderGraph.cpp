@@ -4,8 +4,10 @@ namespace ZE::GFX::Pipeline
 {
 	void RenderGraph::Execute(Graphics& gfx)
 	{
+		CommandList& asyncList = asyncListChain.Get();
 		CommandList& mainList = gfx.GetMainList();
 		Device& dev = gfx.GetDevice();
+		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 
 		// If needed do an update
 		switch (update)
@@ -26,23 +28,24 @@ namespace ZE::GFX::Pipeline
 			auto& mainGroup = passGroups[i].at(0);
 			auto& asyncGroup = passGroups[i].at(1);
 
-			if (mainGroup.Count)
+			if (mainGroup.PassGroupCount)
 			{
 				ZE_DRAW_TAG_BEGIN_MAIN(dev, "Main execution group, level " + std::to_string(i + 1), PixelVal::White);
 				if (mainGroup.QueueWait)
 					dev.WaitMainFromCompute(mainGroup.WaitFence);
 
 				mainList.Open(dev);
-				for (U32 j = 0; j < mainGroup.Count; ++j)
+				for (U32 j = 0; j < mainGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = mainGroup.PassGroups[j];
-					for (U32 k = 0; k < parallelGroup.Count; ++k)
-					{
-						// TODO: resource barriers - gather barriers needed between passes and execute them together
+					if (parallelGroup.BarrierCount)
+						execData.Buffers.Barrier(mainList, parallelGroup.StartBarriers.get(), parallelGroup.BarrierCount);
+
+					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
 						parallelGroup.Passes[k].first(dev, mainList, execData, parallelGroup.Passes[k].second);
-					}
 				}
-				// TODO: last exec group with some last transitions for backbuffer and others, have to be main group
+				if (mainGroup.BarrierCount)
+					execData.Buffers.Barrier(mainList, mainGroup.EndBarriers.get(), mainGroup.BarrierCount);
 				mainList.Close(dev);
 
 				if (mainGroup.SignalFence)
@@ -50,22 +53,24 @@ namespace ZE::GFX::Pipeline
 				ZE_DRAW_TAG_END_MAIN(dev);
 			}
 
-			if (asyncGroup.Count)
+			if (asyncGroup.PassGroupCount)
 			{
 				ZE_DRAW_TAG_BEGIN_COMPUTE(dev, "Async execution group, level " + std::to_string(i + 1), PixelVal::White);
 				if (asyncGroup.QueueWait)
 					dev.WaitComputeFromMain(asyncGroup.WaitFence);
 
 				asyncList.Open(dev);
-				for (U32 j = 0; j < asyncGroup.Count; ++j)
+				for (U32 j = 0; j < asyncGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = asyncGroup.PassGroups[j];
-					for (U32 k = 0; k < parallelGroup.Count; ++k)
-					{
-						// TODO: resource barriers - gather barriers needed between passes and execute them together
+					if (parallelGroup.BarrierCount)
+						execData.Buffers.Barrier(asyncList, parallelGroup.StartBarriers.get(), parallelGroup.BarrierCount);
+
+					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
 						parallelGroup.Passes[k].first(dev, asyncList, execData, parallelGroup.Passes[k].second);
-					}
 				}
+				if (mainGroup.BarrierCount)
+					execData.Buffers.Barrier(asyncList, asyncGroup.EndBarriers.get(), asyncGroup.BarrierCount);
 				asyncList.Close(dev);
 
 				if (asyncGroup.SignalFence)

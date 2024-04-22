@@ -92,12 +92,13 @@ namespace ZE::GFX::Pipeline
 		// Manually transition resources between layouts and accesses in pipeline, recomended to use only on innner resources!
 		template<U32 BarrierCount>
 		constexpr void Barrier(CommandList& cl, const std::array<BarrierTransition, BarrierCount>& barriers) const noexcept { ZE_RHI_BACKEND_CALL(Barrier<BarrierCount>, cl, barriers); }
-		// Manually transition resource between states, recomended to use only on innner resources!
-		constexpr void Barrier(CommandList& cl, BarrierTransition& desc) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, desc); }
+		// Manually transition resource between layout and access in pipeline, recomended to use only on innner resources!
+		constexpr void Barrier(CommandList& cl, const BarrierTransition* barriers, U32 count) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, barriers, count); }
+		// Manually transition resource between layout and access in pipeline, recomended to use only on innner resources!
+		constexpr void Barrier(CommandList& cl, const BarrierTransition& desc) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, desc); }
 
 		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INALID_RID
-		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output,
-			float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
+		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
 
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
 		// Before destroying FrameBuffer you have to call this function for proper memory freeing

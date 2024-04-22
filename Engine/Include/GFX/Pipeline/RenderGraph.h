@@ -92,11 +92,15 @@ namespace ZE::GFX::Pipeline
 	 - Processing - depends only on input data, when no data provided this pass can be removed from execution (later passes have to account for missing input)
 	*/
 
+	// RenderGraph Execution: last exec group with some last transitions for backbuffer and others, have to be main group
+
 	// For FFX it would be okay to create reflection system to identify which pass belongs to which effect, so basically: searchPass(getPassType(FFX_EFFECT_CACAO)).AddInnerBuffer()
 
 	// Class for running render graphs previously created by some builder. Should be generic so it will accept any input provided for data, passes, etc.
 	class RenderGraph final
 	{
+		friend class RenderGraphBuilder;
+
 		// If update of settings caused any need for graph update
 		enum class PendingUpdate : U8
 		{
@@ -108,16 +112,17 @@ namespace ZE::GFX::Pipeline
 		// Group of render passes that can be run in parallel with no resource dependency
 		struct ParallelPassGroup
 		{
-			// TODO: Some transitions before starting group of passes
+			U32 BarrierCount = 0;
+			std::unique_ptr<BarrierTransition[]> StartBarriers;
+			U32 PassCount = 0;
 			std::unique_ptr<std::pair<PassExecuteCallback, PassData>[]> Passes;
-			U32 Count = 0;
 		};
 
 		// Group of passes to be executed in single submission
 		struct ExecutionGroup
 		{
+			U32 PassGroupCount = 0;
 			std::unique_ptr<ParallelPassGroup[]> PassGroups;
-			U32 Count = 0;
 			bool QueueWait = false;
 #if _ZE_RENDER_GRAPH_SINGLE_THREAD
 			U64 WaitFence = 0;
@@ -126,8 +131,9 @@ namespace ZE::GFX::Pipeline
 			UA64 WaitFence = 0;
 			UA64* SignalFence = nullptr;
 #endif
-			// TODO: Some transitions for ending execution group
-			// (only barriers related to cross-queue resources and for last group preparing the backbuffer)
+			U32 BarrierCount = 0;
+			// Only related to cross-queue resources and for last group preparing the backbuffer
+			std::unique_ptr<BarrierTransition[]> EndBarriers;
 		};
 
 		PendingUpdate update = PendingUpdate::None;

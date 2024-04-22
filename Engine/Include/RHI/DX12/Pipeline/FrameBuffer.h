@@ -82,7 +82,7 @@ namespace ZE::RHI::DX12::Pipeline
 		void EnterRaster() const noexcept;
 		void SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;
-		void FillBarier(D3D12_TEXTURE_BARRIER& barrier, GFX::Pipeline::BarrierTransition& desc) const noexcept;
+		void FillBarier(D3D12_TEXTURE_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 		void PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriers, U32 count) const noexcept;
 
 	public:
@@ -132,7 +132,8 @@ namespace ZE::RHI::DX12::Pipeline
 
 		template<U32 BarrierCount>
 		void Barrier(GFX::CommandList& cl, const std::array<GFX::Pipeline::BarrierTransition, BarrierCount>& barriers) const noexcept;
-		void Barrier(GFX::CommandList& cl, GFX::Pipeline::BarrierTransition& desc) const noexcept;
+		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
+		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 
 		void ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
 			RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const;
