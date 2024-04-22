@@ -1,4 +1,3 @@
-set(ZE_CMAKE_VERSION 3.22)
 cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
 cmake_policy(SET CMP0091 NEW) # Setting of MSVC runtime library
 
@@ -24,8 +23,6 @@ option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
 option(ZE_ENABLE_VK "Enable Vulkan API usage" OFF)
 option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
-option(ZE_DEBUG_FRAME_MEMORY_PRINT "Enable printing of frame buffer memory allocation for supported APIs on debug builds" OFF)
-option(ZE_DEBUG_FRAME_NO_ALIASING_MEMORY "Disable packing of frame buffer memory and aliasing it between resources" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_RENDERER_NO_SPLIT_BARRIERS "Turns off splitting barriers and performs them immediatelly" ON)
 option(ZE_RENDERER_CREATION_VALIDATION "Turns on validation during whole process of render graph creation, enabled by default in development builds but can be forced even in release" ON)
@@ -363,8 +360,6 @@ add_definitions(-D_ZE_EXTERNAL_MODEL_LOADING=$<BOOL:${ZE_EXTERNAL_MODEL_LOADING}
 add_definitions(-D_ZE_RENDERER_CREATION_VALIDATION=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>,$<BOOL:${ZE_RENDERER_CREATION_VALIDATION}>>)
 add_definitions(-D_ZE_RENDERER_NO_SPLIT_BARRIERS=$<BOOL:${ZE_RENDERER_NO_SPLIT_BARRIERS}>)
 add_definitions(-D_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SINGLE_THREAD}>)
-add_definitions(-D_ZE_DEBUG_FRAME_MEMORY_PRINT=$<BOOL:${ZE_DEBUG_FRAME_MEMORY_PRINT}>)
-add_definitions(-D_ZE_DEBUG_FRAME_NO_ALIASING_MEMORY=$<BOOL:${ZE_DEBUG_FRAME_NO_ALIASING_MEMORY}>)
 add_definitions(-D_ZE_DEBUG_GFX_API=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
 add_definitions(-D_ZE_DEBUG_GFX_NAMES=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
 add_definitions(-D_ZE_GFX_MARKERS=$<NOT:$<BOOL:${ZE_BUILD_RELEASE}>>)

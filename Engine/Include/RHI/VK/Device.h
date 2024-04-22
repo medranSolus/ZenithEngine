@@ -166,9 +166,6 @@ namespace ZE::RHI::VK
 
 		xess_context_handle_t GetXeSSCtx() { ZE_FAIL("XeSS no supported for Vulkan!"); return nullptr; }
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags) { ZE_FAIL("XeSS not supported for Vulkan!"); }
-		void ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
-			GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
-			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset) { ZE_FAIL("XeSS not supported for Vulkan!"); }
 
 		U64 GetMainFence() const noexcept { return gfxFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

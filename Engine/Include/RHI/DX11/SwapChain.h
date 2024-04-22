@@ -18,7 +18,6 @@ namespace ZE::RHI::DX11
 		~SwapChain() = default;
 
 		constexpr void StartFrame(GFX::Device& dev) {}
-		constexpr void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const {}
 		void Free(GFX::Device& dev) noexcept { srv = nullptr; rtv = nullptr; backBuffer = nullptr; swapChain = nullptr; }
 
 		void Present(GFX::Device& dev) const;

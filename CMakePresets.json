@@ -10,6 +10,7 @@
       "name": "default",
       "hidden": true,
       "cacheVariables": {
+        "ZE_CMAKE_VERSION": "3.22",
         "ZE_PLATFORM_WINDOWS": false,
         "ZE_PLATFORM_LINUX": false,
         "ZE_PLATFORM_ANDROID": false,

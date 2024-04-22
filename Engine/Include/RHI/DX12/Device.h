@@ -22,6 +22,8 @@ namespace ZE::RHI::DX12
 {
 	class Device final
 	{
+		static_assert(Settings::MAX_RENDER_TARGETS <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Incorrect number of max render targets for pass!");
+
 		static constexpr U16 COPY_LIST_GROW_SIZE = 5;
 		static constexpr D3D_FEATURE_LEVEL MINIMAL_D3D_LEVEL = D3D_FEATURE_LEVEL_12_1;
 		static constexpr U64 BLOCK_DESCRIPTOR_ALLOC_CAPACITY = 1000;
@@ -129,9 +131,7 @@ namespace ZE::RHI::DX12
 
 		xess_context_handle_t GetXeSSCtx();
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);
-		void ExecuteXeSS(GFX::CommandList& cl, GFX::Resource::Generic& color, GFX::Resource::Generic& motionVectors,
-			GFX::Resource::Generic* depth, GFX::Resource::Generic* exposure, GFX::Resource::Generic* responsive,
-			GFX::Resource::Generic& output, float jitterX, float jitterY, UInt2 renderSize, bool reset);
+
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
 		bool IsShaderFloat16Supported() const noexcept;

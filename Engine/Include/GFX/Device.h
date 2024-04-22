@@ -31,9 +31,6 @@ namespace ZE::GFX
 		constexpr FfxInterface& GetFfxInterface() noexcept { FfxInterface* ffx = nullptr; ZE_RHI_BACKEND_CALL_RET(ffx, GetFfxInterface); return *ffx; }
 		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
 		constexpr void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 flags) { ZE_RHI_BACKEND_CALL(InitializeXeSS, targetRes, quality, flags); }
-		constexpr void ExecuteXeSS(CommandList& cl, Resource::Generic& color, Resource::Generic& motionVectors,
-			Resource::Generic* depth, Resource::Generic* exposure, Resource::Generic* responsive, Resource::Generic& output,
-			float jitterX, float jitterY, UInt2 renderSize, bool reset) { ZE_RHI_BACKEND_CALL(ExecuteXeSS, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, renderSize, reset); }
 
 		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
 		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }

@@ -95,14 +95,6 @@ namespace ZE::RHI::DX12
 		}
 	}
 
-	void SwapChain::PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const
-	{
-		cl.Get().dx12.Open(dev.Get().dx12);
-		cl.Get().dx12.GetList()->ResourceBarrier(1, &presentBarrier);
-		cl.Get().dx12.Close(dev.Get().dx12);
-		dev.Get().dx12.ExecuteMain(cl);
-	}
-
 	void SwapChain::Free(GFX::Device& dev) noexcept
 	{
 		rtvDescHeap = nullptr;
@@ -111,12 +103,11 @@ namespace ZE::RHI::DX12
 			dev.Get().dx12.FreeDescs(srvHandle);
 	}
 
-	SwapChain::DescEntry SwapChain::SetCurrentBackbuffer(GFX::Device& dev, DX::ComPtr<IResource>& buffer)
+	SwapChain::DescEntry SwapChain::SetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer)
 	{
-		ZE_DX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE(dev);
 		const U32 current = Settings::GetCurrentBackbufferIndex();
 		ZE_DX_THROW_FAILED(swapChain->GetBuffer(current, IID_PPV_ARGS(&buffer)));
-		presentBarrier.Transition.pResource = buffer.Get();
 		return rtvSrv[current];
 	}
 }

@@ -89,7 +89,7 @@ namespace ZE::GFX
 	void ExecuteCopyJob(FfxBackendContext& ctx, Device& dev, CommandList& cl, const FfxCopyJobDescription& job);
 	void ExecuteComputeJob(FfxBackendContext& ctx, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, const FfxComputeJobDescription& job);
 
-	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, Resource::Generic& res, RID rid, Resource::State state) noexcept
+	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept
 	{
 		// Create proxy resource
 		res.Init(buffers, rid);

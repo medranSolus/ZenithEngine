@@ -1,5 +1,4 @@
 #include "GFX/Pipeline/RenderPass/UpscaleXeSS.h"
-#include "GFX/Resource/Generic.h"
 #include "GFX/XeSSException.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
@@ -79,25 +78,10 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale XeSS", Pixel(0xB2, 0x22, 0x22));
-		/*
-		// Create proxy resources
-		Resource::Generic color(renderData.Buffers, ids.Color),
-			motionVectors(renderData.Buffers, ids.MotionVectors),
-			depth(renderData.Buffers, ids.Depth),
-			responsive(renderData.Buffers, ids.ResponsiveMask),
-			output(renderData.Buffers, ids.Output);
+		
+		renderData.Buffers.ExecuteXeSS(dev, cl, ids.Color, ids.MotionVectors, ids.Depth, INVALID_RID, ids.ResponsiveMask, ids.Output,
+			renderData.DynamicData.JitterCurrent.x, renderData.DynamicData.JitterCurrent.y, false);
 
-		dev.ExecuteXeSS(cl, color, motionVectors, &depth, nullptr, &responsive, output,
-			renderData.DynamicData.JitterCurrent.x, renderData.DynamicData.JitterCurrent.y,
-			renderData.Buffers.GetDimmensions(ids.Color), false);
-
-		// Free proxy resources
-		color.Free(dev);
-		motionVectors.Free(dev);
-		depth.Free(dev);
-		responsive.Free(dev);
-		output.Free(dev);
-		*/
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

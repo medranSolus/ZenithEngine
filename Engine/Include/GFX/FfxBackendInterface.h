@@ -1,8 +1,6 @@
 #pragma once
-#include "Pipeline/ResourceID.h"
+#include "Pipeline/FrameBuffer.h"
 #include "Resource/DynamicCBuffer.h"
-#include "Resource/Generic.h"
-#include "CommandList.h"
 #include "ChainPool.h"
 #include "FfxException.h"
 ZE_WARNING_PUSH
@@ -18,8 +16,8 @@ namespace ZE::GFX
 	// Convert FFX SDK surface format into pixel format
 	constexpr PixelFormat GetPixelFormatFfx(FfxSurfaceFormat format) noexcept;
 
-	// Initialize proxy Generic resource from one of the frame buffers and create handle for FFX SDK (created resource will be freed internally)
-	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, Resource::Generic& res, RID rid, Resource::State state) noexcept;
+	// Initialize handle for FFX SDK from one of the frame buffers
+	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept;
 
 	// Fill up pointers to FFX SDK backend callbacks
 	void ffxGetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers) noexcept;

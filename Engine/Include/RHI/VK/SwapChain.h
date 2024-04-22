@@ -26,7 +26,6 @@ namespace ZE::RHI::VK
 
 		void StartFrame(GFX::Device& dev);
 		void Present(GFX::Device& dev) const;
-		void PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const;
 		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal

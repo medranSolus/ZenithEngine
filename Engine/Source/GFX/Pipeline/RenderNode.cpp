@@ -18,15 +18,15 @@ namespace ZE::GFX::Pipeline
 		return true;
 	}
 
-	void RenderNode::AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& desc) noexcept
+	void RenderNode::AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& resDesc) noexcept
 	{
-		desc.Flags |= FrameResourceFlag::ForceSRV;
-		innerBuffers.emplace_back(std::forward<FrameResourceDesc>(desc));
+		resDesc.Flags |= FrameResourceFlag::ForceSRV;
+		innerBuffers.emplace_back(std::forward<FrameResourceDesc>(resDesc));
 		innerLayouts.emplace_back(layout);
 		innerRIDs.emplace_back(INVALID_RID);
 	}
 
-	bool RenderNode::AddOutput(std::string&& name, TextureLayout layout, RID rid, RID replacement)
+	bool RenderNode::AddOutput(std::string&& name, TextureLayout layout, RID rid, RID replacement) noexcept
 	{
 		std::string outputName = passName + "." + std::forward<std::string>(name);
 #if _ZE_RENDERER_CREATION_VALIDATION

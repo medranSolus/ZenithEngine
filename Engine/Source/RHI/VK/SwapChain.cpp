@@ -187,39 +187,6 @@ namespace ZE::RHI::VK
 		ZE_VK_THROW_NOSUCC(vkQueuePresentKHR(dev.Get().vk.GetGfxQueue(), &presentInfo));
 	}
 
-	void SwapChain::PrepareBackbuffer(GFX::Device& dev, GFX::CommandList& cl) const
-	{
-		auto& device = dev.Get().vk;
-		auto& list = cl.Get().vk;
-
-		// Transition backbuffer to presentable layout
-		VkImageMemoryBarrier2 presentBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2, nullptr };
-		presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT | (device.CanPresentFromCompute() ? VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT : 0)
-			| VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
-		presentBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
-		presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
-		presentBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
-		presentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // TODO: record last used access
-		presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		presentBarrier.dstQueueFamilyIndex = presentBarrier.srcQueueFamilyIndex = list.GetFamily();
-		presentBarrier.image = images[currentImage];
-		presentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-
-		VkDependencyInfo depInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO, nullptr };
-		depInfo.dependencyFlags = 0;
-		depInfo.memoryBarrierCount = 0;
-		depInfo.pMemoryBarriers = nullptr;
-		depInfo.bufferMemoryBarrierCount = 0;
-		depInfo.pBufferMemoryBarriers = nullptr;
-		depInfo.imageMemoryBarrierCount = 1;
-		depInfo.pImageMemoryBarriers = &presentBarrier;
-
-		list.Open();
-		vkCmdPipelineBarrier2(list.GetBuffer(), &depInfo);
-		list.Close();
-		ExecutePresentTransition(device, list);
-	}
-
 	void SwapChain::Free(GFX::Device& dev) noexcept
 	{
 		if (views)

@@ -1,5 +1,4 @@
 #include "RHI/DX12/CommandList.h"
-#include "GFX/Resource/Generic.h"
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"
@@ -43,33 +42,6 @@ namespace ZE::RHI::DX12
 	void CommandList::Reset(GFX::Device& dev)
 	{
 		Reset(dev.Get().dx12);
-	}
-
-	void CommandList::Barrier(GFX::Device& dev, GFX::Resource::GenericResourceBarrier* barriers, U32 count) const noexcept(!_ZE_DEBUG_GFX_API)
-	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-
-		std::unique_ptr<D3D12_RESOURCE_BARRIER[]> resBarriers = std::make_unique<D3D12_RESOURCE_BARRIER[]>(count);
-		for (U32 i = 0; i < count; ++i)
-		{
-			ZE_ASSERT(barriers[i].Resource, "Empty Generic resource from barrier!");
-
-			resBarriers[i].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			if (barriers[i].IsUAV)
-			{
-				resBarriers[i].Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-				resBarriers[i].UAV.pResource = barriers[i].Resource->Get().dx12.GetResource();
-			}
-			else
-			{
-				resBarriers[i].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-				resBarriers[i].Transition.pResource = barriers[i].Resource->Get().dx12.GetResource();
-				resBarriers[i].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-				resBarriers[i].Transition.StateBefore = GetResourceState(barriers[i].Before);
-				resBarriers[i].Transition.StateAfter = GetResourceState(barriers[i].After);
-			}
-		}
-		ZE_DX_THROW_FAILED_INFO(commands->ResourceBarrier(count, resBarriers.get()));
 	}
 
 	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
