@@ -18,7 +18,7 @@ namespace ZE
 #	define ZE_ENABLE_AGILITYSDK \
 	extern "C" \
 	{ \
-		ZE_EXPORT extern const UINT D3D12SDKVersion = 611; \
+		ZE_EXPORT extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; \
 		ZE_EXPORT extern const char* D3D12SDKPath = ".\\AgilitySDK\\"; \
 	}
 #else
