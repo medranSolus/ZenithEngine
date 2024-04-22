@@ -11,75 +11,25 @@ namespace ZE::RHI::VK::Pipeline
 	{
 	}
 
-	void FrameBuffer::Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept
+	void FrameBuffer::BeginRaster(GFX::CommandList& cl)
 	{
+		VkRenderingInfo renderInfo = { VK_STRUCTURE_TYPE_RENDERING_INFO, nullptr };
+		renderInfo.flags = 0;
+		renderInfo.renderArea.offset.x = 0;
+		renderInfo.renderArea.offset.y = 0;
+		renderInfo.renderArea.extent.width;
+		renderInfo.renderArea.extent.height;
+		renderInfo.layerCount;
+		renderInfo.viewMask = 0;
+		renderInfo.colorAttachmentCount;
+		renderInfo.pColorAttachments;
+		renderInfo.pDepthAttachment;
+		renderInfo.pStencilAttachment;
+		vkCmdBeginRendering(cl.Get().vk.GetBuffer(), &renderInfo);
 	}
 
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const noexcept
+	void FrameBuffer::EndRaster(GFX::CommandList& cl)
 	{
-	}
-
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
-	{
-	}
-
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept
-	{
-	}
-
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept
-	{
-	}
-
-	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
-	{
-	}
-
-	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept
-	{
-	}
-
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
-	{
-	}
-
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept
-	{
-	}
-
-	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
-	{
-	}
-
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept
-	{
+		vkCmdEndRendering(cl.Get().vk.GetBuffer());
 	}
 }

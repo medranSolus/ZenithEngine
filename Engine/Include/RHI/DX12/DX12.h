@@ -2,11 +2,10 @@
 // Headers needed for DirectX 12
 #include "RHI/DX/DXGI.h"
 #include "GFX/Binding/Range.h"
-#include "GFX/Pipeline/BarrierType.h"
-#include "GFX/Resource/GenericResourceDesc.h"
+#include "GFX/Pipeline/Barrier.h"
+#include "GFX/Pipeline/TextureLayout.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
-#include "GFX/Resource/State.h"
 #include "GFX/ShaderPresence.h"
 #include "GFX/QueueType.h"
 ZE_WARNING_PUSH
@@ -24,11 +23,11 @@ namespace ZE::RHI::DX12
 	typedef ID3D12DescriptorHeap                     IDescriptorHeap;
 	typedef ID3D12Debug6                             IDebug;
 	typedef ID3D12DebugDevice2                       IDebugDevice;
-	typedef ID3D12Device12                           IDevice;
+	typedef ID3D12Device14                           IDevice;
 	typedef ID3D12DeviceRemovedExtendedData1         IDeviceRemovedExtendedData;
 	typedef ID3D12DeviceRemovedExtendedDataSettings1 IDeviceRemovedExtendedDataSettings;
 	typedef ID3D12Fence1                             IFence;
-	typedef ID3D12GraphicsCommandList9               IGraphicsCommandList;
+	typedef ID3D12GraphicsCommandList10              IGraphicsCommandList;
 	typedef ID3D12Heap1                              IHeap;
 	typedef ID3D12InfoQueue                          IInfoQueue;
 	typedef ID3D12Pageable                           IPageable;
@@ -37,6 +36,12 @@ namespace ZE::RHI::DX12
 	typedef ID3D12Resource2                          IResource;
 	typedef ID3D12RootSignature                      IRootSignature;
 
+	// Get DirectX 12 version of resource access
+	constexpr D3D12_BARRIER_ACCESS GetBarrierAccess(GFX::Pipeline::ResourceAccesses accesses) noexcept;
+	// Get DirectX 12 version of pipeline texture layout
+	constexpr D3D12_BARRIER_LAYOUT GetBarrierLayout(GFX::Pipeline::TextureLayout layout) noexcept;
+	// Get DirectX 12 version of pipeline barrier sync
+	constexpr D3D12_BARRIER_SYNC GetBarrierSync(GFX::Pipeline::StageSyncs syncs) noexcept;
 	// Get DirectX 12 version of command list types
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(GFX::QueueType type) noexcept;
 	// Get DirectX 12 version of comparison function
@@ -45,12 +50,8 @@ namespace ZE::RHI::DX12
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
 	// Get DirectX 12 version of filter type
 	constexpr D3D12_FILTER GetFilterType(GFX::Resource::SamplerFilter samplerType) noexcept;
-	// Get DirectX12 version of resource flags for Generic resource
-	constexpr D3D12_RESOURCE_FLAGS GetGenericResourceFlags(GFX::Resource::GenericResourceFlags flags) noexcept;
 	// Get register space for given shader type
 	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept;
-	// Get DirectX 12 version of resource states
-	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept;
 	// Get shader visibility from shader type
 	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, GFX::ShaderPresenceMask* presence = nullptr) noexcept;
 	// Get DirectX 12 version of static border color for static sampler
@@ -59,10 +60,147 @@ namespace ZE::RHI::DX12
 	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept;
 	// Get DirectX 12 version of primitive topology types
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept;
-	// Get DirectX 12 version of possible barrier types
-	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept;
 
 #pragma region Functions
+	constexpr D3D12_BARRIER_ACCESS GetBarrierAccess(GFX::Pipeline::ResourceAccesses accesses) noexcept
+	{
+		if (accesses == GFX::Pipeline::ResourceAccess::None)
+			return D3D12_BARRIER_ACCESS_NO_ACCESS;
+
+		D3D12_BARRIER_ACCESS barrierAccess = D3D12_BARRIER_ACCESS_COMMON;
+		if (accesses & GFX::Pipeline::ResourceAccess::VertexBuffer)
+			barrierAccess |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER;
+		if (accesses & GFX::Pipeline::ResourceAccess::ConstantBuffer)
+			barrierAccess |= D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
+		if (accesses & GFX::Pipeline::ResourceAccess::IndexBuffer)
+			barrierAccess |= D3D12_BARRIER_ACCESS_INDEX_BUFFER;
+		if (accesses & GFX::Pipeline::ResourceAccess::RenderTarget)
+			barrierAccess |= D3D12_BARRIER_ACCESS_RENDER_TARGET;
+		if (accesses & GFX::Pipeline::ResourceAccess::UnorderedAccess)
+			barrierAccess |= D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+		if (accesses & GFX::Pipeline::ResourceAccess::DepthStencilWrite)
+			barrierAccess |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
+		if (accesses & GFX::Pipeline::ResourceAccess::DepthStencilRead)
+			barrierAccess |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
+		if (accesses & GFX::Pipeline::ResourceAccess::ShaderResource)
+			barrierAccess |= D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+		if (accesses & GFX::Pipeline::ResourceAccess::StreamOutput)
+			barrierAccess |= D3D12_BARRIER_ACCESS_STREAM_OUTPUT;
+		if (accesses & GFX::Pipeline::ResourceAccess::IndirectArguments)
+			barrierAccess |= D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+		if (accesses & GFX::Pipeline::ResourceAccess::Predication)
+			barrierAccess |= D3D12_BARRIER_ACCESS_PREDICATION;
+		if (accesses & GFX::Pipeline::ResourceAccess::CopyDest)
+			barrierAccess |= D3D12_BARRIER_ACCESS_COPY_DEST;
+		if (accesses & GFX::Pipeline::ResourceAccess::CopySource)
+			barrierAccess |= D3D12_BARRIER_ACCESS_COPY_SOURCE;
+		if (accesses & GFX::Pipeline::ResourceAccess::ResolveDest)
+			barrierAccess |= D3D12_BARRIER_ACCESS_RESOLVE_DEST;
+		if (accesses & GFX::Pipeline::ResourceAccess::ResolveSource)
+			barrierAccess |= D3D12_BARRIER_ACCESS_RESOLVE_SOURCE;
+		if (accesses & GFX::Pipeline::ResourceAccess::RayTracingAccelerationStructRead)
+			barrierAccess |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
+		if (accesses & GFX::Pipeline::ResourceAccess::RayTracingAccelerationStructWrite)
+			barrierAccess |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
+		if (accesses & GFX::Pipeline::ResourceAccess::ShadingRateSource)
+			barrierAccess |= D3D12_BARRIER_ACCESS_SHADING_RATE_SOURCE;
+
+		/* Not used:
+		 * D3D12_BARRIER_ACCESS_VIDEO_DECODE_READ
+		 * D3D12_BARRIER_ACCESS_VIDEO_DECODE_WRITE
+		 * D3D12_BARRIER_ACCESS_VIDEO_PROCESS_READ
+		 * D3D12_BARRIER_ACCESS_VIDEO_PROCESS_WRITE
+		 * D3D12_BARRIER_ACCESS_VIDEO_ENCODE_READ
+		 * D3D12_BARRIER_ACCESS_VIDEO_ENCODE_WRITE
+		 */
+		return barrierAccess;
+	}
+
+	constexpr D3D12_BARRIER_LAYOUT GetBarrierLayout(GFX::Pipeline::TextureLayout layout) noexcept
+	{
+		switch (layout)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Pipeline::TextureLayout::Undefined:
+		case GFX::Pipeline::TextureLayout::Preinitialized:
+			return D3D12_BARRIER_LAYOUT_UNDEFINED;
+		case GFX::Pipeline::TextureLayout::Common:
+			return D3D12_BARRIER_LAYOUT_COMMON;
+		case GFX::Pipeline::TextureLayout::Present:
+			return D3D12_BARRIER_LAYOUT_PRESENT;
+		case GFX::Pipeline::TextureLayout::GenericRead:
+			return D3D12_BARRIER_LAYOUT_GENERIC_READ;
+		case GFX::Pipeline::TextureLayout::RenderTarget:
+			return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+		case GFX::Pipeline::TextureLayout::UnorderedAccess:
+			return D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS;
+		case GFX::Pipeline::TextureLayout::DepthStencilWrite:
+			return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
+		case GFX::Pipeline::TextureLayout::DepthStencilRead:
+			return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+		case GFX::Pipeline::TextureLayout::ShaderResource:
+			return D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+		case GFX::Pipeline::TextureLayout::CopySource:
+			return D3D12_BARRIER_LAYOUT_COPY_SOURCE;
+		case GFX::Pipeline::TextureLayout::CopyDest:
+			return D3D12_BARRIER_LAYOUT_COPY_DEST;
+		case GFX::Pipeline::TextureLayout::ResolveSource:
+			return D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE;
+		case GFX::Pipeline::TextureLayout::ResolveDest:
+			return D3D12_BARRIER_LAYOUT_RESOLVE_DEST;
+		case GFX::Pipeline::TextureLayout::ShadingRateSource:
+			return D3D12_BARRIER_LAYOUT_SHADING_RATE_SOURCE;
+		}
+	}
+
+	constexpr D3D12_BARRIER_SYNC GetBarrierSync(GFX::Pipeline::StageSyncs syncs) noexcept
+	{
+		D3D12_BARRIER_SYNC barrierSync = D3D12_BARRIER_SYNC_NONE;
+		if (syncs & GFX::Pipeline::StageSync::All)
+			barrierSync |= D3D12_BARRIER_SYNC_ALL;
+		if (syncs & GFX::Pipeline::StageSync::AllGraphics)
+			barrierSync |= D3D12_BARRIER_SYNC_DRAW;
+		if (syncs & GFX::Pipeline::StageSync::IndexInput)
+			barrierSync |= D3D12_BARRIER_SYNC_INDEX_INPUT;
+		if (syncs & GFX::Pipeline::StageSync::GeometryShading)
+			barrierSync |= D3D12_BARRIER_SYNC_VERTEX_SHADING;
+		if (syncs & GFX::Pipeline::StageSync::PixelShading)
+			barrierSync |= D3D12_BARRIER_SYNC_PIXEL_SHADING;
+		if (syncs & GFX::Pipeline::StageSync::ComputeShading)
+			barrierSync |= D3D12_BARRIER_SYNC_COMPUTE_SHADING;
+		if (syncs & GFX::Pipeline::StageSync::RayTracing)
+			barrierSync |= D3D12_BARRIER_SYNC_RAYTRACING;
+		if (syncs & GFX::Pipeline::StageSync::ExecuteIndirect)
+			barrierSync |= D3D12_BARRIER_SYNC_EXECUTE_INDIRECT;
+		if (syncs & GFX::Pipeline::StageSync::RenderTarget)
+			barrierSync |= D3D12_BARRIER_SYNC_RENDER_TARGET;
+		if (syncs & GFX::Pipeline::StageSync::DepthStencil)
+			barrierSync |= D3D12_BARRIER_SYNC_DEPTH_STENCIL;
+		if (syncs & GFX::Pipeline::StageSync::ClearUnorderedAccess)
+			barrierSync |= D3D12_BARRIER_SYNC_CLEAR_UNORDERED_ACCESS_VIEW;
+		if (syncs & GFX::Pipeline::StageSync::Copy)
+			barrierSync |= D3D12_BARRIER_SYNC_COPY;
+		if (syncs & GFX::Pipeline::StageSync::Resolve)
+			barrierSync |= D3D12_BARRIER_SYNC_RESOLVE;
+		if (syncs & GFX::Pipeline::StageSync::Predication)
+			barrierSync |= D3D12_BARRIER_SYNC_PREDICATION;
+		if (syncs & GFX::Pipeline::StageSync::RayTracingAccelerationStructBuild)
+			barrierSync |= D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
+		if (syncs & GFX::Pipeline::StageSync::RayTracingAccelerationStructCopy)
+			barrierSync |= D3D12_BARRIER_SYNC_COPY_RAYTRACING_ACCELERATION_STRUCTURE;
+
+		/* Not used:
+		 * D3D12_BARRIER_SYNC_ALL_SHADING
+		 * D3D12_BARRIER_SYNC_NON_PIXEL_SHADING
+		 * D3D12_BARRIER_SYNC_EMIT_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO
+		 * D3D12_BARRIER_SYNC_VIDEO_DECODE
+		 * D3D12_BARRIER_SYNC_VIDEO_PROCESS
+		 * D3D12_BARRIER_SYNC_VIDEO_ENCODE
+		 */
+		return barrierSync;
+	}
+
 	constexpr D3D12_COMMAND_LIST_TYPE GetCommandType(GFX::QueueType type) noexcept
 	{
 		switch (type)
@@ -223,20 +361,6 @@ namespace ZE::RHI::DX12
 		return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // 001
 	}
 
-	constexpr D3D12_RESOURCE_FLAGS GetGenericResourceFlags(GFX::Resource::GenericResourceFlags flags) noexcept
-	{
-		D3D12_RESOURCE_FLAGS resFlags = D3D12_RESOURCE_FLAG_NONE;
-
-		if (flags & GFX::Resource::GenericResourceFlag::RenderTarget)
-			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (flags & GFX::Resource::GenericResourceFlag::UnorderedAccess)
-			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		if (flags & GFX::Resource::GenericResourceFlag::DepthBuffer)
-			resFlags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-		return resFlags;
-	}
-
 	constexpr U32 GetRegisterSpaceForShader(GFX::Binding::RangeFlags flags, GFX::Resource::ShaderTypes type) noexcept
 	{
 		ZE_ASSERT(type, "Empty shader type!");
@@ -257,70 +381,6 @@ namespace ZE::RHI::DX12
 		default:
 			return 0;
 		}
-	}
-
-	constexpr D3D12_RESOURCE_STATES GetResourceState(GFX::Resource::State state) noexcept
-	{
-		D3D12_RESOURCE_STATES resState = D3D12_RESOURCE_STATE_COMMON;
-
-		if (state == GFX::Resource::StateGenericRead)
-			resState = D3D12_RESOURCE_STATE_GENERIC_READ;
-		else
-		{
-			if (state & GFX::Resource::StateVertexBuffer || state & GFX::Resource::StateConstantBuffer)
-				resState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			if (state & GFX::Resource::StateIndexBuffer)
-				resState |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
-			if (state & GFX::Resource::StateShaderResourceNonPS)
-				resState |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			if (state & GFX::Resource::StateShaderResourcePS)
-				resState |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			if (state & GFX::Resource::StateCopySource)
-				resState |= D3D12_RESOURCE_STATE_COPY_SOURCE;
-			if (state & GFX::Resource::StateIndirect)
-				resState |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-		}
-		if (state & GFX::Resource::StateDepthRead)
-			resState |= D3D12_RESOURCE_STATE_DEPTH_READ;
-
-		if (state & GFX::Resource::StateRenderTarget)
-			resState |= D3D12_RESOURCE_STATE_RENDER_TARGET;
-		if (state & GFX::Resource::StateCopyDestination)
-			resState |= D3D12_RESOURCE_STATE_COPY_DEST;
-		if (state & GFX::Resource::StateStreamOut)
-			resState |= D3D12_RESOURCE_STATE_STREAM_OUT;
-		if (state & GFX::Resource::StateDepthWrite)
-			resState |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
-
-		if (state & GFX::Resource::StateUnorderedAccess)
-			resState |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		if (state & GFX::Resource::StateAccelerationStructureRT)
-			resState |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-		if (state & GFX::Resource::StateShadingRateSource)
-			resState |= D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-		if (state & GFX::Resource::StatePredication)
-			resState |= D3D12_RESOURCE_STATE_PREDICATION;
-
-		if (state & GFX::Resource::StateResolveDestination)
-			resState |= D3D12_RESOURCE_STATE_RESOLVE_DEST;
-		if (state & GFX::Resource::StateResolveSource)
-			resState |= D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-
-		if (state & GFX::Resource::StateVideoDecodeRead)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_DECODE_READ;
-		if (state & GFX::Resource::StateVideoProcessRead)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
-		if (state & GFX::Resource::StateVideoEncodeRead)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ;
-
-		if (state & GFX::Resource::StateVideoDecodeWrite)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-		if (state & GFX::Resource::StateVideoProcessWrite)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
-		if (state & GFX::Resource::StateVideoEncodeWrite)
-			resState |= D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
-
-		return resState;
 	}
 
 	constexpr D3D12_SHADER_VISIBILITY GetShaderVisibility(GFX::Resource::ShaderTypes type, GFX::ShaderPresenceMask* presence) noexcept
@@ -423,21 +483,6 @@ namespace ZE::RHI::DX12
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		case GFX::Resource::TopologyType::ControlPoint:
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-		}
-	}
-
-	constexpr D3D12_RESOURCE_BARRIER_FLAGS GetTransitionType(GFX::Pipeline::BarrierType type) noexcept
-	{
-		switch (type)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case GFX::Pipeline::BarrierType::Immediate:
-			return D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		case GFX::Pipeline::BarrierType::Begin:
-			return D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-		case GFX::Pipeline::BarrierType::End:
-			return D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 		}
 	}
 #pragma endregion

@@ -14,68 +14,10 @@ namespace ZE::RHI::VK::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer();
 
-		constexpr UInt2 GetDimmensions(RID rid) const noexcept { return { 0, 0 }; }
-		constexpr U16 GetArraySize(RID rid) const noexcept { return 0; }
-		constexpr U16 GetMipCount(RID rid) const noexcept { return 0; }
-		constexpr bool IsCubeTexture(RID rid) const noexcept { return false; }
-		constexpr bool IsArrayView(RID rid) const noexcept { return false; }
-		constexpr bool IsUAV(RID rid) const noexcept { return false; }
-		constexpr PixelFormat GetFormat(RID rid) const noexcept { return PixelFormat::Unknown; }
-
-		constexpr void InitRTV(GFX::CommandList& cl, RID rid) const noexcept {}
-		constexpr void InitDSV(GFX::CommandList& cl, RID rid) const noexcept {}
-
-		void Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept;
-
-		void SetRTV(GFX::CommandList& cl, RID rid) const noexcept;
-		void SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
-		void SetDSV(GFX::CommandList& cl, RID rid) const noexcept;
-		void SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept;
-		void SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept;
-
-		void SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept;
-		void SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept;
-
-		template<U32 RTVCount>
-		void SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept;
-		template<U32 RTVCount>
-		void SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept;
-
-		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept;
-
-		constexpr void BarrierUAV(GFX::CommandList& cl, RID rid) const noexcept {}
-		void BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept;
-		template<U32 BarrierCount>
-		void BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const noexcept;
-
-		void ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept;
-		void ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept;
-		void ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept;
-		void ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept;
-
-		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
-		constexpr void InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const noexcept {}
-		void ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept;
-
-		constexpr void Free(GFX::Device& dev) noexcept {}
+		void BeginRaster(GFX::CommandList& cl);
+		void EndRaster(GFX::CommandList& cl);
 	};
 
 #pragma region Functions
-	template<U32 RTVCount>
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept
-	{
-	}
-
-	template<U32 RTVCount>
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept
-	{
-	}
-
-	template<U32 BarrierCount>
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const noexcept
-	{
-	}
 #pragma endregion
 }

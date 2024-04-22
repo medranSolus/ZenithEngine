@@ -1,5 +1,5 @@
 #pragma once
-#include "FrameResourceDesc.h"
+#include "FrameBufferDesc.h"
 #include "RenderNode.h"
 
 namespace ZE::GFX::Pipeline
@@ -9,6 +9,7 @@ namespace ZE::GFX::Pipeline
 	// (ex. handling of data) as well as pointers to custom data structures
 	struct RenderGraphDesc
 	{
+		FrameBufferFlags ResourceOptions;
 		std::vector<FrameResourceDesc> Resources;
 		std::vector<RenderNode> RenderPasses;
 		std::vector<Resource::SamplerDesc> Samplers;
@@ -41,6 +42,8 @@ namespace ZE::GFX::Pipeline
 			"Cannot use depth stencil with simultaneous access resource!");
 		ZE_ASSERT(!((desc.Flags & FrameResourceFlag::SyncRenderSize) && (desc.Flags & FrameResourceFlag::SyncDisplaySize)),
 			"Cannot sync same resource to both render and display sizes!");
+		ZE_ASSERT(Resources.size() < INVALID_RID, "Too much resources, needed wider type!");
+
 		RID id = Utils::SafeCast<RID>(Resources.size());
 		Resources.emplace_back(std::forward<FrameResourceDesc>(desc));
 		return id;

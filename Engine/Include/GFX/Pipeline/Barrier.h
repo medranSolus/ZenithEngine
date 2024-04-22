@@ -6,6 +6,9 @@
 
 namespace ZE::GFX::Pipeline
 {
+	// Type of barrier to be performed, allowing for split barrier
+	enum class BarrierType : U8 { Immediate, SplitBegin, SplitEnd };
+
 	// Transition barrier to be performed on texture
 	struct BarrierTransition
 	{
@@ -18,7 +21,6 @@ namespace ZE::GFX::Pipeline
 		StageSyncs StageBefore;
 		// What pipeline stages need to wait before this barrier completes
 		StageSyncs StageAfter;
-		// Indicate whether it's part of split barrier
-		bool IsSplit;
+		BarrierType Type = BarrierType::Immediate;
 	};
 }

@@ -1,156 +1,164 @@
 #include "RHI/DX12/Pipeline/FrameBuffer.h"
+#include "Data/Camera.h"
+#include "GFX/XeSSException.h"
 
 namespace ZE::RHI::DX12::Pipeline
 {
-	struct ResourceInfo
+#if !_ZE_MODE_RELEASE
+	void FrameBuffer::PrintMemory(std::string&& memID, U32 levelCount, U64 heapSize,
+		std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+		const std::vector<std::pair<U32, U32>>& resourcesLifetime) noexcept
 	{
-		RID Handle;
-		U32 Offset;
-		U32 Chunks;
-		U64 StartLevel;
-		U64 LastLevel;
-		D3D12_RESOURCE_DESC Desc;
-		D3D12_CLEAR_VALUE ClearVal;
-		DX::ComPtr<IResource> Resource;
-		std::bitset<8> Flags;
+		U32 maxChunks = 0;
+		for (auto it = resBegin; it != resEnd; ++it)
+			maxChunks += it->Chunks;
 
-		constexpr bool IsRTV() const noexcept { return Flags[0]; }
-		constexpr bool IsDSV() const noexcept { return Flags[1]; }
-		constexpr bool IsSRV() const noexcept { return Flags[2]; }
-		constexpr bool IsUAV() const noexcept { return Flags[3]; }
-		constexpr bool IsCube() const noexcept { return Flags[4]; }
-		constexpr bool UseStencilView() const noexcept { return Flags[5]; }
-		constexpr bool IsAliasing() const noexcept { return Flags[6]; }
-		void SetAliasing() noexcept { Flags[6] = true; }
-		constexpr bool IsTemporal() const noexcept { return Flags[7]; }
-		void SetTemporal() noexcept { Flags[7] = true; }
-	};
-
-#if _ZE_DEBUG_FRAME_MEMORY_PRINT
-	void FrameBuffer::PrintMemory(std::string&& memID, U32 maxChunks, U64 levelCount,
-		RID invalidID, const std::vector<RID>& memory, U64 heapSize)
-	{
-		const U64 pixelsPerLevel = maxChunks / levelCount;
-		U64 separatorPixels = pixelsPerLevel / 20;
+		const U32 pixelsPerLevel = maxChunks / levelCount;
+		U32 separatorPixels = pixelsPerLevel / 20;
 		if (separatorPixels < 2)
 			separatorPixels = 2;
-		const U64 chunkPixels = pixelsPerLevel - separatorPixels;
-		GFX::Surface print(levelCount * pixelsPerLevel, maxChunks);
+		const U32 chunkPixels = pixelsPerLevel - separatorPixels;
+
+		GFX::Surface print(levelCount * pixelsPerLevel, maxChunks, PixelFormat::R8G8B8A8_UNorm);
+		Pixel* image = reinterpret_cast<Pixel*>(print.GetBuffer());
+		// Clear output image
+		for (U32 y = 0; y < print.GetHeight(); ++y)
+			for (U32 x = 0; x < print.GetWidth(); ++x)
+				image[y * print.GetWidth() + x] = PixelVal::Black;
+
+		// Write regions for all resources
+		for (; resBegin != resEnd; ++resBegin)
+		{
+			// Compute resource color
+			const U64 val = resBegin->Handle / resourcesLifetime.size();
+			const Pixel pixel(static_cast<U8>(val >> (8 * (val % 3))),
+				static_cast<U8>(val >> (8 * ((val + 1) % 3))),
+				static_cast<U8>(val >> (8 * ((val + 2) % 3))),
+				static_cast<U8>(val >> 24) ^ 0xFF);
+
+			// Fill resorce rectangle
+			for (U32 chunk = 0; chunk < resBegin->Chunks; ++chunk)
+			{
+				resBegin->ChunkOffset;
+				U32 startLevel = resourcesLifetime.at(resBegin->Handle).first;
+				U32 levelCount = resourcesLifetime.at(resBegin->Handle).second;
+				for (U32 level = 0; level < levelCount; ++level)
+				{
+					const U32 offset = chunk * maxChunks + level * pixelsPerLevel;
+					for (U64 p = 0; p < chunkPixels; ++p)
+						image[offset + p] = pixel;
+				}
+			}
+		}
+
+		// Create separators for every level
 		for (U32 chunk = 0; chunk < maxChunks; ++chunk)
 		{
-			for (U64 level = 0; level < levelCount; ++level)
+			for (U32 level = 0; level < levelCount; ++level)
 			{
-				U64 val = memory.at(chunk * levelCount + level) * 255 / invalidID;
-				Pixel pixel(static_cast<U8>(val >> (8 * (val % 3))),
-					static_cast<U8>(val >> (8 * ((val + 1) % 3))),
-					static_cast<U8>(val >> (8 * ((val + 2) % 3))),
-					static_cast<U8>(val >> 24) ^ 0xFF);
-				for (U64 p = 0; p < chunkPixels; ++p)
-					print.PutPixel(level * pixelsPerLevel + p, chunk, pixel);
+				const U32 offset = chunk * maxChunks + level * pixelsPerLevel + chunkPixels;
 				for (U64 p = 0; p < separatorPixels; ++p)
-					print.PutPixel(level * pixelsPerLevel + p + chunkPixels, chunk, { 255, 255, 255, 255 });
+					image[offset + p] = PixelVal::White;
 			}
 		}
-		print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "bytes.png");
+		print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "B.png");
 	}
 #endif
 
-#if !_ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-	U64 FrameBuffer::FindHeapSize(U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
+	U64 FrameBuffer::AllocateResources(std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+		const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags) noexcept
 	{
-		U32 lastChunk = 0;
-		for (U32 chunk = 0; chunk < maxChunks; ++chunk)
+		U32 heapChunks = 0;
+
+		// Other algorithm: https://stackoverflow.com/questions/25683078/algorithm-for-packing-time-slots
+		if (flags & GFX::Pipeline::FrameBufferFlag::NoMemoryAliasing)
 		{
-			bool notFoundInLevel = true;
-			for (U64 level = 0; level < levelCount; ++level)
+			// No resource aliasing so place all of the one after another
+			for (; resBegin != resEnd; ++resBegin)
 			{
-				if (memory.at(chunk * levelCount + level) != invalidID)
+				resBegin->ChunkOffset = heapChunks;
+				heapChunks += resBegin->Chunks;
+			}
+		}
+		else
+		{
+			// Find max size of the heap
+			U32 maxChunks = 0;
+			for (auto it = resBegin; it != resEnd; ++it)
+				maxChunks += it->Chunks;
+
+			// Find free memory regions for resources
+			std::vector<RID> memory(maxChunks * levelCount, INVALID_RID);
+			for (auto it = resBegin; it != resEnd; ++it)
+			{
+				U32 startLevel = 0, endLevel = levelCount;
+				if (!it->IsTemporal())
 				{
-					lastChunk = chunk;
-					notFoundInLevel = false;
-					break;
+					startLevel = resourcesLifetime.at(it->Handle).first;
+					endLevel = startLevel + resourcesLifetime.at(it->Handle).second;
 				}
-			}
-			if (notFoundInLevel)
-				break;
-		}
-		return Utils::SafeCast<U64>(lastChunk + 1) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	}
 
-	bool FrameBuffer::CheckResourceAliasing(U32 offset, U32 chunks, U64 startLevel, U64 lastLevel,
-		U32 maxChunks, U64 levelCount, RID invalidID, const std::vector<RID>& memory) noexcept
-	{
-		// Check all chunks of resource
-		chunks += offset;
-		for (; offset < chunks; ++offset)
-		{
-			// Time before usage of resource
-			for (U64 time = 0; time < startLevel; ++time)
-				if (memory.at(offset * levelCount + time) != invalidID)
-					return true;
-			// Time after usage of resource
-			for (++lastLevel; lastLevel < levelCount; ++lastLevel)
-				if (memory.at(offset * levelCount + lastLevel) != invalidID)
-					return true;
-		}
-		return false;
-	}
-#endif
-
-	U32 FrameBuffer::AllocResource(RID id, U32 chunks, U64 startLevel, U64 lastLevel,
-		U32 maxChunks, U64 levelCount, RID invalidID, std::vector<RID>& memory)
-	{
-		U32 foundOffset = 0;
-#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-		// Place resources one after another
-		for (; foundOffset < maxChunks; ++foundOffset)
-			if (memory.at(foundOffset * levelCount) == invalidID)
-				break;
-		// Indicate that this memory will be occupied by single resource
-		for (U32 chunk = 0; chunk < chunks; ++chunk)
-			memory.at(Utils::SafeCast<U64>(foundOffset + chunk) * levelCount) = id;
-#else
-		// Search through whole memory
-		for (U32 offset = 0, chunksFound = 0; offset < maxChunks; ++offset)
-		{
-			// Check chunks for whole requested duration
-			for (U64 time = startLevel; time <= lastLevel; ++time)
-			{
-				if (memory.at(offset * levelCount + time) != invalidID)
+				U32 foundOffset = 0;
+				// Search through whole memory
+				for (U32 offset = 0, chunksFound = 0; offset < maxChunks; ++offset)
 				{
-					foundOffset = maxChunks;
-					break;
+					// Check chunks for whole requested duration
+					for (U32 time = startLevel; time < endLevel; ++time)
+					{
+						if (memory.at(offset * levelCount + time) != INVALID_RID)
+						{
+							foundOffset = maxChunks;
+							break;
+						}
+					}
+					if (foundOffset != maxChunks)
+					{
+						if (++chunksFound == it->Chunks)
+							break;
+					}
+					else
+					{
+						chunksFound = 0;
+						foundOffset = offset + 1;
+					}
 				}
+				ZE_ASSERT(foundOffset + it->Chunks <= maxChunks, "Memory too small to fit requested resource, bug in memory table creation!");
+
+				// Reserve space in memory
+				for (U32 chunk = 0; chunk < it->Chunks; ++chunk)
+					std::fill_n(memory.begin() + Utils::SafeCast<U64>(foundOffset + chunk) * levelCount + startLevel, endLevel - startLevel, it->Handle);
+				it->ChunkOffset = foundOffset;
 			}
-			if (foundOffset != maxChunks)
+
+			// Find last chunk of the heap and remove and use it as heap size
+			U32 lastChunk = 0;
+			for (U32 chunk = 0; chunk < maxChunks; ++chunk)
 			{
-				if (++chunksFound == chunks)
+				bool notFoundInLevel = true;
+				for (U32 level = 0; level < levelCount; ++level)
+				{
+					if (memory.at(chunk * levelCount + level) != INVALID_RID)
+					{
+						heapChunks = chunk;
+						notFoundInLevel = false;
+						break;
+					}
+				}
+				if (notFoundInLevel)
 					break;
 			}
-			else
-			{
-				chunksFound = 0;
-				foundOffset = offset + 1;
-			}
+			++heapChunks;
 		}
-#endif
-		// Should never happen, bug in memory table creation!!!
-		if (foundOffset == maxChunks)
-			throw ZE_RGC_EXCEPT("Memory too small to fit requested resource! ID: [" + std::to_string(id) +
-				"] Chunks: [" + std::to_string(chunks) + "] Start level: [" + std::to_string(startLevel) +
-				"] Last level: [" + std::to_string(lastLevel) + "]");
-		// Reserve space in memory
-		for (U32 chunk = 0; chunk < chunks; ++chunk)
-			std::fill_n(memory.begin() + Utils::SafeCast<U64>(foundOffset + chunk) * levelCount + startLevel, lastLevel - startLevel + 1, id);
-		return foundOffset;
+		return Utils::SafeCast<U64>(heapChunks) * D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 	}
 
-	void FrameBuffer::InitResource(CommandList& cl, RID rid) const noexcept
+	void FrameBuffer::EnterRaster() const noexcept
 	{
-		// Perform discard operations for aliasing resources
-		ZE_ASSERT(rid != 0, "Backbuffer do not need discarding it's contents! (Or at least it shouldn't with FLIP_DISCARD... TODO: Check this)");
-		if (aliasingResources[rid - 1])
-			cl.GetList()->DiscardResource(resources[rid].Resource.Get(), nullptr);
+#if !_ZE_MODE_RELEASE
+		ZE_ASSERT(!isRasterActive, "Starting rasterization without calling EndRaster()!");
+
+		isRasterActive = true;
+#endif
 	}
 
 	void FrameBuffer::SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept
@@ -179,160 +187,208 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.GetList()->RSSetScissorRects(1, &scissorRect);
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, GFX::CommandList& mainList, GFX::Pipeline::FrameBufferDesc& desc)
+	void FrameBuffer::FillBarier(D3D12_TEXTURE_BARRIER& barrier, GFX::Pipeline::BarrierTransition& desc) const noexcept
 	{
+		ZE_ASSERT(desc.Resource < resourceCount, "Resource ID outside available range!");
+
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::Undefined && desc.LayoutAfter != GFX::Pipeline::TextureLayout::Preinitialized,
+			"Undefined and preinitialized layouts are only possible for resources written by CPU!");
+
+		ZE_ASSERT(desc.LayoutBefore != GFX::Pipeline::TextureLayout::DepthStencilRead ||
+			desc.Resource != BACKBUFFER_RID && desc.LayoutBefore == GFX::Pipeline::TextureLayout::DepthStencilRead && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::DepthStencilRead ||
+			desc.Resource != BACKBUFFER_RID && desc.LayoutAfter == GFX::Pipeline::TextureLayout::DepthStencilRead && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(desc.LayoutBefore != GFX::Pipeline::TextureLayout::DepthStencilWrite ||
+			desc.Resource != BACKBUFFER_RID && desc.LayoutBefore == GFX::Pipeline::TextureLayout::DepthStencilRead && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::DepthStencilWrite ||
+			desc.Resource != BACKBUFFER_RID && desc.LayoutAfter == GFX::Pipeline::TextureLayout::DepthStencilRead && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being depth stencil!");
+
+		ZE_ASSERT(desc.LayoutBefore != GFX::Pipeline::TextureLayout::RenderTarget ||
+			desc.LayoutBefore == GFX::Pipeline::TextureLayout::RenderTarget && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being render target!");
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::RenderTarget ||
+			desc.LayoutAfter == GFX::Pipeline::TextureLayout::RenderTarget && rtvDsvHandles[desc.Resource].ptr != UINT64_MAX,
+			"Current resource is not suitable for being render target!");
+
+		ZE_ASSERT(desc.LayoutBefore != GFX::Pipeline::TextureLayout::ShaderResource ||
+			desc.LayoutBefore == GFX::Pipeline::TextureLayout::ShaderResource && GetSRV(desc.Resource).CpuShaderVisibleHandle.ptr != UINT64_MAX,
+			"Current resource is not suitable for being shader resource!");
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::ShaderResource ||
+			desc.LayoutAfter == GFX::Pipeline::TextureLayout::ShaderResource && GetSRV(desc.Resource).CpuShaderVisibleHandle.ptr != UINT64_MAX,
+			"Current resource is not suitable for being shader resource!");
+
+		ZE_ASSERT(desc.LayoutBefore != GFX::Pipeline::TextureLayout::UnorderedAccess ||
+			desc.LayoutBefore == GFX::Pipeline::TextureLayout::UnorderedAccess && GetUAV(desc.Resource).CpuHandle.ptr != UINT64_MAX,
+			"Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(desc.LayoutAfter != GFX::Pipeline::TextureLayout::UnorderedAccess ||
+			desc.LayoutAfter == GFX::Pipeline::TextureLayout::UnorderedAccess && GetUAV(desc.Resource).CpuHandle.ptr != UINT64_MAX,
+			"Current resource is not suitable for being unnordered access!");
+
+		barrier.SyncBefore = GetBarrierSync(desc.StageBefore);
+		barrier.SyncAfter = GetBarrierSync(desc.StageAfter);
+		switch (desc.Type)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Pipeline::BarrierType::Immediate:
+			break;
+		case GFX::Pipeline::BarrierType::SplitBegin:
+			barrier.SyncAfter |= D3D12_BARRIER_SYNC_SPLIT;
+			break;
+		case GFX::Pipeline::BarrierType::SplitEnd:
+			barrier.SyncBefore |= D3D12_BARRIER_SYNC_SPLIT;
+			break;
+		}
+		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
+		barrier.AccessAfter = GetBarrierAccess(desc.AccessAfter);
+		barrier.LayoutBefore = GetBarrierLayout(desc.LayoutBefore);
+		barrier.LayoutAfter = GetBarrierLayout(desc.LayoutAfter);
+		barrier.pResource = GetResource(desc.Resource).Get();
+		barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
+		barrier.Subresources.NumMipLevels = 0;
+		barrier.Subresources.FirstArraySlice = 0;
+		barrier.Subresources.NumArraySlices = 0;
+		barrier.Subresources.FirstPlane = 0;
+		barrier.Subresources.NumPlanes = 0;
+		barrier.Flags = desc.LayoutBefore == GFX::Pipeline::TextureLayout::Undefined ? D3D12_TEXTURE_BARRIER_FLAG_DISCARD : D3D12_TEXTURE_BARRIER_FLAG_NONE;
+	}
+
+	void FrameBuffer::PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriers, U32 count) const noexcept
+	{
+		D3D12_BARRIER_GROUP group;
+		group.Type = D3D12_BARRIER_TYPE_TEXTURE;
+		group.NumBarriers = count;
+		group.pTextureBarriers = barriers;
+		cl.GetList()->Barrier(1, &group);
+	}
+
+	FrameBuffer::FrameBuffer(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc)
+	{
+		ZE_ASSERT(desc.Resources.size() > 0, "Empty FrameBuffer!");
+		ZE_ASSERT(desc.Resources.size() == desc.ResourceLifetimes.size(), "Not every resource have it's associated lifetime!");
+		ZE_ASSERT(desc.PassLevelCount > 0, "At least single pass level is required for passes to execute!");
+
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
+		IDevice* device = dev.Get().dx12.GetDevice();
 
-		resourceCount = Utils::SafeCast<RID>(desc.ResourceInfo.size());
-		ZE_ASSERT(desc.ResourceInfo.size() <= UINT16_MAX, "Too much resources, needed wider type!");
-
-		auto* device = dev.Get().dx12.GetDevice();
-		std::vector<ResourceInfo> resourcesInfo;
-		resourcesInfo.reserve(resourceCount - 1);
+		resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
 		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
 		RID dsvCount = 0, dsvAdditionalMipsCount = 0;
-		RID srvUavCount = 0;
+		RID srvCount = 0, srvUavCount = 0;
 		RID uavCount = 0, uavAdditionalMipsCount = 0;
-		bool rtvDsvMipsPresent = false;
-		bool uavMipsPresent = false;
 
 		// Get sizes in chunks for resources and their descriptors
-		D3D12_RESOURCE_DESC resDesc = {};
-		resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		std::vector<ResourcInitInfo> resourcesInfo;
+		D3D12_RESOURCE_DESC1 resDesc = {};
 		resDesc.SampleDesc.Count = 1;
 		resDesc.SampleDesc.Quality = 0;
 		resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		resDesc.SamplerFeedbackMipRegion.Width = 0;
+		resDesc.SamplerFeedbackMipRegion.Height = 0;
+		resDesc.SamplerFeedbackMipRegion.Depth = 0;
+
 		for (RID i = 1; i < resourceCount; ++i)
 		{
-			const auto& res = desc.ResourceInfo.at(i);
-			resDesc.Width = res.Sizes.X;
-			resDesc.Height = res.Sizes.Y;
-			resDesc.DepthOrArraySize = res.ArraySize;
-			resDesc.MipLevels = res.MipLevels;
-			if (!resDesc.MipLevels)
-				resDesc.MipLevels = 1;
-			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Cube)
-				resDesc.DepthOrArraySize *= 6;
-			if (res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess)
-				resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
-			else
-				resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-			bool isRT = false, isDS = false, isUA = false, isSR = res.Flags & GFX::Pipeline::FrameResourceFlags::ForceSRV;
-			if (res.Flags & GFX::Pipeline::FrameResourceFlags::ForceDSV)
+			const auto& res = desc.Resources.at(i);
+			if (res.Flags & GFX::Pipeline::FrameResourceFlag::InternalResourceActive)
 			{
-				resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-				isDS = true;
-				if (resDesc.MipLevels > 1)
-					rtvDsvMipsPresent = true;
-			}
-
-			// Check required flags based on lifetime
-			const auto& lifetime = desc.ResourceLifetimes.at(i);
-			for (const auto& state : lifetime)
-			{
-				switch (state.second)
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Texture3D)
+					resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+				else
+					resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+				resDesc.Width = res.Sizes.X;
+				resDesc.Height = res.Sizes.Y;
+				resDesc.DepthOrArraySize = res.DepthOrArraySize;
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Cube)
 				{
-				case GFX::Resource::StateRenderTarget:
+					ZE_ASSERT(resDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE3D, "Cannot create cubemap texture as 3D texture!");
+
+					resDesc.DepthOrArraySize *= 6;
+				}
+				resDesc.MipLevels = res.MipLevels;
+				if (!resDesc.MipLevels)
+					resDesc.MipLevels = 1;
+				resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::SimultaneousAccess)
+					resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+				else
+					resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+				D3D12_CLEAR_VALUE clearDesc = {};
+				clearDesc.Format = resDesc.Format;
+				// Check usage flags
+				bool isRT = res.Flags & GFX::Pipeline::FrameResourceFlag::InternalUsageRenderTarget;
+				bool isDS = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceDSV | GFX::Pipeline::FrameResourceFlag::InternalUsageDepth);
+				bool isUA = res.Flags & GFX::Pipeline::FrameResourceFlag::InternalUsageUnorderedAccess;
+				bool isSR = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceSRV | GFX::Pipeline::FrameResourceFlag::InternalUsageShaderResource);
+				if (isRT)
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and render target view for same buffer!");
 					ZE_ASSERT(!Utils::IsDepthStencilFormat(res.Format), "Cannot use depth stencil format with render target!");
 
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-					isRT = true;
+					++rtvCount;
 					if (resDesc.MipLevels > 1)
-						rtvDsvMipsPresent = true;
-					break;
+						rtvAdditionalMipsCount += resDesc.MipLevels - 1;
 				}
-				case GFX::Resource::StateDepthRead:
-				case GFX::Resource::StateDepthWrite:
+				if (isDS)
 				{
-					ZE_ASSERT((res.Flags & GFX::Pipeline::FrameResourceFlags::SimultaneousAccess) == 0, "Simultaneous access cannot be used on depth stencil!");
+					ZE_ASSERT(resDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE3D, "Cannot create 3D texture as depth stencil!");
+					ZE_ASSERT((res.Flags & GFX::Pipeline::FrameResourceFlag::SimultaneousAccess) == 0, "Simultaneous access cannot be used on depth stencil!");
 					ZE_ASSERT(!isRT, "Cannot create depth stencil and render target view for same buffer!");
 					ZE_ASSERT(!isUA, "Cannot create depth stencil and unordered access view for same buffer!");
 
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-					isDS = true;
+					clearDesc.DepthStencil.Depth = res.ClearDepth;
+					clearDesc.DepthStencil.Stencil = res.ClearStencil;
+					++dsvCount;
 					if (resDesc.MipLevels > 1)
-						rtvDsvMipsPresent = true;
-					break;
+						dsvAdditionalMipsCount += resDesc.MipLevels - 1;
 				}
-				case GFX::Resource::StateUnorderedAccess:
+				else
+					*reinterpret_cast<ColorF4*>(clearDesc.Color) = res.ClearColor;
+				if (isUA)
 				{
 					ZE_ASSERT(!isDS, "Cannot create depth stencil and unordered access view for same buffer!");
 
 					resDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-					isUA = true;
+					++uavCount;
 					if (resDesc.MipLevels > 1)
-						uavMipsPresent = true;
-					break;
+						uavAdditionalMipsCount += resDesc.MipLevels - 1;
 				}
-				case GFX::Resource::StateShaderResourcePS:
-				case GFX::Resource::StateShaderResourceNonPS:
-				case GFX::Resource::StateShaderResourceAll:
-				{
-					isSR = true;
-					break;
-				}
-				default:
-					break;
-				}
-			}
+				if (isSR)
+					++srvCount;
+				else
+					resDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+				if (isSR || isUA)
+					++srvUavCount;
 
-			resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
-			D3D12_CLEAR_VALUE clearDesc = {};
-			clearDesc.Format = resDesc.Format;
-			if (Utils::IsDepthStencilFormat(res.Format))
-			{
-				clearDesc.DepthStencil.Depth = res.ClearDepth;
-				clearDesc.DepthStencil.Stencil = res.ClearStencil;
-			}
-			else
-				*reinterpret_cast<ColorF4*>(clearDesc.Color) = res.ClearColor;
+				// Get resource alignment and size in chunks
+				resDesc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+				D3D12_RESOURCE_ALLOCATION_INFO1 allocInfo = {};
+				device->GetResourceAllocationInfo2(0, 1, &resDesc, &allocInfo);
+				if (allocInfo.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+					resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 
-			const U64 size = Math::DivideRoundUp(device->GetResourceAllocationInfo(0, 1, &resDesc).SizeInBytes,
-				static_cast<U64>(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
-			auto& info = resourcesInfo.emplace_back(i, 0, Utils::SafeCast<U32>(size), lifetime.begin()->first, lifetime.rbegin()->first, resDesc, clearDesc, nullptr,
-				static_cast<U8>(isRT) | (isDS << 1) | (isSR << 2) | (isUA << 3)
-				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::Cube) << 4)
-				| ((res.Flags & GFX::Pipeline::FrameResourceFlags::StencilView) << 5));
-			if (res.Flags & GFX::Pipeline::FrameResourceFlags::Temporal)
-				info.SetTemporal();
-
-			if (isRT)
-			{
-				++rtvCount;
-				if (resDesc.MipLevels > 1)
-					rtvAdditionalMipsCount += resDesc.MipLevels - 1;
-			}
-			else if (isDS)
-			{
-				++dsvCount;
-				if (resDesc.MipLevels > 1)
-					dsvAdditionalMipsCount += resDesc.MipLevels - 1;
-			}
-			if (isSR || isUA)
-				++srvUavCount;
-			if (isUA)
-			{
-				++uavCount;
-				if (resDesc.MipLevels > 1)
-					uavAdditionalMipsCount += resDesc.MipLevels - 1;
+				// Create resource entry and fill it with proper info
+				const U64 chunksCount = Math::DivideRoundUp(allocInfo.SizeInBytes, static_cast<U64>(D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
+				auto& info = resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(chunksCount), 0, resDesc, clearDesc, res.Flags, 0);
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Cube)
+					info.SetCube();
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::StencilView)
+					info.SetStencilView();
+				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Temporal)
+					info.SetTemporal();
 			}
 		}
+		ZE_ASSERT(resourcesInfo.size() > 0, "No active resource in the frame!");
 
 		// Prepare data for allocating resources and heaps
-		if (rtvDsvMipsPresent)
-			rtvDsvMips = new Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>[resourceCount - 1];
-		if (uavMipsPresent)
-			uavMips = new Ptr<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>>[resourceCount - 1];
-		const U64 levelCount = desc.TransitionsPerLevel.size() / 2;
-		const RID invalidID = resourceCount;
 		const D3D12_RESIDENCY_PRIORITY residencyPriority = D3D12_RESIDENCY_PRIORITY_MAXIMUM;
-		RID rt_dsCount;
-		U32 maxChunks = 0;
-		std::vector<RID> memory;
 		D3D12_HEAP_DESC heapDesc = {};
 		heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -341,117 +397,51 @@ namespace ZE::RHI::DX12::Pipeline
 		heapDesc.Properties.VisibleNodeMask = 0;
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		heapDesc.Flags = D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-		std::vector<D3D12_RESOURCE_BARRIER> startingTransitions;
-		std::vector<std::pair<U64, D3D12_RESOURCE_BARRIER>> wrappingTransitions;
-#endif
 
-		// Handle resource types (Non RT/DS) depending on present tier level
+		RID mainHeapResourceCount;
+		// Handle resource types (non RT/DS) depending on present tier level
 		if (dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1)
 		{
-			heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
+			heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_BUFFERS;
+			mainHeapResourceCount = rtvCount + dsvCount;
 			// Sort resources descending by size leaving UAV only on the end
-			rt_dsCount = rtvCount + dsvCount;
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 				[](const auto& r1, const auto& r2) -> bool
 				{
-					if ((r1.IsRTV() || r1.IsDSV()) == (r2.IsRTV() || r2.IsDSV()))
+					const bool r1RTV_DSV = r1.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+					const bool r2RTV_DSV = r1.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+					if (r1RTV_DSV == r2RTV_DSV)
 						return r1.Chunks > r2.Chunks;
-					return r1.IsRTV() || r1.IsDSV();
+					return r1RTV_DSV;
 				});
-			U32 maxChunksUAV = 0;
-			for (const auto& res : resourcesInfo)
-			{
-				if (res.IsRTV() || res.IsDSV())
-					maxChunks += res.Chunks;
-				else
-					maxChunksUAV += res.Chunks;
-			}
 
 			// Create heap for non RT or DS buffers
-			if (rt_dsCount < resourcesInfo.size())
+			if (mainHeapResourceCount < Utils::SafeCast<RID>(resourcesInfo.size()))
 			{
-				// Find free memory regions for UAV only resources
-				memory.resize(maxChunksUAV * levelCount, invalidID);
-				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
-				{
-					auto& res = resourcesInfo.at(i);
-					res.Offset = AllocResource(i, res.Chunks,
-						res.IsTemporal() ? 0 : res.StartLevel,
-						res.IsTemporal() ? levelCount : res.LastLevel,
-						maxChunksUAV, levelCount, invalidID, memory);
-				}
+				// Find offsets for all resources in this heap and get it's size
+				heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin() + mainHeapResourceCount, resourcesInfo.end(), desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
 
-#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-				heapDesc.SizeInBytes = Utils::SafeCast<U64>(maxChunksUAV) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-#else
-				// Check resource aliasing
-				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
-				{
-					auto& res = resourcesInfo.at(i);
-					if (!res.IsTemporal() && CheckResourceAliasing(res.Offset, res.Chunks, res.StartLevel,
-						res.LastLevel, maxChunksUAV, levelCount, invalidID, memory))
-						res.SetAliasing();
-				}
-				// Find final size for UAV only heap and create it with resources
-				heapDesc.SizeInBytes = FindHeapSize(maxChunksUAV, levelCount, invalidID, memory);
-#endif
-				ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&uavHeap)));
+				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
+				ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&uavHeap)));
+				ZE_DX_SET_ID(uavHeap, "GFX::Pipeline::FrameBuffer heap - UAV");
 				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(uavHeap.GetAddressOf()), &residencyPriority));
 				heapDesc.Flags &= ~D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
 				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
 
-#if _ZE_DEBUG_FRAME_MEMORY_PRINT
-				PrintMemory("T1_UAV", maxChunksUAV, levelCount, invalidID, memory, heapDesc.SizeInBytes);
+#if !_ZE_MODE_RELEASE
+				if (desc.Flags & GFX::Pipeline::FrameBufferFlag::DebugMemoryPrint)
+					PrintMemory("tier1_uav", desc.PassLevelCount, heapDesc.SizeInBytes,
+						resourcesInfo.begin() + mainHeapResourceCount, resourcesInfo.end(), desc.ResourceLifetimes);
 #endif
-				for (RID i = rt_dsCount; i < resourcesInfo.size(); ++i)
-				{
-					auto& res = resourcesInfo.at(i);
-					const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
-					GFX::Resource::State firstState = lifetime.begin()->second;
-					GFX::Resource::State lastState = lifetime.rbegin()->second;
-					ZE_DX_THROW_FAILED(device->CreatePlacedResource(uavHeap.Get(),
-						res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-						&res.Desc, GetResourceState(_ZE_RENDERER_NO_SPLIT_BARRIERS || res.IsAliasing() ? firstState : lastState),
-						res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-					ZE_DX_SET_ID(res.Resource, "RID:" + std::to_string(res.Handle));
-					if (lastState != firstState)
-					{
-						U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-						if (res.IsAliasing())
-						{
-#endif
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-								GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-						}
-						else
-						{
-							desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-								GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-							D3D12_RESOURCE_BARRIER barrier = {};
-							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-							barrier.Transition.StateBefore = GetResourceState(lastState);
-							barrier.Transition.StateAfter = GetResourceState(firstState);
-							barrier.Transition.pResource = res.Resource.Get();
-							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-							startingTransitions.emplace_back(barrier);
-							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-							wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
-						}
-#endif
-					}
-				}
+				// Set all resources as using UAV heap for creation later
+				for (auto it = resourcesInfo.begin() + mainHeapResourceCount; it != resourcesInfo.end(); ++it)
+					it->SetHeapUAV();
 			}
 		}
 		else
 		{
+			mainHeapResourceCount = Utils::SafeCast<RID>(resourcesInfo.size());
 			// Sort resources descending by size
-			rt_dsCount = Utils::SafeCast<RID>(resourcesInfo.size());
-			for (const auto& res : resourcesInfo)
-				maxChunks += res.Chunks;
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 				[](const auto& r1, const auto& r2) -> bool
 				{
@@ -459,124 +449,54 @@ namespace ZE::RHI::DX12::Pipeline
 				});
 		}
 
-		// Find free memory regions for resources
-		memory.assign(maxChunks * levelCount, invalidID);
-		for (RID i = 0; i < rt_dsCount; ++i)
-		{
-			auto& res = resourcesInfo.at(i);
-			res.Offset = AllocResource(i, res.Chunks,
-				res.IsTemporal() ? 0 : res.StartLevel,
-				res.IsTemporal() ? levelCount : res.LastLevel,
-				maxChunks, levelCount, invalidID, memory);
-		}
-
-#if _ZE_DEBUG_FRAME_NO_ALIASING_MEMORY
-		heapDesc.SizeInBytes = Utils::SafeCast<U64>(maxChunks) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-#else
-		// Check resource aliasing
-		for (RID i = 0; i < rt_dsCount; ++i)
-		{
-			auto& res = resourcesInfo.at(i);
-			if (!res.IsTemporal() && CheckResourceAliasing(res.Offset, res.Chunks,
-				res.StartLevel, res.LastLevel, maxChunks, levelCount, invalidID, memory))
-				res.SetAliasing();
-		}
-		// Find final size for heap and create it with resources
-		heapDesc.SizeInBytes = FindHeapSize(maxChunks, levelCount, invalidID, memory);
-#endif
-		ZE_DX_THROW_FAILED(device->CreateHeap(&heapDesc, IID_PPV_ARGS(&mainHeap)));
+		// Allocate resources and create main heap
+		heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
+		ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&mainHeap)));
+		ZE_DX_SET_ID(uavHeap, "GFX::Pipeline::FrameBuffer heap - main");
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
-#if _ZE_DEBUG_FRAME_MEMORY_PRINT
-		PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? "T1" : "T2", maxChunks, levelCount, invalidID, memory, heapDesc.SizeInBytes);
-#endif
-		for (U64 i = 0; i < rt_dsCount; ++i)
-		{
-			auto& res = resourcesInfo.at(i);
-			const auto& lifetime = desc.ResourceLifetimes.at(res.Handle);
-			GFX::Resource::State firstState = lifetime.begin()->second;
-			GFX::Resource::State lastState = lifetime.rbegin()->second;
-			ZE_DX_THROW_FAILED(device->CreatePlacedResource(mainHeap.Get(),
-				res.Offset * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-				&res.Desc, GetResourceState(_ZE_RENDERER_NO_SPLIT_BARRIERS || res.IsAliasing() ? firstState : lastState),
-				res.IsRTV() || res.IsDSV() ? &res.ClearVal : nullptr, IID_PPV_ARGS(&res.Resource)));
-			ZE_DX_SET_ID(res.Resource, "RID_" + std::to_string(res.Handle));
-			if (lastState != firstState)
-			{
-				U64 lastLevel = 2 * lifetime.rbegin()->first + 1;
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-				if (res.IsAliasing())
-				{
-#endif
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-						GFX::Pipeline::BarrierType::Immediate, lastState, firstState);
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-				}
-				else
-				{
-					desc.TransitionsPerLevel.at(lastLevel).emplace_back(res.Handle,
-						GFX::Pipeline::BarrierType::Begin, lastState, firstState);
-					D3D12_RESOURCE_BARRIER barrier = {};
-					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					barrier.Transition.StateBefore = GetResourceState(lastState);
-					barrier.Transition.StateAfter = GetResourceState(firstState);
-					barrier.Transition.pResource = res.Resource.Get();
-					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-					startingTransitions.emplace_back(barrier);
-					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-					wrappingTransitions.emplace_back(lifetime.begin()->first, barrier);
-				}
-#endif
-			}
-		}
-
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-		// Perform initial transitions for wrapping consistency
-		U64 transitionFence = 0;
-		if (startingTransitions.size() > 0)
-		{
-			mainList.Get().dx12.Open(dev);
-			ZE_DRAW_TAG_BEGIN(dev, mainList.Get().dx12, "DX12 Wrapping Transitions", PixelVal::Gray);
-			mainList.Get().dx12.GetList()->ResourceBarrier(Utils::SafeCast<U32>(startingTransitions.size()), startingTransitions.data());
-			ZE_DRAW_TAG_END(dev, mainList.Get().dx12);
-			mainList.Get().dx12.Close(dev);
-			dev.Get().dx12.ExecuteMain(mainList);
-			transitionFence = dev.Get().dx12.SetMainFence();
-		}
-		// Sort wrapping transitions in descending order
-		std::sort(wrappingTransitions.begin(), wrappingTransitions.end(),
-			[](const auto& t1, const auto& t2) -> bool
-			{
-				return t1.first > t2.first;
-			});
+#if !_ZE_MODE_RELEASE
+		if (desc.Flags & GFX::Pipeline::FrameBufferFlag::DebugMemoryPrint)
+			PrintMemory(dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? "tier1" : "tier2",
+				desc.PassLevelCount, heapDesc.SizeInBytes, resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes);
 #endif
 
-		// Sort resources for increasing RID
+		// Sort resources for increasing RID to properly create adjacent descriptors later on
 		std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 			[](const auto& r1, const auto& r2) -> bool
 			{
 				return r1.Handle < r2.Handle;
 			});
-		aliasingResources = new bool[resourcesInfo.size()];
-		resources = new BufferData[invalidID];
-		resources[0].Resource = nullptr;
-		resources[0].Size = desc.ResourceInfo.front().Sizes;
-		resources[0].Array = desc.ResourceInfo.front().ArraySize;
-		resources[0].Mips = desc.ResourceInfo.front().MipLevels;
-		resources[0].Format = desc.ResourceInfo.front().Format;
-		for (RID i = 1; auto & res : resourcesInfo)
+
+		// Create all resources and fill their info
+		resources = new BufferData[resourceCount];
+		resources[BACKBUFFER_RID].Resource = nullptr;
+		resources[BACKBUFFER_RID].Size = desc.Resources.front().Sizes;
+		resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
+		resources[BACKBUFFER_RID].Mips = desc.Resources.front().MipLevels;
+		resources[BACKBUFFER_RID].Format = desc.Resources.front().Format;
+		for (auto& res : resourcesInfo)
 		{
-			aliasingResources[i - 1] = res.IsAliasing();
-			auto& data = resources[i];
-			data.Resource = std::move(res.Resource);
-			data.Size = desc.ResourceInfo.at(i).Sizes;
-			data.Array = desc.ResourceInfo.at(i).ArraySize;
-			data.Mips = desc.ResourceInfo.at(i).MipLevels;
-			data.Format = desc.ResourceInfo.at(i).Format;
-			if (desc.ResourceInfo.at(i).Flags & GFX::Pipeline::FrameResourceFlags::Cube)
-				data.SetCube();
-			++i;
+			auto& data = resources[res.Handle];
+			ZE_DX_THROW_FAILED(device->CreatePlacedResource2(res.IsHeapUAV() ? uavHeap.Get() : mainHeap.Get(),
+				res.ChunkOffset * D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT, &res.Desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
+				res.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? &res.ClearVal : nullptr,
+				0, nullptr, IID_PPV_ARGS(&data.Resource)));
+			ZE_DX_SET_ID(data.Resource, "RID_" + std::to_string(res.Handle) + (desc.Resources.at(res.Handle).DebugName.size() ? " " + desc.Resources.at(res.Handle).DebugName : ""));
+
+			data.Size = { Utils::SafeCast<U32>(res.Desc.Width), res.Desc.Height };
+			data.Array = res.Desc.DepthOrArraySize;
+			data.Mips = res.Desc.MipLevels;
+			data.Format = DX::GetFormatFromDX(res.Desc.Format);
+			if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				data.SetTexture3D();
+			else
+			{
+				if (res.Desc.DepthOrArraySize > 1)
+					data.SetArrayView();
+				if (res.IsCube())
+					data.SetCube();
+			}
 		}
 
 		// Create descriptor heaps
@@ -590,37 +510,50 @@ namespace ZE::RHI::DX12::Pipeline
 		descHeapDesc.NumDescriptors = dsvCount + dsvAdditionalMipsCount;
 		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
 
-		// Get sizes of descriptors
-		rtvDsv = new D3D12_CPU_DESCRIPTOR_HANDLE[invalidID];
-		srv = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>[invalidID];
-		uav = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>[invalidID - 1];
+		// Prepare descriptors creation
+		rtvDsvHandles = new D3D12_CPU_DESCRIPTOR_HANDLE[resourceCount];
+		srvHandles = new HandleSRV[resourceCount];
+		uavHandles = new HandleUAV[resourceCount - 1];
+		if (rtvAdditionalMipsCount + dsvAdditionalMipsCount)
+			rtvDsvMips = new Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>[resourceCount - 1];
+		if (uavAdditionalMipsCount)
+			uavMips = new Ptr<HandleUAV>[resourceCount - 1];
+
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 		const U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		const RID uavDescCount = uavCount + uavAdditionalMipsCount;
-		descInfo = dev.Get().dx12.AllocDescs(srvUavCount + uavDescCount);
+		descInfo = dev.Get().dx12.AllocDescs(srvCount + uavDescCount);
 		if (uavDescCount)
 			descInfoCpu = dev.Get().dx12.AllocDescs(uavDescCount, false);
+
 		D3D12_CPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandle = descInfo.CPU;
 		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
 		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = descInfoCpu.CPU;
+
 		// Create demanded views for each resource
-		for (RID i = 1; const auto& res : resourcesInfo)
+		for (const auto& res : resourcesInfo)
 		{
-			if (res.IsRTV())
+			if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
 			{
 				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 				rtvDesc.Format = res.Desc.Format;
-				if (res.Desc.DepthOrArraySize > 1)
+				if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				{
+					rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+					rtvDesc.Texture3D.MipSlice = 0;
+					rtvDesc.Texture3D.FirstWSlice = 0;
+					rtvDesc.Texture3D.WSize = res.Desc.DepthOrArraySize;
+				}
+				else if (res.Desc.DepthOrArraySize > 1)
 				{
 					rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 					rtvDesc.Texture2DArray.MipSlice = 0;
 					rtvDesc.Texture2DArray.FirstArraySlice = 0;
 					rtvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
 					rtvDesc.Texture2DArray.PlaneSlice = 0;
-					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -628,30 +561,32 @@ namespace ZE::RHI::DX12::Pipeline
 					rtvDesc.Texture2D.MipSlice = 0;
 					rtvDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
-				rtvDsv[i] = rtvHandle;
+				ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
+				rtvDsvHandles[res.Handle] = rtvHandle;
 				rtvHandle.ptr += rtvDescSize;
 
-				// Generate views for proper mips
+				// Generate RT views for proper mips
 				if (res.Desc.MipLevels > 1)
 				{
-					auto& targetResourceMip = rtvDsvMips[i - 1];
+					auto& targetResourceMip = rtvDsvMips[res.Handle - 1];
 					targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
-					targetResourceMip[0] = rtvDsv[i];
-					for (U16 j = 1; j < res.Desc.MipLevels; ++j)
+					targetResourceMip[0] = rtvDsvHandles[res.Handle];
+					for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 					{
-						if (res.Desc.DepthOrArraySize > 1)
-							rtvDesc.Texture2DArray.MipSlice = j;
+						if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+							rtvDesc.Texture3D.MipSlice = i;
+						else if (res.Desc.DepthOrArraySize > 1)
+							rtvDesc.Texture2DArray.MipSlice = i;
 						else
-							rtvDesc.Texture2D.MipSlice = j;
+							rtvDesc.Texture2D.MipSlice = i;
 
-						ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[i].Resource.Get(), &rtvDesc, rtvHandle));
-						targetResourceMip[j] = rtvHandle;
+						ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
+						targetResourceMip[i] = rtvHandle;
 						rtvHandle.ptr += rtvDescSize;
 					}
 				}
 			}
-			else if (res.IsDSV())
+			else if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
 			{
 				D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 				dsvDesc.Format = res.Desc.Format;
@@ -662,44 +597,50 @@ namespace ZE::RHI::DX12::Pipeline
 					dsvDesc.Texture2DArray.MipSlice = 0;
 					dsvDesc.Texture2DArray.FirstArraySlice = 0;
 					dsvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
-					resources[i].SetArrayView();
 				}
 				else
 				{
 					dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 					dsvDesc.Texture2D.MipSlice = 0;
 				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
-				rtvDsv[i] = dsvHandle;
+				ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
+				rtvDsvHandles[res.Handle] = dsvHandle;
 				dsvHandle.ptr += dsvDescSize;
 
 				// Generate views for proper mips
 				if (res.Desc.MipLevels > 1)
 				{
-					auto& targetResourceMip = rtvDsvMips[i - 1];
+					auto& targetResourceMip = rtvDsvMips[res.Handle - 1];
 					targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
-					targetResourceMip[0] = rtvDsv[i];
-					for (U16 j = 1; j < res.Desc.MipLevels; ++j)
+					targetResourceMip[0] = rtvDsvHandles[res.Handle];
+					for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 					{
 						if (res.Desc.DepthOrArraySize > 1)
-							dsvDesc.Texture2DArray.MipSlice = j;
+							dsvDesc.Texture2DArray.MipSlice = i;
 						else
-							dsvDesc.Texture2D.MipSlice = j;
+							dsvDesc.Texture2D.MipSlice = i;
 
-						ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[i].Resource.Get(), &dsvDesc, dsvHandle));
-						targetResourceMip[j] = dsvHandle;
+						ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
+						targetResourceMip[i] = dsvHandle;
 						dsvHandle.ptr += dsvDescSize;
 					}
 				}
 			}
 			else
-				rtvDsv[i].ptr = UINT64_MAX;
-			if (res.IsSRV())
+				rtvDsvHandles[res.Handle].ptr = UINT64_MAX;
+			if ((res.Desc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0)
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 				srvDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-				if (res.IsCube())
+				if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				{
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+					srvDesc.Texture3D.MostDetailedMip = 0;
+					srvDesc.Texture3D.MipLevels = res.Desc.MipLevels;
+					srvDesc.Texture3D.ResourceMinLODClamp = 0.0f;
+				}
+				else if (res.IsCube())
 				{
 					if (res.Desc.DepthOrArraySize > 6)
 					{
@@ -709,7 +650,6 @@ namespace ZE::RHI::DX12::Pipeline
 						srvDesc.TextureCubeArray.First2DArrayFace = 0;
 						srvDesc.TextureCubeArray.NumCubes = res.Desc.DepthOrArraySize / 6;
 						srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
-						resources[i].SetArrayView();
 					}
 					else
 					{
@@ -728,7 +668,6 @@ namespace ZE::RHI::DX12::Pipeline
 					srvDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
 					srvDesc.Texture2DArray.PlaneSlice = 0;
 					srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -738,30 +677,35 @@ namespace ZE::RHI::DX12::Pipeline
 					srvDesc.Texture2D.PlaneSlice = 0;
 					srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[i].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
-				srv[i] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
+				ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[res.Handle].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
+				srvHandles[res.Handle] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
 				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
 			}
 			else
-				srv[i].first.ptr = srv[i].second.ptr = UINT64_MAX;
-			++i;
+				srvHandles[res.Handle].CpuShaderVisibleHandle.ptr = srvHandles[res.Handle].GpuShaderVisibleHandle.ptr = UINT64_MAX;
 		}
 		// Split processing so UAV and SRV descriptors are placed next to each other
-		for (RID i = 1; const auto& res : resourcesInfo)
+		for (const auto& res : resourcesInfo)
 		{
-			if (res.IsUAV())
+			if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
-				if (res.Desc.DepthOrArraySize > 1)
+				if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+				{
+					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+					uavDesc.Texture3D.MipSlice = 0;
+					uavDesc.Texture3D.FirstWSlice = 0;
+					uavDesc.Texture3D.WSize = res.Desc.DepthOrArraySize;
+				}
+				else if (res.Desc.DepthOrArraySize > 1)
 				{
 					uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 					uavDesc.Texture2DArray.MipSlice = 0;
 					uavDesc.Texture2DArray.FirstArraySlice = 0;
 					uavDesc.Texture2DArray.ArraySize = res.Desc.DepthOrArraySize;
 					uavDesc.Texture2DArray.PlaneSlice = 0;
-					resources[i].SetArrayView();
 				}
 				else
 				{
@@ -769,9 +713,9 @@ namespace ZE::RHI::DX12::Pipeline
 					uavDesc.Texture2D.MipSlice = 0;
 					uavDesc.Texture2D.PlaneSlice = 0;
 				}
-				ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
+				ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
 				device->CopyDescriptorsSimple(1, srvUavShaderVisibleHandle, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				uav[i - 1] = { uavHandle, { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu } };
+				uavHandles[res.Handle - 1] = { uavHandle, srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 				uavHandle.ptr += srvUavDescSize;
 				srvUavShaderVisibleHandle.ptr += srvUavDescSize;
 				srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
@@ -779,21 +723,23 @@ namespace ZE::RHI::DX12::Pipeline
 				// Generate views for proper mips
 				if (res.Desc.MipLevels > 1)
 				{
-					auto& targetResourceMip = uavMips[i - 1];
-					targetResourceMip = new std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>>[res.Desc.MipLevels];
-					targetResourceMip[0] = uav[i - 1];
+					auto& targetResourceMip = uavMips[res.Handle - 1];
+					targetResourceMip = new HandleUAV[res.Desc.MipLevels];
+					targetResourceMip[0] = uavHandles[res.Handle - 1];
 
 					D3D12_CPU_DESCRIPTOR_HANDLE dstStart = srvUavShaderVisibleHandle;
 					D3D12_CPU_DESCRIPTOR_HANDLE srcStart = uavHandle;
-					for (U16 j = 1; j < res.Desc.MipLevels; ++j)
+					for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 					{
-						if (res.Desc.DepthOrArraySize > 1)
-							uavDesc.Texture2DArray.MipSlice = j;
+						if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+							uavDesc.Texture3D.MipSlice = i;
+						else if (res.Desc.DepthOrArraySize > 1)
+							uavDesc.Texture2DArray.MipSlice = i;
 						else
-							uavDesc.Texture2D.MipSlice = j;
+							uavDesc.Texture2D.MipSlice = i;
 
-						ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[i].Resource.Get(), nullptr, &uavDesc, uavHandle));
-						targetResourceMip[j] = { uavHandle, { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu } };
+						ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
+						targetResourceMip[i] = { uavHandle, srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 						uavHandle.ptr += srvUavDescSize;
 						srvUavShaderVisibleHandle.ptr += srvUavDescSize;
 						srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
@@ -802,164 +748,8 @@ namespace ZE::RHI::DX12::Pipeline
 				}
 			}
 			else
-				uav[i - 1].first.ptr = uav[i - 1].second.first.ptr = uav[i - 1].second.second.ptr = UINT64_MAX;
-			++i;
+				uavHandles[res.Handle - 1].CpuHandle.ptr = uavHandles[res.Handle - 1].CpuShaderVisibleHandle.ptr = uavHandles[res.Handle - 1].GpuShaderVisibleHandle.ptr = UINT64_MAX;
 		}
-
-		// Find number of barriers and prepare aux structures
-		transitionSyncs = new GFX::Pipeline::SyncType[levelCount];
-		transitions = new TransitionPoint[levelCount];
-		U64 barrierCount = 0;
-		for (const auto& level : desc.TransitionsPerLevel)
-		{
-			for (const auto& transition : level)
-			{
-#if _ZE_RENDERER_NO_SPLIT_BARRIERS
-				if (transition.Barrier == GFX::Pipeline::BarrierType::End)
-					continue;
-				++barrierCount;
-#endif
-				if (transition.RID == 0)
-					++backbufferBarriersLocationsCount;
-			}
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-			barrierCount += level.size();
-#endif
-		}
-		if (backbufferBarriersLocationsCount > 1)
-		{
-			backbufferBarriersLocations = new U64[--backbufferBarriersLocationsCount];
-			backbufferBarriersLocations[0] = 0;
-		}
-		else
-			backbufferBarriersLocationsCount = 0;
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-		barrierCount += wrappingTransitions.size();
-#endif
-		initTransitions.Barriers = new D3D12_RESOURCE_BARRIER[barrierCount];
-		initTransitions.BarrierCount = 0;
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-#if _ZE_RENDERER_NO_SPLIT_BARRIERS
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-#endif
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		// Compute barriers before first render passes
-		U64 backbufferBarrierIndex = 0;
-		auto computeBarriers = [&](TransitionPoint& transitions, const U64 level, const U64 barrierIndex)
-			{
-				for (const auto& transition : desc.TransitionsPerLevel.at(level))
-				{
-#if _ZE_RENDERER_NO_SPLIT_BARRIERS
-					if (transition.Barrier == GFX::Pipeline::BarrierType::End)
-						continue;
-#else
-					barrier.Flags = GetTransitionType(transition.Barrier);
-#endif
-					barrier.Transition.StateBefore = GetResourceState(transition.BeforeState);
-					barrier.Transition.StateAfter = GetResourceState(transition.AfterState);
-					barrier.Transition.pResource = resources[transition.RID].Resource.Get();
-
-					transitions.Barriers[transitions.BarrierCount++] = barrier;
-					if (transition.RID == 0 && level != 0)
-					{
-						backbufferBarriersLocations[backbufferBarrierIndex++] = barrierIndex;
-						if (transitions.BarrierCount != 1)
-						{
-							ZE_ASSERT(transitions.Barriers[0].Transition.pResource != nullptr, "Backbuffer barrier already at top of the list!");
-							transitions.Barriers[transitions.BarrierCount - 1] = transitions.Barriers[0];
-							transitions.Barriers[0] = barrier;
-						}
-					}
-				}
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-				while (wrappingTransitions.size() != 0 && wrappingTransitions.back().first == barrierIndex)
-				{
-					transitions.Barriers[transitions.BarrierCount++] = wrappingTransitions.back().second;
-					wrappingTransitions.pop_back();
-				}
-#endif
-			};
-		computeBarriers(initTransitions, 0, 0);
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-		for (auto& wrap : wrappingTransitions)
-			--wrap.first;
-#endif
-		transitions[0].Barriers = initTransitions.Barriers + initTransitions.BarrierCount;
-		transitions[0].BarrierCount = 0;
-		// Compute normal barriers between passes
-		for (U64 i = 1; i < desc.TransitionsPerLevel.size(); ++i)
-		{
-			const U64 index = i / 2 - (i % 2 == 0);
-			if (index != 0 && i % 2 != 0)
-			{
-				transitions[index].Barriers = transitions[index - 1].Barriers + transitions[index - 1].BarrierCount;
-				transitions[index].BarrierCount = 0;
-			}
-			computeBarriers(transitions[index], i, index);
-		}
-
-		// Check what kind of transition sync is needed
-		auto computeBarrierSyncs = [](TransitionPoint& transitions, GFX::Pipeline::SyncType* syncBefore)
-			{
-				bool copyBefore = false, computeBefore = false;
-				bool copyAfter = false, computeAfter = false;
-				for (U32 i = 0; i < transitions.BarrierCount; ++i)
-				{
-					auto& barrier = transitions.Barriers[i];
-					// TODO: Compute syncs based on passes from which resources are used
-					if (syncBefore && barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_END_ONLY)
-					{
-						if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
-							computeBefore = true;
-
-						if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
-							|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
-							copyBefore = true;
-					}
-
-					if (barrier.Flags != D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY)
-					{
-						if (barrier.Transition.StateBefore & (D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
-							computeAfter = true;
-
-						if ((barrier.Transition.StateBefore & D3D12_RESOURCE_STATE_GENERIC_READ) == D3D12_RESOURCE_STATE_GENERIC_READ
-							|| barrier.Transition.StateBefore == D3D12_RESOURCE_STATE_COMMON)
-							copyAfter = true;
-					}
-				}
-				if (syncBefore)
-				{
-					if (copyBefore && computeBefore)
-						*syncBefore = GFX::Pipeline::SyncType::AllToMain;
-					else if (copyBefore)
-						*syncBefore = GFX::Pipeline::SyncType::CopyToMain;
-					else if (computeBefore)
-						*syncBefore = GFX::Pipeline::SyncType::ComputeToMain;
-					else
-						*syncBefore = GFX::Pipeline::SyncType::None;
-				}
-
-				if (copyAfter && computeAfter)
-					transitions.AfterSync = GFX::Pipeline::SyncType::MainToAll;
-				else if (copyAfter)
-					transitions.AfterSync = GFX::Pipeline::SyncType::MainToCopy;
-				else if (computeAfter)
-					transitions.AfterSync = GFX::Pipeline::SyncType::MainToCompute;
-			};
-		computeBarrierSyncs(initTransitions, nullptr);
-		for (U64 i = 0; i < levelCount; ++i)
-			computeBarrierSyncs(transitions[i], transitionSyncs + i);
-
-#if !_ZE_RENDERER_NO_SPLIT_BARRIERS
-		// Finish initial transitions
-		if (startingTransitions.size() > 0)
-		{
-			dev.Get().dx12.WaitMain(transitionFence);
-			mainList.Get().dx12.Reset(dev);
-			startingTransitions.clear();
-		}
-#endif
 	}
 
 	FrameBuffer::~FrameBuffer()
@@ -968,24 +758,14 @@ namespace ZE::RHI::DX12::Pipeline
 			&& rtvDescHeap == nullptr && dsvDescHeap == nullptr
 			&& mainHeap == nullptr && uavHeap == nullptr);
 
-		if (initTransitions.Barriers)
-			initTransitions.Barriers.DeleteArray();
-		if (transitionSyncs)
-			transitionSyncs.DeleteArray();
-		if (transitions)
-			transitions.DeleteArray();
-		if (backbufferBarriersLocations)
-			backbufferBarriersLocations.DeleteArray();
-		if (aliasingResources)
-			aliasingResources.DeleteArray();
 		if (resources)
 			resources.DeleteArray();
-		if (rtvDsv)
-			rtvDsv.DeleteArray();
-		if (srv)
-			srv.DeleteArray();
-		if (uav)
-			uav.DeleteArray();
+		if (rtvDsvHandles)
+			rtvDsvHandles.DeleteArray();
+		if (srvHandles)
+			srvHandles.DeleteArray();
+		if (uavHandles)
+			uavHandles.DeleteArray();
 		if (rtvDsvMips)
 		{
 			for (RID i = 0; i < resourceCount - 1; ++i)
@@ -1002,85 +782,23 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 	}
 
-	void FrameBuffer::Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept
+	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, U8 count) const noexcept
 	{
-		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
-		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
-		ZE_ASSERT(GetDimmensions(src) == GetDimmensions(dest), "Resources must have same dimmensions for copy!");
+		ZE_ASSERT(count <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
+		EnterRaster();
 
-		cl.Get().dx12.GetList()->CopyResource(resources[dest].Resource.Get(), resources[src].Resource.Get());
-	}
-
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid) const noexcept
-	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-
-		SetViewport(cl.Get().dx12, rid);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rid, true, nullptr);
-	}
-
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
-	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
-		ZE_ASSERT(rtvDsvMips[rid - 1] != nullptr, "Mips for current resource not supported!");
-
-		SetViewport(cl.Get().dx12, rid);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rid - 1] + mipLevel, TRUE, nullptr);
-	}
-
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid) const noexcept
-	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
-
-		SetViewport(cl.Get().dx12, rid);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, TRUE, rtvDsv + rid);
-	}
-
-	void FrameBuffer::SetDSV(GFX::CommandList& cl, RID rid, U16 mipLevel) const noexcept
-	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
-		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
-		ZE_ASSERT(rtvDsvMips[rid - 1] != nullptr, "Mips for current resource not supported!");
-
-		SetViewport(cl.Get().dx12, rid);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, TRUE, rtvDsvMips[rid - 1] + mipLevel);
-	}
-
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
-	{
-		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
-		ZE_ASSERT(dsv < resourceCount, "DSV resource ID outside available range!");
-		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-		ZE_ASSERT(rtvDsv[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
-
-		SetViewport(cl.Get().dx12, rtv);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsv + rtv, TRUE, rtvDsv + dsv);
-	}
-
-	void FrameBuffer::SetRTVSparse(GFX::CommandList& cl, const RID* rid, U8 count) const noexcept
-	{
-		ZE_ASSERT(count <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
-
-		D3D12_CPU_DESCRIPTOR_HANDLE handles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		D3D12_VIEWPORT vieports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		D3D12_RECT scissorRects[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[Settings::MAX_RENDER_TARGETS];
+		D3D12_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
+		D3D12_RECT scissorRects[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
-		for (U32 i = 0; i < count; ++i)
+		for (U8 i = 0; i < count; ++i)
 		{
-			RID id = rid[i];
+			RID id = rtv[i];
 			if (id != INVALID_RID)
 			{
 				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-				handles[realCount] = rtvDsv[id];
+				handles[realCount] = rtvDsvHandles[id];
 				ZE_ASSERT(handles[realCount].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
 				SetupViewport(vieports[realCount], scissorRects[realCount], id);
@@ -1092,24 +810,26 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(realCount, handles, false, nullptr);
 	}
 
-	void FrameBuffer::SetOutputSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
+	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
 	{
-		ZE_ASSERT(count <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
-		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(count <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
+		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		EnterRaster();
 
-		D3D12_CPU_DESCRIPTOR_HANDLE handles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		D3D12_VIEWPORT vieports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		D3D12_RECT scissorRects[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		D3D12_CPU_DESCRIPTOR_HANDLE handles[Settings::MAX_RENDER_TARGETS];
+		D3D12_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
+		D3D12_RECT scissorRects[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
-		for (U32 i = 0; i < count; ++i)
+		for (U8 i = 0; i < count; ++i)
 		{
 			RID id = rtv[i];
 			if (id != INVALID_RID)
 			{
 				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-				handles[realCount] = rtvDsv[id];
+				handles[realCount] = rtvDsvHandles[id];
 				ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
 				SetupViewport(vieports[realCount], scissorRects[realCount], id);
@@ -1118,13 +838,92 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(count, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(count, scissorRects);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(count, handles, false, rtvDsv + dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(count, handles, false, rtvDsvHandles + dsv);
 	}
 
-	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
+	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(srv[rid].second.ptr != UINT64_MAX, "Current resource is not suitable for being shader resource!");
+		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvHandles + dsv);
+	}
+
+	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv) const noexcept
+	{
+		ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, rtv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvHandles + rtv, true, nullptr);
+	}
+
+	void FrameBuffer::BeginRasterDepth(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
+	{
+		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
+		ZE_ASSERT(dsv < resourceCount, "DSV resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, rtv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvHandles + rtv, true, rtvDsvHandles + dsv);
+	}
+
+	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept
+	{
+		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
+		ZE_ASSERT(rtvDsvMips[dsv - 1] != nullptr, "Mips for current resource not supported!");
+		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvMips[dsv - 1] + mipLevel);
+	}
+
+	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, U16 mipLevel) const noexcept
+	{
+		ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
+		ZE_ASSERT(rtvDsvMips[rtv - 1] != nullptr, "Mips for current resource not supported!");
+		ZE_ASSERT(mipLevel < GetMipCount(rtv), "Mip level outside available range!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, rtv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rtv - 1] + mipLevel, true, nullptr);
+	}
+
+	void FrameBuffer::BeginRasterDepth(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept
+	{
+		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
+		ZE_ASSERT(dsv < resourceCount, "DSV resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
+		ZE_ASSERT(rtvDsvMips[rtv - 1] != nullptr, "Mips for current RTV resource not supported!");
+		ZE_ASSERT(rtvDsvMips[dsv - 1] != nullptr, "Mips for current DSV resource not supported!");
+		ZE_ASSERT(mipLevel < GetMipCount(rtv), "Mip level outside available RTV range!");
+		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available DSV range!");
+
+		EnterRaster();
+		SetViewport(cl.Get().dx12, rtv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rtv - 1] + mipLevel, true, rtvDsvMips[dsv - 1] + mipLevel);
+	}
+
+	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept
+	{
+		ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(GetSRV(srv).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being shader resource!");
 
 		const auto& schema = bindCtx.BindingSchema.Get().dx12;
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::SRV
@@ -1135,21 +934,21 @@ namespace ZE::RHI::DX12::Pipeline
 		if (schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::SRV)
 		{
 			if (schema.IsCompute())
-				list->SetComputeRootShaderResourceView(bindCtx.Count++, resources[rid].Resource->GetGPUVirtualAddress());
+				list->SetComputeRootShaderResourceView(bindCtx.Count++, GetResource(srv)->GetGPUVirtualAddress());
 			else
-				list->SetGraphicsRootShaderResourceView(bindCtx.Count++, resources[rid].Resource->GetGPUVirtualAddress());
+				list->SetGraphicsRootShaderResourceView(bindCtx.Count++, GetResource(srv)->GetGPUVirtualAddress());
 		}
 		else if (schema.IsCompute())
-			list->SetComputeRootDescriptorTable(bindCtx.Count++, srv[rid].second);
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, GetSRV(srv).GpuShaderVisibleHandle);
 		else
-			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, srv[rid].second);
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, GetSRV(srv).GpuShaderVisibleHandle);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid) const noexcept
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid - 1].second.second.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
+		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
 		const auto& schema = bindCtx.BindingSchema.Get().dx12;
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::UAV
@@ -1160,23 +959,24 @@ namespace ZE::RHI::DX12::Pipeline
 		if (schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::UAV)
 		{
 			if (schema.IsCompute())
-				list->SetComputeRootUnorderedAccessView(bindCtx.Count++, resources[rid].Resource->GetGPUVirtualAddress());
+				list->SetComputeRootUnorderedAccessView(bindCtx.Count++, GetResource(uav)->GetGPUVirtualAddress());
 			else
-				list->SetGraphicsRootUnorderedAccessView(bindCtx.Count++, resources[rid].Resource->GetGPUVirtualAddress());
+				list->SetGraphicsRootUnorderedAccessView(bindCtx.Count++, GetResource(uav)->GetGPUVirtualAddress());
 		}
 		else if (schema.IsCompute())
-			list->SetComputeRootDescriptorTable(bindCtx.Count++, uav[rid - 1].second.second);
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, GetUAV(uav).GpuShaderVisibleHandle);
 		else
-			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uav[rid - 1].second.second);
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, GetUAV(uav).GpuShaderVisibleHandle);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid - 1].second.second.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
-		ZE_ASSERT(uavMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
-		ZE_ASSERT(uavMips[rid - 1] != nullptr, "Mips for current resource not supported!");
+		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
+		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(uavMips != nullptr, "Mips not supported as no UAV resource has been created with mips greater than 1!");
+		ZE_ASSERT(uavMips[uav - 1] != nullptr, "Mips for current resource not supported!");
+		ZE_ASSERT(mipLevel < GetMipCount(uav), "Mip level outside available UAV range!");
 
 		const auto& schema = bindCtx.BindingSchema.Get().dx12;
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::Table,
@@ -1184,213 +984,127 @@ namespace ZE::RHI::DX12::Pipeline
 
 		auto* list = cl.Get().dx12.GetList();
 		if (schema.IsCompute())
-			list->SetComputeRootDescriptorTable(bindCtx.Count++, uavMips[rid - 1][mipLevel].second.second);
+			list->SetComputeRootDescriptorTable(bindCtx.Count++, uavMips[uav - 1][mipLevel].GpuShaderVisibleHandle);
 		else
-			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uavMips[rid - 1][mipLevel].second.second);
+			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uavMips[uav - 1][mipLevel].GpuShaderVisibleHandle);
 	}
 
-	void FrameBuffer::BarrierUAV(GFX::CommandList& cl, RID rid) const noexcept
+	void FrameBuffer::EndRaster(GFX::CommandList& cl) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid - 1].first.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
+#if !_ZE_MODE_RELEASE
+		ZE_ASSERT(isRasterActive, "Calling EndRaster() while not in rasterization mode!");
 
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.UAV.pResource = resources[rid].Resource.Get();
-		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
+		isRasterActive = false;
+#endif
 	}
 
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept
+	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rtv, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
-		ZE_ASSERT(before != GFX::Resource::StateUnorderedAccess ||
-			before == GFX::Resource::StateUnorderedAccess && uav[rid - 1].first.ptr != UINT64_MAX,
-			"Current resource is not suitable for being unnordered access!");
-
-		ZE_ASSERT(before != GFX::Resource::StateRenderTarget ||
-			before == GFX::Resource::StateRenderTarget && rtvDsv[rid].ptr != UINT64_MAX,
-			"Current resource is not suitable for being render target!");
-
-		ZE_ASSERT(before != GFX::Resource::StateDepthRead ||
-			before == GFX::Resource::StateDepthRead && rtvDsv[rid].ptr != UINT64_MAX,
-			"Current resource is not suitable for being depth stencil!");
-		ZE_ASSERT(before != GFX::Resource::StateDepthWrite ||
-			before == GFX::Resource::StateDepthWrite && rtvDsv[rid].ptr != UINT64_MAX,
-			"Current resource is not suitable for being depth stencil!");
-
-		ZE_ASSERT(before != GFX::Resource::StateShaderResourceAll ||
-			before == GFX::Resource::StateShaderResourceAll && srv[rid].second.ptr != UINT64_MAX,
-			"Current resource is not suitable for being shader resource!");
-		ZE_ASSERT(before != GFX::Resource::StateShaderResourcePS ||
-			before == GFX::Resource::StateShaderResourcePS && srv[rid].second.ptr != UINT64_MAX,
-			"Current resource is not suitable for being shader resource!");
-		ZE_ASSERT(before != GFX::Resource::StateShaderResourceNonPS ||
-			before == GFX::Resource::StateShaderResourceNonPS && srv[rid].second.ptr != UINT64_MAX,
-			"Current resource is not suitable for being shader resource!");
-
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = resources[rid].Resource.Get();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = GetResourceState(before);
-		barrier.Transition.StateAfter = GetResourceState(after);
-		cl.Get().dx12.GetList()->ResourceBarrier(1, &barrier);
-	}
-
-	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
-	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-
-		cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsv[rid],
+		cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsvHandles[rtv],
 			reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
 
-	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept
+	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID dsv, float depth, U8 stencil) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsv[rid].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
+		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 
-		cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsv[rid],
+		cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsvHandles[dsv],
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
 	}
 
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
+	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID uav, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid - 1].first.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
+		ZE_ASSERT(GetUAV(uav).CpuHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
-		auto& desc = uav[rid - 1];
-		cl.Get().dx12.GetList()->ClearUnorderedAccessViewFloat(desc.second.second, desc.first,
-			resources[rid].Resource.Get(), reinterpret_cast<const float*>(&color), 0, nullptr);
+		const HandleUAV& desc = GetUAV(uav);
+		cl.Get().dx12.GetList()->ClearUnorderedAccessViewFloat(desc.GpuShaderVisibleHandle, desc.CpuHandle,
+			GetResource(uav).Get(), reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
 
-	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept
+	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID uav, const Pixel colors[4]) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != 0, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(uav[rid - 1].first.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
+		ZE_ASSERT(GetUAV(uav).CpuHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
-		auto& desc = uav[rid - 1];
-		cl.Get().dx12.GetList()->ClearUnorderedAccessViewUint(desc.second.second, desc.first,
-			resources[rid].Resource.Get(), reinterpret_cast<const U32*>(colors), 0, nullptr);
+		const HandleUAV& desc = GetUAV(uav);
+		cl.Get().dx12.GetList()->ClearUnorderedAccessViewUint(desc.GpuShaderVisibleHandle, desc.CpuHandle,
+			GetResource(uav).Get(), reinterpret_cast<const U32*>(colors), 0, nullptr);
+	}
+
+	void FrameBuffer::Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept
+	{
+		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
+		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
+		ZE_ASSERT(GetDimmensions(src) == GetDimmensions(dest), "Resources must have same dimmensions for copy!");
+
+		cl.Get().dx12.GetList()->CopyResource(GetResource(dest).Get(), GetResource(src).Get());
+	}
+
+	void FrameBuffer::CopyBufferRegion(GFX::CommandList& cl, RID src, U64 srcOffset, RID dest, U64 destOffset, U64 bytes) const noexcept
+	{
+		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
+		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
+		ZE_ASSERT(srcOffset + bytes <= GetDimmensions(src).X, "Source copy region outside of resource!");
+		ZE_ASSERT(destOffset + bytes <= GetDimmensions(dest).X, "Destination copy region outside of resource!");
+
+		cl.Get().dx12.GetList()->CopyBufferRegion(GetResource(dest).Get(), destOffset,
+			GetResource(src).Get(), srcOffset, bytes);
+	}
+
+	void FrameBuffer::Barrier(GFX::CommandList& cl, GFX::Pipeline::BarrierTransition& desc) const noexcept
+	{
+		D3D12_TEXTURE_BARRIER barrier;
+		FillBarier(barrier, desc);
+		PerformBarrier(cl.Get().dx12, &barrier, 1);
+	}
+
+	void FrameBuffer::ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
+		RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const
+	{
+		ZE_ASSERT(color < resourceCount, "Color resource ID outside available range!");
+		ZE_ASSERT(motionVectors < resourceCount, "Motion vectors resource ID outside available range!");
+		ZE_ASSERT(output < resourceCount, "XeSS output resource ID outside available range!");
+		ZE_XESS_ENABLE();
+
+		xess_d3d12_execute_params_t execParams = {};
+		execParams.pColorTexture = GetResource(color).Get();
+		execParams.pVelocityTexture = GetResource(motionVectors).Get();
+		execParams.pDepthTexture = depth != INVALID_RID ? GetResource(depth).Get() : nullptr;
+		execParams.pExposureScaleTexture = exposure != INVALID_RID ? GetResource(exposure).Get() : nullptr;
+		execParams.pResponsivePixelMaskTexture = responsive != INVALID_RID ? GetResource(responsive).Get() : nullptr;
+		execParams.pOutputTexture = GetResource(output).Get();
+
+		UInt2 renderSize = GetDimmensions(color);
+		execParams.jitterOffsetX = Data::GetUnitPixelJitterX(jitterX, renderSize.X);
+		execParams.jitterOffsetY = Data::GetUnitPixelJitterY(jitterY, renderSize.Y);
+		execParams.exposureScale = 1.0f;
+		execParams.resetHistory = static_cast<U32>(reset);
+		execParams.inputWidth = renderSize.X;
+		execParams.inputHeight = renderSize.Y;
+		execParams.inputColorBase = { 0, 0 };
+		execParams.inputMotionVectorBase = { 0, 0 };
+		execParams.inputDepthBase = { 0, 0 };
+		execParams.inputResponsiveMaskBase = { 0, 0 };
+		execParams.outputColorBase = { 0, 0 };
+		execParams.pDescriptorHeap = nullptr; // TODO: When external heap, specify allocated descriptors here
+		execParams.descriptorHeapOffset = 0;
+		ZE_XESS_THROW_FAILED(xessD3D12Execute(dev.GetXeSSCtx(), cl.Get().dx12.GetList(), &execParams), "Error performing XeSS!");
 	}
 
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
 	{
-		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev, resources[0].Resource);
-		rtvDsv[0] = backbufferRtvSrv.RTV;
-		srv[0].first = backbufferRtvSrv.SRVCpu;
-		srv[0].second = backbufferRtvSrv.SRVGpu;
-		initTransitions.Barriers[0].Transition.pResource = resources[0].Resource.Get();
-		for (U64 i = 0; i < backbufferBarriersLocationsCount; ++i)
-			transitions[backbufferBarriersLocations[i]].Barriers[0].Transition.pResource = resources[0].Resource.Get();
-	}
-
-	void FrameBuffer::InitTransitions(GFX::Device& dev, GFX::CommandList& cl) const
-	{
-		// Perform wrapping barriers
-		auto& device = dev.Get().dx12;
-		cl.Get().dx12.Open(device);
-		ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, "Init Transitions", PixelVal::Gray);
-		cl.Get().dx12.GetList()->ResourceBarrier(initTransitions.BarrierCount, initTransitions.Barriers);
-		ZE_DRAW_TAG_END(dev, cl.Get().dx12);
-		cl.Get().dx12.Close(device);
-		device.ExecuteMain(cl);
-
-		// Insert waits for engines that consumes addressed resources
-		switch (initTransitions.AfterSync)
-		{
-		case GFX::Pipeline::SyncType::MainToAll:
-		{
-			U64 fence = device.SetMainFence();
-			device.WaitCopyFromMain(fence);
-			device.WaitComputeFromMain(fence);
-			break;
-		}
-		case GFX::Pipeline::SyncType::MainToCompute:
-		{
-			device.WaitComputeFromMain(device.SetMainFence());
-			break;
-		}
-		case GFX::Pipeline::SyncType::MainToCopy:
-		{
-			device.WaitCopyFromMain(device.SetMainFence());
-			break;
-		}
-		default:
-			break;
-		}
-	}
-
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const
-	{
-		// Perform normal transitions and reseting resources to initial state for aliasing
-		auto& transition = transitions[level];
-		if (transition.BarrierCount > 0)
-		{
-			auto& device = dev.Get().dx12;
-
-			// Insert waits if barrier adresses other engines
-			switch (transitionSyncs[level])
-			{
-			case GFX::Pipeline::SyncType::AllToMain:
-				device.WaitMainFromCopy(device.SetCopyFence()); [[fallthrough]];
-			case GFX::Pipeline::SyncType::ComputeToMain:
-			{
-				device.WaitMainFromCompute(device.SetComputeFence());
-				break;
-			}
-			case GFX::Pipeline::SyncType::CopyToMain:
-			{
-				device.WaitMainFromCopy(device.SetCopyFence());
-				break;
-			}
-			default:
-				ZE_FAIL("Incorret enum value for enter sync context!"); [[fallthrough]];
-			case GFX::Pipeline::SyncType::None:
-				break;
-			}
-
-			cl.Get().dx12.Open(device);
-			ZE_DRAW_TAG_BEGIN(dev, cl.Get().dx12, "Exit Transitions", PixelVal::Gray);
-			cl.Get().dx12.GetList()->ResourceBarrier(transition.BarrierCount, transition.Barriers);
-			ZE_DRAW_TAG_END(dev, cl.Get().dx12);
-			cl.Get().dx12.Close(device);
-			device.ExecuteMain(cl);
-
-			// Insert waits for engines that consumes addressed resources
-			switch (transition.AfterSync)
-			{
-			case GFX::Pipeline::SyncType::MainToAll:
-			{
-				U64 fence = device.SetMainFence();
-				device.WaitCopyFromMain(fence);
-				device.WaitComputeFromMain(fence);
-				break;
-			}
-			case GFX::Pipeline::SyncType::MainToCompute:
-			{
-				device.WaitComputeFromMain(device.SetMainFence());
-				break;
-			}
-			case GFX::Pipeline::SyncType::MainToCopy:
-			{
-				device.WaitCopyFromMain(device.SetMainFence());
-				break;
-			}
-			default:
-				ZE_FAIL("Incorret enum value for exit sync context!"); [[fallthrough]];
-			case GFX::Pipeline::SyncType::None:
-				break;
-			}
-		}
+		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev.Get().dx12, resources[BACKBUFFER_RID].Resource);
+		rtvDsvHandles[BACKBUFFER_RID] = backbufferRtvSrv.RTV;
+		srvHandles[BACKBUFFER_RID].CpuShaderVisibleHandle = backbufferRtvSrv.SRVCpu;
+		srvHandles[BACKBUFFER_RID].GpuShaderVisibleHandle = backbufferRtvSrv.SRVGpu;
 	}
 
 	void FrameBuffer::Free(GFX::Device& dev) noexcept

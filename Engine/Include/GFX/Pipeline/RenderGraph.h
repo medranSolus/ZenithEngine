@@ -82,7 +82,7 @@ namespace ZE::GFX::Pipeline
 	//
 	// Maybe not needed at all since ExecuteData is held outside render pass facilities since it's only set of data and functions so it would be better to hold some
 	// master RenderPass list with below enum and all other function pointers along with it
-	std::pair<void*, Type> GetData() noexcept { return { nullptr, static_cast<Type>(CoreType::UpscaleNIS) }; }
+	//std::pair<void*, Type> GetData() noexcept { return { nullptr, static_cast<Type>(CoreType::UpscaleNIS) }; }
 
 	// TO THINK: What about FfxBackendInterface and create resource function, we need a way to request additional resources to be added to our
 
@@ -135,7 +135,7 @@ namespace ZE::GFX::Pipeline
 		std::unique_ptr<std::array<ExecutionGroup, 2>[]> passGroups;
 		U32 execGroupCount = 0;
 		RendererPassExecuteData execData;
-		CommandList& asyncList;
+		ChainPool<CommandList> asyncListChain;
 
 	public:
 		RenderGraph() = default;

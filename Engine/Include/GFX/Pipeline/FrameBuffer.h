@@ -21,10 +21,86 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		//constexpr void Init(Device& dev, CommandList& mainList, FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, mainList, desc); }
-		//constexpr void SwitchApi(GfxApiType nextApi, Device& dev, CommandList& mainList) { /*ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, mainList);*/ }
+		constexpr void Init(Device& dev, FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
 		ZE_RHI_BACKEND_GET(Pipeline::FrameBuffer);
 
 		// Main Gfx API
+
+		// Get width and height of the resource
+		constexpr UInt2 GetDimmensions(RID rid) const noexcept { UInt2 dimm; ZE_RHI_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
+		constexpr U16 GetArraySize(RID rid) const noexcept { U16 arraySize; ZE_RHI_BACKEND_CALL_RET(arraySize, GetArraySize, rid); return arraySize; }
+		constexpr U16 GetMipCount(RID rid) const noexcept { U16 mips; ZE_RHI_BACKEND_CALL_RET(mips, GetMipCount, rid); return mips; }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { PixelFormat format; ZE_RHI_BACKEND_CALL_RET(format, GetFormat, rid); return format; }
+		constexpr bool IsUAV(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUAV, rid); return val; }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCubeTexture, rid); return val; }
+		constexpr bool IsTexture3D(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsTexture3D, rid); return val; }
+		constexpr bool IsArrayView(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsArrayView, rid); return val; }
+
+		// When render targets have been created one after one without any depth stencil between them
+		// they are considered adjacent which can speed-up their setting in the pipeline.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
+		template<U8 RTVCount>
+		constexpr void BeginRaster(CommandList& cl, const RID* rtv, bool adjacent = false) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster<RTVCount>, cl, rtv, adjacent); }
+		// When render targets have been created one after one without any depth stencil between them
+		// they are considered adjacent which can speed-up their setting in the pipeline.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
+		template<U8 RTVCount>
+		constexpr void BeginRaster(CommandList& cl, const RID* rtv, RID dsv, bool adjacent = false) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster<RTVCount>, cl, rtv, dsv, adjacent); }
+
+		// Start rasterization when render target list may contain not present resources
+		constexpr void BeginRasterSparse(CommandList& cl, const RID* rtv, U8 count) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterSparse, cl, rtv, count); }
+		// Start rasterization when render target list may contain not present resources
+		constexpr void BeginRasterSparse(CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterSparse, cl, rtv, dsv, count); }
+
+		// Maybe add also ability to set scale and offset for viewport if needed
+		constexpr void BeginRasterDepthOnly(CommandList& cl, RID dsv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepthOnly, cl, dsv); }
+		constexpr void BeginRaster(CommandList& cl, RID rtv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv); }
+		constexpr void BeginRasterDepth(CommandList& cl, RID rtv, RID dsv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepth, cl, rtv, dsv); }
+
+		constexpr void BeginRasterDepthOnly(CommandList& cl, RID dsv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepthOnly, cl, dsv, mipLevel); }
+		constexpr void BeginRaster(CommandList& cl, RID rtv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv, mipLevel); }
+		constexpr void BeginRasterDepth(CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepth, cl, rtv, dsv, mipLevel); }
+
+		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
+		// Resources are considered adjacent when during creation in render graph they have been specified one by one.
+		// Resource adjacency is based on type of view type, SRV and UAV are grouped separately, ex:
+		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
+		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
+		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetSRV, cl, bindCtx, rid); }
+		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
+		// Resources are considered adjacent when during creation in render graph they have been specified one by one.
+		// Resource adjacency is based on type of view type, SRV and UAV are grouped separately, ex:
+		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
+		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
+		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
+		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
+		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid, mipLevel); }
+
+		// All begin rasterization commands must end with this function so proper handling of render passes is ensured
+		constexpr void EndRaster(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(EndRaster, cl); }
+
+		constexpr void ClearRTV(CommandList& cl, RID rid, const ColorF4& color) const noexcept { ZE_RHI_BACKEND_CALL(ClearRTV, cl, rid, color); }
+		constexpr void ClearDSV(CommandList& cl, RID rid, float depth, U8 stencil) const noexcept { ZE_RHI_BACKEND_CALL(ClearDSV, cl, rid, depth, stencil); }
+		constexpr void ClearUAV(CommandList& cl, RID rid, const ColorF4& color) const noexcept { ZE_RHI_BACKEND_CALL(ClearUAV, cl, rid, color); }
+		constexpr void ClearUAV(CommandList& cl, RID rid, const Pixel colors[4]) const noexcept { ZE_RHI_BACKEND_CALL(ClearUAV, cl, rid, colors); }
+
+		constexpr void Copy(CommandList& cl, RID src, RID dest) const noexcept { ZE_RHI_BACKEND_CALL(Copy, cl, src, dest); }
+		constexpr void CopyBufferRegion(CommandList& cl, RID src, U64 srcOffset, RID dest, U64 destOffset, U64 bytes) const noexcept { ZE_RHI_BACKEND_CALL(CopyBufferRegion, cl, src, srcOffset, dest, destOffset, bytes); }
+
+		// Manually transition resources between layouts and accesses in pipeline, recomended to use only on innner resources!
+		template<U32 BarrierCount>
+		constexpr void Barrier(CommandList& cl, const std::array<BarrierTransition, BarrierCount>& barriers) const noexcept { ZE_RHI_BACKEND_CALL(Barrier<BarrierCount>, cl, barriers); }
+		// Manually transition resource between states, recomended to use only on innner resources!
+		constexpr void Barrier(CommandList& cl, BarrierTransition& desc) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, desc); }
+
+		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INALID_RID
+		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output,
+			float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
+
+		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
+		// Before destroying FrameBuffer you have to call this function for proper memory freeing
+		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 }

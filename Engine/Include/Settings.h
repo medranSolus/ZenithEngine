@@ -36,6 +36,8 @@ namespace ZE
 		static constexpr U64 UPLOAD_HEAP_SIZE = 64 * Math::MEGABYTE;
 		// Single CPU stating buffer for preparing data before upload to GPU
 		static constexpr U32 STAGING_BUFFER_SIZE = 128 * Math::MEGABYTE;
+		// Have to be adjusted per-platform
+		static constexpr U8 MAX_RENDER_TARGETS = 8;
 
 		static inline GFX::VendorGPU GpuVendor = GFX::VendorGPU::Unknown;
 		static inline GFX::RayTracingTier RayTracingTier = GFX::RayTracingTier::None;

@@ -149,8 +149,6 @@ namespace ZE
 
 		if (IsGuiActive())
 			gui.EndFrame(graphics);
-		else
-			graphics.GetSwapChain().PrepareBackbuffer(dev, cl);
 
 		ZE_PERF_START("Swapchain present");
 		graphics.Present();

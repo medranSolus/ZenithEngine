@@ -1,10 +1,10 @@
-#include "GFX/PipelineOld/FrameBufferDesc.h"
 #include "Settings.h"
 
 namespace ZE::GFX::Pipeline
 {
-	void FrameBufferDesc::ComputeWorkflowTransitions(U64 dependencyLevels) noexcept
+	void ComputeWorkflowTransitions(U64 dependencyLevels) noexcept
 	{
+		/*
 		// Backbuffer states wrapping
 		auto& backbuffer = ResourceLifetimes.front();
 		TransitionsPerLevel.resize(dependencyLevels * 2);
@@ -54,5 +54,6 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 		}
+		*/
 	}
 }
