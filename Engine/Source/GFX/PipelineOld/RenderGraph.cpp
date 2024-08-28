@@ -1,5 +1,5 @@
 #include "GFX/PipelineOld/RenderGraph.h"
-
+/*
 namespace ZE::GFX::Pipeline
 {
 	void RenderGraph::BeforeSync(Device& dev, const PassSyncDesc& syncInfo)
@@ -103,29 +103,6 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::SortNodes(U64 currentNode, U64& orderedCount, const std::vector<std::vector<U64>>& graphList,
-		std::vector<U64>& nodes, std::vector<std::bitset<2>>& visited)
-	{
-		if (visited.at(currentNode)[0])
-		{
-			if (visited.at(currentNode)[1])
-				throw ZE_RGC_EXCEPT("Found circular dependency in node [" + std::to_string(currentNode) +
-					"]! Possible multiple outputs to same buffer.");
-			return;
-		}
-		visited[currentNode][0] = true;
-		if (graphList.at(currentNode).size() == 0)
-		{
-			nodes.at(--orderedCount) = currentNode;
-			return;
-		}
-		visited.at(currentNode)[1] = true;
-		for (U64 adjNode : graphList.at(currentNode))
-			SortNodes(adjNode, orderedCount, graphList, nodes, visited);
-		nodes.at(--orderedCount) = currentNode;
-		visited.at(currentNode)[1] = false;
-	}
-
 	void RenderGraph::CullIndirectDependecies(U64 currentNode, U64 checkNode, U64 minDepLevel, std::vector<std::vector<U64>>& syncList,
 		const std::vector<std::vector<U64>>& depList, const std::vector<U64>& dependencyLevels) noexcept
 	{
@@ -177,11 +154,6 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	void RenderGraph::ExecuteThread(Device& dev, CommandList& cl, PassDesc& pass)
-	{
-		pass.Execute(dev, cl, execData, pass.Data);
-	}
-
 	void RenderGraph::ExecuteThreadSync(Device& dev, CommandList& cl, PassDesc& pass)
 	{
 		BeforeSync(dev, pass.Syncs);
@@ -199,21 +171,14 @@ namespace ZE::GFX::Pipeline
 		for (U64 i = 0; i < nodes.size(); ++i)
 		{
 			auto& currentNode = nodes.at(i);
-			if (std::find_if(nodes.begin(), nodes.begin() + i, [&currentNode](const RenderNode& n) { return n.GetName() == currentNode.GetName(); }) != nodes.end()
-				&& std::find_if(nodes.begin() + i + 1, nodes.end(), [&currentNode](const RenderNode& n) { return n.GetName() == currentNode.GetName(); }) != nodes.end())
-				throw ZE_RGC_EXCEPT("Render graph already contains node of name [" + currentNode.GetName() + "]!");
 			for (const auto& out : currentNode.GetOutputs())
 			{
 				for (U64 j = 0; j < nodes.size(); ++j)
 				{
 					if (nodes.at(j).ContainsInput(out))
 					{
-						if (j == i)
-							throw ZE_RGC_EXCEPT("Output of pass [" + nodes.at(j).GetName() + "] specified as it's input!");
-						graphList.at(i).emplace_back(j);
 						if (std::find(depList.at(j).begin(), depList.at(j).end(), i) == depList.at(j).end())
 						{
-							depList.at(j).emplace_back(i);
 							if (nodes.at(j).GetPassType() != currentNode.GetPassType())
 								syncList.at(j).emplace_back(i);
 						}
@@ -223,54 +188,10 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Sort nodes in topological order
-		std::vector<U64> ordered(nodes.size());
-		U64 orderedCount = nodes.size();
-		// Visited | on current stack of graph traversal
-		std::vector<std::bitset<2>> visited(nodes.size(), 0);
-		for (U64 i = 0; i < nodes.size(); ++i)
-			if (!visited.at(i)[0])
-				SortNodes(i, orderedCount, graphList, ordered, visited);
-		visited.clear();
 
 		// Compute longest path for each node as it's dependency level
-		std::vector<U64> dependencyLevels(nodes.size(), 0);
-		for (U64 node : ordered)
-		{
-			U64 nodeLevel = dependencyLevels.at(node);
-			for (U64 adjNode : graphList.at(node))
-			{
-				if (dependencyLevels.at(adjNode) <= nodeLevel)
-					dependencyLevels.at(adjNode) = nodeLevel + 1;
-				if (dependencyLevels.at(adjNode) > levelCount)
-					levelCount = dependencyLevels.at(adjNode);
-			}
-		}
-		ordered.clear();
 
 		// Minimize distances between nodes when possible
-		if (minimizeDistances)
-		{
-			for (auto& list : graphList)
-				list.clear();
-			U64 i = 0;
-			for (const auto& deps : depList)
-			{
-				U64 currentLevel = dependencyLevels.at(i++);
-				for (U64 dep : deps)
-					graphList.at(dep).emplace_back(currentLevel);
-			}
-			i = 0;
-			for (auto& list : graphList)
-			{
-				if (list.size() > 0)
-				{
-					std::sort(list.begin(), list.end());
-					dependencyLevels.at(i) = list.front() - 1;
-				}
-				++i;
-			}
-		}
-		graphList.clear();
 
 		// Cull redundant syncs with other nodes on same GPU engines
 		for (auto& syncs : syncList)
@@ -768,4 +689,4 @@ namespace ZE::GFX::Pipeline
 			execData.SharedStates.DeleteArray();
 		}
 	}
-}
+}*/

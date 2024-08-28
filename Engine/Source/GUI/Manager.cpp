@@ -334,7 +334,7 @@ namespace ZE::GUI
 			const D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain.GetCurrentRTV();
 			list.GetList()->OMSetRenderTargets(1, &rtv, true, nullptr);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), list.GetList());
-			list.GetList()->ResourceBarrier(1, &swapChain.GetPresentBarrier());
+			//list.GetList()->ResourceBarrier(1, &swapChain.GetPresentBarrier());
 
 			ZE_DRAW_TAG_END(gfx.GetDevice(), list);
 			list.Close(dev);

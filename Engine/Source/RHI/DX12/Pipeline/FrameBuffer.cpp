@@ -6,7 +6,7 @@ namespace ZE::RHI::DX12::Pipeline
 {
 #if !_ZE_MODE_RELEASE
 	void FrameBuffer::PrintMemory(std::string&& memID, U32 levelCount, U64 heapSize,
-		std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+		std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
 		const std::vector<std::pair<U32, U32>>& resourcesLifetime) noexcept
 	{
 		U32 maxChunks = 0;
@@ -40,9 +40,9 @@ namespace ZE::RHI::DX12::Pipeline
 			for (U32 chunk = 0; chunk < resBegin->Chunks; ++chunk)
 			{
 				resBegin->ChunkOffset;
-				U32 startLevel = resourcesLifetime.at(resBegin->Handle).first;
-				U32 levelCount = resourcesLifetime.at(resBegin->Handle).second;
-				for (U32 level = 0; level < levelCount; ++level)
+				//U32 startLevel = resourcesLifetime.at(resBegin->Handle).first;
+				U32 endLevel = resourcesLifetime.at(resBegin->Handle).second;
+				for (U32 level = 0; level < endLevel; ++level)
 				{
 					const U32 offset = chunk * maxChunks + level * pixelsPerLevel;
 					for (U64 p = 0; p < chunkPixels; ++p)
@@ -65,7 +65,7 @@ namespace ZE::RHI::DX12::Pipeline
 	}
 #endif
 
-	U64 FrameBuffer::AllocateResources(std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+	U64 FrameBuffer::AllocateResources(std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
 		const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags) noexcept
 	{
 		U32 heapChunks = 0;
@@ -131,7 +131,7 @@ namespace ZE::RHI::DX12::Pipeline
 			}
 
 			// Find last chunk of the heap and remove and use it as heap size
-			U32 lastChunk = 0;
+			//U32 lastChunk = 0;
 			for (U32 chunk = 0; chunk < maxChunks; ++chunk)
 			{
 				bool notFoundInLevel = true;
@@ -282,7 +282,7 @@ namespace ZE::RHI::DX12::Pipeline
 		RID uavCount = 0, uavAdditionalMipsCount = 0;
 
 		// Get sizes in chunks for resources and their descriptors
-		std::vector<ResourcInitInfo> resourcesInfo;
+		std::vector<ResourceInitInfo> resourcesInfo;
 		D3D12_RESOURCE_DESC1 resDesc = {};
 		resDesc.SampleDesc.Count = 1;
 		resDesc.SampleDesc.Quality = 0;
@@ -294,6 +294,7 @@ namespace ZE::RHI::DX12::Pipeline
 		for (RID i = 1; i < resourceCount; ++i)
 		{
 			const auto& res = desc.Resources.at(i);
+			ZE_ASSERT_WARN(res.Flags & GFX::Pipeline::FrameResourceFlag::InternalResourceActive, "Resource don't contain active flag! Redundant memory will be allocated on CPU.");
 			if (res.Flags & GFX::Pipeline::FrameResourceFlag::InternalResourceActive)
 			{
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Texture3D)
@@ -321,9 +322,9 @@ namespace ZE::RHI::DX12::Pipeline
 				D3D12_CLEAR_VALUE clearDesc = {};
 				clearDesc.Format = resDesc.Format;
 				// Check usage flags
-				bool isRT = res.Flags & GFX::Pipeline::FrameResourceFlag::InternalUsageRenderTarget;
+				bool isRT = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceRTV | GFX::Pipeline::FrameResourceFlag::InternalUsageRenderTarget);
 				bool isDS = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceDSV | GFX::Pipeline::FrameResourceFlag::InternalUsageDepth);
-				bool isUA = res.Flags & GFX::Pipeline::FrameResourceFlag::InternalUsageUnorderedAccess;
+				bool isUA = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceUAV | GFX::Pipeline::FrameResourceFlag::InternalUsageUnorderedAccess);
 				bool isSR = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceSRV | GFX::Pipeline::FrameResourceFlag::InternalUsageShaderResource);
 				if (isRT)
 				{
@@ -376,7 +377,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 				// Create resource entry and fill it with proper info
 				const U64 chunksCount = Math::DivideRoundUp(allocInfo.SizeInBytes, static_cast<U64>(D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
-				auto& info = resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(chunksCount), 0, resDesc, clearDesc, res.Flags, 0);
+				auto& info = resourcesInfo.emplace_back();//i, Utils::SafeCast<U32>(chunksCount), 0, resDesc, clearDesc, res.Flags, 0);
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Cube)
 					info.SetCube();
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::StencilView)

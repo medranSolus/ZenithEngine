@@ -17,13 +17,13 @@ namespace ZE::GFX
 	constexpr PixelFormat GetPixelFormatFfx(FfxSurfaceFormat format) noexcept;
 
 	// Initialize handle for FFX SDK from one of the frame buffers
-	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept;
+	inline FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept { return {}; }
 
 	// Fill up pointers to FFX SDK backend callbacks
-	void ffxGetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers) noexcept;
+	inline void ffxGetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers) noexcept {}
 
 	// Free up FFX SDK backend interface
-	void ffxDestroyInterface(Device& dev) noexcept;
+	inline void ffxDestroyInterface(Device& dev) noexcept {}
 
 #pragma region Functions
 	constexpr FfxSurfaceFormat GetFfxSurfaceFormat(PixelFormat format) noexcept

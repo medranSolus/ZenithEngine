@@ -7,7 +7,7 @@ namespace ZE::RHI::DX12::Pipeline
 {
 	class FrameBuffer final
 	{
-		struct ResourcInitInfo
+		struct ResourceInitInfo
 		{
 			RID Handle;
 			U32 Chunks;
@@ -73,10 +73,10 @@ namespace ZE::RHI::DX12::Pipeline
 
 #if !_ZE_MODE_RELEASE
 		static void PrintMemory(std::string&& memID, U32 levelCount, U64 heapSize,
-			std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+			std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
 			const std::vector<std::pair<U32, U32>>& resourcesLifetime) noexcept;
 #endif
-		static U64 AllocateResources(std::vector<ResourcInitInfo>::iterator resBegin, std::vector<ResourcInitInfo>::iterator resEnd,
+		static U64 AllocateResources(std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
 			const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags) noexcept;
 
 		void EnterRaster() const noexcept;

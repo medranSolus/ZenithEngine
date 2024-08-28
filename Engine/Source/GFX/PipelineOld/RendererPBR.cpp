@@ -3,7 +3,7 @@
 #define ZE_MAKE_NODE(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
 
 namespace ZE::GFX::Pipeline
-{
+{/*
 	void RendererPBR::UpdateSettingsData(const Data::Projection& projection) noexcept
 	{
 		currentProjectionData = projection;
@@ -428,4 +428,5 @@ namespace ZE::GFX::Pipeline
 		if (change)
 			execData.SettingsBuffer.Update(dev, assets.GetDisk(), { INVALID_EID, &settingsData, nullptr, sizeof(DataPBR) });
 	}
+	*/
 }

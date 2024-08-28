@@ -5,7 +5,7 @@
 
 // Assert for FFX backend interface pointer
 #define ZE_CHECK_FFX_BACKEND() ZE_ASSERT(backendInterface, "Empty FFX backend interface!")
-
+/*
 namespace ZE::GFX
 {
 	// Custom name for the resource
@@ -16,8 +16,8 @@ namespace ZE::GFX
 	// Data about current and starting resource state
 	struct FfxResourceStateInfo
 	{
-		Resource::State Current;
-		Resource::State Initial;
+		Pipeline::TextureLayout Current;
+		Pipeline::TextureLayout Initial;
 	};
 	// Tag for resources registered per frame from outside
 	struct FfxDynamicResource {};
@@ -32,9 +32,9 @@ namespace ZE::GFX
 		Data::Library<U64, U64> PipelinesReferences;
 		Data::Library<U64, Binding::Schema> Bindings;
 		Data::Library<U64, U64> BindingsReferences;
-		Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
-		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
-		std::vector<Resource::GenericResourceBarrier> Barriers;
+		//Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
+		//Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
+		//std::vector<Resource::GenericResourceBarrier> Barriers;
 		std::vector<FfxGpuJobDescription> Jobs;
 	};
 
@@ -76,14 +76,14 @@ namespace ZE::GFX
 	constexpr Resource::DynamicCBuffer& GetDynamicBuffer(FfxInterface* backendInterface) noexcept;
 	constexpr U32& GetFfxCtxRefCount(FfxInterface* backendInterface) noexcept;
 	constexpr CommandList& GetCommandList(FfxCommandList commandList) noexcept;
-	constexpr Resource::GenericResourceType GetResourceType(FfxResourceType type) noexcept;
-	constexpr Resource::GenericResourceHeap GetHeapType(FfxHeapType type) noexcept;
-	constexpr Resource::GenericResourceFlags GetResourceFlags(FfxResourceUsage usage) noexcept;
-	constexpr Resource::State GetState(FfxResourceStates state) noexcept;
-	constexpr FfxResourceStates GetState(Resource::State state) noexcept;
+	//constexpr Resource::GenericResourceType GetResourceType(FfxResourceType type) noexcept;
+	//constexpr Resource::GenericResourceHeap GetHeapType(FfxHeapType type) noexcept;
+	//constexpr Resource::GenericResourceFlags GetResourceFlags(FfxResourceUsage usage) noexcept;
+	constexpr Pipeline::TextureLayout GetState(FfxResourceStates state) noexcept;
+	constexpr FfxResourceStates GetState(Pipeline::TextureLayout state) noexcept;
 	constexpr Resource::Texture::AddressMode GetAddressMode(FfxAddressMode mode) noexcept;
 	constexpr Resource::SamplerFilter GetFilter(FfxFilterType filter) noexcept;
-	void AddResourceBarrier(FfxBackendContext& ctx, ResID resId, Resource::State after) noexcept;
+	void AddResourceBarrier(FfxBackendContext& ctx, ResID resId, Pipeline::TextureLayout after) noexcept;
 	void FlushBarriers(FfxBackendContext& ctx, Device& dev, CommandList& cl);
 	void ExecuteClearJob(FfxBackendContext& ctx, Device& dev, CommandList& cl, const FfxClearFloatJobDescription& job);
 	void ExecuteCopyJob(FfxBackendContext& ctx, Device& dev, CommandList& cl, const FfxCopyJobDescription& job);
@@ -92,10 +92,10 @@ namespace ZE::GFX
 	FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept
 	{
 		// Create proxy resource
-		res.Init(buffers, rid);
+		//res.Init(buffers, rid);
 
 		FfxResource desc = {};
-		desc.resource = &res;
+		//desc.resource = &res;
 		desc.description.type = buffers.IsCubeTexture(rid) ? FFX_RESOURCE_TYPE_TEXTURE_CUBE : FFX_RESOURCE_TYPE_TEXTURE2D;
 		desc.description.format = GetFfxSurfaceFormat(buffers.GetFormat(rid));
 		auto sizes = buffers.GetDimmensions(rid);
@@ -109,7 +109,7 @@ namespace ZE::GFX
 			desc.description.usage = static_cast<FfxResourceUsage>(desc.description.usage | FFX_RESOURCE_USAGE_UAV);
 		if (buffers.IsArrayView(rid))
 			desc.description.usage = static_cast<FfxResourceUsage>(desc.description.usage | FFX_RESOURCE_USAGE_ARRAYVIEW);
-		desc.state = GetState(state);
+		desc.state = GetState(layout);
 		return desc;
 	}
 
@@ -948,4 +948,4 @@ namespace ZE::GFX
 			cl.Compute(dev, job.dimensions[0], job.dimensions[1], job.dimensions[2]);
 	}
 #pragma endregion
-}
+}*/
