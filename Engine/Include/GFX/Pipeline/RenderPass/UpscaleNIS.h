@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		float Sharpness = 0.5f;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetUpscaler() == UpscalerType::NIS; }
+	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::NIS; }
 
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;

@@ -9,15 +9,15 @@ namespace ZE::GFX::Pipeline
 	struct PassData
 	{
 		Ptr<const RID> Resources;
-		PtrVoid ExecData;
+		PtrVoid ExecData = nullptr;
 	};
 
 	// Create all needed data for render pass
-	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*&);
+	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*);
 	// Optional function that will be performing extended setup that needs GPU explicit work
 	typedef void (*PassSetupCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&, RendererPassBuildData&);
 	// Evaluate whether pass shall run and if it cause update of the render graph
-	typedef bool (*PassEvaluateExecutionCallback)(PassData&) noexcept;
+	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
 	// Main function that will be performing rendering, obligatory
 	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
 	// Optional function to handle pass data update after render graph got it's update.
@@ -25,6 +25,10 @@ namespace ZE::GFX::Pipeline
 	typedef bool (*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);
 	// Optional function that will be freeing up data used by pass
 	typedef void (*PassCleanCallback)(Device&, void*) noexcept;
+	// Optional function for copying init data for pass creation
+	typedef void* (*PassCopyInitDataCallback)(void*) noexcept;
+	// Optional function for freeing up init data for pass creation
+	typedef void (*PassFreeInitDataCallback)(void*) noexcept;
 
 	// Types of every render pass present, including custom ones created outside engine
 	typedef U32 PassType;
@@ -34,7 +38,9 @@ namespace ZE::GFX::Pipeline
 		// Special type indicating that it's impossible to guess the type of the pass and it's related data
 		Invalid,
 
-		LambertianClear,
+		GBufferClear,
+		MotionVectorsClear,
+		ReactiveMaskClear,
 		Lambertian,
 		LambertianComputeCopy,
 
@@ -86,5 +92,9 @@ namespace ZE::GFX::Pipeline
 		PassUpdatetCallback Update = nullptr;
 		// Required if init callback returns pointer to arbitrary data
 		PassCleanCallback Clean = nullptr;
+		// Required if InitData is present
+		PassCopyInitDataCallback CopyInitData = nullptr;
+		// Required if InitData is present
+		PassFreeInitDataCallback FreeInitData = nullptr;
 	};
 }

@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		float Sharpness = 0.7f;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2; }
+	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2; }
 
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;

@@ -31,7 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		float StepsPerSlice;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetAOType() == AOType::XeGTAO; }
+	constexpr bool Evaluate() noexcept { return Settings::GetAOType() == AOType::XeGTAO; }
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept;
 	PassDesc GetDesc() noexcept;

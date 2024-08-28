@@ -6,7 +6,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 {
 	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, *reinterpret_cast<ExecuteData*>(passData)); }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	static void MessageHandler(FfxMsgType type, const wchar_t* msg) noexcept
 	{
@@ -89,7 +89,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 
 		FfxFsr2DispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(cl);
-		Resource::Generic color, depth, motion, reactiveMask, output;
+		//Resource::Generic color, depth, motion, reactiveMask, output;
 		//desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
 		//desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
 		//desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);

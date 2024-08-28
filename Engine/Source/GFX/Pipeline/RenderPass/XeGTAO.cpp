@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 	};
 #pragma pack(pop)
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept
 	{

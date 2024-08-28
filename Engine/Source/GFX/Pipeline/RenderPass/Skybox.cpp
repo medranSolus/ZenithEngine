@@ -3,17 +3,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for Skybox initialization formats!");
 
 		std::pair<std::string, std::string>* cubemapInfo = reinterpret_cast<std::pair<std::string, std::string>*>(initData);
-		void* passData = Initialize(dev, buildData, formats.at(0), formats.at(1), cubemapInfo->first, cubemapInfo->second);
-		delete cubemapInfo;
-		initData = nullptr;
-
-		return passData;
+		return Initialize(dev, buildData, formats.at(0), formats.at(1), cubemapInfo->first, cubemapInfo->second);
 	}
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
@@ -27,6 +23,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
+		desc.CopyInitData = CopyInitData;
+		desc.FreeInitData = FreeInitData;
 		return desc;
 	}
 
@@ -37,6 +35,16 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		execData->SkyTexture.Free(dev);
 		execData->MeshData.Free(dev);
 		delete execData;
+	}
+
+	void* CopyInitData(void* data) noexcept
+	{
+		return new std::pair<std::string, std::string>(*reinterpret_cast<std::pair<std::string, std::string>*>(data));
+	}
+
+	void FreeInitData(void* data) noexcept
+	{
+		delete reinterpret_cast<std::pair<std::string, std::string>*>(data);
 	}
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT,

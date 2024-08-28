@@ -5,7 +5,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 {
 	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, *reinterpret_cast<ExecuteData*>(passData)); }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	static void MessageHandler(const char* message, xess_logging_level_t level) noexcept
 	{
@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale XeSS", Pixel(0xB2, 0x22, 0x22));
-		
+
 		renderData.Buffers.ExecuteXeSS(dev, cl, ids.Color, ids.MotionVectors, ids.Depth, INVALID_RID, ids.ResponsiveMask, ids.Output,
 			renderData.DynamicData.JitterCurrent.x, renderData.DynamicData.JitterCurrent.y, false);
 

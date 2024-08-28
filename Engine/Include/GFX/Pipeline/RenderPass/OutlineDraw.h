@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		Resource::PipelineStateGfx StateRender;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input data
+	constexpr bool Evaluate() noexcept { return true; } // TODO: check input data
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
 	void Clean(Device& dev, void* data) noexcept;

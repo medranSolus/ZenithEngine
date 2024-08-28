@@ -5,7 +5,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for PointLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));

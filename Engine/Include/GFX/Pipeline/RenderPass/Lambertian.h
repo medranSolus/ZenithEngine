@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		bool ReactiveEnabled;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input element count
+	constexpr bool Evaluate() noexcept { return true; } // TODO: check input element count
 
 	PassDesc GetDesc(PixelFormat formatDS, PixelFormat formatNormal, PixelFormat formatAlbedo,
 		PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept;

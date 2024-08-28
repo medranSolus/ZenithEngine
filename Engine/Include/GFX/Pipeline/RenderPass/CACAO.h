@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		UInt2 RenderSize = { 0, 0 };
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetAOType() == AOType::CACAO; }
+	constexpr bool Evaluate() noexcept { return Settings::GetAOType() == AOType::CACAO; }
 
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;

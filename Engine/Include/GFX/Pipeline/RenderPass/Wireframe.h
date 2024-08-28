@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		Resource::PipelineStateGfx State;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: check input element count
+	constexpr bool Evaluate() noexcept { return true; } // TODO: check input element count
 	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;

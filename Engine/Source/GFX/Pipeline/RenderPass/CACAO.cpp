@@ -3,9 +3,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, *reinterpret_cast<ExecuteData*>(passData)); return false }
+	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, *reinterpret_cast<ExecuteData*>(passData)); return false; }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	PassDesc GetDesc() noexcept
 	{
@@ -72,7 +72,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 		FfxCacaoDispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(cl);
-		Resource::Generic depth, normal, ao;
+		//Resource::Generic depth, normal, ao;
 		//desc.depthBuffer = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
 		//desc.normalBuffer = ffxGetResource(renderData.Buffers, normal, ids.Normal, Resource::StateShaderResourceNonPS);
 		//desc.outputBuffer = ffxGetResource(renderData.Buffers, ao, ids.AO, Resource::StateUnorderedAccess);

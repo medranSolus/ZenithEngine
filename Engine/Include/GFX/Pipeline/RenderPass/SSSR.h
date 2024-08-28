@@ -34,7 +34,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		bool TemporalVarianceGuidedTracingEnabled = true;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::IsEnabledSSSR(); }
+	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR(); }
 
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;

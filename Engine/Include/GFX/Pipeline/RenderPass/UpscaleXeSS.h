@@ -21,7 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		xess_quality_settings_t Quality = XESS_QUALITY_SETTING_ULTRA_QUALITY;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return Settings::GetUpscaler() == UpscalerType::XeSS; }
+	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::XeSS; }
 	constexpr void Clean(Device& dev, void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 
 	PassDesc GetDesc() noexcept;

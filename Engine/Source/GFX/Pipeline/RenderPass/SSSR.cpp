@@ -5,7 +5,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
 	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, *reinterpret_cast<ExecuteData*>(passData)); return false; }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	PassDesc GetDesc() noexcept
 	{
@@ -71,7 +71,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		FfxSssrDispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(cl);
 
-		Resource::Generic color, depth, motion, normal, roughness, environment, brdf, sssr;
+		//Resource::Generic color, depth, motion, normal, roughness, environment, brdf, sssr;
 		//desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
 		//desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
 		//desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);

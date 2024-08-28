@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	struct ClearBufferEntry
 	{
 		ClearBufferType BufferType;
-		union
+		union ClearVal
 		{
 			// For RTV and FloatUAV
 			ColorF4 Color;
@@ -21,10 +21,10 @@ namespace ZE::GFX::Pipeline::RenderPass
 				float Depth;
 				U8 Stencil;
 			} DSV;
-		} ClearValue;
 
-		constexpr ClearBufferEntry() noexcept {}
-		~ClearBufferEntry() = default;
+			constexpr ClearVal() noexcept {}
+			~ClearVal() = default;
+		} ClearValue;
 	};
 
 	// Generic component for clearing resources
@@ -39,27 +39,29 @@ namespace ZE::GFX::Pipeline::RenderPass
 		struct ExecuteData
 		{
 			ClearBufferEntry Info[N];
-
-			constexpr ExecuteData() noexcept {}
-			~ExecuteData() = default;
 		};
 
-		static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData) { return initData; }
+		static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return new ExecuteData(*reinterpret_cast<ExecuteData*>(initData)); }
 		static void Clean(Device& dev, void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
+		static void* CopyInitData(void* data) noexcept { return new ExecuteData(*reinterpret_cast<ExecuteData*>(data)); }
+		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 
-		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo) noexcept;
+		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate = nullptr) noexcept;
 		static void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	};
 
 #pragma region Functions
 	template<ResIndex N>
-	PassDesc ClearBuffer<N>::GetDesc(PassType type, const ExecuteData& clearInfo) noexcept
+	PassDesc ClearBuffer<N>::GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate) noexcept
 	{
 		PassDesc desc{ type };
 		desc.InitData = new ExecuteData(clearInfo);
 		desc.Init = Initialize;
+		desc.Evaluate = evaluate;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
+		desc.CopyInitData = CopyInitData;
+		desc.FreeInitData = FreeInitData;
 		return desc;
 	}
 
@@ -81,16 +83,16 @@ namespace ZE::GFX::Pipeline::RenderPass
 				default:
 					ZE_ENUM_UNHANDLED();
 				case ClearBufferType::RTV:
-					//renderData.Buffers.ClearRTV(cl, rid, info.Color);
+					renderData.Buffers.ClearRTV(cl, rid, info.ClearValue.Color);
 					break;
 				case ClearBufferType::DSV:
-					//renderData.Buffers.ClearDSV(cl, rid, info.DSV.Depth, info.DSV.Stencil);
+					renderData.Buffers.ClearDSV(cl, rid, info.ClearValue.DSV.Depth, info.ClearValue.DSV.Stencil);
 					break;
 				case ClearBufferType::FloatUAV:
-					//renderData.Buffers.ClearUAV(cl, rid, info.Color);
+					renderData.Buffers.ClearUAV(cl, rid, info.ClearValue.Color);
 					break;
 				case ClearBufferType::UIntUAV:
-					//renderData.Buffers.ClearUAV(cl, rid, info.Colors);
+					renderData.Buffers.ClearUAV(cl, rid, info.ClearValue.Colors);
 					break;
 				}
 			}

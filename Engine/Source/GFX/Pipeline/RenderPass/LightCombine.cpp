@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return false;
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for LightCombine initialization formats!");
 		return Initialize(dev, buildData, formats.front());

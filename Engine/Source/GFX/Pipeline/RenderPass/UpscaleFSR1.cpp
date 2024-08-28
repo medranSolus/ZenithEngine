@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		return Update(dev, *reinterpret_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for FSR1 initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -80,7 +80,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 		FfxFsr1DispatchDescription desc = {};
 		desc.commandList = ffxGetCommandList(cl);
-		Resource::Generic color, output;
+		//Resource::Generic color, output;
 		//desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
 		//desc.output = ffxGetResource(renderData.Buffers, output, ids.Output, Resource::StateUnorderedAccess);
 		desc.renderSize = { inputSize.X, inputSize.Y };

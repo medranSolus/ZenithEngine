@@ -5,7 +5,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for SpotLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
@@ -48,7 +48,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Shadow map
 		desc.AddRange({ 4, 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
-		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex);
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel | Resource::ShaderType::Vertex);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);

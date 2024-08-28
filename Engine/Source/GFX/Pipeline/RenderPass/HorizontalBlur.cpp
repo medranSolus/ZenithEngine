@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void*& initData)
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for HorizontalBlur initialization formats!");
 		return Initialize(dev, buildData, formats.front());

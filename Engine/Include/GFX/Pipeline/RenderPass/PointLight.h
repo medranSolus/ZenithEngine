@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		Resource::Mesh VolumeMesh;
 	};
 
-	constexpr bool Evaluate(PassData& passData) noexcept { return true; } // TODO: Check input data
+	constexpr bool Evaluate() noexcept { return true; } // TODO: Check input data
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
 	void Clean(Device& dev, void* data) noexcept;
