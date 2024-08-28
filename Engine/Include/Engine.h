@@ -14,6 +14,7 @@ namespace ZE
 		GFX::Graphics graphics;
 		GUI::Manager gui;
 		Window::MainWindow window;
+		GFX::Pipeline::RenderGraphBuilder graphBuilder;
 		GFX::Pipeline::RenderGraph renderGraph;
 		Data::AssetsStreamer assets;
 		std::bitset<Flags::Count> flags;
@@ -34,7 +35,7 @@ namespace ZE
 		constexpr Data::AssetsStreamer& Assets() noexcept { return assets; }
 
 		// Initialization method that must be called before using engine
-		void Init(const EngineParams& params);
+		bool Init(const EngineParams& params);
 		// Need to be called before starting first frame
 		void Start(EID camera) noexcept;
 		// Returns number of update steps that have to be taken by simulations multiplied by delta time

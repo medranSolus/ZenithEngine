@@ -1,8 +1,9 @@
 #include "Engine.h"
+#include "Data/Light.h"
 
 namespace ZE
 {
-	void Engine::Init(const EngineParams& params)
+	bool Engine::Init(const EngineParams& params)
 	{
 		SetGui(true);
 		flags[Flags::Initialized] = true;
@@ -11,12 +12,40 @@ namespace ZE
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
 
-		graphics.Init(window, params.GraphicsDescriptorPoolSize, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		graphics.Init(window, params.GraphicsDescriptorPoolSize, false); // GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
 
-		gui.Init(graphics, GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		gui.Init(graphics, false);// GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		assets.Init(graphics.GetDevice());
-		renderer.Init(graphics.GetDevice(), graphics.GetMainList(), assets, params.Renderer);
+
+		GFX::Pipeline::BuildResult buildRes = GFX::Pipeline::BuildResult::Success;
+		if (params.CustomRendererDesc)
+		{
+			buildRes = graphBuilder.LoadConfig(*params.CustomRendererDesc);
+			if (buildRes == GFX::Pipeline::BuildResult::Success)
+			{
+				buildRes = graphBuilder.ComputeGraph();
+				if (buildRes == GFX::Pipeline::BuildResult::Success)
+					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, *params.CustomRendererDesc);
+			}
+		}
+		else
+		{
+			GFX::Pipeline::RenderGraphDesc graphDesc = GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams);
+			buildRes = graphBuilder.LoadConfig(graphDesc);
+			if (buildRes == GFX::Pipeline::BuildResult::Success)
+			{
+				buildRes = graphBuilder.ComputeGraph();
+				if (buildRes == GFX::Pipeline::BuildResult::Success)
+					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, graphDesc);
+			}
+		}
+		if (buildRes != GFX::Pipeline::BuildResult::Success)
+		{
+			Logger::Error(std::string("Error processing render gragh, reason: ") + GFX::Pipeline::DecodeBuildResult(buildRes));
+			return false;
+		}
+
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Check for optimization UB code: https://github.com/xiw/stack/
 		prevTime = Perf::Get().GetNow();
@@ -61,6 +90,7 @@ namespace ZE
 		  - check out https://research.nvidia.com/publication/2017-02_hashed-alpha-testing, http://www.ludicon.com/castano/blog/articles/computing-alpha-mipmaps/
 		  - bigger concern, maybe create offline module to handle creation of mipmaps since they can be computed manually by artist?
 		*/
+		return true;
 	}
 
 	Engine::~Engine()
@@ -88,7 +118,7 @@ namespace ZE
 				Settings::Data.get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
 			Settings::Data.clear<GFX::Resource::Mesh>();
 
-			renderer.Free(graphics.GetDevice());
+			//renderer.Free(graphics.GetDevice());
 			assets.Free(graphics.GetDevice());
 			gui.Destroy(graphics.GetDevice());
 		}
@@ -97,7 +127,7 @@ namespace ZE
 	void Engine::Start(EID camera) noexcept
 	{
 		prevTime = Perf::Get().GetNow();
-		renderer.SetInverseViewProjection(camera);
+		//renderer.SetInverseViewProjection(camera);
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
@@ -144,7 +174,7 @@ namespace ZE
 		ZE_PERF_STOP();
 
 		ZE_PERF_START("Execute render graph");
-		renderer.Execute(graphics);
+		//renderer.Execute(graphics);
 		ZE_PERF_STOP();
 
 		if (IsGuiActive())
