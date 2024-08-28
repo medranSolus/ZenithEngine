@@ -21,8 +21,8 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_DELETE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		constexpr void Init(Device& dev, FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
+		constexpr void Init(Device& dev, const FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
+		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
 		ZE_RHI_BACKEND_GET(Pipeline::FrameBuffer);
 
 		// Main Gfx API

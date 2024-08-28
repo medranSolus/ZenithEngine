@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline
 	// Transition barrier to be performed on texture
 	struct BarrierTransition
 	{
-		RID Resource;
+		RID Resource = INVALID_RID;
 		TextureLayout LayoutBefore;
 		TextureLayout LayoutAfter;
 		ResourceAccesses AccessBefore;

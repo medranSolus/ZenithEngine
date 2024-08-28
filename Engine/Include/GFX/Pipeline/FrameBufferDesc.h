@@ -27,6 +27,7 @@ namespace ZE::GFX::Pipeline
 		FrameBufferFlags Flags;
 		std::vector<FrameResourceDesc> Resources;
 		U32 PassLevelCount;
+		// Start | End level
 		std::vector<std::pair<U32, U32>> ResourceLifetimes;
 	};
 }
