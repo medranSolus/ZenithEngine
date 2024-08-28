@@ -246,7 +246,7 @@ namespace ZE::RHI::DX12
 
 	void DiskManager::StartUploadGPU(bool waitable) noexcept
 	{
-		if (waitable)
+		if (waitable || uploadDestResourceQueue.size())
 		{
 			fileQueue->EnqueueSetEvent(fenceEvents[0]);
 			memoryQueue->EnqueueSetEvent(fenceEvents[1]);

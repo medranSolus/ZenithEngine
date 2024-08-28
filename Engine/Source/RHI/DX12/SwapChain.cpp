@@ -62,12 +62,6 @@ namespace ZE::RHI::DX12
 			srvHandle.CPU.ptr += srvDescSize;
 			srvHandle.GPU.ptr += srvDescSize;
 		}
-
-		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		presentBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		presentBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		presentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		presentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	}
 
 	SwapChain::~SwapChain()
