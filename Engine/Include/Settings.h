@@ -17,6 +17,7 @@ namespace ZE
 			AttachPIX,
 			GPUValidation,
 			SSSR,
+			AsyncAO,
 			Count,
 		};
 
@@ -98,6 +99,7 @@ namespace ZE
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
 		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SSSR]; }
+		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO]; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
@@ -159,6 +161,7 @@ namespace ZE
 			else
 				Logger::Warning("Requested SSSR while using not supported GFX API! Disabling SSSR.");
 		}
+		flags[Flags::AsyncAO] = params.Flags & SettingsInitFlag::AsyncAO;
 
 		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;

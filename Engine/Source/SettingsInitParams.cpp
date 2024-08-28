@@ -17,6 +17,7 @@ namespace ZE
 		parser.AddOption("nis");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
+		parser.AddOption("noAsyncAO");
 		parser.AddOption("sssr");
 	}
 
@@ -54,6 +55,8 @@ namespace ZE
 			params.AmbientOcclusion = GFX::AOType::CACAO;
 		else
 			params.AmbientOcclusion = GFX::AOType::None;
+		if (!parser.GetOption("noAsyncAO"))
+			params.Flags |= SettingsInitFlag::AsyncAO;
 
 		return params;
 	}

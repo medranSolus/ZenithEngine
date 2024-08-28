@@ -17,6 +17,8 @@ namespace ZE
 		EnableGPUValidation = 2,
 		// Enable Screen Space Reflections, only available for DirectX 12 or Vulkan RHI.
 		EnableSSSR = 4,
+		// Run Ambient Occlusion on async compute queue for supported RHI.
+		AsyncAO = 8,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

@@ -24,18 +24,10 @@ namespace ZE
 		// WARNING: may result in higher or lower memory reservation for frame in some cases
 		//   but can sometimes leverage GPU consumption if most of heavy work is done early, measure it for specific use case
 		bool MinimizeRenderPassDistances = false;
-		// Set to true if custom render graph definition is needed, otherwise fill in CoreRenderer parameters
-		bool CustomRenderer;
-		union
-		{
-			// Parameters used by render pipeline
-			GFX::Pipeline::CoreRenderer::Params CoreRendererParams;
-			// Description of custom render graph to be used in the engine
-			GFX::Pipeline::RenderGraphDesc* RendererDesc;
-		};
-
-		EngineParams() noexcept {}
-		~EngineParams() = default;
+		// Provide custom render graph definition if needed, otherwise fill in CoreRenderer parameters
+		GFX::Pipeline::RenderGraphDesc* CustomRendererDesc = nullptr;
+		// Parameters used by render pipeline
+		GFX::Pipeline::CoreRenderer::Params CoreRendererParams;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static void SetParsedParams(const CmdParser& parser, EngineParams& params) noexcept;

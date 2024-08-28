@@ -16,6 +16,6 @@ namespace ZE::RHI::DX12::Resource
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
 		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateComputePipelineState(&desc, IID_PPV_ARGS(&state)));
-		ZE_DX_SET_ID(state, shader.Get().dx12.GetName());
+		ZE_DX_SET_ID(state, *shader.Get().dx12.GetName());
 	}
 }

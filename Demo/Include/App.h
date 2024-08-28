@@ -1,5 +1,6 @@
 #pragma once
 #include "Zenith.h"
+#include "Data/Camera.h"
 using namespace ZE;
 
 class App final

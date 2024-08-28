@@ -1,6 +1,7 @@
 #include "App.h"
 #include "GFX/Primitive.h"
 #include "Data/SceneManager.h"
+#include "Data/Tags.h"
 
 template<typename T>
 void App::EnableProperty(EID entity)
@@ -142,7 +143,7 @@ void App::ShowOptionsWindow()
 		}
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
-		engine.Reneder().ShowWindow(engine.Gfx().GetDevice(), engine.Assets());
+		//engine.RenderGraph().ShowDebugUI(engine.Gfx().GetDevice(), engine.Assets());
 	}
 	ImGui::End();
 }
@@ -455,8 +456,8 @@ void App::ShowObjectWindow()
 				change |= GUI::InputClamp(0.1f, 20.0f, camera.Projection.NearClip,
 					ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f"));
 
-				if (selected == currentCamera && change)
-					engine.Reneder().UpdateSettingsData(camera.Projection);
+				//if (selected == currentCamera && change)
+					//engine.Reneder().UpdateSettingsData(camera.Projection);
 			}
 			ImGui::EndChild();
 		}
@@ -601,7 +602,7 @@ void App::MakeFrame()
 		ShowOptionsWindow();
 		ShowObjectWindow();
 	}
-	engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
+	//engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 }
 
 App::App(const CmdParser& params)
@@ -610,8 +611,8 @@ App::App(const CmdParser& params)
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);
 	engineParams.WindowName = WINDOW_TITLE;
-	engineParams.Renderer.SkyboxPath = "Skybox/Space";
-	engineParams.Renderer.SkyboxExt = ".png";
+	engineParams.CoreRendererParams.SkyboxPath = "Skybox/Space";
+	engineParams.CoreRendererParams.SkyboxExt = ".png";
 	engine.Init(engineParams);
 
 	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
