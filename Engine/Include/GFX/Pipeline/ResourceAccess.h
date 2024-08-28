@@ -1,5 +1,6 @@
 #pragma once
 #include "Types.h"
+#include "TextureLayout.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -31,4 +32,45 @@ namespace ZE::GFX::Pipeline
 		ShadingRateSource                 = 0x00040000
 	};
 	ZE_ENUM_OPERATORS(ResourceAccess, ResourceAccesses);
+
+	constexpr ResourceAccesses GetAccessFromLayout(TextureLayout layout) noexcept;
+
+#pragma region Functions
+	constexpr ResourceAccesses GetAccessFromLayout(TextureLayout layout) noexcept
+	{
+		switch (layout)
+		{
+		case TextureLayout::Undefined:
+		case TextureLayout::Preinitialized:
+			return static_cast<ResourceAccesses>(ResourceAccess::None);
+		default:
+			ZE_ENUM_UNHANDLED();
+		case TextureLayout::Common:
+		case TextureLayout::Present:
+			return static_cast<ResourceAccesses>(ResourceAccess::Common);
+		case TextureLayout::GenericRead:
+			return ResourceAccess::CopySource | ResourceAccess::ShaderResource;
+		case TextureLayout::RenderTarget:
+			return static_cast<ResourceAccesses>(ResourceAccess::RenderTarget);
+		case TextureLayout::UnorderedAccess:
+			return static_cast<ResourceAccesses>(ResourceAccess::UnorderedAccess);
+		case TextureLayout::DepthStencilWrite:
+			return static_cast<ResourceAccesses>(ResourceAccess::DepthStencilWrite);
+		case TextureLayout::DepthStencilRead:
+			return static_cast<ResourceAccesses>(ResourceAccess::DepthStencilRead);
+		case TextureLayout::ShaderResource:
+			return static_cast<ResourceAccesses>(ResourceAccess::ShaderResource);
+		case TextureLayout::CopySource:
+			return static_cast<ResourceAccesses>(ResourceAccess::CopySource);
+		case TextureLayout::CopyDest:
+			return static_cast<ResourceAccesses>(ResourceAccess::CopyDest);
+		case TextureLayout::ResolveSource:
+			return static_cast<ResourceAccesses>(ResourceAccess::ResolveSource);
+		case TextureLayout::ResolveDest:
+			return static_cast<ResourceAccesses>(ResourceAccess::ResolveDest);
+		case TextureLayout::ShadingRateSource:
+			return static_cast<ResourceAccesses>(ResourceAccess::ShadingRateSource);
+		}
+	}
+#pragma endregion
 }

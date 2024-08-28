@@ -161,6 +161,8 @@ namespace ZE::RHI::DX12
 			barrierSync |= D3D12_BARRIER_SYNC_ALL;
 		if (syncs & GFX::Pipeline::StageSync::AllGraphics)
 			barrierSync |= D3D12_BARRIER_SYNC_DRAW;
+		if (syncs & GFX::Pipeline::StageSync::AllShading)
+			barrierSync |= D3D12_BARRIER_SYNC_ALL_SHADING;
 		if (syncs & GFX::Pipeline::StageSync::IndexInput)
 			barrierSync |= D3D12_BARRIER_SYNC_INDEX_INPUT;
 		if (syncs & GFX::Pipeline::StageSync::GeometryShading)
@@ -191,7 +193,6 @@ namespace ZE::RHI::DX12
 			barrierSync |= D3D12_BARRIER_SYNC_COPY_RAYTRACING_ACCELERATION_STRUCTURE;
 
 		/* Not used:
-		 * D3D12_BARRIER_SYNC_ALL_SHADING
 		 * D3D12_BARRIER_SYNC_NON_PIXEL_SHADING
 		 * D3D12_BARRIER_SYNC_EMIT_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO
 		 * D3D12_BARRIER_SYNC_VIDEO_DECODE
