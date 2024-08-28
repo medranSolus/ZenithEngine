@@ -19,4 +19,6 @@ namespace ZE
 	inline constexpr RID INVALID_RID = UINT16_MAX;
 	// Backbuffer is always first in resource list
 	inline constexpr RID BACKBUFFER_RID = 0;
+	// Backbuffer name during resource creation
+	inline constexpr std::string_view BACKBUFFER_NAME = "backbuffer";
 }
