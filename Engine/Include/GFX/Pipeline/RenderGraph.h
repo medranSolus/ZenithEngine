@@ -11,11 +11,7 @@ namespace ZE::GFX::Pipeline
 		- introduce callback for setting pass data from outside (maybe register as data blob inside RenderGraph with enum?)
 		- callback for dynamic updating of pass (can result in rebuilding of graph)
 		- common interface for GPU resource aliasing
-		- usage of Enhanced Barriers for DX12 to match Vulkan version
-		- no more small command lists and unnecessary signals between them
-		- rework async compute
 		- pass to be able to specify after which other pass it should be started, more like a hint if it's not possible due to data flow
-		- every pass will get cmd list according to it's type
 		- option for post-creation initialization so basically splitting setup step into 2
 		- distincion for render graph updates:
 			- soft: some effects are not enabled and some buffers won't be used, so just different resources in flight, good for frame-to-frame changes when effects don't have input data
@@ -112,33 +108,39 @@ namespace ZE::GFX::Pipeline
 		// Group of render passes that can be run in parallel with no resource dependency
 		struct ParallelPassGroup
 		{
-			U32 BarrierCount = 0;
-			std::unique_ptr<BarrierTransition[]> StartBarriers;
+			struct PassInfo
+			{
+				U32 PassID = UINT32_MAX;
+				PassExecuteCallback Exec = nullptr;
+				PassData Data;
+				std::unique_ptr<RID[]> Resources;
+			};
+
+			std::vector<BarrierTransition> StartBarriers;
 			U32 PassCount = 0;
-			std::unique_ptr<std::pair<PassExecuteCallback, PassData>[]> Passes;
+			std::unique_ptr<PassInfo[]> Passes;
 		};
 
 		// Group of passes to be executed in single submission
 		struct ExecutionGroup
 		{
+#if _ZE_RENDER_GRAPH_SINGLE_THREAD
+			typedef U64 FenceValue;
+#else
+			typedef UA64 FenceValue;
+#endif
 			U32 PassGroupCount = 0;
 			std::unique_ptr<ParallelPassGroup[]> PassGroups;
 			bool QueueWait = false;
-#if _ZE_RENDER_GRAPH_SINGLE_THREAD
-			U64 WaitFence = 0;
-			U64* SignalFence = nullptr;
-#else
-			UA64 WaitFence = 0;
-			UA64* SignalFence = nullptr;
-#endif
-			U32 BarrierCount = 0;
+			FenceValue WaitFence = 0;
+			FenceValue* SignalFence = nullptr;
 			// Only related to cross-queue resources and for last group preparing the backbuffer
-			std::unique_ptr<BarrierTransition[]> EndBarriers;
+			std::vector<BarrierTransition> EndBarriers;
 		};
 
 		PendingUpdate update = PendingUpdate::None;
 
-		std::unique_ptr<std::array<ExecutionGroup, 2>[]> passGroups;
+		std::unique_ptr<std::array<ExecutionGroup, 2>[]> passExecGroups;
 		U32 execGroupCount = 0;
 		RendererPassExecuteData execData;
 		ChainPool<CommandList> asyncListChain;

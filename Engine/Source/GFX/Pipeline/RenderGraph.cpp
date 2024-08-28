@@ -25,8 +25,8 @@ namespace ZE::GFX::Pipeline
 		// TODO: Single threaded method only for now
 		for (U32 i = 0; i < execGroupCount; ++i)
 		{
-			auto& mainGroup = passGroups[i].at(0);
-			auto& asyncGroup = passGroups[i].at(1);
+			auto& mainGroup = passExecGroups[i].at(0);
+			auto& asyncGroup = passExecGroups[i].at(1);
 
 			if (mainGroup.PassGroupCount)
 			{
@@ -38,14 +38,14 @@ namespace ZE::GFX::Pipeline
 				for (U32 j = 0; j < mainGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = mainGroup.PassGroups[j];
-					if (parallelGroup.BarrierCount)
-						execData.Buffers.Barrier(mainList, parallelGroup.StartBarriers.get(), parallelGroup.BarrierCount);
+					if (parallelGroup.StartBarriers.size())
+						execData.Buffers.Barrier(mainList, parallelGroup.StartBarriers.data(), Utils::SafeCast<U32>(parallelGroup.StartBarriers.size()));
 
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
-						parallelGroup.Passes[k].first(dev, mainList, execData, parallelGroup.Passes[k].second);
+						parallelGroup.Passes[k].Exec(dev, mainList, execData, parallelGroup.Passes[k].Data);
 				}
-				if (mainGroup.BarrierCount)
-					execData.Buffers.Barrier(mainList, mainGroup.EndBarriers.get(), mainGroup.BarrierCount);
+				if (mainGroup.EndBarriers.size())
+					execData.Buffers.Barrier(mainList, mainGroup.EndBarriers.data(), Utils::SafeCast<U32>(mainGroup.EndBarriers.size()));
 				mainList.Close(dev);
 
 				if (mainGroup.SignalFence)
@@ -63,14 +63,14 @@ namespace ZE::GFX::Pipeline
 				for (U32 j = 0; j < asyncGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = asyncGroup.PassGroups[j];
-					if (parallelGroup.BarrierCount)
-						execData.Buffers.Barrier(asyncList, parallelGroup.StartBarriers.get(), parallelGroup.BarrierCount);
+					if (parallelGroup.StartBarriers.size())
+						execData.Buffers.Barrier(asyncList, parallelGroup.StartBarriers.data(), Utils::SafeCast<U32>(parallelGroup.StartBarriers.size()));
 
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
-						parallelGroup.Passes[k].first(dev, asyncList, execData, parallelGroup.Passes[k].second);
+						parallelGroup.Passes[k].Exec(dev, asyncList, execData, parallelGroup.Passes[k].Data);
 				}
-				if (mainGroup.BarrierCount)
-					execData.Buffers.Barrier(asyncList, asyncGroup.EndBarriers.get(), asyncGroup.BarrierCount);
+				if (asyncGroup.EndBarriers.size())
+					execData.Buffers.Barrier(asyncList, asyncGroup.EndBarriers.data(), Utils::SafeCast<U32>(asyncGroup.EndBarriers.size()));
 				asyncList.Close(dev);
 
 				if (asyncGroup.SignalFence)
