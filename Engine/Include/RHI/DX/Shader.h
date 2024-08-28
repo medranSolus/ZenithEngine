@@ -24,7 +24,7 @@ namespace ZE::RHI::DX
 
 		constexpr void Free(GFX::Device& dev) noexcept { bytecode = nullptr; }
 #if _ZE_DEBUG_GFX_NAMES
-		constexpr const std::string& GetName() const noexcept { return shaderName; }
+		constexpr const std::string* GetName() const noexcept { return &shaderName; }
 #endif
 
 		// Gfx API Internal

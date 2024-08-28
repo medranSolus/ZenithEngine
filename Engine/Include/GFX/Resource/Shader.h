@@ -29,7 +29,7 @@ namespace ZE::GFX::Resource
 		// Before destroying shader you have to call this function for proper memory freeing
 		constexpr void Free(GFX::Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 #if _ZE_DEBUG_GFX_NAMES
-		const std::string& GetName() const noexcept { ZE_RHI_BACKEND_CALL(GetName); }
+		const std::string& GetName() const noexcept { const std::string* name = nullptr; ZE_RHI_BACKEND_CALL_RET(name, GetName); return *name; }
 #endif
 	};
 }

@@ -23,7 +23,7 @@ namespace ZE::RHI::VK::Resource
 		~Shader() { ZE_ASSERT_FREED(shader == VK_NULL_HANDLE); }
 
 #if _ZE_DEBUG_GFX_NAMES
-		constexpr const std::string& GetName() const noexcept { return shaderName; }
+		constexpr const std::string* GetName() const noexcept { return &shaderName; }
 #endif
 		void Free(GFX::Device& dev) noexcept;
 
