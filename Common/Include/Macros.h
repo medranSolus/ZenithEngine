@@ -47,12 +47,29 @@
 	className& operator=(className&&) = default; \
 	className& operator=(const className&) = default
 
+// Deletes all copy and move constructors/assign operators
+#define ZE_CLASS_DELETE(className) \
+	className(className&&) = delete; \
+	className(const className&) = delete; \
+	className& operator=(className&&) = delete; \
+	className& operator=(const className&) = delete
+
 // Adds defaulted copy constructors/assign operators and deletes move constructors/assign operators
 #define ZE_CLASS_COPY(className) \
 	className(className&&) = delete; \
 	className(const className&) = default; \
 	className& operator=(className&&) = delete; \
 	className& operator=(const className&) = default
+
+// Adds defaulted copy constructors/assign operators
+#define ZE_CLASS_COPY_ONLY(className) \
+	className(const className&) = default; \
+	className& operator=(const className&) = default
+
+// Adds deleted copy constructors/assign operators
+#define ZE_CLASS_NO_COPY(className) \
+	className(const className&) = delete; \
+	className& operator=(const className&) = delete
 
 // Adds defaulted move constructors/assign operators and deletes copy constructors/assign operators
 #define ZE_CLASS_MOVE(className) \
@@ -61,17 +78,10 @@
 	className& operator=(className&&) = default; \
 	className& operator=(const className&) = delete
 
-// Deletes all copy and move constructors/assign operators
-#define ZE_CLASS_DELETE(className) \
-	className(className&&) = delete; \
-	className(const className&) = delete; \
-	className& operator=(className&&) = delete; \
-	className& operator=(const className&) = delete
-
-// Adds deleted copy constructors/assign operators
-#define ZE_CLASS_NO_COPY(className) \
-	className(const className&) = delete; \
-	className& operator=(const className&) = delete
+// Adds deleted move constructors/assign operators
+#define ZE_CLASS_MOVE_ONLY(className) \
+	className(className&&) = default; \
+	className& operator=(className&&) = default;
 
 // Adds deleted move constructors/assign operators
 #define ZE_CLASS_NO_MOVE(className) \
