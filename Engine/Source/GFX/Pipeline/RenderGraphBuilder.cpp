@@ -103,99 +103,106 @@ namespace ZE::GFX::Pipeline
 			"Number of passes cannot exceed UINT32_MAX!");
 
 		// Gather passes and group them by graph connector names
-		for (U32 i = 0; i < desc.RenderPasses.size(); ++i)
 		{
-			const RenderNode& node = desc.RenderPasses.at(i);
-
-			ZE_CHECK_FAILED_CONFIG_LOAD(!node.GetDesc().Execute, ErrorPassExecutionCallbackNotProvided,
-				"Execution callback missing in [" + node.GetFullName() + "]!");
-			ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().FreeInitData, ErrorPassFreeInitDataCallbackNotProvided,
-				"FreeInitData callback missing in [" + node.GetFullName() + "]!");
-			ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().Init, ErrorPassFreeInitDataCallbackNotProvided,
-				"Init callback missing in [" + node.GetFullName() + "] while initialization data has been provided!");
-
-			// Check if pass with same connector name is not already in the database
-			bool newPass = true;
-			for (U32 j = 0; j < passDescs.size(); ++j)
-			{
-				if (passDescs.at(j).front().GetGraphConnectorName() == node.GetGraphConnectorName())
-				{
 #if _ZE_RENDERER_CREATION_VALIDATION
-					bool wrongOutputSet = false, notSorted = true;
-					std::vector<std::string> nodeOutputs;
-					for (const auto& setNode : passDescs.at(j))
-					{
-						if (setNode.GetOutputs().size() != node.GetOutputs().size())
-						{
-							wrongOutputSet = true;
-							break;
-						}
-						// If sizes match then need to check if output sets are the same
-						if (notSorted)
-						{
-							nodeOutputs = node.GetOutputs();
-							std::sort(nodeOutputs.begin(), nodeOutputs.end());
-							notSorted = false;
-						}
-						std::vector<std::string> currentOutputs = setNode.GetOutputs();
-						std::sort(currentOutputs.begin(), currentOutputs.end());
-						if (nodeOutputs != currentOutputs)
-						{
-							wrongOutputSet = true;
-							break;
-						}
-					}
-					ZE_CHECK_FAILED_CONFIG_LOAD(wrongOutputSet, ErrorPassWrongOutputSet,
-						"Output resources of the [" + node.GetFullName() + "] doesn't match with rest of the passes with same graph connector name!");
+			ZE_PERF_GUARD("RenderGraphBuilder::LoadGraphDesc - gather passes, renderer validation");
+#else
+			ZE_PERF_GUARD("RenderGraphBuilder::LoadGraphDesc - gather passes");
+#endif
+			for (U32 i = 0; i < desc.RenderPasses.size(); ++i)
+			{
+				const RenderNode& node = desc.RenderPasses.at(i);
 
-					if (passDescs.at(j).size() > 0)
+				ZE_CHECK_FAILED_CONFIG_LOAD(!node.GetDesc().Execute, ErrorPassExecutionCallbackNotProvided,
+					"Execution callback missing in [" + node.GetFullName() + "]!");
+				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().FreeInitData, ErrorPassFreeInitDataCallbackNotProvided,
+					"FreeInitData callback missing in [" + node.GetFullName() + "]!");
+				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().Init, ErrorPassFreeInitDataCallbackNotProvided,
+					"Init callback missing in [" + node.GetFullName() + "] while initialization data has been provided!");
+
+				// Check if pass with same connector name is not already in the database
+				bool newPass = true;
+				for (U32 j = 0; j < passDescs.size(); ++j)
+				{
+					if (passDescs.at(j).front().GetGraphConnectorName() == node.GetGraphConnectorName())
 					{
-						// Check for name correctness
-						ZE_CHECK_FAILED_CONFIG_LOAD(node.GetPassName() == "", ErrorPassEmptyName,
-							"Passes sharing same connector name of [" + node.GetGraphConnectorName() +
-							"] are required to have it's own distinct name!");
-						// Check for first pass since this name is required only when there are multiple passes in graph node
-						if (passDescs.at(j).size() == 1)
+#if _ZE_RENDERER_CREATION_VALIDATION
+						bool wrongOutputSet = false, notSorted = true;
+						std::vector<std::string> nodeOutputs;
+						for (const auto& setNode : passDescs.at(j))
 						{
-							ZE_CHECK_FAILED_CONFIG_LOAD(passDescs.at(j).front().GetPassName() == "", ErrorPassEmptyName,
-								"Passes sharing same connector name of [" + passDescs.at(j).front().GetGraphConnectorName() +
-								"] are required to have it's own disting name!");
-						}
-						// Check for name clashes with all passes
-						for (const auto& sharedNode : passDescs.at(j))
-						{
-							ZE_CHECK_FAILED_CONFIG_LOAD(node.GetPassName() == sharedNode.GetPassName(), ErrorPassNameClash,
-								"Pass name [" + node.GetFullName() + "] is not unique!");
-						}
-					}
-					// Check if not all inputs are optional
-					if (node.GetExecType() != PassExecutionType::Producer)
-					{
-						bool allInputsOptional = true;
-						for (bool inputRequired : node.GetInputRequirements())
-						{
-							if (inputRequired)
+							if (setNode.GetOutputs().size() != node.GetOutputs().size())
 							{
-								allInputsOptional = false;
+								wrongOutputSet = true;
+								break;
+							}
+							// If sizes match then need to check if output sets are the same
+							if (notSorted)
+							{
+								nodeOutputs = node.GetOutputs();
+								std::sort(nodeOutputs.begin(), nodeOutputs.end());
+								notSorted = false;
+							}
+							std::vector<std::string> currentOutputs = setNode.GetOutputs();
+							std::sort(currentOutputs.begin(), currentOutputs.end());
+							if (nodeOutputs != currentOutputs)
+							{
+								wrongOutputSet = true;
 								break;
 							}
 						}
-						ZE_CHECK_FAILED_CONFIG_LOAD(allInputsOptional, ErrorProcessorAllInputsOptional,
-							"Only producer passes can have all optional input, pass [" + node.GetFullName() +
-							"] need to have at least one required input resource!");
-					}
+						ZE_CHECK_FAILED_CONFIG_LOAD(wrongOutputSet, ErrorPassWrongOutputSet,
+							"Output resources of the [" + node.GetFullName() + "] doesn't match with rest of the passes with same graph connector name!");
+
+						if (passDescs.at(j).size() > 0)
+						{
+							// Check for name correctness
+							ZE_CHECK_FAILED_CONFIG_LOAD(node.GetPassName() == "", ErrorPassEmptyName,
+								"Passes sharing same connector name of [" + node.GetGraphConnectorName() +
+								"] are required to have it's own distinct name!");
+							// Check for first pass since this name is required only when there are multiple passes in graph node
+							if (passDescs.at(j).size() == 1)
+							{
+								ZE_CHECK_FAILED_CONFIG_LOAD(passDescs.at(j).front().GetPassName() == "", ErrorPassEmptyName,
+									"Passes sharing same connector name of [" + passDescs.at(j).front().GetGraphConnectorName() +
+									"] are required to have it's own disting name!");
+							}
+							// Check for name clashes with all passes
+							for (const auto& sharedNode : passDescs.at(j))
+							{
+								ZE_CHECK_FAILED_CONFIG_LOAD(node.GetPassName() == sharedNode.GetPassName(), ErrorPassNameClash,
+									"Pass name [" + node.GetFullName() + "] is not unique!");
+							}
+						}
+						// Check if not all inputs are optional
+						if (node.GetExecType() != PassExecutionType::Producer)
+						{
+							bool allInputsOptional = true;
+							for (bool inputRequired : node.GetInputRequirements())
+							{
+								if (inputRequired)
+								{
+									allInputsOptional = false;
+									break;
+								}
+							}
+							ZE_CHECK_FAILED_CONFIG_LOAD(allInputsOptional, ErrorProcessorAllInputsOptional,
+								"Only producer passes can have all optional input, pass [" + node.GetFullName() +
+								"] need to have at least one required input resource!");
+						}
 #endif
-					// Append new pass as node stays the same
-					auto& newNode = passDescs.at(j).emplace_back(node);
-					// If outputs to backbuffer then change to producer
-					if (newNode.GetExecType() != PassExecutionType::Producer && std::find(newNode.GetOutputResources().begin(), newNode.GetOutputResources().end(), BACKBUFFER_NAME) != newNode.GetOutputResources().end())
-						newNode.SetProducer();
-					newPass = false;
-					break;
+						// Append new pass as node stays the same
+						auto& newNode = passDescs.at(j).emplace_back(node);
+						// If outputs to backbuffer then change to producer
+						if (newNode.GetExecType() != PassExecutionType::Producer && std::find(newNode.GetOutputResources().begin(), newNode.GetOutputResources().end(), BACKBUFFER_NAME) != newNode.GetOutputResources().end())
+							newNode.SetProducer();
+						newPass = false;
+						break;
+					}
 				}
+				if (newPass)
+					passDescs.emplace_back().emplace_back(node);
 			}
-			if (newPass)
-				passDescs.emplace_back().emplace_back(node);
 		}
 
 		// Init dependency info for all nodes in given group
@@ -205,57 +212,60 @@ namespace ZE::GFX::Pipeline
 
 		// Create graph via reversed adjacency list (list of node groups and for each node in a group
 		// list of nodes from which traversal is possible as data flow)
-		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
-			const auto& graphNodeGroup = passDescs.at(i);
-			for (U32 j = 0; j < graphNodeGroup.size(); ++j)
+			ZE_PERF_GUARD("RenderGraphBuilder::LoadGraphDesc - graph creation");
+			for (U32 i = 0; i < passDescs.size(); ++i)
 			{
-				const auto& graphNode = graphNodeGroup.at(j);
-
-				// Add connection between passes if manually scheduled
-				if (graphNode.GetPreceedingPass() != "")
+				const auto& graphNodeGroup = passDescs.at(i);
+				for (U32 j = 0; j < graphNodeGroup.size(); ++j)
 				{
-					auto& preceedingNodes = renderGraphDepList.at(i).NodesDependecies.at(j).PreceedingNodes;
-					for (U32 k = 0; k < passDescs.size(); ++k)
+					const auto& graphNode = graphNodeGroup.at(j);
+
+					// Add connection between passes if manually scheduled
+					if (graphNode.GetPreceedingPass() != "")
 					{
-						const auto& checkedGroup = passDescs.at(k);
-						if (checkedGroup.front().GetGraphConnectorName() == graphNode.GetPreceedingPass())
+						auto& preceedingNodes = renderGraphDepList.at(i).NodesDependecies.at(j).PreceedingNodes;
+						for (U32 k = 0; k < passDescs.size(); ++k)
 						{
-							auto connection = std::find_if(preceedingNodes.begin(), preceedingNodes.end(), [k](const GraphConnection& connection) { return connection.NodeIndex == k; });
-							if (connection == preceedingNodes.end())
-								preceedingNodes.emplace_back(k, true);
-							else
-								connection->Required = true;
-							break;
+							const auto& checkedGroup = passDescs.at(k);
+							if (checkedGroup.front().GetGraphConnectorName() == graphNode.GetPreceedingPass())
+							{
+								auto connection = std::find_if(preceedingNodes.begin(), preceedingNodes.end(), [k](const GraphConnection& connection) { return connection.NodeIndex == k; });
+								if (connection == preceedingNodes.end())
+									preceedingNodes.emplace_back(k, true);
+								else
+									connection->Required = true;
+								break;
+							}
 						}
 					}
-				}
 
-				// Connect based on which outputs are present in other nodes as inputs (directed graph)
-				for (const auto& out : graphNode.GetOutputs())
-				{
-					for (U32 k = 0; k < passDescs.size(); ++k)
+					// Connect based on which outputs are present in other nodes as inputs (directed graph)
+					for (const auto& out : graphNode.GetOutputs())
 					{
-						const auto& checkedGroup = passDescs.at(k);
-						for (U32 l = 0; l < checkedGroup.size(); ++l)
+						for (U32 k = 0; k < passDescs.size(); ++k)
 						{
-							const auto& checkedNode = checkedGroup.at(l);
-							auto it = std::find(checkedNode.GetInputs().begin(), checkedNode.GetInputs().end(), out);
-							if (it != checkedNode.GetInputs().end())
+							const auto& checkedGroup = passDescs.at(k);
+							for (U32 l = 0; l < checkedGroup.size(); ++l)
 							{
-								ZE_CHECK_FAILED_CONFIG_LOAD(i == k, ErrorOutputAsInputSamePass,
-									"Output resource [" + out + "] specified as input " + (graphNodeGroup.size() == 1 ? " of the same pass!"
-										: " of pass with the same graph connector name [" + graphNode.GetFullName() + "]!"));
+								const auto& checkedNode = checkedGroup.at(l);
+								auto it = std::find(checkedNode.GetInputs().begin(), checkedNode.GetInputs().end(), out);
+								if (it != checkedNode.GetInputs().end())
+								{
+									ZE_CHECK_FAILED_CONFIG_LOAD(i == k, ErrorOutputAsInputSamePass,
+										"Output resource [" + out + "] specified as input " + (graphNodeGroup.size() == 1 ? " of the same pass!"
+											: " of pass with the same graph connector name [" + graphNode.GetFullName() + "]!"));
 
-								ResIndex inputIdx = Utils::SafeCast<ResIndex>(std::distance(checkedNode.GetInputs().begin(), it));
-								auto& preceedingNodes = renderGraphDepList.at(k).NodesDependecies.at(l).PreceedingNodes;
-								auto connection = std::find_if(preceedingNodes.begin(), preceedingNodes.end(), [i](const GraphConnection& connection) { return connection.NodeIndex == i; });
+									ResIndex inputIdx = Utils::SafeCast<ResIndex>(std::distance(checkedNode.GetInputs().begin(), it));
+									auto& preceedingNodes = renderGraphDepList.at(k).NodesDependecies.at(l).PreceedingNodes;
+									auto connection = std::find_if(preceedingNodes.begin(), preceedingNodes.end(), [i](const GraphConnection& connection) { return connection.NodeIndex == i; });
 
-								// Specifying only graph group index as outputs in given group must be the same, only inputs to all nodes can vary
-								if (connection == preceedingNodes.end())
-									preceedingNodes.emplace_back(i, checkedNode.IsInputRequired(inputIdx));
-								else
-									connection->Required |= checkedNode.IsInputRequired(inputIdx);
+									// Specifying only graph group index as outputs in given group must be the same, only inputs to all nodes can vary
+									if (connection == preceedingNodes.end())
+										preceedingNodes.emplace_back(i, checkedNode.IsInputRequired(inputIdx));
+									else
+										connection->Required |= checkedNode.IsInputRequired(inputIdx);
+								}
 							}
 						}
 					}
@@ -264,15 +274,18 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Sort nodes in topological order
-		topoplogyOrder.reserve(passDescs.size());
-		// Visited | on current stack of graph traversal
-		std::vector<std::bitset<2>> visited(passDescs.size(), 0);
-		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
-			if (!visited.at(i)[0])
+			ZE_PERF_GUARD("RenderGraphBuilder::LoadGraphDesc - topology sort");
+			topoplogyOrder.reserve(passDescs.size());
+			// Visited | on current stack of graph traversal
+			std::vector<std::bitset<2>> visited(passDescs.size(), 0);
+			for (U32 i = 0; i < passDescs.size(); ++i)
 			{
-				ZE_CHECK_FAILED_CONFIG_LOAD(SortNodesTopologyOrder(i, visited), ErrorPassCircularDependency,
-					"Ill-formed render graph! Cycle found between nodes, aborting loading config.");
+				if (!visited.at(i)[0])
+				{
+					ZE_CHECK_FAILED_CONFIG_LOAD(SortNodesTopologyOrder(i, visited), ErrorPassCircularDependency,
+						"Ill-formed render graph! Cycle found between nodes, aborting loading config.");
+				}
 			}
 		}
 		return BuildResult::Success;
@@ -386,6 +399,8 @@ namespace ZE::GFX::Pipeline
 
 	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout() const noexcept
 	{
+		ZE_PERF_GUARD("RenderGraphBuilder::GetFrameBufferLayout");
+
 		FrameBufferDesc desc = {};
 		desc.Flags = resourceOptions;
 		desc.PassLevelCount = dependencyLevelCount;
@@ -455,6 +470,8 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraphBuilder::GroupRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc) const
 	{
+		ZE_PERF_GUARD("RenderGraphBuilder::GroupRenderPasses");
+
 		RendererPassBuildData buildData = { graph.execData.Bindings, assets, desc.SettingsRange, desc.DynamicDataRange, desc.Samplers };
 		auto fillInPassData = [&](U32 node, RenderGraph::ParallelPassGroup::PassInfo& passInfo)
 			{
@@ -470,6 +487,7 @@ namespace ZE::GFX::Pipeline
 
 		if (asyncComputeEnabled)
 		{
+			ZE_PERF_GUARD("RenderGraphBuilder::GroupRenderPasses - async compute enabled");
 			graph.asyncListChain.Exec([&dev](CommandList& cmd) { cmd.Init(dev, QueueType::Compute); });
 
 			// Create exec groups for every dependency level
@@ -479,20 +497,23 @@ namespace ZE::GFX::Pipeline
 			std::vector<U8> execGroupWorkType(dependencyLevelCount);
 			for (U32 i = 0, size = Utils::SafeCast<U32>(dependencyLevels.size()); i < size; ++i)
 			{
-				U32 depLevel = dependencyLevels.at(i);
-				bool isAsync = passDescs.at(i).at(computedGraph.at(i).NodeGroupIndex).IsAsync();
-				execGroupWorkType.at(depLevel) |= (U32)!isAsync | (((U32)isAsync) << 1);
-				if (isAsync)
+				if (computedGraph.at(i).Present)
 				{
-					if (execGroupsAsync.at(depLevel).size() == 0)
-						execGroupsAsync.at(depLevel).emplace_back();
-					execGroupsAsync.at(depLevel).back().emplace_back(i);
-				}
-				else
-				{
-					if (execGroups.at(depLevel).size() == 0)
-						execGroups.at(depLevel).emplace_back();
-					execGroups.at(depLevel).back().emplace_back(i);
+					U32 depLevel = dependencyLevels.at(i);
+					bool isAsync = passDescs.at(i).at(computedGraph.at(i).NodeGroupIndex).IsAsync();
+					execGroupWorkType.at(depLevel) |= (U32)!isAsync | (((U32)isAsync) << 1);
+					if (isAsync)
+					{
+						if (execGroupsAsync.at(depLevel).size() == 0)
+							execGroupsAsync.at(depLevel).emplace_back();
+						execGroupsAsync.at(depLevel).back().emplace_back(i);
+					}
+					else
+					{
+						if (execGroups.at(depLevel).size() == 0)
+							execGroups.at(depLevel).emplace_back();
+						execGroups.at(depLevel).back().emplace_back(i);
+					}
 				}
 			}
 
@@ -551,6 +572,7 @@ namespace ZE::GFX::Pipeline
 		}
 		else
 		{
+			ZE_PERF_GUARD("RenderGraphBuilder::GroupRenderPasses - no async compute");
 			graph.execGroupCount = 1;
 			graph.passExecGroups = std::make_unique<std::array<RenderGraph::ExecutionGroup, 2>[]>(1);
 
@@ -560,21 +582,28 @@ namespace ZE::GFX::Pipeline
 
 			// Get number of passes in each group and assign passes to those groups
 			for (U32 i = 0, size = Utils::SafeCast<U32>(dependencyLevels.size()); i < size; ++i)
-				++execGroup.PassGroups[dependencyLevels.at(i)].PassCount;
+			{
+				if (computedGraph.at(i).Present)
+					++execGroup.PassGroups[dependencyLevels.at(i)].PassCount;
+			}
 			auto passesIndices = std::make_unique<U32[]>(dependencyLevelCount);
 			for (U32 level = 0; level < dependencyLevelCount; ++level)
 			{
 				passesIndices[level] = execGroup.PassGroups[level].PassCount;
 				execGroup.PassGroups[level].Passes = std::make_unique<RenderGraph::ParallelPassGroup::PassInfo[]>(execGroup.PassGroups[level].PassCount);
 			}
+
 			// Fill in description of single pass in group
 			for (U32 i = 0, size = Utils::SafeCast<U32>(dependencyLevels.size()); i < size; ++i)
 			{
-				U32 depLevel = dependencyLevels.at(i);
-				auto& passGroup = execGroup.PassGroups[depLevel];
-				U32 passIndex = passGroup.PassCount - passesIndices[depLevel]--;
+				if (computedGraph.at(i).Present)
+				{
+					U32 depLevel = dependencyLevels.at(i);
+					auto& passGroup = execGroup.PassGroups[depLevel];
+					U32 passIndex = passGroup.PassCount - passesIndices[depLevel]--;
 
-				fillInPassData(i, passGroup.Passes[passIndex]);
+					fillInPassData(i, passGroup.Passes[passIndex]);
+				}
 			}
 		}
 
@@ -583,8 +612,63 @@ namespace ZE::GFX::Pipeline
 			shader.second.Free(dev);
 	}
 
+	void RenderGraphBuilder::ComputeGroupSyncs(class RenderGraph& graph) const noexcept
+	{
+		if (asyncComputeEnabled && graph.execGroupCount > 1)
+		{
+			ZE_PERF_GUARD("RenderGraphBuilder::ComputeGroupSyncs");
+			auto checkGroupSync = [&](RenderGraph::ExecutionGroup& group, RenderGraph::ExecutionGroup& prevGroup)
+				{
+					// Skip if no need to sync with anything
+					if (prevGroup.PassGroupCount)
+					{
+						bool activeDependency = false;
+						for (U32 passGroup = 0; passGroup < group.PassGroupCount && !activeDependency; ++passGroup)
+						{
+							for (U32 pass = 0; pass < group.PassGroups[passGroup].PassCount && !activeDependency; ++pass)
+							{
+								U32 passId = group.PassGroups[passGroup].Passes[pass].PassID;
+								auto& dependecies = renderGraphDepList.at(passId).NodesDependecies.at(computedGraph.at(passId).NodeGroupIndex);
+
+								// Check pass groups from the end since it's higher chance to find syncing node
+								for (U32 prevPassGroup = prevGroup.PassGroupCount; prevPassGroup > 0 && !activeDependency;)
+								{
+									--prevPassGroup;
+									for (U32 prevPass = prevGroup.PassGroups[prevPassGroup].PassCount; prevPass > 0;)
+									{
+										--prevPass;
+										U32 prevPassId = prevGroup.PassGroups[prevPassGroup].Passes[prevPass].PassID;
+										for (const auto& dep : dependecies.PreceedingNodes)
+										{
+											if (prevPassId == dep.NodeIndex)
+											{
+												activeDependency = true;
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+						if (activeDependency)
+						{
+							group.QueueWait = true;
+							prevGroup.SignalFence = &group.WaitFence;
+						}
+					}
+				};
+			for (U32 i = 1; i < graph.execGroupCount; ++i)
+			{
+				checkGroupSync(graph.passExecGroups[i].at(0), graph.passExecGroups[i - 1].at(1));
+				checkGroupSync(graph.passExecGroups[i].at(1), graph.passExecGroups[i - 1].at(0));
+			}
+		}
+	}
+
 	BuildResult RenderGraphBuilder::FillPassBarriers(RenderGraph& graph, GraphFinalizeFlags flags) noexcept
 	{
+		ZE_PERF_GUARD("RenderGraphBuilder::FillPassBarriers");
+
 		struct ResourceState
 		{
 			TextureLayout InputLayout;
@@ -596,6 +680,10 @@ namespace ZE::GFX::Pipeline
 			bool AsyncQueue;
 			U32 ExecGroupIndex;
 			U32 PassGroupIndex;
+
+			constexpr RenderGraph::ExecutionGroup& GetExecGroup(RenderGraph& graph) const noexcept { ZE_ASSERT(ExecGroupIndex < graph.execGroupCount, "Incorrect exec group index!"); return graph.passExecGroups[ExecGroupIndex].at(static_cast<U64>(AsyncQueue)); }
+			constexpr RenderGraph::ParallelPassGroup& GetPassGroup(RenderGraph& graph, RenderGraph::ExecutionGroup& execGroup) const noexcept { ZE_ASSERT(PassGroupIndex < execGroup.PassGroupCount, "Incorrect pass group index!"); return execGroup.PassGroups[PassGroupIndex]; }
+			constexpr RenderGraph::ParallelPassGroup& GetPassGroup(RenderGraph& graph) const noexcept { return GetPassGroup(graph, GetExecGroup(graph)); }
 		};
 
 		// Map for quick resolution of RIDs
@@ -606,263 +694,283 @@ namespace ZE::GFX::Pipeline
 
 		// Group all resources into lifetimes based on their usage
 		std::vector<std::map<U32, ResourceState>> resourceLifetimes;
-		resourceLifetimes.resize(computedResources.size());
-		auto gatherResourceUsage = [&](RenderGraph::ExecutionGroup& execGroup, U32 execGroupIndex, bool async) -> BuildResult
-			{
-				auto mergeReadOnlyLayout = [](TextureLayout& current, TextureLayout incoming) -> bool
-					{
-						// If possible then convert common layouts to something more
-						// generic in case of read only texture layouts
-						bool layoutMismatch = true;
-						switch (incoming)
+		{
+			ZE_PERF_GUARD("RenderGraphBuilder::FillPassBarriers - group lifetimes");
+
+			resourceLifetimes.resize(computedResources.size());
+			auto gatherResourceUsage = [&](RenderGraph::ExecutionGroup& execGroup, U32 execGroupIndex, bool async) -> BuildResult
+				{
+					auto mergeReadOnlyLayout = [](TextureLayout& current, TextureLayout incoming) -> bool
 						{
-						case TextureLayout::Common:
-						{
-							switch (current)
-							{
-							case TextureLayout::GenericRead:
-							case TextureLayout::ShaderResource:
-							case TextureLayout::CopySource:
-							{
-								layoutMismatch = false;
-								current = TextureLayout::Common;
-								break;
-							}
-							default:
-								break;
-							}
-							break;
-						}
-						case TextureLayout::GenericRead:
-						case TextureLayout::ShaderResource:
-						case TextureLayout::CopySource:
-						{
-							switch (current)
+							// If possible then convert common layouts to something more
+							// generic in case of read only texture layouts
+							bool layoutMismatch = true;
+							switch (incoming)
 							{
 							case TextureLayout::Common:
 							{
-								layoutMismatch = false;
-								current = TextureLayout::Common;
+								switch (current)
+								{
+								case TextureLayout::GenericRead:
+								case TextureLayout::ShaderResource:
+								case TextureLayout::CopySource:
+								{
+									layoutMismatch = false;
+									current = TextureLayout::Common;
+									break;
+								}
+								default:
+									break;
+								}
 								break;
 							}
 							case TextureLayout::GenericRead:
 							case TextureLayout::ShaderResource:
 							case TextureLayout::CopySource:
 							{
-								layoutMismatch = false;
-								current = TextureLayout::GenericRead;
+								switch (current)
+								{
+								case TextureLayout::Common:
+								{
+									layoutMismatch = false;
+									current = TextureLayout::Common;
+									break;
+								}
+								case TextureLayout::GenericRead:
+								case TextureLayout::ShaderResource:
+								case TextureLayout::CopySource:
+								{
+									layoutMismatch = false;
+									current = TextureLayout::GenericRead;
+									break;
+								}
+								default:
+									break;
+								}
 								break;
 							}
 							default:
 								break;
 							}
-							break;
-						}
-						default:
-							break;
-						}
-						return layoutMismatch;
-					};
-				for (U32 j = 0; j < execGroup.PassGroupCount; ++j)
-				{
-					auto& passGroup = execGroup.PassGroups[j];
-
-					for (U32 k = 0; k < passGroup.PassCount; ++k)
+							return layoutMismatch;
+						};
+					for (U32 j = 0; j < execGroup.PassGroupCount; ++j)
 					{
-						auto& pass = passGroup.Passes[k];
-						auto& computed = computedGraph.at(pass.PassID);
-						auto& renderNode = passDescs.at(pass.PassID).at(computed.NodeGroupIndex);
-						U32 depLevel = dependencyLevels.at(pass.PassID);
+						auto& passGroup = execGroup.PassGroups[j];
 
-						// Go over all input, output and internal resources to asign their layouts
-						for (ResIndex input = 0; input < computed.InputResources.size(); ++input)
+						for (U32 k = 0; k < passGroup.PassCount; ++k)
 						{
-							std::string_view name = computed.InputResources.at(input);
+							auto& pass = passGroup.Passes[k];
+							auto& computed = computedGraph.at(pass.PassID);
+							auto& renderNode = passDescs.at(pass.PassID).at(computed.NodeGroupIndex);
+							U32 depLevel = dependencyLevels.at(pass.PassID);
 
-							if (name != "")
+							// Go over all input, output and internal resources to asign their layouts
+							for (ResIndex input = 0; input < computed.InputResources.size(); ++input)
 							{
-								auto& lifetime = resourceLifetimes.at(resourceLookup.at(name));
-								TextureLayout layout = renderNode.GetInputLayout(input);
+								std::string_view name = computed.InputResources.at(input);
 
-								if (lifetime.contains(depLevel))
+								if (name != "")
 								{
-									auto& entry = lifetime.at(depLevel);
-									if (entry.InputLayout != layout)
+									auto& lifetime = resourceLifetimes.at(resourceLookup.at(name));
+									TextureLayout layout = renderNode.GetInputLayout(input);
+
+									if (lifetime.contains(depLevel))
 									{
-										ZE_CHECK_FAILED_GRAPH_COMPUTE(mergeReadOnlyLayout(entry.InputLayout, layout), ErrorResourceInputLayoutMismatch,
-											"Input resource [" + std::string(name) + "] of pass [" + renderNode.GetFullName() + "] at dependency level " +
-											std::to_string(depLevel) + " is being used in different layouts at the same time!");
+										auto& entry = lifetime.at(depLevel);
+										if (entry.InputLayout != layout)
+										{
+											ZE_CHECK_FAILED_GRAPH_COMPUTE(mergeReadOnlyLayout(entry.InputLayout, layout), ErrorResourceInputLayoutMismatch,
+												"Input resource [" + std::string(name) + "] of pass [" + renderNode.GetFullName() + "] at dependency level " +
+												std::to_string(depLevel) + " is being used in different layouts at the same time!");
+										}
+										entry.PossibleAccess |= GetAccessFromLayout(layout);
+										entry.WorkGfx |= renderNode.IsGfxPass();
+										entry.WorkCompute |= renderNode.IsComputePass();
+										entry.WorkRayTracing |= renderNode.IsRayTracingPass();
+										entry.AsyncQueue |= async;
 									}
-									entry.PossibleAccess |= GetAccessFromLayout(layout);
-									entry.WorkGfx |= renderNode.IsGfxPass();
-									entry.WorkCompute |= renderNode.IsComputePass();
-									entry.WorkRayTracing |= renderNode.IsRayTracingPass();
-									entry.AsyncQueue |= async;
-								}
-								else
-								{
-									lifetime.emplace(depLevel, ResourceState{ layout, TextureLayout::Undefined,
-										GetAccessFromLayout(layout), renderNode.IsGfxPass(), renderNode.IsComputePass(),
-										renderNode.IsRayTracingPass(), async, execGroupIndex, j });
+									else
+									{
+										lifetime.emplace(depLevel, ResourceState{ layout, TextureLayout::Undefined,
+											GetAccessFromLayout(layout), renderNode.IsGfxPass(), renderNode.IsComputePass(),
+											renderNode.IsRayTracingPass(), async, execGroupIndex, j });
+									}
 								}
 							}
-						}
 
-						for (ResIndex output = 0; output < computed.OutputResources.size(); ++output)
-						{
-							std::string_view name = computed.OutputResources.at(output);
-
-							if (name != "")
+							for (ResIndex output = 0; output < computed.OutputResources.size(); ++output)
 							{
-								auto& lifetime = resourceLifetimes.at(resourceLookup.at(name));
-								TextureLayout layout = renderNode.GetOutputLayout(output);
+								std::string_view name = computed.OutputResources.at(output);
 
-								if (lifetime.contains(depLevel))
+								if (name != "")
 								{
-									auto& entry = lifetime.at(depLevel);
-									if (entry.OutputLayout == TextureLayout::Undefined)
-										entry.OutputLayout = layout;
-									else if (entry.OutputLayout != layout)
+									auto& lifetime = resourceLifetimes.at(resourceLookup.at(name));
+									TextureLayout layout = renderNode.GetOutputLayout(output);
+
+									if (lifetime.contains(depLevel))
 									{
-										ZE_CHECK_FAILED_GRAPH_COMPUTE(mergeReadOnlyLayout(entry.OutputLayout, layout), ErrorResourceOutputLayoutMismatch,
-											"Resource [" + std::string(name) + "] outputted by pass [" + renderNode.GetFullName() + "] at dependency level " +
-											std::to_string(depLevel) + " is being used in different layouts at the same time!");
+										auto& entry = lifetime.at(depLevel);
+										if (entry.OutputLayout == TextureLayout::Undefined)
+											entry.OutputLayout = layout;
+										else if (entry.OutputLayout != layout)
+										{
+											ZE_CHECK_FAILED_GRAPH_COMPUTE(mergeReadOnlyLayout(entry.OutputLayout, layout), ErrorResourceOutputLayoutMismatch,
+												"Resource [" + std::string(name) + "] outputted by pass [" + renderNode.GetFullName() + "] at dependency level " +
+												std::to_string(depLevel) + " is being used in different layouts at the same time!");
+										}
+										entry.PossibleAccess |= GetAccessFromLayout(layout);
+										entry.WorkGfx |= renderNode.IsGfxPass();
+										entry.WorkCompute |= renderNode.IsComputePass();
+										entry.WorkRayTracing |= renderNode.IsRayTracingPass();
+										entry.AsyncQueue |= async;
 									}
-									entry.PossibleAccess |= GetAccessFromLayout(layout);
-									entry.WorkGfx |= renderNode.IsGfxPass();
-									entry.WorkCompute |= renderNode.IsComputePass();
-									entry.WorkRayTracing |= renderNode.IsRayTracingPass();
-									entry.AsyncQueue |= async;
-								}
-								else
-								{
-									lifetime.emplace(depLevel, ResourceState{ TextureLayout::Undefined, layout,
-										GetAccessFromLayout(layout), renderNode.IsGfxPass(), renderNode.IsComputePass(),
-										renderNode.IsRayTracingPass(), async, execGroupIndex, j });
+									else
+									{
+										lifetime.emplace(depLevel, ResourceState{ TextureLayout::Undefined, layout,
+											GetAccessFromLayout(layout), renderNode.IsGfxPass(), renderNode.IsComputePass(),
+											renderNode.IsRayTracingPass(), async, execGroupIndex, j });
+									}
 								}
 							}
-						}
 
-						for (ResIndex inner = 0; inner < renderNode.GetInnerBuffers().size(); ++inner)
-						{
-							auto& lifetime = resourceLifetimes.at(resourceLookup.at(renderNode.GetInnerBufferName(inner)));
-							TextureLayout layout = renderNode.GetInnerBufferLayout(inner);
+							for (ResIndex inner = 0; inner < renderNode.GetInnerBuffers().size(); ++inner)
+							{
+								auto& lifetime = resourceLifetimes.at(resourceLookup.at(renderNode.GetInnerBufferName(inner)));
+								TextureLayout layout = renderNode.GetInnerBufferLayout(inner);
 
-							lifetime.emplace(depLevel, ResourceState{ layout, layout,
-								GetAccessFromLayout(layout), renderNode.IsGfxPass(),
-								renderNode.IsComputePass(), renderNode.IsRayTracingPass(),
-								async, execGroupIndex, j });
+								lifetime.emplace(depLevel, ResourceState{ layout, layout,
+									GetAccessFromLayout(layout), renderNode.IsGfxPass(),
+									renderNode.IsComputePass(), renderNode.IsRayTracingPass(),
+									async, execGroupIndex, j });
+							}
 						}
 					}
-				}
-				return BuildResult::Success;
-			};
-		for (U32 i = 0; i < graph.execGroupCount; ++i)
-		{
-			BuildResult result = gatherResourceUsage(graph.passExecGroups[i].at(0), i, false);
-			if (result != BuildResult::Success)
-				return result;
-			if (asyncComputeEnabled)
+					return BuildResult::Success;
+				};
+			for (U32 i = 0; i < graph.execGroupCount; ++i)
 			{
-				result = gatherResourceUsage(graph.passExecGroups[i].at(1), i, true);
+				BuildResult result = gatherResourceUsage(graph.passExecGroups[i].at(0), i, false);
 				if (result != BuildResult::Success)
 					return result;
+				if (asyncComputeEnabled)
+				{
+					result = gatherResourceUsage(graph.passExecGroups[i].at(1), i, true);
+					if (result != BuildResult::Success)
+						return result;
+				}
 			}
 		}
 
 		// Compute what layout changes are needed between resource usages
-		for (RID rid = 0; rid < resourceLifetimes.size(); ++rid)
 		{
-			auto& lifetime = resourceLifetimes.at(rid);
-			ZE_ASSERT(lifetime.size() > 0, "Computing transitions for resource that have no record of usage!");
+			ZE_PERF_GUARD("RenderGraphBuilder::FillPassBarriers - compute transitions");
 
-			// Fix for in/out layouts when resource is used first time or not exposed later directly
-			for (auto& state : lifetime)
+			for (RID rid = 0; rid < resourceLifetimes.size(); ++rid)
 			{
-				if (state.second.InputLayout == TextureLayout::Undefined)
-					state.second.InputLayout = state.second.OutputLayout;
-				if (state.second.OutputLayout == TextureLayout::Undefined)
-					state.second.OutputLayout = state.second.InputLayout;
-			}
+				auto& lifetime = resourceLifetimes.at(rid);
+				ZE_ASSERT(lifetime.size() > 0, "Computing transitions for resource that have no record of usage!");
 
-			auto placeTransition = [&](std::vector<BarrierTransition>& beginBarriers,
-				std::vector<BarrierTransition>& endBarriers, BarrierTransition& barrier, bool noSplitUseEnd)
+				// Fix for in/out layouts when resource is used first time or not exposed later directly
+				for (auto& state : lifetime)
 				{
-					if (noSplitUseEnd || (flags & GraphFinalizeFlag::NoSplitBarriersUseEnd))
-						endBarriers.emplace_back(barrier);
-					else if (flags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
-						beginBarriers.emplace_back(barrier);
-					else
-					{
-						barrier.Type = BarrierType::SplitBegin;
-						beginBarriers.emplace_back(barrier);
-						barrier.Type = BarrierType::SplitEnd;
-						endBarriers.emplace_back(barrier);
-					}
-				};
-			for (auto it = lifetime.begin(); it != lifetime.end(); ++it)
-			{
-				auto next = it;
-				++next;
-				if (next != lifetime.end())
-				{
-					auto& begin = it->second;
-					auto& end = next->second;
-					if (begin.OutputLayout != end.InputLayout)
-					{
-						ZE_CHECK_FAILED_GRAPH_COMPUTE((begin.ExecGroupIndex == end.ExecGroupIndex && (begin.PassGroupIndex >= end.PassGroupIndex || begin.AsyncQueue != end.AsyncQueue))
-							|| begin.ExecGroupIndex > end.ExecGroupIndex, ErrorResourceLayoutChangesInIncorrectOrder,
-							"Layout of the resource [" + std::string(computedResources.at(rid)) + "] changes between incorrect execution groups or pass groups!");
+					if (state.second.InputLayout == TextureLayout::Undefined)
+						state.second.InputLayout = state.second.OutputLayout;
+					if (state.second.OutputLayout == TextureLayout::Undefined)
+						state.second.OutputLayout = state.second.InputLayout;
+				}
 
-						BarrierTransition barrier =
-						{
-							rid, begin.OutputLayout, end.InputLayout,
-							begin.PossibleAccess, end.PossibleAccess,
-							GetSyncFromAccess(begin.PossibleAccess, begin.WorkGfx, begin.WorkCompute, begin.WorkRayTracing),
-							GetSyncFromAccess(end.PossibleAccess, end.WorkGfx, end.WorkCompute, end.WorkRayTracing),
-							BarrierType::Immediate
-						};
-						auto& endExecGroup = graph.passExecGroups[end.ExecGroupIndex].at(static_cast<U64>(end.AsyncQueue));
-
-						if (begin.ExecGroupIndex == end.ExecGroupIndex)
-						{
-							placeTransition(endExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers,
-								endExecGroup.PassGroups[end.PassGroupIndex].StartBarriers, barrier,
-								begin.PassGroupIndex + 1 == end.PassGroupIndex);
-						}
+				auto placeTransition = [&](std::vector<BarrierTransition>& beginBarriers,
+					std::vector<BarrierTransition>& endBarriers, BarrierTransition& barrier, bool noSplitUseEnd)
+					{
+						if (noSplitUseEnd || (flags & GraphFinalizeFlag::NoSplitBarriersUseEnd))
+							endBarriers.emplace_back(barrier);
+						else if (flags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
+							beginBarriers.emplace_back(barrier);
 						else
 						{
-							auto& beginExecGroup = graph.passExecGroups[begin.ExecGroupIndex].at(static_cast<U64>(begin.AsyncQueue));
+							barrier.Type = BarrierType::SplitBegin;
+							beginBarriers.emplace_back(barrier);
+							barrier.Type = BarrierType::SplitEnd;
+							endBarriers.emplace_back(barrier);
+						}
+					};
+				for (auto it = lifetime.begin(); it != lifetime.end(); ++it)
+				{
+					auto next = it;
+					++next;
+					if (next != lifetime.end())
+					{
+						auto& begin = it->second;
+						auto& end = next->second;
+						if (begin.OutputLayout != end.InputLayout)
+						{
+							ZE_CHECK_FAILED_GRAPH_COMPUTE((begin.ExecGroupIndex == end.ExecGroupIndex && (begin.PassGroupIndex >= end.PassGroupIndex || begin.AsyncQueue != end.AsyncQueue))
+								|| begin.ExecGroupIndex > end.ExecGroupIndex, ErrorResourceLayoutChangesInIncorrectOrder,
+								"Layout of the resource [" + std::string(computedResources.at(rid)) + "] changes between incorrect execution groups or pass groups!");
 
-							// Different queues, have to execute transition on starting queue
-							if (begin.AsyncQueue != end.AsyncQueue)
+							BarrierTransition barrier =
 							{
-								// Last group, move barrier to the end barriers section
-								placeTransition(beginExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers,
-									beginExecGroup.EndBarriers, barrier, begin.PassGroupIndex + 1 == beginExecGroup.PassGroupCount);
+								rid, begin.OutputLayout, end.InputLayout,
+								begin.PossibleAccess, end.PossibleAccess,
+								GetSyncFromAccess(begin.PossibleAccess, begin.WorkGfx, begin.WorkCompute, begin.WorkRayTracing),
+								GetSyncFromAccess(end.PossibleAccess, end.WorkGfx, end.WorkCompute, end.WorkRayTracing),
+								BarrierType::Immediate
+							};
+							auto& endExecGroup = end.GetExecGroup(graph);
+							ZE_ASSERT(endExecGroup.PassGroupCount, "Placing barrier in execution group without any passes!");
+
+							if (begin.ExecGroupIndex == end.ExecGroupIndex)
+							{
+								placeTransition(endExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers,
+									end.GetPassGroup(graph, endExecGroup).StartBarriers, barrier,
+									begin.PassGroupIndex + 1 == end.PassGroupIndex);
 							}
 							else
 							{
-								// Last pass group in exec group, prefer using end exec group for possibility of more barriers in one place
-								if (begin.PassGroupIndex + 1 == beginExecGroup.PassGroupCount)
+								auto& beginExecGroup = begin.GetExecGroup(graph);
+								ZE_ASSERT(beginExecGroup.PassGroupCount, "Placing barrier in execution group without any passes!");
+								// Move barrier to the end barriers section
+								const bool lastGroup = begin.PassGroupIndex + 1 == beginExecGroup.PassGroupCount;
+
+								// Different queues, have to execute transition on starting queue
+								if (begin.AsyncQueue != end.AsyncQueue)
 								{
-									placeTransition(endExecGroup.PassGroups[0].StartBarriers,
-										endExecGroup.PassGroups[end.PassGroupIndex].StartBarriers, barrier, false);
+									placeTransition(beginExecGroup.PassGroups[lastGroup ? 0 : begin.PassGroupIndex + 1].StartBarriers,
+										beginExecGroup.EndBarriers, barrier, lastGroup);
 								}
-								else if (flags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
-									beginExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
-								else if (flags & GraphFinalizeFlag::NoSplitBarriersUseEnd)
-									endExecGroup.PassGroups[end.PassGroupIndex].StartBarriers.emplace_back(barrier);
 								else
 								{
-									barrier.Type = BarrierType::SplitBegin;
-									if (flags & GraphFinalizeFlag::CrossExecGroupSplitBarriersUseEndGroup)
+									// Last pass group in exec group, prefer using end exec group for possibility of more barriers in one place
+									if (lastGroup)
+									{
+										placeTransition(endExecGroup.PassGroups[0].StartBarriers,
+											end.GetPassGroup(graph, endExecGroup).StartBarriers, barrier, end.PassGroupIndex == 0);
+									}
+									else if (flags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
 										beginExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
+									else if (flags & GraphFinalizeFlag::NoSplitBarriersUseEnd)
+										end.GetPassGroup(graph, endExecGroup).StartBarriers.emplace_back(barrier);
 									else
-										endExecGroup.PassGroups[0].StartBarriers.emplace_back(barrier);
-
-									barrier.Type = BarrierType::SplitEnd;
-									endExecGroup.PassGroups[end.PassGroupIndex].StartBarriers.emplace_back(barrier);
+									{
+										if (flags & GraphFinalizeFlag::CrossExecGroupSplitBarriersUseEndGroup)
+										{
+											if (end.PassGroupIndex != 0)
+											{
+												barrier.Type = BarrierType::SplitBegin;
+												endExecGroup.PassGroups[0].StartBarriers.emplace_back(barrier);
+												barrier.Type = BarrierType::SplitEnd;
+											}
+											end.GetPassGroup(graph, endExecGroup).StartBarriers.emplace_back(barrier);
+										}
+										else
+										{
+											barrier.Type = BarrierType::SplitBegin;
+											beginExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
+											barrier.Type = BarrierType::SplitEnd;
+											beginExecGroup.EndBarriers.emplace_back(barrier);
+										}
+									}
 								}
 							}
 						}
@@ -872,26 +980,113 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Intial transitions for every resource + end wrapping transitions when resource is temporal
+		ZE_PERF_START("RenderGraphBuilder::FillPassBarriers - initial transitions");
 		for (RID rid = 0; rid < resourceLifetimes.size(); ++rid)
 		{
 			auto& lifetime = resourceLifetimes.at(rid);
 			auto firstUsage = lifetime.begin();
 			auto lastUsage = lifetime.end();
+			ZE_ASSERT(firstUsage->second.GetExecGroup(graph).PassGroupCount, "Placing barrier in execution group without any passes!");
 
 			if (resources.Get(std::string(computedResources.at(rid))).Flags & FrameResourceFlag::Temporal)
 			{
-				TextureLayout first = firstUsage->second.InputLayout;
-				TextureLayout last = lastUsage->second.OutputLayout;
-				if (first != last)
+				TextureLayout firstLayout = firstUsage->second.InputLayout;
+				TextureLayout lastLayout = lastUsage->second.OutputLayout;
+				if (firstLayout != lastLayout)
 				{
+					ZE_ASSERT(lastUsage->second.GetExecGroup(graph).PassGroupCount, "Placing barrier in execution group without any passes!");
+
 					BarrierTransition barrier =
 					{
-						rid, lastUsage->second.OutputLayout, firstUsage->second.InputLayout,
+						rid, lastLayout, firstLayout,
 						lastUsage->second.PossibleAccess, firstUsage->second.PossibleAccess,
 						GetSyncFromAccess(lastUsage->second.PossibleAccess, lastUsage->second.WorkGfx, lastUsage->second.WorkCompute, lastUsage->second.WorkRayTracing),
 						GetSyncFromAccess(firstUsage->second.PossibleAccess, firstUsage->second.WorkGfx, firstUsage->second.WorkCompute, firstUsage->second.WorkRayTracing),
 						BarrierType::Immediate
 					};
+
+					// Everything is reversed in comparison to normal resources
+					if (flags & GraphFinalizeFlag::InitializeResourcesWhereMostBarriers)
+					{
+						U32 maxCount = 0;
+						U32 maxExecGroupIndex = 0, maxPassGroupIndex = 0;
+						bool useEndBarriers = false;
+						for (U32 index = graph.execGroupCount, first = lastUsage->second.ExecGroupIndex; index > first;)
+						{
+							auto& group = graph.passExecGroups[--index].at(static_cast<U64>(lastUsage->second.AsyncQueue));
+							if (group.PassGroupCount > 0)
+							{
+								if (index != first && Utils::SafeCast<U32>(group.EndBarriers.size()) >= maxCount)
+								{
+									maxCount = Utils::SafeCast<U32>(group.EndBarriers.size());
+									maxExecGroupIndex = index;
+									maxPassGroupIndex = 0;
+									useEndBarriers = true;
+								}
+
+								// If firstt group then move only down to the target pass
+								for (U32 i = group.PassGroupCount, firstPass = index == first ? lastUsage->second.PassGroupIndex + 1 : 0; i > firstPass;)
+								{
+									// Greater or equal since moving closer to final pass will only benefit barriers
+									if (Utils::SafeCast<U32>(group.PassGroups[--i].StartBarriers.size()) >= maxCount)
+									{
+										maxCount = Utils::SafeCast<U32>(group.PassGroups[i].StartBarriers.size());
+										maxExecGroupIndex = index;
+										maxPassGroupIndex = i;
+										useEndBarriers = false;
+									}
+								}
+							}
+						}
+						if (maxCount == 0)
+						{
+							auto& group = lastUsage->second.GetExecGroup(graph);
+							if (lastUsage->second.PassGroupIndex + 1 == group.PassGroupCount)
+								group.EndBarriers.emplace_back(barrier);
+							else
+								group.PassGroups[lastUsage->second.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
+						}
+						else if (useEndBarriers)
+							graph.passExecGroups[maxExecGroupIndex].at(static_cast<U64>(lastUsage->second.AsyncQueue)).EndBarriers.emplace_back(barrier);
+						else
+							graph.passExecGroups[maxExecGroupIndex].at(static_cast<U64>(lastUsage->second.AsyncQueue)).PassGroups[maxPassGroupIndex].StartBarriers.emplace_back(barrier);
+					}
+					else if (flags & GraphFinalizeFlag::InitializeResourcesBeforePass)
+					{
+						auto& group = lastUsage->second.GetExecGroup(graph);
+						if (lastUsage->second.PassGroupIndex + 1 == group.PassGroupCount)
+							group.EndBarriers.emplace_back(barrier);
+						else
+							group.PassGroups[lastUsage->second.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
+					}
+					else if (flags & GraphFinalizeFlag::InitializeResourcesSplitBarrier)
+					{
+						auto& group = lastUsage->second.GetExecGroup(graph);
+						if (lastUsage->second.PassGroupIndex + 1 != group.PassGroupCount)
+						{
+							barrier.Type = BarrierType::SplitBegin;
+							group.PassGroups[lastUsage->second.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
+							barrier.Type = BarrierType::SplitEnd;
+						}
+						group.EndBarriers.emplace_back(barrier);
+					}
+					else // InitializeResourcesFrameStart
+					{
+						// Check for further exec groups to have any passes to perform work on given queue
+						bool notPlaced = true;
+						for (U32 index = graph.execGroupCount - 1, first = lastUsage->second.ExecGroupIndex; index > first; --index)
+						{
+							auto& group = graph.passExecGroups[index].at(static_cast<U64>(lastUsage->second.AsyncQueue));
+							if (group.PassGroupCount > 0)
+							{
+								group.EndBarriers.emplace_back(barrier);
+								notPlaced = false;
+								break;
+							}
+						}
+						if (notPlaced)
+							lastUsage->second.GetExecGroup(graph).EndBarriers.emplace_back(barrier);
+					}
 				}
 			}
 			else
@@ -904,6 +1099,94 @@ namespace ZE::GFX::Pipeline
 					GetSyncFromAccess(firstUsage->second.PossibleAccess, firstUsage->second.WorkGfx, firstUsage->second.WorkCompute, firstUsage->second.WorkRayTracing),
 					BarrierType::Immediate
 				};
+
+				if (flags & GraphFinalizeFlag::InitializeResourcesWhereMostBarriers)
+				{
+					U32 maxCount = 0;
+					U32 maxExecGroupIndex = 0, maxPassGroupIndex = 0;
+					bool useEndBarriers = false;
+					for (U32 index = 0, last = firstUsage->second.ExecGroupIndex; index <= last; ++index)
+					{
+						auto& group = graph.passExecGroups[index].at(static_cast<U64>(firstUsage->second.AsyncQueue));
+						if (group.PassGroupCount > 0)
+						{
+							// If last group then move only up to the target pass
+							for (U32 i = 0, size = index == last ? firstUsage->second.PassGroupIndex + 1 : group.PassGroupCount; i < size; ++i)
+							{
+								// Greater or equal since moving closer to final pass will only benefit barriers
+								if (Utils::SafeCast<U32>(group.PassGroups[i].StartBarriers.size()) >= maxCount)
+								{
+									maxCount = Utils::SafeCast<U32>(group.PassGroups[i].StartBarriers.size());
+									maxExecGroupIndex = index;
+									maxPassGroupIndex = i;
+									useEndBarriers = false;
+								}
+							}
+							if (index != last && Utils::SafeCast<U32>(group.EndBarriers.size()) >= maxCount)
+							{
+								maxCount = Utils::SafeCast<U32>(group.EndBarriers.size());
+								maxExecGroupIndex = index;
+								maxPassGroupIndex = 0;
+								useEndBarriers = true;
+							}
+						}
+					}
+					if (maxCount == 0)
+						firstUsage->second.GetPassGroup(graph).StartBarriers.emplace_back(barrier);
+					else if (useEndBarriers)
+						graph.passExecGroups[maxExecGroupIndex].at(static_cast<U64>(firstUsage->second.AsyncQueue)).EndBarriers.emplace_back(barrier);
+					else
+						graph.passExecGroups[maxExecGroupIndex].at(static_cast<U64>(firstUsage->second.AsyncQueue)).PassGroups[maxPassGroupIndex].StartBarriers.emplace_back(barrier);
+				}
+				else if (flags & GraphFinalizeFlag::InitializeResourcesBeforePass)
+					firstUsage->second.GetPassGroup(graph).StartBarriers.emplace_back(barrier);
+				else if (flags & GraphFinalizeFlag::InitializeResourcesSplitBarrier)
+				{
+					if (firstUsage->second.PassGroupIndex != 0)
+					{
+						barrier.Type = BarrierType::SplitBegin;
+						firstUsage->second.GetExecGroup(graph).PassGroups[0].StartBarriers.emplace_back(barrier);
+						barrier.Type = BarrierType::SplitEnd;
+					}
+					firstUsage->second.GetPassGroup(graph).StartBarriers.emplace_back(barrier);
+				}
+				else // InitializeResourcesFrameStart
+				{
+					// Check for previous exec groups to have any passes to perform work on given queue
+					bool notPlaced = true;
+					for (U32 index = 0, last = firstUsage->second.ExecGroupIndex; index < last; ++index)
+					{
+						auto& group = graph.passExecGroups[index].at(static_cast<U64>(firstUsage->second.AsyncQueue));
+						if (group.PassGroupCount > 0)
+						{
+							group.PassGroups[0].StartBarriers.emplace_back(barrier);
+							notPlaced = false;
+							break;
+						}
+					}
+					if (notPlaced)
+						firstUsage->second.GetExecGroup(graph).PassGroups[0].StartBarriers.emplace_back(barrier);
+				}
+			}
+		}
+		ZE_PERF_STOP();
+
+		// Insert transition to the present state at the end of the graph if required
+		if (!(flags & GraphFinalizeFlag::NoPresentBarrier))
+		{
+			auto& lastUsage = resourceLifetimes.at(BACKBUFFER_RID).rbegin()->second;
+			TextureLayout lastLayout = lastUsage.OutputLayout;
+			if (lastLayout != TextureLayout::Present)
+			{
+				BarrierTransition barrier =
+				{
+					BACKBUFFER_RID, lastLayout, TextureLayout::Present,
+					lastUsage.PossibleAccess, static_cast<ResourceAccesses>(ResourceAccess::Common),
+					GetSyncFromAccess(lastUsage.PossibleAccess, lastUsage.WorkGfx, lastUsage.WorkCompute, lastUsage.WorkRayTracing),
+					static_cast<StageSyncs>(StageSync::AllGraphics),
+					BarrierType::Immediate
+				};
+				lastUsage.GetExecGroup(graph).EndBarriers.emplace_back(barrier);
 			}
 		}
 
@@ -912,6 +1195,8 @@ namespace ZE::GFX::Pipeline
 
 	BuildResult RenderGraphBuilder::LoadConfig(const RenderGraphDesc& desc) noexcept
 	{
+		ZE_PERF_GUARD("RenderGraphBuilder::LoadConfig");
+
 		// Clear previous config on start for sanity
 		ClearConfig();
 
@@ -951,33 +1236,38 @@ namespace ZE::GFX::Pipeline
 			|| passDescs.size() != renderGraphDepList.size() || passDescs.size() != topoplogyOrder.size(),
 			ErrorConfigNotLoaded, "Computing render graph while no config has been properly loaded!");
 
+		ZE_PERF_GUARD("RenderGraphBuilder::ComputeGraph");
 		ClearComputedGraph();
 
 		// Check for presence of nodes in current configuration, first by evaluation value
 		std::vector<PresenceInfo> presentNodes(passDescs.size());
-		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
-			const auto& passGroup = passDescs.at(i);
-			for (U32 j = 0; j < passGroup.size(); ++j)
+			ZE_PERF_GUARD("RenderGraphBuilder::ComputeGraph - evaluate nodes");
+			for (U32 i = 0; i < passDescs.size(); ++i)
 			{
-				const auto& pass = passGroup.at(j);
-				if (pass.GetExecType() == PassExecutionType::DynamicProcessor
-					|| pass.GetDesc().Evaluate == nullptr || pass.GetDesc().Evaluate())
+				const auto& passGroup = passDescs.at(i);
+				for (U32 j = 0; j < passGroup.size(); ++j)
 				{
-					auto& node = presentNodes.at(i);
+					const auto& pass = passGroup.at(j);
+					if (pass.GetExecType() == PassExecutionType::DynamicProcessor
+						|| pass.GetDesc().Evaluate == nullptr || pass.GetDesc().Evaluate())
+					{
+						auto& node = presentNodes.at(i);
 
-					ZE_CHECK_FAILED_GRAPH_COMPUTE(node.Present, ErrorMultiplePresentPassesWithSameConnectorName,
-						"Found multiple passes in same connector group that are present at the same time! Wrong passes: [" +
-						passDescs.at(i).at(node.NodeGroupIndex).GetFullName() + "], [" + passDescs.at(i).at(j).GetFullName() + "].");
+						ZE_CHECK_FAILED_GRAPH_COMPUTE(node.Present, ErrorMultiplePresentPassesWithSameConnectorName,
+							"Found multiple passes in same connector group that are present at the same time! Wrong passes: [" +
+							passDescs.at(i).at(node.NodeGroupIndex).GetFullName() + "], [" + passDescs.at(i).at(j).GetFullName() + "].");
 
-					node.Present = true;
-					node.ActiveInputProducerPresent = node.ProducerChecked = pass.GetExecType() == PassExecutionType::Producer;
-					node.NodeGroupIndex = j;
+						node.Present = true;
+						node.ActiveInputProducerPresent = node.ProducerChecked = pass.GetExecType() == PassExecutionType::Producer;
+						node.NodeGroupIndex = j;
+					}
 				}
 			}
 		}
 
 		// Create adjacency graph for current configuration from dependency lists
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - create adjacency graph");
 		std::vector<std::vector<U32>> graphList(passDescs.size());
 		for (U32 i = 0; i < graphList.size(); ++i)
 		{
@@ -986,8 +1276,10 @@ namespace ZE::GFX::Pipeline
 				graphList.at(prevNode.NodeIndex).emplace_back(i);
 			}
 		}
+		ZE_PERF_STOP();
 
 		// Check present processor nodes if they have all required input from producers and if their output is consumed by some producers
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - compute graph culling");
 		for (U32 i = 0; i < presentNodes.size(); ++i)
 		{
 			auto& node = presentNodes.at(i);
@@ -999,8 +1291,10 @@ namespace ZE::GFX::Pipeline
 					CheckNodeConsumerPresence(i, presentNodes, graphList);
 			}
 		}
+		ZE_PERF_STOP();
 
 		// Only passes with both input and outputs will be present in the computed graph
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - cull graph");
 		computedGraph.resize(passDescs.size());
 		for (U32 i = 0; i < computedGraph.size(); ++i)
 		{
@@ -1013,104 +1307,110 @@ namespace ZE::GFX::Pipeline
 				computedNode.Present = computedNode.Present && presence.ActiveInputProducerPresent && presence.ActiveOutputProducerPresent;
 		}
 		presentNodes.clear();
+		ZE_PERF_STOP();
 
 		// Fill real in/out resources and dependency levels
-		dependencyLevels.resize(passDescs.size(), 0);
-		dependencyLevelCount = 0;
-		for (U32 node : topoplogyOrder)
 		{
-			auto& computed = computedGraph.at(node);
-			const auto& renderNode = passDescs.at(node).at(computed.NodeGroupIndex);
-			const auto& dependencies = renderGraphDepList.at(node).NodesDependecies.at(computed.NodeGroupIndex).PreceedingNodes;
+			ZE_PERF_GUARD("RenderGraphBuilder::ComputeGraph - fill resources");
 
-			std::vector<std::string> originalInputs;
-			originalInputs.reserve(renderNode.GetInputs().size());
-			computed.InputResources.reserve(renderNode.GetInputs().size());
-
-			// Find all input resources in current configuration
-			for (ResIndex i = 0, size = Utils::SafeCast<ResIndex>(renderNode.GetInputs().size()); i < size; ++i)
+			dependencyLevels.resize(passDescs.size(), 0);
+			dependencyLevelCount = 0;
+			for (U32 node : topoplogyOrder)
 			{
-				const auto& input = renderNode.GetInputs().at(i);
+				auto& computed = computedGraph.at(node);
+				const auto& renderNode = passDescs.at(node).at(computed.NodeGroupIndex);
+				const auto& dependencies = renderGraphDepList.at(node).NodesDependecies.at(computed.NodeGroupIndex).PreceedingNodes;
 
-				// Get name of the input pass and find it
-				std::deque<std::string_view> split = Utils::SplitString(input, ".");
-				ZE_CHECK_FAILED_GRAPH_COMPUTE(split.size() != 2, ErrorPassInputIncorrectFormat,
-					"Input of pass [" + renderNode.GetFullName() + "] is in incorrect format [" + input + "]!");
+				std::vector<std::string> originalInputs;
+				originalInputs.reserve(renderNode.GetInputs().size());
+				computed.InputResources.reserve(renderNode.GetInputs().size());
 
-				auto it = std::find_if(dependencies.begin(), dependencies.end(), [&](const GraphConnection& dep)
-					{
-						return passDescs.at(dep.NodeIndex).at(computedGraph.at(dep.NodeIndex).NodeGroupIndex).GetGraphConnectorName() == split.at(0);
-					});
-				ZE_CHECK_FAILED_GRAPH_COMPUTE(it == dependencies.end(), ErrorPassNameNotFound,
-					"Cannot find dependency [" + std::string(split.at(0)) + "] of pass [" + renderNode.GetFullName() + "]!");
-
-				// Check which output matches current input
-				const auto& prevComputed = computedGraph.at(it->NodeIndex);
-				const auto& prevNode = passDescs.at(it->NodeIndex).at(prevComputed.NodeGroupIndex);
-				for (ResIndex j = 0, outSize = Utils::SafeCast<ResIndex>(prevNode.GetOutputs().size()); j < outSize; ++j)
+				// Find all input resources in current configuration
+				for (ResIndex i = 0, size = Utils::SafeCast<ResIndex>(renderNode.GetInputs().size()); i < size; ++i)
 				{
-					if (prevNode.GetOutputs().at(j) == input)
-					{
-						originalInputs.emplace_back(prevNode.GetOutputResources().at(j));
-						computed.InputResources.emplace_back(prevComputed.OutputResources.at(j));
+					const auto& input = renderNode.GetInputs().at(i);
 
-						ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
-							ErrorMissingNonOptionalInput, "Input [" + input + "] of pass [" + renderNode.GetFullName() + "] is missing it's resource!");
-						break;
+					// Get name of the input pass and find it
+					std::deque<std::string_view> split = Utils::SplitString(input, ".");
+					ZE_CHECK_FAILED_GRAPH_COMPUTE(split.size() != 2, ErrorPassInputIncorrectFormat,
+						"Input of pass [" + renderNode.GetFullName() + "] is in incorrect format [" + input + "]!");
+
+					auto it = std::find_if(dependencies.begin(), dependencies.end(), [&](const GraphConnection& dep)
+						{
+							return passDescs.at(dep.NodeIndex).at(computedGraph.at(dep.NodeIndex).NodeGroupIndex).GetGraphConnectorName() == split.at(0);
+						});
+					ZE_CHECK_FAILED_GRAPH_COMPUTE(it == dependencies.end(), ErrorPassNameNotFound,
+						"Cannot find dependency [" + std::string(split.at(0)) + "] of pass [" + renderNode.GetFullName() + "]!");
+
+					// Check which output matches current input
+					const auto& prevComputed = computedGraph.at(it->NodeIndex);
+					const auto& prevNode = passDescs.at(it->NodeIndex).at(prevComputed.NodeGroupIndex);
+					for (ResIndex j = 0, outSize = Utils::SafeCast<ResIndex>(prevNode.GetOutputs().size()); j < outSize; ++j)
+					{
+						if (prevNode.GetOutputs().at(j) == input)
+						{
+							originalInputs.emplace_back(prevNode.GetOutputResources().at(j));
+							computed.InputResources.emplace_back(prevComputed.OutputResources.at(j));
+
+							ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
+								ErrorMissingNonOptionalInput, "Input [" + input + "] of pass [" + renderNode.GetFullName() + "] is missing it's resource!");
+							break;
+						}
 					}
 				}
-			}
-			ZE_CHECK_FAILED_GRAPH_COMPUTE(originalInputs.size() != renderNode.GetInputs().size(), ErrorNotAllInputsFound,
-				"Cannot find al inputs for pass [" + renderNode.GetFullName() + "]!");
+				ZE_CHECK_FAILED_GRAPH_COMPUTE(originalInputs.size() != renderNode.GetInputs().size(), ErrorNotAllInputsFound,
+					"Cannot find al inputs for pass [" + renderNode.GetFullName() + "]!");
 
-			// Determine which output resources will be present
-			computed.OutputResources.reserve(renderNode.GetOutputResources().size());
-			for (ResIndex i = 0, size = Utils::SafeCast<ResIndex>(renderNode.GetOutputResources().size()); i < size; ++i)
-			{
-				const auto& output = renderNode.GetOutputResources().at(i);
-				const auto& replacement = renderNode.GetOutputReplacementResources().at(i);
-
-				auto it = std::find(originalInputs.begin(), originalInputs.end(), output);
-				if (computed.Present)
+				// Determine which output resources will be present
+				computed.OutputResources.reserve(renderNode.GetOutputResources().size());
+				for (ResIndex i = 0, size = Utils::SafeCast<ResIndex>(renderNode.GetOutputResources().size()); i < size; ++i)
 				{
-					if (it != originalInputs.end())
+					const auto& output = renderNode.GetOutputResources().at(i);
+					const auto& replacement = renderNode.GetOutputReplacementResources().at(i);
+
+					auto it = std::find(originalInputs.begin(), originalInputs.end(), output);
+					if (computed.Present)
+					{
+						if (it != originalInputs.end())
+						{
+							computed.OutputResources.emplace_back(computed.InputResources.at(std::distance(originalInputs.begin(), it)));
+						}
+						else
+						{
+							computed.OutputResources.emplace_back(output);
+						}
+					}
+					else if (replacement != "")
+					{
+						computed.OutputResources.emplace_back(replacement);
+					}
+					else if (it != originalInputs.end())
 					{
 						computed.OutputResources.emplace_back(computed.InputResources.at(std::distance(originalInputs.begin(), it)));
 					}
 					else
 					{
-						computed.OutputResources.emplace_back(output);
+						computed.OutputResources.emplace_back();
 					}
 				}
-				else if (replacement != "")
-				{
-					computed.OutputResources.emplace_back(replacement);
-				}
-				else if (it != originalInputs.end())
-				{
-					computed.OutputResources.emplace_back(computed.InputResources.at(std::distance(originalInputs.begin(), it)));
-				}
-				else
-				{
-					computed.OutputResources.emplace_back();
-				}
-			}
 
-			// Compute longest path for each node as it's dependency level
-			U32 nodeLevel = dependencyLevels.at(node);
-			for (U32 adjNode : graphList.at(node))
-			{
-				if (dependencyLevels.at(adjNode) <= nodeLevel)
-					dependencyLevels.at(adjNode) = nodeLevel + 1;
-				if (dependencyLevels.at(adjNode) > dependencyLevelCount)
-					dependencyLevelCount = dependencyLevels.at(adjNode);
+				// Compute longest path for each node as it's dependency level
+				U32 nodeLevel = dependencyLevels.at(node);
+				for (U32 adjNode : graphList.at(node))
+				{
+					if (dependencyLevels.at(adjNode) <= nodeLevel)
+						dependencyLevels.at(adjNode) = nodeLevel + 1;
+					if (dependencyLevels.at(adjNode) > dependencyLevelCount)
+						dependencyLevelCount = dependencyLevels.at(adjNode);
+				}
 			}
+			++dependencyLevelCount;
 		}
-		++dependencyLevelCount;
 
 		// Minimize distances between nodes when possible
 		if (minimizeDistances)
 		{
+			ZE_PERF_GUARD("RenderGraphBuilder::ComputeGraph - minimize distances");
 			for (auto& list : graphList)
 				list.clear();
 			for (U32 i = 0; i < renderGraphDepList.size(); ++i)
@@ -1133,6 +1433,7 @@ namespace ZE::GFX::Pipeline
 		graphList.clear();
 
 		// Mark active resources with correct flags
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - get resources flags");
 		auto getFlagsFromLayout = [](TextureLayout layout) -> FrameResourceFlags
 			{
 				FrameResourceFlags flags = static_cast<FrameResourceFlags>(FrameResourceFlag::InternalResourceActive);
@@ -1186,7 +1487,9 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 		}
+		ZE_PERF_STOP();
 
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - check correct resources flags");
 		BuildResult result = BuildResult::Success;
 		resources.TransformCheck([&result](const std::string& name, const FrameResourceDesc& res) -> bool
 			{
@@ -1217,20 +1520,29 @@ namespace ZE::GFX::Pipeline
 				}
 				return false;
 			});
+		ZE_PERF_STOP();
+
+		if (result != BuildResult::Success)
+		{
+			ClearComputedGraph();
+			return result;
+		}
 
 		// Get final list of resources
+		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - set final resources list");
 		computedResources.emplace_back(BACKBUFFER_NAME);
 		resources.Transform([&](const std::string& name, const FrameResourceDesc& res)
 			{
 				if ((res.Flags & FrameResourceFlag::InternalResourceActive) && name != BACKBUFFER_NAME)
 					computedResources.emplace_back(name);
 			});
+		ZE_PERF_STOP();
 
 		// TODO: need to have update path when FFX SDK requests new buffers as it happens not during graph recompilation but after
 		//       initializing it's internal structures where buffers are "created" (added to list for next recompile)
 		//       either run the compute step after initializing all the new render passes or make a path for resource only update
 
-		return result;
+		return BuildResult::Success;
 	}
 
 	BuildResult RenderGraphBuilder::FinalizeGraph(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc, GraphFinalizeFlags flags)
@@ -1247,6 +1559,8 @@ namespace ZE::GFX::Pipeline
 			if (result != BuildResult::Success)
 				return result;
 		}
+
+		ZE_PERF_GUARD("RenderGraphBuilder::FinalizeGraph");
 		Device& dev = gfx.GetDevice();
 
 		// Create GPU buffers
@@ -1266,9 +1580,13 @@ namespace ZE::GFX::Pipeline
 		// Initialize passes structure
 		GroupRenderPasses(dev, assets, graph, desc);
 
+		// Check for sync dependencies between execution groups
+		ComputeGroupSyncs(graph);
+
 		// Skip computation of barriers where not required
 		if (Settings::GetGfxApi() != GfxApiType::DX11 && Settings::GetGfxApi() != GfxApiType::OpenGL)
 			return FillPassBarriers(graph, flags);
+
 		return BuildResult::Success;
 	}
 

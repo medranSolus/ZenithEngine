@@ -217,8 +217,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			RenderNode node("lambertianComputeCopy", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Processor);
 			node.AddInput("lambertian.DS", TextureLayout::CopySource);
 			node.AddInput("lambertian.GB_N", TextureLayout::CopySource);
-			node.AddOutput("DS", TextureLayout::CopyDest, "gbuffDepthCompute");
-			node.AddOutput("GB_N", TextureLayout::CopyDest, "gbuffNormalCompute");
+			node.AddOutput("DS", TextureLayout::CopyDest, "gbuffDepthCompute", "gbuffDepth");
+			node.AddOutput("GB_N", TextureLayout::CopyDest, "gbuffNormalCompute", "gbuffNormal");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 #pragma endregion

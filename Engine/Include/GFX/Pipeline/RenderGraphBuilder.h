@@ -10,14 +10,14 @@ namespace ZE::GFX::Pipeline
 	// Additional flags for controlling behavior during construction of render graph
 	enum class GraphFinalizeFlag : GraphFinalizeFlags
 	{
-		// When initializing resources put their barriers on start of the frame (default)
+		// When initializing resources put their barriers on start of the frame or any preceeding execution group (default)
 		InitializeResourcesFrameStart = 0x01,
 		// When initializing resources put their barriers just before their first usage
 		InitializeResourcesBeforePass = 0x02,
 		// When initializing resources put their barriers where most of the barriers are currently performed
 		InitializeResourcesWhereMostBarriers = 0x04,
 		// By default initialization barriers are BarrierType::Immediate in chosen place
-		// but this option performs split barrier between start of the frame and first resource usage (if possible)
+		// but this option performs split barrier between start of the execution group and first resource usage (if possible)
 		InitializeResourcesSplitBarrier = 0x08,
 		// Don't perform split barriers for transitions, use identified BarrierType::SplitBegin location
 		NoSplitBarriersUseBegin = 0x10,
@@ -25,6 +25,8 @@ namespace ZE::GFX::Pipeline
 		NoSplitBarriersUseEnd = 0x20,
 		// In case of split barriers performed between 2 execution groups on same queue prefer using second group to place barriers
 		CrossExecGroupSplitBarriersUseEndGroup = 0x40,
+		// Don't transition backbuffer to the present state at the end of the graph execution
+		NoPresentBarrier = 0x80,
 	};
 	ZE_ENUM_OPERATORS(GraphFinalizeFlag, GraphFinalizeFlags);
 
@@ -95,6 +97,7 @@ namespace ZE::GFX::Pipeline
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
 		FrameBufferDesc GetFrameBufferLayout() const noexcept;
 		void GroupRenderPasses(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph, const RenderGraphDesc& desc) const;
+		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;
 		BuildResult FillPassBarriers(class RenderGraph& graph, GraphFinalizeFlags flags) noexcept;
 
 	public:
