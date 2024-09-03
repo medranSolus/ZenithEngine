@@ -42,7 +42,6 @@ namespace ZE
 		PlatformPerf platformImpl;
 
 #if _ZE_MODE_PROFILE
-		void Save();
 		U64& CreateStartStamp(const std::string& sectionTag) noexcept;
 		long double SaveStopStamp(long double frequency, U64 stamp) noexcept;
 #endif
@@ -67,6 +66,7 @@ namespace ZE
 		long double Stop() noexcept;
 		// Use for measuring short periods of time as it gets raw data based on RDTSC
 		long double StopShort() noexcept;
+		void Save();
 		U64 GetSectionCallCount(const std::string& sectionTag) noexcept;
 #endif
 	};

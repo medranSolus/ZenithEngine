@@ -190,7 +190,7 @@ namespace ZE::Math
 	template<typename T>
 	constexpr T Sign(T val) noexcept
 	{
-		return (static_cast<T>(0) < val) - (val < static_cast<T>(0));
+		return static_cast<T>((static_cast<T>(0) < val) - (val < static_cast<T>(0)));
 	}
 
 	Float3 GetEulerAngles(const Float4& rotor) noexcept;
