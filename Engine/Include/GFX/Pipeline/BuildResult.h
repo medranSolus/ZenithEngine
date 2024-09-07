@@ -27,6 +27,7 @@ namespace ZE::GFX::Pipeline
 		ErrorWrongResourceConfiguration,
 		ErrorPassExecutionCallbackNotProvided,
 		ErrorPassFreeInitDataCallbackNotProvided,
+		ErrorPassCopyInitDataCallbackNotProvided,
 		ErrorPassInitCallbackNotProvided,
 		ErrorResourceInputLayoutMismatch,
 		ErrorResourceOutputLayoutMismatch,
@@ -62,7 +63,12 @@ namespace ZE::GFX::Pipeline
 			DECODE(ErrorIncorrectResourceFormat, "Resource format is not supported for current resource usage in graph");
 			DECODE(ErrorWrongResourceConfiguration, "Wrong configuration flags for resource");
 			DECODE(ErrorPassExecutionCallbackNotProvided, "No execution callback for given render pass");
+			DECODE(ErrorPassFreeInitDataCallbackNotProvided, "No callback provided to clean init data for given render pass");
+			DECODE(ErrorPassCopyInitDataCallbackNotProvided, "No callback provided to copy init data for given render pass");
 			DECODE(ErrorPassInitCallbackNotProvided, "No initialization callback for given render pass while init data has been provided");
+			DECODE(ErrorResourceInputLayoutMismatch, "Trying to use same resource with different input layouts at the same time");
+			DECODE(ErrorResourceOutputLayoutMismatch, "Trying to use same resource with different output layouts at the same time");
+			DECODE(ErrorResourceLayoutChangesInIncorrectOrder, "Trying to change layout between wrong order of passes or execution groups");
 		}
 #undef DECODE
 	}

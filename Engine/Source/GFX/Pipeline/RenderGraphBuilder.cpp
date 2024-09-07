@@ -117,7 +117,9 @@ namespace ZE::GFX::Pipeline
 					"Execution callback missing in [" + node.GetFullName() + "]!");
 				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().FreeInitData, ErrorPassFreeInitDataCallbackNotProvided,
 					"FreeInitData callback missing in [" + node.GetFullName() + "]!");
-				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().Init, ErrorPassFreeInitDataCallbackNotProvided,
+				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().CopyInitData, ErrorPassCopyInitDataCallbackNotProvided,
+					"CopyInitData callback missing in [" + node.GetFullName() + "]!");
+				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().Init, ErrorPassInitCallbackNotProvided,
 					"Init callback missing in [" + node.GetFullName() + "] while initialization data has been provided!");
 
 				// Check if pass with same connector name is not already in the database
