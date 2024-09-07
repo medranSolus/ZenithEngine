@@ -1565,7 +1565,7 @@ namespace ZE::GFX::Pipeline
 
 		// Create GPU buffers
 		graph.execData.DynamicBuffer = &gfx.GetDynamicBuffer();
-		//graph.execData.Buffers.Init(dev, GetFrameBufferLayout());
+		graph.execData.Buffers.Init(dev, GetFrameBufferLayout());
 
 		// Send to GPU new graph data
 		graph.execData.CustomData = desc.PassCustomData;

@@ -1,5 +1,5 @@
 #pragma once
-#include "PixelFormat.h"
+#include "Settings.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -71,7 +71,36 @@ namespace ZE::GFX::Pipeline
 #if _ZE_DEBUG_GFX_NAMES
 		std::string DebugName = "";
 #endif
+
+		constexpr UInt2 GetResolutionAdjustedSizes() const noexcept;
 	};
+
+#pragma region Functions
+	constexpr UInt2 FrameResourceDesc::GetResolutionAdjustedSizes() const noexcept
+	{
+		if (Flags & (FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncRenderSize))
+		{
+			ZE_ASSERT(((Flags & FrameResourceFlag::SyncDisplaySize) != 0) != ((Flags & FrameResourceFlag::SyncRenderSize) != 0),
+				"Cannot synchronize frame resource size to display and render size at the same time!");
+			ZE_ASSERT(!(((Flags & FrameResourceFlag::SyncScalingMultiply) != 0) && ((Flags & FrameResourceFlag::SyncScalingDivide) != 0)),
+				"Cannot use frame resource synchronization factor as multiplier and divider at the same time!");
+
+			UInt2 baseSize = Flags & FrameResourceFlag::SyncDisplaySize ? Settings::DisplaySize : Settings::RenderSize;
+			if (Flags & FrameResourceFlag::SyncScalingMultiply)
+			{
+				ZE_ASSERT_WARN(Sizes.X != 0 || Sizes.Y != 0, "Warning, resolution multiplication scaling factor contains zero!");
+				return { baseSize.X * Sizes.X, baseSize.Y * Sizes.Y };
+			}
+			if (Flags & FrameResourceFlag::SyncScalingDivide)
+			{
+				ZE_ASSERT(Sizes.X != 0 || Sizes.Y != 0, "Resolution division scaling factor contains zero!");
+				return { baseSize.X / Sizes.X, baseSize.Y / Sizes.Y };
+			}
+			return baseSize;
+		}
+		return Sizes;
+	}
+#pragma endregion
 }
 
 #if _ZE_DEBUG_GFX_NAMES

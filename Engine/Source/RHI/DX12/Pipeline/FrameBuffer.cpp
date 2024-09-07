@@ -76,42 +76,45 @@ namespace ZE::RHI::DX12::Pipeline
 			// No resource aliasing so place all of the one after another
 			for (; resBegin != resEnd; ++resBegin)
 			{
+				// Make sure that current offset will be aligned
+				heapChunks = Math::AlignUp(heapChunks, Utils::SafeCast<U32>(resBegin->Desc.Alignment / D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
 				resBegin->ChunkOffset = heapChunks;
 				heapChunks += resBegin->Chunks;
 			}
 		}
 		else
 		{
-			// Find max size of the heap
-			U32 maxChunks = 0;
-			for (auto it = resBegin; it != resEnd; ++it)
-				maxChunks += it->Chunks;
-
 			// Find free memory regions for resources
-			std::vector<RID> memory(maxChunks * levelCount, INVALID_RID);
+			std::vector<RID> memory;
+			U32 allocatedChunks = 0;
 			for (auto it = resBegin; it != resEnd; ++it)
 			{
+				const U32 chunkAlignment = Utils::SafeCast<U32>(it->Desc.Alignment / D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT);
+				// TODO: maybe treat temporals differently in terms of search
+				// (push at the front or end but what if different alignments)
 				U32 startLevel = 0, endLevel = levelCount;
 				if (!it->IsTemporal())
 				{
 					startLevel = resourcesLifetime.at(it->Handle).first;
-					endLevel = startLevel + resourcesLifetime.at(it->Handle).second;
+					endLevel = resourcesLifetime.at(it->Handle).second;
 				}
 
-				U32 foundOffset = 0;
 				// Search through whole memory
-				for (U32 offset = 0, chunksFound = 0; offset < maxChunks; ++offset)
+				U32 foundOffset = UINT32_MAX, chunksFound = 0;
+				for (U32 offset = 0; offset < allocatedChunks; offset = Math::AlignUp(++offset, chunkAlignment))
 				{
+					if (foundOffset == UINT32_MAX)
+						foundOffset = offset;
 					// Check chunks for whole requested duration
 					for (U32 time = startLevel; time < endLevel; ++time)
 					{
 						if (memory.at(offset * levelCount + time) != INVALID_RID)
 						{
-							foundOffset = maxChunks;
+							foundOffset = UINT32_MAX;
 							break;
 						}
 					}
-					if (foundOffset != maxChunks)
+					if (foundOffset != UINT32_MAX)
 					{
 						if (++chunksFound == it->Chunks)
 							break;
@@ -119,35 +122,24 @@ namespace ZE::RHI::DX12::Pipeline
 					else
 					{
 						chunksFound = 0;
-						foundOffset = offset + 1;
+						foundOffset = UINT32_MAX;
 					}
 				}
-				ZE_ASSERT(foundOffset + it->Chunks <= maxChunks, "Memory too small to fit requested resource, bug in memory table creation!");
 
-				// Reserve space in memory
+				// Allocate new heap chunks
+				if (foundOffset == UINT32_MAX || chunksFound != it->Chunks)
+				{
+					foundOffset = Math::AlignUp(allocatedChunks, chunkAlignment);
+					allocatedChunks = foundOffset + it->Chunks;
+					memory.resize(allocatedChunks * levelCount);
+				}
+
+				// Reserve space in memoryv
 				for (U32 chunk = 0; chunk < it->Chunks; ++chunk)
 					std::fill_n(memory.begin() + Utils::SafeCast<U64>(foundOffset + chunk) * levelCount + startLevel, endLevel - startLevel, it->Handle);
 				it->ChunkOffset = foundOffset;
 			}
-
-			// Find last chunk of the heap and remove and use it as heap size
-			//U32 lastChunk = 0;
-			for (U32 chunk = 0; chunk < maxChunks; ++chunk)
-			{
-				bool notFoundInLevel = true;
-				for (U32 level = 0; level < levelCount; ++level)
-				{
-					if (memory.at(chunk * levelCount + level) != INVALID_RID)
-					{
-						heapChunks = chunk;
-						notFoundInLevel = false;
-						break;
-					}
-				}
-				if (notFoundInLevel)
-					break;
-			}
-			++heapChunks;
+			heapChunks = Utils::SafeCast<U32>(memory.size() / levelCount);
 		}
 		return Utils::SafeCast<U64>(heapChunks) * D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 	}
@@ -301,8 +293,9 @@ namespace ZE::RHI::DX12::Pipeline
 					resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
 				else
 					resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-				resDesc.Width = res.Sizes.X;
-				resDesc.Height = res.Sizes.Y;
+				const UInt2 sizes = res.GetResolutionAdjustedSizes();
+				resDesc.Width = sizes.X;
+				resDesc.Height = sizes.Y;
 				resDesc.DepthOrArraySize = res.DepthOrArraySize;
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Cube)
 				{
@@ -373,11 +366,14 @@ namespace ZE::RHI::DX12::Pipeline
 				D3D12_RESOURCE_ALLOCATION_INFO1 allocInfo = {};
 				device->GetResourceAllocationInfo2(0, 1, &resDesc, &allocInfo);
 				if (allocInfo.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+				{
 					resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+					device->GetResourceAllocationInfo2(0, 1, &resDesc, &allocInfo);
+				}
 
 				// Create resource entry and fill it with proper info
 				const U64 chunksCount = Math::DivideRoundUp(allocInfo.SizeInBytes, static_cast<U64>(D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
-				auto& info = resourcesInfo.emplace_back();//i, Utils::SafeCast<U32>(chunksCount), 0, resDesc, clearDesc, res.Flags, 0);
+				auto& info = resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(chunksCount), 0U, resDesc, clearDesc, 0);
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::Cube)
 					info.SetCube();
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::StencilView)
@@ -453,7 +449,7 @@ namespace ZE::RHI::DX12::Pipeline
 		// Allocate resources and create main heap
 		heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
 		ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&mainHeap)));
-		ZE_DX_SET_ID(uavHeap, "GFX::Pipeline::FrameBuffer heap - main");
+		ZE_DX_SET_ID(mainHeap, "GFX::Pipeline::FrameBuffer heap - main");
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
 
 #if !_ZE_MODE_RELEASE
