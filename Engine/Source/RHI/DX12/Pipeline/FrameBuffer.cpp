@@ -9,42 +9,39 @@ namespace ZE::RHI::DX12::Pipeline
 		std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
 		const std::vector<std::pair<U32, U32>>& resourcesLifetime) noexcept
 	{
-		U32 maxChunks = 0;
-		for (auto it = resBegin; it != resEnd; ++it)
-			maxChunks += it->Chunks;
+		// TODO: Don't go with 4KB chunks since it's making too big image
+		auto lastRes = resEnd;
+		--lastRes;
+		U32 maxChunks = lastRes->ChunkOffset + lastRes->Chunks;
 
-		const U32 pixelsPerLevel = maxChunks / levelCount;
-		U32 separatorPixels = pixelsPerLevel / 20;
-		if (separatorPixels < 2)
-			separatorPixels = 2;
+		const U32 pixelsPerLevel = Math::Clamp(maxChunks / levelCount, 240U, 512U);
+		const U32 separatorPixels = Math::Clamp(pixelsPerLevel / 20, 8U, 48U);
 		const U32 chunkPixels = pixelsPerLevel - separatorPixels;
 
 		GFX::Surface print(levelCount * pixelsPerLevel, maxChunks, PixelFormat::R8G8B8A8_UNorm);
 		Pixel* image = reinterpret_cast<Pixel*>(print.GetBuffer());
+		const U32 rowWidth = print.GetRowByteSize() / sizeof(Pixel);
 		// Clear output image
 		for (U32 y = 0; y < print.GetHeight(); ++y)
 			for (U32 x = 0; x < print.GetWidth(); ++x)
-				image[y * print.GetWidth() + x] = PixelVal::Black;
+				image[y * rowWidth + x] = PixelVal::Black;
 
 		// Write regions for all resources
 		for (; resBegin != resEnd; ++resBegin)
 		{
 			// Compute resource color
-			const U64 val = resBegin->Handle / resourcesLifetime.size();
-			const Pixel pixel(static_cast<U8>(val >> (8 * (val % 3))),
-				static_cast<U8>(val >> (8 * ((val + 1) % 3))),
-				static_cast<U8>(val >> (8 * ((val + 2) % 3))),
-				static_cast<U8>(val >> 24) ^ 0xFF);
+			const U64 val = resourcesLifetime.size() * resBegin->Handle;
+			const Pixel pixel(static_cast<U8>(val >> (val % 3)),
+				static_cast<U8>(val >> ((val + 1) % 3)),
+				static_cast<U8>(val >> ((val + 2) % 3)));
 
 			// Fill resorce rectangle
 			for (U32 chunk = 0; chunk < resBegin->Chunks; ++chunk)
 			{
-				resBegin->ChunkOffset;
-				//U32 startLevel = resourcesLifetime.at(resBegin->Handle).first;
 				U32 endLevel = resourcesLifetime.at(resBegin->Handle).second;
-				for (U32 level = 0; level < endLevel; ++level)
+				for (U32 level = resourcesLifetime.at(resBegin->Handle).first; level < endLevel; ++level)
 				{
-					const U32 offset = chunk * maxChunks + level * pixelsPerLevel;
+					const U64 offset = resBegin->ChunkOffset + chunk + level * pixelsPerLevel;
 					for (U64 p = 0; p < chunkPixels; ++p)
 						image[offset + p] = pixel;
 				}
@@ -56,7 +53,7 @@ namespace ZE::RHI::DX12::Pipeline
 		{
 			for (U32 level = 0; level < levelCount; ++level)
 			{
-				const U32 offset = chunk * maxChunks + level * pixelsPerLevel + chunkPixels;
+				const U32 offset = chunk * chunkPixels + level * pixelsPerLevel;
 				for (U64 p = 0; p < separatorPixels; ++p)
 					image[offset + p] = PixelVal::White;
 			}
