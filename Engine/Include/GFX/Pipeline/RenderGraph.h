@@ -148,7 +148,7 @@ namespace ZE::GFX::Pipeline
 	public:
 		RenderGraph() = default;
 		ZE_CLASS_MOVE(RenderGraph);
-		~RenderGraph() = default;
+		~RenderGraph() { ZE_ASSERT_FREED(passExecGroups == nullptr); }
 
 		void Execute(Graphics& gfx);
 
@@ -161,5 +161,6 @@ namespace ZE::GFX::Pipeline
 		//
 		// Need to indicate change to settings that require rebuild
 		void ShowDebugUI() noexcept;
+		void Free(Device& dev) noexcept;
 	};
 }

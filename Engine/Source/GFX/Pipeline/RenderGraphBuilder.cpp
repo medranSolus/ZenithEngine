@@ -470,11 +470,10 @@ namespace ZE::GFX::Pipeline
 		return desc;
 	}
 
-	void RenderGraphBuilder::GroupRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc) const
+	void RenderGraphBuilder::GroupRenderPasses(Device& dev, RenderGraph& graph) const
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::GroupRenderPasses");
 
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, desc.SettingsRange, desc.DynamicDataRange, desc.Samplers };
 		auto fillInPassData = [&](U32 node, RenderGraph::ParallelPassGroup::PassInfo& passInfo)
 			{
 				const PassDesc& nodeDesc = passDescs.at(node).at(computedGraph.at(node).NodeGroupIndex).GetDesc();
@@ -483,8 +482,6 @@ namespace ZE::GFX::Pipeline
 				passInfo.Exec = nodeDesc.Execute;
 				passInfo.Resources = GetNodeResources(node);
 				passInfo.Data.Resources = passInfo.Resources.get();
-				if (nodeDesc.Init)
-					passInfo.Data.ExecData = nodeDesc.Init(dev, buildData, nodeDesc.InitializeFormats, nodeDesc.InitData);
 			};
 
 		if (asyncComputeEnabled)
@@ -612,6 +609,37 @@ namespace ZE::GFX::Pipeline
 		// Clear up loaded shaders
 		for (auto& shader : buildData.ShaderCache)
 			shader.second.Free(dev);
+	}
+
+	void RenderGraphBuilder::InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc)
+	{
+		ZE_PERF_GUARD("RenderGraphBuilder::InitializeRenderPasses");
+
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, desc.SettingsRange, desc.DynamicDataRange, desc.Samplers };
+		auto fillInitData = [&](RenderGraph::ExecutionGroup& execGroup)
+			{
+				for (U32 i = 0; i < execGroup.PassGroupCount; ++i)
+				{
+					for (U32 j = 0; j < execGroup.PassGroups[i].PassCount; ++j)
+					{
+						auto& pass = execGroup.PassGroups[i].Passes[j];
+						auto& node = passDescs.at(pass.PassID).at(computedGraph.at(pass.PassID).NodeGroupIndex);
+						if (node.GetPassInitData())
+							node.GetDesc().Update(dev, buildData, node.GetDesc().InitData, node.GetDesc().InitializeFormats);
+						pass.Data.ExecData = node.GetPassInitData();
+
+						// TODO: Where to put exec data? Better to cache it and update on most of times
+						//       rather than destroy every graph update and initialize all passes from the begining.
+						//       Better to just update all current passes (with required performing cascade updates),
+						//       create missing ones and all of the rest to Clean()
+					}
+				}
+			};
+		for (U32 group = 0; group < graph.execGroupCount; ++group)
+		{
+			fillInitData(graph.passExecGroups[group].at(0));
+			fillInitData(graph.passExecGroups[group].at(1));
+		}
 	}
 
 	void RenderGraphBuilder::ComputeGroupSyncs(class RenderGraph& graph) const noexcept
@@ -1577,10 +1605,15 @@ namespace ZE::GFX::Pipeline
 		settingsData.DataStatic = &graph.execData.SettingsData;
 		settingsData.Bytes = sizeof(RendererSettingsData);
 		graph.execData.SettingsBuffer.Init(dev, assets.GetDisk(), settingsData);
-		assets.GetDisk().StartUploadGPU(true);
 
 		// Initialize passes structure
-		GroupRenderPasses(dev, assets, graph, desc);
+		GroupRenderPasses(dev, graph);
+
+		// Perform all needed work for active passes
+		InitializeRenderPasses(dev, assets, graph, desc);
+
+		// After pass data have been scheduled to upload we can start actual GPU upload request
+		assets.GetDisk().StartUploadGPU(true);
 
 		// Check for sync dependencies between execution groups
 		ComputeGroupSyncs(graph);

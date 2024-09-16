@@ -86,4 +86,14 @@ namespace ZE::GFX::Pipeline
 
 		ImGui::EndChild();
 	}
+
+	void RenderGraph::Free(Device& dev) noexcept
+	{
+		execGroupCount = 0;
+		passExecGroups = nullptr;
+		asyncListChain.Exec([&dev](CommandList& x) { x.Free(dev); });
+		execData.Buffers.Free(dev);
+		execData.Bindings.Free(dev);
+		execData.SettingsBuffer.Free(dev);
+	}
 }
