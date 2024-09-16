@@ -12,7 +12,7 @@ namespace ZE::GFX
 	public:
 		// Minimal alignment that texture rows must meet, defined per platform that assets are created for
 		static constexpr U32 ROW_PITCH_ALIGNMENT = 256U;
-		static constexpr U32 SLICE_PITCH_ALIGNMENT = 512U;
+		static constexpr U64 SLICE_PITCH_ALIGNMENT = 512U;
 
 	private:
 		enum class CopySource : bool { GrayscaleAlpha, RGB };
@@ -24,7 +24,7 @@ namespace ZE::GFX
 		U16 depth = 0;
 		U16 mipCount = 0;
 		U16 arraySize = 0;
-		U32 memorySize = 0;
+		U64 memorySize = 0;
 		std::shared_ptr<U8[]> memory = nullptr;
 
 		template<CopySource SRC_FORMAT, typename T>
@@ -44,8 +44,8 @@ namespace ZE::GFX
 		constexpr U16 GetMipCount() const noexcept { return mipCount; }
 		constexpr U16 GetArraySize() const noexcept { return arraySize; }
 		constexpr U32 GetRowByteSize() const noexcept { return Math::AlignUp((width * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
-		constexpr U32 GetSliceByteSize() const noexcept { return Math::AlignUp(GetRowByteSize() * height, SLICE_PITCH_ALIGNMENT); }
-		constexpr U32 GetMemorySize() const noexcept { return memorySize; }
+		constexpr U64 GetSliceByteSize() const noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize()) * height, SLICE_PITCH_ALIGNMENT); }
+		constexpr U64 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
 
 		std::shared_ptr<U8[]> GetMemory() noexcept { return memory; }

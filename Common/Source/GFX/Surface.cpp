@@ -447,7 +447,7 @@ namespace ZE::GFX
 		std::string ext = path.extension().string();
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
-		FILE* file = fopen(filename.data(), "rwb");
+		FILE* file = fopen(filename.data(), "wb");
 		if (!file)
 		{
 			Logger::Error("Error creating \"" + path.string() + "\" file!");
@@ -466,12 +466,12 @@ namespace ZE::GFX
 			int result = spng_set_png_file(ctx, file);
 			if (!result)
 			{
-				// Need to check what formats can be saved directly and which one require per pixel copy
+				// TODO: Need to check what formats can be saved directly and which one require per pixel copy
 				spng_ihdr header = {};
 				header.width = width;
 				header.height = height;
-				uint8_t bit_depth;
-				uint8_t color_type; // SPNG_COLOR_TYPE_GRAYSCALE, SPNG_COLOR_TYPE_TRUECOLOR, SPNG_COLOR_TYPE_TRUECOLOR_ALPHA
+				header.bit_depth = Utils::GetChannelSize(format) * 8;
+				header.color_type = SPNG_COLOR_TYPE_TRUECOLOR_ALPHA;
 				header.compression_method = 0;
 				header.filter_method = 0;
 				header.interlace_method = SPNG_INTERLACE_NONE;
@@ -523,7 +523,8 @@ namespace ZE::GFX
 		{
 			//stbi_write_jpg();
 		}
-		Logger::Error("Saving surface to \"" + path.string() + "\": failed to save.");
+		else
+			Logger::Error("Saving surface to \"" + path.string() + "\": failed to save.");
 
 		fclose(file);
 		return success;
@@ -545,7 +546,7 @@ namespace ZE::GFX
 				U16 currentDepth = depth;
 				for (U16 mip = 0; mip < mipLevels; ++mip)
 				{
-					offset += Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+					offset += Math::AlignUp(static_cast<U64>(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
 
 					currentWidth >>= 1;
 					if (currentWidth == 0)
@@ -557,7 +558,7 @@ namespace ZE::GFX
 					if (currentDepth == 0)
 						currentDepth = 1;
 				}
-				return offset + depthLevel * Math::AlignUp(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT);
+				return offset + depthLevel * Math::AlignUp(static_cast<U64>(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT);
 			};
 		U8* image = memory.get();
 		for (U16 a = 0; a < arrayIndex; ++a)
@@ -614,7 +615,7 @@ namespace ZE::GFX
 		// - single depth level holding 2D texture
 		// - single texture with height of rows
 		// - Every mip level smaller in 3D dimmensions than previous one
-		U32 channelMemorySize = 0;
+		U64 channelMemorySize = 0;
 		const U8 channelSize = Utils::GetFormatBitCount(singleChannelFormat) / 8;
 		for (U16 a = 0; a < arraySize; ++a)
 		{
@@ -623,7 +624,7 @@ namespace ZE::GFX
 			U16 currentDepth = depth;
 			for (U16 mip = 0; mip < mipCount; ++mip)
 			{
-				channelMemorySize += Math::AlignUp(Math::AlignUp(currentWidth * channelSize, ROW_PITCH_ALIGNMENT) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+				channelMemorySize += Math::AlignUp(static_cast<U64>(Math::AlignUp(currentWidth * channelSize, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
 
 				currentWidth >>= 1;
 				if (currentWidth == 0)
@@ -661,7 +662,7 @@ namespace ZE::GFX
 
 		// Copy channel data
 		U8* srcMemory = memory.get();
-		U32 destMemoryOffset = 0;
+		U64 destMemoryOffset = 0;
 		for (U16 a = 0; a < arraySize; ++a)
 		{
 			U32 currentWidth = width;
@@ -691,7 +692,7 @@ namespace ZE::GFX
 
 							destMemoryOffset += channelSize;
 						}
-						destMemoryOffset = Math::AlignUp(destMemoryOffset, ROW_PITCH_ALIGNMENT);
+						destMemoryOffset = Math::AlignUp(destMemoryOffset, static_cast<U64>(ROW_PITCH_ALIGNMENT));
 						srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(ROW_PITCH_ALIGNMENT)));
 					}
 					destMemoryOffset = Math::AlignUp(destMemoryOffset, SLICE_PITCH_ALIGNMENT);

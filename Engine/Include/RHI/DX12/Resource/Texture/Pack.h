@@ -10,7 +10,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 	{
 		static_assert(Math::AlignUp(GFX::Surface::ROW_PITCH_ALIGNMENT, static_cast<U32>(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)) == GFX::Surface::ROW_PITCH_ALIGNMENT,
 			"For platform supporting DX12 texture rows' alignment must be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT!");
-		static_assert(Math::AlignUp(GFX::Surface::SLICE_PITCH_ALIGNMENT, static_cast<U32>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT)) == GFX::Surface::SLICE_PITCH_ALIGNMENT,
+		static_assert(Math::AlignUp(GFX::Surface::SLICE_PITCH_ALIGNMENT, static_cast<U64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT)) == GFX::Surface::SLICE_PITCH_ALIGNMENT,
 			"For platform supporting DX12 texture slice's alignment must be aligned to D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT!");
 
 		U32 count;

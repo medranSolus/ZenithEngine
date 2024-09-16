@@ -88,12 +88,12 @@ namespace ZE::RHI::DX12::Resource::Texture
 					for (U16 arrayIndex = 0; const auto& surface : tex.Surfaces)
 					{
 						const U16 index = arrayIndex++;
-						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), surface.GetMemorySize(),
+						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), Utils::SafeCast<U32>(surface.GetMemorySize()),
 							index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces);
 					}
 				}
 				else
-					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), startSurface.GetMemorySize());
+					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), Utils::SafeCast<U32>(startSurface.GetMemorySize()));
 			}
 			else
 			{
