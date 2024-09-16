@@ -19,6 +19,8 @@ namespace ZE
 		EnableSSSR = 4,
 		// Run Ambient Occlusion on async compute queue for supported RHI.
 		AsyncAO = 8,
+		// When uploading data to the GPU ignore possible optimizations and always copy source data. Disabled in release builds.
+		AlwaysCopySourceGPUData = 16,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

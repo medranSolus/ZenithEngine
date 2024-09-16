@@ -29,7 +29,7 @@ namespace ZE::RHI::DX12
 		CommandList(GFX::Device& dev) : CommandList(dev, GFX::QueueType::Main) {}
 		CommandList(GFX::Device& dev, GFX::QueueType type);
 		ZE_CLASS_MOVE(CommandList);
-		~CommandList() { ZE_ASSERT(commands == nullptr && allocator == nullptr, "Command list not freed before deletion!"); }
+		~CommandList() { ZE_ASSERT_FREED(commands == nullptr && allocator == nullptr); }
 
 		void Free(GFX::Device& dev) noexcept { Free(); }
 

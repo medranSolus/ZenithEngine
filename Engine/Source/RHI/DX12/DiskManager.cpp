@@ -246,13 +246,13 @@ namespace ZE::RHI::DX12
 
 	void DiskManager::StartUploadGPU(bool waitable) noexcept
 	{
+		fileQueue->Submit();
+		memoryQueue->Submit();
 		if (waitable || uploadDestResourceQueue.size())
 		{
 			fileQueue->EnqueueSetEvent(fenceEvents[0]);
 			memoryQueue->EnqueueSetEvent(fenceEvents[1]);
 		}
-		fileQueue->Submit();
-		memoryQueue->Submit();
 
 		LockGuardRW lock(queueMutex);
 		submitQueue.reserve(submitQueue.size() + uploadQueue.size());
@@ -271,6 +271,8 @@ namespace ZE::RHI::DX12
 	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl)
 	{
 		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
+			throw ZE_WIN_EXCEPT_LAST();
+		if (!ResetEvent(fenceEvents[0]) || !ResetEvent(fenceEvents[1]))
 			throw ZE_WIN_EXCEPT_LAST();
 
 		DSTORAGE_ERROR_RECORD errorRecord = {};
@@ -395,7 +397,15 @@ namespace ZE::RHI::DX12
 		request.Options.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
 		request.Options.DestinationType = DSTORAGE_REQUEST_DESTINATION_BUFFER;
 
-		request.Source.Memory.Source = srcCopy.get() ? srcCopy.get() : srcStatic;
+#if !_ZE_MODE_RELEASE
+		if (Settings::IsEnabledCopySourceGPUData() && srcStatic)
+		{
+			auto memCopy = std::make_shared<U8[]>(bytes);
+			std::memcpy(memCopy.get(), srcStatic, bytes);
+			srcCopy = memCopy;
+		}
+#endif
+		request.Source.Memory.Source = srcCopy ? srcCopy.get() : srcStatic;
 		request.Source.Memory.Size = bytes;
 
 		request.Destination.Buffer.Resource = dest;

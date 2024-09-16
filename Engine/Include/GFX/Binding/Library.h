@@ -13,7 +13,7 @@ namespace ZE::GFX::Binding
 	public:
 		Library() = default;
 		ZE_CLASS_DELETE(Library);
-		~Library() { ZE_ASSERT(schemas == nullptr, "Resource not freed before deletion!"); }
+		~Library() { ZE_ASSERT_FREED(schemas == nullptr); }
 
 		constexpr Schema& GetSchema(U32 index) noexcept { ZE_ASSERT(index < schemaCount, "Trying to get Schema out of range!"); return schemas[index]; }
 

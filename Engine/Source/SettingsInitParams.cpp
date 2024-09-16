@@ -19,6 +19,7 @@ namespace ZE
 		parser.AddOption("cacao");
 		parser.AddOption("noAsyncAO");
 		parser.AddOption("sssr");
+		parser.AddOption("alwaysCopySourceGpuData");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -57,6 +58,8 @@ namespace ZE
 			params.AmbientOcclusion = GFX::AOType::None;
 		if (!parser.GetOption("noAsyncAO"))
 			params.Flags |= SettingsInitFlag::AsyncAO;
+		if (parser.GetOption("alwaysCopySourceGpuData"))
+			params.Flags |= SettingsInitFlag::AlwaysCopySourceGPUData;
 
 		return params;
 	}
