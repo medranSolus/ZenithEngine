@@ -76,8 +76,13 @@ namespace ZE::GFX::Pipeline
 		// Topological order of render graph nodes
 		std::vector<U32> topoplogyOrder;
 
+		// Caching state of execution data between computations of graph to avoid reinitialization of them every time
+		Data::Library<PassType, std::pair<PtrVoid, PassCleanCallback>> execDataCache;
+
 		// Render graph created via adjacency list
 		std::vector<ComputedNode> computedGraph;
+		// List of invalid passes execution data
+		std::vector<std::pair<PtrVoid, PassCleanCallback>> invalidExecDatas;
 		// Longest paths for each node
 		std::vector<U32> dependencyLevels;
 		// Final list of resources used in graph
@@ -90,8 +95,8 @@ namespace ZE::GFX::Pipeline
 		bool CheckNodeProducerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence) const noexcept;
 		bool CheckNodeConsumerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence, const std::vector<std::vector<U32>>& graphList) const noexcept;
 		bool SortNodesTopologyOrder(U32 currentNode, std::vector<std::bitset<2>>& visited) noexcept;
-		BuildResult LoadGraphDesc(const RenderGraphDesc& desc) noexcept;
-		BuildResult LoadResourcesDesc(const RenderGraphDesc& desc) noexcept;
+		BuildResult LoadGraphDesc(Device& dev, const RenderGraphDesc& desc) noexcept;
+		BuildResult LoadResourcesDesc(Device& dev, const RenderGraphDesc& desc) noexcept;
 
 		// Order: input, inner, output (without already present resources from inputs)
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
@@ -99,19 +104,19 @@ namespace ZE::GFX::Pipeline
 		void GroupRenderPasses(Device& dev, class RenderGraph& graph) const;
 		void InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc);
 		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;
-		BuildResult FillPassBarriers(class RenderGraph& graph, GraphFinalizeFlags flags) noexcept;
+		BuildResult FillPassBarriers(Device& dev, class RenderGraph& graph, GraphFinalizeFlags flags) noexcept;
 
 	public:
 		RenderGraphBuilder() = default;
 		ZE_CLASS_MOVE(RenderGraphBuilder);
 		~RenderGraphBuilder() = default;
 
-		BuildResult LoadConfig(const RenderGraphDesc& desc) noexcept;
+		BuildResult LoadConfig(Device& dev, const RenderGraphDesc& desc) noexcept;
 
-		BuildResult ComputeGraph(bool minimizeDistances = false) noexcept;
+		BuildResult ComputeGraph(Device& dev, bool minimizeDistances = false) noexcept;
 		BuildResult FinalizeGraph(Graphics& gfx, Data::AssetsStreamer& assets, class RenderGraph& graph, const RenderGraphDesc& desc, GraphFinalizeFlags flags = 0);
 
-		void ClearConfig() noexcept;
-		void ClearComputedGraph() noexcept;
+		void ClearConfig(Device& dev) noexcept;
+		void ClearComputedGraph(Device& dev) noexcept;
 	};
 }

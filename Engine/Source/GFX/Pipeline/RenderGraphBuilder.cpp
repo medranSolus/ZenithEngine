@@ -2,9 +2,9 @@
 #include "GFX/Pipeline/RenderGraph.h"
 
 // Helper macro to end loading config and return when condition is true
-#define ZE_CHECK_FAILED_CONFIG_LOAD(condition, result, message) do { if (condition) { ZE_FAIL(message); ClearConfig(); return BuildResult::##result; } } while (false)
+#define ZE_CHECK_FAILED_CONFIG_LOAD(condition, result, message) do { if (condition) { ZE_FAIL(message); ClearConfig(dev); return BuildResult::##result; } } while (false)
 // Helper macro to end computing graph and return when condition is true
-#define ZE_CHECK_FAILED_GRAPH_COMPUTE(condition, result, message) do { if (condition) { ZE_FAIL(message); ClearComputedGraph(); return BuildResult::##result; } } while (false)
+#define ZE_CHECK_FAILED_GRAPH_COMPUTE(condition, result, message) do { if (condition) { ZE_FAIL(message); ClearComputedGraph(dev); return BuildResult::##result; } } while (false)
 
 namespace ZE::GFX::Pipeline
 {
@@ -95,7 +95,7 @@ namespace ZE::GFX::Pipeline
 		return false;
 	}
 
-	BuildResult RenderGraphBuilder::LoadGraphDesc(const RenderGraphDesc& desc) noexcept
+	BuildResult RenderGraphBuilder::LoadGraphDesc(Device& dev, const RenderGraphDesc& desc) noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::LoadGraphDesc");
 
@@ -293,7 +293,7 @@ namespace ZE::GFX::Pipeline
 		return BuildResult::Success;
 	}
 
-	BuildResult RenderGraphBuilder::LoadResourcesDesc(const RenderGraphDesc& desc) noexcept
+	BuildResult RenderGraphBuilder::LoadResourcesDesc(Device& dev, const RenderGraphDesc& desc) noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::LoadResourcesDesc");
 
@@ -605,10 +605,6 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 		}
-
-		// Clear up loaded shaders
-		for (auto& shader : buildData.ShaderCache)
-			shader.second.Free(dev);
 	}
 
 	void RenderGraphBuilder::InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc)
@@ -623,10 +619,28 @@ namespace ZE::GFX::Pipeline
 					for (U32 j = 0; j < execGroup.PassGroups[i].PassCount; ++j)
 					{
 						auto& pass = execGroup.PassGroups[i].Passes[j];
-						auto& node = passDescs.at(pass.PassID).at(computedGraph.at(pass.PassID).NodeGroupIndex);
-						if (node.GetPassInitData())
-							node.GetDesc().Update(dev, buildData, node.GetDesc().InitData, node.GetDesc().InitializeFormats);
-						pass.Data.ExecData = node.GetPassInitData();
+						auto& computed = computedGraph.at(pass.PassID);
+						auto& node = passDescs.at(pass.PassID).at(computed.NodeGroupIndex);
+
+						// Always compute exec data for invalid passes
+						if (node.GetDesc().Type == CorePassType::Invalid)
+						{
+							invalidExecDatas.emplace_back(node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData),
+								node.GetDesc().Clean);
+						}
+						else
+						{
+							// If pass has been created before then only perform update, otherwise create from start
+							if (!execDataCache.Contains(node.GetDesc().Type))
+								execDataCache.Add(node.GetDesc().Type, nullptr, node.GetDesc().Clean);
+
+							auto& execData = execDataCache.Get(node.GetDesc().Type);
+							if (execData.first == nullptr)
+								execData.first = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
+							else
+								node.GetDesc().Update(dev, buildData, execData.first, node.GetDesc().InitializeFormats);
+							pass.Data.ExecData = execData.first;
+						}
 
 						// TODO: Where to put exec data? Better to cache it and update on most of times
 						//       rather than destroy every graph update and initialize all passes from the begining.
@@ -640,6 +654,10 @@ namespace ZE::GFX::Pipeline
 			fillInitData(graph.passExecGroups[group].at(0));
 			fillInitData(graph.passExecGroups[group].at(1));
 		}
+
+		// Clear up loaded shaders
+		for (auto& shader : buildData.ShaderCache)
+			shader.second.Free(dev);
 	}
 
 	void RenderGraphBuilder::ComputeGroupSyncs(class RenderGraph& graph) const noexcept
@@ -695,7 +713,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	BuildResult RenderGraphBuilder::FillPassBarriers(RenderGraph& graph, GraphFinalizeFlags flags) noexcept
+	BuildResult RenderGraphBuilder::FillPassBarriers(Device& dev, RenderGraph& graph, GraphFinalizeFlags flags) noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::FillPassBarriers");
 
@@ -1223,31 +1241,31 @@ namespace ZE::GFX::Pipeline
 		return BuildResult::Success;
 	}
 
-	BuildResult RenderGraphBuilder::LoadConfig(const RenderGraphDesc& desc) noexcept
+	BuildResult RenderGraphBuilder::LoadConfig(Device& dev, const RenderGraphDesc& desc) noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::LoadConfig");
 
 		// Clear previous config on start for sanity
-		ClearConfig();
+		ClearConfig(dev);
 
 		// Can be run on multiple threads possibly
-		BuildResult result = LoadGraphDesc(desc);
+		BuildResult result = LoadGraphDesc(dev, desc);
 		if (result != BuildResult::Success)
 		{
-			ClearConfig();
+			ClearConfig(dev);
 			return result;
 		}
 
-		result = LoadResourcesDesc(desc);
+		result = LoadResourcesDesc(dev, desc);
 		if (result != BuildResult::Success)
 		{
-			ClearConfig();
+			ClearConfig(dev);
 			return result;
 		}
 		return BuildResult::Success;
 	}
 
-	BuildResult RenderGraphBuilder::ComputeGraph(bool minimizeDistances) noexcept
+	BuildResult RenderGraphBuilder::ComputeGraph(Device& dev, bool minimizeDistances) noexcept
 	{
 		// Get master list of resources (remove the ones that are not referenced by any pass in full configuration
 		// and issue warning) - DONE
@@ -1267,7 +1285,7 @@ namespace ZE::GFX::Pipeline
 			ErrorConfigNotLoaded, "Computing render graph while no config has been properly loaded!");
 
 		ZE_PERF_GUARD("RenderGraphBuilder::ComputeGraph");
-		ClearComputedGraph();
+		ClearComputedGraph(dev);
 
 		// Check for presence of nodes in current configuration, first by evaluation value
 		std::vector<PresenceInfo> presentNodes(passDescs.size());
@@ -1554,7 +1572,7 @@ namespace ZE::GFX::Pipeline
 
 		if (result != BuildResult::Success)
 		{
-			ClearComputedGraph();
+			ClearComputedGraph(dev);
 			return result;
 		}
 
@@ -1580,18 +1598,17 @@ namespace ZE::GFX::Pipeline
 		// Not handled initialization yet:
 		// RendererDynamicData DynamicData;
 		// RendererGraphData GraphData;
+		Device& dev = gfx.GetDevice();
 
 		// In case that graph have not been yet computed
 		if (!IsGraphComputed())
 		{
 			ZE_WARNING("Graph needs to be computed before finalizing it!");
-			BuildResult result = ComputeGraph();
+			BuildResult result = ComputeGraph(dev);
 			if (result != BuildResult::Success)
 				return result;
 		}
-
 		ZE_PERF_GUARD("RenderGraphBuilder::FinalizeGraph");
-		Device& dev = gfx.GetDevice();
 
 		// Create GPU buffers
 		graph.execData.DynamicBuffer = &gfx.GetDynamicBuffer();
@@ -1620,12 +1637,12 @@ namespace ZE::GFX::Pipeline
 
 		// Skip computation of barriers where not required
 		if (Settings::GetGfxApi() != GfxApiType::DX11 && Settings::GetGfxApi() != GfxApiType::OpenGL)
-			return FillPassBarriers(graph, flags);
+			return FillPassBarriers(dev, graph, flags);
 
 		return BuildResult::Success;
 	}
 
-	void RenderGraphBuilder::ClearConfig() noexcept
+	void RenderGraphBuilder::ClearConfig(Device& dev) noexcept
 	{
 		resourceOptions = static_cast<FrameBufferFlags>(FrameBufferFlag::None);
 		resources.Clear();
@@ -1633,12 +1650,31 @@ namespace ZE::GFX::Pipeline
 		renderGraphDepList.clear();
 		topoplogyOrder.clear();
 
-		ClearComputedGraph();
+		ClearComputedGraph(dev);
 	}
 
-	void RenderGraphBuilder::ClearComputedGraph() noexcept
+	void RenderGraphBuilder::ClearComputedGraph(Device& dev) noexcept
 	{
+		execDataCache.Transform([&](auto& execData)
+			{
+				if (execData.first)
+				{
+					ZE_ASSERT(execData.second, "Clean function should always be present when exec data is not empty!");
+					execData.second(dev, execData.first);
+				}
+			});
+		for (auto& invalidPass : invalidExecDatas)
+		{
+			if (invalidPass.first)
+			{
+				ZE_ASSERT(invalidPass.second, "Clean function should always be present when invalid pass exec data is not empty!");
+				invalidPass.second(dev, invalidPass.first);
+			}
+		}
+
+		execDataCache.Clear();
 		computedGraph.clear();
+		invalidExecDatas.clear();
 		dependencyLevels.clear();
 		computedResources.clear();
 		asyncComputeEnabled = false;

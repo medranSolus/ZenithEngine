@@ -72,6 +72,7 @@ namespace ZE::GFX::Pipeline
 		// enum values if they wish to create custom render graph definition
 		CustomStart = 0x80000000
 	};
+	ZE_ENUM_OPERATORS(CorePassType, PassType);
 
 	// Information about given render pass
 	struct PassDesc

@@ -13,18 +13,19 @@ namespace ZE
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
 
 		graphics.Init(window, params.GraphicsDescriptorPoolSize, false); // GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
-		Settings::RenderSize = GFX::CalculateRenderSize(graphics.GetDevice(), Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
+		GFX::Device& dev = graphics.GetDevice();
+		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
 
 		gui.Init(graphics, false);// GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
-		assets.Init(graphics.GetDevice());
+		assets.Init(dev);
 
 		GFX::Pipeline::BuildResult buildRes = GFX::Pipeline::BuildResult::Success;
 		if (params.CustomRendererDesc)
 		{
-			buildRes = graphBuilder.LoadConfig(*params.CustomRendererDesc);
+			buildRes = graphBuilder.LoadConfig(dev, *params.CustomRendererDesc);
 			if (buildRes == GFX::Pipeline::BuildResult::Success)
 			{
-				buildRes = graphBuilder.ComputeGraph();
+				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
 					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, *params.CustomRendererDesc);
 			}
@@ -32,10 +33,10 @@ namespace ZE
 		else
 		{
 			GFX::Pipeline::RenderGraphDesc graphDesc = GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams);
-			buildRes = graphBuilder.LoadConfig(graphDesc);
+			buildRes = graphBuilder.LoadConfig(dev, graphDesc);
 			if (buildRes == GFX::Pipeline::BuildResult::Success)
 			{
-				buildRes = graphBuilder.ComputeGraph();
+				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
 					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, graphDesc);
 			}
