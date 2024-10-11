@@ -704,7 +704,8 @@ namespace ZE::Data
 				metalTexFile.Clear();
 
 				// Get height texture
-				if (false && material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
+				// TODO: fix height maps
+				if constexpr (false && material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))

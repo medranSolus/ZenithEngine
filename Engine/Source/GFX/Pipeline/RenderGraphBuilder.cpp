@@ -301,17 +301,14 @@ namespace ZE::GFX::Pipeline
 		std::vector<std::string_view> presentResources;
 		for (const auto& res : desc.Resources)
 		{
-			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & FrameResourceFlag::Texture3D) && (res.second.Flags & FrameResourceFlag::Cube),
-				ErrorWrongResourceDimensionsFlags, "Cannot create cubemap texture as 3D texture for resource [" + res.first + "]!");
-
 			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & (FrameResourceFlag::ForceRTV | FrameResourceFlag::ForceUAV)) && (res.second.Flags & FrameResourceFlag::ForceDSV),
 				ErrorIncorrectResourceUsage, "Cannot create depth stencil together with render target or unordered access view for same resource [" + res.first + "]!");
 
 			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & FrameResourceFlag::ForceRTV) && Utils::IsDepthStencilFormat(res.second.Format),
 				ErrorIncorrectResourceFormat, "Cannot use depth stencil format with render target for resource [" + res.first + "]!");
 
-			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & FrameResourceFlag::Texture3D) && (res.second.Flags & FrameResourceFlag::ForceDSV),
-				ErrorWrongResourceConfiguration, "Cannot create 3D texture as depth stencil in resource [" + res.first + "]!");
+			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Type != FrameResourceType::Texture2D) && (res.second.Flags & FrameResourceFlag::ForceDSV),
+				ErrorWrongResourceConfiguration, "Cannot create non-2D texture as depth stencil in resource [" + res.first + "]!");
 
 			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & FrameResourceFlag::SimultaneousAccess) && (res.second.Flags & FrameResourceFlag::ForceDSV),
 				ErrorWrongResourceConfiguration, "Simultaneous access cannot be used on depth stencil in resource [" + res.first + "]!");
@@ -399,7 +396,7 @@ namespace ZE::GFX::Pipeline
 		return rids;
 	}
 
-	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout() const noexcept
+	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout(const RenderGraph& graph) const noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::GetFrameBufferLayout");
 
@@ -410,8 +407,7 @@ namespace ZE::GFX::Pipeline
 		// Begin | End level
 		std::unordered_map<std::string_view, std::pair<U32, U32>> resourceLookup;
 		resourceLookup.reserve(computedResources.size());
-		desc.Resources.clear();
-		desc.Resources.reserve(computedResources.size());
+		desc.Resources.reserve(computedResources.size() + graph.ffxInternalBuffers.Size());
 		for (const auto& resName : computedResources)
 		{
 			const auto& res = resources.Get(std::string(resName));
@@ -464,9 +460,22 @@ namespace ZE::GFX::Pipeline
 
 		// Copy lifetimes to final structure
 		desc.ResourceLifetimes.clear();
-		desc.ResourceLifetimes.reserve(computedResources.size());
+		desc.ResourceLifetimes.reserve(desc.Resources.size());
 		for (const auto& resName : computedResources)
 			desc.ResourceLifetimes.emplace_back(resourceLookup.at(resName));
+
+		// Get info from FFX buffers
+		graph.ffxInternalBuffers.Iter([&](auto& ffxRes)
+			{
+				desc.Resources.emplace_back(ffxRes.Desc).Flags |= FrameResourceFlag::InternalResourceActive;
+				if (ffxRes.PassID != UINT32_MAX && !(ffxRes.Desc.Flags & FrameResourceFlag::Temporal))
+				{
+					U32 depStart = dependencyLevels.at(ffxRes.PassID);
+					desc.ResourceLifetimes.emplace_back(depStart, depStart + 1);
+				}
+				else
+					desc.ResourceLifetimes.emplace_back(0U, dependencyLevelCount);
+			});
 		return desc;
 	}
 
@@ -611,7 +620,8 @@ namespace ZE::GFX::Pipeline
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::InitializeRenderPasses");
 
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, desc.SettingsRange, desc.DynamicDataRange, desc.Samplers };
+		bool cascadeUpdate = false;
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, desc.SettingsRange, desc.DynamicDataRange, desc.Samplers };
 		auto fillInitData = [&](RenderGraph::ExecutionGroup& execGroup)
 			{
 				for (U32 i = 0; i < execGroup.PassGroupCount; ++i)
@@ -622,30 +632,34 @@ namespace ZE::GFX::Pipeline
 						auto& computed = computedGraph.at(pass.PassID);
 						auto& node = passDescs.at(pass.PassID).at(computed.NodeGroupIndex);
 
+						FFX::PassInfo ffxPassInfo = {};
+						ffxPassInfo.PassID = pass.PassID;
+						FFX::SetCurrentPass(graph.ffxInterface, &ffxPassInfo);
+
 						// Always compute exec data for invalid passes
-						if (node.GetDesc().Type == CorePassType::Invalid)
+						if (node.GetDesc().Type == CorePassType::Invalid || node.IsExecDataCachingDisabled())
 						{
-							invalidExecDatas.emplace_back(node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData),
+							graph.passExecData.emplace_back(node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData),
 								node.GetDesc().Clean);
 						}
 						else
 						{
 							// If pass has been created before then only perform update, otherwise create from start
-							if (!execDataCache.Contains(node.GetDesc().Type))
-								execDataCache.Add(node.GetDesc().Type, nullptr, node.GetDesc().Clean);
+							std::string fullname = node.GetFullName();
+							if (!execDataCache.Contains(fullname))
+								execDataCache.Add(fullname, nullptr, node.GetDesc().Clean);
 
-							auto& execData = execDataCache.Get(node.GetDesc().Type);
+							auto& execData = execDataCache.Get(fullname);
 							if (execData.first == nullptr)
-								execData.first = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
-							else
-								node.GetDesc().Update(dev, buildData, execData.first, node.GetDesc().InitializeFormats);
+							{
+								if (node.GetDesc().Init)
+									execData.first = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
+							}
+							else if (node.GetDesc().Update)
+								cascadeUpdate |= node.GetDesc().Update(dev, buildData, execData.first, node.GetDesc().InitializeFormats);
 							pass.Data.ExecData = execData.first;
 						}
-
-						// TODO: Where to put exec data? Better to cache it and update on most of times
-						//       rather than destroy every graph update and initialize all passes from the begining.
-						//       Better to just update all current passes (with required performing cascade updates),
-						//       create missing ones and all of the rest to Clean()
+						FFX::SetCurrentPass(graph.ffxInterface, nullptr);
 					}
 				}
 			};
@@ -655,9 +669,64 @@ namespace ZE::GFX::Pipeline
 			fillInitData(graph.passExecGroups[group].at(1));
 		}
 
+		// Remove any exec data from passes that are not present
+		auto removeNodeData = [&](RenderNode& node)
+			{
+				std::string fullname = node.GetFullName();
+				if (execDataCache.Contains(fullname))
+				{
+					auto& execData = execDataCache.Get(fullname);
+					if (execData.first)
+						execData.second(dev, execData.first);
+					execDataCache.Remove(fullname);
+				}
+			};
+		for (U32 passId = 0; passId < passDescs.size(); ++passId)
+		{
+			auto& computed = computedGraph.at(passId);
+			if (!computed.Present)
+			{
+				for (auto& node : passDescs.at(passId))
+					removeNodeData(node);
+			}
+			else if (passDescs.at(passId).size() > 1)
+			{
+				for (U32 index = 0; index < computed.NodeGroupIndex; ++index)
+					removeNodeData(passDescs.at(passId).at(index));
+				for (U32 index = computed.NodeGroupIndex + 1; index < passDescs.at(passId).size(); ++index)
+					removeNodeData(passDescs.at(passId).at(index));
+			}
+		}
+
+		// Perform updates as long as there is required to reapply any changes that might need rebuilding render grap
+		while (cascadeUpdate)
+		{
+			cascadeUpdate = false;
+			for (U32 passId = 0; passId < passDescs.size(); ++passId)
+			{
+				auto& computed = computedGraph.at(passId);
+				if (computed.Present)
+				{
+					auto& node = passDescs.at(passId).at(computed.NodeGroupIndex);
+
+					if (node.GetDesc().Update)
+					{
+						std::string fullname = node.GetFullName();
+						if (execDataCache.Contains(fullname))
+							cascadeUpdate |= node.GetDesc().Update(dev, buildData, execDataCache.Get(fullname).first, node.GetDesc().InitializeFormats);
+					}
+				}
+			}
+		}
+
+		RID ffxBuffersOffset = Utils::SafeCast<RID>(computedResources.size());
+		graph.ffxInternalBuffers.Transform([&ffxBuffersOffset](FFX::InternalResourceDescription& desc) { desc.ResID = ffxBuffersOffset++; });
+
+		// After pass data have been scheduled to upload we can start actual GPU upload request
+		assets.GetDisk().StartUploadGPU(true);
 		// Clear up loaded shaders
-		for (auto& shader : buildData.ShaderCache)
-			shader.second.Free(dev);
+		buildData.FreeShaderCache(dev);
+		graph.ffxBuffersChanged = false;
 	}
 
 	void RenderGraphBuilder::ComputeGroupSyncs(class RenderGraph& graph) const noexcept
@@ -1142,8 +1211,8 @@ namespace ZE::GFX::Pipeline
 				BarrierTransition barrier =
 				{
 					rid, TextureLayout::Undefined, firstUsage->second.InputLayout,
-					static_cast<ResourceAccesses>(ResourceAccess::None), firstUsage->second.PossibleAccess,
-					static_cast<StageSyncs>(StageSync::None),
+					Base(ResourceAccess::None), firstUsage->second.PossibleAccess,
+					Base(StageSync::None),
 					GetSyncFromAccess(firstUsage->second.PossibleAccess, firstUsage->second.WorkGfx, firstUsage->second.WorkCompute, firstUsage->second.WorkRayTracing),
 					BarrierType::Immediate
 				};
@@ -1229,9 +1298,9 @@ namespace ZE::GFX::Pipeline
 				BarrierTransition barrier =
 				{
 					BACKBUFFER_RID, lastLayout, TextureLayout::Present,
-					lastUsage.PossibleAccess, static_cast<ResourceAccesses>(ResourceAccess::Common),
+					lastUsage.PossibleAccess, Base(ResourceAccess::Common),
 					GetSyncFromAccess(lastUsage.PossibleAccess, lastUsage.WorkGfx, lastUsage.WorkCompute, lastUsage.WorkRayTracing),
-					static_cast<StageSyncs>(StageSync::AllGraphics),
+					Base(StageSync::AllGraphics),
 					BarrierType::Immediate
 				};
 				lastUsage.GetExecGroup(graph).EndBarriers.emplace_back(barrier);
@@ -1484,7 +1553,7 @@ namespace ZE::GFX::Pipeline
 		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - get resources flags");
 		auto getFlagsFromLayout = [](TextureLayout layout) -> FrameResourceFlags
 			{
-				FrameResourceFlags flags = static_cast<FrameResourceFlags>(FrameResourceFlag::InternalResourceActive);
+				FrameResourceFlags flags = Base(FrameResourceFlag::InternalResourceActive);
 				switch (layout)
 				{
 				case ZE::GFX::Pipeline::TextureLayout::RenderTarget:
@@ -1554,9 +1623,9 @@ namespace ZE::GFX::Pipeline
 					result = BuildResult::ErrorIncorrectResourceFormat;
 					return true;
 				}
-				if ((res.Flags & FrameResourceFlag::Texture3D) && (res.Flags & FrameResourceFlag::InternalUsageDepth))
+				if (res.Type != FrameResourceType::Texture2D && res.Type != FrameResourceType::TextureCube && (res.Flags & FrameResourceFlag::InternalUsageDepth))
 				{
-					ZE_FAIL("Cannot create 3D texture as depth stencil in resource [" + name + "]!");
+					ZE_FAIL("Cannot create non-2D or cube texture as depth stencil in resource [" + name + "]!");
 					result = BuildResult::ErrorWrongResourceConfiguration;
 					return true;
 				}
@@ -1610,14 +1679,11 @@ namespace ZE::GFX::Pipeline
 		}
 		ZE_PERF_GUARD("RenderGraphBuilder::FinalizeGraph");
 
-		// Create GPU buffers
-		graph.execData.DynamicBuffer = &gfx.GetDynamicBuffer();
-		graph.execData.Buffers.Init(dev, GetFrameBufferLayout());
-
-		// Send to GPU new graph data
+		graph.dynamicBuffers.Exec([&dev](auto& buffer) { buffer.Init(dev); });
 		graph.execData.CustomData = desc.PassCustomData;
 		graph.execData.SettingsData = desc.SettingsData;
 
+		// Send to GPU new graph data
 		Resource::CBufferData settingsData = {};
 		settingsData.DataStatic = &graph.execData.SettingsData;
 		settingsData.Bytes = sizeof(RendererSettingsData);
@@ -1626,11 +1692,14 @@ namespace ZE::GFX::Pipeline
 		// Initialize passes structure
 		GroupRenderPasses(dev, graph);
 
+		// Need proper interface before passes will start using it
+		graph.ffxInterface = FFX::GetInterface(dev, graph.dynamicBuffers, graph.execData.Buffers, assets.GetDisk(), graph.ffxInternalBuffers, graph.ffxBuffersChanged);
+
 		// Perform all needed work for active passes
 		InitializeRenderPasses(dev, assets, graph, desc);
 
-		// After pass data have been scheduled to upload we can start actual GPU upload request
-		assets.GetDisk().StartUploadGPU(true);
+		// After render passes has been initialized, new frame buffer can be created with all new setttings applied
+		graph.execData.Buffers.Init(dev, GetFrameBufferLayout(graph));
 
 		// Check for sync dependencies between execution groups
 		ComputeGroupSyncs(graph);
@@ -1644,7 +1713,7 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraphBuilder::ClearConfig(Device& dev) noexcept
 	{
-		resourceOptions = static_cast<FrameBufferFlags>(FrameBufferFlag::None);
+		resourceOptions = Base(FrameBufferFlag::None);
 		resources.Clear();
 		passDescs.clear();
 		renderGraphDepList.clear();
@@ -1655,7 +1724,7 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraphBuilder::ClearComputedGraph(Device& dev) noexcept
 	{
-		execDataCache.Transform([&](auto& execData)
+		execDataCache.Transform([&dev](std::pair<PtrVoid, PassCleanCallback>& execData)
 			{
 				if (execData.first)
 				{
@@ -1663,18 +1732,9 @@ namespace ZE::GFX::Pipeline
 					execData.second(dev, execData.first);
 				}
 			});
-		for (auto& invalidPass : invalidExecDatas)
-		{
-			if (invalidPass.first)
-			{
-				ZE_ASSERT(invalidPass.second, "Clean function should always be present when invalid pass exec data is not empty!");
-				invalidPass.second(dev, invalidPass.first);
-			}
-		}
 
 		execDataCache.Clear();
 		computedGraph.clear();
-		invalidExecDatas.clear();
 		dependencyLevels.clear();
 		computedResources.clear();
 		asyncComputeEnabled = false;

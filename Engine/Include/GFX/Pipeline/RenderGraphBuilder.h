@@ -77,12 +77,10 @@ namespace ZE::GFX::Pipeline
 		std::vector<U32> topoplogyOrder;
 
 		// Caching state of execution data between computations of graph to avoid reinitialization of them every time
-		Data::Library<PassType, std::pair<PtrVoid, PassCleanCallback>> execDataCache;
+		Data::Library<std::string, std::pair<PtrVoid, PassCleanCallback>> execDataCache;
 
 		// Render graph created via adjacency list
 		std::vector<ComputedNode> computedGraph;
-		// List of invalid passes execution data
-		std::vector<std::pair<PtrVoid, PassCleanCallback>> invalidExecDatas;
 		// Longest paths for each node
 		std::vector<U32> dependencyLevels;
 		// Final list of resources used in graph
@@ -100,7 +98,7 @@ namespace ZE::GFX::Pipeline
 
 		// Order: input, inner, output (without already present resources from inputs)
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
-		FrameBufferDesc GetFrameBufferLayout() const noexcept;
+		FrameBufferDesc GetFrameBufferLayout(const class RenderGraph& graph) const noexcept;
 		void GroupRenderPasses(Device& dev, class RenderGraph& graph) const;
 		void InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc);
 		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;

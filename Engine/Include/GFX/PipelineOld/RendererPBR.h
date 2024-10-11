@@ -1,10 +1,9 @@
 #pragma once
-#include "RenderGraph.h"
 
 namespace ZE::GFX::Pipeline
 {
 	// Physically Based Renderer
-	class RendererPBR final : public RenderGraph
+	class RendererPBR final
 	{
 		//DataPBR settingsData = {};
 		//CameraPBR dynamicData = {};
@@ -20,9 +19,8 @@ namespace ZE::GFX::Pipeline
 		bool enableSharpening = true;
 		U32 jitterIndex = 0;
 
-
 	public:
-		RendererPBR() noexcept : RenderGraph(this, nullptr, nullptr, sizeof(U32)) {}
+		RendererPBR() = default;
 		ZE_CLASS_DELETE(RendererPBR);
 		virtual ~RendererPBR() = default;
 
@@ -38,9 +36,9 @@ namespace ZE::GFX::Pipeline
 
 		// Need to be called when data in parameters changed (also after creation of renderer)
 		//void UpdateSettingsData(const Data::Projection& projection) noexcept;
-		void SetInverseViewProjection(EID camera) noexcept;
+		//void SetInverseViewProjection(EID camera) noexcept;
 		// Need to be called before ending every frame
-		void UpdateWorldData(Device& dev, EID camera) noexcept;
+		//void UpdateWorldData(Device& dev, EID camera) noexcept;
 		//void ShowWindow(Device& dev, Data::AssetsStreamer& assets);
 	};
 }
