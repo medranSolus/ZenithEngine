@@ -33,6 +33,7 @@ namespace ZE::GFX
 	public:
 		Surface() = default;
 		Surface(U32 width, U32 height, PixelFormat format = PixelFormat::R8G8B8A8_UNorm, const void* srcImage = nullptr) noexcept;
+		Surface(U32 width, U32 height, U16 depth, U16 mipCount, U16 arraySize, PixelFormat format, bool alpha, const void* srcImage = nullptr) noexcept;
 		ZE_CLASS_MOVE(Surface);
 		~Surface() = default;
 

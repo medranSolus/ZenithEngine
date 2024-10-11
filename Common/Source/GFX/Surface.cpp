@@ -59,7 +59,7 @@ namespace ZE::GFX
 	}
 
 	Surface::Surface(U32 width, U32 height, PixelFormat format, const void* srcImage) noexcept
-		: format(format), width(width), height(height), depth(1), mipCount(1), arraySize(1),
+		: format(format), alpha(false), width(width), height(height), depth(1), mipCount(1), arraySize(1),
 		memorySize(GetSliceByteSize()), memory(std::make_shared<U8[]>(memorySize))
 	{
 		if (srcImage)
@@ -72,6 +72,42 @@ namespace ZE::GFX
 			{
 				for (U32 row = 0; row < height; ++row)
 					std::memcpy(memory.get() + row * destRowSize, reinterpret_cast<const U8*>(srcImage) + row * srcRowSize, srcRowSize);
+			}
+		}
+	}
+
+	Surface::Surface(U32 width, U32 height, U16 depth, U16 mipCount, U16 arraySize, PixelFormat format, bool alpha, const void* srcImage) noexcept
+		: format(format), alpha(alpha), width(width), height(height), depth(depth), mipCount(mipCount), arraySize(arraySize),
+		memorySize(GetSliceByteSize()* (depth == 1 ? arraySize : depth)), memory(std::make_shared<U8[]>(memorySize))
+	{
+		ZE_ASSERT(depth == 1 || arraySize == 1, "Cannot create surface that has both depth and array organization!");
+
+		if (srcImage)
+		{
+			const U32 srcRowSize = width * GetPixelSize();
+			const U64 srcSliceSize = static_cast<U64>(srcRowSize) * height;
+			const U64 destSliceSize = GetSliceByteSize();
+			if (destSliceSize == srcSliceSize)
+				std::memcpy(memory.get(), srcImage, memorySize);
+			else
+			{
+				const U32 destRowSize = GetRowByteSize();
+				const U16 sliceCount = (depth == 1 ? arraySize : depth);
+				if (destRowSize == srcRowSize)
+				{
+					for (U16 slice = 0; slice < sliceCount; ++slice)
+						std::memcpy(memory.get() + destSliceSize * slice, reinterpret_cast<const U8*>(srcImage) + srcSliceSize * slice, srcSliceSize);
+				}
+				else
+				{
+					for (U16 slice = 0; slice < sliceCount; ++slice)
+					{
+						U8* destSlice = memory.get() + destSliceSize * slice;
+						const U8* srcSlice = reinterpret_cast<const U8*>(srcImage) + srcSliceSize * slice;
+						for (U32 row = 0; row < height; ++row)
+							std::memcpy(destSlice + row * destRowSize, srcSlice + row * srcRowSize, srcRowSize);
+					}
+				}
 			}
 		}
 	}
