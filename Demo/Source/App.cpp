@@ -697,7 +697,7 @@ App::App(const CmdParser& params)
 
 		AddPointLight("Light bulb", { -2.4f, 2.8f, -1.1f }, { 1.0f, 1.0f, 1.0f }, 0.5f, 50);
 		AddModel("Sting sword", { -1.9f, 2.1f, -2.3f }, { 35.0f, 270.0f, 110.0f }, 0.045f, "Models/Sting_Sword/Sting_Sword.obj",
-			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV));
+			Base(Data::ExternalModelOption::FlipUV));
 
 #if !_ZE_MODE_DEBUG
 		AddPointLight("Blue ilumination", { 10.8f, 5.9f, -0.1f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 60);

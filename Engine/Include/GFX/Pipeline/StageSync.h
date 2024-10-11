@@ -59,9 +59,9 @@ namespace ZE::GFX::Pipeline
 	constexpr StageSyncs GetSyncFromAccess(ResourceAccesses access, bool gfxWork, bool computeWork, bool rtWork) noexcept
 	{
 		if (access == ResourceAccess::None)
-			return static_cast<StageSyncs>(StageSync::None);
+			return Base(StageSync::None);
 
-		StageSyncs syncs = static_cast<StageSyncs>(StageSync::None);
+		StageSyncs syncs = Base(StageSync::None);
 		if (access & ResourceAccess::Common)
 		{
 			if (gfxWork)

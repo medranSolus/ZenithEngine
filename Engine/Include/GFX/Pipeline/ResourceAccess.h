@@ -42,34 +42,34 @@ namespace ZE::GFX::Pipeline
 		{
 		case TextureLayout::Undefined:
 		case TextureLayout::Preinitialized:
-			return static_cast<ResourceAccesses>(ResourceAccess::None);
+			return Base(ResourceAccess::None);
 		default:
 			ZE_ENUM_UNHANDLED();
 		case TextureLayout::Common:
 		case TextureLayout::Present:
-			return static_cast<ResourceAccesses>(ResourceAccess::Common);
+			return Base(ResourceAccess::Common);
 		case TextureLayout::GenericRead:
 			return ResourceAccess::CopySource | ResourceAccess::ShaderResource;
 		case TextureLayout::RenderTarget:
-			return static_cast<ResourceAccesses>(ResourceAccess::RenderTarget);
+			return Base(ResourceAccess::RenderTarget);
 		case TextureLayout::UnorderedAccess:
-			return static_cast<ResourceAccesses>(ResourceAccess::UnorderedAccess);
+			return Base(ResourceAccess::UnorderedAccess);
 		case TextureLayout::DepthStencilWrite:
-			return static_cast<ResourceAccesses>(ResourceAccess::DepthStencilWrite);
+			return Base(ResourceAccess::DepthStencilWrite);
 		case TextureLayout::DepthStencilRead:
-			return static_cast<ResourceAccesses>(ResourceAccess::DepthStencilRead);
+			return Base(ResourceAccess::DepthStencilRead);
 		case TextureLayout::ShaderResource:
-			return static_cast<ResourceAccesses>(ResourceAccess::ShaderResource);
+			return Base(ResourceAccess::ShaderResource);
 		case TextureLayout::CopySource:
-			return static_cast<ResourceAccesses>(ResourceAccess::CopySource);
+			return Base(ResourceAccess::CopySource);
 		case TextureLayout::CopyDest:
-			return static_cast<ResourceAccesses>(ResourceAccess::CopyDest);
+			return Base(ResourceAccess::CopyDest);
 		case TextureLayout::ResolveSource:
-			return static_cast<ResourceAccesses>(ResourceAccess::ResolveSource);
+			return Base(ResourceAccess::ResolveSource);
 		case TextureLayout::ResolveDest:
-			return static_cast<ResourceAccesses>(ResourceAccess::ResolveDest);
+			return Base(ResourceAccess::ResolveDest);
 		case TextureLayout::ShadingRateSource:
-			return static_cast<ResourceAccesses>(ResourceAccess::ShadingRateSource);
+			return Base(ResourceAccess::ShadingRateSource);
 		}
 	}
 #pragma endregion

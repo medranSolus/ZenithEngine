@@ -77,13 +77,13 @@ namespace ZE::GFX::Pipeline
 	// Information about given render pass
 	struct PassDesc
 	{
-		PassType Type = static_cast<PassType>(CorePassType::Invalid);
+		PassType Type = Base(CorePassType::Invalid);
 		// Optional data for pass intialization
 		PtrVoid InitData = nullptr;
 		// Optional list of pixel formats for buffers used in pass
 		std::vector<PixelFormat> InitializeFormats;
 		PassInitCallback Init = nullptr;
-		// Optional for additional setup step with access to GPU commands
+		// Optional for additional setup step with access to GPU commands, will be run always after Init and Update call
 		PassSetupCallback Setup = nullptr;
 		// Check whether pass should run, meaning it can be removed from execution otherwise with all further processing passes.
 		// If not provided then assume always returning true
