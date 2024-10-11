@@ -11,6 +11,11 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
  - Vulkan SDK 1.3.250.0
  - CMake 3.22
 
+## Development progress
+
+Current tasks and issues are tracked with associated [project page](https://github.com/users/medranSolus/projects/5) where all issues are grouped into corresponding categories.
+Additional list of in-code TODO actions is located [here](Doc/TODO.md) for purpose of tracking possible changes and improvements not large enough to be put into separate issue.
+
 ## License
 
 Zenith Engine project is divided into 4 distinct parts, each with license on it's own.
