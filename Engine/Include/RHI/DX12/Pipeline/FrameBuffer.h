@@ -1,6 +1,9 @@
 #pragma once
 #include "GFX/Binding/Context.h"
+#include "GFX/Resource/Texture/Pack.h"
+#include "GFX/Resource/CBuffer.h"
 #include "GFX/Pipeline/FrameBufferDesc.h"
+#include "GFX/CommandSignature.h"
 #include "GFX/SwapChain.h"
 
 namespace ZE::RHI::DX12::Pipeline
@@ -14,16 +17,21 @@ namespace ZE::RHI::DX12::Pipeline
 			U32 ChunkOffset;
 			D3D12_RESOURCE_DESC1 Desc;
 			D3D12_CLEAR_VALUE ClearVal;
-			std::bitset<4> Flags;
+			U32 ByteStride;
+			std::bitset<6> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
 			constexpr bool UseStencilView() const noexcept { return Flags[1]; }
 			constexpr void SetStencilView() noexcept { Flags[1] = true; }
-			constexpr bool IsTemporal() const noexcept { return Flags[2]; }
-			constexpr void SetTemporal() noexcept { Flags[2] = true; }
-			constexpr bool IsHeapUAV() const noexcept { return Flags[3]; }
-			constexpr void SetHeapUAV() noexcept { Flags[3] = true; }
+			constexpr bool IsRawBufferView() const noexcept { return Flags[2]; }
+			constexpr void SetRawBufferView() noexcept { Flags[2] = true; }
+			constexpr bool IsTemporal() const noexcept { return Flags[3]; }
+			constexpr void SetTemporal() noexcept { Flags[3] = true; }
+			constexpr bool IsHeapUAV() const noexcept { return Flags[4]; }
+			constexpr void SetHeapUAV() noexcept { Flags[4] = true; }
+			constexpr bool IsArrayView() const noexcept { return Flags[5]; }
+			constexpr void ForceArrayView() noexcept { Flags[5] = true; }
 		};
 		struct BufferData
 		{
@@ -32,14 +40,13 @@ namespace ZE::RHI::DX12::Pipeline
 			U16 Array;
 			U16 Mips;
 			PixelFormat Format;
-			std::bitset<3> Flags;
+			D3D12_RESOURCE_DIMENSION Dimenions;
+			std::bitset<2> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
-			constexpr bool IsTexture3D() const noexcept { return Flags[1]; }
-			constexpr void SetTexture3D() noexcept { Flags[1] = true; }
-			constexpr bool IsArrayView() const noexcept { return Flags[2]; }
-			constexpr void SetArrayView() noexcept { Flags[2] = true; }
+			constexpr bool IsArrayView() const noexcept { return Flags[1]; }
+			constexpr void SetArrayView() noexcept { Flags[1] = true; }
 		};
 		struct HandleSRV
 		{
@@ -97,7 +104,9 @@ namespace ZE::RHI::DX12::Pipeline
 		constexpr PixelFormat GetFormat(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Format; }
 		constexpr bool IsUAV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); if (rid == BACKBUFFER_RID) return false; return uavHandles[rid - 1].CpuHandle.ptr != UINT64_MAX; }
 		constexpr bool IsCubeTexture(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsCube(); }
-		constexpr bool IsTexture3D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsTexture3D(); }
+		constexpr bool IsTexture1D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE1D; }
+		constexpr bool IsTexture3D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE3D; }
+		constexpr bool IsBuffer(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_BUFFER; }
 		constexpr bool IsArrayView(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsArrayView(); }
 
 		template<U8 RTVCount>
@@ -109,12 +118,10 @@ namespace ZE::RHI::DX12::Pipeline
 		void BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept;
 
 		void BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv) const noexcept;
-		void BeginRaster(GFX::CommandList& cl, RID rtv) const noexcept;
-		void BeginRasterDepth(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept;
+		void BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept;
 
 		void BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept;
-		void BeginRaster(GFX::CommandList& cl, RID rtv, U16 mipLevel) const noexcept;
-		void BeginRasterDepth(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept;
+		void BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept;
 
 		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept;
 		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept;
@@ -127,8 +134,12 @@ namespace ZE::RHI::DX12::Pipeline
 		void ClearUAV(GFX::CommandList& cl, RID uav, const ColorF4& color) const noexcept;
 		void ClearUAV(GFX::CommandList& cl, RID uav, const Pixel colors[4]) const noexcept;
 
-		void Copy(GFX::CommandList& cl, RID src, RID dest) const noexcept;
+		void Copy(GFX::Device& dev, GFX::CommandList& cl, RID src, RID dest) const noexcept;
+		void CopyFullResource(GFX::CommandList& cl, RID src, RID dest) const noexcept;
 		void CopyBufferRegion(GFX::CommandList& cl, RID src, U64 srcOffset, RID dest, U64 destOffset, U64 bytes) const noexcept;
+
+		void InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::CBuffer& buffer) const noexcept;
+		void InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::Texture::Pack& texture, U32 index) const noexcept;
 
 		template<U32 BarrierCount>
 		void Barrier(GFX::CommandList& cl, const std::array<GFX::Pipeline::BarrierTransition, BarrierCount>& barriers) const noexcept;
@@ -137,6 +148,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		void ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
 			RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const;
+		void ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept;
 		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 		void Free(GFX::Device& dev) noexcept;
 

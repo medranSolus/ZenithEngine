@@ -27,5 +27,10 @@ namespace ZE::RHI::DX12::Resource::Texture
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 		void Free(GFX::Device& dev) noexcept;
 		std::vector<std::vector<GFX::Surface>> GetData(GFX::Device& dev) const;
+
+		// Gfx API Internal
+
+		constexpr U32 GetTextureCount() const noexcept { return count; }
+		IResource* GetResource(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return resources[index].Resource.Get(); }
 	};
 }

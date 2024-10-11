@@ -34,7 +34,9 @@ namespace ZE::GFX::Pipeline
 		constexpr PixelFormat GetFormat(RID rid) const noexcept { PixelFormat format; ZE_RHI_BACKEND_CALL_RET(format, GetFormat, rid); return format; }
 		constexpr bool IsUAV(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUAV, rid); return val; }
 		constexpr bool IsCubeTexture(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCubeTexture, rid); return val; }
+		constexpr bool IsTexture1D(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsTexture1D, rid); return val; }
 		constexpr bool IsTexture3D(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsTexture3D, rid); return val; }
+		constexpr bool IsBuffer(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsBuffer, rid); return val; }
 		constexpr bool IsArrayView(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsArrayView, rid); return val; }
 
 		// When render targets have been created one after one without any depth stencil between them
@@ -55,12 +57,10 @@ namespace ZE::GFX::Pipeline
 
 		// Maybe add also ability to set scale and offset for viewport if needed
 		constexpr void BeginRasterDepthOnly(CommandList& cl, RID dsv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepthOnly, cl, dsv); }
-		constexpr void BeginRaster(CommandList& cl, RID rtv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv); }
-		constexpr void BeginRasterDepth(CommandList& cl, RID rtv, RID dsv) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepth, cl, rtv, dsv); }
+		constexpr void BeginRaster(CommandList& cl, RID rtv, RID dsv = INVALID_RID) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv, dsv); }
 
 		constexpr void BeginRasterDepthOnly(CommandList& cl, RID dsv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepthOnly, cl, dsv, mipLevel); }
-		constexpr void BeginRaster(CommandList& cl, RID rtv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv, mipLevel); }
-		constexpr void BeginRasterDepth(CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRasterDepth, cl, rtv, dsv, mipLevel); }
+		constexpr void BeginRaster(CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(BeginRaster, cl, rtv, dsv, mipLevel); }
 
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in render graph they have been specified one by one.
@@ -86,8 +86,12 @@ namespace ZE::GFX::Pipeline
 		constexpr void ClearUAV(CommandList& cl, RID rid, const ColorF4& color) const noexcept { ZE_RHI_BACKEND_CALL(ClearUAV, cl, rid, color); }
 		constexpr void ClearUAV(CommandList& cl, RID rid, const Pixel colors[4]) const noexcept { ZE_RHI_BACKEND_CALL(ClearUAV, cl, rid, colors); }
 
-		constexpr void Copy(CommandList& cl, RID src, RID dest) const noexcept { ZE_RHI_BACKEND_CALL(Copy, cl, src, dest); }
+		constexpr void Copy(Device& dev, CommandList& cl, RID src, RID dest) const noexcept { ZE_RHI_BACKEND_CALL(Copy, dev, cl, src, dest); }
+		constexpr void CopyFullResource(CommandList& cl, RID src, RID dest) const noexcept { ZE_RHI_BACKEND_CALL(CopyFullResource, cl, src, dest); }
 		constexpr void CopyBufferRegion(CommandList& cl, RID src, U64 srcOffset, RID dest, U64 destOffset, U64 bytes) const noexcept { ZE_RHI_BACKEND_CALL(CopyBufferRegion, cl, src, srcOffset, dest, destOffset, bytes); }
+
+		constexpr void InitResource(CommandList& cl, RID rid, const Resource::CBuffer& buffer) const noexcept { ZE_RHI_BACKEND_CALL(InitResource, cl, rid, buffer); }
+		constexpr void InitResource(CommandList& cl, RID rid, const Resource::Texture::Pack& texture, U32 index) const noexcept { ZE_RHI_BACKEND_CALL(InitResource, cl, rid, texture, index); }
 
 		// Manually transition resources between layouts and accesses in pipeline, recomended to use only on innner resources!
 		template<U32 BarrierCount>
@@ -99,6 +103,7 @@ namespace ZE::GFX::Pipeline
 
 		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INALID_RID
 		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
+		constexpr void ExecuteIndirect(CommandList& cl, CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteIndirect, cl, signature, commandsBuffer, commandsOffset); }
 
 		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
 		// Before destroying FrameBuffer you have to call this function for proper memory freeing

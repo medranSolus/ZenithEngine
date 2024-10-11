@@ -31,16 +31,18 @@ namespace ZE::GFX::Pipeline
 		// Cannot be used together with ForceDSV
 		ForceUAV = 0x0040,
 		ForceSRV = 0x0080,
-		// Cannot be used together with Texture3D
-		Cube = 0x0100,
-		// Cannot be used together with Cube
-		Texture3D = 0x0200,
+		// Resource have to preserve it's content's over the frame and cannot alias with other resources
+		Temporal = 0x0100,
+		// Cannot be used together with ForceDSV
+		SimultaneousAccess = 0x0200,
 		// When creating SRV over depth stencil choose to use stencil instead of depth
 		StencilView = 0x0400,
-		// Resource have to preserve it's content's over the frame and cannot alias with other resources
-		Temporal = 0x0800,
-		// Cannot be used together with ForceDSV
-		SimultaneousAccess = 0x1000,
+		// When creating SRV or UAV over texture resource, treat it as an array
+		ArrayView = 0x0800,
+		// When creating SRV over buffer resource, treat it as a raw view (byte address buffer)
+		RawBufferView = 0x1000,
+		// When creating buffer, allow it to hold indirect rendering arguments
+		AllowIndirect = 0x2000,
 
 		// Internal flag indicating that resource is active in current configuration
 		InternalResourceActive = 0x08000000,
@@ -57,6 +59,14 @@ namespace ZE::GFX::Pipeline
 	};
 	ZE_ENUM_OPERATORS(FrameResourceFlag, FrameResourceFlags);
 
+	// Type of the resource to be created
+	enum class FrameResourceType : U8
+	{
+		// When creating Buffer resource use FrameResourceDesc::Sizes::Y as requested byte stride in views (0 typed view, otherwise structured view)
+		Buffer,
+		Texture1D, Texture2D, TextureCube, Texture3D
+	};
+
 	// Description of single resource in FrameBuffer
 	struct FrameResourceDesc
 	{
@@ -68,6 +78,7 @@ namespace ZE::GFX::Pipeline
 		float ClearDepth = 0.0f;
 		U8 ClearStencil = 0;
 		U16 MipLevels = 1;
+		FrameResourceType Type = FrameResourceType::Texture2D;
 #if _ZE_DEBUG_GFX_NAMES
 		std::string DebugName = "";
 #endif
