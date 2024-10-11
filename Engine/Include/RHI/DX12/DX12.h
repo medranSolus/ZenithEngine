@@ -3,7 +3,9 @@
 #include "RHI/DX/DXGI.h"
 #include "GFX/Binding/Range.h"
 #include "GFX/Pipeline/Barrier.h"
+#include "GFX/Pipeline/FrameResourceDesc.h"
 #include "GFX/Pipeline/TextureLayout.h"
+#include "GFX/Resource/Texture/Type.h"
 #include "GFX/Resource/PipelineStateDesc.h"
 #include "GFX/Resource/SamplerDesc.h"
 #include "GFX/ShaderPresence.h"
@@ -48,6 +50,8 @@ namespace ZE::RHI::DX12
 	constexpr D3D12_COMPARISON_FUNC GetComparisonFunc(GFX::Resource::CompareMethod func) noexcept;
 	// Get DirectX 12 version of culling modes
 	constexpr D3D12_CULL_MODE GetCulling(GFX::Resource::CullMode mode) noexcept;
+	// Get DirectX 12 version of resource type
+	constexpr D3D12_RESOURCE_DIMENSION GetDimension(GFX::Pipeline::FrameResourceType type) noexcept;
 	// Get DirectX 12 version of filter type
 	constexpr D3D12_FILTER GetFilterType(GFX::Resource::SamplerFilter samplerType) noexcept;
 	// Get register space for given shader type
@@ -58,6 +62,8 @@ namespace ZE::RHI::DX12
 	constexpr D3D12_STATIC_BORDER_COLOR GetStaticBorderColor(GFX::Resource::Texture::EdgeColor color) noexcept;
 	// Get DirectX 12 version of texture addressing mode
 	constexpr D3D12_TEXTURE_ADDRESS_MODE GetTextureAddressMode(GFX::Resource::Texture::AddressMode mode) noexcept;
+	// Get DirectX 12 version of texture type
+	constexpr D3D12_RESOURCE_DIMENSION GetTextureDimension(GFX::Resource::Texture::Type type) noexcept;
 	// Get DirectX 12 version of primitive topology types
 	constexpr D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType(GFX::Resource::TopologyType type) noexcept;
 
@@ -254,6 +260,24 @@ namespace ZE::RHI::DX12
 			return D3D12_CULL_MODE_FRONT;
 		case GFX::Resource::CullMode::Back:
 			return D3D12_CULL_MODE_BACK;
+		}
+	}
+
+	constexpr D3D12_RESOURCE_DIMENSION GetDimension(GFX::Pipeline::FrameResourceType type) noexcept
+	{
+		switch (type)
+		{
+		case GFX::Pipeline::FrameResourceType::Buffer:
+			return D3D12_RESOURCE_DIMENSION_BUFFER;
+		case GFX::Pipeline::FrameResourceType::Texture1D:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		case GFX::Pipeline::FrameResourceType::Texture2D:
+		case GFX::Pipeline::FrameResourceType::TextureCube:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		case GFX::Pipeline::FrameResourceType::Texture3D:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+		default:
+			return D3D12_RESOURCE_DIMENSION_UNKNOWN;
 		}
 	}
 
@@ -465,6 +489,24 @@ namespace ZE::RHI::DX12
 			return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		case GFX::Resource::Texture::AddressMode::MirrorOnce:
 			return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+		}
+	}
+
+	constexpr D3D12_RESOURCE_DIMENSION GetTextureDimension(GFX::Resource::Texture::Type type) noexcept
+	{
+		switch (type)
+		{
+		case GFX::Resource::Texture::Type::Tex1D:
+		case GFX::Resource::Texture::Type::Tex1DArray:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		case GFX::Resource::Texture::Type::Tex2D:
+		case GFX::Resource::Texture::Type::Tex2DArray:
+		case GFX::Resource::Texture::Type::Cube:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		case GFX::Resource::Texture::Type::Tex3D:
+			return D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+		default:
+			return D3D12_RESOURCE_DIMENSION_UNKNOWN;
 		}
 	}
 

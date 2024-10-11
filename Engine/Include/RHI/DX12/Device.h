@@ -13,10 +13,6 @@ ZE_WARNING_POP
 namespace ZE::GFX
 {
 	class CommandList;
-	namespace Resource
-	{
-		class Generic;
-	}
 }
 namespace ZE::RHI::DX12
 {
@@ -58,7 +54,6 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IFence> copyFence;
 
 		AllocatorGPU allocator;
-		FfxInterface ffxInterface;
 		xess_context_handle_t xessCtx = nullptr;
 
 		DescriptorAllocator::BlockAllocator blockDescAllocator;
@@ -92,7 +87,6 @@ namespace ZE::RHI::DX12
 		~Device();
 
 		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
-		constexpr FfxInterface* GetFfxInterface() noexcept { return &ffxInterface; }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void EndFrame() noexcept {}
 

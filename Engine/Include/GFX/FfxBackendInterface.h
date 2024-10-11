@@ -1,4 +1,6 @@
 #pragma once
+#include "Data/Library.h"
+#include "IO/DiskManager.h"
 #include "Pipeline/FrameBuffer.h"
 #include "Resource/DynamicCBuffer.h"
 #include "ChainPool.h"
@@ -7,26 +9,44 @@ ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_types.h"
 ZE_WARNING_POP
 
-namespace ZE::GFX
+namespace ZE::GFX::FFX
 {
+	// Description of additional resource used by FFX backend to be allocated in frame buffer
+	struct InternalResourceDescription
+	{
+		Pipeline::FrameResourceDesc Desc;
+		RID ResID;
+		U32 PassID;
+	};
+
+	// Data about pass to help in creation of new resources with setting their correct lifetime
+	struct PassInfo
+	{
+		U32 PassID = UINT32_MAX;
+	};
+
 	// Convert command list into handle used by FFX SDK
-	constexpr FfxCommandList ffxGetCommandList(CommandList& cl) noexcept { return (FfxCommandList)&cl; }
+	constexpr FfxCommandList GetCommandList(CommandList& cl) noexcept { return (FfxCommandList)&cl; }
 	// Convert pixel format into FFX SDK surface format
-	constexpr FfxSurfaceFormat GetFfxSurfaceFormat(PixelFormat format) noexcept;
+	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept;
 	// Convert FFX SDK surface format into pixel format
-	constexpr PixelFormat GetPixelFormatFfx(FfxSurfaceFormat format) noexcept;
+	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept;
 
 	// Initialize handle for FFX SDK from one of the frame buffers
-	inline FfxResource ffxGetResource(Pipeline::FrameBuffer& buffers, RID rid, Pipeline::TextureLayout layout) noexcept { return {}; }
+	FfxResource GetResource(Pipeline::FrameBuffer& buffers, RID rid, FfxResourceStates state) noexcept;
 
 	// Fill up pointers to FFX SDK backend callbacks
-	inline void ffxGetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers) noexcept {}
+	FfxInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers, Pipeline::FrameBuffer& frameBuffer,
+		IO::DiskManager& disk, Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers, bool& notifyBuffersChange) noexcept;
+
+	// Set information about current pass for creation of internal buffers. Need to be called before and after Init/Update pass calls
+	void SetCurrentPass(FfxInterface& backendInterface, const PassInfo* info) noexcept;
 
 	// Free up FFX SDK backend interface
-	inline void ffxDestroyInterface(Device& dev) noexcept {}
+	void DestroyInterface(FfxInterface& backendInterface) noexcept;
 
 #pragma region Functions
-	constexpr FfxSurfaceFormat GetFfxSurfaceFormat(PixelFormat format) noexcept
+	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept
 	{
 		switch (format)
 		{
@@ -82,7 +102,7 @@ namespace ZE::GFX
 		}
 	}
 
-	constexpr PixelFormat GetPixelFormatFfx(FfxSurfaceFormat format) noexcept
+	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept
 	{
 		switch (format)
 		{

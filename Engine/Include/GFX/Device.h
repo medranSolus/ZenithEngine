@@ -28,7 +28,6 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
-		constexpr FfxInterface& GetFfxInterface() noexcept { FfxInterface* ffx = nullptr; ZE_RHI_BACKEND_CALL_RET(ffx, GetFfxInterface); return *ffx; }
 		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
 		constexpr void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 flags) { ZE_RHI_BACKEND_CALL(InitializeXeSS, targetRes, quality, flags); }
 

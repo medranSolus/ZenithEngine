@@ -15,7 +15,6 @@ namespace ZE::GFX
 		// TODO: Move chainPool inside CL
 		ChainPool<CommandList> mainList;
 		ChainPool<U64> fenceChain;
-		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
 
 	public:
 		Graphics() = default;
@@ -25,7 +24,6 @@ namespace ZE::GFX
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
-		constexpr Resource::DynamicCBuffer& GetDynamicBuffer() noexcept { return dynamicBuffers.Get(); }
 		constexpr void WaitForFrame();
 		constexpr void Present();
 
@@ -37,7 +35,6 @@ namespace ZE::GFX
 	{
 		swapChain.StartFrame(device);
 		device.WaitMain(fenceChain.Get());
-		dynamicBuffers.Get().StartFrame(device);
 		mainList.Get().Reset(device);
 	}
 

@@ -7,10 +7,6 @@
 namespace ZE::GFX
 {
 	class CommandList;
-	namespace Resource
-	{
-		class Generic;
-	}
 }
 namespace ZE::RHI::VK
 {
@@ -104,7 +100,6 @@ namespace ZE::RHI::VK
 		float conservativeRasterOverestimateSize = 0.0f;
 
 		AllocatorGPU allocator;
-		FfxInterface ffxInterface;
 
 		CommandList copyList;
 		TableInfo<U16> copyResInfo;
@@ -159,7 +154,6 @@ namespace ZE::RHI::VK
 		~Device();
 
 		constexpr U32 GetData() const noexcept { return 0; }
-		constexpr FfxInterface* GetFfxInterface() noexcept { return &ffxInterface; }
 		constexpr GFX::ShaderModel GetMaxShaderModel() const noexcept { return GFX::ShaderModel::V6_0; }
 		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { return { 32, 32 }; }
 		constexpr bool IsShaderFloat16Supported() const noexcept { return false; }

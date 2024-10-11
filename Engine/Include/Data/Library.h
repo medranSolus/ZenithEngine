@@ -15,6 +15,7 @@ namespace ZE::Data
 		~Library() = default;
 
 		U64 Size() const noexcept { return data.size(); }
+		void Iter(std::function<void(const T&)> func) const noexcept { for (const auto& item : data) func(item.second); }
 		void Transform(std::function<void(T&)> func) noexcept { for (auto item : data) func(item.second); }
 		void Transform(std::function<void(const Key&, T&)> func) noexcept { for (auto item : data) func(item.first, item.second); }
 		void TransformCheck(std::function<bool(const Key&, T&)> func) noexcept { for (auto item : data) if (func(item.first, item.second)) break; }

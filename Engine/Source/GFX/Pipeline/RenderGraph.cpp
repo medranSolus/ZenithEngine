@@ -7,6 +7,9 @@ namespace ZE::GFX::Pipeline
 		CommandList& asyncList = asyncListChain.Get();
 		CommandList& mainList = gfx.GetMainList();
 		Device& dev = gfx.GetDevice();
+
+		execData.DynamicBuffer = &dynamicBuffers.Get();
+		execData.DynamicBuffer->StartFrame(dev);
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 
 		// If needed do an update
@@ -22,7 +25,9 @@ namespace ZE::GFX::Pipeline
 			break;
 		}
 
-		// TODO: Single threaded method only for now
+		// TODO: Single threaded method only for now, but multiple threads possible as workers
+		//       for a) passes in single pass group and then maybe for multiple pass groups at once
+		//       but only if no synchronization issues could occur between pass states
 		for (U32 i = 0; i < execGroupCount; ++i)
 		{
 			auto& mainGroup = passExecGroups[i].at(0);
@@ -89,9 +94,22 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::Free(Device& dev) noexcept
 	{
+		for (auto& passData : passExecData)
+		{
+			if (passData.first)
+			{
+				ZE_ASSERT(passData.second, "Clean function should always be present when pass exec data is not empty!");
+				passData.second(dev, passData.first);
+			}
+		}
+		passExecData.clear();
+
+		ffxInternalBuffers.Clear();
+		FFX::DestroyInterface(ffxInterface);
 		execGroupCount = 0;
 		passExecGroups = nullptr;
 		asyncListChain.Exec([&dev](CommandList& x) { x.Free(dev); });
+		dynamicBuffers.Exec([&dev](Resource::DynamicCBuffer& x) { x.Free(dev); });
 		execData.Buffers.Free(dev);
 		execData.Bindings.Free(dev);
 		execData.SettingsBuffer.Free(dev);

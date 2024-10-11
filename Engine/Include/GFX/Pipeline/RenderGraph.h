@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/FfxBackendInterface.h"
 #include "GFX/Graphics.h"
 #include "RenderGraphBuilder.h"
 
@@ -91,6 +92,8 @@ namespace ZE::GFX::Pipeline
 	// RenderGraph Execution: last exec group with some last transitions for backbuffer and others, have to be main group
 
 	// For FFX it would be okay to create reflection system to identify which pass belongs to which effect, so basically: searchPass(getPassType(FFX_EFFECT_CACAO)).AddInnerBuffer()
+	// FFX can call AddInnerBuffer() on nodes they are belonging to in order to allocate resources for it's internal use
+	// and after that during deletion it will just call to remove them from node description to avoid multi definition of resources
 
 	// Class for running render graphs previously created by some builder. Should be generic so it will accept any input provided for data, passes, etc.
 	class RenderGraph final
@@ -124,16 +127,11 @@ namespace ZE::GFX::Pipeline
 		// Group of passes to be executed in single submission
 		struct ExecutionGroup
 		{
-#if _ZE_RENDER_GRAPH_SINGLE_THREAD
-			typedef U64 FenceValue;
-#else
-			typedef UA64 FenceValue;
-#endif
 			U32 PassGroupCount = 0;
 			std::unique_ptr<ParallelPassGroup[]> PassGroups;
 			bool QueueWait = false;
-			FenceValue WaitFence = 0;
-			FenceValue* SignalFence = nullptr;
+			U64 WaitFence = 0;
+			U64* SignalFence = nullptr;
 			// Only related to cross-queue resources and for last group preparing the backbuffer
 			std::vector<BarrierTransition> EndBarriers;
 		};
@@ -144,6 +142,11 @@ namespace ZE::GFX::Pipeline
 		U32 execGroupCount = 0;
 		RendererPassExecuteData execData;
 		ChainPool<CommandList> asyncListChain;
+		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
+		std::vector<std::pair<PtrVoid, PassCleanCallback>> passExecData;
+		FfxInterface ffxInterface = {};
+		Data::Library<S32, FFX::InternalResourceDescription> ffxInternalBuffers;
+		bool ffxBuffersChanged = false;
 
 	public:
 		RenderGraph() = default;
