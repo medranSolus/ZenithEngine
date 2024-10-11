@@ -226,10 +226,6 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED(factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&memoryQueue)));
 		ZE_DX_THROW_FAILED(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&compressCodecGDeflate)));
 
-		fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
-		ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
-		fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
-		ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage memory queue fence event!");
 		cpuDecompressionThread = std::jthread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
 	}
 
@@ -246,13 +242,24 @@ namespace ZE::RHI::DX12
 
 	void DiskManager::StartUploadGPU(bool waitable) noexcept
 	{
-		fileQueue->Submit();
-		memoryQueue->Submit();
 		if (waitable || uploadDestResourceQueue.size())
 		{
+			// Recreate handles in case of previous events to ensure that always last event is selected
+			if (fenceEvents[0])
+				CloseHandle(fenceEvents[0]);
+			if (fenceEvents[1])
+				CloseHandle(fenceEvents[1]);
+
+			fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
+			ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
+			fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
+			ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage memory queue fence event!");
+
 			fileQueue->EnqueueSetEvent(fenceEvents[0]);
 			memoryQueue->EnqueueSetEvent(fenceEvents[1]);
 		}
+		fileQueue->Submit();
+		memoryQueue->Submit();
 
 		LockGuardRW lock(queueMutex);
 		submitQueue.reserve(submitQueue.size() + uploadQueue.size());
@@ -270,10 +277,18 @@ namespace ZE::RHI::DX12
 
 	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl)
 	{
+		// If not called previously then force it
+		if (!fenceEvents[0] || !fenceEvents[1])
+			StartUploadGPU(true);
+
 		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
 			throw ZE_WIN_EXCEPT_LAST();
-		if (!ResetEvent(fenceEvents[0]) || !ResetEvent(fenceEvents[1]))
-			throw ZE_WIN_EXCEPT_LAST();
+
+		// Destroy old fences so always new will be chosen in case of double call to StartUploadGPU()
+		CloseHandle(fenceEvents[0]);
+		CloseHandle(fenceEvents[1]);
+		fenceEvents[0] = nullptr;
+		fenceEvents[1] = nullptr;
 
 		DSTORAGE_ERROR_RECORD errorRecord = {};
 		fileQueue->RetrieveErrorRecord(&errorRecord);
