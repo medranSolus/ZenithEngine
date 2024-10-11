@@ -368,11 +368,13 @@ namespace ZE::RHI::DX12
 				return GFX::ShaderModel::V6_6;
 			case D3D_SHADER_MODEL_6_7:
 				return GFX::ShaderModel::V6_7;
-			default:
-				ZE_WARNING("Shader model reported outside max known version 6.8, newer hardware detected!");
-				[[fallthrough]];
 			case D3D_SHADER_MODEL_6_8:
 				return GFX::ShaderModel::V6_8;
+			default:
+				ZE_WARNING("Shader model reported outside max known version 6.9, newer hardware detected!");
+				[[fallthrough]];
+			case D3D_SHADER_MODEL_6_9:
+				return GFX::ShaderModel::V6_9;
 			}
 		}
 		return GFX::ShaderModel::V6_0;
@@ -531,9 +533,10 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
 			&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION,
 			"Texture too big!");
+		ZE_ASSERT(height == 1 || type != GFX::Resource::Texture::Type::Tex1D, "Height of 1D texture must be 1!");
 
 		D3D12_RESOURCE_DESC1 desc = {};
-		desc.Dimension = type == GFX::Resource::Texture::Type::Tex3D ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		desc.Dimension = GetTextureDimension(type);
 		desc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = width;
 		desc.Height = height;

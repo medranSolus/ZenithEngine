@@ -12,7 +12,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
-		for (U32 i = 0; const auto& tex : desc.Textures)
+		for (U32 i = 0; const auto & tex : desc.Textures)
 		{
 			ResourceInfo& resInfo = resources[i];
 
@@ -22,6 +22,24 @@ namespace ZE::RHI::DX12::Resource::Texture
 			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			switch (tex.Type)
 			{
+			case GFX::Resource::Texture::Type::Tex1D:
+			{
+				mipLevels = &srv.Texture1D.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+				srv.Texture1D.MostDetailedMip = 0;
+				srv.Texture1D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Tex1DArray:
+			{
+				mipLevels = &srv.Texture1DArray.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+				srv.Texture1DArray.MostDetailedMip = 0;
+				srv.Texture1DArray.FirstArraySlice = 0;
+				srv.Texture1DArray.ArraySize = 1;
+				srv.Texture1DArray.ResourceMinLODClamp = 0.0f;
+				break;
+			}
 			default:
 				ZE_ENUM_UNHANDLED();
 			case GFX::Resource::Texture::Type::Tex2D:
@@ -31,6 +49,17 @@ namespace ZE::RHI::DX12::Resource::Texture
 				srv.Texture2D.MostDetailedMip = 0;
 				srv.Texture2D.PlaneSlice = 0;
 				srv.Texture2D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Tex2DArray:
+			{
+				mipLevels = &srv.Texture2DArray.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				srv.Texture2DArray.MostDetailedMip = 0;
+				srv.Texture2DArray.FirstArraySlice = 0;
+				srv.Texture2DArray.ArraySize = 1;
+				srv.Texture2DArray.PlaneSlice = 0;
+				srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
 				break;
 			}
 			case GFX::Resource::Texture::Type::Tex3D:
@@ -49,17 +78,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				srv.TextureCube.ResourceMinLODClamp = 0.0f;
 				break;
 			}
-			case GFX::Resource::Texture::Type::Array:
-			{
-				mipLevels = &srv.Texture2DArray.MipLevels;
-				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-				srv.Texture2DArray.MostDetailedMip = 0;
-				srv.Texture2DArray.FirstArraySlice = 0;
-				srv.Texture2DArray.ArraySize = 1;
-				srv.Texture2DArray.PlaneSlice = 0;
-				srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
-				break;
-			}
 			}
 
 			// Check actual provided surface count for given texture
@@ -73,9 +91,13 @@ namespace ZE::RHI::DX12::Resource::Texture
 					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : (surfaces > 1 ? surfaces : startSurface.GetArraySize()),
 					srv.Format, tex.Type);
 
-				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || tex.Type != GFX::Resource::Texture::Type::Tex2D, "Single texture cannot hold multiple surfaces!");
+				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || (tex.Type != GFX::Resource::Texture::Type::Tex2D && tex.Type != GFX::Resource::Texture::Type::Tex1D),
+					"Single texture cannot hold multiple surfaces!");
 				ZE_ASSERT(texDesc.DepthOrArraySize == 6 || tex.Type != GFX::Resource::Texture::Type::Cube, "Cube texture should contain 6 surfaces!");
-				if (tex.Type == GFX::Resource::Texture::Type::Array)
+
+				if (tex.Type == GFX::Resource::Texture::Type::Tex1DArray)
+					srv.Texture1DArray.ArraySize = texDesc.DepthOrArraySize;
+				if (tex.Type == GFX::Resource::Texture::Type::Tex2DArray)
 					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
 				texDesc.MipLevels = startSurface.GetMipCount();
 				*mipLevels = startSurface.GetMipCount();
@@ -85,7 +107,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 				if (surfaces > 1)
 				{
-					for (U16 arrayIndex = 0; const auto& surface : tex.Surfaces)
+					for (U16 arrayIndex = 0; const auto & surface : tex.Surfaces)
 					{
 						const U16 index = arrayIndex++;
 						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), Utils::SafeCast<U32>(surface.GetMemorySize()),
@@ -118,7 +140,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
-		for (U32 i = 0; const auto& tex : desc.Textures)
+		for (U32 i = 0; const auto & tex : desc.Textures)
 		{
 			ResourceInfo& resInfo = resources[i];
 
@@ -128,6 +150,24 @@ namespace ZE::RHI::DX12::Resource::Texture
 			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			switch (tex.Type)
 			{
+			case GFX::Resource::Texture::Type::Tex1D:
+			{
+				mipLevels = &srv.Texture1D.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+				srv.Texture1D.MostDetailedMip = 0;
+				srv.Texture1D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Tex1DArray:
+			{
+				mipLevels = &srv.Texture1DArray.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+				srv.Texture1DArray.MostDetailedMip = 0;
+				srv.Texture1DArray.FirstArraySlice = 0;
+				srv.Texture1DArray.ArraySize = 1;
+				srv.Texture1DArray.ResourceMinLODClamp = 0.0f;
+				break;
+			}
 			default:
 				ZE_ENUM_UNHANDLED();
 			case GFX::Resource::Texture::Type::Tex2D:
@@ -137,6 +177,17 @@ namespace ZE::RHI::DX12::Resource::Texture
 				srv.Texture2D.MostDetailedMip = 0;
 				srv.Texture2D.PlaneSlice = 0;
 				srv.Texture2D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+			case GFX::Resource::Texture::Type::Tex2DArray:
+			{
+				mipLevels = &srv.Texture2DArray.MipLevels;
+				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				srv.Texture2DArray.MostDetailedMip = 0;
+				srv.Texture2DArray.FirstArraySlice = 0;
+				srv.Texture2DArray.ArraySize = 1;
+				srv.Texture2DArray.PlaneSlice = 0;
+				srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
 				break;
 			}
 			case GFX::Resource::Texture::Type::Tex3D:
@@ -155,17 +206,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 				srv.TextureCube.ResourceMinLODClamp = 0.0f;
 				break;
 			}
-			case GFX::Resource::Texture::Type::Array:
-			{
-				mipLevels = &srv.Texture2DArray.MipLevels;
-				srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-				srv.Texture2DArray.MostDetailedMip = 0;
-				srv.Texture2DArray.FirstArraySlice = 0;
-				srv.Texture2DArray.ArraySize = 1;
-				srv.Texture2DArray.PlaneSlice = 0;
-				srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
-				break;
-			}
 			}
 
 			// Check actual provided surface count for given texture
@@ -174,9 +214,13 @@ namespace ZE::RHI::DX12::Resource::Texture
 				srv.Format = DX::GetDXFormat(tex.Format);
 				D3D12_RESOURCE_DESC1 texDesc = device.GetTextureDesc(tex.Width, tex.Height, tex.DepthArraySize, srv.Format, tex.Type);
 
-				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || tex.Type != GFX::Resource::Texture::Type::Tex2D, "Single texture cannot hold multiple surfaces!");
+				ZE_ASSERT(texDesc.DepthOrArraySize == 1 || (tex.Type != GFX::Resource::Texture::Type::Tex2D && tex.Type != GFX::Resource::Texture::Type::Tex1D),
+					"Single texture cannot hold multiple surfaces!");
 				ZE_ASSERT(texDesc.DepthOrArraySize == 6 || tex.Type != GFX::Resource::Texture::Type::Cube, "Cube texture should contain 6 surfaces!");
-				if (tex.Type == GFX::Resource::Texture::Type::Array)
+
+				if (tex.Type == GFX::Resource::Texture::Type::Tex1DArray)
+					srv.Texture1DArray.ArraySize = texDesc.DepthOrArraySize;
+				if (tex.Type == GFX::Resource::Texture::Type::Tex2DArray)
 					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
 				texDesc.MipLevels = tex.MipLevels;
 				*mipLevels = tex.MipLevels;
