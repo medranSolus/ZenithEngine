@@ -102,55 +102,58 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.InitBuffers(16);
 
 #pragma region Framebuffer definition
+		// Helpers for creating resource definitions
+#define TEX_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, type, debugName) { scaling, 1, flags, format, ColorF4{ clearR, clearG, clearB, clearA }, 0.0f, 0, 1, type ZE_FRAME_RES_INIT_NAME(debugName) }
+#define TEX2D_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, debugName) TEX_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, FrameResourceType::Texture2D, debugName)
+#define CLR_COLOR_TEX2D_DESC(flags, format, clearR, clearG, clearB, clearA, debugName) TEX2D_DESC(SIZE_SYNC,flags, format, clearR, clearG, clearB, clearA, debugName)
+#define GENERIC_TEX2D_DESC(flags, format, debugName) CLR_COLOR_TEX2D_DESC(flags, format, 0.0f, 0.0f, 0.0f, 1.0f, debugName)
+#define TEX2D_MIP_DESC(flags, format, mips, debugName) { SIZE_SYNC, 1, flags, format, ColorF4{}, 0.0f, 0, mips, FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME(debugName) }
+
 		// GBuffer related resources
 		graphDesc.AddResource("gbuffDepth",
-			{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff depth") });
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::DepthOnly, "GBuff depth"));
 		graphDesc.AddResource("gbuffNormal",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff normals") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, "GBuff normals"));
 		graphDesc.AddResource("gbuffAlbedo",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_UNorm, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff albedo") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_UNorm, "GBuff albedo"));
 		graphDesc.AddResource("gbuffMaterial",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R8G8_UNorm, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff material params") }); // R - metalness, G - roughness
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R8G8_UNorm, "GBuff material params")); // R - metalness, G - roughness
 		graphDesc.AddResource("gbuffMotion",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff motion vectors") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, "GBuff motion vectors"));
 		graphDesc.AddResource("gbuffReactive",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R8_UNorm, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff reactive mask") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R8_UNorm, "GBuff reactive mask"));
 
 		// Copy of resources for async compute SSAO
 		graphDesc.AddResource("gbuffDepthCompute",
-			{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceDSV, PixelFormat::DepthOnly, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff depth compute copy") });
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceDSV, PixelFormat::DepthOnly, "GBuff depth compute copy"));
 		graphDesc.AddResource("gbuffNormalCompute",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("GBuff normals compute copy") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, "GBuff normals compute copy"));
 
 		// Light related resources
 		graphDesc.AddResource("directLighting",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, ColorF4(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Direct lighting") });
+			CLR_COLOR_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, ColorF4{ 0.0f, 0.0f, 0.0f, 0.0f }, "Direct lighting"));
 		graphDesc.AddResource("ssao",
-			{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UInt, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("SSAO") });
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UInt, "SSAO"));
 		if (false)
 			graphDesc.AddResource("ssr",
-				{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("SSR") });
+				GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
 
 		// Combined scene related resources
 		graphDesc.AddResource("rawScene",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Raw lighted scene") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "Raw lighted scene"));
 		graphDesc.AddResource("upscaledScene",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncDisplaySize), PixelFormat::R16G16B16A16_Float, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Upscaled scene") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::R16G16B16A16_Float, "Upscaled scene"));
 
 		// Outline related resources
 		graphDesc.AddResource("outlineDepth",
-			{ SIZE_SYNC, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::SyncDisplaySize), PixelFormat::DepthStencil, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Outline depth") });
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::DepthStencil, "Outline depth"));
 		graphDesc.AddResource("outline",
-			{ OUTLINE_SIZE_SCALING, 1, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Outline") });
+			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline"));
 		graphDesc.AddResource("outlineBlur",
-			{ OUTLINE_SIZE_SCALING, 1, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, ColorF4(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Outline blur") });
+			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline blur"));
 #pragma endregion
 
-		// TODO: Don't make passes dependent on input RID during creation,
-		// let them decide during execution and by setting correct output flags as required=false
-		// Also add ALL possible passes to the list, even the ones that won't be run and only decide for them during creation with evaluate function
-		//
-		// For future, before stepping into this function, maybe at settings level, will need to read configuration for correct upscaling quality.
+		// TODO: For future, before stepping into this function, maybe at settings level, will need to read configuration for correct upscaling quality.
 		// This will be kept in render passes configuration area so for given current
 
 #pragma region Geometry
@@ -166,7 +169,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[3].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[3].ClearValue.Color = ColorF4();
 
-			RenderNode node("gbufferClear", "", RenderPass::ClearBuffer<4>::GetDesc(static_cast<PassType>(CorePassType::GBufferClear),
+			RenderNode node("gbufferClear", "", RenderPass::ClearBuffer<4>::GetDesc(Base(CorePassType::GBufferClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("DS", TextureLayout::DepthStencilWrite, "gbuffDepth");
 			node.AddOutput("GB_N", TextureLayout::RenderTarget, "gbuffNormal");
@@ -179,7 +182,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4();
 
-			RenderNode node("motionClear", "", RenderPass::ClearBuffer<1>::GetDesc(static_cast<PassType>(CorePassType::MotionVectorsClear),
+			RenderNode node("motionClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::MotionVectorsClear),
 				clearInfo, []() noexcept { return Settings::ComputeMotionVectors(); }), PassExecutionType::Producer);
 			node.AddOutput("GB_MV", TextureLayout::RenderTarget, "gbuffMotion");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -189,7 +192,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4();
 
-			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1>::GetDesc(static_cast<PassType>(CorePassType::ReactiveMaskClear),
+			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::ReactiveMaskClear),
 				clearInfo, []() noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS; }), PassExecutionType::Producer);
 			node.AddOutput("GB_R", TextureLayout::RenderTarget, "gbuffReactive");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -223,12 +226,13 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 #pragma endregion
 #pragma region Lightning
+		const UInt2 shadowMapDim = { params.ShadowMapSize, params.ShadowMapSize };
 		{
 			RenderPass::ClearBuffer<1>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
-			RenderNode node("lightClear", "", RenderPass::ClearBuffer<1>::GetDesc(static_cast<PassType>(CorePassType::LightClear),
+			RenderNode node("lightClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::LightClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("LB", TextureLayout::RenderTarget, "directLighting");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -242,9 +246,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
 			node.AddInput("lightClear.LB", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::ForceSRV), PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX }, 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Direct light shadow map") });
+				TEX2D_DESC(shadowMapDim, Base(FrameResourceFlag::ForceSRV), PixelFormat::R32_Float, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, "Direct light shadow map"));
 			node.AddInnerBuffer(TextureLayout::DepthStencilWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::None), PixelFormat::DepthOnly, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Direct light shadow map depth") });
+				TEX2D_DESC(shadowMapDim, Base(FrameResourceFlag::None), PixelFormat::DepthOnly, 0.0f, 0.0f, 0.0f, 1.0f, "Direct light shadow map depth"));
 			node.AddOutput("LB", TextureLayout::RenderTarget, "directLighting");
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -258,9 +262,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
 			node.AddInput("dirLight.LB", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::ForceSRV), PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX }, 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Spot light shadow map") });
+				TEX2D_DESC(shadowMapDim, Base(FrameResourceFlag::ForceSRV), PixelFormat::R32_Float, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, "Spot light shadow map"));
 			node.AddInnerBuffer(TextureLayout::DepthStencilWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::None), PixelFormat::DepthOnly, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Spot light shadow map depth") });
+				TEX2D_DESC(shadowMapDim, Base(FrameResourceFlag::None), PixelFormat::DepthOnly, 0.0f, 0.0f, 0.0f, 1.0f, "Spot light shadow map depth"));
 			node.AddOutput("LB", TextureLayout::RenderTarget, "directLighting");
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -274,9 +278,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
 			node.AddInput("spotLight.LB", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, FrameResourceFlag::Cube | FrameResourceFlag::ForceSRV, PixelFormat::R32_Float, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX }, 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Point light shadow map") });
+				TEX_DESC(shadowMapDim, Base(FrameResourceFlag::ForceSRV), PixelFormat::R32_Float, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FrameResourceType::TextureCube, "Point light shadow map"));
 			node.AddInnerBuffer(TextureLayout::DepthStencilWrite,
-				{ params.ShadowMapSize, params.ShadowMapSize, 1, static_cast<FrameResourceFlags>(FrameResourceFlag::Cube), PixelFormat::DepthOnly, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("Point light shadow map depth") });
+				TEX_DESC(shadowMapDim, Base(FrameResourceFlag::None), PixelFormat::DepthOnly, 0.0f, 0.0f, 0.0f, 1.0f, FrameResourceType::TextureCube, "Point light shadow map depth"));
 			node.AddOutput("LB", TextureLayout::RenderTarget, "directLighting");
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -286,11 +290,11 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertianComputeCopy.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertianComputeCopy.GB_N", TextureLayout::ShaderResource);
 			node.AddInnerBuffer(TextureLayout::UnorderedAccess,
-				{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R32_Float, ColorF4(), 0.0f, 0, 5 ZE_FRAME_RES_INIT_NAME("XeGTAO viewspace depth") });
+				TEX2D_MIP_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R32_Float, 5, "XeGTAO viewspace depth"));
 			node.AddInnerBuffer(TextureLayout::UnorderedAccess,
-				{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, graphDesc.GetFormat("ssao"), ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("XeGTAO scratch AO") });
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, graphDesc.GetFormat("ssao"), "XeGTAO scratch AO"));
 			node.AddInnerBuffer(TextureLayout::UnorderedAccess,
-				{ SIZE_SYNC, 1, FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UNorm, ColorF4(), 0.0f, 0, 1 ZE_FRAME_RES_INIT_NAME("XeGTAO depth edges") });
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UNorm, "XeGTAO depth edges"));
 			node.AddOutput("SB", TextureLayout::UnorderedAccess, "ssao");
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -301,6 +305,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertianComputeCopy.GB_N", TextureLayout::ShaderResource);
 			node.AddOutput("SB", TextureLayout::UnorderedAccess, "ssao");
 			node.SetHintCompute();
+			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
@@ -346,6 +351,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddOutput("RT", TextureLayout::ShaderResource, "rawScene");
 			node.AddOutput("SSR", TextureLayout::UnorderedAccess, "ssr");
 			node.SetHintCompute();
+			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 #pragma endregion
@@ -355,6 +361,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
+			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
@@ -365,6 +372,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
+			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
@@ -394,7 +402,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[1].ClearValue.DSV.Depth = 0.0f;
 			clearInfo.Info[1].ClearValue.DSV.Stencil = 0;
 
-			RenderNode node("outlineClear", "", RenderPass::ClearBuffer<2>::GetDesc(static_cast<PassType>(CorePassType::OutlineClear),
+			RenderNode node("outlineClear", "", RenderPass::ClearBuffer<2>::GetDesc(Base(CorePassType::OutlineClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("RT", TextureLayout::RenderTarget, "outline");
 			node.AddOutput("DS", TextureLayout::DepthStencilWrite, "outlineDepth");

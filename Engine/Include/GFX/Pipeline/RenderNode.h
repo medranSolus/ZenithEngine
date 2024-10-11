@@ -18,8 +18,8 @@ namespace ZE::GFX::Pipeline
 		std::string graphName;
 		std::string passName;
 		PassDesc desc;
-		// Async | GFX pass | compute pass | RT pass
-		std::bitset<4> flags;
+		// Async | GFX pass | compute pass | RT pass | No exec data caching
+		std::bitset<5> flags;
 		PassExecutionType execType;
 		// Just a hint if possible
 		std::string scheduleAfter = "";
@@ -49,6 +49,9 @@ namespace ZE::GFX::Pipeline
 		constexpr std::string GetFullName() const noexcept { return graphName + (passName.size() ? "." + passName : ""); }
 		constexpr const PassDesc& GetDesc() const noexcept { return desc; }
 		constexpr bool IsAsync() const noexcept { return flags[0]; }
+		// When pass execution data cannot be used by multiple instances of same pass then prevent it with this flag
+		constexpr void DisableExecDataCaching() noexcept { flags[4] = true; }
+		constexpr bool IsExecDataCachingDisabled() const noexcept { return flags[4]; }
 		constexpr PassExecutionType GetExecType() const noexcept { return execType; }
 		constexpr void SetProducer() noexcept { execType = PassExecutionType::Producer; }
 		constexpr void ScheduleAfter(const std::string& pass) noexcept { scheduleAfter = pass; }
