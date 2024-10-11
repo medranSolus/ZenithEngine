@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::VerticalBlur) };
+		PassDesc desc{ Base(CorePassType::VerticalBlur) };
 		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.InitializeFormats.emplace_back(formatDS);
@@ -53,19 +53,21 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Vertical Blur", Pixel(0xFD, 0xEF, 0xB2));
+		renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.DepthStencil);
+
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 		ctx.BindingSchema.SetGraphics(cl);
+		data.State.Bind(cl);
 
 		data.State.SetStencilRef(cl, 0xFF);
 		Resource::Constant<U32> direction(dev, true);
 		direction.Bind(cl, ctx);
-		//renderData.Buffers.SetSRV(cl, ctx, ids.OutlineBlur);
+		renderData.Buffers.SetSRV(cl, ctx, ids.OutlineBlur);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		cl.DrawFullscreen(dev);
 
+		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

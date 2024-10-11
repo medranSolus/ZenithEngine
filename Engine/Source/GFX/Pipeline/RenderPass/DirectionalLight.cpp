@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::DirectionalLight) };
+		PassDesc desc{ Base(CorePassType::DirectionalLight) };
 		desc.InitializeFormats.reserve(3);
 		desc.InitializeFormats.emplace_back(formatLighting);
 		desc.InitializeFormats.emplace_back(formatShadow);
@@ -65,19 +65,21 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			Resources ids = *passData.Resources.CastConst<Resources>();
 			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Directional Light", Pixel(0xF5, 0xF5, 0xD1));
-			//renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
-			//renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 0.0f, 0);
-			//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
 
+			renderData.Buffers.ClearRTV(cl, ids.ShadowMap, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+			renderData.Buffers.ClearDSV(cl, ids.ShadowMapDepth, 0.0f, 0);
+			renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::RenderTarget, TextureLayout::ShaderResource,
+				Base(ResourceAccess::RenderTarget), Base(ResourceAccess::ShaderResource), Base(StageSync::RenderTarget), Base(StageSync::PixelShading) });
+
+			renderData.Buffers.BeginRaster(cl, ids.Lighting);
+			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			ctx.BindingSchema.SetGraphics(cl);
-			//renderData.Buffers.SetRTV(cl, ids.Lighting);
+			data.State.Bind(cl);
 
 			ctx.SetFromEnd(3);
-			//renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-			//renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+			renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
+			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
 			ctx.Reset();
@@ -94,7 +96,10 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 				cl.DrawFullscreen(dev);
 			}
 			ZE_PERF_STOP();
-			//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
+
+			renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::ShaderResource, TextureLayout::RenderTarget,
+				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::RenderTarget), Base(StageSync::PixelShading), Base(StageSync::RenderTarget) });
+			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
 		}
 	}

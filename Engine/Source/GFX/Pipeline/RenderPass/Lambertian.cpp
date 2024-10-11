@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 	PassDesc GetDesc(PixelFormat formatDS, PixelFormat formatNormal, PixelFormat formatAlbedo,
 		PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::Lambertian) };
+		PassDesc desc{ Base(CorePassType::Lambertian) };
 		desc.InitializeFormats.reserve(6);
 		desc.InitializeFormats.emplace_back(formatDS);
 		desc.InitializeFormats.emplace_back(formatNormal);
@@ -181,10 +181,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			// Depth pre-pass
 			ZE_PERF_START("Lambertian Depth");
-			data.StateDepth.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Depth", Pixel(0xC2, 0xC5, 0xCC));
+			renderData.Buffers.BeginRasterDepthOnly(cl, ids.DepthStencil);
 			ctx.BindingSchema.SetGraphics(cl);
-			//renderData.Buffers.SetDSV(cl, ids.DepthStencil);
+			data.StateDepth.Bind(cl);
 
 			ZE_PERF_START("Lambertian Depth - main loop");
 			for (U64 i = 0; i < solidCount; ++i)
@@ -229,6 +229,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			}
 			ZE_PERF_STOP();
 
+			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
 			ZE_PERF_STOP();
 
@@ -245,15 +246,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			// Solid pass
 			ZE_PERF_START("Lambertian Solid");
-			data.StatesSolid[currentState].Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Solid", Pixel(0xC2, 0xC5, 0xCC));
-			ctx.BindingSchema.SetGraphics(cl);
-			/*
-			if (isMotion || isReactive)
-				renderData.Buffers.SetOutputSparse(cl, &ids.Normal, ids.DepthStencil, 3 + isMotion + isReactive);
+			if (data.MotionEnabled || data.ReactiveEnabled)
+				renderData.Buffers.BeginRasterSparse(cl, &ids.Normal, ids.DepthStencil, 3 + data.MotionEnabled + data.ReactiveEnabled);
 			else
-				renderData.Buffers.SetOutput<3>(cl, &ids.Normal, ids.DepthStencil, true);
-			*/
+				renderData.Buffers.BeginRaster<3>(cl, &ids.Normal, ids.DepthStencil, true);
+			ctx.BindingSchema.SetGraphics(cl);
+			data.StatesSolid[currentState].Bind(cl);
+
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
@@ -291,6 +291,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			}
 			ZE_PERF_STOP();
 
+			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
 			ZE_PERF_STOP();
 
@@ -309,13 +310,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			ZE_PERF_START("Lambertian Transparent");
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Lambertian Transparent", Pixel(0xEC, 0xED, 0xEF));
-			ctx.BindingSchema.SetGraphics(cl);
-			/*
-			if (isMotion || isReactive)
-				renderData.Buffers.SetOutputSparse(cl, &ids.Normal, ids.DepthStencil, 3 + isMotion + isReactive);
+			if (data.MotionEnabled || data.ReactiveEnabled)
+				renderData.Buffers.BeginRasterSparse(cl, &ids.Normal, ids.DepthStencil, 3 + data.MotionEnabled + data.ReactiveEnabled);
 			else
-				renderData.Buffers.SetOutput<3>(cl, &ids.Normal, ids.DepthStencil, true);
-			*/
+				renderData.Buffers.BeginRaster<3>(cl, &ids.Normal, ids.DepthStencil, true);
+			ctx.BindingSchema.SetGraphics(cl);
+
 			ctx.SetFromEnd(1);
 			renderData.BindRendererDynamicData(cl, ctx);
 			renderData.SettingsBuffer.Bind(cl, ctx);
@@ -376,6 +376,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			}
 			ZE_PERF_STOP();
 
+			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
 			ZE_PERF_STOP();
 		}

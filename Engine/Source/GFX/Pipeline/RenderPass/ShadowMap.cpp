@@ -78,8 +78,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Clear", PixelVal::Gray);
-		//renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
-		//renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+		renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
 		// Prepare view-projection for shadow
@@ -118,10 +118,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ZE_PERF_STOP();
 
 				// Depth pre-pass
-				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Depth", Pixel(0x98, 0x9F, 0xA7));
+				renderData.Buffers.BeginRasterDepthOnly(cl, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetDSV(cl, ids.Depth);
+				data.StateDepth.Bind(cl);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -149,6 +149,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					Settings::Data.get<Resource::Mesh>(solidGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
+				renderData.Buffers.EndRaster(cl);
 				ZE_PERF_STOP();
 				ZE_DRAW_TAG_END(dev, cl);
 
@@ -165,10 +166,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 				// Solid pass
 				ZE_PERF_START("Shadow Map Solid");
-				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Solid", Pixel(0x79, 0x82, 0x8D));
+				renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				data.StatesSolid[currentState].Bind(cl);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -208,6 +209,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				}
 				ZE_PERF_STOP();
 
+				renderData.Buffers.EndRaster(cl);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
 
@@ -225,8 +227,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 				ZE_PERF_STOP();
 
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Transparent", Pixel(0x79, 0x82, 0x8D));
+				renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(1);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -270,6 +272,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					Settings::Data.get<Resource::Mesh>(transparentGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
+				renderData.Buffers.EndRaster(cl);
 				ZE_PERF_STOP();
 				ZE_DRAW_TAG_END(dev, cl);
 			}

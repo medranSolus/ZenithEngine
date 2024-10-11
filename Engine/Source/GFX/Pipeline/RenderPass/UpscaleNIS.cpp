@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 	PassDesc GetDesc() noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::UpscaleNIS) };
+		PassDesc desc{ Base(CorePassType::UpscaleNIS) };
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
@@ -119,8 +119,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
-		const UInt2 inputSize = {};// execData.Buffers.GetDimmensions(ids.Color);
-		const UInt2 outputSize = {};// execData.Buffers.GetDimmensions(ids.Output);
+		const UInt2 inputSize = execData.Buffers.GetDimmensions(ids.Color);
+		const UInt2 outputSize = execData.Buffers.GetDimmensions(ids.Output);
 
 		NISConfig config = {};
 		[[maybe_unused]] const bool correctUpdate = NVScalerUpdateConfig(config, data.Sharpness,
@@ -128,17 +128,16 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 			0, 0, outputSize.X, outputSize.Y, outputSize.X, outputSize.Y, NISHDRMode::Linear);
 		ZE_ASSERT(correctUpdate, "Error updating NIS config data!");
 
-		// TODO: add some begin-end parts for setting up render targets/or something for UAV with compute
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale NIS", Pixel(0x32, 0xCD, 0x32));
-		data.StateUpscale.Bind(cl);
 
 		Binding::Context bindCtx{ execData.Bindings.GetSchema(data.BindingIndex) };
 		bindCtx.BindingSchema.SetCompute(cl);
+		data.StateUpscale.Bind(cl);
 
 		auto& cbuffer = *execData.DynamicBuffer;
 		cbuffer.Bind(cl, bindCtx, cbuffer.Alloc(dev, &config, sizeof(NISConfig)));
-		//execData.Buffers.SetUAV(cl, bindCtx, ids.Output);
-		//execData.Buffers.SetSRV(cl, bindCtx, ids.Color);
+		execData.Buffers.SetUAV(cl, bindCtx, ids.Output);
+		execData.Buffers.SetSRV(cl, bindCtx, ids.Color);
 		data.Coefficients.Bind(cl, bindCtx);
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);

@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 
 	PassDesc GetDesc(PixelFormat formatRT) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::HorizontalBlur) };
+		PassDesc desc{ Base(CorePassType::HorizontalBlur) };
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
@@ -49,21 +49,20 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Horizontal Blur", Pixel(0xF3, 0xEA, 0xAF));
+		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
+
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 		ctx.BindingSchema.SetGraphics(cl);
-		// TODO: What about first usage of render targets when they get fully overwritten?
-		// Need to handle such cases with barriers and discard operation
-		//renderData.Buffers.InitRTV(cl, ids.RenderTarget);
+		data.State.Bind(cl);
 
 		Resource::Constant<U32> direction(dev, false);
 		direction.Bind(cl, ctx);
-		//renderData.Buffers.SetSRV(cl, ctx, ids.Outline);
+		renderData.Buffers.SetSRV(cl, ctx, ids.Outline);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		//renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 		cl.DrawFullscreen(dev);
 
+		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::Wireframe) };
+		PassDesc desc{ Base(CorePassType::Wireframe) };
 		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.InitializeFormats.emplace_back(formatDS);
@@ -72,10 +72,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Wireframe", Pixel(0xBC, 0x54, 0x4B));
+			renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.DepthStencil);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			ctx.BindingSchema.SetGraphics(cl);
-			//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
+			data.State.Bind(cl);
 
 			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 1.0f }); // Can be taken from mesh later
@@ -102,6 +103,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
+			renderData.Buffers.EndRaster(cl);
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 

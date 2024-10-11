@@ -17,7 +17,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::LightCombine) };
+		PassDesc desc{ Base(CorePassType::LightCombine) };
 		desc.InitializeFormats.emplace_back(outputFormat);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
@@ -75,17 +75,19 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::GetAOType() != AOType::None),
 			"LightCombine pass not updated for changed ssao input settings!");
-		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "LightCombine", Pixel(0xFF, 0xFF, 0x9F));
-		ctx.BindingSchema.SetGraphics(cl);
+		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
 
-		//renderData.Buffers.InitRTV(cl, ids.RenderTarget);
-		//renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+		ctx.BindingSchema.SetGraphics(cl);
+		data.State.Bind(cl);
+
+		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		//renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 		cl.DrawFullscreen(dev);
 
+		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

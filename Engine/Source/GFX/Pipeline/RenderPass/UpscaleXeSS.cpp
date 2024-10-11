@@ -28,7 +28,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	PassDesc GetDesc() noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::UpscaleXeSS) };
+		PassDesc desc{ Base(CorePassType::UpscaleXeSS) };
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;

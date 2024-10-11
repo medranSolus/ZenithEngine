@@ -71,8 +71,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Clear", PixelVal::Gray);
-		//renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
-		//renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
+		renderData.Buffers.ClearDSV(cl, ids.Depth, 0.0f, 0);
+		renderData.Buffers.ClearRTV(cl, ids.RenderTarget, { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX });
 		ZE_DRAW_TAG_END(dev, cl);
 
 		auto group = Data::GetRenderGroup<Data::ShadowCaster>();
@@ -146,10 +146,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 				// Depth pre-pass
 				ZE_PERF_START("Shadow Map Cube Depth");
-				data.StateDepth.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Depth", Pixel(0x75, 0x7C, 0x88));
+				renderData.Buffers.BeginRasterDepthOnly(cl, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetDSV(cl, ids.Depth);
+				data.StateDepth.Bind(cl);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
@@ -178,6 +178,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				}
 				ZE_PERF_STOP();
 
+				renderData.Buffers.EndRaster(cl);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
 
@@ -194,10 +195,10 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 				// Solid pass
 				ZE_PERF_START("Shadow Map Cube Solid");
-				data.StatesSolid[currentState].Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Solid", Pixel(0x52, 0xB2, 0xBF));
+				renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
+				data.StatesSolid[currentState].Bind(cl);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
@@ -238,6 +239,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				}
 				ZE_PERF_STOP();
 
+				renderData.Buffers.EndRaster(cl);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
 
@@ -256,8 +258,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 				ZE_PERF_START("Shadow Map Cube Transparent");
 				ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Transparent", Pixel(0x52, 0xB2, 0xBF));
+				renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.Depth);
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.Depth);
 
 				ctx.SetFromEnd(2);
 				cbuffer.Bind(cl, ctx, cubeBufferInfo);
@@ -302,6 +304,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 				}
 				ZE_PERF_STOP();
 
+				renderData.Buffers.EndRaster(cl);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
 			}

@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::HDRGammaCorrection) };
+		PassDesc desc{ Base(CorePassType::HDRGammaCorrection) };
 		desc.InitializeFormats.emplace_back(outputFormat);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
@@ -47,16 +47,18 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
-
 		ZE_DRAW_TAG_BEGIN(dev, cl, "HDRGammaCorrection", PixelVal::White);
-		ctx.BindingSchema.SetGraphics(cl);
+		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
 
-		//renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
+		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
+		ctx.BindingSchema.SetGraphics(cl);
+		data.State.Bind(cl);
+
+		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		//renderData.Buffers.SetRTV(cl, ids.RenderTarget);
 		cl.DrawFullscreen(dev);
 
+		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

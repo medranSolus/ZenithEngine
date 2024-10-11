@@ -13,7 +13,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::SpotLight) };
+		PassDesc desc{ Base(CorePassType::SpotLight) };
 		desc.InitializeFormats.reserve(3);
 		desc.InitializeFormats.emplace_back(formatLighting);
 		desc.InitializeFormats.emplace_back(formatShadow);
@@ -116,19 +116,20 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 					continue;
 
 				ZE_PERF_START("Spot Light - shadow map");
-				TransformBuffer transformBuffer;
+				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
-					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap),
-					transform.Position, lightData.Direction, lightFrustum));
+					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction, lightFrustum));
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Spot Light - after shadow map");
-				data.State.Bind(cl);
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Spot Light nr_" + std::to_string(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
-				//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateRenderTarget, Resource::StateShaderResourcePS);
+				renderData.Buffers.BeginRaster(cl, ids.Lighting);
+				renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::RenderTarget, TextureLayout::ShaderResource,
+					Base(ResourceAccess::RenderTarget), Base(ResourceAccess::ShaderResource), Base(StageSync::RenderTarget), Base(StageSync::PixelShading) });
 
+				ctx.Reset();
 				ctx.BindingSchema.SetGraphics(cl);
-				//renderData.Buffers.SetRTV(cl, ids.Lighting);
+				data.State.Bind(cl);
 
 				Float3 translation = transform.Position;
 				translation.y -= light.Volume;
@@ -146,14 +147,15 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation))));
 
 				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
-				//renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
-				//renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
+				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 				renderData.BindRendererDynamicData(cl, ctx);
 				renderData.SettingsBuffer.Bind(cl, ctx);
-				ctx.Reset();
-
 				data.VolumeMesh.Draw(dev, cl);
-				//renderData.Buffers.BarrierTransition(cl, ids.ShadowMap, Resource::StateShaderResourcePS, Resource::StateRenderTarget);
+
+				renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::ShaderResource, TextureLayout::RenderTarget,
+					Base(ResourceAccess::ShaderResource), Base(ResourceAccess::RenderTarget), Base(StageSync::PixelShading), Base(StageSync::RenderTarget) });
+				renderData.Buffers.EndRaster(cl);
 				ZE_DRAW_TAG_END(dev, cl);
 				ZE_PERF_STOP();
 			}

@@ -15,7 +15,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
 		const std::string& cubemapPath, const std::string& cubemapExt) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::Skybox) };
+		PassDesc desc{ Base(CorePassType::Skybox) };
 		desc.InitData = new std::pair<std::string, std::string>(cubemapPath, cubemapExt);
 		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatRT);
@@ -107,16 +107,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Skybox", Pixel(0x82, 0xCA, 0xFA));
+		renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.DepthStencil);
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 		ctx.BindingSchema.SetGraphics(cl);
+		data.State.Bind(cl);
 
-		//renderData.Buffers.SetOutput(cl, ids.RenderTarget, ids.DepthStencil);
 		data.SkyTexture.Bind(cl, ctx);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		data.MeshData.Draw(dev, cl);
 
+		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

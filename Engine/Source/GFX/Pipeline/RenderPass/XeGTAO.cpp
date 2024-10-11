@@ -50,7 +50,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 	PassDesc GetDesc() noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::XeGTAO) };
+		PassDesc desc{ Base(CorePassType::XeGTAO) };
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
@@ -140,7 +140,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		ZE_PERF_GUARD("XeGTAO");
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
-		const UInt2 size = {};// renderData.Buffers.GetDimmensions(ids.Depth);
+		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "XeGTAO", Pixel(0x89, 0xCF, 0xF0));
 		auto& cbuffer = *renderData.DynamicBuffer;
@@ -154,57 +154,68 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(cl);
+		data.StatePrefilter.Bind(cl);
+
 		cbuffer.Bind(cl, prefilterCtx, cbufferInfo);
-		//renderData.Buffers.SetUAV(cl, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
-		//renderData.Buffers.SetSRV(cl, prefilterCtx, ids.Depth);
+		renderData.Buffers.SetUAV(cl, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
+		renderData.Buffers.SetSRV(cl, prefilterCtx, ids.Depth);
 		renderData.SettingsBuffer.Bind(cl, prefilterCtx);
 		cl.Compute(dev, Math::DivideRoundUp(size.X, 16U), Math::DivideRoundUp(size.Y, 16U), 1);
 
-		//renderData.Buffers.BarrierTransition(cl, ids.ViewspaceDepth, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS);
+		renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ViewspaceDepth, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+			Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource), Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) });
 
 		Binding::Context mainCtx{ renderData.Bindings.GetSchema(data.BindingIndexAO) };
-		data.StateAO.Bind(cl);
 		mainCtx.BindingSchema.SetCompute(cl);
+		data.StateAO.Bind(cl);
+
 		cbuffer.Bind(cl, mainCtx, cbufferInfo);
-		//renderData.Buffers.SetUAV(cl, mainCtx, ids.ScratchAO);
-		//renderData.Buffers.SetUAV(cl, mainCtx, ids.DepthEdges);
-		//renderData.Buffers.SetSRV(cl, mainCtx, ids.ViewspaceDepth);
-		//renderData.Buffers.SetSRV(cl, mainCtx, ids.Normal);
+		renderData.Buffers.SetUAV(cl, mainCtx, ids.ScratchAO);
+		renderData.Buffers.SetUAV(cl, mainCtx, ids.DepthEdges);
+		renderData.Buffers.SetSRV(cl, mainCtx, ids.ViewspaceDepth);
+		renderData.Buffers.SetSRV(cl, mainCtx, ids.Normal);
 		data.HilbertLUT.Bind(cl, mainCtx);
 		renderData.BindRendererDynamicData(cl, mainCtx);
 		renderData.SettingsBuffer.Bind(cl, mainCtx);
 		cl.Compute(dev, Math::DivideRoundUp(size.X, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
 			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		/*
-		renderData.Buffers.BarrierTransition(cl, std::array
+		renderData.Buffers.Barrier(cl, std::array
 			{
-				TransitionInfo(ids.ScratchAO, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-					TransitionInfo(ids.DepthEdges, Resource::StateUnorderedAccess, Resource::StateShaderResourceNonPS),
-					TransitionInfo(ids.ViewspaceDepth, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
+			BarrierTransition{ ids.ScratchAO, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+				Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
+				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+			BarrierTransition{ ids.DepthEdges, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+				Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
+				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+			BarrierTransition{ ids.ViewspaceDepth, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
 			});
-		*/
 
 		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
-		data.StateDenoise.Bind(cl);
 		denoiseCtx.BindingSchema.SetCompute(cl);
+		data.StateDenoise.Bind(cl);
+
 		Resource::Constant<U32> lastDenoise(dev, true);
 		lastDenoise.Bind(cl, denoiseCtx);
 		cbuffer.Bind(cl, denoiseCtx, cbufferInfo);
-		//renderData.Buffers.SetUAV(cl, denoiseCtx, ids.AO);
-		//renderData.Buffers.SetSRV(cl, denoiseCtx, ids.ScratchAO);
-		//renderData.Buffers.SetSRV(cl, denoiseCtx, ids.DepthEdges);
+		renderData.Buffers.SetUAV(cl, denoiseCtx, ids.AO);
+		renderData.Buffers.SetSRV(cl, denoiseCtx, ids.ScratchAO);
+		renderData.Buffers.SetSRV(cl, denoiseCtx, ids.DepthEdges);
 		renderData.SettingsBuffer.Bind(cl, denoiseCtx);
 		cl.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
 			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		/*
-		renderData.Buffers.BarrierTransition(cl, std::array
+		renderData.Buffers.Barrier(cl, std::array
 			{
-				TransitionInfo(ids.ScratchAO, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess),
-					TransitionInfo(ids.DepthEdges, Resource::StateShaderResourceNonPS, Resource::StateUnorderedAccess)
+			BarrierTransition{ ids.ScratchAO, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+			BarrierTransition{ ids.DepthEdges, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
 			});
-		*/
 		ZE_DRAW_TAG_END(dev, cl);
 	}
 }

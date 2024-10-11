@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::OutlineDraw) };
+		PassDesc desc{ Base(CorePassType::OutlineDraw) };
 		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.InitializeFormats.emplace_back(formatDS);
@@ -91,11 +91,12 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			auto& cbuffer = *renderData.DynamicBuffer;
 
-			data.StateStencil.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw Stencil", Pixel(0xF9, 0xE0, 0x76));
+			renderData.Buffers.BeginRasterDepthOnly(cl, ids.DepthStencil);
+
 			ctx.BindingSchema.SetGraphics(cl);
+			data.StateStencil.Bind(cl);
 			data.StateStencil.SetStencilRef(cl, 0xFF);
-			//renderData.Buffers.SetDSV(cl, ids.DepthStencil);
 
 			ZE_PERF_START("Outline Draw Stencil - main loop");
 			for (U64 i = 0; i < count; ++i)
@@ -106,7 +107,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				EID entity = visibleGroup[i];
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
 
-				TransformBuffer transformBuffer;
+				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
@@ -118,14 +119,15 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
+			renderData.Buffers.EndRaster(cl);
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 
 			// Separate calls due to different RT/DS sizes
-			data.StateRender.Bind(cl);
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Draw", Pixel(0xCD, 0xD4, 0x6A));
+			renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
 			ctx.BindingSchema.SetGraphics(cl);
-			//renderData.Buffers.SetRTV(cl, ids.RenderTarget);
+			data.StateRender.Bind(cl);
 
 			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
@@ -145,6 +147,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
+			renderData.Buffers.EndRaster(cl);
 			ZE_PERF_STOP();
 			ZE_DRAW_TAG_END(dev, cl);
 
