@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	void Update(Device& dev, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
+	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate = false);
+	void* Initialize(Device& dev, const FfxInterface& ffxInterface, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

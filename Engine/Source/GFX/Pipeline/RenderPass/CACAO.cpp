@@ -3,13 +3,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, *reinterpret_cast<ExecuteData*>(passData)); return false; }
+	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, buildData.FfxInterface, *reinterpret_cast<ExecuteData*>(passData)); return false; }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData.FfxInterface, buildData); }
 
 	PassDesc GetDesc() noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::CACAO) };
+		PassDesc desc{ Base(CorePassType::CACAO) };
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return desc;
 	}
 
-	void Update(Device& dev, ExecuteData& passData, bool firstUpdate)
+	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate)
 	{
 		if (passData.RenderSize != Settings::RenderSize)
 		{
@@ -30,7 +30,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 				ZE_FFX_CHECK(ffxCacaoContextDestroy(&passData.Ctx), "Error destroying CACAO context!");
 			}
 			FfxCacaoContextDescription cacaoDesc = {};
-			cacaoDesc.backendInterface = dev.GetFfxInterface();
+			cacaoDesc.backendInterface = ffxInterface;
 			cacaoDesc.width = passData.RenderSize.X;
 			cacaoDesc.height = passData.RenderSize.Y;
 			cacaoDesc.useDownsampledSsao = false;
@@ -46,12 +46,12 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		delete execData;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	void* Initialize(Device& dev, const FfxInterface& ffxInterface, RendererPassBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
 
 		passData->Settings.generateNormals = false;
-		Update(dev, *passData, true);
+		Update(dev, ffxInterface, *passData, true);
 
 		return passData;
 	}
@@ -71,11 +71,10 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		ZE_FFX_CHECK(ffxCacaoUpdateSettings(&data.Ctx, &data.Settings, false), "Error updating CACAO settings!");
 
 		FfxCacaoDispatchDescription desc = {};
-		desc.commandList = ffxGetCommandList(cl);
-		//Resource::Generic depth, normal, ao;
-		//desc.depthBuffer = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
-		//desc.normalBuffer = ffxGetResource(renderData.Buffers, normal, ids.Normal, Resource::StateShaderResourceNonPS);
-		//desc.outputBuffer = ffxGetResource(renderData.Buffers, ao, ids.AO, Resource::StateUnorderedAccess);
+		desc.commandList = FFX::GetCommandList(cl);
+		desc.depthBuffer = FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.normalBuffer = FFX::GetResource(renderData.Buffers, ids.Normal, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.outputBuffer = FFX::GetResource(renderData.Buffers, ids.AO, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		// Matrix data is not modified inside callbacks, missing const specifier in header
 		desc.proj = reinterpret_cast<FfxCacaoMat4x4*>(&renderData.GraphData.Projection);
 		desc.normalsToView = reinterpret_cast<FfxCacaoMat4x4*>(&renderData.DynamicData.ViewTps);

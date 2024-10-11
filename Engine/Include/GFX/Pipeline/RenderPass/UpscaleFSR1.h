@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 	PassDesc GetDesc(PixelFormat formatOutput) noexcept;
 	void Clean(Device& dev, void* data) noexcept;
-	bool Update(Device& dev, ExecuteData& passData, PixelFormat formatOutput, bool firstUpdate = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatOutput);
+	bool Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, PixelFormat formatOutput, bool firstUpdate = false);
+	void* Initialize(Device& dev, const FfxInterface& ffxInterface, PixelFormat formatOutput);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

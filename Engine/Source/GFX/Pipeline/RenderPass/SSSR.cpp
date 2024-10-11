@@ -3,13 +3,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, *reinterpret_cast<ExecuteData*>(passData)); return false; }
+	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, buildData.FfxInterface, *reinterpret_cast<ExecuteData*>(passData)); return false; }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData.FfxInterface); }
 
 	PassDesc GetDesc() noexcept
 	{
-		PassDesc desc{ static_cast<PassType>(CorePassType::SSSR) };
+		PassDesc desc{ Base(CorePassType::SSSR) };
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
@@ -26,7 +26,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		delete execData;
 	}
 
-	void Update(Device& dev, ExecuteData& passData, bool firstUpdate)
+	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate)
 	{
 		if (passData.RenderSize != Settings::RenderSize)
 		{
@@ -41,45 +41,41 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 			sssrDesc.flags = FFX_SSSR_ENABLE_DEPTH_INVERTED;
 			sssrDesc.renderSize.width = passData.RenderSize.X;
 			sssrDesc.renderSize.height = passData.RenderSize.Y;
-			sssrDesc.normalsHistoryBufferFormat = GetFfxSurfaceFormat(PixelFormat::R16G16_Float);
-			sssrDesc.backendInterface = dev.GetFfxInterface();
+			sssrDesc.normalsHistoryBufferFormat = FFX::GetSurfaceFormat(PixelFormat::R16G16_Float);
+			sssrDesc.backendInterface = ffxInterface;
 			ZE_FFX_THROW_FAILED(ffxSssrContextCreate(&passData.Ctx, &sssrDesc), "Error creating SSSR context!");
 		}
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	void* Initialize(Device& dev, const FfxInterface& ffxInterface)
 	{
 		ExecuteData* passData = new ExecuteData;
-		Update(dev, *passData, true);
+		Update(dev, ffxInterface, *passData, true);
 		return passData;
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
-		return;
 		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("SSSR");
 
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
-		const UInt2 inputSize = {};// renderData.Buffers.GetDimmensions(ids.Color);
+		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "SSSR", Pixel(0x80, 0x00, 0x00));
 
-		// https://gpuopen.com/manuals/fidelityfx_sdk/fidelityfx_sdk-page_techniques_stochastic-screen-space-reflections
-
 		FfxSssrDispatchDescription desc = {};
-		desc.commandList = ffxGetCommandList(cl);
+		desc.commandList = FFX::GetCommandList(cl);
 
-		//Resource::Generic color, depth, motion, normal, roughness, environment, brdf, sssr;
-		//desc.color = ffxGetResource(renderData.Buffers, color, ids.Color, Resource::StateShaderResourceNonPS);
-		//desc.depth = ffxGetResource(renderData.Buffers, depth, ids.Depth, Resource::StateShaderResourceNonPS);
-		//desc.motionVectors = ffxGetResource(renderData.Buffers, motion, ids.MotionVectors, Resource::StateShaderResourceNonPS);
-		//desc.normal = ffxGetResource(renderData.Buffers, normal, ids.NormalMap, Resource::StateShaderResourceNonPS);
-		//desc.materialParameters = ffxGetResource(renderData.Buffers, roughness, ids.Roughness, Resource::StateShaderResourceNonPS);
-		//desc.environmentMap = ffxGetResource(renderData.Buffers, environment, ids.EnvironmentMap, Resource::StateShaderResourceNonPS);
-		//desc.brdfTexture = ffxGetResource(renderData.Buffers, brdf, ids.BrdfLut, Resource::StateShaderResourceNonPS);
-		//desc.output = ffxGetResource(renderData.Buffers, sssr, ids.SSSR, Resource::StateShaderResourceNonPS);
+		desc.color = FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.depth = FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.motionVectors = FFX::GetResource(renderData.Buffers, ids.MotionVectors, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.normal = FFX::GetResource(renderData.Buffers, ids.NormalMap, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.materialParameters = FFX::GetResource(renderData.Buffers, ids.MaterialData, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.environmentMap = FFX::GetResource(renderData.Buffers, ids.EnvironmentMap, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.brdfTexture = FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		*reinterpret_cast<Float4x4*>(desc.invViewProjection) = renderData.DynamicData.ViewProjectionInverseTps;
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMLoadFloat4x4(&renderData.GraphData.Projection));
