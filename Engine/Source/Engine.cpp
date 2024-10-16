@@ -99,7 +99,8 @@ namespace ZE
 		if (flags[Flags::Initialized])
 		{
 			// Wait till all GPU operations are done
-			graphics.GetDevice().WaitMain(graphics.GetDevice().SetMainFence());
+			GFX::Device& dev = graphics.GetDevice();
+			dev.WaitMain(graphics.GetDevice().SetMainFence());
 
 			// Free all remaining gpu data
 			for (auto& buffer : Settings::Data.view<Data::DirectionalLightBuffer>())
@@ -119,16 +120,17 @@ namespace ZE
 				Settings::Data.get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
 			Settings::Data.clear<GFX::Resource::Mesh>();
 
-			//renderer.Free(graphics.GetDevice());
-			assets.Free(graphics.GetDevice());
-			gui.Destroy(graphics.GetDevice());
+			renderGraph.Free(dev);
+			graphBuilder.ClearConfig(dev);
+			assets.Free(dev);
+			gui.Destroy(dev);
 		}
 	}
 
 	void Engine::Start(EID camera) noexcept
 	{
 		prevTime = Perf::Get().GetNow();
-		//renderer.SetInverseViewProjection(camera);
+		renderGraph.SetCamera(camera);
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
@@ -155,9 +157,11 @@ namespace ZE
 
 	void Engine::EndFrame()
 	{
-		graphics.WaitForFrame();
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& cl = graphics.GetMainList();
+
+		graphics.WaitForFrame();
+		renderGraph.UpdateFrameData(dev);
 
 		ZE_PERF_START("Update upload data status");
 		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
@@ -175,7 +179,7 @@ namespace ZE
 		ZE_PERF_STOP();
 
 		ZE_PERF_START("Execute render graph");
-		//renderer.Execute(graphics);
+		renderGraph.Execute(graphics);
 		ZE_PERF_STOP();
 
 		if (IsGuiActive())

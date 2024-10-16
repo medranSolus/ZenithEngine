@@ -155,6 +155,11 @@ namespace ZE::GFX::Pipeline
 
 		void Execute(Graphics& gfx);
 
+		// Before executing render graph it's needed to set active camera
+		void SetCamera(EID camera);
+		// Need to be called before ending every frame
+		void UpdateFrameData(Device& dev);
+
 		// Here handle the data from passes to create ImGUI element for them
 		// (not window, only master app above will do the windows and use here only stuff that is not dependant on pixels,
 		// more proportions but with some minimal one that will allow for vertical scroll, etc.)

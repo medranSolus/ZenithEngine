@@ -3,72 +3,10 @@
 #define ZE_MAKE_NODE(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
 
 namespace ZE::GFX::Pipeline
-{/*
-	void RendererPBR::UpdateSettingsData(const Data::Projection& projection) noexcept
+{
+	void RendererPBR::ShowWindow()
 	{
-		currentProjectionData = projection;
-		// No need to create new projection as it's data is always changing with jitter
-		if (!Settings::ApplyJitter())
-			Math::XMStoreFloat4x4(&currentProjection, Data::GetProjectionMatrix(projection));
-		dynamicData.JitterCurrent = { 0.0f, 0.0f };
-		// Not uploading now since it's uploaded every frame
-		dynamicData.NearClip = currentProjectionData.NearClip;
-	}
-
-	void RendererPBR::SetInverseViewProjection(EID camera) noexcept
-	{
-		Data::Camera& camData = Settings::Data.get<Data::Camera>(camera);
-		UpdateSettingsData(camData.Projection);
-
-		const auto& transform = Settings::Data.get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
-		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr,
-			Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
-				Math::XMLoadFloat3(&camData.EyeDirection),
-				Math::XMLoadFloat3(&camData.UpVector)) * Data::GetProjectionMatrix(camData.Projection))));
-
-		if (Settings::ApplyJitter())
-			CalculateJitter(jitterIndex, dynamicData.JitterCurrent.x, dynamicData.JitterCurrent.y, Settings::RenderSize, Settings::GetUpscaler());
-	}
-
-	void RendererPBR::UpdateWorldData(Device& dev, EID camera) noexcept
-	{
-		ZE_ASSERT((Settings::Data.all_of<Data::TransformGlobal, Data::Camera>(camera)),
-			"Current camera does not have all required components!");
-
-		const auto& currentCamera = Settings::Data.get<Data::Camera>(camera);
-		const auto& transform = Settings::Data.get<Data::Transform>(camera); // TODO: Change into TransformGlobal later
-		cameraRotation = transform.Rotation;
-
-		// Setup shader world data
-		dynamicData.CameraPos = transform.Position;
-		const Matrix view = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&dynamicData.CameraPos),
-			Math::XMLoadFloat3(&currentCamera.EyeDirection),
-			Math::XMLoadFloat3(&currentCamera.UpVector));
-		Math::XMStoreFloat4x4(&dynamicData.ViewTps, Math::XMMatrixTranspose(view));
-
-		if (Settings::ComputeMotionVectors())
-			prevViewProjectionTps = dynamicData.ViewProjectionTps;
-
-		Matrix projection;
-		if (Settings::ApplyJitter())
-		{
-			CalculateJitter(jitterIndex, currentProjectionData.JitterX, currentProjectionData.JitterY, Settings::RenderSize, Settings::GetUpscaler());
-			dynamicData.JitterPrev = dynamicData.JitterCurrent;
-			dynamicData.JitterCurrent = { currentProjectionData.JitterX, currentProjectionData.JitterY };
-
-			projection = Data::GetProjectionMatrix(currentProjectionData);
-			Math::XMStoreFloat4x4(&currentProjection, projection);
-		}
-		else
-			projection = Math::XMLoadFloat4x4(&currentProjection);
-
-		const Matrix viewProjection = view * projection;
-		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionTps, Math::XMMatrixTranspose(viewProjection));
-		Math::XMStoreFloat4x4(&dynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, viewProjection)));
-	}
-
-	void RendererPBR::ShowWindow(Device& dev, Data::AssetsStreamer& assets)
-	{
+		/*
 		bool change = false;
 		if (ImGui::CollapsingHeader("Outline"))
 		{
@@ -427,6 +365,6 @@ namespace ZE::GFX::Pipeline
 		// If any settings data updated then upload new buffer
 		if (change)
 			execData.SettingsBuffer.Update(dev, assets.GetDisk(), { INVALID_EID, &settingsData, nullptr, sizeof(DataPBR) });
+		*/
 	}
-	*/
 }

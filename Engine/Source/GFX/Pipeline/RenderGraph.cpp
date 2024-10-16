@@ -1,4 +1,6 @@
 #include "GFX/Pipeline/RenderGraph.h"
+#include "Data/Camera.h"
+#include "Data/Transform.h"
 
 namespace ZE::GFX::Pipeline
 {
@@ -10,6 +12,7 @@ namespace ZE::GFX::Pipeline
 
 		execData.DynamicBuffer = &dynamicBuffers.Get();
 		execData.DynamicBuffer->StartFrame(dev);
+		execData.DynamicBuffer->Alloc(dev, &execData.DynamicData, sizeof(RendererDynamicData));
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
 
 		// If needed do an update
@@ -52,6 +55,7 @@ namespace ZE::GFX::Pipeline
 				if (mainGroup.EndBarriers.size())
 					execData.Buffers.Barrier(mainList, mainGroup.EndBarriers.data(), Utils::SafeCast<U32>(mainGroup.EndBarriers.size()));
 				mainList.Close(dev);
+				dev.ExecuteMain(mainList);
 
 				if (mainGroup.SignalFence)
 					*mainGroup.SignalFence = dev.SetMainFence();
@@ -77,12 +81,56 @@ namespace ZE::GFX::Pipeline
 				if (asyncGroup.EndBarriers.size())
 					execData.Buffers.Barrier(asyncList, asyncGroup.EndBarriers.data(), Utils::SafeCast<U32>(asyncGroup.EndBarriers.size()));
 				asyncList.Close(dev);
+				dev.ExecuteCompute(asyncList);
 
 				if (asyncGroup.SignalFence)
 					*asyncGroup.SignalFence = dev.SetComputeFence();
 				ZE_DRAW_TAG_END_COMPUTE(dev);
 			}
 		}
+	}
+
+	void RenderGraph::SetCamera(EID camera)
+	{
+		ZE_VALID_EID(execData.GraphData.CurrentCamera);
+		execData.GraphData.CurrentCamera = camera;
+	}
+
+	void RenderGraph::UpdateFrameData(Device& dev)
+	{
+		ZE_VALID_EID(execData.GraphData.CurrentCamera);
+		ZE_ASSERT((Settings::Data.all_of<Data::TransformGlobal, Data::Camera>(execData.GraphData.CurrentCamera)),
+			"Current camera does not have all required components!");
+
+		auto& currentCamera = Settings::Data.get<Data::Camera>(execData.GraphData.CurrentCamera);
+		const auto& transform = Settings::Data.get<Data::Transform>(execData.GraphData.CurrentCamera); // TODO: Change into TransformGlobal later
+
+		// Setup shader dynamic data
+		execData.DynamicData.CameraPos = transform.Position;
+		execData.DynamicData.NearClip = currentCamera.Projection.NearClip;
+		const Matrix view = Math::XMMatrixLookToLH(Math::XMLoadFloat3(&transform.Position),
+			Math::XMLoadFloat3(&currentCamera.EyeDirection),
+			Math::XMLoadFloat3(&currentCamera.UpVector));
+		Math::XMStoreFloat4x4(&execData.DynamicData.ViewTps, Math::XMMatrixTranspose(view));
+
+		if (Settings::ComputeMotionVectors())
+			execData.GraphData.PrevViewProjectionTps = execData.DynamicData.ViewProjectionTps;
+
+		if (Settings::ApplyJitter())
+		{
+			CalculateJitter(execData.GraphData.JitterIndex, currentCamera.Projection.JitterX, currentCamera.Projection.JitterY, Settings::RenderSize, Settings::GetUpscaler());
+			execData.DynamicData.JitterPrev = execData.DynamicData.JitterCurrent;
+			execData.DynamicData.JitterCurrent = { currentCamera.Projection.JitterX, currentCamera.Projection.JitterY };
+		}
+		else
+			execData.DynamicData.JitterPrev = execData.DynamicData.JitterCurrent = { 0.0f, 0.0f };
+
+		Matrix projection = Data::GetProjectionMatrix(currentCamera.Projection);
+		Math::XMStoreFloat4x4(&execData.GraphData.Projection, projection);
+
+		const Matrix viewProjection = view * projection;
+		Math::XMStoreFloat4x4(&execData.DynamicData.ViewProjectionTps, Math::XMMatrixTranspose(viewProjection));
+		Math::XMStoreFloat4x4(&execData.DynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, viewProjection)));
 	}
 
 	void RenderGraph::ShowDebugUI() noexcept
