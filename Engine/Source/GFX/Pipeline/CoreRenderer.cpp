@@ -99,7 +99,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		SetupRenderSlots(graphDesc);
 		SetupData(graphDesc.SettingsData, params,
 			{ Settings::DisplaySize.X / OUTLINE_SIZE_SCALING.X, Settings::DisplaySize.Y / OUTLINE_SIZE_SCALING.Y });
-		graphDesc.InitBuffers(16);
+		graphDesc.InitBuffers();
 
 #pragma region Framebuffer definition
 		// Helpers for creating resource definitions

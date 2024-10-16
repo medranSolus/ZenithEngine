@@ -8,9 +8,8 @@ namespace ZE::GFX::Pipeline
 		return it != Resources.end() ? it->second.Format : PixelFormat::Unknown;
 	}
 
-	void RenderGraphDesc::InitBuffers(RID resourceCount) noexcept
+	void RenderGraphDesc::InitBuffers() noexcept
 	{
-		Resources.reserve(resourceCount + 1);
 		// Backbuffer
 		AddResource(BACKBUFFER_NAME,
 			{
