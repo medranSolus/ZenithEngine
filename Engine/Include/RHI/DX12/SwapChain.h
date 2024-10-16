@@ -35,6 +35,6 @@ namespace ZE::RHI::DX12
 
 		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[Settings::GetCurrentBackbufferIndex()].RTV; }
 
-		DescEntry SetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer);
+		DescEntry GetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer);
 	};
 }

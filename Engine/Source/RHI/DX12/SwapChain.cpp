@@ -5,7 +5,7 @@ namespace ZE::RHI::DX12
 {
 	SwapChain::SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput)
 	{
-		ZE_DX_ENABLE(dev.Get().dx12);
+		ZE_DX_ENABLE_ID(dev.Get().dx12);
 		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
 #if _ZE_DEBUG_GFX_API
 			debugManager
@@ -48,6 +48,7 @@ namespace ZE::RHI::DX12
 		{
 			DX::ComPtr<IResource> buffer = nullptr;
 			ZE_DX_THROW_FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
+			ZE_DX_SET_ID(buffer, "Backbuffer " + std::to_string(i));
 			ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
 			rtvSrv[i].RTV = rtvHandle;
 			if (shaderInput)
@@ -97,7 +98,7 @@ namespace ZE::RHI::DX12
 			dev.Get().dx12.FreeDescs(srvHandle);
 	}
 
-	SwapChain::DescEntry SwapChain::SetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer)
+	SwapChain::DescEntry SwapChain::GetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer)
 	{
 		ZE_DX_ENABLE(dev);
 		const U32 current = Settings::GetCurrentBackbufferIndex();

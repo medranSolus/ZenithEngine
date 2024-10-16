@@ -226,10 +226,10 @@ namespace ZE::RHI::DX12::Pipeline
 		case GFX::Pipeline::BarrierType::Immediate:
 			break;
 		case GFX::Pipeline::BarrierType::SplitBegin:
-			barrier.SyncAfter |= D3D12_BARRIER_SYNC_SPLIT;
+			barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
 			break;
 		case GFX::Pipeline::BarrierType::SplitEnd:
-			barrier.SyncBefore |= D3D12_BARRIER_SYNC_SPLIT;
+			barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
 			break;
 		}
 		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
@@ -471,7 +471,7 @@ namespace ZE::RHI::DX12::Pipeline
 		// Create all resources and fill their info
 		resources = new BufferData[resourceCount];
 		resources[BACKBUFFER_RID].Resource = nullptr;
-		resources[BACKBUFFER_RID].Size = desc.Resources.front().Sizes;
+		resources[BACKBUFFER_RID].Size = desc.Resources.front().GetResolutionAdjustedSizes();
 		resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
 		resources[BACKBUFFER_RID].Mips = desc.Resources.front().MipLevels;
 		resources[BACKBUFFER_RID].Format = desc.Resources.front().Format;
@@ -1344,7 +1344,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
 	{
-		auto backbufferRtvSrv = swapChain.Get().dx12.SetCurrentBackbuffer(dev.Get().dx12, resources[BACKBUFFER_RID].Resource);
+		auto backbufferRtvSrv = swapChain.Get().dx12.GetCurrentBackbuffer(dev.Get().dx12, resources[BACKBUFFER_RID].Resource);
 		rtvDsvHandles[BACKBUFFER_RID] = backbufferRtvSrv.RTV;
 		srvHandles[BACKBUFFER_RID].CpuShaderVisibleHandle = backbufferRtvSrv.SRVCpu;
 		srvHandles[BACKBUFFER_RID].GpuShaderVisibleHandle = backbufferRtvSrv.SRVGpu;
