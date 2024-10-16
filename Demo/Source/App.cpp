@@ -143,7 +143,11 @@ void App::ShowOptionsWindow()
 		}
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
-		//engine.RenderGraph().ShowDebugUI(engine.Gfx().GetDevice(), engine.Assets());
+		ImGui::Text("ImGui Demo window");
+		ImGui::SameLine();
+		if (ImGui::Button(demoWindow ? "Hide" : "Show"))
+			demoWindow = !demoWindow;
+		engine.RenderGraph().ShowDebugUI();
 	}
 	ImGui::End();
 }
@@ -595,14 +599,14 @@ EID App::AddDirectionalLight(std::string&& name,
 void App::MakeFrame()
 {
 	ZE_PERF_GUARD("Frame rendering");
-	//ImGui::ShowDemoWindow();
+	if (demoWindow)
+		ImGui::ShowDemoWindow();
 	if (engine.IsGuiActive())
 	{
 		ZE_PERF_GUARD("GUI");
 		ShowOptionsWindow();
 		ShowObjectWindow();
 	}
-	//engine.Reneder().UpdateWorldData(engine.Gfx().GetDevice(), currentCamera);
 }
 
 App::App(const CmdParser& params)

@@ -16,6 +16,7 @@ class App final
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
 	bool run = true;
+	bool demoWindow = false;
 
 	template<typename T>
 	void EnableProperty(EID entity);
