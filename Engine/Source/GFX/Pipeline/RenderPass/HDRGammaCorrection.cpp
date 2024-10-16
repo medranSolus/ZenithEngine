@@ -32,7 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
 		psoDesc.SetShader(dev, psoDesc.PS, "HDRGammaPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
-		psoDesc.Culling = Resource::CullMode::None;
+		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;
 		ZE_PSO_SET_NAME(psoDesc, "HDRGammaCorrection");

@@ -38,6 +38,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		const bool isAO = Settings::GetAOType() != AOType::None;
 		if (isAO != passData.AmbientOcclusionEnabled)
 		{
+			passData.AmbientOcclusionEnabled = isAO;
 			Resource::PipelineStateDesc psoDesc;
 			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
