@@ -313,13 +313,18 @@ namespace ZE::GFX::Pipeline
 			ZE_CHECK_FAILED_CONFIG_LOAD((res.second.Flags & FrameResourceFlag::SimultaneousAccess) && (res.second.Flags & FrameResourceFlag::ForceDSV),
 				ErrorWrongResourceConfiguration, "Simultaneous access cannot be used on depth stencil in resource [" + res.first + "]!");
 
-			for (const auto& pass : desc.RenderPasses)
+			if (res.first == BACKBUFFER_NAME)
+				presentResources.emplace_back(res.first);
+			else
 			{
-				if (std::find(pass.GetOutputResources().begin(), pass.GetOutputResources().end(), res.first) != pass.GetOutputResources().end()
-					|| std::find(pass.GetOutputReplacementResources().begin(), pass.GetOutputReplacementResources().end(), res.first) != pass.GetOutputReplacementResources().end())
+				for (const auto& pass : desc.RenderPasses)
 				{
-					presentResources.emplace_back(res.first);
-					break;
+					if (std::find(pass.GetOutputResources().begin(), pass.GetOutputResources().end(), res.first) != pass.GetOutputResources().end()
+						|| std::find(pass.GetOutputReplacementResources().begin(), pass.GetOutputReplacementResources().end(), res.first) != pass.GetOutputReplacementResources().end())
+					{
+						presentResources.emplace_back(res.first);
+						break;
+					}
 				}
 			}
 		}
@@ -420,41 +425,45 @@ namespace ZE::GFX::Pipeline
 		// Compute resource lifetimes based on dependency levels
 		for (U32 i = 0; i < computedGraph.size(); ++i)
 		{
-			U32 depStart = dependencyLevels.at(i);
-			U32 depEnd = depStart + 1;
 			const auto& computed = computedGraph.at(i);
-			for (const auto& input : computed.InputResources)
+			if (computed.Present)
 			{
-				if (input != "")
-				{
-					auto& lifetime = resourceLookup.at(input);
-					if (lifetime.first > depStart)
-						lifetime.first = depStart;
-					if (lifetime.second < depEnd)
-						lifetime.second = depEnd;
-				}
-			}
-			for (const auto& output : computed.OutputResources)
-			{
-				if (output != "")
-				{
-					auto& lifetime = resourceLookup.at(output);
-					if (lifetime.first > depStart)
-						lifetime.first = depStart;
-					if (lifetime.second < depEnd)
-						lifetime.second = depEnd;
-				}
-			}
+				U32 depStart = dependencyLevels.at(i);
+				U32 depEnd = depStart + 1;
 
-			// Check temporary inner resources
-			const auto& node = passDescs.at(i).at(computed.NodeGroupIndex);
-			for (ResIndex j = 0, size = Utils::SafeCast<ResIndex>(node.GetInnerBuffers().size()); j < size; ++j)
-			{
-				auto& lifetime = resourceLookup.at(node.GetInnerBufferName(j));
-				if (lifetime.first > depStart)
-					lifetime.first = depStart;
-				if (lifetime.second < depEnd)
-					lifetime.second = depEnd;
+				for (const auto& input : computed.InputResources)
+				{
+					if (input != "")
+					{
+						auto& lifetime = resourceLookup.at(input);
+						if (lifetime.first > depStart)
+							lifetime.first = depStart;
+						if (lifetime.second < depEnd)
+							lifetime.second = depEnd;
+					}
+				}
+				for (const auto& output : computed.OutputResources)
+				{
+					if (output != "")
+					{
+						auto& lifetime = resourceLookup.at(output);
+						if (lifetime.first > depStart)
+							lifetime.first = depStart;
+						if (lifetime.second < depEnd)
+							lifetime.second = depEnd;
+					}
+				}
+
+				// Check temporary inner resources
+				const auto& node = passDescs.at(i).at(computed.NodeGroupIndex);
+				for (ResIndex j = 0, size = Utils::SafeCast<ResIndex>(node.GetInnerBuffers().size()); j < size; ++j)
+				{
+					auto& lifetime = resourceLookup.at(node.GetInnerBufferName(j));
+					if (lifetime.first > depStart)
+						lifetime.first = depStart;
+					if (lifetime.second < depEnd)
+						lifetime.second = depEnd;
+				}
 			}
 		}
 
@@ -639,8 +648,8 @@ namespace ZE::GFX::Pipeline
 						// Always compute exec data for invalid passes
 						if (node.GetDesc().Type == CorePassType::Invalid || node.IsExecDataCachingDisabled())
 						{
-							graph.passExecData.emplace_back(node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData),
-								node.GetDesc().Clean);
+							pass.Data.ExecData = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
+							graph.passExecData.emplace_back(pass.Data.ExecData, node.GetDesc().Clean);
 						}
 						else
 						{
@@ -1655,18 +1664,11 @@ namespace ZE::GFX::Pipeline
 			});
 		ZE_PERF_STOP();
 
-		// TODO: need to have update path when FFX SDK requests new buffers as it happens not during graph recompilation but after
-		//       initializing it's internal structures where buffers are "created" (added to list for next recompile)
-		//       either run the compute step after initializing all the new render passes or make a path for resource only update
-
 		return BuildResult::Success;
 	}
 
 	BuildResult RenderGraphBuilder::FinalizeGraph(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc, GraphFinalizeFlags flags)
 	{
-		// Not handled initialization yet:
-		// RendererDynamicData DynamicData;
-		// RendererGraphData GraphData;
 		Device& dev = gfx.GetDevice();
 
 		// In case that graph have not been yet computed
