@@ -34,7 +34,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 			box.Transform(box, Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 
 			// Mark entity as visible
-			if (frustum.Intersects(box))
+			if (frustum.Intersects(box)
+#if !_ZE_MODE_RELEASE
+				|| Settings::IsEnabledNoCulling()
+#endif
+				)
 			{
 				if constexpr (std::is_same_v<VisibilitySolid, VisibilityTransparent>)
 					Settings::Data.emplace<VisibilitySolid>(entity);

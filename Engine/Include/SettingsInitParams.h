@@ -21,6 +21,8 @@ namespace ZE
 		AsyncAO = 8,
 		// When uploading data to the GPU ignore possible optimizations and always copy source data. Disabled in release builds.
 		AlwaysCopySourceGPUData = 16,
+		// Don't perform any type of culling. Disabled in release builds.
+		DisableCulling = 32,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

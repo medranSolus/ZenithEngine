@@ -20,6 +20,7 @@ namespace ZE
 		parser.AddOption("noAsyncAO");
 		parser.AddOption("sssr");
 		parser.AddOption("alwaysCopySourceGpuData");
+		parser.AddOption("noCulling");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -60,6 +61,8 @@ namespace ZE
 			params.Flags |= SettingsInitFlag::AsyncAO;
 		if (parser.GetOption("alwaysCopySourceGpuData"))
 			params.Flags |= SettingsInitFlag::AlwaysCopySourceGPUData;
+		if (parser.GetOption("noCulling"))
+			params.Flags |= SettingsInitFlag::DisableCulling;
 
 		return params;
 	}

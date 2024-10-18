@@ -19,6 +19,7 @@ namespace ZE
 			SSSR,
 			AsyncAO,
 			CopySourceGPUData,
+			NoCulling,
 			Count,
 		};
 
@@ -102,6 +103,7 @@ namespace ZE
 		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SSSR]; }
 		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO]; }
 		static constexpr bool IsEnabledCopySourceGPUData() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::CopySourceGPUData]; }
+		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
@@ -150,6 +152,7 @@ namespace ZE
 #if !_ZE_MODE_RELEASE
 		flags[Flags::AttachPIX] = params.Flags & SettingsInitFlag::AllowPIXAttach;
 		flags[Flags::CopySourceGPUData] = params.Flags & SettingsInitFlag::AlwaysCopySourceGPUData;
+		flags[Flags::NoCulling] = params.Flags & SettingsInitFlag::DisableCulling;
 #endif
 #if _ZE_DEBUG_GFX_API
 		flags[Flags::GPUValidation] = params.Flags & SettingsInitFlag::EnableGPUValidation;
