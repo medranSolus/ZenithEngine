@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline
 	struct RenderGraphDesc
 	{
 		FrameBufferFlags ResourceOptions;
-		std::map<std::string, FrameResourceDesc> Resources;
+		std::vector<std::pair<std::string, FrameResourceDesc>> Resources;
 		std::vector<RenderNode> RenderPasses;
 		std::vector<Resource::SamplerDesc> Samplers;
 		Binding::Range SettingsRange;
@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline
 		PtrVoid PassCustomData;
 		// TODO: here comes all the custom callbacks and pointers
 
-		PixelFormat GetFormat(const std::string& name) const noexcept;
+		PixelFormat GetFormat(std::string_view name) const noexcept;
 		void InitBuffers() noexcept;
 		void AddResource(std::string_view name, FrameResourceDesc&& desc) noexcept;
 	};

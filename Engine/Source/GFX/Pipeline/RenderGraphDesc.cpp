@@ -2,10 +2,12 @@
 
 namespace ZE::GFX::Pipeline
 {
-	PixelFormat RenderGraphDesc::GetFormat(const std::string& name) const noexcept
+	PixelFormat RenderGraphDesc::GetFormat(std::string_view name) const noexcept
 	{
-		auto it = Resources.find(name);
-		return it != Resources.end() ? it->second.Format : PixelFormat::Unknown;
+		for (const auto& res : Resources)
+			if (res.first == name)
+				return res.second.Format;
+		return PixelFormat::Unknown;
 	}
 
 	void RenderGraphDesc::InitBuffers() noexcept
@@ -25,8 +27,11 @@ namespace ZE::GFX::Pipeline
 		ZE_ASSERT(!((desc.Flags & FrameResourceFlag::SyncRenderSize) && (desc.Flags & FrameResourceFlag::SyncDisplaySize)),
 			"Cannot sync same resource to both render and display sizes!");
 		ZE_ASSERT(Resources.size() < INVALID_RID, "Too much resources, needed wider type!");
-		ZE_ASSERT(!Resources.contains(std::string(name)), "Resource with same name is already present!");
+		for (const auto& res : Resources)
+		{
+			ZE_ASSERT(res.first != name, "Resource with same name is already present!");
+		}
 
-		Resources.emplace(name, std::forward<FrameResourceDesc>(desc));
+		Resources.emplace_back(name, std::forward<FrameResourceDesc>(desc));
 	}
 }
