@@ -57,7 +57,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 2, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Direct lighting + SSAO
+		desc.AddRange({ 2, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);

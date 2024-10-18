@@ -81,6 +81,8 @@ namespace ZE::RHI::DX12::Binding
 					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
 				else
 					range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+				if (entry.Flags & GFX::Binding::RangeFlag::RangeSourceDynamic)
+					range.Flags |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
 				range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 			}
 			else
@@ -123,6 +125,8 @@ namespace ZE::RHI::DX12::Binding
 						range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
 					else
 						range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+					if (entry.Flags & GFX::Binding::RangeFlag::RangeSourceDynamic)
+						range.Flags |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
 					range.OffsetInDescriptorsFromTableStart = 0;
 				}
 				else
