@@ -152,7 +152,7 @@ namespace ZE::RHI::DX12::Binding
 					}
 					parameter.Descriptor.ShaderRegister = entry.StartSlot;
 					parameter.Descriptor.RegisterSpace = GetRegisterSpaceForShader(entry.Flags, entry.Shaders);
-					if (entry.Flags & GFX::Binding::RangeFlag::StaticData || entry.Flags & GFX::Binding::RangeFlag::CBV)
+					if (entry.Flags & GFX::Binding::RangeFlag::StaticData)
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 					else
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
