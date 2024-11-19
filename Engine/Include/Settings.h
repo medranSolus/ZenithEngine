@@ -20,6 +20,7 @@ namespace ZE
 			AsyncAO,
 			CopySourceGPUData,
 			NoCulling,
+			ImGui,
 			Count,
 		};
 
@@ -94,9 +95,7 @@ namespace ZE
 		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
 		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
 
-		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
-		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
@@ -104,6 +103,11 @@ namespace ZE
 		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO]; }
 		static constexpr bool IsEnabledCopySourceGPUData() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::CopySourceGPUData]; }
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
+		static constexpr bool IsEnabledImGui() noexcept { return flags[Flags::ImGui]; }
+
+		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
+		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
+		static constexpr void SetImGui(bool enabled) noexcept { flags[Flags::ImGui] = enabled; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
@@ -153,6 +157,7 @@ namespace ZE
 		flags[Flags::AttachPIX] = params.Flags & SettingsInitFlag::AllowPIXAttach;
 		flags[Flags::CopySourceGPUData] = params.Flags & SettingsInitFlag::AlwaysCopySourceGPUData;
 		flags[Flags::NoCulling] = params.Flags & SettingsInitFlag::DisableCulling;
+		flags[Flags::ImGui] = true;
 #endif
 #if _ZE_DEBUG_GFX_API
 		flags[Flags::GPUValidation] = params.Flags & SettingsInitFlag::EnableGPUValidation;

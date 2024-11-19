@@ -648,8 +648,11 @@ namespace ZE::GFX::Pipeline
 						// Always compute exec data for invalid passes
 						if (node.GetDesc().Type == CorePassType::Invalid || node.IsExecDataCachingDisabled())
 						{
-							pass.Data.ExecData = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
-							graph.passExecData.emplace_back(pass.Data.ExecData, node.GetDesc().Clean);
+							if (node.GetDesc().Init)
+							{
+								pass.Data.ExecData = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
+								graph.passExecData.emplace_back(pass.Data.ExecData, node.GetDesc().Clean);
+							}
 						}
 						else
 						{

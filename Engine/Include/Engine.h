@@ -1,6 +1,6 @@
 #pragma once
 #include "GFX/Pipeline/RenderGraph.h"
-#include "GUI/Manager.h"
+#include "GUI/ImGuiManager.h"
 #include "StartupConfig.h"
 
 namespace ZE
@@ -8,11 +8,11 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
-		enum Flags : U8 { Initialized, GuiEnable, Count };
+		enum Flags : U8 { Initialized, Count };
 
 		double prevTime = 0.0;
 		GFX::Graphics graphics;
-		GUI::Manager gui;
+		GUI::ImGuiManager imgui;
 		Window::MainWindow window;
 		GFX::Pipeline::RenderGraphBuilder graphBuilder;
 		GFX::Pipeline::RenderGraph renderGraph;
@@ -24,12 +24,8 @@ namespace ZE
 		ZE_CLASS_DELETE(Engine);
 		virtual ~Engine();
 
-		constexpr bool IsGuiActive() const noexcept { return flags[Flags::GuiEnable]; }
-		constexpr void ToggleGui() noexcept { SetGui(!IsGuiActive()); }
-		constexpr void SetGui(bool enabled) noexcept { flags[Flags::GuiEnable] = enabled; }
-
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
-		constexpr GUI::Manager& Gui() noexcept { return gui; }
+		constexpr GUI::ImGuiManager& ImGui() noexcept { return imgui; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RenderGraph& RenderGraph() noexcept { return renderGraph; }
 		constexpr Data::AssetsStreamer& Assets() noexcept { return assets; }

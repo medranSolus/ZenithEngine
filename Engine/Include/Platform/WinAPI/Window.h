@@ -56,6 +56,6 @@ namespace ZE::WinAPI
 		void Init(std::string_view name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;
 		void SetTitle(std::string_view title) override;
-		void NewGuiFrame() const noexcept override;
+		void NewImGuiFrame() const noexcept override;
 	};
 }

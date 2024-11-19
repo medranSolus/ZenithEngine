@@ -338,7 +338,7 @@ namespace ZE::WinAPI
 			throw ZE_WIN_EXCEPT_LAST();
 	}
 
-	void Window::NewGuiFrame() const noexcept
+	void Window::NewImGuiFrame() const noexcept
 	{
 		ImGui_ImplWin32_NewFrame();
 	}

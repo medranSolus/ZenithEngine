@@ -113,14 +113,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& execData, PassData& passData)
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Upscale NIS");
 
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
-		const UInt2 inputSize = execData.Buffers.GetDimmensions(ids.Color);
-		const UInt2 outputSize = execData.Buffers.GetDimmensions(ids.Output);
+		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
+		const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
 
 		NISConfig config = {};
 		[[maybe_unused]] const bool correctUpdate = NVScalerUpdateConfig(config, data.Sharpness,
@@ -130,14 +130,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale NIS", Pixel(0x32, 0xCD, 0x32));
 
-		Binding::Context bindCtx{ execData.Bindings.GetSchema(data.BindingIndex) };
+		Binding::Context bindCtx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 		bindCtx.BindingSchema.SetCompute(cl);
 		data.StateUpscale.Bind(cl);
 
-		auto& cbuffer = *execData.DynamicBuffer;
+		auto& cbuffer = *renderData.DynamicBuffer;
 		cbuffer.Bind(cl, bindCtx, cbuffer.Alloc(dev, &config, sizeof(NISConfig)));
-		execData.Buffers.SetUAV(cl, bindCtx, ids.Output);
-		execData.Buffers.SetSRV(cl, bindCtx, ids.Color);
+		renderData.Buffers.SetUAV(cl, bindCtx, ids.Output);
+		renderData.Buffers.SetSRV(cl, bindCtx, ids.Color);
 		data.Coefficients.Bind(cl, bindCtx);
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);

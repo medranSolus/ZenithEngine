@@ -29,5 +29,5 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 	void Clean(Device& dev, void* data) noexcept;
 	bool Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& execData, PassData& passData);
+	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

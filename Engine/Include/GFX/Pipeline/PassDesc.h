@@ -68,6 +68,7 @@ namespace ZE::GFX::Pipeline
 
 		Wireframe,
 		HDRGammaCorrection,
+		DearImGui,
 		// Begining of the range that is possible for other custom passes to use their own
 		// enum values if they wish to create custom render graph definition
 		CustomStart = 0x80000000

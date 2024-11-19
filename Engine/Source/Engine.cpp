@@ -5,7 +5,6 @@ namespace ZE
 {
 	bool Engine::Init(const EngineParams& params)
 	{
-		SetGui(true);
 		flags[Flags::Initialized] = true;
 		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
 
@@ -16,7 +15,6 @@ namespace ZE
 		GFX::Device& dev = graphics.GetDevice();
 		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
 
-		gui.Init(graphics, false);// GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		assets.Init(dev);
 
 		GFX::Pipeline::BuildResult buildRes = GFX::Pipeline::BuildResult::Success;
@@ -123,7 +121,6 @@ namespace ZE
 			renderGraph.Free(dev);
 			graphBuilder.ClearConfig(dev);
 			assets.Free(dev);
-			gui.Destroy(dev);
 		}
 	}
 
@@ -146,9 +143,9 @@ namespace ZE
 		if (frameTime > maxFrameTime)
 			frameTime = maxFrameTime;
 
-		if (IsGuiActive())
+		if (Settings::IsEnabledImGui())
 		{
-			gui.StartFrame(window);
+			imgui.StartFrame(window);
 			assets.ShowWindow(graphics.GetDevice());
 		}
 		assets.GetDisk().StartUploadGPU(true);
@@ -159,6 +156,9 @@ namespace ZE
 	{
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& cl = graphics.GetMainList();
+
+		if (Settings::IsEnabledImGui())
+			imgui.EndFrame();
 
 		graphics.WaitForFrame();
 		renderGraph.UpdateFrameData(dev);
@@ -181,9 +181,6 @@ namespace ZE
 		ZE_PERF_START("Execute render graph");
 		renderGraph.Execute(graphics);
 		ZE_PERF_STOP();
-
-		if (IsGuiActive())
-			gui.EndFrame(graphics);
 
 		ZE_PERF_START("Swapchain present");
 		graphics.Present();

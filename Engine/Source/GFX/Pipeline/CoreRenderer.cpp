@@ -442,6 +442,13 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+		{
+			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("hdrGamma.RT", TextureLayout::RenderTarget);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
 #pragma endregion
 		return graphDesc;
 	}

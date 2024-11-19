@@ -85,7 +85,7 @@ void App::ProcessInput()
 				}
 				case VK_F1:
 				{
-					engine.ToggleGui();
+					Settings::SetImGui(!Settings::IsEnabledImGui());
 					break;
 				}
 				}
@@ -601,7 +601,7 @@ void App::MakeFrame()
 	ZE_PERF_GUARD("Frame rendering");
 	if (demoWindow)
 		ImGui::ShowDemoWindow();
-	if (engine.IsGuiActive())
+	if (Settings::IsEnabledImGui())
 	{
 		ZE_PERF_GUARD("GUI");
 		ShowOptionsWindow();
@@ -619,7 +619,7 @@ App::App(const CmdParser& params)
 	engineParams.CoreRendererParams.SkyboxExt = ".png";
 	engine.Init(engineParams);
 
-	engine.Gui().SetFont(engine.Gfx(), "Fonts/Arial.ttf", 14.0f);
+	engine.ImGui().SetFont("Fonts/Arial.ttf", 14.0f);
 
 	if (params.GetOption("cubePerfTest"))
 	{

@@ -42,6 +42,6 @@ namespace ZE::Window
 		virtual void Init(std::string_view name, U32 width = 0, U32 height = 0) = 0;
 		virtual std::pair<bool, int> ProcessMessage() noexcept = 0;
 		virtual void SetTitle(std::string_view title) = 0;
-		virtual void NewGuiFrame() const noexcept = 0;
+		virtual void NewImGuiFrame() const noexcept = 0;
 	};
 }
