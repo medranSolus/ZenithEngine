@@ -1348,19 +1348,6 @@ namespace ZE::GFX::Pipeline
 
 	BuildResult RenderGraphBuilder::ComputeGraph(Device& dev, bool minimizeDistances) noexcept
 	{
-		// Get master list of resources (remove the ones that are not referenced by any pass in full configuration
-		// and issue warning) - DONE
-		//
-		// After that create graph of nodes. Merge the ones that have same graph connector name so they
-		// will occupy same place but will be chosen based on current configuration. - DONE
-		//
-		// Compute as much as possible sync points between queues, order passes into execution groups,
-		// reorder them based on hints, etc.
-		//
-		// Later on during graph building there will be more computing based on current actual configuration,
-		// each pass will be checked if it can run in current setup, process nodes will be culled if no input,
-		// producers will be present, etc. - DONE
-
 		ZE_CHECK_FAILED_GRAPH_COMPUTE(!passDescs.size() || !resources.Size()
 			|| passDescs.size() != renderGraphDepList.size() || passDescs.size() != topoplogyOrder.size(),
 			ErrorConfigNotLoaded, "Computing render graph while no config has been properly loaded!");

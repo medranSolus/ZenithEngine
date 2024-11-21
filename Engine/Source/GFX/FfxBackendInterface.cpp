@@ -377,6 +377,7 @@ namespace ZE::GFX::FFX
 				surfaces.emplace_back(resDesc.Sizes.X, resDesc.Sizes.Y, resDesc.DepthOrArraySize, resDesc.MipLevels,
 					static_cast<U16>(1U), resDesc.Format, false, createResourceDescription->initData);
 				Resource::Texture::PackDesc packDesc = {};
+				packDesc.Options = Resource::Texture::PackOption::CopySource;
 
 				Resource::Texture::Type texType = Resource::Texture::Type::Tex2D;
 				switch (createResourceDescription->resourceDescription.type)
@@ -517,7 +518,7 @@ namespace ZE::GFX::FFX
 
 		// Walk back all the resources that don't belong to FFX and reset them to their initial state
 		for (FfxResID res : ctx.Resources.view<FfxDynamicResource>())
-			AddResourceBarrier(ffxInterface, res, ctx.Resources.get<FfxResourceStateInfo>(res).Initial);
+			AddResourceBarrier(ffxInterface, GetInternalIndex(res), ctx.Resources.get<FfxResourceStateInfo>(res).Initial);
 		FlushBarriers(ctx, GetCommandList(commandList), GetFfxInterface(backendInterface).Buffers);
 
 		// Clear dynamic resources
@@ -940,10 +941,12 @@ namespace ZE::GFX::FFX
 	void AddResourceBarrier(FfxBackendInterface& ffxInterface, S32 internalIndex, FfxResourceStates after) noexcept
 	{
 		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
-		FfxResourceStates& current = ctx.Resources.get<FfxResourceStateInfo>(GetFfxResID(internalIndex)).Current;
-		if (current != after)
+		FfxResourceStateInfo& state = ctx.Resources.get<FfxResourceStateInfo>(GetFfxResID(internalIndex));
+
+		if (state.Current != after || state.Undefined)
 		{
-			const Pipeline::TextureLayout currentLayout = GetLayout(current);
+			// Adjust for resource initialization
+			const Pipeline::TextureLayout currentLayout = state.Undefined ? Pipeline::TextureLayout::Undefined : GetLayout(state.Current);
 			const Pipeline::TextureLayout afterLayout = GetLayout(after);
 			const Pipeline::ResourceAccesses accessBefore = Pipeline::GetAccessFromLayout(currentLayout);
 			Pipeline::ResourceAccesses accessAfter = Pipeline::GetAccessFromLayout(afterLayout);
@@ -952,9 +955,10 @@ namespace ZE::GFX::FFX
 
 			ctx.Barriers.emplace_back(GetRID(ffxInterface, internalIndex),
 				currentLayout, afterLayout, accessBefore, accessAfter,
-				Pipeline::GetSyncFromAccess(accessBefore, current & FFX_RESOURCE_STATE_PIXEL_READ, current & FFX_RESOURCE_STATE_COMPUTE_READ, false),
+				Pipeline::GetSyncFromAccess(accessBefore, state.Current & FFX_RESOURCE_STATE_PIXEL_READ, state.Current & FFX_RESOURCE_STATE_COMPUTE_READ, false),
 				Pipeline::GetSyncFromAccess(accessAfter, after & FFX_RESOURCE_STATE_PIXEL_READ, after & FFX_RESOURCE_STATE_COMPUTE_READ, false));
-			current = after;
+			state.Current = after;
+			state.Undefined = false;
 		}
 		else if (after == FFX_RESOURCE_STATE_UNORDERED_ACCESS)
 		{
@@ -980,11 +984,10 @@ namespace ZE::GFX::FFX
 	void ExecuteClearJob(FfxBackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job)
 	{
 		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
-		RID rid = GetRID(ffxInterface, job.target.internalIndex);
-		AddResourceBarrier(ffxInterface, rid, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		AddResourceBarrier(ffxInterface, job.target.internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		FlushBarriers(ctx, cl, buffers);
 
-		buffers.ClearUAV(cl, rid, *reinterpret_cast<const ColorF4*>(job.color));
+		buffers.ClearUAV(cl, GetRID(ffxInterface, job.target.internalIndex), *reinterpret_cast<const ColorF4*>(job.color));
 	}
 
 	void ExecuteCopyJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job)
@@ -992,13 +995,13 @@ namespace ZE::GFX::FFX
 		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
 		RID srcId = GetRID(ffxInterface, job.src.internalIndex);
 		RID destId = GetRID(ffxInterface, job.dst.internalIndex);
-		AddResourceBarrier(ffxInterface, destId, FFX_RESOURCE_STATE_COPY_DEST);
+		AddResourceBarrier(ffxInterface, job.src.internalIndex, FFX_RESOURCE_STATE_COPY_SRC);
+		AddResourceBarrier(ffxInterface, job.dst.internalIndex, FFX_RESOURCE_STATE_COPY_DEST);
+		FlushBarriers(ctx, cl, buffers);
 
 		// Initialization of resource
 		if (srcId == destId)
 		{
-			FlushBarriers(ctx, cl, buffers);
-
 			FfxResID ffxID = GetFfxResID(job.dst.internalIndex);
 			FfxInitData& initData = ctx.Resources.get<FfxInitData>(ffxID);
 
@@ -1009,12 +1012,7 @@ namespace ZE::GFX::FFX
 			initData.LastFrameUsed = Settings::GetFrameIndex();
 		}
 		else
-		{
-			AddResourceBarrier(ffxInterface, srcId, FFX_RESOURCE_STATE_COPY_SRC);
-			FlushBarriers(ctx, cl, buffers);
-
 			buffers.Copy(dev, cl, srcId, destId);
-		}
 	}
 
 	void ExecuteComputeJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job)
@@ -1023,20 +1021,20 @@ namespace ZE::GFX::FFX
 		// Transition all the UAVs and SRVs
 		for (U32 i = 0; i < job.pipeline.uavBufferCount; ++i)
 			if (job.uavBuffers[i].internalIndex)
-				AddResourceBarrier(ffxInterface, GetRID(ffxInterface, job.uavBuffers[i].internalIndex), FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+				AddResourceBarrier(ffxInterface, job.uavBuffers[i].internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		for (U32 i = 0; i < job.pipeline.uavTextureCount; ++i)
 			if (job.uavTextures[i].internalIndex)
-				AddResourceBarrier(ffxInterface, GetRID(ffxInterface, job.uavTextures[i].internalIndex), FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+				AddResourceBarrier(ffxInterface, job.uavTextures[i].internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		for (U32 i = 0; i < job.pipeline.srvBufferCount; ++i)
 			if (job.srvBuffers[i].internalIndex)
-				AddResourceBarrier(ffxInterface, GetRID(ffxInterface, job.srvBuffers[i].internalIndex), FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+				AddResourceBarrier(ffxInterface, job.srvBuffers[i].internalIndex, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 		for (U32 i = 0; i < job.pipeline.srvTextureCount; ++i)
 			if (job.srvTextures[i].internalIndex)
-				AddResourceBarrier(ffxInterface, GetRID(ffxInterface, job.srvTextures[i].internalIndex), FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+				AddResourceBarrier(ffxInterface, job.srvTextures[i].internalIndex, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
 		// If we are dispatching indirectly, transition the argument resource to indirect argument
 		if (job.pipeline.cmdSignature)
-			AddResourceBarrier(ffxInterface, GetRID(ffxInterface, job.cmdArgument.internalIndex), FFX_RESOURCE_STATE_INDIRECT_ARGUMENT);
+			AddResourceBarrier(ffxInterface, job.cmdArgument.internalIndex, FFX_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		FlushBarriers(ctx, cl, buffers);
 
 		// Bind pipeline with binding schema
@@ -1055,7 +1053,13 @@ namespace ZE::GFX::FFX
 		for (U32 i = 0; i < job.pipeline.uavTextureCount; ++i)
 		{
 			if (job.uavTextures[i].internalIndex)
-				buffers.SetUAV(cl, bindCtx, GetRID(ffxInterface, job.uavTextures[i].internalIndex), Utils::SafeCast<U16>(job.uavTextureMips[i]));
+			{
+				RID rid = GetRID(ffxInterface, job.uavTextures[i].internalIndex);
+				if (job.uavTextureMips[i])
+					buffers.SetUAV(cl, bindCtx, rid, Utils::SafeCast<U16>(job.uavTextureMips[i]));
+				else
+					buffers.SetUAV(cl, bindCtx, rid);
+			}
 			else
 				++bindCtx.Count;
 		}

@@ -81,7 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		FfxFsr1DispatchDescription desc = {};
 		desc.commandList = FFX::GetCommandList(cl);
 		desc.color = FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.output = FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.output = FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.enableSharpening = data.SharpeningEnabled;
 		desc.sharpness = data.Sharpness;

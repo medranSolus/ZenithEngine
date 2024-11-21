@@ -32,7 +32,9 @@ namespace ZE::GFX::Resource::Texture
 	enum PackOption : PackOptions
 	{
 		// Textures are created as static pipeline resources during engine initializaion, currently not used
-		StaticCreation = 1
+		StaticCreation = 1,
+		// Textures will start with correct layout allowing for using them as copy sources only
+		CopySource = 2,
 	};
 
 	// Describes set of textures to create pack with

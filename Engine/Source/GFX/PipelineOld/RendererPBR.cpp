@@ -1,10 +1,6 @@
-#include "GFX/PipelineOld/RendererPBR.h"
-
-#define ZE_MAKE_NODE(name, queueType, passNamespace, ...) RenderNode node(name, queueType, RenderPass::passNamespace::Execute, RenderPass::passNamespace::Clean, RenderPass::passNamespace::Setup(__VA_ARGS__))
-
 namespace ZE::GFX::Pipeline
 {
-	void RendererPBR::ShowWindow()
+	void ShowWindow()
 	{
 		/*
 		bool change = false;

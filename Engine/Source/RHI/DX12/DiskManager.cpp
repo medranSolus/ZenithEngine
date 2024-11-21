@@ -310,15 +310,15 @@ namespace ZE::RHI::DX12
 			std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
 			for (auto& res : submitDestResourceQueue)
 			{
-				if (res.first == ResourceType::Texture)
+				if (res.first == ResourceType::Texture || res.first == ResourceType::TextureCopySrc)
 				{
 					D3D12_TEXTURE_BARRIER& barrier = textureBarriers.emplace_back();
 					barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
-					barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
+					barrier.SyncAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_SYNC_COPY : D3D12_BARRIER_SYNC_ALL_SHADING;
 					barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
-					barrier.AccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+					barrier.AccessAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_ACCESS_COPY_SOURCE : D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
 					barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_COMMON;
-					barrier.LayoutAfter = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+					barrier.LayoutAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_LAYOUT_COPY_SOURCE : D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
 					barrier.pResource = res.second;
 					barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
 					barrier.Subresources.NumMipLevels = 0;
@@ -435,7 +435,7 @@ namespace ZE::RHI::DX12
 	}
 
 	void DiskManager::AddFileTextureRequest(IResource* dest, IO::File& file, U64 sourceOffset,
-		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool copySrc) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(sourceBytes, "Zero sized source buffer!");
@@ -459,10 +459,10 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		fileQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, dest, ResourceType::Texture, nullptr);
+		AddRequest(INVALID_EID, dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, nullptr);
 	}
 
-	void DiskManager::AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes) noexcept
+	void DiskManager::AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes, bool copySrc) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -485,11 +485,11 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, dest, ResourceType::Texture, src);
+		AddRequest(INVALID_EID, dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
 	}
 
 	void DiskManager::AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,
-		U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement) noexcept
+		U32 bytes, U16 arrayIndex, U32 width, U32 height, bool lastElement, bool copySrc) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
@@ -519,6 +519,6 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, lastElement ? dest : nullptr, ResourceType::Texture, src);
+		AddRequest(INVALID_EID, lastElement ? dest : nullptr, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
 	}
 }

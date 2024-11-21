@@ -105,17 +105,18 @@ namespace ZE::RHI::DX12::Resource::Texture
 				resInfo = device.CreateTexture(texDesc);
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
+				const bool copySrc = desc.Options & GFX::Resource::Texture::PackOption::CopySource;
 				if (surfaces > 1)
 				{
 					for (U16 arrayIndex = 0; const auto & surface : tex.Surfaces)
 					{
 						const U16 index = arrayIndex++;
 						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), Utils::SafeCast<U32>(surface.GetMemorySize()),
-							index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces);
+							index, surface.GetWidth(), surface.GetHeight(), arrayIndex == surfaces, copySrc);
 					}
 				}
 				else
-					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), Utils::SafeCast<U32>(startSurface.GetMemorySize()));
+					diskManager.AddMemoryTextureRequest(resInfo.Resource.Get(), startSurface.GetMemory(), Utils::SafeCast<U32>(startSurface.GetMemorySize()), copySrc);
 			}
 			else
 			{
@@ -228,7 +229,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				resInfo = device.CreateTexture(texDesc);
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_from_file_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
-				diskManager.AddFileTextureRequest(resInfo.Resource.Get(), file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize);
+				diskManager.AddFileTextureRequest(resInfo.Resource.Get(), file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize, desc.Options & GFX::Resource::Texture::PackOption::CopySource);
 			}
 			else
 			{

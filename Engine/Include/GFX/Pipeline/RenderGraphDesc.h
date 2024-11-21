@@ -5,8 +5,6 @@
 namespace ZE::GFX::Pipeline
 {
 	// User-filled description of whole render graph with render passes and framebuffer resources
-	// Also user provided callbacks should be here for various parts of render graph
-	// (ex. handling of data) as well as pointers to custom data structures
 	struct RenderGraphDesc
 	{
 		FrameBufferFlags ResourceOptions;

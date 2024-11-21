@@ -153,9 +153,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline blur"));
 #pragma endregion
 
-		// TODO: For future, before stepping into this function, maybe at settings level, will need to read configuration for correct upscaling quality.
-		// This will be kept in render passes configuration area so for given current
-
 #pragma region Geometry
 		{
 			RenderPass::ClearBuffer<4>::ExecuteData clearInfo;
