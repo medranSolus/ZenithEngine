@@ -31,7 +31,7 @@ namespace ZE::GFX
 			ZE_XESS_ENABLE();
 			xess_2d_t renderSize = {};
 			const xess_2d_t output = { targetSize.X, targetSize.Y };
-			const xess_quality_settings_t xessQuality = quality == UINT32_MAX ? XESS_QUALITY_SETTING_ULTRA_QUALITY : static_cast<xess_quality_settings_t>(quality);
+			const xess_quality_settings_t xessQuality = quality == UINT32_MAX ? XESS_QUALITY_SETTING_AA : static_cast<xess_quality_settings_t>(quality);
 			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, xessQuality, &renderSize), "Error retrieving XeSS render resolution!");
 			return { renderSize.x, renderSize.y };
 		}

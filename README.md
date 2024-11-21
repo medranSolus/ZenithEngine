@@ -52,6 +52,6 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [volk v1.3.250](https://github.com/zeux/volk) - [MIT License](Doc/License/ThirdParty/volk.txt)
  - [WinPixEventRuntime v1.0.231030001](https://www.nuget.org/packages/WinPixEventRuntime) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/WinPixEventRuntime.txt), [Third Party Notices](Doc/License/ThirdParty/WinPixEventRuntimeThirdPartyNotices.txt)
  - [XeGTAO v1.30](https://github.com/GameTechDev/XeGTAO) - [MIT LICENSE](Doc/License/ThirdParty/XeGTAO.txt)
- - [XeSS v1.2.0](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.pdf), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
+ - [XeSS v1.3.1](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.pdf), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
 
  ## [Changelog](Doc/Changelog.md)
