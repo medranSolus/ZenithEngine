@@ -401,7 +401,7 @@ namespace ZE::GFX::Pipeline
 		return rids;
 	}
 
-	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout(const RenderGraph& graph) const noexcept
+	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout(Device& dev, const RenderGraph& graph) const noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::GetFrameBufferLayout");
 
@@ -485,6 +485,61 @@ namespace ZE::GFX::Pipeline
 				else
 					desc.ResourceLifetimes.emplace_back(0U, dependencyLevelCount);
 			});
+		// Add XeSS aliasable memory to the requested framebuffer regions
+		if (dev.IsXeSSEnabled())
+		{
+			U32 xessPassId = UINT32_MAX;
+			for (U32 i = 0; const auto & passGroup : passDescs)
+			{
+				for (const auto& pass : passGroup)
+				{
+					if (pass.GetDesc().Type == CorePassType::UpscaleXeSS)
+					{
+						xessPassId = i;
+						break;
+					}
+				}
+				if (xessPassId != UINT32_MAX)
+					break;
+				++i;
+			}
+			ZE_ASSERT(xessPassId != UINT32_MAX, "When XeSS is enabled it must be in the graph!");
+
+			U32 depStart = dependencyLevels.at(xessPassId);
+
+			FrameResourceDesc frameDesc = {};
+			frameDesc.DepthOrArraySize = 0;
+			frameDesc.Flags = FrameResourceFlag::InternalResourceActive | FrameResourceFlag::NoResourceCreation;
+			frameDesc.Format = PixelFormat::Unknown;
+			frameDesc.ClearColor = ColorF4{};
+			frameDesc.ClearDepth = 0.0f;
+			frameDesc.ClearStencil = 0;
+			frameDesc.MipLevels = 0;
+
+			RID buffer = INVALID_RID, texture = INVALID_RID;
+			std::pair<U64, U64> sizes = dev.GetXeSSAliasableRegionSizes();
+			if (sizes.first)
+			{
+				frameDesc.Sizes.X = static_cast<U32>(sizes.first);
+				frameDesc.Sizes.Y = static_cast<U32>(sizes.first >> 32);
+				frameDesc.Type = FrameResourceType::Buffer;
+
+				buffer = Utils::SafeCast<RID>(desc.Resources.size());
+				desc.Resources.emplace_back(frameDesc);
+				desc.ResourceLifetimes.emplace_back(depStart, depStart + 1);
+			}
+			if (sizes.second)
+			{
+				frameDesc.Sizes.X = static_cast<U32>(sizes.second);
+				frameDesc.Sizes.Y = static_cast<U32>(sizes.second >> 32);
+				frameDesc.Type = FrameResourceType::Texture2D;
+
+				texture = Utils::SafeCast<RID>(desc.Resources.size());
+				desc.Resources.emplace_back(frameDesc);
+				desc.ResourceLifetimes.emplace_back(depStart, depStart + 1);
+			}
+			dev.SetXeSSAliasableResources(buffer, texture);
+		}
 		return desc;
 	}
 
@@ -1691,7 +1746,7 @@ namespace ZE::GFX::Pipeline
 		InitializeRenderPasses(dev, assets, graph, desc);
 
 		// After render passes has been initialized, new frame buffer can be created with all new setttings applied
-		graph.execData.Buffers.Init(dev, GetFrameBufferLayout(graph));
+		graph.execData.Buffers.Init(dev, GetFrameBufferLayout(dev, graph));
 
 		// Check for sync dependencies between execution groups
 		ComputeGroupSyncs(graph);

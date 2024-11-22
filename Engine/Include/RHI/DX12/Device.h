@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Pipeline/ResourceID.h"
 #include "GFX/Resource/Texture/Type.h"
 #include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
@@ -54,7 +55,16 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IFence> copyFence;
 
 		AllocatorGPU allocator;
-		xess_context_handle_t xessCtx = nullptr;
+		struct
+		{
+			xess_context_handle_t Ctx = nullptr;
+			DescriptorInfo Descs = {};
+			xess_2d_t TargetRes = { 0, 0 };
+			xess_quality_settings_t Quality = XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
+			U32 InitFlags = 0;
+			RID BufferRegion = INVALID_RID;
+			RID TextureRegion = INVALID_RID;
+		} xessData = {};
 
 		DescriptorAllocator::BlockAllocator blockDescAllocator;
 		DescriptorAllocator::ChunkAllocator chunkDescAllocator;
@@ -89,6 +99,9 @@ namespace ZE::RHI::DX12
 		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
 		constexpr void EndFrame() noexcept {}
+		constexpr bool IsXeSSEnabled() const noexcept { return xessData.Descs.Handle != nullptr; }
+		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { xessData.BufferRegion = buffer; xessData.TextureRegion = texture; }
+		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { return { xessData.BufferRegion, xessData.TextureRegion }; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -125,6 +138,8 @@ namespace ZE::RHI::DX12
 
 		xess_context_handle_t GetXeSSCtx();
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);
+		void FreeXeSS() noexcept;
+		std::pair<U64, U64> GetXeSSAliasableRegionSizes() const;
 
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
@@ -146,6 +161,10 @@ namespace ZE::RHI::DX12
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 
+		constexpr const xess_2d_t& GetXeSSTargetResolution() const noexcept { return xessData.TargetRes; }
+		constexpr xess_quality_settings_t GetXeSSQuality() const noexcept { return xessData.Quality; }
+		constexpr U32 GetXeSSInitFlags() const noexcept { return xessData.InitFlags; }
+
 		IDevice* GetDevice() const noexcept { return device.Get(); }
 		ICommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
@@ -166,5 +185,6 @@ namespace ZE::RHI::DX12
 
 		DescriptorInfo AllocDescs(U32 count, bool gpuHeap = true) noexcept;
 		void FreeDescs(DescriptorInfo& descInfo) noexcept;
+		U32 GetXeSSDescriptorsOffset() const noexcept;
 	};
 }

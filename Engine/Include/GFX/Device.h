@@ -28,8 +28,14 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
+		constexpr bool IsXeSSEnabled() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsXeSSEnabled); return val; }
 		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
 		constexpr void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 flags) { ZE_RHI_BACKEND_CALL(InitializeXeSS, targetRes, quality, flags); }
+		constexpr void FreeXeSS() noexcept { ZE_RHI_BACKEND_CALL(FreeXeSS); }
+		// Buffer | Texture
+		constexpr std::pair<U64, U64> GetXeSSAliasableRegionSizes() const { std::pair<U64, U64> sizes = { 0, 0 }; ZE_RHI_BACKEND_CALL_RET(sizes, GetXeSSAliasableRegionSizes); return sizes; }
+		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { ZE_RHI_BACKEND_CALL(SetXeSSAliasableResources, buffer, texture); }
+		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { std::pair<RID, RID> res = { INVALID_RID, INVALID_RID }; ZE_RHI_BACKEND_CALL_RET(res, GetXeSSAliasableResources); return res; }
 
 		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
 		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }

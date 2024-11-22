@@ -277,11 +277,7 @@ namespace ZE::RHI::DX12
 
 	Device::~Device()
 	{
-		if (xessCtx)
-		{
-			ZE_XESS_ENABLE();
-			ZE_XESS_CHECK(xessDestroyContext(xessCtx), "Error destroying XeSS context!");
-		}
+		FreeXeSS();
 		if (commandLists)
 			commandLists.Free();
 
@@ -311,41 +307,59 @@ namespace ZE::RHI::DX12
 
 	xess_context_handle_t Device::GetXeSSCtx()
 	{
-		ZE_XESS_ENABLE();
-		if (xessCtx == nullptr)
+		if (xessData.Ctx == nullptr)
 		{
-			ZE_XESS_THROW_FAILED(xessD3D12CreateContext(device.Get(), &xessCtx), "Error creating XeSS D3D12 context!");
-			if (xessIsOptimalDriver(xessCtx) == XESS_RESULT_WARNING_OLD_DRIVER)
+			ZE_XESS_ENABLE();
+			ZE_XESS_THROW_FAILED(xessD3D12CreateContext(device.Get(), &xessData.Ctx), "Error creating XeSS D3D12 context!");
+			if (xessIsOptimalDriver(xessData.Ctx) == XESS_RESULT_WARNING_OLD_DRIVER)
 				Logger::Warning("Outdated Intel driver!");
 		}
-		return xessCtx;
+		return xessData.Ctx;
 	}
 
 	void Device::InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags)
 	{
+		ZE_ASSERT(!IsXeSSEnabled(), "XeSS already initialized!");
+		ZE_XESS_ENABLE();
+		xess_context_handle_t ctx = GetXeSSCtx();
+
+		xessData.TargetRes = { targetRes.X, targetRes.Y };
+		xessData.Quality = quality;
+		xessData.InitFlags = initFlags | XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP;
+		ZE_XESS_THROW_FAILED(xessD3D12BuildPipelines(ctx, nullptr, false, initFlags), "Error creating XeSS D3D12 pipelines!");
+
+		// Init external descriptor pool
+		xess_properties_t props = {};
+		ZE_XESS_THROW_FAILED(xessGetProperties(ctx, &xessData.TargetRes, &props), "Error querity XeSS properties!");
+		xessData.Descs = AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount());
+	}
+
+	void Device::FreeXeSS() noexcept
+	{
+		if (xessData.Ctx)
+		{
+			ZE_XESS_ENABLE();
+			ZE_XESS_CHECK(xessDestroyContext(xessData.Ctx), "Error destroying XeSS context!");
+			xessData.Ctx = nullptr;
+		}
+		if (xessData.Descs.Handle)
+			FreeDescs(xessData.Descs);
+	}
+
+	std::pair<U64, U64> Device::GetXeSSAliasableRegionSizes() const
+	{
+		ZE_ASSERT(xessData.Ctx != nullptr, "XeSS not initialized!");
 		ZE_XESS_ENABLE();
 
-		xess_d3d12_init_params_t initParams = {};
-		initParams.outputResolution = { targetRes.X, targetRes.Y };
-		initParams.qualitySetting = quality;
-		// TODO: Add XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP when integration with frame buffer possible
-		// and use xessGetProperties() for sizes to reserve inside heaps for aliasable memory
-		initParams.initFlags = initFlags;
-		ZE_XESS_THROW_FAILED(xessD3D12BuildPipelines(xessCtx, nullptr, false, initParams.initFlags), "Error creating XeSS D3D12 pipelines!");
+		xess_properties_t props = {};
+		ZE_XESS_THROW_FAILED(xessGetProperties(xessData.Ctx, &xessData.TargetRes, &props), "Error querity XeSS properties!");
 
-		initParams.creationNodeMask = 0;
-		initParams.visibleNodeMask = 0;
-		initParams.pTempBufferHeap = nullptr;
-		initParams.bufferHeapOffset = 0;
-		initParams.pTempTextureHeap = nullptr;
-		initParams.textureHeapOffset = 0;
-		initParams.pPipelineLibrary = nullptr;
-		ZE_XESS_THROW_FAILED(xessD3D12Init(xessCtx, &initParams), "Error initializing XeSS D3D12 context!");
+		return { props.tempBufferHeapSize, props.tempTextureHeapSize };
 	}
 
 	GFX::ShaderModel Device::GetMaxShaderModel() const noexcept
 	{
-		D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_8 };
+		D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_HIGHEST_SHADER_MODEL };
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(D3D12_FEATURE_DATA_SHADER_MODEL))))
 		{
 			switch (shaderModel.HighestShaderModel)
@@ -608,5 +622,13 @@ namespace ZE::RHI::DX12
 		descInfo.Handle = nullptr;
 		descInfo.GPU.ptr = 0;
 		descInfo.CPU.ptr = 0;
+	}
+
+	U32 Device::GetXeSSDescriptorsOffset() const noexcept
+	{
+		ZE_ASSERT(IsXeSSEnabled(), "XeSS hasn't been initializd yet!");
+		U64 heapOffset = xessData.Descs.GPU.ptr - GetDescHeap()->GetGPUDescriptorHandleForHeapStart().ptr;
+		U64 singleSetCount = descriptorGpuAllocator.GetSize(xessData.Descs.Handle) / Settings::GetBackbufferCount();
+		return Utils::SafeCast<U32>(heapOffset + descriptorSize * singleSetCount * Settings::GetCurrentBackbufferIndex());
 	}
 }

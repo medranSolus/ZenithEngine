@@ -18,7 +18,7 @@ namespace ZE::RHI::DX12::Pipeline
 			D3D12_RESOURCE_DESC1 Desc;
 			D3D12_CLEAR_VALUE ClearVal;
 			U32 ByteStride;
-			std::bitset<6> Flags;
+			std::bitset<8> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -30,8 +30,12 @@ namespace ZE::RHI::DX12::Pipeline
 			constexpr void SetTemporal() noexcept { Flags[3] = true; }
 			constexpr bool IsHeapUAV() const noexcept { return Flags[4]; }
 			constexpr void SetHeapUAV() noexcept { Flags[4] = true; }
-			constexpr bool IsArrayView() const noexcept { return Flags[5]; }
-			constexpr void ForceArrayView() noexcept { Flags[5] = true; }
+			constexpr bool IsHeapBuffer() const noexcept { return Flags[5]; }
+			constexpr void SetHeapBuffer() noexcept { Flags[5] = true; }
+			constexpr bool IsArrayView() const noexcept { return Flags[6]; }
+			constexpr void ForceArrayView() noexcept { Flags[6] = true; }
+			constexpr bool IsMemoryOnlyRegion() const noexcept { return Flags[7]; }
+			constexpr void SetMemoryOnlyRegion() noexcept { Flags[7] = true; }
 		};
 		struct BufferData
 		{
@@ -41,12 +45,15 @@ namespace ZE::RHI::DX12::Pipeline
 			U16 Mips;
 			PixelFormat Format;
 			D3D12_RESOURCE_DIMENSION Dimenions;
-			std::bitset<2> Flags;
+			std::bitset<3> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
 			constexpr bool IsArrayView() const noexcept { return Flags[1]; }
 			constexpr void SetArrayView() noexcept { Flags[1] = true; }
+			// If true then Size contains size in bytes with X being LSB and Y being MSB parts, Array contain LSB of chunk offset and Mips contains MSB part
+			constexpr bool IsMemoryOnlyRegion() const noexcept { return Flags[2]; }
+			constexpr void SetMemoryOnlyRegion() noexcept { Flags[2] = true; }
 		};
 		struct HandleSRV
 		{
@@ -75,6 +82,7 @@ namespace ZE::RHI::DX12::Pipeline
 		DX::ComPtr<IDescriptorHeap> dsvDescHeap;
 		DX::ComPtr<IHeap> mainHeap;
 		DX::ComPtr<IHeap> uavHeap;
+		DX::ComPtr<IHeap> bufferHeap;
 		DescriptorInfo descInfo;
 		DescriptorInfo descInfoCpu;
 

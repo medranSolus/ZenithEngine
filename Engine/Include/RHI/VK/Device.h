@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Pipeline/ResourceID.h"
 #include "GFX/ShaderModel.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
@@ -158,8 +159,13 @@ namespace ZE::RHI::VK
 		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { return { 32, 32 }; }
 		constexpr bool IsShaderFloat16Supported() const noexcept { return false; }
 
+		constexpr bool IsXeSSEnabled() const noexcept { return false; }
 		xess_context_handle_t GetXeSSCtx() { ZE_FAIL("XeSS no supported for Vulkan!"); return nullptr; }
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags) { ZE_FAIL("XeSS not supported for Vulkan!"); }
+		void FreeXeSS() noexcept { ZE_FAIL("XeSS not supported for Vulkan!"); }
+		std::pair<U64, U64> GetXeSSAliasableRegionSizes() const noexcept { ZE_FAIL("XeSS not supported for Vulkan!"); return { 0, 0 }; }
+		void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { ZE_FAIL("XeSS not supported for Vulkan!"); }
+		std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { ZE_FAIL("XeSS not supported for Vulkan!"); return { INVALID_RID, INVALID_RID }; }
 
 		U64 GetMainFence() const noexcept { return gfxFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }

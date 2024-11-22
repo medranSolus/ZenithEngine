@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Pipeline/ResourceID.h"
 #include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
 #include "CommandList.h"
@@ -67,8 +68,13 @@ namespace ZE::RHI::DX11
 
 		constexpr void EndFrame() noexcept {}
 
+		constexpr bool IsXeSSEnabled() const noexcept { return false; }
 		xess_context_handle_t GetXeSSCtx() { ZE_FAIL("XeSS no supported for DirectX 11!"); return nullptr; }
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags) { ZE_FAIL("XeSS not supported for DirectX 11!"); }
+		void FreeXeSS() noexcept { ZE_FAIL("XeSS not supported for DirectX 11!"); }
+		std::pair<U64, U64> GetXeSSAliasableRegionSizes() const noexcept { ZE_FAIL("XeSS not supported for DirectX 11!"); return { 0, 0 }; }
+		void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { ZE_FAIL("XeSS not supported for DirectX 11!"); }
+		std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { ZE_FAIL("XeSS not supported for DirectX 11!"); return { INVALID_RID, INVALID_RID }; }
 
 		void ExecuteMain(GFX::CommandList& cl) { Execute(cl); }
 		void ExecuteCompute(GFX::CommandList& cl) { Execute(cl); }

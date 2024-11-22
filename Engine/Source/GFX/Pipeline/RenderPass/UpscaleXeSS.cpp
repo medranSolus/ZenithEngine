@@ -37,6 +37,12 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return desc;
 	}
 
+	void Clean(Device& dev, void* data) noexcept
+	{
+		dev.FreeXeSS();
+		delete reinterpret_cast<ExecuteData*>(data);
+	}
+
 	bool Update(Device& dev, ExecuteData& passData)
 	{
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::XeSS, passData.Quality);

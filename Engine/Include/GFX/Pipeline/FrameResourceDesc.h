@@ -43,6 +43,9 @@ namespace ZE::GFX::Pipeline
 		RawBufferView = 0x1000,
 		// When creating buffer, allow it to hold indirect rendering arguments
 		AllowIndirect = 0x2000,
+		// Treat resource as memory region to be reserved inside FrameBuffer without actual resource allocation.
+		// Sizes::X should hold lower (LSB) part of U64 size of memory region in bytes and Sizes::Y should hold upper (MSB) part
+		NoResourceCreation = 0x4000,
 
 		// Internal flag indicating that resource is active in current configuration
 		InternalResourceActive = 0x08000000,
