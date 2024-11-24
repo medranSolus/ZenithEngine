@@ -1027,10 +1027,10 @@ namespace ZE::GFX::FFX
 				AddResourceBarrier(ffxInterface, job.uavTextures[i].internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		for (U32 i = 0; i < job.pipeline.srvBufferCount; ++i)
 			if (job.srvBuffers[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.srvBuffers[i].internalIndex, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+				AddResourceBarrier(ffxInterface, job.srvBuffers[i].internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
 		for (U32 i = 0; i < job.pipeline.srvTextureCount; ++i)
 			if (job.srvTextures[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.srvTextures[i].internalIndex, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+				AddResourceBarrier(ffxInterface, job.srvTextures[i].internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		// If we are dispatching indirectly, transition the argument resource to indirect argument
 		if (job.pipeline.cmdSignature)
