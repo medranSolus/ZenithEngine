@@ -589,7 +589,7 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 
-			// Merge if exec groups have same work characteristics
+			// Merge if exec groups have same work characteristics (or if for given dep level there is no work group)
 			auto mergeGroup = [](U32 i, std::vector<std::vector<std::vector<U32>>>& execGroups)
 				{
 					auto& currentGroup = execGroups.at(i);
@@ -601,7 +601,8 @@ namespace ZE::GFX::Pipeline
 			for (U32 i = dependencyLevelCount - 1; i > 0;)
 			{
 				--i;
-				if (execGroupWorkType.at(i) == execGroupWorkType.at(i + 1))
+				if (execGroupWorkType.at(i) == execGroupWorkType.at(i + 1)
+					|| execGroupWorkType.at(i) == 0 || execGroupWorkType.at(i + 1) == 0)
 				{
 					mergeGroup(i, execGroups);
 					mergeGroup(i, execGroupsAsync);
@@ -1115,18 +1116,26 @@ namespace ZE::GFX::Pipeline
 								auto& beginExecGroup = begin.GetExecGroup(graph);
 								ZE_ASSERT(beginExecGroup.PassGroupCount, "Placing barrier in execution group without any passes!");
 								// Move barrier to the end barriers section
-								const bool lastGroup = begin.PassGroupIndex + 1 == beginExecGroup.PassGroupCount;
+								const bool lastBeginGroup = begin.PassGroupIndex + 1 == beginExecGroup.PassGroupCount;
 
-								// Different queues, have to execute transition on starting queue
+								// Different queues, have to execute transition on gfx queue
 								if (begin.AsyncQueue != end.AsyncQueue)
 								{
-									placeTransition(beginExecGroup.PassGroups[lastGroup ? 0 : begin.PassGroupIndex + 1].StartBarriers,
-										beginExecGroup.EndBarriers, barrier, lastGroup);
+									if (begin.AsyncQueue)
+									{
+										placeTransition(endExecGroup.PassGroups[0].StartBarriers,
+											end.GetPassGroup(graph, endExecGroup).StartBarriers, barrier, end.PassGroupIndex == 0);
+									}
+									else
+									{
+										placeTransition(beginExecGroup.PassGroups[lastBeginGroup ? 0 : begin.PassGroupIndex + 1].StartBarriers,
+											beginExecGroup.EndBarriers, barrier, lastBeginGroup);
+									}
 								}
 								else
 								{
 									// Last pass group in exec group, prefer using end exec group for possibility of more barriers in one place
-									if (lastGroup)
+									if (lastBeginGroup)
 									{
 										placeTransition(endExecGroup.PassGroups[0].StartBarriers,
 											end.GetPassGroup(graph, endExecGroup).StartBarriers, barrier, end.PassGroupIndex == 0);
