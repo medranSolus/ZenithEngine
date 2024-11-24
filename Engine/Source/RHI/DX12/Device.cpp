@@ -169,7 +169,7 @@ namespace ZE::RHI::DX12
 		D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12)));
 		if (!options12.EnhancedBarriersSupported)
-			throw ZE_CMP_EXCEPT("DX12 error: Ehanced Barriers not supported by current driver!");
+			throw ZE_CMP_EXCEPT("DX12 error: Enhanced Barriers not supported by current driver!");
 
 #if _ZE_DEBUG_GFX_API
 		DX::ComPtr<IInfoQueue> infoQueue = nullptr;
@@ -405,9 +405,9 @@ namespace ZE::RHI::DX12
 
 	bool Device::IsShaderFloat16Supported() const noexcept
 	{
-		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
-		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))))
-			return options.MinPrecisionSupport & D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT;
+		D3D12_FEATURE_DATA_D3D12_OPTIONS4 options4 = {};
+		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &options4, sizeof(options4))))
+			return options4.Native16BitShaderOpsSupported;
 		return false;
 	}
 
