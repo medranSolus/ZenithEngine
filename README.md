@@ -40,7 +40,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [Render Pipeline Shaders](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders) - [AMD Internal Evaluation License](Doc/License/ThirdParty/RenderPipelineShaders.txt)
  - [qoixx](https://github.com/wx257osn2/qoixx) - [MIT](Doc/License/ThirdParty/qoixx.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
- - [AgilitySDK v1.613.2](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
+ - [AgilitySDK v1.614.1](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
  - [DirectStorage v1.2.2](https://devblogs.microsoft.com/directx/directstorage-api-downloads/) - [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/DirectStorage.txt), Code: [MIT License](Doc/License/ThirdParty/DirectStorage-code.txt), [Third Party Notices](Doc/License/ThirdParty/DirectStorageThirdPartyNotices.rtf)
  - [DirectXShaderCompiler v1.7.2212.1](https://github.com/microsoft/DirectXShaderCompiler) - [LLVM Release License](Doc/License/ThirdParty/DirectXShaderCompiler.txt)
  - [EnTT v3.11.x](https://github.com/skypjack/entt) - [The MIT License (MIT)](Doc/License/ThirdParty/EnTT.txt)
