@@ -9,7 +9,7 @@
 #endif
 
 // Cannot set wave size for DX11
-#if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11)
+#if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11) && ZE_HLSL_6_6
 #	define ZE_CS_WAVE64 [WaveSize(64)]
 #else
 #	define ZE_CS_WAVE64
@@ -20,7 +20,7 @@
 #endif
 // Wave operations only available for SM 6.6+
 #if defined(_ZE_API_DX12) || defined(_ZE_API_VK)
-#	define FFX_WAVE 1
+#	define FFX_WAVE ZE_HLSL_6_6
 #endif
 
 // Default options
