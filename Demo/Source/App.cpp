@@ -31,15 +31,20 @@ void App::ProcessInput()
 {
 	ZE_PERF_GUARD("Input processing");
 	Window::MainWindow& window = engine.Window();
+	bool cameraChanged = false;
+
 	while (window.Mouse().IsInput())
 	{
 		if (auto opt = window.Mouse().Read())
 		{
 			const auto& value = opt.value();
 			if (value.IsRightDown() && window.IsCursorEnabled())
+			{
 				Data::RotateCamera(currentCamera,
 					rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
 					rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
+				cameraChanged = true;
+			}
 
 			switch (value.GetType())
 			{
@@ -58,9 +63,12 @@ void App::ProcessInput()
 			case Window::Mouse::Event::Type::RawMove:
 			{
 				if (!window.IsCursorEnabled())
+				{
 					Data::RotateCamera(currentCamera,
 						rotateSpeed * Utils::SafeCast<float>(value.GetDY()) / Utils::SafeCast<float>(Settings::DisplaySize.Y),
 						rotateSpeed * Utils::SafeCast<float>(value.GetDX()) / Utils::SafeCast<float>(Settings::DisplaySize.Y), cameraType);
+					cameraChanged = true;
+				}
 				break;
 			}
 			default:
@@ -94,21 +102,60 @@ void App::ProcessInput()
 	}
 
 	if (keyboard.IsKeyDown('W'))
+	{
 		Data::MoveCameraZ(currentCamera, moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('S'))
+	{
 		Data::MoveCameraZ(currentCamera, -moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('A'))
+	{
 		Data::MoveCameraX(currentCamera, -moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('D'))
+	{
 		Data::MoveCameraX(currentCamera, moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown(VK_SPACE))
+	{
 		Data::MoveCameraY(currentCamera, moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('C'))
+	{
 		Data::MoveCameraY(currentCamera, -moveSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('Q'))
+	{
 		Data::RollCamera(currentCamera, rollSpeed, cameraType);
+		cameraChanged = true;
+	}
 	if (keyboard.IsKeyDown('E'))
+	{
 		Data::RollCamera(currentCamera, -rollSpeed, cameraType);
+		cameraChanged = true;
+	}
+
+	if (cameraChanged)
+	{
+		if (Settings::Data.try_get<ParentID>(currentCamera))
+			PropagateTransformChange(currentCamera);
+		else
+		{
+			Settings::Data.get<Data::TransformGlobal>(currentCamera) = static_cast<Data::TransformGlobal>(Settings::Data.get<Data::Transform>(currentCamera));
+			if (Children* children = Settings::Data.try_get<Children>(currentCamera))
+			{
+				for (EID child : children->Childs)
+					PropagateTransformChange(child);
+			}
+		}
+	}
 }
 
 void App::ShowOptionsWindow()
@@ -501,9 +548,9 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 
 	Float4 roation;
 	Float3 eyeVector, upVector;
-	XMStoreFloat3(&eyeVector, Math::XMVector3Rotate({ 0.0f, 0.0f, 1.0f, 0.0f }, rotor));
-	XMStoreFloat3(&upVector, Math::XMVector3Rotate({ 0.0f, 1.0f, 0.0f, 0.0f }, rotor));
-	XMStoreFloat4(&roation, rotor);
+	Math::XMStoreFloat3(&eyeVector, Math::XMVector3Rotate({ 0.0f, 0.0f, 1.0f, 0.0f }, rotor));
+	Math::XMStoreFloat3(&upVector, Math::XMVector3Rotate({ 0.0f, 1.0f, 0.0f, 0.0f }, rotor));
+	Math::XMStoreFloat4(&roation, rotor);
 
 	Settings::Data.emplace<Data::Camera>(camera,
 		Data::Camera(std::move(eyeVector), std::move(upVector),
