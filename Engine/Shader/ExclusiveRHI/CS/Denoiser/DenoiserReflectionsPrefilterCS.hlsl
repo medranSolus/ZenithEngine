@@ -17,7 +17,7 @@ FfxUInt32 GetDenoiserTile(const in FfxUInt32 gid)
 	return ua_tileList[gid];
 }
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 void FFX_DNSR_Reflections_StorePrefilteredReflections(const in FfxInt32x2 coord, const in FfxFloat16x3 radiance, const in FfxFloat16 variance)
 {
     ua_radiance[coord] = radiance.xyzz;
@@ -31,7 +31,7 @@ void FFX_DNSR_Reflections_StorePrefilteredReflections(const in FfxInt32x2 coord,
 }
 #endif
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 FfxFloat16x3 LoadRadianceH(const in FfxInt32x3 coord)
 {
     return (FfxFloat16x3)tx_radiance.Load(coord).xyz;

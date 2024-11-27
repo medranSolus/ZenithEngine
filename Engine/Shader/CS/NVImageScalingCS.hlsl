@@ -22,6 +22,9 @@ TEXTURE_EX(coefUSM, Texture2D<float4>, 2, 2);
 #ifndef NIS_THREAD_GROUP_SIZE
 #	define NIS_THREAD_GROUP_SIZE 256
 #endif
+#if ZE_HLSL_6_VER >= 2
+#	define NIS_HLSL_6_2 1
+#endif
 // Upscaling
 #define NIS_SCALER 1
 // Always perform on whole image

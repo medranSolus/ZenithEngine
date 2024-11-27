@@ -74,7 +74,7 @@ void FFX_SSSR_WriteDepthHierarchy(const in FfxUInt32 index, const in FfxUInt32x2
 	}
 }
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 void SpdStoreH(const in FfxInt32x2 coord, const in FfxFloat16x4 outValue, const in FfxUInt32 index, const in FfxUInt32 slice)
 {
     // + 1 as we store a copy of the depth buffer at index 0
@@ -134,7 +134,7 @@ void FFX_SSSR_GetDepthHierarchyMipDimensions(const in FfxUInt32 mip, out FfxFloa
 	}
 }
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 FfxFloat16x4 SpdLoadH(const in FfxInt32x2 coord, const in FfxUInt32 slice)
 {
 	// 5 -> 6 as we store a copy of the depth buffer at index 0
@@ -158,7 +158,7 @@ void FFX_SSSR_GetInputDepthDimensions(out FfxFloat32x2 imageSize)
 	tx_depth.GetDimensions(imageSize.x, imageSize.y);
 }
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 FfxFloat16x4 SpdLoadSourceImageH(const in FfxInt32x2 coord, const in FfxUInt32 slice)
 {
     return (FfxFloat16x4)FFX_SSSR_GetInputDepth(coord).xxxx;

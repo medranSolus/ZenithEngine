@@ -13,7 +13,7 @@
 UAV_EX(tileMetadata, RWStructuredBuffer<FfxUInt32>, 0, 0);
 TEXTURE_EX(depth, Texture2D<float>, 0, 2); // External resource format
 TEXTURE_EX(normals, Texture2D<CodedNormalGB>, 1, 3); // External resource format
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 TEXTURE_EX(filterInput, Texture2D<FfxFloat16x2>, 2, 4);
 #endif
 
@@ -38,7 +38,7 @@ FfxFloat32x3 LoadNormals(const in FfxInt32x2 coord)
 	return DecodeNormal(tx_normals.Load(FfxInt32x3(coord, 0)));
 }
 
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 FfxFloat16x2 LoadFilterInput(const in FfxUInt32x2 coord)
 {
 	return (FfxFloat16x2)tx_filterInput.Load(FfxInt32x3(coord, 0)).xy;
