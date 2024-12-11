@@ -31,6 +31,7 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() { ZE_ASSERT_FREED(commands == nullptr && allocator == nullptr); }
 
+		bool IsInitialized() const noexcept { return allocator != nullptr; }
 		void Free(GFX::Device& dev) noexcept { Free(); }
 
 		void Open(GFX::Device& dev);

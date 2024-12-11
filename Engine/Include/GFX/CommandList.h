@@ -23,6 +23,7 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
+		constexpr bool IsInitialized() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsInitialized); return val; }
 		constexpr void InitMain(Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
 		constexpr void Init(Device& dev, QueueType type = QueueType::Main) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
 		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, QueueType type) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, type); }
