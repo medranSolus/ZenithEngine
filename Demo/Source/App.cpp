@@ -188,12 +188,73 @@ void App::ShowOptionsWindow()
 			break;
 		}
 		}
+
 		ImGui::SameLine();
 		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
 		ImGui::Text("ImGui Demo window");
 		ImGui::SameLine();
 		if (ImGui::Button(demoWindow ? "Hide" : "Show"))
 			demoWindow = !demoWindow;
+
+		switch (Settings::AmbientOcclusionType)
+		{
+		default:
+		case GFX::AOType::None:
+		{
+			if (ImGui::Button("[No SSAO]"))
+				Settings::AmbientOcclusionType = GFX::AOType::CACAO;
+			break;
+		}
+		case GFX::AOType::CACAO:
+		{
+			if (ImGui::Button("[CACAO]"))
+				Settings::AmbientOcclusionType = GFX::AOType::XeGTAO;
+			break;
+		}
+		case GFX::AOType::XeGTAO:
+		{
+			if (ImGui::Button("[XeGTAO]"))
+				Settings::AmbientOcclusionType = GFX::AOType::None;
+			break;
+		}
+		}
+		ImGui::SameLine();
+		switch (Settings::Upscaler)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::UpscalerType::None:
+		{
+			if (ImGui::Button("[No upscale]"))
+				Settings::Upscaler = GFX::UpscalerType::Fsr1;
+			break;
+		}
+		case GFX::UpscalerType::Fsr1:
+		{
+			if (ImGui::Button("[FSR 1]"))
+				Settings::Upscaler = GFX::UpscalerType::NIS;
+			break;
+		}
+		case GFX::UpscalerType::NIS:
+		{
+			if (ImGui::Button("[NIS]"))
+				Settings::Upscaler = GFX::UpscalerType::Fsr2;
+			break;
+		}
+		case GFX::UpscalerType::Fsr2:
+		{
+			if (ImGui::Button("[FSR 2]"))
+				Settings::Upscaler = GFX::UpscalerType::XeSS;
+			break;
+		}
+		case GFX::UpscalerType::XeSS:
+		{
+			if (ImGui::Button("[XeSS]"))
+				Settings::Upscaler = GFX::UpscalerType::None;
+			break;
+		}
+		}
+
 		engine.RenderGraph().ShowDebugUI();
 	}
 	ImGui::End();
