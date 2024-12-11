@@ -10,6 +10,8 @@ namespace ZE::GFX::Binding
 				schemas[i].Free(dev);
 			schemas.DeleteArray();
 		}
+		schemaCount = 0;
+		locations.clear();
 	}
 
 	bool Library::FetchBinding(const std::string& name, U32& index) const noexcept

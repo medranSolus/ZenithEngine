@@ -344,6 +344,11 @@ namespace ZE::RHI::DX12
 		}
 		if (xessData.Descs.Handle)
 			FreeDescs(xessData.Descs);
+
+		xessData.TargetRes = { 0, 0 };
+		xessData.InitFlags = 0;
+		xessData.BufferRegion = INVALID_RID;
+		xessData.TextureRegion = INVALID_RID;
 	}
 
 	std::pair<U64, U64> Device::GetXeSSAliasableRegionSizes() const

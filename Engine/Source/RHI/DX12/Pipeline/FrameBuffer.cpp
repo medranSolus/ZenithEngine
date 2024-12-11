@@ -1059,30 +1059,9 @@ namespace ZE::RHI::DX12::Pipeline
 	{
 		ZE_ASSERT_FREED(descInfo.Handle == nullptr && descInfoCpu.Handle == nullptr
 			&& rtvDescHeap == nullptr && dsvDescHeap == nullptr
-			&& mainHeap == nullptr && uavHeap == nullptr && bufferHeap == nullptr);
-
-		if (resources)
-			resources.DeleteArray();
-		if (rtvDsvHandles)
-			rtvDsvHandles.DeleteArray();
-		if (srvHandles)
-			srvHandles.DeleteArray();
-		if (uavHandles)
-			uavHandles.DeleteArray();
-		if (rtvDsvMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (rtvDsvMips[i])
-					rtvDsvMips[i].DeleteArray();
-			rtvDsvMips.DeleteArray();
-		}
-		if (uavMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (uavMips[i])
-					uavMips[i].DeleteArray();
-			uavMips.DeleteArray();
-		}
+			&& mainHeap == nullptr && uavHeap == nullptr && bufferHeap == nullptr
+			&& resources == nullptr && rtvDsvHandles == nullptr && srvHandles == nullptr
+			&& uavHandles == nullptr && rtvDsvMips == nullptr && uavMips == nullptr);
 	}
 
 	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, U8 count) const noexcept
@@ -1422,6 +1401,8 @@ namespace ZE::RHI::DX12::Pipeline
 	void FrameBuffer::ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
 		RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const
 	{
+		Device& device = dev.Get().dx12;
+		ZE_ASSERT(device.IsXeSSEnabled(), "XeSS not enabled!");
 		ZE_ASSERT(color < resourceCount, "Color resource ID outside available range!");
 		ZE_ASSERT(motionVectors < resourceCount, "Motion vectors resource ID outside available range!");
 		ZE_ASSERT(output < resourceCount, "XeSS output resource ID outside available range!");
@@ -1447,9 +1428,9 @@ namespace ZE::RHI::DX12::Pipeline
 		execParams.inputDepthBase = { 0, 0 };
 		execParams.inputResponsiveMaskBase = { 0, 0 };
 		execParams.outputColorBase = { 0, 0 };
-		execParams.pDescriptorHeap = dev.Get().dx12.GetDescHeap();
-		execParams.descriptorHeapOffset = dev.Get().dx12.GetXeSSDescriptorsOffset();
-		ZE_XESS_THROW_FAILED(xessD3D12Execute(dev.GetXeSSCtx(), cl.Get().dx12.GetList(), &execParams), "Error performing XeSS!");
+		execParams.pDescriptorHeap = device.GetDescHeap();
+		execParams.descriptorHeapOffset = device.GetXeSSDescriptorsOffset();
+		ZE_XESS_THROW_FAILED(xessD3D12Execute(device.GetXeSSCtx(), cl.Get().dx12.GetList(), &execParams), "Error performing XeSS!");
 	}
 
 	void FrameBuffer::ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept
@@ -1478,5 +1459,28 @@ namespace ZE::RHI::DX12::Pipeline
 			dev.Get().dx12.FreeDescs(descInfo);
 		if (descInfoCpu.Handle)
 			dev.Get().dx12.FreeDescs(descInfoCpu);
+
+		if (resources)
+			resources.DeleteArray();
+		if (rtvDsvHandles)
+			rtvDsvHandles.DeleteArray();
+		if (srvHandles)
+			srvHandles.DeleteArray();
+		if (uavHandles)
+			uavHandles.DeleteArray();
+		if (rtvDsvMips)
+		{
+			for (RID i = 0; i < resourceCount - 1; ++i)
+				if (rtvDsvMips[i])
+					rtvDsvMips[i].DeleteArray();
+			rtvDsvMips.DeleteArray();
+		}
+		if (uavMips)
+		{
+			for (RID i = 0; i < resourceCount - 1; ++i)
+				if (uavMips[i])
+					uavMips[i].DeleteArray();
+			uavMips.DeleteArray();
+		}
 	}
 }
