@@ -43,6 +43,9 @@ namespace ZE::GFX::Resource::Texture
 		EID ResourceID = INVALID_EID;
 		PackOptions Options = 0;
 		std::vector<Desc> Textures;
+#if _ZE_DEBUG_GFX_NAMES
+		std::string DebugName = "";
+#endif
 
 		void Init(const Schema& schema) noexcept;
 		void AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept;
@@ -60,3 +63,11 @@ namespace ZE::GFX::Resource::Texture
 		void AddTexture(U16 requestedlocation, const FileDesc& textureDesc) noexcept;
 	};
 }
+
+#if _ZE_DEBUG_GFX_NAMES
+// Sets name to be used as indentificator of created TexturePack resource
+#	define ZE_TEXTURE_SET_NAME(texDesc, name) texDesc.DebugName = name
+#else
+// Sets name to be used as indentificator of created TexturePack resource
+#	define ZE_TEXTURE_SET_NAME(texDesc, name)
+#endif

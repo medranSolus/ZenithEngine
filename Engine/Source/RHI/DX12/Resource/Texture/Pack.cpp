@@ -12,7 +12,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
-		for (U32 i = 0; const auto & tex : desc.Textures)
+		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			ResourceInfo& resInfo = resources[i];
 
@@ -103,7 +103,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				*mipLevels = startSurface.GetMipCount();
 
 				resInfo = device.CreateTexture(texDesc);
-				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
 
 				const bool copySrc = desc.Options & GFX::Resource::Texture::PackOption::CopySource;
 				if (surfaces > 1)
