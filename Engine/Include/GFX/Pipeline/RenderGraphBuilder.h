@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/Graphics.h"
+#include "GFX/Device.h"
 #include "BuildResult.h"
 #include "RenderGraphDesc.h"
 
@@ -63,9 +63,12 @@ namespace ZE::GFX::Pipeline
 			U32 NodeGroupIndex = 0;
 			std::vector<std::string> InputResources;
 			std::vector<std::string> OutputResources;
+			PtrVoid GraphPassInfo; // Void ptr due to the include order
 		};
 
-		FrameBufferFlags resourceOptions;
+		RenderGraphDesc initialDesc;
+		bool minimizeDistances = false;
+
 		Data::Library<std::string, FrameResourceDesc> resources;
 		// Passes grouped by graph connector name
 		std::vector<std::vector<RenderNode>> passDescs;
@@ -86,33 +89,40 @@ namespace ZE::GFX::Pipeline
 		bool asyncComputeEnabled = false;
 		U32 dependencyLevelCount = 0;
 
+		static constexpr FrameResourceFlags GetInternalFlagsActiveResource(TextureLayout layout) noexcept;
 		bool IsGraphComputed() const noexcept { return computedGraph.size() && dependencyLevels.size() && computedResources.size() && dependencyLevelCount; }
 
 		bool CheckNodeProducerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence) const noexcept;
 		bool CheckNodeConsumerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence, const std::vector<std::vector<U32>>& graphList) const noexcept;
 		bool SortNodesTopologyOrder(U32 currentNode, std::vector<std::bitset<2>>& visited) noexcept;
-		BuildResult LoadGraphDesc(Device& dev, const RenderGraphDesc& desc) noexcept;
-		BuildResult LoadResourcesDesc(Device& dev, const RenderGraphDesc& desc) noexcept;
+		BuildResult LoadGraphDesc(Device& dev) noexcept;
+		BuildResult LoadResourcesDesc(Device& dev) noexcept;
 
 		// Order: input, inner, output (without already present resources from inputs)
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
 		FrameBufferDesc GetFrameBufferLayout(Device& dev, const class RenderGraph& graph) const noexcept;
-		void GroupRenderPasses(Device& dev, class RenderGraph& graph) const;
-		void InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, const RenderGraphDesc& desc);
+		bool CascadePassUpdate(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool cascadeUpdate) const;
+		bool SetupPassData(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, RenderNode& node, U32 passId, PtrVoid& passExecData);
+		void GroupRenderPasses(Device& dev, class RenderGraph& graph);
+		void InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph);
 		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;
-		BuildResult FillPassBarriers(Device& dev, class RenderGraph& graph, GraphFinalizeFlags flags) noexcept;
+		void UpdateFfxResourceIds(class RenderGraph& graph) const noexcept;
+		BuildResult FillPassBarriers(Device& dev, class RenderGraph& graph, bool clearPrevious = false) noexcept;
+		BuildResult ApplyComputedGraph(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph);
 
 	public:
 		RenderGraphBuilder() = default;
 		ZE_CLASS_MOVE(RenderGraphBuilder);
 		~RenderGraphBuilder() = default;
 
-		BuildResult LoadConfig(Device& dev, const RenderGraphDesc& desc) noexcept;
+		BuildResult LoadConfig(Device& dev, const RenderGraphDesc& desc, bool minimizePassDistances = false) noexcept;
 
-		BuildResult ComputeGraph(Device& dev, bool minimizeDistances = false) noexcept;
-		BuildResult FinalizeGraph(Graphics& gfx, Data::AssetsStreamer& assets, class RenderGraph& graph, const RenderGraphDesc& desc, GraphFinalizeFlags flags = 0);
+		BuildResult ComputeGraph(Device& dev) noexcept;
+		BuildResult FinalizeGraph(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph, GraphFinalizeFlags flags = 0);
+
+		BuildResult UpdatePassConfiguration(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph);
 
 		void ClearConfig(Device& dev) noexcept;
-		void ClearComputedGraph(Device& dev) noexcept;
+		void ClearComputedGraph(Device& dev, bool freePassDataCache = true) noexcept;
 	};
 }

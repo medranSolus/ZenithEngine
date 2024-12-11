@@ -11,9 +11,9 @@ namespace ZE
 		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
 
-		graphics.Init(window, params.GraphicsDescriptorPoolSize, false); // GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		graphics.Init(window, params.GraphicsDescriptorPoolSize, true); // GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
 		GFX::Device& dev = graphics.GetDevice();
-		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::GetUpscaler(), UINT32_MAX);
+		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::Upscaler, UINT32_MAX);
 
 		assets.Init(dev);
 
@@ -25,18 +25,17 @@ namespace ZE
 			{
 				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, *params.CustomRendererDesc);
+					graphBuilder.FinalizeGraph(dev, assets, renderGraph);
 			}
 		}
 		else
 		{
-			GFX::Pipeline::RenderGraphDesc graphDesc = GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams);
-			buildRes = graphBuilder.LoadConfig(dev, graphDesc);
+			buildRes = graphBuilder.LoadConfig(dev, GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams));
 			if (buildRes == GFX::Pipeline::BuildResult::Success)
 			{
 				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					graphBuilder.FinalizeGraph(graphics, assets, renderGraph, graphDesc);
+					graphBuilder.FinalizeGraph(dev, assets, renderGraph);
 			}
 		}
 		if (buildRes != GFX::Pipeline::BuildResult::Success)
@@ -98,7 +97,7 @@ namespace ZE
 		{
 			// Wait till all GPU operations are done
 			GFX::Device& dev = graphics.GetDevice();
-			dev.WaitMain(graphics.GetDevice().SetMainFence());
+			dev.FlushGPU();
 
 			// Free all remaining gpu data
 			for (auto& buffer : Settings::Data.view<Data::DirectionalLightBuffer>())
@@ -154,32 +153,16 @@ namespace ZE
 
 	void Engine::EndFrame()
 	{
-		GFX::Device& dev = graphics.GetDevice();
-		GFX::CommandList& cl = graphics.GetMainList();
-
 		if (Settings::IsEnabledImGui())
 			imgui.EndFrame();
 
 		graphics.WaitForFrame();
-		renderGraph.UpdateFrameData(dev);
-
-		ZE_PERF_START("Update upload data status");
-		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
-		if (gpuWorkPending)
-			cl.Open(dev);
-
-		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, cl);
-		ZE_ASSERT(status, "Error uploading engine GPU data!");
-
-		if (gpuWorkPending)
-		{
-			cl.Close(dev);
-			dev.ExecuteMain(cl);
-		}
-		ZE_PERF_STOP();
+		renderGraph.UpdateFrameData(graphics.GetDevice());
 
 		ZE_PERF_START("Execute render graph");
-		renderGraph.Execute(graphics);
+		GFX::Pipeline::BuildResult result = renderGraph.Execute(graphics, assets, &graphBuilder);
+		if (result != GFX::Pipeline::BuildResult::Success)
+			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
 		ZE_PERF_STOP();
 
 		ZE_PERF_START("Swapchain present");

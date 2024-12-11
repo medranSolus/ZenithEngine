@@ -32,6 +32,8 @@ namespace ZE::GFX::Pipeline
 		ErrorResourceInputLayoutMismatch,
 		ErrorResourceOutputLayoutMismatch,
 		ErrorResourceLayoutChangesInIncorrectOrder,
+		ErrorPassGroupEvalutaionFunctionMissing,
+		ErrorPassGroupMultipleDynamicProcessors,
 	};
 
 	constexpr const char* DecodeBuildResult(BuildResult result) noexcept;
@@ -69,6 +71,8 @@ namespace ZE::GFX::Pipeline
 			DECODE(ErrorResourceInputLayoutMismatch, "Trying to use same resource with different input layouts at the same time");
 			DECODE(ErrorResourceOutputLayoutMismatch, "Trying to use same resource with different output layouts at the same time");
 			DECODE(ErrorResourceLayoutChangesInIncorrectOrder, "Trying to change layout between wrong order of passes or execution groups");
+			DECODE(ErrorPassGroupEvalutaionFunctionMissing, "One of the passes in the pass group is missing its evaluation function");
+			DECODE(ErrorPassGroupMultipleDynamicProcessors, "Multiple passes in single pass group where there is a dynamic processor");
 		}
 #undef DECODE
 	}

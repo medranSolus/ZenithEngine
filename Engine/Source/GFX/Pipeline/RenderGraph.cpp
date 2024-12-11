@@ -4,29 +4,64 @@
 
 namespace ZE::GFX::Pipeline
 {
-	void RenderGraph::Execute(Graphics& gfx)
+	void RenderGraph::UnloadConfig(Device& dev) noexcept
 	{
-		CommandList& asyncList = asyncListChain.Get();
-		CommandList& mainList = gfx.GetMainList();
+		passExecData.Transform([&dev](const auto& passData)
+			{
+				if (passData.first)
+				{
+					ZE_ASSERT(passData.second, "Clean function should always be present when pass exec data is not empty!");
+					GpuSyncStatus status = { true, true, true };
+					passData.second(dev, passData.first, status);
+				}
+			});
+		passExecData.Clear();
+
+		ffxInternalBuffers.Clear();
+		execGroupCount = 0;
+		passExecGroups = nullptr;
+	}
+
+	BuildResult RenderGraph::Execute(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraphBuilder* builder)
+	{
 		Device& dev = gfx.GetDevice();
+		CommandList& asyncList = asyncListChain.Get();
+		if (asyncList.IsInitialized())
+			asyncList.Reset(dev);
+		CommandList& mainList = gfx.GetMainList();
+
+		if (builder)
+		{
+			BuildResult result = builder->UpdatePassConfiguration(dev, assets, *this);
+			if (result != BuildResult::Success)
+				return result;
+			assets.GetDisk().StartUploadGPU(true); // TODO: Better for it to have some kind of token or ID into wait or anything, maybe with map of events, something like that
+		}
+
+		ZE_PERF_START("Update upload data status");
+		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
+		if (gpuWorkPending)
+			mainList.Open(dev);
+
+		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, mainList);
+		ZE_ASSERT(status, "Error uploading engine GPU data!");
+
+		if (gpuWorkPending)
+		{
+			mainList.Close(dev);
+			// If any async passes has been processed then sync for initialization of resources
+			if (asyncList.IsInitialized())
+			{
+				dev.ExecuteMain(mainList);
+				dev.WaitComputeFromMain(dev.SetMainFence());
+			}
+		}
+		ZE_PERF_STOP();
 
 		execData.DynamicBuffer = &dynamicBuffers.Get();
 		execData.DynamicBuffer->StartFrame(dev);
 		execData.DynamicBuffer->Alloc(dev, &execData.DynamicData, sizeof(RendererDynamicData));
 		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
-
-		// If needed do an update
-		switch (update)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case PendingUpdate::None:
-			break;
-		case PendingUpdate::Soft:
-			break;
-		case PendingUpdate::Hard:
-			break;
-		}
 
 		// TODO: Single threaded method only for now, but multiple threads possible as workers
 		//       for a) passes in single pass group and then maybe for multiple pass groups at once
@@ -88,6 +123,7 @@ namespace ZE::GFX::Pipeline
 				ZE_DRAW_TAG_END_COMPUTE(dev);
 			}
 		}
+		return BuildResult::Success;
 	}
 
 	void RenderGraph::SetCamera(EID camera)
@@ -118,7 +154,7 @@ namespace ZE::GFX::Pipeline
 
 		if (Settings::ApplyJitter())
 		{
-			CalculateJitter(execData.GraphData.JitterIndex, currentCamera.Projection.JitterX, currentCamera.Projection.JitterY, Settings::RenderSize, Settings::GetUpscaler());
+			CalculateJitter(execData.GraphData.JitterIndex, currentCamera.Projection.JitterX, currentCamera.Projection.JitterY, Settings::RenderSize, Settings::Upscaler);
 			execData.DynamicData.JitterPrev = execData.DynamicData.JitterCurrent;
 			execData.DynamicData.JitterCurrent = { currentCamera.Projection.JitterX, currentCamera.Projection.JitterY };
 		}
@@ -142,20 +178,10 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::Free(Device& dev) noexcept
 	{
-		for (auto& passData : passExecData)
-		{
-			if (passData.first)
-			{
-				ZE_ASSERT(passData.second, "Clean function should always be present when pass exec data is not empty!");
-				passData.second(dev, passData.first);
-			}
-		}
-		passExecData.clear();
+		UnloadConfig(dev);
 
-		ffxInternalBuffers.Clear();
+		finalizationFlags = 0;
 		FFX::DestroyInterface(ffxInterface);
-		execGroupCount = 0;
-		passExecGroups = nullptr;
 		asyncListChain.Exec([&dev](CommandList& x) { x.Free(dev); });
 		dynamicBuffers.Exec([&dev](Resource::DynamicCBuffer& x) { x.Free(dev); });
 		execData.Buffers.Free(dev);

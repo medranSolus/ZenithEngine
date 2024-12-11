@@ -81,32 +81,17 @@ namespace ZE::GFX::Pipeline
 	// master RenderPass list with below enum and all other function pointers along with it
 	//std::pair<void*, Type> GetData() noexcept { return { nullptr, static_cast<Type>(CoreType::UpscaleNIS) }; }
 
-	// TO THINK: What about FfxBackendInterface and create resource function, we need a way to request additional resources to be added to our
-
-	/* Types of passes:
-	 - Static - creates data to be consumed later on in pipeline
-	 - Dynamic - also creates data but can stop doing it on per frame basis (triggers soft update)
-	 - Processing - depends only on input data, when no data provided this pass can be removed from execution (later passes have to account for missing input)
-	*/
-
-	// RenderGraph Execution: last exec group with some last transitions for backbuffer and others, have to be main group
-
-	// For FFX it would be okay to create reflection system to identify which pass belongs to which effect, so basically: searchPass(getPassType(FFX_EFFECT_CACAO)).AddInnerBuffer()
-	// FFX can call AddInnerBuffer() on nodes they are belonging to in order to allocate resources for it's internal use
-	// and after that during deletion it will just call to remove them from node description to avoid multi definition of resources
+	// Maybe after running update it will be good to send out command that will run "end of frame" parts again,
+	// so it will be possible to upload relevant data (maybe even do it before updating graph)
+	// update scene transforms with component that adds previous transform data and so on and so on.
+	// 
+	// Also adding option to disk manager that will allow for checking some fence value, ID or special event that can be checked in a better way to determine if relevant data has been uploaded
+	// (can be used for checking if render pass data has been sent out but also as a way to determine if mesh data for given object is in place (fence value greater than something)
 
 	// Class for running render graphs previously created by some builder. Should be generic so it will accept any input provided for data, passes, etc.
 	class RenderGraph final
 	{
 		friend class RenderGraphBuilder;
-
-		// If update of settings caused any need for graph update
-		enum class PendingUpdate : U8
-		{
-			None, // No update needed
-			Soft, // Only some passes are disabled so re-route flow of the graph, leaving all else intact
-			Hard, // Critical changes to the graph structure that require recreation of whole framebuffer
-		};
 
 		// Group of render passes that can be run in parallel with no resource dependency
 		struct ParallelPassGroup
@@ -136,24 +121,25 @@ namespace ZE::GFX::Pipeline
 			std::vector<BarrierTransition> EndBarriers;
 		};
 
-		PendingUpdate update = PendingUpdate::None;
-
 		std::unique_ptr<std::array<ExecutionGroup, 2>[]> passExecGroups;
 		U32 execGroupCount = 0;
 		RendererPassExecuteData execData;
 		ChainPool<CommandList> asyncListChain;
 		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
-		std::vector<std::pair<PtrVoid, PassCleanCallback>> passExecData;
+		Data::Library<U32, std::pair<PtrVoid, PassCleanCallback>> passExecData;
 		FfxInterface ffxInterface = {};
 		Data::Library<S32, FFX::InternalResourceDescription> ffxInternalBuffers;
 		bool ffxBuffersChanged = false;
+		GraphFinalizeFlags finalizationFlags = 0;
+
+		void UnloadConfig(Device& dev) noexcept;
 
 	public:
 		RenderGraph() = default;
 		ZE_CLASS_MOVE(RenderGraph);
 		~RenderGraph() { ZE_ASSERT_FREED(passExecGroups == nullptr); }
 
-		void Execute(Graphics& gfx);
+		BuildResult Execute(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraphBuilder* builder);
 
 		// Before executing render graph it's needed to set active camera
 		void SetCamera(EID camera);
