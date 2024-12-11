@@ -47,6 +47,8 @@ namespace ZE::GFX
 		constexpr void WaitCompute(U64 val) { ZE_RHI_BACKEND_CALL(WaitCompute, val); }
 		// CPU side wait for copy queue
 		constexpr void WaitCopy(U64 val) { ZE_RHI_BACKEND_CALL(WaitCopy, val); }
+		// CPU side wait for all the commands to finish on GPU
+		constexpr void FlushGPU() { WaitMain(SetMainFence()); WaitCompute(SetComputeFence()); WaitCopy(SetCopyFence()); }
 
 		// Set fence for main queue from CPU
 		constexpr U64 SetMainFenceCPU() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetMainFenceCPU); return val; }

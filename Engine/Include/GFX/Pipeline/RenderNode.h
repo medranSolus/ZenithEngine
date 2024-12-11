@@ -7,9 +7,9 @@ namespace ZE::GFX::Pipeline
 	// How pass will execute based on input data, controls how it's evaluation will influence graph update
 	enum class PassExecutionType : U8
 	{
-		Producer,         // Always present if evaluation indicates so, otherwise removed (causing hard reset)
-		Processor,        // Only present if there is input data from other passes and if any further passes consume it's output data (evaluation is causing hard reset)
-		DynamicProcessor, // Same as normal processor pass but different evaluation is not causing a hard reset (it's buffers are present always if there are producers)
+		Producer,         // Always present if evaluation indicates so, otherwise removed
+		Processor,        // Only present if there is input data from other passes and if any further passes consume it's output data
+		DynamicProcessor, // Same as normal processor pass but different evaluation is not causing a framebuffer recomputation (it's buffers are present always if there are producers), have to be alone in pass group
 	};
 
 	// Description of single render pass in RenderGraph

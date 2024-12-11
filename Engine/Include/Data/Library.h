@@ -21,6 +21,7 @@ namespace ZE::Data
 		void TransformCheck(std::function<bool(const Key&, T&)> func) noexcept { for (auto item : data) if (func(item.first, item.second)) break; }
 		void Clear() noexcept { data.clear(); }
 		bool Contains(const Key& name) const noexcept { return data.contains(name); }
+		const Key& GetKey(const Key& name) const noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.find(name)->first; }
 		const T& Get(const Key& name) const noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.at(name); }
 		T& Get(const Key& name) noexcept { ZE_ASSERT(Contains(name), "Element not present!"); return data.at(name); }
 		void Remove(const Key& name) noexcept { ZE_ASSERT(Contains(name), "Element not present!"); data.erase(name); }

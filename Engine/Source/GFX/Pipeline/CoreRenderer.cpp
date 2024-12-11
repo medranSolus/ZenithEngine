@@ -73,10 +73,10 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 
-		settingsData.MipBias = CalculateMipBias(Settings::RenderSize.X, Settings::DisplaySize.X, Settings::GetUpscaler());
+		settingsData.MipBias = CalculateMipBias(Settings::RenderSize.X, Settings::DisplaySize.X, Settings::Upscaler);
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
-		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::GetUpscaler());
+		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::Upscaler);
 
 		// Setup blur kernel
 		float gaussSum = 0.0f;
@@ -190,7 +190,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[0].ClearValue.Color = ColorF4();
 
 			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::ReactiveMaskClear),
-				clearInfo, []() noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS; }), PassExecutionType::Producer);
+				clearInfo, []() noexcept { return Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::XeSS; }), PassExecutionType::Producer);
 			node.AddOutput("GB_R", TextureLayout::RenderTarget, "gbuffReactive");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
