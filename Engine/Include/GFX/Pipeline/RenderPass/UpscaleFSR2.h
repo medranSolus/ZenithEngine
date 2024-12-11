@@ -24,11 +24,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		float Sharpness = 0.7f;
 	};
 
-	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::Fsr2; }
+	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::Fsr2; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data) noexcept;
-	bool Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, const FfxInterface& ffxInterface);
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

@@ -4,12 +4,11 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
 	{
 		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
-		Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.at(0), formats.at(1),
-			formats.at(2), formats.at(3), formats.at(4), formats.at(5));
-		return false;
+		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData),
+			formats.at(0), formats.at(1), formats.at(2), formats.at(3), formats.at(4), formats.at(5));
 	}
 
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
@@ -38,8 +37,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StateDepth.Free(dev);
 		U8 stateCount = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
@@ -53,11 +53,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		delete execData;
 	}
 
-	void Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive)
 	{
 		const bool isMotion = Settings::ComputeMotionVectors();
-		const bool isReactive = Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS;
+		const bool isReactive = Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::XeSS;
 		if (isMotion != passData.MotionEnabled || isReactive != passData.ReactiveEnabled)
 		{
 			passData.MotionEnabled = isMotion;
@@ -85,6 +85,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				if (isReactive)
 					shaderName += "R";
 			}
+			buildData.SyncStatus.SyncMain(dev);
 			U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
 			while (stateIndex--)
 			{
@@ -104,7 +105,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				passData.StatesTransparent[stateIndex].Free(dev);
 				passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
 			}
+			return UpdateStatus::InternalOnly;
 		}
+		return UpdateStatus::NoUpdate;
 	}
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
@@ -125,7 +128,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
 		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
 		passData->MotionEnabled = !Settings::ComputeMotionVectors();
-		passData->ReactiveEnabled = Settings::GetUpscaler() != UpscalerType::Fsr2 && Settings::GetUpscaler() != UpscalerType::XeSS;
+		passData->ReactiveEnabled = Settings::Upscaler != UpscalerType::Fsr2 && Settings::Upscaler != UpscalerType::XeSS;
 		Update(dev, buildData, *passData, formatDS, formatNormal, formatAlbedo, formatMaterialParams, formatMotion, formatReactive);
 
 		Resource::PipelineStateDesc psoDesc;
@@ -146,7 +149,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		ZE_ASSERT(data.MotionEnabled == Settings::ComputeMotionVectors(),
 			"Lambertian pass not updated for changed motion vectors output settings!");
-		ZE_ASSERT(data.ReactiveEnabled == (Settings::GetUpscaler() == UpscalerType::Fsr2 || Settings::GetUpscaler() == UpscalerType::XeSS),
+		ZE_ASSERT(data.ReactiveEnabled == (Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::XeSS),
 			"Lambertian pass not updated for changed reactive mask output settings!");
 
 		const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);

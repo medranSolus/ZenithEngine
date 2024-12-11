@@ -45,6 +45,8 @@ namespace ZE
 
 		static inline GFX::VendorGPU GpuVendor = GFX::VendorGPU::Unknown;
 		static inline GFX::RayTracingTier RayTracingTier = GFX::RayTracingTier::None;
+		static inline GFX::UpscalerType Upscaler = GFX::UpscalerType::None;
+		static inline GFX::AOType AmbientOcclusionType = GFX::AOType::None;
 		static inline PixelFormat BackbufferFormat = PixelFormat::R8G8B8A8_UNorm;
 
 		static inline UInt2 DisplaySize = { 0, 0 };
@@ -60,8 +62,6 @@ namespace ZE
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
 		static inline GfxApiType gfxApi;
-		static inline GFX::UpscalerType upscaler;
-		static inline GFX::AOType aoType;
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
@@ -80,8 +80,6 @@ namespace ZE
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized()); return gfxApi; }
-		static constexpr GFX::UpscalerType GetUpscaler() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler; }
-		static constexpr GFX::AOType GetAOType() noexcept { ZE_ASSERT_INIT(Initialized()); return aoType; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
@@ -92,8 +90,8 @@ namespace ZE
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetBackbufferCount(); }
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
-		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
-		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return upscaler != GFX::UpscalerType::None && upscaler != GFX::UpscalerType::Fsr1 && upscaler != GFX::UpscalerType::NIS; }
+		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || Upscaler != GFX::UpscalerType::None && Upscaler != GFX::UpscalerType::Fsr1 && Upscaler != GFX::UpscalerType::NIS; }
+		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return Upscaler != GFX::UpscalerType::None && Upscaler != GFX::UpscalerType::Fsr1 && Upscaler != GFX::UpscalerType::NIS; }
 
 		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
@@ -177,8 +175,8 @@ namespace ZE
 		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;
 		applicationVersion = params.AppVersion;
-		upscaler = params.Upscaler;
-		aoType = params.AmbientOcclusion;
+		Upscaler = params.Upscaler;
+		AmbientOcclusionType = params.AmbientOcclusion;
 		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
 	}
 #pragma endregion

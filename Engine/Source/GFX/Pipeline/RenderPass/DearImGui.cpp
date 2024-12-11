@@ -19,8 +19,9 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		GUI::ImGuiManager::DestroyRenderData(dev, reinterpret_cast<ExecuteData*>(data)->GuiData);
 		delete reinterpret_cast<ExecuteData*>(data);
 	}

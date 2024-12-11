@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	constexpr bool Evaluate() noexcept { return true; } // TODO: Check input data
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
-	void Clean(Device& dev, void* data) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);

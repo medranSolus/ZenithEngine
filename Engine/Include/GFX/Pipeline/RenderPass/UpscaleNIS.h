@@ -23,11 +23,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		float Sharpness = 0.5f;
 	};
 
-	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::NIS; }
+	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::NIS; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data) noexcept;
-	bool Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

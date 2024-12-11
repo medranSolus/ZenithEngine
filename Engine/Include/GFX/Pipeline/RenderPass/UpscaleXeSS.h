@@ -21,11 +21,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		xess_quality_settings_t Quality = XESS_QUALITY_SETTING_AA;
 	};
 
-	constexpr bool Evaluate() noexcept { return Settings::GetUpscaler() == UpscalerType::XeSS; }
+	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::XeSS; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data) noexcept;
-	bool Update(Device& dev, ExecuteData& passData);
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
+	UpdateStatus Update(Device& dev, ExecuteData& passData, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

@@ -17,7 +17,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledImGui(); }
 
 	PassDesc GetDesc(PixelFormat formatRT) noexcept;
-	void Clean(Device& dev, void* data) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

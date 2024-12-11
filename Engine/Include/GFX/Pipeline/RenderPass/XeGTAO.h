@@ -31,11 +31,11 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		float StepsPerSlice;
 	};
 
-	constexpr bool Evaluate() noexcept { return Settings::GetAOType() == AOType::XeGTAO; }
+	constexpr bool Evaluate() noexcept { return Settings::AmbientOcclusionType == AOType::XeGTAO; }
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept;
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

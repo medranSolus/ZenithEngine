@@ -3,9 +3,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, buildData.FfxInterface, *reinterpret_cast<ExecuteData*>(passData)); return false; }
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData.FfxInterface); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	PassDesc GetDesc() noexcept
 	{
@@ -18,15 +18,17 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
+
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		ZE_FFX_CHECK(ffxSssrContextDestroy(&execData->Ctx), "Error destroying SSSR context!");
 		delete execData;
 	}
 
-	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate)
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
 	{
 		if (passData.RenderSize != Settings::RenderSize)
 		{
@@ -35,6 +37,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 
 			if (firstUpdate)
 			{
+				buildData.SyncStatus.SyncMain(dev);
 				ZE_FFX_CHECK(ffxSssrContextDestroy(&passData.Ctx), "Error destroying SSSR context!");
 			}
 			FfxSssrContextDescription sssrDesc = {};
@@ -42,15 +45,17 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 			sssrDesc.renderSize.width = passData.RenderSize.X;
 			sssrDesc.renderSize.height = passData.RenderSize.Y;
 			sssrDesc.normalsHistoryBufferFormat = FFX::GetSurfaceFormat(PixelFormat::R16G16_Float);
-			sssrDesc.backendInterface = ffxInterface;
+			sssrDesc.backendInterface = buildData.FfxInterface;
 			ZE_FFX_THROW_FAILED(ffxSssrContextCreate(&passData.Ctx, &sssrDesc), "Error creating SSSR context!");
+			return UpdateStatus::InternalOnly;
 		}
+		return UpdateStatus::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, const FfxInterface& ffxInterface)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
-		Update(dev, ffxInterface, *passData, true);
+		Update(dev, buildData, *passData, true);
 		return passData;
 	}
 

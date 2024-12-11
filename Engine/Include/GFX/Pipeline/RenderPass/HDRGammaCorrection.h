@@ -16,9 +16,8 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		Resource::PipelineStateGfx State;
 	};
 
-	inline void Clean(Device& dev, void* data) noexcept { reinterpret_cast<ExecuteData*>(data)->State.Free(dev); delete reinterpret_cast<ExecuteData*>(data); }
-
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

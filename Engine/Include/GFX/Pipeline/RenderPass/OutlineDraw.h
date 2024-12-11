@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 	constexpr bool Evaluate() noexcept { return true; } // TODO: check input data
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
-	void Clean(Device& dev, void* data) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

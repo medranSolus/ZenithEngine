@@ -24,6 +24,14 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return desc;
 	}
 
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	{
+		syncStatus.SyncMain(dev);
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->State.Free(dev);
+		delete execData;
+	}
+
 	void* Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth)
 	{

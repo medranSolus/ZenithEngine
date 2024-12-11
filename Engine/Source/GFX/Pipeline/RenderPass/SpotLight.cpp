@@ -25,8 +25,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->State.Free(dev);
 		execData->VolumeMesh.Free(dev);

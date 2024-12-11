@@ -22,7 +22,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
 		const std::string& cubemapPath, const std::string& cubemapExt) noexcept;
-	void Clean(Device& dev, void* data) noexcept;
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* CopyInitData(void* data) noexcept;
 	void FreeInitData(void* data) noexcept;
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT,

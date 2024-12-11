@@ -37,8 +37,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR(); }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data) noexcept;
-	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, const FfxInterface& ffxInterface);
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

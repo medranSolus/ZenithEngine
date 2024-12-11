@@ -3,9 +3,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { Update(dev, buildData.FfxInterface, *reinterpret_cast<ExecuteData*>(passData)); return false; }
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData.FfxInterface, buildData); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	PassDesc GetDesc() noexcept
 	{
@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return desc;
 	}
 
-	void Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate)
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
 	{
 		if (passData.RenderSize != Settings::RenderSize)
 		{
@@ -27,31 +27,42 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 			if (!firstUpdate)
 			{
+				if (Settings::IsEnabledAsyncAO())
+					buildData.SyncStatus.SyncCompute(dev);
+				else
+					buildData.SyncStatus.SyncMain(dev);
 				ZE_FFX_CHECK(ffxCacaoContextDestroy(&passData.Ctx), "Error destroying CACAO context!");
 			}
 			FfxCacaoContextDescription cacaoDesc = {};
-			cacaoDesc.backendInterface = ffxInterface;
+			cacaoDesc.backendInterface = buildData.FfxInterface;
 			cacaoDesc.width = passData.RenderSize.X;
 			cacaoDesc.height = passData.RenderSize.Y;
 			cacaoDesc.useDownsampledSsao = false;
 			ZE_FFX_THROW_FAILED(ffxCacaoContextCreate(&passData.Ctx, &cacaoDesc), "Error creating CACAO context!");
+			return UpdateStatus::InternalOnly;
 		}
+		return UpdateStatus::NoUpdate;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		if (Settings::IsEnabledAsyncAO())
+			syncStatus.SyncCompute(dev);
+		else
+			syncStatus.SyncMain(dev);
+
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		ZE_FFX_CHECK(ffxCacaoContextDestroy(&execData->Ctx), "Error destroying CACAO context!");
 		delete execData;
 	}
 
-	void* Initialize(Device& dev, const FfxInterface& ffxInterface, RendererPassBuildData& buildData)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
 
 		passData->Settings.generateNormals = false;
-		Update(dev, ffxInterface, *passData, true);
+		Update(dev, buildData, *passData, true);
 
 		return passData;
 	}

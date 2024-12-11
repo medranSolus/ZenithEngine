@@ -5,7 +5,7 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
 
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
@@ -20,16 +20,18 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StateUpscale.Free(dev);
 		execData->Coefficients.Free(dev);
 		delete execData;
 	}
 
-	bool Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
 	{
+		UpdateStatus status = UpdateStatus::NoUpdate;
 		if (passData.Float16Support != dev.IsShaderFloat16Supported())
 		{
 			passData.Float16Support = dev.IsShaderFloat16Supported();
@@ -46,6 +48,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 					passData.BlockHeight = 32;
 			}
 			Resource::Shader upscale(dev, shaderName);
+			buildData.SyncStatus.SyncMain(dev);
+			passData.StateUpscale.Free(dev);
 			passData.StateUpscale.Init(dev, upscale, buildData.BindingLib.GetSchema(passData.BindingIndex));
 			upscale.Free(dev);
 
@@ -72,6 +76,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 			coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesUSM));
 			passData.Coefficients.Free(dev);
 			passData.Coefficients.Init(dev, buildData.Assets.GetDisk(), coeffDesc);
+			status = UpdateStatus::InternalOnly;
 		}
 
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::NIS, static_cast<U32>(passData.Quality));
@@ -79,9 +84,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		{
 			Settings::RenderSize = renderSize;
 			passData.DisplaySize = Settings::DisplaySize;
-			return true;
+			status = UpdateStatus::FrameBufferImpact;
 		}
-		return false;
+		return status;
 	}
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData)

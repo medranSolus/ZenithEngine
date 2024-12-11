@@ -18,6 +18,14 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		return desc;
 	}
 
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	{
+		syncStatus.SyncMain(dev);
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->State.Free(dev);
+		delete execData;
+	}
+
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
 	{
 		ExecuteData* passData = new ExecuteData;

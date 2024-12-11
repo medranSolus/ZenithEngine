@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, *reinterpret_cast<ExecuteData*>(passData)); }
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, *reinterpret_cast<ExecuteData*>(passData), buildData.SyncStatus); }
 
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
@@ -37,13 +37,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		dev.FreeXeSS();
 		delete reinterpret_cast<ExecuteData*>(data);
 	}
 
-	bool Update(Device& dev, ExecuteData& passData)
+	UpdateStatus Update(Device& dev, ExecuteData& passData, GpuSyncStatus& syncStatus)
 	{
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::XeSS, passData.Quality);
 		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
@@ -56,11 +57,12 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 				-Utils::SafeCast<float>(renderSize.X), -Utils::SafeCast<float>(renderSize.Y)),
 				"Error setting XeSS motion vectors scale!");
 
+			syncStatus.SyncMain(dev);
 			dev.InitializeXeSS(Settings::DisplaySize, passData.Quality,
 				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK);
-			return true;
+			return UpdateStatus::FrameBufferImpact;
 		}
-		return false;
+		return UpdateStatus::NoUpdate;
 	}
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData)
@@ -73,7 +75,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 			"Error setting XeSS message callback!");
 		ZE_XESS_CHECK(xessSetJitterScale(dev.GetXeSSCtx(), 1.0f, 1.0f),
 			"Error setting XeSS jitter scale!");
-		Update(dev, *passData);
+
+		Update(dev, *passData, buildData.SyncStatus);
 
 		return passData;
 	}

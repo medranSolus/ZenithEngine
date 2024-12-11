@@ -58,8 +58,13 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		if (Settings::IsEnabledAsyncAO())
+			syncStatus.SyncCompute(dev);
+		else
+			syncStatus.SyncMain(dev);
+
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StatePrefilter.Free(dev);
 		execData->StateAO.Free(dev);
@@ -95,7 +100,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
 		desc.AddRange({ 1, 1, 5, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Normal map
-		desc.AddRange({ 1, 2, 6, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::StaticData }); // Hilber LUT
+		desc.AddRange({ 1, 2, 6, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Hilber LUT
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Compute);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Compute);
 		passData->BindingIndexAO = buildData.BindingLib.AddDataBinding(dev, desc);
@@ -120,6 +125,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 		// Create Hilbert look-up texture
 		Resource::Texture::PackDesc hilbertDesc;
+		ZE_TEXTURE_SET_NAME(hilbertDesc, "XeGTAO Hilbert LUT");
 		std::vector<Surface> surfaces;
 		surfaces.emplace_back(XE_HILBERT_WIDTH, XE_HILBERT_WIDTH, PixelFormat::R16_UInt);
 

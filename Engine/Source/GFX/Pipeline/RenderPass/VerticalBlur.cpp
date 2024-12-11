@@ -21,6 +21,14 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		return desc;
 	}
 
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	{
+		syncStatus.SyncMain(dev);
+		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
+		execData->State.Free(dev);
+		delete execData;
+	}
+
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		ExecuteData* passData = new ExecuteData;

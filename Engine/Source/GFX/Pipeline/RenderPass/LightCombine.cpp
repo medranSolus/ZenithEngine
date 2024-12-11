@@ -2,11 +2,10 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for LightCombine initialization formats!");
-		Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.front());
-		return false;
+		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.front());
 	}
 
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
@@ -26,19 +25,21 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->State.Free(dev);
 		delete execData;
 	}
 
-	void Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
 	{
-		const bool isAO = Settings::GetAOType() != AOType::None;
+		const bool isAO = Settings::AmbientOcclusionType != AOType::None;
 		if (isAO != passData.AmbientOcclusionEnabled)
 		{
 			passData.AmbientOcclusionEnabled = isAO;
+
 			Resource::PipelineStateDesc psoDesc;
 			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
@@ -47,9 +48,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 			psoDesc.FormatsRT[0] = outputFormat;
 			psoDesc.SetShader(dev, psoDesc.PS, isAO ? "LightCombinePS_A" : "LightCombinePS", buildData.ShaderCache);
 			ZE_PSO_SET_NAME(psoDesc, psoDesc.PS->GetName());
+
+			buildData.SyncStatus.SyncMain(dev);
 			passData.State.Free(dev);
 			passData.State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex));
+			return UpdateStatus::GraphImpact;
 		}
+		return UpdateStatus::NoUpdate;
 	}
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
@@ -62,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		passData->AmbientOcclusionEnabled = Settings::GetAOType() == AOType::None;
+		passData->AmbientOcclusionEnabled = Settings::AmbientOcclusionType == AOType::None;
 		Update(dev, buildData, *passData, outputFormat);
 
 		return passData;
@@ -74,7 +79,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::GetAOType() != AOType::None),
+		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::AmbientOcclusionType != AOType::None),
 			"LightCombine pass not updated for changed ssao input settings!");
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "LightCombine", Pixel(0xFF, 0xFF, 0x9F));

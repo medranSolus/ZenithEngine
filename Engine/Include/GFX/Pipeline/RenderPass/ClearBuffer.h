@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		};
 
 		static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return new ExecuteData(*reinterpret_cast<ExecuteData*>(initData)); }
-		static void Clean(Device& dev, void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
+		static void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus) { delete reinterpret_cast<ExecuteData*>(data); }
 		static void* CopyInitData(void* data) noexcept { return new ExecuteData(*reinterpret_cast<ExecuteData*>(data)); }
 		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 

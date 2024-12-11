@@ -397,6 +397,7 @@ namespace ZE::GFX::FFX
 					break;
 				}
 				packDesc.AddTexture(texType, std::move(surfaces));
+				ZE_TEXTURE_SET_NAME(packDesc, Utils::ToUTF8(createResourceDescription->name) + "_INIT_DATA");
 				initData.Texture.Init(dev, ffxInterface.Disk, packDesc);
 			}
 			ffxInterface.Disk.StartUploadGPU(true);

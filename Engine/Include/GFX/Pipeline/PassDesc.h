@@ -12,19 +12,26 @@ namespace ZE::GFX::Pipeline
 		PtrVoid ExecData = nullptr;
 	};
 
+	// Information about how update was performed for pass
+	enum class UpdateStatus : U8
+	{
+		NoUpdate,         // Nothing updated
+		InternalOnly,     // Only internals of the pass were updated
+		GraphImpact,      // Updates inside pass might affect other passes as well, required to update all passes additionally
+		FrameBufferImpact // Same as 'GraphImpact' but also frame buffer need to be recreated
+	};
+
 	// Create all needed data for render pass
 	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*);
-	// Optional function that will be performing extended setup that needs GPU explicit work
-	typedef void (*PassSetupCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&, RendererPassBuildData&);
 	// Evaluate whether pass shall run and if it cause update of the render graph
 	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
 	// Main function that will be performing rendering, obligatory
 	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
 	// Optional function to handle pass data update after render graph got it's update.
 	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
-	typedef bool (*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);
+	typedef UpdateStatus(*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);
 	// Optional function that will be freeing up data used by pass
-	typedef void (*PassCleanCallback)(Device&, void*) noexcept;
+	typedef void (*PassCleanCallback)(Device&, void*, GpuSyncStatus&);
 	// Optional function for copying init data for pass creation
 	typedef void* (*PassCopyInitDataCallback)(void*) noexcept;
 	// Optional function for freeing up init data for pass creation
@@ -84,8 +91,6 @@ namespace ZE::GFX::Pipeline
 		// Optional list of pixel formats for buffers used in pass
 		std::vector<PixelFormat> InitializeFormats;
 		PassInitCallback Init = nullptr;
-		// Optional for additional setup step with access to GPU commands, will be run always after Init and Update call
-		PassSetupCallback Setup = nullptr;
 		// Check whether pass should run, meaning it can be removed from execution otherwise with all further processing passes.
 		// If not provided then assume always returning true
 		PassEvaluateExecutionCallback Evaluate = nullptr;

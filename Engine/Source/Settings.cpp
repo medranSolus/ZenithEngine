@@ -11,6 +11,7 @@ namespace ZE
 		flags = 0;
 		applicationName = nullptr;
 		applicationVersion = 0;
-		upscaler = GFX::UpscalerType::None;
+		Upscaler = GFX::UpscalerType::None;
+		AmbientOcclusionType = GFX::AOType::None;
 	}
 }

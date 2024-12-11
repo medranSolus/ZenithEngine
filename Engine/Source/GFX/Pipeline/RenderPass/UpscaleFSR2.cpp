@@ -4,9 +4,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 {
-	static bool Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData.FfxInterface, *reinterpret_cast<ExecuteData*>(passData)); }
+	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData.FfxInterface); }
+	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
 
 	static void MessageHandler(FfxMsgType type, const wchar_t* msg) noexcept
 	{
@@ -34,15 +34,16 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data) noexcept
+	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		syncStatus.SyncMain(dev);
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		ZE_FFX_CHECK(ffxFsr2ContextDestroy(&execData->Ctx), "Error destroying FSR2 context!");
 		delete execData;
 	}
 
-	bool Update(Device& dev, const FfxInterface& ffxInterface, ExecuteData& passData, bool firstUpdate)
+	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
 	{
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::Fsr2, passData.Quality);
 		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
@@ -53,6 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 
 			if (!firstUpdate)
 			{
+				buildData.SyncStatus.SyncMain(dev);
 				ZE_FFX_CHECK(ffxFsr2ContextDestroy(&passData.Ctx), "Error destroying FSR2 context!");
 			}
 			FfxFsr2ContextDescription ctxDesc = {};
@@ -61,18 +63,18 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 				| (_ZE_DEBUG_GFX_API ? FFX_FSR2_ENABLE_DEBUG_CHECKING : 0);
 			ctxDesc.maxRenderSize = { renderSize.X, renderSize.Y };
 			ctxDesc.displaySize = { passData.DisplaySize.X, passData.DisplaySize.Y };
-			ctxDesc.backendInterface = ffxInterface;
+			ctxDesc.backendInterface = buildData.FfxInterface;
 			ctxDesc.fpMessage = MessageHandler;
 			ZE_FFX_THROW_FAILED(ffxFsr2ContextCreate(&passData.Ctx, &ctxDesc), "Error creating FSR2 context!");
-			return true;
+			return UpdateStatus::FrameBufferImpact;
 		}
-		return false;
+		return UpdateStatus::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, const FfxInterface& ffxInterface)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData)
 	{
 		ExecuteData* passData = new ExecuteData;
-		Update(dev, ffxInterface, *passData, true);
+		Update(dev, buildData, *passData, true);
 		return passData;
 	}
 
