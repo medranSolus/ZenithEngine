@@ -364,7 +364,63 @@ namespace ZE::RHI::DX12
 			}
 			return true;
 		}
+
 		ZE_WARNING("The DirectStorage request failed!");
+#if !_ZE_MODE_RELEASE
+		switch (errorRecord.FirstFailure.CommandType)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case DSTORAGE_COMMAND_TYPE_NONE:
+			break;
+		case DSTORAGE_COMMAND_TYPE_REQUEST:
+		{
+			std::string error = "Failed to complete request from ";
+			if (errorRecord.FirstFailure.Request.Request.Options.SourceType == DSTORAGE_REQUEST_SOURCE_FILE)
+				error += "file [" + Utils::ToUTF8(errorRecord.FirstFailure.Request.Filename) + "]";
+			else
+				error += "memory location";
+			error += " to the ";
+			switch (errorRecord.FirstFailure.Request.Request.Options.DestinationType)
+			{
+			case DSTORAGE_REQUEST_DESTINATION_MEMORY:
+				error += "memory location!";
+				break;
+			case DSTORAGE_REQUEST_DESTINATION_BUFFER:
+				error += "D3D buffer!";
+				break;
+			case DSTORAGE_REQUEST_DESTINATION_TEXTURE_REGION:
+				error += "D3D texture region!";
+				break;
+			case DSTORAGE_REQUEST_DESTINATION_MULTIPLE_SUBRESOURCES:
+				error += "D3D texture with it's subresources!";
+				break;
+			case DSTORAGE_REQUEST_DESTINATION_TILES:
+				error += "D3D tile resource!";
+				break;
+			default:
+				break;
+			}
+			Logger::Warning(error);
+			break;
+		}
+		case DSTORAGE_COMMAND_TYPE_STATUS:
+		{
+			Logger::Warning("Failed to perform signal on status array with index: " + std::to_string(errorRecord.FirstFailure.Status.Index));
+			break;
+		}
+		case DSTORAGE_COMMAND_TYPE_SIGNAL:
+		{
+			Logger::Warning("Failed to perform signal on fence with value: " + std::to_string(errorRecord.FirstFailure.Signal.Value));
+			break;
+		}
+		case DSTORAGE_COMMAND_TYPE_EVENT:
+		{
+			Logger::Warning("Failed to perform event with handle: " + std::to_string(reinterpret_cast<uintptr_t>(errorRecord.FirstFailure.Event.Handle)));
+			break;
+		}
+		}
+#endif
 		return false;
 	}
 
