@@ -61,6 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::Texture::PackDesc texDesc;
+		ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
 		texDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		std::vector<Surface> textures;
 		textures.reserve(6);

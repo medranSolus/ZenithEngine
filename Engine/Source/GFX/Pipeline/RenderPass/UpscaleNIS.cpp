@@ -71,12 +71,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 			}
 
 			Resource::Texture::PackDesc coeffDesc;
+			ZE_TEXTURE_SET_NAME(coeffDesc, "NIS Coefficients");
 			coeffDesc.Options = Resource::Texture::PackOption::StaticCreation;
 			coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesScale));
 			coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesUSM));
 			passData.Coefficients.Free(dev);
 			passData.Coefficients.Init(dev, buildData.Assets.GetDisk(), coeffDesc);
-			status = UpdateStatus::InternalOnly;
+			status = UpdateStatus::GpuUploadRequired;
 		}
 
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::NIS, static_cast<U32>(passData.Quality));
@@ -84,7 +85,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		{
 			Settings::RenderSize = renderSize;
 			passData.DisplaySize = Settings::DisplaySize;
-			status = UpdateStatus::FrameBufferImpact;
+			status = status == UpdateStatus::GpuUploadRequired ? UpdateStatus::FrameBufferImpactGpuUpload : UpdateStatus::FrameBufferImpact;
 		}
 		return status;
 	}

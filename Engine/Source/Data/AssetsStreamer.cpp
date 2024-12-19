@@ -564,6 +564,7 @@ namespace ZE::Data
 
 				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 				GFX::Resource::Texture::PackDesc texDesc;
+				ZE_TEXTURE_SET_NAME(texDesc, assets.get<std::string>(materialId));
 				texDesc.Init(texSchema);
 				texDesc.ResourceID = materialId;
 

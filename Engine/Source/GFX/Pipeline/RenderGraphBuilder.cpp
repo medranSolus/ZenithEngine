@@ -714,7 +714,7 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	bool RenderGraphBuilder::CascadePassUpdate(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool cascadeUpdate) const
+	bool RenderGraphBuilder::CascadePassUpdate(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::CascadePassUpdate");
 
@@ -744,7 +744,12 @@ namespace ZE::GFX::Pipeline
 							ZE_ENUM_UNHANDLED();
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::InternalOnly:
+						case UpdateStatus::GpuUploadRequired:
+							gpuUploadRequired = true;
 							break;
+						case UpdateStatus::FrameBufferImpactGpuUpload:
+							gpuUploadRequired = true;
+							[[fallthrough]];
 						case UpdateStatus::FrameBufferImpact:
 							framebufferImpact = true;
 							[[fallthrough]];
@@ -759,7 +764,7 @@ namespace ZE::GFX::Pipeline
 		return framebufferImpact;
 	}
 
-	bool RenderGraphBuilder::SetupPassData(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, RenderNode& node, U32 passId, PtrVoid& passExecData)
+	bool RenderGraphBuilder::SetupPassData(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, PtrVoid& passExecData)
 	{
 		bool cascadeUpdate = false;
 
@@ -797,7 +802,12 @@ namespace ZE::GFX::Pipeline
 					ZE_ENUM_UNHANDLED();
 				case UpdateStatus::NoUpdate:
 				case UpdateStatus::InternalOnly:
+				case UpdateStatus::GpuUploadRequired:
+					gpuUploadRequired = true;
 					break;
+				case UpdateStatus::FrameBufferImpactGpuUpload:
+					gpuUploadRequired = true;
+					[[fallthrough]];
 				case UpdateStatus::GraphImpact:
 				case UpdateStatus::FrameBufferImpact:
 					cascadeUpdate = true;
@@ -815,7 +825,7 @@ namespace ZE::GFX::Pipeline
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::InitializeRenderPasses");
 
-		bool cascadeUpdate = false;
+		bool cascadeUpdate = false, gpuUpload = false;
 		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers, { true, true, true } };
 		auto fillInitData = [&](RenderGraph::ExecutionGroup& execGroup)
 			{
@@ -827,7 +837,7 @@ namespace ZE::GFX::Pipeline
 						auto& computed = computedGraph.at(pass.PassID);
 						auto& node = passDescs.at(pass.PassID).at(computed.NodeGroupIndex);
 
-						cascadeUpdate |= SetupPassData(dev, graph, buildData, node, pass.PassID, pass.Data.ExecData);
+						cascadeUpdate |= SetupPassData(dev, graph, buildData, gpuUpload, node, pass.PassID, pass.Data.ExecData);
 					}
 				}
 			};
@@ -869,10 +879,10 @@ namespace ZE::GFX::Pipeline
 		}
 
 		// Perform updates as long as there is required to reapply any changes that might need rebuilding render graph
-		CascadePassUpdate(dev, graph, buildData, cascadeUpdate);
+		CascadePassUpdate(dev, graph, buildData, cascadeUpdate, gpuUpload);
 
 		// After pass data have been scheduled to upload we can start actual GPU upload request
-		assets.GetDisk().StartUploadGPU(true);
+		assets.GetDisk().StartUploadGPU();
 		// Clear up loaded shaders
 		buildData.FreeShaderCache(dev);
 	}
@@ -1879,7 +1889,7 @@ namespace ZE::GFX::Pipeline
 
 		BuildResult result = BuildResult::Success;
 		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
-		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false;
+		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, uploadWait = false;
 
 		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
@@ -1910,6 +1920,12 @@ namespace ZE::GFX::Pipeline
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::InternalOnly:
 							break;
+						case UpdateStatus::GpuUploadRequired:
+							uploadWait = true;
+							break;
+						case UpdateStatus::FrameBufferImpactGpuUpload:
+							uploadWait = true;
+							[[fallthrough]];
 						case UpdateStatus::FrameBufferImpact:
 							framebufferUpdate = true;
 							[[fallthrough]];
@@ -2012,7 +2028,7 @@ namespace ZE::GFX::Pipeline
 
 										auto& passInfo = *computed.GraphPassInfo.Cast<RenderGraph::ParallelPassGroup::PassInfo>();
 										passInfo.Exec = pass.GetDesc().Execute;
-										cascadeUpdate |= SetupPassData(dev, graph, buildData, pass, i, passInfo.Data.ExecData);
+										cascadeUpdate |= SetupPassData(dev, graph, buildData, uploadWait, pass, i, passInfo.Data.ExecData);
 
 										if (resourcesUpdate)
 										{
@@ -2057,7 +2073,7 @@ namespace ZE::GFX::Pipeline
 
 		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged)
 		{
-			CascadePassUpdate(dev, graph, buildData, cascadeUpdate);
+			CascadePassUpdate(dev, graph, buildData, cascadeUpdate, uploadWait);
 
 			// Wait for the GPU work to finish before recreating framebuffer
 			if (!graphUpdate)
@@ -2072,6 +2088,9 @@ namespace ZE::GFX::Pipeline
 
 			UpdateFfxResourceIds(graph);
 		}
+
+		if (uploadWait && result == BuildResult::Success)
+			return BuildResult::WaitUpload;
 		return result;
 	}
 

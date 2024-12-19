@@ -15,10 +15,12 @@ namespace ZE::GFX::Pipeline
 	// Information about how update was performed for pass
 	enum class UpdateStatus : U8
 	{
-		NoUpdate,         // Nothing updated
-		InternalOnly,     // Only internals of the pass were updated
-		GraphImpact,      // Updates inside pass might affect other passes as well, required to update all passes additionally
-		FrameBufferImpact // Same as 'GraphImpact' but also frame buffer need to be recreated
+		NoUpdate,                    // Nothing updated
+		InternalOnly,                // Only internals of the pass were updated
+		GpuUploadRequired,           // If update resulted in additional data sent to GPU then communicate to graph that waiting for upload is required
+		GraphImpact,                 // Updates inside pass might affect other passes as well, required to update all passes additionally
+		FrameBufferImpact,           // Same as 'GraphImpact' but also frame buffer need to be recreated
+		FrameBufferImpactGpuUpload,  // 'FrameBufferImpact' and 'GpuUploadRequired' combined
 	};
 
 	// Create all needed data for render pass

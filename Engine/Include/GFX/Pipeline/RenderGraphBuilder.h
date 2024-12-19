@@ -101,8 +101,8 @@ namespace ZE::GFX::Pipeline
 		// Order: input, inner, output (without already present resources from inputs)
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
 		FrameBufferDesc GetFrameBufferLayout(Device& dev, const class RenderGraph& graph) const noexcept;
-		bool CascadePassUpdate(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool cascadeUpdate) const;
-		bool SetupPassData(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, RenderNode& node, U32 passId, PtrVoid& passExecData);
+		bool CascadePassUpdate(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const;
+		bool SetupPassData(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, PtrVoid& passExecData);
 		void GroupRenderPasses(Device& dev, class RenderGraph& graph);
 		void InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph);
 		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;

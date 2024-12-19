@@ -40,6 +40,8 @@ namespace ZE::GFX
 
 	constexpr void Graphics::Present()
 	{
+		ZE_PERF_GUARD("Swapchain present");
+
 		fenceChain.Get() = device.SetMainFence();
 		swapChain.Present(device);
 		device.EndFrame();
