@@ -7,6 +7,7 @@ namespace ZE::GFX::Pipeline
 	enum class BuildResult : U8
 	{
 		Success = 0,
+		WaitUpload,
 		ErrorTooManyPasses,
 		ErrorTooManyResources,
 		ErrorPassWrongOutputSet,
@@ -46,6 +47,7 @@ namespace ZE::GFX::Pipeline
 		{
 		default: return "UNKNOWN";
 			DECODE(Success, "Success");
+			DECODE(WaitUpload, "Successful build but wait required to upload pass data");
 			DECODE(ErrorTooManyPasses, "Specified too many passes in RenderGraphDesc");
 			DECODE(ErrorTooManyResources, "Specified too many resources in RenderGraphDesc");
 			DECODE(ErrorPassWrongOutputSet, "One of the passes in group doesn't have matching outputs with rest of the group");
@@ -78,3 +80,6 @@ namespace ZE::GFX::Pipeline
 	}
 #pragma endregion
 }
+
+// Check if current pipeline build succeeded
+#define ZE_PIPELINE_BUILD_SUCCESS(result) ((result) == ZE::GFX::Pipeline::BuildResult::Success || (result) == ZE::GFX::Pipeline::BuildResult::WaitUpload)

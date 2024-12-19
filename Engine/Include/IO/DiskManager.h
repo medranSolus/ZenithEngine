@@ -48,10 +48,13 @@ namespace ZE::IO
 
 		// Main IO API
 
-		constexpr void StartUploadGPU(bool waitable) noexcept { ZE_RHI_BACKEND_CALL(StartUploadGPU, waitable); }
+		// After setting upload wait point it's needed to start upload of the data with 'StartUploadGPU()'
+		constexpr DiskStatusHandle SetGPUUploadWaitPoint() noexcept { DiskStatusHandle status = nullptr; ZE_RHI_BACKEND_CALL_RET(status, SetGPUUploadWaitPoint); return status; }
+		// Kicks off GPU work for uploading data from the CPU
+		constexpr void StartUploadGPU() noexcept { ZE_RHI_BACKEND_CALL(StartUploadGPU); }
 		// Check if command list passed to `WaitForUploadGPU()` will need to perform any work (if needs to be open before passing to function and later executed)
-		constexpr bool IsGPUWorkPending() const noexcept { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, IsGPUWorkPending); return status; }
-		// Before passing in command list, check `IsGPUWorkPending()`
-		constexpr bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl) { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, WaitForUploadGPU, dev, cl); return status; }
+		constexpr bool IsGPUWorkPending(DiskStatusHandle handle) const noexcept { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, IsGPUWorkPending, handle); return status; }
+		// Before passing in command list, check `IsGPUWorkPending()` and make sure that you have started GPU upload with `StartUploadGPU()`
+		constexpr bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle) { bool status = false; ZE_RHI_BACKEND_CALL_RET(status, WaitForUploadGPU, dev, cl, handle); return status; }
 	};
 }

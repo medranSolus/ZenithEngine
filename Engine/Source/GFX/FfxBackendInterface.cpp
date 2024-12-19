@@ -400,16 +400,17 @@ namespace ZE::GFX::FFX
 				ZE_TEXTURE_SET_NAME(packDesc, Utils::ToUTF8(createResourceDescription->name) + "_INIT_DATA");
 				initData.Texture.Init(dev, ffxInterface.Disk, packDesc);
 			}
-			ffxInterface.Disk.StartUploadGPU(true);
+			DiskStatusHandle diskStatus = ffxInterface.Disk.SetGPUUploadWaitPoint();
+			ffxInterface.Disk.StartUploadGPU();
 
 			CommandList barrierCL;
-			bool workPending = ffxInterface.Disk.IsGPUWorkPending();
+			bool workPending = ffxInterface.Disk.IsGPUWorkPending(diskStatus);
 			if (workPending)
 			{
 				barrierCL.Init(dev);
 				barrierCL.Open(dev);
 			}
-			bool status = ffxInterface.Disk.WaitForUploadGPU(dev, barrierCL);
+			bool status = ffxInterface.Disk.WaitForUploadGPU(dev, barrierCL, diskStatus);
 			ZE_ASSERT(status, "Error uploading initial FFX resource data!");
 			if (workPending)
 			{

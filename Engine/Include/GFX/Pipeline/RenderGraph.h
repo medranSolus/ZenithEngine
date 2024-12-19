@@ -84,7 +84,7 @@ namespace ZE::GFX::Pipeline
 	// Maybe after running update it will be good to send out command that will run "end of frame" parts again,
 	// so it will be possible to upload relevant data (maybe even do it before updating graph)
 	// update scene transforms with component that adds previous transform data and so on and so on.
-	// 
+	//
 	// Also adding option to disk manager that will allow for checking some fence value, ID or special event that can be checked in a better way to determine if relevant data has been uploaded
 	// (can be used for checking if render pass data has been sent out but also as a way to determine if mesh data for given object is in place (fence value greater than something)
 
@@ -139,7 +139,9 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_MOVE(RenderGraph);
 		~RenderGraph() { ZE_ASSERT_FREED(passExecGroups == nullptr); }
 
-		BuildResult Execute(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraphBuilder* builder);
+		constexpr bool IsAsyncPresent() const noexcept { return asyncListChain.Get().IsInitialized(); }
+
+		void Execute(Graphics& gfx);
 
 		// Before executing render graph it's needed to set active camera
 		void SetCamera(EID camera);

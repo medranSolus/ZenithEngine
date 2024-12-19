@@ -19,6 +19,8 @@ namespace ZE
 		Data::AssetsStreamer assets;
 		std::bitset<Flags::Count> flags;
 
+		bool UploadSync();
+
 	public:
 		Engine(const SettingsInitParams& params) noexcept : StartupConfig(params) {}
 		ZE_CLASS_DELETE(Engine);

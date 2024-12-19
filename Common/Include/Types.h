@@ -38,4 +38,6 @@ namespace ZE
 	typedef PtrVoid LibraryHandle;
 	// Identifier to single allocation
 	typedef PtrVoid AllocHandle;
+	// Handle to the corresponding disk operation
+	typedef PtrVoid DiskStatusHandle;
 }

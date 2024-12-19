@@ -3,6 +3,27 @@
 
 namespace ZE
 {
+	bool Engine::UploadSync()
+	{
+		GFX::Device& dev = graphics.GetDevice();
+		GFX::CommandList& mainList = graphics.GetMainList();
+		DiskStatusHandle diskStatus = assets.GetDisk().SetGPUUploadWaitPoint();
+		assets.GetDisk().StartUploadGPU();
+
+		ZE_PERF_START("Update upload data status");
+		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending(diskStatus);
+		if (gpuWorkPending)
+			mainList.Open(dev);
+
+		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, mainList, diskStatus);
+		ZE_ASSERT(status, "Error uploading engine GPU data!");
+
+		if (gpuWorkPending)
+			mainList.Close(dev);
+		ZE_PERF_STOP();
+		return gpuWorkPending;
+	}
+
 	bool Engine::Init(const EngineParams& params)
 	{
 		flags[Flags::Initialized] = true;
@@ -125,8 +146,9 @@ namespace ZE
 
 	void Engine::Start(EID camera) noexcept
 	{
-		prevTime = Perf::Get().GetNow();
 		renderGraph.SetCamera(camera);
+		UploadSync();
+		prevTime = Perf::Get().GetNow();
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
@@ -147,27 +169,38 @@ namespace ZE
 			imgui.StartFrame(window);
 			assets.ShowWindow(graphics.GetDevice());
 		}
-		assets.GetDisk().StartUploadGPU(true);
+		assets.GetDisk().StartUploadGPU();
 		return frameTime;
 	}
 
 	void Engine::EndFrame()
 	{
+		GFX::Device& dev = graphics.GetDevice();
+		GFX::CommandList& mainList = graphics.GetMainList();
+
 		if (Settings::IsEnabledImGui())
 			imgui.EndFrame();
-
 		graphics.WaitForFrame();
-		renderGraph.UpdateFrameData(graphics.GetDevice());
 
-		ZE_PERF_START("Execute render graph");
-		GFX::Pipeline::BuildResult result = renderGraph.Execute(graphics, assets, &graphBuilder);
-		if (result != GFX::Pipeline::BuildResult::Success)
+		// Update of render graph and it's data
+		GFX::Pipeline::BuildResult result = graphBuilder.UpdatePassConfiguration(dev, assets, renderGraph);
+		if (!ZE_PIPELINE_BUILD_SUCCESS(result))
 			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
-		ZE_PERF_STOP();
+		renderGraph.UpdateFrameData(dev);
 
-		ZE_PERF_START("Swapchain present");
+		if (result == GFX::Pipeline::BuildResult::WaitUpload)
+		{
+			// If any async passes has been processed then sync for initialization of resources
+			if (UploadSync() && renderGraph.IsAsyncPresent())
+			{
+				dev.ExecuteMain(mainList);
+				dev.WaitComputeFromMain(dev.SetMainFence());
+			}
+		}
+
+		renderGraph.Execute(graphics);
 		graphics.Present();
-		ZE_PERF_STOP();
+
 		// Frame marker
 		ZE_PERF_STOP();
 	}

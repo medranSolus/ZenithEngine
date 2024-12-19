@@ -30,6 +30,15 @@ namespace ZE::RHI::DX12
 
 		enum class ResourceType : U8 { Buffer, Mesh, Texture, TextureCopySrc };
 
+		struct UploadEntry
+		{
+			U64 CurrentFence;
+			EID ResID;
+			ResourceType Type;
+			IResource* DestResource;
+			std::shared_ptr<const U8[]> SrcMemory;
+		};
+
 		WinAPI::DiskManager osDiskManager;
 
 		DX::ComPtr<IStorageFactory> factory;
@@ -40,15 +49,11 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IStorageQueue> fileQueue;
 		DX::ComPtr<IStorageQueue> memoryQueue;
 
-		std::shared_mutex queueMutex;
-		std::vector<EID> uploadQueue;
-		std::vector<EID> submitQueue;
-		std::vector<std::pair<ResourceType, IResource*>> uploadDestResourceQueue;
-		std::vector<std::pair<ResourceType, IResource*>> submitDestResourceQueue;
-		std::vector<std::shared_ptr<const U8[]>> uploadSrcMemoryQueue;
-		std::vector<std::shared_ptr<const U8[]>> submitSrcMemoryQueue;
+		mutable std::shared_mutex queueMutex, fenceMutex;
+		UA64 currentFenceValue = 0;
+		std::vector<UploadEntry> uploadQueue;
+		std::unordered_map<U64, std::array<HANDLE, 2>> fenceEvents;
 
-		HANDLE fenceEvents[2] = { nullptr, nullptr };
 		BoolAtom checkForDecompression = true;
 		std::jthread cpuDecompressionThread;
 
@@ -63,10 +68,10 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(DiskManager);
 		~DiskManager();
 
-		constexpr bool IsGPUWorkPending() const noexcept { return submitDestResourceQueue.size(); }
-
-		void StartUploadGPU(bool waitable) noexcept;
-		bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl);
+		DiskStatusHandle SetGPUUploadWaitPoint() noexcept;
+		void StartUploadGPU() noexcept;
+		bool IsGPUWorkPending(DiskStatusHandle handle) const noexcept;
+		bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle);
 
 		// IO API Internal
 

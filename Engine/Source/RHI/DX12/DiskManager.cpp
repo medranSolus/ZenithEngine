@@ -156,21 +156,22 @@ namespace ZE::RHI::DX12
 
 	void DiskManager::AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
 	{
-		LockGuardRW lock(queueMutex, resourceID != INVALID_EID || dest || src);
-		if (dest)
-			uploadDestResourceQueue.emplace_back(type, dest);
-		if (src)
-			uploadSrcMemoryQueue.emplace_back(src);
-		if (resourceID != INVALID_EID)
+		if (resourceID != INVALID_EID || dest || src)
 		{
-#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
-			for (EID id : uploadQueue)
+			U64 fence = static_cast<U64>(currentFenceValue);
+			LockGuardRW lock(queueMutex);
+
+			if (resourceID != INVALID_EID)
 			{
-				ZE_ASSERT(id != resourceID, "Same resource EID added twice as request for DirectStorage upload!");
-			}
+#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
+				for (auto& entry : uploadQueue)
+				{
+					ZE_ASSERT(entry.ResID != resourceID, "Same resource EID added twice as request for DirectStorage upload!");
+				}
 #endif
-			uploadQueue.emplace_back(resourceID);
-			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
+			}
+			uploadQueue.emplace_back(fence, resourceID, type, dest, src);
 		}
 	}
 
@@ -232,63 +233,76 @@ namespace ZE::RHI::DX12
 	DiskManager::~DiskManager()
 	{
 		checkForDecompression = false;
-		if (fenceEvents[0])
-			CloseHandle(fenceEvents[0]);
-		if (fenceEvents[1])
-			CloseHandle(fenceEvents[1]);
+		for (auto& events : fenceEvents)
+		{
+			if (events.second.at(0))
+				CloseHandle(events.second.at(0));
+			if (events.second.at(1))
+				CloseHandle(events.second.at(1));
+		}
 		if (decompressionEvent)
 			CloseHandle(decompressionEvent);
 	}
 
-	void DiskManager::StartUploadGPU(bool waitable) noexcept
+	DiskStatusHandle DiskManager::SetGPUUploadWaitPoint() noexcept
 	{
-		if (waitable || uploadDestResourceQueue.size())
-		{
-			// Recreate handles in case of previous events to ensure that always last event is selected
-			if (fenceEvents[0])
-				CloseHandle(fenceEvents[0]);
-			if (fenceEvents[1])
-				CloseHandle(fenceEvents[1]);
+		HANDLE fileEvent = CreateEventW(nullptr, false, false, nullptr);
+		ZE_ASSERT(fileEvent, "Cannot create DirectStorage file queue fence event!");
+		HANDLE memoryEvent = CreateEventW(nullptr, false, false, nullptr);
+		ZE_ASSERT(memoryEvent, "Cannot create DirectStorage memory queue fence event!");
 
-			fenceEvents[0] = CreateEventW(nullptr, false, false, nullptr);
-			ZE_ASSERT(fenceEvents[0], "Cannot create DirectStorage file queue fence event!");
-			fenceEvents[1] = CreateEventW(nullptr, false, false, nullptr);
-			ZE_ASSERT(fenceEvents[1], "Cannot create DirectStorage memory queue fence event!");
+		fileQueue->EnqueueSetEvent(fileEvent);
+		memoryQueue->EnqueueSetEvent(memoryEvent);
 
-			fileQueue->EnqueueSetEvent(fenceEvents[0]);
-			memoryQueue->EnqueueSetEvent(fenceEvents[1]);
-		}
-		fileQueue->Submit();
-		memoryQueue->Submit();
-
-		LockGuardRW lock(queueMutex);
-		submitQueue.reserve(submitQueue.size() + uploadQueue.size());
-		submitQueue.insert(submitQueue.end(), uploadQueue.begin(), uploadQueue.end());
-		uploadQueue.clear();
-
-		submitDestResourceQueue.reserve(submitDestResourceQueue.size() + uploadDestResourceQueue.size());
-		submitDestResourceQueue.insert(submitDestResourceQueue.end(), uploadDestResourceQueue.begin(), uploadDestResourceQueue.end());
-		uploadDestResourceQueue.clear();
-
-		submitSrcMemoryQueue.reserve(submitSrcMemoryQueue.size() + uploadSrcMemoryQueue.size());
-		submitSrcMemoryQueue.insert(submitSrcMemoryQueue.end(), uploadSrcMemoryQueue.begin(), uploadSrcMemoryQueue.end());
-		uploadSrcMemoryQueue.clear();
+		U64 fence = static_cast<U64>(currentFenceValue++);
+		LockGuardRW lock(fenceMutex);
+		fenceEvents.emplace(fence, std::array{ fileEvent, memoryEvent });
+		return reinterpret_cast<void*>(fence);
 	}
 
-	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl)
+	void DiskManager::StartUploadGPU() noexcept
 	{
-		// If not called previously then force it
-		if (!fenceEvents[0] || !fenceEvents[1])
-			StartUploadGPU(true);
+		fileQueue->Submit();
+		memoryQueue->Submit();
+	}
 
-		if (WaitForMultipleObjects(2, fenceEvents, true, INFINITE) != WAIT_OBJECT_0)
+	bool DiskManager::IsGPUWorkPending(DiskStatusHandle handle) const noexcept
+	{
+		U64 handleFence = handle.CastPtr<U64>();
+		LockGuardRO lock(queueMutex);
+		for (const auto& entry : uploadQueue)
+		{
+			if (entry.CurrentFence <= handleFence)
+			{
+				if (entry.DestResource)
+					return true;
+			}
+			else
+				break;
+		}
+		return false;
+	}
+
+	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle)
+	{
+		U64 handleFence = handle.CastPtr<U64>();
+		std::array<HANDLE, 2> evenHandles;
+		{
+			LockGuardRW lock(fenceMutex);
+			if (!fenceEvents.contains(handleFence))
+			{
+				ZE_FAIL("Unknown DiskStatusHandle handle to wait for!");
+				return false;
+			}
+			evenHandles = fenceEvents.at(handleFence);
+			fenceEvents.erase(handleFence);
+		}
+
+		if (WaitForMultipleObjects(2, evenHandles.data(), true, INFINITE) != WAIT_OBJECT_0)
 			throw ZE_WIN_EXCEPT_LAST();
 
-		// Destroy old fences so always new will be chosen in case of double call to StartUploadGPU()
-		CloseHandle(fenceEvents[0]);
-		CloseHandle(fenceEvents[1]);
-		fenceEvents[0] = nullptr;
-		fenceEvents[1] = nullptr;
+		CloseHandle(evenHandles.at(0));
+		CloseHandle(evenHandles.at(1));
 
 		DSTORAGE_ERROR_RECORD errorRecord = {};
 		fileQueue->RetrieveErrorRecord(&errorRecord);
@@ -297,50 +311,67 @@ namespace ZE::RHI::DX12
 		{
 			ZE_DX_ENABLE_INFO(dev.Get().dx12);
 
-			LockGuardRW lock(queueMutex);
-			submitSrcMemoryQueue.clear();
-
-			// Set all resources location to GPU
-			for (EID id : submitQueue)
-				Settings::Data.get<Data::ResourceLocationAtom>(id) = Data::ResourceLocation::GPU;
-			submitQueue.clear();
-
-			// Transition all textures to SRV and perform buffer barriers
 			std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
 			std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
-			for (auto& res : submitDestResourceQueue)
+			U64 removeCount = 0;
+
 			{
-				if (res.first == ResourceType::Texture || res.first == ResourceType::TextureCopySrc)
+				LockGuardRW lock(queueMutex);
+				for (auto& entry : uploadQueue)
 				{
-					D3D12_TEXTURE_BARRIER& barrier = textureBarriers.emplace_back();
-					barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
-					barrier.SyncAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_SYNC_COPY : D3D12_BARRIER_SYNC_ALL_SHADING;
-					barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
-					barrier.AccessAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_ACCESS_COPY_SOURCE : D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
-					barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_COMMON;
-					barrier.LayoutAfter = res.first == ResourceType::TextureCopySrc ? D3D12_BARRIER_LAYOUT_COPY_SOURCE : D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
-					barrier.pResource = res.second;
-					barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
-					barrier.Subresources.NumMipLevels = 0;
-					barrier.Subresources.FirstArraySlice = 0;
-					barrier.Subresources.NumArraySlices = 0;
-					barrier.Subresources.FirstPlane = 0;
-					barrier.Subresources.NumPlanes = 0;
-					barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
+					if (entry.CurrentFence <= handleFence)
+					{
+						++removeCount;
+
+						// Set all resources location to GPU
+						if (entry.ResID != INVALID_EID)
+							Settings::Data.get<Data::ResourceLocationAtom>(entry.ResID) = Data::ResourceLocation::GPU;
+
+						// Transition all textures to SRV and perform buffer barriers
+						if (entry.DestResource)
+						{
+							if (entry.Type == ResourceType::Texture || entry.Type == ResourceType::TextureCopySrc)
+							{
+								D3D12_TEXTURE_BARRIER& barrier = textureBarriers.emplace_back();
+								barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
+								barrier.SyncAfter = entry.Type == ResourceType::TextureCopySrc ? D3D12_BARRIER_SYNC_COPY : D3D12_BARRIER_SYNC_ALL_SHADING;
+								barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+								barrier.AccessAfter = entry.Type == ResourceType::TextureCopySrc ? D3D12_BARRIER_ACCESS_COPY_SOURCE : D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+								barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_COMMON;
+								barrier.LayoutAfter = entry.Type == ResourceType::TextureCopySrc ? D3D12_BARRIER_LAYOUT_COPY_SOURCE : D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+								barrier.pResource = entry.DestResource;
+								barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
+								barrier.Subresources.NumMipLevels = 0;
+								barrier.Subresources.FirstArraySlice = 0;
+								barrier.Subresources.NumArraySlices = 0;
+								barrier.Subresources.FirstPlane = 0;
+								barrier.Subresources.NumPlanes = 0;
+								barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
+							}
+							else
+							{
+								D3D12_BUFFER_BARRIER& barrier = bufferBarriers.emplace_back();
+								barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
+								barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
+								barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+								barrier.AccessAfter = entry.Type == ResourceType::Buffer ? D3D12_BARRIER_ACCESS_CONSTANT_BUFFER : D3D12_BARRIER_ACCESS_INDEX_BUFFER | D3D12_BARRIER_ACCESS_VERTEX_BUFFER;
+								barrier.pResource = entry.DestResource;
+								barrier.Offset = 0;
+								barrier.Size = UINT64_MAX;
+							}
+						}
+					}
+					else
+						break;
 				}
-				else
+				if (removeCount)
 				{
-					D3D12_BUFFER_BARRIER& barrier = bufferBarriers.emplace_back();
-					barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
-					barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL_SHADING;
-					barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
-					barrier.AccessAfter = res.first == ResourceType::Buffer ? D3D12_BARRIER_ACCESS_CONSTANT_BUFFER : D3D12_BARRIER_ACCESS_INDEX_BUFFER | D3D12_BARRIER_ACCESS_VERTEX_BUFFER;
-					barrier.pResource = res.second;
-					barrier.Offset = 0;
-					barrier.Size = UINT64_MAX;
+					if (removeCount == uploadQueue.size())
+						uploadQueue.clear();
+					else
+						uploadQueue.erase(uploadQueue.begin(), uploadQueue.begin() + removeCount);
 				}
 			}
-			submitDestResourceQueue.clear();
 
 			U8 index = 0;
 			D3D12_BARRIER_GROUP barrierGroups[2];

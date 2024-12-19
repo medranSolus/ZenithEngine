@@ -22,41 +22,15 @@ namespace ZE::GFX::Pipeline
 		passExecGroups = nullptr;
 	}
 
-	BuildResult RenderGraph::Execute(Graphics& gfx, Data::AssetsStreamer& assets, RenderGraphBuilder* builder)
+	void RenderGraph::Execute(Graphics& gfx)
 	{
+		ZE_PERF_GUARD("Execute render graph");
+
 		Device& dev = gfx.GetDevice();
+		CommandList& mainList = gfx.GetMainList();
 		CommandList& asyncList = asyncListChain.Get();
 		if (asyncList.IsInitialized())
 			asyncList.Reset(dev);
-		CommandList& mainList = gfx.GetMainList();
-
-		if (builder)
-		{
-			BuildResult result = builder->UpdatePassConfiguration(dev, assets, *this);
-			if (result != BuildResult::Success)
-				return result;
-			assets.GetDisk().StartUploadGPU(true); // TODO: Better for it to have some kind of token or ID into wait or anything, maybe with map of events, something like that
-		}
-
-		ZE_PERF_START("Update upload data status");
-		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending();
-		if (gpuWorkPending)
-			mainList.Open(dev);
-
-		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, mainList);
-		ZE_ASSERT(status, "Error uploading engine GPU data!");
-
-		if (gpuWorkPending)
-		{
-			mainList.Close(dev);
-			// If any async passes has been processed then sync for initialization of resources
-			if (asyncList.IsInitialized())
-			{
-				dev.ExecuteMain(mainList);
-				dev.WaitComputeFromMain(dev.SetMainFence());
-			}
-		}
-		ZE_PERF_STOP();
 
 		execData.DynamicBuffer = &dynamicBuffers.Get();
 		execData.DynamicBuffer->StartFrame(dev);
@@ -123,7 +97,6 @@ namespace ZE::GFX::Pipeline
 				ZE_DRAW_TAG_END_COMPUTE(dev);
 			}
 		}
-		return BuildResult::Success;
 	}
 
 	void RenderGraph::SetCamera(EID camera)
