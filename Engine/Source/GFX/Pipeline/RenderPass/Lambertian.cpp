@@ -138,6 +138,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		passData->StateDepth.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
+		Settings::AssureEntityPools<InsideFrustumSolid, InsideFrustumNotSolid>();
 		return passData;
 	}
 

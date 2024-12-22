@@ -79,12 +79,12 @@ namespace ZE::Data
 			const GFX::Resource::Texture::PackDesc& textureDesc, ResourceFlags resourceFlags)
 		{
 			EID materialId = Settings::CreateEntity();
-			Storage& data = Settings::Data;
+			Settings::AssureEntityPools<Material, MaterialFlags, GFX::Material<Material, Material::TEX_SCHEMA_NAME>>();
 
-			data.emplace<Material>(materialId, materialData);
-			data.emplace<MaterialFlags>(materialId, materialFlags);
+			Settings::Data.emplace<Material>(materialId, materialData);
+			Settings::Data.emplace<MaterialFlags>(materialId, materialFlags);
 
-			data.emplace<GFX::Material<Material, Material::TEX_SCHEMA_NAME>>(materialId, dev, materialData, textureDesc);
+			Settings::Data.emplace<GFX::Material<Material, Material::TEX_SCHEMA_NAME>>(materialId, dev, materialData, textureDesc);
 
 			return { materialId };
 		}

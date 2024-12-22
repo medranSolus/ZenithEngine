@@ -48,4 +48,17 @@ namespace ZE::Data
 		constexpr void SetAttenuationRange(U64 range) noexcept { Math::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
 	struct PointLightBuffer : public LightBuffer {};
+
+	// Assure that all light components are registered as pools in data storage
+	constexpr void InitLightComponents() noexcept;
+
+#pragma region Functions
+	constexpr void InitLightComponents() noexcept
+	{
+		Settings::AssureEntityPools<LightBuffer,
+			DirectionalLight, Direction, DirectionalLightBuffer, 
+			SpotLight, SpotLightBuffer,
+			PointLight, PointLightBuffer>();
+	}
+#pragma endregion
 }

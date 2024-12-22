@@ -70,6 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		}
 
 		Math::XMStoreFloat4x4(&passData.Projection, projection);
+		Settings::AssureEntityPools<InsideFrustumSolid, InsideFrustumNotSolid>();
 	}
 
 	Matrix Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,

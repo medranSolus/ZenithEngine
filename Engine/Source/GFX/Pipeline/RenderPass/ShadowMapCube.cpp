@@ -64,6 +64,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		}
 
 		Math::XMStoreFloat4x4(&passData.Projection, Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
+		Settings::AssureEntityPools<Solid, Transparent>();
 	}
 
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,

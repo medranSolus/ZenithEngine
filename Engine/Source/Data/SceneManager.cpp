@@ -9,9 +9,8 @@ namespace ZE::Data
 #if _ZE_EXTERNAL_MODEL_LOADING
 	void ParseNode(const aiNode& node, EID currentEntity, const Data::Transform& topTransform, const std::vector<std::pair<MeshID, MaterialID>>& meshes) noexcept
 	{
-		Storage& registry = Settings::Data;
-		if (!registry.try_get<std::string>(currentEntity))
-			registry.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
+		if (!Settings::Data.try_get<std::string>(currentEntity))
+			Settings::Data.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
 
 		// Load transforms for node
 		Vector translation, rotation, scaling;
@@ -24,29 +23,29 @@ namespace ZE::Data
 		}
 
 		// Store node transforms without influence of top-level transform
-		auto& local = Settings::Data.emplace<Data::Transform>(currentEntity);
+		auto& local = Settings::Data.emplace<Transform>(currentEntity);
 		Math::XMStoreFloat4(&local.Rotation, rotation);
 		Math::XMStoreFloat3(&local.Position, translation);
 		Math::XMStoreFloat3(&local.Scale, scaling);
 
 		// Apply top-level transform and local one as final render transform
-		auto& global = Settings::Data.emplace<Data::TransformGlobal>(currentEntity, topTransform);
+		auto& global = Settings::Data.emplace<TransformGlobal>(currentEntity, topTransform);
 		Math::XMStoreFloat4(&global.Rotation, Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&global.Rotation), rotation)));
 		Math::XMStoreFloat3(&global.Position, Math::XMVectorAdd(Math::XMLoadFloat3(&global.Position), translation));
 		Math::XMStoreFloat3(&global.Scale, Math::XMVectorMultiply(Math::XMLoadFloat3(&global.Scale), scaling));
 
 		if (Settings::ComputeMotionVectors())
-			Settings::Data.emplace<Data::TransformPrevious>(currentEntity, topTransform);
+			Settings::Data.emplace<TransformPrevious>(currentEntity, topTransform);
 
-		if (!registry.all_of<Children>(currentEntity))
-			registry.emplace<Children>(currentEntity);
+		if (!Settings::Data.all_of<Children>(currentEntity))
+			Settings::Data.emplace<Children>(currentEntity);
 
 		if (node.mNumMeshes)
 		{
-			registry.emplace<RenderLambertian>(currentEntity);
-			registry.emplace<ShadowCaster>(currentEntity);
-			registry.emplace<MeshID>(currentEntity, meshes.at(node.mMeshes[0]).first);
-			registry.emplace<MaterialID>(currentEntity, meshes.at(node.mMeshes[0]).second);
+			Settings::Data.emplace<RenderLambertian>(currentEntity);
+			Settings::Data.emplace<ShadowCaster>(currentEntity);
+			Settings::Data.emplace<MeshID>(currentEntity, meshes.at(node.mMeshes[0]).first);
+			Settings::Data.emplace<MaterialID>(currentEntity, meshes.at(node.mMeshes[0]).second);
 
 			// Create child entities for every multiple instances of meshes in this node
 			std::vector<EID> childrenEntities(node.mNumMeshes - 1);
@@ -54,19 +53,19 @@ namespace ZE::Data
 			for (U32 i = 1; i < node.mNumMeshes; ++i)
 			{
 				EID child = childrenEntities.at(i - 1);
-				registry.emplace<ParentID>(child, currentEntity);
-				registry.emplace<RenderLambertian>(child);
-				registry.emplace<ShadowCaster>(child);
-				registry.emplace<std::string>(child, registry.get<std::string>(currentEntity) + "_" + std::to_string(i));
+				Settings::Data.emplace<ParentID>(child, currentEntity);
+				Settings::Data.emplace<RenderLambertian>(child);
+				Settings::Data.emplace<ShadowCaster>(child);
+				Settings::Data.emplace<std::string>(child, Settings::Data.get<std::string>(currentEntity) + "_" + std::to_string(i));
 
-				registry.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
-				registry.emplace<TransformGlobal>(child, global);
+				Settings::Data.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
+				Settings::Data.emplace<TransformGlobal>(child, global);
 				if (Settings::ComputeMotionVectors())
-					registry.emplace<TransformPrevious>(child, global);
+					Settings::Data.emplace<TransformPrevious>(child, global);
 
-				registry.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
-				registry.emplace<MaterialID>(child, meshes.at(node.mMeshes[i]).second);
-				registry.get<Children>(currentEntity).Childs.emplace_back(child);
+				Settings::Data.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
+				Settings::Data.emplace<MaterialID>(child, meshes.at(node.mMeshes[i]).second);
+				Settings::Data.get<Children>(currentEntity).Childs.emplace_back(child);
 			}
 		}
 
@@ -78,15 +77,15 @@ namespace ZE::Data
 			for (U32 i = 0; i < node.mNumChildren; ++i)
 			{
 				EID child = childrenEntities.at(i);
-				registry.emplace<ParentID>(child, currentEntity);
-				registry.get<Children>(currentEntity).Childs.emplace_back(child);
+				Settings::Data.emplace<ParentID>(child, currentEntity);
+				Settings::Data.get<Children>(currentEntity).Childs.emplace_back(child);
 
 				ParseNode(*node.mChildren[i], child, global, meshes);
 			}
 		}
 
-		if (registry.get<Children>(currentEntity).Childs.size() == 0)
-			registry.remove<Children>(currentEntity);
+		if (Settings::Data.get<Children>(currentEntity).Childs.size() == 0)
+			Settings::Data.remove<Children>(currentEntity);
 	}
 
 	Task<bool> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform, std::string_view filename, ExternalModelOptions options) noexcept

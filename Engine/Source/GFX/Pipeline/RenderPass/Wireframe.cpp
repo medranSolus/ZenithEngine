@@ -53,6 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
 		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
+		Settings::AssureEntityPools<InsideFrustum>();
 		return passData;
 	}
 

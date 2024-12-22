@@ -37,6 +37,9 @@ namespace ZE::Data
 	template<EmptyType T, typename Visibility>
 	constexpr auto GetVisibleRenderGroup() noexcept { return Settings::Data.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
 
+	// Assure that all render components are registered as pools in data storage
+	constexpr void InitRenderComponents() noexcept { Settings::AssureEntityPools<RenderLambertian, RenderOutline, RenderWireframe, ShadowCaster, LightDirectional, LightSpot, LightPoint, MaterialTransparent, MaterialBlend>(); }
+
 	inline auto GetDirectionalLightGroup() noexcept { return Settings::Data.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
 	inline auto GetSpotLightGroup() noexcept { return Settings::Data.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
 	inline auto GetPointLightGroup() noexcept { return Settings::Data.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }

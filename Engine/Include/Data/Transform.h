@@ -1,4 +1,5 @@
 #pragma once
+#include "Settings.h"
 
 namespace ZE::Data
 {
@@ -13,4 +14,7 @@ namespace ZE::Data
 	};
 	struct TransformGlobal : public Transform {};
 	struct TransformPrevious : public TransformGlobal {};
+
+	// Assure that all transform components are registered as pools in data storage
+	constexpr void InitTransformComponents() noexcept { Settings::AssureEntityPools<Transform, TransformGlobal, TransformPrevious>(); }
 }

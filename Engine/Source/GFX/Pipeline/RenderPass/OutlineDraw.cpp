@@ -58,6 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
 		passData->StateRender.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
+		Settings::AssureEntityPools<InsideFrustum>();
 		return passData;
 	}
 

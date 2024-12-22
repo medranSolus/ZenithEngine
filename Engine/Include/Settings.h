@@ -76,6 +76,9 @@ namespace ZE
 
 		template<typename T>
 		static constexpr std::shared_mutex& GetEntityMutex() noexcept { static std::shared_mutex mutex; return mutex; }
+		// If data pool is used concurrently by multiple threads, it have to be assured that all pools are created before using them
+		template<typename Type, typename ...Other>
+		static constexpr void AssureEntityPools() noexcept;
 
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
@@ -111,7 +114,7 @@ namespace ZE
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
 		static void DestroyEntity(EID entity) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); Data.destroy(entity); }
 		static void DestroyEntities(std::vector<EID>::iterator begin, std::vector<EID>::iterator end) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (; begin < end; ++begin) Data.destroy(*begin); }
-
+		
 		static constexpr U32 GetChainResourceCount() noexcept;
 
 		static constexpr void Init(const SettingsInitParams& params) noexcept;
@@ -119,6 +122,17 @@ namespace ZE
 	};
 
 #pragma region Functions
+	template<typename Type, typename ...Other>
+	static constexpr void Settings::AssureEntityPools() noexcept
+	{
+		if ((!Data.storage(entt::type_hash<Type>()) || ... || !Data.storage(entt::type_hash<Other>())))
+		{
+			static std::shared_mutex mutex;
+			LockGuardRW lock(mutex);
+			(Data.storage<Type>(), ..., Data.storage<Other>());
+		}
+	}
+
 	constexpr U32 Settings::GetChainResourceCount() noexcept
 	{
 		ZE_ASSERT_INIT(Initialized());

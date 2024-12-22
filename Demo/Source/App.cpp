@@ -602,7 +602,7 @@ void App::PropagateTransformChange(EID childEntity)
 EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Float3&& position, const Float3& angle)
 {
-	EID camera = Settings::Data.create();
+	EID camera = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(camera, std::move(name));
 
 	const Vector rotor = Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(angle.x), Math::ToRadians(angle.y), Math::ToRadians(angle.z));
@@ -631,7 +631,7 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 EID App::AddModel(std::string&& name, Float3&& position,
 	const Float3& angle, float scale, const std::string& file, Data::ExternalModelOptions options)
 {
-	EID model = Settings::Data.create();
+	EID model = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(model, std::move(name));
 	Data::Transform transform = { Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale) };
 
@@ -646,7 +646,7 @@ EID App::AddModel(std::string&& name, Float3&& position,
 EID App::AddPointLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range)
 {
-	EID light = Settings::Data.create();
+	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
 	Settings::Data.emplace<Data::LightPoint>(light);
 
@@ -667,7 +667,7 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range,
 	float innerAngle, float outerAngle, const Float3& direction)
 {
-	EID light = Settings::Data.create();
+	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
 	Settings::Data.emplace<Data::LightSpot>(light);
 
@@ -690,7 +690,7 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 EID App::AddDirectionalLight(std::string&& name,
 	ColorF3&& color, float intensity, const Float3& direction)
 {
-	EID light = Settings::Data.create();
+	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
 	Settings::Data.emplace<Data::LightDirectional>(light);
 
@@ -735,12 +735,10 @@ App::App(const CmdParser& params)
 
 		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
 
-		Data::Storage& assets = Settings::Data;
-
 		// Create mesh for all the cubes
-		EID meshId = assets.create();
-		assets.emplace<std::string>(meshId, "Cube");
-		assets.emplace<Math::BoundingBox>(meshId, GFX::Primitive::MakeCubeBoundingBox());
+		EID meshId = Settings::CreateEntity();
+		Settings::Data.emplace<std::string>(meshId, "Cube");
+		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::MakeCubeBoundingBox());
 
 		std::vector<U32> indices = GFX::Primitive::MakeCubeIndex();
 		std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
@@ -751,18 +749,18 @@ App::App(const CmdParser& params)
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(GFX::Vertex), sizeof(U32)
 		};
-		assets.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
+		Settings::Data.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
 
 		// And some materials for them all
 		std::array<EID, 255> materialIds;
-		for (U32 i = 0; EID & materialId : materialIds)
+		for (U32 i = 0; EID& materialId : materialIds)
 		{
-			materialId = assets.create();
-			assets.emplace<std::string>(materialId, "Cube_mat_" + std::to_string(i++));
+			materialId = Settings::CreateEntity();
+			Settings::Data.emplace<std::string>(materialId, "Cube_mat_" + std::to_string(i++));
 
-			Data::MaterialPBR& data = assets.emplace<Data::MaterialPBR>(materialId);
-			Data::MaterialBuffersPBR& buffers = assets.emplace<Data::MaterialBuffersPBR>(materialId);
-			assets.emplace<Data::PBRFlags>(materialId);
+			Data::MaterialPBR& data = Settings::Data.emplace<Data::MaterialPBR>(materialId);
+			Data::MaterialBuffersPBR& buffers = Settings::Data.emplace<Data::MaterialBuffersPBR>(materialId);
+			Settings::Data.emplace<Data::PBRFlags>(materialId);
 
 			const float seed = static_cast<float>(i) / static_cast<float>(materialIds.size());
 			data.Albedo = { seed, seed * 0.8f, 1.0f - seed, 1.0f };
@@ -780,7 +778,7 @@ App::App(const CmdParser& params)
 		std::mt19937_64 randEngine;
 		for (U32 i = 0, size = params.GetNumber("cubePerfTestSize"); i < size; ++i)
 		{
-			EID model = Settings::Data.create();
+			EID model = Settings::CreateEntity();
 			Settings::Data.emplace<std::string>(model, "Cube_" + std::to_string(i));
 
 			const float angleX = Math::Rand(0.0f, 360.0f, randEngine);

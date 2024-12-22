@@ -37,6 +37,16 @@ namespace ZE::Data
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_ROUGH_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
 		texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
+
+		// Preinitialize components that will be added anyway during loading resources
+		Settings::AssureEntityPools<std::string, MeshID, MaterialID, PackID, ParentID, Children,
+			Math::BoundingBox, IO::CompressionFormat,
+			GFX::Resource::Mesh, GFX::Resource::CBuffer, GFX::Resource::Texture::Pack>();
+		InitLightComponents();
+		InitRenderComponents();
+		InitTransformComponents();
+		InitMaterialPBRComponents();
+		InitCameraComponents();
 	}
 
 	void AssetsStreamer::Free(GFX::Device& dev)
@@ -64,7 +74,6 @@ namespace ZE::Data
 				// Prepare IDs for all created entities
 				std::vector<EID> resourceIds(header.ResourcesCount);
 				Settings::CreateEntities(resourceIds);
-				Storage& assets = Settings::Data;
 
 				// Handle files according to version
 				IO::FileStatus result = IO::FileStatus::Ok;
@@ -100,9 +109,9 @@ namespace ZE::Data
 						const auto& entry = resourceTable[i];
 
 						EID resId = resourceIds.at(resIdIndex++);
-						assets.emplace<PackID>(resId, header.ID);
+						Settings::Data.emplace<PackID>(resId, header.ID);
 
-						std::string& name = assets.emplace<std::string>(resId);
+						std::string& name = Settings::Data.emplace<std::string>(resId);
 						name.resize(entry.NameSize);
 						std::memcpy(name.data(), nameTable + entry.NameIndex, entry.NameSize);
 
@@ -111,7 +120,7 @@ namespace ZE::Data
 						{
 						case IO::Format::ResourcePackEntryType::Geometry:
 						{
-							assets.emplace<Math::BoundingBox>(resId, entry.Geometry.BoxCenter, entry.Geometry.BoxExtents);
+							Settings::Data.emplace<Math::BoundingBox>(resId, entry.Geometry.BoxCenter, entry.Geometry.BoxExtents);
 							break;
 						}
 						case IO::Format::ResourcePackEntryType::Material:
@@ -149,7 +158,7 @@ namespace ZE::Data
 								{
 									// Load CPU side of material data
 									if (entry.Buffer.Compression == IO::CompressionFormat::None)
-										materialBufferWait.emplace_back(file.ReadAsync(&assets.emplace<MaterialPBR>(resId), sizeof(MaterialPBR), entry.Buffer.Offset));
+										materialBufferWait.emplace_back(file.ReadAsync(&Settings::Data.emplace<MaterialPBR>(resId), sizeof(MaterialPBR), entry.Buffer.Offset));
 									else
 									{
 										U8* dest = materialBuffers.emplace_back(resId, entry.Buffer.Compression,
@@ -157,7 +166,7 @@ namespace ZE::Data
 										materialBufferWait.emplace_back(file.ReadAsync(dest, entry.Buffer.Bytes, entry.Buffer.Offset));
 									}
 									// Load CPU material flags entry from opaque flags field
-									assets.emplace<PBRFlags>(resId).Flags = Utils::SafeCast<U8>(entry.Buffer.CustomFlags);
+									Settings::Data.emplace<PBRFlags>(resId).Flags = Utils::SafeCast<U8>(entry.Buffer.CustomFlags);
 								}
 							}
 							else
@@ -257,7 +266,7 @@ namespace ZE::Data
 							data.VertexSize = entry.Geometry.VertexSize;
 							data.IndexFormat = entry.Geometry.IndexBufferFormat;
 							data.Compression = entry.Geometry.Compression;
-							assets.emplace<GFX::Resource::Mesh>(resId, dev, diskManager, data, file);
+							Settings::Data.emplace<GFX::Resource::Mesh>(resId, dev, diskManager, data, file);
 							break;
 						}
 						case IO::Format::ResourcePackEntryType::Material:
@@ -273,7 +282,7 @@ namespace ZE::Data
 
 							if (!isMaterial)
 							{
-								assets.emplace<GFX::Resource::CBuffer>(resId, dev, diskManager, bufferData, file);
+								Settings::Data.emplace<GFX::Resource::CBuffer>(resId, dev, diskManager, bufferData, file);
 								break;
 							}
 							entryPtr = resourceTable + ++i;
@@ -327,9 +336,9 @@ namespace ZE::Data
 							}
 
 							if (isMaterial)
-								assets.emplace<MaterialBuffersPBR>(resId, dev, diskManager, bufferData, desc, file);
+								Settings::Data.emplace<MaterialBuffersPBR>(resId, dev, diskManager, bufferData, desc, file);
 							else
-								assets.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, file);
+								Settings::Data.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, file);
 							break;
 						}
 						}
@@ -350,7 +359,7 @@ namespace ZE::Data
 						for (auto& buffer : materialBuffers)
 						{
 							IO::Compressor codec(buffer.Format);
-							codec.Decompress(buffer.CompressedBuffer.get(), buffer.CompressedSize, &assets.emplace<MaterialPBR>(buffer.ResID), sizeof(MaterialPBR));
+							codec.Decompress(buffer.CompressedBuffer.get(), buffer.CompressedSize, &Settings::Data.emplace<MaterialPBR>(buffer.ResID), sizeof(MaterialPBR));
 						}
 					}
 					break;
@@ -374,17 +383,15 @@ namespace ZE::Data
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
 			[&]() -> IO::FileStatus
 			{
-				Storage& assets = Settings::Data;
-
 				// Gather all resources for given group
 				std::vector<EID> resourceIds;
 				U32 materialCount = 0;
-				for (EID entity : assets.view<PackID>())
+				for (EID entity : Settings::Data.view<PackID>())
 				{
-					if (assets.get<PackID>(entity).ID == packId)
+					if (Settings::Data.get<PackID>(entity).ID == packId)
 					{
 						resourceIds.emplace_back(entity);
-						if (assets.try_get<MaterialBuffersPBR>(entity))
+						if (Settings::Data.try_get<MaterialBuffersPBR>(entity))
 							++materialCount;
 					}
 				}
@@ -421,24 +428,24 @@ namespace ZE::Data
 				{
 					auto& entry = resourceInfoTable[i++];
 					entry.NameIndex = nameOffset;
-					entry.NameSize = Utils::SafeCast<U16>(assets.get<std::string>(entity).size());
+					entry.NameSize = Utils::SafeCast<U16>(Settings::Data.get<std::string>(entity).size());
 					nameOffset += entry.NameSize;
 
-					if (auto* mesh = assets.try_get<GFX::Resource::Mesh>(entity))
+					if (auto* mesh = Settings::Data.try_get<GFX::Resource::Mesh>(entity))
 					{
 						entry.Type = IO::Format::ResourcePackEntryType::Geometry;
 						entry.Geometry.Offset = dataOffset;
 						entry.Geometry.Bytes = mesh->GetSize(); // TODO NOW: Currently no compression, add simple zlib ones
 						entry.Geometry.UncompressedSize = mesh->GetSize();
-						entry.Geometry.BoxCenter = assets.get<Math::BoundingBox>(entity).Center;
-						entry.Geometry.BoxExtents = assets.get<Math::BoundingBox>(entity).Extents;
+						entry.Geometry.BoxCenter = Settings::Data.get<Math::BoundingBox>(entity).Center;
+						entry.Geometry.BoxExtents = Settings::Data.get<Math::BoundingBox>(entity).Extents;
 						entry.Geometry.VertexCount = mesh->GetVertexCount();
 						entry.Geometry.IndexCount = mesh->GetIndexCount();
 						entry.Geometry.VertexSize = mesh->GetVertexSize();
 						entry.Geometry.IndexBufferFormat = mesh->GetIndexFormat();
 
 						// If custom compression specified then use this one
-						auto* compression = assets.try_get<IO::CompressionFormat>(entity);
+						auto* compression = Settings::Data.try_get<IO::CompressionFormat>(entity);
 						entry.Geometry.Compression = compression ? *compression : defaultCompression;
 
 						if (entry.Geometry.IndexBufferFormat == PixelFormat::R8_UInt)
@@ -533,17 +540,16 @@ namespace ZE::Data
 
 				// Create main mesh data
 				EID meshId = Settings::CreateEntity();
-				Storage& assets = Settings::Data;
 				meshData.MeshID = meshId;
 
 				// Load custom data by default to resource pack 0
-				assets.emplace<PackID>(meshId).ID = 0;
-				assets.emplace<std::string>(meshId, mesh.mName.length != 0
+				Settings::Data.emplace<PackID>(meshId).ID = 0;
+				Settings::Data.emplace<std::string>(meshId, mesh.mName.length != 0
 					? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
-				assets.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
+				Settings::Data.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
 
 				// Load parsed mesh data into correct mesh and start it's upload to GPU
-				assets.emplace<GFX::Resource::Mesh>(meshId, dev, diskManager, meshData);
+				Settings::Data.emplace<GFX::Resource::Mesh>(meshId, dev, diskManager, meshData);
 				return { meshId };
 			});
 	}
@@ -554,17 +560,16 @@ namespace ZE::Data
 			[&, path = path]() -> MaterialID
 			{
 				EID materialId = Settings::CreateEntity();
-				Storage& assets = Settings::Data;
 
-				assets.emplace<std::string>(materialId, material.GetName().length != 0
+				Settings::Data.emplace<std::string>(materialId, material.GetName().length != 0
 					? material.GetName().C_Str() : "material_" + std::to_string(static_cast<U64>(materialId)));
 
-				MaterialPBR& data = assets.emplace<MaterialPBR>(materialId);
-				PBRFlags& flags = assets.emplace<PBRFlags>(materialId);
+				MaterialPBR& data = Settings::Data.emplace<MaterialPBR>(materialId);
+				PBRFlags& flags = Settings::Data.emplace<PBRFlags>(materialId);
 
 				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 				GFX::Resource::Texture::PackDesc texDesc;
-				ZE_TEXTURE_SET_NAME(texDesc, assets.get<std::string>(materialId));
+				ZE_TEXTURE_SET_NAME(texDesc, Settings::Data.get<std::string>(materialId));
 				texDesc.Init(texSchema);
 				texDesc.ResourceID = materialId;
 
@@ -735,14 +740,14 @@ namespace ZE::Data
 				if (notSolid)
 				{
 					flags |= MaterialPBR::Flag::IsTransparent;
-					assets.emplace<MaterialTransparent>(materialId);
+					Settings::Data.emplace<MaterialTransparent>(materialId);
 				}
 				data.Flags = flags;
 
 				// Load custom data by default to resource pack 0
-				assets.emplace<PackID>(materialId).ID = 0;
+				Settings::Data.emplace<PackID>(materialId).ID = 0;
 				// Start upload of buffer data and textures to GPU
-				assets.emplace<MaterialBuffersPBR>(materialId, dev, diskManager, data, texDesc);
+				Settings::Data.emplace<MaterialBuffersPBR>(materialId, dev, diskManager, data, texDesc);
 				return { materialId };
 			});
 	}
