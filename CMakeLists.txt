@@ -16,6 +16,10 @@ set(ZE_BUILD_DIR "${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE}" CACHE STRING
 	"Output directory for build files")
 set(ZE_ICON_ID 101 CACHE STRING "Icon identyficator for Windows builds,
 	should be set with icon ID from your .rc file")
+set(ZE_NGX_ID 0 CACHE STRING "Unique identifier used for initialization
+	of Nvidia NGX interface, should be set with the one assigned from Nvidia per app basis
+	(contact Nvidia before release here: https://developer.nvidia.com/sw-notification).
+	When set to 0 for development, engine UUID will be used.")
 
 option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" OFF)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
@@ -215,7 +219,11 @@ if(${ZE_EXTERNAL_MODEL_LOADING})
 endif()
 if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK})
 	if(${ZE_PLATFORM_WINDOWS})
-		set(DLSS_TARGET "${DLSS_DIR}/lib/Windows_x86_64/x86_64/${DLSS_LIB}_s.lib")
+		set(DLSS_TARGET "${DLSS_DIR}/lib/Windows_x86_64/x86_64/${DLSS_LIB}_d")
+		if(${ZE_BUILD_DEBUG})
+			set(DLSS_TARGET "${DLSS_TARGET}_dbg")
+		endif()
+		set(DLSS_TARGET "${DLSS_TARGET}.lib")
 	elseif(${ZE_PLATFORM_LINUX})
 		set(DLSS_TARGET "${DLSS_DIR}/lib/Linux_x86_64/lib${DLSS_LIB}.a")
 	endif()
@@ -353,6 +361,7 @@ add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64
 add_definitions(-DVK_NO_PROTOTYPES)
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 add_definitions(-DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>)
+add_definitions(-DZE_NGX_ID=${ZE_NGX_ID})
 # EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
 add_definitions(-D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # General flags with project options
