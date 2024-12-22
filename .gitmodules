@@ -16,7 +16,6 @@
 [submodule "External/EnTT"]
 	path = External/EnTT
 	url = https://github.com/skypjack/entt.git
-	branch = v3.11.x
 [submodule "External/zlib"]
 	path = External/zlib
 	url = https://github.com/madler/zlib.git
