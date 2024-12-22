@@ -140,6 +140,7 @@ namespace ZE::GFX::Pipeline
 		~RenderGraph() { ZE_ASSERT_FREED(passExecGroups == nullptr); }
 
 		constexpr bool IsAsyncPresent() const noexcept { return asyncListChain.Get().IsInitialized(); }
+		constexpr EID GetCurrentCamera() const noexcept { return execData.GraphData.CurrentCamera; }
 
 		void Execute(Graphics& gfx);
 

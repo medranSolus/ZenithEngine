@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "Data/Light.h"
+#include "Data/Transform.h"
 
 namespace ZE
 {
@@ -198,7 +199,26 @@ namespace ZE
 			}
 		}
 
+		// Add or remove missing transform components
+		if (Settings::ComputeMotionVectors())
+		{
+			if (!Settings::Data.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
+			{
+				for (EID id : Settings::Data.view<Data::TransformGlobal>())
+					Settings::Data.emplace_or_replace<Data::TransformPrevious>(id, Settings::Data.get<Data::TransformGlobal>(id));
+			}
+		}
+		else if (Settings::Data.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
+			Settings::Data.clear<Data::TransformPrevious>();
+
 		renderGraph.Execute(graphics);
+
+		// Move all current transforms to previous state
+		if (Settings::ComputeMotionVectors())
+		{
+			for (EID id : Settings::Data.view<Data::TransformGlobal>())
+				static_cast<Data::TransformGlobal&>(Settings::Data.get<Data::TransformPrevious>(id)) = Settings::Data.get<Data::TransformGlobal>(id);
+		}
 		graphics.Present();
 
 		// Frame marker
