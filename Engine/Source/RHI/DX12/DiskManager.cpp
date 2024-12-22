@@ -17,7 +17,7 @@ namespace ZE::RHI::DX12
 		case IO::CompressionFormat::None:
 			return DSTORAGE_CUSTOM_COMPRESSION_0;
 		case IO::CompressionFormat::ZLib:
-			return COMPRESSION_FORMAT_ZLIB;
+			return DS_COMPRESSION_FORMAT_ZLIB;
 		}
 	}
 
@@ -101,7 +101,7 @@ namespace ZE::RHI::DX12
 				}
 				ZE_WARNING_PUSH;
 				ZE_WARNING_DISABLE_MSVC(4063);
-				case COMPRESSION_FORMAT_ZLIB:
+				case DS_COMPRESSION_FORMAT_ZLIB:
 				{
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
 						[](const void* src, U32 srcSize, void* dst, U32 dstSize)
