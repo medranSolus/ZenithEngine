@@ -26,7 +26,11 @@ namespace ZE::GUI
 #if _ZE_RHI_DX12
 	struct CustomDataDX12
 	{
-		RHI::DX12::DescriptorInfo Desc;
+		RHI::DX12::Device& Dev;
+		std::unordered_map<U64, RHI::DX12::DescriptorInfo> AllocatedDescs;
+
+		CustomDataDX12(RHI::DX12::Device& dev) noexcept : Dev(dev) {}
+		~CustomDataDX12() = default;
 	};
 #endif
 
@@ -61,10 +65,40 @@ namespace ZE::GUI
 		case GfxApiType::DX12:
 		{
 			backendData = new U8[sizeof(CustomDataDX12)];
-			*backendData.Cast<CustomDataDX12>() = { dev.Get().dx12.AllocDescs(1) };
-			ImGui_ImplDX12_Init(dev.Get().dx12.GetDevice(), Utils::SafeCast<int>(Settings::GetBackbufferCount()),
-				RHI::DX::GetDXFormat(outputFormat), dev.Get().dx12.GetDescHeap(),
-				backendData.Cast<CustomDataDX12>()->Desc.CPU, backendData.Cast<CustomDataDX12>()->Desc.GPU);
+			new (backendData.Cast<CustomDataDX12>()) CustomDataDX12(dev.Get().dx12);
+
+			ImGui_ImplDX12_InitInfo initInfo = {};
+			initInfo.Device = dev.Get().dx12.GetDevice();
+			initInfo.CommandQueue = dev.Get().dx12.GetQueueMain();
+			initInfo.NumFramesInFlight = Utils::SafeCast<int>(Settings::GetBackbufferCount());
+			initInfo.RTVFormat = RHI::DX::GetDXFormat(outputFormat);
+			initInfo.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			initInfo.UserData = backendData;
+			initInfo.SrvDescriptorHeap = dev.Get().dx12.GetDescHeap();
+			initInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
+				{
+					CustomDataDX12& dx12Data = *reinterpret_cast<CustomDataDX12*>(info->UserData);
+					RHI::DX12::DescriptorInfo descInfo = dx12Data.Dev.AllocDescs(1);
+					dx12Data.AllocatedDescs.emplace(descInfo.CPU.ptr, descInfo);
+					*out_cpu_desc_handle = descInfo.CPU;
+					*out_gpu_desc_handle = descInfo.GPU;
+				};
+			initInfo.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_desc_handle)
+				{
+					CustomDataDX12& dx12Data = *reinterpret_cast<CustomDataDX12*>(info->UserData);
+					auto it = dx12Data.AllocatedDescs.find(cpu_desc_handle.ptr);
+					if (it != dx12Data.AllocatedDescs.end())
+					{
+						dx12Data.Dev.FreeDescs(it->second);
+						dx12Data.AllocatedDescs.erase(it);
+					}
+					else
+					{
+						ZE_FAIL("Unknown descriptor to free for ImGui DX12 backend!");
+					}
+				};
+			[[maybe_unused]] bool status = ImGui_ImplDX12_Init(&initInfo);
+			ZE_ASSERT(status, "Error initializing ImGui DX12 backend!");
 			break;
 		}
 #endif
@@ -192,7 +226,8 @@ namespace ZE::GUI
 			if (data)
 			{
 				ImGui_ImplDX12_Shutdown();
-				dev.Get().dx12.FreeDescs(data.Cast<CustomDataDX12>()->Desc);
+				ZE_ASSERT(data.Cast<CustomDataDX12>()->AllocatedDescs.size() == 0, "Not all descs are freed by ImGui DX12 backend!");
+				data.Cast<CustomDataDX12>()->~CustomDataDX12();
 				data.Delete();
 			}
 			return;
