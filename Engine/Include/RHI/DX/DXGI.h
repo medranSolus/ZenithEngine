@@ -11,6 +11,7 @@ namespace ZE::RHI::DX
 {
 	// Wrappers for DXGI interfaces (rest is in DebugInfoManager.h)
 	typedef IDXGIAdapter4   IAdapter;
+	typedef IDXGIOutput6    IOutput;
 	typedef IDXGIDevice4    IDevice;
 	typedef IDXGIFactory7   IFactory;
 	typedef IDXGISwapChain4 ISwapChain;

@@ -39,31 +39,41 @@ namespace ZE::RHI::DX
 		{
 			// Get highest possible performant GPU
 			ZE_DX_THROW_FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));
-			// Check if GPU is attached to the screen
-			ComPtr<IDXGIOutput> ouptut = nullptr;
-			if (SUCCEEDED(adapter->EnumOutputs(0, &ouptut)))
-				break;
-		}
-		DXGI_ADAPTER_DESC desc;
-		if (SUCCEEDED(adapter->GetDesc(&desc)))
-		{
-			switch (desc.VendorId)
+
+			DXGI_ADAPTER_DESC3 desc;
+			if (SUCCEEDED(adapter->GetDesc3(&desc)))
 			{
-			case 0x10DE:
-			{
-				Settings::GpuVendor = GFX::VendorGPU::Nvidia;
-				break;
-			}
-			case 0x1002:
-			{
-				Settings::GpuVendor = GFX::VendorGPU::AMD;
-				break;
-			}
-			case 0x8086:
-			{
-				Settings::GpuVendor = GFX::VendorGPU::Intel;
-				break;
-			}
+				// Ignore Basic Render Driver adapter
+				if ((desc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE) == 0)
+				{
+					switch (desc.VendorId)
+					{
+					case 0x10DE:
+					{
+						Settings::GpuVendor = GFX::VendorGPU::Nvidia;
+						break;
+					}
+					case 0x1002:
+					{
+						Settings::GpuVendor = GFX::VendorGPU::AMD;
+						break;
+					}
+					case 0x8086:
+					{
+						Settings::GpuVendor = GFX::VendorGPU::Intel;
+						break;
+					}
+					}
+
+					// Check if any monitor is attached to the GPU
+					// or if Nvidia Optimus is enabled (no output but still returned as first GPU in the list)
+					ComPtr<IDXGIOutput> output = nullptr;
+					if (SUCCEEDED(adapter->EnumOutputs(0, &output)) || Settings::GpuVendor == GFX::VendorGPU::Nvidia)
+						break;
+					else
+						Settings::GpuVendor = GFX::VendorGPU::Unknown;
+					break;
+				}
 			}
 		}
 		return adapter;
