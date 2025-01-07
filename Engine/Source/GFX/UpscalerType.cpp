@@ -1,6 +1,9 @@
 #include "GFX/UpscalerType.h"
 #include "GFX/Device.h"
 #include "GFX/XeSSException.h"
+ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_fsr1.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX
 {
@@ -26,6 +29,7 @@ namespace ZE::GFX
 			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr2Quality);
 			return renderSize;
 		}
+#if _ZE_RHI_DX12
 		case UpscalerType::XeSS:
 		{
 			ZE_XESS_ENABLE();
@@ -35,6 +39,7 @@ namespace ZE::GFX
 			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, xessQuality, &renderSize), "Error retrieving XeSS render resolution!");
 			return { renderSize.x, renderSize.y };
 		}
+#endif
 		case UpscalerType::NIS:
 		{
 			float ratio = 1.0f;
@@ -65,6 +70,18 @@ namespace ZE::GFX
 				Utils::SafeCast<U32>(Utils::SafeCast<float>(targetSize.Y) / ratio)
 			};
 		}
+#if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
+		case UpscalerType::DLSS:
+		{
+			NgxInterface* ngx = dev.GetNGX();
+			if (ngx)
+			{
+				const NVSDK_NGX_PerfQuality_Value ngxQuality = quality == UINT32_MAX ? NVSDK_NGX_PerfQuality_Value_DLAA : static_cast<NVSDK_NGX_PerfQuality_Value>(quality);
+				return ngx->GetRenderSize(targetSize, ngxQuality);
+			}
+			return targetSize;
+		}
+#endif
 		}
 	}
 
@@ -83,6 +100,36 @@ namespace ZE::GFX
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth));
 		case UpscalerType::NIS:
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth)) + 1e-4f;
+		case UpscalerType::DLSS:
+			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth)) - 1.0f + 1e-4f;
+		}
+	}
+
+	bool IsUpscalerSupported(Device& dev, UpscalerType type) noexcept
+	{
+		switch (type)
+		{
+		case UpscalerType::None:
+		case UpscalerType::Fsr1:
+		case UpscalerType::Fsr2:
+		case UpscalerType::NIS:
+			return true;
+		case UpscalerType::XeSS:
+			return _ZE_RHI_DX12;
+		case UpscalerType::DLSS:
+		{
+#if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
+			if (Settings::GpuVendor == VendorGPU::Nvidia)
+			{
+				NgxInterface* ngx = dev.GetNGX();
+				if (ngx)
+					return ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling);
+			}
+#endif
+			return false;
+		}
+		default:
+			return false;
 		}
 	}
 }

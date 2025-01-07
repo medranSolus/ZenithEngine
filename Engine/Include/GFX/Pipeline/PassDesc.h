@@ -65,6 +65,7 @@ namespace ZE::GFX::Pipeline
 		LightCombine,
 		Skybox,
 
+		UpscaleDLSS,
 		UpscaleFSR1,
 		UpscaleFSR2,
 		UpscaleNIS,

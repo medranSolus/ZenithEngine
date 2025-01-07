@@ -93,8 +93,8 @@ namespace ZE
 		static constexpr U32 GetCurrentBackbufferIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetBackbufferCount(); }
 		static constexpr U32 GetCurrentChainResourceIndex() noexcept { ZE_ASSERT_INIT(Initialized()); return frameIndex % GetChainResourceCount(); }
 
-		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || Upscaler != GFX::UpscalerType::None && Upscaler != GFX::UpscalerType::Fsr1 && Upscaler != GFX::UpscalerType::NIS; }
-		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return Upscaler != GFX::UpscalerType::None && Upscaler != GFX::UpscalerType::Fsr1 && Upscaler != GFX::UpscalerType::NIS; }
+		static constexpr bool ComputeMotionVectors() noexcept { ZE_ASSERT_INIT(Initialized()); return IsEnabledSSSR() || IsMotionRequired(Upscaler); }
+		static constexpr bool ApplyJitter() noexcept { ZE_ASSERT_INIT(Initialized()); return IsJitterRequired(Upscaler); }
 
 		static constexpr bool IsEnabledGfxTags() noexcept { return flags[Flags::GfxTags]; }
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
@@ -114,7 +114,7 @@ namespace ZE
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
 		static void DestroyEntity(EID entity) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); Data.destroy(entity); }
 		static void DestroyEntities(std::vector<EID>::iterator begin, std::vector<EID>::iterator end) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (; begin < end; ++begin) Data.destroy(*begin); }
-		
+
 		static constexpr U32 GetChainResourceCount() noexcept;
 
 		static constexpr void Init(const SettingsInitParams& params) noexcept;

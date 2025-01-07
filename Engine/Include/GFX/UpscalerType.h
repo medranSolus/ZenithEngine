@@ -1,8 +1,6 @@
 #pragma once
 ZE_WARNING_PUSH
-#include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
-#include "xess/xess.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -14,7 +12,8 @@ namespace ZE::GFX
 		Fsr1,
 		Fsr2,
 		XeSS,
-		NIS
+		NIS,
+		DLSS
 	};
 
 	// Configuration of possible quality modes for NIS upsacler
@@ -22,11 +21,15 @@ namespace ZE::GFX
 
 	// Get jitter subpixel offsets in UV space
 	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept;
-	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept;
+	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY,
+		UInt2 renderSize, UInt2 displaySize, UpscalerType upscaling) noexcept;
+	constexpr bool IsMotionRequired(UpscalerType upscaling) noexcept;
+	constexpr bool IsJitterRequired(UpscalerType upscaling) noexcept;
 
 	// Pass UINT32_MAX for max quality regardles of upscaler
 	UInt2 CalculateRenderSize(class Device& dev, UInt2 targetSize, UpscalerType upscaling, U32 quality) noexcept;
 	float CalculateMipBias(U32 renderWidth, U32 targetWidth, UpscalerType upscaling) noexcept;
+	bool IsUpscalerSupported(Device& dev, UpscalerType type) noexcept;
 
 #pragma region Functions
 	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept
@@ -42,7 +45,8 @@ namespace ZE::GFX
 		}
 	}
 
-	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY, UInt2 renderSize, UpscalerType upscaling) noexcept
+	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY,
+		UInt2 renderSize, UInt2 displaySize, UpscalerType upscaling) noexcept
 	{
 		switch (upscaling)
 		{
@@ -57,10 +61,12 @@ namespace ZE::GFX
 			jitterY = 0.0f;
 			break;
 		}
+		// XeSS and DLSS can use same jitter as FSR2 (halton sequence)
 		case UpscalerType::Fsr2:
-		case UpscalerType::XeSS: // XeSS can use same jitter as FSR2
+		case UpscalerType::XeSS:
+		case UpscalerType::DLSS:
 		{
-			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, renderSize.X);
+			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, displaySize.X);
 			phaseIndex = (phaseIndex + 1) % phaseCount;
 			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
 			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
@@ -68,6 +74,28 @@ namespace ZE::GFX
 			break;
 		}
 		}
+	}
+
+	constexpr bool IsMotionRequired(UpscalerType upscaling) noexcept
+	{
+		switch (upscaling)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case UpscalerType::None:
+		case UpscalerType::Fsr1:
+		case UpscalerType::NIS:
+			return false;
+		case UpscalerType::Fsr2:
+		case UpscalerType::XeSS:
+		case UpscalerType::DLSS:
+			return true;
+		}
+	}
+
+	constexpr bool IsJitterRequired(UpscalerType upscaling) noexcept
+	{
+		return IsMotionRequired(upscaling);
 	}
 #pragma endregion
 }
