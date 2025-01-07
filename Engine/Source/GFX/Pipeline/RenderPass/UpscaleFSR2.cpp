@@ -107,7 +107,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
 		desc.sharpness = data.Sharpness;
 		desc.preExposure = 1.0f;
-		desc.reset = false; // TODO: check conditions for that
+		desc.reset = renderData.GraphData.FrameTemporalReset;
 		desc.cameraNear = FLT_MAX;
 		desc.cameraFar = renderData.DynamicData.NearClip;
 		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
