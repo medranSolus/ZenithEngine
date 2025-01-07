@@ -10,13 +10,7 @@ namespace ZE::GFX::Pipeline
 		- rebuilding graph when new type of content is on the scene (keep only the passes that produce something)
 		- allow for change of resolution at the start of the frame
 		- introduce callback for setting pass data from outside (maybe register as data blob inside RenderGraph with enum?)
-		- callback for dynamic updating of pass (can result in rebuilding of graph)
 		- common interface for GPU resource aliasing
-		- pass to be able to specify after which other pass it should be started, more like a hint if it's not possible due to data flow
-		- option for post-creation initialization so basically splitting setup step into 2
-		- distincion for render graph updates:
-			- soft: some effects are not enabled and some buffers won't be used, so just different resources in flight, good for frame-to-frame changes when effects don't have input data
-			- hard: resolution changed, some effect is disabled by the user so it's required to recreate whole frame buffer with different resource aliasing scheme
 	*/
 
 	/* IDEA FOR UI AND OPTIONS REGARDING RENDER PASSES
@@ -80,13 +74,6 @@ namespace ZE::GFX::Pipeline
 	// Maybe not needed at all since ExecuteData is held outside render pass facilities since it's only set of data and functions so it would be better to hold some
 	// master RenderPass list with below enum and all other function pointers along with it
 	//std::pair<void*, Type> GetData() noexcept { return { nullptr, static_cast<Type>(CoreType::UpscaleNIS) }; }
-
-	// Maybe after running update it will be good to send out command that will run "end of frame" parts again,
-	// so it will be possible to upload relevant data (maybe even do it before updating graph)
-	// update scene transforms with component that adds previous transform data and so on and so on.
-	//
-	// Also adding option to disk manager that will allow for checking some fence value, ID or special event that can be checked in a better way to determine if relevant data has been uploaded
-	// (can be used for checking if render pass data has been sent out but also as a way to determine if mesh data for given object is in place (fence value greater than something)
 
 	// Class for running render graphs previously created by some builder. Should be generic so it will accept any input provided for data, passes, etc.
 	class RenderGraph final

@@ -9,7 +9,7 @@ namespace ZE::RHI::DX11
 		// Retrieve factory used to create device
 		DX::ComPtr<DX::IDevice> dxgiDevice = nullptr;
 		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDev().As(&dxgiDevice));
-		DX::ComPtr<IDXGIAdapter> adapter = nullptr;
+		DX::ComPtr<DX::IAdapter> adapter = nullptr;
 		ZE_DX_THROW_FAILED(dxgiDevice->GetAdapter(&adapter));
 		DX::ComPtr<DX::IFactory> factory = nullptr;
 		ZE_DX_THROW_FAILED(adapter->GetParent(IID_PPV_ARGS(&factory)));

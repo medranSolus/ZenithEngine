@@ -176,6 +176,8 @@ namespace ZE
 
 	void Engine::EndFrame()
 	{
+		// TODO: add module for checking if all settings parameters are correct and decide on subsystems updates (like changing gfx API, swapchain recreation)
+
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& mainList = graphics.GetMainList();
 

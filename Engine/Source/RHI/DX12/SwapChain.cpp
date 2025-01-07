@@ -8,7 +8,7 @@ namespace ZE::RHI::DX12
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
 #if _ZE_DEBUG_GFX_API
-			debugManager
+			ZE_DX_EXCEPT_MANAGER
 #endif
 		);
 		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), swapChain, shaderInput
