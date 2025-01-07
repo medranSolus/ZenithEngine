@@ -250,6 +250,12 @@ void App::ShowOptionsWindow()
 		case GFX::UpscalerType::XeSS:
 		{
 			if (ImGui::Button("[XeSS]"))
+				Settings::Upscaler = GFX::UpscalerType::DLSS;
+			break;
+		}
+		case GFX::UpscalerType::DLSS:
+		{
+			if (ImGui::Button("[DLSS]"))
 				Settings::Upscaler = GFX::UpscalerType::None;
 			break;
 		}
@@ -372,11 +378,11 @@ void App::ShowObjectWindow()
 				Float3 rotation = Math::ToDegrees(Math::GetEulerAngles(transform.Rotation));
 				ImGui::Text("Rotation");
 				ImGui::SetNextItemWidth(INPUT_WIDTH);
-				bool angleSet = ImGui::InputFloat("X##angle", &rotation.x, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				bool angleSet = ImGui::InputFloat("X##angle", &rotation.x, 0.0f, 0.0f, "%.2f");
 				ImGui::SetNextItemWidth(INPUT_WIDTH);
-				angleSet |= ImGui::InputFloat("Y##angle", &rotation.y, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				angleSet |= ImGui::InputFloat("Y##angle", &rotation.y, 0.0f, 0.0f, "%.2f");
 				ImGui::SetNextItemWidth(INPUT_WIDTH);
-				angleSet |= ImGui::InputFloat("Z##angle", &rotation.z, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+				angleSet |= ImGui::InputFloat("Z##angle", &rotation.z, 0.0f, 0.0f, "%.2f");
 				if (angleSet)
 				{
 					change = true;

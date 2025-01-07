@@ -77,6 +77,7 @@ namespace ZE::GFX::Pipeline
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
 		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid, mipLevel); }
+		constexpr void SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept { ZE_RHI_BACKEND_CALL(SetResourceNGX, param, name, res); }
 
 		// All begin rasterization commands must end with this function so proper handling of render passes is ensured
 		constexpr void EndRaster(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(EndRaster, cl); }

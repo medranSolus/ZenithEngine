@@ -1248,6 +1248,13 @@ namespace ZE::RHI::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, uavMips[uav - 1][mipLevel].GpuShaderVisibleHandle);
 	}
 
+	void FrameBuffer::SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept
+	{
+		ZE_ASSERT(res < resourceCount, "Resource ID outside available range!");
+
+		param->Set(name.data(), GetResource(res).Get());
+	}
+
 	void FrameBuffer::EndRaster(GFX::CommandList& cl) const noexcept
 	{
 #if !_ZE_MODE_RELEASE

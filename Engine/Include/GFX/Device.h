@@ -9,6 +9,7 @@
 #	include "RHI/VK/Device.h"
 #endif
 #include "RHI/Backend.h"
+#include "NgxInterface.h"
 
 namespace ZE::GFX
 {
@@ -16,17 +17,21 @@ namespace ZE::GFX
 	class Device final
 	{
 		ZE_RHI_BACKEND(Device);
+		NgxInterface ngx;
 
 	public:
 		Device() = default;
 		ZE_CLASS_DELETE(Device);
-		~Device() = default;
+		~Device() { if (ngx.IsInitialized()) ngx.Free(*this); }
 
 		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount) { ZE_RHI_BACKEND_VAR.Init(window, descriptorCount); }
 		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window) { U32 data; ZE_RHI_BACKEND_VAR.Switch(nextApi, window, data); }
 		ZE_RHI_BACKEND_GET(Device);
 
 		// Main Gfx API
+
+		constexpr bool IsNGXEnabled() const noexcept { return ngx.IsInitialized(); }
+		constexpr NgxInterface* GetNGX() noexcept;
 
 		constexpr bool IsXeSSEnabled() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsXeSSEnabled); return val; }
 		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
@@ -98,6 +103,18 @@ namespace ZE::GFX
 		constexpr void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_RHI_BACKEND_CALL(TagEndCopy); } }
 #endif
 	};
+
+#pragma region Functions
+	constexpr NgxInterface* Device::GetNGX() noexcept
+	{
+		if (Settings::GpuVendor == VendorGPU::Nvidia)
+		{
+			if (ngx.IsInitialized() || ngx.Init(*this))
+				return &ngx;
+		}
+		return nullptr;
+	}
+#pragma endregion
 }
 
 #if _ZE_GFX_MARKERS

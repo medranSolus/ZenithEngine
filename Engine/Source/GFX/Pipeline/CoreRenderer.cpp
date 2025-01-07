@@ -389,6 +389,15 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+		{
+			RenderNode node("upscale", "dlss", RenderPass::UpscaleDLSS::GetDesc(), PassExecutionType::Processor);
+			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
+			node.SetHintCompute();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
 #pragma endregion
 #pragma region Post process display size
 		{
