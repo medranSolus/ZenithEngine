@@ -124,5 +124,6 @@ namespace ZE::GFX::Pipeline
 
 		void ClearConfig(Device& dev) noexcept;
 		void ClearComputedGraph(Device& dev, bool freePassDataCache = true) noexcept;
+		bool ShowCurrentPassesDebugUI(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph) noexcept;
 	};
 }

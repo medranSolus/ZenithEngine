@@ -18,6 +18,7 @@ namespace ZE
 
 		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, mainList, diskStatus);
 		ZE_ASSERT(status, "Error uploading engine GPU data!");
+		flags[ExecuteUploadSync] = false;
 
 		if (gpuWorkPending)
 			mainList.Close(dev);
@@ -152,6 +153,16 @@ namespace ZE
 		prevTime = Perf::Get().GetNow();
 	}
 
+	void Engine::ShowRenderGraphDebugUI() noexcept
+	{
+		if (ImGui::BeginChild("##render_graph_settings"))
+		{
+			if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))
+				flags[ExecuteUploadSync] = true;
+		}
+		ImGui::EndChild();
+	}
+
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
 	{
 		ZE_PERF_START("Frame");
@@ -191,7 +202,7 @@ namespace ZE
 			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
 		renderGraph.UpdateFrameData(dev);
 
-		if (result == GFX::Pipeline::BuildResult::WaitUpload)
+		if (result == GFX::Pipeline::BuildResult::WaitUpload || flags[ExecuteUploadSync])
 		{
 			// If any async passes has been processed then sync for initialization of resources
 			if (UploadSync() && renderGraph.IsAsyncPresent())

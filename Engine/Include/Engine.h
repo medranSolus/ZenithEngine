@@ -8,7 +8,7 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
-		enum Flags : U8 { Initialized, Count };
+		enum Flags : U8 { Initialized, ExecuteUploadSync, Count };
 
 		double prevTime = 0.0;
 		GFX::Graphics graphics;
@@ -36,6 +36,7 @@ namespace ZE
 		bool Init(const EngineParams& params);
 		// Need to be called before starting first frame
 		void Start(EID camera) noexcept;
+		void ShowRenderGraphDebugUI() noexcept;
 		// Returns number of update steps that have to be taken by simulations multiplied by delta time
 		double BeginFrame(double deltaTime, U64 maxUpdateSteps);
 		void EndFrame();

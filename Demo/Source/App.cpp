@@ -261,7 +261,7 @@ void App::ShowOptionsWindow()
 		}
 		}
 
-		engine.RenderGraph().ShowDebugUI();
+		engine.ShowRenderGraphDebugUI();
 	}
 	ImGui::End();
 }

@@ -2153,4 +2153,118 @@ namespace ZE::GFX::Pipeline
 		dependencyLevelCount = 0;
 		resources.Transform([](FrameResourceDesc& desc) { desc.Flags &= ~FrameResourceFlag::InternalFlagsMask; });
 	}
+
+	bool RenderGraphBuilder::ShowCurrentPassesDebugUI(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph) noexcept
+	{
+		bool settingsChange = false;
+		if (ImGui::CollapsingHeader("Outline"))
+		{
+			ImGui::Columns(2, "##outline_options", false);
+			{
+				ImGui::Text("Blur radius");
+				ImGui::SetNextItemWidth(-1.0f);
+				settingsChange |= ImGui::SliderInt("##blur_radius", &graph.execData.SettingsData.BlurRadius, 1, RendererSettingsData::BLUR_KERNEL_RADIUS);
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Text("Outline range");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(0.1f, 25.0f, graph.execData.SettingsData.BlurSigma,
+					ImGui::InputFloat("##blur_sigma", &graph.execData.SettingsData.BlurSigma, 0.1f, 0.0f, "%.1f")))
+				{
+					settingsChange = true;
+					CoreRenderer::SetupBlurKernel(graph.execData.SettingsData);
+				}
+			}
+			ImGui::Columns(1);
+			ImGui::NewLine();
+		}
+		if (ImGui::CollapsingHeader("Display"))
+		{
+			ImGui::Columns(2, "##display_options", false);
+			{
+				ImGui::Text("Gamma correction");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(1.0f, 10.0f, graph.execData.SettingsData.Gamma,
+					ImGui::InputFloat("##gamma", &graph.execData.SettingsData.Gamma, 0.1f, 0.0f, "%.1f")))
+				{
+					settingsChange = true;
+					graph.execData.SettingsData.GammaInverse = 1.0f / graph.execData.SettingsData.Gamma;
+				}
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Text("HDR exposure");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (GUI::InputClamp(0.1f, FLT_MAX, graph.execData.SettingsData.HDRExposure,
+					ImGui::InputFloat("##hdr", &graph.execData.SettingsData.HDRExposure, 0.1f, 0.0f, "%.1f")))
+				{
+					settingsChange = true;
+					CoreRenderer::SetupBlurIntensity(graph.execData.SettingsData);
+				}
+			}
+			ImGui::Columns(1);
+			ImGui::NewLine();
+		}
+		if (ImGui::CollapsingHeader("Shadows"))
+		{
+			ImGui::Columns(2, "##shadow_options", false);
+			{
+				ImGui::Text("Depth bias");
+				ImGui::SetNextItemWidth(-1.0f);
+				S32 bias = Utils::SafeCast<S32>(graph.execData.SettingsData.ShadowBias * graph.execData.SettingsData.ShadowMapSize);
+				if (ImGui::InputInt("##depth_bias", &bias))
+				{
+					settingsChange = true;
+					graph.execData.SettingsData.ShadowBias = Utils::SafeCast<float>(bias) / graph.execData.SettingsData.ShadowMapSize;
+				}
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Text("Normal offset");
+				ImGui::SetNextItemWidth(-1.0f);
+				settingsChange |= GUI::InputClamp(0.0f, 1.0f, graph.execData.SettingsData.ShadowNormalOffset,
+					ImGui::InputFloat("##normal_offset", &graph.execData.SettingsData.ShadowNormalOffset, 0.001f, 0.0f, "%.3f"));
+			}
+			ImGui::Columns(1);
+
+			ImGui::Text("Ambient color");
+			ImGui::SetNextItemWidth(-5.0f);
+			settingsChange |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&graph.execData.SettingsData.AmbientLight),
+				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
+			ImGui::NewLine();
+		}
+
+		// Update the settings buffer after it was changed
+		if (settingsChange)
+		{
+			Resource::CBufferData settingsData = {};
+			settingsData.DataStatic = &graph.execData.SettingsData;
+			settingsData.Bytes = sizeof(RendererSettingsData);
+			graph.execData.SettingsBuffer.Update(dev, assets.GetDisk(), settingsData);
+		}
+
+		for (U32 i = 0; auto & computed : computedGraph)
+		{
+			if (computed.Present)
+			{
+				auto& node = passDescs.at(i).at(computed.NodeGroupIndex);
+				std::string fullname = node.GetFullName();
+				void* execData = nullptr;
+				if (execDataCache.Contains(fullname))
+					execData = execDataCache.Get(fullname).first;
+				else if (graph.passExecData.Contains(i))
+					execData = graph.passExecData.Get(i).first;
+
+				if (node.GetDesc().DebugUI)
+					node.GetDesc().DebugUI(execData);
+			}
+			++i;
+		}
+
+		// In case some custom data has been passed in
+		if (initialDesc.PassCustomDataDebugUICallback)
+			initialDesc.PassCustomDataDebugUICallback(graph.execData.CustomData);
+		return settingsChange;
+	}
 }

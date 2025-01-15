@@ -15,7 +15,7 @@ namespace ZE::GFX::Pipeline
 		Binding::Range DynamicDataRange;
 		RendererSettingsData SettingsData;
 		PtrVoid PassCustomData;
-		// TODO: here comes all the custom callbacks and pointers
+		void (*PassCustomDataDebugUICallback)(void*) = nullptr;
 
 		PixelFormat GetFormat(std::string_view name) const noexcept;
 		void InitBuffers() noexcept;
