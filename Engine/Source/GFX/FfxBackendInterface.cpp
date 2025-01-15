@@ -621,12 +621,16 @@ namespace ZE::GFX::FFX
 				rangeOffset += Utils::SafeCast<U8>(shaderBlob.boundConstantBufferCounts[i]);
 			}
 			// TODO: cache binding based on input parameters
-			ctx.Bindings.Add(id, dev, schemaDesc);
-			ctx.BindingsReferences.Add(id, 0ULL);
+			if (!ctx.Bindings.Contains(id))
+				ctx.Bindings.Add(id, dev, schemaDesc);
+			if (!ctx.BindingsReferences.Contains(id))
+				ctx.BindingsReferences.Add(id, 0ULL);
 
 			// Create pipeline
-			ctx.Pipelines.Add(id, dev, shader, ctx.Bindings.Get(id));
-			ctx.PipelinesReferences.Add(id, 0ULL);
+			if (!ctx.Pipelines.Contains(id))
+				ctx.Pipelines.Add(id, dev, shader, ctx.Bindings.Get(id));
+			if (!ctx.PipelinesReferences.Contains(id))
+				ctx.PipelinesReferences.Add(id, 0ULL);
 			shader.Free(dev);
 		}
 		else
