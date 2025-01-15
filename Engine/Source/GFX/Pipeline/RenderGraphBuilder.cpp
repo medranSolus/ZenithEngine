@@ -1,5 +1,7 @@
 #include "GFX/Pipeline/RenderGraphBuilder.h"
+#include "GFX/Pipeline/CoreRenderer.h"
 #include "GFX/Pipeline/RenderGraph.h"
+#include "GUI/DearImGui.h"
 
 // Helper macro to end loading config and return when condition is true
 #define ZE_CHECK_FAILED_CONFIG_LOAD(condition, result, message) do { if (condition) { ZE_FAIL(message); ClearConfig(dev); return BuildResult::##result; } } while (false)
@@ -2043,7 +2045,7 @@ namespace ZE::GFX::Pipeline
 									graphUpdate = true;
 							}
 							else
-								graphUpdate = pass.GetExecType() != PassExecutionType::Processor;
+								graphUpdate = pass.GetExecType() != PassExecutionType::DynamicProcessor;
 
 							break;
 						}
@@ -2074,6 +2076,28 @@ namespace ZE::GFX::Pipeline
 		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged)
 		{
 			CascadePassUpdate(dev, graph, buildData, cascadeUpdate, uploadWait);
+
+			// Update all referenced RIDs due to changes in frambuffer
+			auto updateExecGroupResources = [&](U32 i, RenderGraph::ExecutionGroup& execGroup)
+				{
+					for (U32 j = 0; j < execGroup.PassGroupCount; ++j)
+					{
+						auto& passGroup = execGroup.PassGroups[j];
+
+						for (U32 k = 0; k < passGroup.PassCount; ++k)
+						{
+							auto& passInfo = passGroup.Passes[k];
+							passInfo.Resources = GetNodeResources(passInfo.PassID);
+							passInfo.Data.Resources = passInfo.Resources.get();
+						}
+					}
+				};
+			for (U32 i = 0; i < graph.execGroupCount; ++i)
+			{
+				updateExecGroupResources(i, graph.passExecGroups[i].at(0));
+				if (asyncComputeEnabled)
+					updateExecGroupResources(i, graph.passExecGroups[i].at(1));
+			}
 
 			// Wait for the GPU work to finish before recreating framebuffer
 			if (!graphUpdate)
