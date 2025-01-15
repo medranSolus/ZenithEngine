@@ -1,4 +1,5 @@
 #include "GFX/pipeline/RenderPass/UpscaleDLSS.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 {
@@ -14,6 +15,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -37,6 +39,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		NgxInterface* ngx = dev.GetNGX();
 		if (ngx)
 		{
+			ZE_ASSERT(passData.Quality != NVSDK_NGX_PerfQuality_Value_UltraQuality, "DLSS ultra quality setting currently unsuported!");
+
 			UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::DLSS, passData.Quality);
 			if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
 			{
@@ -78,7 +82,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 				NVSDK_NGX_DLSS_Feature_Flags_IsHDR | NVSDK_NGX_DLSS_Feature_Flags_MVLowRes
 				| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted | NVSDK_NGX_DLSS_Feature_Flags_AutoExposure
 				| NVSDK_NGX_DLSS_Feature_Flags_DoSharpening);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, 0);
+			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, false);
 
 			/* Optimization presets
 				NVSDK_NGX_DLSS_Hint_Render_Preset_Default -> stick to whatever Nvidia will choose over OTA
@@ -140,7 +144,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_Y, renderData.DynamicData.JitterCurrent.y);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_X, -Utils::SafeCast<float>(inputSize.X));
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_Y, -Utils::SafeCast<float>(inputSize.Y));
-		data.NgxParam->Set(NVSDK_NGX_Parameter_Sharpness, data.Sharpness);
+		data.NgxParam->Set(NVSDK_NGX_Parameter_Sharpness, data.SharpeningEnabled ? data.Sharpness : 0.0f);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Reset, renderData.GraphData.FrameTemporalReset);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, Utils::SafeCast<float>(Settings::FrameTime));
 
@@ -148,5 +152,76 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		ZE_ASSERT(status, "Error running DLSS upscaling!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("DLSS"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			auto getQualityString = [](NVSDK_NGX_PerfQuality_Value quality) noexcept -> const char*
+				{
+					switch (quality)
+					{
+					case NVSDK_NGX_PerfQuality_Value_MaxPerf:
+						return "Performance";
+					case NVSDK_NGX_PerfQuality_Value_Balanced:
+						return "Balanced";
+					case NVSDK_NGX_PerfQuality_Value_MaxQuality:
+						return "Quality";
+					case NVSDK_NGX_PerfQuality_Value_UltraPerformance:
+						return "Ultra Performance";
+						break;
+					default:
+					case NVSDK_NGX_PerfQuality_Value_UltraQuality:
+						ZE_ENUM_UNHANDLED();
+					case NVSDK_NGX_PerfQuality_Value_DLAA:
+						return "DLAA";
+					}
+				};
+			constexpr std::array<NVSDK_NGX_PerfQuality_Value, 5> LEVELS =
+			{
+				NVSDK_NGX_PerfQuality_Value_UltraPerformance,
+				NVSDK_NGX_PerfQuality_Value_MaxPerf,
+				NVSDK_NGX_PerfQuality_Value_Balanced,
+				NVSDK_NGX_PerfQuality_Value_MaxQuality,
+				NVSDK_NGX_PerfQuality_Value_DLAA
+			};
+			if (ImGui::BeginCombo("Quality level", getQualityString(execData.Quality)))
+			{
+				for (auto level : LEVELS)
+				{
+					const bool selected = level == execData.Quality;
+					if (ImGui::Selectable(getQualityString(level), selected))
+						execData.Quality = level;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::Columns(2, "##sharpness_settings", false);
+			{
+				ImGui::Text("Sharpness");
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Checkbox("##enable_sharpness", &execData.SharpeningEnabled);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Enable an additional sharpening pass");
+			}
+			ImGui::Columns(1);
+
+			if (!execData.SharpeningEnabled)
+				ImGui::BeginDisabled(true);
+			GUI::InputClamp(0.0f, 1.0f, execData.Sharpness,
+				ImGui::InputFloat("##dlss_sharpness", &execData.Sharpness, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
+			if (!execData.SharpeningEnabled)
+				ImGui::EndDisabled();
+			ImGui::NewLine();
+		}
 	}
 }

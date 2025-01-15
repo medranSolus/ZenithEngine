@@ -55,6 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -175,8 +176,25 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		mainCtx.BindingSchema.SetCompute(cl);
 		data.StateAO.Bind(cl);
 
+		// Need to perform ping-pong according to the number of denoise passes
+		RID currentOutput = INVALID_RID, currentScratch = INVALID_RID;
+		if (data.Settings.DenoisePasses == 0)
+		{
+			currentScratch = ids.AO;
+		}
+		else if (data.Settings.DenoisePasses % 2 == 1)
+		{
+			currentOutput = ids.AO;
+			currentScratch = ids.ScratchAO;
+		}
+		else
+		{
+			currentOutput = ids.ScratchAO;
+			currentScratch = ids.AO;
+		}
+
 		cbuffer.Bind(cl, mainCtx, cbufferInfo);
-		renderData.Buffers.SetUAV(cl, mainCtx, ids.ScratchAO);
+		renderData.Buffers.SetUAV(cl, mainCtx, currentScratch);
 		renderData.Buffers.SetUAV(cl, mainCtx, ids.DepthEdges);
 		renderData.Buffers.SetSRV(cl, mainCtx, ids.ViewspaceDepth);
 		renderData.Buffers.SetSRV(cl, mainCtx, ids.Normal);
@@ -186,42 +204,90 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		cl.Compute(dev, Math::DivideRoundUp(size.X, static_cast<U32>(XE_GTAO_NUMTHREADS_X)),
 			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		renderData.Buffers.Barrier(cl, std::array
+		std::array beforeDenoiseBarriers =
+		{
+		BarrierTransition{ ids.ViewspaceDepth, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+			Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+			Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+		BarrierTransition{ ids.DepthEdges, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+			Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
+			Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+		BarrierTransition{ currentScratch, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+			Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
+			Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
+		};
+		renderData.Buffers.Barrier(cl, beforeDenoiseBarriers.data(), data.Settings.DenoisePasses == 0 ? 1 : 3);
+
+		if (data.Settings.DenoisePasses)
+		{
+			Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
+			denoiseCtx.BindingSchema.SetCompute(cl);
+			data.StateDenoise.Bind(cl);
+
+			Resource::Constant<U32> lastDenoise(dev, data.Settings.DenoisePasses == 1);
+			lastDenoise.Bind(cl, denoiseCtx);
+			cbuffer.Bind(cl, denoiseCtx, cbufferInfo);
+			renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
+			renderData.Buffers.SetSRV(cl, denoiseCtx, currentScratch);
+			renderData.Buffers.SetSRV(cl, denoiseCtx, ids.DepthEdges);
+			renderData.SettingsBuffer.Bind(cl, denoiseCtx);
+
+			for (int i = 1; i < data.Settings.DenoisePasses; ++i)
 			{
-			BarrierTransition{ ids.ScratchAO, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
-				Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
-				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
-			BarrierTransition{ ids.DepthEdges, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
-				Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
-				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
-			BarrierTransition{ ids.ViewspaceDepth, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
-				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
-				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
-			});
+				denoiseCtx.SetFromEnd(3);
+				renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
+				renderData.Buffers.SetSRV(cl, denoiseCtx, currentScratch);
+				cl.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
+					Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
 
-		Binding::Context denoiseCtx{ renderData.Bindings.GetSchema(data.BindingIndexDenoise) };
-		denoiseCtx.BindingSchema.SetCompute(cl);
-		data.StateDenoise.Bind(cl);
-
-		Resource::Constant<U32> lastDenoise(dev, true);
-		lastDenoise.Bind(cl, denoiseCtx);
-		cbuffer.Bind(cl, denoiseCtx, cbufferInfo);
-		renderData.Buffers.SetUAV(cl, denoiseCtx, ids.AO);
-		renderData.Buffers.SetSRV(cl, denoiseCtx, ids.ScratchAO);
-		renderData.Buffers.SetSRV(cl, denoiseCtx, ids.DepthEdges);
-		renderData.SettingsBuffer.Bind(cl, denoiseCtx);
-		cl.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
-			Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
-
-		renderData.Buffers.Barrier(cl, std::array
+				renderData.Buffers.Barrier(cl, std::array
+					{
+					BarrierTransition{ currentScratch, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+						Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+						Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+					BarrierTransition{ currentOutput, TextureLayout::UnorderedAccess, TextureLayout::ShaderResource,
+						Base(ResourceAccess::UnorderedAccess), Base(ResourceAccess::ShaderResource),
+						Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
+					});
+				std::swap(currentScratch, currentOutput);
+			}
+			if (data.Settings.DenoisePasses != 1)
 			{
-			BarrierTransition{ ids.ScratchAO, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
-				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
-				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
-			BarrierTransition{ ids.DepthEdges, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
-				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
-				Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
-			});
+				denoiseCtx.Reset();
+				lastDenoise.Set(dev, true);
+				lastDenoise.Bind(cl, denoiseCtx);
+				denoiseCtx.SetFromEnd(3);
+				renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
+				renderData.Buffers.SetSRV(cl, denoiseCtx, currentScratch);
+			}
+			cl.Compute(dev, Math::DivideRoundUp(size.X, XE_GTAO_NUMTHREADS_X * 2U),
+				Math::DivideRoundUp(size.Y, static_cast<U32>(XE_GTAO_NUMTHREADS_Y)), 1);
+
+			renderData.Buffers.Barrier(cl, std::array
+				{
+				BarrierTransition{ currentScratch, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+					Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+					Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) },
+				BarrierTransition{ ids.DepthEdges, TextureLayout::ShaderResource, TextureLayout::UnorderedAccess,
+					Base(ResourceAccess::ShaderResource), Base(ResourceAccess::UnorderedAccess),
+					Base(StageSync::ComputeShading), Base(StageSync::ComputeShading) }
+				});
+		}
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("XeGTAO"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
+			const int quality = execData.Settings.QualityLevel;
+			::XeGTAO::GTAOImGuiSettings(execData.Settings);
+			if (quality != execData.Settings.QualityLevel)
+				UpdateQualityInfo(execData);
+			ImGui::NewLine();
+		}
 	}
 }

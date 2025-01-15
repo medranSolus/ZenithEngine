@@ -20,6 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		bool Float16Support;
 		UInt2 DisplaySize = { 0, 0 };
 		NISQualityMode Quality = NISQualityMode::MegaQuality;
+		bool SharpeningEnabled = true;
 		float Sharpness = 0.5f;
 	};
 
@@ -30,4 +31,5 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	void DebugUI(void* data) noexcept;
 }

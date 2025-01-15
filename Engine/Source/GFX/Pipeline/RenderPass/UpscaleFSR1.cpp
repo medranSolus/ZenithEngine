@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/UpscaleFSR1.h"
 #include "GFX/FfxBackendInterface.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 {
@@ -24,6 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -90,5 +92,50 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		ZE_FFX_THROW_FAILED(ffxFsr1ContextDispatch(&data.Ctx, &desc), "Error performing FSR1!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("FSR 1"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			constexpr std::array<const char*, 4> LEVELS = { "Performance", "Balanced", "Quality", "Ultra Quality" };
+			if (ImGui::BeginCombo("Quality level", LEVELS.at(3U - static_cast<U8>(execData.Quality))))
+			{
+				for (FfxFsr1QualityMode i = FFX_FSR1_QUALITY_MODE_PERFORMANCE; const char* level : LEVELS)
+				{
+					const bool selected = i == execData.Quality;
+					if (ImGui::Selectable(level, selected))
+						execData.Quality = i;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+					i = static_cast<FfxFsr1QualityMode>(static_cast<U8>(i) - 1U);
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::Columns(2, "##sharpness_settings", false);
+			{
+				ImGui::Text("Sharpness");
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Checkbox("##enable_sharpness", &execData.SharpeningEnabled);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Enable an additional sharpening pass");
+			}
+			ImGui::Columns(1);
+
+			if (!execData.SharpeningEnabled)
+				ImGui::BeginDisabled(true);
+			GUI::InputClamp(0.0f, 1.0f, execData.Sharpness,
+				ImGui::InputFloat("##fsr_sharpness", &execData.Sharpness, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
+			if (!execData.SharpeningEnabled)
+				ImGui::EndDisabled();
+			ImGui::NewLine();
+		}
 	}
 }

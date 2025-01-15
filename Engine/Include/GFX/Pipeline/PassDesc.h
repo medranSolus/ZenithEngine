@@ -38,6 +38,8 @@ namespace ZE::GFX::Pipeline
 	typedef void* (*PassCopyInitDataCallback)(void*) noexcept;
 	// Optional function for freeing up init data for pass creation
 	typedef void (*PassFreeInitDataCallback)(void*) noexcept;
+	// Optional function for creating ImGui debug controls
+	typedef void (*PassDebugUICallback)(void*) noexcept;
 
 	// Types of every render pass present, including custom ones created outside engine
 	typedef U32 PassType;
@@ -106,5 +108,7 @@ namespace ZE::GFX::Pipeline
 		PassCopyInitDataCallback CopyInitData = nullptr;
 		// Required if InitData is present
 		PassFreeInitDataCallback FreeInitData = nullptr;
+		// Only used in non-release builds or in demo/editor
+		PassDebugUICallback DebugUI = nullptr;
 	};
 }

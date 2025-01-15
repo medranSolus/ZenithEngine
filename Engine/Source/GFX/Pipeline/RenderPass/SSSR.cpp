@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/SSSR.h"
 #include "GFX/FfxBackendInterface.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
@@ -15,6 +16,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -110,5 +112,94 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		ZE_FFX_THROW_FAILED(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("SSSR"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			GUI::InputClamp(0.0f, 1.0f, execData.IblFactor,
+				ImGui::InputFloat("##ibl_factor", &execData.IblFactor, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("A factor to control the intensity of the image based lighting. Set to 1 for an HDR probe.");
+
+			ImGui::Text("Temporal Stability");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0.0f, 1.0f, execData.TemporalStabilityFactor,
+				ImGui::InputFloat("##sssr_temp_stability", &execData.TemporalStabilityFactor, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("A factor to control the accmulation of history values. Higher values reduce noise, but are more likely to exhibit ghosting artefacts.");
+
+			ImGui::Text("Depth Buffer Thickness");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0.0f, 0.03f, execData.DepthBufferThickness,
+				ImGui::InputFloat("##sssr_depth_thicc", &execData.DepthBufferThickness, 0.001f, 0.01f, "%.3f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("A bias for accepting hits. Larger values can cause streaks, lower values can cause holes.");
+
+			ImGui::Text("Roughness Threshold");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0.0f, 1.0f, execData.RoughnessThreshold,
+				ImGui::InputFloat("##sssr_rough_threshold", &execData.RoughnessThreshold, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Regions with a roughness value greater than this threshold won't spawn rays.");
+
+			ImGui::Text("Temporal Variance Threshold");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0.0f, 0.01f, execData.VarianceThreshold,
+				ImGui::InputFloat("##sssr_variance_threshold", &execData.VarianceThreshold, 0.0001f, 0.001f, "%.4f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Luminance differences between history results will trigger an additional ray if they are greater than this threshold value.");
+
+			ImGui::Text("Max Traversal Iterations");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0U, 256U, execData.MaxTraversalIntersections,
+				ImGui::InputInt("##sssr_max_intersect", reinterpret_cast<int*>(&execData.MaxTraversalIntersections), 1, 50));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Caps the maximum number of lookups that are performed from the depth buffer hierarchy. Most rays should terminate after approximately 20 lookups.");
+
+			ImGui::Text("Min Traversal Occupancy");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0U, 32U, execData.MinTraversalOccupancy,
+				ImGui::InputInt("##sssr_min_occupancy", reinterpret_cast<int*>(&execData.MinTraversalOccupancy), 1, 10));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Exit the core loop early if less than this number of threads are running.");
+
+			ImGui::Text("Most Detailed Mip");
+			ImGui::SetNextItemWidth(-1.0f);
+			GUI::InputClamp(0U, 5U, execData.MostDetailedMip,
+				ImGui::InputInt("##sssr_mip_detail", reinterpret_cast<int*>(&execData.MostDetailedMip), 1, 1));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("The most detailed MIP map level in the depth hierarchy. Perfect mirrors always use 0 as the most detailed level.");
+
+			constexpr std::array<const char*, 3> SAMPLES = { "1", "2", "4" };
+			U8 sampleIndex = Utils::SafeCast<U8>(execData.SamplesPerQuad == 4 ? 2 : execData.SamplesPerQuad - 1);
+			ImGui::SetNextItemWidth(50.0f);
+			if (ImGui::BeginCombo("Samples per quad", SAMPLES.at(sampleIndex)))
+			{
+				for (U8 i = 0; const char* samples : SAMPLES)
+				{
+					const bool selected = i == sampleIndex;
+					if (ImGui::Selectable(samples, selected))
+					{
+						sampleIndex = i;
+						execData.SamplesPerQuad = sampleIndex == 2 ? 4 : sampleIndex + 1;
+					}
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+					++i;
+				}
+				ImGui::EndCombo();
+			}
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("The minimum number of rays per quad. Variance guided tracing can increase this up to a maximum of 4.");
+
+			ImGui::Checkbox("Enable Variance Guided Tracing##sssr_enable_variance", &execData.TemporalVarianceGuidedTracingEnabled);
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("A boolean controlling whether a ray should be spawned on pixels where a temporal variance is detected or not.");
+			ImGui::NewLine();
+		}
 	}
 }

@@ -18,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 	{
 		UInt2 DisplaySize = { 0, 0 };
 		NVSDK_NGX_PerfQuality_Value Quality = NVSDK_NGX_PerfQuality_Value_DLAA;
+		bool SharpeningEnabled = true;
 		float Sharpness = 0.0f;
 		NVSDK_NGX_Parameter* NgxParam = nullptr;
 		NVSDK_NGX_Handle* DlssHandle = nullptr;
@@ -30,4 +31,5 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	void DebugUI(void* data) noexcept;
 }

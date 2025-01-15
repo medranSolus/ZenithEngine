@@ -41,4 +41,5 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	void DebugUI(void* data) noexcept;
 }

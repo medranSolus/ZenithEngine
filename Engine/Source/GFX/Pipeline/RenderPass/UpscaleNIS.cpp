@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/UpscaleNIS.h"
+#include "GUI/DearImGui.h"
 ZE_WARNING_PUSH
 #include "NIS_Config.h"
 ZE_WARNING_POP
@@ -17,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -129,7 +131,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
 
 		NISConfig config = {};
-		[[maybe_unused]] const bool correctUpdate = NVScalerUpdateConfig(config, data.Sharpness,
+		[[maybe_unused]] const bool correctUpdate = NVScalerUpdateConfig(config, data.SharpeningEnabled ? data.Sharpness : 0.0f,
 			0, 0, inputSize.X, inputSize.Y, inputSize.X, inputSize.Y,
 			0, 0, outputSize.X, outputSize.Y, outputSize.X, outputSize.Y, NISHDRMode::Linear);
 		ZE_ASSERT(correctUpdate, "Error updating NIS config data!");
@@ -148,5 +150,50 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("NIS"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			constexpr std::array<const char*, 5> LEVELS = { "Performance", "Balanced", "Quality", "Ultra Quality", "Mega Quality" };
+			if (ImGui::BeginCombo("Quality level", LEVELS.at(4U - static_cast<U8>(execData.Quality))))
+			{
+				for (NISQualityMode i = NISQualityMode::Performance; const char* level : LEVELS)
+				{
+					const bool selected = i == execData.Quality;
+					if (ImGui::Selectable(level, selected))
+						execData.Quality = i;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+					i = static_cast<NISQualityMode>(static_cast<U8>(i) - 1U);
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::Columns(2, "##sharpness_settings", false);
+			{
+				ImGui::Text("Sharpness");
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Checkbox("##enable_sharpness", &execData.SharpeningEnabled);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Enable an additional sharpening pass");
+			}
+			ImGui::Columns(1);
+
+			if (!execData.SharpeningEnabled)
+				ImGui::BeginDisabled(true);
+			GUI::InputClamp(0.0f, 1.0f, execData.Sharpness,
+				ImGui::InputFloat("##nis_sharpness", &execData.Sharpness, 0.01f, 0.1f, "%.2f"));
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
+			if (!execData.SharpeningEnabled)
+				ImGui::EndDisabled();
+			ImGui::NewLine();
+		}
 	}
 }

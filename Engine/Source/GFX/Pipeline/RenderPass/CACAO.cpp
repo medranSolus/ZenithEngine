@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/CACAO.h"
 #include "GFX/FfxBackendInterface.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO
 {
@@ -15,6 +16,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -95,5 +97,137 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		ZE_FFX_THROW_FAILED(ffxCacaoContextDispatch(&data.Ctx, &desc), "Error performing CACAO!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("CACAO"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			constexpr std::array<const char*, 5> LEVELS = { "Lowest", "Low", "Medium", "High", "Highest" };
+			if (ImGui::BeginCombo("Quality level", LEVELS.at(execData.Settings.qualityLevel)))
+			{
+				for (FfxCacaoQuality i = FFX_CACAO_QUALITY_LOWEST; const char* level : LEVELS)
+				{
+					const bool selected = i == execData.Settings.qualityLevel;
+					if (ImGui::Selectable(level, selected))
+						execData.Settings.qualityLevel = i;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+					i = static_cast<FfxCacaoQuality>(i + 1);
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::Columns(2, "##cacao_options", false);
+			{
+				ImGui::Text("Blur radius");
+				ImGui::SetNextItemWidth(-1.0f);
+				GUI::InputClamp(0.1f, FLT_MAX, execData.Settings.radius,
+					ImGui::InputFloat("##cacao_blur_radius", &execData.Settings.radius, 0.1f, 1.0f, "%.1f"));
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Size of the occlusion sphere");
+			}
+			ImGui::NextColumn();
+			{
+				ImGui::Text("Blur pass count");
+				ImGui::SetNextItemWidth(-1.0f);
+				ImGui::SliderInt("##cacao_blur_count", reinterpret_cast<int*>(&execData.Settings.blurPassCount), 0, 8);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Number of edge-sensitive smart blur passes to apply");
+			}
+			ImGui::Columns(1);
+
+			if (execData.Settings.qualityLevel != FFX_CACAO_QUALITY_HIGHEST)
+				ImGui::BeginDisabled(true);
+			ImGui::Text("Adaptative quality limit");
+			ImGui::InputFloat("##cacao_adapt_limit", &execData.Settings.adaptiveQualityLimit, 0.01f, 0.1f, "%.2f");
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Only for highest quality level");
+			if (execData.Settings.qualityLevel != FFX_CACAO_QUALITY_HIGHEST)
+				ImGui::EndDisabled();
+
+			if (ImGui::CollapsingHeader("Advanced"))
+			{
+				ImGui::Columns(2, "##cacao_advanced", false);
+				{
+					ImGui::Text("Sharpness");
+					GUI::InputClamp(0.0f, 1.0f, execData.Settings.sharpness,
+						ImGui::InputFloat("##cacao_sharpness", &execData.Settings.sharpness, 0.01f, 0.1f, "%.2f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("How much to bleed over edges; 1: not at all, 0.5: half-half; 0.0: completely ignore edges");
+					ImGui::Text("Fade out start");
+					GUI::InputClamp(0.0f, execData.Settings.fadeOutTo, execData.Settings.fadeOutFrom,
+						ImGui::InputFloat("##cacao_fade_from", &execData.Settings.fadeOutFrom, 1.0f, 5.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Distance to start fading out the effect");
+				}
+				ImGui::NextColumn();
+				{
+					ImGui::Text("Horizontal angle treshold");
+					GUI::InputClamp(0.0f, 0.2f, execData.Settings.horizonAngleThreshold,
+						ImGui::InputFloat("##cacao_horizon_angle", &execData.Settings.horizonAngleThreshold, 0.01f, 0.0f, "%.2f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Limits self-shadowing (makes the sampling area less of a hemisphere, more of a spherical cone, to avoid self-shadowing and various artifacts due to low tessellation and depth buffer imprecision, etc.)");
+					ImGui::Text("Fade out end");
+					GUI::InputClamp(execData.Settings.fadeOutFrom, FLT_MAX, execData.Settings.fadeOutTo,
+						ImGui::InputFloat("##cacao_fade_to", &execData.Settings.fadeOutTo, 1.0f, 5.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Distance at which the effect is faded out");
+				}
+				ImGui::Columns(1);
+
+				ImGui::Text("Shadow controls");
+				ImGui::Columns(2, "##cacao_shadows", false);
+				{
+					ImGui::Text("Shadow multipler");
+					GUI::InputClamp(0.0f, 5.0f, execData.Settings.shadowMultiplier,
+						ImGui::InputFloat("##cacao_shadow_mult", &execData.Settings.shadowMultiplier, 0.1f, 1.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Effect strength linear multiplier");
+					ImGui::Text("Shadow clamp");
+					GUI::InputClamp(0.0f, 1.0f, execData.Settings.shadowClamp,
+						ImGui::InputFloat("##cacao_shadow_clamp", &execData.Settings.shadowClamp, 0.01f, 0.1f, "%.2f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Effect max limit (applied after multiplier but before blur)");
+				}
+				ImGui::NextColumn();
+				{
+					ImGui::Text("Shadow power");
+					GUI::InputClamp(0.5f, 5.0f, execData.Settings.shadowPower,
+						ImGui::InputFloat("##cacao_shadow_pow", &execData.Settings.shadowPower, 0.01f, 0.1f, "%.2f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Effect strength modifier");
+					ImGui::Text("Shadow detail");
+					GUI::InputClamp(0.5f, 5.0f, execData.Settings.detailShadowStrength,
+						ImGui::InputFloat("##cacao_shadow_det", &execData.Settings.detailShadowStrength, 0.1f, 1.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Used for high-res detail AO using neighboring depth pixels: adds a lot of detail but also reduces temporal stability (adds aliasing)");
+				}
+				ImGui::Columns(1);
+
+				ImGui::Text("Bilateral sigma");
+				ImGui::Columns(2, "##cacao_bilateral", false);
+				{
+					ImGui::Text("Blur term");
+					GUI::InputClamp(0.0f, FLT_MAX, execData.Settings.bilateralSigmaSquared,
+						ImGui::InputFloat("##cacao_bil_sigma", &execData.Settings.bilateralSigmaSquared, 0.1f, 1.0f, "%.1f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Sigma squared value for use in bilateral upsampler giving Gaussian blur term");
+				}
+				ImGui::NextColumn();
+				{
+					ImGui::Text("Similarity weight");
+					GUI::InputClamp(0.0f, FLT_MAX, execData.Settings.bilateralSimilarityDistanceSigma,
+						ImGui::InputFloat("##cacao_bil_similarity", &execData.Settings.bilateralSimilarityDistanceSigma, 0.01f, 0.1f, "%.2f"));
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Sigma squared value for use in bilateral upsampler giving similarity weighting for neighbouring pixels");
+				}
+				ImGui::Columns(1);
+				ImGui::NewLine();
+			}
+			ImGui::NewLine();
+		}
 	}
 }

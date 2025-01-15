@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/UpscaleXeSS.h"
 #include "GFX/XeSSException.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 {
@@ -34,6 +35,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
+		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
@@ -53,11 +55,19 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 			Settings::RenderSize = renderSize;
 			passData.DisplaySize = Settings::DisplaySize;
 
+			syncStatus.SyncMain(dev);
+			if (dev.IsXeSSEnabled())
+				dev.FreeXeSS();
+
+			ZE_XESS_CHECK(xessSetLoggingCallback(dev.GetXeSSCtx(),
+				_ZE_DEBUG_GFX_API ? XESS_LOGGING_LEVEL_DEBUG : XESS_LOGGING_LEVEL_WARNING, MessageHandler),
+				"Error setting XeSS message callback!");
+			ZE_XESS_CHECK(xessSetJitterScale(dev.GetXeSSCtx(), 1.0f, 1.0f),
+				"Error setting XeSS jitter scale!");
 			ZE_XESS_CHECK(xessSetVelocityScale(dev.GetXeSSCtx(),
 				-Utils::SafeCast<float>(renderSize.X), -Utils::SafeCast<float>(renderSize.Y)),
 				"Error setting XeSS motion vectors scale!");
 
-			syncStatus.SyncMain(dev);
 			dev.InitializeXeSS(Settings::DisplaySize, passData.Quality,
 				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK);
 			return UpdateStatus::FrameBufferImpact;
@@ -67,17 +77,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	void* Initialize(Device& dev, RendererPassBuildData& buildData)
 	{
-		ZE_XESS_ENABLE();
 		ExecuteData* passData = new ExecuteData;
-
-		ZE_XESS_CHECK(xessSetLoggingCallback(dev.GetXeSSCtx(),
-			_ZE_DEBUG_GFX_API ? XESS_LOGGING_LEVEL_DEBUG : XESS_LOGGING_LEVEL_WARNING, MessageHandler),
-			"Error setting XeSS message callback!");
-		ZE_XESS_CHECK(xessSetJitterScale(dev.GetXeSSCtx(), 1.0f, 1.0f),
-			"Error setting XeSS jitter scale!");
-
 		Update(dev, *passData, buildData.SyncStatus);
-
 		return passData;
 	}
 
@@ -92,5 +93,29 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 			renderData.DynamicData.JitterCurrent.x, renderData.DynamicData.JitterCurrent.y, renderData.GraphData.FrameTemporalReset);
 
 		ZE_DRAW_TAG_END(dev, cl);
+	}
+
+	void DebugUI(void* data) noexcept
+	{
+		if (ImGui::CollapsingHeader("XeSS"))
+		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
+			constexpr std::array<const char*, 7> LEVELS = { "Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality", "Ultra Quality Plus", "Native AA" };
+			if (ImGui::BeginCombo("Quality level", LEVELS.at(static_cast<U8>(execData.Quality) - 100U)))
+			{
+				for (xess_quality_settings_t i = XESS_QUALITY_SETTING_ULTRA_PERFORMANCE; const char* level : LEVELS)
+				{
+					const bool selected = i == execData.Quality;
+					if (ImGui::Selectable(level, selected))
+						execData.Quality = i;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+					i = static_cast<xess_quality_settings_t>(static_cast<U8>(i) + 1U);
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::NewLine();
+		}
 	}
 }

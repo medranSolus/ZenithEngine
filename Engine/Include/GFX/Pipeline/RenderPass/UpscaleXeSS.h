@@ -28,4 +28,5 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 	UpdateStatus Update(Device& dev, ExecuteData& passData, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
 	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	void DebugUI(void* data) noexcept;
 }

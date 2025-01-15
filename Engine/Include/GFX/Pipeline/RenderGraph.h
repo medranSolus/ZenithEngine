@@ -13,6 +13,22 @@ namespace ZE::GFX::Pipeline
 		- common interface for GPU resource aliasing
 	*/
 
+	/*
+	MORE ON UI
+
+	Probably better to create 2 paths for the UI rendering, one for debug ImGUI UI where there will be everything needed
+	(also for future editor, etc.) and use it basically as another callback which will behave much like the Update() calls
+	with possibility to update stuff in it and outside of it. Thou every ImGUI controls need to be size agnostic so they need to
+	take into possibility that they are part of some bigger stuff out there so every positioning must be done in terms of full
+	width alignment to some encompassing area (like box or so). Columns would be allowed and other detailed controls, but not spawning windows (if they are not pop-ups).
+
+	As for real settings UI, seperate immediate mode framework will be used in future where controls will be added according to some
+	design from notes below, but with ability to check if pass needs updating as for Update or similar (or maybe just rely on Update call later on..)
+	When it's designed it can also feature ImGui but as an extension, not design per se, plus ImGui is meant to display all possible options
+	while settings UI will be used only for meanigful ones that player can change.
+
+	*/
+
 	/* IDEA FOR UI AND OPTIONS REGARDING RENDER PASSES
 
 	Have function that returns what type of options given render pass can hold (enum similar to CorePassType with extensions possible)
@@ -135,16 +151,6 @@ namespace ZE::GFX::Pipeline
 		void SetCamera(EID camera);
 		// Need to be called before ending every frame
 		void UpdateFrameData(Device& dev);
-
-		// Here handle the data from passes to create ImGUI element for them
-		// (not window, only master app above will do the windows and use here only stuff that is not dependant on pixels,
-		// more proportions but with some minimal one that will allow for vertical scroll, etc.)
-		//
-		// When Invalid type for RenderPass is encountered then just do nothing, for renderer data use provided callback
-		// and same for custom passes so user can handle them (AND with CustomStart to get them all, for default always issue warning)
-		//
-		// Need to indicate change to settings that require rebuild
-		void ShowDebugUI() noexcept;
 		void Free(Device& dev) noexcept;
 	};
 }
