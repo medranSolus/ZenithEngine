@@ -143,13 +143,6 @@ namespace ZE::GFX::Pipeline
 		Math::XMStoreFloat4x4(&execData.DynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, viewProjection)));
 	}
 
-	void RenderGraph::ShowDebugUI() noexcept
-	{
-		ImGui::BeginChild("##render_graph", { 100.0f, 100.0f }, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-		ImGui::EndChild();
-	}
-
 	void RenderGraph::Free(Device& dev) noexcept
 	{
 		UnloadConfig(dev);

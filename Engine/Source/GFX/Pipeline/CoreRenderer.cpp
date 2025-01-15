@@ -53,6 +53,26 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		};
 	}
 
+	void SetupBlurIntensity(RendererSettingsData& settingsData) noexcept
+	{
+		settingsData.BlurIntensity = 1.0f;
+		if (settingsData.HDRExposure < 1.0f)
+			settingsData.BlurIntensity /= settingsData.HDRExposure;
+	}
+
+	void SetupBlurKernel(RendererSettingsData& settingsData) noexcept
+	{
+		float gaussSum = 0.0f;
+		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
+		{
+			const float g = Math::Gauss(Utils::SafeCast<float>(i), settingsData.BlurSigma);
+			gaussSum += g;
+			settingsData.BlurCoefficients[i].x = g;
+		}
+		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
+			settingsData.BlurCoefficients[i].x /= gaussSum;
+	}
+
 	void SetupData(RendererSettingsData& settingsData, const Params& params, UInt2 outlineBuffSize) noexcept
 	{
 		settingsData.DisplaySize = Settings::DisplaySize;
@@ -64,9 +84,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.BlurWidth = outlineBuffSize.X;
 		settingsData.BlurHeight = outlineBuffSize.Y;
 		settingsData.BlurRadius = RendererSettingsData::BLUR_KERNEL_RADIUS;
-		settingsData.BlurIntensity = 1.0f;
-		if (settingsData.HDRExposure < 1.0f)
-			settingsData.BlurIntensity /= settingsData.HDRExposure;
+		SetupBlurIntensity(settingsData);
 
 		settingsData.BlurSigma = params.Sigma;
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
@@ -78,16 +96,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.GammaInverse = 1.0f / params.Gamma;
 		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::Upscaler);
 
-		// Setup blur kernel
-		float gaussSum = 0.0f;
-		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
-		{
-			const float g = Math::Gauss(Utils::SafeCast<float>(i), settingsData.BlurSigma);
-			gaussSum += g;
-			settingsData.BlurCoefficients[i].x = g;
-		}
-		for (S32 i = 0; i <= settingsData.BlurRadius; ++i)
-			settingsData.BlurCoefficients[i].x /= gaussSum;
+		SetupBlurKernel(settingsData);
 	}
 
 	RenderGraphDesc GetDesc(const Params& params) noexcept
