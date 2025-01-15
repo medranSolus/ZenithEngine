@@ -275,13 +275,13 @@ link_directories(${EXTERNAL_BIN_DIR})
 # Platform specific flags
 if(${ZE_PLATFORM_WINDOWS})
 	add_definition_flags(
-		"-DWIN32 -DWIN64 -D_WINDOWS -D_UNICODE -DUNICODE -DNOMINMAX -DZE_EXPORT=__declspec(dllexport) -DZE_IMPORT=__declspec(dllimport) -DVK_USE_PLATFORM_WIN32_KHR"
-		"-DUSE_PIX"
-		"-DUSE_PIX"
-		"-DUSE_PIX"
+		"WIN32 WIN64 _WINDOWS _UNICODE UNICODE NOMINMAX ZE_EXPORT=__declspec(dllexport) ZE_IMPORT=__declspec(dllimport) VK_USE_PLATFORM_WIN32_KHR"
+		"USE_PIX"
+		"USE_PIX"
+		"USE_PIX"
 		"")
 elseif(${ZE_PLATFORM_LINUX})
-	add_definitions("-DVK_USE_PLATFORM_WAYLAND_KHR -DVK_USE_PLATFORM_XCB_KHR -DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_DIRECTFB_EXT -DVK_USE_PLATFORM_XLIB_XRANDR_EXT")
+	add_compile_definitions(VK_USE_PLATFORM_WAYLAND_KHR VK_USE_PLATFORM_XCB_KHR VK_USE_PLATFORM_XLIB_KHR VK_USE_PLATFORM_DIRECTFB_EXT VK_USE_PLATFORM_XLIB_XRANDR_EXT)
 	message(FATAL_ERROR "Building for unsupported platform!")
 else()
 	message(FATAL_ERROR "Building for unsupported platform!")
@@ -353,42 +353,42 @@ else()
 endif()
 
 # General flags
-add_definitions(-DSPNG_SSE=2)
-add_definitions(-DSPNG_STATIC)
-add_definitions(-DZLIB_CONST)
-add_definitions(-DENTT_NOEXCEPTION)
-add_definitions(-DENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
-add_definitions(-DVK_NO_PROTOTYPES)
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
-add_definitions(-DIMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>)
-add_definitions(-DZE_NGX_ID=${ZE_NGX_ID})
+add_compile_definitions(SPNG_SSE=2)
+add_compile_definitions(SPNG_STATIC)
+add_compile_definitions(ZLIB_CONST)
+add_compile_definitions(ENTT_NOEXCEPTION)
+add_compile_definitions(ENTT_ID_TYPE=$<IF:$<BOOL:${ZE_USE_WIDE_ENTITY_ID}>,std::uint64_t,std::uint32_t>)
+add_compile_definitions(VK_NO_PROTOTYPES)
+add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS)
+add_compile_definitions(IMGUI_USER_CONFIG=<${ENGINE_INC_DIR}/GUI/ImGuiConfig.h>)
+add_compile_definitions(ZE_NGX_ID=${ZE_NGX_ID})
 # EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
-add_definitions(-D_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
+add_compile_definitions(_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # General flags with project options
-add_definitions(-D_ZE_EXTERNAL_MODEL_LOADING=$<BOOL:${ZE_EXTERNAL_MODEL_LOADING}>)
-add_definitions(-D_ZE_RENDERER_CREATION_VALIDATION=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>,$<BOOL:${ZE_RENDERER_CREATION_VALIDATION}>>)
-add_definitions(-D_ZE_RENDERER_NO_SPLIT_BARRIERS=$<BOOL:${ZE_RENDERER_NO_SPLIT_BARRIERS}>)
-add_definitions(-D_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SINGLE_THREAD}>)
-add_definitions(-D_ZE_DEBUG_GFX_API=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
-add_definitions(-D_ZE_DEBUG_GFX_NAMES=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
-add_definitions(-D_ZE_GFX_MARKERS=$<NOT:$<BOOL:${ZE_BUILD_RELEASE}>>)
+add_compile_definitions(_ZE_EXTERNAL_MODEL_LOADING=$<BOOL:${ZE_EXTERNAL_MODEL_LOADING}>)
+add_compile_definitions(_ZE_RENDERER_CREATION_VALIDATION=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>,$<BOOL:${ZE_RENDERER_CREATION_VALIDATION}>>)
+add_compile_definitions(_ZE_RENDERER_NO_SPLIT_BARRIERS=$<BOOL:${ZE_RENDERER_NO_SPLIT_BARRIERS}>)
+add_compile_definitions(_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SINGLE_THREAD}>)
+add_compile_definitions(_ZE_DEBUG_GFX_API=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
+add_compile_definitions(_ZE_DEBUG_GFX_NAMES=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
+add_compile_definitions(_ZE_GFX_MARKERS=$<NOT:$<BOOL:${ZE_BUILD_RELEASE}>>)
 # Platform type
-add_definitions(-D_ZE_PLATFORM_WINDOWS=$<BOOL:${ZE_PLATFORM_WINDOWS}> -D_ZE_PLATFORM_LINUX=$<BOOL:${ZE_PLATFORM_LINUX}> -D_ZE_PLATFORM_ANDROID=$<BOOL:${ZE_PLATFORM_ANDROID}>)
-add_definitions(-D_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> -D_ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}>)
+add_compile_definitions(_ZE_PLATFORM_WINDOWS=$<BOOL:${ZE_PLATFORM_WINDOWS}> _ZE_PLATFORM_LINUX=$<BOOL:${ZE_PLATFORM_LINUX}> _ZE_PLATFORM_ANDROID=$<BOOL:${ZE_PLATFORM_ANDROID}>)
+add_compile_definitions(_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> _ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}>)
 # Compiler type
-add_definitions(-D_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> -D_ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> -D_ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
+add_compile_definitions(_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> _ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> _ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # RHI type
-add_definitions(-D_ZE_RHI_DX11=$<BOOL:${ZE_ENABLE_DX11}> -D_ZE_RHI_DX12=$<BOOL:${ZE_ENABLE_DX12}> -D_ZE_RHI_GL=$<BOOL:${ZE_ENABLE_GL}> -D_ZE_RHI_VK=$<BOOL:${ZE_ENABLE_VK}>)
+add_compile_definitions(_ZE_RHI_DX11=$<BOOL:${ZE_ENABLE_DX11}> _ZE_RHI_DX12=$<BOOL:${ZE_ENABLE_DX12}> _ZE_RHI_GL=$<BOOL:${ZE_ENABLE_GL}> _ZE_RHI_VK=$<BOOL:${ZE_ENABLE_VK}>)
 # Engine version
-add_definitions(-D_ZE_VERSION_MAJOR=${ZE_VER_MAJOR} -D_ZE_VERSION_MINOR=${ZE_VER_MINOR} -D_ZE_VERSION_PATCH=${ZE_VER_PATCH})
+add_compile_definitions(_ZE_VERSION_MAJOR=${ZE_VER_MAJOR} _ZE_VERSION_MINOR=${ZE_VER_MINOR} _ZE_VERSION_PATCH=${ZE_VER_PATCH})
 # Build type
-add_definitions(-D_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> -D_ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> -D_ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> -D_ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
+add_compile_definitions(_ZE_MODE_DEBUG=$<BOOL:${ZE_BUILD_DEBUG}> _ZE_MODE_DEV=$<BOOL:${ZE_BUILD_DEVELOPMENT}> _ZE_MODE_PROFILE=$<BOOL:${ZE_BUILD_PROFILE}> _ZE_MODE_RELEASE=$<BOOL:${ZE_BUILD_RELEASE}>)
 add_definition_flags(
 	""
-	"-D_DEBUG"
-	"-DNDEBUG"
-	"-DNDEBUG"
-	"-DNDEBUG")
+	"_DEBUG"
+	"NDEBUG"
+	"NDEBUG"
+	"NDEBUG")
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${NIS_INC_DIR}\"")

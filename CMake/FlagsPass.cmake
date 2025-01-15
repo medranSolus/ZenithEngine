@@ -39,7 +39,7 @@ endfunction()
 #   PROFILE_FLAGS = flags used by PROFILE target
 #   RELEASE_FLAGS = flags used by RELEASE target
 function(add_definition_flags GLOBAL_FLAGS DEBUG_FLAGS DEV_FLAGS PROFILE_FLAGS RELEASE_FLAGS)
-	append_flags(add_definitions)
+	append_flags(add_compile_definitions)
 endfunction()
 
 # Function for passing linker flags based on build type

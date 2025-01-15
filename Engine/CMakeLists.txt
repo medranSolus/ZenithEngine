@@ -137,5 +137,5 @@ add_dependencies(${ENGINE_TARGET} ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGIN
 
 # Icon definition
 if(${ZE_PLATFORM_WINDOWS})
-    target_compile_definitions(${ENGINE_TARGET} PUBLIC -DZE_APPICON=${ZE_ICON_ID})
+    target_compile_definitions(${ENGINE_TARGET} PUBLIC ZE_APPICON=${ZE_ICON_ID})
 endif()
