@@ -14,6 +14,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 		desc.InitializeFormats.reserve(1);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
 		return desc;

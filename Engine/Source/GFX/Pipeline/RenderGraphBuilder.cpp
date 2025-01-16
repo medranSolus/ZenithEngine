@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline
 		// Check if found any present producer node
 		PassExecutionType passType = passDescs.at(node).at(presence.NodeGroupIndex).GetExecType();
 		if (presence.Present && passType == PassExecutionType::Producer)
-			return true;
+				return true;
 		// Otherwise traverse graph in search for producer nodes checking everything along the way
 		if (!presence.ProducerChecked)
 		{
@@ -2045,7 +2045,7 @@ namespace ZE::GFX::Pipeline
 									graphUpdate = true;
 							}
 							else
-								graphUpdate = pass.GetExecType() != PassExecutionType::DynamicProcessor;
+								graphUpdate = pass.GetExecType() == PassExecutionType::Producer || pass.GetExecType() == PassExecutionType::StaticProcessor;
 
 							break;
 						}

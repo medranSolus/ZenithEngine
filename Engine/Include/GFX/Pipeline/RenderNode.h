@@ -9,6 +9,7 @@ namespace ZE::GFX::Pipeline
 	{
 		Producer,         // Always present if evaluation indicates so, otherwise removed
 		Processor,        // Only present if there is input data from other passes and if any further passes consume it's output data
+		StaticProcessor,  // Same as normal processor pass but different evaluation is causing a framegraph rebuilding (same as Producer)
 		DynamicProcessor, // Same as normal processor pass but different evaluation is not causing a framebuffer recomputation (it's buffers are present always if there are producers), have to be alone in pass group
 	};
 
