@@ -21,6 +21,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		Settings::RenderSize = Settings::DisplaySize;
 		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		NgxInterface* ngx = dev.GetNGX();

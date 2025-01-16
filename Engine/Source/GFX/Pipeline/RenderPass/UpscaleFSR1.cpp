@@ -31,6 +31,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		Settings::RenderSize = Settings::DisplaySize;
 		syncStatus.SyncMain(dev);
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);

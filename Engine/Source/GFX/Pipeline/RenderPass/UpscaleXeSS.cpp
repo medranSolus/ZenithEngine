@@ -41,6 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		Settings::RenderSize = Settings::DisplaySize;
 		syncStatus.SyncMain(dev);
 		dev.FreeXeSS();
 		delete reinterpret_cast<ExecuteData*>(data);

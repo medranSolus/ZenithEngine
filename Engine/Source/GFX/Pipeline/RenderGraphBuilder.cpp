@@ -1892,6 +1892,7 @@ namespace ZE::GFX::Pipeline
 		BuildResult result = BuildResult::Success;
 		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
 		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, uploadWait = false;
+		UInt2 renderSize = Settings::RenderSize;
 
 		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
@@ -2073,7 +2074,7 @@ namespace ZE::GFX::Pipeline
 		}
 		buildData.FreeShaderCache(dev);
 
-		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged)
+		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
 		{
 			CascadePassUpdate(dev, graph, buildData, cascadeUpdate, uploadWait);
 

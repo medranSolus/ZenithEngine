@@ -24,6 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
+		Settings::RenderSize = Settings::DisplaySize;
 		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->StateUpscale.Free(dev);
