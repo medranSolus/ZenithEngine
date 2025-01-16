@@ -27,6 +27,7 @@ namespace ZE
 	public:
 		static constexpr const char* ENGINE_UUID = "5A656E69-7468-456E-6769-6E6553616669";
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
+		static constexpr const char* ENGINE_DISPLAY_NAME = "Zenith Engine";
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY(_ZE_VERSION_MAJOR) "." ZE_STRINGIFY(_ZE_VERSION_MINOR) "." ZE_STRINGIFY(_ZE_VERSION_PATCH);
 

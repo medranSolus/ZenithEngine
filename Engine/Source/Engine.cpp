@@ -157,6 +157,76 @@ namespace ZE
 	{
 		if (ImGui::BeginChild("##render_graph_settings"))
 		{
+			if (ImGui::CollapsingHeader("Engine info"))
+			{
+				ImGui::Text(Settings::ENGINE_DISPLAY_NAME);
+				ImGui::Text("Version:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_VERSION_STR);
+				ImGui::Text("UUID:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_UUID);
+
+				ImGui::Text("Current RHI:"); ImGui::SameLine();
+				switch (Settings::GetGfxApi())
+				{
+				case GfxApiType::DX11:
+				{
+					ImGui::Text("DirectX 11");
+					break;
+				}
+				case GfxApiType::DX12:
+				{
+					ImGui::Text("DirectX 12");
+					break;
+				}
+				case GfxApiType::OpenGL:
+				{
+					ImGui::Text("OpenGL");
+					break;
+				}
+				case GfxApiType::Vulkan:
+				{
+					ImGui::Text("Vulkan");
+					break;
+				}
+				}
+
+				ImGui::NewLine();
+			}
+
+			if (ImGui::CollapsingHeader("Effects"))
+			{
+				constexpr std::array<const char*, 3> AO_LEVELS = { "No AO", "XeGTAO", "CACAO" };
+				if (ImGui::BeginCombo("Ambient Occlusion", AO_LEVELS.at(static_cast<U8>(Settings::AmbientOcclusionType))))
+				{
+					for (GFX::AOType i = GFX::AOType::None; const char* level : AO_LEVELS)
+					{
+						const bool selected = i == Settings::AmbientOcclusionType;
+						if (ImGui::Selectable(level, selected))
+							Settings::AmbientOcclusionType = i;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+						i = static_cast<GFX::AOType>(static_cast<U8>(i) + 1);
+					}
+					ImGui::EndCombo();
+				}
+
+				constexpr std::array<const char*, 6> UPSCALE_LEVELS = { "None", "FSR 1", "FSR 2", "XeSS", "NIS", "DLSS" };
+				if (ImGui::BeginCombo("Upscaling", UPSCALE_LEVELS.at(static_cast<U8>(Settings::Upscaler))))
+				{
+					for (GFX::UpscalerType i = GFX::UpscalerType::None; const char* level : UPSCALE_LEVELS)
+					{
+						if (GFX::IsUpscalerSupported(graphics.GetDevice(), i))
+						{
+							const bool selected = i == Settings::Upscaler;
+							if (ImGui::Selectable(level, selected))
+								Settings::Upscaler = i;
+							if (selected)
+								ImGui::SetItemDefaultFocus();
+							i = static_cast<GFX::UpscalerType>(static_cast<U8>(i) + 1);
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::NewLine();
+			}
 			if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))
 				flags[ExecuteUploadSync] = true;
 		}

@@ -165,101 +165,12 @@ void App::ShowOptionsWindow()
 		if (ImGui::Button("Exit"))
 			run = false;
 		ImGui::SameLine();
-		switch (Settings::GetGfxApi())
-		{
-		case GfxApiType::DX11:
-		{
-			ImGui::Text("DirectX 11");
-			break;
-		}
-		case GfxApiType::DX12:
-		{
-			ImGui::Text("DirectX 12");
-			break;
-		}
-		case GfxApiType::OpenGL:
-		{
-			ImGui::Text("OpenGL");
-			break;
-		}
-		case GfxApiType::Vulkan:
-		{
-			ImGui::Text("Vulkan");
-			break;
-		}
-		}
-
-		ImGui::SameLine();
 		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
+
 		ImGui::Text("ImGui Demo window");
 		ImGui::SameLine();
 		if (ImGui::Button(demoWindow ? "Hide" : "Show"))
 			demoWindow = !demoWindow;
-
-		switch (Settings::AmbientOcclusionType)
-		{
-		default:
-		case GFX::AOType::None:
-		{
-			if (ImGui::Button("[No SSAO]"))
-				Settings::AmbientOcclusionType = GFX::AOType::CACAO;
-			break;
-		}
-		case GFX::AOType::CACAO:
-		{
-			if (ImGui::Button("[CACAO]"))
-				Settings::AmbientOcclusionType = GFX::AOType::XeGTAO;
-			break;
-		}
-		case GFX::AOType::XeGTAO:
-		{
-			if (ImGui::Button("[XeGTAO]"))
-				Settings::AmbientOcclusionType = GFX::AOType::None;
-			break;
-		}
-		}
-		ImGui::SameLine();
-		switch (Settings::Upscaler)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case GFX::UpscalerType::None:
-		{
-			if (ImGui::Button("[No upscale]"))
-				Settings::Upscaler = GFX::UpscalerType::Fsr1;
-			break;
-		}
-		case GFX::UpscalerType::Fsr1:
-		{
-			if (ImGui::Button("[FSR 1]"))
-				Settings::Upscaler = GFX::UpscalerType::NIS;
-			break;
-		}
-		case GFX::UpscalerType::NIS:
-		{
-			if (ImGui::Button("[NIS]"))
-				Settings::Upscaler = GFX::UpscalerType::Fsr2;
-			break;
-		}
-		case GFX::UpscalerType::Fsr2:
-		{
-			if (ImGui::Button("[FSR 2]"))
-				Settings::Upscaler = GFX::UpscalerType::XeSS;
-			break;
-		}
-		case GFX::UpscalerType::XeSS:
-		{
-			if (ImGui::Button("[XeSS]"))
-				Settings::Upscaler = GFX::UpscalerType::DLSS;
-			break;
-		}
-		case GFX::UpscalerType::DLSS:
-		{
-			if (ImGui::Button("[DLSS]"))
-				Settings::Upscaler = GFX::UpscalerType::None;
-			break;
-		}
-		}
 
 		engine.ShowRenderGraphDebugUI();
 	}
@@ -573,9 +484,6 @@ void App::ShowObjectWindow()
 				ImGui::SetNextItemWidth(-1.0f);
 				change |= GUI::InputClamp(0.1f, 20.0f, camera.Projection.NearClip,
 					ImGui::InputFloat("##near_clip", &camera.Projection.NearClip, 0.01f, 0.0f, "%.3f"));
-
-				//if (selected == currentCamera && change)
-					//engine.Reneder().UpdateSettingsData(camera.Projection);
 			}
 			ImGui::EndChild();
 		}
