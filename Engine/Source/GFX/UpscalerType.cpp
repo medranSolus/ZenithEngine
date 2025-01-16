@@ -121,9 +121,22 @@ namespace ZE::GFX
 #if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
 			if (Settings::GpuVendor == VendorGPU::Nvidia)
 			{
-				NgxInterface* ngx = dev.GetNGX();
-				if (ngx)
-					return ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling);
+				// Cache this variable to not query driver every time
+				static U8 status = 0;
+				if (status == 0)
+				{
+					NgxInterface* ngx = dev.GetNGX();
+					if (ngx)
+					{
+						if (ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling))
+						{
+							status = 1; // Available
+							return true;
+						}
+					}
+					status = 2; // Not available
+				}
+				return status == 1;
 			}
 #endif
 			return false;
