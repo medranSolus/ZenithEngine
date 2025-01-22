@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline
 		// Check if found any present producer node
 		PassExecutionType passType = passDescs.at(node).at(presence.NodeGroupIndex).GetExecType();
 		if (presence.Present && passType == PassExecutionType::Producer)
-				return true;
+			return true;
 		// Otherwise traverse graph in search for producer nodes checking everything along the way
 		if (!presence.ProducerChecked)
 		{
@@ -781,6 +781,8 @@ namespace ZE::GFX::Pipeline
 			{
 				passExecData = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
 				graph.passExecData.Add(passId, passExecData, node.GetDesc().Clean);
+				if (passExecData)
+					gpuUploadRequired |= node.IsInitDataGpuUploadRequired();
 			}
 		}
 		else
@@ -794,7 +796,11 @@ namespace ZE::GFX::Pipeline
 			if (execData.first == nullptr)
 			{
 				if (node.GetDesc().Init)
+				{
 					execData.first = node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData);
+					if (execData.first)
+						gpuUploadRequired |= node.IsInitDataGpuUploadRequired();
+				}
 			}
 			else if (node.GetDesc().Update)
 			{

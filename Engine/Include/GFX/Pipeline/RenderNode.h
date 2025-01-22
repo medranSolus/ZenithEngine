@@ -19,8 +19,8 @@ namespace ZE::GFX::Pipeline
 		std::string graphName;
 		std::string passName;
 		PassDesc desc;
-		// Async | GFX pass | compute pass | RT pass | No exec data caching
-		std::bitset<5> flags;
+		// Async | GFX pass | compute pass | RT pass | No exec data caching | Init GPU upload required
+		std::bitset<6> flags;
 		PassExecutionType execType;
 		// Just a hint if possible
 		std::string scheduleAfter = "";
@@ -53,6 +53,9 @@ namespace ZE::GFX::Pipeline
 		// When pass execution data cannot be used by multiple instances of same pass then prevent it with this flag
 		constexpr void DisableExecDataCaching() noexcept { flags[4] = true; }
 		constexpr bool IsExecDataCachingDisabled() const noexcept { return flags[4]; }
+		// When pass during initialization needs to upload some data to the GPU (ex. textures) set this flag to allow for correct synchronization
+		constexpr void SetInitDataGpuUploadRequired() noexcept { flags[5] = true; }
+		constexpr bool IsInitDataGpuUploadRequired() const noexcept { return flags[5]; }
 		constexpr PassExecutionType GetExecType() const noexcept { return execType; }
 		constexpr void SetProducer() noexcept { execType = PassExecutionType::Producer; }
 		constexpr void ScheduleAfter(const std::string& pass) noexcept { scheduleAfter = pass; }

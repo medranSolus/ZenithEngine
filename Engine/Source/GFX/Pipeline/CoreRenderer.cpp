@@ -302,6 +302,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInnerBuffer(TextureLayout::UnorderedAccess,
 				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UNorm, "XeGTAO depth edges"));
 			node.AddOutput("SB", TextureLayout::UnorderedAccess, "ssao");
+			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
@@ -331,6 +332,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.DS", TextureLayout::DepthStencilRead);
 			node.AddOutput("RT", TextureLayout::RenderTarget, "rawScene");
 			node.AddOutput("DS", TextureLayout::DepthStencilRead, "gbuffDepth");
+			node.SetInitDataGpuUploadRequired();
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
@@ -395,6 +397,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			RenderNode node("upscale", "nis", RenderPass::UpscaleNIS::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
+			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
