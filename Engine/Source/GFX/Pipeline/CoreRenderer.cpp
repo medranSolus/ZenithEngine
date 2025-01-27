@@ -379,6 +379,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
+			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

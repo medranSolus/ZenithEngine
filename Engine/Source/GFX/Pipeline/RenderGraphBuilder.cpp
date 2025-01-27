@@ -2082,7 +2082,7 @@ namespace ZE::GFX::Pipeline
 
 		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
 		{
-			CascadePassUpdate(dev, graph, buildData, cascadeUpdate, uploadWait);
+			CascadePassUpdate(dev, graph, buildData, uploadWait, cascadeUpdate);
 
 			// Update all referenced RIDs due to changes in frambuffer
 			auto updateExecGroupResources = [&](U32 i, RenderGraph::ExecutionGroup& execGroup)
@@ -2105,6 +2105,7 @@ namespace ZE::GFX::Pipeline
 				if (asyncComputeEnabled)
 					updateExecGroupResources(i, graph.passExecGroups[i].at(1));
 			}
+			UpdateFfxResourceIds(graph);
 
 			// Wait for the GPU work to finish before recreating framebuffer
 			if (!graphUpdate)
@@ -2116,8 +2117,6 @@ namespace ZE::GFX::Pipeline
 
 			graph.execData.Buffers.Free(dev);
 			graph.execData.Buffers.Init(dev, GetFrameBufferLayout(dev, graph));
-
-			UpdateFfxResourceIds(graph);
 		}
 
 		if (uploadWait && result == BuildResult::Success)
