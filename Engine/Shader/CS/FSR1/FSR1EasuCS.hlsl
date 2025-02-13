@@ -1,6 +1,6 @@
 #define ZE_FSR1_CB_RANGE 2
 #include "CB/ConstantsFSR1.hlsli"
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 #   define FfxFloat3 FfxFloat16x3
 #   define FfxFloat4 FfxFloat16x4
 #else

@@ -2,33 +2,27 @@
 #define FFX_CS_HLSLI
 #define FFX_CORE_H
 
-#if ZE_HLSL_6_VER >= 2
-#	define FFX_HLSL_6_2 1
-#else
-#	define FFX_HLSL_6_2 0
-#endif
+#define FFX_HLSL_SM ZE_HLSL_SHADER_MODEL
 
-#if defined(_ZE_HALF_PRECISION) && ZE_HLSL_6_VER >= 2
+#if defined(_ZE_HALF_PRECISION) && ZE_HLSL_SHADER_MODEL >= 62
 #	define FFX_HALF 1
 #else
 #	define FFX_HALF 0
 #endif
 
-// Cannot set wave size for DX11
-#if defined(_ZE_PREFER_WAVE64) && !defined(_ZE_API_DX11) && ZE_HLSL_6_VER >= 6
+// Cannot set wave size for SM below 6.6
+#if defined(_ZE_PREFER_WAVE64) && ZE_HLSL_SHADER_MODEL >= 66
 #	define ZE_CS_WAVE64 [WaveSize(64)]
 #else
 #	define ZE_CS_WAVE64
 #endif
 // No WaveReadLaneAt() function present below SM6.0
-#ifdef _ZE_API_DX11
+#if ZE_HLSL_SHADER_MODEL < 60
 #	define FFX_SPD_NO_WAVE_OPERATIONS 1
 #endif
-// Wave operations only available for SM 6.6+
-#if (defined(_ZE_API_DX12) || defined(_ZE_API_VK)) && ZE_HLSL_6_VER >= 6
+// Wave operations only available for SM6.6+
+#if ZE_HLSL_SHADER_MODEL >= 66
 #	define FFX_WAVE 1
-#else
-#	define FFX_WAVE 0
 #endif
 
 // Default options
@@ -54,15 +48,23 @@
 #ifndef FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE
 #   define FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE 0
 #endif
+#ifndef FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE
+#   define FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE 0
+#endif
 
 #define FFX_SSSR_OPTION_INVERTED_DEPTH 1
 // Upsample currently always uses approximation
 #define FFX_FSR2_OPTION_UPSAMPLE_USE_LANCZOS_TYPE 2
+#define FFX_FSR3UPSCALER_OPTION_UPSAMPLE_USE_LANCZOS_TYPE 2
 // Controls which part of code should use half precission even when requested
 #define FFX_FSR2_OPTION_UPSAMPLE_SAMPLERS_USE_DATA_HALF 0
 #define FFX_FSR2_OPTION_ACCUMULATE_SAMPLERS_USE_DATA_HALF 0
 #define FFX_FSR2_OPTION_REPROJECT_SAMPLERS_USE_DATA_HALF 1
 #define FFX_FSR2_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
+#define FFX_FSR3UPSCALER_OPTION_UPSAMPLE_SAMPLERS_USE_DATA_HALF 0
+#define FFX_FSR3UPSCALER_OPTION_ACCUMULATE_SAMPLERS_USE_DATA_HALF 0
+#define FFX_FSR3UPSCALER_OPTION_REPROJECT_SAMPLERS_USE_DATA_HALF 1
+#define FFX_FSR3UPSCALER_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
 
 #include "WarningGuardOn.hlsli"
 #include "ffx_common_types.h"

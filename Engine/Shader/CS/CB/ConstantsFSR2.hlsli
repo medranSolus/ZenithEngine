@@ -28,6 +28,7 @@ struct ConstantsFSR2
 	FfxFloat32 fDeltaTime;
 	FfxFloat32 fDynamicResChangeFactor;
 	FfxFloat32 fViewSpaceToMetersFactor;
+	FfxFloat32 fPadding;
 };
 
 CBUFFER(fsr2Consts, ConstantsFSR2, 0, ZE_FSR2_CB_RANGE);

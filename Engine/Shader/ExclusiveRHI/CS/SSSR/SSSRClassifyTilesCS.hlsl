@@ -100,7 +100,7 @@ ZE_CS_WAVE64
 [numthreads(64, 1, 1)]
 void main(const in uint localGroupIndex : SV_GroupIndex, const in uint3 gid : SV_GroupID)
 {
-	FfxUInt32x2 gtid = FFX_DNSR_Reflections_RemapLane8x8(localGroupIndex);
+	FfxUInt32x2 gtid = ffxRemapForWaveReduction(localGroupIndex);
 	FfxUInt32x2 dtid = gid.xy * 8 + gtid;
 	FfxFloat32 roughness = LoadRoughnessFromMaterialParametersInput(FfxInt32x3(dtid, 0));
 

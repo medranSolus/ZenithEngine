@@ -7,8 +7,8 @@ UAV2D(dilatedReactiveMask, unorm FfxFloat32x2, 1, 1);
 TEXTURE_EX(colorJittered, Texture2D<AlbedoGB>, 0, 2); // External resource format
 TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 1, 3); // External resource format
 TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 2, 4);
-TEXTURE_EX(reactiveMask, Texture2D<FfxFloat32>, 3, 5);
-TEXTURE_EX(transparencyCompositionMask, Texture2D<FfxFloat32>, 4, 6);
+TEXTURE_EX(reactiveMask, Texture2D<ReactiveGB>, 3, 5); // External resource format
+TEXTURE_EX(transparencyCompositionMask, Texture2D<TransparencyGB>, 4, 6); // External resource format
 TEXTURE_EX(reconstructedPrevNearestDepth, Texture2D<FfxUInt32>, 5, 7);
 TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 6, 8);
 TEXTURE_EX(prevDilatedMotionVectors, Texture2D<FfxFloat32x2>, 7, 9);

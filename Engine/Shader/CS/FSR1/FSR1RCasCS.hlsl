@@ -1,17 +1,26 @@
 #define ZE_FSR1_CB_RANGE 2
 #include "CB/ConstantsFSR1.hlsli"
-#ifdef _ZE_HALF_PRECISION
+#if FFX_HALF
 #   define FfxInt2 FfxInt16x2
+#   define FfxFloat2 FfxFloat16x2
 #   define FfxFloat3 FfxFloat16x3
 #   define FfxFloat4 FfxFloat16x4
 #else
 #   define FfxInt2 FfxInt32x2
+#   define FfxFloat2 FfxFloat32x2
 #   define FfxFloat3 FfxFloat32x3
 #   define FfxFloat4 FfxFloat32x4
 #endif
 
 UAV2D(upscaled, float4, 0, 0);
 TEXTURE_EX(rcasInput, Texture2D<float4>, 0, 1);
+
+void StoreRCasOutputHx2(FfxInt2 pxCoord, const in FfxFloat2 fColorR, const in FfxFloat2 fColorG, const in FfxFloat2 fColorB, const in FfxFloat2 fColorA)
+{
+	ua_upscaled[pxCoord] = FfxFloat32x4(fColorR.x, fColorG.x, fColorB.x, fColorA.x);
+	pxCoord.x += 8;
+	ua_upscaled[pxCoord] = FfxFloat32x4(fColorR.y, fColorG.y, fColorB.y, fColorA.y);
+}
 
 void StoreRCasOutput(const in FfxInt2 pxCoord, const in FfxFloat3 color)
 {
