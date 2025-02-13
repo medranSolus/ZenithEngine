@@ -252,6 +252,7 @@ add_fidelityfx_target(CACAO)
 add_fidelityfx_target(DENOISER)
 add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
+add_fidelityfx_target(FSR3UPSCALER)
 add_fidelityfx_target(SSSR)
 
 # Inject debug postfix if library use it
@@ -374,7 +375,7 @@ add_compile_definitions(_ZE_DEBUG_GFX_NAMES=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOO
 add_compile_definitions(_ZE_GFX_MARKERS=$<NOT:$<BOOL:${ZE_BUILD_RELEASE}>>)
 # Platform type
 add_compile_definitions(_ZE_PLATFORM_WINDOWS=$<BOOL:${ZE_PLATFORM_WINDOWS}> _ZE_PLATFORM_LINUX=$<BOOL:${ZE_PLATFORM_LINUX}> _ZE_PLATFORM_ANDROID=$<BOOL:${ZE_PLATFORM_ANDROID}>)
-add_compile_definitions(_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> _ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}>)
+add_compile_definitions(_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> _ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}> _ZE_PLATFORM_XBOX_SCARLET=$<BOOL:${ZE_PLATFORM_XBOX_SCARLET}>)
 # Compiler type
 add_compile_definitions(_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> _ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> _ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # RHI type
@@ -398,6 +399,12 @@ if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 		set(SHADER_FLAGS "${SHADER_FLAGS} /Od")
 	endif()
 endif()
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_WINDOWS=${ZE_PLATFORM_WINDOWS}")
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_LINUX=${ZE_PLATFORM_LINUX}")
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_ANDROID=${ZE_PLATFORM_ANDROID}")
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_FUCHSIA=${ZE_PLATFORM_FUCHSIA}")
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_NSWITCH=${ZE_PLATFORM_NSWITCH}")
+set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_XBOX_SCARLET=${ZE_PLATFORM_XBOX_SCARLET}")
 
 
 ############## SUBPROJECTS ##############
@@ -524,6 +531,7 @@ add_external_fidelityfx_effect(CACAO)
 add_external_fidelityfx_effect(DENOISER)
 add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
+add_external_fidelityfx_effect(FSR3UPSCALER)
 add_external_fidelityfx_effect(SSSR)
 
 # EnTT

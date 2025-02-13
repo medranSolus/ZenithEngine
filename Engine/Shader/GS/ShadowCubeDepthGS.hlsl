@@ -2,7 +2,7 @@
 
 struct GSIn
 {
-	float3 worldPos : POSITION;
+	float3 worldPos : WORLD_POSITION;
 };
 
 struct GSOut

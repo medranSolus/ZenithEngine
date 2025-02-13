@@ -16,6 +16,7 @@
         "ZE_PLATFORM_ANDROID": false,
         "ZE_PLATFORM_FUCHSIA": false,
         "ZE_PLATFORM_NSWITCH": false,
+        "ZE_PLATFORM_XBOX_SCARLET": false,
         "ZE_COMPILER_MSVC": false,
         "ZE_COMPILER_CLANG": false,
         "ZE_COMPILER_GCC": false,
