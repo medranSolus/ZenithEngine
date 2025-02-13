@@ -29,6 +29,13 @@ namespace ZE::GFX
 			ffxFsr2GetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr2Quality);
 			return renderSize;
 		}
+		case UpscalerType::Fsr3:
+		{
+			UInt2 renderSize = {};
+			const FfxFsr3UpscalerQualityMode fsr3Quality = quality == UINT32_MAX ? FFX_FSR3UPSCALER_QUALITY_MODE_NATIVEAA : static_cast<FfxFsr3UpscalerQualityMode>(quality);
+			ffxFsr3UpscalerGetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr3Quality);
+			return renderSize;
+		}
 #if _ZE_RHI_DX12
 		case UpscalerType::XeSS:
 		{
@@ -95,6 +102,7 @@ namespace ZE::GFX
 		case UpscalerType::Fsr1:
 			return 0.0f;
 		case UpscalerType::Fsr2:
+		case UpscalerType::Fsr3:
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth)) - 1.0f;
 		case UpscalerType::XeSS:
 			return log2f(Utils::SafeCast<float>(renderWidth) / Utils::SafeCast<float>(targetWidth));
@@ -112,6 +120,7 @@ namespace ZE::GFX
 		case UpscalerType::None:
 		case UpscalerType::Fsr1:
 		case UpscalerType::Fsr2:
+		case UpscalerType::Fsr3:
 		case UpscalerType::NIS:
 			return true;
 		case UpscalerType::XeSS:

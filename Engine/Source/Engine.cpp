@@ -208,7 +208,7 @@ namespace ZE
 					ImGui::EndCombo();
 				}
 
-				constexpr std::array<const char*, 6> UPSCALE_LEVELS = { "None", "FSR 1", "FSR 2", "XeSS", "NIS", "DLSS" };
+				constexpr std::array<const char*, 7> UPSCALE_LEVELS = { "None", "FSR 1", "FSR 2", "FSR 3", "XeSS", "NIS", "DLSS" };
 				if (ImGui::BeginCombo("Upscaling", UPSCALE_LEVELS.at(static_cast<U8>(Settings::Upscaler))))
 				{
 					for (GFX::UpscalerType i = GFX::UpscalerType::None; const char* level : UPSCALE_LEVELS)

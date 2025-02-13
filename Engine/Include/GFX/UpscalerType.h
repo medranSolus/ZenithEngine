@@ -1,6 +1,7 @@
 #pragma once
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr2.h"
+#include "FidelityFX/host/ffx_fsr3upscaler.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -11,6 +12,7 @@ namespace ZE::GFX
 		None,
 		Fsr1,
 		Fsr2,
+		Fsr3,
 		XeSS,
 		NIS,
 		DLSS
@@ -37,6 +39,7 @@ namespace ZE::GFX
 		switch (upscaling)
 		{
 		case UpscalerType::Fsr2:
+		case UpscalerType::Fsr3:
 			return 0.9f;
 		case UpscalerType::XeSS:
 			return 1.0f;
@@ -73,6 +76,15 @@ namespace ZE::GFX
 			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
 			break;
 		}
+		case UpscalerType::Fsr3:
+		{
+			U32 phaseCount = ffxFsr3UpscalerGetJitterPhaseCount(renderSize.X, displaySize.X);
+			phaseIndex = (phaseIndex + 1) % phaseCount;
+			ffxFsr3UpscalerGetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
+			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
+			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
+			break;
+		}
 		}
 	}
 
@@ -87,6 +99,7 @@ namespace ZE::GFX
 		case UpscalerType::NIS:
 			return false;
 		case UpscalerType::Fsr2:
+		case UpscalerType::Fsr3:
 		case UpscalerType::XeSS:
 		case UpscalerType::DLSS:
 			return true;

@@ -89,8 +89,8 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		desc.normalBuffer = FFX::GetResource(renderData.Buffers, ids.Normal, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.outputBuffer = FFX::GetResource(renderData.Buffers, ids.AO, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		// Matrix data is not modified inside callbacks, missing const specifier in header
-		desc.proj = reinterpret_cast<FfxCacaoMat4x4*>(&renderData.GraphData.Projection);
-		desc.normalsToView = reinterpret_cast<FfxCacaoMat4x4*>(&renderData.DynamicData.ViewTps);
+		desc.proj = reinterpret_cast<FfxFloat32x4x4*>(&renderData.GraphData.Projection);
+		desc.normalsToView = reinterpret_cast<FfxFloat32x4x4*>(&renderData.DynamicData.ViewTps);
 		// Custom way of loading normals is chosen so no need to perform any unpacking from SDK (custom callbacks provided)
 		desc.normalUnpackMul = 1.0f;
 		desc.normalUnpackAdd = 0.0f;
