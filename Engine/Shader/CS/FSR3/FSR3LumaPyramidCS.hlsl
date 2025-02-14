@@ -55,7 +55,7 @@ FfxFloat32 LoadCurrentLuma(const in FfxUInt32x2 pxCoord)
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64
-[numthreads(8, 8, 1)]
+[numthreads(256, 1, 1)]
 void main(const uint3 wgid : SV_GroupID, const uint tid : SV_GroupIndex)
 {
 	ComputeAutoExposure(wgid, tid);
