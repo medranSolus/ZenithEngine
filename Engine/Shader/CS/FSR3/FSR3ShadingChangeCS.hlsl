@@ -1,7 +1,7 @@
 #define ZE_FSR3_CB_RANGE 2
 #include "CB/ConstantsFSR3.hlsli"
 
-UAV2D(ua_shadingChange, FfxFloat32, 0, 0);
+UAV2D(shadingChange, FfxFloat32, 0, 0);
 TEXTURE_EX(spdMips, Texture2D<FfxFloat32x2>, 0, 1); // External resource format
 
 void StoreShadingChange(const in FfxUInt32x2 pxCoord, const in FfxFloat32 shadingChange)

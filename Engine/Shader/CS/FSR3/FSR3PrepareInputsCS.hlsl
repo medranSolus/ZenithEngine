@@ -4,7 +4,7 @@
 
 UAV2D(farthestDepth, FfxFloat32, 0, 0);
 UAV2D(currentLuma, FfxFloat32, 1, 1);
-UAV2D(reconstructPrevNearestDepth, FfxFloat32, 2, 2);
+UAV2D(reconstructPrevNearestDepth, FfxUInt32, 2, 2);
 UAV2D(dilatedDepth, FfxFloat32, 3, 3);
 UAV2D(dilatedMotionVectors, FfxFloat32x2, 4, 4);
 TEXTURE_EX(depth, Texture2D<float>, 0, 5); // External resource format

@@ -20,6 +20,7 @@ FfxFloat32x2 RWLoadPyramid(const in FfxInt32x2 pxCoord, const in FfxUInt32 index
 	switch (index)
 	{
 	default:
+		return 0.0f;
 	case 0:
 		return ua_spdMip0[pxCoord];
 	case 1:
@@ -39,7 +40,6 @@ void StorePyramid(const in FfxInt32x2 pxCoord, const in FfxFloat32x2 value, cons
 {
 	switch (index)
 	{
-	default:
 	case 0:
 		ua_spdMip0[pxCoord] = value;
 		break;

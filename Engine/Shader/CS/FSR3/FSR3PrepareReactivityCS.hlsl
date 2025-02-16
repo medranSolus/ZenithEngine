@@ -10,7 +10,7 @@ TEXTURE_EX(transparencyCompositionMask, Texture2D<TransparencyGB>, 1, 4); // Ext
 TEXTURE_EX(accumulation, Texture2D<FfxFloat32>, 2, 5);
 TEXTURE_EX(shadingChange, Texture2D<FfxFloat32>, 3, 6);
 TEXTURE_EX(currentLuma, Texture2D<FfxFloat32>, 4, 7);
-TEXTURE_EX(reconstructedPrevNearestDepthreconstructedPrevNearestDepth, Texture2D<FfxUInt32>, 5, 8);
+TEXTURE_EX(reconstructedPrevNearestDepth, Texture2D<FfxUInt32>, 5, 8);
 TEXTURE_EX(dilatedMotinoVectors, Texture2D<FfxFloat32x2>, 6, 9);
 TEXTURE_EX(dilatedDepth, Texture2D<FfxFloat32>, 7, 10);
 TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 8, 11);
@@ -51,7 +51,7 @@ FfxFloat32 SampleTransparencyAndCompositionMask(const in FfxFloat32x2 uv)
 
 FfxFloat32 SampleAccumulation(const in FfxFloat32x2 uv)
 {
-	return x_accumulation.SampleLevel(splr_LinearClamp, uv, 0);
+	return tx_accumulation.SampleLevel(splr_LinearClamp, uv, 0);
 }
 
 FfxFloat32 SampleShadingChange(const in FfxFloat32x2 uv)
