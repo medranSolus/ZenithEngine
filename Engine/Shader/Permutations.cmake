@@ -64,6 +64,7 @@ add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_PREFER_WAVE64:W")
 
 # FSR1
+add_shader_permutation("FSR1RCasCS" "FFX_FSR1_OPTION_RCAS_PASSTHROUGH_ALPHA=1:A")
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_APPLY_RCAS=1:S")
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_SRGB_CONVERSIONS=1:R")
 add_shader_permutation("FSR1EasuCS" "_ZE_HALF_PRECISION:H")
@@ -101,7 +102,9 @@ add_shader_permutation("FSR2LockCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2LuminancePyramidCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("FSR2RCasCS" "_ZE_HALF_PRECISION:H")
+if(${ZE_PLATFORM_XBOX_SCARLET})
+	add_shader_permutation("FSR2RCasCS" "_ZE_HALF_PRECISION:H")
+endif()
 add_shader_permutation("FSR2RCasCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_INVERTED_DEPTH=1:I")
@@ -110,6 +113,41 @@ add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_JITTERED_MO
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "FFX_FSR2_OPTION_HDR_COLOR_INPUT=1:D")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("FSR2ReconstructPrevDepthCS" "_ZE_PREFER_WAVE64:W")
+
+# FSR3
+add_shader_permutation("FSR3PrepareInputsCS" "FFX_FSR3UPSCALER_OPTION_INVERTED_DEPTH=1:I")
+add_shader_permutation("FSR3PrepareInputsCS" "FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
+add_shader_permutation("FSR3PrepareInputsCS" "FFX_FSR3UPSCALER_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR3PrepareInputsCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3LumaPyramidCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3ShadingChangePyramidCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3ShadingChangeCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3PrepareReactivityCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR3PrepareReactivityCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3LumaInstabilityCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3AccumulateCS" "FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING=1:S")
+add_shader_permutation("FSR3AccumulateCS" "FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE=1:L")
+add_shader_permutation("FSR3AccumulateCS" "FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS=1:R")
+add_shader_permutation("FSR3AccumulateCS" "FFX_FSR3UPSCALER_OPTION_JITTERED_MOTION_VECTORS=1:J")
+add_shader_permutation("FSR3AccumulateCS" "FFX_FSR3UPSCALER_OPTION_HDR_COLOR_INPUT=1:D")
+add_shader_permutation("FSR3AccumulateCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR3AccumulateCS" "_ZE_PREFER_WAVE64:W")
+
+if(${ZE_PLATFORM_XBOX_SCARLET})
+	add_shader_permutation("FSR3RCasCS" "_ZE_HALF_PRECISION:H")
+endif()
+add_shader_permutation("FSR3RCasCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3DebugViewCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("FSR3GenerateReactiveCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("FSR3GenerateReactiveCS" "_ZE_PREFER_WAVE64:W")
 
 # SSSR
 add_shader_permutation("SSSRClassifyTilesCS" "_ZE_HALF_PRECISION:H")
