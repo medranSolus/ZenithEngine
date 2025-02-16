@@ -3,32 +3,17 @@
 #include "CB/ConstantsFSR3.hlsli"
 #include "CB/ConstantsSPD.hlsli"
 
-UAV2D(farthestDepthMip1, FfxFloat32, 0, 0);
-UAV2D(frameInfo, FfxFloat32x4, 1, 1);
-UAV_EX(spdMip0, RWTexture2D<FfxFloat32x2>, 2, 2);
-UAV_EX(spdMip1, RWTexture2D<FfxFloat32x2>, 3, 3);
-UAV_EX(spdMip2, RWTexture2D<FfxFloat32x2>, 4, 4);
-UAV_EX(spdMip3, RWTexture2D<FfxFloat32x2>, 5, 5);
-UAV_EX(spdMip4, RWTexture2D<FfxFloat32x2>, 6, 6);
-UAV_EX(spdMip5, globallycoherent RWTexture2D<FfxFloat32x2>, 7, 7);
-UAV_EX(spdGlobalAtomic, globallycoherent RWTexture2D<FfxUInt32>, 8, 8);
-TEXTURE_EX(farthestDepth, Texture2D<FfxFloat32>, 0, 9);
-TEXTURE_EX(currentLuma, Texture2D<FfxFloat32>, 1, 10);
-
-void StoreFarthestDepthMip1(FfxUInt32x2 iPxPos, FfxFloat32 fDepth)
-{
-	ua_farthestDepthMip1[iPxPos] = fDepth;
-}
-
-FfxFloat32x4 LoadFrameInfo()
-{
-	return ua_frameInfo[FfxInt32x2(0, 0)];
-}
-
-void StoreFrameInfo(const in FfxFloat32x4 info)
-{
-	ua_frameInfo[FfxInt32x2(0, 0)] = info;
-}
+UAV_EX(spdMip0, RWTexture2D<FfxFloat32x2>, 0, 0);
+UAV_EX(spdMip1, RWTexture2D<FfxFloat32x2>, 1, 1);
+UAV_EX(spdMip2, RWTexture2D<FfxFloat32x2>, 2, 2);
+UAV_EX(spdMip3, RWTexture2D<FfxFloat32x2>, 3, 3);
+UAV_EX(spdMip4, RWTexture2D<FfxFloat32x2>, 4, 4);
+UAV_EX(spdMip5, globallycoherent RWTexture2D<FfxFloat32x2>, 5, 5);
+UAV_EX(spdGlobalAtomic, globallycoherent RWTexture2D<FfxUInt32>, 6, 6);
+TEXTURE_EX(currentLuma, Texture2D<FfxFloat32>, 0, 7);
+TEXTURE_EX(prevLuma, Texture2D<FfxFloat32>, 2, 8);
+TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 1, 9);
+TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 4, 10);
 
 FfxFloat32x2 RWLoadPyramid(const in FfxInt32x2 pxCoord, const in FfxUInt32 index)
 {
@@ -86,23 +71,42 @@ void SPD_ResetAtomicCounter()
 	ua_spdGlobalAtomic[FfxInt32x2(0, 0)] = 0;
 }
 
-FfxFloat32 LoadFarthestDepth(const in FfxUInt32x2 pxCoord)
-{
-	return tx_farthestDepth[pxCoord];
-}
-
 FfxFloat32 LoadCurrentLuma(const in FfxUInt32x2 pxCoord)
 {
 	return tx_currentLuma[pxCoord];
 }
 
+FfxFloat32 LoadPreviousLuma(const in FfxUInt32x2 pxCoord)
+{
+	return tx_prevLuma[pxCoord];
+}
+
+FfxFloat32x2 LoadDilatedMotionVector(const in FfxUInt32x2 pxCoord)
+{
+	return tx_dilatedMotionVectors[pxCoord];
+}
+
+FfxFloat32 Exposure()
+{
+	FfxFloat32 exposure = tx_exposure[FfxUInt32x2(0, 0)].x;
+
+#if _ZE_PLATFORM_XBOX_SCARLET
+    if (exposure < 0.000030517578/** 2^-15 */)
+        exposure = 1.0f;
+#else
+	if (exposure == 0.0f)
+		exposure = 1.0f;
+#endif
+	return exposure;
+}
+
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_luma_pyramid.h"
+#include "fsr3upscaler/ffx_fsr3upscaler_shading_change_pyramid.h"
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64
 [numthreads(256, 1, 1)]
 void main(const uint3 wgid : SV_GroupID, const uint tid : SV_GroupIndex)
 {
-	ComputeAutoExposure(wgid, tid);
+	ComputeShadingChangePyramid(wgid, tid);
 }

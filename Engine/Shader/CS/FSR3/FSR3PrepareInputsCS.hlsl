@@ -13,7 +13,7 @@ TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 2, 7); // External resource forma
 
 void StoreFarthestDepth(const in FfxUInt32x2 pxCoord, const in FfxFloat32 depth)
 {
-	ux_farthestDepth[pxCoord] = depth;
+	ua_farthestDepth[pxCoord] = depth;
 }
 
 void StoreCurrentLuma(const in FfxUInt32x2 pxCoord, const in FfxFloat32 luma)
@@ -23,11 +23,12 @@ void StoreCurrentLuma(const in FfxUInt32x2 pxCoord, const in FfxFloat32 luma)
 
 void StoreReconstructedDepth(const in FfxUInt32x2 pxCoord, const in FfxFloat32 depth)
 {
+	FfxUInt32 uDepth = asuint(depth);
 	// min for standard, max for inverted depth
 #if FFX_FSR3UPSCALER_OPTION_INVERTED_DEPTH
-    InterlockedMax(ua_reconstructPrevNearestDepth[pxCoord], asuint(depth));
+    InterlockedMax(ua_reconstructPrevNearestDepth[pxCoord], uDepth);
 #else
-	InterlockedMin(ua_reconstructPrevNearestDepth[pxCoord], asuint(depth));
+	InterlockedMin(ua_reconstructPrevNearestDepth[pxCoord], uDepth);
 #endif
 }
 
@@ -54,13 +55,11 @@ FfxFloat32x3 LoadInputColor(const in FfxUInt32x2 pxCoord)
 FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxCoord)
 {
 	FfxFloat32x2 motionVector = tx_motionVectors[pxCoord];
-
 	motionVector *= MotionVectorScale();
 
 #if FFX_FSR3UPSCALER_OPTION_JITTERED_MOTION_VECTORS
     motionVector -= MotionVectorJitterCancellation();
 #endif
-
 	return motionVector;
 }
 
