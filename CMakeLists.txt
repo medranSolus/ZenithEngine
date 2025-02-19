@@ -98,6 +98,8 @@ set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
+set(FFXAPI_DIR "${EXTERNAL_DIR}/FidelityFXSDK/ffx-api")
+set(FFXAPI_DLL_DIR "${EXTERNAL_DIR}/FidelityFXSDK/PrebuiltSignedDLL")
 set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK/sdk")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
@@ -128,6 +130,7 @@ set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
+set(FFXAPI_INC_DIR "${FFXAPI_DIR}/include")
 set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
@@ -174,6 +177,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${DXTEX_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${FTYPE_INC_DIR}"
+	"${FFXAPI_INC_DIR}"
 	"${FFXSDK_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
 	"${IMGUI_INC_DIR}"
