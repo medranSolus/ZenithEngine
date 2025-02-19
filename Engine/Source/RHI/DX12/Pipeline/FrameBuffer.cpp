@@ -1,5 +1,6 @@
 #include "RHI/DX12/Pipeline/FrameBuffer.h"
 #include "Data/Camera.h"
+#include "GFX/FfxApiFunctions.h"
 #include "GFX/XeSSException.h"
 
 namespace ZE::RHI::DX12::Pipeline
@@ -1403,6 +1404,50 @@ namespace ZE::RHI::DX12::Pipeline
 		D3D12_TEXTURE_BARRIER barrier;
 		FillBarier(barrier, desc);
 		PerformBarrier(cl.Get().dx12, &barrier, 1);
+	}
+
+	FfxApiResource FrameBuffer::GetFfxResource(RID rid, U32 state) const noexcept
+	{
+		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
+		FfxApiResource resDesc = { nullptr };
+		if (rid != INVALID_RID)
+		{
+			resDesc.resource = GetResource(rid).Get();
+			if (IsCubeTexture(rid))
+				resDesc.description.type = FFX_API_RESOURCE_TYPE_TEXTURE_CUBE;
+			else if (IsTexture1D(rid))
+				resDesc.description.type = FFX_API_RESOURCE_TYPE_TEXTURE1D;
+			else if (IsTexture3D(rid))
+				resDesc.description.type = FFX_API_RESOURCE_TYPE_TEXTURE3D;
+			else if (IsBuffer(rid))
+				resDesc.description.type = FFX_API_RESOURCE_TYPE_BUFFER;
+			else
+				resDesc.description.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
+
+			resDesc.description.format = GFX::GetFfxApiFormat(GetFormat(rid));
+			UInt2 sizes = GetDimmensions(rid);
+			if (resDesc.description.type == FFX_API_RESOURCE_TYPE_BUFFER)
+			{
+				resDesc.description.size = sizes.X;
+				resDesc.description.stride = sizes.Y;
+				resDesc.description.alignment = 0;
+			}
+			else
+			{
+				resDesc.description.width = sizes.X;
+				resDesc.description.height = sizes.Y;
+				resDesc.description.depth = GetArraySize(rid);
+			}
+			resDesc.description.mipCount = GetMipCount(rid);
+			resDesc.description.flags = FFX_API_RESOURCE_FLAGS_NONE;
+			resDesc.description.usage = FFX_API_RESOURCE_USAGE_READ_ONLY;
+			if (IsUAV(rid))
+				resDesc.description.usage = static_cast<FfxApiResourceUsage>(resDesc.description.usage | FFX_API_RESOURCE_USAGE_UAV);
+			if (IsArrayView(rid))
+				resDesc.description.usage = static_cast<FfxApiResourceUsage>(resDesc.description.usage | FFX_API_RESOURCE_USAGE_ARRAYVIEW);
+		}
+		resDesc.state = state;
+		return resDesc;
 	}
 
 	void FrameBuffer::ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,

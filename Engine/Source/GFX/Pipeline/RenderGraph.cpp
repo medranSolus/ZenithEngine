@@ -127,7 +127,7 @@ namespace ZE::GFX::Pipeline
 
 		if (Settings::ApplyJitter())
 		{
-			CalculateJitter(execData.GraphData.JitterIndex, currentCamera.Projection.JitterX,
+			CalculateJitter(dev, execData.GraphData.JitterIndex, currentCamera.Projection.JitterX,
 				currentCamera.Projection.JitterY, Settings::RenderSize, Settings::DisplaySize, Settings::Upscaler);
 			execData.DynamicData.JitterPrev = execData.DynamicData.JitterCurrent;
 			execData.DynamicData.JitterCurrent = { currentCamera.Projection.JitterX, currentCamera.Projection.JitterY };

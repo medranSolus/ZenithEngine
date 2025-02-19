@@ -7,6 +7,7 @@
 #include "GFX/SwapChain.h"
 ZE_WARNING_PUSH
 #include "nvsdk_ngx_params.h"
+#include "ffx_api/ffx_api_types.h"
 ZE_WARNING_POP
 
 namespace ZE::RHI::DX12::Pipeline
@@ -157,6 +158,8 @@ namespace ZE::RHI::DX12::Pipeline
 		void Barrier(GFX::CommandList& cl, const std::array<GFX::Pipeline::BarrierTransition, BarrierCount>& barriers) const noexcept;
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
+
+		FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept;
 
 		void ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
 			RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const;

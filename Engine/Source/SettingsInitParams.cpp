@@ -11,6 +11,8 @@ namespace ZE
 		parser.AddNumber("threadsCount", 0);
 		parser.AddOption("pix");
 		parser.AddOption("gpuValidation");
+		parser.AddOption("ffxfsr");
+		parser.AddOption("fsr3");
 		parser.AddOption("fsr2");
 		parser.AddOption("fsr1");
 		parser.AddOption("xess");
@@ -41,12 +43,16 @@ namespace ZE
 		if (parser.GetOption("sssr"))
 			params.Flags |= SettingsInitFlag::EnableSSSR;
 
-		if (parser.GetOption("fsr2"))
-			params.Upscaler = GFX::UpscalerType::Fsr2;
+		if (parser.GetOption("ffxfsr"))
+			params.Upscaler = GFX::UpscalerType::FfxFsr;
+		else if (parser.GetOption("fsr3"))
+			params.Upscaler = GFX::UpscalerType::Fsr3;
 		else if (parser.GetOption("dlss"))
 			params.Upscaler = GFX::UpscalerType::DLSS;
 		else if (parser.GetOption("xess"))
 			params.Upscaler = GFX::UpscalerType::XeSS;
+		else if (parser.GetOption("fsr2"))
+			params.Upscaler = GFX::UpscalerType::Fsr2;
 		else if (parser.GetOption("fsr1"))
 			params.Upscaler = GFX::UpscalerType::Fsr1;
 		else if (parser.GetOption("nis"))

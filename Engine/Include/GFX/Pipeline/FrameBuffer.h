@@ -102,6 +102,8 @@ namespace ZE::GFX::Pipeline
 		// Manually transition resource between layout and access in pipeline, recomended to use only on innner resources!
 		constexpr void Barrier(CommandList& cl, const BarrierTransition& desc) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, desc); }
 
+		constexpr FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept { FfxApiResource res = {}; ZE_RHI_BACKEND_CALL_RET(res, GetFfxResource, rid, state); return res; }
+
 		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INALID_RID
 		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
 		constexpr void ExecuteIndirect(CommandList& cl, CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteIndirect, cl, signature, commandsBuffer, commandsOffset); }

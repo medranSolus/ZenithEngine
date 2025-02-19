@@ -13,6 +13,7 @@ namespace ZE::GFX
 		Fsr1,
 		Fsr2,
 		Fsr3,
+		FfxFsr,
 		XeSS,
 		NIS,
 		DLSS
@@ -23,13 +24,13 @@ namespace ZE::GFX
 
 	// Get jitter subpixel offsets in UV space
 	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept;
-	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY,
-		UInt2 renderSize, UInt2 displaySize, UpscalerType upscaling) noexcept;
 	constexpr bool IsMotionRequired(UpscalerType upscaling) noexcept;
 	constexpr bool IsJitterRequired(UpscalerType upscaling) noexcept;
 
 	// Pass UINT32_MAX for max quality regardles of upscaler
 	UInt2 CalculateRenderSize(class Device& dev, UInt2 targetSize, UpscalerType upscaling, U32 quality) noexcept;
+	void CalculateJitter(Device& dev, U32& phaseIndex, float& jitterX, float& jitterY,
+		UInt2 renderSize, UInt2 displaySize, UpscalerType upscaling) noexcept;
 	float CalculateMipBias(U32 renderWidth, U32 targetWidth, UpscalerType upscaling) noexcept;
 	bool IsUpscalerSupported(Device& dev, UpscalerType type) noexcept;
 
@@ -40,51 +41,12 @@ namespace ZE::GFX
 		{
 		case UpscalerType::Fsr2:
 		case UpscalerType::Fsr3:
+		case UpscalerType::FfxFsr:
 			return 0.9f;
 		case UpscalerType::XeSS:
 			return 1.0f;
 		default:
 			return 0.0f;
-		}
-	}
-
-	constexpr void CalculateJitter(U32& phaseIndex, float& jitterX, float& jitterY,
-		UInt2 renderSize, UInt2 displaySize, UpscalerType upscaling) noexcept
-	{
-		switch (upscaling)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case UpscalerType::None:
-		case UpscalerType::Fsr1:
-		case UpscalerType::NIS:
-		{
-			phaseIndex = 0;
-			jitterX = 0.0f;
-			jitterY = 0.0f;
-			break;
-		}
-		// XeSS and DLSS can use same jitter as FSR2 (halton sequence)
-		case UpscalerType::Fsr2:
-		case UpscalerType::XeSS:
-		case UpscalerType::DLSS:
-		{
-			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, displaySize.X);
-			phaseIndex = (phaseIndex + 1) % phaseCount;
-			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
-			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
-			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
-			break;
-		}
-		case UpscalerType::Fsr3:
-		{
-			U32 phaseCount = ffxFsr3UpscalerGetJitterPhaseCount(renderSize.X, displaySize.X);
-			phaseIndex = (phaseIndex + 1) % phaseCount;
-			ffxFsr3UpscalerGetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
-			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
-			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
-			break;
-		}
 		}
 	}
 
@@ -100,6 +62,7 @@ namespace ZE::GFX
 			return false;
 		case UpscalerType::Fsr2:
 		case UpscalerType::Fsr3:
+		case UpscalerType::FfxFsr:
 		case UpscalerType::XeSS:
 		case UpscalerType::DLSS:
 			return true;
