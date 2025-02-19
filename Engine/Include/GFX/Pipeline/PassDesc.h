@@ -70,6 +70,8 @@ namespace ZE::GFX::Pipeline
 		UpscaleDLSS,
 		UpscaleFSR1,
 		UpscaleFSR2,
+		UpscaleFSR3,
+		UpscaleFfxFSR,
 		UpscaleNIS,
 		UpscaleXeSS,
 

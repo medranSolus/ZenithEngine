@@ -15,6 +15,7 @@
 #include "RenderPass/SpotLight.h"
 #include "RenderPass/SSSR.h"
 #include "RenderPass/UpscaleDLSS.h"
+#include "RenderPass/UpscaleFfxFSR.h"
 #include "RenderPass/UpscaleFSR1.h"
 #include "RenderPass/UpscaleFSR2.h"
 #include "RenderPass/UpscaleNIS.h"
