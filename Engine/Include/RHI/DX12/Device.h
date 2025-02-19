@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/ResourceID.h"
 #include "GFX/Resource/Texture/Type.h"
+#include "GFX/FfxApiFunctions.h"
 #include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
 #include "AllocatorGPU.h"
@@ -80,6 +81,9 @@ namespace ZE::RHI::DX12
 #if !_ZE_MODE_RELEASE
 		HMODULE pixCapturer = nullptr;
 #endif
+		HMODULE ffxApiDll = nullptr;
+		PfnFfxCreateContext ffxCreateContext = nullptr;
+		GFX::FfxApiFunctions ffxFunctions = {};
 
 		void WaitCPU(IFence* fence, U64 val);
 		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);
@@ -98,10 +102,13 @@ namespace ZE::RHI::DX12
 
 		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
 		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
+
 		constexpr void EndFrame() noexcept {}
 		constexpr bool IsXeSSEnabled() const noexcept { return xessData.Descs.Handle != nullptr; }
 		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { xessData.BufferRegion = buffer; xessData.TextureRegion = texture; }
 		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { return { xessData.BufferRegion, xessData.TextureRegion }; }
+
+		void* GetFfxHandle() const noexcept { return GetDevice(); }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -135,6 +142,9 @@ namespace ZE::RHI::DX12
 		void TagEndCompute() const noexcept { PIXEndEvent(computeQueue.Get()); }
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
+
+		const GFX::FfxApiFunctions* GetFfxFunctions() noexcept;
+		ffxReturnCode_t CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept;
 
 		xess_context_handle_t GetXeSSCtx();
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);

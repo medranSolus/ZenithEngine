@@ -3,6 +3,9 @@
 #include "GFX/CommandList.h"
 #include "GFX/XeSSException.h"
 #include "Data/Camera.h"
+ZE_WARNING_PUSH
+#include "ffx_api/dx12/ffx_api_dx12.h"
+ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
@@ -305,6 +308,46 @@ namespace ZE::RHI::DX12
 			ZE_ASSERT(res, "Error unloading WinPixGpuCapturer.dll!");
 		}
 #endif
+		if (ffxApiDll)
+		{
+			const BOOL res = FreeLibrary(ffxApiDll);
+			ZE_ASSERT(res, "Error unloading amd_fidelityfx_dx12.dll!");
+			ffxApiDll = nullptr;
+		}
+	}
+
+	const GFX::FfxApiFunctions* Device::GetFfxFunctions() noexcept
+	{
+		if (!ffxApiDll)
+		{
+			ffxApiDll = LoadLibraryW(L"amd_fidelityfx_dx12.dll");
+			if (!ffxApiDll)
+			{
+				Logger::Error("Error loading [amd_fidelityfx_dx12.dll]!");
+				return nullptr;
+			}
+
+			ffxCreateContext = (PfnFfxCreateContext)GetProcAddress(ffxApiDll, "ffxCreateContext");
+			ffxFunctions.DestroyContext = (PfnFfxDestroyContext)GetProcAddress(ffxApiDll, "ffxDestroyContext");
+			ffxFunctions.Configure = (PfnFfxConfigure)GetProcAddress(ffxApiDll, "ffxConfigure");
+			ffxFunctions.Query = (PfnFfxQuery)GetProcAddress(ffxApiDll, "ffxQuery");
+			ffxFunctions.Dispatch = (PfnFfxDispatch)GetProcAddress(ffxApiDll, "ffxDispatch");
+		}
+		return &ffxFunctions;
+	}
+
+	ffxReturnCode_t Device::CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept
+	{
+		if (GetFfxFunctions())
+		{
+			ffxCreateBackendDX12Desc backendDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12, ctxHeader.pNext };
+			backendDesc.device = device.Get();
+			ctxHeader.pNext = &backendDesc.header;
+			ffxReturnCode_t ret = ffxCreateContext(ctx, &ctxHeader, nullptr);
+			ctxHeader.pNext = backendDesc.header.pNext;
+			return ret;
+		}
+		return FFX_API_RETURN_ERROR_PARAMETER;
 	}
 
 	xess_context_handle_t Device::GetXeSSCtx()

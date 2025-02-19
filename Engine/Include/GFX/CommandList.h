@@ -31,6 +31,8 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
+		constexpr void* GetFfxHandle() const noexcept { void* handle = nullptr; ZE_RHI_BACKEND_CALL_RET(handle, GetFfxHandle); return handle; }
+
 		constexpr void Open(Device& dev) { ZE_RHI_BACKEND_CALL(Open, dev); }
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }

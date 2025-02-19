@@ -33,6 +33,10 @@ namespace ZE::GFX
 		constexpr bool IsNGXEnabled() const noexcept { return ngx.IsInitialized(); }
 		constexpr NgxInterface* GetNGX() noexcept;
 
+		constexpr const FfxApiFunctions* GetFfxFunctions() noexcept { const FfxApiFunctions* ffxFunc = nullptr; ZE_RHI_BACKEND_CALL_RET(ffxFunc, GetFfxFunctions); return ffxFunc; }
+		constexpr void* GetFfxHandle() const noexcept { void* handle = nullptr; ZE_RHI_BACKEND_CALL_RET(handle, GetFfxHandle); return handle; }
+		constexpr ffxReturnCode_t CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept { ffxReturnCode_t ret = FFX_API_RETURN_OK; ZE_RHI_BACKEND_CALL_RET(ret, CreateFfxCtx, ctx, ctxHeader); return ret; }
+
 		constexpr bool IsXeSSEnabled() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsXeSSEnabled); return val; }
 		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
 		constexpr void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 flags) { ZE_RHI_BACKEND_CALL(InitializeXeSS, targetRes, quality, flags); }
