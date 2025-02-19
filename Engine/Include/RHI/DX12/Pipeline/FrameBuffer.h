@@ -159,6 +159,9 @@ namespace ZE::RHI::DX12::Pipeline
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 
+		void MapResource(GFX::Device& dev, RID rid, void** ptr) const;
+		void UnmapResource(RID rid) const noexcept;
+
 		FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept;
 
 		void ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,

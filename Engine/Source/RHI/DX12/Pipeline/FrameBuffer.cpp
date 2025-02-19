@@ -1406,6 +1406,21 @@ namespace ZE::RHI::DX12::Pipeline
 		PerformBarrier(cl.Get().dx12, &barrier, 1);
 	}
 
+	void FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const
+	{
+		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
+		ZE_DX_ENABLE(dev.Get().dx12);
+
+		const D3D12_RANGE range = { 0 };
+		ZE_DX_THROW_FAILED(GetResource(rid)->Map(0, &range, ptr));
+	}
+
+	void FrameBuffer::UnmapResource(RID rid) const noexcept
+	{
+		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
+		GetResource(rid)->Unmap(0, nullptr);
+	}
+
 	FfxApiResource FrameBuffer::GetFfxResource(RID rid, U32 state) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
