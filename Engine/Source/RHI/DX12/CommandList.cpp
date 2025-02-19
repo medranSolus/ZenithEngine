@@ -9,6 +9,11 @@ namespace ZE::RHI::DX12
 	{
 		ZE_DX_ENABLE(dev);
 		ZE_DX_THROW_FAILED(commands->Reset(allocator.Get(), state));
+		RestoreExternalState(dev);
+	}
+
+	void CommandList::RestoreExternalState(Device& dev) const noexcept
+	{
 		IDescriptorHeap* heaps[] = { dev.GetDescHeap() };
 		commands->SetDescriptorHeaps(1, heaps);
 	}
@@ -32,6 +37,11 @@ namespace ZE::RHI::DX12
 	{
 		Open(dev.Get().dx12, pso.Get().dx12.GetState());
 		commands->IASetPrimitiveTopology(pso.Get().dx12.GetTopology());
+	}
+
+	void CommandList::RestoreExternalState(GFX::Device& dev) const noexcept
+	{
+		RestoreExternalState(dev.Get().dx12);
 	}
 
 	void CommandList::Close(GFX::Device& dev)

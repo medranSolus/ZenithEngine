@@ -72,13 +72,7 @@ namespace ZE::RHI::DX12
 		const NVSDK_NGX_Parameter* param, PFN_NVSDK_NGX_ProgressCallback progress) const noexcept
 	{
 		ZE_WARNING_DISABLE_MSVC(5039); // Progress callback is noexcept
-		NVSDK_NGX_Result res = NVSDK_NGX_D3D12_EvaluateFeature(cl.Get().dx12.GetList(), handle, param, progress);
-		if (NVSDK_NGX_SUCCEED(res))
-		{
-			IDescriptorHeap* heaps[] = { dev.Get().dx12.GetDescHeap() };
-			cl.Get().dx12.GetList()->SetDescriptorHeaps(1, heaps);
-		}
-		return res;
+		return NVSDK_NGX_D3D12_EvaluateFeature(cl.Get().dx12.GetList(), handle, param, progress);
 	}
 
 	NVSDK_NGX_Result NgxInterface::ReleaseFeature(NVSDK_NGX_Handle* handle) const noexcept

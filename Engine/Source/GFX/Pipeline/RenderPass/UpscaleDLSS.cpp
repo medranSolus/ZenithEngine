@@ -151,6 +151,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 
 		[[maybe_unused]] bool status = dev.GetNGX()->RunFeature(dev, cl, data.DlssHandle, data.NgxParam);
 		ZE_ASSERT(status, "Error running DLSS upscaling!");
+		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
 	}

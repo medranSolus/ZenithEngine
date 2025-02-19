@@ -23,6 +23,7 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<ICommandAllocator> allocator;
 
 		void Open(Device& dev, IPipelineState* state);
+		void RestoreExternalState(Device& dev) const noexcept;
 
 	public:
 		CommandList() = default;
@@ -38,6 +39,8 @@ namespace ZE::RHI::DX12
 		void Open(GFX::Device& dev);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
 		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
+
+		void RestoreExternalState(GFX::Device& dev) const noexcept;
 
 		void Close(GFX::Device& dev);
 		void Reset(GFX::Device& dev);

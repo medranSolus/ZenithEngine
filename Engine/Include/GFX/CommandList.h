@@ -37,6 +37,10 @@ namespace ZE::GFX
 		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
 		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
 
+		// After using command list for external libraries with their own set of memory it is necessary to restore original memory state.
+		// Note that this not include actual pipeline states set for this command list
+		constexpr void RestoreExternalState(GFX::Device& dev) const noexcept { ZE_RHI_BACKEND_CALL(RestoreExternalState, dev); }
+
 		constexpr void Close(Device& dev) { ZE_RHI_BACKEND_CALL(Close, dev); }
 		constexpr void Reset(Device& dev) { ZE_RHI_BACKEND_CALL(Reset, dev); }
 

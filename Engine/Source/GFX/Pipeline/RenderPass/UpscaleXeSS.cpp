@@ -92,6 +92,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 		renderData.Buffers.ExecuteXeSS(dev, cl, ids.Color, ids.MotionVectors, ids.Depth, INVALID_RID, ids.ResponsiveMask, ids.Output,
 			renderData.DynamicData.JitterCurrent.x, renderData.DynamicData.JitterCurrent.y, renderData.GraphData.FrameTemporalReset);
+		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
 	}
