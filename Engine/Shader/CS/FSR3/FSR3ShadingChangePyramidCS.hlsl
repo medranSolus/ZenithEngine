@@ -11,9 +11,9 @@ UAV_EX(spdMip4, RWTexture2D<FfxFloat32x2>, 4, 4);
 UAV_EX(spdMip5, globallycoherent RWTexture2D<FfxFloat32x2>, 5, 5);
 UAV_EX(spdGlobalAtomic, globallycoherent RWTexture2D<FfxUInt32>, 6, 6);
 TEXTURE_EX(currentLuma, Texture2D<FfxFloat32>, 0, 7);
-TEXTURE_EX(prevLuma, Texture2D<FfxFloat32>, 2, 8);
-TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 1, 9);
-TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 4, 10);
+TEXTURE_EX(prevLuma, Texture2D<FfxFloat32>, 1, 8);
+TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 2, 9);
+TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 3, 10);
 
 FfxFloat32x2 RWLoadPyramid(const in FfxInt32x2 pxCoord, const in FfxUInt32 index)
 {

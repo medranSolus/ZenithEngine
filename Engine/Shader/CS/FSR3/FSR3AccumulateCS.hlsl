@@ -1,4 +1,4 @@
-#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING
+#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING == 0
 #	if FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE == 1
 #		define ZE_FSR3_CB_RANGE 11
 #	else
@@ -12,7 +12,8 @@
 #include "CB/ConstantsFSR3.hlsli"
 #include "GBufferUtils.hlsli"
 
-#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING
+// Setting the correct r anges and slots
+#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING == 0
 #	define NEW_LOCKS_RANGE 2
 #	define INPUT_COLOR_RANGE 3
 #	if FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS
@@ -34,7 +35,7 @@
 #		define REACTIVE_MASK_RANGE 9
 #	endif
 #else
-#	define NEWLOCKS_RANGE 1
+#	define NEW_LOCKS_RANGE 1
 #	define INPUT_COLOR_RANGE 2
 #	if FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS
 #		define UPSCALED_COLOR_RANGE 3
@@ -56,27 +57,44 @@
 #	endif
 #endif
 
+#if FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS
+#	define UPSCALED_COLOR_SLOT 1
+#	define FARTHES_DEPTH_SLOT 2
+#	define LUMA_INSTABILITY_SLOT 3
+#else
+#	define UPSCALED_COLOR_SLOT 2
+#	define FARTHES_DEPTH_SLOT 3
+#	define LUMA_INSTABILITY_SLOT 4
+#endif
+
+#if FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE == 1
+#	define REACTIVE_MASK_SLOT 7
+#else
+#	define REACTIVE_MASK_SLOT 6
+#endif
+
 
 UAV2D(upscaledColor, FfxFloat32x4, 0, 0);
-#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING
+#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING == 0
 UAV2D(upscaledOutput, float4, 1, 1); // External resource format
 #endif
-UAV2D(newLocks, unorm FfxFloat32, 2, NEW_LOCKS_RANGE);
+UAV2D(newLocks, unorm FfxFloat32, NEW_LOCKS_RANGE, NEW_LOCKS_RANGE);
+
 TEXTURE_EX(inputColor, Texture2D<FfxFloat32x4>, 0, INPUT_COLOR_RANGE);
 #if !FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS
 TEXTURE_EX(motionVectors, Texture2D<MotionGB>, 1, MOTION_VECTORS_RANGE); // External resource format
 #endif
-TEXTURE_EX(upscaledColor, Texture2D<FfxFloat32x4>, 2, UPSCALED_COLOR_RANGE);
-TEXTURE_EX(farthestDepthMip1, Texture2D<FfxFloat32>, 3, FARTHES_DEPTH_RANGE);
-TEXTURE_EX(lumaInstability, Texture2D<FfxFloat32>, 4, LUMA_INSTABILITY_RANGE);
+TEXTURE_EX(upscaledColor, Texture2D<FfxFloat32x4>, UPSCALED_COLOR_SLOT, UPSCALED_COLOR_RANGE);
+TEXTURE_EX(farthestDepthMip1, Texture2D<FfxFloat32>, FARTHES_DEPTH_SLOT, FARTHES_DEPTH_RANGE);
+TEXTURE_EX(lumaInstability, Texture2D<FfxFloat32>, LUMA_INSTABILITY_SLOT, LUMA_INSTABILITY_RANGE);
 #if FFX_FSR3UPSCALER_OPTION_LOW_RESOLUTION_MOTION_VECTORS
-TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 5, DILATED_MOTION_VECTORS_RANGE);
+TEXTURE_EX(dilatedMotionVectors, Texture2D<FfxFloat32x2>, 4, DILATED_MOTION_VECTORS_RANGE);
 #endif
-TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 6, EXPOSURE_RANGE);
+TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 5, EXPOSURE_RANGE);
 #if FFX_FSR3UPSCALER_OPTION_REPROJECT_USE_LANCZOS_TYPE == 1
-TEXTURE_EX(lanczosLut, Texture2D<FfxFloat32>, 7, LANCZOS_RANGE);
+TEXTURE_EX(lanczosLut, Texture2D<FfxFloat32>, 6, LANCZOS_RANGE);
 #endif
-TEXTURE_EX(dilatedReactiveMask, Texture2D<unorm FfxFloat32x4>, 8, REACTIVE_MASK_RANGE);
+TEXTURE_EX(dilatedReactiveMask, Texture2D<unorm FfxFloat32x4>, REACTIVE_MASK_SLOT, REACTIVE_MASK_RANGE);
 
 void StoreInternalColorAndWeight(const in FfxUInt32x2 pxCoord, FfxFloat32x4 colorAndWeight)
 {
@@ -85,7 +103,7 @@ void StoreInternalColorAndWeight(const in FfxUInt32x2 pxCoord, FfxFloat32x4 colo
 
 void StoreUpscaledOutput(const in FfxUInt32x2 pxCoord, FfxFloat32x3 color)
 {
-#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING
+#if FFX_FSR3UPSCALER_OPTION_APPLY_SHARPENING == 0
 	ua_upscaledOutput[pxCoord] = FfxFloat32x4(color, 1.f);
 #endif
 }

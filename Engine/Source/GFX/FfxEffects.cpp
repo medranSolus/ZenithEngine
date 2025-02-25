@@ -1344,7 +1344,7 @@ namespace ZE::GFX::FFX
 			const FfxShaderBlob blob =
 			{
 				nullptr, 0, // Blob, data
-				1, lut ? 8U : 7U, 2U + static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, lut ? 8U : 7U, 3U - static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				lowResMotionVectors ? (lut ? srvNamesLowResLut : srvNamesLowRes) : (lut ? srvNamesLut : srvNames), slots, counts, nullptr, // SRV tex
 				sharpen ? uavNamesSharpen : uavNames, slots, counts, nullptr, // UAV tex
@@ -1390,7 +1390,7 @@ namespace ZE::GFX::FFX
 			static constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
-				1, 2, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, 4, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				srvNames, slots, counts, nullptr, // SRV tex
 				uavNames, slots, counts, nullptr, // UAV tex

@@ -1,4 +1,5 @@
 #define ZE_RCAS_CB_RANGE 3
+#define ZE_RCAS_SLOT 0
 #include "CB/ConstantsRCAS.hlsli"
 
 UAV2D(upscaled, float4, 0, 0); // External resource format
