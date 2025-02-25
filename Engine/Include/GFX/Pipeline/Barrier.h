@@ -22,5 +22,6 @@ namespace ZE::GFX::Pipeline
 		// What pipeline stages need to wait before this barrier completes
 		StageSyncs StageAfter;
 		BarrierType Type = BarrierType::Immediate;
+		U32 Subresource = UINT32_MAX;
 	};
 }

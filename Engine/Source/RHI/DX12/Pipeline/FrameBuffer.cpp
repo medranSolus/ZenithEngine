@@ -238,7 +238,7 @@ namespace ZE::RHI::DX12::Pipeline
 		barrier.LayoutBefore = GetBarrierLayout(desc.LayoutBefore);
 		barrier.LayoutAfter = GetBarrierLayout(desc.LayoutAfter);
 		barrier.pResource = GetResource(desc.Resource).Get();
-		barrier.Subresources.IndexOrFirstMipLevel = UINT32_MAX;
+		barrier.Subresources.IndexOrFirstMipLevel = desc.Subresource;
 		barrier.Subresources.NumMipLevels = 0;
 		barrier.Subresources.FirstArraySlice = 0;
 		barrier.Subresources.NumArraySlices = 0;
