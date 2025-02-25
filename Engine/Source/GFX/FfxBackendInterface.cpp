@@ -125,6 +125,8 @@ namespace ZE::GFX::FFX
 	void ExecuteClearJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job);
 	void ExecuteCopyJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job);
 	void ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job);
+	void ExecuteBarrierJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxBarrierDescription& job);
+	void ExecuteDiscardJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxDiscardJobDescription& job);
 
 	FfxResource GetResource(Pipeline::FrameBuffer& buffers, RID rid, FfxResourceStates state) noexcept
 	{
@@ -737,32 +739,37 @@ namespace ZE::GFX::FFX
 		for (U32 i = 0; i < shaderBlob.uavTextureCount; ++i)
 		{
 			outPipeline->uavTextureBindings[i].slotIndex = shaderBlob.boundUAVTextures[i];
-			//outPipeline->uavTextureBindings[i].bindCount = shaderBlob.boundUAVTextureCounts[i];
+#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->uavTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVTextureNames[i]).c_str());
+#endif
 		}
 		for (U32 i = 0; i < shaderBlob.srvTextureCount; ++i)
 		{
 			outPipeline->srvTextureBindings[i].slotIndex = shaderBlob.boundSRVTextures[i];
-			//outPipeline->srvTextureBindings[i].bindCount = shaderBlob.boundSRVTextureCounts[i];
+#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->srvTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVTextureNames[i]).c_str());
+#endif
 		}
 		for (U32 i = 0; i < shaderBlob.srvBufferCount; ++i)
 		{
 			outPipeline->srvBufferBindings[i].slotIndex = shaderBlob.boundSRVBuffers[i];
-			//outPipeline->srvBufferBindings[i].bindCount = shaderBlob.boundSRVBufferCounts[i];
+#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->srvBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVBufferNames[i]).c_str());
+#endif
 		}
 		for (U32 i = 0; i < shaderBlob.uavBufferCount; ++i)
 		{
 			outPipeline->uavBufferBindings[i].slotIndex = shaderBlob.boundUAVBuffers[i];
-			//outPipeline->uavBufferBindings[i].bindCount = shaderBlob.boundUAVBufferCounts[i];
+#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->uavBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVBufferNames[i]).c_str());
+#endif
 		}
 		for (U32 i = 0; i < shaderBlob.cbvCount; ++i)
 		{
 			outPipeline->constantBufferBindings[i].slotIndex = shaderBlob.boundConstantBuffers[i];
-			//outPipeline->constantBufferBindings[i].bindCount = shaderBlob.boundConstantBufferCounts[i];
+#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->constantBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundConstantBufferNames[i]).c_str());
+#endif
 		}
 
 		// Only set the command signature if this is setup as an indirect workload
@@ -854,6 +861,12 @@ namespace ZE::GFX::FFX
 				break;
 			case FFX_GPU_JOB_COMPUTE:
 				ExecuteComputeJob(ffxInterface, dev, cl, dynamicBuffer, ffxInterface.Buffers, job.computeJobDescriptor);
+				break;
+			case FFX_GPU_JOB_BARRIER:
+				ExecuteBarrierJob(ffxInterface, cl, ffxInterface.Buffers, job.barrierDescriptor);
+				break;
+			case FFX_GPU_JOB_DISCARD:
+				ExecuteDiscardJob(ffxInterface, cl, ffxInterface.Buffers, job.discardJobDescriptor);
 				break;
 			default:
 				ZE_FAIL("Unknown FFX GPU job!");
@@ -1213,6 +1226,54 @@ namespace ZE::GFX::FFX
 		}
 		else
 			cl.Compute(dev, job.dimensions[0], job.dimensions[1], job.dimensions[2]);
+	}
+
+	void ExecuteBarrierJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxBarrierDescription& job)
+	{
+		if (job.barrierType == FFX_BARRIER_TYPE_UAV)
+		{
+			constexpr Pipeline::StageSyncs SYNC = Pipeline::GetSyncFromAccess(Base(Pipeline::ResourceAccess::UnorderedAccess), false, false, false);
+
+			buffers.Barrier(cl, { GetRID(ffxInterface, job.resource.internalIndex),
+				Pipeline::TextureLayout::UnorderedAccess, Pipeline::TextureLayout::UnorderedAccess,
+				Base(Pipeline::ResourceAccess::UnorderedAccess),
+				Base(Pipeline::ResourceAccess::UnorderedAccess),
+				SYNC, SYNC, Pipeline::BarrierType::Immediate, job.subResourceID });
+		}
+		else if (job.currentState != job.newState)
+		{
+			const Pipeline::TextureLayout currentLayout = GetLayout(job.currentState);
+			const Pipeline::TextureLayout afterLayout = GetLayout(job.newState);
+			const Pipeline::ResourceAccesses accessBefore = Pipeline::GetAccessFromLayout(currentLayout);
+			Pipeline::ResourceAccesses accessAfter = Pipeline::GetAccessFromLayout(afterLayout);
+			if (job.newState & FFX_RESOURCE_STATE_INDIRECT_ARGUMENT)
+				accessAfter |= Pipeline::ResourceAccess::IndirectArguments;
+
+			buffers.Barrier(cl, { GetRID(ffxInterface, job.resource.internalIndex),
+				currentLayout, afterLayout, accessBefore, accessAfter,
+				Pipeline::GetSyncFromAccess(accessBefore, job.currentState & FFX_RESOURCE_STATE_PIXEL_READ, job.currentState & FFX_RESOURCE_STATE_COMPUTE_READ, false),
+				Pipeline::GetSyncFromAccess(accessAfter, job.newState & FFX_RESOURCE_STATE_PIXEL_READ, job.newState & FFX_RESOURCE_STATE_COMPUTE_READ, false),
+				Pipeline::BarrierType::Immediate, job.subResourceID });
+
+			ResourceStateInfo& state = GetFfxCtx(ffxInterface).Resources.get<ResourceStateInfo>(GetResID(job.resource.internalIndex));
+			state.Current = job.newState;
+			state.Undefined = false;
+		}
+	}
+
+	void ExecuteDiscardJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxDiscardJobDescription& job)
+	{
+		ResourceStateInfo& state = GetFfxCtx(ffxInterface).Resources.get<ResourceStateInfo>(GetResID(job.target.internalIndex));
+		state.Undefined = false;
+		const Pipeline::TextureLayout currentLayout = GetLayout(state.Current);
+		const Pipeline::ResourceAccesses accessBefore = Pipeline::GetAccessFromLayout(currentLayout);
+
+		buffers.Barrier(cl, { GetRID(ffxInterface, job.target.internalIndex),
+			Pipeline::TextureLayout::Undefined, currentLayout,
+			Base(Pipeline::ResourceAccess::None), accessBefore,
+			Base(Pipeline::StageSync::None),
+			Pipeline::GetSyncFromAccess(accessBefore, state.Current & FFX_RESOURCE_STATE_PIXEL_READ, state.Current & FFX_RESOURCE_STATE_COMPUTE_READ, false),
+			Pipeline::BarrierType::Immediate, UINT32_MAX });
 	}
 #pragma endregion
 }
