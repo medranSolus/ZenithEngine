@@ -18,6 +18,7 @@
 #include "RenderPass/UpscaleFfxFSR.h"
 #include "RenderPass/UpscaleFSR1.h"
 #include "RenderPass/UpscaleFSR2.h"
+#include "RenderPass/UpscaleFSR3.h"
 #include "RenderPass/UpscaleNIS.h"
 #include "RenderPass/UpscaleXeSS.h"
 #include "RenderPass/VerticalBlur.h"

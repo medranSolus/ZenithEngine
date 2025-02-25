@@ -147,6 +147,14 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.AddResource("ssr",
 				GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
 
+		// Resources related to the FSR3
+		graphDesc.AddResource("dilatedDepth",
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV | FrameResourceFlag::ForceRTV, PixelFormat::R32_Float, "FSR3 dilated depth"));
+		graphDesc.AddResource("dilatedMotion",
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV | FrameResourceFlag::ForceRTV, PixelFormat::R16G16_Float, "FSR3 dilated motion vectors"));
+		graphDesc.AddResource("prevNearDepth",
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R32_UInt, "FSR3 reconstructed prev nearest depth"));
+
 		// Combined scene related resources
 		graphDesc.AddResource("rawScene",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "Raw lighted scene"));
@@ -379,6 +387,21 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
+			node.SetInitDataGpuUploadRequired();
+			node.SetHintCompute();
+			node.DisableExecDataCaching();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("upscale", "fsr3", RenderPass::UpscaleFSR3::GetDesc(), PassExecutionType::StaticProcessor);
+			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
+			node.AddOutput("DilatedDepth", TextureLayout::UnorderedAccess, "dilatedDepth");
+			node.AddOutput("DilatedMotion", TextureLayout::UnorderedAccess, "dilatedMotion");
+			node.AddOutput("PrevNearDepth", TextureLayout::UnorderedAccess, "prevNearDepth");
 			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
