@@ -89,11 +89,19 @@ namespace ZE::GFX
 		constexpr ShaderModel GetMaxShaderModel() const noexcept { ShaderModel model; ZE_RHI_BACKEND_CALL_RET(model, GetMaxShaderModel); return model; }
 		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { std::pair<U32, U32> minMax; ZE_RHI_BACKEND_CALL_RET(minMax, GetWaveLaneCountRange); return minMax; }
 		constexpr bool IsShaderFloat16Supported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsShaderFloat16Supported); return val; }
+		constexpr bool IsCoherentMemorySupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCoherentMemorySupported); return val; }
+		constexpr bool IsDedicatedAllocSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsDedicatedAllocSupported); return val; }
+		constexpr bool IsBufferMarkersSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsBufferMarkersSupported); return val; }
+		constexpr bool IsExtendedSynchronizationSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsExtendedSynchronizationSupported); return val; }
+		constexpr bool IsUavNonUniformIndexing() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUavNonUniformIndexing); return val; }
 
 		constexpr void Execute(CommandList* cls, U32 count) { ZE_RHI_BACKEND_CALL(Execute, cls, count); }
 		constexpr void ExecuteMain(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteMain, cl); }
 		constexpr void ExecuteCompute(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteCompute, cl); }
 		constexpr void ExecuteCopy(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteCopy, cl); }
+
+		constexpr FfxBreadcrumbsBlockData AllocBreadcrumbsBlock(U64 bytes) { FfxBreadcrumbsBlockData block = {}; ZE_RHI_BACKEND_CALL_RET(block, AllocBreadcrumbsBlock, bytes); return block; }
+		constexpr void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) { ZE_RHI_BACKEND_CALL(FreeBreadcrumbsBlock, block); }
 
 		constexpr void EndFrame() noexcept { ZE_RHI_BACKEND_CALL(EndFrame); }
 

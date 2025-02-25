@@ -69,6 +69,16 @@ namespace ZE::RHI::DX12
 		ZE_DX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
 	}
 
+	void CommandList::WriteBreadcrumbs(GFX::Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept(!_ZE_DEBUG_GFX_API)
+	{
+		ZE_DX_ENABLE_INFO(dev.Get().dx12);
+
+		const D3D12_WRITEBUFFERIMMEDIATE_MODE mode = isBegin ? D3D12_WRITEBUFFERIMMEDIATE_MODE_MARKER_IN : D3D12_WRITEBUFFERIMMEDIATE_MODE_MARKER_OUT;
+		const D3D12_WRITEBUFFERIMMEDIATE_PARAMETER params = { location, value };
+
+		ZE_DX_THROW_FAILED_INFO(commands->WriteBufferImmediate(1, &params, &mode));
+	}
+
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{

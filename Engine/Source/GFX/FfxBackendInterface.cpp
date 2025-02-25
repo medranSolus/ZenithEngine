@@ -13,19 +13,19 @@
 namespace ZE::GFX::FFX
 {
 	// Custom name for the resource
-	struct FfxResourceName
+	struct ResourceName
 	{
 		wchar_t Name[FFX_RESOURCE_NAME_SIZE];
 	};
 	// Data about current and starting resource state
-	struct FfxResourceStateInfo
+	struct ResourceStateInfo
 	{
 		FfxResourceStates Current;
 		FfxResourceStates Initial;
 		bool Undefined;
 	};
 	// Initial data for filling up GPU resources
-	struct FfxInitData
+	struct InitData
 	{
 		bool IsBuffer;
 		Resource::CBuffer Buffer;
@@ -33,29 +33,30 @@ namespace ZE::GFX::FFX
 		U64 LastFrameUsed;
 	};
 	// Tag for resources registered per frame from outside
-	struct FfxDynamicResource
+	struct DynamicResource
 	{
 		RID ResID;
 	};
 	// ID of internally created resource
-	typedef U32 FfxResID;
+	typedef U32 ResID;
 
 	// Main context used by FFX SDK
-	struct FfxBackendContext
+	struct BackendContext
 	{
-		entt::basic_registry<FfxResID> Resources;
+		entt::basic_registry<ResID> Resources;
 		Data::Library<U64, Resource::PipelineStateCompute> Pipelines;
 		Data::Library<U64, U64> PipelinesReferences;
 		Data::Library<U64, Binding::Schema> Bindings;
 		Data::Library<U64, U64> BindingsReferences;
 		Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
 		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
+		Data::Library<FfxEffect, FfxEffectMemoryUsage> EffectMemoryUsage;
 		std::vector<Pipeline::BarrierTransition> Barriers;
 		std::vector<FfxGpuJobDescription> Jobs;
 	};
 
 	// Interface data setup when filling FfxInterface
-	struct FfxBackendInterface
+	struct BackendInterface
 	{
 		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
 		Pipeline::FrameBuffer& Buffers;
@@ -64,40 +65,53 @@ namespace ZE::GFX::FFX
 		bool& NotifyBuffersChange;
 		U32 ContextRefCount = 0;
 		PassInfo CurrentPass = {};
-		FfxBackendContext* Ctx = nullptr;
+		BackendContext* Ctx = nullptr;
 	};
 
 	// Interface functions used by FFX SDK backend
 	void ffxAssertCallback(const char* message) noexcept;
 	FfxUInt32 ffxGetSDKVersion(FfxInterface* backendInterface);
-	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId);
+	FfxErrorCode ffxGetEffectGpuMemoryUsage(FfxInterface* backendInterface, FfxUInt32 effectContextId, FfxEffectMemoryUsage* outVramUsage);
+	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxEffect effect,
+		FfxEffectBindlessConfig* bindlessConfig, FfxUInt32* effectContextId);
 	FfxErrorCode ffxGetDeviceCapabilities(FfxInterface* backendInterface, FfxDeviceCapabilities* deviceCapabilities);
 	FfxErrorCode ffxDestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId);
 	FfxErrorCode ffxCreateResource(FfxInterface* backendInterface,
 		const FfxCreateResourceDescription* createResourceDescription,
 		FfxUInt32 effectContextId, FfxResourceInternal* outTexture);
-	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource);
+	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource, FfxUInt32 effectContextId);
 	FfxResource ffxGetResource(FfxInterface* backendInterface, FfxResourceInternal resource);
 	FfxErrorCode ffxRegisterResource(FfxInterface* backendInterface, const FfxResource* inResource,
 		FfxUInt32 effectContextId, FfxResourceInternal* outResourceInternal);
+	FfxErrorCode ffxRegisterStaticResource(FfxInterface* backendInterface, const FfxStaticResourceDescription* desc, FfxUInt32 effectContextId);
 	FfxErrorCode ffxUnregisterResources(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId);
 	FfxResourceDescription ffxGetResourceDescriptor(FfxInterface* backendInterface, FfxResourceInternal resource);
+	FfxErrorCode ffxStageConstantBufferData(FfxInterface* backendInterface, void* data, FfxUInt32 size, FfxConstantBuffer* constantBuffer);
+	FfxErrorCode ffxMapResource(FfxInterface* backendInterface, FfxResourceInternal resource, void** ptr);
+	FfxErrorCode ffxUnmapResource(FfxInterface* backendInterface, FfxResourceInternal resource);
 	FfxErrorCode ffxCreatePipeline(FfxInterface* backendInterface, FfxEffect effect, FfxPass passId,
 		uint32_t permutationOptions, const FfxPipelineDescription* desc, FfxUInt32 effectContextId, FfxPipelineState* outPipeline);
 	FfxErrorCode ffxDestroyPipeline(FfxInterface* backendInterface, FfxPipelineState* pipeline, FfxUInt32 effectContextId);
 	FfxErrorCode ffxScheduleGpuJob(FfxInterface* backendInterface, const FfxGpuJobDescription* job);
-	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList);
+	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId);
+	FfxErrorCode ffxBreadcrumbsAllocBlock(FfxInterface* backendInterface, U64 blockBytes, FfxBreadcrumbsBlockData* blockData);
+	void ffxBreadcrumbsFreeBlock(FfxInterface* backendInterface, FfxBreadcrumbsBlockData* blockData);
+	void ffxBreadcrumbsWrite(FfxInterface* backendInterface, FfxCommandList commandList, U32 value, U64 gpuLocation, void* gpuBuffer, bool isBegin);
+	void ffxBreadcrumbsPrintDeviceInfo(FfxInterface* backendInterface, FfxAllocationCallbacks* allocs, bool extendedInfo, char** printBuffer, U64* printSize);
+	FfxErrorCode ffxGetPermutationBlobByIndex(FfxEffect effectId, FfxPass passId, FfxBindStage bindStage, uint32_t permutationOptions, FfxShaderBlob* outBlob);
+	FfxErrorCode ffxSwapChainConfigureFrameGeneration(const FfxFrameGenerationConfig* config);
+	void ffxRegisterConstantBufferAllocator(FfxInterface* backendInterface, FfxConstantBufferAllocator fpConstantAllocator) {}
 
 	// Utility functions for working with FFX SDK
-	constexpr FfxResID GetFfxResID(S32 internalIndex) noexcept { ZE_ASSERT(internalIndex, "Invalid FFX resource index"); return static_cast<FfxResID>(internalIndex - 1); }
-	constexpr S32 GetInternalIndex(FfxResID ffxID) noexcept { return static_cast<S32>(ffxID + 1); }
+	constexpr ResID GetResID(S32 internalIndex) noexcept { ZE_ASSERT(internalIndex, "Invalid FFX resource index"); return static_cast<ResID>(internalIndex - 1); }
+	constexpr S32 GetInternalIndex(ResID ffxID) noexcept { return static_cast<S32>(ffxID + 1); }
 	// Fix RID for special values to treat it like a pointer
 	constexpr void* EncodeRID(RID rid) noexcept { return (void*)static_cast<uintptr_t>(rid == INVALID_RID ? 0 : (rid == BACKBUFFER_RID ? INVALID_RID : rid)); } // No reinterpret_cast to ensure constexpr
 	constexpr RID DecodeRID(void* resource) noexcept { return resource ? (((RID)(uintptr_t)(resource)) == INVALID_RID ? BACKBUFFER_RID : (RID)((uintptr_t)resource)) : INVALID_RID; } // No reinterpret_cast to ensure constexpr
 
-	constexpr FfxBackendInterface& GetFfxInterface(FfxInterface* backendInterface) noexcept;
-	constexpr FfxBackendContext& GetFfxCtx(FfxBackendInterface& ffxInterface) noexcept;
-	constexpr FfxBackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept;
+	constexpr BackendInterface& GetFfxInterface(FfxInterface* backendInterface) noexcept;
+	constexpr BackendContext& GetFfxCtx(BackendInterface& ffxInterface) noexcept;
+	constexpr BackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept;
 	constexpr Device& GetDevice(FfxInterface* backendInterface) noexcept;
 	constexpr CommandList& GetCommandList(FfxCommandList commandList) noexcept;
 	constexpr Pipeline::FrameResourceType GetResourceType(FfxResourceType type) noexcept;
@@ -105,12 +119,12 @@ namespace ZE::GFX::FFX
 	constexpr Pipeline::TextureLayout GetLayout(FfxResourceStates state) noexcept;
 	constexpr Resource::Texture::AddressMode GetAddressMode(FfxAddressMode mode) noexcept;
 	constexpr Resource::SamplerFilter GetFilter(FfxFilterType filter) noexcept;
-	RID GetRID(FfxBackendInterface& ffxInterface, S32 internalIndex) noexcept;
-	void AddResourceBarrier(FfxBackendInterface& ffxInterface, S32 internalIndex, FfxResourceStates after) noexcept;
-	void FlushBarriers(FfxBackendContext& ctx, CommandList& cl, Pipeline::FrameBuffer& buffers);
-	void ExecuteClearJob(FfxBackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job);
-	void ExecuteCopyJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job);
-	void ExecuteComputeJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job);
+	RID GetRID(BackendInterface& ffxInterface, S32 internalIndex) noexcept;
+	void AddResourceBarrier(BackendInterface& ffxInterface, S32 internalIndex, FfxResourceStates after) noexcept;
+	void FlushBarriers(BackendContext& ctx, CommandList& cl, Pipeline::FrameBuffer& buffers);
+	void ExecuteClearJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job);
+	void ExecuteCopyJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job);
+	void ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job);
 
 	FfxResource GetResource(Pipeline::FrameBuffer& buffers, RID rid, FfxResourceStates state) noexcept
 	{
@@ -162,6 +176,7 @@ namespace ZE::GFX::FFX
 	{
 		FfxInterface backendInterface = {};
 		backendInterface.fpGetSDKVersion = ffxGetSDKVersion;
+		backendInterface.fpGetEffectGpuMemoryUsage = ffxGetEffectGpuMemoryUsage;
 		backendInterface.fpCreateBackendContext = ffxCreateBackendContext;
 		backendInterface.fpGetDeviceCapabilities = ffxGetDeviceCapabilities;
 		backendInterface.fpDestroyBackendContext = ffxDestroyBackendContext;
@@ -169,16 +184,29 @@ namespace ZE::GFX::FFX
 		backendInterface.fpDestroyResource = ffxDestroyResource;
 		backendInterface.fpGetResource = ffxGetResource;
 		backendInterface.fpRegisterResource = ffxRegisterResource;
+		backendInterface.fpRegisterStaticResource = ffxRegisterStaticResource;
 		backendInterface.fpUnregisterResources = ffxUnregisterResources;
 		backendInterface.fpGetResourceDescription = ffxGetResourceDescriptor;
+		backendInterface.fpMapResource = ffxMapResource;
+		backendInterface.fpUnmapResource = ffxUnmapResource;
+		backendInterface.fpStageConstantBufferDataFunc = ffxStageConstantBufferData;
 		backendInterface.fpCreatePipeline = ffxCreatePipeline;
 		backendInterface.fpDestroyPipeline = ffxDestroyPipeline;
 		backendInterface.fpScheduleGpuJob = ffxScheduleGpuJob;
 		backendInterface.fpExecuteGpuJobs = ffxExecuteGpuJobs;
 
+		backendInterface.fpBreadcrumbsAllocBlock = ffxBreadcrumbsAllocBlock;
+		backendInterface.fpBreadcrumbsFreeBlock = ffxBreadcrumbsFreeBlock;
+		backendInterface.fpBreadcrumbsWrite = ffxBreadcrumbsWrite;
+		backendInterface.fpBreadcrumbsPrintDeviceInfo = ffxBreadcrumbsPrintDeviceInfo;
+
+		backendInterface.fpGetPermutationBlobByIndex = ffxGetPermutationBlobByIndex;
+		backendInterface.fpSwapChainConfigureFrameGeneration = ffxSwapChainConfigureFrameGeneration;
+		backendInterface.fpRegisterConstantBufferAllocator = ffxRegisterConstantBufferAllocator;
+
 		// Setup all custom backend memory
-		backendInterface.scratchBufferSize = sizeof(FfxBackendInterface);
-		backendInterface.scratchBuffer = new FfxBackendInterface{ dynamicBuffers, frameBuffer, disk, internalBuffers, notifyBuffersChange };
+		backendInterface.scratchBufferSize = sizeof(BackendInterface);
+		backendInterface.scratchBuffer = new BackendInterface{ dynamicBuffers, frameBuffer, disk, internalBuffers, notifyBuffersChange };
 		backendInterface.device = &dev;
 
 		// Set assert printing
@@ -195,7 +223,7 @@ namespace ZE::GFX::FFX
 	{
 		if (backendInterface.scratchBuffer)
 		{
-			delete reinterpret_cast<FfxBackendInterface*>(backendInterface.scratchBuffer);
+			delete reinterpret_cast<BackendInterface*>(backendInterface.scratchBuffer);
 			backendInterface.scratchBuffer = nullptr;
 		}
 	}
@@ -211,20 +239,31 @@ namespace ZE::GFX::FFX
 		return FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH);
 	}
 
-	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxUInt32* effectContextId)
+	FfxErrorCode ffxGetEffectGpuMemoryUsage(FfxInterface* backendInterface, FfxUInt32 effectContextId, FfxEffectMemoryUsage* outVramUsage)
 	{
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		*outVramUsage = GetFfxCtx(backendInterface).EffectMemoryUsage.Get(static_cast<FfxEffect>(effectContextId));
+		return FFX_OK;
+	}
+
+	FfxErrorCode ffxCreateBackendContext(FfxInterface* backendInterface, FfxEffect effect,
+		FfxEffectBindlessConfig* bindlessConfig, FfxUInt32* effectContextId)
+	{
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
 		if (effectContextId)
-			*effectContextId = ffxInterface.CurrentPass.PassID;
+			*effectContextId = effect;
 
 		if (ffxInterface.ContextRefCount++ == 0)
 		{
-			U8* buffer = new U8[sizeof(FfxBackendContext)];
-			std::memset(buffer, 0, sizeof(FfxBackendContext));
-			reinterpret_cast<FfxBackendInterface*>(backendInterface->scratchBuffer)->Ctx = reinterpret_cast<FfxBackendContext*>(buffer);
+			U8* buffer = new U8[sizeof(BackendContext)];
+			std::memset(buffer, 0, sizeof(BackendContext));
+			reinterpret_cast<BackendInterface*>(backendInterface->scratchBuffer)->Ctx = reinterpret_cast<BackendContext*>(buffer);
 
-			new(reinterpret_cast<FfxBackendContext*>(buffer)) FfxBackendContext;
+			new(reinterpret_cast<BackendContext*>(buffer)) BackendContext;
 		}
+
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
+		if (!ctx.EffectMemoryUsage.Contains(effect))
+			ctx.EffectMemoryUsage.Add(effect, { 0, 0 });
 
 		return FFX_OK;
 	}
@@ -240,33 +279,33 @@ namespace ZE::GFX::FFX
 			ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
 			[[fallthrough]];
 		case ShaderModel::V5_1:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
 			break;
 		case ShaderModel::V6_0:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
 			break;
 		case ShaderModel::V6_1:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
 			break;
 		case ShaderModel::V6_2:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
 			break;
 		case ShaderModel::V6_3:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
 			break;
 		case ShaderModel::V6_4:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
 			break;
 		case ShaderModel::V6_5:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
 			break;
 		case ShaderModel::V6_6:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
 			break;
 		case ShaderModel::V6_7:
 		case ShaderModel::V6_8:
 		case ShaderModel::V6_9:
-			deviceCapabilities->minimumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
 			break;
 		}
 
@@ -275,17 +314,22 @@ namespace ZE::GFX::FFX
 		deviceCapabilities->waveLaneCountMax = minMax.second;
 		deviceCapabilities->fp16Supported = dev.IsShaderFloat16Supported();
 		deviceCapabilities->raytracingSupported = Settings::RayTracingTier != GFX::RayTracingTier::None;
+		deviceCapabilities->deviceCoherentMemorySupported = dev.IsCoherentMemorySupported();
+		deviceCapabilities->dedicatedAllocationSupported = dev.IsDedicatedAllocSupported();
+		deviceCapabilities->bufferMarkerSupported = dev.IsBufferMarkersSupported();
+		deviceCapabilities->extendedSynchronizationSupported = dev.IsExtendedSynchronizationSupported();
+		deviceCapabilities->shaderStorageBufferArrayNonUniformIndexing = dev.IsUavNonUniformIndexing();
 
 		return FFX_OK;
 	}
 
 	FfxErrorCode ffxDestroyBackendContext(FfxInterface* backendInterface, FfxUInt32 effectContextId)
 	{
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
 		if (--ffxInterface.ContextRefCount == 0)
 		{
 			Device& dev = GetDevice(backendInterface);
-			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+			BackendContext& ctx = GetFfxCtx(backendInterface);
 
 			if (ffxInterface.InternalBuffers.Size())
 			{
@@ -294,9 +338,9 @@ namespace ZE::GFX::FFX
 			}
 
 			// Free all remaining init resources
-			for (FfxResID ffxId : ctx.Resources.view<FfxInitData>())
+			for (ResID ffxId : ctx.Resources.view<InitData>())
 			{
-				FfxInitData& initData = ctx.Resources.get<FfxInitData>(ffxId);
+				InitData& initData = ctx.Resources.get<InitData>(ffxId);
 				initData.IsBuffer ? initData.Buffer.Free(dev) : initData.Texture.Free(dev);
 			}
 			ctx.Resources.clear();
@@ -305,7 +349,7 @@ namespace ZE::GFX::FFX
 			ctx.Bindings.Transform([&dev](Binding::Schema& schema) { schema.Free(dev); });
 			ctx.CommandSignatures.Transform([&dev](CommandSignature& signature) { signature.Free(dev); });
 
-			ctx.~FfxBackendContext();
+			ctx.~BackendContext();
 			delete[] reinterpret_cast<U8*>(ffxInterface.Ctx);
 			ffxInterface.Ctx = nullptr;
 		}
@@ -321,11 +365,11 @@ namespace ZE::GFX::FFX
 
 		// FFX_RESOURCE_FLAGS_UNDEFINED -> not used as handling undefined layout comes naturaly here
 
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		Device& dev = GetDevice(backendInterface);
 
-		FfxResID ffxID = ctx.Resources.create();
+		ResID ffxID = ctx.Resources.create();
 		outTexture->internalIndex = GetInternalIndex(ffxID);
 
 		ZE_ASSERT(createResourceDescription->heapType == FFX_HEAP_TYPE_DEFAULT, "Need to account for new type of heap!");
@@ -358,16 +402,18 @@ namespace ZE::GFX::FFX
 		resDesc.Type = GetResourceType(createResourceDescription->resourceDescription.type);
 		ZE_FRAME_RES_SET_NAME(resDesc, Utils::ToUTF8(createResourceDescription->name));
 
-		if (createResourceDescription->initData)
+		if (createResourceDescription->initData.type == FFX_RESOURCE_INIT_DATA_TYPE_BUFFER
+			|| createResourceDescription->initData.type == FFX_RESOURCE_INIT_DATA_TYPE_VALUE)
 		{
-			FfxInitData& initData = ctx.Resources.emplace<FfxInitData>(ffxID,
+			const bool isValue = createResourceDescription->initData.type == FFX_RESOURCE_INIT_DATA_TYPE_VALUE;
+			InitData& initData = ctx.Resources.emplace<InitData>(ffxID,
 				createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_BUFFER);
 			initData.LastFrameUsed = UINT64_MAX; // Indication that it shouldn't be removed
 			if (initData.IsBuffer)
 			{
 				Resource::CBufferData data = {};
-				data.Bytes = createResourceDescription->initDataSize;
-				data.DataStatic = createResourceDescription->initData;
+				data.Bytes = Utils::SafeCast<U32>(createResourceDescription->initData.size);
+				data.DataStatic = isValue ? &createResourceDescription->initData.value : createResourceDescription->initData.buffer;
 				initData.Buffer.Init(dev, ffxInterface.Disk, data);
 			}
 			else
@@ -375,7 +421,7 @@ namespace ZE::GFX::FFX
 				// Handling of textures
 				std::vector<Surface> surfaces;
 				surfaces.emplace_back(resDesc.Sizes.X, resDesc.Sizes.Y, resDesc.DepthOrArraySize, resDesc.MipLevels,
-					static_cast<U16>(1U), resDesc.Format, false, createResourceDescription->initData);
+					static_cast<U16>(1U), resDesc.Format, false, isValue ? &createResourceDescription->initData.value : createResourceDescription->initData.buffer);
 				Resource::Texture::PackDesc packDesc = {};
 				packDesc.Options = Resource::Texture::PackOption::CopySource;
 
@@ -436,22 +482,22 @@ namespace ZE::GFX::FFX
 		ffxInterface.InternalBuffers.Add(outTexture->internalIndex, resDesc, INVALID_RID, effectContextId);
 		ffxInterface.NotifyBuffersChange = true;
 
-		ctx.Resources.emplace<FfxResourceStateInfo>(ffxID, createResourceDescription->initalState, createResourceDescription->initalState, true);
+		ctx.Resources.emplace<ResourceStateInfo>(ffxID, createResourceDescription->initialState, createResourceDescription->initialState, true);
 		ctx.Resources.emplace<FfxResourceDescription>(ffxID, createResourceDescription->resourceDescription);
 #if _ZE_DEBUG_GFX_NAMES
 		if (createResourceDescription->name)
-			wcscpy_s(ctx.Resources.emplace<FfxResourceName>(ffxID).Name, createResourceDescription->name);
+			wcscpy_s(ctx.Resources.emplace<ResourceName>(ffxID).Name, createResourceDescription->name);
 #endif
 		return FFX_OK;
 	}
 
-	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource)
+	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource, FfxUInt32 effectContextId)
 	{
 		if (resource.internalIndex)
 		{
-			FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-			FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
-			FfxResID id = GetFfxResID(resource.internalIndex);
+			BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+			BackendContext& ctx = GetFfxCtx(ffxInterface);
+			ResID id = GetResID(resource.internalIndex);
 
 			// Due to different handling of internal resources sometimes there can be request to delete resource that is not present (eg. FSR2 copy resources)
 			if (ctx.Resources.valid(id))
@@ -459,7 +505,7 @@ namespace ZE::GFX::FFX
 				Device& dev = GetDevice(backendInterface);
 				ZE_ASSERT(ffxInterface.InternalBuffers.Contains(resource.internalIndex), "Resource has not been properly created!");
 
-				FfxInitData* initData = ctx.Resources.try_get<FfxInitData>(id);
+				InitData* initData = ctx.Resources.try_get<InitData>(id);
 				if (initData)
 					initData->IsBuffer ? initData->Buffer.Free(dev) : initData->Texture.Free(dev);
 				ffxInterface.InternalBuffers.Remove(resource.internalIndex);
@@ -472,16 +518,16 @@ namespace ZE::GFX::FFX
 
 	FfxResource ffxGetResource(FfxInterface* backendInterface, FfxResourceInternal resource)
 	{
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
-		FfxResID ffxId = GetFfxResID(resource.internalIndex);
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
+		ResID ffxId = GetResID(resource.internalIndex);
 
 		FfxResource res = {};
 		res.resource = EncodeRID(GetRID(ffxInterface, resource.internalIndex));
-		res.state = ctx.Resources.get<FfxResourceStateInfo>(ffxId).Current;
+		res.state = ctx.Resources.get<ResourceStateInfo>(ffxId).Current;
 		res.description = ffxGetResourceDescriptor(backendInterface, resource);
 #if _ZE_DEBUG_GFX_NAMES
-		if (FfxResourceName* name = ctx.Resources.try_get<FfxResourceName>(ffxId))
+		if (ResourceName* name = ctx.Resources.try_get<ResourceName>(ffxId))
 			wcscpy_s(res.name, name->Name);
 #endif
 		return res;
@@ -495,42 +541,77 @@ namespace ZE::GFX::FFX
 
 		if (inResource->resource)
 		{
-			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
-			FfxResID ffxId = ctx.Resources.create();
+			BackendContext& ctx = GetFfxCtx(backendInterface);
+			ResID ffxId = ctx.Resources.create();
 			outResourceInternal->internalIndex = GetInternalIndex(ffxId);
 
-			ctx.Resources.emplace<FfxResourceStateInfo>(ffxId, inResource->state, inResource->state, false);
+			ctx.Resources.emplace<ResourceStateInfo>(ffxId, inResource->state, inResource->state, false);
 			ctx.Resources.emplace<FfxResourceDescription>(ffxId, inResource->description);
 #if _ZE_DEBUG_GFX_NAMES
 			if (inResource->name)
-				wcscpy_s(ctx.Resources.emplace<FfxResourceName>(ffxId).Name, inResource->name);
+				wcscpy_s(ctx.Resources.emplace<ResourceName>(ffxId).Name, inResource->name);
 #endif
 			// Tag as dynamic per-frame resource
-			ctx.Resources.emplace<FfxDynamicResource>(ffxId, DecodeRID(inResource->resource));
+			ctx.Resources.emplace<DynamicResource>(ffxId, DecodeRID(inResource->resource));
 		}
 		else
 			outResourceInternal->internalIndex = 0;
 		return FFX_OK;
 	}
 
+	FfxErrorCode ffxRegisterStaticResource(FfxInterface* backendInterface, const FfxStaticResourceDescription* desc, FfxUInt32 effectContextId)
+	{
+		ZE_FAIL("Static resources are not yet supported!");
+		return FFX_ERROR_INCOMPLETE_INTERFACE;
+	}
+
 	FfxErrorCode ffxUnregisterResources(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId)
 	{
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 
 		// Walk back all the resources that don't belong to FFX and reset them to their initial state
-		for (FfxResID res : ctx.Resources.view<FfxDynamicResource>())
-			AddResourceBarrier(ffxInterface, GetInternalIndex(res), ctx.Resources.get<FfxResourceStateInfo>(res).Initial);
+		for (ResID res : ctx.Resources.view<DynamicResource>())
+			AddResourceBarrier(ffxInterface, GetInternalIndex(res), ctx.Resources.get<ResourceStateInfo>(res).Initial);
 		FlushBarriers(ctx, GetCommandList(commandList), GetFfxInterface(backendInterface).Buffers);
 
 		// Clear dynamic resources
-		ctx.Resources.destroy(ctx.Resources.view<FfxDynamicResource>().begin(), ctx.Resources.view<FfxDynamicResource>().end());
+		ctx.Resources.destroy(ctx.Resources.view<DynamicResource>().begin(), ctx.Resources.view<DynamicResource>().end());
 		return FFX_OK;
 	}
 
 	FfxResourceDescription ffxGetResourceDescriptor(FfxInterface* backendInterface, FfxResourceInternal resource)
 	{
-		return GetFfxCtx(backendInterface).Resources.get<FfxResourceDescription>(GetFfxResID(resource.internalIndex));
+		return GetFfxCtx(backendInterface).Resources.get<FfxResourceDescription>(GetResID(resource.internalIndex));
+	}
+
+	FfxErrorCode ffxStageConstantBufferData(FfxInterface* backendInterface, void* data, FfxUInt32 size, FfxConstantBuffer* constantBuffer)
+	{
+		if (data && constantBuffer)
+		{
+			Device& dev = GetDevice(backendInterface);
+			auto alloc = GetFfxInterface(backendInterface).DynamicBuffers.Get().Alloc(dev, data, size);
+
+			constantBuffer->data = reinterpret_cast<U32*>(alloc.Block);
+			constantBuffer->num32BitEntries = alloc.Offset;
+			return FFX_OK;
+		}
+		else
+			return FFX_ERROR_INVALID_POINTER;
+	}
+
+	FfxErrorCode ffxMapResource(FfxInterface* backendInterface, FfxResourceInternal resource, void** ptr)
+	{
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		ffxInterface.Buffers.MapResource(GetDevice(backendInterface), GetRID(ffxInterface, resource.internalIndex), ptr);
+		return FFX_OK;
+	}
+
+	FfxErrorCode ffxUnmapResource(FfxInterface* backendInterface, FfxResourceInternal resource)
+	{
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		ffxInterface.Buffers.UnmapResource(GetRID(ffxInterface, resource.internalIndex));
+		return FFX_OK;
 	}
 
 	FfxErrorCode ffxCreatePipeline(FfxInterface* backendInterface, FfxEffect effect, FfxPass passId,
@@ -541,7 +622,7 @@ namespace ZE::GFX::FFX
 		ZE_ASSERT(desc->stage == FFX_BIND_COMPUTE_SHADER_STAGE || desc->stage == 0, "Pipeline not for the compute shader!");
 
 		Device& dev = GetDevice(backendInterface);
-		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+		BackendContext& ctx = GetFfxCtx(backendInterface);
 		const U64 id = FFX::GetPipelineID(effect, passId, permutationOptions);
 
 		FfxShaderBlob shaderBlob = {};
@@ -549,7 +630,7 @@ namespace ZE::GFX::FFX
 		{
 			// Fill out for every shader that is created when needed by effect
 			Resource::Shader shader;
-			const FfxErrorCode code = FFX::GetShaderInfo(dev, effect, passId, permutationOptions, shaderBlob, &shader);
+			const FfxErrorCode code = GetShaderInfo(&dev, effect, passId, permutationOptions, shaderBlob, &shader);
 			if (code != FFX_OK)
 				return code;
 
@@ -636,7 +717,7 @@ namespace ZE::GFX::FFX
 		else
 		{
 			// Shader already loaded but resource info still needed
-			const FfxErrorCode code = FFX::GetShaderInfo(dev, effect, passId, permutationOptions, shaderBlob, nullptr);
+			const FfxErrorCode code = GetShaderInfo(nullptr, effect, passId, permutationOptions, shaderBlob, nullptr);
 			if (code != FFX_OK)
 				return code;
 		}
@@ -656,31 +737,31 @@ namespace ZE::GFX::FFX
 		for (U32 i = 0; i < shaderBlob.uavTextureCount; ++i)
 		{
 			outPipeline->uavTextureBindings[i].slotIndex = shaderBlob.boundUAVTextures[i];
-			outPipeline->uavTextureBindings[i].bindCount = shaderBlob.boundUAVTextureCounts[i];
+			//outPipeline->uavTextureBindings[i].bindCount = shaderBlob.boundUAVTextureCounts[i];
 			wcscpy_s(outPipeline->uavTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVTextureNames[i]).c_str());
 		}
 		for (U32 i = 0; i < shaderBlob.srvTextureCount; ++i)
 		{
 			outPipeline->srvTextureBindings[i].slotIndex = shaderBlob.boundSRVTextures[i];
-			outPipeline->srvTextureBindings[i].bindCount = shaderBlob.boundSRVTextureCounts[i];
+			//outPipeline->srvTextureBindings[i].bindCount = shaderBlob.boundSRVTextureCounts[i];
 			wcscpy_s(outPipeline->srvTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVTextureNames[i]).c_str());
 		}
 		for (U32 i = 0; i < shaderBlob.srvBufferCount; ++i)
 		{
 			outPipeline->srvBufferBindings[i].slotIndex = shaderBlob.boundSRVBuffers[i];
-			outPipeline->srvBufferBindings[i].bindCount = shaderBlob.boundSRVBufferCounts[i];
+			//outPipeline->srvBufferBindings[i].bindCount = shaderBlob.boundSRVBufferCounts[i];
 			wcscpy_s(outPipeline->srvBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVBufferNames[i]).c_str());
 		}
 		for (U32 i = 0; i < shaderBlob.uavBufferCount; ++i)
 		{
 			outPipeline->uavBufferBindings[i].slotIndex = shaderBlob.boundUAVBuffers[i];
-			outPipeline->uavBufferBindings[i].bindCount = shaderBlob.boundUAVBufferCounts[i];
+			//outPipeline->uavBufferBindings[i].bindCount = shaderBlob.boundUAVBufferCounts[i];
 			wcscpy_s(outPipeline->uavBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVBufferNames[i]).c_str());
 		}
 		for (U32 i = 0; i < shaderBlob.cbvCount; ++i)
 		{
 			outPipeline->constantBufferBindings[i].slotIndex = shaderBlob.boundConstantBuffers[i];
-			outPipeline->constantBufferBindings[i].bindCount = shaderBlob.boundConstantBufferCounts[i];
+			//outPipeline->constantBufferBindings[i].bindCount = shaderBlob.boundConstantBufferCounts[i];
 			wcscpy_s(outPipeline->constantBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundConstantBufferNames[i]).c_str());
 		}
 
@@ -706,7 +787,7 @@ namespace ZE::GFX::FFX
 		if (pipeline)
 		{
 			Device& dev = GetDevice(backendInterface);
-			FfxBackendContext& ctx = GetFfxCtx(backendInterface);
+			BackendContext& ctx = GetFfxCtx(backendInterface);
 
 			if (pipeline->rootSignature)
 			{
@@ -749,25 +830,14 @@ namespace ZE::GFX::FFX
 	{
 		ZE_ASSERT(job, "Empty FFX gpu job!");
 
-		FfxBackendContext& ctx = GetFfxCtx(backendInterface);
-
-		FfxGpuJobDescription& newJob = ctx.Jobs.emplace_back(*job);
-		if (newJob.jobType == FFX_GPU_JOB_COMPUTE)
-		{
-			// Need to copy CBV data in case it's on the stack only
-			for (U32 i = 0; i < newJob.computeJobDescriptor.pipeline.constCount; ++i)
-			{
-				const U32 entryCount = newJob.computeJobDescriptor.cbs[i].num32BitEntries = job->computeJobDescriptor.cbs[i].num32BitEntries;
-				std::memcpy(newJob.computeJobDescriptor.cbs[i].data, job->computeJobDescriptor.cbs[i].data, entryCount * sizeof(U32));
-			}
-		}
+		GetFfxCtx(backendInterface).Jobs.emplace_back(*job);
 		return FFX_OK;
 	}
 
-	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList)
+	FfxErrorCode ffxExecuteGpuJobs(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId)
 	{
-		FfxBackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		Device& dev = GetDevice(backendInterface);
 		Resource::DynamicCBuffer& dynamicBuffer = ffxInterface.DynamicBuffers.Get();
 		CommandList& cl = GetCommandList(commandList);
@@ -792,34 +862,72 @@ namespace ZE::GFX::FFX
 		}
 		ctx.Jobs.clear();
 
-		for (FfxResID ffxId : ctx.Resources.view<FfxInitData>())
+		for (ResID ffxId : ctx.Resources.view<InitData>())
 		{
-			FfxInitData& initData = ctx.Resources.get<FfxInitData>(ffxId);
+			InitData& initData = ctx.Resources.get<InitData>(ffxId);
 			if (initData.LastFrameUsed + Settings::GetBackbufferCount() < Settings::GetFrameIndex())
 			{
 				initData.IsBuffer ? initData.Buffer.Free(dev) : initData.Texture.Free(dev);
-				ctx.Resources.remove<FfxInitData>(ffxId);
+				ctx.Resources.remove<InitData>(ffxId);
 			}
 		}
 
 		return FFX_OK;
 	}
+
+	FfxErrorCode ffxBreadcrumbsAllocBlock(FfxInterface* backendInterface, U64 blockBytes, FfxBreadcrumbsBlockData* blockData)
+	{
+		ZE_ASSERT(blockData != nullptr, "Empty FFX Breadcrumbs block data!");
+
+		*blockData = GetDevice(backendInterface).AllocBreadcrumbsBlock(blockBytes);
+		return FFX_OK;
+	}
+
+	void ffxBreadcrumbsFreeBlock(FfxInterface* backendInterface, FfxBreadcrumbsBlockData* blockData)
+	{
+		ZE_ASSERT(blockData != nullptr, "Empty FFX Breadcrumbs block data!");
+		GetDevice(backendInterface).FreeBreadcrumbsBlock(*blockData);
+	}
+
+	void ffxBreadcrumbsWrite(FfxInterface* backendInterface, FfxCommandList commandList, U32 value, U64 gpuLocation, void* gpuBuffer, bool isBegin)
+	{
+		ZE_ASSERT(gpuBuffer != nullptr, "Empty FFX Breadcrumbs GPU buffer!");
+		GetCommandList(commandList).WriteBreadcrumbs(GetDevice(backendInterface), value, gpuLocation, gpuBuffer, isBegin);
+	}
+
+	void ffxBreadcrumbsPrintDeviceInfo(FfxInterface* backendInterface, FfxAllocationCallbacks* allocs, bool extendedInfo, char** printBuffer, U64* printSize)
+	{
+		// TODO: currently no printing of device info
+	}
+
+	FfxErrorCode ffxGetPermutationBlobByIndex(FfxEffect effectId, FfxPass passId, FfxBindStage bindStage, uint32_t permutationOptions, FfxShaderBlob* outBlob)
+	{
+		if (outBlob)
+			return GetShaderInfo(nullptr, effectId, passId, permutationOptions, *outBlob, nullptr);
+		return FFX_ERROR_INVALID_POINTER;
+	}
+
+	FfxErrorCode ffxSwapChainConfigureFrameGeneration(const FfxFrameGenerationConfig* config)
+	{
+		ZE_FAIL("FSR frame generation is currently not supported!");
+		return FFX_ERROR_INCOMPLETE_INTERFACE;
+	}
 #pragma endregion
 #pragma region FFX utility functions
-	constexpr FfxBackendInterface& GetFfxInterface(FfxInterface* backendInterface) noexcept
+	constexpr BackendInterface& GetFfxInterface(FfxInterface* backendInterface) noexcept
 	{
 		ZE_CHECK_FFX_BACKEND();
 		ZE_ASSERT(backendInterface->scratchBuffer, "Empty FFX backend interface!");
-		return *(FfxBackendInterface*)(backendInterface->scratchBuffer); // No reinterpret_cast to ensure constexpr
+		return *(BackendInterface*)(backendInterface->scratchBuffer); // No reinterpret_cast to ensure constexpr
 	}
 
-	constexpr FfxBackendContext& GetFfxCtx(FfxBackendInterface& ffxInterface) noexcept
+	constexpr BackendContext& GetFfxCtx(BackendInterface& ffxInterface) noexcept
 	{
 		ZE_ASSERT(ffxInterface.Ctx, "Empty FFX backend context!");
 		return *ffxInterface.Ctx;
 	}
 
-	constexpr FfxBackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept
+	constexpr BackendContext& GetFfxCtx(FfxInterface* backendInterface) noexcept
 	{
 		return GetFfxCtx(GetFfxInterface(backendInterface));
 	}
@@ -861,7 +969,7 @@ namespace ZE::GFX::FFX
 		Pipeline::FrameResourceFlags flags = Base(Pipeline::FrameResourceFlag::ForceSRV);
 		if (usage != FFX_RESOURCE_USAGE_READ_ONLY)
 		{
-			if (usage & FFX_RESOURCE_USAGE_RENDERTARGET)
+			if (usage & (FFX_RESOURCE_USAGE_RENDERTARGET | FFX_RESOURCE_USAGE_DCC_RENDERTARGET))
 				flags |= Pipeline::FrameResourceFlag::ForceRTV;
 			if (usage & FFX_RESOURCE_USAGE_UAV)
 				flags |= Pipeline::FrameResourceFlag::ForceUAV;
@@ -871,6 +979,8 @@ namespace ZE::GFX::FFX
 				flags |= Pipeline::FrameResourceFlag::AllowIndirect;
 			if (usage & FFX_RESOURCE_USAGE_ARRAYVIEW)
 				flags |= Pipeline::FrameResourceFlag::ArrayView;
+			if (usage & FFX_RESOURCE_USAGE_STENCILTARGET)
+				flags |= Pipeline::FrameResourceFlag::StencilView | Pipeline::FrameResourceFlag::ForceDSV;
 		}
 		return flags;
 	}
@@ -879,6 +989,8 @@ namespace ZE::GFX::FFX
 	{
 		switch (state)
 		{
+		case FFX_RESOURCE_STATE_COMMON:
+			return Pipeline::TextureLayout::Common;
 		case FFX_RESOURCE_STATE_UNORDERED_ACCESS:
 			return Pipeline::TextureLayout::UnorderedAccess;
 		case FFX_RESOURCE_STATE_COMPUTE_READ:
@@ -895,6 +1007,10 @@ namespace ZE::GFX::FFX
 		case FFX_RESOURCE_STATE_GENERIC_READ:
 		case FFX_RESOURCE_STATE_INDIRECT_ARGUMENT:
 			return Pipeline::TextureLayout::GenericRead;
+		case FFX_RESOURCE_STATE_PRESENT:
+			return Pipeline::TextureLayout::Present;
+		case FFX_RESOURCE_STATE_RENDER_TARGET:
+			return Pipeline::TextureLayout::RenderTarget;
 		}
 	}
 
@@ -932,11 +1048,11 @@ namespace ZE::GFX::FFX
 		}
 	}
 
-	RID GetRID(FfxBackendInterface& ffxInterface, S32 internalIndex) noexcept
+	RID GetRID(BackendInterface& ffxInterface, S32 internalIndex) noexcept
 	{
 		ZE_ASSERT(internalIndex, "Invalid FFX resource index");
 
-		auto* registered = GetFfxCtx(ffxInterface).Resources.try_get<FfxDynamicResource>(GetFfxResID(internalIndex));
+		auto* registered = GetFfxCtx(ffxInterface).Resources.try_get<DynamicResource>(GetResID(internalIndex));
 		if (registered)
 			return registered->ResID;
 
@@ -944,10 +1060,10 @@ namespace ZE::GFX::FFX
 		return ffxInterface.InternalBuffers.Get(internalIndex).ResID;
 	}
 
-	void AddResourceBarrier(FfxBackendInterface& ffxInterface, S32 internalIndex, FfxResourceStates after) noexcept
+	void AddResourceBarrier(BackendInterface& ffxInterface, S32 internalIndex, FfxResourceStates after) noexcept
 	{
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
-		FfxResourceStateInfo& state = ctx.Resources.get<FfxResourceStateInfo>(GetFfxResID(internalIndex));
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
+		ResourceStateInfo& state = ctx.Resources.get<ResourceStateInfo>(GetResID(internalIndex));
 
 		if (state.Current != after || state.Undefined)
 		{
@@ -978,7 +1094,7 @@ namespace ZE::GFX::FFX
 		}
 	}
 
-	void FlushBarriers(FfxBackendContext& ctx, CommandList& cl, Pipeline::FrameBuffer& buffers)
+	void FlushBarriers(BackendContext& ctx, CommandList& cl, Pipeline::FrameBuffer& buffers)
 	{
 		if (ctx.Barriers.size())
 		{
@@ -987,18 +1103,18 @@ namespace ZE::GFX::FFX
 		}
 	}
 
-	void ExecuteClearJob(FfxBackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job)
+	void ExecuteClearJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job)
 	{
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		AddResourceBarrier(ffxInterface, job.target.internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		FlushBarriers(ctx, cl, buffers);
 
 		buffers.ClearUAV(cl, GetRID(ffxInterface, job.target.internalIndex), *reinterpret_cast<const ColorF4*>(job.color));
 	}
 
-	void ExecuteCopyJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job)
+	void ExecuteCopyJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job)
 	{
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		RID srcId = GetRID(ffxInterface, job.src.internalIndex);
 		RID destId = GetRID(ffxInterface, job.dst.internalIndex);
 		AddResourceBarrier(ffxInterface, job.src.internalIndex, FFX_RESOURCE_STATE_COPY_SRC);
@@ -1008,8 +1124,8 @@ namespace ZE::GFX::FFX
 		// Initialization of resource
 		if (srcId == destId)
 		{
-			FfxResID ffxID = GetFfxResID(job.dst.internalIndex);
-			FfxInitData& initData = ctx.Resources.get<FfxInitData>(ffxID);
+			ResID ffxID = GetResID(job.dst.internalIndex);
+			InitData& initData = ctx.Resources.get<InitData>(ffxID);
 
 			if (initData.IsBuffer)
 				buffers.InitResource(cl, destId, initData.Buffer);
@@ -1021,22 +1137,22 @@ namespace ZE::GFX::FFX
 			buffers.Copy(dev, cl, srcId, destId);
 	}
 
-	void ExecuteComputeJob(FfxBackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job)
+	void ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job)
 	{
-		FfxBackendContext& ctx = GetFfxCtx(ffxInterface);
+		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		// Transition all the UAVs and SRVs
 		for (U32 i = 0; i < job.pipeline.uavBufferCount; ++i)
-			if (job.uavBuffers[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.uavBuffers[i].internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+			if (job.uavBuffers[i].resource.internalIndex)
+				AddResourceBarrier(ffxInterface, job.uavBuffers[i].resource.internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		for (U32 i = 0; i < job.pipeline.uavTextureCount; ++i)
-			if (job.uavTextures[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.uavTextures[i].internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+			if (job.uavTextures[i].resource.internalIndex)
+				AddResourceBarrier(ffxInterface, job.uavTextures[i].resource.internalIndex, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		for (U32 i = 0; i < job.pipeline.srvBufferCount; ++i)
-			if (job.srvBuffers[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.srvBuffers[i].internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
+			if (job.srvBuffers[i].resource.internalIndex)
+				AddResourceBarrier(ffxInterface, job.srvBuffers[i].resource.internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
 		for (U32 i = 0; i < job.pipeline.srvTextureCount; ++i)
-			if (job.srvTextures[i].internalIndex)
-				AddResourceBarrier(ffxInterface, job.srvTextures[i].internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
+			if (job.srvTextures[i].resource.internalIndex)
+				AddResourceBarrier(ffxInterface, job.srvTextures[i].resource.internalIndex, FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		// If we are dispatching indirectly, transition the argument resource to indirect argument
 		if (job.pipeline.cmdSignature)
@@ -1051,18 +1167,18 @@ namespace ZE::GFX::FFX
 		// Bind all resources
 		for (U32 i = 0; i < job.pipeline.uavBufferCount; ++i)
 		{
-			if (job.uavBuffers[i].internalIndex)
-				buffers.SetUAV(cl, bindCtx, GetRID(ffxInterface, job.uavBuffers[i].internalIndex));
+			if (job.uavBuffers[i].resource.internalIndex)
+				buffers.SetUAV(cl, bindCtx, GetRID(ffxInterface, job.uavBuffers[i].resource.internalIndex));
 			else
 				++bindCtx.Count;
 		}
 		for (U32 i = 0; i < job.pipeline.uavTextureCount; ++i)
 		{
-			if (job.uavTextures[i].internalIndex)
+			if (job.uavTextures[i].resource.internalIndex)
 			{
-				RID rid = GetRID(ffxInterface, job.uavTextures[i].internalIndex);
-				if (job.uavTextureMips[i])
-					buffers.SetUAV(cl, bindCtx, rid, Utils::SafeCast<U16>(job.uavTextureMips[i]));
+				RID rid = GetRID(ffxInterface, job.uavTextures[i].resource.internalIndex);
+				if (job.uavTextures[i].mip)
+					buffers.SetUAV(cl, bindCtx, rid, Utils::SafeCast<U16>(job.uavTextures[i].mip));
 				else
 					buffers.SetUAV(cl, bindCtx, rid);
 			}
@@ -1071,22 +1187,22 @@ namespace ZE::GFX::FFX
 		}
 		for (U32 i = 0; i < job.pipeline.srvBufferCount; ++i)
 		{
-			if (job.srvBuffers[i].internalIndex)
-				buffers.SetSRV(cl, bindCtx, GetRID(ffxInterface, job.srvBuffers[i].internalIndex));
+			if (job.srvBuffers[i].resource.internalIndex)
+				buffers.SetSRV(cl, bindCtx, GetRID(ffxInterface, job.srvBuffers[i].resource.internalIndex));
 			else
 				++bindCtx.Count;
 		}
 		for (U32 i = 0; i < job.pipeline.srvTextureCount; ++i)
 		{
-			if (job.srvTextures[i].internalIndex)
-				buffers.SetSRV(cl, bindCtx, GetRID(ffxInterface, job.srvTextures[i].internalIndex));
+			if (job.srvTextures[i].resource.internalIndex)
+				buffers.SetSRV(cl, bindCtx, GetRID(ffxInterface, job.srvTextures[i].resource.internalIndex));
 			else
 				++bindCtx.Count;
 		}
 
-		// Copy data to dynamic cbuffer and bind it
+		// Bind previously copied data
 		for (U32 i = 0; i < job.pipeline.constCount; ++i)
-			dynamicBuffer.AllocBind(dev, cl, bindCtx, job.cbs[i].data, job.cbs[i].num32BitEntries * sizeof(U32));
+			dynamicBuffer.Bind(cl, bindCtx, { job.cbs[i].num32BitEntries, reinterpret_cast<U64>(job.cbs[i].data) });
 
 		// Dispatch (or dispatch indirect)
 		if (job.pipeline.cmdSignature)

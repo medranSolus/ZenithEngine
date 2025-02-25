@@ -180,7 +180,8 @@ namespace ZE::RHI::DX12
 			break;
 		}
 		}
-		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::HOST_HEAP_SIZE, NORMAL_CHUNK, 3);
+		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::UPLOAD_HEAP_SIZE, NORMAL_CHUNK, 3);
+		readbackBuffersAllocator.Init(READBACK_BUFF_HEAP_FLAGS | flags, Settings::HOST_HEAP_SIZE, NORMAL_CHUNK, 3);
 	}
 
 	ResourceInfo AllocatorGPU::AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
@@ -199,6 +200,11 @@ namespace ZE::RHI::DX12
 	ResourceInfo AllocatorGPU::AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
 		return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, dynamicBuffersAllocator);
+	}
+
+	ResourceInfo AllocatorGPU::AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
+	{
+		return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, readbackBuffersAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)

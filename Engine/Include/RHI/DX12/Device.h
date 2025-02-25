@@ -84,6 +84,7 @@ namespace ZE::RHI::DX12
 		HMODULE ffxApiDll = nullptr;
 		PfnFfxCreateContext ffxCreateContext = nullptr;
 		GFX::FfxApiFunctions ffxFunctions = {};
+		bool featureExistingHeap = false;
 
 		void WaitCPU(IFence* fence, U64 val);
 		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);
@@ -107,6 +108,12 @@ namespace ZE::RHI::DX12
 		constexpr bool IsXeSSEnabled() const noexcept { return xessData.Descs.Handle != nullptr; }
 		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { xessData.BufferRegion = buffer; xessData.TextureRegion = texture; }
 		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { return { xessData.BufferRegion, xessData.TextureRegion }; }
+
+		constexpr bool IsCoherentMemorySupported() const noexcept { return false; }
+		constexpr bool IsDedicatedAllocSupported() const noexcept { return true; }
+		constexpr bool IsBufferMarkersSupported() const noexcept { return false; }
+		constexpr bool IsExtendedSynchronizationSupported() const noexcept { return false; }
+		constexpr bool IsUavNonUniformIndexing() const noexcept { return true; }
 
 		void* GetFfxHandle() const noexcept { return GetDevice(); }
 
@@ -159,6 +166,9 @@ namespace ZE::RHI::DX12
 		void ExecuteMain(GFX::CommandList& cl);
 		void ExecuteCompute(GFX::CommandList& cl);
 		void ExecuteCopy(GFX::CommandList& cl);
+
+		FfxBreadcrumbsBlockData AllocBreadcrumbsBlock(U64 bytes);
+		void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block);
 
 		// Gfx API Internal
 

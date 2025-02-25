@@ -49,6 +49,7 @@ namespace ZE::GFX
 		case FFX_ERROR_NULL_DEVICE: return "The operation failed because a device was null.";
 		case FFX_ERROR_BACKEND_API_ERROR: return "The operation failed because the backend API returned an error code.";
 		case FFX_ERROR_INSUFFICIENT_MEMORY: return "The operation failed because there was not enough memory.";
+		case FFX_ERROR_INVALID_VERSION: return "The operation failed because the wrong backend was linked.";
 		}
 	}
 #pragma endregion

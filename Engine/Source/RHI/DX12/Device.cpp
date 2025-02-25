@@ -260,6 +260,9 @@ namespace ZE::RHI::DX12
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
 		D3D12_FEATURE_DATA_D3D12_OPTIONS16 options16 = {};
 		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &options16, sizeof(options16)));
+		D3D12_FEATURE_DATA_EXISTING_HEAPS existingHeaps = {};
+		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_EXISTING_HEAPS, &existingHeaps, sizeof(existingHeaps))))
+			featureExistingHeap = existingHeaps.Supported;
 
 		// Check for RT
 		switch (options5.RaytracingTier)
@@ -567,6 +570,93 @@ namespace ZE::RHI::DX12
 	void Device::ExecuteCopy(GFX::CommandList& cl)
 	{
 		Execute(copyQueue.Get(), cl.Get().dx12);
+	}
+
+	FfxBreadcrumbsBlockData Device::AllocBreadcrumbsBlock(U64 bytes)
+	{
+		ZE_WIN_ENABLE_EXCEPT();
+
+		FfxBreadcrumbsBlockData blockData = {};
+		D3D12_RESOURCE_DESC1 desc = GetBufferDesc(bytes);
+		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
+
+		// VirtualAlloc() + OpenExistingHeapFromAddress() + CreatePlacedResource() path, ensures that Breadcrumb buffer survives TDR.
+		if (featureExistingHeap)
+		{
+			blockData.memory = VirtualAlloc(nullptr, bytes, MEM_COMMIT, PAGE_READWRITE);
+			if (blockData.memory != nullptr)
+			{
+				IHeap* heap = nullptr;
+				if (SUCCEEDED(device->OpenExistingHeapFromAddress(blockData.memory, IID_PPV_ARGS(&heap))))
+				{
+					IResource* resource = nullptr;
+					if (SUCCEEDED(device->CreatePlacedResource2(heap, 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, IID_PPV_ARGS(&resource))))
+					{
+						resource->SetName(L"Buffer for Breadcrumbs - placed in VirtualAlloc, OpenExistingHeapFromAddress");
+						blockData.heap = reinterpret_cast<void*>(heap);
+						blockData.buffer = reinterpret_cast<void*>(resource);
+						blockData.baseAddress = resource->GetGPUVirtualAddress();
+						return blockData;
+					}
+					heap->Release();
+				}
+				[[maybe_unused]] const BOOL status = VirtualFree(blockData.memory, 0, MEM_RELEASE);
+				ZE_ASSERT(status != 0, "Error while releasing Breadcrumb memory!");
+				blockData.memory = nullptr;
+			}
+		}
+
+		// If VirtualAlloc path failed, try standard path
+		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		ResourceInfo res = allocator.AllocReadbackBuffer(*this, desc);
+
+		const D3D12_RANGE range = {};
+		ZE_DX_THROW_FAILED(res.Resource->Map(0, &range, &blockData.memory));
+		res.Resource->AddRef(); // Allow for release later on
+
+		blockData.heap = res.Handle;
+		blockData.buffer = reinterpret_cast<void*>(res.Resource.Get());
+		blockData.baseAddress = res.Resource->GetGPUVirtualAddress();
+		return blockData;
+	}
+
+	void Device::FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block)
+	{
+		if (featureExistingHeap)
+		{
+			// VirutalAlloc() path
+			if (block.buffer)
+			{
+				reinterpret_cast<IResource*>(block.buffer)->Release();
+				block.buffer = nullptr;
+			}
+			if (block.heap)
+			{
+				reinterpret_cast<IHeap*>(block.heap)->Release();
+				block.heap = nullptr;
+			}
+			if (block.memory)
+			{
+				[[maybe_unused]] const BOOL status = VirtualFree(block.memory, 0, MEM_RELEASE);
+				ZE_ASSERT(status != 0, "Error while releasing Breadcrumb memory!");
+				block.memory = nullptr;
+			}
+		}
+		else if (block.buffer && block.heap)
+		{
+			ResourceInfo res = {};
+			res.Handle = block.heap;
+			res.Resource.Attach(reinterpret_cast<IResource*>(block.buffer));
+			if (block.memory)
+			{
+				res.Resource->Unmap(0, nullptr);
+				block.memory = nullptr;
+			}
+
+			allocator.RemoveReadackBuffer(res);
+			block.buffer = nullptr;
+			block.heap = nullptr;
+		}
 	}
 
 	D3D12_RESOURCE_DESC1 Device::GetBufferDesc(U64 size) const noexcept

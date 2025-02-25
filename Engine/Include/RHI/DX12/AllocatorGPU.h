@@ -14,7 +14,7 @@ namespace ZE::RHI::DX12
 
 	private:
 		typedef Allocator::TLSFMemoryChunkFlags HeapFlags;
-		enum HeapFlag : HeapFlags { None = 0, Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, AllowTexturesRTDS = 8, NoMSAA = 16, CommittedAlloc = 32, GpuUploadHeap = 64 };
+		enum HeapFlag : HeapFlags { None = 0, Dynamic = 1, AllowBuffers = 2, AllowTextures = 4, AllowTexturesRTDS = 8, NoMSAA = 16, CommittedAlloc = 32, GpuUploadHeap = 64, Readback = 128 };
 
 		struct Memory
 		{
@@ -34,6 +34,7 @@ namespace ZE::RHI::DX12
 		static constexpr HeapFlags MAIN_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::NoMSAA;
 		static constexpr HeapFlags SECONDARY_HEAP_FLAGS = HeapFlag::AllowTextures | HeapFlag::NoMSAA;
 		static constexpr HeapFlags DYNAMIC_BUFF_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::Dynamic | HeapFlag::NoMSAA;
+		static constexpr HeapFlags READBACK_BUFF_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::Readback | HeapFlag::NoMSAA;
 
 		AllocTier allocTier = AllocTier::Tier1;
 		HeapAllocator::BlockAllocator blockAllocator;
@@ -45,6 +46,8 @@ namespace ZE::RHI::DX12
 		HeapAllocator secondaryAllocator;
 		// Tier1 + Tier2: dynamic buffers
 		HeapAllocator dynamicBuffersAllocator;
+		// Tier1 + Tier2: readback buffers
+		HeapAllocator readbackBuffersAllocator;
 
 		static constexpr U64 GetHeapAlignment(HeapFlags flags) noexcept;
 		static constexpr D3D12_HEAP_TYPE GetHeapType(HeapFlags flags) noexcept;
@@ -69,7 +72,7 @@ namespace ZE::RHI::DX12
 
 	public:
 		AllocatorGPU() : blockAllocator(BLOCK_ALLOC_CAPACITY), chunkAllocator(CHUNK_ALLOC_CAPACITY), mainAllocator(blockAllocator, chunkAllocator),
-			secondaryAllocator(blockAllocator, chunkAllocator), dynamicBuffersAllocator(blockAllocator, chunkAllocator) {}
+			secondaryAllocator(blockAllocator, chunkAllocator), dynamicBuffersAllocator(blockAllocator, chunkAllocator), readbackBuffersAllocator(blockAllocator, chunkAllocator) {}
 		ZE_CLASS_MOVE(AllocatorGPU);
 		~AllocatorGPU();
 
@@ -78,6 +81,7 @@ namespace ZE::RHI::DX12
 
 		void RemoveBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, mainAllocator); }
 		void RemoveDynamicBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, dynamicBuffersAllocator); }
+		void RemoveReadackBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, readbackBuffersAllocator); }
 		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
 		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported);
@@ -85,6 +89,8 @@ namespace ZE::RHI::DX12
 		ResourceInfo AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 		// Buffers that can be written fast into from CPU
 		ResourceInfo AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
+		// Buffers that can be written by GPU and read fast from CPU
+		ResourceInfo AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 		// Only small textures (smaller than 64KB)
 		ResourceInfo AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc);
 		// Only normal textures and small multisampled textures (smaller than 4MB)

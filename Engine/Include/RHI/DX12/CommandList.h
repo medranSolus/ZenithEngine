@@ -48,6 +48,8 @@ namespace ZE::RHI::DX12
 		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
 
+		void WriteBreadcrumbs(GFX::Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept(!_ZE_DEBUG_GFX_API);
+
 #if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept;
 		void TagEnd(GFX::Device& dev) const noexcept;

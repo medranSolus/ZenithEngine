@@ -48,6 +48,8 @@ namespace ZE::GFX
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
 		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 
+		constexpr void WriteBreadcrumbs(Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(WriteBreadcrumbs, dev, value, location, breadcrumbsBuffer, isBegin); }
+
 		// Before destroying command list you have to call this function for proper memory freeing
 		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 

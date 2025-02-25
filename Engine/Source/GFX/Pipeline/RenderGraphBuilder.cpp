@@ -2082,7 +2082,7 @@ namespace ZE::GFX::Pipeline
 
 		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
 		{
-			CascadePassUpdate(dev, graph, buildData, uploadWait, cascadeUpdate);
+			CascadePassUpdate(dev, graph, buildData, uploadWait, cascadeUpdate || graph.ffxBuffersChanged);
 
 			// Update all referenced RIDs due to changes in frambuffer
 			auto updateExecGroupResources = [&](U32 i, RenderGraph::ExecutionGroup& execGroup)
