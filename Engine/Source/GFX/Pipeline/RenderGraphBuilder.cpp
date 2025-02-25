@@ -157,28 +157,19 @@ namespace ZE::GFX::Pipeline
 					if (passDescs.at(j).front().GetGraphConnectorName() == node.GetGraphConnectorName())
 					{
 #if _ZE_RENDERER_CREATION_VALIDATION
-						bool wrongOutputSet = false, notSorted = true;
-						std::vector<std::string> nodeOutputs;
+						bool wrongOutputSet = false;
 						for (const auto& setNode : passDescs.at(j))
 						{
-							if (setNode.GetOutputs().size() != node.GetOutputs().size())
+							// Need to check if output sets are the same in the lower part of the set
+							const auto& currentOutputs = setNode.GetOutputs();
+							const auto& nodeOutputs = node.GetOutputs();
+							for (U64 k = 0, size = std::min(currentOutputs.size(), nodeOutputs.size()); k < size; ++k)
 							{
-								wrongOutputSet = true;
-								break;
-							}
-							// If sizes match then need to check if output sets are the same
-							if (notSorted)
-							{
-								nodeOutputs = node.GetOutputs();
-								std::sort(nodeOutputs.begin(), nodeOutputs.end());
-								notSorted = false;
-							}
-							std::vector<std::string> currentOutputs = setNode.GetOutputs();
-							std::sort(currentOutputs.begin(), currentOutputs.end());
-							if (nodeOutputs != currentOutputs)
-							{
-								wrongOutputSet = true;
-								break;
+								if (nodeOutputs.at(k) != currentOutputs.at(k))
+								{
+									wrongOutputSet = true;
+									break;
+								}
 							}
 						}
 						ZE_CHECK_FAILED_CONFIG_LOAD(wrongOutputSet, ErrorPassWrongOutputSet,
