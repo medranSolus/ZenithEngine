@@ -4,6 +4,9 @@
 #include <map>
 #include <shared_mutex>
 #include <string>
+ZE_WARNING_PUSH
+#include "Tracy.hpp"
+ZE_WARNING_POP
 
 #if _ZE_PLATFORM_WINDOWS
 #include "Platform/WinAPI/Perf.h"

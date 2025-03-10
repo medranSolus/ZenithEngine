@@ -28,6 +28,7 @@ namespace ZE
 
 	bool Engine::Init(const EngineParams& params)
 	{
+		TracyNoop();
 		flags[Flags::Initialized] = true;
 		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
 

@@ -30,6 +30,7 @@ option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large numbe
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_RENDERER_NO_SPLIT_BARRIERS "Turns off splitting barriers and performs them immediatelly" ON)
 option(ZE_RENDERER_CREATION_VALIDATION "Turns on validation during whole process of render graph creation, enabled by default in development builds but can be forced even in release" ON)
+option(ZE_ENABLE_TRACY "Enable Tracy profiling tool explicitly (enabled by default only on profile builds)" OFF)
 option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
@@ -108,6 +109,7 @@ set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
+set(TRACY_DIR "${EXTERNAL_DIR}/tracy")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
 set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
@@ -139,6 +141,7 @@ set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
+set(TRACY_INC_DIR "${TRACY_DIR}/public/tracy")
 set(XESS_INC_DIR "${XESS_DIR}/inc")
 set(QOI_INC_DIR "${QOI_DIR}/include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
@@ -212,6 +215,7 @@ set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
+set(TRACY_LIB "TracyClient")
 set(XESS_LIB "libxess")
 set(ZLIB_LIB "zlibstatic")
 
@@ -249,6 +253,7 @@ endif()
 if(${ZE_ENABLE_DX12})
 	set(XESS_TARGET "${XESS_DIR}/lib/${XESS_LIB}.lib")
 endif()
+set(TRACY_TARGET "${TRACY_LIB}")
 set(ZLIB_TARGET "${ZLIB_LIB}")
 
 # FidelityFX SDK effects
@@ -377,6 +382,9 @@ add_compile_definitions(_ZE_RENDER_GRAPH_SINGLE_THREAD=$<BOOL:${ZE_RENDERER_SING
 add_compile_definitions(_ZE_DEBUG_GFX_API=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
 add_compile_definitions(_ZE_DEBUG_GFX_NAMES=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>>)
 add_compile_definitions(_ZE_GFX_MARKERS=$<NOT:$<BOOL:${ZE_BUILD_RELEASE}>>)
+if(${ZE_ENABLE_TRACY} OR ${ZE_BUILD_PROFILE})
+	add_compile_definitions(TRACY_ENABLE)
+endif()
 # Platform type
 add_compile_definitions(_ZE_PLATFORM_WINDOWS=$<BOOL:${ZE_PLATFORM_WINDOWS}> _ZE_PLATFORM_LINUX=$<BOOL:${ZE_PLATFORM_LINUX}> _ZE_PLATFORM_ANDROID=$<BOOL:${ZE_PLATFORM_ANDROID}>)
 add_compile_definitions(_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> _ZE_PLATFORM_NSWITCH=$<BOOL:${ZE_PLATFORM_NSWITCH}> _ZE_PLATFORM_XBOX_SCARLET=$<BOOL:${ZE_PLATFORM_XBOX_SCARLET}>)
@@ -537,6 +545,13 @@ add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
 add_external_fidelityfx_effect(FSR3UPSCALER)
 add_external_fidelityfx_effect(SSSR)
+
+# tracy
+set(TRACY_CACHE_ARGS "-DTRACY_STATIC:BOOL=ON"
+	"-DTRACY_LTO:BOOL=ON"
+	"-DTRACY_ENABLE:BOOL=ON"
+	"-DTRACY_ON_DEMAND:BOOL=ON")
+add_external_project(TRACY "" "" "")
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
