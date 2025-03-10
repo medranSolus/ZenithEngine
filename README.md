@@ -39,6 +39,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [libspng](https://github.com/randy408/libspng) - [BSD 2-Clause License](Doc/License/ThirdParty/libspng.txt)
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
  - [qoixx](https://github.com/wx257osn2/qoixx) - [MIT](Doc/License/ThirdParty/qoixx.txt)
+ - [tracy](https://github.com/wolfpld/tracy) - [3-clause BSD license](Doc/License/ThirdParty/tracy.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
  - [AgilitySDK v1.614.1](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
  - [DirectStorage v1.2.2](https://devblogs.microsoft.com/directx/directstorage-api-downloads/) - [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/DirectStorage.txt), Code: [MIT License](Doc/License/ThirdParty/DirectStorage-code.txt), [Third Party Notices](Doc/License/ThirdParty/DirectStorageThirdPartyNotices.rtf)

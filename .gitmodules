@@ -47,3 +47,6 @@
 [submodule "External/qoixx"]
 	path = External/qoixx
 	url = https://github.com/wx257osn2/qoixx.git
+[submodule "External/tracy"]
+	path = External/tracy
+	url = https://github.com/wolfpld/tracy
