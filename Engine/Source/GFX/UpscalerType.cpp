@@ -232,30 +232,56 @@ namespace ZE::GFX
 		case UpscalerType::NIS:
 			return true;
 		case UpscalerType::FfxFsr:
-			return _ZE_RHI_DX12 || _ZE_RHI_VK;
+		{
+			switch (Settings::GetGfxApi())
+			{
+			case GfxApiType::DX12:
+			case GfxApiType::Vulkan:
+				return true;
+			default:
+				return false;
+			}
+		}
 		case UpscalerType::XeSS:
-			return _ZE_RHI_DX12;
+		{
+			switch (Settings::GetGfxApi())
+			{
+			case GfxApiType::DX12:
+			case GfxApiType::Vulkan:
+				return true;
+			case GfxApiType::DX11:
+				return Settings::GpuVendor == VendorGPU::Intel;
+			default:
+				return false;
+			}
+		}
 		case UpscalerType::DLSS:
 		{
 #if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
 			if (Settings::GpuVendor == VendorGPU::Nvidia)
 			{
 				// Cache this variable to not query driver every time
-				static U8 status = 0;
-				if (status == 0)
+				static struct
 				{
+					// 0 - not checked, 1 - available, 2 - not available
+					U8 Code = 0;
+					GfxApiType LastApiCheck = GfxApiType::OpenGL;
+				} status = {};
+				if (status.Code == 0 || status.LastApiCheck != Settings::GetGfxApi())
+				{
+					status.LastApiCheck = Settings::GetGfxApi();
 					NgxInterface* ngx = dev.GetNGX();
 					if (ngx)
 					{
 						if (ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling))
 						{
-							status = 1; // Available
+							status.Code = 1;
 							return true;
 						}
 					}
-					status = 2; // Not available
+					status.Code = 2;
 				}
-				return status == 1;
+				return status.Code == 1;
 			}
 #endif
 			return false;
