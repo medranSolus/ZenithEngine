@@ -1969,7 +1969,9 @@ namespace ZE::GFX::Pipeline
 				}
 
 				std::vector<std::string> activeInputs;
-				bool notSorted = true;
+				std::vector<std::string> activeOutputs;
+				bool inputsNotSorted = true;
+				bool outputsNotSorted = true;
 				bool otherPresent = false;
 				for (U32 j = 0; j < passGroup.size(); ++j)
 				{
@@ -2010,18 +2012,25 @@ namespace ZE::GFX::Pipeline
 									resourcesUpdate = true;
 								}
 
-								// If new pass have same set of inputs then there's no need to re-route the graph
 								std::vector<std::string> currentInputs = pass.GetInputs();
-								if (currentInputs.size() == activePass.GetInputs().size())
+								if (inputsNotSorted)
 								{
-									if (notSorted)
+									activeInputs = activePass.GetInputs();
+									std::sort(activeInputs.begin(), activeInputs.end());
+									inputsNotSorted = false;
+								}
+								std::sort(currentInputs.begin(), currentInputs.end());
+								if (activeInputs == currentInputs)
+								{
+									std::vector<std::string> currentOutputs = pass.GetOutputs();
+									if (outputsNotSorted)
 									{
-										activeInputs = activePass.GetInputs();
-										std::sort(activeInputs.begin(), activeInputs.end());
-										notSorted = false;
+										activeOutputs = activePass.GetOutputs();
+										std::sort(activeOutputs.begin(), activeOutputs.end());
+										outputsNotSorted = false;
 									}
-									std::sort(currentInputs.begin(), currentInputs.end());
-									if (activeInputs == currentInputs)
+									std::sort(currentOutputs.begin(), currentOutputs.end());
+									if (activeOutputs == currentOutputs)
 									{
 										computed.NodeGroupIndex = j;
 										ZE_ASSERT(computed.GraphPassInfo, "Handle to the computed pass info set up incorrectly!");
