@@ -39,6 +39,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [libspng](https://github.com/randy408/libspng) - [BSD 2-Clause License](Doc/License/ThirdParty/libspng.txt)
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
  - [qoixx](https://github.com/wx257osn2/qoixx) - [MIT](Doc/License/ThirdParty/qoixx.txt)
+ - [XeSS](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.txt), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
  - [AgilitySDK v1.614.1](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)
  - [DirectStorage v1.2.2](https://devblogs.microsoft.com/directx/directstorage-api-downloads/) - [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/DirectStorage.txt), Code: [MIT License](Doc/License/ThirdParty/DirectStorage-code.txt), [Third Party Notices](Doc/License/ThirdParty/DirectStorageThirdPartyNotices.rtf)
@@ -51,6 +52,5 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [volk v1.3.250](https://github.com/zeux/volk) - [MIT License](Doc/License/ThirdParty/volk.txt)
  - [WinPixEventRuntime v1.0.240308001](https://www.nuget.org/packages/WinPixEventRuntime) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/WinPixEventRuntime.txt), [Third Party Notices](Doc/License/ThirdParty/WinPixEventRuntimeThirdPartyNotices.txt)
  - [XeGTAO v1.30](https://github.com/GameTechDev/XeGTAO) - [MIT LICENSE](Doc/License/ThirdParty/XeGTAO.txt)
- - [XeSS v1.3.1](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.pdf), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
 
  ## [Changelog](Doc/Changelog.md)

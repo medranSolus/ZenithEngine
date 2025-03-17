@@ -47,3 +47,6 @@
 [submodule "External/qoixx"]
 	path = External/qoixx
 	url = https://github.com/wx257osn2/qoixx.git
+[submodule "External/XeSS"]
+	path = External/XeSS
+	url = https://github.com/intel/xess.git
