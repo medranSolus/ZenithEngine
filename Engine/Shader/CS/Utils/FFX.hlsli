@@ -1,6 +1,5 @@
 #ifndef FFX_CS_HLSLI
 #define FFX_CS_HLSLI
-#define FFX_CORE_H
 
 #define FFX_HLSL_SM ZE_HLSL_SHADER_MODEL
 
@@ -67,12 +66,7 @@
 #define FFX_FSR3UPSCALER_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
 
 #include "WarningGuardOn.hlsli"
-#include "ffx_common_types.h"
-// Changed how 'FFX_GROUP_MEMORY_BARRIER' is defined to avoid problems with FXC incorrect preprocessor
-#include "ffx_core_hlsl.hlsli"
-#include "ffx_core_gpu_common.h"
-#include "ffx_core_gpu_common_half.h"
-#include "ffx_core_portability.h"
+#include "ffx_core.h"
 #include "WarningGuardOff.hlsli"
 
 #endif // FFX_CS_HLSLI

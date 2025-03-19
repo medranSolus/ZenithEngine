@@ -56,7 +56,7 @@ namespace ZE::GFX
 // Variable holding last result code of XeSS SDK call
 #define ZE_XESS_EXCEPT_RESULT __xessErrorCode
 // Enable usage of ZE_XESS_* macros in current scope
-#define ZE_XESS_ENABLE() [[maybe_unused]] xess_result_t ZE_XESS_EXCEPT_RESULT
+#define ZE_XESS_ENABLE() [[maybe_unused]] xess_result_t ZE_XESS_EXCEPT_RESULT = XESS_RESULT_SUCCESS
 // Before using needs call to ZE_XESS_ENABLE()
 #define ZE_XESS_THROW_FAILED(call, info) if ((ZE_XESS_EXCEPT_RESULT = (call)) != XESS_RESULT_SUCCESS) throw ZE::GFX::XeSSException(__LINE__, __FILENAME__, ZE_XESS_EXCEPT_RESULT, info)
 // Performs assert check on return value of XeSS SDK call, before using needs call to ZE_XESS_ENABLE()
