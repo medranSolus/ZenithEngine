@@ -50,3 +50,9 @@
 [submodule "External/XeSS"]
 	path = External/XeSS
 	url = https://github.com/intel/xess.git
+[submodule "External/bzip2"]
+	path = External/bzip2
+	url = https://gitlab.com/bzip2/bzip2
+[submodule "External/brotli"]
+	path = External/brotli
+	url = https://github.com/google/brotli

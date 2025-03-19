@@ -33,7 +33,6 @@ if(${ZE_ENABLE_DX12})
         copy_runtime_data(ENGINE_AGILITY_SYMBOLS "${AGILITY_DIR}/bin/x64" "" ".pdb" "AgilitySDK/")
     endif()
     
-    copy_runtime_data(ENGINE_XESS "${XESS_DIR}/bin" "" "libxess.dll" "")
     copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "AgilitySDK/")
     copy_runtime_data(ENGINE_DSTORE "${DSTORE_DIR}/bin/x64" "" ".dll" "")
     copy_runtime_data(ENGINE_FFXAPI_DX12 "${FFXAPI_DLL_DIR}" "" "amd_fidelityfx_dx12.dll" "")
@@ -48,6 +47,8 @@ if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
     copy_runtime_data(ENGINE_AGS "${AGS_DIR}/ags_lib/lib" "${AGS_LIB}" ".dll" "")
 endif()
 if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK})
+    copy_runtime_data(ENGINE_XESS "${XESS_DIR}/bin" "" "libxess.dll" "")
+
     if(${ZE_BUILD_RELEASE} OR ${ZE_BUILD_PROFILE})
         set(DLSS_LOCATION "rel")
     else()
@@ -137,7 +138,7 @@ target_compile_features(${ENGINE_TARGET} PUBLIC ${ZE_CXX_STD})
 target_include_directories(${ENGINE_TARGET} PUBLIC ${ZE_INC_DIRS})
 target_precompile_headers(${ENGINE_TARGET} PUBLIC ${PCH})
 target_link_libraries(${ENGINE_TARGET}
-    PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${AGS_TARGET} ${ASSIMP_TARGET} ${DLSS_TARGET} ${DSTORE_TARGET} ${ENTT_TARGET} ${FFXSDK_TARGETS} ${FTYPE_TARGET} ${LIBPNG_TARGET} ${PIX_TARGET} ${XESS_TARGET} ${VOLK_TARGET})
+    PUBLIC ${DX_TARGETS} ${COMMON_TARGET} ${ENGINE_EXTERNAL_TARGETS})
 add_dependencies(${ENGINE_TARGET} ${ENGINE_COPY_TARGET} ${SHADER_TARGET} ${ENGINE_AGILITY_COPY_TARGET} ${ENGINE_AGILITY_DEBUG_COPY_TARGET} ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET} ${ENGINE_AGS_COPY_TARGET} ${ENGINE_DLSS_COPY_TARGET} ${ENGINE_DSTORE_COPY_TARGET} ${ENGINE_FFXAPI_DX12_COPY_TARGET} ${ENGINE_FFXAPI_VK_COPY_TARGET} ${ENGINE_PIX_COPY_TARGET} ${ENGINE_XESS_COPY_TARGET})
 
 # Icon definition
