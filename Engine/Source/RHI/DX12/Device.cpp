@@ -196,7 +196,9 @@ namespace ZE::RHI::DX12
 			// When performing initial upload of data from DirectStorage, barrier is required for proper initialization
 			D3D12_MESSAGE_ID_NON_OPTIMAL_BARRIER_ONLY_EXECUTE_COMMAND_LISTS,
 			// When DLSS is creating buffers with STATE_COPY_DESC while they can be set to STATE_COMMON since it doesn't make any difference
-			D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED
+			D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
+			// Bug in AgilitySDK 1.615.1 in conjuction with enhanced barriers where even when creating heap without not-zeroed flag it reports same issue. TODO: remove when fixed
+			D3D12_MESSAGE_ID_RENDER_TARGET_OR_DEPTH_STENCIL_RESOUCE_NOT_INITIALIZED,
 		};
 
 		D3D12_INFO_QUEUE_FILTER filter = {};
