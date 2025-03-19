@@ -6,9 +6,6 @@
 namespace ZE::GFX::Pipeline
 {
 	/*
-		- better access to interfaces from the passes
-		- rebuilding graph when new type of content is on the scene (keep only the passes that produce something)
-		- allow for change of resolution at the start of the frame
 		- introduce callback for setting pass data from outside (maybe register as data blob inside RenderGraph with enum?)
 		- common interface for GPU resource aliasing
 	*/

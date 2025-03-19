@@ -120,6 +120,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_SSSR_VERSION_MAJOR), ZE_DEPAREN(FFX_SSSR_VERSION_MINOR), ZE_DEPAREN(FFX_SSSR_VERSION_PATCH)));
+
 			GUI::InputClamp(0.0f, 1.0f, execData.IblFactor,
 				ImGui::InputFloat("##ibl_factor", &execData.IblFactor, 0.01f, 0.1f, "%.2f"));
 			if (ImGui::IsItemHovered())

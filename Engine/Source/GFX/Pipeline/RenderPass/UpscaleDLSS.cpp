@@ -162,6 +162,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			ImGui::Text("Version 310.1.0.0 (built with)");
+
 			auto getQualityString = [](NVSDK_NGX_PerfQuality_Value quality) noexcept -> const char*
 				{
 					switch (quality)

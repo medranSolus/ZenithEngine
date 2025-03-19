@@ -88,10 +88,17 @@
 	className(className&&) = delete; \
 	className& operator=(className&&) = delete;
 
+// Macro for removing parentheses around macro values
+#define ZE_DEPAREN(x) ZE_VANISH x
+// Part of ZE_DEPAREN() macro procedure
+#define ZE_VANISH(...) __VA_ARGS__
+
 // Macro for turning literal values into strings
 #define ZE_XSTRINGIFY(x) #x
 // Macro for turning values into strings
 #define ZE_STRINGIFY(x) ZE_XSTRINGIFY(x)
+// Macro for turning versions into strings
+#define ZE_STRINGIFY_VERSION(major, minor, patch) ZE_STRINGIFY(major)"."ZE_STRINGIFY(minor)"."ZE_STRINGIFY(patch)
 // Compiler agnostic way of handling pragma directive
 #define ZE_PRAGMA(X) _Pragma(#X)
 

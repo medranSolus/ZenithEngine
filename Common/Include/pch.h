@@ -152,6 +152,7 @@
 * Standard headers, remove if appears above
 */
 #include <algorithm>
+#include <cinttypes>
 #include <sstream>
 #include <fstream>
 

@@ -159,6 +159,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			ImGui::Text("Version 1.0.3");
+
 			constexpr std::array<const char*, 5> LEVELS = { "Performance", "Balanced", "Quality", "Ultra Quality", "Mega Quality" };
 			if (ImGui::BeginCombo("Quality level", LEVELS.at(4U - static_cast<U8>(execData.Quality))))
 			{

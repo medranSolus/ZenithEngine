@@ -18,6 +18,7 @@
 *** atomic
 *** cfloat
 *** chrono
+*** cinttypes
 *** cmath
 *** condition_variable
 *** cstddef

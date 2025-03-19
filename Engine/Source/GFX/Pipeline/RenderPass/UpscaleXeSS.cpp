@@ -103,6 +103,12 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			xess_version_t versionInfo = {};
+			if (xessGetVersion(&versionInfo) == XESS_RESULT_SUCCESS)
+				ImGui::Text("Version %" PRIu16 ".%" PRIu16 ".%" PRIu16, versionInfo.major, versionInfo.minor, versionInfo.patch);
+			else
+				ImGui::Text("Version 2.0.1 (built with)");
+
 			constexpr std::array<const char*, 7> LEVELS = { "Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality", "Ultra Quality Plus", "Native AA" };
 			if (ImGui::BeginCombo("Quality level", LEVELS.at(static_cast<U8>(execData.Quality) - 100U)))
 			{

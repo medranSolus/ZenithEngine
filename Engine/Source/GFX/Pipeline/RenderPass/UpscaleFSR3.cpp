@@ -132,6 +132,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MAJOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MINOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_PATCH)));
+
 			constexpr std::array<const char*, 5> LEVELS = { "Ultra Performance", "Performance", "Balanced", "Quality", "Native AA" };
 			if (ImGui::BeginCombo("Quality level", LEVELS.at(4U - static_cast<U8>(execData.Quality))))
 			{

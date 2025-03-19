@@ -282,6 +282,8 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
+			ImGui::Text("Version 1.30");
+
 			// GTAOImGuiSettings() don't indicate if quality or denoise passes has been updated...
 			const int quality = execData.Settings.QualityLevel;
 			::XeGTAO::GTAOImGuiSettings(execData.Settings);
