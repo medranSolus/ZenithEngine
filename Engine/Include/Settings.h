@@ -21,6 +21,7 @@ namespace ZE
 			CopySourceGPUData,
 			NoCulling,
 			ImGui,
+			SplitRenderSubmissions,
 			Count,
 		};
 
@@ -29,7 +30,7 @@ namespace ZE
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
 		static constexpr const char* ENGINE_DISPLAY_NAME = "Zenith Engine";
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
-		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY(_ZE_VERSION_MAJOR) "." ZE_STRINGIFY(_ZE_VERSION_MINOR) "." ZE_STRINGIFY(_ZE_VERSION_PATCH);
+		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY_VERSION(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 
 		// GPU heap for buffers only
 		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
@@ -106,6 +107,7 @@ namespace ZE
 		static constexpr bool IsEnabledCopySourceGPUData() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::CopySourceGPUData]; }
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
 		static constexpr bool IsEnabledImGui() noexcept { return flags[Flags::ImGui]; }
+		static constexpr bool IsEnabledSplitRenderSubmissions() noexcept { return flags[Flags::SplitRenderSubmissions]; }
 
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
@@ -171,6 +173,7 @@ namespace ZE
 		flags[Flags::CopySourceGPUData] = params.Flags & SettingsInitFlag::AlwaysCopySourceGPUData;
 		flags[Flags::NoCulling] = params.Flags & SettingsInitFlag::DisableCulling;
 		flags[Flags::ImGui] = true;
+		flags[Flags::SplitRenderSubmissions] = params.Flags & SettingsInitFlag::SplitRenderSubmissions;
 #endif
 #if _ZE_DEBUG_GFX_API
 		flags[Flags::GPUValidation] = params.Flags & SettingsInitFlag::EnableGPUValidation;

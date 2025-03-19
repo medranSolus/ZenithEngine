@@ -24,6 +24,7 @@ namespace ZE
 		parser.AddOption("sssr");
 		parser.AddOption("alwaysCopySourceGpuData");
 		parser.AddOption("noCulling");
+		parser.AddOption("splitRenderSubmissions");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -72,6 +73,8 @@ namespace ZE
 			params.Flags |= SettingsInitFlag::AlwaysCopySourceGPUData;
 		if (parser.GetOption("noCulling"))
 			params.Flags |= SettingsInitFlag::DisableCulling;
+		if (parser.GetOption("splitRenderSubmissions"))
+			params.Flags |= SettingsInitFlag::SplitRenderSubmissions;
 
 		return params;
 	}

@@ -1188,6 +1188,9 @@ namespace ZE::GFX::Pipeline
 				auto placeTransition = [&](std::vector<BarrierTransition>& beginBarriers,
 					std::vector<BarrierTransition>& endBarriers, BarrierTransition& barrier, bool noSplitUseEnd)
 					{
+#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
+						noSplitUseEnd |= Settings::IsEnabledSplitRenderSubmissions();
+#endif
 						if (noSplitUseEnd || (graph.finalizationFlags & GraphFinalizeFlag::NoSplitBarriersUseEnd))
 							endBarriers.emplace_back(barrier);
 						else if (graph.finalizationFlags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
@@ -1262,7 +1265,7 @@ namespace ZE::GFX::Pipeline
 									}
 									else if (graph.finalizationFlags & GraphFinalizeFlag::NoSplitBarriersUseBegin)
 										beginExecGroup.PassGroups[begin.PassGroupIndex + 1].StartBarriers.emplace_back(barrier);
-									else if (graph.finalizationFlags & GraphFinalizeFlag::NoSplitBarriersUseEnd)
+									else if (graph.finalizationFlags & GraphFinalizeFlag::NoSplitBarriersUseEnd || (_ZE_MODE_DEBUG || _ZE_MODE_DEV ? Settings::IsEnabledSplitRenderSubmissions() : false))
 										end.GetPassGroup(graph, endExecGroup).StartBarriers.emplace_back(barrier);
 									else
 									{

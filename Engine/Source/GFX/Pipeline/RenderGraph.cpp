@@ -2,6 +2,21 @@
 #include "Data/Camera.h"
 #include "Data/Transform.h"
 
+#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
+#define ZE_SPLIT_SUBMISSIONS_DISABLED() if (!Settings::IsEnabledSplitRenderSubmissions())
+#define ZE_SPLIT_SUBMISSIONS_BEGIN(list) if (Settings::IsEnabledSplitRenderSubmissions()) list.Open(dev)
+#define ZE_SPLIT_SUBMISSIONS_END(list, async) do { \
+	if (Settings::IsEnabledSplitRenderSubmissions()) \
+	{ \
+		list.Close(dev); \
+		async ? dev.ExecuteCompute(list) : dev.ExecuteMain(list); \
+	} } while (false)
+#else
+#define ZE_SPLIT_SUBMISSIONS_HEADER()
+#define ZE_SPLIT_SUBMISSIONS_BEGIN(list)
+#define ZE_SPLIT_SUBMISSIONS_END(list, async)
+#endif
+
 namespace ZE::GFX::Pipeline
 {
 	void RenderGraph::UnloadConfig(Device& dev) noexcept
@@ -51,20 +66,38 @@ namespace ZE::GFX::Pipeline
 				if (mainGroup.QueueWait)
 					dev.WaitMainFromCompute(mainGroup.WaitFence);
 
-				mainList.Open(dev);
+				ZE_SPLIT_SUBMISSIONS_DISABLED()
+				{
+					mainList.Open(dev);
+				}
 				for (U32 j = 0; j < mainGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = mainGroup.PassGroups[j];
 					if (parallelGroup.StartBarriers.size())
+					{
+						ZE_SPLIT_SUBMISSIONS_BEGIN(mainList);
 						execData.Buffers.Barrier(mainList, parallelGroup.StartBarriers.data(), Utils::SafeCast<U32>(parallelGroup.StartBarriers.size()));
+						ZE_SPLIT_SUBMISSIONS_END(mainList, false);
+					}
 
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
+					{
+						ZE_SPLIT_SUBMISSIONS_BEGIN(mainList);
 						parallelGroup.Passes[k].Exec(dev, mainList, execData, parallelGroup.Passes[k].Data);
+						ZE_SPLIT_SUBMISSIONS_END(mainList, false);
+					}
 				}
 				if (mainGroup.EndBarriers.size())
+				{
+					ZE_SPLIT_SUBMISSIONS_BEGIN(mainList);
 					execData.Buffers.Barrier(mainList, mainGroup.EndBarriers.data(), Utils::SafeCast<U32>(mainGroup.EndBarriers.size()));
-				mainList.Close(dev);
-				dev.ExecuteMain(mainList);
+					ZE_SPLIT_SUBMISSIONS_END(mainList, false);
+				}
+				ZE_SPLIT_SUBMISSIONS_DISABLED()
+				{
+					mainList.Close(dev);
+					dev.ExecuteMain(mainList);
+				}
 
 				if (mainGroup.SignalFence)
 					*mainGroup.SignalFence = dev.SetMainFence();
@@ -77,20 +110,38 @@ namespace ZE::GFX::Pipeline
 				if (asyncGroup.QueueWait)
 					dev.WaitComputeFromMain(asyncGroup.WaitFence);
 
-				asyncList.Open(dev);
+				ZE_SPLIT_SUBMISSIONS_DISABLED()
+				{
+					asyncList.Open(dev);
+				}
 				for (U32 j = 0; j < asyncGroup.PassGroupCount; ++j)
 				{
 					auto& parallelGroup = asyncGroup.PassGroups[j];
 					if (parallelGroup.StartBarriers.size())
+					{
+						ZE_SPLIT_SUBMISSIONS_BEGIN(asyncList);
 						execData.Buffers.Barrier(asyncList, parallelGroup.StartBarriers.data(), Utils::SafeCast<U32>(parallelGroup.StartBarriers.size()));
+						ZE_SPLIT_SUBMISSIONS_END(asyncList, true);
+					}
 
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
+					{
+						ZE_SPLIT_SUBMISSIONS_BEGIN(asyncList);
 						parallelGroup.Passes[k].Exec(dev, asyncList, execData, parallelGroup.Passes[k].Data);
+						ZE_SPLIT_SUBMISSIONS_END(asyncList, true);
+					}
 				}
 				if (asyncGroup.EndBarriers.size())
+				{
+					ZE_SPLIT_SUBMISSIONS_BEGIN(asyncList);
 					execData.Buffers.Barrier(asyncList, asyncGroup.EndBarriers.data(), Utils::SafeCast<U32>(asyncGroup.EndBarriers.size()));
-				asyncList.Close(dev);
-				dev.ExecuteCompute(asyncList);
+					ZE_SPLIT_SUBMISSIONS_END(asyncList, true);
+				}
+				ZE_SPLIT_SUBMISSIONS_DISABLED()
+				{
+					asyncList.Close(dev);
+					dev.ExecuteCompute(asyncList);
+				}
 
 				if (asyncGroup.SignalFence)
 					*asyncGroup.SignalFence = dev.SetComputeFence();
