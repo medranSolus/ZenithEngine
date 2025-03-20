@@ -1,6 +1,7 @@
 #include "IO/Compressor.h"
 ZE_WARNING_PUSH
 #include "zlib.h"
+#include "bzlib.h"
 ZE_WARNING_POP
 
 namespace ZE::IO
@@ -17,6 +18,7 @@ namespace ZE::IO
 			return compressedSize;
 		}
 		case CompressionFormat::ZLib:
+		case CompressionFormat::Bzip2:
 			return *reinterpret_cast<const U32*>(reinterpret_cast<const U8*>(compressedBuffer) + compressedSize - sizeof(U32) - 1);
 		}
 	}
@@ -46,7 +48,7 @@ namespace ZE::IO
 			strm.data_type = Z_BINARY;
 
 			// [9..15], [1..9], Z_RLE should be good for image data
-			[[maybe_unused]] int ret = deflateInit2(&strm, Z_BEST_COMPRESSION, Z_DEFLATED, 15, 9, Z_DEFAULT_STRATEGY);
+			[[maybe_unused]] S32 ret = deflateInit2(&strm, Z_BEST_COMPRESSION, Z_DEFLATED, 15, 9, Z_DEFAULT_STRATEGY);
 			ZE_ASSERT(ret == Z_OK, "Error initializing ZLIB deflate compression!");
 
 			// Get max size after decompression
@@ -62,6 +64,21 @@ namespace ZE::IO
 
 			// Resize to actual size and append original file size (2 bytes added at the end of stream so there would be no data errors)
 			compressed.resize(static_cast<U64>(strm.next_out - compressed.data()) + sizeof(U32) + 2);
+			*reinterpret_cast<U32*>(&compressed.at(compressed.size() - sizeof(U32) - 1)) = inputSize;
+			break;
+		}
+		case CompressionFormat::Bzip2:
+		{
+			// Can't determine lower bound as in Zlib so assume at least current size
+			compressed.resize(inputSize);
+
+			U32 compressedSize = inputSize;
+			[[maybe_unused]] S32 ret = BZ2_bzBuffToBuffCompress(reinterpret_cast<char*>(compressed.data()), &compressedSize,
+				reinterpret_cast<char*>(const_cast<void*>(input)), inputSize, 9, 0, 0);
+			ZE_ASSERT(ret == BZ_OK, "Error performing Bzip2 compression!");
+
+			// Resize to actual size and append original file size (2 bytes added at the end of stream so there would be no data errors)
+			compressed.resize(compressedSize + sizeof(U32) + 2);
 			*reinterpret_cast<U32*>(&compressed.at(compressed.size() - sizeof(U32) - 1)) = inputSize;
 			break;
 		}
@@ -92,7 +109,7 @@ namespace ZE::IO
 			strm.opaque = nullptr;
 			strm.data_type = Z_BINARY;
 
-			[[maybe_unused]] int ret = inflateInit2(&strm, 15);
+			[[maybe_unused]] S32 ret = inflateInit2(&strm, 15);
 			ZE_ASSERT(ret == Z_OK, "Error initializing ZLIB inflate decompression!");
 
 			strm.next_out = reinterpret_cast<U8*>(dst);
@@ -103,6 +120,13 @@ namespace ZE::IO
 
 			ret = inflateEnd(&strm);
 			ZE_ASSERT(ret == Z_OK, "Error ending ZLIB inflate decompression!");
+			break;
+		}
+		case CompressionFormat::Bzip2:
+		{
+			[[maybe_unused]] S32 ret = BZ2_bzBuffToBuffDecompress(reinterpret_cast<char*>(dst), &dstSize,
+				reinterpret_cast<char*>(const_cast<void*>(src)), srcSize - sizeof(U32) - 2, 0, 0);
+			ZE_ASSERT(ret == BZ_OK && GetOriginalSize(src, srcSize) == dstSize, "Error performing Bzip2 decompression!");
 			break;
 		}
 		}

@@ -7,5 +7,6 @@ namespace ZE::IO
 	{
 		None,
 		ZLib,
+		Bzip2,
 	};
 }

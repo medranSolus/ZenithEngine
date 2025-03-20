@@ -18,6 +18,8 @@ namespace ZE::RHI::DX12
 			return DSTORAGE_CUSTOM_COMPRESSION_0;
 		case IO::CompressionFormat::ZLib:
 			return DS_COMPRESSION_FORMAT_ZLIB;
+		case IO::CompressionFormat::Bzip2:
+			return DS_COMPRESSION_FORMAT_BZIP2;
 		}
 	}
 
@@ -87,6 +89,7 @@ namespace ZE::RHI::DX12
 			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
 			for (U32 i = 0; i < requestCount; ++i)
 			{
+				bool bzip2 = false;
 				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i];
 				DSTORAGE_CUSTOM_DECOMPRESSION_RESULT& res = results[i];
 				switch (req.CompressionFormat)
@@ -101,12 +104,15 @@ namespace ZE::RHI::DX12
 				}
 				ZE_WARNING_PUSH;
 				ZE_WARNING_DISABLE_MSVC(4063);
+				case DS_COMPRESSION_FORMAT_BZIP2:
+					bzip2 = true;
+					[[fallthrough]];
 				case DS_COMPRESSION_FORMAT_ZLIB:
 				{
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](const void* src, U32 srcSize, void* dst, U32 dstSize)
+						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize)
 						{
-							IO::Compressor codec(IO::CompressionFormat::ZLib);
+							IO::Compressor codec(bzip2 ? IO::CompressionFormat::Bzip2 : IO::CompressionFormat::ZLib);
 							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
 							codec.Decompress(src, srcSize, dst, dstSize);
 						},

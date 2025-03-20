@@ -27,6 +27,7 @@ namespace ZE::RHI::DX12
 		static constexpr U32 MINIMAL_DECOPRESSED_OBJECTS_PER_TURN = 4;
 		// Custom decompression formats
 		static constexpr DSTORAGE_COMPRESSION_FORMAT DS_COMPRESSION_FORMAT_ZLIB = static_cast<DSTORAGE_COMPRESSION_FORMAT>(DSTORAGE_CUSTOM_COMPRESSION_0 + 1);
+		static constexpr DSTORAGE_COMPRESSION_FORMAT DS_COMPRESSION_FORMAT_BZIP2 = static_cast<DSTORAGE_COMPRESSION_FORMAT>(DS_COMPRESSION_FORMAT_ZLIB + 1);
 
 		enum class ResourceType : U8 { Buffer, Mesh, Texture, TextureCopySrc };
 
