@@ -32,7 +32,7 @@ void StoreDilatedReactiveMasks(const in FfxUInt32x2 pxCoord, const in FfxFloat32
 
 FfxFloat32 LoadReactiveMask(const in FfxUInt32x2 pxCoord)
 {
-	return tx_reactiveMask[pxCoord];
+	return tx_reactiveMask[pxCoord] * ReactivenessScale();
 }
 
 FfxInt32x2 GetTransparencyAndCompositionMaskResourceDimensions()
@@ -56,7 +56,7 @@ FfxFloat32 SampleAccumulation(const in FfxFloat32x2 uv)
 
 FfxFloat32 SampleShadingChange(const in FfxFloat32x2 uv)
 {
-	return tx_shadingChange.SampleLevel(splr_LinearClamp, uv, 0);
+	return tx_shadingChange.SampleLevel(splr_LinearClamp, uv, 0) * ShadingChangeScale();
 }
 
 FfxFloat32 LoadCurrentLuma(const in FfxUInt32x2 pxCoord)

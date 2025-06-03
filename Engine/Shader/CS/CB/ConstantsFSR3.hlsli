@@ -35,6 +35,11 @@ struct ConstantsFSR3
 	FfxFloat32 fFrameIndex;
 
 	FfxFloat32 fVelocityFactor;
+	FfxFloat32 fReactivenessScale;
+	FfxFloat32 fShadingChangeScale;
+	FfxFloat32 fAccumulationAddedPerFrame;
+	
+	FfxFloat32 fMinDisocclusionAccumulation;
 };
 
 CBUFFER(fsr3Consts, ConstantsFSR3, 0, ZE_FSR3_CB_RANGE);
@@ -132,6 +137,26 @@ FfxFloat32 FrameIndex()
 FfxFloat32 VelocityFactor()
 {
 	return cb_fsr3Consts.fVelocityFactor;
+}
+
+FfxFloat32 ReactivenessScale()
+{
+	return cb_fsr3Consts.fReactivenessScale;
+}
+
+FfxFloat32 ShadingChangeScale()
+{
+	return cb_fsr3Consts.fShadingChangeScale;
+}
+
+FfxFloat32 AccumulationAddedPerFrame()
+{
+    return cb_fsr3Consts.fAccumulationAddedPerFrame;
+}
+
+FfxFloat32 MinDisocclusionAccumulation()
+{
+	return cb_fsr3Consts.fMinDisocclusionAccumulation;
 }
 
 #include "fsr3upscaler/ffx_fsr3upscaler_resources.h"
