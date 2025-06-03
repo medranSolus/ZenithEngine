@@ -5,7 +5,7 @@ cmake_policy(SET CMP0091 NEW) # Setting of MSVC runtime library
 
 set(ZE_PROJECT_NAME "Zenith Engine")
 set(ZE_VER_MAJOR 0)
-set(ZE_VER_MINOR 4)
+set(ZE_VER_MINOR 5)
 set(ZE_VER_PATCH 0)
 project(${ZE_PROJECT_NAME} VERSION ${ZE_VER_MAJOR}.${ZE_VER_MINOR}.${ZE_VER_PATCH})
 

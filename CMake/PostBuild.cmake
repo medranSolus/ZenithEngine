@@ -13,7 +13,7 @@ macro(copy_runtime_data PROJECT DATA_DIR DATA_PREFIX DATA_SUFIX DATA_OUT_PREFIX)
     foreach(FILE IN LISTS ${PROJECT}_DATA_LIST)
         string(REPLACE "${DATA_DIR}/" "${ZE_BIN_DIR}/${DATA_OUT_PREFIX}" FILE_OUT ${FILE})
         list(APPEND ${PROJECT}_DATA_OUT_LIST ${FILE_OUT})
-        add_custom_command(OUTPUT ${FILE_OUT} POST_BUILD
+        add_custom_command(OUTPUT ${FILE_OUT}
             COMMAND "${CMAKE_COMMAND}"
             ARGS -E copy "${FILE}" "${FILE_OUT}"
             MAIN_DEPENDENCY "${FILE}"

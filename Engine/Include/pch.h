@@ -16,6 +16,7 @@
 *** algorithm
 *** array
 *** atomic
+*** bit
 *** cfloat
 *** chrono
 *** cinttypes

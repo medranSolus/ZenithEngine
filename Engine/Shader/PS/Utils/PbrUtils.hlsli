@@ -80,7 +80,6 @@ float3 GetBRDFCookTorrance(const in float3 directionToLight, const in float3 dir
 	const float3 baseReflectivityF0 = lerp(0.04f, surfaceColor, metalness);
 	const float3 fresnel = baseReflectivityF0 + (1.0f - baseReflectivityF0) * pow(1.0f - max(dot(halfwayCameraLight, directionToCamera), 0.0f), 5.0f);
 	
-	
 	// Distribution
 	const float roughness2 = roughness * roughness;
 	const float NdotH = max(dot(surfaceNormal, halfwayCameraLight), 0.0f);

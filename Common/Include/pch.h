@@ -104,6 +104,7 @@
 * Types.h (defined by CmdParser.h)
 *** BasicTypes.h (defined by CmdParser.h)
 * PixelFormat.h
+* bit
 * deque
 * limits
 * string

@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.h"
 #include "PixelFormat.h"
+#include <bit>
 #include <deque>
 #include <limits>
 #include <string>
