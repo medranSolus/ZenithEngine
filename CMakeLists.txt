@@ -217,7 +217,7 @@ set(ENGINE_TARGET "zenith")
 # External libraries
 set(AGS_LIB "amd_ags_x64")
 set(ASSIMP_LIB "assimp")
-set(BROTLI_LIB "brotlicommon-static")
+set(BROTLI_LIB "brotlicommon")
 set(BZIP2_LIB "bz2_static")
 set(DLSS_LIB "nvsdk_ngx")
 set(DSTORE_LIB "dstorage")
@@ -238,7 +238,7 @@ if(${ZE_EXTERNAL_MODEL_LOADING})
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
 endif()
 set(BROTLI_TARGET "${BROTLI_LIB}")
-set(BROTLI_TARGETS "${BROTLI_LIB}" "brotlidec-static" "brotlienc-static")
+set(BROTLI_TARGETS "${BROTLI_LIB}" "brotlidec" "brotlienc")
 set(BZIP2_TARGET "${BZIP2_LIB}")
 if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK})
 	if(${ZE_PLATFORM_WINDOWS})
@@ -463,7 +463,7 @@ endif()
 
 # zlib
 set(ZLIB_CACHE_ARGS "")
-add_external_project(ZLIB "" "" "")
+add_external_project(ZLIB "" "" "" "")
 if(NOT EXISTS "${EXTERNAL_BIN_DIR}/zconf.h")
 	ExternalProject_Add_Step(${ZLIB_TARGET} headerConfig
 		DEPENDEES install
@@ -483,7 +483,7 @@ set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
 	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXTERNAL_BIN_DIR}"
 	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
-add_external_project(LIBSPNG "" "" "ZLIB")
+add_external_project(LIBSPNG "" "" "" "ZLIB")
 
  # libpng
 set(LIBPNG_CACHE_ARGS "-DPNG_BUILD_ZLIB:BOOL=OFF"
@@ -499,7 +499,7 @@ set(LIBPNG_CACHE_ARGS "-DPNG_BUILD_ZLIB:BOOL=OFF"
 	"-DPNG_FRAMEWORK:BOOL=OFF"
 	"-DPNG_DEBUG:BOOL=OFF"
 	"-DPNG_HARDWARE_OPTIMIZATIONS:BOOL=ON")
-add_external_project(LIBPNG "" "" "ZLIB")
+add_external_project(LIBPNG "" "" "" "ZLIB")
 if(NOT EXISTS "${LIBPNG_OUT_LIB}")
 	ExternalProject_Add_Step(${LIBPNG_TARGET} headerConfig
 		DEPENDEES install
@@ -523,7 +523,7 @@ if(${ZE_EXTERNAL_MODEL_LOADING})
 		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DASSIMP_INSTALL_PDB:BOOL=OFF"
 		"-DASSIMP_NO_EXPORT:BOOL=OFF")
-	add_external_project(ASSIMP "lib/" "code/" ZLIB)
+	add_external_project(ASSIMP "lib/" "code/" "" "ZLIB")
 	if(NOT EXISTS "${ASSIMP_OUT_LIB}")
 		ExternalProject_Add_Step(${ASSIMP_TARGET} headerConfig
 			DEPENDEES install
@@ -542,43 +542,43 @@ if(${ZE_COMPILER_MSVC})
 	set(HARFBUZZ_CACHE_ARGS ${HARFBUZZ_CACHE_ARGS}
 		"-DCMAKE_CXX_FLAGS:STRING=/bigobj")
 endif()
-add_external_project(HARFBUZZ "" "" "")
+add_external_project(HARFBUZZ "" "" "" "")
 
 # brotli
 set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
 	"-DBROTLI_DISABLE_TESTS:BOOL=ON")
-add_external_project(BROTLI "" "" "")
-if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlidec-static${LIB_EXT}")
+add_external_project(BROTLI "" "" "../../" "")
+if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlidec${LIB_EXT}")
 	ExternalProject_Add_Step(${BROTLI_TARGET} brotliDecoder
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlidec-static${LIB_EXT}"
+		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlidec${LIB_EXT}"
 		"${EXTERNAL_BIN_DIR}")
 endif()
-if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlienc-static${LIB_EXT}")
+if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}")
 	ExternalProject_Add_Step(${BROTLI_TARGET} brotliEncoder
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlienc-static${LIB_EXT}"
+		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}"
 		"${EXTERNAL_BIN_DIR}")
 endif()
 if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
-	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlidec-static.pdb")
+	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlidec.pdb")
 		ExternalProject_Add_Step(${BROTLI_TARGET} brotliDecoderPdb
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}/CMakeFiles/brotlidec-static.dir/brotlidec-static.pdb"
+			"${BROTLI_BUILD_DIR}/brotlidec.pdb"
 			"${EXTERNAL_BIN_DIR}")
 	endif()
-	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlienc-static.pdb")
+	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlienc.pdb")
 		ExternalProject_Add_Step(${BROTLI_TARGET} brotliEncoderPdb
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}/CMakeFiles/brotlienc-static.dir/brotlienc-static.pdb"
+			"${BROTLI_BUILD_DIR}/brotlienc.pdb"
 			"${EXTERNAL_BIN_DIR}")
 	endif()
 endif()
@@ -592,7 +592,7 @@ set(BZIP2_CACHE_ARGS "-DENABLE_LIB_ONLY:BOOL=ON"
 	"-DENABLE_DEBUG:BOOL=OFF"
 	"-DENABLE_SHARED_LIB:BOOL=OFF"
 	"-DBROTLI_DISABLE_TESTS:BOOL=ON")
-add_external_project(BZIP2 "" "" "")
+add_external_project(BZIP2 "" "" "" "")
 
 # FreeType
 set(FTYPE_CACHE_ARGS "-DSKIP_INSTALL_ALL:BOOL=ON"
@@ -612,10 +612,11 @@ set(FTYPE_CACHE_ARGS "-DSKIP_INSTALL_ALL:BOOL=ON"
 	"-DPNG_LIBRARY:STRING=${LIBPNG_TARGET}"
 	"-DFT_DISABLE_HARFBUZZ:BOOL=OFF"
 	"-DFT_REQUIRE_HARFBUZZ:BOOL=ON"
+	"-DFT_DYNAMIC_HARFBUZZ:BOOL=OFF"
 	"-DHarfBuzz_FOUND:BOOL=ON"
-	"-DHARFBUZZ_INCLUDE_DIRS:STRING=${HARFBUZZ_INC_DIR};${EXTERNAL_BIN_DIR}"
+	"-DHarfBuzz_INCLUDE_DIRS:STRING=${HARFBUZZ_INC_DIR};${EXTERNAL_BIN_DIR}"
 	"-DHarfBuzz_INCLUDE_DIR:STRING=${HARFBUZZ_INC_DIR}"
-	"-DHARFBUZZ_LIBRARIES:STRING=${HARFBUZZ_TARGET}"
+	"-DHarfBuzz_LIBRARIES:STRING=${HARFBUZZ_TARGET}"
 	"-DHarfBuzz_LIBRARY:STRING=${HARFBUZZ_TARGET}"
 	"-DFT_DISABLE_BROTLI:BOOL=OFF"
 	"-DFT_REQUIRE_BROTLI:BOOL=ON"
@@ -631,7 +632,7 @@ set(FTYPE_CACHE_ARGS "-DSKIP_INSTALL_ALL:BOOL=ON"
 	"-DBZIP2_INCLUDE_DIR:STRING=${BZIP2_INC_DIR}"
 	"-DBZIP2_LIBRARIES:STRING=${BZIP2_TARGET}"
 	"-DBZIP2_LIBRARY:STRING=${BZIP2_TARGET}")
-add_external_project(FTYPE "" "" "LIBPNG;HARFBUZZ;BROTLI;BZIP2")
+add_external_project(FTYPE "" "" "" "LIBPNG;HARFBUZZ;BROTLI;BZIP2")
 
 # FidelityFX SDK
 add_external_fidelityfx_effect(CACAO)

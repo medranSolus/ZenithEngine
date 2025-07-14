@@ -40,5 +40,5 @@ macro(add_external_fidelityfx_effect EFFECT_NAME)
 	    "-DFFX_INCLUDE_PATH:STRING=${FFXSDK_DIR}/include"
 	    "-DFFX_HOST_PATH:STRING=${FFXSDK_HOST_PATH}"
 	    "-DFFX_COMPONENTS_PATH:STRING=${FFXSDK_DIR}/src/components")
-    add_external_project(FFX${EFFECT_NAME} "" "" "")
+    add_external_project(FFX${EFFECT_NAME} "" "" "" "")
 endmacro()

@@ -3,8 +3,9 @@ include_guard(DIRECTORY)
 # Macro for setting external projects build variables
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
-macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR)
+#	ADD_PDB_DIR_PRE = different path for MSVC debug symbols for "CMakeFiles/PROJECT_LIb.dir/" location
+#	ADD_PDB_DIR_POST = different path for MSVC debug symbols inside "CMakeFiles/PROJECT_LIb.dir/" location
+macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST)
 	set(${PROJECT}_OUT_LIB_NAME "${LIB_PREFIX}${${PROJECT}_TARGET}${LIB_EXT}")
 	set(${PROJECT}_OUT_LIB "${EXTERNAL_BIN_DIR}/${${PROJECT}_OUT_LIB_NAME}")
 
@@ -15,7 +16,7 @@ macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR)
 	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
 		set(${PROJECT}_CP_CMD "${${PROJECT}_CP_CMD}" &&
 			"${CMAKE_COMMAND}" -E rename
-				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR}CMakeFiles/${${PROJECT}_LIB}.dir/${${PROJECT}_LIB}.pdb"
+				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR_PRE}CMakeFiles/${${PROJECT}_LIB}.dir/${ADD_PDB_DIR_POST}${${PROJECT}_LIB}.pdb"
 				"${EXTERNAL_BIN_DIR}/${${PROJECT}_LIB}.pdb")
 	endif()
 endmacro()
@@ -23,12 +24,13 @@ endmacro()
 # Macro for loading external projects
 #	PROJECT = prefix of all project variables
 #	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
+#	ADD_PDB_DIR_PRE = different path for MSVC debug symbols for "CMakeFiles/PROJECT_LIb.dir/" location
+#	ADD_PDB_DIR_POST = different path for MSVC debug symbols inside "CMakeFiles/PROJECT_LIb.dir/" location
 #	DEP_PROJECTS = prefixes of projects on which this eternal project depends (semicolon separated)
 # Set ${PROJECT}_CACHE_ARGS variable to pass options for project
-macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR DEP_PROJECTS)
+macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST DEP_PROJECTS)
 	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${PROJECT}/")
-	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}")
+	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR_PRE}" "${ADD_PDB_DIR_POST}")
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
 		foreach(DEP_PROJECT IN ITEMS ${DEP_PROJECTS})
 			list(APPEND ${PROJECT}_DEPENDENCY "${${DEP_PROJECT}_TARGET}")
@@ -43,6 +45,10 @@ macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR DEP_PROJECTS)
 				"-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}"
 				"-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT:STRING=${CMAKE_MSVC_DEBUG_INFORMATION_FORMAT}"
 				"-DCMAKE_BUILD_TYPE:STRING=${ZE_EXTERNAL_BUILD_TYPE}"
+				"-DCMAKE_LIBRARY_PATH:STRING=${EXTERNAL_BIN_DIR}"
+				"-DCMAKE_INSTALL_PREFIX_PATH:STRING=${EXTERNAL_BIN_DIR}"
+				"-DCMAKE_FIND_PACKAGE_HINTS:STRING=${EXTERNAL_BIN_DIR}"
+				"-DCMAKE_MODULE_PATH:STRING=${CMAKE_MODULE_PATH}"
 			INSTALL_COMMAND "${${PROJECT}_CP_CMD}")
 	elseif(EXISTS ${${PROJECT}_BUILD_DIR})
 		file(REMOVE_RECURSE ${${PROJECT}_BUILD_DIR})

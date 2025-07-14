@@ -280,6 +280,9 @@ namespace ZE::RHI::DX12
 		case D3D12_RAYTRACING_TIER_1_1:
 			Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
 			break;
+		case D3D12_RAYTRACING_TIER_1_2:
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_2;
+			break;
 		}
 
 		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported);
