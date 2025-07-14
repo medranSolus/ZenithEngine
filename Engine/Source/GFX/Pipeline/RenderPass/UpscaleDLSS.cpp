@@ -81,25 +81,15 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_VisibilityNodeMask, 1U);
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Feature_Create_Flags,
 				NVSDK_NGX_DLSS_Feature_Flags_IsHDR | NVSDK_NGX_DLSS_Feature_Flags_MVLowRes
-				| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted | NVSDK_NGX_DLSS_Feature_Flags_AutoExposure
-				| NVSDK_NGX_DLSS_Feature_Flags_DoSharpening);
+				| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted | NVSDK_NGX_DLSS_Feature_Flags_AutoExposure);
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, false);
 
-			/* Optimization presets
-				NVSDK_NGX_DLSS_Hint_Render_Preset_Default -> stick to whatever Nvidia will choose over OTA
-				NVSDK_NGX_DLSS_Hint_Render_Preset_A -> intended for Performance/Balanced/Quality, older one, better fighting of ghosting with missing inputs (ex. motion vectors)
-				NVSDK_NGX_DLSS_Hint_Render_Preset_B -> intended for Ultra Performance, similar to A
-				NVSDK_NGX_DLSS_Hint_Render_Preset_C -> intended for Performance/Balanced/Quality, favors current frame info, good for fast pacing games
-				NVSDK_NGX_DLSS_Hint_Render_Preset_D -> intended for Performance/Balanced/Quality, default for this modes, favors image stability
-				NVSDK_NGX_DLSS_Hint_Render_Preset_E -> unused
-				NVSDK_NGX_DLSS_Hint_Render_Preset_F -> intended for Ultra Performance/DLAA, default for this modes
-				NVSDK_NGX_DLSS_Hint_Render_Preset_G -> unused
-			*/
+			// Optimization presets
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, NVSDK_NGX_DLSS_Hint_Render_Preset_Default);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, NVSDK_NGX_DLSS_Hint_Render_Preset_D);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_DLSS_Hint_Render_Preset_D);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, NVSDK_NGX_DLSS_Hint_Render_Preset_D);
+			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
+			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
+			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
 			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
 
 			// Some default parameters
