@@ -546,14 +546,17 @@ add_external_project(HARFBUZZ "" "" "" "")
 
 # brotli
 set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
-	"-DBROTLI_DISABLE_TESTS:BOOL=ON")
-add_external_project(BROTLI "" "" "../../" "")
+	"-DBROTLI_DISABLE_TESTS:BOOL=ON"
+	"-DBROTLI_BUILD_TOOLS:BOOL=OFF"
+	"-DBUILD_SHARED_LIBS:BOOL=OFF"
+	"-DENABLE_SANITIZER:BOOL=OFF")
+add_external_project(BROTLI "" "" "" "")
 if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlidec${LIB_EXT}")
 	ExternalProject_Add_Step(${BROTLI_TARGET} brotliDecoder
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlidec${LIB_EXT}"
+		"${BROTLI_BUILD_DIR}${LIB_PREFIX}brotlidec${LIB_EXT}"
 		"${EXTERNAL_BIN_DIR}")
 endif()
 if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}")
@@ -561,7 +564,7 @@ if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}")
 		DEPENDEES install
 		LOG OFF
 		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}"
+		"${BROTLI_BUILD_DIR}${LIB_PREFIX}brotlienc${LIB_EXT}"
 		"${EXTERNAL_BIN_DIR}")
 endif()
 if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
@@ -570,7 +573,7 @@ if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}/brotlidec.pdb"
+			"${BROTLI_BUILD_DIR}CMakeFiles/brotlidec.dir/brotlidec.pdb"
 			"${EXTERNAL_BIN_DIR}")
 	endif()
 	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlienc.pdb")
@@ -578,7 +581,7 @@ if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}/brotlienc.pdb"
+			"${BROTLI_BUILD_DIR}CMakeFiles/brotlienc.dir/brotlienc.pdb"
 			"${EXTERNAL_BIN_DIR}")
 	endif()
 endif()
