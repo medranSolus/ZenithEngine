@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR3_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR3_CB_RANGE 8
 #include "CB/ConstantsFSR3.hlsli"
 #include "GBufferUtils.hlsli"
@@ -64,7 +67,11 @@ FfxFloat32x2 LoadInputMotionVector(const in FfxUInt32x2 pxCoord)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_prepare_inputs.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_prepare_inputs.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_prepare_inputs.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

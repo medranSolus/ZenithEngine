@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR2_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR2_CB_RANGE 5
 #define ZE_SPD_CB_RANGE 6
 #include "CB/ConstantsFSR2.hlsli"
@@ -58,7 +61,11 @@ FfxFloat32x3 SampleInputColor(const in FfxFloat32x2 uv)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr2/ffx_fsr2_compute_luminance_pyramid.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_compute_luminance_pyramid.h"
+#else
+#	include "fsr2/ffx_fsr2_compute_luminance_pyramid.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

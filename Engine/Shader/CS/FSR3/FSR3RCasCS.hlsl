@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR3_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_RCAS_CB_RANGE 3
 #define ZE_RCAS_SLOT 0
 #include "CB/ConstantsRCAS.hlsli"
@@ -31,7 +34,11 @@ FfxFloat32 Exposure()
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_rcas.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_rcas.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_rcas.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

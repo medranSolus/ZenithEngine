@@ -159,7 +159,12 @@ FfxFloat32 MinDisocclusionAccumulation()
 	return cb_fsr3Consts.fMinDisocclusionAccumulation;
 }
 
-#include "fsr3upscaler/ffx_fsr3upscaler_resources.h"
-#include "fsr3upscaler/ffx_fsr3upscaler_common.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_resources.h"
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_common.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_resources.h"
+#	include "fsr3upscaler/ffx_fsr3upscaler_common.h"
+#endif
 
 #endif // CONSTANTS_FSR3_CS_HLSLI

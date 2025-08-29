@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR2_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR2_CB_RANGE 8
 #include "CB/ConstantsFSR2.hlsli"
 #include "GBufferUtils.hlsli"
@@ -69,7 +72,11 @@ FfxFloat32 Exposure()
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr2/ffx_fsr2_reconstruct_dilated_velocity_and_previous_depth.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_reconstruct_dilated_velocity_and_previous_depth.h"
+#else
+#	include "fsr2/ffx_fsr2_reconstruct_dilated_velocity_and_previous_depth.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

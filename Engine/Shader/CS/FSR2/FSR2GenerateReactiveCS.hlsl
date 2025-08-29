@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR2_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR2_CB_RANGE 3
 #define ZE_REACTIVE_CB_RANGE 4
 #include "CB/ConstantsFSR2.hlsli"

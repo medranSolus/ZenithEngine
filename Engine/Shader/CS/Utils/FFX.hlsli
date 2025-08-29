@@ -66,7 +66,11 @@
 #define FFX_FSR3UPSCALER_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF 0
 
 #include "WarningGuardOn.hlsli"
-#include "ffx_core.h"
+#ifdef _ZE_FFX_API
+#	include "api/internal/gpu/ffx_core.h"
+#else
+#	include "ffx_core.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 #endif // FFX_CS_HLSLI

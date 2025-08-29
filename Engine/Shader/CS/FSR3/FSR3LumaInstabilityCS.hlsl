@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR3_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR3_CB_RANGE 8
 #include "CB/ConstantsFSR3.hlsli"
 
@@ -69,7 +72,11 @@ FfxFloat32 SampleFarthestDepthMip1(FfxFloat32x2 fUV)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_luma_instability.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_luma_instability.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_luma_instability.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

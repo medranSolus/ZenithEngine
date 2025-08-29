@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR3_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR3_CB_RANGE 2
 #include "CB/ConstantsFSR3.hlsli"
 
@@ -25,7 +28,11 @@ FfxFloat32x2 SampleSPDMipLevel(const in FfxFloat32x2 uv, const in FfxUInt32 mipL
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_shading_change.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_shading_change.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_shading_change.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

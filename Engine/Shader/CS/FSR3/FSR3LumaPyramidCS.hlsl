@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR3_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR3_CB_RANGE 11
 #define ZE_SPD_CB_RANGE 12
 #include "CB/ConstantsFSR3.hlsli"
@@ -97,7 +100,11 @@ FfxFloat32 LoadCurrentLuma(const in FfxUInt32x2 pxCoord)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr3upscaler/ffx_fsr3upscaler_luma_pyramid.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_luma_pyramid.h"
+#else
+#	include "fsr3upscaler/ffx_fsr3upscaler_luma_pyramid.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

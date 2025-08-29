@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR2_SHADERS
+#	define _ZE_FFX_API
+#endif
 #define ZE_FSR2_CB_RANGE 11
 #define ZE_AUTO_REACTIVE_CB_RANGE 12
 #include "CB/ConstantsFSR2.hlsli"
@@ -74,7 +77,11 @@ void StorePrevPostAlpha(const in uint2 pxCoord, const in FFX_MIN16_F3 color)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr2/ffx_fsr2_tcr_autogen.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_tcr_autogen.h"
+#else
+#	include "fsr2/ffx_fsr2_tcr_autogen.h"
+#endif
 #include "WarningGuardOff.hlsli"
 
 ZE_CS_WAVE64

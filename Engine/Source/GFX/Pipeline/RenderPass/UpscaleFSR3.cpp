@@ -133,6 +133,10 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MAJOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MINOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_PATCH)));
+#if _ZE_USE_FFX_API_FSR_SHADERS
+			ImGui::SameLine();
+			ImGui::Text(" (Shaders version " ZE_STRINGIFY_VERSION(_ZE_FSR3_SHADERS_VERSION_MAJOR, _ZE_FSR3_SHADERS_VERSION_MINOR, _ZE_FSR3_SHADERS_VERSION_PATCH) " from FFX API)");
+#endif
 
 			constexpr std::array<const char*, 5> LEVELS = { "Ultra Performance", "Performance", "Balanced", "Quality", "Native AA" };
 			if (ImGui::BeginCombo("Quality level", LEVELS.at(4U - static_cast<U8>(execData.Quality))))

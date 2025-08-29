@@ -354,10 +354,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
-		if (false)
 		{
 			RenderNode node("ssr", "sssr", RenderPass::SSSR::GetDesc(), PassExecutionType::Producer);
-			//node.AddInput("wireframe.RT", TextureLayout::ShaderResource); ??
+			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
@@ -407,6 +406,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#if _ZE_FFXAPI_ENABLED
 		{
 			RenderNode node("upscale", "ffxfsr", RenderPass::UpscaleFfxFSR::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
@@ -417,6 +417,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#endif
+#if _ZE_XESS_ENABLED
 		{
 			RenderNode node("upscale", "xess", RenderPass::UpscaleXeSS::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
@@ -427,6 +429,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#endif
 		{
 			RenderNode node("upscale", "nis", RenderPass::UpscaleNIS::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
@@ -435,6 +438,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#if _ZE_DLSS_ENABLED
 		{
 			RenderNode node("upscale", "dlss", RenderPass::UpscaleDLSS::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
@@ -444,6 +448,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#endif
 #pragma endregion
 #pragma region Post process display size
 		{

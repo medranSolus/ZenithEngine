@@ -14,13 +14,19 @@
 #include "RenderPass/Skybox.h"
 #include "RenderPass/SpotLight.h"
 #include "RenderPass/SSSR.h"
-#include "RenderPass/UpscaleDLSS.h"
-#include "RenderPass/UpscaleFfxFSR.h"
+#if _ZE_DLSS_ENABLED
+#	include "RenderPass/UpscaleDLSS.h"
+#endif
+#if _ZE_FFXAPI_ENABLED
+#	include "RenderPass/UpscaleFfxFSR.h"
+#endif
 #include "RenderPass/UpscaleFSR1.h"
 #include "RenderPass/UpscaleFSR2.h"
 #include "RenderPass/UpscaleFSR3.h"
 #include "RenderPass/UpscaleNIS.h"
-#include "RenderPass/UpscaleXeSS.h"
+#if _ZE_XESS_ENABLED
+#	include "RenderPass/UpscaleXeSS.h"
+#endif
 #include "RenderPass/VerticalBlur.h"
 #include "RenderPass/Wireframe.h"
 #include "RenderPass/XeGTAO.h"

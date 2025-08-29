@@ -1,3 +1,6 @@
+#if ZE_USE_FFX_API_FSR2_SHADERS
+#	define _ZE_FFX_API
+#endif
 #if FFX_FSR2_OPTION_APPLY_SHARPENING
 #	if FFX_FSR2_OPTION_REPROJECT_USE_LANCZOS_TYPE == 1
 #		define ZE_FSR2_CB_RANGE 13
@@ -171,11 +174,19 @@ FfxFloat32x2 SampleDilatedReactiveMasks(const in FfxFloat32x2 uv)
 }
 
 #include "WarningGuardOn.hlsli"
-#include "fsr2/ffx_fsr2_sample.h"
-#include "fsr2/ffx_fsr2_upsample.h"
-#include "fsr2/ffx_fsr2_postprocess_lock_status.h"
-#include "fsr2/ffx_fsr2_reproject.h"
-#include "fsr2/ffx_fsr2_accumulate.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_sample.h"
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_upsample.h"
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_postprocess_lock_status.h"
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_reproject.h"
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_accumulate.h"
+#else
+#	include "fsr2/ffx_fsr2_sample.h"
+#	include "fsr2/ffx_fsr2_upsample.h"
+#	include "fsr2/ffx_fsr2_postprocess_lock_status.h"
+#	include "fsr2/ffx_fsr2_reproject.h"
+#	include "fsr2/ffx_fsr2_accumulate.h"
+#endif
 #include "WarningGuardOff.hlsli"
 #define THREAD_WIDTH 8
 #define THREAD_HEIGHT 8

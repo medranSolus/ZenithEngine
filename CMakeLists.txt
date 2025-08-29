@@ -34,6 +34,7 @@ option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
+option(ZE_USE_FFX_API_FSR_SHADERS "Instead of using shader provided by the legacy FidelityFX SDK v1.1.4, use the one supplied with the newest FFX API" ON)
 
 # CMake modules
 include(ExternalProject)
@@ -427,6 +428,13 @@ add_compile_definitions(_ZE_FFXAPI_ENABLED=$<BOOL:${ZE_FFXAPI_ENABLED_GEN}>)
 add_compile_definitions(_ZE_DLSS_ENABLED=$<BOOL:${ZE_DLSS_ENABLED_GEN}>)
 add_compile_definitions(_ZE_XESS_ENABLED=$<BOOL:${ZE_XESS_ENABLED_GEN}>)
 # General flags with project options
+add_compile_definitions(_ZE_USE_FFX_API_FSR_SHADERS=$<BOOL:${ZE_USE_FFX_API_FSR_SHADERS}>)
+add_compile_definitions(_ZE_FSR2_SHADERS_VERSION_MAJOR=2)
+add_compile_definitions(_ZE_FSR2_SHADERS_VERSION_MINOR=3)
+add_compile_definitions(_ZE_FSR2_SHADERS_VERSION_PATCH=4)
+add_compile_definitions(_ZE_FSR3_SHADERS_VERSION_MAJOR=3)
+add_compile_definitions(_ZE_FSR3_SHADERS_VERSION_MINOR=1)
+add_compile_definitions(_ZE_FSR3_SHADERS_VERSION_PATCH=5)
 add_compile_definitions(_ZE_EXTERNAL_MODEL_LOADING=$<BOOL:${ZE_EXTERNAL_MODEL_LOADING}>)
 add_compile_definitions(_ZE_RENDERER_CREATION_VALIDATION=$<OR:$<BOOL:${ZE_BUILD_DEBUG}>,$<BOOL:${ZE_BUILD_DEVELOPMENT}>,$<BOOL:${ZE_RENDERER_CREATION_VALIDATION}>>)
 add_compile_definitions(_ZE_RENDERER_NO_SPLIT_BARRIERS=$<BOOL:${ZE_RENDERER_NO_SPLIT_BARRIERS}>)
@@ -453,7 +461,7 @@ add_definition_flags(
 	"NDEBUG")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${NIS_INC_DIR}\"")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DZE_USE_FFX_API_FSR2_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DZE_USE_FFX_API_FSR3_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${FFXAPI_DIR}\" /I \"${NIS_INC_DIR}\"")
 if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
 	if(NOT ${ZE_BUILD_PROFILE})

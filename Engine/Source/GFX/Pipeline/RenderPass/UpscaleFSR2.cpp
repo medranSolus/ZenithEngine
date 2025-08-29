@@ -133,6 +133,10 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_FSR2_VERSION_MAJOR), ZE_DEPAREN(FFX_FSR2_VERSION_MINOR), ZE_DEPAREN(FFX_FSR2_VERSION_PATCH)));
+#if _ZE_USE_FFX_API_FSR_SHADERS
+			ImGui::SameLine();
+			ImGui::Text(" (Shaders version " ZE_STRINGIFY_VERSION(_ZE_FSR2_SHADERS_VERSION_MAJOR, _ZE_FSR2_SHADERS_VERSION_MINOR, _ZE_FSR2_SHADERS_VERSION_PATCH) " from FFX API)");
+#endif
 
 			constexpr std::array<const char*, 4> LEVELS = { "Ultra Performance", "Performance", "Balanced", "Quality" };
 			if (ImGui::BeginCombo("Quality level", LEVELS.at(4U - static_cast<U8>(execData.Quality))))

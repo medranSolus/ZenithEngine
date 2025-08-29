@@ -110,7 +110,12 @@ FfxFloat32 ViewSpaceToMetersFactor()
 	return cb_fsr2Consts.fViewSpaceToMetersFactor;
 }
 
-#include "fsr2/ffx_fsr2_resources.h"
-#include "fsr2/ffx_fsr2_common.h"
+#ifdef _ZE_FFX_API
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_resources.h"
+#	include "upscalers/fsr3/include/gpu/fsr2/ffx_fsr2_common.h"
+#else
+#	include "fsr2/ffx_fsr2_resources.h"
+#	include "fsr2/ffx_fsr2_common.h"
+#endif
 
 #endif // CONSTANTS_FSR2_CS_HLSLI
