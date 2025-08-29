@@ -122,7 +122,7 @@ add_library(${ENGINE_TARGET} STATIC ${SRC_LIST} ${IMGUI_SRC_LIST} ${ZE_API_HEADE
 
 # Link targets for DirectX
 if(${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
-    set(DX_TARGETS D3DCompiler dxgi dxguid uuid)
+    set(DX_TARGETS D3DCompiler dxgi dxguid uuid DWrite)
 
     if(${ZE_ENABLE_DX11})
         set(DX_TARGETS ${DX_TARGETS} d3d11)
