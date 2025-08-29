@@ -4,7 +4,7 @@
 #include "GFX/XeSSException.h"
 #include "Data/Camera.h"
 ZE_WARNING_PUSH
-#include "ffx_api/dx12/ffx_api_dx12.h"
+#include "dx12/ffx_api_dx12.h"
 ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
@@ -319,7 +319,7 @@ namespace ZE::RHI::DX12
 		if (ffxApiDll)
 		{
 			const BOOL res = FreeLibrary(ffxApiDll);
-			ZE_ASSERT(res, "Error unloading amd_fidelityfx_dx12.dll!");
+			ZE_ASSERT(res, "Error unloading amd_fidelityfx_loader_dx12.dll!");
 			ffxApiDll = nullptr;
 		}
 	}
@@ -328,10 +328,10 @@ namespace ZE::RHI::DX12
 	{
 		if (!ffxApiDll)
 		{
-			ffxApiDll = LoadLibraryW(L"amd_fidelityfx_dx12.dll");
+			ffxApiDll = LoadLibraryW(L"amd_fidelityfx_loader_dx12.dll");
 			if (!ffxApiDll)
 			{
-				Logger::Error("Error loading [amd_fidelityfx_dx12.dll]!");
+				Logger::Error("Error loading [amd_fidelityfx_loader_dx12.dll]!");
 				return nullptr;
 			}
 

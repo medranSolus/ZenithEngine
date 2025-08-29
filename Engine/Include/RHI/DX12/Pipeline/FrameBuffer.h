@@ -7,7 +7,7 @@
 #include "GFX/SwapChain.h"
 ZE_WARNING_PUSH
 #include "nvsdk_ngx_params.h"
-#include "ffx_api/ffx_api_types.h"
+#include "ffx_api_types.h"
 ZE_WARNING_POP
 
 namespace ZE::RHI::DX12::Pipeline

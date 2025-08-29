@@ -1,7 +1,7 @@
 #pragma once
 ZE_WARNING_PUSH
-#include "ffx_api/ffx_api.h"
-#include "ffx_api/ffx_api_types.h"
+#include "ffx_api.h"
+#include "ffx_api_types.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX

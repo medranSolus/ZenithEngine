@@ -17,12 +17,14 @@ namespace ZE::GFX
 	class Device final
 	{
 		ZE_RHI_BACKEND(Device);
+#if _ZE_DLSS_ENABLED
 		NgxInterface ngx;
+#endif
 
 	public:
 		Device() = default;
 		ZE_CLASS_DELETE(Device);
-		~Device() { if (ngx.IsInitialized()) ngx.Free(*this); }
+		~Device();
 
 		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount) { ZE_RHI_BACKEND_VAR.Init(window, descriptorCount); }
 		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window) { U32 data; ZE_RHI_BACKEND_VAR.Switch(nextApi, window, data); }
@@ -30,7 +32,7 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
-		constexpr bool IsNGXEnabled() const noexcept { return ngx.IsInitialized(); }
+		constexpr bool IsNGXEnabled() const noexcept;
 		constexpr NgxInterface* GetNGX() noexcept;
 
 		constexpr const FfxApiFunctions* GetFfxFunctions() noexcept { const FfxApiFunctions* ffxFunc = nullptr; ZE_RHI_BACKEND_CALL_RET(ffxFunc, GetFfxFunctions); return ffxFunc; }
@@ -117,13 +119,32 @@ namespace ZE::GFX
 	};
 
 #pragma region Functions
+	inline Device::~Device()
+	{
+#if _ZE_DLSS_ENABLED
+		if (ngx.IsInitialized())
+			ngx.Free(*this);
+#endif
+	}
+
+	constexpr bool Device::IsNGXEnabled() const noexcept
+	{
+#if _ZE_DLSS_ENABLED
+		return ngx.IsInitialized();
+#else
+		return false
+#endif
+	}
+
 	constexpr NgxInterface* Device::GetNGX() noexcept
 	{
+#if _ZE_DLSS_ENABLED
 		if (Settings::GpuVendor == VendorGPU::Nvidia)
 		{
 			if (ngx.IsInitialized() || ngx.Init(*this))
 				return &ngx;
 		}
+#endif
 		return nullptr;
 	}
 #pragma endregion

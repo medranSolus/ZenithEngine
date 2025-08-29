@@ -3,7 +3,7 @@
 #include "GFX/XeSSException.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr1.h"
-#include "ffx_api/ffx_upscale.h"
+#include "ffx_upscale.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -37,7 +37,7 @@ namespace ZE::GFX
 			ffxFsr3UpscalerGetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr3Quality);
 			return renderSize;
 		}
-#if _ZE_RHI_DX12 || _ZE_RHI_VK
+#if _ZE_FFXAPI_ENABLED
 		case UpscalerType::FfxFsr:
 		{
 			UInt2 renderSize = {};
@@ -58,7 +58,7 @@ namespace ZE::GFX
 			return targetSize;
 		}
 #endif
-#if _ZE_RHI_DX12
+#if _ZE_XESS_ENABLED
 		case UpscalerType::XeSS:
 		{
 			ZE_XESS_ENABLE();
@@ -99,7 +99,7 @@ namespace ZE::GFX
 				Utils::SafeCast<U32>(Utils::SafeCast<float>(targetSize.Y) / ratio)
 			};
 		}
-#if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
+#if _ZE_DLSS_ENABLED
 		case UpscalerType::DLSS:
 		{
 			NgxInterface* ngx = dev.GetNGX();
@@ -144,7 +144,7 @@ namespace ZE::GFX
 		}
 		case UpscalerType::FfxFsr:
 		{
-#if _ZE_RHI_DX12 || _ZE_RHI_VK
+#if _ZE_FFXAPI_ENABLED
 			const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
 			if (ffxFunc)
 			{
@@ -236,7 +236,6 @@ namespace ZE::GFX
 			switch (Settings::GetGfxApi())
 			{
 			case GfxApiType::DX12:
-			case GfxApiType::Vulkan:
 				return true;
 			default:
 				return false;
@@ -257,7 +256,7 @@ namespace ZE::GFX
 		}
 		case UpscalerType::DLSS:
 		{
-#if _ZE_RHI_DX11 || _ZE_RHI_DX12 || _ZE_RHI_VK
+#if _ZE_DLSS_ENABLED
 			if (Settings::GpuVendor == VendorGPU::Nvidia)
 			{
 				// Cache this variable to not query driver every time

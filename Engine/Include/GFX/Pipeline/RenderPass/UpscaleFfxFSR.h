@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 ZE_WARNING_PUSH
-#include "ffx_api/ffx_upscale.h"
+#include "ffx_upscale.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR

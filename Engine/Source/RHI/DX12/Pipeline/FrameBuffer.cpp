@@ -1406,6 +1406,33 @@ namespace ZE::RHI::DX12::Pipeline
 		PerformBarrier(cl.Get().dx12, &barrier, 1);
 	}
 
+	void FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
+	{
+		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
+		ZE_ASSERT(resources[rid].IsOutsideResource(), "Trying to register data to incorrect not outside resource!");
+		ZE_ASSERT(type != GFX::Pipeline::FrameResourceType::Buffer, "Cannot register buffer resource when passing texture pack!");
+		ZE_ASSERT(textures.Get().dx12.GetDescInfo().GpuSide, "Texture descriptors need to be visible for GPU!");
+
+		auto& res = resources[rid];
+		const auto& resDesc = res.Resource->GetDesc1();
+		const auto& texDescInfo = textures.Get().dx12.GetDescInfo();
+
+		res.Resource = textures.Get().dx12.GetRes(textureIndex);
+		res.Size = { Utils::SafeCast<U32>(resDesc.Width), resDesc.Height };
+		res.Array = resDesc.DepthOrArraySize;
+		res.Mips = resDesc.MipLevels;
+		res.Format = DX::GetFormatFromDX(resDesc.Format);
+		res.Dimenions = GetDimension(type);
+
+		if (type == GFX::Pipeline::FrameResourceType::TextureCube)
+			res.SetCube();
+		if (type != GFX::Pipeline::FrameResourceType::Texture3D && res.Array > 1)
+			res.SetArrayView();
+
+		srvHandles[rid].CpuShaderVisibleHandle = texDescInfo.CPU;
+		srvHandles[rid].GpuShaderVisibleHandle = texDescInfo.GPU;
+	}
+
 	void FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
