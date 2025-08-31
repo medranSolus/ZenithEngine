@@ -80,19 +80,6 @@ if(FALSE)
 	display_cmake_flags()
 endif()
 
-# Enable external features based on build targets
-set(ZE_AGILITY_ENABLED ${ZE_ENABLE_DX12})
-set(ZE_AGS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}))
-set(ZE_ASSIMP_ENABLED ${ZE_EXTERNAL_MODEL_LOADING})
-set(ZE_DLSS_ENABLED ((${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK}))
-set(ZE_DLSS_ENABLED_GEN $<OR:$<BOOL:${ZE_ENABLE_DX11}>,$<BOOL:${ZE_ENABLE_DX12}>,$<BOOL:${ZE_ENABLE_VK}>>)
-set(ZE_DSTORE_ENABLED ${ZE_ENABLE_DX12})
-set(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
-set(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
-set(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
-set(ZE_PIX_ENABLED (${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE}))
-set(ZE_XESS_ENABLED ((${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK}))
-set(ZE_XESS_ENABLED_GEN $<OR:$<BOOL:${ZE_ENABLE_DX11}>,$<BOOL:${ZE_ENABLE_DX12}>,$<BOOL:${ZE_ENABLE_VK}>>)
 
 ########### MAIN DIRECTORIES ############
 
@@ -167,13 +154,28 @@ set(ZLIB_INC_DIR "${ZLIB_DIR}")
 ############# CUSTOM CMAKE MODULES ##############
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
+include(BoolAssign)
 include(CompileFilter)
 include(External)
 include(FidelityFX)
 include(FlagsDisplay)
 include(FlagsPass)
-include(ShaderBuild)
 include(PostBuild)
+include(ShaderBuild)
+
+
+############# EXTERNAL FEATURES ##############
+
+set_bool(ZE_AGILITY_ENABLED ${ZE_ENABLE_DX12})
+set_bool(ZE_AGS_ENABLED ${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
+set_bool(ZE_ASSIMP_ENABLED ${ZE_EXTERNAL_MODEL_LOADING})
+set_bool(ZE_DLSS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
+set_bool(ZE_DSTORE_ENABLED ${ZE_ENABLE_DX12})
+set_bool(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
+set_bool(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
+set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
+set_bool(ZE_PIX_ENABLED ${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE})
+set_bool(ZE_XESS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
 
 
 ############# USING ENGINE ##############
@@ -424,9 +426,9 @@ add_compile_definitions(ZE_NGX_ID=${ZE_NGX_ID})
 # EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
 add_compile_definitions(_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # Flags for enabling features per given target
-add_compile_definitions(_ZE_FFXAPI_ENABLED=$<BOOL:${ZE_FFXAPI_ENABLED_GEN}>)
-add_compile_definitions(_ZE_DLSS_ENABLED=$<BOOL:${ZE_DLSS_ENABLED_GEN}>)
-add_compile_definitions(_ZE_XESS_ENABLED=$<BOOL:${ZE_XESS_ENABLED_GEN}>)
+add_compile_definitions(_ZE_FFXAPI_ENABLED=$<BOOL:${ZE_FFXAPI_ENABLED}>)
+add_compile_definitions(_ZE_DLSS_ENABLED=$<BOOL:${ZE_DLSS_ENABLED}>)
+add_compile_definitions(_ZE_XESS_ENABLED=$<BOOL:${ZE_XESS_ENABLED}>)
 # General flags with project options
 add_compile_definitions(_ZE_USE_FFX_API_FSR_SHADERS=$<BOOL:${ZE_USE_FFX_API_FSR_SHADERS}>)
 add_compile_definitions(_ZE_FSR2_SHADERS_VERSION_MAJOR=2)
