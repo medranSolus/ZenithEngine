@@ -28,7 +28,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	};
 
 	// Generic component for clearing resources
-	template<ResIndex N>
+	template<ResIndex N, const char* MARKER_STRING = nullptr>
 	struct ClearBuffer
 	{
 		struct Resources
@@ -51,8 +51,8 @@ namespace ZE::GFX::Pipeline::RenderPass
 	};
 
 #pragma region Functions
-	template<ResIndex N>
-	PassDesc ClearBuffer<N>::GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate) noexcept
+	template<ResIndex N, const char* MARKER_STRING>
+	PassDesc ClearBuffer<N, MARKER_STRING>::GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate) noexcept
 	{
 		PassDesc desc{ type };
 		desc.InitData = new ExecuteData(clearInfo);
@@ -65,13 +65,20 @@ namespace ZE::GFX::Pipeline::RenderPass
 		return desc;
 	}
 
-	template<ResIndex N>
-	void ClearBuffer<N>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	template<ResIndex N, const char* MARKER_STRING>
+	void ClearBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		ZE_DRAW_TAG_BEGIN(dev, cl, "Batched Clear [" + std::to_string(N) + "]", PixelVal::White);
+		if constexpr (MARKER_STRING == nullptr)
+		{
+			ZE_DRAW_TAG_BEGIN(dev, cl, "Batched Clear [" + std::to_string(N) + "]", PixelVal::White);
+		}
+		else
+		{
+			ZE_DRAW_TAG_BEGIN(dev, cl, MARKER_STRING, PixelVal::White);
+		}
 		for (ResIndex i = 0; i < N; ++i)
 		{
 			RID rid = ids.Buffers[i];
@@ -101,3 +108,15 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 #pragma endregion
 }
+
+#if _ZE_GFX_MARKERS
+// Used for setting the name of the debug marker for clear pass to be used later on
+#	define ZE_CLEAR_BUFFER_DEBUG_MARKER(str) static const char __DEBUG_MARKER[] = str
+// Specify this after specialization to the ClearBuffer class to allow for debug marker usage if available
+#	define ZE_CLEAR_BUFFER_MARKER_SET , __DEBUG_MARKER
+#else
+// Used for setting the name of the debug marker for clear pass to be used later on
+#	define ZE_CLEAR_BUFFER_DEBUG_MARKER(str)
+// Specify this after specialization to the ClearBuffer class to allow for debug marker usage if available
+#	define ZE_CLEAR_BUFFER_MARKER_SET
+#endif

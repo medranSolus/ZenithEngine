@@ -144,8 +144,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.AddResource("ssao",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UInt, "SSAO"));
 		if (false)
-			graphDesc.AddResource("ssr",
-				GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
+		graphDesc.AddResource("ssr",
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
 
 		// Resources related to the FSR3
 		graphDesc.AddResource("dilatedDepth",
@@ -172,7 +172,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 
 #pragma region Geometry
 		{
-			RenderPass::ClearBuffer<4>::ExecuteData clearInfo;
+			ZE_CLEAR_BUFFER_DEBUG_MARKER("GBuffer Clear");
+			RenderPass::ClearBuffer<4 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::DSV;
 			clearInfo.Info[0].ClearValue.DSV.Depth = 0.0f;
 			clearInfo.Info[0].ClearValue.DSV.Stencil = 0;
@@ -183,7 +184,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[3].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[3].ClearValue.Color = ColorF4();
 
-			RenderNode node("gbufferClear", "", RenderPass::ClearBuffer<4>::GetDesc(Base(CorePassType::GBufferClear),
+			RenderNode node("gbufferClear", "", RenderPass::ClearBuffer<4 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::GBufferClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("DS", TextureLayout::DepthStencilWrite, "gbuffDepth");
 			node.AddOutput("GB_N", TextureLayout::RenderTarget, "gbuffNormal");
@@ -192,21 +193,23 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderPass::ClearBuffer<1>::ExecuteData clearInfo;
+			ZE_CLEAR_BUFFER_DEBUG_MARKER("Motion Vectors Clear");
+			RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4();
 
-			RenderNode node("motionClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::MotionVectorsClear),
+			RenderNode node("motionClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::MotionVectorsClear),
 				clearInfo, []() noexcept { return Settings::ComputeMotionVectors(); }), PassExecutionType::Producer);
 			node.AddOutput("GB_MV", TextureLayout::RenderTarget, "gbuffMotion");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderPass::ClearBuffer<1>::ExecuteData clearInfo;
+			ZE_CLEAR_BUFFER_DEBUG_MARKER("Reactive Mask Clear");
+			RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4();
 
-			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::ReactiveMaskClear),
+			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::ReactiveMaskClear),
 				clearInfo, []() noexcept { return Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::Fsr3 || Settings::Upscaler == UpscalerType::FfxFsr || Settings::Upscaler == UpscalerType::XeSS; }), PassExecutionType::Producer);
 			node.AddOutput("GB_R", TextureLayout::RenderTarget, "gbuffReactive");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -242,11 +245,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #pragma region Lightning
 		const UInt2 shadowMapDim = { params.ShadowMapSize, params.ShadowMapSize };
 		{
-			RenderPass::ClearBuffer<1>::ExecuteData clearInfo;
+			ZE_CLEAR_BUFFER_DEBUG_MARKER("Lighting Clear");
+			RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
-			RenderNode node("lightClear", "", RenderPass::ClearBuffer<1>::GetDesc(Base(CorePassType::LightClear),
+			RenderNode node("lightClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::LightClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("LB", TextureLayout::RenderTarget, "directLighting");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
@@ -452,14 +456,15 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #pragma endregion
 #pragma region Post process display size
 		{
-			RenderPass::ClearBuffer<2>::ExecuteData clearInfo;
+			ZE_CLEAR_BUFFER_DEBUG_MARKER("Outline Clear");
+			RenderPass::ClearBuffer<2 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
 			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 			clearInfo.Info[1].BufferType = RenderPass::ClearBufferType::DSV;
 			clearInfo.Info[1].ClearValue.DSV.Depth = 0.0f;
 			clearInfo.Info[1].ClearValue.DSV.Stencil = 0;
 
-			RenderNode node("outlineClear", "", RenderPass::ClearBuffer<2>::GetDesc(Base(CorePassType::OutlineClear),
+			RenderNode node("outlineClear", "", RenderPass::ClearBuffer<2 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::OutlineClear),
 				clearInfo), PassExecutionType::Producer);
 			node.AddOutput("RT", TextureLayout::RenderTarget, "outline");
 			node.AddOutput("DS", TextureLayout::DepthStencilWrite, "outlineDepth");
