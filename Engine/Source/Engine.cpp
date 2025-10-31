@@ -48,7 +48,7 @@ namespace ZE
 			{
 				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					graphBuilder.FinalizeGraph(dev, assets, renderGraph);
+					buildRes = graphBuilder.FinalizeGraph(dev, graphics.GetSwapChain(), assets, renderGraph);
 			}
 		}
 		else
@@ -58,7 +58,7 @@ namespace ZE
 			{
 				buildRes = graphBuilder.ComputeGraph(dev);
 				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					graphBuilder.FinalizeGraph(dev, assets, renderGraph);
+					buildRes = graphBuilder.FinalizeGraph(dev, graphics.GetSwapChain(), assets, renderGraph);
 			}
 		}
 		if (buildRes != GFX::Pipeline::BuildResult::Success)
@@ -148,8 +148,17 @@ namespace ZE
 
 	void Engine::Start(EID camera) noexcept
 	{
-		renderGraph.SetCamera(camera);
+		GFX::Device& dev = graphics.GetDevice();
+		GFX::CommandList& mainList = graphics.GetMainList();
+
 		UploadSync();
+		renderGraph.SetCamera(camera);
+		renderGraph.UpdateFrameData(dev);
+		if (graphBuilder.ExecuteStartupPasses(dev, mainList, renderGraph))
+			dev.ExecuteMain(mainList);
+
+		// Frame 0 is special frame used only for any initialization of graph resources
+		Settings::AdvanceFrame();
 		prevTime = Perf::Get().GetNow();
 	}
 
@@ -267,7 +276,7 @@ namespace ZE
 		graphics.WaitForFrame();
 
 		// Update of render graph and it's data
-		GFX::Pipeline::BuildResult result = graphBuilder.UpdatePassConfiguration(dev, assets, renderGraph);
+		GFX::Pipeline::BuildResult result = graphBuilder.UpdatePassConfiguration(dev, mainList, assets, renderGraph);
 		if (!ZE_PIPELINE_BUILD_SUCCESS(result))
 			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
 		renderGraph.UpdateFrameData(dev);

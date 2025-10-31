@@ -19,6 +19,14 @@
 
 namespace ZE::GFX::Pipeline
 {
+	void RenderGraph::PrepareFrameResources(Device& dev, SwapChain& swapChain)
+	{
+		execData.DynamicBuffer = &dynamicBuffers.Get();
+		execData.DynamicBuffer->StartFrame(dev);
+		execData.DynamicBuffer->Alloc(dev, &execData.DynamicData, sizeof(RendererDynamicData));
+		execData.Buffers.SwapBackbuffer(dev, swapChain);
+	}
+
 	void RenderGraph::UnloadConfig(Device& dev) noexcept
 	{
 		passExecData.Transform([&dev](const auto& passData)
@@ -47,10 +55,7 @@ namespace ZE::GFX::Pipeline
 		if (asyncList.IsInitialized())
 			asyncList.Reset(dev);
 
-		execData.DynamicBuffer = &dynamicBuffers.Get();
-		execData.DynamicBuffer->StartFrame(dev);
-		execData.DynamicBuffer->Alloc(dev, &execData.DynamicData, sizeof(RendererDynamicData));
-		execData.Buffers.SwapBackbuffer(dev, gfx.GetSwapChain());
+		PrepareFrameResources(dev, gfx.GetSwapChain());
 
 		// TODO: Single threaded method only for now, but multiple threads possible as workers
 		//       for a) passes in single pass group and then maybe for multiple pass groups at once

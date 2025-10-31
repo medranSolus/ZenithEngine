@@ -132,6 +132,7 @@ namespace ZE::GFX::Pipeline
 		bool ffxBuffersChanged = false;
 		GraphFinalizeFlags finalizationFlags = 0;
 
+		void PrepareFrameResources(Device& dev, SwapChain& swapChain);
 		void UnloadConfig(Device& dev) noexcept;
 
 	public:

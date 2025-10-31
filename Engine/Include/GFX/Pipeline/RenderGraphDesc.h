@@ -9,6 +9,7 @@ namespace ZE::GFX::Pipeline
 	{
 		FrameBufferFlags ResourceOptions;
 		std::vector<std::pair<std::string, FrameResourceDesc>> Resources;
+		std::vector<RenderNode> StartupPasses;
 		std::vector<RenderNode> RenderPasses;
 		std::vector<Resource::SamplerDesc> Samplers;
 		Binding::Range SettingsRange;

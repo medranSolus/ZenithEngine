@@ -317,6 +317,23 @@ namespace ZE::GFX::Pipeline
 		return BuildResult::Success;
 	}
 
+	void RenderGraphBuilder::LoadStartupPasses() noexcept
+	{
+		ZE_PERF_GUARD("RenderGraphBuilder::LoadStartupPasses");
+
+		startupNodes.reserve(initialDesc.StartupPasses.size());
+		for (const auto& pass : initialDesc.StartupPasses)
+		{
+			StartupNode node;
+			node.Present = false;
+			node.GraphName = pass.GetGraphConnectorName();
+			node.Outputs = pass.GetOutputs();
+			node.OutputResources = pass.GetOutputResources();
+			node.Desc = pass.GetDesc();
+			startupNodes.emplace_back(node);
+		}
+	}
+
 	BuildResult RenderGraphBuilder::LoadResourcesDesc(Device& dev) noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::LoadResourcesDesc");
@@ -341,15 +358,20 @@ namespace ZE::GFX::Pipeline
 				presentResources.emplace_back(res.first);
 			else
 			{
-				for (const auto& pass : initialDesc.RenderPasses)
-				{
-					if (std::find(pass.GetOutputResources().begin(), pass.GetOutputResources().end(), res.first) != pass.GetOutputResources().end()
-						|| std::find(pass.GetOutputReplacementResources().begin(), pass.GetOutputReplacementResources().end(), res.first) != pass.GetOutputReplacementResources().end())
+				auto checkPasses = [&](const std::vector<RenderNode>& passes)
 					{
-						presentResources.emplace_back(res.first);
-						break;
-					}
-				}
+						for (const auto& pass : passes)
+						{
+							if (std::find(pass.GetOutputResources().begin(), pass.GetOutputResources().end(), res.first) != pass.GetOutputResources().end()
+								|| std::find(pass.GetOutputReplacementResources().begin(), pass.GetOutputReplacementResources().end(), res.first) != pass.GetOutputReplacementResources().end())
+							{
+								presentResources.emplace_back(res.first);
+								break;
+							}
+						}
+					};
+				checkPasses(initialDesc.RenderPasses);
+				checkPasses(initialDesc.StartupPasses);
 			}
 		}
 		ZE_ASSERT_WARN(presentResources.size() == initialDesc.Resources.size(), "Some frame resources are not accesed and will be removed from pipeline config!");
@@ -441,7 +463,7 @@ namespace ZE::GFX::Pipeline
 			const auto& res = resources.Get(std::string(resName));
 			desc.Resources.emplace_back(res);
 			resourceLookup.emplace(resName, std::make_pair<U32, U32>(UINT32_MAX, 0U));
-			if (res.Flags & FrameResourceFlag::Temporal)
+			if (res.Flags & (FrameResourceFlag::Temporal | FrameResourceFlag::OutsideResource))
 				resourceLookup.at(resName) = { 0U, dependencyLevelCount };
 		}
 
@@ -707,11 +729,11 @@ namespace ZE::GFX::Pipeline
 		}
 	}
 
-	bool RenderGraphBuilder::CascadePassUpdate(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const
+	std::pair<bool, bool> RenderGraphBuilder::CascadePassUpdate(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::CascadePassUpdate");
 
-		bool framebufferImpact = false;
+		bool framebufferImpact = false, startupPassExecute = false;
 		while (cascadeUpdate)
 		{
 			cascadeUpdate = false;
@@ -724,7 +746,7 @@ namespace ZE::GFX::Pipeline
 
 					if (node.GetDesc().Update)
 					{
-						PtrVoid execData = nullptr;
+						void* execData = nullptr;
 						std::string fullname = node.GetFullName();
 						if (execDataCache.Contains(fullname))
 							execData = execDataCache.Get(fullname).first;
@@ -737,6 +759,7 @@ namespace ZE::GFX::Pipeline
 							ZE_ENUM_UNHANDLED();
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::InternalOnly:
+							break;
 						case UpdateStatus::GpuUploadRequired:
 							gpuUploadRequired = true;
 							break;
@@ -753,8 +776,43 @@ namespace ZE::GFX::Pipeline
 					}
 				}
 			}
+			for (auto& startupPass : startupNodes)
+			{
+				if (startupPass.Present)
+				{
+					if (startupPass.Desc.Update)
+					{
+						void* execData = nullptr;
+						if (execDataCache.Contains(startupPass.GraphName))
+							execData = execDataCache.Get(startupPass.GraphName).first;
+
+						switch (startupPass.Desc.Update(dev, buildData, execData, startupPass.Desc.InitializeFormats))
+						{
+						default:
+							ZE_ENUM_UNHANDLED();
+						case UpdateStatus::NoUpdate:
+						case UpdateStatus::GpuUploadRequired:
+							gpuUploadRequired = true;
+							[[fallthrough]];
+						case UpdateStatus::InternalOnly:
+							startupPassExecute = true;
+							break;
+						case UpdateStatus::FrameBufferImpactGpuUpload:
+							gpuUploadRequired = true;
+							[[fallthrough]];
+						case UpdateStatus::FrameBufferImpact:
+							framebufferImpact = true;
+							[[fallthrough]];
+						case UpdateStatus::GraphImpact:
+							cascadeUpdate = true;
+							startupPassExecute = true;
+							break;
+						}
+					}
+				}
+			}
 		}
-		return framebufferImpact;
+		return { framebufferImpact, startupPassExecute };
 	}
 
 	bool RenderGraphBuilder::SetupPassData(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, PtrVoid& passExecData)
@@ -820,12 +878,11 @@ namespace ZE::GFX::Pipeline
 		return cascadeUpdate;
 	}
 
-	void RenderGraphBuilder::InitializeRenderPasses(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph)
+	std::pair<bool, bool> RenderGraphBuilder::InitializeRenderPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData)
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::InitializeRenderPasses");
 
-		bool cascadeUpdate = false, gpuUpload = false;
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers, { true, true, true } };
+		bool gpuUpload = false, cascadeUpdate = false;
 		auto fillInitData = [&](RenderGraph::ExecutionGroup& execGroup)
 			{
 				for (U32 i = 0; i < execGroup.PassGroupCount; ++i)
@@ -855,7 +912,12 @@ namespace ZE::GFX::Pipeline
 					auto& execData = execDataCache.Get(fullname);
 					if (execData.first)
 					{
-						execData.second(dev, execData.first, buildData.SyncStatus);
+						if (execData.second)
+							execData.second(dev, execData.first, buildData.SyncStatus);
+						else
+						{
+							ZE_FAIL("Memory leak detected, no clean callback for [" + fullname + "]!");
+						}
 					}
 					execDataCache.Remove(fullname);
 				}
@@ -876,14 +938,68 @@ namespace ZE::GFX::Pipeline
 					removeNodeData(passDescs.at(passId).at(index));
 			}
 		}
+		return { gpuUpload, cascadeUpdate };
+	}
 
-		// Perform updates as long as there is required to reapply any changes that might need rebuilding render graph
-		CascadePassUpdate(dev, graph, buildData, cascadeUpdate, gpuUpload);
+	std::pair<bool, bool> RenderGraphBuilder::InitializeStartupPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData)
+	{
+		ZE_PERF_GUARD("RenderGraphBuilder::InitializeStartupPasses");
 
-		// After pass data have been scheduled to upload we can start actual GPU upload request
-		assets.GetDisk().StartUploadGPU();
-		// Clear up loaded shaders
-		buildData.FreeShaderCache(dev);
+		bool gpuUpload = false, cascadeUpdate = false;
+		for (U32 passId = 0; passId < startupNodes.size(); ++passId)
+		{
+			auto& pass = startupNodes.at(passId);
+			if (pass.Present)
+			{
+				if (!execDataCache.Contains(pass.GraphName))
+					execDataCache.Add(pass.GraphName, nullptr, pass.Desc.Clean);
+
+				auto& execData = execDataCache.Get(pass.GraphName);
+				if (execData.first == nullptr)
+				{
+					if (pass.Desc.Init)
+					{
+						execData.first = pass.Desc.Init(dev, buildData, pass.Desc.InitializeFormats, pass.Desc.InitData);
+						gpuUpload = initialDesc.StartupPasses.at(passId).IsInitDataGpuUploadRequired();
+					}
+				}
+				else if (pass.Desc.Update)
+				{
+					switch (pass.Desc.Update(dev, buildData, execData.first, pass.Desc.InitializeFormats))
+					{
+					default:
+						ZE_ENUM_UNHANDLED();
+					case UpdateStatus::NoUpdate:
+					case UpdateStatus::InternalOnly:
+					case UpdateStatus::GpuUploadRequired:
+						gpuUpload = true;
+						break;
+					case UpdateStatus::FrameBufferImpactGpuUpload:
+						gpuUpload = true;
+						[[fallthrough]];
+					case UpdateStatus::GraphImpact:
+					case UpdateStatus::FrameBufferImpact:
+						cascadeUpdate = true;
+						break;
+					}
+				}
+			}
+			else if (execDataCache.Contains(pass.GraphName))
+			{
+				auto& execData = execDataCache.Get(pass.GraphName);
+				if (execData.first)
+				{
+					if (execData.second)
+						execData.second(dev, execData.first, buildData.SyncStatus);
+					else
+					{
+						ZE_FAIL("Memory leak detected, no clean callback for [" + pass.GraphName + "]!");
+					}
+				}
+				execDataCache.Remove(pass.GraphName);
+			}
+		}
+		return { gpuUpload, cascadeUpdate };
 	}
 
 	void RenderGraphBuilder::ComputeGroupSyncs(RenderGraph& graph) const noexcept
@@ -1517,7 +1633,18 @@ namespace ZE::GFX::Pipeline
 		GroupRenderPasses(dev, graph);
 
 		// Perform all needed work for active passes
-		InitializeRenderPasses(dev, assets, graph);
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers, { true, true, true } };
+		std::pair<bool, bool> passStatus = InitializeRenderPasses(dev, graph, buildData);
+		std::pair<bool, bool> startupPassStatus = InitializeStartupPasses(dev, graph, buildData);
+		passStatus.first |= startupPassStatus.first;
+
+		// Perform updates as long as there is required to reapply any changes that might need rebuilding render graph
+		CascadePassUpdate(dev, graph, buildData, passStatus.first, passStatus.second || startupPassStatus.second);
+
+		// After pass data have been scheduled to upload we can start actual GPU upload request
+		assets.GetDisk().StartUploadGPU();
+		// Clear up loaded shaders
+		buildData.FreeShaderCache(dev);
 
 		// Check for sync dependencies between execution groups
 		ComputeGroupSyncs(graph);
@@ -1529,6 +1656,23 @@ namespace ZE::GFX::Pipeline
 		if (Settings::GetGfxApi() != GfxApiType::DX11 && Settings::GetGfxApi() != GfxApiType::OpenGL)
 			return FillPassBarriers(dev, graph);
 		return BuildResult::Success;
+	}
+
+	void RenderGraphBuilder::UpdateStartupPassesPresence() noexcept
+	{
+		ZE_PERF_GUARD("RenderGraphBuilder::UpdateStartupPassesPresence");
+
+		for (auto& startupNode : startupNodes)
+		{
+			for (const auto& resName : startupNode.OutputResources)
+			{
+				if (std::find(computedResources.begin(), computedResources.end(), resName) != computedResources.end())
+				{
+					startupNode.Present = true;
+					break;
+				}
+			}
+		}
 	}
 
 	BuildResult RenderGraphBuilder::LoadConfig(Device& dev, const RenderGraphDesc& desc, bool minimizePassDistances) noexcept
@@ -1554,6 +1698,8 @@ namespace ZE::GFX::Pipeline
 			ClearConfig(dev);
 			return result;
 		}
+
+		LoadStartupPasses();
 
 		// Clear original desc after loading render pass data
 		initialDesc.RenderPasses.clear();
@@ -1669,22 +1815,44 @@ namespace ZE::GFX::Pipeline
 						{
 							return passDescs.at(dep.NodeIndex).at(computedGraph.at(dep.NodeIndex).NodeGroupIndex).GetGraphConnectorName() == split.at(0);
 						});
-					ZE_CHECK_FAILED_GRAPH_COMPUTE(it == dependencies.end(), ErrorPassNameNotFound,
-						"Cannot find dependency [" + std::string(split.at(0)) + "] of pass [" + renderNode.GetFullName() + "]!");
-
-					// Check which output matches current input
-					const auto& prevComputed = computedGraph.at(it->NodeIndex);
-					const auto& prevNode = passDescs.at(it->NodeIndex).at(prevComputed.NodeGroupIndex);
-					for (ResIndex j = 0, outSize = Utils::SafeCast<ResIndex>(prevNode.GetOutputs().size()); j < outSize; ++j)
+					if (it != dependencies.end())
 					{
-						if (prevNode.GetOutputs().at(j) == input)
+						// Check which output matches current input
+						const auto& prevComputed = computedGraph.at(it->NodeIndex);
+						const auto& prevNode = passDescs.at(it->NodeIndex).at(prevComputed.NodeGroupIndex);
+						for (ResIndex j = 0, outSize = Utils::SafeCast<ResIndex>(prevNode.GetOutputs().size()); j < outSize; ++j)
 						{
-							originalInputs.emplace_back(prevNode.GetOutputResources().at(j));
-							computed.InputResources.emplace_back(prevComputed.OutputResources.at(j));
+							if (prevNode.GetOutputs().at(j) == input)
+							{
+								originalInputs.emplace_back(prevNode.GetOutputResources().at(j));
+								computed.InputResources.emplace_back(prevComputed.OutputResources.at(j));
 
-							ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
-								ErrorMissingNonOptionalInput, "Input [" + input + "] of pass [" + renderNode.GetFullName() + "] is missing it's resource!");
-							break;
+								ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
+									ErrorMissingNonOptionalInput, "Input [" + input + "] of pass [" + renderNode.GetFullName() + "] is missing it's resource!");
+								break;
+							}
+						}
+					}
+					else
+					{
+						auto startupNode = std::find_if(startupNodes.begin(), startupNodes.end(), [&](const StartupNode& node)
+							{
+								return node.GraphName == split.at(0);
+							});
+						ZE_CHECK_FAILED_GRAPH_COMPUTE(startupNode == startupNodes.end(), ErrorPassNameNotFound,
+							"Cannot find dependency [" + std::string(split.at(0)) + "] of pass [" + renderNode.GetFullName() + "]!");
+
+						for (ResIndex j = 0, outSize = Utils::SafeCast<ResIndex>(startupNode->Outputs.size()); j < outSize; ++j)
+						{
+							if (startupNode->Outputs.at(j) == input)
+							{
+								originalInputs.emplace_back(startupNode->OutputResources.at(j));
+								computed.InputResources.emplace_back(originalInputs.back());
+
+								ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
+									ErrorMissingNonOptionalInput, "Input [" + input + "] of pass [" + renderNode.GetFullName() + "] is missing it's resource!");
+								break;
+							}
 						}
 					}
 				}
@@ -1833,7 +2001,7 @@ namespace ZE::GFX::Pipeline
 			return result;
 		}
 
-		// Get final list of resources
+		// Get final list of resources and startup nodes providing them
 		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - set final resources list");
 		computedResources.emplace_back(BACKBUFFER_NAME);
 		resources.Transform([&](const std::string& name, const FrameResourceDesc& res)
@@ -1842,11 +2010,12 @@ namespace ZE::GFX::Pipeline
 					computedResources.emplace_back(name);
 			});
 		ZE_PERF_STOP();
+		UpdateStartupPassesPresence();
 
 		return BuildResult::Success;
 	}
 
-	BuildResult RenderGraphBuilder::FinalizeGraph(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph, GraphFinalizeFlags flags)
+	BuildResult RenderGraphBuilder::FinalizeGraph(Device& dev, SwapChain& swapChain, Data::AssetsStreamer& assets, RenderGraph& graph, GraphFinalizeFlags flags)
 	{
 		// In case that graph have not been yet computed
 		if (!IsGraphComputed())
@@ -1878,6 +2047,8 @@ namespace ZE::GFX::Pipeline
 			graph.execData.SettingsBuffer.Init(dev, assets.GetDisk(), settingsData);
 
 			graph.execData.Buffers.Init(dev, GetFrameBufferLayout(dev, graph));
+
+			graph.PrepareFrameResources(dev, swapChain);
 		}
 		else
 			graph.Free(dev);
@@ -1885,14 +2056,81 @@ namespace ZE::GFX::Pipeline
 		return result;
 	}
 
-	BuildResult RenderGraphBuilder::UpdatePassConfiguration(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph)
+	bool RenderGraphBuilder::ExecuteStartupPasses(Device& dev, CommandList& cl, RenderGraph& graph)
+	{
+		ZE_PERF_GUARD("RenderGraphBuilder::ExecuteStartupPasses");
+
+		bool recordedCommands = false;
+		std::vector<RID> resIds;
+		for (auto& startupNode : startupNodes)
+		{
+			if (startupNode.Present && startupNode.Desc.Execute)
+			{
+				resIds.resize(startupNode.OutputResources.size());
+				for (U32 i = 0; const auto& output : startupNode.OutputResources)
+				{
+					RID rid = INVALID_RID;
+					if (output != "")
+					{
+						auto it = std::find(computedResources.begin(), computedResources.end(), output);
+						if (it != computedResources.end())
+							rid = Utils::SafeCast<RID>(std::distance(computedResources.begin(), it));
+						ZE_ASSERT(rid != INVALID_RID, "If output is not empty it must always be present after computing graph!");
+					}
+					resIds.at(i++) = rid;
+				}
+
+				void* execData = nullptr;
+				if (execDataCache.Contains(startupNode.GraphName))
+					execData = execDataCache.Get(startupNode.GraphName).first;
+				PassData data = { resIds.data(), execData };
+				recordedCommands |= startupNode.Desc.Execute(dev, cl, graph.execData, data);
+			}
+		}
+		return recordedCommands;
+	}
+
+	BuildResult RenderGraphBuilder::UpdatePassConfiguration(Device& dev, CommandList& startupUpdateList, Data::AssetsStreamer& assets, RenderGraph& graph)
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::UpdatePassConfiguration");
 
 		BuildResult result = BuildResult::Success;
 		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
-		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, uploadWait = false;
+		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, uploadWait = false, runStartupPasses = false;
 		UInt2 renderSize = Settings::RenderSize;
+
+		for (auto& startupPass : startupNodes)
+		{
+			if (startupPass.Present && startupPass.Desc.Update)
+			{
+				void* execData = nullptr;
+				if (execDataCache.Contains(startupPass.GraphName))
+					execData = execDataCache.Get(startupPass.GraphName).first;
+				switch (startupPass.Desc.Update(dev, buildData, execData, startupPass.Desc.InitializeFormats))
+				{
+				default:
+					ZE_ENUM_UNHANDLED();
+				case UpdateStatus::NoUpdate:
+					break;
+				case UpdateStatus::GpuUploadRequired:
+					uploadWait = true;
+					[[fallthrough]];
+				case UpdateStatus::InternalOnly:
+					runStartupPasses = true;
+					break;
+				case UpdateStatus::FrameBufferImpactGpuUpload:
+					uploadWait = true;
+					[[fallthrough]];
+				case UpdateStatus::FrameBufferImpact:
+					framebufferUpdate = true;
+					[[fallthrough]];
+				case UpdateStatus::GraphImpact:
+					cascadeUpdate = true;
+					runStartupPasses = true;
+					break;
+				}
+			}
+		}
 
 		for (U32 i = 0; i < passDescs.size(); ++i)
 		{
@@ -1909,7 +2147,7 @@ namespace ZE::GFX::Pipeline
 					// No point on doing updates right now if it's required to perform cascade update later
 					if (!cascadeUpdate && activePass.GetDesc().Update)
 					{
-						PtrVoid execData = nullptr;
+						void* execData = nullptr;
 						std::string fullname = activePass.GetFullName();
 						if (execDataCache.Contains(fullname))
 							execData = execDataCache.Get(fullname).first;
@@ -2083,10 +2321,12 @@ namespace ZE::GFX::Pipeline
 		}
 		buildData.FreeShaderCache(dev);
 
-		if (cascadeUpdate || framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
-		{
-			CascadePassUpdate(dev, graph, buildData, uploadWait, cascadeUpdate || graph.ffxBuffersChanged);
+		std::pair<bool, bool> cascadeResult = CascadePassUpdate(dev, graph, buildData, uploadWait, cascadeUpdate || graph.ffxBuffersChanged);
+		framebufferUpdate |= cascadeResult.first;
+		runStartupPasses |= cascadeResult.second;
 
+		if (framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
+		{
 			// Update all referenced RIDs due to changes in frambuffer
 			auto updateExecGroupResources = [&](U32 i, RenderGraph::ExecutionGroup& execGroup)
 				{
@@ -2120,7 +2360,12 @@ namespace ZE::GFX::Pipeline
 
 			graph.execData.Buffers.Free(dev);
 			graph.execData.Buffers.Init(dev, GetFrameBufferLayout(dev, graph));
+
+			runStartupPasses = true;
 		}
+
+		if (runStartupPasses && ExecuteStartupPasses(dev, startupUpdateList, graph))
+			dev.ExecuteMain(startupUpdateList);
 
 		if (uploadWait && result == BuildResult::Success)
 			return BuildResult::WaitUpload;
@@ -2133,6 +2378,7 @@ namespace ZE::GFX::Pipeline
 		minimizeDistances = false;
 		resources.Clear();
 		passDescs.clear();
+		startupNodes.clear();
 		renderGraphDepList.clear();
 		topoplogyOrder.clear();
 
@@ -2147,13 +2393,19 @@ namespace ZE::GFX::Pipeline
 				{
 					if (execData.first)
 					{
-						ZE_ASSERT(execData.second, "Clean function should always be present when exec data is not empty!");
 						GpuSyncStatus status = { true, true, true };
-						execData.second(dev, execData.first, status);
+						if (execData.second)
+							execData.second(dev, execData.first, status);
+						else
+						{
+							ZE_FAIL("Clean function should always be present when exec data is not empty!");
+						}
 					}
 				});
 			execDataCache.Clear();
 		}
+		for (auto& pass : startupNodes)
+			pass.Present = false;
 
 		computedGraph.clear();
 		dependencyLevels.clear();
@@ -2253,22 +2505,34 @@ namespace ZE::GFX::Pipeline
 			graph.execData.SettingsBuffer.Update(dev, assets.GetDisk(), settingsData);
 		}
 
-		for (U32 i = 0; auto & computed : computedGraph)
+		for (U32 i = 0; auto& computed : computedGraph)
 		{
 			if (computed.Present)
 			{
 				auto& node = passDescs.at(i).at(computed.NodeGroupIndex);
-				std::string fullname = node.GetFullName();
-				void* execData = nullptr;
-				if (execDataCache.Contains(fullname))
-					execData = execDataCache.Get(fullname).first;
-				else if (graph.passExecData.Contains(i))
-					execData = graph.passExecData.Get(i).first;
-
 				if (node.GetDesc().DebugUI)
+				{
+					std::string fullname = node.GetFullName();
+					void* execData = nullptr;
+					if (execDataCache.Contains(fullname))
+						execData = execDataCache.Get(fullname).first;
+					else if (graph.passExecData.Contains(i))
+						execData = graph.passExecData.Get(i).first;
+
 					node.GetDesc().DebugUI(execData);
+				}
 			}
 			++i;
+		}
+		for (auto& startup : startupNodes)
+		{
+			if (startup.Present && startup.Desc.DebugUI)
+			{
+				void* execData = nullptr;
+				if (execDataCache.Contains(startup.GraphName))
+					execData = execDataCache.Get(startup.GraphName).first;
+				startup.Desc.DebugUI(execData);
+			}
 		}
 
 		// In case some custom data has been passed in

@@ -67,7 +67,7 @@ namespace ZE
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
-		static inline U64 frameIndex = 0;
+		static inline U64 frameIndex = UINT64_MAX; // Sets to 0 when engine is starting up
 		static inline U32 backbufferCount = 0;
 
 		static constexpr bool Initialized() noexcept { return backbufferCount != 0; }

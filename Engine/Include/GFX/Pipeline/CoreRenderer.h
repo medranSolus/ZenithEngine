@@ -1,4 +1,5 @@
 #pragma once
+#include "Data/SkyboxSource.h"
 #include "RenderGraphDesc.h"
 
 namespace ZE::GFX::Pipeline::CoreRenderer
@@ -7,9 +8,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 	struct Params
 	{
 		// Path to location of skybox textures
-		std::string SkyboxPath;
-		// Extensions of skybox textures
-		std::string SkyboxExt;
+		Data::SkyboxSource SkyboxSource;
 		// Dimensions of used shadow maps
 		U32 ShadowMapSize = 1024;
 		// Constant bias to be applied when performing shadow depth test
