@@ -11,6 +11,7 @@ namespace ZE::GFX::Pipeline
 		Processor,        // Only present if there is input data from other passes and if any further passes consume it's output data
 		StaticProcessor,  // Same as normal processor pass but different evaluation is causing a framegraph rebuilding (same as Producer)
 		DynamicProcessor, // Same as normal processor pass but different evaluation is not causing a framebuffer recomputation (it's buffers are present always if there are producers), have to be alone in pass group
+		Startup,          // Run only once at the start of the render graph if it's output resources are present in framebuffer, can contain only output buffers
 	};
 
 	// Description of single render pass in RenderGraph
@@ -50,7 +51,7 @@ namespace ZE::GFX::Pipeline
 		constexpr std::string GetFullName() const noexcept { return graphName + (passName.size() ? "." + passName : ""); }
 		constexpr const PassDesc& GetDesc() const noexcept { return desc; }
 		constexpr bool IsAsync() const noexcept { return flags[0]; }
-		// When pass execution data cannot be used by multiple instances of same pass then prevent it with this flag
+		// When pass execution data cannot be used by multiple instances of same pass then prevent it with this flag (no effect for startup passes)
 		constexpr void DisableExecDataCaching() noexcept { flags[4] = true; }
 		constexpr bool IsExecDataCachingDisabled() const noexcept { return flags[4]; }
 		// When pass during initialization needs to upload some data to the GPU (ex. textures) set this flag to allow for correct synchronization

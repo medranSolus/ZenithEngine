@@ -637,8 +637,7 @@ App::App(const CmdParser& params)
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);
 	engineParams.WindowName = WINDOW_TITLE;
-	engineParams.CoreRendererParams.SkyboxPath = "Skybox/Space";
-	engineParams.CoreRendererParams.SkyboxExt = ".png";
+	engineParams.CoreRendererParams.SkyboxSource.InitFolder("Skybox/Space", ".png");
 	engine.Init(engineParams);
 
 	engine.ImGui().SetFont("Fonts/Arial.ttf", 14.0f);

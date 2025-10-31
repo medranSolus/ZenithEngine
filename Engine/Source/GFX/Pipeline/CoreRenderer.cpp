@@ -118,6 +118,14 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #define GENERIC_TEX2D_DESC(flags, format, debugName) CLR_COLOR_TEX2D_DESC(flags, format, 0.0f, 0.0f, 0.0f, 1.0f, debugName)
 #define TEX2D_MIP_DESC(flags, format, mips, debugName) { SIZE_SYNC, 1, flags, format, ColorF4{}, 0.0f, 0, mips, FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME(debugName) }
 
+		// Static preprocessed resources
+		graphDesc.AddResource("skybox",
+			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32B32_Float, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Cubemap skybox"));
+		graphDesc.AddResource("envMap",
+			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32B32_Float, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Environment map"));
+		graphDesc.AddResource("brdfLut",
+			TEX2D_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32_Float, 0.0f, 0.0f, 0.0f, 0.0f, "BRDF LUT"));
+
 		// GBuffer related resources
 		graphDesc.AddResource("gbuffDepth",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::DepthOnly, "GBuff depth"));
@@ -144,8 +152,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.AddResource("ssao",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UInt, "SSAO"));
 		if (false)
-		graphDesc.AddResource("ssr",
-			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
+			graphDesc.AddResource("ssr",
+				GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
 
 		// Resources related to the FSR3
 		graphDesc.AddResource("dilatedDepth",
@@ -170,6 +178,24 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline blur"));
 #pragma endregion
 
+#pragma region Startup
+		{
+			RenderNode node("skyboxLoad", "", RenderPass::LoadSkybox::GetDesc(params.SkyboxSource), PassExecutionType::Startup);
+			node.AddOutput("Sky", TextureLayout::ShaderResource, "skybox");
+			node.SetInitDataGpuUploadRequired();
+			graphDesc.StartupPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("envMapLoad", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Startup);
+			node.AddOutput("Map", TextureLayout::ShaderResource, "envMap");
+			graphDesc.StartupPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("brdfLutLoad", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Startup);
+			node.AddOutput("LUT", TextureLayout::ShaderResource, "brdfLut");
+			graphDesc.StartupPasses.emplace_back(std::move(node));
+		}
+#pragma endregion
 #pragma region Geometry
 		{
 			ZE_CLEAR_BUFFER_DEBUG_MARKER("GBuffer Clear");
@@ -339,12 +365,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #pragma region Post process render size
 		{
 			RenderNode node("skybox", "", RenderPass::Skybox::GetDesc(graphDesc.GetFormat("rawScene"),
-				graphDesc.GetFormat("gbuffDepth"), params.SkyboxPath, params.SkyboxExt), PassExecutionType::Processor);
+				graphDesc.GetFormat("gbuffDepth")), PassExecutionType::Processor);
 			node.AddInput("lightCombine.RT", TextureLayout::RenderTarget);
 			node.AddInput("lambertian.DS", TextureLayout::DepthStencilRead);
+			node.AddInput("skyboxLoad.Sky", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::RenderTarget, "rawScene");
 			node.AddOutput("DS", TextureLayout::DepthStencilRead, "gbuffDepth");
-			node.SetInitDataGpuUploadRequired();
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
@@ -358,6 +384,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+		if (false)
 		{
 			RenderNode node("ssr", "sssr", RenderPass::SSSR::GetDesc(), PassExecutionType::Producer);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
@@ -365,10 +392,10 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
-			//node.AddInput("ssao.SB", TextureLayout::ShaderResource); // Env map
-			//node.AddInput("lambertian.GB_C", TextureLayout::ShaderResource); // BRDF LUT
-			node.AddOutput("RT", TextureLayout::ShaderResource, "rawScene");
+			node.AddInput("envMapLoad.Map", TextureLayout::ShaderResource);
+			node.AddInput("brdfLutLoad.LUT", TextureLayout::ShaderResource);
 			node.AddOutput("SSR", TextureLayout::UnorderedAccess, "ssr");
+			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

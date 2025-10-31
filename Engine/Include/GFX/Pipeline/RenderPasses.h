@@ -9,6 +9,7 @@
 #include "RenderPass/Lambertian.h"
 #include "RenderPass/LambertianComputeCopy.h"
 #include "RenderPass/LightCombine.h"
+#include "RenderPass/LoadSkybox.h"
 #include "RenderPass/OutlineDraw.h"
 #include "RenderPass/PointLight.h"
 #include "RenderPass/Skybox.h"

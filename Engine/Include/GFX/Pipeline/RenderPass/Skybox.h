@@ -9,23 +9,18 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 	{
 		RID RenderTarget;
 		RID DepthStencil;
+		RID Skybox;
 	};
 
 	struct ExecuteData
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		// TODO: maybe move out as RID if environment map would use it too
-		Resource::Texture::Pack SkyTexture;
 		Resource::Mesh MeshData;
 	};
 
-	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
-		const std::string& cubemapPath, const std::string& cubemapExt) noexcept;
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* CopyInitData(void* data) noexcept;
-	void FreeInitData(void* data) noexcept;
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT,
-		PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

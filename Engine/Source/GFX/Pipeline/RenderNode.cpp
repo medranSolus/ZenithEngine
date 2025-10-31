@@ -44,6 +44,7 @@ namespace ZE::GFX::Pipeline
 
 	bool RenderNode::AddInput(std::string&& name, TextureLayout layout, bool required) noexcept
 	{
+		ZE_ASSERT(execType != PassExecutionType::Startup, "Startup pass cannot have any inputs!");
 #if _ZE_RENDERER_CREATION_VALIDATION
 		if (ContainsInput(name))
 		{
@@ -59,6 +60,7 @@ namespace ZE::GFX::Pipeline
 
 	void RenderNode::AddInnerBuffer(TextureLayout layout, FrameResourceDesc&& resDesc) noexcept
 	{
+		ZE_ASSERT(execType != PassExecutionType::Startup, "Startup pass cannot have any inner buffers!");
 		resDesc.Flags |= FrameResourceFlag::ForceSRV;
 		innerBuffers.emplace_back(std::forward<FrameResourceDesc>(resDesc));
 		innerLayouts.emplace_back(layout);
@@ -70,7 +72,12 @@ namespace ZE::GFX::Pipeline
 #if _ZE_RENDERER_CREATION_VALIDATION
 		if (std::find(outputNames.begin(), outputNames.end(), outputName) != outputNames.end())
 		{
-			ZE_FAIL("Pass [" + GetFullName() + "] already contains output [" + name + "]!");
+			ZE_FAIL("Pass [" + GetFullName() + "] already contains output [" + outputName + "]!");
+			return false;
+		}
+		if (replacement != "" && execType == PassExecutionType::Startup)
+		{
+			ZE_FAIL("Startup pass [" + GetFullName() + "] cannot have replacement specified for output resource!");
 			return false;
 		}
 #endif

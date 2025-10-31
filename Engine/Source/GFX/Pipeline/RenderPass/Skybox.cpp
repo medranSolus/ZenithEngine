@@ -5,26 +5,20 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
-		ZE_ASSERT(initData, "Empty intialization data!");
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for Skybox initialization formats!");
 
-		std::pair<std::string, std::string>* cubemapInfo = reinterpret_cast<std::pair<std::string, std::string>*>(initData);
-		return Initialize(dev, buildData, formats.at(0), formats.at(1), cubemapInfo->first, cubemapInfo->second);
+		return Initialize(dev, buildData, formats.at(0), formats.at(1));
 	}
 
-	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS,
-		const std::string& cubemapPath, const std::string& cubemapExt) noexcept
+	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::Skybox) };
-		desc.InitData = new std::pair<std::string, std::string>(cubemapPath, cubemapExt);
 		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.InitializeFormats.emplace_back(formatDS);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
-		desc.CopyInitData = CopyInitData;
-		desc.FreeInitData = FreeInitData;
 		return desc;
 	}
 
@@ -33,23 +27,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		syncStatus.SyncMain(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->State.Free(dev);
-		execData->SkyTexture.Free(dev);
 		execData->MeshData.Free(dev);
 		delete execData;
 	}
 
-	void* CopyInitData(void* data) noexcept
-	{
-		return new std::pair<std::string, std::string>(*reinterpret_cast<std::pair<std::string, std::string>*>(data));
-	}
-
-	void FreeInitData(void* data) noexcept
-	{
-		delete reinterpret_cast<std::pair<std::string, std::string>*>(data);
-	}
-
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT,
-		PixelFormat formatDS, const std::string& cubemapPath, const std::string& cubemapExt)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
 	{
 		ExecuteData* passData = new ExecuteData;
 
@@ -59,23 +41,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
-
-		Resource::Texture::PackDesc texDesc;
-		ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
-		texDesc.Options = Resource::Texture::PackOption::StaticCreation;
-		std::vector<Surface> textures;
-		textures.reserve(6);
-		bool result = true;
-		result &= textures.emplace_back().Load(cubemapPath + "/px" + cubemapExt); // Right
-		result &= textures.emplace_back().Load(cubemapPath + "/nx" + cubemapExt); // Left
-		result &= textures.emplace_back().Load(cubemapPath + "/py" + cubemapExt); // Up
-		result &= textures.emplace_back().Load(cubemapPath + "/ny" + cubemapExt); // Down
-		result &= textures.emplace_back().Load(cubemapPath + "/pz" + cubemapExt); // Front
-		result &= textures.emplace_back().Load(cubemapPath + "/nz" + cubemapExt); // Back
-		if (!result)
-			throw ZE_RGC_EXCEPT("Error loading cubemap!");
-		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
-		passData->SkyTexture.Init(dev, buildData.Assets.GetDisk(), texDesc);
 
 		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
 		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
@@ -102,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Skybox");
 		Resources ids = *passData.Resources.CastConst<Resources>();
@@ -115,12 +80,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		ctx.BindingSchema.SetGraphics(cl);
 		data.State.Bind(cl);
 
-		data.SkyTexture.Bind(cl, ctx);
+		renderData.Buffers.SetSRV(cl, ctx, ids.Skybox);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		data.MeshData.Draw(dev, cl);
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 }
