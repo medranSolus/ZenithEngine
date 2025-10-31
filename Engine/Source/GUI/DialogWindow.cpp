@@ -188,4 +188,26 @@ namespace ZE::GUI::DialogWindow
 			return selectedFile;
 		return {};
 	}
+
+	bool ShowInfo(std::string_view title, std::string_view text) noexcept
+	{
+		bool result = false;
+		if (!ImGui::IsPopupOpen(title.data()))
+			ImGui::OpenPopup(title.data());
+		ImGui::SetNextWindowPos({ ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f },
+			ImGuiCond_Appearing, { 0.5f, 0.5f });
+		if (ImGui::BeginPopupModal(title.data(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+		{
+			ImGui::PushTextWrapPos(250.0f);
+			ImGui::TextWrapped(text.data());
+			ImGui::PopTextWrapPos();
+			if (ImGui::Button("OK", { -1.0f, 0.0f }))
+			{
+				result = true;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		return result;
+	}
 }

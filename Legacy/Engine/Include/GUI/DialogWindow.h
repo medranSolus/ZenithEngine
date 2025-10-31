@@ -25,7 +25,6 @@ namespace ZE::GUI
 		static Result GetModelParams(GFX::Shape::ModelParams& params) noexcept;
 		static Result GetLightParams(GFX::Light::LightParams& params) noexcept;
 		static Result GetCameraParams(Camera::CameraParams& params) noexcept;
-		static Result ShowInfo(const std::string& title, const std::string& text) noexcept;
 	};
 }
 

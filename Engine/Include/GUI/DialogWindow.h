@@ -9,4 +9,6 @@ namespace ZE::GUI::DialogWindow
 	std::vector<std::filesystem::directory_entry> GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType);
 	// Create button with pop-up window allowing for navigating through files on disk
 	std::optional<std::string> FileBrowserButton(std::string_view title, std::string_view startDir, FileType searchType = FileType::All);
+	// Show simple pop-up window
+	bool ShowInfo(std::string_view title, std::string_view text) noexcept;
 }

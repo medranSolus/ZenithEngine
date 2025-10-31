@@ -189,26 +189,4 @@ namespace ZE::GUI
 		}
 		return result;
 	}
-
-	DialogWindow::Result DialogWindow::ShowInfo(const std::string& title, const std::string& text) noexcept
-	{
-		Result result = Result::None;
-		if (!ImGui::IsPopupOpen(title.c_str()))
-			ImGui::OpenPopup(title.c_str());
-		ImGui::SetNextWindowPos({ ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f },
-			ImGuiCond_Appearing, { 0.5f, 0.5f });
-		if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
-		{
-			ImGui::PushTextWrapPos(250.0f);
-			ImGui::TextWrapped(text.c_str());
-			ImGui::PopTextWrapPos();
-			if (ImGui::Button("OK", { -1.0f, 0.0f }))
-			{
-				result = Result::Accept;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
-		return result;
-	}
 }
