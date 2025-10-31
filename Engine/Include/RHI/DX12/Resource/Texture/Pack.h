@@ -31,6 +31,8 @@ namespace ZE::RHI::DX12::Resource::Texture
 		// Gfx API Internal
 
 		constexpr U32 GetTextureCount() const noexcept { return count; }
+		constexpr const DescriptorInfo& GetDescInfo() const noexcept { return descInfo; }
 		IResource* GetResource(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return resources[index].Resource.Get(); }
+		DX::ComPtr<IResource> GetRes(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return resources[index].Resource; }
 	};
 }

@@ -97,7 +97,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 				if (tex.Type == GFX::Resource::Texture::Type::Tex1DArray)
 					srv.Texture1DArray.ArraySize = texDesc.DepthOrArraySize;
-				if (tex.Type == GFX::Resource::Texture::Type::Tex2DArray)
+				else if (tex.Type == GFX::Resource::Texture::Type::Tex2DArray)
 					srv.Texture2DArray.ArraySize = texDesc.DepthOrArraySize;
 				texDesc.MipLevels = startSurface.GetMipCount();
 				*mipLevels = startSurface.GetMipCount();
@@ -108,7 +108,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				const bool copySrc = desc.Options & GFX::Resource::Texture::PackOption::CopySource;
 				if (surfaces > 1)
 				{
-					for (U16 arrayIndex = 0; const auto & surface : tex.Surfaces)
+					for (U16 arrayIndex = 0; const auto& surface : tex.Surfaces)
 					{
 						const U16 index = arrayIndex++;
 						diskManager.AddMemoryTextureArrayRequest(resInfo.Resource.Get(), surface.GetMemory(), Utils::SafeCast<U32>(surface.GetMemorySize()),
@@ -141,7 +141,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		descInfo = device.AllocDescs(count);
 		resources = new ResourceInfo[count];
 
-		for (U32 i = 0; const auto & tex : desc.Textures)
+		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			ResourceInfo& resInfo = resources[i];
 

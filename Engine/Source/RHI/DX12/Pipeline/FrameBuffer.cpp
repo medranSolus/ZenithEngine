@@ -271,6 +271,7 @@ namespace ZE::RHI::DX12::Pipeline
 		RID srvCount = 0, srvUavCount = 0;
 		RID uavCount = 0, uavAdditionalMipsCount = 0, memoryOnlyUavCount = 0;
 		RID bufferCount = 0;
+		RID outsideResourceCount = 0;
 
 		// Get sizes in chunks for resources and their descriptors
 		std::vector<ResourceInitInfo> resourcesInfo;
@@ -311,6 +312,18 @@ namespace ZE::RHI::DX12::Pipeline
 						++uavCount;
 						++memoryOnlyUavCount;
 					}
+				}
+				else if (res.Flags & GFX::Pipeline::FrameResourceFlag::OutsideResource)
+				{
+					resDesc.Alignment = 0;
+					resDesc.Width = 0;
+					resDesc.Height = 0;
+					resDesc.DepthOrArraySize = 0;
+					resDesc.MipLevels = 0;
+					resDesc.Format = DX::GetDXFormat(res.Format);
+					resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+					resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(0), 0U, resDesc).SetOutsideResource();
+					++outsideResourceCount;
 				}
 				else
 				{
@@ -430,31 +443,40 @@ namespace ZE::RHI::DX12::Pipeline
 		heapDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		heapDesc.Flags = D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
 
-		RID mainHeapResourceCount;
+		RID mainHeapResourceCount = 0;
 		// Handle resource types (non RT/DS) depending on present tier level
 		if (dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1)
 		{
 			mainHeapResourceCount = rtvCount + dsvCount;
-			RID uavHeapResourceCount = Utils::SafeCast<RID>(resourcesInfo.size()) - (bufferCount + mainHeapResourceCount);
-			// Sort resources descending by size leaving UAV only on the end
+			RID uavHeapResourceCount = Utils::SafeCast<RID>(resourcesInfo.size()) - (bufferCount + mainHeapResourceCount + outsideResourceCount);
+			// Sort resources descending by size but ordering them by heap type: RTV/DSV, UAV, Buffer, OutsideResource
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 				[](const auto& r1, const auto& r2) -> bool
 				{
-					const bool r1Buffer = r1.Desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER;
-					const bool r2Buffer = r2.Desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER;
-					const bool r1RTV_DSV = r1.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-					const bool r2RTV_DSV = r1.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-					if (r1Buffer == r2Buffer || r1RTV_DSV == r2RTV_DSV)
+					U8 groupIndex1 = 0, groupIndex2 = 0;
+					if (r1.IsOutsideResource())
+						groupIndex1 = 3;
+					else if (r1.Desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+						groupIndex1 = 2;
+					else if (!(r1.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)))
+						groupIndex1 = 1;
+					if (r2.IsOutsideResource())
+						groupIndex2 = 3;
+					else if (r2.Desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+						groupIndex2 = 2;
+					else if (!(r2.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)))
+						groupIndex2 = 1;
+
+					if (groupIndex1 == groupIndex2)
 						return r1.Chunks > r2.Chunks;
-					if (r1Buffer || r2Buffer)
-						return !r1Buffer;
-					return r1RTV_DSV;
+					return groupIndex1 < groupIndex2;
 				});
 
 			// Create heap for buffer resources
 			if (bufferCount)
 			{
 				auto begin = resourcesInfo.begin() + mainHeapResourceCount + uavHeapResourceCount;
+				auto end = resourcesInfo.begin() + mainHeapResourceCount + uavHeapResourceCount + bufferCount;
 				// Find offsets for all resources in this heap and get it's size
 				heapDesc.SizeInBytes = AllocateResources(begin, resourcesInfo.end(), desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
 
@@ -468,8 +490,8 @@ namespace ZE::RHI::DX12::Pipeline
 				if (desc.Flags & GFX::Pipeline::FrameBufferFlag::DebugMemoryPrint)
 					PrintMemory("tier1_buffer", desc.PassLevelCount, heapDesc.SizeInBytes, begin, resourcesInfo.end(), desc.ResourceLifetimes);
 #endif
-				// Set all resources as using UAV heap for creation later
-				for (; begin != resourcesInfo.end(); ++begin)
+				// Set all resources as using Buffer heap for creation later
+				for (; begin != end; ++begin)
 					begin->SetHeapBuffer();
 			}
 			heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_BUFFERS;
@@ -500,11 +522,13 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 		else
 		{
-			mainHeapResourceCount = Utils::SafeCast<RID>(resourcesInfo.size());
+			mainHeapResourceCount = Utils::SafeCast<RID>(resourcesInfo.size()) - outsideResourceCount;
 			// Sort resources descending by size
 			std::sort(resourcesInfo.begin(), resourcesInfo.end(),
 				[](const auto& r1, const auto& r2) -> bool
 				{
+					if (r1.IsOutsideResource() || r2.IsOutsideResource())
+						return !r1.IsOutsideResource();
 					return r1.Chunks > r2.Chunks;
 				});
 		}
@@ -546,6 +570,15 @@ namespace ZE::RHI::DX12::Pipeline
 				data.Format = PixelFormat::Unknown;
 				data.Dimenions = res.Desc.Dimension;
 				data.SetMemoryOnlyRegion();
+			}
+			else if (res.IsOutsideResource())
+			{
+				data.Size = { 0, 0 };
+				data.Array = 0;
+				data.Mips = 0;
+				data.Format = DX::GetFormatFromDX(res.Desc.Format);
+				data.Dimenions = res.Desc.Dimension;
+				data.SetOutsideResource();
 			}
 			else
 			{
@@ -609,7 +642,7 @@ namespace ZE::RHI::DX12::Pipeline
 		// Create demanded views for each resource
 		for (const auto& res : resourcesInfo)
 		{
-			if (!res.IsMemoryOnlyRegion())
+			if (!res.IsMemoryOnlyRegion() && !res.IsOutsideResource())
 			{
 				if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
 				{
@@ -890,7 +923,7 @@ namespace ZE::RHI::DX12::Pipeline
 		// Split processing so UAV and SRV descriptors are placed next to each other
 		for (const auto& res : resourcesInfo)
 		{
-			if (!res.IsMemoryOnlyRegion())
+			if (!res.IsMemoryOnlyRegion() && !res.IsOutsideResource())
 			{
 				if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
 				{
@@ -1414,10 +1447,11 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_ASSERT(textures.Get().dx12.GetDescInfo().GpuSide, "Texture descriptors need to be visible for GPU!");
 
 		auto& res = resources[rid];
+		res.Resource = textures.Get().dx12.GetRes(textureIndex);
+
 		const auto& resDesc = res.Resource->GetDesc1();
 		const auto& texDescInfo = textures.Get().dx12.GetDescInfo();
 
-		res.Resource = textures.Get().dx12.GetRes(textureIndex);
 		res.Size = { Utils::SafeCast<U32>(resDesc.Width), resDesc.Height };
 		res.Array = resDesc.DepthOrArraySize;
 		res.Mips = resDesc.MipLevels;
@@ -1426,7 +1460,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		if (type == GFX::Pipeline::FrameResourceType::TextureCube)
 			res.SetCube();
-		if (type != GFX::Pipeline::FrameResourceType::Texture3D && res.Array > 1)
+		else if (type != GFX::Pipeline::FrameResourceType::Texture3D && res.Array > 1)
 			res.SetArrayView();
 
 		srvHandles[rid].CpuShaderVisibleHandle = texDescInfo.CPU;

@@ -22,7 +22,7 @@ namespace ZE::RHI::DX12::Pipeline
 			D3D12_RESOURCE_DESC1 Desc;
 			D3D12_CLEAR_VALUE ClearVal;
 			U32 ByteStride;
-			std::bitset<8> Flags;
+			std::bitset<9> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -40,6 +40,8 @@ namespace ZE::RHI::DX12::Pipeline
 			constexpr void ForceArrayView() noexcept { Flags[6] = true; }
 			constexpr bool IsMemoryOnlyRegion() const noexcept { return Flags[7]; }
 			constexpr void SetMemoryOnlyRegion() noexcept { Flags[7] = true; }
+			constexpr bool IsOutsideResource() const noexcept { return Flags[8]; }
+			constexpr void SetOutsideResource() noexcept { Flags[8] = true; }
 		};
 		struct BufferData
 		{
@@ -49,7 +51,7 @@ namespace ZE::RHI::DX12::Pipeline
 			U16 Mips;
 			PixelFormat Format;
 			D3D12_RESOURCE_DIMENSION Dimenions;
-			std::bitset<3> Flags;
+			std::bitset<4> Flags;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -58,6 +60,10 @@ namespace ZE::RHI::DX12::Pipeline
 			// If true then Size contains size in bytes with X being LSB and Y being MSB parts, Array contain LSB of chunk offset and Mips contains MSB part
 			constexpr bool IsMemoryOnlyRegion() const noexcept { return Flags[2]; }
 			constexpr void SetMemoryOnlyRegion() noexcept { Flags[2] = true; }
+			constexpr bool IsOutsideResource() const noexcept { return Flags[3]; }
+			constexpr void SetOutsideResource() noexcept { Flags[3] = true; }
+
+			bool IsResourceRegistered() const noexcept { return Resource != nullptr; }
 		};
 		struct HandleSRV
 		{
@@ -159,6 +165,8 @@ namespace ZE::RHI::DX12::Pipeline
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 
+		void RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
+
 		void MapResource(GFX::Device& dev, RID rid, void** ptr) const;
 		void UnmapResource(RID rid) const noexcept;
 
@@ -172,7 +180,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		// Gfx API Internal
 
-		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Resource; }
+		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(resources[rid].IsResourceRegistered(), "Outside resource not registered!"); return resources[rid].Resource; }
 		const HandleSRV& GetSRV(RID srv) const noexcept { ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!"); return srvHandles[srv]; }
 		const HandleUAV& GetUAV(RID uav) const noexcept { ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!"); return uavHandles[uav - 1]; }
 	};

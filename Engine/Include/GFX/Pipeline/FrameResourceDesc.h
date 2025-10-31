@@ -46,6 +46,9 @@ namespace ZE::GFX::Pipeline
 		// Treat resource as memory region to be reserved inside FrameBuffer without actual resource allocation.
 		// Sizes::X should hold lower (LSB) part of U64 size of memory region in bytes and Sizes::Y should hold upper (MSB) part
 		NoResourceCreation = 0x4000,
+		// Similar to NoResourceCreation but disables reserving memory for this resource indicating that it's held outside the FrameBuffer.
+		// Such resource needs to be registered into FrameBuffer before it can be first used. Only supports SRV resources
+		OutsideResource = 0x8000,
 
 		// Internal flag indicating that resource is active in current configuration
 		InternalResourceActive = 0x08000000,
