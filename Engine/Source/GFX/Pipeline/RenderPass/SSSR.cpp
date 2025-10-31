@@ -61,7 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("SSSR");
@@ -112,6 +112,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		ZE_FFX_THROW_FAILED(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

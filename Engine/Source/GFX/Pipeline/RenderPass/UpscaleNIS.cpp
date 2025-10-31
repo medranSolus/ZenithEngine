@@ -122,7 +122,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Upscale NIS");
 
@@ -151,6 +151,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

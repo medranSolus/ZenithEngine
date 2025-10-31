@@ -81,7 +81,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("Upscale FSR3");
@@ -124,6 +124,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		ZE_FFX_THROW_FAILED(ffxFsr3UpscalerContextDispatch(&data.Ctx, &desc), "Error performing FSR3!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

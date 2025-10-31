@@ -30,6 +30,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	void DebugUI(void* data) noexcept;
 }

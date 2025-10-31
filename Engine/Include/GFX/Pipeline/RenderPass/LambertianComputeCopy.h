@@ -14,5 +14,5 @@ namespace ZE::GFX::Pipeline::RenderPass::LambertianComputeCopy
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledAsyncAO(); }
 
 	PassDesc GetDesc() noexcept;
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

@@ -57,7 +57,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		auto group = Data::GetRenderGroup<Data::RenderWireframe>();
 		U64 count = group.size();
@@ -120,6 +120,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_START("Wireframe - visibility clear");
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
+			return true;
 		}
+		return false;
 	}
 }

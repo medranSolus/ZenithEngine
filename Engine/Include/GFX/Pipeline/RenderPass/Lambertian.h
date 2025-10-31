@@ -38,5 +38,5 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

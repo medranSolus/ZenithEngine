@@ -142,7 +142,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("XeGTAO");
 		Resources ids = *passData.Resources.CastConst<Resources>();
@@ -274,6 +274,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 				});
 		}
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

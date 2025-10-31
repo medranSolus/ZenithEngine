@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Settings::AssureEntityPools<Solid, Transparent>();
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
 	{
 		// Clearing data on first usage
@@ -313,6 +313,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			ZE_PERF_START("Shadow Map Cube - visibility clear");
 			Settings::Data.clear<Solid, Transparent>();
 			ZE_PERF_STOP();
+			return true;
 		}
+		return false;
 	}
 }

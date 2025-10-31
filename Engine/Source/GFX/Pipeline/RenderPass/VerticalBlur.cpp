@@ -55,7 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Vertical Blur");
 		Resources ids = *passData.Resources.CastConst<Resources>();
@@ -77,5 +77,6 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 }

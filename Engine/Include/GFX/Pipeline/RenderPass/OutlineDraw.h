@@ -26,5 +26,5 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

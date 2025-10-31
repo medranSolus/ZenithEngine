@@ -28,5 +28,5 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

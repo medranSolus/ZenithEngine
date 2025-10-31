@@ -29,6 +29,6 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	void Clean(Device& dev, ExecuteData& data) noexcept;
 	void Initialize(Device& dev, RendererPassBuildData& buildData,
 		ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume);
 }

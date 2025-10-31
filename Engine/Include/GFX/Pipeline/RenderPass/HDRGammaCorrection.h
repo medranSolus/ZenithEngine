@@ -19,5 +19,5 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

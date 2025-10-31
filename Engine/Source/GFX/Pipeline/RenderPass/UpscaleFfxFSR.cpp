@@ -117,7 +117,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
 		if (ffxFunc)
@@ -161,7 +161,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 			cl.RestoreExternalState(dev);
 
 			ZE_DRAW_TAG_END(dev, cl);
+			return true;
 		}
+		return false;
 	}
 
 	void DebugUI(void* data) noexcept

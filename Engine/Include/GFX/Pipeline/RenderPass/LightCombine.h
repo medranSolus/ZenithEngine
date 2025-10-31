@@ -22,5 +22,5 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }

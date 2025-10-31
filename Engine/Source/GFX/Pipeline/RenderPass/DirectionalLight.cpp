@@ -62,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Directional Light");
 
@@ -109,6 +109,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::RenderTarget), Base(StageSync::PixelShading), Base(StageSync::RenderTarget) });
 			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
+			return true;
 		}
+		return false;
 	}
 }

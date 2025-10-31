@@ -47,7 +47,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 
 		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate = nullptr) noexcept;
-		static void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+		static bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	};
 
 #pragma region Functions
@@ -66,7 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	template<ResIndex N, const char* MARKER_STRING>
-	void ClearBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool ClearBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
@@ -105,6 +105,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 			}
 		}
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 #pragma endregion
 }

@@ -27,8 +27,8 @@ namespace ZE::GFX::Pipeline
 	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*);
 	// Evaluate whether pass shall run and if it cause update of the render graph
 	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
-	// Main function that will be performing rendering, obligatory
-	typedef void (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
+	// Main function that will be performing rendering, obligatory, returns true if any commands have been recorded
+	typedef bool (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
 	// Optional function to handle pass data update after render graph got it's update.
 	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
 	typedef UpdateStatus(*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);

@@ -69,7 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("CACAO");
@@ -97,6 +97,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		ZE_FFX_THROW_FAILED(ffxCacaoContextDispatch(&data.Ctx, &desc), "Error performing CACAO!");
 
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

@@ -142,7 +142,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Lambertian");
 		Resources ids = *passData.Resources.CastConst<Resources>();
@@ -389,5 +389,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		// Remove current visibility
 		Settings::Data.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 		ZE_PERF_STOP();
+		return solidCount != 0 || transparentCount != 0;
 	}
 }

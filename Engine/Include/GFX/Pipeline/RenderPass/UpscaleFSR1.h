@@ -27,6 +27,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatOutput, bool firstUpdate = false);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatOutput);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	void DebugUI(void* data) noexcept;
 }

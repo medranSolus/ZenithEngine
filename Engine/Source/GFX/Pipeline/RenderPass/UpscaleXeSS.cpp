@@ -83,7 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Upscale XeSS");
 
@@ -95,6 +95,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
+		return true;
 	}
 
 	void DebugUI(void* data) noexcept

@@ -37,6 +37,6 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 	PassDesc GetDesc() noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	void DebugUI(void* data) noexcept;
 }

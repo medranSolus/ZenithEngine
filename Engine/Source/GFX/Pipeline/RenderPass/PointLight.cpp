@@ -77,7 +77,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		auto group = Data::GetPointLightGroup();
 		const U64 count = group.size();
@@ -146,6 +146,8 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
+			return true;
 		}
+		return false;
 	}
 }

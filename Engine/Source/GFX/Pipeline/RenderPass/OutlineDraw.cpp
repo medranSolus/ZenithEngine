@@ -62,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		return passData;
 	}
 
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
 		ZE_PERF_GUARD("Outline Draw");
 
@@ -157,6 +157,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - visibility clear");
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
+			return true;
 		}
+		return false;
 	}
 }

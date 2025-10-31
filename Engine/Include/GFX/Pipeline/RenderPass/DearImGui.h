@@ -19,5 +19,5 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 	PassDesc GetDesc(PixelFormat formatRT) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT);
-	void Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 }
