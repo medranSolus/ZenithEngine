@@ -8,6 +8,7 @@ namespace ZE::Math
 	constexpr U64 MEGABYTE = 1ULL << 20;
 	constexpr U64 KILOBYTE = 1ULL << 10;
 	constexpr float PI = static_cast<float>(M_PI);
+	constexpr float PI2 = static_cast<float>(M_PI * 2.0);
 
 	constexpr Float4 NoRotation() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
 	constexpr Float3 NoRotationAngles() noexcept { return { 0.0f, 0.0f, 0.0f }; }
@@ -60,17 +61,17 @@ namespace ZE::Math
 
 	inline float Wrap(float x, float wrap) noexcept
 	{
-		return static_cast<float>(fmod(x, wrap));
+		return static_cast<float>(std::fmod(x, wrap));
 	}
 
 	inline float Wrap2Pi(float x) noexcept
 	{
-		return Wrap(x, 2.0f * M_PI);
+		return Wrap(x, PI2);
 	}
 
 	inline float Wrap2PiRand(std::mt19937_64& eng) noexcept
 	{
-		return std::uniform_real_distribution<float>(0.0f, 2.0f * static_cast<float>(M_PI))(eng);
+		return std::uniform_real_distribution<float>(0.0f, PI2)(eng);
 	}
 
 	inline float WrapNDCRand(std::mt19937_64& eng) noexcept
@@ -126,18 +127,6 @@ namespace ZE::Math
 		Float4 q;
 		XMStoreFloat4(&q, XMQuaternionRotationRollPitchYaw(ToRadians(angleX), ToRadians(angleY), ToRadians(angleZ)));
 		return q;
-	}
-
-	inline float GetLightVolume(const ColorF3& color, float intensity, float attnLinear, float attnQuad) noexcept
-	{
-		const float lightMax = intensity * fmaxf(fmaxf(color.RGB.x, color.RGB.y), color.RGB.z);
-		return (-attnLinear + sqrtf(attnLinear * attnLinear - 4.0f * attnQuad * (1.0f - lightMax * 256.0f))) / (2.0f * attnQuad);
-	}
-
-	constexpr void SetLightAttenuation(float& linear, float& quad, U64 range) noexcept
-	{
-		linear = 4.5f / static_cast<float>(range);
-		quad = 75.0f / static_cast<float>(range * range);
 	}
 
 	// Not to be used with floats

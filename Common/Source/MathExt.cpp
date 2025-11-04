@@ -11,23 +11,23 @@ namespace ZE::Math
 		if (euler.x > SINGULARITY) // South pole
 		{
 			euler.x = M_PI_2;
-			euler.y = 2.0f * atan2(rotor.y, rotor.w);
+			euler.y = 2.0f * std::atan2(rotor.y, rotor.w);
 			euler.z = 0.0f;
 		}
 		else if (euler.x < -SINGULARITY) // North pole
 		{
 			euler.x = -M_PI_2;
-			euler.y = -2.0f * atan2(rotor.y, rotor.w);
+			euler.y = -2.0f * std::atan2(rotor.y, rotor.w);
 			euler.z = 0.0f;
 		}
 		else
 		{
-			euler.x = asin(2.0f * euler.x);
+			euler.x = std::asin(2.0f * euler.x);
 
 			const float qx2 = rotor.x * rotor.x;
-			euler.y = atan2(2.0f * (rotor.w * rotor.y - rotor.x * rotor.z),
+			euler.y = std::atan2(2.0f * (rotor.w * rotor.y - rotor.x * rotor.z),
 				1 - 2.0f * (qx2 + rotor.y * rotor.y));
-			euler.z = atan2(2.0f * (rotor.w * rotor.z - rotor.x * rotor.y),
+			euler.z = std::atan2(2.0f * (rotor.w * rotor.z - rotor.x * rotor.y),
 				1 - 2.0f * (qx2 + rotor.z * rotor.z));
 		}
 		return euler;
@@ -76,8 +76,8 @@ namespace ZE::Math
 			// When transforming over 90 degrees geometry gets flattened in X axis without this
 			if (targetGeometry && angle > M_PI_2)
 			{
-				rotation *= XMMatrixRotationX(static_cast<float>(M_PI));
-				angle -= static_cast<float>(M_PI);
+				rotation *= XMMatrixRotationX(PI);
+				angle -= PI;
 			}
 			rotation *= XMMatrixRotationNormal(XMVector3Cross(baseDirection, newDirection), angle);
 
