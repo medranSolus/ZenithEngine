@@ -381,7 +381,7 @@ void App::ShowObjectWindow()
 					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
 
 					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
-					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
+					buffer.Volume = Math::Light::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
 
@@ -432,7 +432,7 @@ void App::ShowObjectWindow()
 					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
 
 					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
-					buffer.Volume = Math::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
+					buffer.Volume = Math::Light::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
 
@@ -571,7 +571,7 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 	pointLight.SetAttenuationRange(range);
 
 	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
-		Math::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
+		Math::Light::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
 	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, nullptr, sizeof(Data::PointLight) });
 
 	return light;
@@ -595,7 +595,7 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 	spotLight.SetAttenuationRange(range);
 
 	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
-		Math::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
+		Math::Light::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
 	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, nullptr, sizeof(Data::SpotLight) });
 
 	return light;

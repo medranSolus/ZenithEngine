@@ -43,12 +43,20 @@
 #include "ColorF3.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
-*** utility
-* ColorF4.h
-* random
+***** Types.h (defined by CmdParser.h)
+***** utility
+*** ColorF4.h
+*** random
+* MathExt.h
 */
-#include "MathExt.h"
+#include "MathLight.h"
+
+/*
+* MathExt.h (defined by MathLight.h)
+* cstring
+* limits
+*/
+#include "MathFP16.h"
 
 /*
 *** Types.h (defined by CmdParser.h)

@@ -32,7 +32,7 @@ namespace ZE::Data
 		float AttnLinear;
 		float AttnQuad;
 
-		constexpr void SetAttenuationRange(U64 range) noexcept { Math::SetLightAttenuation(AttnLinear, AttnQuad, range); }
+		constexpr void SetAttenuationRange(U64 range) noexcept { Math::Light::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
 	struct SpotLightBuffer : public LightBuffer {};
 
@@ -45,7 +45,7 @@ namespace ZE::Data
 		float AttnLinear;
 		float AttnQuad;
 
-		constexpr void SetAttenuationRange(U64 range) noexcept { Math::SetLightAttenuation(AttnLinear, AttnQuad, range); }
+		constexpr void SetAttenuationRange(U64 range) noexcept { Math::Light::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
 	struct PointLightBuffer : public LightBuffer {};
 
