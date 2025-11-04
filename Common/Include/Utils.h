@@ -26,6 +26,8 @@ namespace ZE::Utils
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept;
 	// Checks whether format is available for depth stencil
 	constexpr bool IsDepthStencilFormat(PixelFormat format) noexcept;
+	// Check whether format is stored as compressed
+	constexpr bool IsCompressedFormat(PixelFormat format) noexcept;
 	// Get string representation of PixelFormat
 	constexpr const char* FormatToString(PixelFormat format) noexcept;
 	// Get number of bits that pixel is occupying
@@ -38,6 +40,8 @@ namespace ZE::Utils
 	constexpr float GetAlpha(U32 alphaChannel, PixelFormat format) noexcept;
 	// Extract format of single channel
 	constexpr PixelFormat GetSingleChannelFormat(PixelFormat format) noexcept;
+	// Indicate which part of pixel is occupied by each channel
+	constexpr void FillFormatChannelMasks(PixelFormat format, U32& maskR, U32& maskG, U32& maskB, U32& maskA) noexcept;
 
 	// Calculace CRC32 hash over given buffer in compile time
 	constexpr U32 CalculateCRC32(const char str[], U64 size) noexcept;
@@ -383,6 +387,30 @@ namespace ZE::Utils
 		case PixelFormat::R16_Depth:
 		case PixelFormat::R32G8_DepthStencil:
 		case PixelFormat::R24G8_DepthStencil:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	constexpr bool IsCompressedFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		case ZE::PixelFormat::BC1_UNorm:
+		case ZE::PixelFormat::BC1_UNorm_SRGB:
+		case ZE::PixelFormat::BC2_UNorm:
+		case ZE::PixelFormat::BC2_UNorm_SRGB:
+		case ZE::PixelFormat::BC3_UNorm:
+		case ZE::PixelFormat::BC3_UNorm_SRGB:
+		case ZE::PixelFormat::BC4_UNorm:
+		case ZE::PixelFormat::BC4_SNorm:
+		case ZE::PixelFormat::BC5_UNorm:
+		case ZE::PixelFormat::BC5_SNorm:
+		case ZE::PixelFormat::BC6H_UF16:
+		case ZE::PixelFormat::BC6H_SF16:
+		case ZE::PixelFormat::BC7_UNorm:
+		case ZE::PixelFormat::BC7_UNorm_SRGB:
 			return true;
 		default:
 			return false;
@@ -962,6 +990,224 @@ namespace ZE::Utils
 		{
 			ZE_FAIL("Unsupported format to extract channels from!");
 			return PixelFormat::Unknown;
+		}
+		}
+	}
+
+	constexpr void FillFormatChannelMasks(PixelFormat format, U32& maskR, U32& maskG, U32& maskB, U32& maskA) noexcept
+	{
+		switch (format)
+		{
+		default:
+		case PixelFormat::YUV_Y410:
+		case PixelFormat::YUV_Y216:
+		case PixelFormat::YUV_Y210:
+		case PixelFormat::YUV_YUY2:
+		case PixelFormat::YUV_P208:
+		case PixelFormat::YUV_P016:
+		case PixelFormat::YUV_P010:
+		case PixelFormat::YUV_NV12:
+			ZE_ENUM_UNHANDLED();
+		case PixelFormat::Unknown:
+		{
+			ZE_FAIL("Cannot fill out channel bit mask for unknown format!");
+
+			maskR = 0;
+			maskG = 0;
+			maskB = 0;
+			maskA = 0;
+			break;
+		}
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		{
+			maskR = maskG = maskB = maskA = 0xFFFFFFFF;
+			break;
+		}
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R16G16B16A16_UNorm:
+		case PixelFormat::R16G16B16A16_SNorm:
+		{
+			maskR = maskB = 0x0000FFFF;
+			maskG = maskA = 0xFFFF0000;
+			break;
+		}
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+		case PixelFormat::R8G8B8A8_SNorm:
+		{
+			maskR = 0x000000FF;
+			maskG = 0x0000FF00;
+			maskB = 0x00FF0000;
+			maskA = 0xFF000000;
+			break;
+		}
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+		{
+			maskR = 0x00FF0000;
+			maskG = 0x0000FF00;
+			maskB = 0x000000FF;
+			maskA = 0xFF000000;
+			break;
+		}
+		case PixelFormat::R32G32B32_Float:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		{
+			maskR = maskG = maskB = 0xFFFFFFFF;
+			maskA = 0;
+			break;
+		}
+		case PixelFormat::R32G32_Float:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		{
+			maskR = maskG = 0xFFFFFFFF;
+			maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R16G16_UNorm:
+		case PixelFormat::R16G16_SNorm:
+		{
+			maskR = 0x0000FFFF;
+			maskG = 0xFFFF0000;
+			maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R8G8_UNorm:
+		case PixelFormat::R8G8_SNorm:
+		{
+			maskR = 0x000000FF;
+			maskG = 0x0000FF00;
+			maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		{
+			maskR = 0xFFFFFFFF;
+			maskG = maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R16_UNorm:
+		case PixelFormat::R16_SNorm:
+		case PixelFormat::R16_Depth:
+		{
+			maskR = 0x0000FFFF;
+			maskG = maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R8_UNorm:
+		case PixelFormat::R8_SNorm:
+		{
+			maskR = 0x000000FF;
+			maskG = maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R24G8_DepthStencil:
+		{
+			// In theory first plane occupies 32 bits but maybe in packed version... currently only needed for DDS saving
+			maskR = 0x00FFFFFF;
+			maskG = 0xFF000000;
+			maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R32G8_DepthStencil:
+		{
+			maskR = 0xFFFFFFFF;
+			maskG = 0x000000FF;
+			maskB = maskA = 0;
+			break;
+		}
+		case PixelFormat::R10G10B10A2_UInt:
+		case PixelFormat::R10G10B10A2_UNorm:
+		{
+			maskR = 0x000003FF;
+			maskG = 0x000FFC00;
+			maskB = 0x3FF00000;
+			maskA = 0xC0000000;
+			break;
+		}
+		case PixelFormat::R11G11B10_Float:
+		{
+			maskR = 0x000007FF;
+			maskG = 0x001FF800;
+			maskB = 0xFFE00000;
+			maskA = 0;
+			break;
+		}
+		case PixelFormat::R9G9B9E5_SharedExp:
+		{
+			maskR = 0x000001FF;
+			maskG = 0x0003FE00;
+			maskB = 0x07FC0000;
+			maskA = 0xF8000000;
+			break;
+		}
+		case PixelFormat::B4G4R4A4_UNorm:
+		{
+			maskR = 0x00000F00;
+			maskG = 0x000000F0;
+			maskB = 0x0000000F;
+			maskA = 0x0000F000;
+			break;
+		}
+		case PixelFormat::B5G5R5A1_UNorm:
+		{
+			maskR = 0x00007C00;
+			maskG = 0x000003E0;
+			maskB = 0x0000001F;
+			maskA = 0x00008000;
+			break;
+		}
+		case PixelFormat::B5G6R5_UNorm:
+		{
+			maskR = 0x0000F800;
+			maskG = 0x000007E0;
+			maskB = 0x0000001F;
+			maskA = 0;
+			break;
+		}
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
+		{
+			ZE_FAIL("Cannot fill out channel bit mask for compressed format!");
+
+			maskR = 0;
+			maskG = 0;
+			maskB = 0;
+			maskA = 0;
+			break;
 		}
 		}
 	}

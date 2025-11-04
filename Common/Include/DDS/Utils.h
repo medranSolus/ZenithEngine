@@ -12,7 +12,22 @@ namespace ZE::DDS
 	enum class FileResult : U8
 	{
 		Ok, ReadError, IncorrectMagicNumber, UnknownFormat, MissingCubemapFaces, IllformattedVolumeTexture,
-		IncorrectArraySize, Incorrect1DTextureHeight, IncorrectDimension
+		IncorrectArraySize, Incorrect1DTextureHeight, IncorrectDimension, WriteError
+	};
+
+	// Data about corresponding surface in memory
+	struct SurfaceData
+	{
+		PixelFormat Format;
+		bool Alpha;
+		U32 Width;
+		U32 Height;
+		U16 Depth;
+		U16 MipCount;
+		U16 ArraySize;
+		U32 RowSize;
+		U32 SliceSize;
+		std::shared_ptr<U8[]> ImageMemory;
 	};
 
 	// Data retrieved from DDS file
@@ -34,6 +49,8 @@ namespace ZE::DDS
 	// Convert FormatDDS to PixelFormat
 	constexpr PixelFormat GetFormatFromDDS(FormatDDS ddsFormat) noexcept;
 
+	// Save DDS file to disk
+	FileResult EncodeFile(FILE* file, const SurfaceData& srcData) noexcept;
 	// Load and parse DDS file from disk
 	FileResult ParseFile(FILE* file, FileData& destData, U32 destRowAlignment, U32 destSliceAlignment) noexcept;
 

@@ -166,8 +166,154 @@ namespace ZE::DDS
 		}
 	}
 
+	FileResult EncodeFile(FILE* file, const SurfaceData& srcData) noexcept
+	{
+		ZE_ASSERT(file, "Empty file to write into!");
+
+#define ZE_DDS_CHECK_WRITE(item) if (fwrite(&item, sizeof(item), 1, file) != 1) return FileResult::WriteError
+#define ZE_MAKE_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24))
+
+		U32 destRowSize, destSliceSize;
+		GetSurfaceInfo(srcData.Width, srcData.Height, srcData.Format, destRowSize, destSliceSize);
+		destSliceSize *= destRowSize;
+		const bool compressed = Utils::IsCompressedFormat(srcData.Format);
+
+		Header header = {};
+		HeaderDXT10 dxt10Header = {};
+
+		header.Size = sizeof(Header);
+		header.Flags = HeaderFlag::Caps | HeaderFlag::Height | HeaderFlag::Width
+			| (compressed ? HeaderFlag::LinearSize : HeaderFlag::Pitch) | HeaderFlag::PixelFormat;
+		header.Height = srcData.Height;
+		header.Width = srcData.Width;
+		header.Depth = srcData.Depth;
+		header.MipMapCount = srcData.MipCount;
+		header.Format.Size = sizeof(PixelFormatDDS);
+		header.Format.Flags = Base(PixelFlag::FourCC);
+		header.Format.FourCC = ZE_MAKE_FOURCC('D', 'X', '1', '0');
+		header.Caps = Base(HeaderCap::Texture);
+
+		dxt10Header.Format = GetDDSFormat(srcData.Format);
+		dxt10Header.ArraySize = srcData.ArraySize;
+
+		if (srcData.ArraySize > 1)
+		{
+			ZE_ASSERT(srcData.Depth == 1, "Array texture cannot contain 3D textures!");
+			header.Caps |= HeaderCap::Complex;
+			dxt10Header.Dimension = Base(ResourceDimension::Texture2D);
+			if (srcData.ArraySize % 6 == 0)
+			{
+				header.Caps2 |= HeaderCap2::Cubemap | HeaderCap2::CubemapAllFaces;
+				dxt10Header.ArraySize /= 6;
+				dxt10Header.MiscFlag = Base(MiscFlagDXT10::TextureCube);
+			}
+		}
+		else if (srcData.Depth > 1)
+		{
+			ZE_ASSERT(srcData.ArraySize == 1, "3D texture cannot contain array!");
+			header.Flags |= HeaderFlag::Depth;
+			header.Caps |= HeaderCap::Complex;
+			header.Caps2 |= HeaderCap2::Volume;
+			dxt10Header.Dimension = Base(ResourceDimension::Texture3D);
+		}
+		else if (srcData.Height > 1)
+			dxt10Header.Dimension = Base(ResourceDimension::Texture2D);
+		else
+			dxt10Header.Dimension = Base(ResourceDimension::Texture1D);
+
+		if (srcData.MipCount > 1)
+		{
+			header.Flags |= HeaderFlag::MipMapCount;
+			header.Caps |= HeaderCap::Complex | HeaderCap::MipMap;
+		}
+
+		if (srcData.Alpha)
+		{
+			header.Format.Flags |= PixelFlag::AlphaPixels;
+			dxt10Header.MiscFlags2 = Base(MiscFlag2DXT10::AlphaStraight);
+		}
+		else
+			dxt10Header.MiscFlags2 = Base(MiscFlag2DXT10::AlphaOpaque);
+
+		if (compressed)
+			header.PitchOrLinearSize = destSliceSize;
+		else
+		{
+			header.PitchOrLinearSize = destRowSize;
+			header.Format.Flags |= PixelFlag::RGB;
+			header.Format.RGBBitCount = Utils::GetFormatBitCount(srcData.Format);
+			Utils::FillFormatChannelMasks(srcData.Format,
+				header.Format.RBitMask, header.Format.GBitMask,
+				header.Format.BBitMask, header.Format.ABitMask);
+		}
+
+		ZE_DDS_CHECK_WRITE(MAGIC_NUMBER);
+		ZE_DDS_CHECK_WRITE(header);
+		ZE_DDS_CHECK_WRITE(dxt10Header);
+
+		U8* srcImageMemory = srcData.ImageMemory.get();
+		for (U16 a = 0; a < srcData.ArraySize; ++a)
+		{
+			U32 currentWidth = header.Width;
+			U32 currentHeight = header.Height;
+			U16 currentDepth = srcData.Depth;
+			for (U16 mip = 0; mip < srcData.MipCount; ++mip)
+			{
+				U32 rowSize, rowCount;
+				GetSurfaceInfo(currentWidth, currentHeight, srcData.Format, rowSize, rowCount);
+
+				// Check if single images or whole depth level can be written at once
+				const bool sameRowSize = rowSize == srcData.RowSize;
+				const U32 sliceSize = rowSize * rowCount;
+				if (sameRowSize && sliceSize == srcData.SliceSize)
+				{
+					const U32 depthLevelSize = currentDepth * sliceSize;
+					if (fwrite(srcImageMemory, depthLevelSize, 1, file) != 1)
+						return FileResult::WriteError;
+					srcImageMemory += depthLevelSize;
+				}
+				else
+				{
+					for (U32 depthSlice = 0; depthSlice < currentDepth; ++depthSlice)
+					{
+						if (sameRowSize)
+						{
+							if (fwrite(srcImageMemory, sliceSize, 1, file) != 1)
+								return FileResult::WriteError;
+							srcImageMemory += srcData.SliceSize;
+						}
+						else
+						{
+							for (U32 row = 0; row < rowCount; ++row)
+							{
+								if (fwrite(srcImageMemory, rowSize, 1, file) != 1)
+									return FileResult::WriteError;
+								srcImageMemory += srcData.RowSize;
+							}
+						}
+					}
+				}
+
+				currentWidth >>= 1;
+				if (currentWidth == 0)
+					currentWidth = 1;
+				currentHeight >>= 1;
+				if (currentHeight == 0)
+					currentHeight = 1;
+				currentDepth >>= 1;
+				if (currentDepth == 0)
+					currentDepth = 1;
+			}
+		}
+		return FileResult::Ok;
+#undef ZE_MAKE_FOURCC
+#undef ZE_DDS_CHECK_WRITE
+	}
+
 	FileResult ParseFile(FILE* file, FileData& destData, U32 destRowAlignment, U32 destSliceAlignment) noexcept
 	{
+		ZE_ASSERT(file, "Empty file to read from!");
+
 #define ZE_DDS_CHECK_READ(item) if (fread(&item, sizeof(item), 1, file) != 1) return FileResult::ReadError
 #define ZE_IS_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == header.Format.FourCC
 
