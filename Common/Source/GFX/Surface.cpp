@@ -112,7 +112,7 @@ namespace ZE::GFX
 		}
 	}
 
-	bool Surface::Load(std::string_view filename) noexcept
+	bool Surface::Load(std::string_view filename, bool forceAlphaCheck) noexcept
 	{
 		const std::filesystem::path path(filename);
 		std::string ext = path.extension().string();
@@ -143,6 +143,8 @@ namespace ZE::GFX
 				format = ddsData.Format;
 				// Don't investigate further, trust the loader till support for BC textures implemented
 				alpha = ddsData.Alpha;
+				if (forceAlphaCheck)
+					checkForAlpha = alpha;
 				width = ddsData.Width;
 				height = ddsData.Height;
 				depth = ddsData.Depth;
@@ -493,6 +495,31 @@ namespace ZE::GFX
 		bool success = true;
 		if (ext == ".dds")
 		{
+			DDS::SurfaceData surfData = {};
+			surfData.Format = format;
+			surfData.Alpha = alpha;
+			surfData.Width = width;
+			surfData.Height = height;
+			surfData.Depth = depth;
+			surfData.MipCount = mipCount;
+			surfData.ArraySize = arraySize;
+			surfData.RowSize = GetRowByteSize();
+			surfData.SliceSize = GetSliceByteSize();
+			surfData.ImageMemory = memory;
+
+			switch (DDS::EncodeFile(file, surfData))
+			{
+			default:
+				ZE_ENUM_UNHANDLED();
+			case DDS::FileResult::WriteError:
+			{
+				success = false;
+				Logger::Error("Error writing DDS file \"" + path.string() + "\"!");
+				break;
+			}
+			case DDS::FileResult::Ok:
+				break;
+			}
 		}
 		else if (ext == ".png")
 		{
@@ -559,7 +586,8 @@ namespace ZE::GFX
 		{
 			//stbi_write_jpg();
 		}
-		else
+
+		if (!success)
 			Logger::Error("Saving surface to \"" + path.string() + "\": failed to save.");
 
 		fclose(file);
