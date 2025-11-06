@@ -20,7 +20,7 @@ namespace ZE
 
 		std::unordered_map<std::string, bool> options;
 		std::unordered_map<std::string, U32> numbers;
-		std::unordered_map<std::string, std::vector<std::string_view>> strings;
+		std::unordered_map<std::string, std::string_view> strings;
 		std::unordered_map<char, std::pair<ParamType, std::string_view>> shortNames;
 
 		bool ParamPresent(std::string_view name) const noexcept;
@@ -28,12 +28,12 @@ namespace ZE
 		void Parse(const std::deque<std::string_view>& params) noexcept;
 
 	public:
-		CmdParser() = default;
+		CmdParser() noexcept { AddOption("help", 'h'); }
 		ZE_CLASS_DELETE(CmdParser);
 		~CmdParser() = default;
 
 		// Adds on/off parameter
-		void AddOption(std::string_view name, bool defValue = false, char shortName = ' ') noexcept;
+		void AddOption(std::string_view name, char shortName = ' ') noexcept;
 		// Adds retrieveable number
 		void AddNumber(std::string_view name, U32 defValue = 0, char shortName = ' ') noexcept;
 		// Adds string parameter
@@ -44,6 +44,5 @@ namespace ZE
 		bool GetOption(std::string_view name) const noexcept;
 		U32 GetNumber(std::string_view name) const noexcept;
 		std::string_view GetString(std::string_view name) const noexcept;
-		const std::vector<std::string_view>& GetStringList(std::string_view name) const noexcept;
 	};
 }

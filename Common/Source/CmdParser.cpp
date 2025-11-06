@@ -115,36 +115,39 @@ namespace ZE
 						Logger::Error("Parameter list too short, missing value for parameter \"" + std::string(param) + "\"!");
 						return;
 					}
-					bool first = true;
-					do
+					if (params.at(i).front() == '-')
 					{
-						if (first)
-						{
-							if (params.at(i).front() == '-')
-							{
-								Logger::Error("Expected string value for parameter \"" + std::string(param) + "\", but got parameter \"" + std::string(params.at(i)) + "\"!");
-								break;
-							}
-							else
-								strings.at(std::string(param)).front() = params.at(i);
-							first = false;
-						}
-						else
-							strings.at(std::string(param)).emplace_back(params.at(i));
-						++i;
-					} while (i < params.size());
-					--i;
+						Logger::Error("Expected string value for parameter \"" + std::string(param) + "\", but got parameter \"" + std::string(params.at(i)) + "\"!");
+						break;
+					}
+					else
+						strings.at(std::string(param)) = params.at(i);
 					break;
 				}
 				}
 			}
 		}
+
+		if (GetOption("help"))
+		{
+			Logger::InfoNoFile("Available command line parameters:");
+			for (const auto& val : options)
+				Logger::InfoNoFile("  --" + val.first);
+			for (const auto& val : numbers)
+				Logger::InfoNoFile("  --" + val.first + " <NUMBER>");
+			for (const auto& val : strings)
+				Logger::InfoNoFile("  --" + val.first + " <STRING>");
+
+			Logger::InfoNoFile("Short names for parameters:");
+			for (const auto& val : shortNames)
+				Logger::InfoNoFile("  -" + std::string(1, val.first) + " = --" + std::string(val.second.second));
+		}
 	}
 
-	void CmdParser::AddOption(std::string_view name, bool defValue, char shortName) noexcept
+	void CmdParser::AddOption(std::string_view name, char shortName) noexcept
 	{
 		ZE_ASSERT(!ParamPresent(name), "Given name has been already used!");
-		options.emplace(name, defValue);
+		options.emplace(name, false);
 		AddShortName(shortName, ParamType::Option, name);
 	}
 
@@ -158,8 +161,7 @@ namespace ZE
 	void CmdParser::AddString(std::string_view name, std::string_view defValue, char shortName) noexcept
 	{
 		ZE_ASSERT(!ParamPresent(name), "Given name has been already used!");
-		std::vector<std::string_view> defList{ defValue };
-		strings.emplace(name, std::move(defList));
+		strings.emplace(name, defValue);
 		AddShortName(shortName, ParamType::String, name);
 	}
 
@@ -203,18 +205,8 @@ namespace ZE
 	{
 		std::string key(name);
 		if (strings.contains(key))
-			return strings.at(key).front();
+			return strings.at(key);
 		ZE_FAIL("Unknown parameter: " + key);
 		return "";
-	}
-
-	const std::vector<std::string_view>& CmdParser::GetStringList(std::string_view name) const noexcept
-	{
-		static std::vector<std::string_view> emptyList;
-		std::string key(name);
-		if (strings.contains(key))
-			return strings.at(key);
-		ZE_FAIL("Unknown list: " + key);
-		return emptyList;
 	}
 }
