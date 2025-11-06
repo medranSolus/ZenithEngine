@@ -26,7 +26,7 @@ namespace ZE::DDS
 		U16 MipCount;
 		U16 ArraySize;
 		U32 RowSize;
-		U32 SliceSize;
+		U64 SliceSize;
 		std::shared_ptr<U8[]> ImageMemory;
 	};
 

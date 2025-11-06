@@ -264,10 +264,10 @@ namespace ZE::DDS
 
 				// Check if single images or whole depth level can be written at once
 				const bool sameRowSize = rowSize == srcData.RowSize;
-				const U32 sliceSize = rowSize * rowCount;
+				const U64 sliceSize = rowSize * rowCount;
 				if (sameRowSize && sliceSize == srcData.SliceSize)
 				{
-					const U32 depthLevelSize = currentDepth * sliceSize;
+					const U64 depthLevelSize = currentDepth * sliceSize;
 					if (fwrite(srcImageMemory, depthLevelSize, 1, file) != 1)
 						return FileResult::WriteError;
 					srcImageMemory += depthLevelSize;

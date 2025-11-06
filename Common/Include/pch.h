@@ -30,6 +30,7 @@
 *** DirectXMath.h
 *** DirectXCollision.h
 * Types.h
+* deque
 * string_view
 * unordered_map
 * vector

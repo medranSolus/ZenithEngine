@@ -1,7 +1,7 @@
 #pragma once
 #include "MathExt.h"
-#include <cstring>
 #include <limits>
+#include <cstring>
 
 namespace std
 {
