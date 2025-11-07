@@ -30,3 +30,4 @@ macro(create_tools_project)
 endmacro()
 
 add_subdirectory(TexEdit)
+add_subdirectory(BrdfGen)
