@@ -186,12 +186,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.StartupPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("envMapLoad", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Startup);
-			node.AddOutput("Map", TextureLayout::ShaderResource, "envMap");
-			graphDesc.StartupPasses.emplace_back(std::move(node));
-		}
-		{
-			RenderNode node("brdfLutLoad", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Startup);
+			RenderNode node("lightmapLoad", "", RenderPass::LoadLightmaps::GetDesc(params.BrdfLutSource, params.EnvMapSource), PassExecutionType::Startup);
+			node.AddOutput("Env", TextureLayout::ShaderResource, "envMap");
 			node.AddOutput("LUT", TextureLayout::ShaderResource, "brdfLut");
 			graphDesc.StartupPasses.emplace_back(std::move(node));
 		}
@@ -392,8 +388,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
-			node.AddInput("envMapLoad.Map", TextureLayout::ShaderResource);
-			node.AddInput("brdfLutLoad.LUT", TextureLayout::ShaderResource);
+			node.AddInput("lightmapLoad.Env", TextureLayout::ShaderResource);
+			node.AddInput("lightmapLoad.LUT", TextureLayout::ShaderResource);
 			node.AddOutput("SSR", TextureLayout::UnorderedAccess, "ssr");
 			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();

@@ -49,6 +49,7 @@ namespace ZE::GFX::Pipeline
 		// Special type indicating that it's impossible to guess the type of the pass and it's related data
 		Invalid,
 
+		LoadLightmaps,
 		LoadSkybox,
 
 		GBufferClear,
