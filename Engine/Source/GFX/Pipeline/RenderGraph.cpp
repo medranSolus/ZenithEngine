@@ -12,7 +12,7 @@
 		async ? dev.ExecuteCompute(list) : dev.ExecuteMain(list); \
 	} } while (false)
 #else
-#define ZE_SPLIT_SUBMISSIONS_HEADER()
+#define ZE_SPLIT_SUBMISSIONS_DISABLED()
 #define ZE_SPLIT_SUBMISSIONS_BEGIN(list)
 #define ZE_SPLIT_SUBMISSIONS_END(list, async)
 #endif

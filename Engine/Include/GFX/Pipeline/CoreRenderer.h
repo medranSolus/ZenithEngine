@@ -1,5 +1,5 @@
 #pragma once
-#include "Data/SkyboxSource.h"
+#include "Data/CubemapSource.h"
 #include "RenderGraphDesc.h"
 
 namespace ZE::GFX::Pipeline::CoreRenderer
@@ -7,8 +7,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 	// Options to start CoreRenderer with
 	struct Params
 	{
+		// Path to location of the precomputed BRDF LUT texture
+		std::string BrdfLutSource;
+		// Path to location of the environment map texture
+		Data::CubemapSource EnvMapSource;
 		// Path to location of skybox textures
-		Data::SkyboxSource SkyboxSource;
+		Data::CubemapSource SkyboxSource;
 		// Dimensions of used shadow maps
 		U32 ShadowMapSize = 1024;
 		// Constant bias to be applied when performing shadow depth test

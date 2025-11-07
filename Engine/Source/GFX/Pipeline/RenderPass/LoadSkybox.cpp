@@ -9,64 +9,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
-		return Initialize(dev, buildData, *reinterpret_cast<Data::SkyboxSource*>(initData));
+		return Initialize(dev, buildData, *reinterpret_cast<Data::CubemapSource*>(initData));
 	}
 
-	static bool LoadTextures(const Data::SkyboxSource& source, std::vector<Surface>& textures) noexcept
-	{
-		if (source.Data == nullptr)
-			return false;
-
-		bool result = true;
-		switch (source.Type)
-		{
-		case Data::SkyboxType::SingleFileCubemap:
-		{
-			result = textures.emplace_back().Load(source.Data[0]);
-			break;
-		}
-		default:
-			ZE_ENUM_UNHANDLED();
-		case Data::SkyboxType::Folder:
-		{
-			textures.reserve(6);
-			result = textures.emplace_back().Load(source.Data[0] + "/px" + source.Data[1]); // Right
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[0] + "/nx" + source.Data[1]); // Left
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[0] + "/py" + source.Data[1]); // Up
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[0] + "/ny" + source.Data[1]); // Down
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[0] + "/pz" + source.Data[1]); // Front
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[0] + "/nz" + source.Data[1]); // Back
-			break;
-		}
-		case Data::SkyboxType::CubemapFiles:
-		{
-			textures.reserve(6);
-			result = textures.emplace_back().Load(source.Data[0]); // Right
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[1]); // Left
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[2]); // Up
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[3]); // Down
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[4]); // Front
-			if (result)
-				result &= textures.emplace_back().Load(source.Data[5]); // Back
-			break;
-		}
-		}
-		return result;
-	}
-
-	PassDesc GetDesc(const Data::SkyboxSource& source) noexcept
+	PassDesc GetDesc(const Data::CubemapSource& source) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::LoadSkybox) };
-		desc.InitData = new Data::SkyboxSource{ source };
+		desc.InitData = new Data::CubemapSource{ source };
 		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Update = Update;
@@ -80,6 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
 		syncStatus.SyncMain(dev);
+		syncStatus.SyncCompute(dev);
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
 		execData->SkyTexture.Free(dev);
 		delete execData;
@@ -87,12 +37,12 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 
 	void* CopyInitData(void* data) noexcept
 	{
-		return new Data::SkyboxSource(*reinterpret_cast<Data::SkyboxSource*>(data));
+		return new Data::CubemapSource(*reinterpret_cast<Data::CubemapSource*>(data));
 	}
 
 	void FreeInitData(void* data) noexcept
 	{
-		delete reinterpret_cast<Data::SkyboxSource*>(data);
+		delete reinterpret_cast<Data::CubemapSource*>(data);
 	}
 
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
@@ -101,7 +51,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		{
 			passData.UpdateData = false;
 			std::vector<Surface> textures;
-			if (LoadTextures(passData.NewSource, textures))
+			if (passData.NewSource.LoadTextures(textures))
 			{
 				passData.SourceData = std::move(passData.NewSource);
 				Resource::Texture::PackDesc texDesc;
@@ -120,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return UpdateStatus::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const Data::SkyboxSource& source)
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source)
 	{
 		ExecuteData* passData = new ExecuteData;
 		passData->SourceData = source;
@@ -129,7 +79,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
 
 		std::vector<Surface> textures;
-		if (!LoadTextures(source, textures))
+		if (!source.LoadTextures(textures))
 			throw ZE_RGC_EXCEPT("Error loading cubemap!");
 
 		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
@@ -153,19 +103,19 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 			ImGui::Text("Loaded skybox:");
 			switch (execData.SourceData.Type)
 			{
-			case Data::SkyboxType::SingleFileCubemap:
+			case Data::CubemapSourceType::SingleFileCubemap:
 			{
 				ImGui::BulletText(execData.SourceData.Data[0].c_str());
 				break;
 			}
 			default:
 				ZE_ENUM_UNHANDLED();
-			case Data::SkyboxType::Folder:
+			case Data::CubemapSourceType::Folder:
 			{
 				ImGui::BulletText("%s/*%s", execData.SourceData.Data[0].c_str(), execData.SourceData.Data[1].c_str());
 				break;
 			}
-			case Data::SkyboxType::CubemapFiles:
+			case Data::CubemapSourceType::CubemapFiles:
 			{
 				ImGui::BulletText("[+X] %s", execData.SourceData.Data[0].c_str());
 				ImGui::BulletText("[-X] %s", execData.SourceData.Data[1].c_str());
