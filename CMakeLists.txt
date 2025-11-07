@@ -30,7 +30,7 @@ option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large numbe
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
 option(ZE_RENDERER_NO_SPLIT_BARRIERS "Turns off splitting barriers and performs them immediatelly" ON)
 option(ZE_RENDERER_CREATION_VALIDATION "Turns on validation during whole process of render graph creation, enabled by default in development builds but can be forced even in release" ON)
-option(ZE_BUILD_TOOL "Enable building of command line utility tool" ON)
+option(ZE_BUILD_TOOLS "Enable building of command line utility tool" ON)
 option(ZE_BUILD_DEMO "Enable building of technological demo" ON)
 option(ZE_NO_DATA "Disable copying of default engine assets" ON)
 option(ZE_CI_JOB "Build engine for CI job" OFF)
@@ -85,7 +85,7 @@ endif()
 
 set(COMMON_DIR "${PROJECT_SOURCE_DIR}/Common")
 set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/Engine")
-set(TOOL_DIR "${PROJECT_SOURCE_DIR}/EditTool")
+set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/Tools")
 set(DEMO_DIR "${PROJECT_SOURCE_DIR}/Demo")
 set(EXTERNAL_DIR "${PROJECT_SOURCE_DIR}/External")
 set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
@@ -227,7 +227,6 @@ else()
 	set(LIB_PREFIX "lib")
 endif()
 
-set(TOOL_TARGET "ZEdit")
 set(DEMO_TARGET "ZenithDemo")
 
 # Libraries
@@ -482,8 +481,8 @@ set(SHADER_FLAGS "${SHADER_FLAGS} /D_ZE_PLATFORM_XBOX_SCARLET=${ZE_PLATFORM_XBOX
 
 add_subdirectory(${COMMON_DIR})
 add_subdirectory(${ENGINE_DIR})
-if(${ZE_BUILD_TOOL})
-	add_subdirectory(${TOOL_DIR})
+if(${ZE_BUILD_TOOLS})
+	add_subdirectory(${TOOLS_DIR})
 endif()
 if(${ZE_BUILD_DEMO})
 	add_subdirectory(${DEMO_DIR})

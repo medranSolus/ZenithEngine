@@ -37,7 +37,6 @@ namespace ZE
 
 			std::string_view param = "";
 			ParamType type = ParamType::Unknown;
-			bool handled = false;
 			// Check for short names
 			if (clParam.at(1) != '-')
 			{
@@ -57,8 +56,7 @@ namespace ZE
 				}
 				else
 				{
-					handled = true;
-					for (U64 j = 1; j < param.size(); ++j)
+					for (U64 j = 1; j < clParam.size(); ++j)
 					{
 						char shortName = clParam.at(j);
 						if (shortNames.contains(shortName))
@@ -75,18 +73,30 @@ namespace ZE
 				}
 			}
 			else
+			{
 				param = clParam.substr(2, clParam.size() - 2);
+				const std::string key(param);
+				if (options.contains(key))
+					type = ParamType::Option;
+				else if (numbers.contains(key))
+					type = ParamType::Number;
+				else if (strings.contains(key))
+					type = ParamType::String;
+				else
+				{
+					Logger::Error("Unknown parameter name: --" + std::string(param));
+					continue;
+				}
+			}
 
-			if (!handled)
+			if (type != ParamType::Unknown)
 			{
 				switch (type)
 				{
 				default:
 					ZE_ENUM_UNHANDLED();
 				case ZE::CmdParser::Unknown:
-				{
 					break;
-				}
 				case ZE::CmdParser::Option:
 				{
 					options.at(std::string(param)) = true;
@@ -130,17 +140,17 @@ namespace ZE
 
 		if (GetOption("help"))
 		{
+			std::unordered_map<std::string, char> shortNamesLut;
+			for (const auto& val : shortNames)
+				shortNamesLut.emplace(std::string(val.second.second), val.first);
+
 			Logger::InfoNoFile("Available command line parameters:");
 			for (const auto& val : options)
-				Logger::InfoNoFile("  --" + val.first);
+				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : ""));
 			for (const auto& val : numbers)
-				Logger::InfoNoFile("  --" + val.first + " <NUMBER>");
+				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <NUMBER>");
 			for (const auto& val : strings)
-				Logger::InfoNoFile("  --" + val.first + " <STRING>");
-
-			Logger::InfoNoFile("Short names for parameters:");
-			for (const auto& val : shortNames)
-				Logger::InfoNoFile("  -" + std::string(1, val.first) + " = --" + std::string(val.second.second));
+				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <STRING>");
 		}
 	}
 
