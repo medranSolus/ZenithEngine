@@ -7,8 +7,8 @@ namespace ZE::Math::Light
 		const float a = roughness * roughness;
 
 		const float phi = PI2 * Xi.x;
-		const float cosTheta = sqrtf((1.0f - Xi.y) / (1.0f + (a * a - 1.0f) * Xi.y));
-		const float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
+		const float cosTheta = std::sqrtf((1.0f - Xi.y) / (1.0f + (a * a - 1.0f) * Xi.y));
+		const float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
 
 		// From spherical coords to cartesian coords
 		const float H_x = cos(phi) * sinTheta;
@@ -46,7 +46,7 @@ namespace ZE::Math::Light
 				const float NdotH = std::max(XMVectorGetZ(H), 0.0f);
 				const float VdotH = std::max(XMVectorGetX(XMVector3Dot(V, H)), 0.0f);
 				const float NdotV = std::max(XMVectorGetX(XMVector3Dot(N, V)), 0.0f);
-				const float G = GeometrySmith(roughness, NdotV, NdotL);
+				const float G = SelfShadowingSmithSchlick<true>(roughness, NdotV, NdotL);
 
 				const float G_Vis = (G * VdotH) / (NdotH * NdotV);
 				const float Fc = std::pow(1.0f - VdotH, 5.0f);

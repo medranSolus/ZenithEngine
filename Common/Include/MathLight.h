@@ -30,15 +30,24 @@ namespace ZE::Math::Light
 		return { static_cast<float>(i) / static_cast<float>(N), RadicalInverse_VdC(i) };
 	}
 
-	constexpr float GeometrySchlickGGX(float NdotV, float roughness) noexcept
+	constexpr float GeometrySchlickGGX(float NdotV, float roughnessRemapped) noexcept
 	{
-		float k = (roughness * roughness) / 2.0f;
-		return NdotV / (NdotV * (1.0f - k) + k);
+		return NdotV / (NdotV * (1.0f - roughnessRemapped) + roughnessRemapped);
 	}
 
-	constexpr float GeometrySmith(float roughness, float NdotV, float NdotL) noexcept
+	template<bool IBL>
+	constexpr float SelfShadowingSmithSchlick(float roughness, float NdotV, float NdotL) noexcept
 	{
-		return GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+		float roughnessRemapped;
+		if constexpr (IBL)
+			roughnessRemapped = roughness * roughness / 2.0f;
+		else
+		{
+			roughnessRemapped = roughness + 1.0f;
+			roughnessRemapped = roughnessRemapped * roughnessRemapped / 8.0f;
+		}
+
+		return GeometrySchlickGGX(NdotV, roughnessRemapped) * GeometrySchlickGGX(NdotL, roughnessRemapped);
 	}
 
 	Vector ImportanceSampleGGX(const Float2& Xi, float roughness, Vector N, Vector tan, Vector bitan) noexcept;
