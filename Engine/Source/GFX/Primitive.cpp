@@ -183,43 +183,43 @@ namespace ZE::GFX::Primitive
 
 		/*
 		* UV mapping according to:
-		* 0,0        ______             1,0
-		*    _______| Left |____________
-		*   | Front | Down | Back | Top |
-		*    -------| Right|------------
-		* 0,1        ------             1,1
+		* 0,0       ________                1,0
+		*    ______|  Top   |_______________
+		*   | Left |  Back  | Right | Front |
+		*    ------| Bottom |---------------
+		* 0,1       --------                1,1
 		*/
 		std::vector<Vertex> vertices
 		{
 			// Front
-			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
-			{ { -POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_1 } },
-			{ { POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_2 } },
-			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { -POINT, -POINT, -POINT }, {}, { 1.0f, UV_SHORT_2 } },
+			{ { -POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_1 } },
+			{ { POINT, POINT, -POINT }, {}, { 0.75f, UV_SHORT_1 } },
+			{ { POINT, -POINT, -POINT }, {}, { 0.75f, UV_SHORT_2 } },
 			// Left
-			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
-			{ { -POINT, POINT, POINT }, {}, { 0.5f, 0.0f } },
-			{ { -POINT, POINT, -POINT }, {}, { 0.25f, 0.0f } },
-			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { -POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_1 } },
+			{ { -POINT, -POINT, -POINT }, {}, { 0.0f, UV_SHORT_2 } },
 			// Back
 			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
-			{ { POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_2 } },
-			{ { -POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_1 } },
-			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
 			// Right
-			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
-			{ { POINT, POINT, -POINT }, {}, { 0.25f, 1.0f } },
-			{ { POINT, POINT, POINT }, {}, { 0.5f, 1.0f } },
+			{ { POINT, -POINT, -POINT }, {}, { 0.75f, UV_SHORT_2 } },
+			{ { POINT, POINT, -POINT }, {}, { 0.75f, UV_SHORT_1 } },
+			{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
 			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
 			// Top
-			{ { -POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_1 } },
-			{ { -POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_1 } },
-			{ { POINT, POINT, POINT }, {}, { 0.75f, UV_SHORT_2 } },
-			{ { POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_2 } },
+			{ { -POINT, POINT, -POINT }, {}, { 0.25f, 0.0f } },
+			{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
+			{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
+			{ { POINT, POINT, -POINT }, {}, { 0.5f, 0.0f } },
 			// Down
-			{ { -POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
-			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_1 } },
-			{ { POINT, -POINT, -POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
+			{ { -POINT, -POINT, -POINT }, {}, { 0.25f, 1.0f } },
+			{ { POINT, -POINT, -POINT }, {}, { 0.5f, 1.0f } },
 			{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
 		};
 		ComputeSurfaceNormalsTangents(vertices, indices);

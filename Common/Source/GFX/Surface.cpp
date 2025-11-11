@@ -390,7 +390,7 @@ namespace ZE::GFX
 				height = static_cast<U32>(srcHeight);
 				memorySize = GetSliceByteSize();
 				memory = std::make_shared<U8[]>(memorySize);
-				alpha = components == 4;
+				alpha = components == 4 || expandAlpha;
 				checkForAlpha = alpha;
 
 				const U32 destRowSize = GetRowByteSize();
