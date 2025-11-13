@@ -352,7 +352,7 @@ namespace ZE::DDS
 			}
 			else if (dxt10Header.Dimension & ResourceDimension::Texture2D)
 			{
-				if ((dxt10Header.Dimension & ResourceDimension::Texture2D) && (dxt10Header.MiscFlag & MiscFlagDXT10::TextureCube))
+				if (dxt10Header.MiscFlag & MiscFlagDXT10::TextureCube)
 					arraySize *= 6;
 			}
 			else if (dxt10Header.Dimension & ResourceDimension::Texture1D)

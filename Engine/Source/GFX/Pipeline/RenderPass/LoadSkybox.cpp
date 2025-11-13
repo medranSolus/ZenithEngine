@@ -138,6 +138,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 				}
 				execData.UpdateError = !execData.UpdateData;
 			}
+			ImGui::SameLine();
+			if (const auto selection = GUI::DialogWindow::FileBrowserButton("Single File", "Skybox", GUI::DialogWindow::FileType::Image))
+			{
+				execData.NewSource.InitSingleFileCubemap(*selection);
+				execData.UpdateData = true;
+				execData.UpdateError = !execData.UpdateData;
+			}
 			ImGui::NewLine();
 		}
 		if (execData.UpdateError)

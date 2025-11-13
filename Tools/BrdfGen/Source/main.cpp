@@ -3,6 +3,7 @@
 #include "json.hpp"
 
 namespace json = nlohmann;
+using namespace ZE;
 
 enum ResultCode : int
 {
@@ -16,7 +17,7 @@ ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, boo
 
 int main(int argc, char* argv[])
 {
-	ZE::CmdParser parser;
+	CmdParser parser;
 	parser.AddOption("fp16", 'f');
 	parser.AddNumber("size", 1024, 's');
 	parser.AddNumber("samples", 2048, 'n');
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
 		if (!fin.good())
 		{
 			fin.close();
-			ZE::Logger::Error("Cannot open JSON batch job file \"" + std::string(json) + "\"!");
+			Logger::Error("Cannot open JSON batch job file \"" + std::string(json) + "\"!");
 		}
 		else
 		{
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
 	{
 		if (!json.empty())
 			return ResultCode::Success;
-		ZE::Logger::Error("No output file specified to generate LUT!");
+		Logger::Error("No output file specified to generate LUT!");
 		return ResultCode::NoOutputFile;
 	}
 
@@ -79,7 +80,7 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		output = command["out"].get<std::string_view>();
 	else
 	{
-		ZE::Logger::Error("JSON command missing required \"out\" parameter!");
+		Logger::Error("JSON command missing required \"out\" parameter!");
 		return ResultCode::NoOutputFile;
 	}
 
@@ -101,10 +102,10 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 
 ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, bool fp16) noexcept
 {
-	ZE::Logger::InfoNoFile("Building BRDF LUT [" + std::to_string(size) + "x" + std::to_string(size) + "], "
+	Logger::InfoNoFile("Building BRDF LUT [" + std::to_string(size) + "x" + std::to_string(size) + "], "
 		+ std::to_string(samples) + " samples, " + (fp16 ? "16 bit" : "32 bit") + ", output file: " + std::string(output));
 
-	ZE::GFX::Surface lut(size, size, fp16 ? ZE::PixelFormat::R16G16_Float : ZE::PixelFormat::R32G32_Float);
+	GFX::Surface lut(size, size, fp16 ? PixelFormat::R16G16_Float : PixelFormat::R32G32_Float);
 
 	const float step = 1.0f / static_cast<float>(size);
 	const U32 rowSize = lut.GetRowByteSize();
@@ -118,12 +119,12 @@ ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, boo
 				{
 					const float NdotV = (static_cast<float>(x) + 0.5f) * step;
 					const float roughness = (static_cast<float>(y) + 0.5f) * step;
-					Float2 sample = ZE::Math::Light::IntegrateBRDF(NdotV, roughness, samples);
+					Float2 sample = Math::Light::IntegrateBRDF(NdotV, roughness, samples);
 
 					if (fp16)
 					{
-						U32 packedValue = ZE::Math::FP16::EncodeFloat16(sample.x);
-						packedValue |= static_cast<U32>(ZE::Math::FP16::EncodeFloat16(sample.y)) << 16;
+						U32 packedValue = Math::FP16::EncodeFloat16(sample.x);
+						packedValue |= static_cast<U32>(Math::FP16::EncodeFloat16(sample.y)) << 16;
 						reinterpret_cast<U32*>(image)[x] = packedValue;
 					}
 					else
@@ -153,7 +154,7 @@ ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, boo
 
 	if (!lut.Save(output))
 	{
-		ZE::Logger::Error("Cannot save BRDF LUT to file \"" + std::string(output) + "\"!");
+		Logger::Error("Cannot save BRDF LUT to file \"" + std::string(output) + "\"!");
 		return ResultCode::CannotSaveFile;
 	}
 	return ResultCode::Success;

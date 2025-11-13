@@ -14,7 +14,7 @@ namespace ZE::DDS
 	// Identifies other, less common options for resources in DDS file
 	typedef U32 MiscFlagsDXT10;
 	// Possible less common resource formats in DDS::HeaderDXT10
-	enum class MiscFlagDXT10 : MiscFlagsDXT10 { TextureCube };
+	enum class MiscFlagDXT10 : MiscFlagsDXT10 { TextureCube = 4 };
 	ZE_ENUM_OPERATORS(MiscFlagDXT10, MiscFlagsDXT10);
 
 	// Contains additional metadata of DDS file

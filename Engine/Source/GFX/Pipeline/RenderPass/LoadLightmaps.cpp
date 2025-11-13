@@ -215,6 +215,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 				}
 				execData.UpdateError = !execData.UpdateData;
 			}
+			ImGui::SameLine();
+			if (const auto selection = GUI::DialogWindow::FileBrowserButton("Single File", "", GUI::DialogWindow::FileType::Image))
+			{
+				execData.EnvMapNewSource.InitSingleFileCubemap(*selection);
+				execData.UpdateData = true;
+				execData.UpdateError = !execData.UpdateData;
+			}
 			ImGui::NewLine();
 
 			ImGui::Text("Loaded BRDF LUT: "); ImGui::SameLine();
