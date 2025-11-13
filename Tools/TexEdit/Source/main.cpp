@@ -1,5 +1,5 @@
-#include "GFX/Surface.h"
 #include "CmdParser.h"
+#include "TexOps.h"
 #include "json.hpp"
 
 namespace json = nlohmann;
@@ -15,13 +15,16 @@ enum ResultCode : int
 };
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
-ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY) noexcept;
+ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept;
 
 int main(int argc, char* argv[])
 {
-	ZE::CmdParser parser;
+	CmdParser parser;
 	parser.AddOption("no-alpha", 'a');
 	parser.AddOption("flip-y", 'y');
+	parser.AddOption("hdri-cubemap", 'c');
+	parser.AddOption("fp16", 'f');
+	parser.AddOption("bilinear", 'b');
 	parser.AddString("source", "", 's');
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
@@ -34,7 +37,7 @@ int main(int argc, char* argv[])
 		if (!fin.good())
 		{
 			fin.close();
-			ZE::Logger::Error("Cannot open JSON batch job file \"" + std::string(json) + "\"!");
+			Logger::Error("Cannot open JSON batch job file \"" + std::string(json) + "\"!");
 		}
 		else
 		{
@@ -62,7 +65,7 @@ int main(int argc, char* argv[])
 	{
 		if (!json.empty())
 			return ResultCode::Success;
-		ZE::Logger::Error("No source file specified!");
+		Logger::Error("No source file specified!");
 		return ResultCode::NoSourceFile;
 	}
 
@@ -71,8 +74,11 @@ int main(int argc, char* argv[])
 		outFile = source;
 	bool noAlpha = parser.GetOption("no-alpha");
 	bool flipY = parser.GetOption("flip-y");
+	bool hdriCubemap = parser.GetOption("hdri-cubemap");
+	bool fp16 = parser.GetOption("fp16");
+	bool bilinear = parser.GetOption("bilinear");
 
-	return RunJob(source, outFile, noAlpha, flipY);
+	return RunJob(source, outFile, noAlpha, flipY, hdriCubemap, fp16, bilinear);
 }
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept
@@ -82,7 +88,7 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		source = command["source"].get<std::string_view>();
 	else
 	{
-		ZE::Logger::Error("JSON command missing required \"source\" parameter!");
+		Logger::Error("JSON command missing required \"source\" parameter!");
 		return ResultCode::NoSourceFile;
 	}
 
@@ -98,116 +104,95 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 	bool flipY = false;
 	if (command.contains("flip-y"))
 		flipY = command["flip-y"].get<bool>();
+	bool hdriCubemap = false;
+	if (command.contains("hdri-cubemap"))
+		hdriCubemap = command["hdri-cubemap"].get<bool>();
+	bool fp16 = false;
+	if (command.contains("fp16"))
+		fp16 = command["fp16"].get<bool>();
+	bool bilinear = false;
+	if (command.contains("bilinear"))
+		bilinear = command["bilinear"].get<bool>();
 
-	return RunJob(source, outFile, noAlpha, flipY);
+	return RunJob(source, outFile, noAlpha, flipY, hdriCubemap, fp16, bilinear);
 }
 
-ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY) noexcept
+ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept
 {
 	// Early out if nothing to do
-	if (!noAlpha && !flipY)
+	if (!noAlpha && !flipY && !hdriCubemap)
 	{
 		ResultCode retCode = ResultCode::NoWorkPerformed;
 		if (outFile == source)
-			ZE::Logger::Warning("Nothing to do for file \"" + std::string(source) + "\"");
+			Logger::Warning("Nothing to do for file \"" + std::string(source) + "\"");
 		else
 		{
-			ZE::GFX::Surface surface;
+			GFX::Surface surface;
 			if (surface.Load(source))
 			{
-				ZE::Logger::Warning("Nothing to do, saving to file \"" + std::string(outFile) + "\"");
+				Logger::Warning("Nothing to do, saving to file \"" + std::string(outFile) + "\"");
 				if (!surface.Save(outFile))
 				{
-					ZE::Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
+					Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
 					retCode = ResultCode::CannotSaveFile;
 				}
 			}
 			else
 			{
-				ZE::Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
+				Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
 				retCode = ResultCode::CannotLoadFile;
 			}
 		}
 		return retCode;
 	}
 
-	U8 requiredChannels = 0;
-	if (noAlpha)
-		requiredChannels = 4;
-	if (flipY)
-		requiredChannels = 2;
-
-	ResultCode retCode = ResultCode::Success;
-	ZE::GFX::Surface surface;
-	if (surface.Load(source))
+	GFX::Surface surface;
+	if (!surface.Load(source))
 	{
-		const U8 channelCount = ZE::Utils::GetChannelCount(surface.GetFormat());
-		if (channelCount < requiredChannels)
-		{
-			ZE::Logger::Error("Source file \"" + std::string(source) + "\" does not have required channels!");
-			retCode = ResultCode::CannotPerformOperation;
-		}
-		else
-		{
-			const U8 channelSize = ZE::Utils::GetChannelSize(surface.GetFormat());
-			const U8 pixelSize = surface.GetPixelSize();
-			const U32 rowSize = surface.GetRowByteSize();
-			U8* buffer = surface.GetBuffer();
-			for (U16 a = 0; a < surface.GetArraySize(); ++a)
-			{
-				U32 currentWidth = surface.GetWidth();
-				U32 currentHeight = surface.GetHeight();
-				U16 currentDepth = surface.GetDepth();
-				for (U16 mip = 0; mip < surface.GetMipCount(); ++mip)
-				{
-					for (U16 d = 0; d < currentDepth; ++d)
-					{
-						for (U32 y = 0; y < currentHeight; ++y)
-						{
-							// Only place with row alignment, everything above have slive alignment
-							for (U32 x = 0; x < currentWidth; ++x)
-							{
-								// Assume R8_UNorm for single channel for now
-								if (noAlpha)
-									buffer[x * pixelSize + channelSize * 3] = 255;
-								if (flipY)
-									buffer[x * pixelSize + channelSize] = 255 - buffer[channelSize];
-							}
-							buffer += rowSize;
-						}
-					}
+		Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
+		return ResultCode::CannotLoadFile;
+	}
 
-					currentWidth >>= 1;
-					if (currentWidth == 0)
-						currentWidth = 1;
-					currentHeight >>= 1;
-					if (currentHeight == 0)
-						currentHeight = 1;
-					currentDepth >>= 1;
-					if (currentDepth == 0)
-						currentDepth = 1;
-				}
-			}
+	bool saved = false;
+	if (hdriCubemap)
+	{
+		if (noAlpha || flipY)
+			Logger::Warning("Other operations specified during HDRi format processing will be ignored!");
+		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
 
-			if (surface.Save(outFile))
-			{
-				if (noAlpha)
-					ZE::Logger::Info("Alpha channel reseted");
-				if (flipY)
-					ZE::Logger::Info("Y channel flipped");
-				ZE::Logger::Info("Saved texture to file \"" + std::string(outFile) + "\"");
-			}
-			else
-			{
-				ZE::Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
-				retCode = ResultCode::CannotSaveFile;
-			}
-		}
+		TexOps::ConvertToCubemap(surface, cubemap, bilinear, fp16);
+		Logger::Info("Converted to 6-faced cubemap");
+		saved = cubemap.Save(outFile);
 	}
 	else
 	{
-		ZE::Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
-		retCode = ResultCode::CannotLoadFile;
+		U8 requiredChannels = 0;
+		if (noAlpha)
+			requiredChannels = 4;
+		if (flipY)
+			requiredChannels = 2;
+
+		const U8 channelCount = Utils::GetChannelCount(surface.GetFormat());
+		if (channelCount < requiredChannels)
+		{
+			Logger::Error("Source file \"" + std::string(source) + "\" does not have required channels!");
+			return ResultCode::CannotPerformOperation;
+		}
+
+		TexOps::SimpleProcess(surface, noAlpha, flipY);
+
+		if (noAlpha)
+			Logger::Info("Alpha channel reseted");
+		if (flipY)
+			Logger::Info("Y channel flipped");
+		saved = surface.Save(outFile);
 	}
-	return retCode;
+
+	if (saved)
+	{
+		Logger::Info("Saved texture to file \"" + std::string(outFile) + "\"");
+		return ResultCode::Success;
+	}
+	Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
+	return ResultCode::CannotSaveFile;
 }
