@@ -136,10 +136,11 @@ ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, boo
 
 	if (cores > 1)
 	{
+		cores = std::clamp(cores, 2U, size);
 		U32 jobRowCount = size / cores;
 		--cores;
 		std::vector<std::thread> workers;
-		for (U8 i = 0; i < cores; ++i)
+		for (U32 i = 0; i < cores; ++i)
 		{
 			U32 jobOffset = i * jobRowCount;
 			workers.emplace_back(brdfGen, jobOffset, jobOffset + jobRowCount, size, image);

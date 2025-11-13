@@ -44,8 +44,8 @@ namespace ZE::GFX
 		constexpr U16 GetDepth() const noexcept { return depth; }
 		constexpr U16 GetMipCount() const noexcept { return mipCount; }
 		constexpr U16 GetArraySize() const noexcept { return arraySize; }
-		constexpr U32 GetRowByteSize() const noexcept { return Math::AlignUp((width * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
-		constexpr U64 GetSliceByteSize() const noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize()) * height, SLICE_PITCH_ALIGNMENT); }
+		constexpr U32 GetRowByteSize(U16 mip = 0) const noexcept { return Math::AlignUp((std::clamp(width >> mip, 1U, width) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
+		constexpr U64 GetSliceByteSize(U16 mip = 0) const noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(mip)) * std::clamp(height >> mip, 1U, height), SLICE_PITCH_ALIGNMENT); }
 		constexpr U64 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
 

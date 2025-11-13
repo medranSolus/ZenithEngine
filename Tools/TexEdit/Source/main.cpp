@@ -15,16 +15,17 @@ enum ResultCode : int
 };
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
-ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept;
+ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept;
 
 int main(int argc, char* argv[])
 {
 	CmdParser parser;
 	parser.AddOption("no-alpha", 'a');
 	parser.AddOption("flip-y", 'y');
-	parser.AddOption("hdri-cubemap", 'c');
+	parser.AddOption("hdri-cubemap", 'q');
 	parser.AddOption("fp16", 'f');
 	parser.AddOption("bilinear", 'b');
+	parser.AddNumber("cores", 1, 'c');
 	parser.AddString("source", "", 's');
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
@@ -72,13 +73,14 @@ int main(int argc, char* argv[])
 	std::string_view outFile = parser.GetString("out");
 	if (outFile.empty())
 		outFile = source;
+	U32 cores = parser.GetNumber("cores");
 	bool noAlpha = parser.GetOption("no-alpha");
 	bool flipY = parser.GetOption("flip-y");
 	bool hdriCubemap = parser.GetOption("hdri-cubemap");
 	bool fp16 = parser.GetOption("fp16");
 	bool bilinear = parser.GetOption("bilinear");
 
-	return RunJob(source, outFile, noAlpha, flipY, hdriCubemap, fp16, bilinear);
+	return RunJob(source, outFile, cores, noAlpha, flipY, hdriCubemap, fp16, bilinear);
 }
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept
@@ -98,6 +100,9 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 	else
 		outFile = source;
 
+	U32 cores = 1;
+	if (command.contains("cores"))
+		cores = command["cores"].get<U32>();
 	bool noAlpha = false;
 	if (command.contains("no-alpha"))
 		noAlpha = command["no-alpha"].get<bool>();
@@ -114,10 +119,10 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 	if (command.contains("bilinear"))
 		bilinear = command["bilinear"].get<bool>();
 
-	return RunJob(source, outFile, noAlpha, flipY, hdriCubemap, fp16, bilinear);
+	return RunJob(source, outFile, cores, noAlpha, flipY, hdriCubemap, fp16, bilinear);
 }
 
-ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept
+ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept
 {
 	// Early out if nothing to do
 	if (!noAlpha && !flipY && !hdriCubemap)
@@ -160,7 +165,7 @@ ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlph
 			Logger::Warning("Other operations specified during HDRi format processing will be ignored!");
 		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
 
-		TexOps::ConvertToCubemap(surface, cubemap, bilinear, fp16);
+		TexOps::ConvertToCubemap(surface, cubemap, cores, bilinear, fp16);
 		Logger::Info("Converted to 6-faced cubemap");
 		saved = cubemap.Save(outFile);
 	}
@@ -179,7 +184,7 @@ ResultCode RunJob(std::string_view source, std::string_view outFile, bool noAlph
 			return ResultCode::CannotPerformOperation;
 		}
 
-		TexOps::SimpleProcess(surface, noAlpha, flipY);
+		TexOps::SimpleProcess(surface, cores, noAlpha, flipY);
 
 		if (noAlpha)
 			Logger::Info("Alpha channel reseted");

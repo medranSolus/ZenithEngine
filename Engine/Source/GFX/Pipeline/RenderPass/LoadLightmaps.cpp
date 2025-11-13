@@ -18,6 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 		Surface lut(size, size, fp16 ? PixelFormat::R16G16_Float : PixelFormat::R32G32_Float);
 
 		const float step = 1.0f / static_cast<float>(size);
+		const U32 rowSize = lut.GetRowByteSize();
 		U8* image = lut.GetBuffer();
 		for (U32 y = 0; y < size; ++y)
 		{
@@ -36,7 +37,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 				else
 					reinterpret_cast<Float2*>(image)[x] = sample;
 			}
-			image += lut.GetRowByteSize();
+			image += rowSize;
 		}
 		return lut;
 	}
