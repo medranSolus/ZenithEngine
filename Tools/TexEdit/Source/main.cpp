@@ -163,6 +163,9 @@ ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, 
 	{
 		if (noAlpha || flipY)
 			Logger::Warning("Other operations specified during HDRi format processing will be ignored!");
+		if (2 * surface.GetHeight() != surface.GetWidth())
+			Logger::Warning("Source image is not in expected 2:1 aspect ratio for HDRi to cubemap conversion!");
+
 		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
 
 		TexOps::ConvertToCubemap(surface, cubemap, cores, bilinear, fp16);

@@ -47,6 +47,7 @@
 ***** Types.h (defined by CmdParser.h)
 ***** utility
 *** ColorF4.h
+*** array
 *** random
 * MathExt.h
 */

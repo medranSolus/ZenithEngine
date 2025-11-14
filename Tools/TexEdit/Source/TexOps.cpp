@@ -48,26 +48,6 @@ namespace TexOps
 
 	void ConvertToCubemap(const GFX::Surface& surface, GFX::Surface& cubemap, U32 cores, bool bilinear, bool fp16) noexcept
 	{
-		// Used for traversal of corresponding cubemap face in 3D space
-		struct FaceDesc
-		{
-			Float3 StartPos;
-			Float3 DirX;
-			Float3 DirY;
-		};
-
-		// +x, -x, +y, -y, +z, -z
-		constexpr float POINT = 0.5f;
-		constexpr std::array<FaceDesc, 6> FACES =
-		{ {
-			{ { -POINT, POINT, POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { POINT, POINT, -POINT }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { POINT, POINT, -POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-			{ { POINT, -POINT, POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-			{ { POINT, POINT, POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { -POINT, POINT, -POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-		} };
-
 		U8* cubemapBuffer = cubemap.GetBuffer();
 		const U8* hdriBuffer = surface.GetBuffer();
 
@@ -80,17 +60,20 @@ namespace TexOps
 			{
 				for (U16 a = startFace; a < endFace; ++a)
 				{
+					const Math::CubemapFaceTraversalDesc& faceDesc = Math::CUBEMAP_FACES_INFO.at(a);
+					const Vector faceStart = Math::XMLoadFloat3(&faceDesc.StartPos);
+					const Vector xDir = Math::XMLoadFloat3(&faceDesc.DirX);
+					const Vector yDir = Math::XMLoadFloat3(&faceDesc.DirY);
+
 					for (U32 y = 0; y < cubemap.GetHeight(); ++y)
 					{
+						const Vector yScale = Math::XMVectorReplicate((static_cast<float>(y) + 0.5f) / static_cast<float>(cubemap.GetHeight()));
+						const Vector rowPos = Math::XMVectorMultiplyAdd(yDir, yScale, faceStart);
+
 						for (U32 x = 0; x < cubemap.GetWidth(); ++x)
 						{
-							const FaceDesc& face = FACES.at(a);
-
-							float xScale = (static_cast<float>(x) + 0.5f) / static_cast<float>(cubemap.GetWidth());
-							float yScale = (static_cast<float>(y) + 0.5f) / static_cast<float>(cubemap.GetHeight());
-
-							Vector direction = Math::XMVectorMultiplyAdd(Math::XMLoadFloat3(&face.DirX), Math::XMVectorSet(xScale, xScale, xScale, 0.0f), Math::XMLoadFloat3(&face.StartPos));
-							direction = Math::XMVector3Normalize(Math::XMVectorMultiplyAdd(Math::XMLoadFloat3(&face.DirY), Math::XMVectorSet(yScale, yScale, yScale, 0.0f), direction));
+							const Vector xScale = Math::XMVectorReplicate((static_cast<float>(x) + 0.5f) / static_cast<float>(cubemap.GetWidth()));
+							const Vector direction = Math::XMVector3Normalize(Math::XMVectorMultiplyAdd(xDir, xScale, rowPos));
 
 							float dirX = Math::XMVectorGetX(direction);
 							float dirY = Math::XMVectorGetY(direction);
@@ -138,10 +121,10 @@ namespace TexOps
 								float f3 = (1.0f - factorY) * factorX;
 								float f4 = factorY * factorX;
 
-								Vector w1 = Math::XMVectorSet(f1, f1, f1, 0.0f);
-								Vector w2 = Math::XMVectorSet(f2, f2, f2, 0.0f);
-								Vector w3 = Math::XMVectorSet(f3, f3, f3, 0.0f);
-								Vector w4 = Math::XMVectorSet(f4, f4, f4, 0.0f);
+								Vector w1 = Math::XMVectorReplicate(f1);
+								Vector w2 = Math::XMVectorReplicate(f2);
+								Vector w3 = Math::XMVectorReplicate(f3);
+								Vector w4 = Math::XMVectorReplicate(f4);
 
 								Vector p1 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
 								Vector p2 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
@@ -162,9 +145,9 @@ namespace TexOps
 							if (fp16)
 							{
 								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset) = Math::FP16::EncodeFloat16(hdriPixel.x);
-								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 1) = Math::FP16::EncodeFloat16(hdriPixel.y);
-								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 2) = Math::FP16::EncodeFloat16(hdriPixel.z);
-								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 3) = Math::FP16::EncodeFloat16(0.0f);
+								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 2) = Math::FP16::EncodeFloat16(hdriPixel.y);
+								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 4) = Math::FP16::EncodeFloat16(hdriPixel.z);
+								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 6) = Math::FP16::EncodeFloat16(0.0f);
 							}
 							else
 								*reinterpret_cast<Float3*>(cubemapBuffer + cubemapOffset) = hdriPixel;

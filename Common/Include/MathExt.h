@@ -1,5 +1,6 @@
 #pragma once
 #include "ColorF4.h"
+#include <array>
 #include <random>
 
 namespace ZE::Math
@@ -14,6 +15,27 @@ namespace ZE::Math
 	constexpr Float3 NoRotationAngles() noexcept { return { 0.0f, 0.0f, 0.0f }; }
 	constexpr Float3 StartPosition() noexcept { return { 0.0f, 0.0f, 0.0f }; }
 	constexpr Float3 UnitScale() noexcept { return { 1.0f, 1.0f, 1.0f }; }
+
+	// Used for traversal of corresponding cubemap face in 3D space
+	struct CubemapFaceTraversalDesc
+	{
+		constexpr static float POINT = 0.5f;
+
+		Float3 StartPos;
+		Float3 DirX;
+		Float3 DirY;
+	};
+
+	// +x, -x, +y, -y, +z, -z
+	constexpr std::array<CubemapFaceTraversalDesc, 6> CUBEMAP_FACES_INFO =
+	{ {
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
+	} };
 
 	constexpr float ToRadians(float angle) noexcept
 	{

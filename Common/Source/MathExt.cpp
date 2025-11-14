@@ -49,7 +49,7 @@ namespace ZE::Math
 
 	bool IsNearEqual(const Vector& v1, const Vector& v2) noexcept
 	{
-		const Vector equality = XMVectorNearEqual(v1, v2, XMVectorSet(FLT_EPSILON, FLT_EPSILON, FLT_EPSILON, 0.0f));
+		const Vector equality = XMVectorNearEqual(v1, v2, XMVectorReplicate(FLT_EPSILON));
 		return std::isnan(XMVectorGetX(equality)) && std::isnan(XMVectorGetY(equality)) && std::isnan(XMVectorGetZ(equality));
 	}
 

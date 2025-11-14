@@ -11,14 +11,14 @@ namespace ZE::Math::Light
 		const float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
 
 		// From spherical coords to cartesian coords
-		const float H_x = cos(phi) * sinTheta;
-		const float H_y = sin(phi) * sinTheta;
+		const float H_x = std::cosf(phi) * sinTheta;
+		const float H_y = std::sinf(phi) * sinTheta;
 
 		// From tangent-space vector to world-space sample vector
 		// sample vector == tan * H_x + bitan * H_y + N * H_z (cosTheta)
-		return XMVector3Normalize(XMVectorAdd(XMVectorMultiply(N, XMVectorSet(cosTheta, cosTheta, cosTheta, 0.0f)),
-			XMVectorAdd(XMVectorMultiply(tan, XMVectorSet(H_x, H_x, H_x, 0.0f)),
-				XMVectorMultiply(bitan, XMVectorSet(H_y, H_y, H_y, 0.0f)))));
+		return XMVector3Normalize(XMVectorAdd(XMVectorMultiply(N, XMVectorReplicate(cosTheta)),
+			XMVectorAdd(XMVectorMultiply(tan, XMVectorReplicate(H_x)),
+				XMVectorMultiply(bitan, XMVectorReplicate(H_y)))));
 	}
 
 	Float2 IntegrateBRDF(float NoV, float roughness, U32 samples) noexcept
@@ -37,7 +37,7 @@ namespace ZE::Math::Light
 		{
 			Float2 Xi = Hammersley(i, samples);
 			Vector H = ImportanceSampleGGX(Xi, roughness, N, tan, bitan);
-			Vector L = XMVector3Normalize(XMVectorSubtract(XMVectorMultiply(XMVectorMultiply(XMVectorSet(2.0f, 2.0f, 2.0f, 0.0f), XMVector3Dot(V, H)), H), V));
+			Vector L = XMVector3Normalize(XMVectorSubtract(XMVectorMultiply(XMVectorMultiply(XMVectorReplicate(2.0f), XMVector3Dot(V, H)), H), V));
 
 			const float NdotL = std::max(XMVectorGetZ(L), 0.0f);
 
