@@ -60,7 +60,13 @@ namespace TexOps
 			{
 				for (U16 a = startFace; a < endFace; ++a)
 				{
-					const Math::CubemapFaceTraversalDesc& faceDesc = Math::CUBEMAP_FACES_INFO.at(a);
+					// Remap +x and -x faces to compensate for wrapping of the spherical coords
+					U16 faceIndex = a;
+					if (a == 0)
+						faceIndex = 1;
+					else if (a == 1)
+						faceIndex = 0;
+					const Math::CubemapFaceTraversalDesc& faceDesc = Math::CUBEMAP_FACES_INFO.at(faceIndex);
 					const Vector faceStart = Math::XMLoadFloat3(&faceDesc.StartPos);
 					const Vector xDir = Math::XMLoadFloat3(&faceDesc.DirX);
 					const Vector yDir = Math::XMLoadFloat3(&faceDesc.DirY);
@@ -75,15 +81,14 @@ namespace TexOps
 							const Vector xScale = Math::XMVectorReplicate((static_cast<float>(x) + 0.5f) / static_cast<float>(cubemap.GetWidth()));
 							const Vector direction = Math::XMVector3Normalize(Math::XMVectorMultiplyAdd(xDir, xScale, rowPos));
 
-							float dirX = Math::XMVectorGetX(direction);
-							float dirY = Math::XMVectorGetY(direction);
-							float dirZ = Math::XMVectorGetZ(direction);
+							const float dirY = Math::XMVectorGetY(direction);
+							const float dirZ = Math::XMVectorGetZ(direction);
 
-							float azimuthAngle = std::atan2f(dirX, dirZ) + Math::PI; // Longitude
-							float polarAngle = std::atanf(dirY / Math::XMVectorGetX(Math::XMVector2Length(Math::XMVectorSetY(direction, dirZ)))) + static_cast<float>(M_PI_2); // Lattitude
+							const float azimuthAngle = std::atan2f(Math::XMVectorGetX(direction), dirZ) + Math::PI; // Longitude
+							const float polarAngle = std::atanf(dirY / Math::XMVectorGetX(Math::XMVector2Length(Math::XMVectorSetY(direction, dirZ)))) + static_cast<float>(M_PI_2); // Lattitude
 
-							float hdriX = (1.0f - azimuthAngle / Math::PI2) * static_cast<float>(surface.GetWidth());
-							float hdriY = (1.0f - polarAngle / Math::PI) * static_cast<float>(surface.GetHeight());
+							const float hdriX = (1.0f - azimuthAngle / Math::PI2) * static_cast<float>(surface.GetWidth());
+							const float hdriY = (1.0f - polarAngle / Math::PI) * static_cast<float>(surface.GetHeight());
 
 							Float3 hdriPixel = {};
 							if (bilinear)
@@ -116,28 +121,23 @@ namespace TexOps
 								factorY = std::abs(factorY);
 
 								// Bilinear interpolation weights
-								float f1 = (1.0f - factorY) * (1.0f - factorX);
-								float f2 = factorY * (1.0f - factorX);
-								float f3 = (1.0f - factorY) * factorX;
-								float f4 = factorY * factorX;
+								const Vector w1 = Math::XMVectorReplicate((1.0f - factorY) * (1.0f - factorX));
+								const Vector w2 = Math::XMVectorReplicate(factorY * (1.0f - factorX));
+								const Vector w3 = Math::XMVectorReplicate((1.0f - factorY) * factorX);
+								const Vector w4 = Math::XMVectorReplicate(factorY * factorX);
 
-								Vector w1 = Math::XMVectorReplicate(f1);
-								Vector w2 = Math::XMVectorReplicate(f2);
-								Vector w3 = Math::XMVectorReplicate(f3);
-								Vector w4 = Math::XMVectorReplicate(f4);
+								const Vector p1 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
+								const Vector p2 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
+								const Vector p3 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
+								const Vector p4 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
 
-								Vector p1 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
-								Vector p2 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
-								Vector p3 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
-								Vector p4 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
-
-								Vector interpolated = Math::XMVectorAbs(Math::XMVectorMultiplyAdd(p1, w1, Math::XMVectorMultiplyAdd(p2, w2, Math::XMVectorMultiplyAdd(p3, w3, Math::XMVectorMultiply(p4, w4)))));
+								const Vector interpolated = Math::XMVectorAbs(Math::XMVectorMultiplyAdd(p1, w1, Math::XMVectorMultiplyAdd(p2, w2, Math::XMVectorMultiplyAdd(p3, w3, Math::XMVectorMultiply(p4, w4)))));
 								Math::XMStoreFloat3(&hdriPixel, interpolated);
 							}
 							else
 							{
-								U32 hdriXIdx = std::clamp(static_cast<U32>(hdriX), 0U, surface.GetWidth() - 1);
-								U32 hdriYIdx = std::clamp(static_cast<U32>(hdriY), 0U, surface.GetHeight() - 1);
+								const U32 hdriXIdx = std::clamp(static_cast<U32>(hdriX), 0U, surface.GetWidth() - 1);
+								const U32 hdriYIdx = std::clamp(static_cast<U32>(hdriY), 0U, surface.GetHeight() - 1);
 								hdriPixel = *reinterpret_cast<const Float3*>(hdriBuffer + hdriYIdx * hdriRowSize + hdriXIdx * pixelSize);
 							}
 

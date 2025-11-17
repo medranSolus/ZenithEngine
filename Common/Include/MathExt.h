@@ -29,8 +29,8 @@ namespace ZE::Math
 	// +x, -x, +y, -y, +z, -z
 	constexpr std::array<CubemapFaceTraversalDesc, 6> CUBEMAP_FACES_INFO =
 	{ {
-		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
 		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
 		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
 		{ { CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
 		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
