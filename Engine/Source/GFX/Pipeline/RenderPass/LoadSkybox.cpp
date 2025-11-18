@@ -57,6 +57,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 				Resource::Texture::PackDesc texDesc;
 				ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
 				texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+
+				buildData.SyncStatus.SyncMain(dev);
+				buildData.SyncStatus.SyncCompute(dev);
 				passData.SkyTexture.Free(dev);
 				passData.SkyTexture.Init(dev, buildData.Assets.GetDisk(), texDesc);
 				return UpdateStatus::GpuUploadRequired;

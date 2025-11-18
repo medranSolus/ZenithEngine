@@ -90,6 +90,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 					Resource::Texture::PackDesc texDesc;
 					ZE_TEXTURE_SET_NAME(texDesc, "Environment Map");
 					texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+
+					buildData.SyncStatus.SyncMain(dev);
+					buildData.SyncStatus.SyncCompute(dev);
 					passData.EnvMap.Free(dev);
 					passData.EnvMap.Init(dev, buildData.Assets.GetDisk(), texDesc);
 					status = UpdateStatus::GpuUploadRequired;
@@ -112,6 +115,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 					texDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(textures));
 					passData.LutSource = passData.NewLutSource;
 					passData.NewLutSource = "";
+
+					buildData.SyncStatus.SyncMain(dev);
+					buildData.SyncStatus.SyncCompute(dev);
 					passData.BrdfLut.Free(dev);
 					passData.BrdfLut.Init(dev, buildData.Assets.GetDisk(), texDesc);
 					status = UpdateStatus::GpuUploadRequired;

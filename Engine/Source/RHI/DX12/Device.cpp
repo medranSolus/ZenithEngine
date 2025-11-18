@@ -318,7 +318,7 @@ namespace ZE::RHI::DX12
 #endif
 		if (ffxApiDll)
 		{
-			const BOOL res = FreeLibrary(ffxApiDll);
+			[[maybe_unused]] const BOOL res = FreeLibrary(ffxApiDll);
 			ZE_ASSERT(res, "Error unloading amd_fidelityfx_loader_dx12.dll!");
 			ffxApiDll = nullptr;
 		}

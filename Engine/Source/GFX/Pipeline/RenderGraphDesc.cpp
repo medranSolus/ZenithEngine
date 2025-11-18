@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline
 		ZE_ASSERT(!((desc.Flags & FrameResourceFlag::SyncRenderSize) && (desc.Flags & FrameResourceFlag::SyncDisplaySize)),
 			"Cannot sync same resource to both render and display sizes!");
 		ZE_ASSERT(Resources.size() < INVALID_RID, "Too much resources, needed wider type!");
-		for (const auto& res : Resources)
+		for ([[maybe_unused]] const auto& res : Resources)
 		{
 			ZE_ASSERT(res.first != name, "Resource with same name is already present!");
 		}
