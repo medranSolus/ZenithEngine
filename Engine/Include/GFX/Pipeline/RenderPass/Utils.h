@@ -1,5 +1,6 @@
 #pragma once
 #include "GFX/TransformBuffer.h"
+#include "Data/CubemapSource.h"
 #include "Data/Tags.h"
 #include <type_traits>
 
@@ -21,6 +22,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 	constexpr void ViewSortAscending(auto& group, const Vector& cameraPos) noexcept { ViewSort<Sort::Ascending>(group, cameraPos); }
 	// Sort entities back-front according to distance from camera
 	constexpr void ViewSortDescending(auto& group, const Vector& cameraPos) noexcept { ViewSort<Sort::Descending>(group, cameraPos); }
+
+	// Display information about current cubemap source in debug UI
+	void ShowCubemapDebugUI(const char* title, const Data::CubemapSource& source, const char* newSourceDir, Data::CubemapSource& newSource, bool& updateData, bool& updateError) noexcept;
 
 #pragma region Functions
 	template<typename VisibilitySolid, typename VisibilityTransparent>

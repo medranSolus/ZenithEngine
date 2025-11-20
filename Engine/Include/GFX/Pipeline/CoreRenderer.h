@@ -11,6 +11,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		std::string BrdfLutSource;
 		// Path to location of the environment map texture
 		Data::CubemapSource EnvMapSource;
+		// Path to location of the irradiance map texture
+		Data::CubemapSource IrrMapSource;
 		// Path to location of skybox textures
 		Data::CubemapSource SkyboxSource;
 		// Dimensions of used shadow maps

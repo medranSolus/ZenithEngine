@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/LoadSkybox.h"
+#include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GUI/DialogWindow.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
@@ -103,51 +104,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 		if (ImGui::CollapsingHeader("Skybox texture"))
 		{
-			ImGui::Text("Loaded skybox:");
-			switch (execData.SourceData.Type)
-			{
-			case Data::CubemapSourceType::SingleFileCubemap:
-			{
-				ImGui::BulletText(execData.SourceData.Data[0].c_str());
-				break;
-			}
-			default:
-				ZE_ENUM_UNHANDLED();
-			case Data::CubemapSourceType::Folder:
-			{
-				ImGui::BulletText("%s/*%s", execData.SourceData.Data[0].c_str(), execData.SourceData.Data[1].c_str());
-				break;
-			}
-			case Data::CubemapSourceType::CubemapFiles:
-			{
-				ImGui::BulletText("[+X] %s", execData.SourceData.Data[0].c_str());
-				ImGui::BulletText("[-X] %s", execData.SourceData.Data[1].c_str());
-				ImGui::BulletText("[+Y] %s", execData.SourceData.Data[2].c_str());
-				ImGui::BulletText("[-Y] %s", execData.SourceData.Data[3].c_str());
-				ImGui::BulletText("[+Z] %s", execData.SourceData.Data[4].c_str());
-				ImGui::BulletText("[-Z] %s", execData.SourceData.Data[5].c_str());
-				break;
-			}
-			}
-
-			ImGui::Text("Load: "); ImGui::SameLine();
-			if (const auto selection = GUI::DialogWindow::FileBrowserButton("Directory", "Skybox", GUI::DialogWindow::FileType::Image))
-			{
-				std::filesystem::path path = *selection;
-				if (path.has_extension() && path.has_parent_path())
-				{
-					execData.NewSource.InitFolder(std::filesystem::relative(path.parent_path(), std::filesystem::current_path()).string(), path.extension().string());
-					execData.UpdateData = true;
-				}
-				execData.UpdateError = !execData.UpdateData;
-			}
-			ImGui::SameLine();
-			if (const auto selection = GUI::DialogWindow::FileBrowserButton("Single File", "Skybox", GUI::DialogWindow::FileType::Image))
-			{
-				execData.NewSource.InitSingleFileCubemap(*selection);
-				execData.UpdateData = true;
-				execData.UpdateError = !execData.UpdateData;
-			}
+			Utils::ShowCubemapDebugUI("Loaded skybox:", execData.SourceData, "Skybox", execData.NewSource, execData.UpdateData, execData.UpdateError);
 			ImGui::NewLine();
 		}
 		if (execData.UpdateError)
