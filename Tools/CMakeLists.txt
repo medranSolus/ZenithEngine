@@ -29,5 +29,6 @@ macro(create_tools_project)
     target_link_libraries(${TOOL_TARGET} PRIVATE ${COMMON_TARGET})
 endmacro()
 
-add_subdirectory(TexEdit)
 add_subdirectory(BrdfGen)
+add_subdirectory(CubeConv)
+add_subdirectory(TexEdit)

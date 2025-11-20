@@ -60,13 +60,7 @@ namespace TexOps
 			{
 				for (U16 a = startFace; a < endFace; ++a)
 				{
-					// Remap +x and -x faces to compensate for wrapping of the spherical coords
-					U16 faceIndex = a;
-					if (a == 0)
-						faceIndex = 1;
-					else if (a == 1)
-						faceIndex = 0;
-					const Math::CubemapFaceTraversalDesc& faceDesc = Math::CUBEMAP_FACES_INFO.at(faceIndex);
+					const Math::CubemapFaceTraversalDesc& faceDesc = Math::CUBEMAP_FACES_INFO.at(a);
 					const Vector faceStart = Math::XMLoadFloat3(&faceDesc.StartPos);
 					const Vector xDir = Math::XMLoadFloat3(&faceDesc.DirX);
 					const Vector yDir = Math::XMLoadFloat3(&faceDesc.DirY);
