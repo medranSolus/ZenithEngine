@@ -716,6 +716,73 @@ App::App(const CmdParser& params)
 			Settings::Data.emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
 		}
 	}
+	else if (params.GetOption("lightParamsTest"))
+	{
+		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 1.5f, -23.0f }, { 0.0f, 0.0f, 0.0f });
+
+		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.57f, -0.58f, 0.59f });
+
+		// Mesh data for test sphere
+		EID meshId = Settings::CreateEntity();
+		Settings::Data.emplace<std::string>(meshId, "IcoSphere_6");
+		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Sphere::MakeBoundingBox());
+
+		GFX::Primitive::Data<GFX::Vertex> sphere = GFX::Primitive::Sphere::MakeIco(6);
+		GFX::Resource::MeshData meshData =
+		{
+			meshId, nullptr,
+			Utils::SafeCast<U32>(sphere.Vertices.size()),
+			Utils::SafeCast<U32>(sphere.Indices.size()),
+			sizeof(GFX::Vertex), 0
+		};
+		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(sphere.Vertices, sphere.Indices, meshData.IndexSize);
+		Settings::Data.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
+
+		// Create test entities
+		U32 testSize = params.GetNumber("lightParamsTestSize");
+		if (testSize == 0)
+			testSize = 10;
+		S32 positionOffset = testSize >> 1;
+		for (U32 metalness = 1; metalness <= testSize; ++metalness)
+		{
+			for (U32 roughness = 1; roughness <= testSize; ++roughness)
+			{
+				// Material creation
+				EID materialId = Settings::CreateEntity();
+				Settings::Data.emplace<std::string>(materialId, "Sphere_mat_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
+
+				Data::MaterialPBR& data = Settings::Data.emplace<Data::MaterialPBR>(materialId);
+				Data::MaterialBuffersPBR& buffers = Settings::Data.emplace<Data::MaterialBuffersPBR>(materialId);
+				Settings::Data.emplace<Data::PBRFlags>(materialId);
+
+				data.Albedo = { 1.0f, 0.0, 0.0f };
+				data.Metalness = static_cast<float>(metalness) / static_cast<float>(testSize);
+				data.Roughness = static_cast<float>(roughness) / static_cast<float>(testSize);
+
+				const GFX::Resource::Texture::Schema& texSchema = engine.Assets().GetSchemaLib().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
+				GFX::Resource::Texture::PackDesc texDesc;
+				texDesc.Init(texSchema);
+				buffers.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc);
+
+				// Object creation
+				EID model = Settings::CreateEntity();
+				Settings::Data.emplace<std::string>(model, "Sphere_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
+
+				auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
+					Settings::Data.emplace<Data::Transform>(model,
+						Math::NoRotation(),
+						Float3(static_cast<float>(static_cast<S32>(roughness) - positionOffset) * 2.5f, static_cast<float>(static_cast<S32>(metalness) - positionOffset) * 2.5f, 0.0f),
+						Math::UnitScale()));
+				if (Settings::ComputeMotionVectors())
+					Settings::Data.emplace<Data::TransformPrevious>(model, transform);
+
+				Settings::Data.emplace<Data::RenderLambertian>(model);
+				Settings::Data.emplace<Data::ShadowCaster>(model);
+				Settings::Data.emplace<Data::MeshID>(model, meshId);
+				Settings::Data.emplace<Data::MaterialID>(model, materialId);
+			}
+		}
+	}
 	else
 	{
 		// Sample Scene

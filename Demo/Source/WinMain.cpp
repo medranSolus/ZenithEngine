@@ -12,6 +12,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SettingsInitParams::SetupParser(parser);
 		EngineParams::SetupParser(parser);
 
+		parser.AddOption("lightParamsTest");
+		parser.AddNumber("lightParamsTestSize", 10);
 		parser.AddOption("cubePerfTest");
 		parser.AddNumber("cubePerfTestSize", 300000);
 		parser.AddOption("noExternalAssets");
