@@ -14,6 +14,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return Initialize(dev, buildData, formats.front());
 	}
 
+	static constexpr const char* GetPsoName(bool isAO, bool isIBL) noexcept
+	{
+		if (isIBL)
+			return isAO ? "LightCombinePS_AI" : "LightCombinePS_I";
+		return isAO ? "LightCombinePS_A" : "LightCombinePS";
+	}
+
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::LightCombine) };
@@ -36,9 +43,10 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
 	{
 		const bool isAO = Settings::AmbientOcclusionType != AOType::None;
-		if (isAO != passData.AmbientOcclusionEnabled)
+		if (isAO != passData.AmbientOcclusionEnabled || buildData.GraphData.UseIBL != passData.IBLState)
 		{
 			passData.AmbientOcclusionEnabled = isAO;
+			passData.IBLState = buildData.GraphData.UseIBL;
 
 			Resource::PipelineStateDesc psoDesc;
 			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
@@ -46,7 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 			psoDesc.Culling = Resource::CullMode::None;
 			psoDesc.RenderTargetsCount = 1;
 			psoDesc.FormatsRT[0] = outputFormat;
-			psoDesc.SetShader(dev, psoDesc.PS, isAO ? "LightCombinePS_A" : "LightCombinePS", buildData.ShaderCache);
+			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.AmbientOcclusionEnabled, passData.IBLState), buildData.ShaderCache);
 			ZE_PSO_SET_NAME(psoDesc, psoDesc.PS->GetName());
 
 			buildData.SyncStatus.SyncMain(dev);
@@ -62,12 +70,16 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 2, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO
+		desc.AddRange({ 2, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO
+		desc.AddRange({ 3, 2, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // IrrMap + EnvMap + BRDF LUT
+		desc.AddRange({ 4, 5, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
+		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		passData->AmbientOcclusionEnabled = Settings::AmbientOcclusionType == AOType::None;
+		passData->IBLState = !buildData.GraphData.UseIBL;
 		Update(dev, buildData, *passData, outputFormat);
 
 		return passData;
@@ -81,6 +93,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::AmbientOcclusionType != AOType::None),
 			"LightCombine pass not updated for changed ssao input settings!");
+		ZE_ASSERT(data.IBLState == renderData.GraphData.UseIBL,
+			"LightCombine pass not updated for changed IBL settings!");
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "LightCombine", Pixel(0xFF, 0xFF, 0x9F));
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -90,6 +104,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		data.State.Bind(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
+		renderData.Buffers.SetSRV(cl, ctx, ids.IrrMap);
+		renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 

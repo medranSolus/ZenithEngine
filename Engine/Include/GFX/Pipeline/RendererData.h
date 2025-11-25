@@ -56,5 +56,6 @@ namespace ZE::GFX::Pipeline
 		Float4x4 PrevViewProjectionTps;
 		U32 JitterIndex = 0;
 		bool FrameTemporalReset = false;
+		bool UseIBL = false;
 	};
 }

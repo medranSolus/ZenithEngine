@@ -48,6 +48,13 @@ float3 GetFresnelSchlick(const in float3 halfway, const in float3 directionToCam
 	return baseReflectivityF0 + (1.0f - baseReflectivityF0) * pow(1.0f - max(dot(halfway, directionToCamera), 0.0f), 5.0f);
 }
 
+// Get Fresnel-Schlick approximation of reflectivity based on viewing angle for scattered global lighting
+float3 GetFresnelSchlickIBL(const in float3 normal, const in float3 directionToCamera, const in float3 baseReflectivityF0, const in float roughness)
+{
+	const float revRgh = 1.0f - roughness;
+	return baseReflectivityF0 + (max(float3(revRgh, revRgh, revRgh), baseReflectivityF0) - baseReflectivityF0) * pow(1.0f - max(dot(normal, directionToCamera), 0.0f), 5.0f);
+}
+
 float3 GetReflectionCookTorrance(const in float3 directionToLight, const in float3 directionToCamera, const in float3 halfwayCameraLight, const in float3 surfaceNormal, const in float3 fresnel, const in float roughness)
 {
 	const float distribution = GetNormalDistributionTrowbridgeReitzGGX(surfaceNormal, halfwayCameraLight, roughness); // Surface normal distribution for microfacets

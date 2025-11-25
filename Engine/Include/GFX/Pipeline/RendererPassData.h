@@ -28,6 +28,8 @@ namespace ZE::GFX::Pipeline
 		Binding::Library& BindingLib;
 		// Allows creation of resources in render passes
 		Data::AssetsStreamer& Assets;
+		// Additional data provided by the renderer
+		RendererGraphData& GraphData;
 		FfxInterface& FfxInterface;
 		// Range slot used by renderer settings data CBuffer
 		Binding::Range SettingsRange;

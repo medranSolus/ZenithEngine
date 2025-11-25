@@ -1633,7 +1633,7 @@ namespace ZE::GFX::Pipeline
 		GroupRenderPasses(dev, graph);
 
 		// Perform all needed work for active passes
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers, { true, true, true } };
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers, { true, true, true } };
 		std::pair<bool, bool> passStatus = InitializeRenderPasses(dev, graph, buildData);
 		std::pair<bool, bool> startupPassStatus = InitializeStartupPasses(dev, graph, buildData);
 		passStatus.first |= startupPassStatus.first;
@@ -2095,7 +2095,7 @@ namespace ZE::GFX::Pipeline
 		ZE_PERF_GUARD("RenderGraphBuilder::UpdatePassConfiguration");
 
 		BuildResult result = BuildResult::Success;
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
 		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, uploadWait = false, runStartupPasses = false;
 		UInt2 renderSize = Settings::RenderSize;
 
@@ -2490,9 +2490,13 @@ namespace ZE::GFX::Pipeline
 			ImGui::Columns(1);
 
 			ImGui::Text("Ambient color");
+			ImGui::BeginDisabled(graph.execData.GraphData.UseIBL);
 			ImGui::SetNextItemWidth(-5.0f);
 			settingsChange |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&graph.execData.SettingsData.AmbientLight),
 				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
+			ImGui::EndDisabled();
+
+			ImGui::Checkbox("Use IBL", &graph.execData.GraphData.UseIBL);
 			ImGui::NewLine();
 		}
 
