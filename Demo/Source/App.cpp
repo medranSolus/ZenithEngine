@@ -653,17 +653,18 @@ App::App(const CmdParser& params)
 		// Create mesh for all the cubes
 		EID meshId = Settings::CreateEntity();
 		Settings::Data.emplace<std::string>(meshId, "Cube");
-		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::MakeCubeBoundingBox());
+		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Cube::MakeBoundingBox());
 
-		std::vector<U32> indices = GFX::Primitive::MakeCubeIndex();
-		std::vector<GFX::Vertex> vertices = GFX::Primitive::MakeCubeVertex(indices);
+		std::vector<U16> indices = GFX::Primitive::Cube::MakeIndex();
+		std::vector<GFX::Vertex> vertices = GFX::Primitive::Cube::MakeVertex(indices);
 		GFX::Resource::MeshData meshData =
 		{
-			meshId, GFX::Primitive::GetPackedMesh(vertices, indices),
+			meshId, nullptr,
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
-			sizeof(GFX::Vertex), sizeof(U32)
+			sizeof(GFX::Vertex), 0
 		};
+		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
 		Settings::Data.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
 
 		// And some materials for them all

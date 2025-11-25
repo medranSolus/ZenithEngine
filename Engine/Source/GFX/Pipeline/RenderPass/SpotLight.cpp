@@ -68,14 +68,16 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		ZE_PSO_SET_NAME(psoDesc, "SpotLight");
 		passData->State.Init(dev, psoDesc, schema);
 
-		const auto volume = Primitive::MakeConeSolid(8);
-		passData->VolumeMesh.Init(dev, buildData.Assets.GetDisk(),
-			{
-				INVALID_EID, Primitive::GetPackedMesh(volume.Vertices, volume.Indices),
-				ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
-				ZE::Utils::SafeCast<U32>(volume.Indices.size()),
-				sizeof(Float3), sizeof(U32)
-			});
+		const auto volume = Primitive::Cone::MakeSolid(8);
+		Resource::MeshData meshData =
+		{
+			INVALID_EID, nullptr,
+			ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
+			ZE::Utils::SafeCast<U32>(volume.Indices.size()),
+			sizeof(Float3), 0
+		};
+		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(volume.Vertices, volume.Indices, meshData.IndexSize);
+		passData->VolumeMesh.Init(dev, buildData.Assets.GetDisk(), meshData);
 		return passData;
 	}
 

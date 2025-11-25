@@ -42,15 +42,17 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
-		const std::vector<Float3> vertices = Primitive::MakeCubeSolidVertex();
-		const std::vector<U32> indices = Primitive::MakeCubeSolidIndexInverted();
-		passData->MeshData.Init(dev, buildData.Assets.GetDisk(),
-			{
-				INVALID_EID, Primitive::GetPackedMesh(vertices, indices),
-				Utils::SafeCast<U32>(vertices.size()),
-				Utils::SafeCast<U32>(indices.size()),
-				sizeof(Float3), sizeof(U32)
-			});
+		const std::vector<Float3> vertices = Primitive::Cube::MakeSolidVertex();
+		const std::vector<U16> indices = Primitive::Cube::MakeSolidIndexInverted();
+		Resource::MeshData meshData =
+		{
+			INVALID_EID, nullptr,
+			Utils::SafeCast<U32>(vertices.size()),
+			Utils::SafeCast<U32>(indices.size()),
+			sizeof(Float3), 0
+		};
+		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
+		passData->MeshData.Init(dev, buildData.Assets.GetDisk(), meshData);
 
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(dev, psoDesc.VS, "SkyboxVS", buildData.ShaderCache);
