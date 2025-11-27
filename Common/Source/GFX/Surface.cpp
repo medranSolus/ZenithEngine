@@ -77,35 +77,77 @@ namespace ZE::GFX
 	}
 
 	Surface::Surface(U32 width, U32 height, U16 depth, U16 mipCount, U16 arraySize, PixelFormat format, bool alpha, const void* srcImage) noexcept
-		: format(format), alpha(alpha), width(width), height(height), depth(depth), mipCount(mipCount), arraySize(arraySize),
-		memorySize(GetSliceByteSize()* (depth == 1 ? arraySize : depth)), memory(std::make_shared<U8[]>(memorySize))
+		: format(format), alpha(alpha), width(width), height(height), depth(depth), mipCount(mipCount), arraySize(arraySize)
 	{
 		ZE_ASSERT(depth == 1 || arraySize == 1, "Cannot create surface that has both depth and array organization!");
 
+		if (mipCount == 0)
+			mipCount = this->mipCount = Math::GetMipLevels(width, height);
+		const U16 texturesCount = depth == 1 ? arraySize : depth;
+		for (U16 mip = 0; mip < mipCount; ++mip)
+			memorySize += GetSliceByteSize(mip) * texturesCount;
+		memory = std::make_shared<U8[]>(memorySize);
+
 		if (srcImage)
 		{
-			const U32 srcRowSize = width * GetPixelSize();
-			const U64 srcSliceSize = static_cast<U64>(srcRowSize) * height;
-			const U64 destSliceSize = GetSliceByteSize();
-			if (destSliceSize == srcSliceSize)
+			if (mipCount == 1 && GetSliceByteSize() == static_cast<U64>(width * GetPixelSize()) * height)
 				std::memcpy(memory.get(), srcImage, memorySize);
 			else
 			{
-				const U32 destRowSize = GetRowByteSize();
-				const U16 sliceCount = (depth == 1 ? arraySize : depth);
-				if (destRowSize == srcRowSize)
+				U8* dest = memory.get();
+				const U8* src = reinterpret_cast<const U8*>(srcImage);
+
+				for (U16 a = 0; a < arraySize; ++a)
 				{
-					for (U16 slice = 0; slice < sliceCount; ++slice)
-						std::memcpy(memory.get() + destSliceSize * slice, reinterpret_cast<const U8*>(srcImage) + srcSliceSize * slice, srcSliceSize);
-				}
-				else
-				{
-					for (U16 slice = 0; slice < sliceCount; ++slice)
+					U32 currentWidth = width;
+					U32 currentHeight = height;
+					U16 currentDepth = depth;
+
+					for (U16 mip = 0; mip < mipCount; ++mip)
 					{
-						U8* destSlice = memory.get() + destSliceSize * slice;
-						const U8* srcSlice = reinterpret_cast<const U8*>(srcImage) + srcSliceSize * slice;
-						for (U32 row = 0; row < height; ++row)
-							std::memcpy(destSlice + row * destRowSize, srcSlice + row * srcRowSize, srcRowSize);
+						const U32 destRowSize = GetRowByteSize(mip);
+						const U64 destSliceSize = GetSliceByteSize(mip);
+						const U32 srcRowSize = currentWidth * GetPixelSize();
+						const U64 srcSliceSize = static_cast<U64>(srcRowSize) * currentHeight;
+
+						if (destSliceSize == srcSliceSize)
+						{
+							const U64 copySize = srcSliceSize * currentDepth;
+							std::memcpy(dest, src, copySize);
+							dest += copySize;
+							src += copySize;
+						}
+						else
+						{
+							for (U16 d = 0; d < currentDepth; ++d)
+							{
+								if (destRowSize == srcRowSize)
+								{
+									std::memcpy(dest, src, srcSliceSize);
+									dest += destSliceSize;
+									src += srcSliceSize;
+								}
+								else
+								{
+									for (U32 y = 0; y < currentHeight; ++y)
+									{
+										std::memcpy(dest, src, srcRowSize);
+										dest += destRowSize;
+										src += srcRowSize;
+									}
+								}
+							}
+						}
+
+						currentWidth >>= 1;
+						if (currentWidth == 0)
+							currentWidth = 1;
+						currentHeight >>= 1;
+						if (currentHeight == 0)
+							currentHeight = 1;
+						currentDepth >>= 1;
+						if (currentDepth == 0)
+							currentDepth = 1;
 					}
 				}
 			}
