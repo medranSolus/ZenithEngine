@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
 {
 	CmdParser parser;
 	parser.AddOption("fp16", 'f');
-	parser.AddNumber("size", 1024, 's');
-	parser.AddNumber("samples", 2048, 'n');
+	parser.AddNumber("size", 512, 's');
+	parser.AddNumber("samples", 4096, 'n');
 	parser.AddNumber("cores", 1, 'c');
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');

@@ -15,8 +15,18 @@ enum ResultCode : int
 	NotCubemap = -5,
 };
 
+struct ConvolutionParams
+{
+	std::string_view OutputFile = "";
+	std::vector<std::string_view> SourceFiles;
+	bool Fp16 = false;
+	float SampleDelta = 0.025f;
+	U32 Cores = 1;
+	U32 ConvolutionSize = 0;
+};
+
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
-ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view output, float sampleDelta, U32 convolutionSize, U32 cores, bool convFp16) noexcept;
+ResultCode RunJob(ConvolutionParams& params) noexcept;
 
 int main(int argc, char* argv[])
 {
@@ -77,8 +87,9 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	std::string_view output = parser.GetString("out");
-	if (output.empty())
+	ConvolutionParams params = {};
+	params.OutputFile = parser.GetString("out");
+	if (params.OutputFile.empty())
 	{
 		if (!json.empty())
 			return ResultCode::Success;
@@ -86,20 +97,19 @@ int main(int argc, char* argv[])
 		return ResultCode::NoOutputFile;
 	}
 
-	std::vector<std::string_view> sourceArray;
 	std::string_view source = parser.GetString("source");
 	if (source.empty())
 	{
 		bool hasAllFaces = true, anyFace = false;
-		sourceArray.reserve(6);
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-px")).empty();
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-nx")).empty();
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-py")).empty();
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-ny")).empty();
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-pz")).empty();
-		anyFace |= !sourceArray.emplace_back(parser.GetString("source-nz")).empty();
+		params.SourceFiles.reserve(6);
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-px")).empty();
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-nx")).empty();
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-py")).empty();
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-ny")).empty();
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-pz")).empty();
+		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-nz")).empty();
 
-		for (const auto& face : sourceArray)
+		for (const auto& face : params.SourceFiles)
 		{
 			if (face.empty())
 			{
@@ -120,15 +130,16 @@ int main(int argc, char* argv[])
 		}
 	}
 	else
-		sourceArray.emplace_back(source);
+		params.SourceFiles.emplace_back(source);
 
-	bool fp16 = parser.GetOption("fp16");
+	params.Fp16 = parser.GetOption("fp16");
 	U32 deltaParam = parser.GetNumber("sample-delta");
-	float sampleDelta = deltaParam == 0 ? 0.025f : 1.0f / static_cast<float>(deltaParam);
-	U32 cores = parser.GetNumber("cores");
-	U32 resize = parser.GetNumber("resize");
+	if (deltaParam != 0)
+		params.SampleDelta = 1.0f / static_cast<float>(deltaParam);
+	params.Cores = parser.GetNumber("cores");
+	params.ConvolutionSize = parser.GetNumber("resize");
 
-	return RunJob(sourceArray, output, sampleDelta, resize, cores, fp16);
+	return RunJob(params);
 }
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept
@@ -182,30 +193,27 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		}
 	}
 
-	bool fp16 = false;
+	ConvolutionParams params = {};
 	if (command.contains("fp16"))
-		fp16 = command["fp16"].get<bool>();
-	float sampleDelta = 0.025f;
+		params.Fp16 = command["fp16"].get<bool>();
 	if (command.contains("sample-delta"))
-		sampleDelta = command["sample-delta"].get<float>();
-	U32 cores = 1;
+		params.SampleDelta = command["sample-delta"].get<float>();
 	if (command.contains("cores"))
-		cores = command["cores"].get<U32>();
-	U32 resize = 0;
+		params.Cores = command["cores"].get<U32>();
 	if (command.contains("resize"))
-		resize = command["resize"].get<U32>();
+		params.ConvolutionSize = command["resize"].get<U32>();
 
-	return RunJob(sourceArray, output, sampleDelta, resize, cores, fp16);
+	return RunJob(params);
 }
 
-ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view output, float sampleDelta, U32 convolutionSize, U32 cores, bool convFp16) noexcept
+ResultCode RunJob(ConvolutionParams& params) noexcept
 {
-	ZE_ASSERT(source.size(), "No source files specified for cubemap convolution!");
-	Logger::InfoNoFile("Convoluting cubemap \"" + std::string(source.front()) + "\", output file: " + std::string(output));
+	ZE_ASSERT(params.SourceFiles.size(), "No source files specified for cubemap convolution!");
+	Logger::InfoNoFile("Convoluting cubemap \"" + std::string(params.SourceFiles.front()) + "\", output file: " + std::string(params.OutputFile));
 
-	bool multipleSources = source.size() == 6;
+	bool multipleSources = params.SourceFiles.size() == 6;
 	std::vector<GFX::Surface> cubemap;
-	for (const auto& face : source)
+	for (const auto& face : params.SourceFiles)
 	{
 		if (!cubemap.emplace_back().Load(face))
 		{
@@ -214,12 +222,12 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 		}
 	}
 
-	if ((source.size() != 1 && !multipleSources) || (source.size() == 1 && cubemap.front().GetArraySize() != 6))
+	if ((params.SourceFiles.size() != 1 && !multipleSources) || (params.SourceFiles.size() == 1 && cubemap.front().GetArraySize() != 6))
 	{
 		if (multipleSources)
 			Logger::Error("Source files do not form a cubemap!");
 		else
-			Logger::Error("Source file \"" + std::string(source.front()) + "\" is not a cubemap!");
+			Logger::Error("Source file \"" + std::string(params.SourceFiles.front()) + "\" is not a cubemap!");
 		return ResultCode::NotCubemap;
 	}
 
@@ -228,14 +236,14 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 	{
 		if (cubemap.front().GetHeight() != cubemapSize)
 		{
-			Logger::Error("Cubemap face \"" + std::string(source.front()) + "\" is not a square!");
+			Logger::Error("Cubemap face \"" + std::string(params.SourceFiles.front()) + "\" is not a square!");
 			return ResultCode::NotCubemap;
 		}
 
 		const PixelFormat format = cubemap.front().GetFormat();
 		if (format != PixelFormat::R16G16B16A16_Float && format != PixelFormat::R32G32B32A32_Float && format != PixelFormat::R32G32B32_Float)
 		{
-			Logger::Error("Cubemap face \"" + std::string(source.front()) + "\" is not in a supported HDR format (R16G16B16A16_Float or R32G32B32A32_Float or R32G32B32_Float)!");
+			Logger::Error("Cubemap face \"" + std::string(params.SourceFiles.front()) + "\" is not in a supported HDR format (R16G16B16A16_Float or R32G32B32A32_Float or R32G32B32_Float)!");
 			return ResultCode::NotCubemap;
 		}
 
@@ -243,19 +251,19 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 		{
 			if (cubemap.at(i).GetWidth() != cubemapSize || cubemap.at(i).GetHeight() != cubemapSize)
 			{
-				Logger::Error("Cubemap face \"" + std::string(source.at(i)) + "\" has different dimmensions than first face!");
+				Logger::Error("Cubemap face \"" + std::string(params.SourceFiles.at(i)) + "\" has different dimmensions than first face!");
 				return ResultCode::NotCubemap;
 			}
 			if (format != cubemap.at(i).GetFormat())
 			{
-				Logger::Error("Cubemap face \"" + std::string(source.at(i)) + "\" has different pixel format than first face!");
+				Logger::Error("Cubemap face \"" + std::string(params.SourceFiles.at(i)) + "\" has different pixel format than first face!");
 				return ResultCode::NotCubemap;
 			}
 		}
 	}
 	else if (cubemap.front().GetWidth() != cubemap.front().GetHeight())
 	{
-		Logger::Error("Cubemap file \"" + std::string(source.front()) + "\" faces are not square!");
+		Logger::Error("Cubemap file \"" + std::string(params.SourceFiles.front()) + "\" faces are not square!");
 		return ResultCode::NotCubemap;
 	}
 	else
@@ -263,26 +271,27 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 		const PixelFormat format = cubemap.front().GetFormat();
 		if (format != PixelFormat::R16G16B16A16_Float && format != PixelFormat::R32G32B32A32_Float && format != PixelFormat::R32G32B32_Float)
 		{
-			Logger::Error("Cubemap file \"" + std::string(source.front()) + "\" is not in a supported HDR format (R16G16B16A16_Float or R32G32B32A32_Float or R32G32B32_Float)!");
+			Logger::Error("Cubemap file \"" + std::string(params.SourceFiles.front()) + "\" is not in a supported HDR format (R16G16B16A16_Float or R32G32B32A32_Float or R32G32B32_Float)!");
 			return ResultCode::NotCubemap;
 		}
 	}
 
-	if (convolutionSize != 0)
+	if (params.ConvolutionSize != 0)
 	{
-		if (convolutionSize > cubemapSize)
+		if (params.ConvolutionSize > cubemapSize)
 		{
 			Logger::Warning("Requested cubemap resize is larger than source cubemap size! Using source size.");
-			convolutionSize = cubemapSize;
+			params.ConvolutionSize = cubemapSize;
 		}
 		else
-			Logger::InfoNoFile(" - Resizing cubemap to " + std::to_string(convolutionSize) + "x" + std::to_string(convolutionSize));
+			Logger::InfoNoFile(" - Resizing cubemap to " + std::to_string(params.ConvolutionSize) + "x" + std::to_string(params.ConvolutionSize));
 	}
 	else
-		convolutionSize = cubemapSize;
+		params.ConvolutionSize = cubemapSize;
 
 	const bool cubemapFp16 = Utils::GetChannelSize(cubemap.front().GetFormat()) == 2;
-	GFX::Surface convolution(convolutionSize, convolutionSize, 1, 1, 6, convFp16 || cubemapFp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
+	const bool convFp16 = params.Fp16 || cubemapFp16;
+	GFX::Surface convolution(params.ConvolutionSize, params.ConvolutionSize, 1, 1, 6, convFp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
 
 	std::vector<U8*> faces;
 	faces.reserve(6);
@@ -313,14 +322,14 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 				const Vector xDir = Math::XMLoadFloat3(&faceDesc.DirX);
 				const Vector yDir = Math::XMLoadFloat3(&faceDesc.DirY);
 
-				for (U32 y = a == begin ? beginRow : 0, rows = a == end - 1 ? endRow : convolutionSize; y < rows; ++y)
+				for (U32 y = a == begin ? beginRow : 0, rows = a == end - 1 ? endRow : params.ConvolutionSize; y < rows; ++y)
 				{
-					const Vector yScale = Math::XMVectorReplicate((static_cast<float>(y) + 0.5f) / static_cast<float>(convolutionSize));
+					const Vector yScale = Math::XMVectorReplicate((static_cast<float>(y) + 0.5f) / static_cast<float>(params.ConvolutionSize));
 					const Vector rowPos = Math::XMVectorMultiplyAdd(yDir, yScale, faceStart);
 
-					for (U32 x = 0; x < convolutionSize; ++x)
+					for (U32 x = 0; x < params.ConvolutionSize; ++x)
 					{
-						const Vector xScale = Math::XMVectorReplicate((static_cast<float>(x) + 0.5f) / static_cast<float>(convolutionSize));
+						const Vector xScale = Math::XMVectorReplicate((static_cast<float>(x) + 0.5f) / static_cast<float>(params.ConvolutionSize));
 						const Vector hemisphereNormal = Math::XMVector3Normalize(Math::XMVectorMultiplyAdd(xDir, xScale, rowPos));
 						const Vector tan = Math::XMVector3Normalize(Math::XMVector3Cross(up, hemisphereNormal));
 						const Vector bitan = Math::XMVector3Normalize(Math::XMVector3Cross(hemisphereNormal, tan));
@@ -328,11 +337,11 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 						U64 samples = 0;
 						Vector irradiance = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-						for (float phi = 0.0f; phi < Math::PI2; phi += sampleDelta)
+						for (float phi = 0.0f; phi < Math::PI2; phi += params.SampleDelta)
 						{
 							const float phiSin = std::sinf(phi);
 							const float phiCos = std::cosf(phi);
-							for (float theta = sampleDelta; theta < static_cast<float>(M_PI_2); theta += sampleDelta)
+							for (float theta = params.SampleDelta; theta < static_cast<float>(M_PI_2); theta += params.SampleDelta)
 							{
 								// Spherical to cartesian in tangent space
 								const float thetaSin = std::sinf(theta);
@@ -450,35 +459,35 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 		};
 
 	U8* convolutionBuffer = convolution.GetBuffer();
-	if (cores > 1)
+	if (params.Cores > 1)
 	{
-		const U32 jobsCount = convolutionSize * 6;
-		cores = std::clamp(cores, 2U, jobsCount);
-		const U32 batchSize = jobsCount / cores;
-		--cores;
+		const U32 jobsCount = params.ConvolutionSize * 6;
+		params.Cores = std::clamp(params.Cores, 2U, jobsCount);
+		const U32 batchSize = jobsCount / params.Cores;
+		--params.Cores;
 
 		U16 arrayOffset = 0;
 		U32 rowOffset = 0;
 		std::vector<std::thread> workers;
-		for (U32 i = 0; i < cores; ++i)
+		for (U32 i = 0; i < params.Cores; ++i)
 		{
 			U16 arrayCount = 1;
 			U32 rowCount = batchSize;
-			while (rowCount > convolutionSize)
+			while (rowCount > params.ConvolutionSize)
 			{
 				++arrayCount;
-				rowCount -= convolutionSize;
+				rowCount -= params.ConvolutionSize;
 			}
 			rowCount += rowOffset;
-			if (rowCount > convolutionSize)
+			if (rowCount > params.ConvolutionSize)
 			{
 				++arrayCount;
-				rowCount -= convolutionSize;
+				rowCount -= params.ConvolutionSize;
 			}
 
 			workers.emplace_back(convolute, convolutionBuffer, arrayOffset, static_cast<U16>(arrayOffset + arrayCount), rowOffset, rowCount);
 
-			if (rowCount == convolutionSize)
+			if (rowCount == params.ConvolutionSize)
 				rowCount = 0;
 			else
 				--arrayCount;
@@ -486,16 +495,16 @@ ResultCode RunJob(const std::vector<std::string_view>& source, std::string_view 
 			arrayOffset += arrayCount;
 			rowOffset = rowCount;
 		}
-		convolute(convolutionBuffer, arrayOffset, 6, rowOffset, convolutionSize);
+		convolute(convolutionBuffer, arrayOffset, 6, rowOffset, params.ConvolutionSize);
 		for (auto& worker : workers)
 			worker.join();
 	}
 	else
-		convolute(convolutionBuffer, 0, 6, 0, convolutionSize);
+		convolute(convolutionBuffer, 0, 6, 0, params.ConvolutionSize);
 
-	if (!convolution.Save(output))
+	if (!convolution.Save(params.OutputFile))
 	{
-		Logger::Error("Cannot save convoluted cubemap to file \"" + std::string(output) + "\"!");
+		Logger::Error("Cannot save convoluted cubemap to file \"" + std::string(params.OutputFile) + "\"!");
 		return ResultCode::CannotSaveFile;
 	}
 	return ResultCode::Success;

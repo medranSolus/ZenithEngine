@@ -90,7 +90,6 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 		UpdateStatus status = UpdateStatus::NoUpdate;
 		if (!passData.UpdateError && passData.UpdateData)
 		{
-			bool updatePerformed = false;
 			if (passData.IrrMapNewSource.Data && passData.IrrMapNewSource != passData.IrrMapSource)
 			{
 				passData.UpdateData = false;
