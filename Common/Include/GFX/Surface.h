@@ -37,6 +37,9 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(Surface);
 		~Surface() = default;
 
+		static constexpr U32 GetRowByteSize(U32 width, PixelFormat format, U16 mip) noexcept { return Math::AlignUp((std::max(width >> mip, 1U) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
+		static constexpr U64 GetSliceByteSize(U32 width, U32 height, PixelFormat format, U16 mip) noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(width, format, mip)) * std::max(height >> mip, 1U), SLICE_PITCH_ALIGNMENT); }
+
 		constexpr PixelFormat GetFormat() const noexcept { return format; }
 		constexpr bool HasAlpha() const noexcept { return alpha; }
 		constexpr U32 GetWidth() const noexcept { return width; }
@@ -44,8 +47,8 @@ namespace ZE::GFX
 		constexpr U16 GetDepth() const noexcept { return depth; }
 		constexpr U16 GetMipCount() const noexcept { return mipCount; }
 		constexpr U16 GetArraySize() const noexcept { return arraySize; }
-		constexpr U32 GetRowByteSize(U16 mip = 0) const noexcept { return Math::AlignUp((std::clamp(width >> mip, 1U, width) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
-		constexpr U64 GetSliceByteSize(U16 mip = 0) const noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(mip)) * std::clamp(height >> mip, 1U, height), SLICE_PITCH_ALIGNMENT); }
+		constexpr U32 GetRowByteSize(U16 mip = 0) const noexcept { return GetRowByteSize(width, format, mip); }
+		constexpr U64 GetSliceByteSize(U16 mip = 0) const noexcept { return GetSliceByteSize(width, height, format, mip); }
 		constexpr U64 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
 

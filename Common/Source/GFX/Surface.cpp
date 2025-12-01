@@ -277,7 +277,7 @@ namespace ZE::GFX
 							{
 								result = spng_get_row_info(ctx, &rowInfo);
 								if (!result)
-									result = spng_decode_row(ctx, memory.get() + width * rowInfo.row_num, srcRowSize);
+									result = spng_decode_row(ctx, memory.get() + destRowSize * rowInfo.row_num, srcRowSize);
 							} while (!result);
 							if (result == SPNG_EOI)
 								result = SPNG_OK;
@@ -499,21 +499,48 @@ namespace ZE::GFX
 		fclose(file);
 
 		// When original file contains alpha then check if it's not all opaque
-		// to avoid setting this texture as source of transparency (only for basic types)
+		// to avoid setting this texture as source of transparency
 		if (checkForAlpha)
 		{
-			for (U32 y = 0; y < height; ++y)
+			alpha = true;
+			U8* srcMemory = memory.get();
+			for (U16 a = 0; a < arraySize; ++a)
 			{
-				const U32 rowOffset = y * GetRowByteSize();
-				for (U32 x = 0; x < width; ++x)
+				U32 currentWidth = width;
+				U32 currentHeight = height;
+				U16 currentDepth = depth;
+				for (U16 mip = 0; mip < mipCount; ++mip)
+				{
+					const U32 rowSize = GetRowByteSize(mip);
+					for (U16 d = 0; d < currentDepth; ++d)
+					{
+						for (U32 y = 0; y < currentHeight; ++y)
+			{
+							const U32 rowOffset = y * rowSize;
+							for (U32 x = 0; x < currentWidth; ++x)
 				{
 					const U32 offset = rowOffset + x * GetPixelSize() + (Utils::GetChannelCount(format) - 1) * Utils::GetChannelSize(format);
 					U32 alphaChannel = 0;
 					for (U8 p = 0; p < Utils::GetChannelSize(format); ++p)
-						alphaChannel |= static_cast<U32>(memory[offset + p]) << p;
+									alphaChannel |= static_cast<U32>(srcMemory[offset + p]) << p;
 
 					if (Utils::GetAlpha(alphaChannel, format) != 1.0f)
 						return success;
+				}
+							srcMemory += rowSize;
+						}
+						srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(SLICE_PITCH_ALIGNMENT)));
+					}
+
+					currentWidth >>= 1;
+					if (currentWidth == 0)
+						currentWidth = 1;
+					currentHeight >>= 1;
+					if (currentHeight == 0)
+						currentHeight = 1;
+					currentDepth >>= 1;
+					if (currentDepth == 0)
+						currentDepth = 1;
 				}
 			}
 			alpha = false;
@@ -545,8 +572,6 @@ namespace ZE::GFX
 			surfData.Depth = depth;
 			surfData.MipCount = mipCount;
 			surfData.ArraySize = arraySize;
-			surfData.RowSize = GetRowByteSize();
-			surfData.SliceSize = GetSliceByteSize();
 			surfData.ImageMemory = memory;
 
 			switch (DDS::EncodeFile(file, surfData))

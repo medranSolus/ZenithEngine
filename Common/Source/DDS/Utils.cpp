@@ -1,4 +1,5 @@
 #include "DDS/Utils.h"
+#include "GFX/Surface.h"
 
 namespace ZE::DDS
 {
@@ -259,13 +260,16 @@ namespace ZE::DDS
 			U16 currentDepth = srcData.Depth;
 			for (U16 mip = 0; mip < srcData.MipCount; ++mip)
 			{
+				const U64 srcSliceSize = GFX::Surface::GetSliceByteSize(currentWidth, currentHeight, srcData.Format, mip);
+				const U32 srcRowSize = GFX::Surface::GetRowByteSize(currentWidth, srcData.Format, mip);
+
 				U32 rowSize, rowCount;
 				GetSurfaceInfo(currentWidth, currentHeight, srcData.Format, rowSize, rowCount);
 
 				// Check if single images or whole depth level can be written at once
-				const bool sameRowSize = rowSize == srcData.RowSize;
+				const bool sameRowSize = rowSize == srcRowSize;
 				const U64 sliceSize = rowSize * rowCount;
-				if (sameRowSize && sliceSize == srcData.SliceSize)
+				if (sameRowSize && sliceSize == srcSliceSize)
 				{
 					const U64 depthLevelSize = currentDepth * sliceSize;
 					if (fwrite(srcImageMemory, depthLevelSize, 1, file) != 1)
@@ -280,7 +284,7 @@ namespace ZE::DDS
 						{
 							if (fwrite(srcImageMemory, sliceSize, 1, file) != 1)
 								return FileResult::WriteError;
-							srcImageMemory += srcData.SliceSize;
+							srcImageMemory += srcSliceSize;
 						}
 						else
 						{
@@ -288,7 +292,7 @@ namespace ZE::DDS
 							{
 								if (fwrite(srcImageMemory, rowSize, 1, file) != 1)
 									return FileResult::WriteError;
-								srcImageMemory += srcData.RowSize;
+								srcImageMemory += srcRowSize;
 							}
 						}
 					}
