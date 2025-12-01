@@ -789,14 +789,7 @@ namespace ZE::Utils
 		case PixelFormat::R32G32B32A32_SInt:
 			return static_cast<float>(static_cast<S32>(alphaChannel));
 		case PixelFormat::R16G16B16A16_Float:
-		{
-			S32 fpInt32 = ((alphaChannel & 0x8000) << 16);
-			fpInt32 |= ((alphaChannel & 0x7fff) << 13) + 0x38000000;
-
-			float f32 = 0.0f;
-			std::memcpy(&f32, &fpInt32, sizeof(float));
-			return f32;
-		}
+			return Math::FP16::DecodeFloat16(static_cast<U16>(alphaChannel));
 		case PixelFormat::R16G16B16A16_UInt:
 			return static_cast<float>(alphaChannel & UINT16_MAX);
 		case PixelFormat::R16G16B16A16_SInt:
@@ -950,10 +943,7 @@ namespace ZE::Utils
 		case PixelFormat::R8_SInt:
 		case PixelFormat::R8_UNorm:
 		case PixelFormat::R8_SNorm:
-		{
-			ZE_FAIL("Extracting channel from single channel texture is pointless!");
 			return format;
-		}
 		case PixelFormat::Unknown:
 		case PixelFormat::R24G8_DepthStencil:
 		case PixelFormat::R32G8_DepthStencil:

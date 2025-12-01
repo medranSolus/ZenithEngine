@@ -2,6 +2,15 @@
 
 namespace ZE::Math::Light
 {
+	Vector ImportanceSampleGGX(const Float2& Xi, float roughness, Vector N) noexcept
+	{
+		Vector up = XMVectorGetZ(XMVectorAbs(N)) < 0.999f ? XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f) : XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+		Vector tan = XMVector3Normalize(XMVector3Cross(up, N));
+		Vector bitan = XMVector3Cross(N, tan);
+
+		return ImportanceSampleGGX(Xi, roughness, N, tan, bitan);
+	}
+
 	Vector ImportanceSampleGGX(const Float2& Xi, float roughness, Vector N, Vector tan, Vector bitan) noexcept
 	{
 		const float a = roughness * roughness;
@@ -35,7 +44,7 @@ namespace ZE::Math::Light
 
 		for (U32 i = 0; i < samples; ++i)
 		{
-			Float2 Xi = Hammersley(i, samples);
+			Float2 Xi = HammersleySequence(i, samples);
 			Vector H = ImportanceSampleGGX(Xi, roughness, N, tan, bitan);
 			Vector L = XMVector3Normalize(XMVectorSubtract(XMVectorMultiply(XMVectorMultiply(XMVectorReplicate(2.0f), XMVector3Dot(V, H)), H), V));
 

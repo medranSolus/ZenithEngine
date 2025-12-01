@@ -15,6 +15,7 @@ namespace ZE::Math::Light
 		quad = 75.0f / static_cast<float>(range * range);
 	}
 
+	// Van der Corput radical inverse sequence
 	constexpr float RadicalInverse_VdC(U32 bits) noexcept
 	{
 		bits = (bits << 16) | (bits >> 16);
@@ -25,7 +26,7 @@ namespace ZE::Math::Light
 		return static_cast<float>(static_cast<double>(bits) * 2.3283064365386963e-10);
 	}
 
-	constexpr Float2 Hammersley(U32 i, U32 N) noexcept
+	constexpr Float2 HammersleySequence(U32 i, U32 N) noexcept
 	{
 		return { static_cast<float>(i) / static_cast<float>(N), RadicalInverse_VdC(i) };
 	}
@@ -50,6 +51,7 @@ namespace ZE::Math::Light
 		return GeometrySchlickGGX(NdotV, roughnessRemapped) * GeometrySchlickGGX(NdotL, roughnessRemapped);
 	}
 
+	Vector ImportanceSampleGGX(const Float2& Xi, float roughness, Vector N) noexcept;
 	Vector ImportanceSampleGGX(const Float2& Xi, float roughness, Vector N, Vector tan, Vector bitan) noexcept;
 	Float2 IntegrateBRDF(float NdotV, float roughness, U32 samples) noexcept;
 }
