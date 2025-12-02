@@ -15,7 +15,17 @@ file(GLOB FFXSDK_SHARED_SOURCES
     "${FFXSDK_SHARED_PATH}/*.h")
 file(GLOB FFXSDK_PUBLIC_SOURCES
     "${FFXSDK_HOST_PATH}/*.h")
-    
+
+
+
+# Macro for specifying dependecies between FidelityFX SDK effects
+#	EFFECT_NAME = name of given effect
+#	DEP_LIST = list of effect dependencies
+# Returns link targets in variable FFXSDK_TARGETS
+macro(add_fidelityfx_target_dep EFFECT_NAME DEP_LIST)
+    set(FFX${EFFECT_NAME}_DEP_LIST "${DEP_LIST}")
+    list(TRANSFORM FFX${EFFECT_NAME}_DEP_LIST PREPEND FFX)
+endmacro()
 
 # Macro for adding FidelityFX SDK effects to project targets
 #	EFFECT_NAME = name of given effect
@@ -23,10 +33,25 @@ file(GLOB FFXSDK_PUBLIC_SOURCES
 macro(add_fidelityfx_target EFFECT_NAME)
     string(TOLOWER ${EFFECT_NAME} FFX${EFFECT_NAME})
 
-    set(FFX${EFFECT_NAME}_DIR "${FFXSDK_DIR}/src/components/${FFX${EFFECT_NAME}}")
+    set(FFX${EFFECT_NAME}_DIR "${ZE_BUILD_DIR}/FFX${EFFECT_NAME}")
     set(FFX${EFFECT_NAME}_LIB "ffx_${FFX${EFFECT_NAME}}_${FFXSDK_PLATFORM_NAME}")
     set(FFX${EFFECT_NAME}_TARGET "${FFX${EFFECT_NAME}_LIB}")
     set(FFXSDK_TARGETS ${FFXSDK_TARGETS} ${FFX${EFFECT_NAME}_TARGET})
+    set(FFX${EFFECT_NAME}_CMAKE_FILE "${FFX${EFFECT_NAME}_DIR}/CMakeLists.txt")
+    
+    file(WRITE "${FFX${EFFECT_NAME}_CMAKE_FILE}"
+        "cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})\n"
+        "project(FFX${EFFECT_NAME})\n"
+        "link_directories(${EXTERNAL_BIN_DIR})\n")
+        
+    foreach(DEP IN LISTS FFX${EFFECT_NAME}_DEP_LIST)
+        file(APPEND "${FFX${EFFECT_NAME}_CMAKE_FILE}"
+            "add_library(${${DEP}_TARGET} STATIC IMPORTED GLOBAL)\n"
+            "set_target_properties(${${DEP}_TARGET} PROPERTIES IMPORTED_LOCATION ${EXTERNAL_BIN_DIR}/${LIB_PREFIX}${${DEP}_TARGET}${LIB_EXT})\n")
+    endforeach()
+    
+    file(APPEND "${FFX${EFFECT_NAME}_CMAKE_FILE}"
+        "add_subdirectory(${FFXSDK_DIR}/src/components/${FFX${EFFECT_NAME}} ${ZE_BUILD_DIR}/FFX_LIBS)\n")
 endmacro()
 
 # Macro for loading FidelityFX SDK effects as external projects
@@ -40,5 +65,5 @@ macro(add_external_fidelityfx_effect EFFECT_NAME)
 	    "-DFFX_INCLUDE_PATH:STRING=${FFXSDK_DIR}/include"
 	    "-DFFX_HOST_PATH:STRING=${FFXSDK_HOST_PATH}"
 	    "-DFFX_COMPONENTS_PATH:STRING=${FFXSDK_DIR}/src/components")
-    add_external_project(FFX${EFFECT_NAME} "" "" "" "")
+    add_external_project(FFX${EFFECT_NAME} "../FFX_LIBS/" "../FFX_LIBS/" "" "${FFX${EFFECT_NAME}_DEP_LIST}")
 endmacro()

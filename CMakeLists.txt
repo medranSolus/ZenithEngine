@@ -295,6 +295,7 @@ add_fidelityfx_target(DENOISER)
 add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
 add_fidelityfx_target(FSR3UPSCALER)
+add_fidelityfx_target_dep(SSSR "DENOISER")
 add_fidelityfx_target(SSSR)
 
 # Inject debug postfix if library use it
@@ -365,7 +366,7 @@ if(${ZE_COMPILER_MSVC})
 	set(CXX_DEVELOPMENT_FLAGS "/GL- /Gw- /sdl")
 	set(CXX_OPTIMIZATION_FLAGS "/O2 /GL /Gw /Gy /MD /Ob2 /Oi /Ot /Oy /QIntel-jcc-erratum") # Maybe consider /Ob3, TODO: profile
 	add_compilation_flags(
-		"/arch:AVX2 /await /favor:blend /EHsc /fp:fast /fpcvt:IA /GA /GF /GR- /GS /guard:cf- /guard:ehcont- /J /JMC- /MP /nologo /openmp:experimental /permissive- /volatile:iso /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:referenceBinding /Zc:rvalueCast /Zc:wchar_t /D_CRT_SECURE_NO_WARNINGS"
+		"/arch:AVX2 /favor:blend /EHsc /fp:fast /fpcvt:IA /GA /GF /GR- /GS /guard:cf- /guard:ehcont- /J /JMC- /MP /nologo /openmp:experimental /permissive- /volatile:iso /Zc:enumTypes /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:referenceBinding /Zc:rvalueCast /Zc:wchar_t /D_CRT_SECURE_NO_WARNINGS"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MDd /Gy- /Od /Oi- /Oy-"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_DEVELOPMENT_FLAGS} /MD /Gy /Ob1 /Oi /Oy"
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_OPTIMIZATION_FLAGS}"
@@ -391,6 +392,7 @@ if(${ZE_COMPILER_MSVC})
 		/wd4711 # Function selected for automatic inline expansion
 		/wd4800 # Implicit conversion from 'type' to bool
 		/wd4820 # X bytes padding added after data member
+		/wd4864 # Expected 'template' keyword before dependent template name
 		/wd4868 # Compiler may not enforce left-to-right evaluation order in braced initializer list, caused by entt::dense_map, just hide it
 		/wd5026 # Move constructor was implicitly defined as deleted
 		/wd5045 # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
