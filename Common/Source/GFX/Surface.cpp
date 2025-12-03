@@ -154,7 +154,7 @@ namespace ZE::GFX
 		}
 	}
 
-	bool Surface::Load(std::string_view filename, bool forceAlphaCheck) noexcept
+	bool Surface::Load(std::string_view filename, bool forceAlphaCheck, bool allocMips) noexcept
 	{
 		const std::filesystem::path path(filename);
 		std::string ext = path.extension().string();
@@ -498,6 +498,39 @@ namespace ZE::GFX
 		}
 		fclose(file);
 
+		if (success && allocMips)
+		{
+			U16 calculatedMipCount = Math::GetMipLevels(width, height);
+			if (mipCount != calculatedMipCount)
+			{
+				U64 newMemorySize = 0;
+				U16 currentDepth = depth;
+				for (U16 mip = 0; mip < calculatedMipCount; ++mip)
+				{
+					newMemorySize += GetSliceByteSize(mip) * currentDepth;
+					currentDepth >>= 1;
+					if (currentDepth == 0)
+						currentDepth = 1;
+				}
+				newMemorySize *= arraySize;
+
+				std::shared_ptr<U8[]> newMem = std::make_shared<U8[]>(newMemorySize);
+				if (arraySize == 1)
+					std::memcpy(newMem.get(), memory.get(), memorySize);
+				else
+				{
+					const U64 oldImageSize = memorySize / arraySize;
+					const U64 newImageSize = newMemorySize / arraySize;
+
+					for (U16 a = 0; a < arraySize; ++a)
+						std::memcpy(newMem.get() + a * newImageSize, memory.get() + a * oldImageSize, oldImageSize);
+				}
+				memory = newMem;
+				memorySize = newMemorySize;
+				mipCount = calculatedMipCount;
+			}
+		}
+
 		// When original file contains alpha then check if it's not all opaque
 		// to avoid setting this texture as source of transparency
 		if (checkForAlpha)
@@ -515,18 +548,18 @@ namespace ZE::GFX
 					for (U16 d = 0; d < currentDepth; ++d)
 					{
 						for (U32 y = 0; y < currentHeight; ++y)
-			{
+						{
 							const U32 rowOffset = y * rowSize;
 							for (U32 x = 0; x < currentWidth; ++x)
-				{
-					const U32 offset = rowOffset + x * GetPixelSize() + (Utils::GetChannelCount(format) - 1) * Utils::GetChannelSize(format);
-					U32 alphaChannel = 0;
-					for (U8 p = 0; p < Utils::GetChannelSize(format); ++p)
+							{
+								const U32 offset = rowOffset + x * GetPixelSize() + (Utils::GetChannelCount(format) - 1) * Utils::GetChannelSize(format);
+								U32 alphaChannel = 0;
+								for (U8 p = 0; p < Utils::GetChannelSize(format); ++p)
 									alphaChannel |= static_cast<U32>(srcMemory[offset + p]) << p;
 
-					if (Utils::GetAlpha(alphaChannel, format) != 1.0f)
-						return success;
-				}
+								if (Utils::GetAlpha(alphaChannel, format) != 1.0f)
+									return success;
+							}
 							srcMemory += rowSize;
 						}
 						srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(SLICE_PITCH_ALIGNMENT)));

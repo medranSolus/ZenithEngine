@@ -57,7 +57,7 @@ namespace ZE::GFX
 		U8* GetBuffer() noexcept { return memory.get(); }
 		const U8* GetBuffer() const noexcept { return memory.get(); }
 
-		bool Load(std::string_view filename, bool forceAlphaCheck = false) noexcept;
+		bool Load(std::string_view filename, bool forceAlphaCheck = false, bool allocMips = false) noexcept;
 		bool Save(std::string_view filename) const noexcept;
 		U8* GetImage(U16 arrayIndex, U16 mipIndex, U16 depthLevel) noexcept;
 		bool ExtractChannel(Surface* channelR, Surface* channelG, Surface* channelB, Surface* channelA) const noexcept;
