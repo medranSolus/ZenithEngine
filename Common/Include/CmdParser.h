@@ -15,11 +15,13 @@ namespace ZE
 			Unknown,
 			Option,
 			Number,
+			Float,
 			String
 		};
 
 		std::unordered_map<std::string, bool> options;
 		std::unordered_map<std::string, U32> numbers;
+		std::unordered_map<std::string, float> floats;
 		std::unordered_map<std::string, std::string_view> strings;
 		std::unordered_map<char, std::pair<ParamType, std::string_view>> shortNames;
 
@@ -36,6 +38,8 @@ namespace ZE
 		void AddOption(std::string_view name, char shortName = ' ') noexcept;
 		// Adds retrieveable number
 		void AddNumber(std::string_view name, U32 defValue = 0, char shortName = ' ') noexcept;
+		// Adds floating-point number
+		void AddFloat(std::string_view name, float defValue = 0.0f, char shortName = ' ') noexcept;
 		// Adds string parameter
 		void AddString(std::string_view name, std::string_view defValue = "", char shortName = ' ') noexcept;
 
@@ -43,6 +47,7 @@ namespace ZE
 		void Parse(std::string_view clParams) noexcept;
 		bool GetOption(std::string_view name) const noexcept;
 		U32 GetNumber(std::string_view name) const noexcept;
+		float GetFloat(std::string_view name) const noexcept;
 		std::string_view GetString(std::string_view name) const noexcept;
 	};
 }

@@ -10,6 +10,8 @@ namespace ZE
 			return true;
 		if (numbers.contains(key))
 			return true;
+		if (floats.contains(key))
+			return true;
 		if (strings.contains(key))
 			return true;
 		return false;
@@ -80,6 +82,8 @@ namespace ZE
 					type = ParamType::Option;
 				else if (numbers.contains(key))
 					type = ParamType::Number;
+				else if (floats.contains(key))
+					type = ParamType::Float;
 				else if (strings.contains(key))
 					type = ParamType::String;
 				else
@@ -118,6 +122,22 @@ namespace ZE
 						std::from_chars(params.at(i).data(), params.at(i).data() + params.at(i).size(), numbers.at(std::string(param)));
 					break;
 				}
+				case ZE::CmdParser::Float:
+				{
+					if (++i >= params.size())
+					{
+						Logger::Error("Parameter list too short, missing value for parameter \"" + std::string(param) + "\"!");
+						return;
+					}
+					if (params.at(i).front() == '-')
+					{
+						Logger::Error("Expected float value for parameter \"" + std::string(param) + "\", but got parameter \"" + std::string(params.at(i)) + "\"!");
+						--i;
+					}
+					else
+						std::from_chars(params.at(i).data(), params.at(i).data() + params.at(i).size(), floats.at(std::string(param)));
+					break;
+				}
 				case ZE::CmdParser::String:
 				{
 					if (++i >= params.size())
@@ -149,6 +169,8 @@ namespace ZE
 				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : ""));
 			for (const auto& val : numbers)
 				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <NUMBER>");
+			for (const auto& val : floats)
+				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <FLOAT>");
 			for (const auto& val : strings)
 				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <STRING>");
 		}
@@ -165,6 +187,13 @@ namespace ZE
 	{
 		ZE_ASSERT(!ParamPresent(name), "Given name has been already used!");
 		numbers.emplace(name, defValue);
+		AddShortName(shortName, ParamType::Number, name);
+	}
+
+	void CmdParser::AddFloat(std::string_view name, float defValue, char shortName) noexcept
+	{
+		ZE_ASSERT(!ParamPresent(name), "Given name has been already used!");
+		floats.emplace(name, defValue);
 		AddShortName(shortName, ParamType::Number, name);
 	}
 
@@ -209,6 +238,15 @@ namespace ZE
 			return numbers.at(key);
 		ZE_FAIL("Unknown number: " + key);
 		return 0;
+	}
+
+	float CmdParser::GetFloat(std::string_view name) const noexcept
+	{
+		std::string key(name);
+		if (floats.contains(key))
+			return floats.at(key);
+		ZE_FAIL("Unknown float: " + key);
+		return 0.0f;
 	}
 
 	std::string_view CmdParser::GetString(std::string_view name) const noexcept
