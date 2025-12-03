@@ -260,8 +260,8 @@ namespace ZE::DDS
 			U16 currentDepth = srcData.Depth;
 			for (U16 mip = 0; mip < srcData.MipCount; ++mip)
 			{
-				const U64 srcSliceSize = GFX::Surface::GetSliceByteSize(currentWidth, currentHeight, srcData.Format, mip);
-				const U32 srcRowSize = GFX::Surface::GetRowByteSize(currentWidth, srcData.Format, mip);
+				const U64 srcSliceSize = GFX::Surface::GetSliceByteSize(currentWidth, currentHeight, srcData.Format, 0);
+				const U32 srcRowSize = GFX::Surface::GetRowByteSize(currentWidth, srcData.Format, 0);
 
 				U32 rowSize, rowCount;
 				GetSurfaceInfo(currentWidth, currentHeight, srcData.Format, rowSize, rowCount);
@@ -284,17 +284,16 @@ namespace ZE::DDS
 						{
 							if (fwrite(srcImageMemory, sliceSize, 1, file) != 1)
 								return FileResult::WriteError;
-							srcImageMemory += srcSliceSize;
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (fwrite(srcImageMemory, rowSize, 1, file) != 1)
+								if (fwrite(srcImageMemory + srcRowSize * row, rowSize, 1, file) != 1)
 									return FileResult::WriteError;
-								srcImageMemory += srcRowSize;
 							}
 						}
+						srcImageMemory += srcSliceSize;
 					}
 				}
 
