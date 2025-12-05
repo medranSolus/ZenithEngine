@@ -7,7 +7,6 @@ namespace TexOps
 		// TODO: Multithreaded version
 		const U8 channelSize = Utils::GetChannelSize(surface.GetFormat());
 		const U8 pixelSize = surface.GetPixelSize();
-		const U32 rowSize = surface.GetRowByteSize();
 		U8* buffer = surface.GetBuffer();
 		for (U16 a = 0; a < surface.GetArraySize(); ++a)
 		{
@@ -16,11 +15,12 @@ namespace TexOps
 			U16 currentDepth = surface.GetDepth();
 			for (U16 mip = 0; mip < surface.GetMipCount(); ++mip)
 			{
+				const U32 rowSize = surface.GetRowByteSize(mip);
 				for (U16 d = 0; d < currentDepth; ++d)
 				{
 					for (U32 y = 0; y < currentHeight; ++y)
 					{
-						// Only place with row alignment, everything above have slive alignment
+						// Only place with row alignment, everything above have slice alignment
 						for (U32 x = 0; x < currentWidth; ++x)
 						{
 							// Assume R8_UNorm for single channel for now
@@ -111,21 +111,18 @@ namespace TexOps
 								else
 									highYIdx = lowYIdx + 1;
 
-								factorX = std::abs(factorX);
-								factorY = std::abs(factorY);
+								std::vector<Float4> samples;
+								samples.resize(4);
+								Float3 temp = *reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + lowXIdx * sizeof(Float3));
+								samples.at(0) = { temp.x, temp.y, temp.z, 0.0f };
+								temp = *reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + lowXIdx * sizeof(Float3));
+								samples.at(1) = { temp.x, temp.y, temp.z, 0.0f };
+								temp = *reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + highXIdx * sizeof(Float3));
+								samples.at(2) = { temp.x, temp.y, temp.z, 0.0f };
+								temp = *reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + highXIdx * sizeof(Float3));
+								samples.at(3) = { temp.x, temp.y, temp.z, 0.0f };
 
-								// Bilinear interpolation weights
-								const Vector w1 = Math::XMVectorReplicate((1.0f - factorY) * (1.0f - factorX));
-								const Vector w2 = Math::XMVectorReplicate(factorY * (1.0f - factorX));
-								const Vector w3 = Math::XMVectorReplicate((1.0f - factorY) * factorX);
-								const Vector w4 = Math::XMVectorReplicate(factorY * factorX);
-
-								const Vector p1 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
-								const Vector p2 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + lowXIdx * sizeof(Float3)));
-								const Vector p3 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + lowYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
-								const Vector p4 = Math::XMLoadFloat3(reinterpret_cast<const Float3*>(hdriBuffer + highYIdx * hdriRowSize + highXIdx * sizeof(Float3)));
-
-								const Vector interpolated = Math::XMVectorAbs(Math::XMVectorMultiplyAdd(p1, w1, Math::XMVectorMultiplyAdd(p2, w2, Math::XMVectorMultiplyAdd(p3, w3, Math::XMVectorMultiply(p4, w4)))));
+								const Vector interpolated = Math::ApplyFilter(Math::FilterType::Bilinear, samples, std::abs(factorX), std::abs(factorY));
 								Math::XMStoreFloat3(&hdriPixel, interpolated);
 							}
 							else

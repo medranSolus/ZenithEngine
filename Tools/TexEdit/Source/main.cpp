@@ -14,8 +14,20 @@ enum ResultCode : int
 	CannotPerformOperation = -4,
 };
 
+struct JobParams
+{
+	std::string_view Source = "";
+	std::string_view OutFile = "";
+	U32 Cores = 1;
+	bool NoAlpha = false;
+	bool FlipY = false;
+	bool HdriCubemap = false;
+	bool Fp16 = false;
+	bool Bilinear = false;
+};
+
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
-ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept;
+ResultCode RunJob(const JobParams& job) noexcept;
 
 int main(int argc, char* argv[])
 {
@@ -61,8 +73,9 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	std::string_view source = parser.GetString("source");
-	if (source.empty())
+	JobParams params = {};
+	params.Source = parser.GetString("source");
+	if (params.Source.empty())
 	{
 		if (!json.empty())
 			return ResultCode::Success;
@@ -70,81 +83,74 @@ int main(int argc, char* argv[])
 		return ResultCode::NoSourceFile;
 	}
 
-	std::string_view outFile = parser.GetString("out");
-	if (outFile.empty())
-		outFile = source;
-	U32 cores = parser.GetNumber("cores");
-	bool noAlpha = parser.GetOption("no-alpha");
-	bool flipY = parser.GetOption("flip-y");
-	bool hdriCubemap = parser.GetOption("hdri-cubemap");
-	bool fp16 = parser.GetOption("fp16");
-	bool bilinear = parser.GetOption("bilinear");
+	params.OutFile = parser.GetString("out");
+	if (params.OutFile.empty())
+		params.OutFile = params.Source;
+	params.Cores = parser.GetNumber("cores");
+	params.NoAlpha = parser.GetOption("no-alpha");
+	params.FlipY = parser.GetOption("flip-y");
+	params.HdriCubemap = parser.GetOption("hdri-cubemap");
+	params.Fp16 = parser.GetOption("fp16");
+	params.Bilinear = parser.GetOption("bilinear");
 
-	return RunJob(source, outFile, cores, noAlpha, flipY, hdriCubemap, fp16, bilinear);
+	return RunJob(params);
 }
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept
 {
-	std::string_view source = "";
+	JobParams params = {};
 	if (command.contains("source"))
-		source = command["source"].get<std::string_view>();
+		params.Source = command["source"].get<std::string_view>();
 	else
 	{
 		Logger::Error("JSON command missing required \"source\" parameter!");
 		return ResultCode::NoSourceFile;
 	}
 
-	std::string_view outFile = "";
 	if (command.contains("out"))
-		outFile = command["out"].get<std::string_view>();
+		params.OutFile = command["out"].get<std::string_view>();
 	else
-		outFile = source;
+		params.OutFile = params.Source;
 
-	U32 cores = 1;
 	if (command.contains("cores"))
-		cores = command["cores"].get<U32>();
-	bool noAlpha = false;
+		params.Cores = command["cores"].get<U32>();
 	if (command.contains("no-alpha"))
-		noAlpha = command["no-alpha"].get<bool>();
-	bool flipY = false;
+		params.NoAlpha = command["no-alpha"].get<bool>();
 	if (command.contains("flip-y"))
-		flipY = command["flip-y"].get<bool>();
-	bool hdriCubemap = false;
+		params.FlipY = command["flip-y"].get<bool>();
 	if (command.contains("hdri-cubemap"))
-		hdriCubemap = command["hdri-cubemap"].get<bool>();
-	bool fp16 = false;
+		params.HdriCubemap = command["hdri-cubemap"].get<bool>();
 	if (command.contains("fp16"))
-		fp16 = command["fp16"].get<bool>();
-	bool bilinear = false;
+		params.Fp16 = command["fp16"].get<bool>();
 	if (command.contains("bilinear"))
-		bilinear = command["bilinear"].get<bool>();
+		params.Bilinear = command["bilinear"].get<bool>();
 
-	return RunJob(source, outFile, cores, noAlpha, flipY, hdriCubemap, fp16, bilinear);
+	return RunJob(params);
 }
 
-ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, bool noAlpha, bool flipY, bool hdriCubemap, bool fp16, bool bilinear) noexcept
+ResultCode RunJob(const JobParams& job) noexcept
 {
 	// Early out if nothing to do
-	if (!noAlpha && !flipY && !hdriCubemap)
+	if (!job.NoAlpha && !job.FlipY && !job.HdriCubemap)
 	{
 		ResultCode retCode = ResultCode::NoWorkPerformed;
-		if (outFile == source)
-			Logger::Warning("Nothing to do for file \"" + std::string(source) + "\"");
+		if (job.OutFile == job.Source)
+			Logger::Warning("Nothing to do for file \"" + std::string(job.Source) + "\"");
 		else
 		{
 			GFX::Surface surface;
-			if (surface.Load(source))
+			if (surface.Load(job.Source))
 			{
-				Logger::Warning("Nothing to do, saving to file \"" + std::string(outFile) + "\"");
-				if (!surface.Save(outFile))
+				Logger::Warning("Nothing to do, saving to file \"" + std::string(job.OutFile) + "\"");
+				if (!surface.Save(job.OutFile))
 				{
-					Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
+					Logger::Error("Error saving to \"" + std::string(job.OutFile) + "\"!");
 					retCode = ResultCode::CannotSaveFile;
 				}
 			}
 			else
 			{
-				Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
+				Logger::Error("Cannot load file \"" + std::string(job.Source) + "\"!");
 				retCode = ResultCode::CannotLoadFile;
 			}
 		}
@@ -152,55 +158,55 @@ ResultCode RunJob(std::string_view source, std::string_view outFile, U32 cores, 
 	}
 
 	GFX::Surface surface;
-	if (!surface.Load(source))
+	if (!surface.Load(job.Source))
 	{
-		Logger::Error("Cannot load file \"" + std::string(source) + "\"!");
+		Logger::Error("Cannot load file \"" + std::string(job.Source) + "\"!");
 		return ResultCode::CannotLoadFile;
 	}
 
 	bool saved = false;
-	if (hdriCubemap)
+	if (job.HdriCubemap)
 	{
-		if (noAlpha || flipY)
+		if (job.NoAlpha || job.FlipY)
 			Logger::Warning("Other operations specified during HDRi format processing will be ignored!");
 		if (2 * surface.GetHeight() != surface.GetWidth())
 			Logger::Warning("Source image is not in expected 2:1 aspect ratio for HDRi to cubemap conversion!");
 
-		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
+		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, job.Fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
 
-		TexOps::ConvertToCubemap(surface, cubemap, cores, bilinear, fp16);
+		TexOps::ConvertToCubemap(surface, cubemap, job.Cores, job.Bilinear, job.Fp16);
 		Logger::Info("Converted to 6-faced cubemap");
-		saved = cubemap.Save(outFile);
+		saved = cubemap.Save(job.OutFile);
 	}
 	else
 	{
 		U8 requiredChannels = 0;
-		if (noAlpha)
+		if (job.NoAlpha)
 			requiredChannels = 4;
-		if (flipY)
+		if (job.FlipY)
 			requiredChannels = 2;
 
 		const U8 channelCount = Utils::GetChannelCount(surface.GetFormat());
 		if (channelCount < requiredChannels)
 		{
-			Logger::Error("Source file \"" + std::string(source) + "\" does not have required channels!");
+			Logger::Error("Source file \"" + std::string(job.Source) + "\" does not have required channels!");
 			return ResultCode::CannotPerformOperation;
 		}
 
-		TexOps::SimpleProcess(surface, cores, noAlpha, flipY);
+		TexOps::SimpleProcess(surface, job.Cores, job.NoAlpha, job.FlipY);
 
-		if (noAlpha)
-			Logger::Info("Alpha channel reseted");
-		if (flipY)
-			Logger::Info("Y channel flipped");
-		saved = surface.Save(outFile);
+		if (job.NoAlpha)
+			Logger::Info("Alpha channel reseted.");
+		if (job.FlipY)
+			Logger::Info("Y channel flipped.");
+		saved = surface.Save(job.OutFile);
 	}
 
 	if (saved)
 	{
-		Logger::Info("Saved texture to file \"" + std::string(outFile) + "\"");
+		Logger::Info("Saved texture to file \"" + std::string(job.OutFile) + "\"");
 		return ResultCode::Success;
 	}
-	Logger::Error("Error saving to \"" + std::string(outFile) + "\"!");
+	Logger::Error("Error saving to \"" + std::string(job.OutFile) + "\"!");
 	return ResultCode::CannotSaveFile;
 }
