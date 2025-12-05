@@ -104,6 +104,76 @@ namespace ZE::Math
 		return box;
 	}
 
+	UInt3 SampleCubemap(const Vector& direction, U32 cubemapSize) noexcept
+	{
+		const float sampleX = XMVectorGetX(direction);
+		const float sampleY = XMVectorGetY(direction);
+		const float sampleZ = XMVectorGetZ(direction);
+
+		// Find which face to sample from
+		Vector sampleAbs = XMVectorAbs(direction);
+
+		U32 sampleFace = UINT32_MAX;
+		Vector uvCoords = {};
+		float uvFactor = 0.5f;
+		if (XMComparisonAllTrue(XMVector3GreaterOrEqualR(XMVectorSplatY(sampleAbs), sampleAbs)))
+		{
+			uvFactor /= XMVectorGetY(sampleAbs);
+
+			float coordY = 0.0f;
+			if (sampleY >= 0.0f)
+			{
+				sampleFace = 2;
+				coordY = sampleZ;
+			}
+			else
+			{
+				sampleFace = 3;
+				coordY = -sampleZ;
+			}
+			uvCoords = XMVectorSet(sampleX, coordY, 0.0f, 0.0f);
+		}
+		else
+		{
+			float coordX = 0.0f;
+			if (XMComparisonAllTrue(XMVector3GreaterOrEqualR(XMVectorSplatX(sampleAbs), sampleAbs)))
+			{
+				uvFactor /= XMVectorGetX(sampleAbs);
+
+				if (sampleX >= 0.0f)
+				{
+					sampleFace = 0;
+					coordX = -sampleZ;
+				}
+				else
+				{
+					sampleFace = 1;
+					coordX = sampleZ;
+				}
+			}
+			else
+			{
+				uvFactor /= XMVectorGetZ(sampleAbs);
+
+				if (sampleZ >= 0.0f)
+				{
+					sampleFace = 4;
+					coordX = sampleX;
+				}
+				else
+				{
+					sampleFace = 5;
+					coordX = -sampleX;
+				}
+			}
+			uvCoords = XMVectorSet(coordX, -sampleY, 0.0f, 0.0f);
+		}
+		uvCoords = XMVectorMultiplyAdd(uvCoords, XMVectorReplicate(uvFactor), XMVectorReplicate(0.5f));
+		uvCoords = XMVectorMultiply(XMVectorSetX(uvCoords, 1.0f - XMVectorGetX(uvCoords)), XMVectorReplicate(static_cast<float>(cubemapSize - 1)));
+
+		return { Utils::SafeCast<U32>(XMVectorGetX(uvCoords)), Utils::SafeCast<U32>(XMVectorGetY(uvCoords)), sampleFace };
+	}
+
 	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX, float bilinearFactorY, const std::vector<float>* filterCoeff) noexcept
 	{
 		// https://bgolus.medium.com/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec

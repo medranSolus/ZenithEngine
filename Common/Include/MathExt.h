@@ -236,6 +236,19 @@ namespace ZE::Math
 		return static_cast<T>((static_cast<T>(0) < val) - (val < static_cast<T>(0)));
 	}
 
+	template<typename T>
+	constexpr T WrapCoord(T coord, T size) noexcept
+	{
+		return (coord % size + size) % size;
+	}
+
+	template<typename T>
+	constexpr T MirrorCoord(T coord, T size) noexcept
+	{
+		const T mod = coord % (size * 2);
+		return mod < size ? (mod < 0 ? std::abs(mod + 1) : mod) : (size * 2 - mod - 1);
+	}
+
 	Float3 GetEulerAngles(const Float4& rotor) noexcept;
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept;
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept;
@@ -245,6 +258,8 @@ namespace ZE::Math
 		bool targetGeometry = false, float geometryOffsetY = 0.0f) noexcept;
 	Matrix GetTransform(const Float3& position, const Float4& rotor, const Float3& scale) noexcept;
 	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept;
+	// Samples cubemap in given direction, returns texel coordinates in cubemap face (X, Y, face index)
+	UInt3 SampleCubemap(const Vector& direction, U32 cubemapSize) noexcept;
 	// Number of filter coefficients must match ceil(sqrt(samples.size()) / 2)
 	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX = 0.5f, float bilinearFactorY = 0.5f, const std::vector<float>* filterCoeff = nullptr) noexcept;
 }
