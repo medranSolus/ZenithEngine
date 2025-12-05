@@ -31,4 +31,5 @@ endmacro()
 
 add_subdirectory(BrdfGen)
 add_subdirectory(CubeConv)
+add_subdirectory(MipGen)
 add_subdirectory(TexEdit)
