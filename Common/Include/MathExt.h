@@ -16,6 +16,17 @@ namespace ZE::Math
 	constexpr Float3 StartPosition() noexcept { return { 0.0f, 0.0f, 0.0f }; }
 	constexpr Float3 UnitScale() noexcept { return { 1.0f, 1.0f, 1.0f }; }
 
+	// Filter to use during image processing
+	enum class FilterType : U8
+	{
+		Box = 0,
+		GammaAverage = 1,
+		Bilinear = 2,
+		Kaiser = 3,
+		Lanczos = 4,
+		Gauss = 5,
+	};
+
 	// Used for traversal of corresponding cubemap face in 3D space
 	struct CubemapFaceTraversalDesc
 	{
@@ -181,9 +192,30 @@ namespace ZE::Math
 	}
 
 	template<typename T>
+	constexpr T Kaiser(T x, T alpha, T length) noexcept
+	{
+		if (x <= length && x >= 0)
+		{
+			T piA = static_cast<T>(M_PI) * alpha;
+			T besselArg = piA * std::sqrt(static_cast<T>(1) - std::pow(static_cast<T>(2) * x / length - 1, static_cast<T>(2)));
+			return std::cyl_bessel_i(alpha, besselArg) / std::cyl_bessel_i(alpha, piA);
+		}
+		return static_cast<T>(0);
+	}
+
+	template<typename T>
+	constexpr T Lanczos(T x, T length) noexcept
+	{
+		if (std::abs(x) < FLT_EPSILON)
+			return static_cast<T>(1);
+		T piX = static_cast<T>(M_PI) * x;
+		return length * std::sin(piX) * std::sin(piX / length) / (piX * piX);
+	}
+
+	template<typename T>
 	constexpr T Gauss(T x, T sigma) noexcept
 	{
-		return static_cast<T>(M_2_SQRTPI) * exp(static_cast<T>(-0.5) * x * x / sigma) / (sigma * static_cast<T>(M_SQRT2 * 2.0));
+		return static_cast<T>(M_2_SQRTPI) * std::exp(static_cast<T>(-0.5) * x * x / sigma) / (sigma * static_cast<T>(M_SQRT2 * 2.0));
 	}
 
 	template<typename T>
@@ -213,4 +245,6 @@ namespace ZE::Math
 		bool targetGeometry = false, float geometryOffsetY = 0.0f) noexcept;
 	Matrix GetTransform(const Float3& position, const Float4& rotor, const Float3& scale) noexcept;
 	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept;
+	// Number of filter coefficients must match ceil(sqrt(samples.size()) / 2)
+	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX = 0.5f, float bilinearFactorY = 0.5f, const std::vector<float>* filterCoeff = nullptr) noexcept;
 }
