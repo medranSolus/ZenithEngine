@@ -1,13 +1,13 @@
 #include "GFX/Surface.h"
 #include "CmdParser.h"
 #include "json.hpp"
+#include <barrier>
 
 namespace json = nlohmann;
 using namespace ZE;
 
 enum ResultCode : int
 {
-	NoWorkPerformed = 1,
 	Success = 0,
 	NoSourceFile = -1,
 	CannotLoadFile = -2,
@@ -202,6 +202,11 @@ ResultCode RunJob(MipParams& job) noexcept
 		Logger::Error("Cannot load file \"" + std::string(job.Source) + "\"!");
 		return ResultCode::CannotLoadFile;
 	}
+	if (surface.GetMipCount() == 1)
+	{
+		Logger::Error("Source texture must have at least 2 mip levels to generate missing mips!");
+		return ResultCode::CannotPerformOperation;
+	}
 
 	// Create filter coefficients if needed
 	std::vector<float> filterCoeffs;
@@ -210,7 +215,6 @@ ResultCode RunJob(MipParams& job) noexcept
 		filterCoeffs.resize((job.WindowSize >> 1) + (job.WindowSize & 1));
 		const U32 coeffSize = Utils::SafeCast<U32>(filterCoeffs.size());
 
-		float firstCoeff = 0.0f;
 		float coeffSum = 0.0f;
 		switch (job.Filter)
 		{
@@ -252,7 +256,7 @@ ResultCode RunJob(MipParams& job) noexcept
 			break;
 		}
 		default:
-			break;
+		break;
 		}
 
 		// Normalize filter coefficients, symetric kernel requires doubling the sum
@@ -272,116 +276,185 @@ ResultCode RunJob(MipParams& job) noexcept
 	const U8 channelSize = pixelSize / channelCount;
 	const bool alphaRemap = channelCount == 4 && job.AlphaTestTreshold != FLT_MAX;
 	const S32 halfWindow = Utils::SafeCast<S32>(job.WindowSize) >> 1;
-	const U64 firstSliceSize = surface.GetSliceByteSize();
 
-	U8* srcBuffer = surface.GetBuffer();
-	U8* mipGenBuffer = srcBuffer + firstSliceSize;
-	for (U16 a = 0; a < surface.GetArraySize(); ++a)
-	{
-		U32 srcWidth = surface.GetWidth();
-		U32 srcHeight = surface.GetHeight();
-		U16 srcDepth = surface.GetDepth();
-		U16 srcMip = 0;
-
-		U32 mipWidth = srcWidth >> 1;
-		U32 mipHeight = srcHeight >> 1;
-		U16 mipDepth = srcDepth >> 1;
-
-		if (job.SrcOriginalLayer)
-			srcBuffer = surface.GetImage(a, 0, 0);
-
-		for (U16 mip = 1; mip < surface.GetMipCount(); ++mip)
+	auto generate = [&](U16 startMip, U16 mipCount, U32 startRow, U32 rowCount)
 		{
-			if (mipWidth == 0)
-				mipWidth = 1;
-			if (mipHeight == 0)
-				mipHeight = 1;
-			if (mipDepth == 0)
-				mipDepth = 1;
-
-			const U64 srcSliceSize = surface.GetSliceByteSize(srcMip);
-			const U64 srcRowSize = surface.GetRowByteSize(srcMip);
-			const U64 sliceSize = surface.GetSliceByteSize(mip);
-			const U64 rowSize = surface.GetRowByteSize(mip);
-			const U32 mipDiff = 1 << (mip - srcMip);
-			for (U16 d = 0; d < mipDepth; ++d)
+			U8* srcBuffer = nullptr;
+			U8* mipGenBuffer = nullptr;
+			for (U16 a = 0; a < surface.GetArraySize(); ++a)
 			{
-				for (U32 y = 0; y < mipHeight; ++y)
+				U32 srcWidth = surface.GetWidth();
+				U32 srcHeight = surface.GetHeight();
+				U16 srcDepth = surface.GetDepth();
+				U16 srcMip = 0;
+
+				if (job.SrcOriginalLayer)
+					srcBuffer = surface.GetImage(a, 0, 0);
+				else
+					srcMip = startMip - 1;
+
+				for (U16 mip = startMip, endMip = mipCount == 1 ? startMip + 1 : surface.GetMipCount(); mip < endMip; ++mip)
 				{
-					// Generate row sampling points
-					std::vector<U32> rowOffsets;
-					rowOffsets.reserve(job.WindowSize);
+					U32 mipWidth = std::max(surface.GetWidth() >> mip, 1U);
+					U32 mipHeight = mipCount == 1 ? startRow + rowCount : std::max(surface.GetHeight() >> mip, 1U);
+					U16 mipDepth = static_cast<U16>(std::max(surface.GetDepth() >> mip, 1));
 
-					const S32 baseY = Utils::SafeCast<S32>(y * mipDiff) + 1;
-					for (S32 i = -halfWindow - (job.WindowSize & 1); i < halfWindow; ++i)
-						rowOffsets.emplace_back(Math::MirrorCoord(Utils::SafeCast<S32>(baseY) + i, Utils::SafeCast<S32>(srcHeight)));
+					const U64 srcSliceSize = surface.GetSliceByteSize(srcMip);
+					const U64 srcRowSize = surface.GetRowByteSize(srcMip);
+					const U64 sliceSize = surface.GetSliceByteSize(mip);
+					const U64 rowSize = surface.GetRowByteSize(mip);
+					const U32 mipDiff = 1 << (mip - srcMip);
 
-					const U64 offset = rowSize * y;
-					for (U32 x = 0; x < mipWidth; ++x)
+					if (job.SrcOriginalLayer)
+						mipGenBuffer = surface.GetImage(a, mip, 0);
+					else
 					{
-						// Generate column sampling points
-						std::vector<U32> columnOffsets;
-						columnOffsets.reserve(job.WindowSize);
+						srcBuffer = surface.GetImage(a, srcMip, 0);
+						mipGenBuffer = srcBuffer + srcSliceSize * srcDepth;
+					}
 
-						const S32 baseX = Utils::SafeCast<S32>(x * mipDiff) + 1;
-						for (S32 i = -halfWindow - (job.WindowSize & 1); i < halfWindow; ++i)
-							columnOffsets.emplace_back(Math::MirrorCoord(Utils::SafeCast<S32>(baseX) + i, Utils::SafeCast<S32>(srcWidth)));
-
-						// Generate samples inside window
-						std::vector<Float4> samples;
-						samples.reserve(static_cast<U64>(job.WindowSize) * job.WindowSize);
-						for (U64 rowOffset : rowOffsets)
+					for (U16 d = 0; d < mipDepth; ++d)
+					{
+						for (U32 y = mipCount == 1 ? startRow : 0; y < mipHeight; ++y)
 						{
-							for (U32 colOffset : columnOffsets)
+							// Generate row sampling points
+							std::vector<U32> rowOffsets;
+							rowOffsets.reserve(job.WindowSize);
+
+							const S32 baseY = Utils::SafeCast<S32>(y * mipDiff) + 1;
+							for (S32 i = -halfWindow - (job.WindowSize & 1); i < halfWindow; ++i)
+								rowOffsets.emplace_back(Math::MirrorCoord(Utils::SafeCast<S32>(baseY) + i, Utils::SafeCast<S32>(srcHeight)));
+
+							const U64 offset = rowSize * y;
+							for (U32 x = 0; x < mipWidth; ++x)
 							{
-								Sample sample = GetPixelSample(srcBuffer + colOffset * pixelSize + rowOffset * srcRowSize, channelSize, channelCount, job.GammaCorrection);
-								// Convert to float for processing
-								samples.emplace_back(ConvertToFloat(sample, format, channelCount));
+								// Generate column sampling points
+								std::vector<U32> columnOffsets;
+								columnOffsets.reserve(job.WindowSize);
+
+								const S32 baseX = Utils::SafeCast<S32>(x * mipDiff) + 1;
+								for (S32 i = -halfWindow - (job.WindowSize & 1); i < halfWindow; ++i)
+									columnOffsets.emplace_back(Math::MirrorCoord(Utils::SafeCast<S32>(baseX) + i, Utils::SafeCast<S32>(srcWidth)));
+
+								// Generate samples inside window
+								std::vector<Float4> samples;
+								samples.reserve(static_cast<U64>(job.WindowSize) * job.WindowSize);
+								for (U64 rowOffset : rowOffsets)
+								{
+									for (U32 colOffset : columnOffsets)
+									{
+										Sample sample = GetPixelSample(srcBuffer + colOffset * pixelSize + rowOffset * srcRowSize, channelSize, channelCount, job.GammaCorrection);
+										// Convert to float for processing
+										samples.emplace_back(ConvertToFloat(sample, format, channelCount));
+									}
+								}
+
+								Float4 mipVal = {};
+								Math::XMStoreFloat4(&mipVal, Math::ApplyFilter(job.Filter, samples, 0.5f, 0.5f, &filterCoeffs));
+
+								// https://asawicki.info/articles/alpha_test.php5
+								if (alphaRemap)
+									mipVal.w = std::max(mipVal.w, (mipVal.w + 2.0f * job.AlphaTestTreshold) / 3.0f);
+
+								// Convert back to original format
+								Sample pixel = ConvertToSourceFormat(mipVal, format, channelCount, job.GammaCorrection);
+								for (U8 i = 0; i < channelCount; ++i)
+									std::memcpy(mipGenBuffer + static_cast<U64>(x) * pixelSize + offset + i * channelSize, &pixel.RGBA[i].UInt, channelSize);
 							}
 						}
 
-						Float4 mipVal = {};
-						Math::XMStoreFloat4(&mipVal, Math::ApplyFilter(job.Filter, samples, 0.5f, 0.5f, &filterCoeffs));
+						srcBuffer += srcSliceSize;
+						mipGenBuffer += sliceSize;
+					}
 
-						// https://asawicki.info/articles/alpha_test.php5
-						if (alphaRemap)
-							mipVal.w = std::max(mipVal.w, (mipVal.w + 2.0f * job.AlphaTestTreshold) / 3.0f);
-
-						// Convert back to original format
-						Sample pixel = ConvertToSourceFormat(mipVal, format, channelCount, job.GammaCorrection);
-						for (U8 i = 0; i < channelCount; ++i)
-							std::memcpy(mipGenBuffer + static_cast<U64>(x) * pixelSize + offset + i * channelSize, &pixel.RGBA[i].UInt, channelSize);
+					if (job.SrcOriginalLayer)
+						srcBuffer -= srcSliceSize * srcDepth;
+					else
+					{
+						++srcMip;
+						srcWidth = mipWidth;
+						srcHeight = mipHeight;
+						srcDepth = mipDepth;
 					}
 				}
-
-				srcBuffer += srcSliceSize;
-				mipGenBuffer += sliceSize;
 			}
+		};
 
-			if (!job.SrcOriginalLayer)
+	if (job.Cores > 1)
+	{
+		struct ThreadTask
+		{
+			U16 MipLevel;
+			U32 RowStart;
+			U32 RowCount;
+		};
+
+		std::vector<ThreadTask> tasks;
+		U32 maxTasks = 0;
+		for (U16 mip = 1; mip < surface.GetMipCount(); ++mip)
+		{
+			U32 rowCount = std::max(surface.GetHeight() >> mip, 1U);
+			// Don't subdivide for small mips too much
+			if (rowCount < 16 || rowCount < job.Cores)
 			{
-				srcWidth >>= 1;
-				if (srcWidth == 0)
-					srcWidth = 1;
-				srcHeight >>= 1;
-				if (srcHeight == 0)
-					srcHeight = 1;
-				srcDepth >>= 1;
-				if (srcDepth == 0)
-					srcDepth = 1;
-				++srcMip;
+				if (maxTasks == 0)
+					maxTasks = Utils::SafeCast<U32>(tasks.size());
+				tasks.emplace_back(mip, 0, rowCount);
 			}
 			else
-				srcBuffer -= firstSliceSize * srcDepth;
+			{
+				U32 mipWorkers = std::clamp(job.Cores, 1U, rowCount);
+				U32 rowsPerTask = rowCount / mipWorkers;
+				ThreadTask task = { mip, 0, rowsPerTask };
 
-			mipWidth >>= 1;
-			mipHeight >>= 1;
-			mipDepth >>= 1;
+				U32 jobsAdded = 1;
+				while (rowCount > rowsPerTask && jobsAdded < job.Cores)
+				{
+					tasks.emplace_back(task);
+					task.RowStart += rowsPerTask;
+					rowCount -= rowsPerTask;
+					++jobsAdded;
+				}
+				task.RowCount = rowCount;
+				tasks.emplace_back(task);
+			}
 		}
-		if (!job.SrcOriginalLayer)
-			srcBuffer += surface.GetSliceByteSize(surface.GetMipCount() - 1);
-		mipGenBuffer += firstSliceSize;
+		maxTasks = Math::AlignDown(maxTasks, job.Cores);
+		job.Cores = std::clamp(job.Cores, 2U, maxTasks);
+
+		std::vector<std::thread> workers;
+		workers.reserve(job.Cores - 1);
+
+		UA16 currentMipLevel = 1;
+		std::barrier mipLevelSync(job.Cores);
+		auto workerFunc = [&](U32 id)
+			{
+				for (U32 taskIdx = id; taskIdx < maxTasks; taskIdx += job.Cores)
+				{
+					const auto& task = tasks.at(taskIdx);
+					generate(task.MipLevel, 1, task.RowStart, task.RowCount);
+
+					// Waiting for other threads to finish before moving to next mip
+					if (!job.SrcOriginalLayer)
+					{
+						currentMipLevel = std::max(task.MipLevel, currentMipLevel.load());
+						mipLevelSync.arrive_and_wait();
+					}
+				}
+				mipLevelSync.arrive_and_drop();
+			};
+		for (U32 i = 1; i < job.Cores; ++i)
+			workers.emplace_back(workerFunc, i);
+		workerFunc(0);
+
+		// Generate last remaining small mips before ending job
+		for (U32 i = maxTasks; i < tasks.size(); ++i)
+			generate(tasks.at(i).MipLevel, 1, tasks.at(i).RowStart, tasks.at(i).RowCount);
+		for (auto& worker : workers)
+			worker.join();
 	}
+	else
+		generate(1, surface.GetMipCount(), 0, 0);
 
 	if (surface.Save(job.OutFile))
 	{
@@ -415,10 +488,10 @@ Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount) 
 	switch (format)
 	{
 	default:
-		ZE_ENUM_UNHANDLED();
+	ZE_ENUM_UNHANDLED();
 	case PixelFormat::Unknown:
-		ZE_FAIL("Unsupported pixel format for float convertion!");
-		[[fallthrough]];
+	ZE_FAIL("Unsupported pixel format for float convertion!");
+	[[fallthrough]];
 	case PixelFormat::R32_Float:
 	{
 		std::memcpy(&val, &pixel, sizeof(Sample));
@@ -494,12 +567,12 @@ Sample ConvertToSourceFormat(const Float4& val, PixelFormat format, U8 channelCo
 	switch (format)
 	{
 	default:
-		ZE_ENUM_UNHANDLED();
+	ZE_ENUM_UNHANDLED();
 	case PixelFormat::Unknown:
-		ZE_FAIL("Unsupported pixel format for converting from float!");
-		[[fallthrough]];
+	ZE_FAIL("Unsupported pixel format for converting from float!");
+	[[fallthrough]];
 	case PixelFormat::R32_Float:
-		break;
+	break;
 	case PixelFormat::R32_UInt:
 	{
 		for (U8 i = 0; i < channelCount; ++i)

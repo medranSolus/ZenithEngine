@@ -154,6 +154,7 @@ namespace TexOps
 			U16 jobSize = Utils::SafeCast<U16>(6 / cores);
 			--cores;
 			std::vector<std::thread> workers;
+			workers.reserve(cores);
 			for (U16 i = 0; i < cores; ++i)
 			{
 				U16 jobOffset = i * jobSize;
