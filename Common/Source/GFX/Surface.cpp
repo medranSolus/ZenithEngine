@@ -197,31 +197,31 @@ namespace ZE::GFX
 				break;
 			}
 			default:
-				ZE_ENUM_UNHANDLED();
+			ZE_ENUM_UNHANDLED();
 			case DDS::FileResult::ReadError:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\"!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\"!");
+			break;
 			case DDS::FileResult::IncorrectMagicNumber:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrect DDS magic number!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrect DDS magic number!");
+			break;
 			case DDS::FileResult::UnknownFormat:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", not supported pixel format!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", not supported pixel format!");
+			break;
 			case DDS::FileResult::MissingCubemapFaces:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", not all cubemap faces defined!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", not all cubemap faces defined!");
+			break;
 			case DDS::FileResult::IllformattedVolumeTexture:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrectly formatted volume texture (ex. array size bigger than 1)!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrectly formatted volume texture (ex. array size bigger than 1)!");
+			break;
 			case DDS::FileResult::IncorrectArraySize:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", wrong value used as array size!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", wrong value used as array size!");
+			break;
 			case DDS::FileResult::Incorrect1DTextureHeight:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", 1D texture with height different than 1!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", 1D texture with height different than 1!");
+			break;
 			case DDS::FileResult::IncorrectDimension:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", unknown texture dimension!");
-				break;
+			Logger::Error("Error reading DDS file \"" + path.string() + "\", unknown texture dimension!");
+			break;
 			}
 		}
 		else if (ext == ".png")
@@ -370,19 +370,19 @@ namespace ZE::GFX
 				switch (components)
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case 1:
-					imageFormat = PixelFormat::R32_Float;
-					break;
+				imageFormat = PixelFormat::R32_Float;
+				break;
 				case 3:
-					imageFormat = PixelFormat::R32G32B32_Float;
-					break;
+				imageFormat = PixelFormat::R32G32B32_Float;
+				break;
 				case 2:
-					expandAlpha = true;
-					[[fallthrough]];
+				expandAlpha = true;
+				[[fallthrough]];
 				case 4:
-					imageFormat = PixelFormat::R32G32B32A32_Float;
-					break;
+				imageFormat = PixelFormat::R32G32B32A32_Float;
+				break;
 				}
 			}
 			if (!srcImage && stbi_is_16_bit_from_file(file))
@@ -391,17 +391,17 @@ namespace ZE::GFX
 				switch (components)
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case 1:
-					imageFormat = PixelFormat::R16_UNorm;
-					break;
+				imageFormat = PixelFormat::R16_UNorm;
+				break;
 				case 2:
 				case 3:
-					expandAlpha = true;
-					[[fallthrough]];
+				expandAlpha = true;
+				[[fallthrough]];
 				case 4:
-					imageFormat = PixelFormat::R16G16B16A16_UNorm;
-					break;
+				imageFormat = PixelFormat::R16G16B16A16_UNorm;
+				break;
 				}
 			}
 			else if (!srcImage)
@@ -410,17 +410,17 @@ namespace ZE::GFX
 				switch (components)
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case 1:
-					imageFormat = PixelFormat::R8_UNorm;
-					break;
+				imageFormat = PixelFormat::R8_UNorm;
+				break;
 				case 2:
 				case 3:
-					expandAlpha = true;
-					[[fallthrough]];
+				expandAlpha = true;
+				[[fallthrough]];
 				case 4:
-					imageFormat = PixelFormat::R8G8B8A8_UNorm;
-					break;
+				imageFormat = PixelFormat::R8G8B8A8_UNorm;
+				break;
 				}
 			}
 
@@ -446,16 +446,16 @@ namespace ZE::GFX
 						switch (channelSize)
 						{
 						default:
-							ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 						case 1:
-							CopyLoadedImage<CopySource::GrayscaleAlpha>(memory.get(), srcImage, width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::GrayscaleAlpha>(memory.get(), srcImage, width, height, destRowSize);
+						break;
 						case 2:
-							CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
+						break;
 						case 4:
-							CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
+						break;
 						}
 					}
 					else
@@ -465,16 +465,16 @@ namespace ZE::GFX
 						switch (channelSize)
 						{
 						default:
-							ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 						case 1:
-							CopyLoadedImage<CopySource::RGB>(memory.get(), srcImage, width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::RGB>(memory.get(), srcImage, width, height, destRowSize);
+						break;
 						case 2:
-							CopyLoadedImage<CopySource::RGB>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::RGB>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
+						break;
 						case 4:
-							CopyLoadedImage<CopySource::RGB>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
-							break;
+						CopyLoadedImage<CopySource::RGB>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
+						break;
 						}
 					}
 				}
@@ -610,7 +610,7 @@ namespace ZE::GFX
 			switch (DDS::EncodeFile(file, surfData))
 			{
 			default:
-				ZE_ENUM_UNHANDLED();
+			ZE_ENUM_UNHANDLED();
 			case DDS::FileResult::WriteError:
 			{
 				success = false;
@@ -618,7 +618,7 @@ namespace ZE::GFX
 				break;
 			}
 			case DDS::FileResult::Ok:
-				break;
+			break;
 			}
 		}
 		else if (ext == ".png")
@@ -705,24 +705,10 @@ namespace ZE::GFX
 		auto getMipOffset = [&](U16 mipLevels, U16 depthLevel) -> U64
 			{
 				U64 offset = 0;
-				U32 currentWidth = width;
-				U32 currentHeight = height;
-				U16 currentDepth = depth;
 				for (U16 mip = 0; mip < mipLevels; ++mip)
-				{
-					offset += Math::AlignUp(static_cast<U64>(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+					offset += GetSliceByteSize(mip) * std::max(depth >> mip, 1);
 
-					currentWidth >>= 1;
-					if (currentWidth == 0)
-						currentWidth = 1;
-					currentHeight >>= 1;
-					if (currentHeight == 0)
-						currentHeight = 1;
-					currentDepth >>= 1;
-					if (currentDepth == 0)
-						currentDepth = 1;
-				}
-				return offset + depthLevel * Math::AlignUp(static_cast<U64>(Math::AlignUp((currentWidth * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT);
+				return offset + depthLevel * GetSliceByteSize(mipLevels);
 			};
 		U8* image = memory.get();
 		for (U16 a = 0; a < arrayIndex; ++a)
@@ -746,7 +732,7 @@ namespace ZE::GFX
 		{
 		default:
 		case 4:
-			break;
+		break;
 		case 2:
 		{
 			if (channelB)
