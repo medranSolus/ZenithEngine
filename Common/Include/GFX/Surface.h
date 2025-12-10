@@ -40,6 +40,8 @@ namespace ZE::GFX
 		static constexpr U32 GetRowByteSize(U32 width, PixelFormat format, U16 mip) noexcept { return Math::AlignUp((std::max(width >> mip, 1U) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
 		static constexpr U64 GetSliceByteSize(U32 width, U32 height, PixelFormat format, U16 mip) noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(width, format, mip)) * std::max(height >> mip, 1U), SLICE_PITCH_ALIGNMENT); }
 
+		static U64 GetMipOffset(U32 width, U32 height, U16 depth, PixelFormat format, U16 mipLevel, U16 depthLevel) noexcept;
+
 		constexpr PixelFormat GetFormat() const noexcept { return format; }
 		constexpr bool HasAlpha() const noexcept { return alpha; }
 		constexpr U32 GetWidth() const noexcept { return width; }
@@ -51,6 +53,7 @@ namespace ZE::GFX
 		constexpr U64 GetSliceByteSize(U16 mip = 0) const noexcept { return GetSliceByteSize(width, height, format, mip); }
 		constexpr U64 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
+		U64 GetMipOffset(U16 mipLevel, U16 depthLevel) noexcept { return GetMipOffset(width, height, depth, format, mipLevel, depthLevel); }
 
 		std::shared_ptr<U8[]> GetMemory() noexcept { return memory; }
 		std::shared_ptr<const U8[]> GetMemory() const noexcept { return memory; }

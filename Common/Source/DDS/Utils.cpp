@@ -34,7 +34,7 @@ namespace ZE::DDS
 			}
 			// No support 24 bits per pixel formats, aka D3DFMT_R8G8B8
 			case 24:
-				break;
+			break;
 			case 16:
 			{
 				if (ZE_IS_MASK(0x7c00, 0x03e0, 0x001f, 0x8000)) return FormatDDS::B5G5R5A1_UNorm;
@@ -152,7 +152,7 @@ namespace ZE::DDS
 			break;
 		}
 		default:
-			break;
+		break;
 		}
 
 		if (blockCompression)
@@ -255,11 +255,12 @@ namespace ZE::DDS
 		U8* srcImageMemory = srcData.ImageMemory.get();
 		for (U16 a = 0; a < srcData.ArraySize; ++a)
 		{
-			U32 currentWidth = header.Width;
-			U32 currentHeight = header.Height;
-			U16 currentDepth = srcData.Depth;
 			for (U16 mip = 0; mip < srcData.MipCount; ++mip)
 			{
+				U32 currentWidth = std::max(header.Width >> mip, 1U);
+				U32 currentHeight = std::max(header.Height >> mip, 1U);
+				U16 currentDepth = std::max<U16>(srcData.Depth >> mip, 1);
+
 				const U64 srcSliceSize = GFX::Surface::GetSliceByteSize(currentWidth, currentHeight, srcData.Format, 0);
 				const U32 srcRowSize = GFX::Surface::GetRowByteSize(currentWidth, srcData.Format, 0);
 
@@ -282,7 +283,7 @@ namespace ZE::DDS
 					{
 						if (sameRowSize)
 						{
-							if (fwrite(srcImageMemory, sliceSize, 1, file) != 1)
+							if (fwrite(srcImageMemory, srcRowSize * currentHeight, 1, file) != 1)
 								return FileResult::WriteError;
 						}
 						else
@@ -296,16 +297,6 @@ namespace ZE::DDS
 						srcImageMemory += srcSliceSize;
 					}
 				}
-
-				currentWidth >>= 1;
-				if (currentWidth == 0)
-					currentWidth = 1;
-				currentHeight >>= 1;
-				if (currentHeight == 0)
-					currentHeight = 1;
-				currentDepth >>= 1;
-				if (currentDepth == 0)
-					currentDepth = 1;
 			}
 		}
 		return FileResult::Ok;
@@ -313,7 +304,7 @@ namespace ZE::DDS
 #undef ZE_DDS_CHECK_WRITE
 	}
 
-	FileResult ParseFile(FILE* file, FileData& destData, U32 destRowAlignment, U32 destSliceAlignment) noexcept
+	FileResult ParseFile(FILE* file, FileData& destData) noexcept
 	{
 		ZE_ASSERT(file, "Empty file to read from!");
 
@@ -388,26 +379,8 @@ namespace ZE::DDS
 		const U16 mipCount = Utils::SafeCast<U16>(header.MipMapCount ? header.MipMapCount : 1);
 		for (U16 a = 0; a < arraySize; ++a)
 		{
-			U32 currentWidth = header.Width;
-			U32 currentHeight = header.Height;
-			U16 currentDepth = depth;
 			for (U16 mip = 0; mip < mipCount; ++mip)
-			{
-				U32 rowSize, rowCount;
-				GetSurfaceInfo(currentWidth, currentHeight, format, rowSize, rowCount);
-
-				destImageSize += Math::AlignUp(Math::AlignUp(rowSize, destRowAlignment) * rowCount, destSliceAlignment) * currentDepth;
-
-				currentWidth >>= 1;
-				if (currentWidth == 0)
-					currentWidth = 1;
-				currentHeight >>= 1;
-				if (currentHeight == 0)
-					currentHeight = 1;
-				currentDepth >>= 1;
-				if (currentDepth == 0)
-					currentDepth = 1;
-			}
+				destImageSize += GFX::Surface::GetSliceByteSize(header.Width, header.Height, format, mip) * std::max(depth >> mip, 1);
 		}
 
 		// Read surfaces from disk to memory directly in padded regions
@@ -415,18 +388,22 @@ namespace ZE::DDS
 		U8* destImageMemory = image.get();
 		for (U16 a = 0; a < arraySize; ++a)
 		{
-			U32 currentWidth = header.Width;
-			U32 currentHeight = header.Height;
-			U16 currentDepth = depth;
 			for (U16 mip = 0; mip < mipCount; ++mip)
 			{
+				U32 currentWidth = std::max(header.Width >> mip, 1U);
+				U32 currentHeight = std::max(header.Height >> mip, 1U);
+				U16 currentDepth = std::max<U16>(depth >> mip, 1);
+
+				const U64 destSliceSize = GFX::Surface::GetSliceByteSize(currentWidth, currentHeight, format, 0);
+				const U32 destRowSize = GFX::Surface::GetRowByteSize(currentWidth, format, 0);
+
 				U32 rowSize, rowCount;
 				GetSurfaceInfo(currentWidth, currentHeight, format, rowSize, rowCount);
 
 				// Check if single images or whole depth level can be read at once
-				const bool sameRowAlignment = (rowSize % destRowAlignment) == 0;
+				const bool sameRowSize = destRowSize == rowSize;
 				const U32 sliceSize = rowSize * rowCount;
-				if (sameRowAlignment && (sliceSize % destSliceAlignment) == 0)
+				if (sameRowSize && destSliceSize == sliceSize)
 				{
 					const U32 depthLevelSize = currentDepth * sliceSize;
 					if (fread(destImageMemory, depthLevelSize, 1, file) != 1)
@@ -435,36 +412,24 @@ namespace ZE::DDS
 				}
 				else
 				{
-					const U32 destRowSize = Math::AlignUp(rowSize, destRowAlignment);
 					for (U32 depthSlice = 0; depthSlice < currentDepth; ++depthSlice)
 					{
-						if (sameRowAlignment)
+						if (sameRowSize)
 						{
-							if (fread(destImageMemory, sliceSize, 1, file) != 1)
+							if (fread(destImageMemory, destRowSize * currentHeight, 1, file) != 1)
 								return FileResult::ReadError;
-							destImageMemory += sliceSize;
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (fread(destImageMemory, rowSize, 1, file) != 1)
+								if (fread(destImageMemory + row * destRowSize, rowSize, 1, file) != 1)
 									return FileResult::ReadError;
-								destImageMemory += destRowSize;
 							}
 						}
+						destImageMemory += destSliceSize;
 					}
 				}
-
-				currentWidth >>= 1;
-				if (currentWidth == 0)
-					currentWidth = 1;
-				currentHeight >>= 1;
-				if (currentHeight == 0)
-					currentHeight = 1;
-				currentDepth >>= 1;
-				if (currentDepth == 0)
-					currentDepth = 1;
 			}
 		}
 

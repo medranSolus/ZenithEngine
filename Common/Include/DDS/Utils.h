@@ -50,7 +50,7 @@ namespace ZE::DDS
 	// Save DDS file to disk
 	FileResult EncodeFile(FILE* file, const SurfaceData& srcData) noexcept;
 	// Load and parse DDS file from disk
-	FileResult ParseFile(FILE* file, FileData& destData, U32 destRowAlignment, U32 destSliceAlignment) noexcept;
+	FileResult ParseFile(FILE* file, FileData& destData) noexcept;
 
 #pragma region Functions
 	// List of mappings between PixelFormat and DDS::FormatDDS for enum decoding in X() macro
@@ -128,8 +128,8 @@ namespace ZE::DDS
 		switch (format)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
-			ZE_DDS_FORMAT_MAPPINGS
+		ZE_ENUM_UNHANDLED();
+		ZE_DDS_FORMAT_MAPPINGS
 		}
 #undef X
 	}
@@ -151,7 +151,7 @@ namespace ZE::DDS
 		case FormatDDS::B8G8R8X8_UNorm_SRGB:
 			ZE_FAIL("Trying to convert unsupported format!");
 			ZE_DDS_FORMAT_MAPPINGS
-				// Convert typeless formats to proper types
+			// Convert typeless formats to proper types
 		case FormatDDS::R32G32B32A32_Typeless: return PixelFormat::R32G32B32A32_UInt;
 		case FormatDDS::R32G32B32_Typeless:    return PixelFormat::R32G32B32_UInt;
 		case FormatDDS::R16G16B16A16_Typeless: return PixelFormat::R16G16B16A16_UInt;

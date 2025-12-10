@@ -154,6 +154,15 @@ namespace ZE::GFX
 		}
 	}
 
+	U64 Surface::GetMipOffset(U32 width, U32 height, U16 depth, PixelFormat format, U16 mipLevel, U16 depthLevel) noexcept
+	{
+		U64 offset = 0;
+		for (U16 mip = 0; mip < mipLevel; ++mip)
+			offset += GetSliceByteSize(width, height, format, mip) * std::max(depth >> mip, 1);
+
+		return offset + depthLevel * GetSliceByteSize(width, height, format, mipLevel);
+	}
+
 	bool Surface::Load(std::string_view filename, bool forceAlphaCheck, bool allocMips) noexcept
 	{
 		const std::filesystem::path path(filename);
@@ -177,7 +186,7 @@ namespace ZE::GFX
 		{
 			tryStbi = false;
 			DDS::FileData ddsData = {};
-			switch (DDS::ParseFile(file, ddsData, ROW_PITCH_ALIGNMENT, SLICE_PITCH_ALIGNMENT))
+			switch (DDS::ParseFile(file, ddsData))
 			{
 			case DDS::FileResult::Ok:
 			{
@@ -702,18 +711,10 @@ namespace ZE::GFX
 			return memory.get() + (arrayIndex + depthLevel) * GetSliceByteSize();
 
 		// Complex path, move by specified mip levels and to selected depth
-		auto getMipOffset = [&](U16 mipLevels, U16 depthLevel) -> U64
-			{
-				U64 offset = 0;
-				for (U16 mip = 0; mip < mipLevels; ++mip)
-					offset += GetSliceByteSize(mip) * std::max(depth >> mip, 1);
-
-				return offset + depthLevel * GetSliceByteSize(mipLevels);
-			};
 		U8* image = memory.get();
 		for (U16 a = 0; a < arrayIndex; ++a)
-			image += getMipOffset(mipCount, 0);
-		return image + getMipOffset(mipIndex, depthLevel);
+			image += GetMipOffset(mipCount, 0);
+		return image + GetMipOffset(mipIndex, depthLevel);
 	}
 
 	bool Surface::ExtractChannel(Surface* channelR, Surface* channelG, Surface* channelB, Surface* channelA) const noexcept
