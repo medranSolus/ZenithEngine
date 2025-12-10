@@ -441,7 +441,8 @@ ResultCode RunJob(MipParams& job) noexcept
 						mipLevelSync.arrive_and_wait();
 					}
 				}
-				mipLevelSync.arrive_and_drop();
+				if (!job.SrcOriginalLayer)
+					mipLevelSync.arrive_and_drop();
 			};
 		for (U32 i = 1; i < job.Cores; ++i)
 			workers.emplace_back(workerFunc, i);
