@@ -40,12 +40,12 @@ namespace ZE::Math
 	// +x, -x, +y, -y, +z, -z
 	constexpr std::array<CubemapFaceTraversalDesc, 6> CUBEMAP_FACES_INFO =
 	{ {
-		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
-		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
-		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
+		{ { -CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
+		{ { CubemapFaceTraversalDesc::POINT, CubemapFaceTraversalDesc::POINT, -CubemapFaceTraversalDesc::POINT }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
 	} };
 
 	constexpr float ToRadians(float angle) noexcept
@@ -260,6 +260,8 @@ namespace ZE::Math
 	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept;
 	// Samples cubemap in given direction, returns texel coordinates in cubemap face (X, Y, face index)
 	UInt3 SampleCubemap(const Vector& direction, U32 cubemapSize) noexcept;
+	// Samples cubemap in given direction, returns UV coords and face index
+	Float2 SampleCubemapUV(const Vector& direction, U32& faceIndex) noexcept;
 	// Number of filter coefficients must match ceil(sqrt(samples.size()) / 2)
 	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX = 0.5f, float bilinearFactorY = 0.5f, const std::vector<float>* filterCoeff = nullptr) noexcept;
 }

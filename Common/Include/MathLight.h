@@ -41,11 +41,11 @@ namespace ZE::Math::Light
 	{
 		float roughnessRemapped;
 		if constexpr (IBL)
-			roughnessRemapped = roughness * roughness / 2.0f;
+			roughnessRemapped = roughness * roughness * 0.5f;
 		else
 		{
 			roughnessRemapped = roughness + 1.0f;
-			roughnessRemapped = roughnessRemapped * roughnessRemapped / 8.0f;
+			roughnessRemapped = roughnessRemapped * roughnessRemapped * 0.125f;
 		}
 
 		return GeometrySchlickGGX(NdotV, roughnessRemapped) * GeometrySchlickGGX(NdotL, roughnessRemapped);

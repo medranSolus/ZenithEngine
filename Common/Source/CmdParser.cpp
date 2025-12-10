@@ -98,9 +98,9 @@ namespace ZE
 				switch (type)
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case ZE::CmdParser::Unknown:
-					break;
+				break;
 				case ZE::CmdParser::Option:
 				{
 					options.at(std::string(param)) = true;
@@ -194,7 +194,7 @@ namespace ZE
 	{
 		ZE_ASSERT(!ParamPresent(name), "Given name has been already used!");
 		floats.emplace(name, defValue);
-		AddShortName(shortName, ParamType::Number, name);
+		AddShortName(shortName, ParamType::Float, name);
 	}
 
 	void CmdParser::AddString(std::string_view name, std::string_view defValue, char shortName) noexcept
