@@ -22,18 +22,28 @@ TEXTURE_EX(materialParams, Texture2D<PackedMaterialGB>, 8, 4);
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
 {
 #ifdef _ZE_LIGHT_COMBINE_IBL
-	
 	const float3 position = GetWorldPosition(tc, tx_depthMap.Sample(splr_PR, tc).x, cb_dynamicData.ViewProjectionInverse);
 	const float3 normal = DecodeNormal(tx_normalMap.Sample(splr_PR, tc));
 	const float3 albedo = tx_albedo.Sample(splr_PR, tc).rgb;
 	const PackedMaterialGB materialData = tx_materialParams.Sample(splr_PR, tc);
 	
+	const float metalness = GetMetalness(materialData);
+	const float roughness = GetRoughness(materialData);
+	
 	const float3 directionToCamera = normalize(cb_dynamicData.CameraPos - position);
 	
-	const float3 fresnel = GetFresnelSchlickIBL(normal, directionToCamera, lerp(0.04f, albedo, GetMetalness(materialData)), GetRoughness(materialData)); 
-	const float3 irradiance = tx_irrMap.Sample(splr_PR, normal).rgb;
+	const float cosTheta = max(dot(normal, directionToCamera), 0.0f);
+	const float3 fresnel = GetFresnelSchlickIBL(cosTheta, lerp(0.04f, albedo, metalness), roughness);
 	
-	float3 ambient = (float3(1.0f, 1.0f, 1.0f) - fresnel) * irradiance * albedo; 
+	const float3 irradiance = tx_irrMap.Sample(splr_LE, normal).rgb;
+	const float3 diffuseLevel = (1.0f - fresnel) * (1.0f - metalness);
+	
+	uint width, height, mipCount;
+	tx_envMap.GetDimensions(0, width, height, mipCount);
+	const float3 prefilteredColor = tx_envMap.SampleLevel(splr_LE, normal, roughness * mipCount).rgb;
+	const float2 envBRDF  = tx_brdfLUT.Sample(splr_PE, float2(cosTheta, roughness)).rg;
+	
+	float3 ambient = diffuseLevel * irradiance * albedo + prefilteredColor * (fresnel * envBRDF.x + envBRDF.y);
 #else
 	float3 ambient = DeleteGammaCorr(cb_settingsData.AmbientLight);
 #endif
