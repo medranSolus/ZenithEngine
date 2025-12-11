@@ -71,10 +71,12 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 2, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO
-		desc.AddRange({ 3, 2, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // IrrMap + EnvMap + BRDF LUT
-		desc.AddRange({ 4, 5, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AddRange({ 1, 2, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // IrrMap
+		desc.AddRange({ 1, 3, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // EnvMap
+		desc.AddRange({ 1, 4, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // BRDF LUT
+		desc.AddRange({ 4, 5, 6, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -104,10 +106,15 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		data.State.Bind(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
-		renderData.Buffers.SetSRV(cl, ctx, ids.IrrMap);
-		renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
+		if (data.IBLState)
+		{
+			renderData.Buffers.SetSRV(cl, ctx, ids.IrrMap);
+			renderData.Buffers.SetSRV(cl, ctx, ids.EnvMap);
+			renderData.Buffers.SetSRV(cl, ctx, ids.BrdfLUT);
+			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+		}
 		cl.DrawFullscreen(dev);
 
 		renderData.Buffers.EndRaster(cl);

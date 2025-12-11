@@ -11,12 +11,12 @@ TEXTURE_EX(ssaoMap, Texture2D<uint>, 1, 2);
 #endif
 #ifdef _ZE_LIGHT_COMBINE_IBL
 TEXTURE_EX(irrMap, TextureCube, 2, 3);
-TEXTURE_EX(envMap, TextureCube, 3, 3);
-TEX2D(brdfLUT, 4, 3);
-TEX2D(depthMap, 5, 4);
-TEXTURE_EX(normalMap,      Texture2D<CodedNormalGB>,    6, 4);
-TEXTURE_EX(albedo,         Texture2D<AlbedoGB>,         7, 4);
-TEXTURE_EX(materialParams, Texture2D<PackedMaterialGB>, 8, 4);
+TEXTURE_EX(envMap, TextureCube, 3, 4);
+TEX2D(brdfLUT, 4, 5);
+TEX2D(depthMap, 5, 6);
+TEXTURE_EX(normalMap,      Texture2D<CodedNormalGB>,    6, 6);
+TEXTURE_EX(albedo,         Texture2D<AlbedoGB>,         7, 6);
+TEXTURE_EX(materialParams, Texture2D<PackedMaterialGB>, 8, 6);
 #endif
 
 float4 main(float2 tc : TEXCOORD) : SV_TARGET
