@@ -138,6 +138,8 @@ set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(FFXAPI_INC_DIR "${FFXAPI_DIR}/api/include")
 set(FFXAPI_UPSCALE_INC_DIR "${FFXAPI_DIR}/upscalers/include")
 set(FFXAPI_FRAMEGEN_INC_DIR "${FFXAPI_DIR}/framegeneration/include")
+set(FFXAPI_DENOISER_INC_DIR "${FFXAPI_DIR}/denoisers/include")
+set(FFXAPI_RADCACHE_INC_DIR "${FFXAPI_DIR}/radiancecache/include")
 set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
@@ -204,6 +206,8 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${FFXAPI_INC_DIR}"
 	"${FFXAPI_UPSCALE_INC_DIR}"
 	"${FFXAPI_FRAMEGEN_INC_DIR}"
+	"${FFXAPI_DENOISER_INC_DIR}"
+	"${FFXAPI_RADCACHE_INC_DIR}"
 	"${FFXSDK_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
 	"${IMGUI_INC_DIR}"
@@ -287,7 +291,7 @@ endif()
 if(${ZE_XESS_ENABLED})
 	set(XESS_TARGET "${XESS_DIR}/lib/${XESS_LIB}.lib")
 endif()
-set(ZLIB_TARGET "${ZLIB_LIB}")
+set(ZLIB_TARGET "zs")
 
 # FidelityFX SDK effects
 add_fidelityfx_target(CACAO)
@@ -494,7 +498,8 @@ endif()
 ########### EXTERNAL PROJECTS ###########
 
 # zlib
-set(ZLIB_CACHE_ARGS "")
+set(ZLIB_CACHE_ARGS "-DZLIB_BUILD_TESTING:BOOL=OFF"
+	"-DZLIB_BUILD_SHARED:BOOL=OFF")
 add_external_project(ZLIB "" "" "" "")
 if(NOT EXISTS "${EXTERNAL_BIN_DIR}/zconf.h")
 	ExternalProject_Add_Step(${ZLIB_TARGET} headerConfig
