@@ -278,37 +278,37 @@ namespace ZE::GFX::FFX
 		switch (dev.GetMaxShaderModel())
 		{
 		case ShaderModel::V5_0:
-			ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
-			[[fallthrough]];
+		ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
+		[[fallthrough]];
 		case ShaderModel::V5_1:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
+		break;
 		case ShaderModel::V6_0:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
+		break;
 		case ShaderModel::V6_1:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
+		break;
 		case ShaderModel::V6_2:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
+		break;
 		case ShaderModel::V6_3:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
+		break;
 		case ShaderModel::V6_4:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+		break;
 		case ShaderModel::V6_5:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+		break;
 		case ShaderModel::V6_6:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
+		break;
 		case ShaderModel::V6_7:
 		case ShaderModel::V6_8:
 		case ShaderModel::V6_9:
-			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
-			break;
+		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
+		break;
 		}
 
 		auto minMax = dev.GetWaveLaneCountRange();
@@ -378,10 +378,12 @@ namespace ZE::GFX::FFX
 		ZE_ASSERT(!ffxInterface.InternalBuffers.Contains(outTexture->internalIndex), "Resource has been already created!");
 
 		Pipeline::FrameResourceDesc resDesc = {};
+		resDesc.Format = GetPixelFormat(createResourceDescription->resourceDescription.format);
 		if (createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_BUFFER)
 		{
-			resDesc.Sizes.X = createResourceDescription->resourceDescription.size;
-			resDesc.Sizes.Y = createResourceDescription->resourceDescription.stride;
+			const U32 formatSize = static_cast<U32>(Utils::GetFormatSize(resDesc.Format));
+			resDesc.Sizes.X = Math::AlignUp(createResourceDescription->resourceDescription.size, formatSize);
+			resDesc.Sizes.Y = Math::AlignUp(createResourceDescription->resourceDescription.stride, formatSize);
 			resDesc.DepthOrArraySize = 1;
 		}
 		else
@@ -396,7 +398,6 @@ namespace ZE::GFX::FFX
 		if ((createResourceDescription->resourceDescription.flags & FFX_RESOURCE_FLAGS_ALIASABLE) == 0)
 			resDesc.Flags |= Pipeline::FrameResourceFlag::Temporal;
 
-		resDesc.Format = GetPixelFormat(createResourceDescription->resourceDescription.format);
 		resDesc.ClearColor = ColorF4{};
 		resDesc.ClearDepth = 0.0f;
 		resDesc.ClearStencil = 0;
@@ -413,9 +414,16 @@ namespace ZE::GFX::FFX
 			initData.LastFrameUsed = UINT64_MAX; // Indication that it shouldn't be removed
 			if (initData.IsBuffer)
 			{
+				std::vector<U8> initValue;
 				Resource::CBufferData data = {};
-				data.Bytes = Utils::SafeCast<U32>(createResourceDescription->initData.size);
-				data.DataStatic = isValue ? &createResourceDescription->initData.value : createResourceDescription->initData.buffer;
+				data.Bytes = Math::AlignUp(Utils::SafeCast<U32>(createResourceDescription->initData.size), static_cast<U32>(Utils::GetFormatSize(resDesc.Format)));
+				if (isValue)
+				{
+					initValue.resize(data.Bytes, createResourceDescription->initData.value);
+					data.DataStatic = initValue.data();
+				}
+				else
+					data.DataStatic = createResourceDescription->initData.buffer;
 				initData.Buffer.Init(dev, ffxInterface.Disk, data);
 			}
 			else
@@ -431,18 +439,18 @@ namespace ZE::GFX::FFX
 				switch (createResourceDescription->resourceDescription.type)
 				{
 				case FFX_RESOURCE_TYPE_TEXTURE1D:
-					texType = Resource::Texture::Type::Tex1D;
-					break;
+				texType = Resource::Texture::Type::Tex1D;
+				break;
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case FFX_RESOURCE_TYPE_TEXTURE2D:
-					break;
+				break;
 				case FFX_RESOURCE_TYPE_TEXTURE_CUBE:
-					texType = Resource::Texture::Type::Cube;
-					break;
+				texType = Resource::Texture::Type::Cube;
+				break;
 				case FFX_RESOURCE_TYPE_TEXTURE3D:
-					texType = Resource::Texture::Type::Tex3D;
-					break;
+				texType = Resource::Texture::Type::Tex3D;
+				break;
 				}
 				packDesc.AddTexture(texType, std::move(surfaces));
 				ZE_TEXTURE_SET_NAME(packDesc, Utils::ToUTF8(createResourceDescription->name) + "_INIT_DATA");
@@ -648,18 +656,18 @@ namespace ZE::GFX::FFX
 				schemaDesc.AddSampler(
 					{
 						GetFilter(desc->samplers[i].filter),
-						{
-							GetAddressMode(desc->samplers[i].addressModeU),
-							GetAddressMode(desc->samplers[i].addressModeV),
-							GetAddressMode(desc->samplers[i].addressModeW)
-						},
-						0.0f,
-						16,
-						Resource::CompareMethod::Never,
-						Resource::Texture::EdgeColor::TransparentBlack,
-						0.0f,
-						FLT_MAX,
-						i
+					{
+						GetAddressMode(desc->samplers[i].addressModeU),
+						GetAddressMode(desc->samplers[i].addressModeV),
+						GetAddressMode(desc->samplers[i].addressModeW)
+					},
+					0.0f,
+					16,
+					Resource::CompareMethod::Never,
+					Resource::Texture::EdgeColor::TransparentBlack,
+					0.0f,
+					FLT_MAX,
+					i
 					});
 			}
 
@@ -854,23 +862,23 @@ namespace ZE::GFX::FFX
 			switch (job.jobType)
 			{
 			case FFX_GPU_JOB_CLEAR_FLOAT:
-				ExecuteClearJob(ffxInterface, cl, ffxInterface.Buffers, job.clearJobDescriptor);
-				break;
+			ExecuteClearJob(ffxInterface, cl, ffxInterface.Buffers, job.clearJobDescriptor);
+			break;
 			case FFX_GPU_JOB_COPY:
-				ExecuteCopyJob(ffxInterface, dev, cl, ffxInterface.Buffers, job.copyJobDescriptor);
-				break;
+			ExecuteCopyJob(ffxInterface, dev, cl, ffxInterface.Buffers, job.copyJobDescriptor);
+			break;
 			case FFX_GPU_JOB_COMPUTE:
-				ExecuteComputeJob(ffxInterface, dev, cl, dynamicBuffer, ffxInterface.Buffers, job.computeJobDescriptor);
-				break;
+			ExecuteComputeJob(ffxInterface, dev, cl, dynamicBuffer, ffxInterface.Buffers, job.computeJobDescriptor);
+			break;
 			case FFX_GPU_JOB_BARRIER:
-				ExecuteBarrierJob(ffxInterface, cl, ffxInterface.Buffers, job.barrierDescriptor);
-				break;
+			ExecuteBarrierJob(ffxInterface, cl, ffxInterface.Buffers, job.barrierDescriptor);
+			break;
 			case FFX_GPU_JOB_DISCARD:
-				ExecuteDiscardJob(ffxInterface, cl, ffxInterface.Buffers, job.discardJobDescriptor);
-				break;
+			ExecuteDiscardJob(ffxInterface, cl, ffxInterface.Buffers, job.discardJobDescriptor);
+			break;
 			default:
-				ZE_FAIL("Unknown FFX GPU job!");
-				break;
+			ZE_FAIL("Unknown FFX GPU job!");
+			break;
 			}
 		}
 		ctx.Jobs.clear();
@@ -911,6 +919,7 @@ namespace ZE::GFX::FFX
 	void ffxBreadcrumbsPrintDeviceInfo(FfxInterface* backendInterface, FfxAllocationCallbacks* allocs, bool extendedInfo, char** printBuffer, U64* printSize)
 	{
 		// TODO: currently no printing of device info
+		ZE_FAIL("No device info!");
 	}
 
 	FfxErrorCode ffxGetPermutationBlobByIndex(FfxEffect effectId, FfxPass passId, FfxBindStage bindStage, uint32_t permutationOptions, FfxShaderBlob* outBlob)
@@ -963,17 +972,17 @@ namespace ZE::GFX::FFX
 		switch (type)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case FFX_RESOURCE_TYPE_BUFFER:
-			return Pipeline::FrameResourceType::Buffer;
+		return Pipeline::FrameResourceType::Buffer;
 		case FFX_RESOURCE_TYPE_TEXTURE1D:
-			return Pipeline::FrameResourceType::Texture1D;
+		return Pipeline::FrameResourceType::Texture1D;
 		case FFX_RESOURCE_TYPE_TEXTURE2D:
-			return Pipeline::FrameResourceType::Texture2D;
+		return Pipeline::FrameResourceType::Texture2D;
 		case FFX_RESOURCE_TYPE_TEXTURE_CUBE:
-			return Pipeline::FrameResourceType::TextureCube;
+		return Pipeline::FrameResourceType::TextureCube;
 		case FFX_RESOURCE_TYPE_TEXTURE3D:
-			return Pipeline::FrameResourceType::Texture3D;
+		return Pipeline::FrameResourceType::Texture3D;
 		}
 	}
 
@@ -1003,27 +1012,27 @@ namespace ZE::GFX::FFX
 		switch (state)
 		{
 		case FFX_RESOURCE_STATE_COMMON:
-			return Pipeline::TextureLayout::Common;
+		return Pipeline::TextureLayout::Common;
 		case FFX_RESOURCE_STATE_UNORDERED_ACCESS:
-			return Pipeline::TextureLayout::UnorderedAccess;
+		return Pipeline::TextureLayout::UnorderedAccess;
 		case FFX_RESOURCE_STATE_COMPUTE_READ:
 		case FFX_RESOURCE_STATE_PIXEL_READ:
 		case FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ:
-			return Pipeline::TextureLayout::ShaderResource;
+		return Pipeline::TextureLayout::ShaderResource;
 		case FFX_RESOURCE_STATE_COPY_SRC:
-			return Pipeline::TextureLayout::CopySource;
+		return Pipeline::TextureLayout::CopySource;
 		case FFX_RESOURCE_STATE_COPY_DEST:
-			return Pipeline::TextureLayout::CopyDest;
+		return Pipeline::TextureLayout::CopyDest;
 		default:
-			ZE_FAIL("Unhandled resource state!");
-			[[fallthrough]];
+		ZE_FAIL("Unhandled resource state!");
+		[[fallthrough]];
 		case FFX_RESOURCE_STATE_GENERIC_READ:
 		case FFX_RESOURCE_STATE_INDIRECT_ARGUMENT:
-			return Pipeline::TextureLayout::GenericRead;
+		return Pipeline::TextureLayout::GenericRead;
 		case FFX_RESOURCE_STATE_PRESENT:
-			return Pipeline::TextureLayout::Present;
+		return Pipeline::TextureLayout::Present;
 		case FFX_RESOURCE_STATE_RENDER_TARGET:
-			return Pipeline::TextureLayout::RenderTarget;
+		return Pipeline::TextureLayout::RenderTarget;
 		}
 	}
 
@@ -1032,17 +1041,17 @@ namespace ZE::GFX::FFX
 		switch (mode)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case FFX_ADDRESS_MODE_WRAP:
-			return Resource::Texture::AddressMode::Repeat;
+		return Resource::Texture::AddressMode::Repeat;
 		case FFX_ADDRESS_MODE_MIRROR:
-			return Resource::Texture::AddressMode::Mirror;
+		return Resource::Texture::AddressMode::Mirror;
 		case FFX_ADDRESS_MODE_CLAMP:
-			return Resource::Texture::AddressMode::Edge;
+		return Resource::Texture::AddressMode::Edge;
 		case FFX_ADDRESS_MODE_BORDER:
-			return Resource::Texture::AddressMode::BorderColor;
+		return Resource::Texture::AddressMode::BorderColor;
 		case FFX_ADDRESS_MODE_MIRROR_ONCE:
-			return Resource::Texture::AddressMode::MirrorOnce;
+		return Resource::Texture::AddressMode::MirrorOnce;
 		}
 	}
 
@@ -1051,13 +1060,13 @@ namespace ZE::GFX::FFX
 		switch (filter)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case FFX_FILTER_TYPE_MINMAGMIP_POINT:
-			return Resource::SamplerType::Point;
+		return Resource::SamplerType::Point;
 		case FFX_FILTER_TYPE_MINMAGMIP_LINEAR:
-			return Resource::SamplerType::Linear;
+		return Resource::SamplerType::Linear;
 		case FFX_FILTER_TYPE_MINMAGLINEARMIP_POINT:
-			return Resource::SamplerType::LinearMinification | Resource::SamplerType::LinearMagnification;
+		return Resource::SamplerType::LinearMinification | Resource::SamplerType::LinearMagnification;
 		}
 	}
 
@@ -1080,6 +1089,9 @@ namespace ZE::GFX::FFX
 
 		if (state.Current != after || state.Undefined)
 		{
+			constexpr FfxResourceStates COMPUTE_STATES = static_cast<FfxResourceStates>(FFX_RESOURCE_STATE_UNORDERED_ACCESS | FFX_RESOURCE_STATE_COMPUTE_READ);
+			constexpr FfxResourceStates GFX_STATES = static_cast<FfxResourceStates>(FFX_RESOURCE_STATE_PIXEL_READ | FFX_RESOURCE_STATE_RENDER_TARGET | FFX_RESOURCE_STATE_DEPTH_ATTACHEMENT);
+
 			// Adjust for resource initialization
 			const Pipeline::TextureLayout currentLayout = state.Undefined ? Pipeline::TextureLayout::Undefined : GetLayout(state.Current);
 			const Pipeline::TextureLayout afterLayout = GetLayout(after);
@@ -1090,8 +1102,8 @@ namespace ZE::GFX::FFX
 
 			ctx.Barriers.emplace_back(GetRID(ffxInterface, internalIndex),
 				currentLayout, afterLayout, accessBefore, accessAfter,
-				Pipeline::GetSyncFromAccess(accessBefore, state.Current & FFX_RESOURCE_STATE_PIXEL_READ, state.Current & FFX_RESOURCE_STATE_COMPUTE_READ, false),
-				Pipeline::GetSyncFromAccess(accessAfter, after & FFX_RESOURCE_STATE_PIXEL_READ, after & FFX_RESOURCE_STATE_COMPUTE_READ, false));
+				state.Undefined ? Base(Pipeline::StageSync::ComputeShading) : Pipeline::GetSyncFromAccess(accessBefore, state.Current & GFX_STATES, state.Current & COMPUTE_STATES, false),
+				Pipeline::GetSyncFromAccess(accessAfter, after & GFX_STATES, after & COMPUTE_STATES, false));
 			state.Current = after;
 			state.Undefined = false;
 		}
