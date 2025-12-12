@@ -107,8 +107,9 @@ namespace ZE::RHI::DX12::Pipeline
 		void EnterRaster() const noexcept;
 		void SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;
+		void FillBarier(D3D12_BUFFER_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 		void FillBarier(D3D12_TEXTURE_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
-		void PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriers, U32 count) const noexcept;
+		void PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriersTex, U32 countTex, const D3D12_BUFFER_BARRIER* barriersBuff, U32 countBuff) const noexcept;
 
 	public:
 		FrameBuffer() = default;
@@ -244,8 +245,11 @@ namespace ZE::RHI::DX12::Pipeline
 
 		D3D12_TEXTURE_BARRIER texBarriers[BarrierCount];
 		for (U32 i = 0; i < BarrierCount; ++i)
+		{
+			ZE_ASSERT(!IsBuffer(barriers.at(i).Resource), "Buffer resources are not supported in this barrier path!");
 			FillBarier(texBarriers[i], barriers.at(i));
-		PerformBarrier(cl.Get().dx12, texBarriers, BarrierCount);
+		}
+		PerformBarrier(cl.Get().dx12, texBarriers, BarrierCount, nullptr, 0);
 	}
 #pragma endregion
 }

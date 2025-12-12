@@ -177,6 +177,32 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.GetList()->RSSetScissorRects(1, &scissorRect);
 	}
 
+	void FrameBuffer::FillBarier(D3D12_BUFFER_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept
+	{
+		ZE_ASSERT(desc.Resource < resourceCount, "Resource ID outside available range!");
+
+		barrier.SyncBefore = GetBarrierSync(desc.StageBefore);
+		barrier.SyncAfter = GetBarrierSync(desc.StageAfter);
+		switch (desc.Type)
+		{
+		default:
+		ZE_ENUM_UNHANDLED();
+		case GFX::Pipeline::BarrierType::Immediate:
+		break;
+		case GFX::Pipeline::BarrierType::SplitBegin:
+		barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
+		break;
+		case GFX::Pipeline::BarrierType::SplitEnd:
+		barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
+		break;
+		}
+		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
+		barrier.AccessAfter = GetBarrierAccess(desc.AccessAfter);
+		barrier.pResource = GetResource(desc.Resource).Get();
+		barrier.Offset = 0;
+		barrier.Size = UINT64_MAX;
+	}
+
 	void FrameBuffer::FillBarier(D3D12_TEXTURE_BARRIER& barrier, const GFX::Pipeline::BarrierTransition& desc) const noexcept
 	{
 		ZE_ASSERT(desc.Resource < resourceCount, "Resource ID outside available range!");
@@ -223,15 +249,15 @@ namespace ZE::RHI::DX12::Pipeline
 		switch (desc.Type)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case GFX::Pipeline::BarrierType::Immediate:
-			break;
+		break;
 		case GFX::Pipeline::BarrierType::SplitBegin:
-			barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
-			break;
+		barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
+		break;
 		case GFX::Pipeline::BarrierType::SplitEnd:
-			barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
-			break;
+		barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
+		break;
 		}
 		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
 		barrier.AccessAfter = GetBarrierAccess(desc.AccessAfter);
@@ -247,13 +273,27 @@ namespace ZE::RHI::DX12::Pipeline
 		barrier.Flags = desc.LayoutBefore == GFX::Pipeline::TextureLayout::Undefined ? D3D12_TEXTURE_BARRIER_FLAG_DISCARD : D3D12_TEXTURE_BARRIER_FLAG_NONE;
 	}
 
-	void FrameBuffer::PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriers, U32 count) const noexcept
+	void FrameBuffer::PerformBarrier(CommandList& cl, const D3D12_TEXTURE_BARRIER* barriersTex, U32 countTex, const D3D12_BUFFER_BARRIER* barriersBuff, U32 countBuff) const noexcept
 	{
-		D3D12_BARRIER_GROUP group = {};
-		group.Type = D3D12_BARRIER_TYPE_TEXTURE;
-		group.NumBarriers = count;
-		group.pTextureBarriers = barriers;
-		cl.GetList()->Barrier(1, &group);
+		D3D12_BARRIER_GROUP groups[2];
+		U32 groupIndex = 0;
+		if (countTex)
+		{
+			groups[0].Type = D3D12_BARRIER_TYPE_TEXTURE;
+			groups[0].NumBarriers = countTex;
+			groups[0].pTextureBarriers = barriersTex;
+			++groupIndex;
+		}
+		if (countBuff)
+		{
+			groups[groupIndex].Type = D3D12_BARRIER_TYPE_BUFFER;
+			groups[groupIndex].NumBarriers = countBuff;
+			groups[groupIndex].pBufferBarriers = barriersBuff;
+			++groupIndex;
+		}
+		ZE_ASSERT(groupIndex > 0, "At least single barrier must be performed!");
+
+		cl.GetList()->Barrier(groupIndex, groups);
 	}
 
 	FrameBuffer::FrameBuffer(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc)
@@ -337,6 +377,13 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 						resDesc.Height = 1;
 						++bufferCount;
+						resDesc.Format = DXGI_FORMAT_UNKNOWN;
+						resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+					}
+					else
+					{
+						resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
+						resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 					}
 
 					resDesc.DepthOrArraySize = res.DepthOrArraySize;
@@ -346,7 +393,6 @@ namespace ZE::RHI::DX12::Pipeline
 					resDesc.MipLevels = res.MipLevels;
 					if (!resDesc.MipLevels)
 						resDesc.MipLevels = Math::GetMipLevels(sizes.X, sizes.Y);
-					resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
 					if (res.Flags & GFX::Pipeline::FrameResourceFlag::SimultaneousAccess)
 						resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 					else
@@ -398,7 +444,7 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					if (isSR)
 						++srvCount;
-					else
+					else if (isDS) // Can't specify deny shader flag if not DSV
 						resDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 					if (isSR || isUA)
 						++srvUavCount;
@@ -652,7 +698,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-						ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.Desc.DepthOrArraySize > 1)
@@ -740,7 +786,7 @@ namespace ZE::RHI::DX12::Pipeline
 								break;
 							}
 							default:
-								break;
+							break;
 							}
 
 							ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
@@ -830,7 +876,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-						ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.IsCube())
@@ -876,7 +922,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 						srvDesc.Buffer.FirstElement = 0;
-						srvDesc.Buffer.NumElements = Utils::SafeCast<U32>(res.Desc.Width);
+						srvDesc.Buffer.NumElements = Utils::SafeCast<U32>(res.Desc.Width) / res.ByteStride;
 						srvDesc.Buffer.StructureByteStride = res.ByteStride;
 						srvDesc.Buffer.Flags = res.IsRawBufferView() ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
 						break;
@@ -934,7 +980,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-						ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
@@ -957,7 +1003,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 						uavDesc.Buffer.FirstElement = 0;
-						uavDesc.Buffer.NumElements = Utils::SafeCast<U32>(res.Desc.Width);
+						uavDesc.Buffer.NumElements = Utils::SafeCast<U32>(res.Desc.Width) / res.ByteStride;
 						uavDesc.Buffer.StructureByteStride = res.ByteStride;
 						uavDesc.Buffer.CounterOffsetInBytes = 0;
 						uavDesc.Buffer.Flags = res.IsRawBufferView() ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
@@ -1031,7 +1077,7 @@ namespace ZE::RHI::DX12::Pipeline
 								break;
 							}
 							default:
-								break;
+							break;
 							}
 
 							ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
@@ -1426,17 +1472,36 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_ASSERT(barriers, "Empty barriers to perform!");
 		ZE_ASSERT(count > 0, "No barriers to perform!");
 
-		std::unique_ptr<D3D12_TEXTURE_BARRIER[]> texBarriers = std::make_unique<D3D12_TEXTURE_BARRIER[]>(count);
+		std::vector<D3D12_TEXTURE_BARRIER> texBarriers;
+		std::vector<D3D12_BUFFER_BARRIER> buffBarriers;
+		texBarriers.reserve(count);
+		U32 texCount = 0, buffCount = 0;
 		for (U32 i = 0; i < count; ++i)
-			FillBarier(texBarriers[i], barriers[i]);
-		PerformBarrier(cl.Get().dx12, texBarriers.get(), count);
+		{
+			if (IsBuffer(barriers[i].Resource))
+			{
+				FillBarier(buffBarriers.emplace_back(), barriers[i]);
+				++buffCount;
+			}
+			else
+			{
+				FillBarier(texBarriers.emplace_back(), barriers[i]);
+				++texCount;
+			}
+		}
+		PerformBarrier(cl.Get().dx12, texBarriers.data(), texCount, buffBarriers.data(), buffCount);
 	}
 
 	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept
 	{
-		D3D12_TEXTURE_BARRIER barrier;
-		FillBarier(barrier, desc);
-		PerformBarrier(cl.Get().dx12, &barrier, 1);
+		D3D12_TEXTURE_BARRIER barrierTex;
+		D3D12_BUFFER_BARRIER barrierBuff;
+		bool buffer = IsBuffer(desc.Resource);
+		if (buffer)
+			FillBarier(barrierBuff, desc);
+		else
+			FillBarier(barrierTex, desc);
+		PerformBarrier(cl.Get().dx12, &barrierTex, static_cast<U32>(!buffer), &barrierBuff, static_cast<U32>(buffer));
 	}
 
 	void FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
