@@ -10,12 +10,6 @@ UAV2D(depthHierarchy3, FfxFloat32, 4, 1);
 UAV2D(depthHierarchy4, FfxFloat32, 5, 1);
 UAV2D(depthHierarchy5, FfxFloat32, 6, 1);
 UAV2D(depthHierarchy6, FfxFloat32, 7, 1);
-UAV2D(depthHierarchy7, FfxFloat32, 8, 1);
-UAV2D(depthHierarchy8, FfxFloat32, 9, 1);
-UAV2D(depthHierarchy9, FfxFloat32, 10, 1);
-UAV2D(depthHierarchy10, FfxFloat32, 11, 1);
-UAV2D(depthHierarchy11, FfxFloat32, 12, 1);
-UAV2D(depthHierarchy12, FfxFloat32, 13, 1);
 TEXTURE_EX(depth, Texture2D<float>, 0, 2); // External resource format
 
 void FFX_SSSR_SPDIncreaseAtomicCounter(inout FfxUInt32 spdCounter)
@@ -52,24 +46,6 @@ void FFX_SSSR_WriteDepthHierarchy(const in FfxUInt32 index, const in FfxUInt32x2
 		break;
 	case 6:
 		ua_depthHierarchy6[coord] = data;
-		break;
-	case 7:
-		ua_depthHierarchy7[coord] = data;
-		break;
-	case 8:
-		ua_depthHierarchy8[coord] = data;
-		break;
-	case 9:
-		ua_depthHierarchy9[coord] = data;
-		break;
-	case 10:
-		ua_depthHierarchy10[coord] = data;
-		break;
-	case 11:
-		ua_depthHierarchy11[coord] = data;
-		break;
-	case 12:
-		ua_depthHierarchy12[coord] = data;
 		break;
 	}
 }
@@ -112,24 +88,6 @@ void FFX_SSSR_GetDepthHierarchyMipDimensions(const in FfxUInt32 mip, out FfxFloa
 		break;
 	case 6:
 		ua_depthHierarchy6.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 7:
-		ua_depthHierarchy7.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 8:
-		ua_depthHierarchy8.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 9:
-		ua_depthHierarchy9.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 10:
-		ua_depthHierarchy10.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 11:
-		ua_depthHierarchy11.GetDimensions(imageSize.x, imageSize.y);
-		break;
-	case 12:
-		ua_depthHierarchy12.GetDimensions(imageSize.x, imageSize.y);
 		break;
 	}
 }

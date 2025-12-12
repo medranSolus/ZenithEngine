@@ -35,8 +35,8 @@ namespace ZE::GFX::FFX
 			switch (passId)
 			{
 			case FFX_CACAO_PASS_CLEAR_LOAD_COUNTER:
-				permutationOptions = 0;
-				break;
+			permutationOptions = 0;
+			break;
 			case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS:
 			case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS:
 			case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS_HALF:
@@ -58,8 +58,8 @@ namespace ZE::GFX::FFX
 			case FFX_CACAO_PASS_APPLY_NON_SMART_HALF:
 			case FFX_CACAO_PASS_APPLY_NON_SMART:
 			case FFX_CACAO_PASS_APPLY:
-				permutationOptions &= CACAO_SHADER_PERMUTATION_FORCE_WAVE64;
-				break;
+			permutationOptions &= CACAO_SHADER_PERMUTATION_FORCE_WAVE64;
+			break;
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_1:
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_2:
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_3:
@@ -68,13 +68,13 @@ namespace ZE::GFX::FFX
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_6:
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_7:
 			case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_8:
-				permutationOptions &= CACAO_SHADER_PERMUTATION_FORCE_WAVE64 | CACAO_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= CACAO_SHADER_PERMUTATION_FORCE_WAVE64 | CACAO_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			case FFX_CACAO_PASS_UPSCALE_BILATERAL_5X5:
-				break;
+			break;
 			default:
-				ZE_FAIL("Invalid pass for CACAO!");
-				break;
+			ZE_FAIL("Invalid pass for CACAO!");
+			break;
 			}
 			break;
 		}
@@ -90,11 +90,11 @@ namespace ZE::GFX::FFX
 			case FFX_DENOISER_PASS_REPROJECT_REFLECTIONS:
 			case FFX_DENOISER_PASS_PREFILTER_REFLECTIONS:
 			case FFX_DENOISER_PASS_RESOLVE_TEMPORAL_REFLECTIONS:
-				permutationOptions &= DENOISER_SHADER_PERMUTATION_FORCE_WAVE64 | DENOISER_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= DENOISER_SHADER_PERMUTATION_FORCE_WAVE64 | DENOISER_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			default:
-				ZE_FAIL("Invalid pass for Denoiser!");
-				break;
+			ZE_FAIL("Invalid pass for Denoiser!");
+			break;
 			}
 			break;
 		}
@@ -104,16 +104,16 @@ namespace ZE::GFX::FFX
 			{
 			case FFX_FSR1_PASS_EASU:
 			case FFX_FSR1_PASS_EASU_RCAS:
-				permutationOptions &= FSR1_SHADER_PERMUTATION_SRGB_CONVERSIONS
-					| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= FSR1_SHADER_PERMUTATION_SRGB_CONVERSIONS
+				| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			case FFX_FSR1_PASS_RCAS:
-				permutationOptions &= FSR1_SHADER_PERMUTATION_RCAS_PASSTHROUGH_ALPHA
-					| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= FSR1_SHADER_PERMUTATION_RCAS_PASSTHROUGH_ALPHA
+				| FSR1_SHADER_PERMUTATION_FORCE_WAVE64 | FSR1_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			default:
-				ZE_FAIL("Invalid pass for FSR1!");
-				break;
+			ZE_FAIL("Invalid pass for FSR1!");
+			break;
 			}
 			break;
 		}
@@ -122,37 +122,37 @@ namespace ZE::GFX::FFX
 			switch (passId)
 			{
 			case FFX_FSR2_PASS_DEPTH_CLIP:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED
-					| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED
+				| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			case FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT
-					| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT
+				| FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			case FFX_FSR2_PASS_LOCK:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
+			break;
 			case FFX_FSR2_PASS_ACCUMULATE:
 			case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16
-					| FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT | FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS
-					| FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16
+				| FSR2_SHADER_PERMUTATION_HDR_COLOR_INPUT | FSR2_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS
+				| FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			case FFX_FSR2_PASS_COMPUTE_LUMINANCE_PYRAMID:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64;
+			break;
 			case FFX_FSR2_PASS_RCAS:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | (_ZE_PLATFORM_XBOX_SCARLET ? FSR2_SHADER_PERMUTATION_ALLOW_FP16 : 0);
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | (_ZE_PLATFORM_XBOX_SCARLET ? FSR2_SHADER_PERMUTATION_ALLOW_FP16 : 0);
+			break;
 			case FFX_FSR2_PASS_GENERATE_REACTIVE:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			case FFX_FSR2_PASS_TCR_AUTOGENERATE:
-				permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR2_SHADER_PERMUTATION_FORCE_WAVE64 | FSR2_SHADER_PERMUTATION_ALLOW_FP16 | FSR2_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			default:
-				ZE_FAIL("Invalid pass for FSR2!");
-				break;
+			ZE_FAIL("Invalid pass for FSR2!");
+			break;
 			}
 			break;
 		}
@@ -161,34 +161,34 @@ namespace ZE::GFX::FFX
 			switch (passId)
 			{
 			case FFX_FSR3UPSCALER_PASS_PREPARE_INPUTS:
-				permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | FSR3UPSCALER_SHADER_PERMUTATION_DEPTH_INVERTED
-					| FSR3UPSCALER_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR3UPSCALER_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | FSR3UPSCALER_SHADER_PERMUTATION_DEPTH_INVERTED
+				| FSR3UPSCALER_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR3UPSCALER_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			case FFX_FSR3UPSCALER_PASS_LUMA_PYRAMID:
 			case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE_PYRAMID:
 			case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE:
 			case FFX_FSR3UPSCALER_PASS_LUMA_INSTABILITY:
 			case FFX_FSR3UPSCALER_PASS_DEBUG_VIEW:
-				permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64;
-				break;
+			permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64;
+			break;
 			case FFX_FSR3UPSCALER_PASS_PREPARE_REACTIVITY:
 			case FFX_FSR3UPSCALER_PASS_GENERATE_REACTIVE:
-				permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			case FFX_FSR3UPSCALER_PASS_ACCUMULATE:
 			case FFX_FSR3UPSCALER_PASS_ACCUMULATE_SHARPEN:
-				permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64
-					| FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16 | FSR3UPSCALER_SHADER_PERMUTATION_USE_LANCZOS_TYPE
-					| FSR3UPSCALER_SHADER_PERMUTATION_ENABLE_SHARPENING | FSR3UPSCALER_SHADER_PERMUTATION_HDR_COLOR_INPUT
-					| FSR3UPSCALER_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR3UPSCALER_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
-				break;
+			permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64
+				| FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16 | FSR3UPSCALER_SHADER_PERMUTATION_USE_LANCZOS_TYPE
+				| FSR3UPSCALER_SHADER_PERMUTATION_ENABLE_SHARPENING | FSR3UPSCALER_SHADER_PERMUTATION_HDR_COLOR_INPUT
+				| FSR3UPSCALER_SHADER_PERMUTATION_LOW_RES_MOTION_VECTORS | FSR3UPSCALER_SHADER_PERMUTATION_JITTER_MOTION_VECTORS;
+			break;
 			case FFX_FSR3UPSCALER_PASS_RCAS:
-				permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | (_ZE_PLATFORM_XBOX_SCARLET ? FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16 : 0);
-				break;
+			permutationOptions &= FSR3UPSCALER_SHADER_PERMUTATION_FORCE_WAVE64 | (_ZE_PLATFORM_XBOX_SCARLET ? FSR3UPSCALER_SHADER_PERMUTATION_ALLOW_FP16 : 0);
+			break;
 			case FFX_FSR3UPSCALER_PASS_TCR_AUTOGENERATE:
 			default:
-				ZE_FAIL("Invalid pass for FSR3!");
-				break;
+			ZE_FAIL("Invalid pass for FSR3!");
+			break;
 			}
 			break;
 		}
@@ -197,24 +197,24 @@ namespace ZE::GFX::FFX
 			switch (passId)
 			{
 			case FFX_SSSR_PASS_DEPTH_DOWNSAMPLE:
-				permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16;
-				break;
+			permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16;
+			break;
 			case FFX_SSSR_PASS_CLASSIFY_TILES:
-				permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16 | SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
-				break;
+			permutationOptions &= SSSR_SHADER_PERMUTATION_ALLOW_FP16 | SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
+			break;
 			case FFX_SSSR_PASS_PREPARE_BLUE_NOISE_TEXTURE:
 			case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
 			case FFX_SSSR_PASS_INTERSECTION:
-				permutationOptions &= SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
-				break;
+			permutationOptions &= SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
+			break;
 			default:
-				ZE_FAIL("Invalid pass for SSSR!");
-				break;
+			ZE_FAIL("Invalid pass for SSSR!");
+			break;
 			}
 			break;
 		}
 		default:
-			ZE_FAIL("Selected effect has not been implemented yet!");
+		ZE_FAIL("Selected effect has not been implemented yet!");
 		}
 		return static_cast<U64>(effect) | (static_cast<U64>(passId) << 8) | (static_cast<U64>(permutationOptions) << 16);
 	}
@@ -225,26 +225,26 @@ namespace ZE::GFX::FFX
 		switch (effect)
 		{
 		default:
-			ZE_FAIL("Selected effect has not been implemented yet!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Selected effect has not been implemented yet!");
+		return FFX_ERROR_INVALID_ENUM;
 		case FFX_EFFECT_CACAO:
-			code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		case FFX_EFFECT_DENOISER:
-			code = GetShaderInfoDenoiser(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoDenoiser(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		case FFX_EFFECT_FSR1:
-			code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		case FFX_EFFECT_FSR2:
-			code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		case FFX_EFFECT_FSR3UPSCALER:
-			code = GetShaderInfoFSR3(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoFSR3(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		case FFX_EFFECT_SSSR:
-			code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
-			break;
+		code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
 		}
 		return code;
 	}
@@ -318,8 +318,8 @@ namespace ZE::GFX::FFX
 		}
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS_HALF:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS_HALF:
-			half = true;
-			[[fallthrough]];
+		half = true;
+		[[fallthrough]];
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS:
 		{
@@ -369,8 +369,8 @@ namespace ZE::GFX::FFX
 		}
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS_FROM_INPUT_NORMALS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_NORMALS_FROM_INPUT_NORMALS:
-			inputNormals = true;
-			[[fallthrough]];
+		inputNormals = true;
+		[[fallthrough]];
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_NORMALS:
 		{
@@ -550,11 +550,11 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		case FFX_CACAO_PASS_APPLY_NON_SMART_HALF:
-			half = true;
-			[[fallthrough]];
+		half = true;
+		[[fallthrough]];
 		case FFX_CACAO_PASS_APPLY_NON_SMART:
-			applyNonSmart = true;
-			[[fallthrough]];
+		applyNonSmart = true;
+		[[fallthrough]];
 		case FFX_CACAO_PASS_APPLY:
 		{
 			static const char* srvNames[] = { "g_SsaoBufferPing" };
@@ -630,8 +630,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		default:
-			ZE_FAIL("Invalid pass for CACAO!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Invalid pass for CACAO!");
+		return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
 	}
@@ -742,8 +742,8 @@ namespace ZE::GFX::FFX
 		}
 		case FFX_DENOISER_PASS_REPROJECT_REFLECTIONS:
 		{
-			static const char* srvNames[] = { "r_extracted_roughness", "r_radiance", "r_variance", "r_normal", "r_normal_history", "r_radiance_history", "r_roughness_history", "r_depth_history", "r_input_depth_hierarchy", "r_input_motion_vectors", "r_sample_count" };
-			static const char* uavTexNames[] = { "rw_reprojected_radiance", "rw_radiance", "rw_sample_count", "rw_average_radiance" };
+			static const char* srvNames[] = { "r_extracted_roughness", "r_radiance", "r_variance", "r_input_normal", "r_normal_history", "r_radiance_history", "r_roughness_history", "r_depth_history", "r_input_depth_hierarchy", "r_input_motion_vectors", "r_sample_count" };
+			static const char* uavTexNames[] = { "rw_reprojected_radiance", "rw_variance", "rw_sample_count", "rw_average_radiance" };
 			static const char* uavBuffNames[] = { "rw_denoiser_tile_list" };
 			static constexpr FfxShaderBlob BLOB =
 			{
@@ -810,8 +810,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		default:
-			ZE_FAIL("Invalid pass for Denoiser!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Invalid pass for Denoiser!");
+		return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
 	}
@@ -853,8 +853,8 @@ namespace ZE::GFX::FFX
 		switch (pass)
 		{
 		case FFX_FSR1_PASS_EASU_RCAS:
-			sharpen = true;
-			[[fallthrough]];
+		sharpen = true;
+		[[fallthrough]];
 		case FFX_FSR1_PASS_EASU:
 		{
 			static const char* srvNames[] = { "r_input_color" };
@@ -1022,8 +1022,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
-			sharpen = true;
-			[[fallthrough]];
+		sharpen = true;
+		[[fallthrough]];
 		case FFX_FSR2_PASS_ACCUMULATE:
 		{
 			static const char* srvNames[] = { "r_input_exposure", "r_input_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks" };
@@ -1140,8 +1140,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		default:
-			ZE_FAIL("Invalid pass for FSR2!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Invalid pass for FSR2!");
+		return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
 	}
@@ -1330,8 +1330,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_ACCUMULATE_SHARPEN:
-			sharpen = true;
-			[[fallthrough]];
+		sharpen = true;
+		[[fallthrough]];
 		case FFX_FSR3UPSCALER_PASS_ACCUMULATE:
 		{
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
@@ -1430,8 +1430,8 @@ namespace ZE::GFX::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_TCR_AUTOGENERATE:
 		default:
-			ZE_FAIL("Invalid pass for FSR3!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Invalid pass for FSR3!");
+		return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
 	}
@@ -1441,7 +1441,7 @@ namespace ZE::GFX::FFX
 		static const char* cbvNames[] = { "cbSSSR" };
 		static const char* samplerNames[] = { "s_EnvironmentMapSampler" };
 		static const U32 slots[] = { 0, 1, 2, 3, 4, 5 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 13 };
+		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 7 };
 		static constexpr const U32* SAMPLER_SLOT = slots;
 		static constexpr const U32* DEPTH_DOWNSAMPLE_UAV_COUNTS = counts + 6;
 
@@ -1563,8 +1563,8 @@ namespace ZE::GFX::FFX
 			break;
 		}
 		default:
-			ZE_FAIL("Invalid pass for SSSR!");
-			return FFX_ERROR_INVALID_ENUM;
+		ZE_FAIL("Invalid pass for SSSR!");
+		return FFX_ERROR_INVALID_ENUM;
 		}
 		return FFX_OK;
 	}
