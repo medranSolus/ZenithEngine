@@ -324,12 +324,12 @@ namespace ZE::RHI::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -340,12 +340,12 @@ namespace ZE::RHI::VK
 			ZE_VK_EXT_LIST_INSTANCE_DEBUG
 #endif
 #if _ZE_GFX_MARKERS
-				X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+			X(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 #endif
 #if !_ZE_PLATFORM_LINUX
-				ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_PLATFORM_REQUIRED
 #endif
-				ZE_VK_EXT_LIST_INSTANCE_REQUIRED
+			ZE_VK_EXT_LIST_INSTANCE_REQUIRED
 		};
 #undef X
 
@@ -528,21 +528,21 @@ namespace ZE::RHI::VK
 				switch (fit.Status)
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case GpuFitness::Status::FeaturesInsufficient:
-					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support enough basic Vulkan features!");
+				throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support enough basic Vulkan features!");
 				case GpuFitness::Status::NoPresentModes:
-					throw ZE_CMP_EXCEPT("Window surface doesn't support any present modes on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				throw ZE_CMP_EXCEPT("Window surface doesn't support any present modes on GPU [" + std::string(properties.properties.deviceName) + "]!");
 				case GpuFitness::Status::NoPixelFormats:
-					throw ZE_CMP_EXCEPT("Window surface doesn't support any pixel formats on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				throw ZE_CMP_EXCEPT("Window surface doesn't support any pixel formats on GPU [" + std::string(properties.properties.deviceName) + "]!");
 				case GpuFitness::Status::BackbufferFormatNotSupported:
-					throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer formaton GPU [" + std::string(properties.properties.deviceName) + "]! Format: [" + std::string(Utils::FormatToString(Settings::BackbufferFormat)) + "]");
+				throw ZE_CMP_EXCEPT("Window surface doesn't support required backbuffer formaton GPU [" + std::string(properties.properties.deviceName) + "]! Format: [" + std::string(Utils::FormatToString(Settings::BackbufferFormat)) + "]");
 				case GpuFitness::Status::QueuesInsufficient:
-					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support all of the graphics, compute and copy queues!");
+				throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support all of the graphics, compute and copy queues!");
 				case GpuFitness::Status::NoExtensions:
-					throw ZE_CMP_EXCEPT("No Vulkan device extensions present on GPU [" + std::string(properties.properties.deviceName) + "]!");
+				throw ZE_CMP_EXCEPT("No Vulkan device extensions present on GPU [" + std::string(properties.properties.deviceName) + "]!");
 				case GpuFitness::Status::NotAllRequiredExtSupported:
-					throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support required device extension: " + std::string(requiredExt.at(fit.ExtIndex)));
+				throw ZE_CMP_EXCEPT("GPU [" + std::string(properties.properties.deviceName) + "] doesn't support required device extension: " + std::string(requiredExt.at(fit.ExtIndex)));
 				}
 			}
 		}
@@ -586,9 +586,9 @@ namespace ZE::RHI::VK
 					break;
 				}
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-					break;
+				break;
 				}
 
 				// Favor lower memory granularity
@@ -628,7 +628,7 @@ namespace ZE::RHI::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-				ZE_VK_EXT_LIST_DEVICE_REQUIRED
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		for (U32 i = 0; i < enabledExtIndices.size(); ++i)
@@ -648,6 +648,8 @@ namespace ZE::RHI::VK
 	Device::Device(const Window::MainWindow& window, U32 descriptorCount)
 	{
 		ZE_VK_ENABLE_ID();
+
+		Settings::SetGfxSupportSSSR(true);
 
 		// TODO: create support for RT later
 		Settings::RayTracingTier = GFX::RayTracingTier::None;
@@ -700,7 +702,7 @@ namespace ZE::RHI::VK
 #if _ZE_DEBUG_GFX_API
 			ZE_VK_EXT_LIST_DEVICE_DEBUG
 #endif
-				ZE_VK_EXT_LIST_DEVICE_REQUIRED
+			ZE_VK_EXT_LIST_DEVICE_REQUIRED
 		};
 #undef X
 		FindPhysicalDevice(enabledExtensions, window, requiredFeatures);

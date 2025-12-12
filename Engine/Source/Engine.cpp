@@ -234,6 +234,13 @@ namespace ZE
 					}
 					ImGui::EndCombo();
 				}
+
+				ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
+				bool sssr = Settings::IsEnabledSSSR();
+				ImGui::Checkbox("SSSR", &sssr);
+				Settings::SetSSSR(sssr);
+				ImGui::EndDisabled();
+
 				ImGui::NewLine();
 			}
 			if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))

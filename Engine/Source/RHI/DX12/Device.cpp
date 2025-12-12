@@ -80,6 +80,7 @@ namespace ZE::RHI::DX12
 #endif
 		// No support for 8 bit indices on DirectX
 		Settings::SetU8IndexBuffers(false);
+		Settings::SetGfxSupportSSSR(true);
 
 #if !_ZE_MODE_RELEASE
 		// Load WinPixGpuCapturer.dll
@@ -160,7 +161,7 @@ namespace ZE::RHI::DX12
 			break;
 		}
 		default:
-			break;
+		break;
 		}
 
 		// Failed to create GPU specific device
@@ -270,19 +271,19 @@ namespace ZE::RHI::DX12
 		switch (options5.RaytracingTier)
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
-			Settings::RayTracingTier = GFX::RayTracingTier::None;
-			break;
+		Settings::RayTracingTier = GFX::RayTracingTier::None;
+		break;
 		case D3D12_RAYTRACING_TIER_1_0:
-			Settings::RayTracingTier = GFX::RayTracingTier::V1_0;
-			break;
+		Settings::RayTracingTier = GFX::RayTracingTier::V1_0;
+		break;
 		case D3D12_RAYTRACING_TIER_1_1:
-			Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
-			break;
+		Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
+		break;
 		case D3D12_RAYTRACING_TIER_1_2:
-			Settings::RayTracingTier = GFX::RayTracingTier::V1_2;
-			break;
+		Settings::RayTracingTier = GFX::RayTracingTier::V1_2;
+		break;
 		}
 
 		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported);
@@ -304,7 +305,7 @@ namespace ZE::RHI::DX12
 			break;
 		}
 		default:
-			break;
+		break;
 		}
 		descriptorGpuAllocator.DestroyFreeChunks(nullptr);
 		descriptorCpuAllocator.DestroyFreeChunks(nullptr);
@@ -423,30 +424,30 @@ namespace ZE::RHI::DX12
 			switch (shaderModel.HighestShaderModel)
 			{
 			case D3D_SHADER_MODEL_5_1:
-				return GFX::ShaderModel::V5_1;
+			return GFX::ShaderModel::V5_1;
 			case D3D_SHADER_MODEL_6_0:
-				return GFX::ShaderModel::V6_0;
+			return GFX::ShaderModel::V6_0;
 			case D3D_SHADER_MODEL_6_1:
-				return GFX::ShaderModel::V6_1;
+			return GFX::ShaderModel::V6_1;
 			case D3D_SHADER_MODEL_6_2:
-				return GFX::ShaderModel::V6_2;
+			return GFX::ShaderModel::V6_2;
 			case D3D_SHADER_MODEL_6_3:
-				return GFX::ShaderModel::V6_3;
+			return GFX::ShaderModel::V6_3;
 			case D3D_SHADER_MODEL_6_4:
-				return GFX::ShaderModel::V6_4;
+			return GFX::ShaderModel::V6_4;
 			case D3D_SHADER_MODEL_6_5:
-				return GFX::ShaderModel::V6_5;
+			return GFX::ShaderModel::V6_5;
 			case D3D_SHADER_MODEL_6_6:
-				return GFX::ShaderModel::V6_6;
+			return GFX::ShaderModel::V6_6;
 			case D3D_SHADER_MODEL_6_7:
-				return GFX::ShaderModel::V6_7;
+			return GFX::ShaderModel::V6_7;
 			case D3D_SHADER_MODEL_6_8:
-				return GFX::ShaderModel::V6_8;
+			return GFX::ShaderModel::V6_8;
 			default:
-				ZE_WARNING("Shader model reported outside max known version 6.9, newer hardware detected!");
-				[[fallthrough]];
+			ZE_WARNING("Shader model reported outside max known version 6.9, newer hardware detected!");
+			[[fallthrough]];
 			case D3D_SHADER_MODEL_6_9:
-				return GFX::ShaderModel::V6_9;
+			return GFX::ShaderModel::V6_9;
 			}
 		}
 		return GFX::ShaderModel::V6_0;
@@ -476,13 +477,13 @@ namespace ZE::RHI::DX12
 			switch (cls->Get().dx12.GetList()->GetType())
 			{
 			default:
-				ZE_FAIL("Incorrect type of command list!!!"); [[fallthrough]];
+			ZE_FAIL("Incorrect type of command list!!!"); [[fallthrough]];
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
-				return ExecuteMain(*cls);
+			return ExecuteMain(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-				return ExecuteCompute(*cls);
+			return ExecuteCompute(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COPY:
-				return ExecuteCopy(*cls);
+			return ExecuteCopy(*cls);
 			}
 		}
 
@@ -510,7 +511,7 @@ namespace ZE::RHI::DX12
 				break;
 			}
 			default:
-				ZE_FAIL("Incorrect type of command list!!!");
+			ZE_FAIL("Incorrect type of command list!!!");
 			}
 		}
 

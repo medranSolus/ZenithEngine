@@ -16,7 +16,8 @@ namespace ZE
 			IndexBufferU8,
 			AttachPIX,
 			GPUValidation,
-			SSSR,
+			EnabledSSSR,
+			SupportedSSSR,
 			AsyncAO,
 			CopySourceGPUData,
 			NoCulling,
@@ -102,7 +103,8 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
-		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SSSR]; }
+		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::EnabledSSSR] && flags[Flags::SupportedSSSR]; }
+		static constexpr bool IsSupportedSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SupportedSSSR]; }
 		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO]; }
 		static constexpr bool IsEnabledCopySourceGPUData() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::CopySourceGPUData]; }
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
@@ -112,6 +114,8 @@ namespace ZE
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr void SetImGui(bool enabled) noexcept { flags[Flags::ImGui] = enabled; }
+		static constexpr void SetSSSR(bool enabled) noexcept { flags[Flags::EnabledSSSR] = enabled; }
+		static constexpr void SetGfxSupportSSSR(bool enabled) noexcept { flags[Flags::SupportedSSSR] = enabled; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
@@ -181,13 +185,7 @@ namespace ZE
 #if _ZE_GFX_MARKERS
 		flags[Flags::GfxTags] = true;
 #endif
-		if (params.Flags & SettingsInitFlag::EnableSSSR)
-		{
-			if (gfxApi == GfxApiType::DX12 || gfxApi == GfxApiType::Vulkan)
-				flags[Flags::SSSR] = true;
-			else
-				Logger::Warning("Requested SSSR while using not supported GFX API! Disabling SSSR.");
-		}
+		flags[Flags::EnabledSSSR] = params.Flags & SettingsInitFlag::EnableSSSR;
 		flags[Flags::AsyncAO] = params.Flags & SettingsInitFlag::AsyncAO;
 
 		backbufferCount = params.BackbufferCount;

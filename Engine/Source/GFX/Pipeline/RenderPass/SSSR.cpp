@@ -23,6 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
 	{
 		syncStatus.SyncMain(dev);
+		syncStatus.SyncCompute(dev);
 
 		ZE_FFX_ENABLE();
 		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
@@ -37,9 +38,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 			ZE_FFX_ENABLE();
 			passData.RenderSize = Settings::RenderSize;
 
-			if (firstUpdate)
+			if (!firstUpdate)
 			{
 				buildData.SyncStatus.SyncMain(dev);
+				buildData.SyncStatus.SyncCompute(dev);
 				ZE_FFX_CHECK(ffxSssrContextDestroy(&passData.Ctx), "Error destroying SSSR context!");
 			}
 			FfxSssrContextDescription sssrDesc = {};
@@ -82,7 +84,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.materialParameters = FFX::GetResource(renderData.Buffers, ids.MaterialData, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.environmentMap = FFX::GetResource(renderData.Buffers, ids.EnvironmentMap, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.brdfTexture = FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		*reinterpret_cast<Float4x4*>(desc.invViewProjection) = renderData.DynamicData.ViewProjectionInverseTps;
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMLoadFloat4x4(&renderData.GraphData.Projection));

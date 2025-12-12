@@ -27,14 +27,14 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 				graphDesc.Samplers.emplace_back(Resource::SamplerDesc
 					{
 						TYPES[type],
-						{
-							ADDRESS_MODES[address],
-							ADDRESS_MODES[address],
-							ADDRESS_MODES[address]
-						},
-						0.0f, 4, Resource::CompareMethod::Never,
-						Resource::Texture::EdgeColor::TransparentBlack,
-						0.0f, FLT_MAX, slot++
+					{
+						ADDRESS_MODES[address],
+						ADDRESS_MODES[address],
+						ADDRESS_MODES[address]
+					},
+					0.0f, 4, Resource::CompareMethod::Never,
+					Resource::Texture::EdgeColor::TransparentBlack,
+					0.0f, FLT_MAX, slot++
 					});
 			}
 		}
@@ -153,9 +153,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			CLR_COLOR_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, ColorF4{ 0.0f, 0.0f, 0.0f, 0.0f }, "Direct lighting"));
 		graphDesc.AddResource("ssao",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UInt, "SSAO"));
-		if (false)
-			graphDesc.AddResource("ssr",
-				GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
+		graphDesc.AddResource("ssr",
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "SSR"));
 
 		// Resources related to the FSR3
 		graphDesc.AddResource("dilatedDepth",
@@ -390,7 +389,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
-		if (false)
 		{
 			RenderNode node("ssr", "sssr", RenderPass::SSSR::GetDesc(), PassExecutionType::Producer);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
