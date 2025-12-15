@@ -16,22 +16,22 @@ namespace ZE::GFX::Pipeline
 		switch (layout)
 		{
 		case ZE::GFX::Pipeline::TextureLayout::RenderTarget:
-			flags |= FrameResourceFlag::InternalUsageRenderTarget;
-			break;
+		flags |= FrameResourceFlag::InternalUsageRenderTarget;
+		break;
 		case ZE::GFX::Pipeline::TextureLayout::UnorderedAccess:
-			flags |= FrameResourceFlag::InternalUsageUnorderedAccess;
-			break;
+		flags |= FrameResourceFlag::InternalUsageUnorderedAccess;
+		break;
 		case ZE::GFX::Pipeline::TextureLayout::DepthStencilWrite:
 		case ZE::GFX::Pipeline::TextureLayout::DepthStencilRead:
-			flags |= FrameResourceFlag::InternalUsageDepth;
-			break;
+		flags |= FrameResourceFlag::InternalUsageDepth;
+		break;
 		case ZE::GFX::Pipeline::TextureLayout::Common:
 		case ZE::GFX::Pipeline::TextureLayout::GenericRead:
 		case ZE::GFX::Pipeline::TextureLayout::ShaderResource:
-			flags |= FrameResourceFlag::InternalUsageShaderResource;
-			break;
+		flags |= FrameResourceFlag::InternalUsageShaderResource;
+		break;
 		default:
-			break;
+		break;
 		}
 		return flags;
 	}
@@ -756,22 +756,22 @@ namespace ZE::GFX::Pipeline
 						switch (node.GetDesc().Update(dev, buildData, execData, node.GetDesc().InitializeFormats))
 						{
 						default:
-							ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::InternalOnly:
-							break;
+						break;
 						case UpdateStatus::GpuUploadRequired:
-							gpuUploadRequired = true;
-							break;
+						gpuUploadRequired = true;
+						break;
 						case UpdateStatus::FrameBufferImpactGpuUpload:
-							gpuUploadRequired = true;
-							[[fallthrough]];
+						gpuUploadRequired = true;
+						[[fallthrough]];
 						case UpdateStatus::FrameBufferImpact:
-							framebufferImpact = true;
-							[[fallthrough]];
+						framebufferImpact = true;
+						[[fallthrough]];
 						case UpdateStatus::GraphImpact:
-							cascadeUpdate = true;
-							break;
+						cascadeUpdate = true;
+						break;
 						}
 					}
 				}
@@ -789,24 +789,24 @@ namespace ZE::GFX::Pipeline
 						switch (startupPass.Desc.Update(dev, buildData, execData, startupPass.Desc.InitializeFormats))
 						{
 						default:
-							ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::GpuUploadRequired:
-							gpuUploadRequired = true;
-							[[fallthrough]];
+						gpuUploadRequired = true;
+						[[fallthrough]];
 						case UpdateStatus::InternalOnly:
-							startupPassExecute = true;
-							break;
+						startupPassExecute = true;
+						break;
 						case UpdateStatus::FrameBufferImpactGpuUpload:
-							gpuUploadRequired = true;
-							[[fallthrough]];
+						gpuUploadRequired = true;
+						[[fallthrough]];
 						case UpdateStatus::FrameBufferImpact:
-							framebufferImpact = true;
-							[[fallthrough]];
+						framebufferImpact = true;
+						[[fallthrough]];
 						case UpdateStatus::GraphImpact:
-							cascadeUpdate = true;
-							startupPassExecute = true;
-							break;
+						cascadeUpdate = true;
+						startupPassExecute = true;
+						break;
 						}
 					}
 				}
@@ -856,19 +856,19 @@ namespace ZE::GFX::Pipeline
 				switch (node.GetDesc().Update(dev, buildData, execData.first, node.GetDesc().InitializeFormats))
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case UpdateStatus::NoUpdate:
 				case UpdateStatus::InternalOnly:
 				case UpdateStatus::GpuUploadRequired:
-					gpuUploadRequired = true;
-					break;
+				gpuUploadRequired = true;
+				break;
 				case UpdateStatus::FrameBufferImpactGpuUpload:
-					gpuUploadRequired = true;
-					[[fallthrough]];
+				gpuUploadRequired = true;
+				[[fallthrough]];
 				case UpdateStatus::GraphImpact:
 				case UpdateStatus::FrameBufferImpact:
-					cascadeUpdate = true;
-					break;
+				cascadeUpdate = true;
+				break;
 				}
 			}
 			passExecData = execData.first;
@@ -968,19 +968,19 @@ namespace ZE::GFX::Pipeline
 					switch (pass.Desc.Update(dev, buildData, execData.first, pass.Desc.InitializeFormats))
 					{
 					default:
-						ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 					case UpdateStatus::NoUpdate:
 					case UpdateStatus::InternalOnly:
 					case UpdateStatus::GpuUploadRequired:
-						gpuUpload = true;
-						break;
+					gpuUpload = true;
+					break;
 					case UpdateStatus::FrameBufferImpactGpuUpload:
-						gpuUpload = true;
-						[[fallthrough]];
+					gpuUpload = true;
+					[[fallthrough]];
 					case UpdateStatus::GraphImpact:
 					case UpdateStatus::FrameBufferImpact:
-						cascadeUpdate = true;
-						break;
+					cascadeUpdate = true;
+					break;
 					}
 				}
 			}
@@ -1117,7 +1117,7 @@ namespace ZE::GFX::Pipeline
 									break;
 								}
 								default:
-									break;
+								break;
 								}
 								break;
 							}
@@ -1142,12 +1142,12 @@ namespace ZE::GFX::Pipeline
 									break;
 								}
 								default:
-									break;
+								break;
 								}
 								break;
 							}
 							default:
-								break;
+							break;
 							}
 							return layoutMismatch;
 						};
@@ -1668,7 +1668,7 @@ namespace ZE::GFX::Pipeline
 			{
 				if (std::find(computedResources.begin(), computedResources.end(), resName) != computedResources.end())
 				{
-					startupNode.Present = true;
+					startupNode.Present = startupNode.Desc.Evaluate ? startupNode.Desc.Evaluate() : true;
 					break;
 				}
 			}
@@ -1846,7 +1846,7 @@ namespace ZE::GFX::Pipeline
 						{
 							if (startupNode->Outputs.at(j) == input)
 							{
-								originalInputs.emplace_back(startupNode->OutputResources.at(j));
+								originalInputs.emplace_back((startupNode->Desc.Evaluate ? startupNode->Desc.Evaluate() : true) ? startupNode->OutputResources.at(j) : "");
 								computed.InputResources.emplace_back(originalInputs.back());
 
 								ZE_CHECK_FAILED_GRAPH_COMPUTE(computed.Present && computed.InputResources.back() == "" && renderNode.IsInputRequired(i),
@@ -2101,6 +2101,11 @@ namespace ZE::GFX::Pipeline
 
 		for (auto& startupPass : startupNodes)
 		{
+			if (startupPass.Desc.Evaluate)
+			{
+				if (startupPass.Desc.Evaluate() != startupPass.Present)
+					cascadeUpdate = graphUpdate = true;
+			}
 			if (startupPass.Present && startupPass.Desc.Update)
 			{
 				void* execData = nullptr;
@@ -2109,25 +2114,25 @@ namespace ZE::GFX::Pipeline
 				switch (startupPass.Desc.Update(dev, buildData, execData, startupPass.Desc.InitializeFormats))
 				{
 				default:
-					ZE_ENUM_UNHANDLED();
+				ZE_ENUM_UNHANDLED();
 				case UpdateStatus::NoUpdate:
-					break;
+				break;
 				case UpdateStatus::GpuUploadRequired:
-					uploadWait = true;
-					[[fallthrough]];
+				uploadWait = true;
+				[[fallthrough]];
 				case UpdateStatus::InternalOnly:
-					runStartupPasses = true;
-					break;
+				runStartupPasses = true;
+				break;
 				case UpdateStatus::FrameBufferImpactGpuUpload:
-					uploadWait = true;
-					[[fallthrough]];
+				uploadWait = true;
+				[[fallthrough]];
 				case UpdateStatus::FrameBufferImpact:
-					framebufferUpdate = true;
-					[[fallthrough]];
+				framebufferUpdate = true;
+				[[fallthrough]];
 				case UpdateStatus::GraphImpact:
-					cascadeUpdate = true;
-					runStartupPasses = true;
-					break;
+				cascadeUpdate = true;
+				runStartupPasses = true;
+				break;
 				}
 			}
 		}
@@ -2157,22 +2162,22 @@ namespace ZE::GFX::Pipeline
 						switch (activePass.GetDesc().Update(dev, buildData, execData, activePass.GetDesc().InitializeFormats))
 						{
 						default:
-							ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 						case UpdateStatus::NoUpdate:
 						case UpdateStatus::InternalOnly:
-							break;
+						break;
 						case UpdateStatus::GpuUploadRequired:
-							uploadWait = true;
-							break;
+						uploadWait = true;
+						break;
 						case UpdateStatus::FrameBufferImpactGpuUpload:
-							uploadWait = true;
-							[[fallthrough]];
+						uploadWait = true;
+						[[fallthrough]];
 						case UpdateStatus::FrameBufferImpact:
-							framebufferUpdate = true;
-							[[fallthrough]];
+						framebufferUpdate = true;
+						[[fallthrough]];
 						case UpdateStatus::GraphImpact:
-							cascadeUpdate = true;
-							break;
+						cascadeUpdate = true;
+						break;
 						}
 					}
 				}
@@ -2490,13 +2495,17 @@ namespace ZE::GFX::Pipeline
 			ImGui::Columns(1);
 
 			ImGui::Text("Ambient color");
-			ImGui::BeginDisabled(graph.execData.GraphData.UseIBL);
+			ImGui::BeginDisabled(Settings::IsEnabledIBL());
 			ImGui::SetNextItemWidth(-5.0f);
 			settingsChange |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&graph.execData.SettingsData.AmbientLight),
 				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
 			ImGui::EndDisabled();
 
-			ImGui::Checkbox("Use IBL", &graph.execData.GraphData.UseIBL);
+			bool ibl = Settings::IsEnabledIBL();
+			ImGui::BeginDisabled(Settings::IsEnabledSSSR());
+			ImGui::Checkbox("Use IBL", &ibl);
+			ImGui::EndDisabled();
+			Settings::SetIBL(ibl);
 			ImGui::NewLine();
 		}
 

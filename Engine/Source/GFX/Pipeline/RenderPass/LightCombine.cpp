@@ -43,10 +43,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
 	{
 		const bool isAO = Settings::AmbientOcclusionType != AOType::None;
-		if (isAO != passData.AmbientOcclusionEnabled || buildData.GraphData.UseIBL != passData.IBLState)
+		const bool isIBL = Settings::IsEnabledIBL() && !Settings::IsEnabledSSSR();
+		if (isAO != passData.AmbientOcclusionEnabled || isIBL != passData.IBLState)
 		{
 			passData.AmbientOcclusionEnabled = isAO;
-			passData.IBLState = buildData.GraphData.UseIBL;
+			passData.IBLState = isIBL;
 
 			Resource::PipelineStateDesc psoDesc;
 			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
@@ -81,7 +82,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		passData->AmbientOcclusionEnabled = Settings::AmbientOcclusionType == AOType::None;
-		passData->IBLState = !buildData.GraphData.UseIBL;
+		passData->IBLState = !Settings::IsEnabledIBL();
 		Update(dev, buildData, *passData, outputFormat);
 
 		return passData;
@@ -95,7 +96,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::AmbientOcclusionType != AOType::None),
 			"LightCombine pass not updated for changed ssao input settings!");
-		ZE_ASSERT(data.IBLState == renderData.GraphData.UseIBL,
+		ZE_ASSERT(data.IBLState == Settings::IsEnabledIBL(),
 			"LightCombine pass not updated for changed IBL settings!");
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "LightCombine", Pixel(0xFF, 0xFF, 0x9F));

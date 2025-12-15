@@ -31,6 +31,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 		Resource::Texture::Pack BrdfLut;
 	};
 
+	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR() || Settings::IsEnabledIBL(); }
+
 	PassDesc GetDesc(const std::string& brdfLutSource, const Data::CubemapSource& envMapSource, const Data::CubemapSource& irrMapSource) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* CopyInitData(void* data) noexcept;

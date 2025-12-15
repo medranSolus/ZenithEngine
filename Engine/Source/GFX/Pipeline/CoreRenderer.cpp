@@ -355,9 +355,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			RenderNode node("lightCombine", "", RenderPass::LightCombine::GetDesc(graphDesc.GetFormat("rawScene")), PassExecutionType::Producer);
 			node.AddInput("pointLight.LB", TextureLayout::ShaderResource);
 			node.AddInput("ssao.SB", TextureLayout::ShaderResource, false);
-			node.AddInput("lightmapLoad.Irr", TextureLayout::ShaderResource);
-			node.AddInput("lightmapLoad.Env", TextureLayout::ShaderResource);
-			node.AddInput("lightmapLoad.LUT", TextureLayout::ShaderResource);
+			node.AddInput("lightmapLoad.Irr", TextureLayout::ShaderResource, false);
+			node.AddInput("lightmapLoad.Env", TextureLayout::ShaderResource, false);
+			node.AddInput("lightmapLoad.LUT", TextureLayout::ShaderResource, false);
 			node.AddInput("lambertian.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_ALB", TextureLayout::ShaderResource);

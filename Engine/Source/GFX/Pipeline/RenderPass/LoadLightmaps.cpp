@@ -55,6 +55,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 		PassDesc desc{ Base(CorePassType::LoadLightmaps) };
 		desc.InitData = new InitData{ irrMapSource, envMapSource, brdfLutSource };
 		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
 		desc.Clean = Clean;
