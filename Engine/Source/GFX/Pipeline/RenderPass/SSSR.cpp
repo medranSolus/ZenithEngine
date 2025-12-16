@@ -87,7 +87,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		*reinterpret_cast<Float4x4*>(desc.invViewProjection) = renderData.DynamicData.ViewProjectionInverseTps;
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMLoadFloat4x4(&renderData.GraphData.Projection));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.Projection)));
 		*reinterpret_cast<Float4x4*>(desc.invProjection) = renderData.DynamicData.ViewProjectionInverseTps;
 		*reinterpret_cast<Float4x4*>(desc.view) = renderData.DynamicData.ViewTps;
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)));
@@ -119,7 +119,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 
 	void DebugUI(void* data) noexcept
 	{
-		if (ImGui::CollapsingHeader("SSSR"))
+		if (ImGui::CollapsingHeader("SSSR##options"))
 		{
 			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 

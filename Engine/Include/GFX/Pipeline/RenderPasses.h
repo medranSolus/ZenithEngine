@@ -11,6 +11,7 @@
 #include "RenderPass/LightCombine.h"
 #include "RenderPass/LoadLightmaps.h"
 #include "RenderPass/LoadSkybox.h"
+#include "RenderPass/MergeIndirectLight.h"
 #include "RenderPass/OutlineDraw.h"
 #include "RenderPass/PointLight.h"
 #include "RenderPass/Skybox.h"

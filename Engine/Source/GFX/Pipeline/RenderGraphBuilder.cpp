@@ -16,22 +16,22 @@ namespace ZE::GFX::Pipeline
 		switch (layout)
 		{
 		case ZE::GFX::Pipeline::TextureLayout::RenderTarget:
-		flags |= FrameResourceFlag::InternalUsageRenderTarget;
-		break;
+			flags |= FrameResourceFlag::InternalUsageRenderTarget;
+			break;
 		case ZE::GFX::Pipeline::TextureLayout::UnorderedAccess:
-		flags |= FrameResourceFlag::InternalUsageUnorderedAccess;
-		break;
+			flags |= FrameResourceFlag::InternalUsageUnorderedAccess;
+			break;
 		case ZE::GFX::Pipeline::TextureLayout::DepthStencilWrite:
 		case ZE::GFX::Pipeline::TextureLayout::DepthStencilRead:
-		flags |= FrameResourceFlag::InternalUsageDepth;
-		break;
+			flags |= FrameResourceFlag::InternalUsageDepth;
+			break;
 		case ZE::GFX::Pipeline::TextureLayout::Common:
 		case ZE::GFX::Pipeline::TextureLayout::GenericRead:
 		case ZE::GFX::Pipeline::TextureLayout::ShaderResource:
-		flags |= FrameResourceFlag::InternalUsageShaderResource;
-		break;
+			flags |= FrameResourceFlag::InternalUsageShaderResource;
+			break;
 		default:
-		break;
+			break;
 		}
 		return flags;
 	}
@@ -856,19 +856,19 @@ namespace ZE::GFX::Pipeline
 				switch (node.GetDesc().Update(dev, buildData, execData.first, node.GetDesc().InitializeFormats))
 				{
 				default:
-				ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 				case UpdateStatus::NoUpdate:
 				case UpdateStatus::InternalOnly:
 				case UpdateStatus::GpuUploadRequired:
-				gpuUploadRequired = true;
-				break;
+					gpuUploadRequired = true;
+					break;
 				case UpdateStatus::FrameBufferImpactGpuUpload:
-				gpuUploadRequired = true;
-				[[fallthrough]];
+					gpuUploadRequired = true;
+					[[fallthrough]];
 				case UpdateStatus::GraphImpact:
 				case UpdateStatus::FrameBufferImpact:
-				cascadeUpdate = true;
-				break;
+					cascadeUpdate = true;
+					break;
 				}
 			}
 			passExecData = execData.first;

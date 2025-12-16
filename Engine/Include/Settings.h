@@ -23,6 +23,7 @@ namespace ZE
 			NoCulling,
 			ImGui,
 			SplitRenderSubmissions,
+			IBL,
 			Count,
 		};
 
@@ -110,12 +111,14 @@ namespace ZE
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
 		static constexpr bool IsEnabledImGui() noexcept { return flags[Flags::ImGui]; }
 		static constexpr bool IsEnabledSplitRenderSubmissions() noexcept { return flags[Flags::SplitRenderSubmissions]; }
+		static constexpr bool IsEnabledIBL() noexcept { return flags[Flags::IBL] && !Settings::IsEnabledSSSR(); }
 
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr void SetImGui(bool enabled) noexcept { flags[Flags::ImGui] = enabled; }
 		static constexpr void SetSSSR(bool enabled) noexcept { flags[Flags::EnabledSSSR] = enabled; }
 		static constexpr void SetGfxSupportSSSR(bool enabled) noexcept { flags[Flags::SupportedSSSR] = enabled; }
+		static constexpr void SetIBL(bool enabled) noexcept { flags[Flags::IBL] = enabled; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }

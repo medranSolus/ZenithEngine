@@ -68,6 +68,7 @@ namespace ZE::GFX::Pipeline
 		SSSR,
 
 		LightCombine,
+		MergeIndirectLight,
 		Skybox,
 
 		UpscaleDLSS,

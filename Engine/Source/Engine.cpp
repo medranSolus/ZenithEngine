@@ -237,7 +237,7 @@ namespace ZE
 
 				ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
 				bool sssr = Settings::IsEnabledSSSR();
-				ImGui::Checkbox("SSSR", &sssr);
+				ImGui::Checkbox("SSSR##enable", &sssr);
 				Settings::SetSSSR(sssr);
 				ImGui::EndDisabled();
 

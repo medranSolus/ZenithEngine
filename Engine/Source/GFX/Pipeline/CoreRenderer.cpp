@@ -404,11 +404,24 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+		{
+			RenderNode node("mergeLightIndirect", "", RenderPass::MergeIndirectLight::GetDesc(graphDesc.GetFormat("rawScene")), PassExecutionType::Processor);
+			node.AddInput("wireframe.RT", TextureLayout::RenderTarget);
+			node.AddInput("ssr.SSR", TextureLayout::ShaderResource, false);
+			node.AddInput("lightmapLoad.LUT", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.DS", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_ALB", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, "rawScene");
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
 #pragma endregion
 #pragma region Upscaling
 		{
 			RenderNode node("upscale", "fsr1", RenderPass::UpscaleFSR1::GetDesc(graphDesc.GetFormat("upscaledScene")), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
@@ -416,7 +429,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 		{
 			RenderNode node("upscale", "fsr2", RenderPass::UpscaleFSR2::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -428,7 +441,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 		{
 			RenderNode node("upscale", "fsr3", RenderPass::UpscaleFSR3::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -444,7 +457,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_FFXAPI_ENABLED
 		{
 			RenderNode node("upscale", "ffxfsr", RenderPass::UpscaleFfxFSR::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -456,7 +469,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_XESS_ENABLED
 		{
 			RenderNode node("upscale", "xess", RenderPass::UpscaleXeSS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -467,7 +480,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #endif
 		{
 			RenderNode node("upscale", "nis", RenderPass::UpscaleNIS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
@@ -476,7 +489,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_DLSS_ENABLED
 		{
 			RenderNode node("upscale", "dlss", RenderPass::UpscaleDLSS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("mergeLightIndirect.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
