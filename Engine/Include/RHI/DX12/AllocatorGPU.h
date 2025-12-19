@@ -25,6 +25,7 @@ namespace ZE::RHI::DX12
 		};
 		typedef Allocator::ChunkedTLSF<Memory, 4, 2> HeapAllocator;
 
+		static constexpr U64 TIGHT_CHUNK = D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT; // 8 B
 		static constexpr U64 SMALL_CHUNK = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT; // 4 KB
 		static constexpr U64 NORMAL_CHUNK = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 64 KB
 		static constexpr U64 HUGE_CHUNK = D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT; // 4 MB
@@ -37,6 +38,7 @@ namespace ZE::RHI::DX12
 		static constexpr HeapFlags READBACK_BUFF_HEAP_FLAGS = HeapFlag::AllowBuffers | HeapFlag::Readback | HeapFlag::NoMSAA;
 
 		AllocTier allocTier = AllocTier::Tier1;
+		bool tightAlignment = false;
 		HeapAllocator::BlockAllocator blockAllocator;
 		HeapAllocator::ChunkAllocator chunkAllocator;
 
@@ -78,24 +80,20 @@ namespace ZE::RHI::DX12
 
 		constexpr AllocTier GetCurrentTier() const noexcept { return allocTier; }
 		constexpr bool IsGpuUploadHeap() const noexcept { return mainAllocator.GetChunkCreationFlags() & HeapFlag::GpuUploadHeap; }
+		constexpr bool IsTightAlignmentEnabled() const noexcept { return tightAlignment; }
 
 		void RemoveBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, mainAllocator); }
 		void RemoveDynamicBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, dynamicBuffersAllocator); }
 		void RemoveReadackBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, readbackBuffersAllocator); }
 		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
-		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported);
+		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported, D3D12_TIGHT_ALIGNMENT_TIER alignmentTier);
 
 		ResourceInfo AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 		// Buffers that can be written fast into from CPU
 		ResourceInfo AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 		// Buffers that can be written by GPU and read fast from CPU
 		ResourceInfo AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
-		// Only small textures (smaller than 64KB)
-		ResourceInfo AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc);
-		// Only normal textures and small multisampled textures (smaller than 4MB)
-		ResourceInfo AllocTexture_64KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc);
-		// Only multisampled textures
-		ResourceInfo AllocTexture_4MB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc);
+		ResourceInfo AllocTexture(Device& dev, const D3D12_RESOURCE_DESC1& desc);
 	};
 }

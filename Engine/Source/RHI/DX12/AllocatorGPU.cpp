@@ -160,9 +160,10 @@ namespace ZE::RHI::DX12
 		dynamicBuffersAllocator.DestroyFreeChunks(nullptr);
 	}
 
-	void AllocatorGPU::Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported)
+	void AllocatorGPU::Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported, D3D12_TIGHT_ALIGNMENT_TIER alignmentTier)
 	{
 		allocTier = heapTier == D3D12_RESOURCE_HEAP_TIER_2 ? AllocTier::Tier2 : AllocTier::Tier1;
+		tightAlignment = alignmentTier != D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
 		const HeapFlags flags = gpuUploadHeapSupported ? HeapFlag::GpuUploadHeap : HeapFlag::None;
 		switch (allocTier)
 		{
@@ -170,22 +171,32 @@ namespace ZE::RHI::DX12
 			ZE_ENUM_UNHANDLED();
 		case AllocTier::Tier1:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS | flags, Settings::BUFFERS_HEAP_SIZE, NORMAL_CHUNK, 3);
-			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS | flags, Settings::TEXTURES_HEAP_SIZE, SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | flags, Settings::BUFFERS_HEAP_SIZE, tightAlignment ? TIGHT_CHUNK : NORMAL_CHUNK, 3);
+			secondaryAllocator.Init(SECONDARY_HEAP_FLAGS | flags, Settings::TEXTURES_HEAP_SIZE, tightAlignment ? TIGHT_CHUNK : SMALL_CHUNK, 3);
 			break;
 		}
 		case AllocTier::Tier2:
 		{
-			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS | flags, Settings::BUFFERS_HEAP_SIZE + Settings::TEXTURES_HEAP_SIZE, SMALL_CHUNK, 3);
+			mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS | flags, Settings::BUFFERS_HEAP_SIZE + Settings::TEXTURES_HEAP_SIZE, tightAlignment ? TIGHT_CHUNK : SMALL_CHUNK, 3);
 			break;
 		}
 		}
-		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::UPLOAD_HEAP_SIZE, NORMAL_CHUNK, 3);
-		readbackBuffersAllocator.Init(READBACK_BUFF_HEAP_FLAGS | flags, Settings::HOST_HEAP_SIZE, NORMAL_CHUNK, 3);
+		dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::UPLOAD_HEAP_SIZE, tightAlignment ? TIGHT_CHUNK : NORMAL_CHUNK, 3);
+		readbackBuffersAllocator.Init(READBACK_BUFF_HEAP_FLAGS | flags, Settings::HOST_HEAP_SIZE, tightAlignment ? TIGHT_CHUNK : NORMAL_CHUNK, 3);
 	}
 
 	ResourceInfo AllocatorGPU::AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
+		if (tightAlignment)
+		{
+			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+
+			if (info.Alignment > TIGHT_CHUNK)
+				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, mainAllocator);
+			return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, mainAllocator);
+		}
+
 		switch (allocTier)
 		{
 		default:
@@ -199,29 +210,48 @@ namespace ZE::RHI::DX12
 
 	ResourceInfo AllocatorGPU::AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
+		if (tightAlignment)
+		{
+			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+
+			if (info.Alignment > TIGHT_CHUNK)
+				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, dynamicBuffersAllocator);
+		}
 		return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, dynamicBuffersAllocator);
 	}
 
 	ResourceInfo AllocatorGPU::AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
+		if (tightAlignment)
+		{
+			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+
+			if (info.Alignment > TIGHT_CHUNK)
+				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, readbackBuffersAllocator);
+		}
 		return AllocMinimalChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, readbackBuffersAllocator);
 	}
 
-	ResourceInfo AllocatorGPU::AllocTexture_4KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
+	ResourceInfo AllocatorGPU::AllocTexture(Device& dev, const D3D12_RESOURCE_DESC1& desc)
 	{
-		return AllocMinimalChunks(dev, bytes, desc, D3D12_BARRIER_LAYOUT_COMMON,
-			allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
-	}
+		// SMALL_CHUNK -> Only small textures (smaller than 64KB)
+		// NORMAL_CHUNK -> Only normal textures and small multisampled textures (smaller than 4MB)
+		// HUGE_CHUNK -> Only multisampled textures
+		auto& allocator = allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator;
 
-	ResourceInfo AllocatorGPU::AllocTexture_64KB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
-	{
-		return AllocBigChunks(dev, bytes, desc, D3D12_BARRIER_LAYOUT_COMMON,
-			NORMAL_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
-	}
+		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+		dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+		if (tightAlignment)
+		{
+			if (info.Alignment > TIGHT_CHUNK)
+				return AllocBigChunks(dev, info.SizeInBytes, desc, D3D12_BARRIER_LAYOUT_COMMON, info.Alignment, allocator);
+			return AllocMinimalChunks(dev, info.SizeInBytes, desc, D3D12_BARRIER_LAYOUT_COMMON, allocator);
+		}
 
-	ResourceInfo AllocatorGPU::AllocTexture_4MB(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc)
-	{
-		return AllocBigChunks(dev, bytes, desc, D3D12_BARRIER_LAYOUT_COMMON,
-			HUGE_CHUNK, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator);
+		if (desc.Alignment == SMALL_CHUNK)
+			return AllocMinimalChunks(dev, info.SizeInBytes, desc, D3D12_BARRIER_LAYOUT_COMMON, allocator);
+		return AllocBigChunks(dev, info.SizeInBytes, desc, D3D12_BARRIER_LAYOUT_COMMON, desc.Alignment, allocator);
 	}
 }

@@ -266,6 +266,9 @@ namespace ZE::RHI::DX12
 		D3D12_FEATURE_DATA_EXISTING_HEAPS existingHeaps = {};
 		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_EXISTING_HEAPS, &existingHeaps, sizeof(existingHeaps))))
 			featureExistingHeap = existingHeaps.Supported;
+		D3D12_FEATURE_DATA_TIGHT_ALIGNMENT tightAlignment = {};
+		if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_TIGHT_ALIGNMENT, &tightAlignment, sizeof(tightAlignment))))
+			tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
 
 		// Check for RT
 		switch (options5.RaytracingTier)
@@ -286,7 +289,7 @@ namespace ZE::RHI::DX12
 		break;
 		}
 
-		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported);
+		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported, tightAlignment.SupportTier);
 	}
 
 	Device::~Device()
@@ -671,7 +674,7 @@ namespace ZE::RHI::DX12
 
 		D3D12_RESOURCE_DESC1 desc = {};
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		desc.Alignment = allocator.IsTightAlignmentEnabled() ? 0 : D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = size;
 		desc.Height = 1;
 		desc.DepthOrArraySize = 1;
@@ -680,7 +683,7 @@ namespace ZE::RHI::DX12
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		desc.Flags = allocator.IsTightAlignmentEnabled() ? D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT : D3D12_RESOURCE_FLAG_NONE;
 		desc.SamplerFeedbackMipRegion.Width = 0;
 		desc.SamplerFeedbackMipRegion.Height = 0;
 		desc.SamplerFeedbackMipRegion.Depth = 0;
@@ -697,7 +700,7 @@ namespace ZE::RHI::DX12
 
 		D3D12_RESOURCE_DESC1 desc = {};
 		desc.Dimension = GetTextureDimension(type);
-		desc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+		desc.Alignment = allocator.IsTightAlignmentEnabled() ? 0 : D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 		desc.Width = width;
 		desc.Height = height;
 		desc.DepthOrArraySize = count;
@@ -706,16 +709,18 @@ namespace ZE::RHI::DX12
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		desc.Flags = allocator.IsTightAlignmentEnabled() ? D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT : D3D12_RESOURCE_FLAG_NONE;
 		desc.SamplerFeedbackMipRegion.Width = 0;
 		desc.SamplerFeedbackMipRegion.Height = 0;
 		desc.SamplerFeedbackMipRegion.Depth = 0;
 
-		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
-		if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
-			desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-
+		if (!allocator.IsTightAlignmentEnabled())
+		{
+			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+			device->GetResourceAllocationInfo2(0, 1, &desc, &info);
+			if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+				desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		}
 		return desc;
 	}
 
@@ -728,14 +733,7 @@ namespace ZE::RHI::DX12
 
 	ResourceInfo Device::CreateTexture(const D3D12_RESOURCE_DESC1& desc)
 	{
-		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-		device->GetResourceAllocationInfo2(0, 1, &desc, &info);
-
-		if (desc.Alignment == D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
-			return allocator.AllocTexture_64KB(*this, info.SizeInBytes, desc);
-		else if (desc.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
-			return allocator.AllocTexture_4KB(*this, info.SizeInBytes, desc);
-		return allocator.AllocTexture_4MB(*this, info.SizeInBytes, desc);
+		return allocator.AllocTexture(*this, desc);
 	}
 
 	DescriptorInfo Device::AllocDescs(U32 count, bool gpuHeap) noexcept
