@@ -2495,16 +2495,14 @@ namespace ZE::GFX::Pipeline
 			ImGui::Columns(1);
 
 			ImGui::Text("Ambient color");
-			ImGui::BeginDisabled(Settings::IsEnabledIBL());
+			ImGui::BeginDisabled(Settings::IsEnabledIBL() || Settings::IsEnabledSSSR());
 			ImGui::SetNextItemWidth(-5.0f);
 			settingsChange |= ImGui::ColorEdit3("##ambient_color", reinterpret_cast<float*>(&graph.execData.SettingsData.AmbientLight),
 				ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoLabel);
 			ImGui::EndDisabled();
 
 			bool ibl = Settings::IsEnabledIBL();
-			ImGui::BeginDisabled(Settings::IsEnabledSSSR());
 			ImGui::Checkbox("Use IBL", &ibl);
-			ImGui::EndDisabled();
 			Settings::SetIBL(ibl);
 			ImGui::NewLine();
 		}

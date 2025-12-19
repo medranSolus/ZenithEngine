@@ -111,7 +111,7 @@ namespace ZE
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
 		static constexpr bool IsEnabledImGui() noexcept { return flags[Flags::ImGui]; }
 		static constexpr bool IsEnabledSplitRenderSubmissions() noexcept { return flags[Flags::SplitRenderSubmissions]; }
-		static constexpr bool IsEnabledIBL() noexcept { return flags[Flags::IBL] && !Settings::IsEnabledSSSR(); }
+		static constexpr bool IsEnabledIBL() noexcept { return flags[Flags::IBL]; }
 
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }

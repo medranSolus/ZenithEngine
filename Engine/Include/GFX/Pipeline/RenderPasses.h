@@ -9,7 +9,7 @@
 #include "RenderPass/Lambertian.h"
 #include "RenderPass/LambertianComputeCopy.h"
 #include "RenderPass/LightCombine.h"
-#include "RenderPass/LoadLightmaps.h"
+#include "RenderPass/LoadLightmapsDiffuse.h"
 #include "RenderPass/LoadSkybox.h"
 #include "RenderPass/MergeIndirectLight.h"
 #include "RenderPass/OutlineDraw.h"

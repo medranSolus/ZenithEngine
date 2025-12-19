@@ -187,8 +187,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.StartupPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("lightmapLoad", "", RenderPass::LoadLightmaps::GetDesc(params.BrdfLutSource, params.EnvMapSource, params.IrrMapSource), PassExecutionType::Startup);
+			RenderNode node("lightmapLoadDiff", "", RenderPass::LoadLightmapsDiffuse::GetDesc(params.IrrMapSource), PassExecutionType::Startup);
 			node.AddOutput("Irr", TextureLayout::ShaderResource, "irrMap");
+			graphDesc.StartupPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("lightmapLoadSpec", "", RenderPass::LoadLightmapsSpecular::GetDesc(params.BrdfLutSource, params.EnvMapSource), PassExecutionType::Startup);
 			node.AddOutput("Env", TextureLayout::ShaderResource, "envMap");
 			node.AddOutput("LUT", TextureLayout::ShaderResource, "brdfLut");
 			graphDesc.StartupPasses.emplace_back(std::move(node));

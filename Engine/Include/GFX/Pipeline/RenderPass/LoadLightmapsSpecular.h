@@ -3,7 +3,7 @@
 #include "GFX/Resource/Texture/Pack.h"
 #include "Data/CubemapSource.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
+namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 {
 	constexpr U32 BRDF_LUT_SIZE = 256;
 	constexpr U32 BRDF_LUT_SAMPLES_COUNT = 512;
@@ -11,7 +11,6 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 
 	struct Resources
 	{
-		RID IrrMap;
 		RID EnvMap;
 		RID BrdfLut;
 	};
@@ -20,25 +19,22 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmaps
 	{
 		bool UpdateData = false;
 		bool UpdateError = false;
-		Data::CubemapSource IrrMapNewSource = {};
-		Data::CubemapSource IrrMapSource = {};
 		Data::CubemapSource EnvMapNewSource = {};
 		Data::CubemapSource EnvMapSource = {};
 		std::string NewLutSource = "";
 		std::string LutSource = "";
-		Resource::Texture::Pack IrrMap;
 		Resource::Texture::Pack EnvMap;
 		Resource::Texture::Pack BrdfLut;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR() || Settings::IsEnabledIBL(); }
 
-	PassDesc GetDesc(const std::string& brdfLutSource, const Data::CubemapSource& envMapSource, const Data::CubemapSource& irrMapSource) noexcept;
+	PassDesc GetDesc(const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* CopyInitData(void* data) noexcept;
 	void FreeInitData(void* data) noexcept;
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource, const Data::CubemapSource& irrMapSource);
+	void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource);
 	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	void DebugUI(void* data) noexcept;
 }
