@@ -308,7 +308,7 @@ namespace ZE::RHI::DX12::Pipeline
 		resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
 		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
 		RID dsvCount = 0, dsvAdditionalMipsCount = 0;
-		RID srvCount = 0, srvUavCount = 0;
+		RID srvCount = 0;
 		RID uavCount = 0, uavAdditionalMipsCount = 0, memoryOnlyUavCount = 0;
 		RID bufferCount = 0;
 		RID outsideResourceCount = 0;
@@ -442,12 +442,11 @@ namespace ZE::RHI::DX12::Pipeline
 						if (resDesc.MipLevels > 1)
 							uavAdditionalMipsCount += resDesc.MipLevels - 1;
 					}
-					if (isSR)
+					// Can't specify deny SRV flag if not DSV
+					if (isSR || !isDS)
 						++srvCount;
-					else if (isDS) // Can't specify deny shader flag if not DSV
+					else
 						resDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
-					if (isSR || isUA)
-						++srvUavCount;
 
 					// Get resource alignment and size in chunks
 					resDesc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;

@@ -87,8 +87,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		*reinterpret_cast<Float4x4*>(desc.invViewProjection) = renderData.DynamicData.ViewProjectionInverseTps;
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.Projection)));
-		*reinterpret_cast<Float4x4*>(desc.invProjection) = renderData.DynamicData.ViewProjectionInverseTps;
+		Matrix projTps = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.Projection));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), projTps);
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invProjection), Math::XMMatrixInverse(nullptr, projTps));
 		*reinterpret_cast<Float4x4*>(desc.view) = renderData.DynamicData.ViewTps;
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)));
 		*reinterpret_cast<Float4x4*>(desc.prevViewProjection) = renderData.GraphData.PrevViewProjectionTps;

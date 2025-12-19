@@ -175,6 +175,7 @@ add_shader_permutation("ShadowPS" "_ZE_USE_PARALLAX:P")
 
 add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_AO:A")
 add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_IBL:I")
+add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_SSR:R")
 
 ############# VS PERMUTATIONS ##############
 

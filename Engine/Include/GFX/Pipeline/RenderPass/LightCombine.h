@@ -8,6 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	{
 		RID DirectLight;
 		RID SSAO;
+		RID SSR;
 		RID IrrMap;
 		RID EnvMap;
 		RID BrdfLUT;
@@ -24,6 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		Resource::PipelineStateGfx State;
 		bool AmbientOcclusionEnabled;
 		bool IBLState;
+		bool SSRState;
 	};
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;

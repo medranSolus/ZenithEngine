@@ -50,6 +50,7 @@ namespace ZE::GFX::Pipeline
 		Invalid,
 
 		LoadLightmapsDiffuse,
+		LoadLightmapsSpecular,
 		LoadSkybox,
 
 		GBufferClear,
@@ -68,7 +69,6 @@ namespace ZE::GFX::Pipeline
 		SSSR,
 
 		LightCombine,
-		MergeIndirectLight,
 		Skybox,
 
 		UpscaleDLSS,

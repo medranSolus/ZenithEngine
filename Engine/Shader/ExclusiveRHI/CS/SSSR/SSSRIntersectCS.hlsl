@@ -59,7 +59,7 @@ FfxFloat32x3 FFX_SSSR_SampleEnvironmentMap(const in FfxFloat32x3 direction, cons
 	tx_environmentMap.GetDimensions(width, height);
 	
 	FfxInt32 maxMipLevel = FfxInt32(log2(FfxFloat32(width > 0 ? width : 1)));
-	FfxFloat32 mip = clamp(preceptualRoughness * FfxFloat32(maxMipLevel), 0.0, FfxFloat32(maxMipLevel));
+	FfxFloat32 mip = clamp(preceptualRoughness * FfxFloat32(maxMipLevel), 0.0f, FfxFloat32(maxMipLevel));
 	
 	return tx_environmentMap.SampleLevel(splr_EnvironmentMap, direction, mip).xyz * IBLFactor();
 }

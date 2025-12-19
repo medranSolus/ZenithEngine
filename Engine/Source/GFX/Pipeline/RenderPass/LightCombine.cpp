@@ -14,11 +14,18 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return Initialize(dev, buildData, formats.front());
 	}
 
-	static constexpr const char* GetPsoName(bool isAO, bool isIBL) noexcept
+	static std::string GetPsoName(bool isAO, bool isIBL, bool isSSR) noexcept
 	{
+		std::string base = "LightCombinePS";
+		if (isAO || isIBL || isSSR)
+			base += '_';
+		if (isAO)
+			base += 'A';
 		if (isIBL)
-			return isAO ? "LightCombinePS_AI" : "LightCombinePS_I";
-		return isAO ? "LightCombinePS_A" : "LightCombinePS";
+			base += 'I';
+		if (isSSR)
+			base += 'R';
+		return base;
 	}
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept
@@ -43,11 +50,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
 	{
 		const bool isAO = Settings::AmbientOcclusionType != AOType::None;
-		const bool isIBL = Settings::IsEnabledIBL() && !Settings::IsEnabledSSSR();
-		if (isAO != passData.AmbientOcclusionEnabled || isIBL != passData.IBLState)
+		if (isAO != passData.AmbientOcclusionEnabled || Settings::IsEnabledIBL() != passData.IBLState || Settings::IsEnabledSSSR() != passData.SSRState)
 		{
 			passData.AmbientOcclusionEnabled = isAO;
-			passData.IBLState = isIBL;
+			passData.IBLState = Settings::IsEnabledIBL();
+			passData.SSRState = Settings::IsEnabledSSSR();
 
 			Resource::PipelineStateDesc psoDesc;
 			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
@@ -55,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 			psoDesc.Culling = Resource::CullMode::None;
 			psoDesc.RenderTargetsCount = 1;
 			psoDesc.FormatsRT[0] = outputFormat;
-			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.AmbientOcclusionEnabled, passData.IBLState), buildData.ShaderCache);
+			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.AmbientOcclusionEnabled, passData.IBLState, passData.SSRState), buildData.ShaderCache);
 			ZE_PSO_SET_NAME(psoDesc, psoDesc.PS->GetName());
 
 			buildData.SyncStatus.SyncMain(dev);
@@ -71,13 +78,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 2, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO
+		desc.AddRange({ 3, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO + SSR
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
-		desc.AddRange({ 1, 2, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // IrrMap
-		desc.AddRange({ 1, 3, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // EnvMap
-		desc.AddRange({ 1, 4, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // BRDF LUT
-		desc.AddRange({ 4, 5, 6, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
+		desc.AddRange({ 4, 3, 3, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // GBuff
+		desc.AddRange({ 1, 7, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // EnvMap
+		desc.AddRange({ 1, 8, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // BRDF LUT
+		desc.AddRange({ 1, 9, 6, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // IrrMap
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
@@ -98,6 +105,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 			"LightCombine pass not updated for changed ssao input settings!");
 		ZE_ASSERT(data.IBLState == Settings::IsEnabledIBL(),
 			"LightCombine pass not updated for changed IBL settings!");
+		ZE_ASSERT(data.SSRState == Settings::IsEnabledSSSR(),
+			"LightCombine pass not updated for changed SSSR settings!");
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "LightCombine", Pixel(0xFF, 0xFF, 0x9F));
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -109,12 +118,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
-		if (data.IBLState)
+		if (data.IBLState || data.SSRState)
 		{
-			renderData.Buffers.SetSRV(cl, ctx, ids.IrrMap);
+			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 			renderData.Buffers.SetSRV(cl, ctx, ids.EnvMap);
 			renderData.Buffers.SetSRV(cl, ctx, ids.BrdfLUT);
-			renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
+			if (data.IBLState)
+				renderData.Buffers.SetSRV(cl, ctx, ids.IrrMap);
 		}
 		cl.DrawFullscreen(dev);
 
