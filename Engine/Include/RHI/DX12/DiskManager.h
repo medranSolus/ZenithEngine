@@ -15,7 +15,7 @@ namespace ZE::RHI::DX12
 	// Wrappers for DirectStorage interfaces (to avoid using multiple different versions)
 	typedef IDStorageFactory                   IStorageFactory;
 	typedef IDStorageCustomDecompressionQueue1 IStorageCustomDecompressionQueue;
-	typedef IDStorageQueue2                    IStorageQueue;
+	typedef IDStorageQueue3                    IStorageQueue;
 	typedef IDStorageCompressionCodec          IStorageCompressionCodec;
 	typedef IDStorageFile                      IStorageFile;
 

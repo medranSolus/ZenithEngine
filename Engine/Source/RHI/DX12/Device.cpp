@@ -269,6 +269,7 @@ namespace ZE::RHI::DX12
 		D3D12_FEATURE_DATA_TIGHT_ALIGNMENT tightAlignment = {};
 		if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_TIGHT_ALIGNMENT, &tightAlignment, sizeof(tightAlignment))))
 			tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
+		tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED; // TODO: Enable when DirectStorage stop complaining about size of the destination resource and will be able to perform normal copies
 
 		// Check for RT
 		switch (options5.RaytracingTier)
