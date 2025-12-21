@@ -7,10 +7,13 @@
 
 TEX2D(directLight, 0, 2);
 #ifdef _ZE_LIGHT_COMBINE_AO
+#	define SSR_SLOT 2
 TEXTURE_EX(ssaoMap, Texture2D<uint>, 1, 2);
+#else
+#	define SSR_SLOT 1
 #endif
 #ifdef _ZE_LIGHT_COMBINE_SSR
-TEX2D(ssr, 2, 2);
+TEX2D(ssr, SSR_SLOT, 2);
 #endif
 #if defined(_ZE_LIGHT_COMBINE_IBL) || defined(_ZE_LIGHT_COMBINE_SSR)
 TEX2D(depthMap, 3, 3);
