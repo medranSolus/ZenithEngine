@@ -190,7 +190,7 @@ namespace ZE::RHI::DX12
 		if (tightAlignment)
 		{
 			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+			dev.GetDevice()->GetResourceAllocationInfo3(0, 1, &desc, nullptr, nullptr, &info);
 
 			if (info.Alignment > TIGHT_CHUNK)
 				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, mainAllocator);
@@ -213,7 +213,7 @@ namespace ZE::RHI::DX12
 		if (tightAlignment)
 		{
 			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+			dev.GetDevice()->GetResourceAllocationInfo3(0, 1, &desc, nullptr, nullptr, &info);
 
 			if (info.Alignment > TIGHT_CHUNK)
 				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, dynamicBuffersAllocator);
@@ -226,7 +226,7 @@ namespace ZE::RHI::DX12
 		if (tightAlignment)
 		{
 			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-			dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+			dev.GetDevice()->GetResourceAllocationInfo3(0, 1, &desc, nullptr, nullptr, &info);
 
 			if (info.Alignment > TIGHT_CHUNK)
 				return AllocBigChunks(dev, desc.Width, desc, D3D12_BARRIER_LAYOUT_UNDEFINED, info.Alignment, readbackBuffersAllocator);
@@ -242,7 +242,7 @@ namespace ZE::RHI::DX12
 		auto& allocator = allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator;
 
 		D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-		dev.GetDevice()->GetResourceAllocationInfo2(0, 1, &desc, &info);
+		dev.GetDevice()->GetResourceAllocationInfo3(0, 1, &desc, nullptr, nullptr, &info);
 		if (tightAlignment)
 		{
 			if (info.Alignment > TIGHT_CHUNK)

@@ -717,7 +717,7 @@ namespace ZE::RHI::DX12
 		if (!allocator.IsTightAlignmentEnabled())
 		{
 			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-			device->GetResourceAllocationInfo2(0, 1, &desc, &info);
+			device->GetResourceAllocationInfo3(0, 1, &desc, nullptr, nullptr, &info);
 			if (info.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
 				desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		}

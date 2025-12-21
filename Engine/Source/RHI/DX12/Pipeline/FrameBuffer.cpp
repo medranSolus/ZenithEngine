@@ -64,7 +64,7 @@ namespace ZE::RHI::DX12::Pipeline
 #endif
 
 	U64 FrameBuffer::AllocateResources(std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
-		const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags) noexcept
+		const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags, U64 minimalChunkSize) noexcept
 	{
 		U32 heapChunks = 0;
 
@@ -75,7 +75,7 @@ namespace ZE::RHI::DX12::Pipeline
 			for (; resBegin != resEnd; ++resBegin)
 			{
 				// Make sure that current offset will be aligned
-				heapChunks = Math::AlignUp(heapChunks, Utils::SafeCast<U32>(resBegin->Desc.Alignment / D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
+				heapChunks = Math::AlignUp(heapChunks, Utils::SafeCast<U32>(resBegin->Desc.Alignment / minimalChunkSize));
 				resBegin->ChunkOffset = heapChunks;
 				heapChunks += resBegin->Chunks;
 			}
@@ -87,7 +87,7 @@ namespace ZE::RHI::DX12::Pipeline
 			U32 allocatedChunks = 0;
 			for (auto it = resBegin; it != resEnd; ++it)
 			{
-				const U32 chunkAlignment = Utils::SafeCast<U32>(it->Desc.Alignment / D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT);
+				const U32 chunkAlignment = Utils::SafeCast<U32>(it->Desc.Alignment / minimalChunkSize);
 				// TODO: maybe treat temporals differently in terms of search
 				// (push at the front or end but what if different alignments)
 				U32 startLevel = 0, endLevel = levelCount;
@@ -139,7 +139,7 @@ namespace ZE::RHI::DX12::Pipeline
 			}
 			heapChunks = Utils::SafeCast<U32>(memory.size() / levelCount);
 		}
-		return Utils::SafeCast<U64>(heapChunks) * D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+		return Utils::SafeCast<U64>(heapChunks) * minimalChunkSize;
 	}
 
 	void FrameBuffer::EnterRaster() const noexcept
@@ -304,6 +304,8 @@ namespace ZE::RHI::DX12::Pipeline
 
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 		IDevice* device = dev.Get().dx12.GetDevice();
+		const bool tightAlignment = dev.Get().dx12.IsTightAlignment();
+		const U64 minimalChunkSize = tightAlignment ? D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT : D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
 		resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
 		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
@@ -334,16 +336,28 @@ namespace ZE::RHI::DX12::Pipeline
 				// Different handling for only memory region reservation
 				if (res.Flags & GFX::Pipeline::FrameResourceFlag::NoResourceCreation)
 				{
-					resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 					resDesc.Width = res.Sizes.X;
 					resDesc.Width |= static_cast<U64>(res.Sizes.Y) << 32;
 					resDesc.Height = 0;
 					resDesc.DepthOrArraySize = 0;
 					resDesc.MipLevels = 0;
 					resDesc.Format = DXGI_FORMAT_UNKNOWN;
-					resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-					const U64 chunksCount = Math::DivideRoundUp(resDesc.Width, static_cast<U64>(D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
+					if (tightAlignment)
+					{
+						resDesc.Alignment = 0;
+						resDesc.Flags = D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT;
+						D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
+						device->GetResourceAllocationInfo3(0, 1, &resDesc, nullptr, nullptr, &info);
+						resDesc.Alignment = info.Alignment;
+					}
+					else
+					{
+						resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+						resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+					}
+
+					const U64 chunksCount = Math::DivideRoundUp(resDesc.Width, static_cast<U64>(minimalChunkSize));
 					resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(chunksCount), 0U, resDesc).SetMemoryOnlyRegion();
 					if (res.Type == GFX::Pipeline::FrameResourceType::Buffer)
 						++bufferCount;
@@ -449,17 +463,26 @@ namespace ZE::RHI::DX12::Pipeline
 						resDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
 					// Get resource alignment and size in chunks
-					resDesc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+					if (tightAlignment)
+					{
+						resDesc.Alignment = 0;
+						resDesc.Flags |= D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT;
+					}
+					else
+						resDesc.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+
 					D3D12_RESOURCE_ALLOCATION_INFO1 allocInfo = {};
-					device->GetResourceAllocationInfo2(0, 1, &resDesc, &allocInfo);
+					device->GetResourceAllocationInfo3(0, 1, &resDesc, nullptr, nullptr, &allocInfo);
+					if (tightAlignment)
+						resDesc.Alignment = allocInfo.Alignment;
 					if (allocInfo.Alignment != D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
 					{
 						resDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-						device->GetResourceAllocationInfo2(0, 1, &resDesc, &allocInfo);
+						device->GetResourceAllocationInfo3(0, 1, &resDesc, nullptr, nullptr, &allocInfo);
 					}
 
 					// Create resource entry and fill it with proper info
-					const U64 chunksCount = Math::DivideRoundUp(allocInfo.SizeInBytes, static_cast<U64>(D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT));
+					const U64 chunksCount = Math::DivideRoundUp(allocInfo.SizeInBytes, static_cast<U64>(minimalChunkSize));
 					auto& info = resourcesInfo.emplace_back(i, Utils::SafeCast<U32>(chunksCount), 0U, resDesc, clearDesc, 0, 0);
 					if (res.Type == GFX::Pipeline::FrameResourceType::TextureCube)
 						info.SetCube();
@@ -523,7 +546,7 @@ namespace ZE::RHI::DX12::Pipeline
 				auto begin = resourcesInfo.begin() + mainHeapResourceCount + uavHeapResourceCount;
 				auto end = resourcesInfo.begin() + mainHeapResourceCount + uavHeapResourceCount + bufferCount;
 				// Find offsets for all resources in this heap and get it's size
-				heapDesc.SizeInBytes = AllocateResources(begin, resourcesInfo.end(), desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
+				heapDesc.SizeInBytes = AllocateResources(begin, resourcesInfo.end(), desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
 
 				heapDesc.Flags |= D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 				ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&bufferHeap)));
@@ -547,7 +570,7 @@ namespace ZE::RHI::DX12::Pipeline
 				auto begin = resourcesInfo.begin() + mainHeapResourceCount;
 				auto end = resourcesInfo.begin() + mainHeapResourceCount + uavHeapResourceCount;
 				// Find offsets for all resources in this heap and get it's size
-				heapDesc.SizeInBytes = AllocateResources(begin, end, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
+				heapDesc.SizeInBytes = AllocateResources(begin, end, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
 
 				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
 				ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&uavHeap)));
@@ -579,7 +602,7 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 
 		// Allocate resources and create main heap
-		heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags);
+		heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
 		ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&mainHeap)));
 		ZE_DX_SET_ID(mainHeap, "GFX::Pipeline::FrameBuffer heap - main");
 		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
@@ -627,8 +650,10 @@ namespace ZE::RHI::DX12::Pipeline
 			}
 			else
 			{
+				if (tightAlignment)
+					res.Desc.Alignment = 0;
 				ZE_DX_THROW_FAILED(device->CreatePlacedResource2(res.IsHeapBuffer() ? bufferHeap.Get() : (res.IsHeapUAV() ? uavHeap.Get() : mainHeap.Get()),
-					res.ChunkOffset * D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT, &res.Desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
+					res.ChunkOffset * minimalChunkSize, &res.Desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
 					res.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? &res.ClearVal : nullptr,
 					0, nullptr, IID_PPV_ARGS(&data.Resource)));
 				ZE_DX_SET_ID(data.Resource, "RID_" + std::to_string(res.Handle) + (desc.Resources.at(res.Handle).DebugName.size() ? " " + desc.Resources.at(res.Handle).DebugName : ""));
@@ -1110,7 +1135,7 @@ namespace ZE::RHI::DX12::Pipeline
 				initParams.pTempBufferHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? bufferHeap.Get() : mainHeap.Get();
 				initParams.bufferHeapOffset = static_cast<U64>(GetArraySize(xessRes.first));
 				initParams.bufferHeapOffset |= static_cast<U64>(GetMipCount(xessRes.first)) << 16;
-				initParams.bufferHeapOffset *= D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+				initParams.bufferHeapOffset *= minimalChunkSize;
 			}
 			else
 			{
@@ -1122,7 +1147,7 @@ namespace ZE::RHI::DX12::Pipeline
 				initParams.pTempTextureHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? uavHeap.Get() : mainHeap.Get();
 				initParams.textureHeapOffset = static_cast<U64>(GetArraySize(xessRes.second));
 				initParams.textureHeapOffset |= static_cast<U64>(GetMipCount(xessRes.second)) << 16;
-				initParams.textureHeapOffset *= D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+				initParams.textureHeapOffset *= minimalChunkSize;
 			}
 			else
 			{

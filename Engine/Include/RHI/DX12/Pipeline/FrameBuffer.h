@@ -102,7 +102,7 @@ namespace ZE::RHI::DX12::Pipeline
 			const std::vector<std::pair<U32, U32>>& resourcesLifetime) noexcept;
 #endif
 		static U64 AllocateResources(std::vector<ResourceInitInfo>::iterator resBegin, std::vector<ResourceInitInfo>::iterator resEnd,
-			const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags) noexcept;
+			const std::vector<std::pair<U32, U32>>& resourcesLifetime, U32 levelCount, GFX::Pipeline::FrameBufferFlags flags, U64 minimalChunkSize) noexcept;
 
 		void EnterRaster() const noexcept;
 		void SetupViewport(D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect, RID rid) const noexcept;
