@@ -164,8 +164,6 @@ void App::ShowOptionsWindow()
 	{
 		if (ImGui::Button("Exit"))
 			run = false;
-		ImGui::SameLine();
-		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
 
 		ImGui::Text("ImGui Demo window");
 		ImGui::SameLine();

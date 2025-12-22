@@ -200,6 +200,21 @@ namespace ZE
 				ImGui::NewLine();
 			}
 
+			if (ImGui::CollapsingHeader("Performance"))
+			{
+				ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
+#ifdef USE_PIX
+				if (Settings::GetGfxApi() == GfxApiType::DX12)
+				{
+					if (ImGui::Button("PIX capture"))
+						flags[Flags::PixCapture] = true;
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Perform GPU capture and save it to file \"capture.wpix\". DX12 only.");
+				}
+#endif
+				ImGui::NewLine();
+			}
+
 			if (ImGui::CollapsingHeader("Effects"))
 			{
 				constexpr std::array<const char*, 3> AO_LEVELS = { "No AO", "XeGTAO", "CACAO" };
@@ -251,6 +266,26 @@ namespace ZE
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
 	{
+#ifdef USE_PIX
+		if (flags[Flags::PixCapture])
+		{
+			if (Settings::GetGfxApi() == GfxApiType::DX12)
+			{
+				graphics.GetDevice().FlushGPU();
+				if (FAILED(PIXSetTargetWindow(window.GetHandle())))
+					Logger::Warning("Failed to set PIX target window!");
+
+				PIXCaptureParameters params = {};
+				params.GpuCaptureParameters.FileName = L"capture.wpix";
+				if (FAILED(PIXBeginCapture2(PIX_CAPTURE_GPU, &params)))
+					Logger::Warning("Failed to begin PIX capture!");
+				else
+					flags[Flags::PixCaptureInProgress] = true;
+			}
+			flags[Flags::PixCapture] = false;
+		}
+#endif
+
 		ZE_PERF_START("Frame");
 
 		double currentTime = Perf::Get().GetNow();
@@ -322,5 +357,14 @@ namespace ZE
 
 		// Frame marker
 		ZE_PERF_STOP();
+
+#ifdef USE_PIX
+		if (flags[Flags::PixCaptureInProgress])
+		{
+			if (FAILED(PIXEndCapture(false)))
+				Logger::Warning("Failed to end PIX capture!");
+			flags[Flags::PixCaptureInProgress] = false;
+		}
+#endif
 	}
 }
