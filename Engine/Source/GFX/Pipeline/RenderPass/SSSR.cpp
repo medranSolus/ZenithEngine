@@ -86,23 +86,27 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.brdfTexture = FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
-		*reinterpret_cast<Float4x4*>(desc.invViewProjection) = renderData.DynamicData.ViewProjectionInverseTps;
-		Matrix projTps = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.Projection));
+		// FFX SDK used post multiplication in the shaders so all combined matrices needs to be recomputed here
+		Matrix proj = Math::XMLoadFloat4x4(&renderData.GraphData.Projection);
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invViewProjection),
+			Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, proj * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)))));
+		Matrix projTps = Math::XMMatrixTranspose(proj);
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), projTps);
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invProjection), Math::XMMatrixInverse(nullptr, projTps));
 		*reinterpret_cast<Float4x4*>(desc.view) = renderData.DynamicData.ViewTps;
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)));
-		*reinterpret_cast<Float4x4*>(desc.prevViewProjection) = renderData.GraphData.PrevViewProjectionTps;
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.prevViewProjection),
+			Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection) * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps))));
 
 		desc.renderSize = { inputSize.X, inputSize.Y };
-		desc.motionVectorScale.x = -0.5f;
-		desc.motionVectorScale.y = -0.5f;
+		desc.motionVectorScale.x = -1.0f;
+		desc.motionVectorScale.y = -1.0f;
 		desc.iblFactor = data.IblFactor;
 		// Custom way of loading normals is chosen so no need to perform any unpacking from SDK (custom callbacks provided)
 		desc.normalUnPackMul = 1.0f;
 		desc.normalUnPackAdd = 0.0f;
 		desc.roughnessChannel = 0; // Not used, specified directly in shader
-		desc.isRoughnessPerceptual = true; // Not used, all shaders assume roughness is linear
+		desc.isRoughnessPerceptual = false; // Not used, all shaders assume roughness is linear
 		desc.temporalStabilityFactor = data.TemporalStabilityFactor;
 		desc.depthBufferThickness = data.DepthBufferThickness;
 		desc.roughnessThreshold = data.RoughnessThreshold;

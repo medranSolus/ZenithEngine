@@ -53,7 +53,8 @@ namespace ZE::GFX::Pipeline
 	{
 		EID CurrentCamera;
 		Float4x4 Projection;
-		Float4x4 PrevViewProjectionTps;
+		Float4x4 PrevViewTps;
+		Float4x4 PrevProjection;
 		U32 JitterIndex = 0;
 		bool FrameTemporalReset = false;
 	};

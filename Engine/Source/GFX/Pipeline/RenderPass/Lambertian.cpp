@@ -154,7 +154,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			"Lambertian pass not updated for changed reactive mask output settings!");
 
 		const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
-		const Matrix prevViewProjection = Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewProjectionTps);
+		const Matrix prevViewProjectionTps = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection)) * Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps);
 		const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 		// Compute visibility of objects inside camera view
@@ -210,7 +210,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
-						prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
+						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
 					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion));
 				}
@@ -344,7 +344,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
-						prevViewProjection * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
+						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
 					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion));
 				}

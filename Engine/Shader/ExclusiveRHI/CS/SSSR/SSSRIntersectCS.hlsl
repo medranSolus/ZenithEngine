@@ -54,14 +54,8 @@ FfxFloat32x3 FFX_SSSR_LoadInputColor(const in FfxInt32x3 coord)
 
 FfxFloat32x3 FFX_SSSR_SampleEnvironmentMap(const in FfxFloat32x3 direction, const in FfxFloat32 preceptualRoughness)
 {
-	FfxFloat32 width;
-	FfxFloat32 height;
-	tx_environmentMap.GetDimensions(width, height);
-	
-	FfxInt32 maxMipLevel = FfxInt32(log2(FfxFloat32(width > 0 ? width : 1)));
-	FfxFloat32 mip = clamp(preceptualRoughness * FfxFloat32(maxMipLevel), 0.0f, FfxFloat32(maxMipLevel));
-	
-	return tx_environmentMap.SampleLevel(splr_EnvironmentMap, direction, mip).xyz * IBLFactor();
+	FfxFloat32x3 sampleDir = FfxFloat32x3(direction.x, direction.y, direction.z);
+	return tx_environmentMap.SampleLevel(splr_EnvironmentMap, normalize(sampleDir), 0.0f).xyz * IBLFactor();
 }
 
 #include "WarningGuardOn.hlsli"

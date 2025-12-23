@@ -663,7 +663,7 @@ namespace ZE::GFX::FFX
 					},
 					0.0f,
 					16,
-					Resource::CompareMethod::Never,
+					Resource::CompareMethod::Always,
 					Resource::Texture::EdgeColor::TransparentBlack,
 					0.0f,
 					FLT_MAX,

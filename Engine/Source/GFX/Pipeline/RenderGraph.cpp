@@ -167,6 +167,10 @@ namespace ZE::GFX::Pipeline
 		ZE_ASSERT((Settings::Data.all_of<Data::TransformGlobal, Data::Camera>(execData.GraphData.CurrentCamera)),
 			"Current camera does not have all required components!");
 
+		// Copy previous camera info
+		execData.GraphData.PrevViewTps = execData.DynamicData.ViewTps;
+		execData.GraphData.PrevProjection = execData.GraphData.Projection;
+
 		auto& currentCamera = Settings::Data.get<Data::Camera>(execData.GraphData.CurrentCamera);
 		const auto& transform = Settings::Data.get<Data::Transform>(execData.GraphData.CurrentCamera); // TODO: Change into TransformGlobal later
 
@@ -177,9 +181,6 @@ namespace ZE::GFX::Pipeline
 			Math::XMLoadFloat3(&currentCamera.EyeDirection),
 			Math::XMLoadFloat3(&currentCamera.UpVector));
 		Math::XMStoreFloat4x4(&execData.DynamicData.ViewTps, Math::XMMatrixTranspose(view));
-
-		if (Settings::ComputeMotionVectors())
-			execData.GraphData.PrevViewProjectionTps = execData.DynamicData.ViewProjectionTps;
 
 		if (Settings::ApplyJitter())
 		{

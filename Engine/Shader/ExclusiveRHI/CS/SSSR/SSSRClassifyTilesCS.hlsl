@@ -25,10 +25,13 @@ void IncrementDenoiserTileCounter(out FfxUInt32 orgVal)
 
 void StoreRay(const in FfxInt32 index, const in FfxUInt32x2 rayCoord, const in FfxBoolean copyHorizontal, const in FfxBoolean copyVertical, const in FfxBoolean copyDiagonal)
 {
-	FfxUInt32 ray15bitX = rayCoord.x & 0b111111111111111;
-	FfxUInt32 ray14bitY = rayCoord.y & 0b11111111111111;
+	FfxUInt32 rayX15bit = rayCoord.x & 0b111111111111111;
+	FfxUInt32 rayY14bit = rayCoord.y & 0b11111111111111;
+	FfxUInt32 copyHorizontal1bit = copyHorizontal ? 1 : 0;
+	FfxUInt32 copyVertical1bit = copyVertical ? 1 : 0;
+	FfxUInt32 copyDiagonal1bit = copyDiagonal ? 1 : 0;
 
-	FfxUInt32 packed = (copyDiagonal << 31) | (copyVertical << 30) | (copyHorizontal << 29) | (ray14bitY << 15) | (ray15bitX << 0);
+	FfxUInt32 packed = (copyDiagonal1bit << 31) | (copyVertical1bit << 30) | (copyHorizontal1bit << 29) | (rayY14bit << 15) | (rayX15bit << 0);
 	// Store out pixel to trace
 	ua_rayList[index] = packed;
 }
@@ -75,12 +78,11 @@ FfxFloat32x3 FFX_SSSR_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
 
 FfxFloat32x3 FFX_SSSR_SampleEnvironmentMap(const in FfxFloat32x3 direction, const in FfxFloat32 preceptualRoughness)
 {
-    FfxFloat32 width;
-	FfxFloat32 height;
+	FfxFloat32 width, height;
 	tx_environmentMap.GetDimensions(width, height);
 	
-	FfxInt32 maxMipLevel = FfxInt32(log2(FfxFloat32(width > 0 ? width : 1)));
-    FfxFloat32 mip = clamp(preceptualRoughness * FfxFloat32(maxMipLevel), 0.0f, FfxFloat32(maxMipLevel));
+	FfxInt32 maxMipLevel = FfxInt32(log2(FfxFloat32(width > 0.0f ? width : 1.0f)));
+	FfxFloat32 mip = clamp(preceptualRoughness * FfxFloat32(maxMipLevel), 0.0f, FfxFloat32(maxMipLevel));
 	
 	return tx_environmentMap.SampleLevel(splr_EnvironmentMap, direction, mip).xyz * IBLFactor();
 }
