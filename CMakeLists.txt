@@ -111,6 +111,7 @@ set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
+set(XAUDIO2_DIR "${EXTERNAL_DIR}/XAudio2")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
 set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
@@ -148,6 +149,7 @@ set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
+set(XAUDIO2_INC_DIR "${XAUDIO2_DIR}/include")
 set(XESS_INC_DIR "${XESS_DIR}/inc")
 set(QOI_INC_DIR "${QOI_DIR}/include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
@@ -177,6 +179,7 @@ set_bool(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
 set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
 set_bool(ZE_PIX_ENABLED ${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE})
+set_bool(ZE_XAUDIO2_ENABLED ${ZE_PLATFORM_WINDOWS})
 set_bool(ZE_XESS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
 
 
@@ -216,6 +219,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${NIS_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
+	"${XAUDIO2_INC_DIR}"
 	"${XESS_INC_DIR}"
 	"${QOI_INC_DIR}"
 	"${ZLIB_INC_DIR}")
@@ -251,6 +255,7 @@ set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
+set(XAUDIO2_LIB "xaudio2_9redist")
 set(XESS_LIB "libxess")
 set(ZLIB_LIB "zlibstatic")
 
@@ -287,6 +292,10 @@ if(${ZE_VOLK_ENABLED})
 endif()
 if(${ZE_PIX_ENABLED})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
+endif()
+if(${ZE_XAUDIO2_ENABLED})
+	set(XAUDIO2_TARGETS "${XAUDIO2_DIR}/release/lib/x64/${XAUDIO2_LIB}.lib"
+		"${XAUDIO2_DIR}/release/lib/x64/xapobaseredist.lib")
 endif()
 if(${ZE_XESS_ENABLED})
 	set(XESS_TARGET "${XESS_DIR}/lib/${XESS_LIB}.lib")
@@ -325,6 +334,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${LIBPNG_TARGET}
 	${LIBSPNG_TARGET}
 	${PIX_TARGET}
+	${XAUDIO2_TARGETS}
 	${XESS_TARGET}
 	${VOLK_TARGET}
 	${ZLIB_TARGET})

@@ -54,6 +54,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [stb_sprintf v1.10](https://github.com/nothings/stb/blob/master/stb_sprintf.h) - [Public Domain](Doc/License/ThirdParty/stb.txt)
  - [volk v1.3.250](https://github.com/zeux/volk) - [MIT License](Doc/License/ThirdParty/volk.txt)
  - [WinPixEventRuntime v1.0.240308001](https://www.nuget.org/packages/WinPixEventRuntime) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/WinPixEventRuntime.txt), [Third Party Notices](Doc/License/ThirdParty/WinPixEventRuntimeThirdPartyNotices.txt)
+ - [XAudio2 v1.2.13](https://www.nuget.org/packages/Microsoft.XAudio2.Redist/) - [MICROSOFT SOFTWARE LICENSE](Doc/License/ThirdParty/XAudio2.txt)
  - [XeGTAO v1.30](https://github.com/GameTechDev/XeGTAO) - [MIT LICENSE](Doc/License/ThirdParty/XeGTAO.txt)
 
  ## [Changelog](Doc/Changelog.md)
