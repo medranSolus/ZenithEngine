@@ -16,13 +16,15 @@ namespace ZE::Data
 		Folder,
 		// Paths to 6 different surfaces representing cubemap
 		// Data contents: 6 cubemap files in order as above
-		CubemapFiles
+		CubemapFiles,
+		// No cubemap present
+		Empty
 	};
 
 	// Information about source of the skybox
 	struct CubemapSource final
 	{
-		CubemapSourceType Type = CubemapSourceType::Folder;
+		CubemapSourceType Type = CubemapSourceType::Empty;
 		std::unique_ptr<std::string[]> Data = nullptr;
 
 		CubemapSource() = default;

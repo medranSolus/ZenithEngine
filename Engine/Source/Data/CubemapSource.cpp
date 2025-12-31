@@ -11,8 +11,6 @@ namespace ZE::Data
 			InitSingleFileCubemap(source.Data[0]);
 			break;
 		}
-		default:
-			ZE_ENUM_UNHANDLED();
 		case CubemapSourceType::Folder:
 		{
 			InitFolder(source.Data[0], source.Data[1]);
@@ -23,6 +21,14 @@ namespace ZE::Data
 			InitCubemapFiles(source.Data[0], source.Data[1],
 				source.Data[2], source.Data[3],
 				source.Data[4], source.Data[5]);
+			break;
+		}
+		default:
+			ZE_ENUM_UNHANDLED();
+		case CubemapSourceType::Empty:
+		{
+			Type = CubemapSourceType::Empty;
+			Data = nullptr;
 			break;
 		}
 		}
@@ -60,51 +66,53 @@ namespace ZE::Data
 
 	bool CubemapSource::LoadTextures(std::vector<GFX::Surface>& textures) const noexcept
 	{
-		if (Data == nullptr)
-			return false;
-
-		bool result = true;
-		switch (Type)
+		bool result = false;
+		if (Data != nullptr)
 		{
-		case Data::CubemapSourceType::SingleFileCubemap:
-		{
-			result = textures.emplace_back().Load(Data[0]);
-			break;
-		}
-		default:
-			ZE_ENUM_UNHANDLED();
-		case Data::CubemapSourceType::Folder:
-		{
-			textures.reserve(6);
-			result = textures.emplace_back().Load(Data[0] + "/px" + Data[1]); // Right
-			if (result)
-				result &= textures.emplace_back().Load(Data[0] + "/nx" + Data[1]); // Left
-			if (result)
-				result &= textures.emplace_back().Load(Data[0] + "/py" + Data[1]); // Up
-			if (result)
-				result &= textures.emplace_back().Load(Data[0] + "/ny" + Data[1]); // Down
-			if (result)
-				result &= textures.emplace_back().Load(Data[0] + "/pz" + Data[1]); // Front
-			if (result)
-				result &= textures.emplace_back().Load(Data[0] + "/nz" + Data[1]); // Back
-			break;
-		}
-		case Data::CubemapSourceType::CubemapFiles:
-		{
-			textures.reserve(6);
-			result = textures.emplace_back().Load(Data[0]); // Right
-			if (result)
-				result &= textures.emplace_back().Load(Data[1]); // Left
-			if (result)
-				result &= textures.emplace_back().Load(Data[2]); // Up
-			if (result)
-				result &= textures.emplace_back().Load(Data[3]); // Down
-			if (result)
-				result &= textures.emplace_back().Load(Data[4]); // Front
-			if (result)
-				result &= textures.emplace_back().Load(Data[5]); // Back
-			break;
-		}
+			switch (Type)
+			{
+			case Data::CubemapSourceType::SingleFileCubemap:
+			{
+				result = textures.emplace_back().Load(Data[0]);
+				break;
+			}
+			case Data::CubemapSourceType::Folder:
+			{
+				textures.reserve(6);
+				result = textures.emplace_back().Load(Data[0] + "/px" + Data[1]); // Right
+				if (result)
+					result &= textures.emplace_back().Load(Data[0] + "/nx" + Data[1]); // Left
+				if (result)
+					result &= textures.emplace_back().Load(Data[0] + "/py" + Data[1]); // Up
+				if (result)
+					result &= textures.emplace_back().Load(Data[0] + "/ny" + Data[1]); // Down
+				if (result)
+					result &= textures.emplace_back().Load(Data[0] + "/pz" + Data[1]); // Front
+				if (result)
+					result &= textures.emplace_back().Load(Data[0] + "/nz" + Data[1]); // Back
+				break;
+			}
+			case Data::CubemapSourceType::CubemapFiles:
+			{
+				textures.reserve(6);
+				result = textures.emplace_back().Load(Data[0]); // Right
+				if (result)
+					result &= textures.emplace_back().Load(Data[1]); // Left
+				if (result)
+					result &= textures.emplace_back().Load(Data[2]); // Up
+				if (result)
+					result &= textures.emplace_back().Load(Data[3]); // Down
+				if (result)
+					result &= textures.emplace_back().Load(Data[4]); // Front
+				if (result)
+					result &= textures.emplace_back().Load(Data[5]); // Back
+				break;
+			}
+			default:
+				ZE_ENUM_UNHANDLED();
+			case Data::CubemapSourceType::Empty:
+				break;
+			}
 		}
 		return result;
 	}
@@ -117,8 +125,6 @@ namespace ZE::Data
 			result = false;
 			switch (Type)
 			{
-			default:
-				ZE_ENUM_UNHANDLED();
 			case Data::CubemapSourceType::CubemapFiles:
 				result = Data[2] != source.Data[2] || Data[3] != source.Data[3]
 					|| Data[4] != source.Data[4] || Data[5] != source.Data[5];
@@ -128,6 +134,10 @@ namespace ZE::Data
 				[[fallthrough]];
 			case Data::CubemapSourceType::SingleFileCubemap:
 				result |= Data[0] != source.Data[0];
+				break;
+			default:
+				ZE_ENUM_UNHANDLED();
+			case Data::CubemapSourceType::Empty:
 				break;
 			}
 		}

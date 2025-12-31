@@ -13,8 +13,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 			ImGui::BulletText(source.Data[0].c_str());
 			break;
 		}
-		default:
-			ZE_ENUM_UNHANDLED();
 		case Data::CubemapSourceType::Folder:
 		{
 			ImGui::BulletText("%s/*%s", source.Data[0].c_str(), source.Data[1].c_str());
@@ -28,6 +26,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 			ImGui::BulletText("[-Y] %s", source.Data[3].c_str());
 			ImGui::BulletText("[+Z] %s", source.Data[4].c_str());
 			ImGui::BulletText("[-Z] %s", source.Data[5].c_str());
+			break;
+		}
+		default:
+			ZE_ENUM_UNHANDLED();
+		case Data::CubemapSourceType::Empty:
+		{
+			ImGui::BulletText("<empty>");
 			break;
 		}
 		}
