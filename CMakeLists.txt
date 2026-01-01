@@ -25,6 +25,8 @@ option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" OFF)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
 option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
 option(ZE_ENABLE_VK "Enable Vulkan API usage" OFF)
+option(ZE_ENABLE_XAUDIO2 "Enable XAudio2 API usage" ON)
+option(ZE_ENABLE_OPENAL "Enable OpenAL API usage" ON)
 option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
@@ -65,6 +67,7 @@ endif()
 if(${ZE_PLATFORM_LINUX})
 	set(ZE_ENABLE_DX11 OFF CACHE BOOL "DirectX 11 not supported for Linux" FORCE)
 	set(ZE_ENABLE_DX12 OFF CACHE BOOL "DirectX 12 not supported for Linux" FORCE)
+	set(ZE_ENABLE_XAUDIO2 OFF CACHE BOOL "XAudio2 not supported for Linux" FORCE)
 elseif(NOT (${ZE_PLATFORM_WINDOWS}))
 	message(FATAL_ERROR "Building for unsupported platform [${CMAKE_SYSTEM_NAME}]!")
 endif()
@@ -73,6 +76,9 @@ if(NOT (${ZE_COMPILER_MSVC} OR ${ZE_COMPILER_CLANG} OR ${ZE_COMPILER_GCC}))
 endif()
 if(NOT (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12} OR ${ZE_ENABLE_VK}))
 	message(FATAL_ERROR "No RHI backend enabled, at least one must be active!")
+endif()
+if(NOT (${ZE_ENABLE_XAUDIO2} OR ${ZE_ENABLE_OPENAL}))
+	message(FATAL_ERROR "No AHI backend enabled, at least one must be active!")
 endif()
 
 # Check flags provided to CMake by toolchains
@@ -109,6 +115,7 @@ set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
+set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(XAUDIO2_DIR "${EXTERNAL_DIR}/XAudio2")
@@ -147,6 +154,7 @@ set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
+set(OPENAL_INC_DIR "${NIS_DIR}/include")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(XAUDIO2_INC_DIR "${XAUDIO2_DIR}/include")
@@ -179,7 +187,6 @@ set_bool(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
 set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
 set_bool(ZE_PIX_ENABLED ${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE})
-set_bool(ZE_XAUDIO2_ENABLED ${ZE_PLATFORM_WINDOWS})
 set_bool(ZE_XESS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
 
 
@@ -217,6 +224,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${LIBPNG_INC_DIR}"
 	"${LIBSPNG_INC_DIR}"
 	"${NIS_INC_DIR}"
+	"${OPENAL_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XAUDIO2_INC_DIR}"
@@ -229,9 +237,11 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 
 if(${ZE_PLATFORM_WINDOWS})
 	set(LIB_EXT ".lib")
+	set(SHARED_LIB_EXT ".dll")
 	set(LIB_PREFIX "")
 else()
 	set(LIB_EXT ".a")
+	set(SHARED_LIB_EXT ".so")
 	set(LIB_PREFIX "lib")
 endif()
 
@@ -253,6 +263,7 @@ set(FTYPE_LIB "freetype")
 set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
+set(OPENAL_LIB "OpenAL32")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
 set(XAUDIO2_LIB "xaudio2_9redist")
@@ -287,13 +298,16 @@ set(FTYPE_TARGET "${FTYPE_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
 set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
+if(${ZE_ENABLE_OPENAL})
+	set(OPENAL_TARGET "${OPENAL_LIB}")
+endif()
 if(${ZE_VOLK_ENABLED})
 	set(VOLK_TARGET "${VOLK_LIB}")
 endif()
 if(${ZE_PIX_ENABLED})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
 endif()
-if(${ZE_XAUDIO2_ENABLED})
+if(${ZE_ENABLE_XAUDIO2})
 	set(XAUDIO2_TARGETS "${XAUDIO2_DIR}/release/lib/x64/${XAUDIO2_LIB}.lib"
 		"${XAUDIO2_DIR}/release/lib/x64/xapobaseredist.lib")
 endif()
@@ -333,6 +347,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${HARFBUZZ_TARGET}
 	${LIBPNG_TARGET}
 	${LIBSPNG_TARGET}
+	${OPENAL_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
 	${XESS_TARGET}
@@ -511,14 +526,7 @@ endif()
 set(ZLIB_CACHE_ARGS "-DZLIB_BUILD_TESTING:BOOL=OFF"
 	"-DZLIB_BUILD_SHARED:BOOL=OFF")
 add_external_project(ZLIB "" "" "" "")
-if(NOT EXISTS "${EXTERNAL_BIN_DIR}/zconf.h")
-	ExternalProject_Add_Step(${ZLIB_TARGET} headerConfig
-		DEPENDEES install
-		LOG OFF
-		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${ZLIB_BUILD_DIR}/zconf.h"
-		"${EXTERNAL_BIN_DIR}")
-endif()
+copy_inner_lib(ZLIB HeaderConfig "" "zconf.h")
 
  # libspng
 set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
@@ -547,14 +555,7 @@ set(LIBPNG_CACHE_ARGS "-DPNG_BUILD_ZLIB:BOOL=OFF"
 	"-DPNG_DEBUG:BOOL=OFF"
 	"-DPNG_HARDWARE_OPTIMIZATIONS:BOOL=ON")
 add_external_project(LIBPNG "" "" "" "ZLIB")
-if(NOT EXISTS "${LIBPNG_OUT_LIB}")
-	ExternalProject_Add_Step(${LIBPNG_TARGET} headerConfig
-		DEPENDEES install
-		LOG OFF
-		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${LIBPNG_BUILD_DIR}/pnglibconf.h"
-		"${EXTERNAL_BIN_DIR}")
-endif()
+copy_inner_lib(LIBPNG HeaderConfig "" "pnglibconf.h")
 
 # Assimp
 if(${ZE_EXTERNAL_MODEL_LOADING})
@@ -581,6 +582,28 @@ if(${ZE_EXTERNAL_MODEL_LOADING})
 	endif()
 endif()
 
+# OpenAL
+if(${ZE_ENABLE_OPENAL})
+	set(OPENAL_CACHE_ARGS "-DALSOFT_UTILS:BOOL=OFF"
+		"-DALSOFT_NO_CONFIG_UTIL:BOOL=ON"
+		"-DALSOFT_EXAMPLES:BOOL=OFF"
+		"-DALSOFT_TESTS:BOOL=OFF"
+		"-DALSOFT_INSTALL_CONFIG:BOOL=OFF"
+		"-DALSOFT_INSTALL_HRTF_DATA:BOOL=OFF"
+		"-DALSOFT_INSTALL_AMBDEC_PRESETS:BOOL=OFF"
+		"-DALSOFT_INSTALL_EXAMPLES:BOOL=OFF"
+		"-DALSOFT_INSTALL_UTILS:BOOL=OFF"
+		"-DALSOFT_UPDATE_BUILD_VERSION:BOOL=OFF"
+		"-DALSOFT_EAX:BOOL=OFF"
+		"-DALSOFT_SEARCH_INSTALL_DATADIR:BOOL=OFF"
+		"-DZLIB_FOUND:BOOL=OFF"
+		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
+		"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
+		"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
+	add_external_project(OPENAL "" "" "../../" "ZLIB")
+	copy_inner_lib(OPENAL SharedLib "" "${OPENAL_LIB}${SHARED_LIB_EXT}")
+endif()
+
 # HarfBuzz
 set(HARFBUZZ_CACHE_ARGS "-DBUILD_FRAMEWORK:BOOL=OFF"
 	"-DHB_HAVE_DIRECTWRITE:BOOL=ON")
@@ -598,39 +621,11 @@ set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
 	"-DBUILD_SHARED_LIBS:BOOL=OFF"
 	"-DENABLE_SANITIZER:BOOL=OFF")
 add_external_project(BROTLI "" "" "" "")
-if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlidec${LIB_EXT}")
-	ExternalProject_Add_Step(${BROTLI_TARGET} brotliDecoder
-		DEPENDEES install
-		LOG OFF
-		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}${LIB_PREFIX}brotlidec${LIB_EXT}"
-		"${EXTERNAL_BIN_DIR}")
-endif()
-if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_PREFIX}brotlienc${LIB_EXT}")
-	ExternalProject_Add_Step(${BROTLI_TARGET} brotliEncoder
-		DEPENDEES install
-		LOG OFF
-		COMMAND "${CMAKE_COMMAND}" -E copy
-		"${BROTLI_BUILD_DIR}${LIB_PREFIX}brotlienc${LIB_EXT}"
-		"${EXTERNAL_BIN_DIR}")
-endif()
+copy_inner_lib(BROTLI BrotliDecoder "" "${LIB_PREFIX}brotlidec${LIB_EXT}")
+copy_inner_lib(BROTLI BrotliEncoder "" "${LIB_PREFIX}brotlienc${LIB_EXT}")
 if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
-	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlidec.pdb")
-		ExternalProject_Add_Step(${BROTLI_TARGET} brotliDecoderPdb
-			DEPENDEES install
-			LOG OFF
-			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}CMakeFiles/brotlidec.dir/brotlidec.pdb"
-			"${EXTERNAL_BIN_DIR}")
-	endif()
-	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/brotlienc.pdb")
-		ExternalProject_Add_Step(${BROTLI_TARGET} brotliEncoderPdb
-			DEPENDEES install
-			LOG OFF
-			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${BROTLI_BUILD_DIR}CMakeFiles/brotlienc.dir/brotlienc.pdb"
-			"${EXTERNAL_BIN_DIR}")
-	endif()
+	copy_inner_lib(BROTLI BrotliDecoderPdb "CMakeFiles/brotlidec.dir/" "brotlidec.pdb")
+	copy_inner_lib(BROTLI BrotliEncoderPdb "CMakeFiles/brotlienc.dir/" "brotlienc.pdb")
 endif()
 
 # bzip2

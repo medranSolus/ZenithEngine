@@ -61,18 +61,17 @@ macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST 
 endmacro()
 
 # Macro for copying external projects inner libraries
-#	MAIN_PROJECT = prefix of a project containing libraries
-#	PROJECT = prefix of all project variables
+#	PROJECT = prefix of a project containing libraries
+#	STEP_NAME = unique name of step to be performed in given project
 #	ADD_BIN_DIR = different path for library file
-#	ADD_PDB_DIR = different path for MSVC debug symbols
-#	ADD_BUILD_DIR = path to build directory inside MAIN_PROJECT
-macro(copy_inner_lib MAIN_PROJECT PROJECT ADD_BIN_DIR ADD_PDB_DIR ADD_BUILD_DIR)
-	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${MAIN_PROJECT}/${ADD_BUILD_DIR}")
-	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR}" "${ADD_BUILD_DIR}")
-	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
-		ExternalProject_Add_Step(${${MAIN_PROJECT}_TARGET} copy${PROJECT}
+#	LIB_NAME = library to be copied
+macro(copy_inner_lib PROJECT STEP_NAME ADD_BIN_DIR LIB_NAME)
+	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_NAME}")
+		ExternalProject_Add_Step(${${PROJECT}_TARGET} copy${STEP_NAME}
 			DEPENDEES install
 			LOG OFF
-			COMMAND "${${PROJECT}_CP_CMD}")
+			COMMAND "${CMAKE_COMMAND}" -E copy
+			"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${LIB_NAME}"
+			"${EXTERNAL_BIN_DIR}")
 	endif()
 endmacro()
