@@ -60,18 +60,30 @@ macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST 
 	endif()
 endmacro()
 
+# Macro for copying external projects inner files
+#	PROJECT = prefix of a project containing libraries
+#	STEP_NAME = unique name of step to be performed in given project
+#	ADD_DIR = different path for file
+#	FILE_NAME = file to be copied
+macro(copy_inner_file PROJECT STEP_NAME ADD_DIR FILE_NAME)
+	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${FILE_NAME}")
+		ExternalProject_Add_Step(${${PROJECT}_TARGET} copy${STEP_NAME}
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${CMAKE_COMMAND}" -E copy
+			"${${PROJECT}_BUILD_DIR}${ADD_DIR}${FILE_NAME}"
+			"${EXTERNAL_BIN_DIR}")
+	endif()
+endmacro()
+
 # Macro for copying external projects inner libraries
 #	PROJECT = prefix of a project containing libraries
 #	STEP_NAME = unique name of step to be performed in given project
 #	ADD_BIN_DIR = different path for library file
 #	LIB_NAME = library to be copied
 macro(copy_inner_lib PROJECT STEP_NAME ADD_BIN_DIR LIB_NAME)
-	if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${LIB_NAME}")
-		ExternalProject_Add_Step(${${PROJECT}_TARGET} copy${STEP_NAME}
-			DEPENDEES install
-			LOG OFF
-			COMMAND "${CMAKE_COMMAND}" -E copy
-			"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${LIB_NAME}"
-			"${EXTERNAL_BIN_DIR}")
+	copy_inner_file("${PROJECT}" "${STEP_NAME}" "${ADD_BIN_DIR}" "${LIB_PREFIX}${LIB_NAME}${LIB_EXT}")
+	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
+		copy_inner_file("${PROJECT}" "${STEP_NAME}Pdb" "${ADD_BIN_DIR}CMakeFiles/${LIB_NAME}.dir/" "${LIB_NAME}.pdb")
 	endif()
 endmacro()

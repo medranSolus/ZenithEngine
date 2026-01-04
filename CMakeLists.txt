@@ -255,6 +255,8 @@ set(ENGINE_TARGET "zenith")
 set(AGS_LIB "amd_ags_x64")
 set(ASSIMP_LIB "assimp")
 set(BROTLI_LIB "brotlicommon")
+set(BROTLIDEC_LIB "brotlidec")
+set(BROTLIENC_LIB "brotlienc")
 set(BZIP2_LIB "bz2_static")
 set(DLSS_LIB "nvsdk_ngx")
 set(DSTORE_LIB "dstorage")
@@ -277,7 +279,7 @@ if(${ZE_ASSIMP_ENABLED})
 	set(ASSIMP_TARGET "${ASSIMP_LIB}-vc${MSVC_TOOLSET_VERSION}-mt")
 endif()
 set(BROTLI_TARGET "${BROTLI_LIB}")
-set(BROTLI_TARGETS "${BROTLI_LIB}" "brotlidec" "brotlienc")
+set(BROTLI_TARGETS "${BROTLI_LIB}" "${BROTLIDEC_LIB}" "${BROTLIENC_LIB}")
 set(BZIP2_TARGET "${BZIP2_LIB}")
 if(${ZE_DLSS_ENABLED})
 	if(${ZE_PLATFORM_WINDOWS})
@@ -526,7 +528,7 @@ endif()
 set(ZLIB_CACHE_ARGS "-DZLIB_BUILD_TESTING:BOOL=OFF"
 	"-DZLIB_BUILD_SHARED:BOOL=OFF")
 add_external_project(ZLIB "" "" "" "")
-copy_inner_lib(ZLIB HeaderConfig "" "zconf.h")
+copy_inner_file(ZLIB HeaderConfig "" "zconf.h")
 
  # libspng
 set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
@@ -555,7 +557,7 @@ set(LIBPNG_CACHE_ARGS "-DPNG_BUILD_ZLIB:BOOL=OFF"
 	"-DPNG_DEBUG:BOOL=OFF"
 	"-DPNG_HARDWARE_OPTIMIZATIONS:BOOL=ON")
 add_external_project(LIBPNG "" "" "" "ZLIB")
-copy_inner_lib(LIBPNG HeaderConfig "" "pnglibconf.h")
+copy_inner_file(LIBPNG HeaderConfig "" "pnglibconf.h")
 
 # Assimp
 if(${ZE_EXTERNAL_MODEL_LOADING})
@@ -601,7 +603,7 @@ if(${ZE_ENABLE_OPENAL})
 		"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 		"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
 	add_external_project(OPENAL "" "" "../../" "ZLIB")
-	copy_inner_lib(OPENAL SharedLib "" "${OPENAL_LIB}${SHARED_LIB_EXT}")
+	copy_inner_file(OPENAL SharedLib "" "${OPENAL_LIB}${SHARED_LIB_EXT}")
 endif()
 
 # HarfBuzz
@@ -621,12 +623,8 @@ set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
 	"-DBUILD_SHARED_LIBS:BOOL=OFF"
 	"-DENABLE_SANITIZER:BOOL=OFF")
 add_external_project(BROTLI "" "" "" "")
-copy_inner_lib(BROTLI BrotliDecoder "" "${LIB_PREFIX}brotlidec${LIB_EXT}")
-copy_inner_lib(BROTLI BrotliEncoder "" "${LIB_PREFIX}brotlienc${LIB_EXT}")
-if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
-	copy_inner_lib(BROTLI BrotliDecoderPdb "CMakeFiles/brotlidec.dir/" "brotlidec.pdb")
-	copy_inner_lib(BROTLI BrotliEncoderPdb "CMakeFiles/brotlienc.dir/" "brotlienc.pdb")
-endif()
+copy_inner_lib(BROTLI BrotliDecoder "" "${BROTLIDEC_LIB}")
+copy_inner_lib(BROTLI BrotliEncoder "" "${BROTLIENC_LIB}")
 
 # bzip2
 set(BZIP2_CACHE_ARGS "-DENABLE_LIB_ONLY:BOOL=ON"
