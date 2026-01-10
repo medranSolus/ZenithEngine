@@ -74,3 +74,6 @@
 [submodule "External/opus"]
 	path = External/opus
 	url = https://github.com/xiph/opus.git
+[submodule "External/AudioFile"]
+	path = External/AudioFile
+	url = https://github.com/adamstark/AudioFile.git

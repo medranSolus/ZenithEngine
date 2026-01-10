@@ -100,6 +100,7 @@ set(EXTERNAL_BIN_DIR "${EXTERNAL_DIR}/Bin/${CMAKE_BUILD_TYPE}")
 set(AGILITY_DIR "${EXTERNAL_DIR}/AgilitySDK")
 set(AGS_DIR "${EXTERNAL_DIR}/AGS")
 set(ASSIMP_DIR "${EXTERNAL_DIR}/Assimp")
+set(AUDIOFILE_DIR "${EXTERNAL_DIR}/AudioFile")
 set(BROTLI_DIR "${EXTERNAL_DIR}/brotli")
 set(BZIP2_DIR "${EXTERNAL_DIR}/bzip2")
 set(DLSS_DIR "${EXTERNAL_DIR}/DLSS")
@@ -140,6 +141,7 @@ set(EXT_SHADER_INC_DIR "${EXTERNAL_DIR}/ShaderInclude")
 set(AGILITY_INC_DIR "${AGILITY_DIR}/include")
 set(AGS_INC_DIR "${AGS_DIR}/ags_lib/inc")
 set(ASSIMP_INC_DIR "${ASSIMP_DIR}/include")
+set(AUDIOFILE_INC_DIR "${AUDIOFILE_DIR}")
 set(BROTLI_INC_DIR "${BROTLI_DIR}/c/include")
 set(BZIP2_INC_DIR "${BZIP2_DIR}")
 set(DLSS_INC_DIR "${DLSS_DIR}/include")
@@ -213,6 +215,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${AGILITY_INC_DIR}"
 	"${AGS_INC_DIR}"
 	"${ASSIMP_INC_DIR}"
+	"${AUDIOFILE_INC_DIR}"
 	"${BROTLI_INC_DIR}"
 	"${BZIP2_INC_DIR}"
 	"${DLSS_INC_DIR}"
