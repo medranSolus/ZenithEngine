@@ -6,7 +6,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	constexpr UINT ERROR_BOX_STYLE = MB_OK | MB_ICONERROR;
 	try
 	{
-		srand(static_cast<unsigned int>(time(nullptr)));
+		std::srand(static_cast<unsigned int>(std::time(nullptr)));
 		CmdParser parser;
 
 		SettingsInitParams::SetupParser(parser);

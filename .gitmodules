@@ -62,3 +62,6 @@
 [submodule "External/OpenAL"]
 	path = External/OpenAL
 	url = https://github.com/kcat/openal-soft.git
+[submodule "External/ogg"]
+	path = External/ogg
+	url = https://github.com/xiph/ogg.git

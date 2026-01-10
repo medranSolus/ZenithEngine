@@ -115,6 +115,7 @@ set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
+set(OGG_DIR "${EXTERNAL_DIR}/ogg")
 set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
@@ -154,6 +155,7 @@ set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
+set(OGG_INC_DIR "${OGG_DIR}/include")
 set(OPENAL_INC_DIR "${NIS_DIR}/include")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
@@ -224,6 +226,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${LIBPNG_INC_DIR}"
 	"${LIBSPNG_INC_DIR}"
 	"${NIS_INC_DIR}"
+	"${OGG_INC_DIR}"
 	"${OPENAL_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
@@ -265,6 +268,7 @@ set(FTYPE_LIB "freetype")
 set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
+set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
@@ -300,6 +304,7 @@ set(FTYPE_TARGET "${FTYPE_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
 set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
+set(OGG_TARGET "${OGG_LIB}")
 if(${ZE_ENABLE_OPENAL})
 	set(OPENAL_TARGET "${OPENAL_LIB}")
 endif()
@@ -349,6 +354,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${HARFBUZZ_TARGET}
 	${LIBPNG_TARGET}
 	${LIBSPNG_TARGET}
+	${OGG_TARGET}
 	${OPENAL_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
@@ -684,6 +690,14 @@ add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
 add_external_fidelityfx_effect(FSR3UPSCALER)
 add_external_fidelityfx_effect(SSSR)
+
+# ogg
+set(OGG_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
+	"-DBUILD_FRAMEWORK:BOOL=OFF"
+	"-DINSTALL_DOCS:BOOL=OFF"
+	"-DINSTALL_PKG_CONFIG_MODULE:BOOL=OFF"
+	"-DINSTALL_CMAKE_PACKAGE_MODULE:BOOL=OFF")
+add_external_project(OGG "" "" "" "")
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
