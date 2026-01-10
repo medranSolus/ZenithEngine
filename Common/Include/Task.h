@@ -23,15 +23,14 @@ namespace ZE
 
 		constexpr std::shared_ptr<ExecutionData> GetData() noexcept { return data; }
 
-		constexpr Task(std::packaged_task<R()>&& task) noexcept
-			: data(std::make_shared<ExecutionData>(std::move(task))) {}
-
 	public:
 		Task() = default;
+		constexpr Task(std::packaged_task<R()>&& task) noexcept
+			: data(std::make_shared<ExecutionData>(std::move(task))) {}
 		ZE_CLASS_DEFAULT(Task);
 		~Task() = default;
 
-		// Waits for scheduled task complition before returting data if any
+		// Waits for scheduled task completion before returting data if any
 		constexpr R Get() noexcept;
 	};
 
