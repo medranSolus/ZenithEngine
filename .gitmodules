@@ -71,3 +71,6 @@
 [submodule "External/vorbis"]
 	path = External/vorbis
 	url = https://github.com/xiph/vorbis.git
+[submodule "External/opus"]
+	path = External/opus
+	url = https://github.com/xiph/opus.git

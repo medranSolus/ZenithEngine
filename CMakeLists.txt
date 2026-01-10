@@ -118,12 +118,13 @@ set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(OGG_DIR "${EXTERNAL_DIR}/ogg")
 set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
+set(OPUS_DIR "${EXTERNAL_DIR}/opus")
+set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(VORB_DIR "${EXTERNAL_DIR}/vorbis")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(XAUDIO2_DIR "${EXTERNAL_DIR}/XAudio2")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
-set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(ZLIB_DIR "${EXTERNAL_DIR}/zlib")
 
 
@@ -160,12 +161,13 @@ set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(OGG_INC_DIR "${OGG_DIR}/include")
 set(OPENAL_INC_DIR "${NIS_DIR}/include")
+set(OPUS_INC_DIR "${OPUS_DIR}/include")
+set(QOI_INC_DIR "${QOI_DIR}/include")
 set(VORB_INC_DIR "${VORB_DIR}/include")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(XAUDIO2_INC_DIR "${XAUDIO2_DIR}/include")
 set(XESS_INC_DIR "${XESS_DIR}/inc")
-set(QOI_INC_DIR "${QOI_DIR}/include")
 set(ZLIB_INC_DIR "${ZLIB_DIR}")
 
 
@@ -233,12 +235,13 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${NIS_INC_DIR}"
 	"${OGG_INC_DIR}"
 	"${OPENAL_INC_DIR}"
+	"${OPUS_INC_DIR}"
+	"${QOI_INC_DIR}"
 	"${VORB_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XAUDIO2_INC_DIR}"
 	"${XESS_INC_DIR}"
-	"${QOI_INC_DIR}"
 	"${ZLIB_INC_DIR}")
 
 
@@ -277,6 +280,7 @@ set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
+set(OPUS_LIB "opus")
 set(VORB_LIB "vorbis")
 set(VORBENC_LIB "vorbisenc")
 set(VORBFILE_LIB "vorbisfile")
@@ -319,6 +323,7 @@ set(OGG_TARGET "${OGG_LIB}")
 if(${ZE_ENABLE_OPENAL})
 	set(OPENAL_TARGET "${OPENAL_LIB}")
 endif()
+set(OPUS_TARGET "${OPUS_LIB}")
 set(VORB_TARGET "${VORB_LIB}")
 set(VORB_TARGETS "${VORB_LIB}" "${VORBENC_LIB}" "${VORBFILE_LIB}")
 if(${ZE_VOLK_ENABLED})
@@ -370,6 +375,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${LIBSPNG_TARGET}
 	${OGG_TARGET}
 	${OPENAL_TARGET}
+	${OPUS_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
 	${XESS_TARGET}
@@ -742,6 +748,28 @@ set(VORB_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
 add_external_project(VORB "lib/" "lib/" "" "OGG")
 copy_inner_lib(VORB VorbisEncoder "lib/" "${VORBENC_LIB}")
 copy_inner_lib(VORB VorbisFile "lib/" "${VORBFILE_LIB}")
+
+# opus
+set(OPUS_CACHE_ARGS "-DOPUS_BUILD_SHARED_LIBRARY:BOOL=OFF"
+	"-DOPUS_BUILD_TESTING:BOOL=OFF"
+	"-DOPUS_CUSTOM_MODES:BOOL=ON"
+	"-DOPUS_BUILD_PROGRAMS:BOOL=OFF"
+	"-DOPUS_DISABLE_INTRINSICS:BOOL=OFF"
+	"-DOPUS_FIXED_POINT:BOOL=OFF"
+	"-DOPUS_ENABLE_FLOAT_API:BOOL=ON"
+	"-DOPUS_FLOAT_APPROX:BOOL=OFF"
+	"-DOPUS_ASSERTIONS:BOOL=OFF"
+	"-DOPUS_HARDENING:BOOL=ON"
+	"-DOPUS_FUZZING:BOOL=OFF"
+	"-DOPUS_CHECK_ASM:BOOL=OFF"
+	"-DOPUS_DNN_FLOAT_DEBUG:BOOL=OFF"
+	"-DOPUS_INSTALL_PKG_CONFIG_MODULE:BOOL=OFF"
+	"-DOPUS_INSTALL_CMAKE_CONFIG_MODULE:BOOL=OFF"
+	"-DOPUS_DRED:BOOL=OFF"
+	"-DOPUS_OSCE:BOOL=OFF"
+	"-DOPUS_BUILD_FRAMEWORK:BOOL=OFF"
+	"-DOPUS_STATIC_RUNTIME:BOOL=OFF")
+add_external_project(OPUS "" "" "" "")
 
 # EnTT
 if(${ZE_COMPILER_MSVC})

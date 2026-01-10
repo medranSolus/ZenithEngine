@@ -43,6 +43,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
  - [ogg](https://github.com/xiph/ogg) - [BDS-3-Clause License](Doc/License/ThirdParty/ogg.txt)
  - [OpenAL Soft](https://github.com/kcat/openal-soft) - [LGPL v2 License](Doc/License/ThirdParty/OpenAL.txt), [Third Party Notices](Doc/License/ThirdParty/OpenALThirdPartyNotices.txt), [Third Party Notices PFFFT](Doc/License/ThirdParty/OpenALThirdPartyNoticesPFFFT.txt)
+ - [opus](https://github.com/xiph/opus) - [BDS-3-Clause License](Doc/License/ThirdParty/opus.txt)
  - [qoixx](https://github.com/wx257osn2/qoixx) - [MIT](Doc/License/ThirdParty/qoixx.txt)
  - [vorbis](https://github.com/xiph/vorbis) - [BDS-3-Clause License](Doc/License/ThirdParty/vorbis.txt)
  - [XeSS](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.txt), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
