@@ -34,6 +34,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [DirectXMath](https://github.com/microsoft/DirectXMath) - [The MIT License (MIT)](Doc/License/ThirdParty/DirectXMath.txt)
  - [DLSS](https://github.com/NVIDIA/DLSS) - [NVIDIA RTX SDKs LICENSE](Doc/License/ThirdParty/DLSS.txt)
  - [EnTT](https://github.com/skypjack/entt) - [The MIT License (MIT)](Doc/License/ThirdParty/EnTT.txt)
+ - [flac](https://github.com/xiph/flac) - [BDS-3-Clause License](Doc/License/ThirdParty/flac.txt)
  - [FreeType](https://gitlab.freedesktop.org/freetype/freetype) - [FREETYPE LICENSES](Doc/License/ThirdParty/FreeType.txt)
  - [FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) - [MIT License](Doc/License/ThirdParty/FidelityFXSDK.md)
  - [HarfBuzz](https://github.com/harfbuzz/harfbuzz) - [Old MIT license](Doc/License/ThirdParty/HarfBuzz.txt)

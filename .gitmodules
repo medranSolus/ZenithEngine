@@ -65,3 +65,6 @@
 [submodule "External/ogg"]
 	path = External/ogg
 	url = https://github.com/xiph/ogg.git
+[submodule "External/flac"]
+	path = External/flac
+	url = https://github.com/xiph/flac.git
