@@ -1,7 +1,7 @@
-#include "DDS/Utils.h"
+#include "IO/DDS/Utils.h"
 #include "GFX/Surface.h"
 
-namespace ZE::DDS
+namespace ZE::IO::DDS
 {
 	static constexpr FormatDDS ParseDDSFormat(const PixelFormatDDS& format) noexcept
 	{
@@ -34,7 +34,7 @@ namespace ZE::DDS
 			}
 			// No support 24 bits per pixel formats, aka D3DFMT_R8G8B8
 			case 24:
-			break;
+				break;
 			case 16:
 			{
 				if (ZE_IS_MASK(0x7c00, 0x03e0, 0x001f, 0x8000)) return FormatDDS::B5G5R5A1_UNorm;
@@ -152,7 +152,7 @@ namespace ZE::DDS
 			break;
 		}
 		default:
-		break;
+			break;
 		}
 
 		if (blockCompression)
@@ -167,11 +167,9 @@ namespace ZE::DDS
 		}
 	}
 
-	FileResult EncodeFile(FILE* file, const SurfaceData& srcData) noexcept
+	FileResult EncodeFile(File& file, const SurfaceData& srcData) noexcept
 	{
-		ZE_ASSERT(file, "Empty file to write into!");
-
-#define ZE_DDS_CHECK_WRITE(item) if (fwrite(&item, sizeof(item), 1, file) != 1) return FileResult::WriteError
+#define ZE_DDS_CHECK_WRITE(item) if (!file.Write(&item, sizeof(item))) return FileResult::WriteError
 #define ZE_MAKE_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24))
 
 		U32 destRowSize, destSliceSize;
@@ -273,7 +271,7 @@ namespace ZE::DDS
 				if (sameRowSize && sliceSize == srcSliceSize)
 				{
 					const U64 depthLevelSize = currentDepth * sliceSize;
-					if (fwrite(srcImageMemory, depthLevelSize, 1, file) != 1)
+					if (!file.Write(srcImageMemory, Utils::SafeCast<U32>(depthLevelSize)))
 						return FileResult::WriteError;
 					srcImageMemory += depthLevelSize;
 				}
@@ -283,14 +281,14 @@ namespace ZE::DDS
 					{
 						if (sameRowSize)
 						{
-							if (fwrite(srcImageMemory, srcRowSize * currentHeight, 1, file) != 1)
+							if (!file.Write(srcImageMemory, srcRowSize * currentHeight))
 								return FileResult::WriteError;
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (fwrite(srcImageMemory + srcRowSize * row, rowSize, 1, file) != 1)
+								if (!file.Write(srcImageMemory + srcRowSize * row, rowSize))
 									return FileResult::WriteError;
 							}
 						}
@@ -304,11 +302,9 @@ namespace ZE::DDS
 #undef ZE_DDS_CHECK_WRITE
 	}
 
-	FileResult ParseFile(FILE* file, FileData& destData) noexcept
+	FileResult ParseFile(File& file, FileData& destData) noexcept
 	{
-		ZE_ASSERT(file, "Empty file to read from!");
-
-#define ZE_DDS_CHECK_READ(item) if (fread(&item, sizeof(item), 1, file) != 1) return FileResult::ReadError
+#define ZE_DDS_CHECK_READ(item) if (file.Read(&item, sizeof(item)) != 1) return FileResult::ReadError
 #define ZE_IS_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == header.Format.FourCC
 
 		// DDS format definition: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
@@ -406,7 +402,7 @@ namespace ZE::DDS
 				if (sameRowSize && destSliceSize == sliceSize)
 				{
 					const U32 depthLevelSize = currentDepth * sliceSize;
-					if (fread(destImageMemory, depthLevelSize, 1, file) != 1)
+					if (!file.Read(destImageMemory, depthLevelSize))
 						return FileResult::ReadError;
 					destImageMemory += depthLevelSize;
 				}
@@ -416,14 +412,15 @@ namespace ZE::DDS
 					{
 						if (sameRowSize)
 						{
-							if (fread(destImageMemory, destRowSize * currentHeight, 1, file) != 1)
+							const U32 depthSliceSize = destRowSize * currentHeight;
+							if (!file.Read(destImageMemory, depthSliceSize))
 								return FileResult::ReadError;
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (fread(destImageMemory + row * destRowSize, rowSize, 1, file) != 1)
+								if (!file.Read(destImageMemory + row * destRowSize, rowSize))
 									return FileResult::ReadError;
 							}
 						}
@@ -442,6 +439,7 @@ namespace ZE::DDS
 		destData.ArraySize = arraySize;
 		destData.ImageMemorySize = Utils::SafeCast<U32>(destImageSize);
 		destData.ImageMemory = image;
+
 		return FileResult::Ok;
 #undef ZE_IS_FOURCC
 #undef ZE_DDS_CHECK_READ

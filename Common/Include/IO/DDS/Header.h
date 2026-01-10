@@ -1,7 +1,7 @@
 #pragma once
 #include "PixelFormatDDS.h"
 
-namespace ZE::DDS
+namespace ZE::IO::DDS
 {
 	// Flags used in DDS::Header
 	typedef U32 HeaderFlags;

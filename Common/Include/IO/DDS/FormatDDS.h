@@ -1,7 +1,7 @@
 #pragma once
 #include "BasicTypes.h"
 
-namespace ZE::DDS
+namespace ZE::IO::DDS
 {
 	// Format of data in DXT10 encoded DDS file Based on DXGI_FORMAT
 	enum class FormatDDS : U32

@@ -1,7 +1,7 @@
 #pragma once
 #include "Macros.h"
 
-namespace ZE::DDS
+namespace ZE::IO::DDS
 {
 	// Flags used in DDS::PixelFormatDDS
 	typedef U32 PixelFlags;

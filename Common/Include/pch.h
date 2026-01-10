@@ -132,16 +132,21 @@
 #include "Allocator/ChunkedTLSF.h"
 
 /*
-***** Macros.h (defined by CmdParser.h)
-*** DDS/PixelFormatDDS.h
-* DDS/Header.h
+* cstdio
 ***** BasicTypes.h (defined by CmdParser.h)
-*** DDS/FormatDDS.h
+*** IO/FileFlags.h
+*** Task.h (defined by ThreadPool.h)
+* IO/File.h
+***** Macros.h (defined by CmdParser.h)
+*** IO/DDS/PixelFormatDDS.h
+* IO/DDS/Header.h
+***** BasicTypes.h (defined by CmdParser.h)
+*** IO/DDS/FormatDDS.h
 *** Macros.h (defined by CmdParser.h)
-* DDS/HeaderDXT10.h
+* IO/DDS/HeaderDXT10.h
 * PixelFormat.h (defined by Utils.h)
 */
-#include "DDS/Utils.h"
+#include "IO/DDS/Utils.h"
 
 /*
 *** Types.h (defined by CmdParser.h)

@@ -1,5 +1,5 @@
 #include "GFX/Surface.h"
-#include "DDS/Utils.h"
+#include "IO/DDS/Utils.h"
 ZE_WARNING_PUSH
 #include "spng.h"
 #include "qoixx.hpp"
@@ -169,8 +169,8 @@ namespace ZE::GFX
 		std::string ext = path.extension().string();
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
-		FILE* file = fopen(filename.data(), "rb");
-		if (!file)
+		IO::File file;
+		if (!file.Open(filename, Base(IO::FileFlag::DefaultRead)))
 		{
 			Logger::Error("Error openinig \"" + path.string() + "\" file!");
 			return false;
@@ -185,10 +185,10 @@ namespace ZE::GFX
 		if (ext == ".dds")
 		{
 			tryStbi = false;
-			DDS::FileData ddsData = {};
-			switch (DDS::ParseFile(file, ddsData))
+			IO::DDS::FileData ddsData = {};
+			switch (IO::DDS::ParseFile(file, ddsData))
 			{
-			case DDS::FileResult::Ok:
+			case IO::DDS::FileResult::Ok:
 			{
 				success = true;
 				format = ddsData.Format;
@@ -206,31 +206,31 @@ namespace ZE::GFX
 				break;
 			}
 			default:
-			ZE_ENUM_UNHANDLED();
-			case DDS::FileResult::ReadError:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\"!");
-			break;
-			case DDS::FileResult::IncorrectMagicNumber:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrect DDS magic number!");
-			break;
-			case DDS::FileResult::UnknownFormat:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", not supported pixel format!");
-			break;
-			case DDS::FileResult::MissingCubemapFaces:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", not all cubemap faces defined!");
-			break;
-			case DDS::FileResult::IllformattedVolumeTexture:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrectly formatted volume texture (ex. array size bigger than 1)!");
-			break;
-			case DDS::FileResult::IncorrectArraySize:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", wrong value used as array size!");
-			break;
-			case DDS::FileResult::Incorrect1DTextureHeight:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", 1D texture with height different than 1!");
-			break;
-			case DDS::FileResult::IncorrectDimension:
-			Logger::Error("Error reading DDS file \"" + path.string() + "\", unknown texture dimension!");
-			break;
+				ZE_ENUM_UNHANDLED();
+			case IO::DDS::FileResult::ReadError:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\"!");
+				break;
+			case IO::DDS::FileResult::IncorrectMagicNumber:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrect DDS magic number!");
+				break;
+			case IO::DDS::FileResult::UnknownFormat:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", not supported pixel format!");
+				break;
+			case IO::DDS::FileResult::MissingCubemapFaces:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", not all cubemap faces defined!");
+				break;
+			case IO::DDS::FileResult::IllformattedVolumeTexture:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrectly formatted volume texture (ex. array size bigger than 1)!");
+				break;
+			case IO::DDS::FileResult::IncorrectArraySize:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", wrong value used as array size!");
+				break;
+			case IO::DDS::FileResult::Incorrect1DTextureHeight:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", 1D texture with height different than 1!");
+				break;
+			case IO::DDS::FileResult::IncorrectDimension:
+				Logger::Error("Error reading DDS file \"" + path.string() + "\", unknown texture dimension!");
+				break;
 			}
 		}
 		else if (ext == ".png")
@@ -239,7 +239,7 @@ namespace ZE::GFX
 			ZE_ASSERT(ctx, "Error creating SPNG context!");
 
 			spng_ihdr header = {};
-			int result = spng_set_png_file(ctx, file);
+			int result = spng_set_png_file(ctx, file.GetHandle());
 			if (!result)
 			{
 				result = spng_get_ihdr(ctx, &header);
@@ -299,7 +299,7 @@ namespace ZE::GFX
 			{
 				Logger::Warning("Error loading file \"" + path.string() + "\", trying fallback to STB Image, SPNG error: " + std::string(spng_strerror(result)));
 				memory = nullptr;
-				rewind(file);
+				rewind(file.GetHandle());
 			}
 			else
 				success = true;
@@ -311,7 +311,7 @@ namespace ZE::GFX
 			if (fileSize)
 			{
 				std::vector<U8> srcImage(fileSize);
-				if (fread(srcImage.data(), 1, fileSize, file) == 1)
+				if (file.Read(srcImage.data(), Utils::SafeCast<U32>(fileSize)))
 				{
 					auto result = qoixx::qoi::decode<std::vector<U8>>(srcImage);
 
@@ -346,10 +346,7 @@ namespace ZE::GFX
 				}
 				else
 				{
-					if (feof(file))
-						Logger::Error("Error reading file \"" + path.string() + "\", unexpected end of file!");
-					else
-						Logger::Error("Error reading file \"" + path.string() + "\"!");
+					Logger::Error("Error reading file \"" + path.string() + "\"!");
 					success = false;
 				}
 			}
@@ -372,64 +369,64 @@ namespace ZE::GFX
 			PixelFormat imageFormat = PixelFormat::Unknown;
 			bool expandAlpha = false;
 
-			if (stbi_is_hdr_from_file(file))
+			if (stbi_is_hdr_from_file(file.GetHandle()))
 			{
 				// More handling might needed when RGBE is used
-				srcImage = reinterpret_cast<U8*>(stbi_loadf_from_file(file, &srcWidth, &srcHeight, &components, 0));
+				srcImage = reinterpret_cast<U8*>(stbi_loadf_from_file(file.GetHandle(), &srcWidth, &srcHeight, &components, 0));
 				switch (components)
 				{
 				default:
-				ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 				case 1:
-				imageFormat = PixelFormat::R32_Float;
-				break;
+					imageFormat = PixelFormat::R32_Float;
+					break;
 				case 3:
-				imageFormat = PixelFormat::R32G32B32_Float;
-				break;
+					imageFormat = PixelFormat::R32G32B32_Float;
+					break;
 				case 2:
-				expandAlpha = true;
-				[[fallthrough]];
+					expandAlpha = true;
+					[[fallthrough]];
 				case 4:
-				imageFormat = PixelFormat::R32G32B32A32_Float;
-				break;
+					imageFormat = PixelFormat::R32G32B32A32_Float;
+					break;
 				}
 			}
-			if (!srcImage && stbi_is_16_bit_from_file(file))
+			if (!srcImage && stbi_is_16_bit_from_file(file.GetHandle()))
 			{
-				srcImage = reinterpret_cast<U8*>(stbi_load_from_file_16(file, &srcWidth, &srcHeight, &components, 0));
+				srcImage = reinterpret_cast<U8*>(stbi_load_from_file_16(file.GetHandle(), &srcWidth, &srcHeight, &components, 0));
 				switch (components)
 				{
 				default:
-				ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 				case 1:
-				imageFormat = PixelFormat::R16_UNorm;
-				break;
+					imageFormat = PixelFormat::R16_UNorm;
+					break;
 				case 2:
 				case 3:
-				expandAlpha = true;
-				[[fallthrough]];
+					expandAlpha = true;
+					[[fallthrough]];
 				case 4:
-				imageFormat = PixelFormat::R16G16B16A16_UNorm;
-				break;
+					imageFormat = PixelFormat::R16G16B16A16_UNorm;
+					break;
 				}
 			}
 			else if (!srcImage)
 			{
-				srcImage = stbi_load_from_file(file, &srcWidth, &srcHeight, &components, 0);
+				srcImage = stbi_load_from_file(file.GetHandle(), &srcWidth, &srcHeight, &components, 0);
 				switch (components)
 				{
 				default:
-				ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 				case 1:
-				imageFormat = PixelFormat::R8_UNorm;
-				break;
+					imageFormat = PixelFormat::R8_UNorm;
+					break;
 				case 2:
 				case 3:
-				expandAlpha = true;
-				[[fallthrough]];
+					expandAlpha = true;
+					[[fallthrough]];
 				case 4:
-				imageFormat = PixelFormat::R8G8B8A8_UNorm;
-				break;
+					imageFormat = PixelFormat::R8G8B8A8_UNorm;
+					break;
 				}
 			}
 
@@ -455,16 +452,16 @@ namespace ZE::GFX
 						switch (channelSize)
 						{
 						default:
-						ZE_ENUM_UNHANDLED();
+							ZE_ENUM_UNHANDLED();
 						case 1:
-						CopyLoadedImage<CopySource::GrayscaleAlpha>(memory.get(), srcImage, width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::GrayscaleAlpha>(memory.get(), srcImage, width, height, destRowSize);
+							break;
 						case 2:
-						CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
+							break;
 						case 4:
-						CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::GrayscaleAlpha>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
+							break;
 						}
 					}
 					else
@@ -474,16 +471,16 @@ namespace ZE::GFX
 						switch (channelSize)
 						{
 						default:
-						ZE_ENUM_UNHANDLED();
+							ZE_ENUM_UNHANDLED();
 						case 1:
-						CopyLoadedImage<CopySource::RGB>(memory.get(), srcImage, width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::RGB>(memory.get(), srcImage, width, height, destRowSize);
+							break;
 						case 2:
-						CopyLoadedImage<CopySource::RGB>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::RGB>(reinterpret_cast<U16*>(memory.get()), reinterpret_cast<const U16*>(srcImage), width, height, destRowSize);
+							break;
 						case 4:
-						CopyLoadedImage<CopySource::RGB>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
-						break;
+							CopyLoadedImage<CopySource::RGB>(reinterpret_cast<float*>(memory.get()), reinterpret_cast<const float*>(srcImage), width, height, destRowSize);
+							break;
 						}
 					}
 				}
@@ -505,7 +502,7 @@ namespace ZE::GFX
 			else
 				Logger::Error("Error loading file \"" + path.string() + "\", STB Image error: " + std::string(stbi_failure_reason()));
 		}
-		fclose(file);
+		file.Close();
 
 		if (success && allocMips)
 		{
@@ -596,8 +593,8 @@ namespace ZE::GFX
 		std::string ext = path.extension().string();
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
-		FILE* file = fopen(filename.data(), "wb");
-		if (!file)
+		IO::File file;
+		if (!file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
 		{
 			Logger::Error("Error creating \"" + path.string() + "\" file!");
 			return false;
@@ -606,7 +603,7 @@ namespace ZE::GFX
 		bool success = true;
 		if (ext == ".dds")
 		{
-			DDS::SurfaceData surfData = {};
+			IO::DDS::SurfaceData surfData = {};
 			surfData.Format = format;
 			surfData.Alpha = alpha;
 			surfData.Width = width;
@@ -616,18 +613,18 @@ namespace ZE::GFX
 			surfData.ArraySize = arraySize;
 			surfData.ImageMemory = memory;
 
-			switch (DDS::EncodeFile(file, surfData))
+			switch (IO::DDS::EncodeFile(file, surfData))
 			{
 			default:
-			ZE_ENUM_UNHANDLED();
-			case DDS::FileResult::WriteError:
+				ZE_ENUM_UNHANDLED();
+			case IO::DDS::FileResult::WriteError:
 			{
 				success = false;
 				Logger::Error("Error writing DDS file \"" + path.string() + "\"!");
 				break;
 			}
-			case DDS::FileResult::Ok:
-			break;
+			case IO::DDS::FileResult::Ok:
+				break;
 			}
 		}
 		else if (ext == ".png")
@@ -635,7 +632,7 @@ namespace ZE::GFX
 			spng_ctx* ctx = spng_ctx_new(SPNG_CTX_ENCODER);
 			ZE_ASSERT(ctx, "Error creating SPNG context!");
 
-			int result = spng_set_png_file(ctx, file);
+			int result = spng_set_png_file(ctx, file.GetHandle());
 			if (!result)
 			{
 				// TODO: Need to check what formats can be saved directly and which one require per pixel copy
@@ -699,7 +696,6 @@ namespace ZE::GFX
 		if (!success)
 			Logger::Error("Saving surface to \"" + path.string() + "\": failed to save.");
 
-		fclose(file);
 		return success;
 	}
 
@@ -733,7 +729,7 @@ namespace ZE::GFX
 		{
 		default:
 		case 4:
-		break;
+			break;
 		case 2:
 		{
 			if (channelB)

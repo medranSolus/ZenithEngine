@@ -2,7 +2,7 @@
 #include "FormatDDS.h"
 #include "Macros.h"
 
-namespace ZE::DDS
+namespace ZE::IO::DDS
 {
 #pragma pack(push, 1)
 	// Identifies the type of resource in DDS file
