@@ -1,7 +1,7 @@
 #include "RHI/DX12/DiskManager.h"
 #include "Data/ResourceLocation.h"
+#include "GFX/GFile.h"
 #include "IO/Compressor.h"
-#include "IO/File.h"
 ZE_WARNING_PUSH
 #include <winioctl.h>
 ZE_WARNING_POP
@@ -461,7 +461,7 @@ namespace ZE::RHI::DX12
 		return false;
 	}
 
-	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
+	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,
 		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
@@ -527,7 +527,7 @@ namespace ZE::RHI::DX12
 		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
 	}
 
-	void DiskManager::AddFileTextureRequest(IResource* dest, IO::File& file, U64 sourceOffset,
+	void DiskManager::AddFileTextureRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
 		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool copySrc) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");

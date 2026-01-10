@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data)
+	Mesh::Mesh(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshData& data)
 	{
 		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
@@ -49,7 +49,7 @@ namespace ZE::RHI::DX12::Resource
 			disk.Get().dx12.AddMemoryBufferRequest(data.MeshID, info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width), true);
 	}
 
-	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file)
+	Mesh::Mesh(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshFileData& data, GFX::GFile& file)
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 

@@ -24,6 +24,7 @@
 *** condition_variable
 *** cstddef
 *** cstdint
+*** cstdio
 *** cstdlib
 *** cstring
 *** deque

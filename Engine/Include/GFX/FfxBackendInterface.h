@@ -1,9 +1,9 @@
 #pragma once
 #include "Data/Library.h"
-#include "IO/DiskManager.h"
 #include "Pipeline/FrameBuffer.h"
 #include "Resource/DynamicCBuffer.h"
 #include "ChainPool.h"
+#include "DiskManager.h"
 #include "FfxException.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_types.h"
@@ -37,7 +37,7 @@ namespace ZE::GFX::FFX
 
 	// Fill up pointers to FFX SDK backend callbacks
 	FfxInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers, Pipeline::FrameBuffer& frameBuffer,
-		IO::DiskManager& disk, Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers, bool& notifyBuffersChange) noexcept;
+		DiskManager& disk, Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers, bool& notifyBuffersChange) noexcept;
 
 	// Set information about current pass for creation of internal buffers. Need to be called before and after Init/Update pass calls
 	void SetCurrentPass(FfxInterface& backendInterface, const PassInfo* info) noexcept;

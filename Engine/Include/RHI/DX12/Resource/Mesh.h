@@ -1,7 +1,7 @@
 #pragma once
 #include "GFX/Resource/MeshData.h"
 #include "GFX/CommandList.h"
-#include "IO/File.h"
+#include "GFX/GFile.h"
 
 namespace ZE::RHI::DX12::Resource
 {
@@ -17,8 +17,8 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		Mesh() = default;
-		Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data);
-		Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file);
+		Mesh(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshData& data);
+		Mesh(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshFileData& data, GFX::GFile& file);
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() { ZE_ASSERT_FREED(info.IsFree()); }
 

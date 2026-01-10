@@ -59,11 +59,12 @@ namespace ZE::Data
 			[&]() -> IO::FileStatus
 			{
 				IO::File file;
-				if (!file.Open(diskManager, packFile, IO::FileFlag::GpuReading))
+				GFX::GFile gFile;
+				if (!file.Open(packFile, Base(IO::FileFlag::DefaultRead)) || !gFile.Open(diskManager, packFile))
 					return IO::FileStatus::ErrorOpeningFile;
 
 				IO::Format::ResourcePackFileHeader header = {};
-				if (!file.Read(&header, sizeof(header), 0))
+				if (!file.Read(&header, sizeof(header)))
 					return IO::FileStatus::ErrorReading;
 				// Check if signature is correct first and resources are present
 				if (std::memcmp(header.Signature, IO::Format::ResourcePackFileHeader::SIGNATURE_STR, 4) != 0)
@@ -92,7 +93,7 @@ namespace ZE::Data
 					const char* nameTable = reinterpret_cast<const char*>(textureTable + header.TexturesCount);
 
 					// Wait for last read and check if correct numer of bytes are read
-					if (tableWait.get() != infoSectionSize)
+					if (tableWait.Get() != infoSectionSize)
 					{
 						result = IO::FileStatus::ErrorReading;
 						break;
@@ -103,7 +104,7 @@ namespace ZE::Data
 					U32 materialEntryCount = 0;
 					U32 textureSchemaMaterialPBRIndex = UINT32_MAX;
 					std::vector<DecompressionEntry> materialBuffers;
-					std::vector<std::future<U32>> materialBufferWait;
+					std::vector<Task<U32>> materialBufferWait;
 					for (U32 i = 0; i < header.ResourcesCount; ++i)
 					{
 						const auto& entry = resourceTable[i];
@@ -266,7 +267,7 @@ namespace ZE::Data
 							data.VertexSize = entry.Geometry.VertexSize;
 							data.IndexFormat = entry.Geometry.IndexBufferFormat;
 							data.Compression = entry.Geometry.Compression;
-							Settings::Data.emplace<GFX::Resource::Mesh>(resId, dev, diskManager, data, file);
+							Settings::Data.emplace<GFX::Resource::Mesh>(resId, dev, diskManager, data, gFile);
 							break;
 						}
 						case IO::Format::ResourcePackEntryType::Material:
@@ -282,7 +283,7 @@ namespace ZE::Data
 
 							if (!isMaterial)
 							{
-								Settings::Data.emplace<GFX::Resource::CBuffer>(resId, dev, diskManager, bufferData, file);
+								Settings::Data.emplace<GFX::Resource::CBuffer>(resId, dev, diskManager, bufferData, gFile);
 								break;
 							}
 							entryPtr = resourceTable + ++i;
@@ -336,9 +337,9 @@ namespace ZE::Data
 							}
 
 							if (isMaterial)
-								Settings::Data.emplace<MaterialBuffersPBR>(resId, dev, diskManager, bufferData, desc, file);
+								Settings::Data.emplace<MaterialBuffersPBR>(resId, dev, diskManager, bufferData, desc, gFile);
 							else
-								Settings::Data.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, file);
+								Settings::Data.emplace<GFX::Resource::Texture::Pack>(resId, dev, diskManager, desc, gFile);
 							break;
 						}
 						}
@@ -347,7 +348,7 @@ namespace ZE::Data
 					// Finish loading of material CPU data
 					for (auto& wait : materialBufferWait)
 					{
-						if (wait.get() != sizeof(MaterialPBR))
+						if (wait.Get() != sizeof(MaterialPBR))
 						{
 							result = IO::FileStatus::ErrorReading;
 							break;
@@ -400,7 +401,7 @@ namespace ZE::Data
 					return IO::FileStatus::ErrorNoResources;
 
 				IO::File file;
-				if (!file.Open(diskManager, packFile, IO::FileFlag::WriteOnly))
+				if (!file.Open(packFile, Base(IO::FileFlag::DefaultWrite)))
 					return IO::FileStatus::ErrorOpeningFile;
 
 				// Save general header info
@@ -416,7 +417,7 @@ namespace ZE::Data
 				header.ID = packId;
 				header.Flags = IO::Format::ResourcePackFlag::None;
 
-				std::vector<std::pair<U32, std::future<U32>>> results;
+				std::vector<std::pair<U32, Task<U32>>> results;
 				results.emplace_back(Utils::SafeCast<U32>(sizeof(header)), file.WriteAsync(&header, sizeof(header), 0));
 
 				// Prepare resource table

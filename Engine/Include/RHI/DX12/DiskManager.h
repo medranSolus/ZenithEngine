@@ -1,14 +1,13 @@
 #pragma once
-#include "Platform/WinAPI/DiskManager.h"
 #include "GFX/CommandList.h"
 #include "IO/CompressionFormat.h"
 ZE_WARNING_PUSH
 #include "dstorage.h"
 ZE_WARNING_POP
 
-namespace ZE::IO
+namespace ZE::GFX
 {
-	class File;
+	class GFile;
 }
 namespace ZE::RHI::DX12
 {
@@ -39,8 +38,6 @@ namespace ZE::RHI::DX12
 			IResource* DestResource;
 			std::shared_ptr<const U8[]> SrcMemory;
 		};
-
-		WinAPI::DiskManager osDiskManager;
 
 		DX::ComPtr<IStorageFactory> factory;
 		DX::ComPtr<IStorageCustomDecompressionQueue> decompressQueue;
@@ -79,12 +76,12 @@ namespace ZE::RHI::DX12
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 		void AddTexturePackID(EID resourceID) noexcept { AddRequest(resourceID, nullptr, ResourceType::Texture, nullptr); }
 
-		void AddFileBufferRequest(EID resourceID, IResource* dest, IO::File& file, U64 sourceOffset,
+		void AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept;
 		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
 		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
 
-		void AddFileTextureRequest(IResource* dest, IO::File& file, U64 sourceOffset,
+		void AddFileTextureRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool copySrc) noexcept;
 		void AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes, bool copySrc) noexcept;
 		void AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,

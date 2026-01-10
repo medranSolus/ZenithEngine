@@ -2,7 +2,7 @@
 #include "GFX/Resource/Texture/PackDesc.h"
 #include "GFX/Binding/Context.h"
 #include "GFX/CommandList.h"
-#include "IO/File.h"
+#include "GFX/GFile.h"
 
 namespace ZE::RHI::DX12::Resource::Texture
 {
@@ -19,8 +19,8 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 	public:
 		Pack() = default;
-		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
-		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file);
+		Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
+		Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();
 

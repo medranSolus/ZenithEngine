@@ -2,7 +2,7 @@
 
 namespace ZE::RHI::DX12::Resource::Texture
 {
-	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
+	Pack::Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
 	{
 		Device& device = dev.Get().dx12;
 		DiskManager& diskManager = disk.Get().dx12;
@@ -131,7 +131,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 		diskManager.AddTexturePackID(desc.ResourceID);
 	}
 
-	Pack::Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file)
+	Pack::Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file)
 	{
 		Device& device = dev.Get().dx12;
 		DiskManager& diskManager = disk.Get().dx12;

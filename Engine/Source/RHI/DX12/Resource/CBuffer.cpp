@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data)
+	CBuffer::CBuffer(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data)
 	{
 		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
@@ -16,7 +16,7 @@ namespace ZE::RHI::DX12::Resource
 		Update(dev, disk, data);
 	}
 
-	CBuffer::CBuffer(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferFileData& data, IO::File& file)
+	CBuffer::CBuffer(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferFileData& data, GFX::GFile& file)
 	{
 		Device& device = dev.Get().dx12;
 		ZE_DX_ENABLE_ID(device);
@@ -29,7 +29,7 @@ namespace ZE::RHI::DX12::Resource
 		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
 	}
 
-	void CBuffer::Update(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::CBufferData& data) const
+	void CBuffer::Update(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data) const
 	{
 		ZE_DX_ENABLE_ID(dev.Get().dx12);
 

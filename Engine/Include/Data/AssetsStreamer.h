@@ -1,6 +1,6 @@
 #pragma once
+#include "GFX/DiskManager.h"
 #include "IO/CompressionFormat.h"
-#include "IO/DiskManager.h"
 #include "IO/FileStatus.h"
 #include "ExternalModelOptions.h"
 #include "MaterialPBR.h"
@@ -43,7 +43,7 @@ namespace ZE::Data
 		static constexpr const char* RESOURCE_DIR = "Resources";
 		static constexpr const char* RESOURCE_FILE = "Resources/respack";
 
-		IO::DiskManager diskManager;
+		GFX::DiskManager diskManager;
 		GFX::Resource::Texture::Library texSchemaLib;
 
 #if _ZE_EXTERNAL_MODEL_LOADING
@@ -56,7 +56,7 @@ namespace ZE::Data
 		ZE_CLASS_MOVE(AssetsStreamer);
 		~AssetsStreamer() = default;
 
-		constexpr IO::DiskManager& GetDisk() noexcept { return diskManager; }
+		constexpr GFX::DiskManager& GetDisk() noexcept { return diskManager; }
 		constexpr GFX::Resource::Texture::Library& GetSchemaLib() noexcept { return texSchemaLib; }
 
 		Task<IO::FileStatus> LoadResourcePack(GFX::Device& dev, U16 packId) { return LoadResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT); }

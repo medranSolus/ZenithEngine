@@ -60,7 +60,7 @@ namespace ZE::GFX::FFX
 	{
 		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
 		Pipeline::FrameBuffer& Buffers;
-		IO::DiskManager& Disk;
+		DiskManager& Disk;
 		Data::Library<S32, FFX::InternalResourceDescription>& InternalBuffers;
 		bool& NotifyBuffersChange;
 		U32 ContextRefCount = 0;
@@ -172,7 +172,7 @@ namespace ZE::GFX::FFX
 	}
 
 	FfxInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers,
-		Pipeline::FrameBuffer& frameBuffer, IO::DiskManager& disk,
+		Pipeline::FrameBuffer& frameBuffer, DiskManager& disk,
 		Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers,
 		bool& notifyBuffersChange) noexcept
 	{

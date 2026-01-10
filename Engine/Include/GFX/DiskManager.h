@@ -1,36 +1,15 @@
 #pragma once
+#if _ZE_RHI_DX11
+#	include "RHI/DX11/DiskManager.h"
+#endif
 #if _ZE_RHI_DX12
 #	include "RHI/DX12/DiskManager.h"
 #endif
-// Rest of the platforms with generic disk manager implementations
-#if _ZE_PLATFORM_WINDOWS
-#	include "Platform/WinAPI/DiskManager.h"
-namespace ZE::RHI
-{
-#	if _ZE_RHI_DX11
-	namespace DX11
-	{
-		typedef ZE::WinAPI::DiskManager DiskManager;
-	}
-#	endif
-#	if _ZE_RHI_GL
-	namespace GL
-	{
-		typedef ZE::WinAPI::DiskManager DiskManager;
-	}
-#	endif
-#	if _ZE_RHI_VK
-	namespace VK
-	{
-		typedef ZE::WinAPI::DiskManager DiskManager;
-	}
-#	endif
-}
-#else
-#	error Missing DiskManager platform specific implementation!
+#if _ZE_RHI_VK
+#	include "RHI/VK/DiskManager.h"
 #endif
 
-namespace ZE::IO
+namespace ZE::GFX
 {
 	class DiskManager final
 	{
