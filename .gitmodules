@@ -68,3 +68,6 @@
 [submodule "External/flac"]
 	path = External/flac
 	url = https://github.com/xiph/flac.git
+[submodule "External/vorbis"]
+	path = External/vorbis
+	url = https://github.com/xiph/vorbis.git

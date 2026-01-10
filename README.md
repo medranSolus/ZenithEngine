@@ -44,6 +44,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [ogg](https://github.com/xiph/ogg) - [BDS-3-Clause License](Doc/License/ThirdParty/ogg.txt)
  - [OpenAL Soft](https://github.com/kcat/openal-soft) - [LGPL v2 License](Doc/License/ThirdParty/OpenAL.txt), [Third Party Notices](Doc/License/ThirdParty/OpenALThirdPartyNotices.txt), [Third Party Notices PFFFT](Doc/License/ThirdParty/OpenALThirdPartyNoticesPFFFT.txt)
  - [qoixx](https://github.com/wx257osn2/qoixx) - [MIT](Doc/License/ThirdParty/qoixx.txt)
+ - [vorbis](https://github.com/xiph/vorbis) - [BDS-3-Clause License](Doc/License/ThirdParty/vorbis.txt)
  - [XeSS](https://github.com/intel/xess) - [Intel Simplified Software License](Doc/License/ThirdParty/XeSS.txt), [Third Party Notices](Doc/License/ThirdParty/XeSSThirdPartyNotices.txt)
  - [zlib](https://github.com/madler/zlib) - [zlib License](Doc/License/ThirdParty/zlib.txt)
  - [AgilitySDK v1.618.5](https://devblogs.microsoft.com/directx/directx12agility/) - Binary: [MICROSOFT SOFTWARE LICENSE TERMS](Doc/License/ThirdParty/AgilitySDK.txt), Code: [MIT License](Doc/License/ThirdParty/AgilitySDK-code.txt)

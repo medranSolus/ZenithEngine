@@ -119,6 +119,7 @@ set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(OGG_DIR "${EXTERNAL_DIR}/ogg")
 set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
+set(VORB_DIR "${EXTERNAL_DIR}/vorbis")
 set(PIX_DIR "${EXTERNAL_DIR}/WinPixEventRuntime")
 set(XAUDIO2_DIR "${EXTERNAL_DIR}/XAudio2")
 set(XESS_DIR "${EXTERNAL_DIR}/XeSS")
@@ -159,6 +160,7 @@ set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(OGG_INC_DIR "${OGG_DIR}/include")
 set(OPENAL_INC_DIR "${NIS_DIR}/include")
+set(VORB_INC_DIR "${VORB_DIR}/include")
 set(VOLK_INC_DIR "${VOLK_DIR}")
 set(PIX_INC_DIR "${PIX_DIR}/Include")
 set(XAUDIO2_INC_DIR "${XAUDIO2_DIR}/include")
@@ -231,6 +233,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${NIS_INC_DIR}"
 	"${OGG_INC_DIR}"
 	"${OPENAL_INC_DIR}"
+	"${VORB_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XAUDIO2_INC_DIR}"
@@ -274,6 +277,9 @@ set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
+set(VORB_LIB "vorbis")
+set(VORBENC_LIB "vorbisenc")
+set(VORBFILE_LIB "vorbisfile")
 set(VOLK_LIB "volk")
 set(PIX_LIB "WinPixEventRuntime")
 set(XAUDIO2_LIB "xaudio2_9redist")
@@ -313,6 +319,8 @@ set(OGG_TARGET "${OGG_LIB}")
 if(${ZE_ENABLE_OPENAL})
 	set(OPENAL_TARGET "${OPENAL_LIB}")
 endif()
+set(VORB_TARGET "${VORB_LIB}")
+set(VORB_TARGETS "${VORB_LIB}" "${VORBENC_LIB}" "${VORBFILE_LIB}")
 if(${ZE_VOLK_ENABLED})
 	set(VOLK_TARGET "${VOLK_LIB}")
 endif()
@@ -365,6 +373,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
 	${XESS_TARGET}
+	${VORB_TARGETS}
 	${VOLK_TARGET}
 	${ZLIB_TARGET})
 
@@ -722,6 +731,17 @@ set(FLAC_CACHE_ARGS "-DBUILD_CXXLIBS:BOOL=OFF"
 	"-DOGG_INCLUDE_DIR:STRING=${OGG_INC_DIR}"
 	"-DOGG_LIBRARY:STRING=${OGG_TARGET}")
 add_external_project(FLAC "src/libFLAC/" "src/libFLAC/" "" "OGG")
+
+# vorbis
+set(VORB_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
+	"-DBUILD_FRAMEWORK:BOOL=OFF"
+	"-DINSTALL_CMAKE_PACKAGE_MODULE:BOOL=OFF"
+	"-DBUILD_TESTING:BOOL=OFF"
+	"-DOGG_INCLUDE_DIR:STRING=${OGG_INC_DIR}"
+	"-DOGG_LIBRARY:STRING=${OGG_TARGET}")
+add_external_project(VORB "lib/" "lib/" "" "OGG")
+copy_inner_lib(VORB VorbisEncoder "lib/" "${VORBENC_LIB}")
+copy_inner_lib(VORB VorbisFile "lib/" "${VORBFILE_LIB}")
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
