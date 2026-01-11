@@ -276,7 +276,7 @@ namespace ZE
 					Logger::Warning("Failed to set PIX target window!");
 
 				PIXCaptureParameters params = {};
-				params.GpuCaptureParameters.FileName = L"capture.wpix";
+				params.GpuCaptureParameters.FileName = L"Logs/capture.wpix";
 				if (FAILED(PIXBeginCapture2(PIX_CAPTURE_GPU, &params)))
 					Logger::Warning("Failed to begin PIX capture!");
 				else
