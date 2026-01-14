@@ -323,6 +323,7 @@ void App::ShowObjectWindow()
 				ImGui::NewLine();
 				EID materialId = Settings::Data.get<Data::MaterialID>(selected).ID;
 				auto& material = Settings::Data.get<Data::MaterialPBR>(materialId);
+				auto pbrFlags = Settings::Data.get<Data::PBRFlags>(materialId);
 
 				ImGui::Text("Material ID: %llu", materialId);
 				if (Settings::Data.all_of<std::string>(materialId))
@@ -334,22 +335,45 @@ void App::ShowObjectWindow()
 				change = ImGui::ColorEdit4("Albedo", reinterpret_cast<float*>(&material.Albedo),
 					COLOR_FLAGS | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
 
+				auto useTexture = [pbrFlags, &material, &change](const char* text, Data::MaterialPBR::Flag flag)
+					{
+						ImGui::BeginDisabled(!(pbrFlags & flag));
+						bool useTex = material.Flags & flag;
+						ImGui::Checkbox(text, &useTex);
+						if (useTex != static_cast<bool>(material.Flags & flag))
+						{
+							change = true;
+							if (useTex)
+								material.Flags |= flag;
+							else
+								material.Flags &= ~flag;
+						}
+						ImGui::EndDisabled();
+					};
+
 				ImGui::Columns(2, "##pbr_params", false);
+				useTexture("Use albedo texture", Data::MaterialPBR::Flag::UseAlbedoTex);
+
 				ImGui::Text("Metalness");
 				ImGui::SetNextItemWidth(-1.0f);
 				change |= GUI::InputClamp(0.0f, 1.0f, material.Metalness,
 					ImGui::InputFloat("##metalness", &material.Metalness, 0.1f, 0.0f, "%.3f"));
+
+				useTexture("Use metal texture", Data::MaterialPBR::Flag::UseMetalnessTex);
 				ImGui::NextColumn();
 
+				useTexture("Use normal texture", Data::MaterialPBR::Flag::UseNormalTex);
 				ImGui::Text("Roughness");
 				ImGui::SetNextItemWidth(-1.0f);
 				change |= GUI::InputClamp(0.0f, 1.0f, material.Roughness,
 					ImGui::InputFloat("##roughness", &material.Roughness, 0.1f, 0.0f, "%.3f"));
+				useTexture("Use roughness texture", Data::MaterialPBR::Flag::UseRoughnessTex);
 				ImGui::Columns(1);
 
 				change |= ImGui::InputFloat("Parallax scale", &material.ParallaxScale, 0.01f, 0.0f, "%.2f");
 				if (material.ParallaxScale < 0.0f)
 					material.ParallaxScale = 0.0f;
+				useTexture("Use parallax texture", Data::MaterialPBR::Flag::UseParallaxTex);
 
 				if (change)
 					Settings::Data.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), materialId, material);
