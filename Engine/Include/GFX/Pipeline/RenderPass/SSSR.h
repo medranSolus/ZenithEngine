@@ -23,11 +23,11 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		FfxSssrContext Ctx;
 		UInt2 RenderSize = { 0, 0 };
 		float IblFactor = 0.55f;
-		float TemporalStabilityFactor = 0.7f;
-		float DepthBufferThickness = 0.015f;
+		float TemporalStabilityFactor = 0.6f;
+		float DepthBufferThickness = 0.02f;
 		float RoughnessThreshold = 0.2f;
 		float VarianceThreshold = 0.0f;
-		U32 MaxTraversalIntersections = 128;
+		U32 MaxTraversalIntersections = 104;
 		U32 MinTraversalOccupancy = 4;
 		U32 MostDetailedMip = 0;
 		U32 SamplesPerQuad = 1;

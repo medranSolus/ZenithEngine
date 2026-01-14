@@ -90,13 +90,14 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		Matrix view = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps));
 
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invViewProjection), Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionInverseTps)));
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMMatrixTranspose(proj));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), proj);
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invProjection), Math::XMMatrixInverse(nullptr, proj));
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.view), view);
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, view));
 		// FFX SDK used post multiplication in the shaders so combined matrices needs to be recomputed here
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.prevViewProjection),
-			Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection) * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps)));
+			Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection)
+				* Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps))));
 
 		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.motionVectorScale.x = -1.0f;
