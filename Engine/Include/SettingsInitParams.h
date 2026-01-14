@@ -25,6 +25,8 @@ namespace ZE
 		DisableCulling = 32,
 		// Submit every GPU workload as separate bundle for execution. Only for debug and development builds.
 		SplitRenderSubmissions = 64,
+		// Enable Image Based Lighting as handler of ambient lighting.
+		EnableIBL = 128,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

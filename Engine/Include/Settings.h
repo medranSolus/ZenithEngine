@@ -43,7 +43,7 @@ namespace ZE
 		// CPU-mappable heap for upload data
 		static constexpr U64 UPLOAD_HEAP_SIZE = 64 * Math::MEGABYTE;
 		// Single CPU stating buffer for preparing data before upload to GPU
-		static constexpr U32 STAGING_BUFFER_SIZE = 128 * Math::MEGABYTE;
+		static constexpr U32 STAGING_BUFFER_SIZE = 384 * Math::MEGABYTE;
 		// Have to be adjusted per-platform
 		static constexpr U8 MAX_RENDER_TARGETS = 8;
 
@@ -150,13 +150,13 @@ namespace ZE
 		switch (GetGfxApi())
 		{
 		default:
-			ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
-			return 1;
+		return 1;
 		case GfxApiType::DX12:
 		case GfxApiType::Vulkan:
-			return GetBackbufferCount();
+		return GetBackbufferCount();
 		}
 	}
 
@@ -190,6 +190,7 @@ namespace ZE
 #endif
 		flags[Flags::EnabledSSSR] = params.Flags & SettingsInitFlag::EnableSSSR;
 		flags[Flags::AsyncAO] = params.Flags & SettingsInitFlag::AsyncAO;
+		flags[Flags::IBL] = params.Flags & SettingsInitFlag::EnableIBL;
 
 		backbufferCount = params.BackbufferCount;
 		applicationName = params.AppName ? params.AppName : ENGINE_NAME;

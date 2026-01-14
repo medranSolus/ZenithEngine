@@ -25,6 +25,7 @@ namespace ZE
 		parser.AddOption("alwaysCopySourceGpuData");
 		parser.AddOption("noCulling");
 		parser.AddOption("splitRenderSubmissions");
+		parser.AddOption("ibl");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -75,6 +76,8 @@ namespace ZE
 			params.Flags |= SettingsInitFlag::DisableCulling;
 		if (parser.GetOption("splitRenderSubmissions"))
 			params.Flags |= SettingsInitFlag::SplitRenderSubmissions;
+		if (parser.GetOption("ibl"))
+			params.Flags |= SettingsInitFlag::EnableIBL;
 
 		return params;
 	}
