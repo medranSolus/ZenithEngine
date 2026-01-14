@@ -86,17 +86,17 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.brdfTexture = FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
-		// FFX SDK used post multiplication in the shaders so all combined matrices needs to be recomputed here
 		Matrix proj = Math::XMLoadFloat4x4(&renderData.GraphData.Projection);
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invViewProjection),
-			Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, proj * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)))));
-		Matrix projTps = Math::XMMatrixTranspose(proj);
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), projTps);
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invProjection), Math::XMMatrixInverse(nullptr, projTps));
-		*reinterpret_cast<Float4x4*>(desc.view) = renderData.DynamicData.ViewTps;
-		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps)));
+		Matrix view = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps));
+
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invViewProjection), Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionInverseTps)));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.projection), Math::XMMatrixTranspose(proj));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invProjection), Math::XMMatrixInverse(nullptr, proj));
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.view), view);
+		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.invView), Math::XMMatrixInverse(nullptr, view));
+		// FFX SDK used post multiplication in the shaders so combined matrices needs to be recomputed here
 		Math::XMStoreFloat4x4(reinterpret_cast<Float4x4*>(desc.prevViewProjection),
-			Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection) * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps))));
+			Math::XMLoadFloat4x4(&renderData.GraphData.PrevProjection) * Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.GraphData.PrevViewTps)));
 
 		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.motionVectorScale.x = -1.0f;
@@ -130,6 +130,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_SSSR_VERSION_MAJOR), ZE_DEPAREN(FFX_SSSR_VERSION_MINOR), ZE_DEPAREN(FFX_SSSR_VERSION_PATCH)));
 
+			ImGui::Text("IBL Factor");
 			GUI::InputClamp(0.0f, 1.0f, execData.IblFactor,
 				ImGui::InputFloat("##ibl_factor", &execData.IblFactor, 0.01f, 0.1f, "%.2f"));
 			if (ImGui::IsItemHovered())
