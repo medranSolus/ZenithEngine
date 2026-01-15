@@ -659,7 +659,7 @@ App::App(const CmdParser& params)
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);
 	engineParams.WindowName = WINDOW_TITLE;
-	engineParams.CoreRendererParams.BrdfLutSource = "brdf_lut_16_ggx.dds";
+	engineParams.CoreRendererParams.BrdfLutSource = "";
 	engineParams.CoreRendererParams.SkyboxSource.InitFolder("Skybox/Space", ".png");
 	engineParams.CoreRendererParams.EnvMapSource = engineParams.CoreRendererParams.SkyboxSource;
 	engine.Init(engineParams);
