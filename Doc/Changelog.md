@@ -11,6 +11,32 @@
 
 ---
 
+## v0.5 *[2026-01-15]*
+
+Render graph update pre-release. Changed whole render graph system to be able to update on the runtime depending on the type of content in the scene and game settings.
+To correctly start technological demo it's still needed to pass `--dx12 --threadsCount 255` command line arguments.
+
+**List of changes:**
+- **[FTR]** Added DLSS upscaling.
+- **[FTR]** Added FSR from FFX SDK DLL.
+- **[FTR]** Added FSR 3.
+- **[FTR]** Created asset streaming system.
+- **[FTR]** Added standalone mipmap generation module.
+- **[FTR]** New cubemap conversion methods in `TexEdit` tool.
+- **[FTR]** Added tool for generation of BRDF LUT textures.
+- **[FTR]** Added tool for cubmap convolutions.
+- **[OTHR]** Reworked how tools are structurized in the project.
+- **[FTR]** New bzip2 compression codec.
+- **[FTR]** Added support for writing DDS textures.
+- **[FTR]** Added FP16 support on the CPU operations.
+- **[ARCH]** Reworked command parser into standard POSIX format with each application accepting `--help` parameter.
+- **[FTR]** Added Image Based Lighting based on singe set of environment maps.
+- **[FTR]** Added option to make PIX captures directly from the engine UI.
+- **[FTR]** Added SSSR.
+- **[ARCH]** **[FTR]** **[OPT]** **[REL-0.5]** New generic render graph.
+
+---
+
 ## v0.4 *[2024-03-05]*
 
 PBR update pre-release. Changed whole pipeline to PBR and introduced new FidelityFX SDK features, along with upscaling.
