@@ -747,37 +747,27 @@ namespace ZE::GFX::FFX
 		for (U32 i = 0; i < shaderBlob.uavTextureCount; ++i)
 		{
 			outPipeline->uavTextureBindings[i].slotIndex = shaderBlob.boundUAVTextures[i];
-#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->uavTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVTextureNames[i]).c_str());
-#endif
 		}
 		for (U32 i = 0; i < shaderBlob.srvTextureCount; ++i)
 		{
 			outPipeline->srvTextureBindings[i].slotIndex = shaderBlob.boundSRVTextures[i];
-#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->srvTextureBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVTextureNames[i]).c_str());
-#endif
 		}
 		for (U32 i = 0; i < shaderBlob.srvBufferCount; ++i)
 		{
 			outPipeline->srvBufferBindings[i].slotIndex = shaderBlob.boundSRVBuffers[i];
-#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->srvBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundSRVBufferNames[i]).c_str());
-#endif
 		}
 		for (U32 i = 0; i < shaderBlob.uavBufferCount; ++i)
 		{
 			outPipeline->uavBufferBindings[i].slotIndex = shaderBlob.boundUAVBuffers[i];
-#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->uavBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundUAVBufferNames[i]).c_str());
-#endif
 		}
 		for (U32 i = 0; i < shaderBlob.cbvCount; ++i)
 		{
 			outPipeline->constantBufferBindings[i].slotIndex = shaderBlob.boundConstantBuffers[i];
-#if _ZE_DEBUG_GFX_NAMES
 			wcscpy_s(outPipeline->constantBufferBindings[i].name, Utils::ToUTF16(shaderBlob.boundConstantBufferNames[i]).c_str());
-#endif
 		}
 
 		// Only set the command signature if this is setup as an indirect workload
