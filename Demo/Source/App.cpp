@@ -93,7 +93,7 @@ void App::ProcessInput()
 				}
 				case VK_F1:
 				{
-					Settings::SetImGui(!Settings::IsEnabledImGui());
+					engine.SwitchDebugUI();
 					break;
 				}
 				}

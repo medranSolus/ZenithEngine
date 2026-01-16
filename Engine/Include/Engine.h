@@ -8,7 +8,7 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
-		enum Flags : U8 { Initialized, ExecuteUploadSync, PixCapture, PixCaptureInProgress, Count };
+		enum Flags : U8 { Initialized, ExecuteUploadSync, PixCapture, PixCaptureInProgress, SwitchImGui, Count };
 
 		double prevTime = 0.0;
 		GFX::Graphics graphics;
@@ -31,6 +31,7 @@ namespace ZE
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RenderGraph& RenderGraph() noexcept { return renderGraph; }
 		constexpr Data::AssetsStreamer& Assets() noexcept { return assets; }
+		constexpr void SwitchDebugUI() noexcept { flags[Flags::SwitchImGui] = true; }
 
 		// Initialization method that must be called before using engine
 		bool Init(const EngineParams& params);

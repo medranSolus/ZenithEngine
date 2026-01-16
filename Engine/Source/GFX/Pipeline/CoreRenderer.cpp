@@ -541,7 +541,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
 			node.AddInput("hdrGamma.RT", TextureLayout::RenderTarget);
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();

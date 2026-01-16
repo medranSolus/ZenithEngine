@@ -164,104 +164,107 @@ namespace ZE
 
 	void Engine::ShowRenderGraphDebugUI() noexcept
 	{
-		if (ImGui::BeginChild("##render_graph_settings"))
+		if (Settings::IsEnabledImGui())
 		{
-			if (ImGui::CollapsingHeader("Engine info"))
+			if (ImGui::BeginChild("##render_graph_settings"))
 			{
-				ImGui::Text(Settings::ENGINE_DISPLAY_NAME);
-				ImGui::Text("Version:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_VERSION_STR);
-				ImGui::Text("UUID:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_UUID);
+				if (ImGui::CollapsingHeader("Engine info"))
+				{
+					ImGui::Text(Settings::ENGINE_DISPLAY_NAME);
+					ImGui::Text("Version:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_VERSION_STR);
+					ImGui::Text("UUID:"); ImGui::SameLine(); ImGui::Text(Settings::ENGINE_UUID);
 
-				ImGui::Text("Current RHI:"); ImGui::SameLine();
-				switch (Settings::GetGfxApi())
-				{
-				case GfxApiType::DX11:
-				{
-					ImGui::Text("DirectX 11");
-					break;
-				}
-				case GfxApiType::DX12:
-				{
-					ImGui::Text("DirectX 12");
-					break;
-				}
-				case GfxApiType::OpenGL:
-				{
-					ImGui::Text("OpenGL");
-					break;
-				}
-				case GfxApiType::Vulkan:
-				{
-					ImGui::Text("Vulkan");
-					break;
-				}
-				}
-
-				ImGui::NewLine();
-			}
-
-			if (ImGui::CollapsingHeader("Performance"))
-			{
-				ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
-#ifdef USE_PIX
-				if (Settings::GetGfxApi() == GfxApiType::DX12)
-				{
-					if (ImGui::Button("PIX capture"))
-						flags[Flags::PixCapture] = true;
-					if (ImGui::IsItemHovered())
-						ImGui::SetTooltip("Perform GPU capture and save it to file \"capture.wpix\". DX12 only.");
-				}
-#endif
-				ImGui::NewLine();
-			}
-
-			if (ImGui::CollapsingHeader("Effects"))
-			{
-				constexpr std::array<const char*, 3> AO_LEVELS = { "No AO", "XeGTAO", "CACAO" };
-				if (ImGui::BeginCombo("Ambient Occlusion", AO_LEVELS.at(static_cast<U8>(Settings::AmbientOcclusionType))))
-				{
-					for (GFX::AOType i = GFX::AOType::None; const char* level : AO_LEVELS)
+					ImGui::Text("Current RHI:"); ImGui::SameLine();
+					switch (Settings::GetGfxApi())
 					{
-						const bool selected = i == Settings::AmbientOcclusionType;
-						if (ImGui::Selectable(level, selected))
-							Settings::AmbientOcclusionType = i;
-						if (selected)
-							ImGui::SetItemDefaultFocus();
-						i = static_cast<GFX::AOType>(static_cast<U8>(i) + 1);
+					case GfxApiType::DX11:
+					{
+						ImGui::Text("DirectX 11");
+						break;
 					}
-					ImGui::EndCombo();
+					case GfxApiType::DX12:
+					{
+						ImGui::Text("DirectX 12");
+						break;
+					}
+					case GfxApiType::OpenGL:
+					{
+						ImGui::Text("OpenGL");
+						break;
+					}
+					case GfxApiType::Vulkan:
+					{
+						ImGui::Text("Vulkan");
+						break;
+					}
+					}
+
+					ImGui::NewLine();
 				}
 
-				constexpr std::array<const char*, 8> UPSCALE_LEVELS = { "None", "FSR 1", "FSR 2", "FSR 3", "Ffx Api FSR", "XeSS", "NIS", "DLSS" };
-				if (ImGui::BeginCombo("Upscaling", UPSCALE_LEVELS.at(static_cast<U8>(Settings::Upscaler))))
+				if (ImGui::CollapsingHeader("Performance"))
 				{
-					for (GFX::UpscalerType i = GFX::UpscalerType::None; const char* level : UPSCALE_LEVELS)
+					ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
+#ifdef USE_PIX
+					if (Settings::GetGfxApi() == GfxApiType::DX12)
 					{
-						if (GFX::IsUpscalerSupported(graphics.GetDevice(), i))
+						if (ImGui::Button("PIX capture"))
+							flags[Flags::PixCapture] = true;
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Perform GPU capture and save it to file \"capture.wpix\". DX12 only.");
+					}
+#endif
+					ImGui::NewLine();
+				}
+
+				if (ImGui::CollapsingHeader("Effects"))
+				{
+					constexpr std::array<const char*, 3> AO_LEVELS = { "No AO", "XeGTAO", "CACAO" };
+					if (ImGui::BeginCombo("Ambient Occlusion", AO_LEVELS.at(static_cast<U8>(Settings::AmbientOcclusionType))))
+					{
+						for (GFX::AOType i = GFX::AOType::None; const char* level : AO_LEVELS)
 						{
-							const bool selected = i == Settings::Upscaler;
+							const bool selected = i == Settings::AmbientOcclusionType;
 							if (ImGui::Selectable(level, selected))
-								Settings::Upscaler = i;
+								Settings::AmbientOcclusionType = i;
 							if (selected)
 								ImGui::SetItemDefaultFocus();
-							i = static_cast<GFX::UpscalerType>(static_cast<U8>(i) + 1);
+							i = static_cast<GFX::AOType>(static_cast<U8>(i) + 1);
 						}
+						ImGui::EndCombo();
 					}
-					ImGui::EndCombo();
+
+					constexpr std::array<const char*, 8> UPSCALE_LEVELS = { "None", "FSR 1", "FSR 2", "FSR 3", "Ffx Api FSR", "XeSS", "NIS", "DLSS" };
+					if (ImGui::BeginCombo("Upscaling", UPSCALE_LEVELS.at(static_cast<U8>(Settings::Upscaler))))
+					{
+						for (GFX::UpscalerType i = GFX::UpscalerType::None; const char* level : UPSCALE_LEVELS)
+						{
+							if (GFX::IsUpscalerSupported(graphics.GetDevice(), i))
+							{
+								const bool selected = i == Settings::Upscaler;
+								if (ImGui::Selectable(level, selected))
+									Settings::Upscaler = i;
+								if (selected)
+									ImGui::SetItemDefaultFocus();
+								i = static_cast<GFX::UpscalerType>(static_cast<U8>(i) + 1);
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
+					bool sssr = Settings::IsEnabledSSSR();
+					ImGui::Checkbox("SSSR##enable", &sssr);
+					Settings::SetSSSR(sssr);
+					ImGui::EndDisabled();
+
+					ImGui::NewLine();
 				}
-
-				ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
-				bool sssr = Settings::IsEnabledSSSR();
-				ImGui::Checkbox("SSSR##enable", &sssr);
-				Settings::SetSSSR(sssr);
-				ImGui::EndDisabled();
-
-				ImGui::NewLine();
+				if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))
+					flags[ExecuteUploadSync] = true;
 			}
-			if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))
-				flags[ExecuteUploadSync] = true;
+			ImGui::EndChild();
 		}
-		ImGui::EndChild();
 	}
 
 	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
@@ -317,11 +320,26 @@ namespace ZE
 			imgui.EndFrame();
 		graphics.WaitForFrame();
 
+		// Need to create proper ImGui context in render graph rebuild before it will be possible to run it
+		bool imguiDryRun = false;
+		if (flags[Flags::SwitchImGui] && !Settings::IsEnabledImGui())
+		{
+			flags[Flags::SwitchImGui] = false;
+			Settings::SetImGui(true);
+			imguiDryRun = true;
+		}
 		// Update of render graph and it's data
 		GFX::Pipeline::BuildResult result = graphBuilder.UpdatePassConfiguration(dev, mainList, assets, renderGraph);
 		if (!ZE_PIPELINE_BUILD_SUCCESS(result))
 			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
 		renderGraph.UpdateFrameData(dev);
+
+		// Get proper ImGui data ready since it was just enabled
+		if (imguiDryRun)
+		{
+			imgui.StartFrame(window);
+			imgui.EndFrame();
+		}
 
 		if (result == GFX::Pipeline::BuildResult::WaitUpload || flags[ExecuteUploadSync])
 		{
@@ -346,6 +364,12 @@ namespace ZE
 			Settings::Data.clear<Data::TransformPrevious>();
 
 		renderGraph.Execute(graphics);
+
+		if (flags[Flags::SwitchImGui] && Settings::IsEnabledImGui())
+		{
+			flags[Flags::SwitchImGui] = false;
+			Settings::SetImGui(false);
+		}
 
 		// Move all current transforms to previous state
 		if (Settings::ComputeMotionVectors())
