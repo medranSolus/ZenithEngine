@@ -17,5 +17,6 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 		alpha += color.a * cb_settingsData.BlurCoefficients[abs(i)];
 		maxColor = max(maxColor, color.rgb);
 	}
-	return float4(maxColor * cb_settingsData.BlurIntensity, alpha);
+	// TODO: Make exposure impact maxColor again by intensity 1/exposure
+	return float4(maxColor, alpha);
 }

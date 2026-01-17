@@ -51,7 +51,8 @@ namespace ZE
 		static inline GFX::RayTracingTier RayTracingTier = GFX::RayTracingTier::None;
 		static inline GFX::UpscalerType Upscaler = GFX::UpscalerType::None;
 		static inline GFX::AOType AmbientOcclusionType = GFX::AOType::None;
-		static inline PixelFormat BackbufferFormat = PixelFormat::R8G8B8A8_UNorm;
+		static inline GFX::TonemapperType Tonemapper = GFX::TonemapperType::Exposure;
+		static inline PixelFormat BackbufferFormat = PixelFormat::B8G8R8A8_UNorm_SRGB;
 
 		static inline UInt2 DisplaySize = { 0, 0 };
 		static inline UInt2 RenderSize = { 0, 0 };
@@ -197,6 +198,7 @@ namespace ZE
 		applicationVersion = params.AppVersion;
 		Upscaler = params.Upscaler;
 		AmbientOcclusionType = params.AmbientOcclusion;
+		Tonemapper = params.Tonemapper;
 		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
 	}
 #pragma endregion

@@ -26,6 +26,7 @@ namespace ZE
 		parser.AddOption("noCulling");
 		parser.AddOption("splitRenderSubmissions");
 		parser.AddOption("ibl");
+		parser.AddOption("reinhard");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -68,6 +69,12 @@ namespace ZE
 			params.AmbientOcclusion = GFX::AOType::CACAO;
 		else
 			params.AmbientOcclusion = GFX::AOType::None;
+
+		if (parser.GetOption("reinhard"))
+			params.Tonemapper = GFX::TonemapperType::Reinhard;
+		else
+			params.Tonemapper = GFX::TonemapperType::Exposure;
+
 		if (!parser.GetOption("noAsyncAO"))
 			params.Flags |= SettingsInitFlag::AsyncAO;
 		if (parser.GetOption("alwaysCopySourceGpuData"))

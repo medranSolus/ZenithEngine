@@ -4,7 +4,6 @@
 #include "RenderPass/ClearBuffer.h"
 #include "RenderPass/DearImGui.h"
 #include "RenderPass/DirectionalLight.h"
-#include "RenderPass/HDRGammaCorrection.h"
 #include "RenderPass/HorizontalBlur.h"
 #include "RenderPass/Lambertian.h"
 #include "RenderPass/LambertianComputeCopy.h"
@@ -17,6 +16,8 @@
 #include "RenderPass/Skybox.h"
 #include "RenderPass/SpotLight.h"
 #include "RenderPass/SSSR.h"
+#include "RenderPass/TonemapExposure.h"
+#include "RenderPass/TonemapReinhard.h"
 #if _ZE_DLSS_ENABLED
 #	include "RenderPass/UpscaleDLSS.h"
 #endif

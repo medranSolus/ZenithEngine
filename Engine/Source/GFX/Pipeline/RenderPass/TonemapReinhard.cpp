@@ -1,18 +1,19 @@
-#include "GFX/Pipeline/RenderPass/HDRGammaCorrection.h"
+#include "GFX/Pipeline/RenderPass/TonemapReinhard.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
+namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 {
 	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
 	{
-		ZE_ASSERT(formats.size() == 1, "Incorrect size for HDRGammaCorrection initialization formats!");
+		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapReinhard initialization formats!");
 		return Initialize(dev, buildData, formats.front());
 	}
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept
 	{
-		PassDesc desc{ Base(CorePassType::HDRGammaCorrection) };
+		PassDesc desc{ Base(CorePassType::TonemapReinhard) };
 		desc.InitializeFormats.emplace_back(outputFormat);
 		desc.Init = Initialize;
+		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Clean = Clean;
 		return desc;
@@ -31,19 +32,18 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		ExecuteData* passData = new ExecuteData;
 
 		Binding::SchemaDesc desc;
-		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
-		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
+		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
 		desc.AppendSamplers(buildData.Samplers);
 		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
 
 		Resource::PipelineStateDesc psoDesc;
 		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "HDRGammaPS", buildData.ShaderCache);
+		psoDesc.SetShader(dev, psoDesc.PS, "ReinhardPS", buildData.ShaderCache);
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;
-		ZE_PSO_SET_NAME(psoDesc, "HDRGammaCorrection");
+		ZE_PSO_SET_NAME(psoDesc, "TonemapReinhard");
 		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
 
 		return passData;
@@ -51,11 +51,11 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 
 	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
 	{
-		ZE_PERF_GUARD("HDRGammaCorrection");
+		ZE_PERF_GUARD("TonemapReinhard");
 		Resources ids = *passData.Resources.CastConst<Resources>();
 		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
 
-		ZE_DRAW_TAG_BEGIN(dev, cl, "HDRGammaCorrection", PixelVal::White);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapReinhard", PixelVal::White);
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
 
 		Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -63,7 +63,6 @@ namespace ZE::GFX::Pipeline::RenderPass::HDRGammaCorrection
 		data.State.Bind(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
-		renderData.SettingsBuffer.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 
 		renderData.Buffers.EndRaster(cl);

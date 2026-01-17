@@ -252,6 +252,21 @@ namespace ZE
 						ImGui::EndCombo();
 					}
 
+					constexpr std::array<const char*, 2> TONEMAP_LEVELS = { "Reinhard", "Exposure" };
+					if (ImGui::BeginCombo("Tonemapper", TONEMAP_LEVELS.at(static_cast<U8>(Settings::Tonemapper))))
+					{
+						for (GFX::TonemapperType i = GFX::TonemapperType::Reinhard; const char* level : TONEMAP_LEVELS)
+						{
+							const bool selected = i == Settings::Tonemapper;
+							if (ImGui::Selectable(level, selected))
+								Settings::Tonemapper = i;
+							if (selected)
+								ImGui::SetItemDefaultFocus();
+							i = static_cast<GFX::TonemapperType>(static_cast<U8>(i) + 1);
+						}
+						ImGui::EndCombo();
+					}
+
 					ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
 					bool sssr = Settings::IsEnabledSSSR();
 					ImGui::Checkbox("SSSR##enable", &sssr);

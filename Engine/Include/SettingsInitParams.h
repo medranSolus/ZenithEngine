@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/AOType.h"
 #include "GFX/UpscalerType.h"
+#include "GFX/TonemapperType.h"
 #include "RHI/ApiType.h"
 #include "CmdParser.h"
 
@@ -53,6 +54,8 @@ namespace ZE
 		GFX::UpscalerType Upscaler;
 		// Type of ambient occlusion to be used in graphics pipeline.
 		GFX::AOType AmbientOcclusion;
+		// Type of tonemapper to be applied on the rendered image.
+		GFX::TonemapperType Tonemapper;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi = GfxApiType::DX12) noexcept;

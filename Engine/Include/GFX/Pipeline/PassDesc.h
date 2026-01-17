@@ -84,8 +84,10 @@ namespace ZE::GFX::Pipeline
 		HorizontalBlur,
 		VerticalBlur,
 
+		TonemapExposure,
+		TonemapReinhard,
+
 		Wireframe,
-		HDRGammaCorrection,
 		DearImGui,
 		// Begining of the range that is possible for other custom passes to use their own
 		// enum values if they wish to create custom render graph definition

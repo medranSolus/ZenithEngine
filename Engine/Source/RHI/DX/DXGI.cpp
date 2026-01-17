@@ -91,7 +91,7 @@ namespace ZE::RHI::DX
 		DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
 		swapDesc.Width = 0; // Use window sizes
 		swapDesc.Height = 0;
-		swapDesc.Format = GetDXFormat(Settings::BackbufferFormat);
+		swapDesc.Format = GetDXFormat(Utils::RemoveSRGB(Settings::BackbufferFormat));
 		swapDesc.Stereo = FALSE;
 		swapDesc.SampleDesc.Count = 1; // Used only in bitblt swap model
 		swapDesc.SampleDesc.Quality = 0;

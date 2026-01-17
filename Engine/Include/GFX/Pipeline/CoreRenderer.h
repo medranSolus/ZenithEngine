@@ -23,16 +23,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		float ShadowNormalOffset = 0.001f;
 		// Sigma parameter to Gauss function used during computing blur
 		float Sigma = 2.6f;
-		// Level of exposure during tonemapping
-		float HDRExposure = 1.5f;
 		// Gamma for current display
 		float Gamma = 2.2f;
 	};
 
 	// Setup only core buffers and samplers slots for given graph
 	void SetupRenderSlots(RenderGraphDesc& graphDesc) noexcept;
-	// Setup only intensity of the Gauss blur based on exporsure member
-	void SetupBlurIntensity(RendererSettingsData& settingsData) noexcept;
 	// Setup only kernel for the gaussian filter based on blur sigma and radius members
 	void SetupBlurKernel(RendererSettingsData& settingsData) noexcept;
 	// Setup only core data members for given graph

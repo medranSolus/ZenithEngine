@@ -1857,7 +1857,7 @@ namespace ZE::GFX::Pipeline
 					}
 				}
 				ZE_CHECK_FAILED_GRAPH_COMPUTE(originalInputs.size() != renderNode.GetInputs().size(), ErrorNotAllInputsFound,
-					"Cannot find al inputs for pass [" + renderNode.GetFullName() + "]!");
+					"Cannot find all inputs for pass [" + renderNode.GetFullName() + "]!");
 
 				// Determine which output resources will be present
 				computed.OutputResources.reserve(renderNode.GetOutputResources().size());
@@ -2448,26 +2448,13 @@ namespace ZE::GFX::Pipeline
 		if (ImGui::CollapsingHeader("Display"))
 		{
 			ImGui::Columns(2, "##display_options", false);
+			ImGui::Text("Gamma correction");
+			ImGui::SetNextItemWidth(-1.0f);
+			if (GUI::InputClamp(1.0f, 10.0f, graph.execData.SettingsData.Gamma,
+				ImGui::InputFloat("##gamma", &graph.execData.SettingsData.Gamma, 0.1f, 0.0f, "%.1f")))
 			{
-				ImGui::Text("Gamma correction");
-				ImGui::SetNextItemWidth(-1.0f);
-				if (GUI::InputClamp(1.0f, 10.0f, graph.execData.SettingsData.Gamma,
-					ImGui::InputFloat("##gamma", &graph.execData.SettingsData.Gamma, 0.1f, 0.0f, "%.1f")))
-				{
-					settingsChange = true;
-					graph.execData.SettingsData.GammaInverse = 1.0f / graph.execData.SettingsData.Gamma;
-				}
-			}
-			ImGui::NextColumn();
-			{
-				ImGui::Text("HDR exposure");
-				ImGui::SetNextItemWidth(-1.0f);
-				if (GUI::InputClamp(0.1f, FLT_MAX, graph.execData.SettingsData.HDRExposure,
-					ImGui::InputFloat("##hdr", &graph.execData.SettingsData.HDRExposure, 0.1f, 0.0f, "%.1f")))
-				{
-					settingsChange = true;
-					CoreRenderer::SetupBlurIntensity(graph.execData.SettingsData);
-				}
+				settingsChange = true;
+				graph.execData.SettingsData.GammaInverse = 1.0f / graph.execData.SettingsData.Gamma;
 			}
 			ImGui::Columns(1);
 			ImGui::NewLine();

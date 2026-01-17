@@ -22,6 +22,10 @@ namespace ZE::Utils
 	template<typename C, typename T>
 	constexpr C SafeCast(T&& val) noexcept;
 
+	// Convert format to SRGB if possible
+	constexpr PixelFormat AddSRGB(PixelFormat format) noexcept;
+	// Convert format from SRGB
+	constexpr PixelFormat RemoveSRGB(PixelFormat format) noexcept;
 	// Check whether formats come from same family with automatic conversion rules
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept;
 	// Checks whether format is available for depth stencil
@@ -83,6 +87,48 @@ namespace ZE::Utils
 			ZE_ASSERT(std::numeric_limits<C>::max() >= val, "Casting value that exceedes maximal size of destination type!");
 		ZE_WARNING_POP
 			return static_cast<C>(val);
+	}
+
+	constexpr PixelFormat AddSRGB(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		default:
+			return format;
+		case PixelFormat::R8G8B8A8_UNorm:
+			return PixelFormat::R8G8B8A8_UNorm_SRGB;
+		case PixelFormat::B8G8R8A8_UNorm:
+			return PixelFormat::B8G8R8A8_UNorm_SRGB;
+		case PixelFormat::BC1_UNorm:
+			return PixelFormat::BC1_UNorm_SRGB;
+		case PixelFormat::BC2_UNorm:
+			return PixelFormat::BC2_UNorm_SRGB;
+		case PixelFormat::BC3_UNorm:
+			return PixelFormat::BC3_UNorm_SRGB;
+		case PixelFormat::BC7_UNorm:
+			return PixelFormat::BC7_UNorm_SRGB;
+		}
+	}
+
+	constexpr PixelFormat RemoveSRGB(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+		default:
+			return format;
+		case PixelFormat::R8G8B8A8_UNorm_SRGB:
+			return PixelFormat::R8G8B8A8_UNorm;
+		case PixelFormat::B8G8R8A8_UNorm_SRGB:
+			return PixelFormat::B8G8R8A8_UNorm;
+		case PixelFormat::BC1_UNorm_SRGB:
+			return PixelFormat::BC1_UNorm;
+		case PixelFormat::BC2_UNorm_SRGB:
+			return PixelFormat::BC2_UNorm;
+		case PixelFormat::BC3_UNorm_SRGB:
+			return PixelFormat::BC3_UNorm;
+		case PixelFormat::BC7_UNorm_SRGB:
+			return PixelFormat::BC7_UNorm;
+		}
 	}
 
 	constexpr bool IsSameFormatFamily(PixelFormat f1, PixelFormat f2) noexcept
@@ -399,20 +445,20 @@ namespace ZE::Utils
 	{
 		switch (format)
 		{
-		case ZE::PixelFormat::BC1_UNorm:
-		case ZE::PixelFormat::BC1_UNorm_SRGB:
-		case ZE::PixelFormat::BC2_UNorm:
-		case ZE::PixelFormat::BC2_UNorm_SRGB:
-		case ZE::PixelFormat::BC3_UNorm:
-		case ZE::PixelFormat::BC3_UNorm_SRGB:
-		case ZE::PixelFormat::BC4_UNorm:
-		case ZE::PixelFormat::BC4_SNorm:
-		case ZE::PixelFormat::BC5_UNorm:
-		case ZE::PixelFormat::BC5_SNorm:
-		case ZE::PixelFormat::BC6H_UF16:
-		case ZE::PixelFormat::BC6H_SF16:
-		case ZE::PixelFormat::BC7_UNorm:
-		case ZE::PixelFormat::BC7_UNorm_SRGB:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_SRGB:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC6H_SF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_SRGB:
 		return true;
 		default:
 		return false;

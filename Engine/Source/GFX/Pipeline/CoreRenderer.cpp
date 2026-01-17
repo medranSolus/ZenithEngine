@@ -53,13 +53,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		};
 	}
 
-	void SetupBlurIntensity(RendererSettingsData& settingsData) noexcept
-	{
-		settingsData.BlurIntensity = 1.0f;
-		if (settingsData.HDRExposure < 1.0f)
-			settingsData.BlurIntensity /= settingsData.HDRExposure;
-	}
-
 	void SetupBlurKernel(RendererSettingsData& settingsData) noexcept
 	{
 		float gaussSum = 0.0f;
@@ -79,22 +72,20 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.RenderSize = Settings::RenderSize;
 
 		settingsData.AmbientLight = { 0.03f, 0.03f, 0.03f };
-		settingsData.HDRExposure = params.HDRExposure;
+		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::Upscaler);
 
 		settingsData.BlurWidth = outlineBuffSize.X;
 		settingsData.BlurHeight = outlineBuffSize.Y;
 		settingsData.BlurRadius = RendererSettingsData::BLUR_KERNEL_RADIUS;
-		SetupBlurIntensity(settingsData);
-
 		settingsData.BlurSigma = params.Sigma;
+
 		settingsData.ShadowMapSize = Utils::SafeCast<float>(params.ShadowMapSize);
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
-
 		settingsData.MipBias = CalculateMipBias(Settings::RenderSize.X, Settings::DisplaySize.X, Settings::Upscaler);
+
 		settingsData.Gamma = params.Gamma;
 		settingsData.GammaInverse = 1.0f / params.Gamma;
-		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::Upscaler);
 
 		SetupBlurKernel(settingsData);
 	}
@@ -174,9 +165,9 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.AddResource("outlineDepth",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::DepthStencil, "Outline depth"));
 		graphDesc.AddResource("outline",
-			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline"));
+			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, PixelFormat::R8G8B8A8_UNorm, 0.0f, 0.0f, 0.0f, 0.0f, "Outline"));
 		graphDesc.AddResource("outlineBlur",
-			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, Settings::BackbufferFormat, 0.0f, 0.0f, 0.0f, 0.0f, "Outline blur"));
+			TEX2D_DESC(OUTLINE_SIZE_SCALING, FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::SyncScalingDivide, PixelFormat::R8G8B8A8_UNorm, 0.0f, 0.0f, 0.0f, 0.0f, "Outline blur"));
 #pragma endregion
 
 #pragma region Startup
@@ -534,7 +525,14 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("hdrGamma", "", RenderPass::HDRGammaCorrection::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			RenderNode node("tonemap", "exposure", RenderPass::TonemapExposure::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("tonemap", "reinhard", RenderPass::TonemapReinhard::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
 			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();
@@ -542,7 +540,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 		{
 			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
-			node.AddInput("hdrGamma.RT", TextureLayout::RenderTarget);
+			node.AddInput("tonemap.RT", TextureLayout::RenderTarget);
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
