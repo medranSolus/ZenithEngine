@@ -57,7 +57,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 				passData.SourceData = std::move(passData.NewSource);
 				Resource::Texture::PackDesc texDesc;
 				ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
-				texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+				texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures), true);
 
 				buildData.SyncStatus.SyncMain(dev);
 				buildData.SyncStatus.SyncCompute(dev);
@@ -86,7 +86,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		if (!source.LoadTextures(textures))
 			throw ZE_RGC_EXCEPT("Error loading cubemap!");
 
-		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures), true);
 		passData->SkyTexture.Init(dev, buildData.Assets.GetDisk(), texDesc);
 
 		return passData;

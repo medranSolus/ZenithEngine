@@ -23,8 +23,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		float ShadowNormalOffset = 0.001f;
 		// Sigma parameter to Gauss function used during computing blur
 		float Sigma = 2.6f;
-		// Gamma for current display
-		float Gamma = 2.2f;
 	};
 
 	// Setup only core buffers and samplers slots for given graph

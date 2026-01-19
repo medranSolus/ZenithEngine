@@ -48,8 +48,8 @@ namespace ZE::GFX::Resource::Texture
 #endif
 
 		void Init(const Schema& schema) noexcept;
-		void AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept;
-		void AddTexture(Type type, std::vector<Surface>&& surfaces) noexcept;
+		void AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces, bool srgb = false) noexcept;
+		void AddTexture(Type type, std::vector<Surface>&& surfaces, bool srgb = false) noexcept;
 	};
 
 	// Set of textures description from file source

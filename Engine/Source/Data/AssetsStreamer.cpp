@@ -587,7 +587,7 @@ namespace ZE::Data
 					{
 						notSolid |= surfaces.back().HasAlpha();
 
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_ALBEDO_NAME, std::move(surfaces));
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_ALBEDO_NAME, std::move(surfaces), true);
 						flags |= MaterialPBR::Flag::UseAlbedoTex;
 					}
 				}

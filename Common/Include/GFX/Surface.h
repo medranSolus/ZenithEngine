@@ -53,6 +53,7 @@ namespace ZE::GFX
 		constexpr U64 GetSliceByteSize(U16 mip = 0) const noexcept { return GetSliceByteSize(width, height, format, mip); }
 		constexpr U64 GetMemorySize() const noexcept { return memorySize; }
 		constexpr U8 GetPixelSize() const noexcept { return Utils::GetFormatBitCount(format) / 8; }
+		constexpr void SetSRGB() noexcept { format = Utils::AddSRGB(format); }
 		U64 GetMipOffset(U16 mipLevel, U16 depthLevel) noexcept { return GetMipOffset(width, height, depth, format, mipLevel, depthLevel); }
 
 		std::shared_ptr<U8[]> GetMemory() noexcept { return memory; }

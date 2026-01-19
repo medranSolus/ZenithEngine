@@ -71,7 +71,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.DisplaySize = Settings::DisplaySize;
 		settingsData.RenderSize = Settings::RenderSize;
 
-		settingsData.AmbientLight = { 0.03f, 0.03f, 0.03f };
+		settingsData.AmbientLight = { 0.001f, 0.001f, 0.002f };
 		settingsData.ReactiveMaskClamp = GetReactiveMaskClamp(Settings::Upscaler);
 
 		settingsData.BlurWidth = outlineBuffSize.X;
@@ -83,9 +83,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		settingsData.ShadowBias = Utils::SafeCast<float>(params.ShadowBias) / settingsData.ShadowMapSize;
 		settingsData.ShadowNormalOffset = params.ShadowNormalOffset;
 		settingsData.MipBias = CalculateMipBias(Settings::RenderSize.X, Settings::DisplaySize.X, Settings::Upscaler);
-
-		settingsData.Gamma = params.Gamma;
-		settingsData.GammaInverse = 1.0f / params.Gamma;
 
 		SetupBlurKernel(settingsData);
 	}

@@ -9,7 +9,7 @@ namespace ZE::GFX::Resource::Texture
 			Textures.at(i).Type = schema.TypeInfo.at(i);
 	}
 
-	void PackDesc::AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces) noexcept
+	void PackDesc::AddTexture(const Schema& schema, const std::string& name, std::vector<Surface>&& surfaces, bool srgb) noexcept
 	{
 		ZE_ASSERT(schema.Location.contains(name), "Specified texture not present in current schema!");
 
@@ -32,11 +32,21 @@ namespace ZE::GFX::Resource::Texture
 			}
 		}
 #endif
+		if (srgb)
+		{
+			for (Surface& surf : surfaces)
+				surf.SetSRGB();
+		}
 		Textures.at(schema.Location.at(name)).Surfaces = std::forward<std::vector<Surface>>(surfaces);
 	}
 
-	void PackDesc::AddTexture(Type type, std::vector<Surface>&& surfaces) noexcept
+	void PackDesc::AddTexture(Type type, std::vector<Surface>&& surfaces, bool srgb) noexcept
 	{
+		if (srgb)
+		{
+			for (Surface& surf : surfaces)
+				surf.SetSRGB();
+		}
 		Textures.emplace_back(type, std::forward<std::vector<Surface>>(surfaces));
 	}
 

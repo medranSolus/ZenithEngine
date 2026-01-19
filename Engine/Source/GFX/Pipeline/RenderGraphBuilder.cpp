@@ -2445,20 +2445,6 @@ namespace ZE::GFX::Pipeline
 			ImGui::Columns(1);
 			ImGui::NewLine();
 		}
-		if (ImGui::CollapsingHeader("Display"))
-		{
-			ImGui::Columns(2, "##display_options", false);
-			ImGui::Text("Gamma correction");
-			ImGui::SetNextItemWidth(-1.0f);
-			if (GUI::InputClamp(1.0f, 10.0f, graph.execData.SettingsData.Gamma,
-				ImGui::InputFloat("##gamma", &graph.execData.SettingsData.Gamma, 0.1f, 0.0f, "%.1f")))
-			{
-				settingsChange = true;
-				graph.execData.SettingsData.GammaInverse = 1.0f / graph.execData.SettingsData.Gamma;
-			}
-			ImGui::Columns(1);
-			ImGui::NewLine();
-		}
 		if (ImGui::CollapsingHeader("Shadows"))
 		{
 			ImGui::Columns(2, "##shadow_options", false);
