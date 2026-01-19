@@ -392,7 +392,6 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Color:");
 				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
-				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
 
 				ImGui::Text("Attenuation:");
 				change |= ImGui::InputFloat("Linear##point", &light.AttnLinear, 0.01f, 0.0f, "%.2f");
@@ -420,7 +419,6 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Color:");
 				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
-				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
 
 				ImGui::Text("Attenuation:");
 				change |= ImGui::InputFloat("Linear##point", &light.AttnLinear, 0.01f, 0.0f, "%.2f");
@@ -471,7 +469,6 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Color:");
 				change |= ImGui::ColorEdit3("Light##point", reinterpret_cast<float*>(&light.Color), COLOR_FLAGS);
-				change |= ImGui::ColorEdit3("Shadow##point", reinterpret_cast<float*>(&light.Shadow), COLOR_FLAGS);
 
 				ImGui::Text("Direction [X|Y|Z]");
 				ImGui::SetNextItemWidth(-5.0f);
@@ -589,7 +586,7 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 	Settings::Data.emplace<Data::TransformGlobal>(light,
 		Settings::Data.emplace<Data::Transform>(light, Math::NoRotation(), std::move(position), Math::UnitScale()));
 
-	Data::PointLight& pointLight = Settings::Data.emplace<Data::PointLight>(light, std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f));
+	Data::PointLight& pointLight = Settings::Data.emplace<Data::PointLight>(light, std::move(color), intensity);
 	pointLight.SetAttenuationRange(range);
 
 	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
@@ -611,9 +608,8 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 		Settings::Data.emplace<Data::Transform>(light,
 			Math::NoRotation(), std::move(position), Math::UnitScale()));
 
-	Data::SpotLight& spotLight = Settings::Data.emplace<Data::SpotLight>(light,
-		std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f), Math::ToRadians(innerAngle),
-		Math::NormalizeReturn(direction), Math::ToRadians(outerAngle));
+	Data::SpotLight& spotLight = Settings::Data.emplace<Data::SpotLight>(light, std::move(color),
+		intensity, Math::NormalizeReturn(direction), Math::ToRadians(innerAngle), Math::ToRadians(outerAngle));
 	spotLight.SetAttenuationRange(range);
 
 	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
@@ -630,8 +626,7 @@ EID App::AddDirectionalLight(std::string&& name,
 	Settings::Data.emplace<std::string>(light, std::move(name));
 	Settings::Data.emplace<Data::LightDirectional>(light);
 
-	Data::DirectionalLight& dirLight = Settings::Data.emplace<Data::DirectionalLight>(light,
-		std::move(color), intensity, ColorF3(0.05f, 0.05f, 0.05f));
+	Data::DirectionalLight& dirLight = Settings::Data.emplace<Data::DirectionalLight>(light, std::move(color), intensity);
 	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
 	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);

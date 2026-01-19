@@ -6,9 +6,8 @@ struct SpotLightBuffer
 {
 	float3 Color;
 	float Intensity;
-	float3 Shadow;
-	float InnerAngle;
 	float3 Direction;
+	float InnerAngle;
 	float OuterAngle;
 	float AttnLinear;
 	float AttnQuad;

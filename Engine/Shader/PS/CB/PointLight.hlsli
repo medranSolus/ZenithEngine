@@ -6,7 +6,6 @@ struct PointLightBuffer
 {
 	float3 Color;
 	float Intensity;
-	float3 ShadowColor;
 	float AttnLinear;
 	float AttnQuad;
 };

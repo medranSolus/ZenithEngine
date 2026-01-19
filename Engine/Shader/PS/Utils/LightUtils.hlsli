@@ -7,9 +7,9 @@ float GetAttenuation(uniform float attLinear, uniform float attQuad, const in fl
 	return 1.0f + (attLinear + attQuad * distanceToLight) * distanceToLight;
 }
 
-float3 GetRadiance(const in float3 shadowAmbientRadiance, const in float3 lightRadiance, const in float3 reflectanceBRDF, const in float shadowLevel)
+float3 GetRadiance(const in float3 lightRadiance, const in float3 reflectanceBRDF, const in float shadowLevel)
 {
-	return lerp(shadowAmbientRadiance, reflectanceBRDF * lightRadiance, shadowLevel) * float(shadowLevel >= 0.001f);
+	return lerp(0.0f, reflectanceBRDF * lightRadiance, shadowLevel);
 }
 
 float2 GetShadowUV(const in float3 position, uniform matrix shadowViewProjection)

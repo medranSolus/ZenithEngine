@@ -17,9 +17,8 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET0
 	// Position depth reconstruction
 	const float3 position = GetWorldPosition(tc, tx_depthMap.Sample(splr_PR, tc).x, cb_dynamicData.ViewProjectionInverse);
 	
-	// Main light colors
-	const float3 shadowAmbientRadiance = DeleteGammaCorr(cb_light.Shadow);
-	const float3 lightRadiance = DeleteGammaCorr(cb_light.Color) * cb_light.Intensity;
+	// Main light color
+	const float3 lightRadiance = cb_light.Color * cb_light.Intensity;
 	
 	// Compute direction vectors
 	const float3 directionToLight = -ct_lightDir.Dir;
@@ -35,5 +34,5 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET0
 	//const float shadowLevel = GetShadowLevel(normalize(cb_dynamicData.CameraPos - position), lightDistance,
 	//	directionToLight, GetShadowUV(position), splr_AB, tx_shadowMap, cb_settingsData.ShadowMapSize);
 
-	return float4(GetRadiance(shadowAmbientRadiance, lightRadiance, reflectance, shadowLevel), 0.0f);
+	return float4(GetRadiance(lightRadiance, reflectance, shadowLevel), 0.0f);
 }

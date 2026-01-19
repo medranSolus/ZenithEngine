@@ -31,9 +31,8 @@ float4 main(float3 texPos : TEX_POSITION) : SV_TARGET0
 	const float outer = cos(cb_light.OuterAngle);
 	const float isInside = theta > outer;
 	
-	// Main light colors
-	const float3 shadowAmbientRadiance = DeleteGammaCorr(cb_light.Shadow);
-	const float3 lightRadiance = DeleteGammaCorr(cb_light.Color) * cb_light.Intensity *
+	// Main light color
+	const float3 lightRadiance = cb_light.Color * cb_light.Intensity *
 		smoothstep(0.0f, 1.0f, (theta - outer) / (cos(cb_light.InnerAngle) - outer)) /
 		GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance);
 	
@@ -46,5 +45,5 @@ float4 main(float3 texPos : TEX_POSITION) : SV_TARGET0
 	const float shadowLevel = GetShadowLevel(directionToCamera, lightDistance,
 		directionToLight, GetShadowUV(position, cb_transform), splr_AE, tx_shadowMap, cb_settingsData.ShadowMapSize);
 
-	return float4(GetRadiance(shadowAmbientRadiance, lightRadiance, reflectance, shadowLevel) * isInside, 0.0f);
+	return float4(GetRadiance(lightRadiance, reflectance, shadowLevel) * isInside, 0.0f);
 }

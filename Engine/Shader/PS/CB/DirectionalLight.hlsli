@@ -6,7 +6,6 @@ struct DirectionalLightBuffer
 {
 	float3 Color;
 	float Intensity;
-	float3 Shadow;
 };
 
 struct LightDir

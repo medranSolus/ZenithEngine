@@ -24,9 +24,8 @@ float4 main(float3 texPos : TEX_POSITION) : SV_TARGET0
 	const float lightDistance = length(directionToLight);
 	directionToLight /= lightDistance;
 	
-	// Main light colors
-	const float3 lightRadiance = DeleteGammaCorr(cb_light.Color) * (cb_light.Intensity / GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance));
-	const float3 shadowAmbientRadiance = DeleteGammaCorr(cb_light.ShadowColor);
+	// Main light color
+	const float3 lightRadiance = cb_light.Color * (cb_light.Intensity / GetAttenuation(cb_light.AttnLinear, cb_light.AttnQuad, lightDistance));
 	
 	// Get GBuffer params
 	const float3 normal = DecodeNormal(tx_normalMap.Sample(splr_PR, tc));
@@ -37,5 +36,5 @@ float4 main(float3 texPos : TEX_POSITION) : SV_TARGET0
 	const float3 reflectance = GetBRDFCookTorrance(directionToLight, directionToCamera, normal, albedo, GetMetalness(materialData), GetRoughness(materialData));
 	const float shadowLevel = GetShadowLevel(directionToCamera, lightDistance, directionToLight, splr_AR, tx_shadowMap, cb_settingsData.ShadowMapSize);
 
-	return float4(GetRadiance(shadowAmbientRadiance, lightRadiance, reflectance, shadowLevel), 0.0f);
+	return float4(GetRadiance(lightRadiance, reflectance, shadowLevel), 0.0f);
 }
