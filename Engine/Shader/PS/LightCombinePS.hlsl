@@ -65,7 +65,7 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	const float2 envBRDF  = tx_brdfLUT.Sample(splr_PE, float2(cosTheta, roughness)).rg;
 	ambient += specularColor * (fresnel * envBRDF.x + envBRDF.y);
 #else
-	float3 ambient = DeleteGammaCorr(cb_settingsData.AmbientLight);
+	float3 ambient = cb_settingsData.AmbientLight;
 #endif
 	
 #ifdef _ZE_LIGHT_COMBINE_AO
