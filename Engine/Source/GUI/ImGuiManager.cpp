@@ -41,6 +41,7 @@ namespace ZE::GUI
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsSRGB;
 		ImGui::StyleColorsDark();
 		auto& style = ImGui::GetStyle();
 		style.WindowRounding = 1;

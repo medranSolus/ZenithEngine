@@ -103,7 +103,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #define TEX_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, type, debugName) { scaling, 1, flags, format, ColorF4{ clearR, clearG, clearB, clearA }, 0.0f, 0, 1, type ZE_FRAME_RES_INIT_NAME(debugName) }
 #define TEX2D_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, debugName) TEX_DESC(scaling, flags, format, clearR, clearG, clearB, clearA, FrameResourceType::Texture2D, debugName)
 #define CLR_COLOR_TEX2D_DESC(flags, format, clearR, clearG, clearB, clearA, debugName) TEX2D_DESC(SIZE_SYNC,flags, format, clearR, clearG, clearB, clearA, debugName)
-#define GENERIC_TEX2D_DESC(flags, format, debugName) CLR_COLOR_TEX2D_DESC(flags, format, 0.0f, 0.0f, 0.0f, 1.0f, debugName)
+#define GENERIC_TEX2D_DESC(flags, format, debugName) CLR_COLOR_TEX2D_DESC(flags, format, 0.0f, 0.0f, 0.0f, 0.0f, debugName)
 #define TEX2D_MIP_DESC(flags, format, mips, debugName) { SIZE_SYNC, 1, flags, format, ColorF4{}, 0.0f, 0, mips, FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME(debugName) }
 
 		// Static preprocessed resources
@@ -194,11 +194,11 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[0].ClearValue.DSV.Depth = 0.0f;
 			clearInfo.Info[0].ClearValue.DSV.Stencil = 0;
 			clearInfo.Info[1].BufferType = RenderPass::ClearBufferType::RTV;
-			clearInfo.Info[1].ClearValue.Color = ColorF4();
+			clearInfo.Info[1].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 			clearInfo.Info[2].BufferType = RenderPass::ClearBufferType::RTV;
-			clearInfo.Info[2].ClearValue.Color = ColorF4();
+			clearInfo.Info[2].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 			clearInfo.Info[3].BufferType = RenderPass::ClearBufferType::RTV;
-			clearInfo.Info[3].ClearValue.Color = ColorF4();
+			clearInfo.Info[3].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
 			RenderNode node("gbufferClear", "", RenderPass::ClearBuffer<4 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::GBufferClear),
 				clearInfo), PassExecutionType::Producer);
@@ -212,7 +212,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			ZE_CLEAR_BUFFER_DEBUG_MARKER("Motion Vectors Clear");
 			RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
-			clearInfo.Info[0].ClearValue.Color = ColorF4();
+			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
 			RenderNode node("motionClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::MotionVectorsClear),
 				clearInfo, []() noexcept { return Settings::ComputeMotionVectors(); }), PassExecutionType::Producer);
@@ -223,7 +223,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			ZE_CLEAR_BUFFER_DEBUG_MARKER("Reactive Mask Clear");
 			RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::ExecuteData clearInfo;
 			clearInfo.Info[0].BufferType = RenderPass::ClearBufferType::RTV;
-			clearInfo.Info[0].ClearValue.Color = ColorF4();
+			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
 			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::ReactiveMaskClear),
 				clearInfo, []() noexcept { return Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::Fsr3 || Settings::Upscaler == UpscalerType::FfxFsr || Settings::Upscaler == UpscalerType::XeSS; }), PassExecutionType::Producer);
@@ -536,8 +536,10 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
+			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(PixelFormat::R8G8B8A8_UNorm, Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
 			node.AddInput("tonemap.RT", TextureLayout::RenderTarget);
+			node.AddInnerBuffer(TextureLayout::RenderTarget,
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8G8B8A8_UNorm, "ImGui UI buffer"));
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

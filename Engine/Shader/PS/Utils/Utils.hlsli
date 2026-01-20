@@ -69,4 +69,24 @@ float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
 	return normalize(mul(tangentNormal, TBN));
 }
 
+// Converts a color from linear light gamma to sRGB gamma
+float3 AddGammaCorr(float3 linearColor)
+{
+	float3 cutoff = step(0.0031308f, linearColor);
+	float3 higher = 1.055f * pow(linearColor, 1.0f / 2.4f) - 0.055f;
+	float3 lower = linearColor * 12.92f;
+
+	return lerp(lower, higher, cutoff);
+}
+
+// Converts a color from sRGB gamma to linear light gamma
+float3 DeleteGammaCorr(float3 srgb)
+{
+	float3 cutoff = step(0.04045f, srgb);
+	float3 higher = pow((srgb + 0.055f) / 1.055f, 2.4f);
+	float3 lower = srgb / 12.92f;
+
+	return lerp(lower, higher, cutoff);
+}
+
 #endif // UTILS_PS_HLSLI
