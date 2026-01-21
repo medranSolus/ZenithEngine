@@ -27,6 +27,7 @@ namespace ZE::WinAPI
 		HWND wndHandle;
 		RECT windowRect;
 		std::vector<U8> rawBuffer; // TODO: Replace with Table<>
+		bool monitorChanged = false;
 
 		static LRESULT WINAPI HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 		static LRESULT WINAPI HandleMsgStub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
@@ -52,6 +53,8 @@ namespace ZE::WinAPI
 		constexpr HWND GetHandle() const noexcept { return wndHandle; }
 		constexpr U32 GetWidth() const noexcept override { return Utils::SafeCast<U32>(windowRect.right); }
 		constexpr U32 GetHeight() const noexcept override { return Utils::SafeCast<U32>(windowRect.bottom); }
+		constexpr bool IsMonitorChanged() const noexcept override { return monitorChanged; }
+		constexpr void ProcessMonitorChange() noexcept override { monitorChanged = false; }
 
 		void Init(std::string_view name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;

@@ -331,6 +331,12 @@ namespace ZE
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& mainList = graphics.GetMainList();
 
+		if (window.IsMonitorChanged())
+		{
+			dev.OnMonitorChanged(window);
+			window.ProcessMonitorChange();
+		}
+
 		if (Settings::IsEnabledImGui())
 			imgui.EndFrame();
 		graphics.WaitForFrame();

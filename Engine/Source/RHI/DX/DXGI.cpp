@@ -21,21 +21,16 @@ namespace ZE::RHI::DX
 		return factory;
 	}
 
-	ComPtr<IAdapter> CreateAdapter(
+	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory
 #if _ZE_DEBUG_GFX_API
-		DebugInfoManager& debugManager
+		, DebugInfoManager& debugManager
 #endif
 	)
 	{
 		ZE_WIN_ENABLE_EXCEPT();
 
-		ComPtr<IFactory> factory = CreateFactory(
-#if _ZE_DEBUG_GFX_API
-			debugManager
-#endif
-		);
 		ComPtr<IAdapter> adapter = nullptr;
-		for (UINT i = 0; true; ++i)
+		for (U32 i = 0; true; ++i)
 		{
 			// Get highest possible performant GPU
 			ZE_DX_THROW_FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));

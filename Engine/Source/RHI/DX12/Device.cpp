@@ -126,9 +126,14 @@ namespace ZE::RHI::DX12
 		DREDRecovery::Enable(debugManager);
 #endif
 
-		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(
+		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
 #if _ZE_DEBUG_GFX_API
 			debugManager
+#endif
+		);
+		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(factory
+#if _ZE_DEBUG_GFX_API
+			, debugManager
 #endif
 		);
 
@@ -418,6 +423,66 @@ namespace ZE::RHI::DX12
 		ZE_XESS_THROW_FAILED(xessGetProperties(xessData.Ctx, &xessData.TargetRes, &props), "Error querity XeSS properties!");
 
 		return { props.tempBufferHeapSize, props.tempTextureHeapSize };
+	}
+
+	void Device::OnMonitorChanged(const Window::MainWindow& window)
+	{
+		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
+#if _ZE_DEBUG_GFX_API
+			debugManager
+#endif
+		);
+		// Enumerate available outputs and find the one attached to our window
+		HMONITOR monitor = MonitorFromWindow(window.GetHandle(), MONITOR_DEFAULTTONEAREST);
+		for (U32 i = 0; monitor != nullptr; ++i)
+		{
+			// Need to iterate over whole list of adapters again in case that current GPU doesn't own the output (in case of systems with integrated graphics)
+			DX::ComPtr<DX::IAdapter> tempAdapter = nullptr;
+			if (SUCCEEDED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tempAdapter))))
+			{
+				for (U32 j = 0; true; ++j)
+				{
+					DX::ComPtr<IDXGIOutput> tempOutput = nullptr;
+					if (SUCCEEDED(tempAdapter->EnumOutputs(j, &tempOutput)))
+					{
+						DX::ComPtr<DX::IOutput> output = nullptr;
+						if (SUCCEEDED(tempOutput.As(&output)))
+						{
+							DXGI_OUTPUT_DESC1 desc;
+							if (SUCCEEDED(output->GetDesc1(&desc)))
+							{
+								if (monitor == desc.Monitor)
+								{
+									displayProps.RedPrimary = { desc.RedPrimary[0], desc.RedPrimary[1] };
+									displayProps.GreenPrimary = { desc.GreenPrimary[0], desc.GreenPrimary[1] };
+									displayProps.BluePrimary = { desc.BluePrimary[0], desc.BluePrimary[1] };
+									displayProps.WhitePoint = { desc.WhitePoint[0], desc.WhitePoint[1] };
+									displayProps.MinLuminance = desc.MinLuminance;
+									displayProps.MaxLuminance = desc.MaxLuminance;
+									monitor = nullptr;
+									break;
+								}
+							}
+						}
+					}
+					else
+						break;
+				}
+			}
+			else
+				break;
+		}
+		if (monitor != nullptr)
+		{
+			// Default CIE 1931 xy chromaticity values for sRGB / Rec.709 
+			displayProps.RedPrimary = { 0.64f, 0.33f };
+			displayProps.GreenPrimary = { 0.3f, 0.6f };
+			displayProps.BluePrimary = { 0.15f, 0.06f };
+			displayProps.WhitePoint = { 0.3127f, 0.329f };
+			displayProps.MinLuminance = 0.0f;
+			displayProps.MaxLuminance = 300.0f;
+			Logger::Warning("DX12 warning: Cannot find monitor attached to main window, using default display properties!");
+		}
 	}
 
 	GFX::ShaderModel Device::GetMaxShaderModel() const noexcept

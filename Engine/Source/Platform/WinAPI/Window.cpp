@@ -81,6 +81,17 @@ namespace ZE::WinAPI
 			keyboard.ClearStates();
 			break;
 		}
+		case WM_WINDOWPOSCHANGED:
+		{
+			static HMONITOR lastMonitor = nullptr;
+			HMONITOR current = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+			if (current != lastMonitor)
+			{
+				lastMonitor = current;
+				monitorChanged = true;
+			}
+			break;
+		}
 #pragma region Keyboard
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:

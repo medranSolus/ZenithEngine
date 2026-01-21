@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/ResourceID.h"
 #include "GFX/Resource/Texture/Type.h"
+#include "GFX/DisplayProperties.h"
 #include "GFX/FfxApiFunctions.h"
 #include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
@@ -85,6 +86,7 @@ namespace ZE::RHI::DX12
 		PfnFfxCreateContext ffxCreateContext = nullptr;
 		GFX::FfxApiFunctions ffxFunctions = {};
 		bool featureExistingHeap = false;
+		GFX::DisplayProperties displayProps = {};
 
 		void WaitCPU(IFence* fence, U64 val);
 		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);
@@ -116,6 +118,7 @@ namespace ZE::RHI::DX12
 		constexpr bool IsUavNonUniformIndexing() const noexcept { return true; }
 
 		void* GetFfxHandle() const noexcept { return GetDevice(); }
+		const GFX::DisplayProperties* GetDisplayProperties() const noexcept { return &displayProps; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
@@ -157,6 +160,8 @@ namespace ZE::RHI::DX12
 		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);
 		void FreeXeSS() noexcept;
 		std::pair<U64, U64> GetXeSSAliasableRegionSizes() const;
+
+		void OnMonitorChanged(const Window::MainWindow& window);
 
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;

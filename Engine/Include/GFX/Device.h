@@ -48,6 +48,9 @@ namespace ZE::GFX
 		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { ZE_RHI_BACKEND_CALL(SetXeSSAliasableResources, buffer, texture); }
 		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { std::pair<RID, RID> res = { INVALID_RID, INVALID_RID }; ZE_RHI_BACKEND_CALL_RET(res, GetXeSSAliasableResources); return res; }
 
+		constexpr void OnMonitorChanged(const Window::MainWindow& window) { ZE_RHI_BACKEND_CALL(OnMonitorChanged, window); }
+		constexpr const DisplayProperties& GetDisplayProperties() const noexcept { const DisplayProperties* props; ZE_RHI_BACKEND_CALL_RET(props, GetDisplayProperties); return *props; }
+
 		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
 		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }
 		constexpr U64 GetCopyFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetCopyFence); return val; }

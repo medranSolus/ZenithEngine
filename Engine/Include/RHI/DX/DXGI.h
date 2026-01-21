@@ -38,10 +38,10 @@ namespace ZE::RHI::DX
 #endif
 	);
 
-	// Creates DXGI Factory and enumerates available GPU adapters in order of highest performant
-	ComPtr<IAdapter> CreateAdapter(
+	// Enumerates available GPU adapters in order of highest performant
+	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory
 #if _ZE_DEBUG_GFX_API
-		DebugInfoManager& debugManager
+		, DebugInfoManager& debugManager
 #endif
 	);
 
