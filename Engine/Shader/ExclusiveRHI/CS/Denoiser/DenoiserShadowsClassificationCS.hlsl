@@ -67,7 +67,7 @@ FfxFloat32x3 LoadPreviousMomentsBuffer(const in FfxInt32x2 coord)
 
 FfxFloat32 LoadHistory(const in FfxFloat32x2 coord)
 {
-	return tx_history.SampleLevel(splr_trilinerClamp, coord, 0).x;
+	return tx_history.SampleLevel(splr_TrilinearClamp, coord, 0).x;
 }
 
 #include "WarningGuardOn.hlsli"

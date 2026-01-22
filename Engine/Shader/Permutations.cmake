@@ -149,6 +149,10 @@ add_shader_permutation("FSR3DebugViewCS" "_ZE_PREFER_WAVE64:W")
 add_shader_permutation("FSR3GenerateReactiveCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("FSR3GenerateReactiveCS" "_ZE_PREFER_WAVE64:W")
 
+# LPM
+add_shader_permutation("LPMFilterCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("LPMFilterCS" "_ZE_PREFER_WAVE64:W")
+
 # SSSR
 add_shader_permutation("SSSRClassifyTilesCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("SSSRClassifyTilesCS" "_ZE_PREFER_WAVE64:W")

@@ -10,7 +10,7 @@ SamplerState splr_ViewspaceDepthTap : register(s3);
 SamplerState splr_RealPointClamp : register(s4);
 #endif
 
-#if defined(_ZE_FFX_FSR3) || defined(_ZE_FFX_FSR2) || defined(_ZE_FFX_FSR1)
+#if defined(_ZE_FFX_FSR3) || defined(_ZE_FFX_FSR2) || defined(_ZE_FFX_FSR1) || defined(_ZE_FFX_DENOISER_REFLECTIONS)
 SamplerState splr_LinearClamp : register(s0);
 #endif
 
@@ -18,12 +18,8 @@ SamplerState splr_LinearClamp : register(s0);
 SamplerState splr_EnvironmentMap : register(s0);
 #endif
 
-#ifdef _ZE_FFX_DENOISER_REFLECTIONS
-SamplerState splr_Linear : register(s0);
-#endif
-
 #ifdef _ZE_FFX_DENOISER_SHADOWS
-SamplerState splr_trilinerClamp : register(s0);
+SamplerState splr_TrilinearClamp : register(s0);
 #endif
 
 #endif // FFX_SAMPLERS_CS_HLSLI

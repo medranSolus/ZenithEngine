@@ -350,6 +350,7 @@ add_fidelityfx_target(DENOISER)
 add_fidelityfx_target(FSR1)
 add_fidelityfx_target(FSR2)
 add_fidelityfx_target(FSR3UPSCALER)
+add_fidelityfx_target(LPM)
 add_fidelityfx_target_dep(SSSR "DENOISER")
 add_fidelityfx_target(SSSR)
 
@@ -713,6 +714,7 @@ add_external_fidelityfx_effect(DENOISER)
 add_external_fidelityfx_effect(FSR1)
 add_external_fidelityfx_effect(FSR2)
 add_external_fidelityfx_effect(FSR3UPSCALER)
+add_external_fidelityfx_effect(LPM)
 add_external_fidelityfx_effect(SSSR)
 
 # ogg

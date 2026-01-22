@@ -86,7 +86,7 @@ FfxFloat16 FFX_DNSR_Reflections_LoadRayLength(const in FfxInt32x2 coord)
 
 FfxFloat16 FFX_DNSR_Reflections_SampleVarianceHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16)tx_variance.SampleLevel(splr_Linear, uv, 0.0f).x;
+    return (FfxFloat16)tx_variance.SampleLevel(splr_LinearClamp, uv, 0.0f).x;
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
@@ -96,7 +96,7 @@ FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord
 
 FfxFloat16x3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16x3)DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f));
+    return (FfxFloat16x3)DecodeNormal(tx_normalsHistory.SampleLevel(splr_LinearClamp, uv, 0.0f));
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x2 coord)
@@ -106,7 +106,7 @@ FfxFloat16x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x
 
 FfxFloat16x3 FFX_DNSR_Reflections_SampleRadianceHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16x3)tx_radianceHistory.SampleLevel(splr_Linear, uv, 0.0f).xyz;
+    return (FfxFloat16x3)tx_radianceHistory.SampleLevel(splr_LinearClamp, uv, 0.0f).xyz;
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadRadianceHistory(const in FfxInt32x2 coord)
@@ -116,14 +116,14 @@ FfxFloat16x3 FFX_DNSR_Reflections_LoadRadianceHistory(const in FfxInt32x2 coord)
 
 FfxFloat16 FFX_DNSR_Reflections_SampleRoughnessHistory(const in FfxFloat32x2 uv)
 {
-    FfxFloat16 rawRoughness = (FfxFloat16)tx_roughnessHistory.SampleLevel(splr_Linear, uv, 0.0f);
+    FfxFloat16 rawRoughness = (FfxFloat16)tx_roughnessHistory.SampleLevel(splr_LinearClamp, uv, 0.0f);
     // Roughness is always linear in internal storage
     return rawRoughness * rawRoughness;
 }
 
 FfxFloat16 FFX_DNSR_Reflections_SampleNumSamplesHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16)tx_sampleCount.SampleLevel(splr_Linear, uv, 0.0f).x;
+    return (FfxFloat16)tx_sampleCount.SampleLevel(splr_LinearClamp, uv, 0.0f).x;
 }
 #else
 FfxFloat32 FFX_DNSR_Reflections_LoadRoughness(const in FfxInt32x2 coord)
@@ -145,7 +145,7 @@ FfxFloat32 FFX_DNSR_Reflections_LoadRayLength(const in FfxInt32x2 coord)
 
 FfxFloat32 FFX_DNSR_Reflections_SampleVarianceHistory(const in FfxFloat32x2 uv)
 {
-	return tx_variance.SampleLevel(splr_Linear, uv, 0.0f).x;
+	return tx_variance.SampleLevel(splr_LinearClamp, uv, 0.0f).x;
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord)
@@ -155,7 +155,7 @@ FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(const in FfxInt32x2 coord
 
 FfxFloat32x3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(const in FfxFloat32x2 uv)
 {
-	return DecodeNormal(tx_normalsHistory.SampleLevel(splr_Linear, uv, 0.0f));
+	return DecodeNormal(tx_normalsHistory.SampleLevel(splr_LinearClamp, uv, 0.0f));
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x2 coord)
@@ -165,7 +165,7 @@ FfxFloat32x3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(const in FfxInt32x
 
 FfxFloat32x3 FFX_DNSR_Reflections_SampleRadianceHistory(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat32x3)tx_radianceHistory.SampleLevel(splr_Linear, uv, 0.0f).xyz;
+    return (FfxFloat32x3)tx_radianceHistory.SampleLevel(splr_LinearClamp, uv, 0.0f).xyz;
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadRadianceHistory(const in FfxInt32x2 coord)
@@ -175,20 +175,20 @@ FfxFloat32x3 FFX_DNSR_Reflections_LoadRadianceHistory(const in FfxInt32x2 coord)
 
 FfxFloat32 FFX_DNSR_Reflections_SampleRoughnessHistory(const in FfxFloat32x2 uv)
 {
-	FfxFloat32 rawRoughness = tx_roughnessHistory.SampleLevel(splr_Linear, uv, 0.0f);
+	FfxFloat32 rawRoughness = tx_roughnessHistory.SampleLevel(splr_LinearClamp, uv, 0.0f);
     // Roughness is always linear in internal storage
 	return rawRoughness * rawRoughness;
 }
 
 FfxFloat32 FFX_DNSR_Reflections_SampleNumSamplesHistory(const in FfxFloat32x2 uv)
 {
-	return tx_sampleCount.SampleLevel(splr_Linear, uv, 0.0f).x;
+	return tx_sampleCount.SampleLevel(splr_LinearClamp, uv, 0.0f).x;
 }
 #endif
 
 FfxFloat32 FFX_DNSR_Reflections_SampleDepthHistory(const in FfxFloat32x2 uv)
 {
-	return tx_depthHistory.SampleLevel(splr_Linear, uv, 0.0f);
+	return tx_depthHistory.SampleLevel(splr_LinearClamp, uv, 0.0f);
 }
 
 FfxFloat32 FFX_DNSR_Reflections_LoadDepthHistory(const in FfxInt32x2 coord)

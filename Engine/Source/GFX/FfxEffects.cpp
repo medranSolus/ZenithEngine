@@ -5,12 +5,14 @@ ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
 #include "FidelityFX/host/ffx_fsr3upscaler.h"
+#include "FidelityFX/host/ffx_lpm.h"
 #include "FidelityFX/host/ffx_sssr.h"
 #include "../src/components/cacao/ffx_cacao_private.h"
 #include "../src/components/denoiser/ffx_denoiser_private.h"
 #include "../src/components/fsr1/ffx_fsr1_private.h"
 #include "../src/components/fsr2/ffx_fsr2_private.h"
 #include "../src/components/fsr3upscaler/ffx_fsr3upscaler_private.h"
+#include "../src/components/lpm/ffx_lpm_private.h"
 #include "../src/components/sssr/ffx_sssr_private.h"
 ZE_WARNING_POP
 
@@ -21,6 +23,7 @@ namespace ZE::GFX::FFX
 	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
+	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	FfxErrorCode GetShaderInfoSSSR(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
 	std::string GetGeneralPermutation(bool fp16, bool wave64) noexcept;
 
@@ -192,6 +195,19 @@ namespace ZE::GFX::FFX
 			}
 			break;
 		}
+		case FFX_EFFECT_LPM:
+		{
+			switch (passId)
+			{
+			case FFX_LPM_PASS_FILTER:
+				permutationOptions &= LPM_SHADER_PERMUTATION_ALLOW_FP16 | LPM_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			default:
+				ZE_FAIL("Invalid pass for LPM!");
+				break;
+			}
+			break;
+		}
 		case FFX_EFFECT_SSSR:
 		{
 			switch (passId)
@@ -241,6 +257,9 @@ namespace ZE::GFX::FFX
 		break;
 		case FFX_EFFECT_FSR3UPSCALER:
 		code = GetShaderInfoFSR3(dev, pass, permutationOptions, shaderBlob, shader);
+		break;
+		case FFX_EFFECT_LPM:
+		code = GetShaderInfoLPM(dev, pass, permutationOptions, shaderBlob, shader);
 		break;
 		case FFX_EFFECT_SSSR:
 		code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
@@ -1432,6 +1451,48 @@ namespace ZE::GFX::FFX
 		default:
 		ZE_FAIL("Invalid pass for FSR3!");
 		return FFX_ERROR_INVALID_ENUM;
+		}
+		return FFX_OK;
+	}
+
+	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	{
+		static const char* cbvNames[] = { "cbLPM" };
+		static const U32 slots[] = { 0 };
+		static const U32 counts[] = { 1 };
+
+		const bool fp16 = permutationOptions & LPM_SHADER_PERMUTATION_ALLOW_FP16;
+		const bool wave64 = permutationOptions & LPM_SHADER_PERMUTATION_ALLOW_FP16;
+
+		switch (pass)
+		{
+		case FFX_LPM_PASS_FILTER:
+		{
+			static const char* srvNames[] = { "r_input_color" };
+			static const char* uavNames[] = { "rw_output_color" };
+			const FfxShaderBlob blob =
+			{
+				nullptr, 0, // Blob, data
+				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				srvNames, slots, counts, nullptr, // SRV tex
+				uavNames, slots, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
+
+			if (shader)
+				shader->Init(*dev, "LPMFilterCS" + GetGeneralPermutation(fp16, wave64));
+			break;
+		}
+		default:
+		{
+			ZE_FAIL("Invalid pass for LPM!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}

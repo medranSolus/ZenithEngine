@@ -47,7 +47,7 @@ FfxFloat16 FFX_DNSR_Reflections_LoadNumSamples(const in FfxInt32x2 coord)
 
 FfxFloat16x3 FFX_DNSR_Reflections_SampleAverageRadiance(const in FfxFloat32x2 uv)
 {
-    return (FfxFloat16x3)tx_avgRadiance.SampleLevel(splr_Linear, uv, 0.0f).xyz;
+    return (FfxFloat16x3)tx_avgRadiance.SampleLevel(splr_LinearClamp, uv, 0.0f).xyz;
 }
 
 FfxFloat16x3 FFX_DNSR_Reflections_LoadRadianceReprojected(const in FfxInt32x2 coord)
@@ -85,7 +85,7 @@ FfxFloat32 FFX_DNSR_Reflections_LoadNumSamples(const in FfxInt32x2 coord)
 
 FfxFloat32x3 FFX_DNSR_Reflections_SampleAverageRadiance(const in FfxFloat32x2 uv)
 {
-	return tx_avgRadiance.SampleLevel(splr_Linear, uv, 0.0f).xyz;
+	return tx_avgRadiance.SampleLevel(splr_LinearClamp, uv, 0.0f).xyz;
 }
 
 FfxFloat32x3 FFX_DNSR_Reflections_LoadRadianceReprojected(const in FfxInt32x2 coord)
