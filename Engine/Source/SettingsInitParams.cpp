@@ -27,6 +27,7 @@ namespace ZE
 		parser.AddOption("splitRenderSubmissions");
 		parser.AddOption("ibl");
 		parser.AddOption("reinhard");
+		parser.AddOption("lpm");
 	}
 
 	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
@@ -72,6 +73,8 @@ namespace ZE
 
 		if (parser.GetOption("reinhard"))
 			params.Tonemapper = GFX::TonemapperType::Reinhard;
+		else if (parser.GetOption("lpm"))
+			params.Tonemapper = GFX::TonemapperType::LPM;
 		else
 			params.Tonemapper = GFX::TonemapperType::Exposure;
 

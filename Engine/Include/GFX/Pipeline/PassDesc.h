@@ -84,8 +84,9 @@ namespace ZE::GFX::Pipeline
 		HorizontalBlur,
 		VerticalBlur,
 
-		TonemapExposure,
 		TonemapReinhard,
+		TonemapExposure,
+		TonemapLPM,
 
 		Wireframe,
 		DearImGui,

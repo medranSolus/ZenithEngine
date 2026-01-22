@@ -252,7 +252,7 @@ namespace ZE
 						ImGui::EndCombo();
 					}
 
-					constexpr std::array<const char*, 2> TONEMAP_LEVELS = { "Reinhard", "Exposure" };
+					constexpr std::array<const char*, 3> TONEMAP_LEVELS = { "Reinhard", "Exposure", "LPM" };
 					if (ImGui::BeginCombo("Tonemapper", TONEMAP_LEVELS.at(static_cast<U8>(Settings::Tonemapper))))
 					{
 						for (GFX::TonemapperType i = GFX::TonemapperType::Reinhard; const char* level : TONEMAP_LEVELS)

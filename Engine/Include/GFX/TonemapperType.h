@@ -7,5 +7,6 @@ namespace ZE::GFX
 	{
 		Reinhard,
 		Exposure,
+		LPM
 	};
 }

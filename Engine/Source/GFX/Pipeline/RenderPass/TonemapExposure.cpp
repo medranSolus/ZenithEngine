@@ -78,14 +78,15 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapExposure
 
 	void DebugUI(void* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
 		if (ImGui::CollapsingHeader("Exposure Tonemapping"))
 		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
 			ImGui::Columns(2, "##tonemap_exposure", false);
 			ImGui::Text("Exposure value");
 			ImGui::SetNextItemWidth(-1.0f);
 			GUI::InputClamp(0.01f, FLT_MAX, execData.Exposure,
-				ImGui::InputFloat("##exposure_value", &execData.Exposure, 0.1f, 0.0f, "%.01f"));
+				ImGui::InputFloat("##exposure_value", &execData.Exposure, 0.1f, 0.0f, "%.2f"));
 			ImGui::Columns(1);
 		}
 	}
