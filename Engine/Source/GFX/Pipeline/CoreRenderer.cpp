@@ -157,6 +157,8 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "Raw lighted scene"));
 		graphDesc.AddResource("upscaledScene",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::R16G16B16A16_Float, "Upscaled scene"));
+		graphDesc.AddResource("tonemapedScene",
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), Settings::BackbufferFormat, "Tonemapped scene"));
 
 		// Outline related resources
 		graphDesc.AddResource("outlineDepth",
@@ -250,7 +252,13 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("lambertianComputeCopy", "", RenderPass::LambertianComputeCopy::GetDesc(), PassExecutionType::Processor);
+			ZE_COPY_BUFFER_DEBUG_MARKER("Copy gbuffer for async SSAO");
+			RenderPass::CopyBuffer<2 ZE_COPY_BUFFER_MARKER_SET>::ExecuteData copyInfo;
+			copyInfo.Info[0].Method = RenderPass::CopyMethod::FullResource;
+			copyInfo.Info[1].Method = RenderPass::CopyMethod::FullResource;
+
+			RenderNode node("lambertianComputeCopy", "", RenderPass::CopyBuffer<2 ZE_COPY_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::LambertianComputeCopy),
+				copyInfo, []() noexcept { return Settings::IsEnabledAsyncAO(); }), PassExecutionType::Processor);
 			node.AddInput("lambertian.DS", TextureLayout::CopySource);
 			node.AddInput("lambertian.GB_N", TextureLayout::CopySource);
 			node.AddOutput("DS", TextureLayout::CopyDest, "gbuffDepthCompute", "gbuffDepth");
@@ -536,8 +544,27 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
+			RenderNode node("tonemap", "lpm", RenderPass::TonemapLPM::GetDesc(), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::UnorderedAccess, "tonemapedScene");
+			node.SetHintCompute();
+			node.DisableExecDataCaching();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			ZE_COPY_BUFFER_DEBUG_MARKER("Copy tonemapped scene output of LPM");
+			RenderPass::CopyBuffer<1 ZE_COPY_BUFFER_MARKER_SET>::ExecuteData copyInfo;
+			copyInfo.Info[0].Method = RenderPass::CopyMethod::FullResource;
+
+			RenderNode node("tonemapSceneCopy", "", RenderPass::CopyBuffer<1 ZE_COPY_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::TonemapLPMSceneCopy),
+				copyInfo, []() noexcept { return RenderPass::TonemapLPM::Evaluate(); }), PassExecutionType::StaticProcessor);
+			node.AddInput("tonemap.RT", TextureLayout::CopySource);
+			node.AddOutput("RT", TextureLayout::CopyDest, BACKBUFFER_NAME);
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
 			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(PixelFormat::R8G8B8A8_UNorm, Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
-			node.AddInput("tonemap.RT", TextureLayout::RenderTarget);
+			node.AddInput("tonemapSceneCopy.RT", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
 				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8G8B8A8_UNorm, "ImGui UI buffer"));
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);

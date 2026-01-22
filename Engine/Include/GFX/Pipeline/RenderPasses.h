@@ -7,7 +7,6 @@
 #include "RenderPass/DirectionalLight.h"
 #include "RenderPass/HorizontalBlur.h"
 #include "RenderPass/Lambertian.h"
-#include "RenderPass/LambertianComputeCopy.h"
 #include "RenderPass/LightCombine.h"
 #include "RenderPass/LoadLightmapsDiffuse.h"
 #include "RenderPass/LoadLightmapsSpecular.h"

@@ -998,7 +998,7 @@ namespace ZE::RHI::DX12::Pipeline
 				if (res.Desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
 				{
 					D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-					uavDesc.Format = DX::ConvertDepthFormatToResourceView(res.Desc.Format, res.UseStencilView());
+					uavDesc.Format = DX::ConvertDepthFormatToResourceView(DX::GetDXFormat(Utils::RemoveSRGB(DX::GetFormatFromDX(res.Desc.Format))), res.UseStencilView());
 
 					switch (res.Desc.Dimension)
 					{

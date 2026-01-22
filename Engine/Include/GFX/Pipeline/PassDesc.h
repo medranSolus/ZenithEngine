@@ -87,6 +87,7 @@ namespace ZE::GFX::Pipeline
 		TonemapReinhard,
 		TonemapExposure,
 		TonemapLPM,
+		TonemapLPMSceneCopy,
 
 		Wireframe,
 		DearImGui,
