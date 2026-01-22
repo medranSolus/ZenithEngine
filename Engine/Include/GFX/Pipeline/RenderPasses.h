@@ -2,6 +2,7 @@
 
 #include "RenderPass/CACAO.h"
 #include "RenderPass/ClearBuffer.h"
+#include "RenderPass/CopyBuffer.h"
 #include "RenderPass/DearImGui.h"
 #include "RenderPass/DirectionalLight.h"
 #include "RenderPass/HorizontalBlur.h"

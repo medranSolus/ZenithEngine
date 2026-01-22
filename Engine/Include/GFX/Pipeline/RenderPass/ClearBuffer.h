@@ -112,9 +112,9 @@ namespace ZE::GFX::Pipeline::RenderPass
 
 #if _ZE_GFX_MARKERS
 // Used for setting the name of the debug marker for clear pass to be used later on
-#	define ZE_CLEAR_BUFFER_DEBUG_MARKER(str) static const char __DEBUG_MARKER[] = str
+#	define ZE_CLEAR_BUFFER_DEBUG_MARKER(str) static const char _ZE_CLEAR_DEBUG_MARKER[] = str
 // Specify this after specialization to the ClearBuffer class to allow for debug marker usage if available
-#	define ZE_CLEAR_BUFFER_MARKER_SET , __DEBUG_MARKER
+#	define ZE_CLEAR_BUFFER_MARKER_SET , _ZE_CLEAR_DEBUG_MARKER
 #else
 // Used for setting the name of the debug marker for clear pass to be used later on
 #	define ZE_CLEAR_BUFFER_DEBUG_MARKER(str)
