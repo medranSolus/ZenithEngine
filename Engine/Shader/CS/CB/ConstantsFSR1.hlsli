@@ -1,9 +1,9 @@
 #ifndef CONSTANTS_FSR1_CS_HLSLI
 #define CONSTANTS_FSR1_CS_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
 #define _ZE_FFX_FSR1
 #include "Utils/FfxSamplers.hlsli"
+#include "Buffers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_FSR1_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsFSR1

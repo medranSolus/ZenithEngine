@@ -70,6 +70,7 @@ float3 GetDiffuseLambert(const in float3 surfaceColor, const in float3 fresnel, 
 	return (float3(1.0f, 1.0f, 1.0f) - fresnel) * surfaceColor * ((1.0f - metalness) / PI);
 }
 
+// 1 / sr
 float3 GetBRDFCookTorrance(const in float3 directionToLight, const in float3 directionToCamera, const in float3 surfaceNormal, const in float3 surfaceColor, const in float metalness, const in float roughness)
 {
 	const float3 halfwayCameraLight = normalize(directionToCamera + directionToLight);
@@ -108,6 +109,12 @@ float3 GetBRDFCookTorrance(const in float3 directionToLight, const in float3 dir
 	const float3 diffuse = (float3(1.0f, 1.0f, 1.0f) - fresnel) * (surfaceColor * (1.0f - metalness) / PI);
 	return (diffuse + reflection) * NdotL;	
 #endif
+}
+
+// W / (m^2 * sr) - flux is in W and brdf is in 1/sr but area is infinitelly small so m^2 is omitted
+float3 GetRadiance(const in float3 lightRadiantFlux, const in float3 reflectanceBRDF, const in float shadowLevel)
+{
+	return lerp(0.0f, reflectanceBRDF * lightRadiantFlux, shadowLevel);
 }
 
 #endif // PBR_UTILS_HLSLI

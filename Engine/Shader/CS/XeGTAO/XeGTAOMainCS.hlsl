@@ -1,9 +1,9 @@
+#define ZE_XEGTAO_CB_RANGE 7
+#include "CB/ConstantsXeGTAO.hlsli"
+#include "DynamicDataCB.hlsli"
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
-#include "DynamicDataCB.hlsli"
-#define ZE_XEGTAO_CB_RANGE 7
-#include "CB/ConstantsXeGTAO.hlsli"
 
 UAV2D(ssaoMap,    uint,	       0, 2);
 UAV2D(depthEdges, unorm float, 1, 3);

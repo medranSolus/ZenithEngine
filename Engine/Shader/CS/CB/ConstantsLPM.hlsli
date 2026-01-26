@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_LPM_CS_HLSLI
 #define CONSTANTS_LPM_CS_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
+#include "Buffers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_LPM_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsLPM

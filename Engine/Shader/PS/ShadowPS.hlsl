@@ -1,9 +1,9 @@
-#include "Samplers.hlsli"
-#include "SettingsDataCB.hlsli"
-#include "Utils/Utils.hlsli"
 #include "CB/Shadow.hlsli"
 #include "CB/PbrFlags.hlsli"
 #include "Tex/PbrInputs.hlsli"
+#include "Samplers.hlsli"
+#include "SettingsDataCB.hlsli"
+#include "UtilsPS.hlsli"
 
 /* List of permutations:
  *

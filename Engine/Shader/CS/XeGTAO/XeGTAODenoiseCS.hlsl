@@ -1,8 +1,8 @@
-#include "Samplers.hlsli"
-#include "SettingsDataCB.hlsli"
-#include "CB/Denoise.hlsli"
 #define ZE_XEGTAO_CB_RANGE 4
 #include "CB/ConstantsXeGTAO.hlsli"
+#include "CB/Denoise.hlsli"
+#include "Samplers.hlsli"
+#include "SettingsDataCB.hlsli"
 
 UAV2D(ssaoMapOutput, uint, 0, 2);
 TEXTURE_EX(ssaoMapPrevious, Texture2D<uint>,    0, 3);

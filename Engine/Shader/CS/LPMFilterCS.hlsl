@@ -1,6 +1,6 @@
-#include "Utils.hlsli"
 #define ZE_LPM_CB_RANGE 2
 #include "CB/ConstantsLPM.hlsli"
+#include "Utils.hlsli"
 #if FFX_HALF
 #	define FfxFloat4 FfxFloat16x4
 #else

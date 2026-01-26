@@ -1,7 +1,7 @@
-#include "Samplers.hlsli"
-#include "SettingsDataCB.hlsli"
 #define ZE_XEGTAO_CB_RANGE 3
 #include "CB/ConstantsXeGTAO.hlsli"
+#include "Samplers.hlsli"
+#include "SettingsDataCB.hlsli"
 
 UAV2D(viewDepthMip0, lpfloat, 0, 1);
 UAV2D(viewDepthMip1, lpfloat, 1, 1);

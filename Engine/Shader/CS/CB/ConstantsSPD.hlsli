@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_SPD_CS_HLSLI
 #define CONSTANTS_SPD_CS_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
+#include "Buffers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_SPD_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsSPD

@@ -1,10 +1,10 @@
-#include "GBufferUtils.hlsli"
-#include "Samplers.hlsli"
-#include "DynamicDataCB.hlsli"
-#include "SettingsDataCB.hlsli"
-#include "Utils/Utils.hlsli"
 #include "CB/Pbr.hlsli"
 #include "Tex/PbrInputs.hlsli"
+#include "Utils/Geometry.hlsli"
+#include "DynamicDataCB.hlsli"
+#include "GBufferUtils.hlsli"
+#include "Samplers.hlsli"
+#include "SettingsDataCB.hlsli"
 
 /* List of permutations:
  *

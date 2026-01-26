@@ -1,5 +1,5 @@
-#include "DynamicDataCB.hlsli"
 #include "CB/View.hlsli"
+#include "DynamicDataCB.hlsli"
 
 struct GSIn
 {

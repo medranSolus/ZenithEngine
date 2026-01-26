@@ -1,5 +1,5 @@
-#ifndef UTILS_PS_HLSLI
-#define UTILS_PS_HLSLI
+#ifndef GEOMETRY_UTILS_PS_HLSLI
+#define GEOMETRY_UTILS_PS_HLSLI
 
 float GetSampledSpecularPower(const in float specularPower)
 {
@@ -69,4 +69,13 @@ float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
 	return normalize(mul(tangentNormal, TBN));
 }
 
-#endif // UTILS_PS_HLSLI
+// Reconstruct pixel position from depth buffer
+float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform matrix inverseViewProjection)
+{
+	const float x = texCoord.x * 2.0f - 1.0f;
+	const float y = (1.0f - texCoord.y) * 2.0f - 1.0f;
+	const float4 pos = mul(float4(x, y, depth, 1.0f), inverseViewProjection);
+	return pos.xyz / pos.w;
+}
+
+#endif // GEOMETRY_UTILS_PS_HLSLI

@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_RCAS_CS_HLSLI
 #define CONSTANTS_RCAS_CS_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
+#include "Buffers.hlsli"
 
 #ifndef ZE_RCAS_SLOT
 #	define ZE_RCAS_SLOT 1

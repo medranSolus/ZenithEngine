@@ -1,6 +1,6 @@
+#include "CB/BlurDirection.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
-#include "CB/BlurDirection.hlsli"
 
 TEX2D(image, 0, 1);
 

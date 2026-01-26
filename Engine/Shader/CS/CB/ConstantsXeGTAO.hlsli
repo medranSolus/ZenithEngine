@@ -1,10 +1,7 @@
 #ifndef CONSTANTS_XEGTAO_HLSLI
 #define CONSTANTS_XEGTAO_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/XeGTAO.hlsli"
-#include "WarningGuardOn.hlsli"
-#include "../Include/XeGTAO.h"
-#include "WarningGuardOff.hlsli"
+#include "Buffers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_XEGTAO_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsXeGTAO

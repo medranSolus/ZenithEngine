@@ -1,9 +1,9 @@
 #ifndef CONSTANTS_DENOISER_REFLECTIONS_CS_HLSLI
 #define CONSTANTS_DENOISER_REFLECTIONS_CS_HLSLI
-#include "Buffers.hlsli"
 #include "Utils/FFX.hlsli"
 #define _ZE_FFX_DENOISER_REFLECTIONS
 #include "Utils/FfxSamplers.hlsli"
+#include "Buffers.hlsli"
 
 // To correctly use this cbuffer, define 'ZE_DENOISER_REFLECTIONS_CB_RANGE' to indicate binding range used for constant buffer
 struct ConstantsDenoiserReflections

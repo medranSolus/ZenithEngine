@@ -7,11 +7,6 @@ float GetAttenuation(uniform float attLinear, uniform float attQuad, const in fl
 	return 1.0f + (attLinear + attQuad * distanceToLight) * distanceToLight;
 }
 
-float3 GetRadiance(const in float3 lightRadiance, const in float3 reflectanceBRDF, const in float shadowLevel)
-{
-	return lerp(0.0f, reflectanceBRDF * lightRadiance, shadowLevel);
-}
-
 float2 GetShadowUV(const in float3 position, uniform matrix shadowViewProjection)
 {
 	const float4 shadowSpacePos = mul(float4(position, 1.0f), shadowViewProjection);
@@ -72,15 +67,6 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 		level += saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos + OFFSETS[i] / mapSize).x)));
 
 	return (saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos).x))) + level) / 21.0f;
-}
-
-// Reconstruct pixel position from depth buffer
-float3 GetWorldPosition(const in float2 texCoord, const in float depth, uniform matrix inverseViewProjection)
-{
-	const float x = texCoord.x * 2.0f - 1.0f;
-	const float y = (1.0f - texCoord.y) * 2.0f - 1.0f;
-	const float4 pos = mul(float4(x, y, depth, 1.0f), inverseViewProjection);
-	return pos.xyz / pos.w;
 }
 
 #endif // LIGHT_UTILS_PS_HLSLI

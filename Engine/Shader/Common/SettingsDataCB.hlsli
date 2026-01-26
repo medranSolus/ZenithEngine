@@ -1,7 +1,6 @@
 #ifndef SETTINGS_DATA_CB_HLSLI
 #define SETTINGS_DATA_CB_HLSLI
 #include "Buffers.hlsli"
-#include "../Include/XeGTAO.h"
 
 #define ZE_BLUR_KERNEL_MAX_SIZE 8
 
