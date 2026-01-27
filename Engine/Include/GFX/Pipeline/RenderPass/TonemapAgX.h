@@ -2,7 +2,7 @@
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
+namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 {
 	struct Resources
 	{
@@ -14,14 +14,13 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		float Exposure = 1.5f;
-		TonemapperType CurrentTonemapper = TonemapperType::LPM;
+		Float4 Params = { 1.5f, 1.35f, 1.1f, 0.18f }; // Exposure | Saturation boost | Contrast enhancement | Pivot point for contrast (mid-gray)
 	};
 
-	bool Evaluate() noexcept;
+	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::AgX; }
+
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat, bool firstCall = false);
 	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
 	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
 	void DebugUI(void* data) noexcept;

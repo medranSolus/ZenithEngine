@@ -530,6 +530,13 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
+			RenderNode node("tonemap", "agx", RenderPass::TonemapAgX::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
 			RenderNode node("tonemap", "collection", RenderPass::TonemapCollection::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
 			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
@@ -542,6 +549,27 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "tonemapedScene");
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("tonemap", "reinhard", RenderPass::TonemapReinhard::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("tonemap", "reinhardX", RenderPass::TonemapReinhardX::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
+			RenderNode node("tonemap", "vdr", RenderPass::TonemapVDR::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{

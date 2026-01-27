@@ -84,8 +84,12 @@ namespace ZE::GFX::Pipeline
 		HorizontalBlur,
 		VerticalBlur,
 
+		TonemapAgX,
 		TonemapCollection,
 		TonemapLPM,
+		TonemapReinhard,
+		TonemapReinhardX,
+		TonemapVDR,
 		TonemapLPMSceneCopy,
 
 		Wireframe,

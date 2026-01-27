@@ -1,4 +1,14 @@
-#include "CB/TonemapParams.hlsli"
+#ifdef _ZE_FILMIC_VDR
+#	include "CB/TonemapParamsVDR.hlsli"
+#elif defined(_ZE_AGX)
+#	include "CB/TonemapParamsAgX.hlsli"
+#elif defined(_ZE_REINHARD) || defined(_ZE_REINHARD_LUMA) || defined(_ZE_REINHARD_JODIE)
+#	include "CB/TonemapParamsReinhard.hlsli"
+#elif defined(_ZE_REINHARD_EXTENDED) || defined(_ZE_REINHARD_LUMA_WHITE)
+#	include "CB/TonemapParamsReinhardX.hlsli"
+#else
+#	include "CB/TonemapParams.hlsli"
+#endif
 #include "Utils/Tonemap.hlsli"
 #include "Samplers.hlsli"
 
@@ -14,34 +24,34 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	//       - ACES 2.0 when optimized version for GPUs become available
 	//       - real camera response https://64.github.io/tonemapping/ (requires LUT)
 #ifdef _ZE_EXPOSURE
-	const float3 mapped = GetTonemapExposure(hdrColor.rgb, GetExposure());
-#elif defined(_ZE_REINHARD)
-	const float3 mapped = GetReinhard(hdrColor.rgb, GetExposure(), GetReinhardOffset());
-#elif defined(_ZE_REINHARD_EXTENDED)
-	const float3 mapped = GetReinhard(hdrColor.rgb, GetExposure(), GetReinhardOffset(), GetMaxWhite());
-#elif defined(_ZE_REINHARD_LUMA)
-	const float3 mapped = GetReinhardLuma(hdrColor.rgb, GetExposure(), GetReinhardOffset());
-#elif defined(_ZE_REINHARD_JODIE)
-	const float3 mapped = GetReinhardJodie(hdrColor.rgb, GetExposure(), GetReinhardOffset());
-#elif defined(_ZE_REINHARD_LUMA_WHITE)
-	const float3 mapped = GetReinhardLuma(hdrColor.rgb, GetExposure(), GetReinhardOffset(), GetMaxWhite());
+	const float3 mapped = GetTonemapExposure(hdrColor.rgb, ct_params.Exposure);
 #elif defined(_ZE_RBDH)
-	const float3 mapped = GetTonemapRBDH(hdrColor.rgb, GetExposure());
+	const float3 mapped = GetTonemapRBDH(hdrColor.rgb, ct_params.Exposure);
 #elif defined(_ZE_FILMIC_HABLE)
-	const float3 mapped = GetFilmicHable(hdrColor.rgb, GetExposure());
-#elif defined(_ZE_FILMIC_VDR)
-	const float3 mapped = GetFilmicVDR(hdrColor.rgb, GetExposure(), GetVdrShoulder(), GetVDRParamB(), GetVDRParamC(), GetVdrConstrast());
+	const float3 mapped = GetFilmicHable(hdrColor.rgb, ct_params.Exposure);
 #elif defined(_ZE_ACES)
-	const float3 mapped = GetACES(hdrColor.rgb, GetExposure());
+	const float3 mapped = GetACES(hdrColor.rgb, ct_params.Exposure);
 #elif defined(_ZE_ACES_NAUTILUS)
-	const float3 mapped = GetACESNautilus(hdrColor.rgb, GetExposure());
-#elif defined(_ZE_AGX)
-	const float3 mapped = GetAgX(hdrColor.rgb, GetExposure(), GetAgxSaturation(), GetAgxContrast(), GetAgxMidContrast());
+	const float3 mapped = GetACESNautilus(hdrColor.rgb, ct_params.Exposure);
 #elif defined(_ZE_KHRONOS_PBR)
-	const float3 mapped = GetKhronosPBRNeutral(hdrColor.rgb, GetExposure());
+	const float3 mapped = GetKhronosPBRNeutral(hdrColor.rgb, ct_params.Exposure);
+#elif defined(_ZE_REINHARD)
+	const float3 mapped = GetReinhard(hdrColor.rgb, ct_params.Exposure, ct_params.Offset);
+#elif defined(_ZE_REINHARD_LUMA)
+	const float3 mapped = GetReinhardLuma(hdrColor.rgb, ct_params.Exposure, ct_params.Offset);
+#elif defined(_ZE_REINHARD_JODIE)
+	const float3 mapped = GetReinhardJodie(hdrColor.rgb, ct_params.Exposure, ct_params.Offset);
+#elif defined(_ZE_REINHARD_EXTENDED)
+	const float3 mapped = GetReinhard(hdrColor.rgb, ct_params.Exposure, ct_params.Offset, ct_params.MaxWhite);
+#elif defined(_ZE_REINHARD_LUMA_WHITE)
+	const float3 mapped = GetReinhardLuma(hdrColor.rgb, ct_params.Exposure, ct_params.Offset, ct_params.MaxWhite);
+#elif defined(_ZE_FILMIC_VDR)
+	const float3 mapped = GetFilmicVDR(hdrColor.rgb, ct_params.Exposure, ct_params.Contrast, ct_params.B, ct_params.C, ct_params.Shoulder);
+#elif defined(_ZE_AGX)
+	const float3 mapped = GetAgX(hdrColor.rgb, ct_params.Exposure, ct_params.Saturation, ct_params.Contrast, ct_params.MidContrast);
 #else
 	// No tonemapping
-	const float3 mapped = saturate(hdrColor.rgb * GetExposure());
+	const float3 mapped = saturate(hdrColor.rgb * ct_params.Exposure);
 #endif
 	
 	return float4(mapped, hdrColor.a);

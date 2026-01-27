@@ -6,32 +6,28 @@ float GetLuma(float3 color)
 	return dot(color, float3(0.2126f, 0.7152f, 0.0722f));
 }
 
-float3 GetTonemapExposure(const in float3 color, const in float exposure)
-{
-	return 1.0f - exp(color * -exposure);
-}
-
-// RomBinDaHouse
-float3 GetTonemapRBDH(const in float3 color, const in float exposure)
-{
-	return exp(-1.0f / (2.72f * exposure * color + 0.15f));
-}
-
 // Reinhard tone mapping (favor for bright areas)
 float3 GetReinhard(const in float3 color, const in float exposure, const in float offset)
 {
 	return (color * exposure) / (offset + color / exposure);
 }
 
+float3 GetReinhardLuma(const in float3 color, const in float exposure, const in float offset)
+{
+	return color * (exposure / (offset + GetLuma(color) / exposure));
+}
+
+float3 GetReinhardJodie(const in float3 color, const in float exposure, const in float offset)
+{
+	const float3 base = GetReinhard(color, exposure, offset);
+	const float3 luma = GetReinhardLuma(color, exposure, offset);
+	return lerp(luma, base, base);
+}
+
 float3 GetReinhard(const in float3 color, const in float exposure, const in float offset, const in float maxWhite)
 {
 	const float3 numerator = color * exposure * (1.0f + color / (maxWhite * maxWhite));
 	return numerator / (offset + color / exposure);
-}
-
-float3 GetReinhardLuma(const in float3 color, const in float exposure, const in float offset)
-{
-	return color * (exposure / (offset + GetLuma(color) / exposure));
 }
 
 float3 GetReinhardLuma(const in float3 color, const in float exposure, const in float offset, const in float maxWhite)
@@ -41,11 +37,15 @@ float3 GetReinhardLuma(const in float3 color, const in float exposure, const in 
 	return color * toneMappedLuma;
 }
 
-float3 GetReinhardJodie(const in float3 color, const in float exposure, const in float offset)
+float3 GetTonemapExposure(const in float3 color, const in float exposure)
 {
-	const float3 base = GetReinhard(color, exposure, offset);
-	const float3 luma = GetReinhardLuma(color, exposure, offset);
-	return lerp(luma, base, base);
+	return 1.0f - exp(color * -exposure);
+}
+
+// RomBinDaHouse
+float3 GetTonemapRBDH(const in float3 color, const in float exposure)
+{
+	return exp(-1.0f / (2.72f * exposure * color + 0.15f));
 }
 
 // Code based on ACES fitted by Stephen Hill (@self_shadow)
@@ -88,6 +88,54 @@ float3 GetACESNautilus(const in float3 color, const in float exposure)
 	return saturate((mapped * (A * mapped + B)) / (mapped * (C * mapped + D) + E));
 }
 
+// Only for LDR Rec.709 space
+float3 GetKhronosPBRNeutral(const in float3 color, const in float exposure)
+{
+	static const float START_COMPRESSION = 0.8f - 0.04f;
+	static const float DESATURATION = 0.15f;
+	static const float D = 1.0f - START_COMPRESSION;
+	static const float D_2 = D * D;
+	
+	float3 mapped = color * exposure;
+	const float x = min(mapped.r, min(mapped.g, mapped.b));
+	const float offset = x < 0.08f ? x - 6.25f * x * x : 0.04f;
+	mapped -= offset;
+
+	const float peak = max(mapped.r, max(mapped.g, mapped.b));
+	if (peak < START_COMPRESSION)
+		return mapped;
+
+	const float newPeak = 1.0f - D_2 / (peak + D - START_COMPRESSION);
+	mapped *= newPeak / peak;
+
+	const float g = 1.0f - 1.0f / (DESATURATION * (peak - newPeak) + 1.0f);
+	return lerp(mapped, newPeak, g);
+}
+
+float3 GetFilmicHable(const in float3 color, const in float exposure)
+{
+	// Based on Uncharted 2 tone mapping curve by John Hable
+	static const float A = 0.15f; // Shoulder strength
+	static const float B = 0.50f; // Linear strength
+	static const float C = 0.10f; // Linear angle
+	static const float D = 0.20f; // Toe strength
+	static const float E = 0.02f; // Toe numerator
+	static const float F = 0.30f; // Toe denominator
+	static const float W = 11.2f; // Linear white point
+	
+	float4 packed = float4(color * exposure, W);
+	packed = ((packed * (A * packed + C * B) + D * E) / (packed * (A * packed + B) + D * F)) - E / F;
+	
+	return packed.rgb / packed.a;
+}
+
+float3 GetFilmicVDR(const in float3 color, const in float exposure, const in float contrast, const float b, const in float c, const in float shoulder)
+{
+	// Introduced by Timothy Lottes at GDC 2016 for AMD's Variable Dynamic Range
+	const float3 z = pow(color * exposure, contrast);
+	return z / (b * pow(z, shoulder) + c);
+}
+
 float3 GetAgX(const in float3 color, const in float exposure, const in float saturation, const in float contrast, const in float midContrast)
 {
 	static const float3x3 AGX_INPUT_MAT =
@@ -126,54 +174,6 @@ float3 GetAgX(const in float3 color, const in float exposure, const in float sat
 	agxColor = saturate(agxColor);
 	
 	return saturate(mul(AGX_OUTPUT_MAT, agxColor));
-}
-
-float3 GetFilmicHable(const in float3 color, const in float exposure)
-{
-	// Based on Uncharted 2 tone mapping curve by John Hable
-	static const float A = 0.15f; // Shoulder strength
-	static const float B = 0.50f; // Linear strength
-	static const float C = 0.10f; // Linear angle
-	static const float D = 0.20f; // Toe strength
-	static const float E = 0.02f; // Toe numerator
-	static const float F = 0.30f; // Toe denominator
-	static const float W = 11.2f; // Linear white point
-	
-	float4 packed = float4(color * exposure, W);
-	packed = ((packed * (A * packed + C * B) + D * E) / (packed * (A * packed + B) + D * F)) - E / F;
-	
-	return packed.rgb / packed.a;
-}
-
-float3 GetFilmicVDR(const in float3 color, const in float exposure, const in float contrast, const float b, const in float c, const in float shoulder)
-{
-	// Introduced by Timothy Lottes at GDC 2016 for AMD's Variable Dynamic Range
-	const float3 z = pow(color * exposure, contrast);
-	return z / (b * pow(z, shoulder) + c);
-}
-
-// Only for LDR Rec.709 space
-float3 GetKhronosPBRNeutral(const in float3 color, const in float exposure)
-{
-	static const float START_COMPRESSION = 0.8f - 0.04f;
-	static const float DESATURATION = 0.15f;
-	static const float D = 1.0f - START_COMPRESSION;
-	static const float D_2 = D * D;
-	
-	float3 mapped = color * exposure;
-	const float x = min(mapped.r, min(mapped.g, mapped.b));
-	const float offset = x < 0.08f ? x - 6.25f * x * x : 0.04f;
-	mapped -= offset;
-
-	const float peak = max(mapped.r, max(mapped.g, mapped.b));
-	if (peak < START_COMPRESSION)
-		return mapped;
-
-	const float newPeak = 1.0f - D_2 / (peak + D - START_COMPRESSION);
-	mapped *= newPeak / peak;
-
-	const float g = 1.0f - 1.0f / (DESATURATION * (peak - newPeak) + 1.0f);
-	return lerp(mapped, newPeak, g);
 }
 
 #endif // TONEMAP_UTILS_HLSLI

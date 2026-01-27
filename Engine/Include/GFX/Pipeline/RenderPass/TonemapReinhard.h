@@ -2,7 +2,7 @@
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 
-namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
+namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 {
 	struct Resources
 	{
@@ -14,11 +14,12 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 	{
 		U32 BindingIndex;
 		Resource::PipelineStateGfx State;
-		float Exposure = 1.5f;
-		TonemapperType CurrentTonemapper = TonemapperType::LPM;
+		Float2 Params = { 1.5f, 1.0f }; // Exposure | Offset
+		TonemapperType CurrentTonemapper = TonemapperType::None;
 	};
 
-	bool Evaluate() noexcept;
+	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::Reinhard || Settings::Tonemapper == TonemapperType::ReinhardLuma || Settings::Tonemapper == TonemapperType::ReinhardLumaJodie; }
+
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
 	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat, bool firstCall = false);
