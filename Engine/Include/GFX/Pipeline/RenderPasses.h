@@ -16,9 +16,8 @@
 #include "RenderPass/Skybox.h"
 #include "RenderPass/SpotLight.h"
 #include "RenderPass/SSSR.h"
-#include "RenderPass/TonemapExposure.h"
+#include "RenderPass/TonemapCollection.h"
 #include "RenderPass/TonemapLPM.h"
-#include "RenderPass/TonemapReinhard.h"
 #if _ZE_DLSS_ENABLED
 #	include "RenderPass/UpscaleDLSS.h"
 #endif

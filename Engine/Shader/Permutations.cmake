@@ -181,6 +181,8 @@ add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_AO:A")
 add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_IBL:I")
 add_shader_permutation("LightCombinePS" "_ZE_LIGHT_COMBINE_SSR:R")
 
+add_shader_permutation("TonemapPS" "_ZE_EXPOSURE:E|_ZE_REINHARD:R|_ZE_REINHARD_EXTENDED:RX|_ZE_REINHARD_LUMA:RL|_ZE_REINHARD_JODIE:RJ|_ZE_REINHARD_LUMA_WHITE:RW|_ZE_RBDH:H|_ZE_FILMIC_HABLE:F|_ZE_FILMIC_VDR:FV|_ZE_ACES:A|_ZE_ACES_NAUTILUS:AN|_ZE_AGX:X|_ZE_KHRONOS_PBR:K")
+
 ############# VS PERMUTATIONS ##############
 
 add_shader_permutation("LambertVS" "_ZE_OUTPUT_MOTION:M")

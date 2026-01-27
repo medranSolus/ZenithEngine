@@ -8,10 +8,10 @@ namespace ZE
 		parser.AddOption("dx12");
 		parser.AddOption("vulkan");
 		parser.AddNumber("backbuffers", 2);
-		parser.AddNumber("threadsCount", 0);
+		parser.AddNumber("threads-count", 0);
 		parser.AddOption("pix");
-		parser.AddOption("gpuValidation");
-		parser.AddOption("ffxfsr");
+		parser.AddOption("gpu-validation");
+		parser.AddOption("ffx-fsr");
 		parser.AddOption("fsr3");
 		parser.AddOption("fsr2");
 		parser.AddOption("fsr1");
@@ -20,13 +20,25 @@ namespace ZE
 		parser.AddOption("dlss");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
-		parser.AddOption("noAsyncAO");
+		parser.AddOption("no-async-ao");
 		parser.AddOption("sssr");
-		parser.AddOption("alwaysCopySourceGpuData");
-		parser.AddOption("noCulling");
-		parser.AddOption("splitRenderSubmissions");
+		parser.AddOption("always-copy-source-gpu-data");
+		parser.AddOption("no-culling");
+		parser.AddOption("split-render-submits");
 		parser.AddOption("ibl");
+		parser.AddOption("tonemap-exp");
 		parser.AddOption("reinhard");
+		parser.AddOption("reinhard-x");
+		parser.AddOption("reinhard-luma");
+		parser.AddOption("reinhard-jodie");
+		parser.AddOption("reinhard-white");
+		parser.AddOption("tonemap-rbdh");
+		parser.AddOption("filmic-hable");
+		parser.AddOption("filmic-vdr");
+		parser.AddOption("aces");
+		parser.AddOption("aces-nautilus");
+		parser.AddOption("agx");
+		parser.AddOption("khronos-pbr-neutral");
 		parser.AddOption("lpm");
 	}
 
@@ -39,15 +51,15 @@ namespace ZE
 		params.GraphicsAPI = GetParsedApi(parser, defApi);
 		params.BackbufferCount = parser.GetNumber("backbuffers");
 		params.StaticThreadsCount = staticThreadsCount;
-		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threadsCount"));
+		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threads-count"));
 		if (parser.GetOption("pix"))
 			params.Flags |= SettingsInitFlag::AllowPIXAttach;
-		if (parser.GetOption("gpuValidation"))
+		if (parser.GetOption("gpu-validation"))
 			params.Flags |= SettingsInitFlag::EnableGPUValidation;
 		if (parser.GetOption("sssr"))
 			params.Flags |= SettingsInitFlag::EnableSSSR;
 
-		if (parser.GetOption("ffxfsr"))
+		if (parser.GetOption("ffx-fsr"))
 			params.Upscaler = GFX::UpscalerType::FfxFsr;
 		else if (parser.GetOption("fsr3"))
 			params.Upscaler = GFX::UpscalerType::Fsr3;
@@ -71,20 +83,44 @@ namespace ZE
 		else
 			params.AmbientOcclusion = GFX::AOType::None;
 
-		if (parser.GetOption("reinhard"))
+		if (parser.GetOption("tonemap-exp"))
+			params.Tonemapper = GFX::TonemapperType::Exposure;
+		else if (parser.GetOption("reinhard"))
 			params.Tonemapper = GFX::TonemapperType::Reinhard;
+		else if (parser.GetOption("reinhard-x"))
+			params.Tonemapper = GFX::TonemapperType::ReinhardExtended;
+		else if (parser.GetOption("reinhard-luma"))
+			params.Tonemapper = GFX::TonemapperType::ReinhardLuma;
+		else if (parser.GetOption("reinhard-jodie"))
+			params.Tonemapper = GFX::TonemapperType::ReinhardLumaJodie;
+		else if (parser.GetOption("reinhard-white"))
+			params.Tonemapper = GFX::TonemapperType::ReinhardLumaPreserveWhite;
+		else if (parser.GetOption("tonemap-rbdh"))
+			params.Tonemapper = GFX::TonemapperType::RomBinDaHouse;
+		else if (parser.GetOption("filmic-hable"))
+			params.Tonemapper = GFX::TonemapperType::FilmicHable;
+		else if (parser.GetOption("filmic-vdr"))
+			params.Tonemapper = GFX::TonemapperType::FilmicVDR;
+		else if (parser.GetOption("aces"))
+			params.Tonemapper = GFX::TonemapperType::ACES;
+		else if (parser.GetOption("aces-nautilus"))
+			params.Tonemapper = GFX::TonemapperType::ACESNautilus;
+		else if (parser.GetOption("agx"))
+			params.Tonemapper = GFX::TonemapperType::AgX;
+		else if (parser.GetOption("khronos-pbr-neutral"))
+			params.Tonemapper = GFX::TonemapperType::KhronosPBRNeutral;
 		else if (parser.GetOption("lpm"))
 			params.Tonemapper = GFX::TonemapperType::LPM;
 		else
-			params.Tonemapper = GFX::TonemapperType::Exposure;
+			params.Tonemapper = GFX::TonemapperType::None;
 
-		if (!parser.GetOption("noAsyncAO"))
+		if (!parser.GetOption("no-async-ao"))
 			params.Flags |= SettingsInitFlag::AsyncAO;
-		if (parser.GetOption("alwaysCopySourceGpuData"))
+		if (parser.GetOption("always-copy-source-gpu-data"))
 			params.Flags |= SettingsInitFlag::AlwaysCopySourceGPUData;
-		if (parser.GetOption("noCulling"))
+		if (parser.GetOption("no-culling"))
 			params.Flags |= SettingsInitFlag::DisableCulling;
-		if (parser.GetOption("splitRenderSubmissions"))
+		if (parser.GetOption("split-render-submits"))
 			params.Flags |= SettingsInitFlag::SplitRenderSubmissions;
 		if (parser.GetOption("ibl"))
 			params.Flags |= SettingsInitFlag::EnableIBL;

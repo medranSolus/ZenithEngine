@@ -252,10 +252,15 @@ namespace ZE
 						ImGui::EndCombo();
 					}
 
-					constexpr std::array<const char*, 3> TONEMAP_LEVELS = { "Reinhard", "Exposure", "LPM" };
+					constexpr std::array<const char*, 15> TONEMAP_LEVELS =
+					{
+						"None", "Exposure", "Reinhard", "Reinhard Extended", "Reinhard Luma",
+						"Reinhard Luma (Jodie)", "Reinhard Luma (White Preservation)", "RomBinDaHouse",
+						"Filmic (Hable's)", "Filmic (AMD's VDR)", "ACES", "ACES (Nautilus)", "AgX", "Khronos PBR Neutral", "LPM"
+					};
 					if (ImGui::BeginCombo("Tonemapper", TONEMAP_LEVELS.at(static_cast<U8>(Settings::Tonemapper))))
 					{
-						for (GFX::TonemapperType i = GFX::TonemapperType::Reinhard; const char* level : TONEMAP_LEVELS)
+						for (GFX::TonemapperType i = GFX::TonemapperType::None; const char* level : TONEMAP_LEVELS)
 						{
 							const bool selected = i == Settings::Tonemapper;
 							if (ImGui::Selectable(level, selected))

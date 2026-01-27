@@ -530,14 +530,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
-			RenderNode node("tonemap", "exposure", RenderPass::TonemapExposure::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
-			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
-			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
-			node.SetHintGfx();
-			graphDesc.RenderPasses.emplace_back(std::move(node));
-		}
-		{
-			RenderNode node("tonemap", "reinhard", RenderPass::TonemapReinhard::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			RenderNode node("tonemap", "collection", RenderPass::TonemapCollection::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
 			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();
