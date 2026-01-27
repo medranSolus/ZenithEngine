@@ -1,9 +1,10 @@
 #include "CB/Shadow.hlsli"
 #include "CB/PbrFlags.hlsli"
 #include "Tex/PbrInputs.hlsli"
+#include "Utils/Geometry.hlsli"
+#include "Utils/Shadow.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
-#include "UtilsPS.hlsli"
 
 /* List of permutations:
  *

@@ -1,5 +1,5 @@
-#ifndef LIGHT_UTILS_PS_HLSLI
-#define LIGHT_UTILS_PS_HLSLI
+#ifndef SHADOW_UTILS_PS_HLSLI
+#define SHADOW_UTILS_PS_HLSLI
 
 float GetAttenuation(uniform float attLinear, uniform float attQuad, const in float distanceToLight)
 {
@@ -69,4 +69,4 @@ float GetShadowLevel(const in float3 directionToCamera, const in float distanceT
 	return (saturate(exp(-30.0f * saturate(shadowLength - shadowMap.Sample(shadowSplr, shadowPos).x))) + level) / 21.0f;
 }
 
-#endif // LIGHT_UTILS_PS_HLSLI
+#endif // SHADOW_UTILS_PS_HLSLI

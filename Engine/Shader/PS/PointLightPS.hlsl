@@ -1,9 +1,11 @@
 #include "CB/PointLight.hlsli"
+#include "Utils/Geometry.hlsli"
+#include "Utils/Pbr.hlsli"
+#include "Utils/Shadow.hlsli"
 #include "DynamicDataCB.hlsli"
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
-#include "UtilsPS.hlsli"
 
 TEXTURE_EX(shadowMap,      TextureCube,                 0, 3);
 TEX2D(depthMap,                                         1, 2);

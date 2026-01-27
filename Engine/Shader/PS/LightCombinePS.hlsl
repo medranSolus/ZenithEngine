@@ -1,8 +1,9 @@
+#include "Utils/Geometry.hlsli"
+#include "Utils/Pbr.hlsli"
 #include "DynamicDataCB.hlsli"
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
-#include "UtilsPS.hlsli"
 
 TEX2D(directLight, 0, 2);
 #ifdef _ZE_LIGHT_COMBINE_AO

@@ -8,6 +8,7 @@ namespace ZE::Data
 	struct DirectionalLight
 	{
 		ColorF3 Color;
+		// Radiant flux in Watts together with color
 		float Intensity;
 	};
 	struct Direction { Float3 Direction; };
@@ -16,6 +17,7 @@ namespace ZE::Data
 	struct SpotLight
 	{
 		ColorF3 Color;
+		// Radiant flux in Watts together with color
 		float Intensity;
 		Float3 Direction;
 		float InnerAngle;
@@ -30,6 +32,7 @@ namespace ZE::Data
 	struct PointLight
 	{
 		ColorF3 Color;
+		// Radiant flux in Watts together with color
 		float Intensity;
 		float AttnLinear;
 		float AttnQuad;

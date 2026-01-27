@@ -387,6 +387,8 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Point Light Intensity");
 				change = ImGui::InputFloat("##point_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Light source radiant flux in Watts");
 				if (light.Intensity < 0.0f)
 					light.Intensity = 0.0f;
 
@@ -414,6 +416,8 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Spot Light Intensity");
 				change = ImGui::InputFloat("##spot_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Light source radiant flux in Watts");
 				if (light.Intensity < 0.0f)
 					light.Intensity = 0.0f;
 
@@ -464,6 +468,8 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Directional Light Intensity");
 				change = ImGui::InputFloat("##dir_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Light source radiant flux in Watts");
 				if (light.Intensity < 0.0f)
 					light.Intensity = 0.0f;
 

@@ -1,11 +1,13 @@
 #include "CB/SpotLight.hlsli"
+#include "Utils/Geometry.hlsli"
+#include "Utils/Pbr.hlsli"
+#include "Utils/Shadow.hlsli"
 #include "DynamicDataCB.hlsli"
 #include "GBufferUtils.hlsli"
 #include "Samplers.hlsli"
 #include "SettingsDataCB.hlsli"
 #define ZE_TRANSFORM_CB_RANGE 6
 #include "TransformCB.hlsli"
-#include "UtilsPS.hlsli"
 
 TEX2D(shadowMap, 0, 3);
 TEX2D(depthMap,  1, 2);
