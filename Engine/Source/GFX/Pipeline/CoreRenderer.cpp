@@ -544,6 +544,14 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
+			RenderNode node("tonemap", "gt7", RenderPass::TonemapGT7::GetDesc(Settings::BackbufferFormat), PassExecutionType::Processor);
+			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetInitDataGpuUploadRequired();
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
 			RenderNode node("tonemap", "lpm", RenderPass::TonemapLPM::GetDesc(), PassExecutionType::Processor);
 			node.AddInput("verticalBlur.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "tonemapedScene");

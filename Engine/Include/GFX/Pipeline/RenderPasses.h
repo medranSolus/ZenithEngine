@@ -18,6 +18,7 @@
 #include "RenderPass/SSSR.h"
 #include "RenderPass/TonemapAgX.h"
 #include "RenderPass/TonemapCollection.h"
+#include "RenderPass/TonemapGT7.h"
 #include "RenderPass/TonemapLPM.h"
 #include "RenderPass/TonemapReinhard.h"
 #include "RenderPass/TonemapReinhardX.h"

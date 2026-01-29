@@ -19,6 +19,7 @@ namespace ZE::GFX
 		ACESNautilus,
 		AgX,
 		KhronosPBRNeutral,
+		GranTurismo7,
 		LPM
 	};
 }

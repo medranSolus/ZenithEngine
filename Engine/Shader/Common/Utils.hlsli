@@ -1,6 +1,29 @@
 #ifndef COMMON_UTILS_HLSLI
 #define COMMON_UTILS_HLSLI
 
+// 1 in the linear frame-buffer space corresponds to this value of physical luminance (typically 100 cd/m^2) [cd/m^2]
+static const float REFERENCE_LUMINANCE = 100.0f;
+
+// Constants for ST.2084
+static const float PQ_M1 = 2610.0f / 16384.0f;
+static const float PQ_M2 = 2523.0f / 32.0f;
+static const float PQ_C1 = 3424.0f / 4096.0f;
+static const float PQ_C2 = 2413.0f / 128.0f;
+static const float PQ_C3 = 2392.0f / 128.0f;
+static const float PQ_PQC = 10000.0f; // Max supported luminance
+
+// Converts linear frame-buffer value to physical luminance where 1 corresponds to REFERENCE_LUMINANCE
+float3 GetLuminanceColor(float3 color)
+{
+	return color * REFERENCE_LUMINANCE;
+}
+
+// Converts physical luminance to a linear frame-buffer value, where 1 corresponds to REFERENCE_LUMINANCE
+float3 GetColorFromLuminance(float3 luminance)
+{
+	return luminance / REFERENCE_LUMINANCE;
+}
+
 // Converts a color from linear light gamma to sRGB gamma
 float3 ApplyGamma(const in float3 linearColor)
 {
@@ -21,25 +44,18 @@ float3 DeleteGamma(const in float3 srgb)
 	return lerp(lower, higher, cutoff);
 }
 
-// Constants for ST.2084
-static const float PQ_m1 = 2610.0f / 16384.0f;
-static const float PQ_m2 = 2523.0f / 32.0f;
-static const float PQ_c1 = 3424.0f / 4096.0f;
-static const float PQ_c2 = 2413.0f / 128.0f;
-static const float PQ_c3 = 2392.0f / 128.0f;
-
-// Apply ST2084 curve on linear color
-float3 ApplyPQ(const in float3 linearColor)
+// Apply ST2084 curve on linear color (inverse EOTF), exponentScaleFactor should be normally 1
+float3 ApplyPQ(const in float3 linearColor, float exponentScaleFactor)
 {
-	const float3 y = pow(abs(linearColor), PQ_m1);
-	return pow((PQ_c1 + PQ_c2 * y) / (1.0f + PQ_c3 * y), PQ_m2);
+	const float3 y = pow(saturate(GetLuminanceColor(linearColor) / PQ_PQC), PQ_M1);
+	return exp2(exponentScaleFactor * PQ_M2 * (log2(PQ_C1 + PQ_C2 * y) - log2(1.0f + PQ_C3 * y)));
 }
 
-// Convert color from ST2084 curve to linear space
-float3 DeletePQ(const in float3 pq)
+// Convert color from ST2084 curve to linear space (EOTF), exponentScaleFactor should be normally 1
+float3 DeletePQ(const in float3 pq, float exponentScaleFactor)
 {
-	const float3 e = pow(saturate(pq), 1.0f / PQ_m2);
-	return pow(max(e - PQ_c1, 0.0f) / (PQ_c2 - PQ_c3 * e), 1.0f / PQ_m1);
+	const float3 e = pow(saturate(pq), 1.0f / (PQ_M2 * exponentScaleFactor));
+	return GetColorFromLuminance(pow(max(e - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * e), 1.0f / PQ_M1) * PQ_PQC);
 }
 
 #endif // COMMON_UTILS_HLSLI

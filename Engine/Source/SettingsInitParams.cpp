@@ -39,6 +39,7 @@ namespace ZE
 		parser.AddOption("aces-nautilus");
 		parser.AddOption("agx");
 		parser.AddOption("khronos-pbr-neutral");
+		parser.AddOption("tonemap-gt7");
 		parser.AddOption("lpm");
 	}
 
@@ -109,6 +110,8 @@ namespace ZE
 			params.Tonemapper = GFX::TonemapperType::AgX;
 		else if (parser.GetOption("khronos-pbr-neutral"))
 			params.Tonemapper = GFX::TonemapperType::KhronosPBRNeutral;
+		else if (parser.GetOption("tonemap-gt7"))
+			params.Tonemapper = GFX::TonemapperType::GranTurismo7;
 		else if (parser.GetOption("lpm"))
 			params.Tonemapper = GFX::TonemapperType::LPM;
 		else

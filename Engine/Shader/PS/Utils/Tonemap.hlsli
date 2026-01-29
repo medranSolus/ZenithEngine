@@ -84,7 +84,7 @@ float3 GetACESNautilus(const in float3 color, const in float exposure)
 	static const float D = 0.59f;
 	static const float E = 0.14f;
 	
-	const float3 mapped = color * 0.6f * exposure;
+	const float3 mapped = color * exposure;
 	return saturate((mapped * (A * mapped + B)) / (mapped * (C * mapped + D) + E));
 }
 

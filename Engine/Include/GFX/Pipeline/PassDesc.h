@@ -86,6 +86,7 @@ namespace ZE::GFX::Pipeline
 
 		TonemapAgX,
 		TonemapCollection,
+		TonemapGT7,
 		TonemapLPM,
 		TonemapReinhard,
 		TonemapReinhardX,

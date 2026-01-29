@@ -2,13 +2,20 @@
 #include "CB/ConstantsLPM.hlsli"
 #include "Utils.hlsli"
 #if FFX_HALF
+#	define FfxFloat3 FfxFloat16x3
 #	define FfxFloat4 FfxFloat16x4
 #else
+#	define FfxFloat3 FfxFloat32x3
 #	define FfxFloat4 FfxFloat32x4
 #endif
 
 UAV2D(outputColor, FfxFloat4, 0, 0);
 TEXTURE_EX(inputColor, Texture2D<FfxFloat4>, 0, 1);
+
+FfxFloat3 ApplyPQ(const in float3 linearColor)
+{
+	return FfxFloat3(ApplyPQ(linearColor, 1.0f));
+}
 
 void StoreOutput(const in FfxUInt32x2 pxCoord, FfxFloat4 color)
 {

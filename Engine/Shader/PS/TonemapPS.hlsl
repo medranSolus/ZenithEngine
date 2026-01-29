@@ -6,10 +6,13 @@
 #	include "CB/TonemapParamsReinhard.hlsli"
 #elif defined(_ZE_REINHARD_EXTENDED) || defined(_ZE_REINHARD_LUMA_WHITE)
 #	include "CB/TonemapParamsReinhardX.hlsli"
+#elif defined(_ZE_GT7)
+#	include "CB/TonemapParamsGT7.hlsli"
 #else
 #	include "CB/TonemapParams.hlsli"
 #endif
 #include "Utils/Tonemap.hlsli"
+#include "Utils/TonemapGT7.hlsli"
 #include "Samplers.hlsli"
 
 TEX2D(frame, 0, 0);
@@ -49,6 +52,13 @@ float4 main(float2 tc : TEXCOORD) : SV_TARGET
 	const float3 mapped = GetFilmicVDR(hdrColor.rgb, ct_params.Exposure, ct_params.Contrast, ct_params.B, ct_params.C, ct_params.Shoulder);
 #elif defined(_ZE_AGX)
 	const float3 mapped = GetAgX(hdrColor.rgb, ct_params.Exposure, ct_params.Saturation, ct_params.Contrast, ct_params.MidContrast);
+#elif defined(_ZE_GT7)
+	const float3 mapped = GetGranTurismo7(hdrColor.rgb, ct_exposure.Val,
+		cb_params.ParamA, cb_params.ParamB, cb_params.ParamC,
+		cb_params.MidPoint, cb_params.ToeStrength, cb_params.ShoulderTreshold,
+		cb_params.FadeStart, cb_params.FadeEnd,
+		cb_params.LuminanceTargetUCS, cb_params.LuminanceTarget,
+		cb_params.BlendRatio, cb_params.CorrectionSDR);
 #else
 	// No tonemapping
 	const float3 mapped = saturate(hdrColor.rgb * ct_params.Exposure);
