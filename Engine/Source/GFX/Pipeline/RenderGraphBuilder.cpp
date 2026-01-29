@@ -2332,6 +2332,17 @@ namespace ZE::GFX::Pipeline
 
 		if (framebufferUpdate || graph.ffxBuffersChanged || renderSize != Settings::RenderSize)
 		{
+			if (renderSize != Settings::RenderSize)
+			{
+				graph.execData.SettingsData.RenderSize = Settings::RenderSize;
+
+				Resource::CBufferData settingsData = {};
+				settingsData.DataStatic = &graph.execData.SettingsData;
+				settingsData.Bytes = sizeof(RendererSettingsData);
+				graph.execData.SettingsBuffer.Update(dev, assets.GetDisk(), settingsData);
+				uploadWait = true;
+			}
+
 			// Update all referenced RIDs due to changes in frambuffer
 			auto updateExecGroupResources = [&](U32 i, RenderGraph::ExecutionGroup& execGroup)
 				{

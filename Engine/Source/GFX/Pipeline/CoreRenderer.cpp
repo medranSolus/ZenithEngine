@@ -595,7 +595,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(PixelFormat::R8G8B8A8_UNorm, Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
 			node.AddInput("tonemapSceneCopy.RT", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
-				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8G8B8A8_UNorm, "ImGui UI buffer"));
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::ForceSRV, PixelFormat::R8G8B8A8_UNorm, "ImGui UI buffer"));
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

@@ -773,11 +773,11 @@ namespace ZE::GFX::FFX
 		// Only set the command signature if this is setup as an indirect workload
 		if (desc->indirectWorkload)
 		{
-			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
-			{
-				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, dev, IndirectCommandType::Dispatch);
+			if (!ctx.CommandSignaturesReferences.Contains(IndirectCommandType::Dispatch))
 				ctx.CommandSignaturesReferences.Add(IndirectCommandType::Dispatch, 0ULL);
-			}
+			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
+				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, dev, IndirectCommandType::Dispatch);
+
 			outPipeline->cmdSignature = reinterpret_cast<FfxCommandSignature>(IndirectCommandType::Dispatch);
 			++ctx.CommandSignaturesReferences.Get(IndirectCommandType::Dispatch);
 		}
