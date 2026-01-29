@@ -79,10 +79,10 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 
 	void DebugUI(void* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
-
 		if (ImGui::CollapsingHeader("AgX Tonemapper"))
 		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
 			ImGui::Columns(2, "##tonemap_params_agx", false);
 			{
 				ImGui::Text("Exposure value");

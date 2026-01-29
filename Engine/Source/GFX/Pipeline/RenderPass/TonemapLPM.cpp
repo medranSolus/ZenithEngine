@@ -93,7 +93,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_LPM_VERSION_MAJOR), ZE_DEPAREN(FFX_LPM_VERSION_MINOR), ZE_DEPAREN(FFX_LPM_VERSION_PATCH)));
 
-			constexpr std::array<const char*, 5> MODES = { "LDR", "HDR10 PQ", "HDR10 scRGB", "FreeSync Premium Pro PQ", "FreeSync Premium Pro scRGB" };
+			constexpr std::array<const char*, 5> MODES = { "SDR", "HDR10 PQ", "HDR10 scRGB", "FreeSync Premium Pro PQ", "FreeSync Premium Pro scRGB" };
 			if (ImGui::BeginCombo("Display mode", MODES.at(static_cast<U8>(execData.DisplayMode))))
 			{
 				for (U8 i = 0; const char* mode : MODES)

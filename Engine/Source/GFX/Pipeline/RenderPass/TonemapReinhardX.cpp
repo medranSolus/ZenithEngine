@@ -122,10 +122,10 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhardX
 
 	void DebugUI(void* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
-
 		if (ImGui::CollapsingHeader("Reinhard X Tonemappers"))
 		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
 			ImGui::Columns(2, "##tonemap_params_reinhardx", false);
 			{
 				ImGui::Text("Exposure value");

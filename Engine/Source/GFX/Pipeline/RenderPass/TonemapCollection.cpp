@@ -155,10 +155,10 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 
 	void DebugUI(void* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
-
 		if (ImGui::CollapsingHeader("Tonemapping Collection"))
 		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
 			ImGui::Columns(2, "##tonemap_params", false);
 
 			ImGui::Text("Exposure value");

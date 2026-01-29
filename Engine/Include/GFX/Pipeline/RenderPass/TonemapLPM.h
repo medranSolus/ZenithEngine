@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		bool Shoulder = true;
 		float SoftGap = 0.0f;
 		float HdrMax = 6.0f;
-		float Exposure = 2.4f;
+		float Exposure = 3.1f;
 		float Contrast = 0.2f;
 		float ShoulderContrast = 1.0f;
 		Float3 Saturation = { 0.0f, 0.0f, 0.0f };

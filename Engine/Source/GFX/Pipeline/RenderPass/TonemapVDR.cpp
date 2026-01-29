@@ -93,10 +93,10 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 
 	void DebugUI(void* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
-
 		if (ImGui::CollapsingHeader("VDR Tonemapper"))
 		{
+			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+
 			bool updateParams = false;
 			ImGui::Columns(2, "##tonemap_params_vdr", false);
 			{

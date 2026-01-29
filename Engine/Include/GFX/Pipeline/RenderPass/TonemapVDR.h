@@ -7,7 +7,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 #pragma pack(push, 1)
 	struct TonemapParams
 	{
-		float Exposure = 1.5f;
+		float Exposure = 2.6f;
 		float Contrast = 1.3f;
 		float B = 0.0f;
 		float C = 0.0f;
