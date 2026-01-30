@@ -109,7 +109,7 @@ namespace ZE::RHI::DX12
 			{
 				pixCapturer = LoadLibraryW((pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll").c_str());
 				if (pixCapturer == nullptr)
-					Logger::Warning("Error loading \"WinPixGpuCapturer.dll\"! Error message:\n    " + WinAPI::WinApiException::TranslateErrorCode(GetLastError()));
+					Logger::Warning("Error loading \"WinPixGpuCapturer.dll\"! Error message:\n    " + Platform::WinAPI::WinApiException::TranslateErrorCode(GetLastError()));
 			}
 		}
 #endif

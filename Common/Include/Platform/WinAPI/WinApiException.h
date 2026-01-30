@@ -2,7 +2,7 @@
 #include "Exception/BasicException.h"
 #include "WinAPI.h"
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	// Exception thrown related to Windows based errors
 	class WinApiException : public virtual Exception::BasicException
@@ -25,7 +25,7 @@ namespace ZE::WinAPI
 	};
 }
 
-#define	ZE_WIN_EXCEPT(code) ZE::WinAPI::WinApiException(__LINE__, __FILENAME__, code)
+#define	ZE_WIN_EXCEPT(code) ZE::Platform::WinAPI::WinApiException(__LINE__, __FILENAME__, code)
 #define	ZE_WIN_EXCEPT_LAST() ZE_WIN_EXCEPT(static_cast<HRESULT>(GetLastError()))
 
 // Variable holding result of last Windows call

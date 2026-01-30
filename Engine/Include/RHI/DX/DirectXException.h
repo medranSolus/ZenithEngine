@@ -4,7 +4,7 @@
 namespace ZE::RHI::DX
 {
 	// Standard exception for DirectX Graphics Infrastructure based APIs
-	class DirectXException : public WinAPI::WinApiException
+	class DirectXException : public Platform::WinAPI::WinApiException
 	{
 #if _ZE_DEBUG_GFX_API
 		std::vector<std::string> debugInfo;

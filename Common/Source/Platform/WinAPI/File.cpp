@@ -2,7 +2,7 @@
 #include <io.h>
 #include <fcntl.h>
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	void File::TransferCompletionCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) noexcept
 	{

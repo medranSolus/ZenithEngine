@@ -10,7 +10,7 @@ namespace ZE::Window
 	class Keyboard final
 	{
 #if _ZE_PLATFORM_WINDOWS
-		friend class WinAPI::Window;
+		friend class Platform::WinAPI::Window;
 #else
 #	error Missing platform specific window friend declaration for Keyboard!
 #endif

@@ -1,7 +1,7 @@
 #pragma once
 
 #if _ZE_PLATFORM_WINDOWS
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	class Window;
 }

@@ -3,7 +3,7 @@
 
 #if _ZE_PLATFORM_WINDOWS
 #include "Platform/WinAPI/File.h"
-namespace ZE { typedef WinAPI::File PlatformFile; }
+namespace ZE { typedef Platform::WinAPI::File PlatformFile; }
 #else
 #	error Missing File platform specific implementation!
 #endif

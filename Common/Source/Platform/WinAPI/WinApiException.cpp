@@ -1,6 +1,6 @@
 #include "Platform/WinAPI/WinApiException.h"
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	std::string WinApiException::TranslateErrorCode(HRESULT code) noexcept
 	{

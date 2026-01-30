@@ -3,7 +3,7 @@
 #include "Window/BaseWindow.h"
 #include "Settings.h"
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	// Window implementation for Windows
 	class Window final : public ZE::Window::BaseWindow

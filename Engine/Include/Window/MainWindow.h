@@ -5,7 +5,7 @@
 namespace ZE::Window
 {
 	// Application window for Windows
-	typedef ZE::WinAPI::Window MainWindow;
+	typedef ZE::Platform::WinAPI::Window MainWindow;
 }
 #else
 #	error Missing Window platform specific implementation!

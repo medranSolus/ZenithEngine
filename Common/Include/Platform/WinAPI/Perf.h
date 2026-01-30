@@ -2,7 +2,7 @@
 #include "WinAPI.h"
 #include "Utils.h"
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	class Perf final
 	{

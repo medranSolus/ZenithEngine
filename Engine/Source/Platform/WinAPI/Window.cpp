@@ -5,7 +5,7 @@ ZE_WARNING_POP
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace ZE::WinAPI
+namespace ZE::Platform::WinAPI
 {
 	Window::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
 	{
