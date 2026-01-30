@@ -58,6 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 			if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
 			{
 				ZE_FFX_API_ENABLE();
+				bool sizeChange = renderSize != Settings::RenderSize;
 				Settings::RenderSize = renderSize;
 				passData.DisplaySize = Settings::DisplaySize;
 
@@ -104,7 +105,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 				ctxDesc.maxUpscaleSize = { passData.DisplaySize.X, passData.DisplaySize.Y };
 				ctxDesc.fpMessage = MessageHandler;
 				ZE_FFX_API_CHECK(dev.CreateFfxCtx(&passData.Ctx, ctxDesc.header), "Error creating FFX-API FSR context!");
-				return UpdateStatus::FrameBufferImpact;
+				return sizeChange ? UpdateStatus::FrameBufferImpact : UpdateStatus::InternalOnly;
 			}
 		}
 		return UpdateStatus::NoUpdate;

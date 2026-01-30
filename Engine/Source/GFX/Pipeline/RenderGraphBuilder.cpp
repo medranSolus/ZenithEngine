@@ -818,6 +818,7 @@ namespace ZE::GFX::Pipeline
 	bool RenderGraphBuilder::SetupPassData(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, PtrVoid& passExecData)
 	{
 		bool cascadeUpdate = false;
+		UInt2 renderSize = Settings::RenderSize;
 
 		FFX::PassInfo ffxPassInfo = {};
 		ffxPassInfo.PassID = passId;
@@ -875,7 +876,7 @@ namespace ZE::GFX::Pipeline
 		}
 		FFX::SetCurrentPass(graph.ffxInterface, nullptr);
 
-		return cascadeUpdate;
+		return cascadeUpdate || renderSize != Settings::RenderSize;
 	}
 
 	std::pair<bool, bool> RenderGraphBuilder::InitializeRenderPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData)

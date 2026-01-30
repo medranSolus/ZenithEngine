@@ -519,6 +519,33 @@ namespace ZE::GFX::FFX
 				if (initData)
 					initData->IsBuffer ? initData->Buffer.Free(dev) : initData->Texture.Free(dev);
 				ffxInterface.InternalBuffers.Remove(resource.internalIndex);
+
+				for (U64 i = 0; i < ctx.Jobs.size(); )
+				{
+					const auto& job = ctx.Jobs.at(i);
+					bool remove = false;
+					switch (job.jobType)
+					{
+					case FFX_GPU_JOB_CLEAR_FLOAT:
+						remove = job.clearJobDescriptor.target.internalIndex == resource.internalIndex;
+						break;
+					case FFX_GPU_JOB_COPY:
+						remove = job.copyJobDescriptor.src.internalIndex == resource.internalIndex || job.copyJobDescriptor.dst.internalIndex == resource.internalIndex;
+						break;
+					case FFX_GPU_JOB_BARRIER:
+						remove = job.barrierDescriptor.resource.internalIndex == resource.internalIndex;
+						break;
+					case FFX_GPU_JOB_DISCARD:
+						remove = job.discardJobDescriptor.target.internalIndex == resource.internalIndex;
+						break;
+					default:
+						break;
+					}
+					if (remove)
+						ctx.Jobs.erase(ctx.Jobs.begin() + i);
+					else
+						++i;
+				}
 				ffxInterface.NotifyBuffersChange = true;
 				ctx.Resources.destroy(id);
 			}
