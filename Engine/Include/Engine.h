@@ -2,6 +2,7 @@
 #include "GFX/Pipeline/RenderGraph.h"
 #include "GUI/ImGuiManager.h"
 #include "StartupConfig.h"
+#include "SFX/Device.h"
 
 namespace ZE
 {
@@ -18,6 +19,7 @@ namespace ZE
 		GFX::Pipeline::RenderGraph renderGraph;
 		Data::AssetsStreamer assets;
 		std::bitset<Flags::Count> flags;
+		SFX::Device audioDev;
 
 		bool UploadSync();
 

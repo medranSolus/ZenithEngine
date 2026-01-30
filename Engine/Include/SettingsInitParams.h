@@ -1,4 +1,5 @@
 #pragma once
+#include "AHI/ApiType.h"
 #include "GFX/AOType.h"
 #include "GFX/UpscalerType.h"
 #include "GFX/TonemapperType.h"
@@ -42,6 +43,8 @@ namespace ZE
 		SettingsInitFlags Flags;
 		// Selected API that RHI will be initialized to.
 		GfxApiType GraphicsAPI;
+		// Selected API that AHI will be initialized to.
+		AudioApiType AudioAPI;
 		// Number of backbuffers to create for swap chain, must be in range [2:16]
 		U32 BackbufferCount;
 		// Allocate this number of threads from thread pool, decreasing it's number for static threads not managed by the pool.

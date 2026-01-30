@@ -25,8 +25,8 @@ option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" OFF)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
 option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
 option(ZE_ENABLE_VK "Enable Vulkan API usage" OFF)
-option(ZE_ENABLE_XAUDIO2 "Enable XAudio2 API usage" ON)
 option(ZE_ENABLE_OPENAL "Enable OpenAL API usage" ON)
+option(ZE_ENABLE_XAUDIO2 "Enable XAudio2 API usage" ON)
 option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)
 option(ZE_RENDERER_SINGLE_THREAD "Turns off recording commands by multiple threads in the renderer" ON)
@@ -514,6 +514,8 @@ add_compile_definitions(_ZE_PLATFORM_FUCHSIA=$<BOOL:${ZE_PLATFORM_FUCHSIA}> _ZE_
 add_compile_definitions(_ZE_COMPILER_MSVC=$<BOOL:${ZE_COMPILER_MSVC}> _ZE_COMPILER_CLANG=$<BOOL:${ZE_COMPILER_CLANG}> _ZE_COMPILER_GCC=$<BOOL:${ZE_COMPILER_GCC}>)
 # RHI type
 add_compile_definitions(_ZE_RHI_DX11=$<BOOL:${ZE_ENABLE_DX11}> _ZE_RHI_DX12=$<BOOL:${ZE_ENABLE_DX12}> _ZE_RHI_GL=$<BOOL:${ZE_ENABLE_GL}> _ZE_RHI_VK=$<BOOL:${ZE_ENABLE_VK}>)
+# AHI type
+add_compile_definitions(_ZE_AHI_OPENAL=$<BOOL:${ZE_ENABLE_OPENAL}> _ZE_AHI_XAUDIO2=$<BOOL:${ZE_ENABLE_XAUDIO2}>)
 # Engine version
 add_compile_definitions(_ZE_VERSION_MAJOR=${ZE_VER_MAJOR} _ZE_VERSION_MINOR=${ZE_VER_MINOR} _ZE_VERSION_PATCH=${ZE_VER_PATCH})
 # Build type

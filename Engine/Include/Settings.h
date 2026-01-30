@@ -67,6 +67,7 @@ namespace ZE
 		static inline const char* applicationName;
 		static inline U32 applicationVersion;
 		static inline GfxApiType gfxApi;
+		static inline AudioApiType audioApi;
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
@@ -88,6 +89,7 @@ namespace ZE
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized()); return gfxApi; }
+		static constexpr AudioApiType GetAudioApi() noexcept { ZE_ASSERT_INIT(Initialized()); return audioApi; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
@@ -175,6 +177,12 @@ namespace ZE
 			"OpenGL API is not enabled in current build!");
 		ZE_ASSERT(gfxApi == GfxApiType::Vulkan && _ZE_RHI_VK || gfxApi != GfxApiType::Vulkan,
 			"Vulkan API is not enabled in current build!");
+
+		audioApi = params.AudioAPI;
+		ZE_ASSERT(audioApi == AudioApiType::XAudio2 && _ZE_AHI_XAUDIO2 || audioApi != AudioApiType::XAudio2,
+			"XAudio2 API is not enabled in current build!");
+		ZE_ASSERT(audioApi == AudioApiType::OpenAL && _ZE_AHI_OPENAL || audioApi != AudioApiType::OpenAL,
+			"OpenAL API is not enabled in current build!");
 
 #if !_ZE_MODE_RELEASE
 		flags[Flags::AttachPIX] = params.Flags & SettingsInitFlag::AllowPIXAttach;
