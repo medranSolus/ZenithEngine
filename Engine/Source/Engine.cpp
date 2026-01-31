@@ -39,6 +39,7 @@ namespace ZE
 		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::Upscaler, UINT32_MAX);
 
 		assets.Init(dev);
+		audioDev.Init();
 
 		GFX::Pipeline::BuildResult buildRes = GFX::Pipeline::BuildResult::Success;
 		if (params.CustomRendererDesc)

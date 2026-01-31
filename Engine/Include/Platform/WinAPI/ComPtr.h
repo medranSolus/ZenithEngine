@@ -1,11 +1,11 @@
 #pragma once
 ZE_WARNING_PUSH
-#include <d3dcommon.h>
 #include <wrl.h>
+#include <unknwn.h>
 ZE_WARNING_POP
 #include <concepts>
 
-namespace ZE::RHI::DX
+namespace ZE::Platform::WinAPI
 {
 	// Smart pointer managing COM interface counting
 	template<std::derived_from<IUnknown> T>

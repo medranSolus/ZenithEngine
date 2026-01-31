@@ -1,11 +1,15 @@
 #pragma once
-#include "ComPtr.h"
+#include "Platform/WinAPI/ComPtr.h"
 ZE_WARNING_PUSH
+#include <d3dcommon.h>
 #include <dxgidebug.h>
 ZE_WARNING_POP
 
 namespace ZE::RHI::DX
 {
+	// Enable ComPtr for all DX namespace
+	using Platform::WinAPI::ComPtr;
+
 	// Wrappers for DXGI interfaces (rest is in DXGI.h)
 	typedef IDXGIInfoQueue IInfoQueue;
 	typedef IDXGIDebug1    IDebug;

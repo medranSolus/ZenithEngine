@@ -2,7 +2,7 @@
 
 namespace ZE::AHI::OpenAL
 {
-	Device::Device()
+	Device::Device(U32 sampleRate)
 	{
 	}
 }
