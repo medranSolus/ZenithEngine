@@ -4,6 +4,7 @@ namespace ZE
 {
 	void SettingsInitParams::SetupParser(CmdParser& parser) noexcept
 	{
+		// Graphics related options
 		parser.AddOption("dx11");
 		parser.AddOption("dx12");
 		parser.AddOption("vulkan");
@@ -41,15 +42,20 @@ namespace ZE
 		parser.AddOption("khronos-pbr-neutral");
 		parser.AddOption("tonemap-gt7");
 		parser.AddOption("lpm");
+		// Audio related options
+		parser.AddOption("xaudio2");
+		parser.AddOption("openal");
 	}
 
-	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi) noexcept
+	SettingsInitParams SettingsInitParams::GetParsedParams(const CmdParser& parser, const char* appName,
+		U32 appVersion, U8 staticThreadsCount, GfxApiType defGfxApi, AudioApiType defAudioApi) noexcept
 	{
 		SettingsInitParams params = {};
 
 		params.AppName = appName;
 		params.AppVersion = appVersion;
-		params.GraphicsAPI = GetParsedApi(parser, defApi);
+		params.GraphicsAPI = GetParsedApi(parser, defGfxApi);
+		params.AudioAPI = GetParsedApi(parser, defAudioApi);
 		params.BackbufferCount = parser.GetNumber("backbuffers");
 		params.StaticThreadsCount = staticThreadsCount;
 		params.CustomThreadPoolThreadsCount = Utils::SafeCast<U8>(parser.GetNumber("threads-count"));
@@ -139,6 +145,15 @@ namespace ZE
 			return GfxApiType::Vulkan;
 		if (parser.GetOption("dx11"))
 			return GfxApiType::DX11;
+		return defApi;
+	}
+
+	AudioApiType SettingsInitParams::GetParsedApi(const CmdParser& parser, AudioApiType defApi) noexcept
+	{
+		if (parser.GetOption("xaudio2"))
+			return AudioApiType::XAudio2;
+		if (parser.GetOption("openal"))
+			return AudioApiType::OpenAL;
 		return defApi;
 	}
 }

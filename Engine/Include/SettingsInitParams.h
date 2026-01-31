@@ -61,7 +61,9 @@ namespace ZE
 		GFX::TonemapperType Tonemapper;
 
 		static void SetupParser(CmdParser& parser) noexcept;
-		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion, U8 staticThreadsCount, GfxApiType defApi = GfxApiType::DX12) noexcept;
+		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion,
+			U8 staticThreadsCount, GfxApiType defGfxApi = GfxApiType::DX12, AudioApiType defAudioApi = AudioApiType::XAudio2) noexcept;
 		static GfxApiType GetParsedApi(const CmdParser& parser, GfxApiType defApi = GfxApiType::DX12) noexcept;
+		static AudioApiType GetParsedApi(const CmdParser& parser, AudioApiType defApi = AudioApiType::XAudio2) noexcept;
 	};
 }
