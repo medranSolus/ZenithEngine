@@ -91,7 +91,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 	{
 		constexpr UInt2 SIZE_SYNC = { 1, 1 };
 		constexpr UInt2 OUTLINE_SIZE_SCALING = { 2, 2 };
-		RenderGraphDesc graphDesc;
+		RenderGraphDesc graphDesc = {};
 
 		SetupRenderSlots(graphDesc);
 		SetupData(graphDesc.SettingsData, params,

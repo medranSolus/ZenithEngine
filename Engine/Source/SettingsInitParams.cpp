@@ -4,14 +4,9 @@ namespace ZE
 {
 	void SettingsInitParams::SetupParser(CmdParser& parser) noexcept
 	{
-		// Graphics related options
-		parser.AddOption("dx11");
-		parser.AddOption("dx12");
-		parser.AddOption("vulkan");
-		parser.AddNumber("backbuffers", 2);
 		parser.AddNumber("threads-count", 0);
-		parser.AddOption("pix");
-		parser.AddOption("gpu-validation");
+
+		// Graphics features
 		parser.AddOption("ffx-fsr");
 		parser.AddOption("fsr3");
 		parser.AddOption("fsr2");
@@ -21,12 +16,10 @@ namespace ZE
 		parser.AddOption("dlss");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
-		parser.AddOption("no-async-ao");
-		parser.AddOption("sssr");
-		parser.AddOption("always-copy-source-gpu-data");
-		parser.AddOption("no-culling");
-		parser.AddOption("split-render-submits");
 		parser.AddOption("ibl");
+		parser.AddOption("sssr");
+
+		// Tonemappers
 		parser.AddOption("tonemap-exp");
 		parser.AddOption("reinhard");
 		parser.AddOption("reinhard-x");
@@ -42,6 +35,19 @@ namespace ZE
 		parser.AddOption("khronos-pbr-neutral");
 		parser.AddOption("tonemap-gt7");
 		parser.AddOption("lpm");
+		
+		// Graphics related options
+		parser.AddOption("dx11");
+		parser.AddOption("dx12");
+		parser.AddOption("vulkan");
+		parser.AddNumber("backbuffers", 2);
+		parser.AddOption("pix");
+		parser.AddOption("gpu-validation");
+		parser.AddOption("no-async-ao");
+		parser.AddOption("always-copy-source-gpu-data");
+		parser.AddOption("no-culling");
+		parser.AddOption("split-render-submits");
+
 		// Audio related options
 		parser.AddOption("xaudio2");
 		parser.AddOption("openal");
