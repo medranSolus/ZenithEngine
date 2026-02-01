@@ -9,7 +9,16 @@ namespace ZE
 	// Main Zenith Engine component containing all the rendering logic
 	class Engine final : public StartupConfig
 	{
-		enum Flags : U8 { Initialized, ExecuteUploadSync, PixCapture, PixCaptureInProgress, SwitchImGui, Count };
+		enum Flags : U8
+		{
+			Initialized,
+			ExecuteUploadSync,
+			PixCapture,
+			PixCaptureInProgress,
+			SwitchImGui,
+			NewReplacementActive,
+			Count
+		};
 
 		double prevTime = 0.0;
 		GFX::Graphics graphics;

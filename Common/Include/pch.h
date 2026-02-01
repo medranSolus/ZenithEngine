@@ -131,6 +131,9 @@
 */
 #include "Allocator/ChunkedTLSF.h"
 
+/**/
+#include "Allocator/OperatorNew.h"
+
 /*
 * cstdio
 ***** BasicTypes.h (defined by CmdParser.h)

@@ -28,6 +28,15 @@ namespace ZE
 
 	bool Engine::Init(const EngineParams& params)
 	{
+		bool newReplacementStatus = false;
+		Allocator::CheckNewReplacement(newReplacementStatus);
+		flags[Flags::NewReplacementActive] = newReplacementStatus;
+		if (!newReplacementStatus)
+		{
+			ZE_BREAK();
+			Logger::Warning("Failed to replace operator new with custom implementation!");
+		}
+
 		flags[Flags::Initialized] = true;
 		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
 
