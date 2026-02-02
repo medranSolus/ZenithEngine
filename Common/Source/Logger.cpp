@@ -1,85 +1,127 @@
 #include "Logger.h"
-#include <iostream>
+#include <iomanip>
 
 namespace ZE
 {
-	void Logger::Log(Level type, const std::string& log, bool flush, bool newLine, bool logToFile) noexcept
+	void Logger::WriteHeader(std::ostream& out, Level type) noexcept
 	{
 		std::string_view banner;
-		bool error = false;
 		switch (type)
 		{
-		case Logger::Level::Info:
+		case Level::Info:
 		{
-			banner = "> [INFO] ";
+			banner = "> [INFO]";
 			break;
 		}
-		case Logger::Level::Warning:
+		case Level::Warning:
 		{
-			banner = "> [WARNING] ";
+			banner = "> [WARNING]";
 			break;
 		}
 		default:
 			ZE_ENUM_UNHANDLED();
-		case Logger::Level::Error:
+		case Level::Error:
 		{
-			banner = "> [ERROR] ";
-			error = true;
+			banner = "> [ERROR]";
+			break;
+		}
+		case Level::Critical:
+		{
+			banner = "> [CRITICAL]";
 			break;
 		}
 		}
+		out << '<' << Utils::GetCurrentTimestamp() << banner;
+	}
+
+	void Logger::LogToFile(std::function<void(std::ostream&)> writeLog) noexcept
+	{
+		LockGuardRW lock(fileMutex);
+		if (CreateLogDir(true))
+		{
+			std::ofstream fout;
+			if (firstUse)
+			{
+				firstUse = false;
+				fout.open(LOG_FILE, std::ofstream::trunc);
+			}
+			else
+				fout.open(LOG_FILE, std::ofstream::app);
+
+			if (fout.good())
+			{
+				writeLog(fout);
+				fout.close();
+			}
+			else
+				Log(Level::Error, "Cannot open log file \"./Logs/log.txt\" for saving following log entry!", false, true, false);
+		}
+	}
+
+	void Logger::Log(Level type, const std::string& log, bool flush, bool newLine, bool logToFile) noexcept
+	{
 		auto writeLog = [&](std::ostream& out)
 			{
-				out << '<' << Utils::GetCurrentTimestamp() << banner << log;
+				WriteHeader(out, type);
+				out << '\t' << log;
 				if (newLine)
 					out << std::endl;
 				if (flush)
 					out << std::flush;
 			};
 
-		bool fileError = false;
 		if (logToFile)
-		{
-			LockGuardRW lock(fileMutex);
-			if (CreateLogDir(true))
-			{
-				std::ofstream fout;
-				if (firstUse)
-				{
-					firstUse = false;
-					fout.open(LOG_FILE, std::ofstream::trunc);
-				}
-				else
-					fout.open(LOG_FILE, std::ofstream::app);
-
-				if (fout.good())
-				{
-					writeLog(fout);
-					fout.close();
-				}
-				else
-					fileError = true;
-			}
-			else
-				fileError = true;
-		}
+			LogToFile(writeLog);
 
 		LockGuardRW lock(consoleMutex);
-		if (fileError)
-		{
-			std::cerr << '<' << Utils::GetCurrentTimestamp() << "> [ERROR] Cannot open log file \"" << LOG_FILE << "\"! Inner log:\n\t";
-			error = true;
-		}
-		writeLog(error ? std::cerr : std::cout);
+		writeLog(type == Level::Error || type == Level::Critical ? std::cerr : std::cout);
+	}
+
+	void Logger::LogStatusCode(Level type, const std::error_code& code, const std::string& msg, U32 line, const char* file, bool logToFile) noexcept
+	{
+		auto writeLog = [&](std::ostream& out)
+			{
+				WriteHeader(out, type);
+
+				out << "\t[CATEGORY] " << code.category().name() << std::endl << std::setfill(' ')
+					<< std::setw(43) << "[LOCATION] " << file << '@' << line << std::endl
+					<< std::setw(38) << "[INFO]" << std::setw(5) << ' ' << code.value() << ": " << code.message() << std::endl
+					<< std::setw(43) << "[DETAILED] " << msg << std::endl;
+			};
+
+		if (logToFile)
+			LogToFile(writeLog);
+
+		LockGuardRW lock(consoleMutex);
+		writeLog(type == Level::Error || type == Level::Critical ? std::cerr : std::cout);
 	}
 
 	bool Logger::CreateLogDir(bool noLock) noexcept
 	{
-		if (!std::filesystem::exists(LOG_DIR))
+		std::error_code code = {};
+		bool exists = std::filesystem::exists(LOG_DIR, code);
+		if (code)
+		{
+			LogStatusCode(Level::Error, code, "Failed to check for log directory existence!", __LINE__, __FILENAME__, false);
+			return false;
+		}
+		if (!exists)
 		{
 			LockGuardRW lock(fileMutex, !noLock);
-			return !std::filesystem::create_directories(LOG_DIR);
+			// Not checking return value since Windows always reports it as false, no matter if directory got created or not
+			std::filesystem::create_directories(LOG_DIR, code);
+			if (code)
+			{
+				LogStatusCode(Level::Error, code, "Failed to create log directory!", __LINE__, __FILENAME__, false);
+				return false;
+			}
+			exists = std::filesystem::exists(LOG_DIR, code);
+			if (code)
+			{
+				LogStatusCode(Level::Error, code, "Failed to check for log directory existence after creating it!", __LINE__, __FILENAME__, false);
+				return false;
+			}
 		}
-		return true;
+		return exists;
 	}
 }

@@ -18,6 +18,8 @@
 *********** atomic
 *********** cstdint
 ********* BasicTypes.h
+********* functional
+********* iostream
 ********* shared_mutex
 ********* string
 ******* Logger.h
