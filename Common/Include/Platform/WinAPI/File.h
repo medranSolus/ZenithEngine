@@ -1,5 +1,6 @@
 #pragma once
 #include "IO/FileFlags.h"
+#include "Error.h"
 #include "Task.h"
 #include "WinAPI.h"
 
@@ -14,9 +15,9 @@ namespace ZE::Platform::WinAPI
 		static void TransferCompletionCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) noexcept;
 
 		template<bool IS_READ, typename BuffBtr>
-		Task<U32> PerformAsyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept;
+		Task<Status> PerformAsyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept;
 		template<bool IS_READ, typename BuffBtr>
-		bool PerformSyncOperation(BuffBtr buffer, U32 size) const noexcept;
+		Status PerformSyncOperation(BuffBtr buffer, U32 size) const noexcept;
 
 	public:
 		File() = default;
@@ -25,26 +26,26 @@ namespace ZE::Platform::WinAPI
 
 		void SetOffset(FILE* stdFile, U64 offset) noexcept;
 
-		Task<U32> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
-		Task<U32> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<false>(buffer, size, offset); }
+		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
+		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<false>(buffer, size, offset); }
 
-		bool Read(void* buffer, U32 size) const noexcept;
-		bool Write(const void* buffer, U32 size) const noexcept;
+		Status Read(void* buffer, U32 size) const noexcept;
+		Status Write(const void* buffer, U32 size) const noexcept;
 
-		bool Open(std::string_view fileName, IO::FileFlags flags, U8** fileMapping, FILE*& stdFile) noexcept;
+		Status Open(std::string_view fileName, IO::FileFlags flags, U8** fileMapping, FILE*& stdFile) noexcept;
 		void Close(U8* fileMapping = nullptr) noexcept;
 	};
 
 #pragma region Functions
 	template<bool IS_READ, typename BuffBtr>
-	Task<U32> File::PerformAsyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept
+	Task<Status> File::PerformAsyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept
 	{
 		ZE_ASSERT(osFile, "File not opened!");
 		if (buffer == nullptr || size == 0)
 		{
 			ZE_FAIL("Invalid file buffer!");
 
-			Task<U32> task(std::packaged_task<U32()>([]() -> U32 { return 0; }));
+			Task<Status> task(std::packaged_task<Status()>([]() noexcept -> Status { return std::make_error_code(std::errc::invalid_argument); }));
 			return task;
 		}
 
@@ -61,17 +62,19 @@ namespace ZE::Platform::WinAPI
 
 		if (operation == 0)
 		{
+			Status lastError = ZE_WIN_LAST_ERROR();
 			[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
 			ZE_ASSERT(status, "Error closing file event handle!");
 			delete overlapped;
 
-			Task<U32> task(std::packaged_task<U32()>([]() -> U32 { return 0; }));
+			Task<Status> task(std::packaged_task<Status()>(std::bind([](Status code) noexcept -> Status { return code; }, lastError)));
 			return task;
 		}
 
-		Task<U32> task(std::packaged_task<U32()>(std::bind([](OVERLAPPED* overlapped) -> U32
+		Task<Status> task(std::packaged_task<Status()>(std::bind([](OVERLAPPED* overlapped, U32 requestedBytes) noexcept -> Status
 			{
 				// Wait for async operation to complete
+				Status code = {};
 				U32 transferedBytes = 0;
 				bool wait = true;
 				do
@@ -82,14 +85,19 @@ namespace ZE::Platform::WinAPI
 					{
 						if (overlapped->Offset == 0)
 							transferedBytes = overlapped->OffsetHigh;
+						else
+							code = std::make_error_code(std::errc::io_error);
 						wait = false;
 						break;
 					}
 					case WAIT_IO_COMPLETION:
 						break;
 					default:
+					{
+						code = ZE_WIN_LAST_ERROR();
 						wait = false;
 						break;
+					}
 					}
 				} while (wait);
 
@@ -97,8 +105,8 @@ namespace ZE::Platform::WinAPI
 				ZE_ASSERT(status, "Error closing file event handle!");
 				delete overlapped;
 
-				return transferedBytes;
-			}, overlapped)));
+				return code;
+			}, overlapped, size)));
 		return task;
 	}
 #pragma endregion

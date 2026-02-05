@@ -35,7 +35,10 @@ namespace ZE
 		mutable std::condition_variable signaler;
 		mutable std::array<Allocator::BlockingQueue<std::function<void()>>, 3> taskQueues;
 
+		static void Join(std::thread& worker, U8 id) noexcept;
+
 		constexpr void ResizeThreads(U8 oldCount, U8 currentCount) noexcept;
+		bool AddThread(U8 threadId) noexcept;
 		void Worker(const BoolAtom& run) const noexcept;
 
 	public:
@@ -144,10 +147,8 @@ namespace ZE
 			threads.reserve(count);
 
 			for (U8 i = 0; i < count; ++i)
-			{
-				threadRunControls[i] = true;
-				threads.emplace_back(&ThreadPool::Worker, this, std::cref(threadRunControls[i]));
-			}
+				if (AddThread(i))
+					break;
 		}
 	}
 #pragma endregion

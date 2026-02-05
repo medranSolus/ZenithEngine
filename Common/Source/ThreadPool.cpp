@@ -1,24 +1,93 @@
 #include "ThreadPool.h"
-#include "Intrinsics.h"
 
 namespace ZE
 {
+	void ThreadPool::Join(std::thread& worker, U8 id) noexcept
+	{
+		auto handleFail = [&](Status code)
+			{
+				std::string msg = "Failed to join worker thread No. " + std::to_string(id);
+				if (code)
+				{
+					ZE_CODE_ERROR(code, msg);
+				}
+				else
+					Logger::Error(msg);
+			};
+		try
+		{
+			worker.join();
+		}
+		catch (const std::system_error& e)
+		{
+			handleFail(e.code());
+		}
+		catch (const std::exception& e)
+		{
+			Logger::Error(e.what());
+			handleFail({});
+		}
+		catch (...)
+		{
+			handleFail({});
+		}
+	}
+
 	constexpr void ThreadPool::ResizeThreads(U8 oldCount, U8 currentCount) noexcept
 	{
-		for (; oldCount < currentCount; ++oldCount)
-		{
-			threadRunControls[oldCount] = true;
-			threads.emplace_back(&ThreadPool::Worker, this, std::cref(threadRunControls[oldCount]));
-		}
 		if (currentCount < oldCount)
 		{
 			for (U8 i = currentCount; i < oldCount; ++i)
 				threadRunControls[i] = false;
 			signaler.notify_all();
 			for (U8 i = currentCount; i < oldCount; ++i)
-				threads[i].join();
+				Join(threads[i], i);
 			threads.resize(currentCount);
 		}
+		else
+		{
+			for (; oldCount < currentCount; ++oldCount)
+				if (AddThread(oldCount))
+					break;
+		}
+	}
+
+	bool ThreadPool::AddThread(U8 threadId) noexcept
+	{
+		bool fail = false;
+		auto handleFail = [&](Status code)
+			{
+				std::string msg = "Failed to start new worker thread, capping thread count to " + std::to_string(threadId);
+				if (code)
+				{
+					ZE_CODE_ERROR(code, msg);
+				}
+				else
+					Logger::Error(msg);
+				fail = true;
+				threadRunControls[threadId] = false;
+				threadsCountOverride = threadId == 0 ? UINT8_MAX : threadId;
+			};
+
+		threadRunControls[threadId] = true;
+		try
+		{
+			threads.emplace_back(&ThreadPool::Worker, this, std::cref(threadRunControls[threadId]));
+		}
+		catch (const std::system_error& e)
+		{
+			handleFail(e.code());
+		}
+		catch (const std::exception& e)
+		{
+			Logger::Error(e.what());
+			handleFail({});
+		}
+		catch (...)
+		{
+			handleFail({});
+		}
+		return fail;
 	}
 
 	void ThreadPool::Worker(const BoolAtom& run) const noexcept
@@ -33,7 +102,7 @@ namespace ZE
 			std::mutex mutex;
 			std::unique_lock lock(mutex);
 			// Wait for new task and try obtain it (more important jobs first)
-			signaler.wait(lock, [this, &run, &newItem, &task]() -> bool
+			signaler.wait(lock, [this, &run, &newItem, &task]() noexcept -> bool
 				{
 					for (auto& queue : taskQueues)
 					{
@@ -72,7 +141,7 @@ namespace ZE
 			const U8 family = (eax >> 8) & 0x0F;
 			const U8 extendedFamily = (eax >> 20) & 0xFF;
 
-			if (strcmp(vendor, "AuthenticAMD") == 0)
+			if (std::strcmp(vendor, "AuthenticAMD") == 0)
 			{
 				// Check for Bulldozer family CPUs and older
 				const U8 displayFamily = family != 0x0F ? family : (extendedFamily + family);
@@ -92,7 +161,7 @@ namespace ZE
 				Intrin::CPUID(eax, ebx, ecx, edx, 0x8000001E);
 				coresCount = logicalCoresCount / (((ebx >> 8) & 0xFF) + 1);
 			}
-			else if (strcmp(vendor, "GenuineIntel") == 0)
+			else if (std::strcmp(vendor, "GenuineIntel") == 0)
 			{
 				// Check for new hybrid Intel CPUs
 				Intrin::CPUIDEX(eax, ebx, ecx, edx, 7, 0);
@@ -123,9 +192,7 @@ namespace ZE
 	{
 		runControl = false;
 		signaler.notify_all();
-		for (std::thread& worker : threads)
-			worker.join();
-		if (threadRunControls)
-			threadRunControls.DeleteArray();
+		for (U8 i = 0; std::thread& worker : threads)
+			Join(worker, i++);
 	}
 }

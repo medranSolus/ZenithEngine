@@ -13,6 +13,8 @@
 
 /*
 * atomic
+* expected
+* system_error
 * cstdint
 */
 #include "BasicTypes.h"
@@ -205,6 +207,12 @@
 
 /*
 * BasicTypes.h
+* string
+*/
+#include "IO/DDS/FileResult.h"
+
+/*
+* BasicTypes.h
 */
 #include "IO/DDS/FormatDDS.h"
 
@@ -256,6 +264,12 @@
 * Platform specific headers
 */
 #if _ZE_PLATFORM_WINDOWS
+/*
+* BasicTypes.h
+* WinAPI.h
+*/
+#	include "Platform/WinAPI/Error.h"
+
 /*
 * IO/FileFlags.h
 * Platform/WinAPI/Error.h

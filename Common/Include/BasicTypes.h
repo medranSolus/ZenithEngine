@@ -1,5 +1,7 @@
 #pragma once
 #include <atomic>
+#include <expected>
+#include <system_error>
 #include <cstdint>
 
 #pragma region Base types
@@ -12,6 +14,12 @@
 	typedef int16_t S16;
 	typedef int32_t S32;
 	typedef int64_t S64;
+
+	// Generic handler for status codes
+	typedef std::error_code Status;
+	// Wrapper for needed return value or error code in case of failure
+	template<typename T>
+	using Expected = std::expected<T, Status>;
 #pragma endregion
 
 #pragma region Atomic types

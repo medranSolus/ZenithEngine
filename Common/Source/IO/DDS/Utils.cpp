@@ -166,12 +166,12 @@ namespace ZE::IO::DDS
 		}
 	}
 
-	FileResult EncodeFile(File& file, const SurfaceData& srcData) noexcept
+	Status EncodeFile(File& file, const SurfaceData& srcData) noexcept
 	{
-#define ZE_DDS_CHECK_WRITE(item) if (!file.Write(&item, sizeof(item))) return FileResult::WriteError
+#define ZE_DDS_CHECK_WRITE(item) ZE_CODE_RET_FAILED(file.Write(&item, sizeof(item)))
 #define ZE_MAKE_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24))
 
-		U32 destRowSize, destSliceSize;
+		U32 destRowSize = 0, destSliceSize = 0;
 		GetSurfaceInfo(srcData.Width, srcData.Height, srcData.Format, destRowSize, destSliceSize);
 		destSliceSize *= destRowSize;
 		const bool compressed = Utils::IsCompressedFormat(srcData.Format);
@@ -270,8 +270,7 @@ namespace ZE::IO::DDS
 				if (sameRowSize && sliceSize == srcSliceSize)
 				{
 					const U64 depthLevelSize = currentDepth * sliceSize;
-					if (!file.Write(srcImageMemory, Utils::SafeCast<U32>(depthLevelSize)))
-						return FileResult::WriteError;
+					ZE_CODE_RET_FAILED(file.Write(srcImageMemory, Utils::SafeCast<U32>(depthLevelSize)));
 					srcImageMemory += depthLevelSize;
 				}
 				else
@@ -280,15 +279,13 @@ namespace ZE::IO::DDS
 					{
 						if (sameRowSize)
 						{
-							if (!file.Write(srcImageMemory, srcRowSize * currentHeight))
-								return FileResult::WriteError;
+							ZE_CODE_RET_FAILED(file.Write(srcImageMemory, srcRowSize * currentHeight));
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (!file.Write(srcImageMemory + srcRowSize * row, rowSize))
-									return FileResult::WriteError;
+								ZE_CODE_RET_FAILED(file.Write(srcImageMemory + srcRowSize * row, rowSize));
 							}
 						}
 						srcImageMemory += srcSliceSize;
@@ -296,14 +293,14 @@ namespace ZE::IO::DDS
 				}
 			}
 		}
-		return FileResult::Ok;
+		return Error::Make(FileResult::Ok);
 #undef ZE_MAKE_FOURCC
 #undef ZE_DDS_CHECK_WRITE
 	}
 
-	FileResult ParseFile(File& file, FileData& destData) noexcept
+	Status ParseFile(File& file, FileData& destData) noexcept
 	{
-#define ZE_DDS_CHECK_READ(item) if (file.Read(&item, sizeof(item)) != 1) return FileResult::ReadError
+#define ZE_DDS_CHECK_READ(item) ZE_CODE_RET_FAILED(file.Read(&item, sizeof(item)))
 #define ZE_IS_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == header.Format.FourCC
 
 		// DDS format definition: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
@@ -312,7 +309,7 @@ namespace ZE::IO::DDS
 		U32 magic = 0;
 		ZE_DDS_CHECK_READ(magic);
 		if (magic != MAGIC_NUMBER)
-			return FileResult::IncorrectMagicNumber;
+			return Error::Make(FileResult::IncorrectMagicNumber);
 
 		Header header = {};
 		ZE_DDS_CHECK_READ(header);
@@ -328,7 +325,7 @@ namespace ZE::IO::DDS
 			ZE_DDS_CHECK_READ(dxt10Header);
 
 			if (dxt10Header.ArraySize == 0)
-				return FileResult::IncorrectArraySize;
+				return Error::Make(FileResult::IncorrectArraySize);
 			arraySize = Utils::SafeCast<U16>(dxt10Header.ArraySize);
 			format = GetFormatFromDDS(dxt10Header.Format);
 			alpha = !(dxt10Header.MiscFlags2 & MiscFlag2DXT10::AlphaOpaque);
@@ -336,7 +333,7 @@ namespace ZE::IO::DDS
 			if (dxt10Header.Dimension & ResourceDimension::Texture3D)
 			{
 				if (!(header.Caps2 & HeaderCap2::Volume) || dxt10Header.ArraySize > 1)
-					return FileResult::IllformattedVolumeTexture;
+					return Error::Make(FileResult::IllformattedVolumeTexture);
 				depth = Utils::SafeCast<U16>(header.Depth);
 			}
 			else if (dxt10Header.Dimension & ResourceDimension::Texture2D)
@@ -347,10 +344,10 @@ namespace ZE::IO::DDS
 			else if (dxt10Header.Dimension & ResourceDimension::Texture1D)
 			{
 				if ((header.Flags & HeaderFlag::Height) && header.Height != 1)
-					return FileResult::Incorrect1DTextureHeight;
+					return Error::Make(FileResult::Incorrect1DTextureHeight);
 			}
 			else
-				return FileResult::IncorrectDimension;
+				return Error::Make(FileResult::IncorrectDimension);
 		}
 		else
 		{
@@ -362,12 +359,12 @@ namespace ZE::IO::DDS
 			{
 				// For older header types there can be situation where not all faces are defined, need to check for that (D3D9 era)
 				if ((header.Caps2 & HeaderCap2::CubemapAllFaces) != HeaderCap2::CubemapAllFaces)
-					return FileResult::MissingCubemapFaces;
+					return Error::Make(FileResult::MissingCubemapFaces);
 				arraySize = 6;
 			}
 		}
 		if (format == PixelFormat::Unknown)
-			return FileResult::UnknownFormat;
+			return Error::Make(FileResult::UnknownFormat);
 
 		// Compute padded destination image size
 		U64 destImageSize = 0;
@@ -401,8 +398,7 @@ namespace ZE::IO::DDS
 				if (sameRowSize && destSliceSize == sliceSize)
 				{
 					const U32 depthLevelSize = currentDepth * sliceSize;
-					if (!file.Read(destImageMemory, depthLevelSize))
-						return FileResult::ReadError;
+					ZE_CODE_RET_FAILED(file.Read(destImageMemory, depthLevelSize));
 					destImageMemory += depthLevelSize;
 				}
 				else
@@ -412,15 +408,13 @@ namespace ZE::IO::DDS
 						if (sameRowSize)
 						{
 							const U32 depthSliceSize = destRowSize * currentHeight;
-							if (!file.Read(destImageMemory, depthSliceSize))
-								return FileResult::ReadError;
+							ZE_CODE_RET_FAILED(file.Read(destImageMemory, depthSliceSize));
 						}
 						else
 						{
 							for (U32 row = 0; row < rowCount; ++row)
 							{
-								if (!file.Read(destImageMemory + row * destRowSize, rowSize))
-									return FileResult::ReadError;
+								ZE_CODE_RET_FAILED(file.Read(destImageMemory + row * destRowSize, rowSize));
 							}
 						}
 						destImageMemory += destSliceSize;
@@ -439,7 +433,7 @@ namespace ZE::IO::DDS
 		destData.ImageMemorySize = Utils::SafeCast<U32>(destImageSize);
 		destData.ImageMemory = image;
 
-		return FileResult::Ok;
+		return Error::Make(FileResult::Ok);
 #undef ZE_IS_FOURCC
 #undef ZE_DDS_CHECK_READ
 	}

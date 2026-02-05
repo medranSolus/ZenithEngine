@@ -31,23 +31,37 @@ namespace ZE
 		~Task() = default;
 
 		// Waits for scheduled task completion before returting data if any
-		constexpr R Get() noexcept;
+		constexpr Expected<R> Get() noexcept;
 	};
 
 #pragma region Functions
 	template <typename R>
-	constexpr R Task<R>::Get() noexcept
+	constexpr Expected<R> Task<R>::Get() noexcept
 	{
+		R result = {};
 		if (data)
 		{
-			std::future<R> future = data->task.get_future();
-			const bool status = std::atomic_exchange_explicit(&data->processing, true, std::memory_order::memory_order_acq_rel);
-			// Check if some thread already started working on this task, if not do it yourself
-			if (!status)
-				data->task();
-			return future.get();
+			try
+			{
+				std::future<R> future = data->task.get_future();
+				const bool status = std::atomic_exchange_explicit(&data->processing, true, std::memory_order::memory_order_acq_rel);
+				// Check if some thread already started working on this task, if not do it yourself
+				if (!status)
+					data->task();
+				result = future.get();
+				data = nullptr;
+			}
+			catch (const std::future_error& e)
+			{
+				return std::unexpected(e.code());
+			}
+			catch (const std::exception& e)
+			{
+				Logger::Error(e.what());
+				return std::unexpected(std::errc::interrupted);
+			}
 		}
-		return R();
+		return result;
 	}
 
 #pragma endregion

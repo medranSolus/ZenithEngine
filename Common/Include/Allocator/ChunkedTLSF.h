@@ -20,8 +20,8 @@ namespace ZE::Allocator
 	{
 		Memory MemChunk;
 
-		// Required static method for creation of memory: void Init(Memory&, TLSFMemoryChunkFlags, U64, void*)
-		static void InitMemory(TLSFMemoryChunk* chunk, TLSFMemoryChunkFlags flags, U64 size, void* userData) { typename Memory::Init(chunk->MemChunk, flags, size, userData); }
+		// Required static method for creation of memory: Status Init(Memory&, TLSFMemoryChunkFlags, U64, void*)
+		static Status InitMemory(TLSFMemoryChunk* chunk, TLSFMemoryChunkFlags flags, U64 size, void* userData) noexcept { return typename Memory::Init(chunk->MemChunk, flags, size, userData); }
 		// Required static method for freeing memory: void Destroy(Memory&, void*)
 		static void DestroyMemory(TLSFMemoryChunk* chunk, void* userData) noexcept { typename Memory::Destroy(chunk->MemChunk, userData); }
 	};
@@ -72,11 +72,11 @@ namespace ZE::Allocator
 		U64 freeMemory = 0;
 		U32 freeBlocks = 0;
 		U32 isFreeBitmap = 0;
-		Ptr<U32> innerIsFreeBitmap;
+		std::unique_ptr<U32[]> innerIsFreeBitmap;
 		U32 listsCount = 0;
 		// 0: 0-(firstListSize) lists for small blocks
 		// 1+: 0-(2^SLI-1) lists for normal blocks
-		Ptr<Block*> freeList;
+		std::unique_ptr<Block*[]> freeList;
 		Ptr<Block> nullBlock;
 
 		static U8 SizeToMemoryClass(U64 size) noexcept { return size > SMALL_BUFFER_SIZE ? Intrin::BitScanMSB(size) - MEMORY_CLASS_SHIFT : 0; }
@@ -93,7 +93,7 @@ namespace ZE::Allocator
 		constexpr U32 GetListIndex(U8 memoryClass, U16 secondIndex) const noexcept;
 		constexpr U16 SizeToSecondIndex(U64 size, U8 memoryClass) const noexcept;
 
-		Block* AllocWithChunk(U64 size, void* memoryUserData);
+		Block* AllocWithChunk(U64 size, void* memoryUserData) noexcept;
 		Block* CreateAlloc(Block* currentBlock, U64 size, U64 alignment) noexcept;
 		Block* FindFreeBlock(U64 size, U32& listIndex) const noexcept;
 		void RemoveFreeBlock(Block* block) noexcept;
@@ -120,9 +120,9 @@ namespace ZE::Allocator
 		// When all allocations must be multiple of some size, use chunkSizeGranularity to speed up whole algorithm.
 		// When first segregated lists holding smallest region can be divided more efficiently, use firstListSizePower to compute size of first memory class (2^firstListSizePower).
 		// When creating with single chunk enabled `memoryUserData` will be used to create only block of memory, otherwise it's ignored
-		void Init(TLSFMemoryChunkFlags memoryFlags, U64 initialChunkSize, U32 chunkSizeGranularity = 1, U8 firstListSizePower = 0, void* memoryUserData = nullptr);
+		Status Init(TLSFMemoryChunkFlags memoryFlags, U64 initialChunkSize, U32 chunkSizeGranularity = 1, U8 firstListSizePower = 0, void* memoryUserData = nullptr) noexcept;
 		// To pass custom data used in creation of memory chunk, pass it as memoryUserData
-		AllocHandle Alloc(U64 allocSize, U64 alignment, void* memoryUserData);
+		AllocHandle Alloc(U64 allocSize, U64 alignment, void* memoryUserData) noexcept;
 		// To pass custom data used in destruction of memory chunk, pass it as memoryUserData
 		void Free(AllocHandle allocation, void* memoryUserData) noexcept;
 		// Delete allocated chunks not used by any allocation (only by null block), required to call before destruction of allocator
@@ -174,10 +174,15 @@ namespace ZE::Allocator
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData)
+	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData) noexcept
 	{
 		TLSFMemoryChunk<Memory>* newChunk = chunkAllocator.Alloc();
-		TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData);
+		if (auto code = TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
+		{
+			ZE_CODE_ERROR(code, "Failed to initialize new TLSF memory chunk!");
+			chunkAllocator.Free(newChunk);
+			return nullptr;
+		}
 
 		// Create new taken block
 		Block* newBlock = blockAllocator.Alloc();
@@ -412,14 +417,11 @@ namespace ZE::Allocator
 		{
 			ZE_ASSERT(!nullBlock->ChunkHandle, "Memory used by free chunk not destroyed (forgot to call DestroyFreeChunks()), memory leak!");
 			ZE_ASSERT(nullBlock->Offset == 0 && nullBlock->Size == chunkSize, "Not all allocations have been freed before destroying allocator, memory leak!");
-
-			freeList.DeleteArray();
-			innerIsFreeBitmap.DeleteArray();
 		}
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	void ZE_CHUNKED_TLSF_TYPE::Init(TLSFMemoryChunkFlags memoryFlags, U64 initialChunkSize, U32 chunkSizeGranularity, U8 firstListSizePower, void* memoryUserData)
+	Status ZE_CHUNKED_TLSF_TYPE::Init(TLSFMemoryChunkFlags memoryFlags, U64 initialChunkSize, U32 chunkSizeGranularity, U8 firstListSizePower, void* memoryUserData) noexcept
 	{
 		ZE_ASSERT(chunkSizeGranularity != 0, "Chunk granularity cannot be 0!");
 		ZE_ASSERT(initialChunkSize % chunkSizeGranularity == 0, "Chunk size should be multiple of chunk granularity!");
@@ -440,23 +442,28 @@ namespace ZE::Allocator
 		listsCount = (memoryClass != 0) * ((memoryClass - 1) * (1UL << SECOND_LEVEL_INDEX) + sli) + firstListSize + 1UL;
 
 		memoryClasses = memoryClass + 2;
-		innerIsFreeBitmap = new U32[memoryClasses];
-		memset(innerIsFreeBitmap, 0, memoryClasses * sizeof(U32));
+		innerIsFreeBitmap = std::make_unique_for_overwrite<U32[]>(memoryClasses);
+		std::memset(innerIsFreeBitmap.get(), 0, memoryClasses * sizeof(U32));
 
-		freeList = new Block * [listsCount];
-		memset(freeList, 0, listsCount * sizeof(Block*));
+		freeList = std::make_unique_for_overwrite<Block*[]>(listsCount);
+		std::memset(freeList.get(), 0, listsCount * sizeof(Block*));
 
 		// Create memory chunk as it will only be single one inside
 		if (IsSingleChunk())
 		{
 			TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
-			TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, initialChunkSize, memoryUserData);
+			if (auto code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, initialChunkSize, memoryUserData))
+			{
+				chunkAllocator.Free(firstChunk);
+				return code;
+			}
 			nullBlock->ChunkHandle = firstChunk;
 		}
+		return {};
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
-	AllocHandle ZE_CHUNKED_TLSF_TYPE::Alloc(U64 allocSize, U64 alignment, void* memoryUserData)
+	AllocHandle ZE_CHUNKED_TLSF_TYPE::Alloc(U64 allocSize, U64 alignment, void* memoryUserData) noexcept
 	{
 		allocSize = Math::DivideRoundUp(allocSize, static_cast<U64>(chunkSizeDivisor));
 		ZE_ASSERT(allocSize > 0, "Cannot allocate empty block!");
@@ -478,7 +485,12 @@ namespace ZE::Allocator
 				if (nullBlock->ChunkHandle == nullptr)
 				{
 					TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
-					TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData);
+					if (auto code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
+					{
+						ZE_CODE_ERROR(code, "Failed to lazy-initialize TLSF memory chunk for null block!");
+						chunkAllocator.Free(firstChunk);
+						return nullptr;
+					}
 					nullBlock->ChunkHandle = firstChunk;
 				}
 			}

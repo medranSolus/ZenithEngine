@@ -169,9 +169,9 @@ namespace ZE::GFX
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
 		IO::File file;
-		if (!file.Open(filename, Base(IO::FileFlag::DefaultRead)))
+		if (auto code = file.Open(filename, Base(IO::FileFlag::DefaultRead)))
 		{
-			Logger::Error("Error openinig \"" + path.string() + "\" file!");
+			ZE_CODE_ERROR(code, "Error openinig \"" + path.string() + "\" file!");
 			return false;
 		}
 
@@ -185,9 +185,11 @@ namespace ZE::GFX
 		{
 			tryStbi = false;
 			IO::DDS::FileData ddsData = {};
-			switch (IO::DDS::ParseFile(file, ddsData))
+			if (auto code = IO::DDS::ParseFile(file, ddsData))
 			{
-			case IO::DDS::FileResult::Ok:
+				ZE_CODE_ERROR(code, "Error reading DDS file \"" + path.string() + "\"!");
+			}
+			else
 			{
 				success = true;
 				format = ddsData.Format;
@@ -202,34 +204,6 @@ namespace ZE::GFX
 				arraySize = ddsData.ArraySize;
 				memorySize = ddsData.ImageMemorySize;
 				memory = ddsData.ImageMemory;
-				break;
-			}
-			default:
-				ZE_ENUM_UNHANDLED();
-			case IO::DDS::FileResult::ReadError:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\"!");
-				break;
-			case IO::DDS::FileResult::IncorrectMagicNumber:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrect DDS magic number!");
-				break;
-			case IO::DDS::FileResult::UnknownFormat:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", not supported pixel format!");
-				break;
-			case IO::DDS::FileResult::MissingCubemapFaces:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", not all cubemap faces defined!");
-				break;
-			case IO::DDS::FileResult::IllformattedVolumeTexture:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", incorrectly formatted volume texture (ex. array size bigger than 1)!");
-				break;
-			case IO::DDS::FileResult::IncorrectArraySize:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", wrong value used as array size!");
-				break;
-			case IO::DDS::FileResult::Incorrect1DTextureHeight:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", 1D texture with height different than 1!");
-				break;
-			case IO::DDS::FileResult::IncorrectDimension:
-				Logger::Error("Error reading DDS file \"" + path.string() + "\", unknown texture dimension!");
-				break;
 			}
 		}
 		else if (ext == ".png")
@@ -593,9 +567,9 @@ namespace ZE::GFX
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
 		IO::File file;
-		if (!file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
+		if (auto code = file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
 		{
-			Logger::Error("Error creating \"" + path.string() + "\" file!");
+			ZE_CODE_ERROR(code, "Error creating \"" + path.string() + "\" file!");
 			return false;
 		}
 
@@ -612,18 +586,10 @@ namespace ZE::GFX
 			surfData.ArraySize = arraySize;
 			surfData.ImageMemory = memory;
 
-			switch (IO::DDS::EncodeFile(file, surfData))
-			{
-			default:
-				ZE_ENUM_UNHANDLED();
-			case IO::DDS::FileResult::WriteError:
+			if (auto code = IO::DDS::EncodeFile(file, surfData))
 			{
 				success = false;
-				Logger::Error("Error writing DDS file \"" + path.string() + "\"!");
-				break;
-			}
-			case IO::DDS::FileResult::Ok:
-				break;
+				ZE_CODE_ERROR(code, "Error writing DDS file \"" + path.string() + "\"!");
 			}
 		}
 		else if (ext == ".png")

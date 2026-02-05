@@ -2,19 +2,11 @@
 #include "IO/File.h"
 #include "Header.h"
 #include "HeaderDXT10.h"
-#include "PixelFormat.h"
 
 namespace ZE::IO::DDS
 {
 	// Identifier of DDS file 'DDS '
 	inline constexpr U32 MAGIC_NUMBER = 0x20534444;
-
-	// Result of DDS file operations
-	enum class FileResult : U8
-	{
-		Ok, ReadError, IncorrectMagicNumber, UnknownFormat, MissingCubemapFaces, IllformattedVolumeTexture,
-		IncorrectArraySize, Incorrect1DTextureHeight, IncorrectDimension, WriteError
-	};
 
 	// Data about corresponding surface in memory
 	struct SurfaceData
@@ -49,9 +41,9 @@ namespace ZE::IO::DDS
 	constexpr PixelFormat GetFormatFromDDS(FormatDDS ddsFormat) noexcept;
 
 	// Save DDS file to disk
-	FileResult EncodeFile(File& file, const SurfaceData& srcData) noexcept;
+	Status EncodeFile(File& file, const SurfaceData& srcData) noexcept;
 	// Load and parse DDS file from disk
-	FileResult ParseFile(File& file, FileData& destData) noexcept;
+	Status ParseFile(File& file, FileData& destData) noexcept;
 
 #pragma region Functions
 	// List of mappings between PixelFormat and DDS::FormatDDS for enum decoding in X() macro

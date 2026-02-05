@@ -26,7 +26,7 @@ namespace ZE
 		static void WriteHeader(std::ostream& out, Level type) noexcept;
 		static void LogToFile(std::function<void(std::ostream&)> writeLog) noexcept;
 		static void Log(Level type, std::string_view log, bool flush, bool newLine = true, bool logToFile = true) noexcept;
-		static void LogStatusCode(Level type, const std::error_code& code, const std::string& msg, U32 line, const char* file, bool logToFile = true) noexcept;
+		static void LogStatusCode(Level type, const Status& code, std::string_view msg, U32 line, const char* file, bool logToFile = true) noexcept;
 
 	public:
 		Logger() = delete;
@@ -37,10 +37,10 @@ namespace ZE
 		static void Error(std::string_view error, bool flush = false, bool newLine = true) noexcept { Log(Level::Error, error, flush, newLine); }
 		static void Critical(std::string_view error, bool newLine = true) noexcept { Log(Level::Critical, error, true, newLine); }
 
-		static void CodeInfo(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Info, code, msg, line, file); }
-		static void CodeWarning(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Warning, code, msg, line, file); }
-		static void CodeError(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Error, code, msg, line, file); }
-		static void CodeCritical(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Critical, code, msg, line, file); }
+		static void CodeInfo(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Info, code, msg, line, file); }
+		static void CodeWarning(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Warning, code, msg, line, file); }
+		static void CodeError(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Error, code, msg, line, file); }
+		static void CodeCritical(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Critical, code, msg, line, file); }
 
 		static bool CreateLogDir(bool noLock = false) noexcept;
 	};

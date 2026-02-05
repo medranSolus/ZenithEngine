@@ -1,4 +1,5 @@
 #pragma once
+#include "FileFlags.h"
 #include <cstdio>
 
 #if _ZE_PLATFORM_WINDOWS
@@ -27,13 +28,13 @@ namespace ZE::IO
 		// Set current offset for synchronous operations
 		void SetOffset(U64 offset) noexcept { platformImpl.SetOffset(stdFile, offset); }
 
-		Task<U32> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return platformImpl.ReadAsync(buffer, size, offset); }
-		Task<U32> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }
+		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return platformImpl.ReadAsync(buffer, size, offset); }
+		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }
 
-		bool Read(void* buffer, U32 size) const noexcept;
-		bool Write(const void* buffer, U32 size) const noexcept;
+		Status Read(void* buffer, U32 size) const noexcept;
+		Status Write(const void* buffer, U32 size) const noexcept;
 
-		bool Open(std::string_view fileName, FileFlags flags = Base(FileFlag::Default), U8** fileMapping = nullptr) noexcept;
+		Status Open(std::string_view fileName, FileFlags flags = Base(FileFlag::Default), U8** fileMapping = nullptr) noexcept;
 		void Close(U8* fileMapping = nullptr) noexcept;
 	};
 }

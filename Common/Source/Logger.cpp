@@ -76,7 +76,7 @@ namespace ZE
 		writeLog(type == Level::Error || type == Level::Critical ? std::cerr : std::cout);
 	}
 
-	void Logger::LogStatusCode(Level type, const std::error_code& code, const std::string& msg, U32 line, const char* file, bool logToFile) noexcept
+	void Logger::LogStatusCode(Level type, const Status& code, std::string_view msg, U32 line, const char* file, bool logToFile) noexcept
 	{
 		auto writeLog = [&](std::ostream& out)
 			{
@@ -97,7 +97,7 @@ namespace ZE
 
 	bool Logger::CreateLogDir(bool noLock) noexcept
 	{
-		std::error_code code = {};
+		Status code = {};
 		bool exists = std::filesystem::exists(LOG_DIR, code);
 		if (code)
 		{

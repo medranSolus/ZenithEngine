@@ -42,6 +42,62 @@
 #define ZE_ASSERT_Q_UNIT(rotor) ZE_ASSERT_Q_UNIT_V(ZE::Math::XMLoadFloat4(&rotor))
 #pragma endregion
 
+#pragma region Error codes
+#ifndef __FILENAME__
+namespace ZE
+{
+	// Extract filename from filepath to hide full path in error logs
+	constexpr const char* GetFilename(const char* path) noexcept
+	{
+		const char* file = path;
+		const char* prevFile = path;
+		while (*path)
+		{
+			++path;
+			if (*path == '/' || *path == '\\')
+			{
+				if (file != prevFile)
+					prevFile = file;
+				file = path;
+			}
+		}
+		return prevFile + 1;
+	}
+}
+// Current file filename
+#define __FILENAME__ ZE::GetFilename(__FILE__)
+#endif
+
+// Instantly return if received error code
+#define ZE_CODE_RET_FAILED(call) do { if (auto __code = (call)) return __code; } while (false)
+
+// Log informational message base on given code
+#define ZE_CODE_INFO(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)
+// Log warning message base on given code
+#define ZE_CODE_WARNING(code, msg) do { ZE_BREAK(); ZE::Logger::CodeWarning(code, msg, __LINE__, __FILENAME__); } while (false)
+// Log error message base on given code
+#define ZE_CODE_ERROR(code, msg) do { ZE_BREAK(); ZE::Logger::CodeError(code, msg, __LINE__, __FILENAME__); } while (false)
+// Log critical error message base on given code
+#define ZE_CODE_CRITICAL(code, msg) do { ZE_BREAK(); ZE::Logger::CodeCritical(code, msg, __LINE__, __FILENAME__); } while (false)
+
+#if !_ZE_MODE_RELEASE
+// Log informational message base on given code (silenced in release build)
+#	define ZE_CODE_INFO_DEBUG(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)
+// Log warning message base on given code (silenced in release build)
+#	define ZE_CODE_WARNING(code, msg) do { ZE_BREAK(); ZE::Logger::CodeWarning(code, msg, __LINE__, __FILENAME__); } while (false)
+// Log error message base on given code (silenced in release build)
+#	define ZE_CODE_ERROR(code, msg) do { ZE_BREAK(); ZE::Logger::CodeError(code, msg, __LINE__, __FILENAME__); } while (false)
+#else
+// Log informational message base on given code (silenced in release build)
+#	define ZE_CODE_INFO_DEBUG(code, msg) ((void)0)
+// Log warning message base on given code (silenced in release build)
+#	define ZE_CODE_WARNING(code, msg) ZE_BREAK(); ((void)0)
+// Log error message base on given code (silenced in release build)
+#	define ZE_CODE_ERROR(code, msg) ZE_BREAK(); ((void)0)
+#endif
+
+#pragma endregion
+
 #pragma region Class members
 // Adds defaulted copy/move constructors/assign operators
 #define ZE_CLASS_DEFAULT(className) \

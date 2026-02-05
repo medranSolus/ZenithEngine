@@ -17,23 +17,24 @@
 *** array
 *** atomic
 *** bit
+*** bitset
 *** cfloat
 *** chrono
 *** cinttypes
 *** cmath
 *** condition_variable
-*** cstddef
 *** cstdint
 *** cstdio
 *** cstdlib
 *** cstring
 *** deque
-*** exception
+*** expected
 *** filesystem
 *** fstream
 *** functional
 *** future
 *** intrin.h/x86intrin.h + cpuid.h
+*** iostream
 *** limits
 *** map
 *** memory
@@ -42,6 +43,7 @@
 *** sstream
 *** string
 *** string_view
+*** system_error
 *** thread
 *** type_traits
 *** utility

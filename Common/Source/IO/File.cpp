@@ -2,33 +2,41 @@
 
 namespace ZE::IO
 {
-	bool File::Read(void* buffer, U32 size) const noexcept
+	Status File::Read(void* buffer, U32 size) const noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{
 			ZE_FAIL("Invalid file buffer!");
-			return false;
+			return std::make_error_code(std::errc::invalid_argument);
 		}
 
 		if (stdFile)
-			return std::fread(buffer, 1, size, stdFile) == size;
+		{	
+			if (std::fread(buffer, 1, size, stdFile) == size)
+				return {};
+			return std::make_error_code(std::io_errc::stream);
+		}
 		return platformImpl.Read(buffer, size);
 	}
 
-	bool File::Write(const void* buffer, U32 size) const noexcept
+	Status File::Write(const void* buffer, U32 size) const noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{
 			ZE_FAIL("Invalid file buffer!");
-			return false;
+			return std::make_error_code(std::errc::invalid_argument);
 		}
 
 		if (stdFile)
-			return std::fwrite(buffer, 1, size, stdFile) == size;
+		{
+			if (std::fwrite(buffer, 1, size, stdFile) == size)
+				return {};
+			return std::make_error_code(std::io_errc::stream);
+		}
 		return platformImpl.Write(buffer, size);
 	}
 
-	bool File::Open(std::string_view fileName, FileFlags flags, U8** fileMapping) noexcept
+	Status File::Open(std::string_view fileName, FileFlags flags, U8** fileMapping) noexcept
 	{
 		ZE_ASSERT(!stdFile, "File already opened!");
 		return platformImpl.Open(fileName, flags, fileMapping, stdFile);

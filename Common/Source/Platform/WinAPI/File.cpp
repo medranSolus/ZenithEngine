@@ -15,7 +15,7 @@ namespace ZE::Platform::WinAPI
 	}
 
 	template<bool IS_READ, typename BuffBtr>
-	bool File::PerformSyncOperation(BuffBtr buffer, U32 size) const noexcept
+	Status File::PerformSyncOperation(BuffBtr buffer, U32 size) const noexcept
 	{
 		OVERLAPPED overlapped = {};
 		overlapped.Offset = static_cast<U32>(currentOffset & UINT32_MAX);
@@ -28,8 +28,10 @@ namespace ZE::Platform::WinAPI
 		else
 			operation = WriteFileEx(osFile, buffer, size, &overlapped, File::TransferCompletionCallback);
 
-		bool success = false;
-		if (operation != 0)
+		Status code = {};
+		if (operation == 0)
+			code = ZE_WIN_LAST_ERROR();
+		else
 		{
 			// Wait for async operation to complete
 			bool wait = true;
@@ -40,24 +42,27 @@ namespace ZE::Platform::WinAPI
 				case WAIT_OBJECT_0:
 				{
 					if (overlapped.Offset == 0 && size == overlapped.OffsetHigh)
-					{
-						success = true;
 						currentOffset += size;
-					}
+					else
+						code = std::make_error_code(std::errc::io_error);
 					wait = false;
 					break;
 				}
 				case WAIT_IO_COMPLETION:
 					break;
 				default:
+				{
+					code = ZE_WIN_LAST_ERROR();
 					wait = false;
 					break;
 				}
+				}
 			} while (wait);
 		}
+
 		[[maybe_unused]] const BOOL status = CloseHandle(overlapped.hEvent);
 		ZE_ASSERT(status, "Error closing file event handle!");
-		return success;
+		return code;
 	}
 
 	void File::SetOffset(FILE* stdFile, U64 offset) noexcept
@@ -74,19 +79,19 @@ namespace ZE::Platform::WinAPI
 		}
 	}
 
-	bool File::Read(void* buffer, U32 size) const noexcept
+	Status File::Read(void* buffer, U32 size) const noexcept
 	{
 		ZE_ASSERT(osFile, "File not opened!");
 		return PerformSyncOperation<true>(buffer, size);
 	}
 
-	bool File::Write(const void* buffer, U32 size) const noexcept
+	Status File::Write(const void* buffer, U32 size) const noexcept
 	{
 		ZE_ASSERT(osFile, "File not opened!");
 		return PerformSyncOperation<false>(buffer, size);
 	}
 
-	bool File::Open(std::string_view fileName, IO::FileFlags flags, U8** fileMapping, FILE*& stdFile) noexcept
+	Status File::Open(std::string_view fileName, IO::FileFlags flags, U8** fileMapping, FILE*& stdFile) noexcept
 	{
 		const bool write = flags & IO::FileFlag::WriteMode;
 		const bool read = flags & IO::FileFlag::ReadMode || !write;
@@ -110,7 +115,7 @@ namespace ZE::Platform::WinAPI
 		if (osFile == INVALID_HANDLE_VALUE)
 		{
 			osFile = nullptr;
-			return false;
+			return ZE_WIN_LAST_ERROR();
 		}
 
 		if (!async)
@@ -125,7 +130,7 @@ namespace ZE::Platform::WinAPI
 			if (fileDesc == -1)
 			{
 				Close();
-				return false;
+				return std::make_error_code(std::errc::bad_file_descriptor);
 			}
 
 			// Open file stream
@@ -154,7 +159,7 @@ namespace ZE::Platform::WinAPI
 				[[maybe_unused]] const S32 status = _close(fileDesc);
 				ZE_ASSERT(status, "Error closing CRT file handle!");
 				osFile = nullptr;
-				return false;
+				return std::make_error_code(std::errc::bad_file_descriptor);
 			}
 		}
 
@@ -165,7 +170,7 @@ namespace ZE::Platform::WinAPI
 			{
 				mapping = nullptr;
 				Close();
-				return false;
+				return ZE_WIN_LAST_ERROR();
 			}
 			*fileMapping = reinterpret_cast<U8*>(MapViewOfFile(mapping, (write ? FILE_MAP_WRITE : FILE_MAP_READ), 0, 0, 0));
 		}
@@ -173,7 +178,7 @@ namespace ZE::Platform::WinAPI
 		// stdFile now has ownership
 		if (!async)
 			osFile = nullptr;
-		return true;
+		return {};
 	}
 
 	void File::Close(U8* fileMapping) noexcept
