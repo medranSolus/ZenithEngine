@@ -62,6 +62,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -98,6 +100,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -134,6 +138,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -171,6 +177,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -216,6 +224,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -252,6 +262,8 @@ namespace ZE::RHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_RHI_DX11
 			case ApiType::DX11:
 			{
@@ -332,6 +344,7 @@ namespace ZE::RHI
 #define ZE_RHI_BACKEND_CALL_EX(variable, ret, function, ...) \
 	switch (Settings::GetGfxApi()) \
 	{ \
+	case ZE::RHI::ApiType::None: ##ret## {}; break; \
 	case ZE::RHI::ApiType::DX11: \
 	{ \
 		ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, __VA_ARGS__); \

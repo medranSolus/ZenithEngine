@@ -1,10 +1,10 @@
 #pragma once
-#include "Types.h"
+#include "BasicTypes.h"
 
 namespace ZE::AHI
 {
 	// Possible supported audio APIs
-	enum class ApiType : U8 { OpenAL, XAudio2 };
+	enum class ApiType : U8 { None, OpenAL, XAudio2 };
 }
 namespace ZE
 {

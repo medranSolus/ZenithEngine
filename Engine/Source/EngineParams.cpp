@@ -6,20 +6,20 @@ namespace ZE
 	{
 		parser.AddNumber("width");
 		parser.AddNumber("height");
-		parser.AddNumber("descPoolSize", 10000);
-		parser.AddOption("minPassDist");
-		parser.AddNumber("shadowMapSize", 1024);
-		parser.AddOption("singleLinePerfEntry");
+		parser.AddNumber("desc-pool-size", 10000);
+		parser.AddOption("min-pass-dist");
+		parser.AddNumber("shadow-map-size", 1024);
+		parser.AddOption("single-line-perf-entry");
 	}
 
 	void EngineParams::SetParsedParams(const CmdParser& parser, EngineParams& params) noexcept
 	{
 		params.Width = parser.GetNumber("width");
 		params.Height = parser.GetNumber("height");
-		params.GraphicsDescriptorPoolSize = parser.GetNumber("descPoolSize");
-		params.SingleLinePerfEntry = parser.GetOption("singleLinePerfEntry");
-		params.MinimizeRenderPassDistances = parser.GetOption("minPassDist");
+		params.GraphicsDescriptorPoolSize = parser.GetNumber("desc-pool-size");
+		params.SingleLinePerfEntry = parser.GetOption("single-line-perf-entry");
+		params.MinimizeRenderPassDistances = parser.GetOption("min-pass-dist");
 		if (params.CustomRendererDesc == nullptr)
-			params.CoreRendererParams.ShadowMapSize = parser.GetNumber("shadowMapSize");
+			params.CoreRendererParams.ShadowMapSize = parser.GetNumber("shadow-map-size");
 	}
 }

@@ -40,6 +40,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -62,6 +64,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -84,6 +88,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -107,6 +113,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -138,6 +146,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -160,6 +170,8 @@ namespace ZE::AHI
 			{
 			default:
 				ZE_ENUM_UNHANDLED();
+			case ApiType::None:
+				break;
 #if _ZE_AHI_OPENAL
 			case ApiType::OpenAL:
 			{
@@ -212,6 +224,7 @@ namespace ZE::AHI
 #define ZE_AHI_BACKEND_CALL_EX(variable, ret, function, ...) \
 	switch (Settings::GetAudioApi()) \
 	{ \
+	case ZE::AHI::ApiType::None: ##ret## {}; break; \
 	case ZE::AHI::ApiType::OpenAL: \
 	{ \
 		ZE_AHI_OPENAL_SWITCH_CALL(variable, ret, function, __VA_ARGS__); \

@@ -64,10 +64,10 @@ namespace ZE
 		static inline Data::Storage Data;
 
 	private:
-		static inline const char* applicationName;
-		static inline U32 applicationVersion;
-		static inline GfxApiType gfxApi;
-		static inline AudioApiType audioApi;
+		static inline const char* applicationName = nullptr;
+		static inline U32 applicationVersion = 0;
+		static inline GfxApiType gfxApi = GfxApiType::None;
+		static inline AudioApiType audioApi = AudioApiType::None;
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
