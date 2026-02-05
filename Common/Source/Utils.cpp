@@ -1,6 +1,4 @@
 #include "Utils.h"
-#include <iomanip>
-#include <cstdlib>
 
 namespace ZE::Utils
 {
@@ -13,7 +11,7 @@ namespace ZE::Utils
 		U64 i = 0;
 		while (i < s.size())
 		{
-			U32 unicode;
+			U32 unicode = 0;
 			U64 remaining = 0;
 			U8 c = s[i++];
 
@@ -161,11 +159,11 @@ namespace ZE::Utils
 		return _aligned_realloc(ptr, newSize, alignment);
 #else
 		if (alignment <= alignof(std::max_align_t))
-			return realloc(ptr, newSize);
+			return std::realloc(ptr, newSize);
 
 		void* newBlock = AlignedAlloc(newSize, alignment);
 		if (newBlock)
-			memcpy(newBlock, ptr, oldSize);
+			std::memcpy(newBlock, ptr, oldSize);
 
 		AlignedFree(ptr);
 		return newBlock;
@@ -179,7 +177,7 @@ namespace ZE::Utils
 #if _ZE_COMPILER_MSVC
 		_aligned_free(ptr);
 #else
-		free(ptr);
+		std::free(ptr);
 #endif
 	}
 
@@ -193,7 +191,7 @@ namespace ZE::Utils
 		localtime_r(&now, &tstruct);
 #endif
 		std::string buff(20, '\0');
-		strftime(buff.data(), buff.size(), fileFormatting ? "%Y_%m_%d_%H_%M_%S" : "%Y-%m-%d %H:%M:%S", &tstruct);
+		std::strftime(buff.data(), buff.size(), fileFormatting ? "%Y_%m_%d_%H_%M_%S" : "%Y-%m-%d %H:%M:%S", &tstruct);
 		buff.pop_back();
 		return buff;
 	}

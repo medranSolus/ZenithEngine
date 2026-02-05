@@ -1,5 +1,5 @@
 #pragma once
-#include "Types.h"
+#include "Utils.h"
 #include <type_traits>
 #include <cstdlib>
 #include <cstring>
@@ -25,7 +25,7 @@ namespace ZE
 		template<typename T, TableIndex I, U8 ALIGNMENT_POWER = 0>
 		static constexpr T* IncrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept;
 		template<typename T, TableIndex I, U8 ALIGNMENT_POWER = 0>
-		static constexpr T* DecrementAlloc(Ptr<T> data, I newSize) noexcept;
+		static constexpr T* DecrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept;
 
 	public:
 		Table() = delete;
@@ -39,9 +39,9 @@ namespace ZE
 		template<typename T, TableIndex I, U8 ALIGNMENT_POWER = 0>
 		static constexpr T* Create(I size, Ptr<T> sourceData) noexcept;
 
-		template<typename T, TableIndex I>
+		template<typename T, TableIndex I, U8 ALIGNMENT_POWER = 0>
 		static constexpr void Clear(I size, Ptr<T>& data) noexcept;
-		template<typename T, TableIndex I>
+		template<typename T, TableIndex I, U8 ALIGNMENT_POWER = 0>
 		static constexpr void Clear(TableInfo<I>& info, Ptr<T>& data) noexcept;
 
 		// Standard resize operation for single-column table
@@ -89,10 +89,10 @@ namespace ZE
 	{
 		static_assert(ALIGNMENT_POWER < 64, "ALIGNMENT_POWER of Table must be smaller than 64!");
 
-		if constexpr (ALIGNMENT_POWER == 0)
-			return reinterpret_cast<T*>(malloc(sizeof(T) * count));
+		if constexpr (ALIGNMENT_POWER < 2)
+			return reinterpret_cast<T*>(std::malloc(sizeof(T) * count));
 		else
-			return reinterpret_cast<T*>(aligned_alloc(1 << ALIGNMENT_POWER, sizeof(T) * count));
+			return reinterpret_cast<T*>(Utils::AlignedAlloc(sizeof(T) * count, 1 << ALIGNMENT_POWER));
 	}
 
 	template<typename T, TableIndex I, U8 ALIGNMENT_POWER>
@@ -101,25 +101,19 @@ namespace ZE
 		ZE_ASSERT(data, "Data empty!");
 		ZE_ASSERT(newSize > oldSize, "Function not made for decrementation!");
 
-		if constexpr (ALIGNMENT_POWER == 0)
+		if constexpr (ALIGNMENT_POWER < 2)
 			return reinterpret_cast<T*>(realloc(data, sizeof(T) * newSize));
 		else
-		{
-			T* ptr = Alloc<T>(newSize);
-			memcpy(ptr, data, sizeof(T) * oldSize);
-			free(data);
-			return ptr;
-		}
+			return reinterpret_cast<T*>(Utils::AlignedRealloc(data, sizeof(T) * newSize, sizeof(T) * oldSize, 1 << ALIGNMENT_POWER));
 	}
 
 	template<typename T, TableIndex I, U8 ALIGNMENT_POWER>
-	constexpr T* Table::DecrementAlloc(Ptr<T> data, I newSize) noexcept
+	constexpr T* Table::DecrementAlloc(Ptr<T> data, I oldSize, I newSize) noexcept
 	{
-		T* ptr = reinterpret_cast<T*>(realloc(data, sizeof(T) * newSize));
-		// Check if realloc returns same region of memory,
-		// if no then handling for alingned mem would be needed
-		ZE_ASSERT(ptr == static_cast<T*>(data), "Realloc moved memory!");
-		return ptr;
+		if constexpr (ALIGNMENT_POWER < 2)
+			return reinterpret_cast<T*>(std::realloc(data, sizeof(T) * newSize));
+		else
+			return Utils::AlignedRealloc(data, sizeof(T) * newSize, sizeof(T) * oldSize, 1 << ALIGNMENT_POWER);
 	}
 
 	template<typename T, TableIndex I, U8 ALIGNMENT_POWER>
@@ -157,25 +151,28 @@ namespace ZE
 		ZE_ASSERT(sourceData, "Data empty!");
 		T* data = Alloc<T>(size);
 		if constexpr (std::is_trivial_v<T>)
-			memcpy(data, sourceData, sizeof(T) * size);
+			std::memcpy(data, sourceData, sizeof(T) * size);
 		else
 			for (I i = 0; i < size; ++i)
 				new(data + i) T(sourceData[i]);
 		return data;
 	}
 
-	template<typename T, TableIndex I>
+	template<typename T, TableIndex I, U8 ALIGNMENT_POWER>
 	constexpr void Table::Clear(I size, Ptr<T>& data) noexcept
 	{
 		ZE_ASSERT(data, "Data empty!");
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			for (I i = 0; i < size; ++i)
 				data[i].~T();
-		free(data);
+		if constexpr (ALIGNMENT_POWER < 2)
+			std::free(data);
+		else
+			Utils::AlignedFree(data);
 		data = nullptr;
 	}
 
-	template<typename T, TableIndex I>
+	template<typename T, TableIndex I, U8 ALIGNMENT_POWER>
 	constexpr void Table::Clear(TableInfo<I>& info, Ptr<T>& data) noexcept
 	{
 		Clear(info.Size, data);
@@ -190,7 +187,7 @@ namespace ZE
 
 		if (info.Size > newSize)
 		{
-			data = DecrementAlloc(data, newSize);
+			data = DecrementAlloc(data, info.Size, newSize);
 			info.Allocated = newSize;
 			if constexpr (!std::is_trivially_destructible_v<T>)
 				for (I i = newSize; i < info.Size; ++i)
@@ -219,7 +216,7 @@ namespace ZE
 
 		if (info.Size > newSize)
 		{
-			data = DecrementAlloc(data, newSize);
+			data = DecrementAlloc(data, info.Size, newSize);
 			if constexpr (!std::is_trivially_destructible_v<T>)
 				for (I i = newSize; i < info.Size; ++i)
 					data[i].~T();
@@ -249,7 +246,7 @@ namespace ZE
 			info.Allocated += CHUNK_SIZE;
 			data = IncrementAlloc(data, info.Size, info.Allocated);
 		}
-		memcpy(data + index + 1, data + index, sizeof(T) * (info.Size - index));
+		std::memcpy(data + index + 1, data + index, sizeof(T) * (info.Size - index));
 		++info.Size;
 		new (data + index) T(std::forward<P>(params)...);
 	}
@@ -289,12 +286,12 @@ namespace ZE
 
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[element].~T();
-		memcpy(data + element, data + element + 1, sizeof(T) * (info.Size - (element + 1)));
+		std::memcpy(data + element, data + element + 1, sizeof(T) * (info.Size - (element + 1)));
 		--info.Size;
 		if (info.Size + CHUNK_SIZE < info.Allocated)
 		{
 			info.Allocated -= CHUNK_SIZE;
-			data = DecrementAlloc(data, info.Allocated);
+			data = DecrementAlloc(data, info.Size, info.Allocated);
 		}
 	}
 
@@ -309,7 +306,7 @@ namespace ZE
 		if (info.Size + CHUNK_SIZE < info.Allocated)
 		{
 			info.Allocated -= CHUNK_SIZE;
-			data = DecrementAlloc(data, info.Allocated);
+			data = DecrementAlloc(data, info.Size, info.Allocated);
 		}
 	}
 
@@ -319,7 +316,7 @@ namespace ZE
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[info.Size - 1].~T();
 		if (info.Size + CHUNK_SIZE <= info.Allocated)
-			data = DecrementAlloc(data, info.Allocated - CHUNK_SIZE);
+			data = DecrementAlloc(data, info.Size, info.Allocated - CHUNK_SIZE);
 	}
 
 	template<U64 CHUNK_SIZE, TableIndex I>

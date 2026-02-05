@@ -5,33 +5,32 @@ namespace ZE
 {
 	void Logger::WriteHeader(std::ostream& out, Level type) noexcept
 	{
-		std::string_view banner;
+		out << '<' << Utils::GetCurrentTimestamp();
 		switch (type)
 		{
 		case Level::Info:
 		{
-			banner = "> [INFO]";
+			out << "> [INFO]";
 			break;
 		}
 		case Level::Warning:
 		{
-			banner = "> [WARNING]";
+			out << "> [WARNING]";
 			break;
 		}
 		default:
 			ZE_ENUM_UNHANDLED();
 		case Level::Error:
 		{
-			banner = "> [ERROR]";
+			out << "> [ERROR]";
 			break;
 		}
 		case Level::Critical:
 		{
-			banner = "> [CRITICAL]";
+			out << "> [CRITICAL]";
 			break;
 		}
 		}
-		out << '<' << Utils::GetCurrentTimestamp() << banner;
 	}
 
 	void Logger::LogToFile(std::function<void(std::ostream&)> writeLog) noexcept
@@ -54,11 +53,11 @@ namespace ZE
 				fout.close();
 			}
 			else
-				Log(Level::Error, "Cannot open log file \"./Logs/log.txt\" for saving following log entry!", false, true, false);
+				Log(Level::Error, "Cannot open log file \"Logs/log.txt\" for saving following log entry!", false, true, false);
 		}
 	}
 
-	void Logger::Log(Level type, const std::string& log, bool flush, bool newLine, bool logToFile) noexcept
+	void Logger::Log(Level type, std::string_view log, bool flush, bool newLine, bool logToFile) noexcept
 	{
 		auto writeLog = [&](std::ostream& out)
 			{
@@ -102,7 +101,9 @@ namespace ZE
 		bool exists = std::filesystem::exists(LOG_DIR, code);
 		if (code)
 		{
+#if !_ZE_MODE_RELEASE
 			LogStatusCode(Level::Error, code, "Failed to check for log directory existence!", __LINE__, __FILENAME__, false);
+#endif
 			return false;
 		}
 		if (!exists)
@@ -112,13 +113,17 @@ namespace ZE
 			std::filesystem::create_directories(LOG_DIR, code);
 			if (code)
 			{
+#if !_ZE_MODE_RELEASE
 				LogStatusCode(Level::Error, code, "Failed to create log directory!", __LINE__, __FILENAME__, false);
+#endif
 				return false;
 			}
 			exists = std::filesystem::exists(LOG_DIR, code);
 			if (code)
 			{
+#if !_ZE_MODE_RELEASE
 				LogStatusCode(Level::Error, code, "Failed to check for log directory existence after creating it!", __LINE__, __FILENAME__, false);
+#endif
 				return false;
 			}
 		}

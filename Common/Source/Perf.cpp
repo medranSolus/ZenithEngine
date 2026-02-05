@@ -1,5 +1,4 @@
 #include "Perf.h"
-#include "Intrinsics.h"
 
 namespace ZE
 {
@@ -76,34 +75,33 @@ namespace ZE
 
 	void Perf::Save()
 	{
-		if (!Logger::CreateLogDir())
+		if (Logger::CreateLogDir())
 		{
-			ZE_FAIL("Cannot create log directory!");
-			return;
-		}
-
-		std::ofstream fout(Logger::LOG_DIR + (LOG_FILE + Utils::GetCurrentTimestamp(true) + LOG_FILE_EXT), std::ios_base::trunc);
-		if (!fout.good())
-		{
-			ZE_FAIL("Cannot open perf output file!");
-			return;
-		}
-		if (IsSingleLineLogEntry())
-		{
-			for (auto& x : data)
-				fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
-		}
-		else
-		{
-			for (auto& x : data)
+			std::ofstream fout(Logger::LOG_DIR + (LOG_FILE + Utils::GetCurrentTimestamp(true) + LOG_FILE_EXT), std::ios_base::trunc);
+			if (fout.good())
 			{
-				fout << '[' << x.first << ']' << std::endl
-					<< "    Avg time: " << x.second.AvgMicroseconds << " us" << std::endl
-					<< "    Tests:    " << x.second.Count << std::endl;
+				if (IsSingleLineLogEntry())
+				{
+					for (auto& x : data)
+						fout << '[' << x.first << "] Avg time: " << x.second.AvgMicroseconds << " us, tests: " << x.second.Count << std::endl;
+				}
+				else
+				{
+					for (auto& x : data)
+					{
+						fout << '[' << x.first << ']' << std::endl
+							<< "    Avg time: " << x.second.AvgMicroseconds << " us" << std::endl
+							<< "    Tests:    " << x.second.Count << std::endl;
+					}
+				}
+				fout.close();
+				data.clear();
+			}
+			else
+			{
+				ZE_FAIL("Cannot open perf output file!");
 			}
 		}
-		fout.close();
-		data.clear();
 	}
 
 	U64 Perf::GetSectionCallCount(const std::string& sectionTag) noexcept

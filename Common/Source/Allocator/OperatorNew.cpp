@@ -1,6 +1,5 @@
 #include "Allocator/OperatorNew.h"
 #include <new>
-#include <cstdlib>
 
 namespace ZE::Allocator
 {

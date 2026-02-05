@@ -3,7 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <shared_mutex>
-#include <string>
+#include <string_view>
 
 namespace ZE
 {
@@ -25,17 +25,17 @@ namespace ZE
 
 		static void WriteHeader(std::ostream& out, Level type) noexcept;
 		static void LogToFile(std::function<void(std::ostream&)> writeLog) noexcept;
-		static void Log(Level type, const std::string& log, bool flush, bool newLine = true, bool logToFile = true) noexcept;
+		static void Log(Level type, std::string_view log, bool flush, bool newLine = true, bool logToFile = true) noexcept;
 		static void LogStatusCode(Level type, const std::error_code& code, const std::string& msg, U32 line, const char* file, bool logToFile = true) noexcept;
 
 	public:
 		Logger() = delete;
 
-		static void InfoNoFile(const std::string& info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine, false); }
-		static void Info(const std::string& info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine); }
-		static void Warning(const std::string& warning, bool flush = false, bool newLine = true) noexcept { Log(Level::Warning, warning, flush, newLine); }
-		static void Error(const std::string& error, bool flush = false, bool newLine = true) noexcept { Log(Level::Error, error, flush, newLine); }
-		static void Critical(const std::string& error, bool flush = false, bool newLine = true) noexcept { Log(Level::Critical, error, flush, newLine); }
+		static void InfoNoFile(std::string_view info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine, false); }
+		static void Info(std::string_view info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine); }
+		static void Warning(std::string_view warning, bool flush = false, bool newLine = true) noexcept { Log(Level::Warning, warning, flush, newLine); }
+		static void Error(std::string_view error, bool flush = false, bool newLine = true) noexcept { Log(Level::Error, error, flush, newLine); }
+		static void Critical(std::string_view error, bool newLine = true) noexcept { Log(Level::Critical, error, true, newLine); }
 
 		static void CodeInfo(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Info, code, msg, line, file); }
 		static void CodeWarning(const std::error_code& code, const std::string& msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Warning, code, msg, line, file); }

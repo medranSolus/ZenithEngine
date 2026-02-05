@@ -1,8 +1,6 @@
 #pragma once
 #include "PixelFormat.h"
-#include <filesystem>
-#include <utility>
-#include <vector>
+#include <memory>
 
 namespace ZE::GFX
 {

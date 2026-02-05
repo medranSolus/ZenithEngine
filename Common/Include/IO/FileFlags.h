@@ -1,5 +1,5 @@
 #pragma once
-#include "BasicTypes.h"
+#include "Macros.h"
 
 namespace ZE::IO
 {

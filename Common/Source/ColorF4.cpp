@@ -4,7 +4,7 @@ namespace ZE
 {
 	ColorF4 ColorF4::operator-(const ColorF4& c) const noexcept
 	{
-		ColorF4 nc;
+		ColorF4 nc = {};
 		Math::XMStoreFloat4(&nc.RGBA,
 			Math::XMVectorAdd(Math::XMLoadFloat4(&RGBA), Math::XMLoadFloat4(&c.RGBA)));
 		return nc;
@@ -12,7 +12,7 @@ namespace ZE
 
 	ColorF4 ColorF4::operator+(const ColorF4& c) const noexcept
 	{
-		ColorF4 nc;
+		ColorF4 nc = {};
 		Math::XMStoreFloat4(&nc.RGBA,
 			Math::XMVectorAdd(Math::XMLoadFloat4(&RGBA), Math::XMLoadFloat4(&c.RGBA)));
 		return nc;
@@ -20,9 +20,9 @@ namespace ZE
 
 	ColorF4 ColorF4::operator*(float x) const noexcept
 	{
-		ColorF4 nc(x, x, x, x);
+		ColorF4 nc = {};
 		Math::XMStoreFloat4(&nc.RGBA,
-			Math::XMVectorMultiply(Math::XMLoadFloat4(&RGBA), Math::XMLoadFloat4(&nc.RGBA)));
+			Math::XMVectorMultiply(Math::XMLoadFloat4(&RGBA), Math::XMVectorReplicate(x)));
 		return nc;
 	}
 }

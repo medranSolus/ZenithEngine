@@ -2,6 +2,8 @@
 #include "ColorF4.h"
 #include <array>
 #include <random>
+#include <cfloat>
+#include <cmath>
 
 namespace ZE::Math
 {

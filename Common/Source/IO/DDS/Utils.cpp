@@ -1,5 +1,4 @@
 #include "IO/DDS/Utils.h"
-#include "GFX/Surface.h"
 
 namespace ZE::IO::DDS
 {

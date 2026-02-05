@@ -5,7 +5,7 @@ namespace ZE::Math
 	Float3 GetEulerAngles(const Float4& rotor) noexcept
 	{
 		constexpr float SINGULARITY = 0.4999f;
-		Float3 euler;
+		Float3 euler = {};
 		euler.x = rotor.w * rotor.x + rotor.y * rotor.z;
 
 		if (euler.x > SINGULARITY) // South pole
@@ -35,16 +35,16 @@ namespace ZE::Math
 
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept
 	{
-		Float3 out;
+		Float3 out = {};
 		XMStoreFloat3(&out, XMVectorAdd(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
-		return std::move(out);
+		return out;
 	}
 
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept
 	{
-		Float3 out;
+		Float3 out = {};
 		XMStoreFloat3(&out, XMVector3Normalize(XMVectorAdd(XMLoadFloat3(&v1), XMLoadFloat3(&v2))));
-		return std::move(out);
+		return out;
 	}
 
 	bool IsNearEqual(const Vector& v1, const Vector& v2) noexcept
@@ -96,7 +96,7 @@ namespace ZE::Math
 
 	BoundingBox GetBoundingBox(const Vector& maxPositive, const Vector& maxNegative) noexcept
 	{
-		BoundingBox box;
+		BoundingBox box = {};
 		XMStoreFloat3(&box.Extents,
 			XMVectorScale(XMVectorSubtract(maxPositive, maxNegative), 0.5f));
 		XMStoreFloat3(&box.Center,
@@ -272,7 +272,7 @@ namespace ZE::Math
 			break;
 		}
 		default:
-		break;
+			break;
 		}
 		return result;
 	}

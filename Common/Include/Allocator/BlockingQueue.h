@@ -10,7 +10,7 @@ namespace ZE::Allocator
 	{
 		struct Node
 		{
-			T Data;
+			T Data = {};
 			std::unique_ptr<Node> Next;
 		};
 

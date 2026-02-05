@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <functional>
 #include <thread>
+#include <vector>
 
 namespace ZE
 {
@@ -28,7 +29,7 @@ namespace ZE
 		bool useMultiThreading = true;
 
 		BoolAtom runControl = true;
-		Ptr<BoolAtom> threadRunControls;
+		std::unique_ptr<BoolAtom[]> threadRunControls;
 		std::vector<std::thread> threads;
 
 		mutable std::condition_variable signaler;
@@ -68,7 +69,7 @@ namespace ZE
 
 		std::packaged_task<Return()> taskPackage(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
 		Task<Return> task(std::move(taskPackage));
-		auto workerFunc = [execData = task.GetData()]() -> void
+		auto workerFunc = [execData = task.GetData()]() noexcept -> void
 			{
 				const bool status = std::atomic_exchange_explicit(&execData->processing, true, std::memory_order::memory_order_acq_rel);
 				if (!status)
@@ -139,8 +140,9 @@ namespace ZE
 
 			// Create worker threads that will sleep waiting for new job to execute
 			const U8 count = GetWorkerThreadsCount();
-			threadRunControls = new BoolAtom[count];
+			threadRunControls = std::make_unique_for_overwrite<BoolAtom[]>(count);
 			threads.reserve(count);
+
 			for (U8 i = 0; i < count; ++i)
 			{
 				threadRunControls[i] = true;

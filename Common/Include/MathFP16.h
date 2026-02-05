@@ -1,6 +1,7 @@
 #pragma once
-#include "MathExt.h"
+#include "BasicTypes.h"
 #include <limits>
+#include <type_traits>
 #include <cstring>
 
 namespace std
@@ -51,10 +52,10 @@ namespace ZE::Math::FP16
 			static constexpr RawType INF = static_cast<RawType>(EXP_MAX) << SIG_BITS;
 			static constexpr RawType QNAN = INF | (INF >> 1);
 
-			static constexpr RawType Abs(RawType v) { return static_cast<RawType>(v & (SIGN - 1)); }
-			static constexpr bool IsNan(RawType v) { return Abs(v) > INF; }
-			static constexpr bool IsInf(RawType v) { return Abs(v) == INF; }
-			static constexpr bool IsZero(RawType v) { return Abs(v) == 0; }
+			static constexpr RawType Abs(RawType v) noexcept { return static_cast<RawType>(v & (SIGN - 1)); }
+			static constexpr bool IsNan(RawType v) noexcept { return Abs(v) > INF; }
+			static constexpr bool IsInf(RawType v) noexcept { return Abs(v) == INF; }
+			static constexpr bool IsZero(RawType v) noexcept { return Abs(v) == 0; }
 		};
 		using RawFloat16Info = RawFloatTypeInfo<U16, 10, 5>;
 		using RawFloat32Info = RawFloatTypeInfo< U32, 23, 8>;
@@ -79,7 +80,7 @@ namespace ZE::Math::FP16
 			using EncRawType = typename EncType::RawType;
 
 			template<bool ENABLE_ROUNDING, typename F>
-			static EncRawType Encode(F value)
+			static EncRawType Encode(F value) noexcept
 			{
 				using FloatInfo = FloatTypeInfo<F>;
 				using FloatRawType = typename FloatInfo::RawType;
@@ -126,7 +127,7 @@ namespace ZE::Math::FP16
 			}
 
 			template<typename F>
-			static F Decode(EncRawType value)
+			static F Decode(EncRawType value) noexcept
 			{
 				using FloatInfo = FloatTypeInfo<F>;
 				using FloatRawType = typename FloatInfo::RawType;
@@ -151,19 +152,19 @@ namespace ZE::Math::FP16
 	}
 
 	template<typename F>
-	auto EncodeFloat16Fast(F&& value)
+	auto EncodeFloat16Fast(F&& value) noexcept
 	{
 		return Internal::Float16Encoder::Encode<false>(std::forward<F>(value));
 	}
 
 	template<typename F>
-	auto EncodeFloat16(F&& value)
+	auto EncodeFloat16(F&& value) noexcept
 	{
 		return Internal::Float16Encoder::Encode<true>(std::forward<F>(value));
 	}
 
 	template<typename F = float, typename X>
-	auto DecodeFloat16(X&& value)
+	auto DecodeFloat16(X&& value) noexcept
 	{
 		return Internal::Float16Encoder::Decode<F>(std::forward<X>(value));
 	}

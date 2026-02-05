@@ -477,6 +477,7 @@ else()
 endif()
 
 # General flags
+add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions(SPNG_SSE=2)
 add_compile_definitions(SPNG_STATIC)
 add_compile_definitions(ZLIB_CONST)

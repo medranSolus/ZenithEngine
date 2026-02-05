@@ -1,9 +1,10 @@
 #pragma once
-#include "Types.h"
+#include "BasicTypes.h"
 #include <bitset>
 #include <map>
 #include <shared_mutex>
 #include <string>
+#include <vector>
 
 #if _ZE_PLATFORM_WINDOWS
 #include "Platform/WinAPI/Perf.h"

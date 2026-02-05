@@ -12,30 +12,16 @@
 */
 
 /*
-********* BasicTypes.h (defined by CmdParser.h)
-********* intrin.h / x86intrin.h + cpuid.h
-******* Intrinsics.h
-*********** atomic
-*********** cstdint
-********* BasicTypes.h
-********* functional
-********* iostream
-********* shared_mutex
-********* string
-******* Logger.h
-***** Macros.h
-***** memory
-*** Ptr.h
-*** cmath
-*** cstddef
-*** cfloat
-*** DirectXMath.h
-*** DirectXCollision.h
+* atomic
+* cstdint
+*/
+#include "BasicTypes.h"
+
+/*
 * Types.h
 * deque
 * string_view
 * unordered_map
-* vector
 */
 #include "CmdParser.h"
 
@@ -46,39 +32,93 @@
 #include "ColorF3.h"
 
 /*
-***** Types.h (defined by CmdParser.h)
-***** utility
-*** ColorF4.h
-*** array
-*** random
-* MathExt.h
+* Types.h (defined by CmdParser.h)
+* utility
 */
-#include "MathLight.h"
+#include "ColorF4.h"
 
 /*
-* MathExt.h (defined by MathLight.h)
-* cstring
+* BasicTypes.h
+* intrin.h / x86intrin.h + cpuid.h
+*/
+#include "Intrinsics.h"
+
+/*
+* Macros.h (defined by CmdParser.h)
+*/
+#include "LockGuard.h"
+
+/*
+* BasicTypes.h
+* functional
+* iostream
+* shared_mutex
+* string_view
+*/
+#include "Logger.h"
+
+/*
+* Logger.h
+* Intrinsics.h
+*/
+#include "Macros.h"
+
+/*
+* ColorF4.h
+* array
+* random
+* cfloat
+* cmath
+*/
+#include "MathExt.h"
+
+/*
+* BasicTypes.h
 * limits
+* type_traits
+* cstring
 */
 #include "MathFP16.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
-*** bitset
-*** map
-*** shared_mutex
-*** string
+* Types.h
+*/
+#include "MathLight.h"
+
+/*
+* BasicTypes.h
+* bitset
+* map
+* shared_mutex
+* string
+* vector
+* Platform/X/Perf.h
+*/
+#include "Perf.h"
+
+/*
 * Perf.h
 */
 #include "PerfGuard.h"
 
 /*
-* Types.h (defined by CmdParser.h)
+* BasicTypes.h
 */
 #include "Pixel.h"
 
 /*
-* Types.h (defined by CmdParser.h)
+* BasicTypes.h
+*/
+#include "PixelFormat.h"
+
+/*
+* Macros.h
+* cstdlib
+*/
+#include "Ptr.h"
+
+/*
+* Utils.h
 * type_traits
 * cstdlib
 * cstring
@@ -86,35 +126,38 @@
 #include "Table.h"
 
 /*
-* Macros.h (defined by CmdParser.h)
+* BasicTypes.h
+* future
+* memory
+*/
+#include "Task.h"
+
+/*
+* Allocator/BlockingQueue.h
+* Allocator/FixedPool.h
+* Task.h
+* array
+* condition_variable
+* thread
+* vector
+*/
+#include "ThreadPool.h"
+
+/*
+* Macros.h
 * chrono
 */
 #include "Timer.h"
 
 /*
-***** Macros.h (defined by CmdParser.h)
-***** shared_mutex
-*** LockGuard.h
-*** memory
-* Allocator/BlockingQueue.h
-*** BasicTypes.h (defined by CmdParser.h)
-*** type_traits
-*** vector
-* Allocator/FixedPool.h
-*** BasicTypes.h (defined by CmdParser.h)
-*** future
-*** memory
-* Task.h
-* array
-* condition_variable
-* functional
-* thread
+* Ptr.h
+* DirectXMath.h
+* DirectXCollision.h
 */
-#include "ThreadPool.h"
+#include "Types.h"
 
 /*
-* Types.h (defined by CmdParser.h)
-*** BasicTypes.h (defined by CmdParser.h)
+* Types.h
 * PixelFormat.h
 * bit
 * deque
@@ -125,73 +168,111 @@
 #include "Utils.h"
 
 /*
-*** BasicTypes.h (defined by CmdParser.h)
-*** vector
+* LockGuard.h
+* memory
+*/
+#include "Allocator/BlockingQueue.h"
+
+/*
 * Allocator/Pool.h
-* Intrinsics.h (defined by CmdParser.h)
+* Intrinsics.h
 * bitset
 */
 #include "Allocator/ChunkedTLSF.h"
+
+/*
+* BasicTypes.h
+* memory
+* type_traits
+* vector
+*/
+#include "Allocator/FixedPool.h"
 
 /**/
 #include "Allocator/OperatorNew.h"
 
 /*
-* cstdio
-***** BasicTypes.h (defined by CmdParser.h)
-*** IO/FileFlags.h
-*** Task.h (defined by ThreadPool.h)
+* BasicTypes.h
+* vector
+*/
+#include "Allocator/Pool.h"
+
+/*
+* PixelFormat.h
+* memory
+*/
+#include "GFX/Surface.h"
+
+/*
+* BasicTypes.h
+*/
+#include "IO/DDS/FormatDDS.h"
+
+/*
+* IO/DDS/PixelFormatDDS.h
+*/
+#include "IO/DDS/Header.h"
+
+/*
+* IO/DDS/FormatDDS.h
+* Macros.h
+*/
+#include "IO/DDS/HeaderDXT10.h"
+
+/*
+* Macros.h
+*/
+#include "IO/DDS/PixelFormatDDS.h"
+
+/*
 * IO/File.h
-***** Macros.h (defined by CmdParser.h)
-*** IO/DDS/PixelFormatDDS.h
 * IO/DDS/Header.h
-***** BasicTypes.h (defined by CmdParser.h)
-*** IO/DDS/FormatDDS.h
-*** Macros.h (defined by CmdParser.h)
 * IO/DDS/HeaderDXT10.h
-* PixelFormat.h (defined by Utils.h)
 */
 #include "IO/DDS/Utils.h"
 
 /*
-*** Types.h (defined by CmdParser.h)
-*** exception
-*** string
-* Exception/BasicException.h
+* IO/FileFlags.h
+* cstdio
+* Platform/X/File.h
 */
-#include "Exception/GenericException.h"
+#include "IO/File.h"
 
 /*
-* PixelFormat.h (defined by Utils.h)
-* filesystem
-* utility
-* vector
+* Macros.h
 */
-#include "GFX/Surface.h"
+#include "IO/FileFlags.h"
 
 /*
 * Standard headers, remove if appears above
 */
 #include <algorithm>
-#include <cinttypes>
-#include <sstream>
+#include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <cinttypes>
 
 /*
 * Platform specific headers
 */
 #if _ZE_PLATFORM_WINDOWS
 /*
-* Exception/BasicException.h (defined by Exception/GenericException.h)
-*** sdkddkver.h
-*** Windows.h
+* IO/FileFlags.h
+* Platform/WinAPI/Error.h
+* Task.h
 * Platform/WinAPI/WinAPI.h
 */
-#	include "Platform/WinAPI/WinApiException.h"
+#	include "Platform/WinAPI/File.h"
 
 /*
-* Platform/WinAPI/WinAPI.h (defined by Platform/WinAPI/WinApiException.h)
-* Utils.h (defined by platform agnostic headers)
+* Platform/WinAPI/WinAPI.h
+* Utils.h
 */
 #	include "Platform/WinAPI/Perf.h"
+
+/*
+* sdkddkver.h
+* Windows.h
+*/
+#	include "Platform/WinAPI/WinAPI.h"
 #endif

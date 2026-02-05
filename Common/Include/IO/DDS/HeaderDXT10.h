@@ -4,7 +4,6 @@
 
 namespace ZE::IO::DDS
 {
-#pragma pack(push, 1)
 	// Identifies the type of resource in DDS file
 	typedef U32 ResourceDimensions;
 	// Possible resource formats in DDS::HeaderDXT10
@@ -37,6 +36,7 @@ namespace ZE::IO::DDS
 	};
 	ZE_ENUM_OPERATORS(MiscFlag2DXT10, MiscFlags2DXT10);
 
+#pragma pack(push, 1)
 	// DDS header extension to handle resource arrays
 	struct HeaderDXT10
 	{

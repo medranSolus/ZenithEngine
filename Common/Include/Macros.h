@@ -2,6 +2,7 @@
 #include "Intrinsics.h"
 #include "Logger.h"
 
+#pragma region Asserts
 #if _ZE_MODE_DEBUG || _ZE_MODE_DEV
 // Debug assert with ability to specify level of log entry
 #	define ZE_ASSERT_LVL(lvl, condition, message) do { if (!(condition)) { ZE::Logger::##lvl##(message, true); ZE::Intrin::DebugBreak(); } } while (false)
@@ -39,7 +40,9 @@
 #define ZE_ASSERT_Q_UNIT_V(rotor) ZE_ASSERT_LVL(Warning, ZE::Math::IsUnitQuaternion(rotor), "Quaternion is not unit quaternion!")
 // Check if stored quaternion is unit length
 #define ZE_ASSERT_Q_UNIT(rotor) ZE_ASSERT_Q_UNIT_V(ZE::Math::XMLoadFloat4(&rotor))
+#pragma endregion
 
+#pragma region Class members
 // Adds defaulted copy/move constructors/assign operators
 #define ZE_CLASS_DEFAULT(className) \
 	className(className&&) = default; \
@@ -87,7 +90,9 @@
 #define ZE_CLASS_NO_MOVE(className) \
 	className(className&&) = delete; \
 	className& operator=(className&&) = delete;
+#pragma endregion
 
+#pragma region String utility
 // Macro for removing parentheses around macro values
 #define ZE_DEPAREN(x) ZE_VANISH x
 // Part of ZE_DEPAREN() macro procedure
@@ -99,6 +104,9 @@
 #define ZE_STRINGIFY(x) ZE_XSTRINGIFY(x)
 // Macro for turning versions into strings
 #define ZE_STRINGIFY_VERSION(major, minor, patch) ZE_STRINGIFY(major)"."ZE_STRINGIFY(minor)"."ZE_STRINGIFY(patch)
+#pragma endregion
+
+#pragma region Compiler warnings
 // Compiler agnostic way of handling pragma directive
 #define ZE_PRAGMA(X) _Pragma(#X)
 
@@ -126,6 +134,7 @@
 #else
 #	error Compiler not supported!
 #endif
+#pragma endregion
 
 // Allow for classic bit operations on enum class type of enumeration
 #define ZE_ENUM_OPERATORS(Type, BaseType) \

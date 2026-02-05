@@ -1,9 +1,5 @@
 #pragma once
-#define _USE_MATH_DEFINES
 #include "Ptr.h"
-#include <cmath>
-#include <cstddef>
-#include <cfloat>
 
 namespace ZE::External
 {

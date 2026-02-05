@@ -18,9 +18,9 @@ namespace ZE::Allocator
 		struct ItemBlock
 		{
 			std::unique_ptr<Item[]> Items;
-			U64 Capacity;
-			U64 FirstFreeIndex;
-			U64 Allocated;
+			U64 Capacity = 0;
+			U64 FirstFreeIndex = 0;
+			U64 Allocated = 0;
 		};
 
 		const U64 firstBlockCapacity;

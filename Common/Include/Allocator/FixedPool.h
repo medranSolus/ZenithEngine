@@ -1,5 +1,6 @@
 #pragma once
 #include "BasicTypes.h"
+#include <memory>
 #include <type_traits>
 #include <vector>
 
@@ -23,7 +24,7 @@ namespace ZE::Allocator
 
 		U64 maxCount = 0;
 		U64 firstFreeIndex = 0;
-		Ptr<Item> items;
+		std::unique_ptr<Item[]> items;
 
 		constexpr void RestoreFullFreeList() noexcept;
 		constexpr void DeleteAllElements(bool forceFastClear) noexcept;
@@ -94,17 +95,14 @@ namespace ZE::Allocator
 	FixedPool<T>::~FixedPool()
 	{
 		if (maxCount)
-		{
 			DeleteAllElements(false);
-			items.DeleteArray();
-		}
 	}
 
 	template<typename T>
 	constexpr void FixedPool<T>::Init(U64 maxItems) noexcept
 	{
 		maxCount = maxItems;
-		items = new Item[maxCount];
+		items = std::make_unique_for_overwrite<Item[]>(maxCount);
 		RestoreFullFreeList();
 	}
 
@@ -139,7 +137,7 @@ namespace ZE::Allocator
 	constexpr void FixedPool<T>::Free(T* ptr) noexcept
 	{
 		ZE_ASSERT(ptr, "Invalid pointer!");
-		ZE_ASSERT(ptr >= items.data() && ptr < items + maxCount,
+		ZE_ASSERT(ptr >= items.get() && ptr < items + maxCount,
 			"Pointer doesn't belong to this memory pool!");
 
 		Item* item = reinterpret_cast<Item*>(ptr);

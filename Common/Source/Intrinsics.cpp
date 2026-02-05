@@ -147,7 +147,7 @@ namespace ZE::Intrin
 	U8 BitScanLSB(U64 mask) noexcept
 	{
 #if _ZE_COMPILER_MSVC
-		unsigned long pos;
+		unsigned long pos = 0;
 		if (_BitScanForward64(&pos, mask))
 			return Utils::SafeCast<U8>(pos);
 		return UINT8_MAX;
@@ -169,7 +169,7 @@ namespace ZE::Intrin
 	U8 BitScanLSB(U32 mask) noexcept
 	{
 #if _ZE_COMPILER_MSVC
-		unsigned long pos;
+		unsigned long pos = 0;
 		if (_BitScanForward(&pos, mask))
 			return Utils::SafeCast<U8>(pos);
 		return UINT8_MAX;
@@ -191,7 +191,7 @@ namespace ZE::Intrin
 	U8 BitScanMSB(U64 mask) noexcept
 	{
 #if _ZE_COMPILER_MSVC
-		unsigned long pos;
+		unsigned long pos = 0;
 		if (_BitScanReverse64(&pos, mask))
 			return Utils::SafeCast<U8>(pos);
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
@@ -213,7 +213,7 @@ namespace ZE::Intrin
 	U8 BitScanMSB(U32 mask) noexcept
 	{
 #if _ZE_COMPILER_MSVC
-		unsigned long pos;
+		unsigned long pos = 0;
 		if (_BitScanReverse(&pos, mask))
 			return Utils::SafeCast<U8>(pos);
 #elif _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
