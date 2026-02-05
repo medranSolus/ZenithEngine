@@ -177,7 +177,7 @@ namespace ZE::Allocator
 	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData) noexcept
 	{
 		TLSFMemoryChunk<Memory>* newChunk = chunkAllocator.Alloc();
-		if (auto code = TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
+		if (Status code = TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
 		{
 			ZE_CODE_ERROR(code, "Failed to initialize new TLSF memory chunk!");
 			chunkAllocator.Free(newChunk);
@@ -452,7 +452,7 @@ namespace ZE::Allocator
 		if (IsSingleChunk())
 		{
 			TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
-			if (auto code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, initialChunkSize, memoryUserData))
+			if (Status code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, initialChunkSize, memoryUserData))
 			{
 				chunkAllocator.Free(firstChunk);
 				return code;
@@ -485,7 +485,7 @@ namespace ZE::Allocator
 				if (nullBlock->ChunkHandle == nullptr)
 				{
 					TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
-					if (auto code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
+					if (Status code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
 					{
 						ZE_CODE_ERROR(code, "Failed to lazy-initialize TLSF memory chunk for null block!");
 						chunkAllocator.Free(firstChunk);

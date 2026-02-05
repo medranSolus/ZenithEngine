@@ -69,7 +69,7 @@ namespace ZE
 #endif
 
 // Instantly return if received error code
-#define ZE_CODE_RET_FAILED(call) do { if (auto __code = (call)) return __code; } while (false)
+#define ZE_CODE_RET_FAILED(call) do { if (Status __code = (call)) return __code; } while (false)
 
 // Log informational message base on given code
 #define ZE_CODE_INFO(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)

@@ -169,7 +169,7 @@ namespace ZE::GFX
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
 		IO::File file;
-		if (auto code = file.Open(filename, Base(IO::FileFlag::DefaultRead)))
+		if (Status code = file.Open(filename, Base(IO::FileFlag::DefaultRead)))
 		{
 			ZE_CODE_ERROR(code, "Error openinig \"" + path.string() + "\" file!");
 			return false;
@@ -185,7 +185,7 @@ namespace ZE::GFX
 		{
 			tryStbi = false;
 			IO::DDS::FileData ddsData = {};
-			if (auto code = IO::DDS::ParseFile(file, ddsData))
+			if (Status code = IO::DDS::ParseFile(file, ddsData))
 			{
 				ZE_CODE_ERROR(code, "Error reading DDS file \"" + path.string() + "\"!");
 			}
@@ -567,7 +567,7 @@ namespace ZE::GFX
 		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
 		IO::File file;
-		if (auto code = file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
+		if (Status code = file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
 		{
 			ZE_CODE_ERROR(code, "Error creating \"" + path.string() + "\" file!");
 			return false;
@@ -586,7 +586,7 @@ namespace ZE::GFX
 			surfData.ArraySize = arraySize;
 			surfData.ImageMemory = memory;
 
-			if (auto code = IO::DDS::EncodeFile(file, surfData))
+			if (Status code = IO::DDS::EncodeFile(file, surfData))
 			{
 				success = false;
 				ZE_CODE_ERROR(code, "Error writing DDS file \"" + path.string() + "\"!");

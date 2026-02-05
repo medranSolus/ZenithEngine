@@ -14,12 +14,6 @@
 	typedef int16_t S16;
 	typedef int32_t S32;
 	typedef int64_t S64;
-
-	// Generic handler for status codes
-	typedef std::error_code Status;
-	// Wrapper for needed return value or error code in case of failure
-	template<typename T>
-	using Expected = std::expected<T, Status>;
 #pragma endregion
 
 #pragma region Atomic types
@@ -43,6 +37,43 @@
 	struct SInt2 { S32 X, Y; };
 	struct SInt3 : public SInt2 { S32 Z; };
 	struct SInt4 : public SInt3 { S32 W; };
+#pragma endregion
+
+#pragma region Error types
+	// Generic handler for status codes
+	// (wrapper was needed since attributes cannot be applied to simple
+	// using or typedef directives in MSVC - std compliance bug)
+	class [[nodiscard]] Status final
+	{
+		std::error_code ec = {};
+
+	public:
+		Status() noexcept = default;
+		Status(const Status&) noexcept = default;
+		Status(Status&&) noexcept = default;
+		Status& operator=(const Status&) noexcept = default;
+		Status& operator=(Status&&) noexcept = default;
+		~Status() = default;
+
+		constexpr Status(const std::error_code& e) noexcept : ec(e) {}
+		constexpr Status(std::error_code&& e) noexcept : ec(std::move(e)) {}
+		Status(int code, const std::error_category& cat) noexcept : ec(code, cat) {}
+
+		constexpr operator const std::error_code& () const noexcept { return ec; }
+		constexpr operator std::error_code& () noexcept { return ec; }
+		explicit operator bool() const noexcept { return static_cast<bool>(ec); }
+
+		int value() const noexcept { return ec.value(); }
+		const std::error_category& category() const noexcept { return ec.category(); }
+		std::string message() const noexcept { return ec.message(); }
+
+		friend bool operator==(const Status& a, const Status& b) noexcept { return a.ec == b.ec; }
+		friend bool operator!=(const Status& a, const Status& b) noexcept { return a.ec != b.ec; }
+	};
+
+	// Wrapper for needed return value or error code in case of failure
+	template<typename T>
+	using Expected = std::expected<T, Status>;
 #pragma endregion
 
 #pragma region Vector operators

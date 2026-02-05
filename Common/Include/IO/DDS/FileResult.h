@@ -20,7 +20,7 @@ namespace ZE::IO::DDS
 		ZE_CLASS_MOVE(Error);
 		virtual ~Error() = default;
 
-		static const std::error_category& GetCategory() noexcept { static Error category = {}; return category; }
+		static constexpr const std::error_category& GetCategory() noexcept { static Error CATEGORY; return CATEGORY; }
 		static Status Make(FileResult result) noexcept { return { static_cast<int>(result), GetCategory() }; }
 
 		const char* name() const noexcept override { return "DDS Error"; }
