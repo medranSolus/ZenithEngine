@@ -1,9 +1,10 @@
 #pragma once
 // Headers needed for DirectX Graphics Infrastructure
 #include "GFX/Resource/Topology.h"
-#include "DebugInfoManager.h"
+#include "Error.h"
 ZE_WARNING_PUSH
 #include <dxgi1_6.h>
+#include <d3dcommon.h>
 #include <d3dcompiler.h>
 ZE_WARNING_POP
 
@@ -30,31 +31,18 @@ namespace ZE::RHI::DX
 	constexpr DXGI_FORMAT ConvertDepthFormatToDSV(DXGI_FORMAT format) noexcept;
 	// Check whether depth stencil format supports only depth
 	constexpr bool IsDepthOnly(DXGI_FORMAT format) noexcept;
-
-	// Creates DXGI Factory
-	ComPtr<IFactory> CreateFactory(
-#if _ZE_DEBUG_GFX_API
-		DebugInfoManager& debugManager
-#endif
-	);
-
-	// Enumerates available GPU adapters in order of highest performant
-	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory
-#if _ZE_DEBUG_GFX_API
-		, DebugInfoManager& debugManager
-#endif
-	);
-
-	// Creates swap chain for window and returns present flags
-	UINT CreateSwapChain(ComPtr<IFactory> factory, IUnknown* device,
-		HWND window, ComPtr<ISwapChain>& swapChain, bool shaderInput
-#if _ZE_DEBUG_GFX_API
-		, DebugInfoManager& debugManager
-#endif
-	);
-
 	// Get qualified primitive topology
 	constexpr D3D_PRIMITIVE_TOPOLOGY GetTopology(GFX::Resource::TopologyType type, GFX::Resource::TopologyOrder order) noexcept;
+
+	// Creates DXGI Factory
+	Expected<ComPtr<IFactory>> CreateFactory() noexcept;
+
+	// Enumerates available GPU adapters in order of highest performant
+	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory) noexcept;
+
+	// Creates swap chain for window and returns present flags
+	Expected<ComPtr<ISwapChain>> CreateSwapChain(ComPtr<IFactory> factory,
+		IUnknown* device, HWND window, bool shaderInput, U32& presentFlags) noexcept;
 
 #pragma region Functions
 	// List of mappings between PixelFormat and DXGI_FORMAT for enum decoding in X() macro

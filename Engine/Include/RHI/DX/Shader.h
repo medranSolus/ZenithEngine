@@ -1,6 +1,5 @@
 #pragma once
 #include "DXGI.h"
-#include "DirectXException.h"
 
 namespace ZE::GFX
 {
@@ -18,11 +17,11 @@ namespace ZE::RHI::DX
 
 	public:
 		Shader() = default;
-		Shader(GFX::Device& dev, std::string_view name);
 		ZE_CLASS_MOVE(Shader);
-		~Shader() { ZE_ASSERT_FREED(bytecode == nullptr); }
+		~Shader() = default;
 
-		constexpr void Free(GFX::Device& dev) noexcept { bytecode = nullptr; }
+		static Expected<Shader> Create(GFX::Device& dev, std::string_view name) noexcept;
+
 #if _ZE_DEBUG_GFX_NAMES
 		constexpr const std::string* GetName() const noexcept { return &shaderName; }
 #endif
@@ -34,20 +33,21 @@ namespace ZE::RHI::DX
 
 #pragma region Functions
 	template<bool IS_DX12>
-	Shader<IS_DX12>::Shader(GFX::Device& dev, std::string_view name)
+	Expected<Shader<IS_DX12>> Shader<IS_DX12>::Create(GFX::Device& dev, std::string_view name) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-#if _ZE_DEBUG_GFX_NAMES
-		shaderName = name;
-#endif
+		Shader shader = {};
 		if constexpr (IS_DX12)
 		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX12/" + Utils::ToUTF16(name) + L".dxil").c_str(), &bytecode));
+			ZE_DX_RET_FAILED_EXPECT(D3DReadFileToBlob((L"Shaders/DX12/" + Utils::ToUTF16(name) + L".dxil").c_str(), &shader.bytecode));
 		}
 		else
 		{
-			ZE_WIN_THROW_FAILED(D3DReadFileToBlob((L"Shaders/DX11/" + Utils::ToUTF16(name) + L".dxbc").c_str(), &bytecode));
+			ZE_DX_RET_FAILED_EXPECT(D3DReadFileToBlob((L"Shaders/DX11/" + Utils::ToUTF16(name) + L".dxbc").c_str(), &shader.bytecode));
 		}
+#if _ZE_DEBUG_GFX_NAMES
+		shader.shaderName = name;
+#endif
+		return shader;
 	}
 #pragma endregion
 }

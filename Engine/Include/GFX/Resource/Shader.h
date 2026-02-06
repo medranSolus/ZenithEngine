@@ -16,20 +16,16 @@ namespace ZE::GFX::Resource
 
 	public:
 		Shader() = default;
-		constexpr Shader(GFX::Device& dev, std::string_view name) { Init(dev, name); }
 		ZE_CLASS_MOVE(Shader);
 		~Shader() = default;
 
-		constexpr void Init(Device& dev, std::string_view name) { ZE_RHI_BACKEND_VAR.Init(dev, name); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, std::string_view name) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, name); }
+		static Expected<Shader> Create(Device& dev, std::string_view name) { ZE_RHI_BACKEND_CREATE(Resource::Shader, dev, name); }
 		ZE_RHI_BACKEND_GET(Resource::Shader);
 
 		// Main Gfx API
 
-		// Before destroying shader you have to call this function for proper memory freeing
-		constexpr void Free(GFX::Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 #if _ZE_DEBUG_GFX_NAMES
-		const std::string& GetName() const noexcept { const std::string* name = nullptr; ZE_RHI_BACKEND_CALL_RET(name, GetName); return *name; }
+		const std::string& GetName() const noexcept { const std::string* name = nullptr; ZE_RHI_BACKEND_CALL_RET_VAR(name, GetName); return name ? *name : ""; }
 #endif
 	};
 }

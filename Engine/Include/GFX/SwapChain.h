@@ -21,15 +21,12 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
-		constexpr void Init(const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_RHI_BACKEND_VAR.Init(window, dev, shaderInput); }
-		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_RHI_BACKEND_VAR.Switch(nextApi, window, dev, shaderInput); }
+		static Expected<SwapChain> Create(const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_RHI_BACKEND_CREATE(SwapChain, window, dev, shaderInput); }
 		ZE_RHI_BACKEND_GET(SwapChain);
 
 		// Main Gfx API
 
-		constexpr void StartFrame(Device& dev) { ZE_RHI_BACKEND_CALL(StartFrame, dev); }
-		constexpr void Present(Device& dev) const { ZE_RHI_BACKEND_CALL(Present, dev); }
-		// Have to be called before destroying the SwapChain
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		constexpr void StartFrame(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(StartFrame, dev); }
+		Status Present(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Present, dev); }
 	};
 }

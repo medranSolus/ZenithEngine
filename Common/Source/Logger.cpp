@@ -95,6 +95,20 @@ namespace ZE
 		writeLog(type == Level::Error || type == Level::Critical ? std::cerr : std::cout);
 	}
 
+	void Logger::Unformatted(bool error, std::string_view msg, bool newLine, bool indent) noexcept
+	{
+		auto writeLog = [&](std::ostream& out)
+			{
+				if (indent)
+					out << '\t';
+				out << msg;
+				if (newLine)
+					out << std::endl;
+			};
+		LogToFile(writeLog);
+		writeLog(error ? std::cerr : std::cout);
+	}
+
 	bool Logger::CreateLogDir(bool noLock) noexcept
 	{
 		Status code = {};

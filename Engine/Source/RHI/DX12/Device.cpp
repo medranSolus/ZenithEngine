@@ -9,18 +9,18 @@ ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
-	void Device::DescHeap::Init(DescHeap& chunk, Allocator::TLSFMemoryChunkFlags flags, U64 size, void* userData)
+	Status Device::DescHeap::Init(DescHeap& chunk, Allocator::TLSFMemoryChunkFlags flags, U64 size, void* userData) noexcept
 	{
 		ZE_ASSERT(userData, "Empty device data!");
 		Device& dev = *reinterpret_cast<Device*>(userData);
-		ZE_DX_ENABLE(dev);
 
 		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 		descHeapDesc.NodeMask = 0;
 		descHeapDesc.Flags = static_cast<D3D12_DESCRIPTOR_HEAP_FLAGS>(flags);
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		descHeapDesc.NumDescriptors = Utils::SafeCast<U32>(size);
-		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&chunk.Heap)));
+		ZE_DX_RET_FAILED(dev.GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&chunk.Heap)));
+		return {};
 	}
 
 	void Device::WaitCPU(IFence* fence, U64 val)

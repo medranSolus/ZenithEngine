@@ -1,40 +1,27 @@
 #include "RHI/DX/DXGI.h"
-#include "RHI/DX/DirectXException.h"
 #include "Settings.h"
 
 namespace ZE::RHI::DX
 {
-	ComPtr<IFactory> CreateFactory(
-#if _ZE_DEBUG_GFX_API
-		DebugInfoManager& debugManager
-#endif
-	)
+	Expected<ComPtr<IFactory>> CreateFactory() noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		// Create proper DXGI factory
 		ComPtr<IDXGIFactory2> oldFactory = nullptr;
-		ZE_DX_THROW_FAILED(CreateDXGIFactory2(_ZE_DEBUG_GFX_API ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&oldFactory)));
+		ZE_DX_RET_FAILED_EXPECT(CreateDXGIFactory2(_ZE_DEBUG_GFX_API ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&oldFactory)));
 		ComPtr<IFactory> factory = nullptr;
-		ZE_DX_THROW_FAILED(oldFactory.As(&factory));
+		ZE_DX_RET_FAILED_EXPECT(oldFactory.As(&factory));
 
 		return factory;
 	}
 
-	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory
-#if _ZE_DEBUG_GFX_API
-		, DebugInfoManager& debugManager
-#endif
-	)
+	ComPtr<IAdapter> CreateAdapter(ComPtr<IFactory> factory) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		ComPtr<IAdapter> adapter = nullptr;
 		for (U32 i = 0; true; ++i)
 		{
 			// Get highest possible performant GPU
-			ZE_DX_THROW_FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));
-
+			if (FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter))))
+				break;
 			DXGI_ADAPTER_DESC3 desc;
 			if (SUCCEEDED(adapter->GetDesc3(&desc)))
 			{
@@ -74,15 +61,9 @@ namespace ZE::RHI::DX
 		return adapter;
 	}
 
-	UINT CreateSwapChain(ComPtr<IFactory> factory, IUnknown* device,
-		HWND window, ComPtr<ISwapChain>& swapChain, bool shaderInput
-#if _ZE_DEBUG_GFX_API
-		, DebugInfoManager& debugManager
-#endif
-	)
+	Expected<ComPtr<ISwapChain>> CreateSwapChain(ComPtr<IFactory> factory,
+		IUnknown* device, HWND window, bool shaderInput, U32& presentFlags) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
 		swapDesc.Width = 0; // Use window sizes
 		swapDesc.Height = 0;
@@ -99,22 +80,27 @@ namespace ZE::RHI::DX
 
 		// Check support for tearing (vsync-off), required in variable rate displays
 		BOOL allowTearing = FALSE;
-		UINT presentFlags = 0;
-		ZE_DX_THROW_FAILED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
-			&allowTearing, sizeof(allowTearing)));
-		if (allowTearing == TRUE)
+		presentFlags = 0;
+		if (SUCCEEDED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing))))
 		{
-			swapDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-			presentFlags = DXGI_PRESENT_ALLOW_TEARING;
+			if (allowTearing == TRUE)
+			{
+				swapDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+				presentFlags = DXGI_PRESENT_ALLOW_TEARING;
+			}
 		}
+		else
+			Logger::Warning("Cannot determine support for tearing in swapchain!");
 
 		ComPtr<IDXGISwapChain1> tempChain = nullptr;
-		ZE_DX_THROW_FAILED(factory->CreateSwapChainForHwnd(device,
+		ZE_DX_RET_FAILED_EXPECT(factory->CreateSwapChainForHwnd(device,
 			window, &swapDesc, nullptr, nullptr, &tempChain));
-		ZE_DX_THROW_FAILED(tempChain.As(&swapChain));
+		ComPtr<ISwapChain> swapChain = nullptr;
+		ZE_DX_RET_FAILED_EXPECT(tempChain.As(&swapChain));
 
 		// Don't use Alt+Enter Windows handling, only borderless fulsscreen window
-		ZE_DX_THROW_FAILED(factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
-		return presentFlags;
+		if (FAILED(factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER)))
+			Logger::Warning("Cannot set window association with newly created swapchain!");
+		return swapChain;
 	}
 }

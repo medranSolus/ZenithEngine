@@ -1,7 +1,6 @@
 #pragma once
 #include "Platform/WinAPI/ComPtr.h"
 ZE_WARNING_PUSH
-#include <d3dcommon.h>
 #include <dxgidebug.h>
 ZE_WARNING_POP
 
@@ -17,17 +16,21 @@ namespace ZE::RHI::DX
 	// Retrieving info from DirectX Debug Layer
 	class DebugInfoManager final
 	{
-		U64 offset = 0;
+		static inline DebugInfoManager* instance = nullptr;
+
+		HMODULE dxgiDebugModule = nullptr;
 		ComPtr<IInfoQueue> infoQueue = nullptr;
 		ComPtr<IDebug> debug = nullptr;
 
 	public:
-		DebugInfoManager();
+		DebugInfoManager() = default;
 		ZE_CLASS_MOVE(DebugInfoManager);
-		~DebugInfoManager() { infoQueue.Reset(); debug->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)); }
+		~DebugInfoManager();
 
-		void BeginRecord() noexcept { offset = infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL); }
+		// Register newly created DebugInfoManager interface to enable checking of debug layer messages
+		static void Register(DebugInfoManager& mgr) noexcept { instance = &mgr; }
 
-		std::vector<std::string> GetMessages() const;
+		static Expected<DebugInfoManager> Create() noexcept;
+		static bool CheckMessages() noexcept;
 	};
 }

@@ -42,6 +42,7 @@ namespace ZE
 		static void CodeError(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Error, code, msg, line, file); }
 		static void CodeCritical(const Status& code, std::string_view msg, U32 line, const char* file) noexcept { LogStatusCode(Level::Critical, code, msg, line, file); }
 
+		static void Unformatted(bool error, std::string_view msg, bool newLine = true, bool indent = true) noexcept;
 		static bool CreateLogDir(bool noLock = false) noexcept;
 	};
 }

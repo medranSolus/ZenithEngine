@@ -70,6 +70,8 @@ namespace ZE
 
 // Instantly return if received error code
 #define ZE_CODE_RET_FAILED(call) do { if (Status __code = (call)) return __code; } while (false)
+// Instantly return if received error code instead of expected object
+#define ZE_EXPECT_RET_FAILED(expectedVar, call) do { auto __exp = (call); if (!__exp) return std::unexpected(__exp.error()); expectedVar = std::move(*__exp); } while (false)
 
 // Log informational message base on given code
 #define ZE_CODE_INFO(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)

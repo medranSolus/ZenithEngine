@@ -14,6 +14,7 @@ namespace ZE::IO::DDS
 	// Main handler of DDS related errors
 	class Error : public std::error_category
 	{
+	protected:
 		Error() = default;
 
 	public:

@@ -17,24 +17,25 @@ namespace ZE::RHI::DX12
 		UINT presentFlags = 0;
 		DX::ComPtr<DX::ISwapChain> swapChain;
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
-		Ptr<DescEntry> rtvSrv;
-		DescriptorInfo srvHandle;
+		std::unique_ptr<DescEntry[]> rtvSrv;
+		DescriptorInfo srvHandle = {};
+		Device* srcDev = nullptr;
 
 	public:
 		SwapChain() = default;
-		SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain();
 
-		constexpr void StartFrame(GFX::Device& dev) {}
+		static Expected<SwapChain> Create(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput) noexcept;
 
-		void Present(GFX::Device& dev) const;
-		void Free(GFX::Device& dev) noexcept;
+		constexpr void StartFrame(GFX::Device& dev) noexcept {}
+
+		Status Present(GFX::Device& dev) const noexcept;
 
 		// Gfx API Internal
 
 		constexpr D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV() const noexcept { return rtvSrv[Settings::GetCurrentBackbufferIndex()].RTV; }
 
-		DescEntry GetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer);
+		Expected<DescEntry> GetCurrentBackbuffer(Device& dev, DX::ComPtr<IResource>& buffer) noexcept;
 	};
 }

@@ -13,7 +13,6 @@
 ZE_WARNING_PUSH
 #include "d3d12.h"
 ZE_WARNING_POP
-#include <bitset>
 
 namespace ZE::RHI::DX12
 {
