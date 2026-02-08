@@ -7,12 +7,12 @@ namespace ZE::Data
 	// Perspective projection data
 	struct Projection
 	{
-		float FOV;
-		float ViewRatio;
-		float NearClip;
+		float FOV = 0.0f;
+		float ViewRatio = 0.0f;
+		float NearClip = 0.0f;
 		// Projection space jitter offsets
-		float JitterX;
-		float JitterY;
+		float JitterX = 0.0f;
+		float JitterY = 0.0f;
 	};
 
 	// Component describing camera params
@@ -21,9 +21,9 @@ namespace ZE::Data
 		static constexpr float ROTATE_EPSILON = 0.000001f - FLT_EPSILON;
 		static constexpr float FLIP_EPSILON = 16.0f * FLT_EPSILON;
 
-		Float3 EyeDirection;
-		Float3 UpVector;
-		Projection Projection;
+		Float3 EyeDirection = {};
+		Float3 UpVector = {};
+		Projection Projection = {};
 	};
 
 	// Types of camera supported by several utility methods

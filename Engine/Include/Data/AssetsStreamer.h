@@ -27,17 +27,17 @@ namespace ZE::Data
 	public:
 		typedef U8 ResourceFlags;
 		enum ResourceFlag : ResourceFlags { None = 0, Static = 1 };
-		struct PackID { U16 ID; };
+		struct PackID { U16 ID = 0; };
 
 		static constexpr const char* RESOURCE_FILE_EXT = ".zeres";
 
 	private:
 		struct DecompressionEntry
 		{
-			EID ResID;
-			IO::CompressionFormat Format;
+			EID ResID = INVALID_EID;
+			IO::CompressionFormat Format = IO::CompressionFormat::None;
 			std::unique_ptr<U8[]> CompressedBuffer;
-			U32 CompressedSize;
+			U32 CompressedSize = 0;
 		};
 
 		static constexpr const char* RESOURCE_DIR = "Resources";

@@ -8,8 +8,8 @@ namespace ZE::RHI::DX12::Resource
 {
 	class CBuffer final
 	{
-		D3D12_GPU_VIRTUAL_ADDRESS address;
-		ResourceInfo resInfo;
+		D3D12_GPU_VIRTUAL_ADDRESS address = 0;
+		ResourceInfo resInfo = {};
 		Device* srcDev = nullptr;
 
 	public:

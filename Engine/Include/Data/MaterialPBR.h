@@ -7,7 +7,7 @@ namespace ZE::Data
 	// CPU side flags of PBR material
 	struct PBRFlags
 	{
-		U8 Flags;
+		U8 Flags = 0;
 
 		constexpr operator U8& () noexcept { return Flags; }
 		constexpr operator const U8& () const noexcept { return Flags; }
@@ -37,11 +37,11 @@ namespace ZE::Data
 			PermutationMask = UseParallaxTex | IsTransparent
 		};
 
-		ColorF4 Albedo;
-		float Metalness;
-		float Roughness;
-		float ParallaxScale;
-		U32 Flags;
+		ColorF4 Albedo = {};
+		float Metalness = 0.0f;
+		float Roughness = 0.0f;
+		float ParallaxScale = 0.0f;
+		U32 Flags = 0;
 
 		static constexpr U8 GetLastPipelineStateNumber() noexcept { return GetPipelineStateNumber({ UINT8_MAX }); }
 		// Describes ordering of pipeline states enforced by the flags, pass UINT8_MAX to get last index for PSO

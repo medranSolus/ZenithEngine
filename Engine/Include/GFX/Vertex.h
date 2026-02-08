@@ -6,10 +6,10 @@ namespace ZE::GFX
 	// Single vertex layout used by the engine
 	struct Vertex
 	{
-		Float3 Position;
-		Float3 Normal;
-		Float2 UV;
-		Float4 Tangent;
+		Float3 Position = {};
+		Float3 Normal = {};
+		Float2 UV = {};
+		Float4 Tangent = {};
 
 		// Get input layout of the vertex
 		static std::vector<Resource::InputParam> GetLayout() noexcept

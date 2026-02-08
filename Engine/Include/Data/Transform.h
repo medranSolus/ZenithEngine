@@ -8,9 +8,9 @@ namespace ZE::Data
 	// If child entity have Transform then all parents should have said component too
 	struct Transform
 	{
-		Float4 Rotation;
-		Float3 Position;
-		Float3 Scale;
+		Float4 Rotation = {};
+		Float3 Position = {};
+		Float3 Scale = {};
 	};
 	struct TransformGlobal : public Transform {};
 	struct TransformPrevious : public TransformGlobal {};

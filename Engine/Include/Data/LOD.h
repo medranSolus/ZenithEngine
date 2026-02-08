@@ -16,7 +16,7 @@ namespace ZE::Data
 		static constexpr U8 BASE_LOD = 0;
 
 		std::unique_ptr<Geometry[]> GeometryLevels;
-		U8 LevelCount;
+		U8 LevelCount = 0;
 
 		Geometry& GetGeometry(U8 lod) noexcept { return GeometryLevels[Math::Clamp(lod, BASE_LOD, LevelCount)]; }
 	};

@@ -6,7 +6,7 @@ namespace ZE::RHI::DX12::Resource
 	class PipelineStateGfx final
 	{
 		DX::ComPtr<IPipelineState> state;
-		D3D_PRIMITIVE_TOPOLOGY topology;
+		D3D_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
 	public:
 		PipelineStateGfx() = default;

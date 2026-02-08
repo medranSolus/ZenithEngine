@@ -27,7 +27,7 @@ namespace ZE
 		GFX::Pipeline::RenderGraphBuilder graphBuilder;
 		GFX::Pipeline::RenderGraph renderGraph;
 		Data::AssetsStreamer assets;
-		std::bitset<Flags::Count> flags;
+		std::bitset<Flags::Count> flags = 0;
 		SFX::Device audioDev;
 
 		bool UploadSync();

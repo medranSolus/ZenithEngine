@@ -7,23 +7,23 @@ namespace ZE::Data
 	// Component describing directional light params
 	struct DirectionalLight
 	{
-		ColorF3 Color;
+		ColorF3 Color = {};
 		// Radiant flux in Watts together with color
-		float Intensity;
+		float Intensity = 0.0f;
 	};
-	struct Direction { Float3 Direction; };
+	struct Direction { Float3 Direction = {}; };
 
 	// Component describing spot light params
 	struct SpotLight
 	{
-		ColorF3 Color;
+		ColorF3 Color = {};
 		// Radiant flux in Watts together with color
-		float Intensity;
-		Float3 Direction;
-		float InnerAngle;
-		float OuterAngle;
-		float AttnLinear;
-		float AttnQuad;
+		float Intensity = 0.0f;
+		Float3 Direction = {};
+		float InnerAngle = 0.0f;
+		float OuterAngle = 0.0f;
+		float AttnLinear = 0.0f;
+		float AttnQuad = 0.0f;
 
 		constexpr void SetAttenuationRange(U64 range) noexcept { Math::Light::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
@@ -31,11 +31,11 @@ namespace ZE::Data
 	// Component containing point light parameters
 	struct PointLight
 	{
-		ColorF3 Color;
+		ColorF3 Color = {};
 		// Radiant flux in Watts together with color
-		float Intensity;
-		float AttnLinear;
-		float AttnQuad;
+		float Intensity = 0.0f;
+		float AttnLinear = 0.0f;
+		float AttnQuad = 0.0f;
 
 		constexpr void SetAttenuationRange(U64 range) noexcept { Math::Light::SetLightAttenuation(AttnLinear, AttnQuad, range); }
 	};
@@ -44,7 +44,7 @@ namespace ZE::Data
 	// Component containing data needed to render light
 	struct LightBuffer
 	{
-		float Volume;
+		float Volume = 0.0f;
 		GFX::Resource::CBuffer Buffer;
 	};
 

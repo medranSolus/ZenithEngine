@@ -46,7 +46,7 @@ namespace ZE::GFX::Primitive
 			const Vector edge2 = Math::XMVectorSubtract(Math::XMLoadFloat3(&v2.Position), p0);
 
 			// Compute surface normal
-			Vector normal;
+			Vector normal = {};
 			if constexpr (GetSurfaceNormal)
 			{
 				normal = Math::XMVector3Normalize(Math::XMVector3Cross(edge1, edge2));
@@ -65,8 +65,8 @@ namespace ZE::GFX::Primitive
 
 			if constexpr (GetTangent)
 			{
-				Float2 deltaUV1;
-				Float2 deltaUV2;
+				Float2 deltaUV1 = {};
+				Float2 deltaUV2 = {};
 				const Vector uv0 = Math::XMLoadFloat2(&v0.UV);
 				Math::XMStoreFloat2(&deltaUV1, Math::XMVectorSubtract(Math::XMLoadFloat2(&v1.UV), uv0));
 				Math::XMStoreFloat2(&deltaUV2, Math::XMVectorSubtract(Math::XMLoadFloat2(&v2.UV), uv0));
@@ -279,7 +279,7 @@ namespace ZE::GFX::Primitive
 				density = 1;
 			density *= 3;
 
-			Data<Float3, U16> data;
+			Data<Float3, U16> data = {};
 			data.Vertices.resize(Utils::SafeCast<U64>(density) + 1);
 
 			data.Vertices.at(0) = { 0.0f, 1.0f, 0.0f };
@@ -425,7 +425,7 @@ namespace ZE::GFX::Primitive
 			const float longitudeAngle = Math::PI2 / Utils::SafeCast<float>(longitudeDensity);
 			const Vector base = Math::XMVectorSet(0.0f, RADIUS, 0.0f, 0.0f);
 
-			Data<Float3> data;
+			Data<Float3> data = {};
 			data.Vertices.reserve(Utils::SafeCast<U64>(latitudeDensity - 1) * longitudeDensity + 2);
 
 			// Sphere vertices without poles
@@ -611,7 +611,7 @@ namespace ZE::GFX::Primitive
 			const float longitudeAngle = Math::PI2 / Utils::SafeCast<float>(longitudeDensity);
 			const Vector base = Math::XMVectorSet(0.0f, RADIUS, 0.0f, 0.0f);
 
-			Data<Vertex> data;
+			Data<Vertex> data = {};
 			data.Vertices.reserve(Utils::SafeCast<U64>(latitudeDensity - 1) * longitudeDensity * 4 + 2 * Utils::SafeCast<U64>(longitudeDensity));
 
 			// Sphere vertices without poles

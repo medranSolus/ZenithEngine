@@ -38,13 +38,13 @@ namespace ZE::GFX::Binding
 	// Single range of shader registers to use
 	struct Range
 	{
-		U32 Count;
-		U32 StartSlot;
+		U32 Count = 0;
+		U32 StartSlot = 0;
 		// All range slots have to be consecutive in single Schema (ex. forbidden Schema with range slots: 0, 1, 3).
 		// Ignored when flags contain 'RangeFlag::BufferPackAppend' or 'RangeFlag::Constant' (they don't occupy range slots).
 		// When not using 'RangeFlag::BufferPack' current 'Range' will occupy next consecutive slots so next available range slot starts at "RangeSlot + Count".
-		U8 RangeSlot;
-		Resource::ShaderTypes Shaders;
+		U8 RangeSlot = 0;
+		Resource::ShaderTypes Shaders = 0;
 		RangeFlags Flags = 0;
 
 		constexpr void Validate() const noexcept;

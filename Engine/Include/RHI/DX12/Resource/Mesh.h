@@ -7,10 +7,10 @@ namespace ZE::RHI::DX12::Resource
 {
 	class Mesh final
 	{
-		D3D12_VERTEX_BUFFER_VIEW vertexView;
-		D3D12_INDEX_BUFFER_VIEW indexView;
-		bool is16bitIndices;
-		ResourceInfo info;
+		D3D12_VERTEX_BUFFER_VIEW vertexView = {};
+		D3D12_INDEX_BUFFER_VIEW indexView = {};
+		bool is16bitIndices = false;
+		ResourceInfo info = {};
 		Device* srcDev = nullptr;
 
 		constexpr bool IsIndexBufferPresent() const noexcept { return indexView.SizeInBytes != 0; }

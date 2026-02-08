@@ -8,7 +8,7 @@ namespace ZE::GFX::Resource::Texture
 	// Info of how single texture should be created
 	struct Desc
 	{
-		Type Type;
+		Type Type = Type::Tex1D;
 		std::vector<Surface> Surfaces;
 	};
 
@@ -21,7 +21,7 @@ namespace ZE::GFX::Resource::Texture
 		U16 MipLevels = 0;
 		// To indicate empty texture entry, fill only Type field and set Format to Unknown
 		PixelFormat Format = PixelFormat::Unknown;
-		Type Type;
+		Type Type = Type::Tex1D;
 		U64 DataOffset = 0;
 		U32 SourceBytes = 0;
 		U32 UncompressedSize = 0;

@@ -7,7 +7,7 @@ namespace ZE::RHI::DX12::Resource
 	template<typename T>
 	class Constant final
 	{
-		T data;
+		T data = {};
 
 	public:
 		Constant() = default;

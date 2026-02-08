@@ -10,22 +10,22 @@ namespace ZE::GFX::Resource
 	// Definition of Sampler used in shaders
 	struct SamplerDesc
 	{
-		SamplerFilter Type;
+		SamplerFilter Type = 0;
 		struct
 		{
-			Texture::AddressMode U;
-			Texture::AddressMode V;
-			Texture::AddressMode W;
+			Texture::AddressMode U = Texture::AddressMode::Edge;
+			Texture::AddressMode V = Texture::AddressMode::Edge;
+			Texture::AddressMode W = Texture::AddressMode::Edge;
 		} Address;
-		float MipLevelBias;
+		float MipLevelBias = 0.0f;
 		// Used when Type is SamplerType::Anisotropic, must be in [1; 16] range
-		U8 MaxAnisotropy;
-		CompareMethod Comparison;
-		Texture::EdgeColor EdgeColor;
+		U8 MaxAnisotropy = 1;
+		CompareMethod Comparison = CompareMethod::Never;
+		Texture::EdgeColor EdgeColor = Texture::EdgeColor::SolidBlack;
 		// Must be less or equal to MaxLOD
-		float MinLOD;
+		float MinLOD = 0.0f;
 		// Must be greater or equal to MinLOD. For no limit set to FLT_MAX
-		float MaxLOD;
-		U32 Slot;
+		float MaxLOD = FLT_MAX;
+		U32 Slot = 0;
 	};
 }

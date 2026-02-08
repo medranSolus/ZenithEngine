@@ -11,7 +11,7 @@ namespace ZE::Platform::WinAPI
 		// Window class register
 		class WindowClass final
 		{
-			HINSTANCE hInstance;
+			HINSTANCE hInstance = nullptr;
 
 		public:
 			WindowClass() noexcept;
@@ -24,8 +24,8 @@ namespace ZE::Platform::WinAPI
 		static constexpr DWORD WIN_STYLE = WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU;
 		static inline WindowClass wndClass;
 
-		HWND wndHandle;
-		RECT windowRect;
+		HWND wndHandle = nullptr;
+		RECT windowRect = {};
 		std::vector<U8> rawBuffer; // TODO: Replace with Table<>
 		bool monitorChanged = false;
 

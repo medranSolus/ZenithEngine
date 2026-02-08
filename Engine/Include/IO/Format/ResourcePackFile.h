@@ -27,12 +27,12 @@ namespace ZE::IO::Format
 		static constexpr const char* SIGNATURE_STR = "ZERF";
 
 		char Signature[4];
-		U32 Version;
-		U32 ResourcesCount;
-		U32 TexturesCount;
-		U32 NameSectionSize;
-		U16 ID;
-		ResourcePackFlags Flags;
+		U32 Version = 0;
+		U32 ResourcesCount = 0;
+		U32 TexturesCount = 0;
+		U32 NameSectionSize = 0;
+		U16 ID = 0;
+		ResourcePackFlags Flags = 0;
 	};
 
 	// Single entry in resource pack info table with resource description
@@ -40,8 +40,8 @@ namespace ZE::IO::Format
 	{
 		ResourcePackEntryType Type;
 		// Index from start of name section
-		U32 NameIndex;
-		U16 NameSize;
+		U32 NameIndex = 0;
+		U16 NameSize = 0;
 		union
 		{
 			struct
@@ -84,16 +84,16 @@ namespace ZE::IO::Format
 	struct ResourcePackTextureEntry
 	{
 		// Offset from start of file
-		U64 Offset;
-		U32 Bytes;
-		U32 UncompressedSize;
-		U32 Width;
-		U32 Height;
-		U16 DepthArraySize;
-		U16 MipLevels;
-		PixelFormat Format;
-		GFX::Resource::Texture::Type Type;
-		CompressionFormat Compression;
+		U64 Offset = 0;
+		U32 Bytes = 0;
+		U32 UncompressedSize = 0;
+		U32 Width = 0;
+		U32 Height = 0;
+		U16 DepthArraySize = 0;
+		U16 MipLevels = 0;
+		PixelFormat Format = PixelFormat::Unknown;
+		GFX::Resource::Texture::Type Type = GFX::Resource::Texture::Type::Tex1D;
+		CompressionFormat Compression = CompressionFormat:::None;
 	};
 #pragma pack(pop)
 }
