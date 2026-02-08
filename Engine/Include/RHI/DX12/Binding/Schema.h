@@ -12,17 +12,17 @@ namespace ZE::RHI::DX12::Binding
 	private:
 		bool isCompute;
 		U32 count;
-		Ptr<BindType> bindings;
+		std::unique_ptr<BindType[]> bindings;
 		DX::ComPtr<IRootSignature> signature;
 
 	public:
 		Schema() = default;
-		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc);
 		ZE_CLASS_MOVE(Schema);
-		~Schema() { ZE_ASSERT(bindings == nullptr && signature == nullptr, "Resource not freed before deletion!"); }
+		~Schema() = default;
+
+		static Expected<Schema> Create(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) noexcept;
 
 		constexpr U32 GetCount() const noexcept { return count; }
-		void Free(GFX::Device& dev) noexcept { signature = nullptr; if (bindings) bindings.DeleteArray(); }
 		void SetCompute(GFX::CommandList& cl) const noexcept { ZE_ASSERT(isCompute, "Schema is not created for compute pass!"); cl.Get().dx12.GetList()->SetComputeRootSignature(GetSignature()); }
 		void SetGraphics(GFX::CommandList& cl) const noexcept { ZE_ASSERT(!isCompute, "Schema is not created for graphics pass!"); cl.Get().dx12.GetList()->SetGraphicsRootSignature(GetSignature()); }
 

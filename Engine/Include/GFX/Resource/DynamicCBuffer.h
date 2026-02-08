@@ -36,10 +36,9 @@ namespace ZE::GFX::Resource
 #pragma region Functions
 	inline Status DynamicCBuffer::AllocBind(Device& dev, CommandList& cl, Binding::Context& bindCtx, const void* values, U32 bytes) noexcept
 	{
-		Expected<DynamicBufferAlloc> alloc = Alloc(dev, values, bytes);
-		if (!alloc)
-			return alloc.error();
-		Bind(cl, bindCtx, alloc.value());
+		DynamicBufferAlloc alloc = {};
+		ZE_EXPECT_RET_FAILED_CODE(alloc, Alloc(dev, values, bytes));
+		Bind(cl, bindCtx, alloc);
 		return {};
 	}
 #pragma endregion

@@ -2,18 +2,6 @@
 
 namespace ZE::GFX::Binding
 {
-	void Library::Free(Device& dev) noexcept
-	{
-		if (schemas)
-		{
-			for (U32 i = 0; i < schemaCount; ++i)
-				schemas[i].Free(dev);
-			schemas.DeleteArray();
-		}
-		schemaCount = 0;
-		locations.clear();
-	}
-
 	bool Library::FetchBinding(const std::string& name, U32& index) const noexcept
 	{
 		if (locations.contains(name))
@@ -24,27 +12,21 @@ namespace ZE::GFX::Binding
 		return true;
 	}
 
-	U32 Library::RegisterCommonBinding(Device& dev, const SchemaDesc& desc, const std::string& name)
+	Expected<U32> Library::RegisterCommonBinding(Device& dev, const SchemaDesc& desc, const std::string& name) noexcept
 	{
 		ZE_ASSERT(!locations.contains(name), "Common data binding already registered!");
 
-		U32 index = AddDataBinding(dev, desc);
+		U32 index = 0;
+		ZE_EXPECT_RET_FAILED(index, AddDataBinding(dev, desc));
 		locations.emplace(name, index);
 		return index;
 	}
 
-	U32 Library::AddDataBinding(Device& dev, const SchemaDesc& desc)
+	Expected<U32> Library::AddDataBinding(Device& dev, const SchemaDesc& desc) noexcept
 	{
-		Schema* newSchemas = new Schema[schemaCount + 1];
-		if (schemaCount > 0)
-		{
-			for (U32 i = 0; i < schemaCount; ++i)
-				newSchemas[i] = std::move(schemas[i]);
-			schemas.DeleteArray(newSchemas);
-		}
-		else
-			schemas = newSchemas;
-		schemas[schemaCount].Init(dev, desc);
-		return schemaCount++;
+		Schema schema = {};
+		ZE_EXPECT_RET_FAILED(schema, Schema::Create(dev, desc));
+		schemas.emplace_back(std::move(schema));
+		return schemas.size() - 1;
 	}
 }

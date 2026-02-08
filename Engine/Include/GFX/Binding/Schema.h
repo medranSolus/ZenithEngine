@@ -18,20 +18,16 @@ namespace ZE::GFX::Binding
 
 	public:
 		Schema() = default;
-		constexpr Schema(Device& dev, const SchemaDesc& desc) { ZE_ASSERT(desc.Ranges.size() > 0, "Empty SchemaDesc!"); ZE_RHI_BACKEND_VAR.Init(dev, desc); }
 		ZE_CLASS_MOVE(Schema);
 		~Schema() = default;
 
-		constexpr void Init(Device& dev, const SchemaDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const SchemaDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
+		static Expected<Schema> Create(Device& dev, const SchemaDesc& desc) noexcept { ZE_RHI_BACKEND_CREATE(Binding::Schema, dev, desc); }
 		ZE_RHI_BACKEND_GET(Binding::Schema);
 
 		// Main Gfx API
 
-		// Before destroying schema you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 		// Get binding index from with offset from the end (0=last, 1=last-1, etc.)
-		constexpr U32 GetIndexFromEnd(U32 offsetFromEnd) const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetCount); ZE_ASSERT(count > offsetFromEnd, "Accessing binding out of range!"); return count - offsetFromEnd - 1; }
+		constexpr U32 GetIndexFromEnd(U32 offsetFromEnd) const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET_VAR(count, GetCount); ZE_ASSERT(count > offsetFromEnd, "Accessing binding out of range!"); return count - offsetFromEnd - 1; }
 		constexpr void SetCompute(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(SetCompute, cl); }
 		constexpr void SetGraphics(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(SetGraphics, cl); }
 	};

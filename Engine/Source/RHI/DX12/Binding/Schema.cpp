@@ -2,17 +2,15 @@
 
 namespace ZE::RHI::DX12::Binding
 {
-	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
+	Expected<Schema> Schema::Create(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx12);
-
 		D3D12_VERSIONED_ROOT_SIGNATURE_DESC signatureDesc = {};
 		signatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
 		signatureDesc.Desc_1_1.NumStaticSamplers = Utils::SafeCast<U32>(desc.Samplers.size());
-		std::unique_ptr < D3D12_STATIC_SAMPLER_DESC[] > staticSamplers = nullptr;
+		std::unique_ptr<D3D12_STATIC_SAMPLER_DESC[]> staticSamplers = nullptr;
 		if (signatureDesc.Desc_1_1.NumStaticSamplers)
 		{
-			staticSamplers = std::make_unique<D3D12_STATIC_SAMPLER_DESC[]>(signatureDesc.Desc_1_1.NumStaticSamplers);
+			staticSamplers = std::make_unique_for_overwrite<D3D12_STATIC_SAMPLER_DESC[]>(signatureDesc.Desc_1_1.NumStaticSamplers);
 			signatureDesc.Desc_1_1.pStaticSamplers = staticSamplers.get();
 			// Load data for samplers
 			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
@@ -46,9 +44,11 @@ namespace ZE::RHI::DX12::Binding
 			else if (!(entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend))
 				signatureDesc.Desc_1_1.NumParameters += entry.Count;
 		}
-		count = signatureDesc.Desc_1_1.NumParameters;
-		bindings = new BindType[count];
-		auto parameters = std::make_unique<D3D12_ROOT_PARAMETER1[]>(count);
+
+		Schema schema = {};
+		schema.count = signatureDesc.Desc_1_1.NumParameters;
+		schema.bindings = std::make_unique_for_overwrite<BindType[]>(schema.count);
+		auto parameters = std::make_unique<D3D12_ROOT_PARAMETER1[]>(schema.count);
 		signatureDesc.Desc_1_1.pParameters = parameters.get();
 
 		// Location | Descs
@@ -98,7 +98,7 @@ namespace ZE::RHI::DX12::Binding
 					parameter.Constants.ShaderRegister = entry.StartSlot;
 					parameter.Constants.RegisterSpace = GetRegisterSpaceForShader(entry.Flags, entry.Shaders);
 					parameter.Constants.Num32BitValues = entry.Count / sizeof(U32) + static_cast<bool>(entry.Count % sizeof(U32));
-					bindings[i++] = BindType::Constant;
+					schema.bindings[i++] = BindType::Constant;
 				}
 				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				{
@@ -107,7 +107,7 @@ namespace ZE::RHI::DX12::Binding
 
 					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 					tables.emplace_back(i, std::vector<D3D12_DESCRIPTOR_RANGE1>{ 1 });
-					bindings[i++] = BindType::Table;
+					schema.bindings[i++] = BindType::Table;
 
 					auto& range = tables.back().second.front();
 					if (entry.Flags & GFX::Binding::RangeFlag::SRV)
@@ -157,10 +157,10 @@ namespace ZE::RHI::DX12::Binding
 					else
 						parameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-					bindings[i++] = type;
+					schema.bindings[i++] = type;
 					for (U32 j = 1; j < entry.Count; ++j)
 					{
-						bindings[i] = type;
+						schema.bindings[i] = type;
 						auto& nextParameter = parameters[i++];
 						nextParameter.ShaderVisibility = parameter.ShaderVisibility;
 						nextParameter.ParameterType = parameter.ParameterType;
@@ -193,7 +193,7 @@ namespace ZE::RHI::DX12::Binding
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
 				| D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
-			isCompute = true;
+			schema.isCompute = true;
 		}
 		else
 		{
@@ -207,7 +207,7 @@ namespace ZE::RHI::DX12::Binding
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 			if (!shaderPresence.IsPixel())
 				signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
-			isCompute = false;
+			schema.isCompute = false;
 		}
 		if (!(desc.Options & GFX::Binding::SchemaOption::NoVertexBuffer) || shaderPresence.IsCompute())
 			signatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -219,19 +219,19 @@ namespace ZE::RHI::DX12::Binding
 
 		// Sanity check for Signature 1.1, if there is no support for new one there should be code to handle that, for now assume 1.1
 		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = { D3D_ROOT_SIGNATURE_VERSION_1_1 };
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)));
 
 		DX::ComPtr<ID3DBlob> serializedSignature = nullptr;
 		DX::ComPtr<ID3DBlob> errors = nullptr;
-		ZE_DX_SET_DEBUG_WATCH();
-		ZE_WIN_EXCEPT_RESULT = D3D12SerializeVersionedRootSignature(&signatureDesc, &serializedSignature, &errors);
-		if (FAILED(ZE_WIN_EXCEPT_RESULT))
+		HRESULT hr = D3D12SerializeVersionedRootSignature(&signatureDesc, &serializedSignature, &errors);
+		if (FAILED(hr))
 		{
 			const char* errorBuffer = reinterpret_cast<const char*>(errors->GetBufferPointer());
-			ZE_BREAK();
-			throw Exception::GenericException(__LINE__, __FILENAME__, errorBuffer, "Root Signature Invalid Parameter");
+			Logger::Error(errorBuffer);
+			ZE_DX_RET_FAILED_EXPECT(hr);
 		}
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
-			serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature)));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CreateRootSignature(0,
+			serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&schema.signature)));
+		return schema;
 	}
 }
