@@ -18,13 +18,14 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::FFX
 {
-	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
-	FfxErrorCode GetShaderInfoSSSR(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader);
+	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoSSSR(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode InitShader(Resource::Shader& shader, Device* dev, const std::string& name) noexcept;
 	std::string GetGeneralPermutation(bool fp16, bool wave64) noexcept;
 
 	U64 GetPipelineID(FfxEffect effect, FfxPass passId, U32 permutationOptions) noexcept
@@ -235,40 +236,40 @@ namespace ZE::GFX::FFX
 		return static_cast<U64>(effect) | (static_cast<U64>(passId) << 8) | (static_cast<U64>(permutationOptions) << 16);
 	}
 
-	FfxErrorCode GetShaderInfo(Device* dev, FfxEffect effect, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfo(Device* dev, FfxEffect effect, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		FfxErrorCode code = FFX_OK;
 		switch (effect)
 		{
 		default:
-		ZE_FAIL("Selected effect has not been implemented yet!");
-		return FFX_ERROR_INVALID_ENUM;
+			ZE_FAIL("Selected effect has not been implemented yet!");
+			return FFX_ERROR_INVALID_ENUM;
 		case FFX_EFFECT_CACAO:
-		code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoCACAO(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_DENOISER:
-		code = GetShaderInfoDenoiser(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoDenoiser(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR1:
-		code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR2:
-		code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoFSR2(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR3UPSCALER:
-		code = GetShaderInfoFSR3(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoFSR3(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_LPM:
-		code = GetShaderInfoLPM(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoLPM(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_SSSR:
-		code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
-		break;
+			code = GetShaderInfoSSSR(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		}
 		return code;
 	}
 
-	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "SSAOConstantsBuffer_t" };
 		static const char* samplerNames[] = { "g_PointClampSampler", "g_PointMirrorSampler", "g_LinearClampSampler", "g_ViewspaceDepthTapSampler" };
@@ -331,14 +332,15 @@ namespace ZE::GFX::FFX
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
 			if (shader)
-				shader->Init(*dev, "CACAOClearCounterCS");
+				return InitShader(*shader, dev, "CACAOClearCounterCS");
 			break;
 		}
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS_HALF:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS_HALF:
-		half = true;
-		[[fallthrough]];
+			half = true;
+			[[fallthrough]];
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_DEPTHS:
 		{
@@ -359,7 +361,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOPrepareDepthCS" + getPreparePermutation(false, half, prepareDownsampled, wave64));
+				return InitShader(*shader, dev, "CACAOPrepareDepthCS" + getPreparePermutation(false, half, prepareDownsampled, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_DEPTHS_AND_MIPS:
@@ -383,13 +385,13 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOPrepareDepthMipsCS" + getPreparePermutation(false, false, prepareDownsampled, wave64));
+				return InitShader(*shader, dev, "CACAOPrepareDepthMipsCS" + getPreparePermutation(false, false, prepareDownsampled, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS_FROM_INPUT_NORMALS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_NORMALS_FROM_INPUT_NORMALS:
-		inputNormals = true;
-		[[fallthrough]];
+			inputNormals = true;
+			[[fallthrough]];
 		case FFX_CACAO_PASS_PREPARE_DOWNSAMPLED_NORMALS:
 		case FFX_CACAO_PASS_PREPARE_NATIVE_NORMALS:
 		{
@@ -411,7 +413,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOPrepareNormalsCS" + getPreparePermutation(inputNormals, false, prepareDownsampled, wave64));
+				return InitShader(*shader, dev, "CACAOPrepareNormalsCS" + getPreparePermutation(inputNormals, false, prepareDownsampled, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_GENERATE_Q0:
@@ -455,7 +457,7 @@ namespace ZE::GFX::FFX
 					if (wave64)
 						name += "W";
 				}
-				shader->Init(*dev, name);
+				return InitShader(*shader, dev, name);
 			}
 			break;
 		}
@@ -478,7 +480,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOImportanceMapGenerateCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "CACAOImportanceMapGenerateCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_POST_PROCESS_IMPORTANCE_MAP_A:
@@ -500,7 +502,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOImportanceMapProcessACS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "CACAOImportanceMapProcessACS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_POST_PROCESS_IMPORTANCE_MAP_B:
@@ -522,7 +524,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "CACAOImportanceMapProcessBCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "CACAOImportanceMapProcessBCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_1:
@@ -564,16 +566,16 @@ namespace ZE::GFX::FFX
 					if (wave64)
 						name += "W";
 				}
-				shader->Init(*dev, name);
+				return InitShader(*shader, dev, name);
 			}
 			break;
 		}
 		case FFX_CACAO_PASS_APPLY_NON_SMART_HALF:
-		half = true;
-		[[fallthrough]];
+			half = true;
+			[[fallthrough]];
 		case FFX_CACAO_PASS_APPLY_NON_SMART:
-		applyNonSmart = true;
-		[[fallthrough]];
+			applyNonSmart = true;
+			[[fallthrough]];
 		case FFX_CACAO_PASS_APPLY:
 		{
 			static const char* srvNames[] = { "g_SsaoBufferPing" };
@@ -607,7 +609,7 @@ namespace ZE::GFX::FFX
 					if (wave64)
 						name += "W";
 				}
-				shader->Init(*dev, name);
+				return InitShader(*shader, dev, name);
 			}
 			break;
 		}
@@ -644,18 +646,20 @@ namespace ZE::GFX::FFX
 					if (wave64)
 						name += "W";
 				}
-				shader->Init(*dev, name);
+				return InitShader(*shader, dev, name);
 			}
 			break;
 		}
 		default:
-		ZE_FAIL("Invalid pass for CACAO!");
-		return FFX_ERROR_INVALID_ENUM;
+		{
+			ZE_FAIL("Invalid pass for CACAO!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNamesReflections[] = { "cbDenoiserReflections" };
 		static const char* shadowsSamplerNames[] = { "s_trilinerClamp" };
@@ -689,7 +693,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "DenoiserShadowsPrepareMaskCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserShadowsPrepareMaskCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_DENOISER_PASS_SHADOWS_TILE_CLASSIFICATION:
@@ -713,7 +717,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "DenoiserShadowsClassificationCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserShadowsClassificationCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_DENOISER_PASS_FILTER_SOFT_SHADOWS_0:
@@ -755,7 +759,7 @@ namespace ZE::GFX::FFX
 						}
 						return suffix;
 					};
-				shader->Init(*dev, "DenoiserShadowsFilterCS" + getPermutation(Utils::SafeCast<U8>(pass) - FFX_DENOISER_PASS_FILTER_SOFT_SHADOWS_0, fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserShadowsFilterCS" + getPermutation(Utils::SafeCast<U8>(pass) - FFX_DENOISER_PASS_FILTER_SOFT_SHADOWS_0, fp16, wave64));
 			}
 			break;
 		}
@@ -779,7 +783,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "DenoiserReflectionsReprojectCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserReflectionsReprojectCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_DENOISER_PASS_PREFILTER_REFLECTIONS:
@@ -802,7 +806,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "DenoiserReflectionsPrefilterCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserReflectionsPrefilterCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_DENOISER_PASS_RESOLVE_TEMPORAL_REFLECTIONS:
@@ -825,17 +829,19 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "DenoiserReflectionsResolveCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DenoiserReflectionsResolveCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		default:
-		ZE_FAIL("Invalid pass for Denoiser!");
-		return FFX_ERROR_INVALID_ENUM;
+		{
+			ZE_FAIL("Invalid pass for Denoiser!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbFSR1" };
 		static const char* samplerNames[] = { "s_LinearClamp" };
@@ -872,8 +878,8 @@ namespace ZE::GFX::FFX
 		switch (pass)
 		{
 		case FFX_FSR1_PASS_EASU_RCAS:
-		sharpen = true;
-		[[fallthrough]];
+			sharpen = true;
+			[[fallthrough]];
 		case FFX_FSR1_PASS_EASU:
 		{
 			static const char* srvNames[] = { "r_input_color" };
@@ -894,7 +900,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR1EasuCS" + getPermutation(passAlpha, sharpen, srgbConversion, fp16, wave64));
+				return InitShader(*shader, dev, "FSR1EasuCS" + getPermutation(passAlpha, sharpen, srgbConversion, fp16, wave64));
 			break;
 		}
 		case FFX_FSR1_PASS_RCAS:
@@ -916,7 +922,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR1RCasCS" + getPermutation(passAlpha, false, false, fp16, wave64));
+				return InitShader(*shader, dev, "FSR1RCasCS" + getPermutation(passAlpha, false, false, fp16, wave64));
 			break;
 		}
 		default:
@@ -928,7 +934,7 @@ namespace ZE::GFX::FFX
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* samplerNames[] = { "s_LinearClamp" };
 		static const char* cbvNamesReactive[] = { "cbFSR2", "cbGenerateReactive" };
@@ -993,7 +999,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2DepthClipCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, false, fp16, wave64));
+				return InitShader(*shader, dev, "FSR2DepthClipCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, false, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH:
@@ -1015,7 +1021,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2ReconstructPrevDepthCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
+				return InitShader(*shader, dev, "FSR2ReconstructPrevDepthCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_LOCK:
@@ -1037,12 +1043,12 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2LockCS" + getPermutation(depthInverted, false, false, false, false, false, fp16, wave64));
+				return InitShader(*shader, dev, "FSR2LockCS" + getPermutation(depthInverted, false, false, false, false, false, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_ACCUMULATE_SHARPEN:
-		sharpen = true;
-		[[fallthrough]];
+			sharpen = true;
+			[[fallthrough]];
 		case FFX_FSR2_PASS_ACCUMULATE:
 		{
 			static const char* srvNames[] = { "r_input_exposure", "r_input_motion_vectors", "r_internal_upscaled_color", "r_lock_status", "r_prepared_input_color", "r_luma_history", "r_imgMips", "r_dilated_reactive_masks" };
@@ -1065,7 +1071,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2AccumulateCS" + getPermutation(false, sharpen, lut, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
+				return InitShader(*shader, dev, "FSR2AccumulateCS" + getPermutation(false, sharpen, lut, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_RCAS:
@@ -1088,7 +1094,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2RCasCS" + GetGeneralPermutation(_ZE_PLATFORM_XBOX_SCARLET ? fp16 : false, wave64));
+				return InitShader(*shader, dev, "FSR2RCasCS" + GetGeneralPermutation(_ZE_PLATFORM_XBOX_SCARLET ? fp16 : false, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_COMPUTE_LUMINANCE_PYRAMID:
@@ -1111,7 +1117,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2LuminancePyramidCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR2LuminancePyramidCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_GENERATE_REACTIVE:
@@ -1155,17 +1161,19 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2GenerateTCRCS" + getPermutation(false, false, false, false, jitteredMotionVectors, false, fp16, wave64));
+				return InitShader(*shader, dev, "FSR2GenerateTCRCS" + getPermutation(false, false, false, false, jitteredMotionVectors, false, fp16, wave64));
 			break;
 		}
 		default:
-		ZE_FAIL("Invalid pass for FSR2!");
-		return FFX_ERROR_INVALID_ENUM;
+		{
+			ZE_FAIL("Invalid pass for FSR2!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* samplerNames[] = { "s_LinearClamp" };
 		static const U32 slots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -1230,7 +1238,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3PrepareInputsCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, false, false, wave64));
+				return InitShader(*shader, dev, "FSR3PrepareInputsCS" + getPermutation(depthInverted, false, false, lowResMotionVectors, jitteredMotionVectors, false, false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_LUMA_PYRAMID:
@@ -1253,7 +1261,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3LumaPyramidCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR3LumaPyramidCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE_PYRAMID:
@@ -1276,7 +1284,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3ShadingChangePyramidCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR3ShadingChangePyramidCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE:
@@ -1299,7 +1307,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3ShadingChangeCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR3ShadingChangeCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_PREPARE_REACTIVITY:
@@ -1322,7 +1330,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3PrepareReactivityCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "FSR3PrepareReactivityCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_LUMA_INSTABILITY:
@@ -1345,12 +1353,12 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3LumaInstabilityCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR3LumaInstabilityCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_ACCUMULATE_SHARPEN:
-		sharpen = true;
-		[[fallthrough]];
+			sharpen = true;
+			[[fallthrough]];
 		case FFX_FSR3UPSCALER_PASS_ACCUMULATE:
 		{
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
@@ -1375,7 +1383,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3AccumulateCS" + getPermutation(false, sharpen, lut, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
+				return InitShader(*shader, dev, "FSR3AccumulateCS" + getPermutation(false, sharpen, lut, lowResMotionVectors, jitteredMotionVectors, hdr, fp16, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_RCAS:
@@ -1398,7 +1406,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3RCasCS" + GetGeneralPermutation(_ZE_PLATFORM_XBOX_SCARLET ? fp16 : false, wave64));
+				return InitShader(*shader, dev, "FSR3RCasCS" + GetGeneralPermutation(_ZE_PLATFORM_XBOX_SCARLET ? fp16 : false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_DEBUG_VIEW:
@@ -1421,7 +1429,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3DebugViewCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "FSR3DebugViewCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_GENERATE_REACTIVE:
@@ -1444,18 +1452,20 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR3GenerateReactiveCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "FSR3GenerateReactiveCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_FSR3UPSCALER_PASS_TCR_AUTOGENERATE:
 		default:
-		ZE_FAIL("Invalid pass for FSR3!");
-		return FFX_ERROR_INVALID_ENUM;
+		{
+			ZE_FAIL("Invalid pass for FSR3!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
 		}
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbLPM" };
 		static const U32 slots[] = { 0 };
@@ -1485,7 +1495,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "LPMFilterCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "LPMFilterCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		default:
@@ -1497,7 +1507,7 @@ namespace ZE::GFX::FFX
 		return FFX_OK;
 	}
 
-	FfxErrorCode GetShaderInfoSSSR(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader)
+	FfxErrorCode GetShaderInfoSSSR(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbSSSR" };
 		static const char* samplerNames[] = { "s_EnvironmentMapSampler" };
@@ -1531,7 +1541,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "SSSRDepthDownsampleCS" + GetGeneralPermutation(fp16, false));
+				return InitShader(*shader, dev, "SSSRDepthDownsampleCS" + GetGeneralPermutation(fp16, false));
 			break;
 		}
 		case FFX_SSSR_PASS_CLASSIFY_TILES:
@@ -1554,7 +1564,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "SSSRClassifyTilesCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "SSSRClassifyTilesCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_SSSR_PASS_PREPARE_BLUE_NOISE_TEXTURE:
@@ -1576,7 +1586,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "SSSRPrepareNoiseCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "SSSRPrepareNoiseCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
@@ -1597,7 +1607,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "SSSRPrepareIndirectCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "SSSRPrepareIndirectCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_SSSR_PASS_INTERSECTION:
@@ -1620,13 +1630,28 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "SSSRIntersectCS" + GetGeneralPermutation(false, wave64));
+				return InitShader(*shader, dev, "SSSRIntersectCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		default:
-		ZE_FAIL("Invalid pass for SSSR!");
-		return FFX_ERROR_INVALID_ENUM;
+		{
+			ZE_FAIL("Invalid pass for SSSR!");
+			return FFX_ERROR_INVALID_ENUM;
 		}
+		}
+		return FFX_OK;
+	}
+
+	FfxErrorCode InitShader(Resource::Shader& shader, Device* dev, const std::string& name) noexcept
+	{
+		ZE_ASSERT(dev, "Empty device!");
+		auto exp = Resource::Shader::Create(*dev, name);
+		if (!exp)
+		{
+			ZE_CODE_ERROR(exp.error(), "Failed retrieving FFX shader " + name);
+			return FFX_ERROR_BACKEND_API_ERROR;
+		}
+		shader = std::move(exp.value());
 		return FFX_OK;
 	}
 

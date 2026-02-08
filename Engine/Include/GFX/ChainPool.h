@@ -24,7 +24,7 @@ namespace ZE::GFX
 		// Get current resource
 		constexpr const T& Get() const noexcept;
 		// Execute function on every inner resource, ex. when resources need special init/destroy or to alter their state
-		constexpr void Exec(std::function<void(T&)> x);
+		constexpr void Exec(std::function<void(T&)> x) noexcept;
 	};
 
 #pragma region Functions
@@ -66,7 +66,7 @@ namespace ZE::GFX
 	}
 
 	template<typename T>
-	constexpr void ChainPool<T>::Exec(std::function<void(T&)> x)
+	constexpr void ChainPool<T>::Exec(std::function<void(T&)> x) noexcept
 	{
 		if (Settings::GetChainResourceCount() > 1)
 		{

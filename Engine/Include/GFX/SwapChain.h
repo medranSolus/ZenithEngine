@@ -21,7 +21,7 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
-		static Expected<SwapChain> Create(const Window::MainWindow& window, Device& dev, bool shaderInput) { ZE_RHI_BACKEND_CREATE(SwapChain, window, dev, shaderInput); }
+		static Expected<SwapChain> Create(const Window::MainWindow& window, Device& dev, bool shaderInput) noexcept { ZE_RHI_BACKEND_CREATE(SwapChain, window, dev, shaderInput); }
 		ZE_RHI_BACKEND_GET(SwapChain);
 
 		// Main Gfx API

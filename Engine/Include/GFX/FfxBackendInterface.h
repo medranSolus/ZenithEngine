@@ -4,7 +4,6 @@
 #include "Resource/DynamicCBuffer.h"
 #include "ChainPool.h"
 #include "DiskManager.h"
-#include "FfxException.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_types.h"
 ZE_WARNING_POP
@@ -14,9 +13,9 @@ namespace ZE::GFX::FFX
 	// Description of additional resource used by FFX backend to be allocated in frame buffer
 	struct InternalResourceDescription
 	{
-		Pipeline::FrameResourceDesc Desc;
-		RID ResID;
-		U32 PassID;
+		Pipeline::FrameResourceDesc Desc = {};
+		RID ResID = INVALID_RID;
+		U32 PassID = UINT32_MAX;
 	};
 
 	// Data about pass to help in creation of new resources with setting their correct lifetime
