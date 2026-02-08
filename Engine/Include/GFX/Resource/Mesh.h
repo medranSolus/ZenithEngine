@@ -18,52 +18,40 @@ namespace ZE::GFX::Resource
 
 	public:
 		Mesh() = default;
-		constexpr Mesh(Device& dev, DiskManager& disk, const MeshData& data) { Init(dev, disk, data); }
-		constexpr Mesh(Device& dev, DiskManager& disk, const MeshFileData& data, GFile& file) { Init(dev, disk, data, file); }
 		ZE_CLASS_MOVE(Mesh);
 		~Mesh() = default;
 
-		constexpr void Init(Device& dev, DiskManager& disk, const MeshData& data);
-		constexpr void Init(Device& dev, DiskManager& disk, const MeshFileData& data, GFile& file);
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, DiskManager& disk, CommandList& cl);
+		static Expected<Mesh> Create(Device& dev, DiskManager& disk, const MeshData& data) noexcept;
+		static Expected<Mesh> Create(Device& dev, DiskManager& disk, const MeshFileData& data, GFile& file) noexcept;
 		ZE_RHI_BACKEND_GET(Resource::Mesh);
 
 		// Main Gfx API
 
-		constexpr U32 GetSize() const noexcept { U32 size = 0; ZE_RHI_BACKEND_CALL_RET(size, GetSize); return size; }
-		constexpr U32 GetVertexCount() const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetVertexCount); return count; }
-		constexpr U32 GetIndexCount() const noexcept { U32 count = 0; ZE_RHI_BACKEND_CALL_RET(count, GetIndexCount); return count; }
-		constexpr U16 GetVertexSize() const noexcept { U16 size = 0; ZE_RHI_BACKEND_CALL_RET(size, GetVertexSize); return size; }
-		constexpr PixelFormat GetIndexFormat() const noexcept { PixelFormat format = PixelFormat::Unknown; ZE_RHI_BACKEND_CALL_RET(format, GetIndexFormat); return format; }
+		constexpr U32 GetSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetSize); }
+		constexpr U32 GetVertexCount() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetVertexCount); }
+		constexpr U32 GetIndexCount() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetIndexCount); }
+		constexpr U16 GetVertexSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetVertexSize); }
+		constexpr PixelFormat GetIndexFormat() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetIndexFormat); }
 
 		constexpr void Draw(Device& dev, CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Draw, dev, cl); }
-		// Before destroying buffer you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 
 #pragma region Functions
-	constexpr void Mesh::Init(Device& dev, DiskManager& disk, const MeshData& data)
+	Expected<Mesh> Mesh::Create(Device& dev, DiskManager& disk, const MeshData& data) noexcept
 	{
 		ZE_ASSERT(data.VertexCount && data.VertexSize, "Empty vertex data!");
 		ZE_ASSERT(data.IndexCount == 0 || (data.IndexCount && data.IndexSize && data.IndexCount % 3 == 0),
 			"Indices have to be multiple of 3!");
-		ZE_RHI_BACKEND_VAR.Init(dev, disk, data);
+		ZE_RHI_BACKEND_CREATE(Resource::Mesh, dev, disk, data);
 	}
 
-	constexpr void Mesh::Init(Device& dev, DiskManager& disk, const MeshFileData& data, GFile& file)
+	Expected<Mesh> Mesh::Create(Device& dev, DiskManager& disk, const MeshFileData& data, GFile& file) noexcept
 	{
 		ZE_ASSERT(data.SourceBytes && data.VertexCount && data.VertexSize, "Empty vertex data!");
 		ZE_ASSERT(data.IndexCount % 3 == 0 && (data.IndexFormat == PixelFormat::Unknown
 			|| data.IndexFormat == PixelFormat::R8_UInt || data.IndexFormat == PixelFormat::R16_UInt || data.IndexFormat == PixelFormat::R32_UInt),
 			"Indices have to be multiple of 3 and one of the following formats: R8_UInt, R16_UInt or R32_UInt!");
-		ZE_RHI_BACKEND_VAR.Init(dev, disk, data, file);
-	}
-
-	constexpr void Mesh::SwitchApi(GfxApiType nextApi, Device& dev, DiskManager& disk, CommandList& cl)
-	{
-		MeshData data = {};
-		ZE_RHI_BACKEND_CALL_RET(data, GetData, dev, cl);
-		ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, disk, data);
+		ZE_RHI_BACKEND_CREATE(Resource::Mesh, dev, disk, data, file);
 	}
 #pragma endregion
 }

@@ -10,11 +10,10 @@ namespace ZE::RHI::DX12
 
 	public:
 		CommandSignature() = default;
-		CommandSignature(GFX::Device& dev, GFX::IndirectCommandType type);
 		ZE_CLASS_MOVE(CommandSignature);
-		~CommandSignature() { ZE_ASSERT_FREED(signature == nullptr); }
+		~CommandSignature() = default;
 
-		void Free(GFX::Device& dev) noexcept { signature = nullptr; }
+		static Expected<CommandSignature> Create(GFX::Device& dev, GFX::IndirectCommandType type) noexcept;
 
 		// Gfx API Internal
 

@@ -9,12 +9,12 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		PipelineStateCompute() = default;
-		PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateCompute);
-		~PipelineStateCompute() { ZE_ASSERT_FREED(state == nullptr); }
+		~PipelineStateCompute() = default;
 
-		void Bind(GFX::CommandList& cl) const noexcept { cl.Get().dx12.GetList()->SetPipelineState(GetState()); }
-		void Free(GFX::Device& dev) noexcept { state = nullptr; }
+		static Expected<PipelineStateCompute> Create(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding) noexcept;
+
+		void Bind(GFX::CommandList& cl) const noexcept { ZE_DX_CHECK_FAILED(cl.Get().dx12.GetList()->SetPipelineState(GetState()), "Setting compute PSO resulted in debug layer messages!"); }
 
 		// Gfx API Internal
 

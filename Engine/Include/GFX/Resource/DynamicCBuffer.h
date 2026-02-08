@@ -18,20 +18,29 @@ namespace ZE::GFX::Resource
 
 	public:
 		DynamicCBuffer() = default;
-		constexpr DynamicCBuffer(Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
 		~DynamicCBuffer() = default;
 
-		constexpr void Init(Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev); }
+		static Expected<DynamicCBuffer> Create(Device& dev) noexcept { ZE_RHI_BACKEND_CREATE(Resource::DynamicCBuffer, dev); }
 		ZE_RHI_BACKEND_GET(Resource::DynamicCBuffer);
 
 		// Main Gfx API
 
-		constexpr DynamicBufferAlloc Alloc(Device& dev, const void* values, U32 bytes) { DynamicBufferAlloc info; ZE_RHI_BACKEND_CALL_RET(info, Alloc, dev, values, bytes); return info; }
+		constexpr Expected<DynamicBufferAlloc> Alloc(Device& dev, const void* values, U32 bytes) noexcept { ZE_RHI_BACKEND_CALL_RET(Alloc, dev, values, bytes); }
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx, const DynamicBufferAlloc& allocInfo) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl, bindCtx, allocInfo); }
-		constexpr void AllocBind(Device& dev, CommandList& cl, Binding::Context& bindCtx, const void* values, U32 bytes) { Bind(cl, bindCtx, Alloc(dev, values, bytes)); }
-		constexpr void StartFrame(Device& dev) { ZE_RHI_BACKEND_CALL(StartFrame, dev); }
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		Status StartFrame(Device& dev) noexcept { ZE_RHI_BACKEND_CALL_RET(StartFrame, dev); }
+
+		Status AllocBind(Device& dev, CommandList& cl, Binding::Context& bindCtx, const void* values, U32 bytes) noexcept;
 	};
+
+#pragma region Functions
+	inline Status DynamicCBuffer::AllocBind(Device& dev, CommandList& cl, Binding::Context& bindCtx, const void* values, U32 bytes) noexcept
+	{
+		Expected<DynamicBufferAlloc> alloc = Alloc(dev, values, bytes);
+		if (!alloc)
+			return alloc.error();
+		Bind(cl, bindCtx, alloc.value());
+		return {};
+	}
+#pragma endregion
 }

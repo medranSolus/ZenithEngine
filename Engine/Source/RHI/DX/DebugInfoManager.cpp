@@ -28,9 +28,6 @@ namespace ZE::RHI::DX
 
 		ZE_WIN_RET_FAILED_EXPECT(dxgiGetDebugInterface(IID_PPV_ARGS(&manager.infoQueue)));
 		ZE_WIN_RET_FAILED_EXPECT(dxgiGetDebugInterface(IID_PPV_ARGS(&manager.debug)));
-
-		// All messages will be printed manually
-		manager.infoQueue->SetMuteDebugOutput(DXGI_DEBUG_ALL, true);
 		return manager;
 	}
 
@@ -55,7 +52,7 @@ namespace ZE::RHI::DX
 					DXGI_INFO_QUEUE_MESSAGE* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());
 					hr = instance->infoQueue->GetMessageW(DXGI_DEBUG_ALL, i, msg, &msgLen); // Get msg
 					if (SUCCEEDED(hr))
-						Logger::Unformatted(true, msg->pDescription, true, true);
+						Logger::Unformatted(true, msg->pDescription, true, true, true);
 					else
 					{
 						ZE_FAIL("Failed to retrieve DX debug message!");

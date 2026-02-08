@@ -18,18 +18,14 @@ namespace ZE::GFX::Resource
 
 	public:
 		PipelineStateCompute() = default;
-		constexpr PipelineStateCompute(Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Init(dev, shader, binding); }
 		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;
 
-		constexpr void Init(Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Init(dev, shader, binding); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, Shader& shader, const Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, shader, binding); }
+		Expected<PipelineStateCompute> Create(Device& dev, Shader& shader, const Binding::Schema& binding) noexcept { ZE_RHI_BACKEND_CREATE(Resource::PipelineStateCompute, dev, shader, binding); }
 		ZE_RHI_BACKEND_GET(Resource::PipelineStateCompute);
 
 		// Main Gfx API
 
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl); }
-		// Before destroying pipeline you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 }

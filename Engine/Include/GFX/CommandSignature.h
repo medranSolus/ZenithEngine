@@ -18,17 +18,12 @@ namespace ZE::GFX
 
 	public:
 		CommandSignature() = default;
-		constexpr CommandSignature(Device& dev, IndirectCommandType type) { Init(dev, type); }
 		ZE_CLASS_MOVE(CommandSignature);
 		~CommandSignature() = default;
 
-		constexpr void Init(Device& dev, IndirectCommandType type) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, IndirectCommandType type) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, type); }
+		static Expected<CommandSignature> Create(Device& dev, IndirectCommandType type) noexcept { ZE_RHI_BACKEND_CREATE(CommandSignature, dev, type); }
 		ZE_RHI_BACKEND_GET(CommandSignature);
 
 		// Main Gfx API
-
-		// Before destroying buffer you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 }

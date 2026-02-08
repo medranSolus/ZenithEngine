@@ -2,10 +2,8 @@
 
 namespace ZE::RHI::DX12
 {
-	CommandSignature::CommandSignature(GFX::Device& dev, GFX::IndirectCommandType type)
+	Expected<CommandSignature> CommandSignature::Create(GFX::Device& dev, GFX::IndirectCommandType type) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx12);
-
 		D3D12_INDIRECT_ARGUMENT_DESC argument = {};
 		D3D12_COMMAND_SIGNATURE_DESC desc = {};
 		desc.pArgumentDescs = &argument;
@@ -22,7 +20,21 @@ namespace ZE::RHI::DX12
 			break;
 		}
 		}
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&signature)));
-		ZE_DX_SET_ID(signature, "Indirect command signature");
+
+		CommandSignature cmd = {};
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(&cmd.signature)));
+#if _ZE_DEBUG_GFX_NAMES
+		switch (type)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::IndirectCommandType::Dispatch:
+		{
+			ZE_DX_SET_ID(cmd.signature, "Indirect command signature - Dispatch");
+			break;
+		}
+		}
+#endif
+		return cmd;
 	}
 }

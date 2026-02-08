@@ -2,10 +2,8 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
+	Expected<PipelineStateGfx> PipelineStateGfx::Create(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx12);
-
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC stateDesc = {};
 		stateDesc.pRootSignature = binding.Get().dx12.GetSignature();
 
@@ -204,7 +202,8 @@ namespace ZE::RHI::DX12::Resource
 
 		// Topology type
 		stateDesc.PrimitiveTopologyType = GetTopologyType(desc.Topology);
-		topology = DX::GetTopology(desc.Topology, desc.Ordering);
+		PipelineStateGfx pso = {};
+		pso.topology = DX::GetTopology(desc.Topology, desc.Ordering);
 
 		// Output description
 		ZE_ASSERT(desc.RenderTargetsCount < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT, "Too many render targets!");
@@ -223,15 +222,16 @@ namespace ZE::RHI::DX12::Resource
 		stateDesc.CachedPSO.CachedBlobSizeInBytes = 0;
 		stateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&state)));
-		ZE_DX_SET_ID(state, "PSO_" + desc.DebugName);
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CreateGraphicsPipelineState(&stateDesc, IID_PPV_ARGS(&pso.state)));
+		ZE_DX_SET_ID(pso.state, "PSO_" + desc.DebugName);
+		return pso;
 	}
 
 	void PipelineStateGfx::Bind(GFX::CommandList& cl) const noexcept
 	{
 		auto list = cl.Get().dx12.GetList();
-		list->SetPipelineState(GetState());
-		list->IASetPrimitiveTopology(topology);
+		ZE_DX_CHECK_FAILED(list->SetPipelineState(GetState()), "Setting GFX PSO resulted in debug layer messages!");
+		ZE_DX_CHECK_FAILED(list->IASetPrimitiveTopology(topology), "Setting primitive topology resulted in debug layer messages!");
 		SetStencilRef(cl, 0);
 	}
 }

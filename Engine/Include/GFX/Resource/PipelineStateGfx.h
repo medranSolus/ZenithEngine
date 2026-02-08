@@ -18,19 +18,15 @@ namespace ZE::GFX::Resource
 
 	public:
 		PipelineStateGfx() = default;
-		constexpr PipelineStateGfx(Device& dev, const PipelineStateDesc& desc, const Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Init(dev, desc, binding); }
 		ZE_CLASS_MOVE(PipelineStateGfx);
 		~PipelineStateGfx() = default;
 
-		constexpr void Init(Device& dev, const PipelineStateDesc& desc, const Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Init(dev, desc, binding); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const PipelineStateDesc& desc, Binding::Schema& binding) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc, binding); }
+		static Expected<PipelineStateGfx> Create(Device& dev, const PipelineStateDesc& desc, const Binding::Schema& binding) noexcept { ZE_RHI_BACKEND_CREATE(Resource::PipelineStateGfx, dev, desc, binding); }
 		ZE_RHI_BACKEND_GET(Resource::PipelineStateGfx);
 
 		// Main Gfx API
 
 		constexpr void SetStencilRef(CommandList& cl, U32 refValue) const noexcept { ZE_RHI_BACKEND_CALL(SetStencilRef, cl, refValue); }
 		constexpr void Bind(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl); }
-		// Before destroying pipeline you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
 	};
 }

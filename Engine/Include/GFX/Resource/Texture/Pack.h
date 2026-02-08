@@ -18,20 +18,15 @@ namespace ZE::GFX::Resource::Texture
 
 	public:
 		Pack() = default;
-		constexpr Pack(Device& dev, DiskManager& disk, const PackDesc& desc) { Init(dev, disk, desc); }
-		constexpr Pack(Device& dev, DiskManager& disk, const PackFileDesc& desc, GFile& file) { Init(dev, disk, desc, file); }
 		ZE_CLASS_MOVE(Pack);
 		~Pack() = default;
 
-		constexpr void Init(Device& dev, DiskManager& disk, const PackDesc& desc) { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_VAR.Init(dev, disk, desc); }
-		constexpr void Init(Device& dev, DiskManager& disk, const PackFileDesc& desc, GFile& file) { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_VAR.Init(dev, disk, desc, file); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, DiskManager& disk, const PackDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, disk, desc); }
+		static Expected<Pack> Create(Device& dev, DiskManager& disk, const PackDesc& desc) noexcept { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_CREATE(Resource::Texture::Pack, dev, disk, desc); }
+		static Expected<Pack> Create(Device& dev, DiskManager& disk, const PackFileDesc& desc, GFile& file) noexcept { ZE_ASSERT(desc.Textures.size() > 0, "Cannot create empty texture pack!"); ZE_RHI_BACKEND_CREATE(Resource::Texture::Pack, dev, disk, desc, file); }
 		ZE_RHI_BACKEND_GET(Resource::Texture::Pack);
 
 		// Main Gfx API
 
-		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const { ZE_RHI_BACKEND_CALL(Bind, cl, bindCtx); }
-		// Before destroying texture pack you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl, bindCtx); }
 	};
 }

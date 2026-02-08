@@ -18,21 +18,16 @@ namespace ZE::GFX::Resource
 
 	public:
 		CBuffer() = default;
-		constexpr CBuffer(Device& dev, DiskManager& disk, const CBufferData& data) { Init(dev, disk, data); }
-		constexpr CBuffer(Device& dev, DiskManager& disk, const CBufferFileData& data, GFile& file) { Init(dev, disk, data, file); }
 		ZE_CLASS_MOVE(CBuffer);
 		~CBuffer() = default;
 
-		constexpr void Init(Device& dev, DiskManager& disk, const CBufferData& data) { ZE_ASSERT((data.DataStatic || data.DataRef) && data.Bytes, "Empty buffer!"); ZE_RHI_BACKEND_VAR.Init(dev, disk, data); }
-		constexpr void Init(Device& dev, DiskManager& disk, const CBufferFileData& data, GFile& file) { ZE_ASSERT(data.SourceBytes, "Empty buffer!"); ZE_RHI_BACKEND_VAR.Init(dev, disk, data, file); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, DiskManager& disk, const CBufferData& data) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, disk, data); }
+		static Expected<CBuffer> Create(Device& dev, DiskManager& disk, const CBufferData& data) noexcept { ZE_ASSERT((data.DataStatic || data.DataRef) && data.Bytes, "Empty buffer!"); ZE_RHI_BACKEND_CREATE(Resource::CBuffer, dev, disk, data); }
+		static Expected<CBuffer> Create(Device& dev, DiskManager& disk, const CBufferFileData& data, GFile& file) noexcept { ZE_ASSERT(data.SourceBytes, "Empty buffer!"); ZE_RHI_BACKEND_CREATE(Resource::CBuffer, dev, disk, data, file); }
 		ZE_RHI_BACKEND_GET(Resource::CBuffer);
 
 		// Main Gfx API
 
-		constexpr void Update(Device& dev, DiskManager& disk, const CBufferData& data) const { ZE_ASSERT((data.DataStatic || data.DataRef) && data.Bytes, "Empty buffer!"); ZE_RHI_BACKEND_CALL(Update, dev, disk, data); }
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl, bindCtx); }
-		// Before destroying buffer you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		Status Update(Device& dev, DiskManager& disk, const CBufferData& data) const noexcept { ZE_ASSERT((data.DataStatic || data.DataRef) && data.Bytes, "Empty buffer!"); ZE_RHI_BACKEND_CALL_RET(Update, dev, disk, data); }
 	};
 }

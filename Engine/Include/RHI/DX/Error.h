@@ -30,7 +30,7 @@ namespace ZE::RHI::DX
 // Check if call produced any related DirectX error messages and return error on them
 #	define ZE_DX_RET_FAILED_DEBUG(call) do { (call); if (ZE::RHI::DX::DebugInfoManager::CheckMessages()) { return ZE::RHI::DX::Error::Make(ZE::RHI::DX::Error::DEBUG_MSG_ERROR); } } while (false)
 // Check if call produced any related DirectX error messages and return error on them, wrapped in std::unexpected
-#	define ZE_DX_RET_FAILED_DEBUG(call) do { (call); if (ZE::RHI::DX::DebugInfoManager::CheckMessages()) { return std::unexpected(ZE::RHI::DX::Error::Make(ZE::RHI::DX::Error::DEBUG_MSG_ERROR)); } } while (false)
+#	define ZE_DX_RET_FAILED_DEBUG_EXPECT(call) do { (call); if (ZE::RHI::DX::DebugInfoManager::CheckMessages()) { return std::unexpected(ZE::RHI::DX::Error::Make(ZE::RHI::DX::Error::DEBUG_MSG_ERROR)); } } while (false)
 // Set HRESULT variable to appriopriate error if DirectX debug layer found any messages
 #	define ZE_DX_CHECK_DEBUG_INFO(hr) if (ZE::RHI::DX::DebugInfoManager::CheckMessages()) hr = FAILED(hr) ? hr : ZE::RHI::DX::Error::DEBUG_MSG_ERROR
 #else
@@ -39,7 +39,7 @@ namespace ZE::RHI::DX
 // Check if call produced any related DirectX error messages and return error on them
 #	define ZE_DX_RET_FAILED_DEBUG(call) (call)
 // Check if call produced any related DirectX error messages and return error on them, wrapped in std::unexpected
-#	define ZE_DX_RET_FAILED_DEBUG(call) (call)
+#	define ZE_DX_RET_FAILED_DEBUG_EXPECT(call) (call)
 // Set HRESULT variable to appriopriate error if DirectX debug layer found any messages
 #	define ZE_DX_CHECK_DEBUG_INFO(hr) ((void)0)
 #endif

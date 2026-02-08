@@ -11,17 +11,25 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		Constant() = default;
-		constexpr Constant(GFX::Device& dev, const T& value) noexcept : data(value) {}
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 
-		constexpr const T& GetData(GFX::Device& dev) const noexcept { return data; }
-		constexpr void Set(GFX::Device& dev, const T& value) noexcept { data = value; }
+		static constexpr Expected<Constant> Create(GFX::Device& dev, const T& value) noexcept;
+
+		constexpr Status Set(GFX::Device& dev, const T& value) noexcept { data = value; return {}; }
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
 	};
 
 #pragma region Functions
+	template<typename T>
+	constexpr Expected<Constant<T>> Constant<T>::Create(GFX::Device& dev, const T& value) noexcept
+	{
+		Constant c = {};
+		c.data = value;
+		return c;
+	}
+
 	template<typename T>
 	void Constant<T>::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
 	{
@@ -33,16 +41,24 @@ namespace ZE::RHI::DX12::Resource
 		if (schema.IsCompute())
 		{
 			if constexpr (sizeof(T) == 4)
-				list->SetComputeRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0);
+			{
+				ZE_DX_CHECK_FAILED(list->SetComputeRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0), "Setting compute constant resulted in debug layer messages!");
+			}
 			else
-				list->SetComputeRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0);
+			{
+				ZE_DX_CHECK_FAILED(list->SetComputeRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0), "Setting compute constants resulted in debug layer messages!");
+			}
 		}
 		else
 		{
 			if constexpr (sizeof(T) == 4)
-				list->SetGraphicsRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0);
+			{
+				ZE_DX_CHECK_FAILED(list->SetGraphicsRoot32BitConstant(bindCtx.Count++, *reinterpret_cast<U32*>(reinterpret_cast<uintptr_t>(&data)), 0), "Setting GFX constant resulted in debug layer messages!");
+			}
 			else
-				list->SetGraphicsRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0);
+			{
+				ZE_DX_CHECK_FAILED(list->SetGraphicsRoot32BitConstants(bindCtx.Count++, sizeof(T) / 4, &data, 0), "Setting GFX constants resulted in debug layer messages!");
+			}
 		}
 	}
 #pragma endregion

@@ -2,63 +2,74 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	void DynamicCBuffer::AllocBlock(GFX::Device& dev)
+	Status DynamicCBuffer::AllocBlock(GFX::Device& dev) noexcept
 	{
 		auto& device = dev.Get().dx12;
-		ZE_DX_ENABLE_ID(device);
 
 		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
 		ResourceInfo resource = device.CreateBuffer(desc, true);
 		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
 		const D3D12_RANGE range = {};
-		ZE_DX_THROW_FAILED(resource.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
+		ZE_DX_RET_FAILED(resource.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
 
 		const D3D12_GPU_VIRTUAL_ADDRESS address = resource.Resource->GetGPUVirtualAddress();
 		resInfo.emplace_back(std::move(resource), address);
+		return {};
 	}
 
-	void DynamicCBuffer::MapBlock(GFX::Device& dev, U64 block)
+	Status DynamicCBuffer::MapBlock(GFX::Device& dev, U64 block) noexcept
 	{
 		ZE_ASSERT(block < resInfo.size(), "Trying to map block outside of range!");
-		ZE_DX_ENABLE(dev.Get().dx12);
 
 		const D3D12_RANGE range = { 0 };
-		ZE_DX_THROW_FAILED(resInfo.at(block).first.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
+		ZE_DX_RET_FAILED(resInfo.at(block).first.Resource->Map(0, &range, reinterpret_cast<void**>(&buffer)));
+		return {};
 	}
 
 	DynamicCBuffer::~DynamicCBuffer()
 	{
-		for ([[maybe_unused]] auto& res : resInfo)
+		for (auto& res : resInfo)
 		{
-			ZE_ASSERT_FREED(res.first.IsFree());
+			ZE_ASSERT(srcDev, "No source Device for cleanup!");
+			srcDev->FreeDynamicBuffer(res.first);
 		}
 	}
 
-	GFX::Resource::DynamicBufferAlloc DynamicCBuffer::Alloc(GFX::Device& dev, const void* values, U32 bytes)
+	Expected<DynamicCBuffer> DynamicCBuffer::Create(GFX::Device& dev) noexcept
+	{
+		DynamicCBuffer buffer = {};
+		if (Status code = buffer.AllocBlock(dev))
+			return std::unexpected(code);
+		return buffer;
+	}
+
+	Expected<GFX::Resource::DynamicBufferAlloc> DynamicCBuffer::Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept
 	{
 		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
 		ZE_ASSERT(bytes <= D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, "Structure too large for dynamic buffer!");
 
 		const U32 newBlock = Math::AlignUp(bytes, 256U);
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
-		const std::lock_guard<std::mutex> lock(allocLock);
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
+		LockGuardRW lock(allocLock);
 #endif
 		if (nextOffset + newBlock > D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
 		{
 			nextOffset = 0;
 			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
+			Status code = {};
 			if (++currentBlock >= resInfo.size())
-				AllocBlock(dev);
+				code = AllocBlock(dev);
 			else
-				MapBlock(dev, currentBlock);
+				code = MapBlock(dev, currentBlock);
+			if (code)
+				return std::unexpected(code);
 		}
-		memcpy(buffer + nextOffset, values, bytes);
+		std::memcpy(buffer + nextOffset, values, bytes);
 
 		GFX::Resource::DynamicBufferAlloc info
 		{
-			nextOffset,
-				currentBlock
+			nextOffset, currentBlock
 		};
 		nextOffset += newBlock;
 		return info;
@@ -77,12 +88,16 @@ namespace ZE::RHI::DX12::Resource
 		const D3D12_GPU_VIRTUAL_ADDRESS address = resInfo.at(allocInfo.Block).second + allocInfo.Offset;
 		auto* list = cl.Get().dx12.GetList();
 		if (schema.IsCompute())
-			list->SetComputeRootConstantBufferView(bindCtx.Count++, address);
+		{
+			ZE_DX_CHECK_FAILED(list->SetComputeRootConstantBufferView(bindCtx.Count++, address), "Setting compute dynamic CBV resulted in debug layer messages!");
+		}
 		else
-			list->SetGraphicsRootConstantBufferView(bindCtx.Count++, address);
+		{
+			ZE_DX_CHECK_FAILED(list->SetGraphicsRootConstantBufferView(bindCtx.Count++, address), "Setting GFX dynamic CBV resulted in debug layer messages!");
+		}
 	}
 
-	void DynamicCBuffer::StartFrame(GFX::Device& dev)
+	Status DynamicCBuffer::StartFrame(GFX::Device& dev) noexcept
 	{
 		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
 
@@ -91,7 +106,8 @@ namespace ZE::RHI::DX12::Resource
 		if (blockCount > 1)
 		{
 			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
-			MapBlock(dev, 0);
+			if (Status code = MapBlock(dev, 0))
+				return code;
 
 			if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
 			{
@@ -101,14 +117,6 @@ namespace ZE::RHI::DX12::Resource
 			}
 			currentBlock = 0;
 		}
-	}
-
-	void DynamicCBuffer::Free(GFX::Device& dev) noexcept
-	{
-		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
-
-		buffer = nullptr;
-		for (auto& res : resInfo)
-			dev.Get().dx12.FreeDynamicBuffer(res.first);
+		return {};
 	}
 }

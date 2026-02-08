@@ -15,18 +15,18 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 		U32 count;
 		DescriptorInfo descInfo;
-		Ptr<ResourceInfo> resources;
+		std::unique_ptr<ResourceInfo[]> resources;
+		Device* srcDev = nullptr;
 
 	public:
 		Pack() = default;
-		Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
-		Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file);
 		ZE_CLASS_MOVE(Pack);
 		~Pack();
 
+		static Expected<Pack> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc) noexcept;
+		static Expected<Pack> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file) noexcept;
+
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
-		void Free(GFX::Device& dev) noexcept;
-		std::vector<std::vector<GFX::Surface>> GetData(GFX::Device& dev) const;
 
 		// Gfx API Internal
 

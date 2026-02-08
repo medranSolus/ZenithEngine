@@ -10,12 +10,12 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		PipelineStateGfx() = default;
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() { ZE_ASSERT_FREED(state == nullptr); }
+		~PipelineStateGfx() = default;
 
-		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { cl.Get().dx12.GetList()->OMSetStencilRef(refValue); }
-		void Free(GFX::Device& dev) noexcept { state = nullptr; }
+		static Expected<PipelineStateGfx> Create(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding) noexcept;
+
+		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { ZE_DX_CHECK_FAILED(cl.Get().dx12.GetList()->OMSetStencilRef(refValue), "Setting stencil ref resulted in debug layer messages!"); }
 
 		void Bind(GFX::CommandList& cl) const noexcept;
 

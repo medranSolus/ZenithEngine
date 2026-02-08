@@ -13,22 +13,23 @@ namespace ZE::RHI::DX12::Resource
 		Ptr<U8> buffer;
 		U32 nextOffset = 0;
 		U64 currentBlock = 0;
-#ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 		std::mutex allocLock;
 #endif
+		Device* srcDev = nullptr;
 
-		void AllocBlock(GFX::Device& dev);
-		void MapBlock(GFX::Device& dev, U64 block);
+		Status AllocBlock(GFX::Device& dev) noexcept;
+		Status MapBlock(GFX::Device& dev, U64 block) noexcept;
 
 	public:
 		DynamicCBuffer() = default;
-		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
 		~DynamicCBuffer();
 
-		GFX::Resource::DynamicBufferAlloc Alloc(GFX::Device& dev, const void* values, U32 bytes);
+		static Expected<DynamicCBuffer> Create(GFX::Device& dev) noexcept;
+
+		Expected<GFX::Resource::DynamicBufferAlloc> Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept;
-		void StartFrame(GFX::Device& dev);
-		void Free(GFX::Device& dev) noexcept;
+		Status StartFrame(GFX::Device& dev) noexcept;
 	};
 }

@@ -10,19 +10,18 @@ namespace ZE::RHI::DX12::Resource
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS address;
 		ResourceInfo resInfo;
+		Device* srcDev = nullptr;
 
 	public:
 		CBuffer() = default;
-		CBuffer(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data);
-		CBuffer(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferFileData& data, GFX::GFile& file);
 		ZE_CLASS_MOVE(CBuffer);
-		~CBuffer() { ZE_ASSERT_FREED(resInfo.IsFree()); }
+		~CBuffer();
 
-		void Free(GFX::Device& dev) noexcept { dev.Get().dx12.FreeBuffer(resInfo); }
+		static Expected<CBuffer> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data) noexcept;
+		static Expected<CBuffer> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferFileData& data, GFX::GFile& file) noexcept;
 
-		void Update(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data) const;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
-		void GetData(GFX::Device& dev, void* values, U32 bytes) const;
+		Status Update(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data) const noexcept;
 
 		// Gfx API Internal
 

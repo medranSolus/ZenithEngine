@@ -2,19 +2,20 @@
 
 namespace ZE::RHI::DX12::Resource::Texture
 {
-	Pack::Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc)
+	Expected<Pack> Pack::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc) noexcept
 	{
 		Device& device = dev.Get().dx12;
 		DiskManager& diskManager = disk.Get().dx12;
-		ZE_DX_ENABLE_ID(device);
 
-		count = Utils::SafeCast<U32>(desc.Textures.size());
-		descInfo = device.AllocDescs(count);
-		resources = new ResourceInfo[count];
+		Pack pack = {};
+		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
+		pack.descInfo = device.AllocDescs(pack.count);
+		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
+		pack.srcDev = &device;
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			ResourceInfo& resInfo = resources[i];
+			ResourceInfo& resInfo = pack.resources[i];
 
 			// Specify default SRV desc
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
@@ -124,26 +125,28 @@ namespace ZE::RHI::DX12::Resource::Texture
 				*mipLevels = 1;
 			}
 
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = pack.descInfo.CPU;
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
-			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
+			ZE_DX_RET_FAILED_DEBUG_EXPECT(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
 		diskManager.AddTexturePackID(desc.ResourceID);
+		return pack;
 	}
 
-	Pack::Pack(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file)
+	Expected<Pack> Pack::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file) noexcept
 	{
 		Device& device = dev.Get().dx12;
 		DiskManager& diskManager = disk.Get().dx12;
-		ZE_DX_ENABLE_ID(device);
 
-		count = Utils::SafeCast<U32>(desc.Textures.size());
-		descInfo = device.AllocDescs(count);
-		resources = new ResourceInfo[count];
+		Pack pack = {};
+		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
+		pack.descInfo = device.AllocDescs(pack.count);
+		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
+		pack.srcDev = &device;
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			ResourceInfo& resInfo = resources[i];
+			ResourceInfo& resInfo = pack.resources[i];
 
 			// Specify default SRV desc
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
@@ -237,24 +240,24 @@ namespace ZE::RHI::DX12::Resource::Texture
 				*mipLevels = 1;
 			}
 
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = descInfo.CPU;
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = pack.descInfo.CPU;
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
-			ZE_DX_THROW_FAILED_INFO(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
+			ZE_DX_RET_FAILED_DEBUG_EXPECT(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
 		diskManager.AddTexturePackID(desc.ResourceID);
+		return pack;
 	}
 
 	Pack::~Pack()
 	{
-		ZE_ASSERT_FREED(descInfo.Handle == nullptr);
-		if (resources)
+		if (descInfo.Handle)
 		{
-			for (U32 i = 0; i < count; ++i)
-			{
-				ZE_ASSERT_FREED(resources[i].IsFree());
-			}
-			resources.DeleteArray();
+			ZE_ASSERT(srcDev, "No source Device for cleanup!");
+			srcDev->FreeDescs(descInfo);
 		}
+		for (U32 i = 0; i < count; ++i)
+			if (resources[i].Resource != nullptr)
+				srcDev->FreeTexture(resources[i]);
 	}
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
@@ -265,25 +268,12 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 		auto* list = cl.Get().dx12.GetList();
 		if (schema.IsCompute())
-			list->SetComputeRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
+		{
+			ZE_DX_CHECK_FAILED(list->SetComputeRootDescriptorTable(bindCtx.Count++, descInfo.GPU), "Setting compute texture pack resulted in debug layer messages!");
+		}
 		else
-			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, descInfo.GPU);
-	}
-
-	void Pack::Free(GFX::Device& dev) noexcept
-	{
-		if (descInfo.Handle)
-			dev.Get().dx12.FreeDescs(descInfo);
-		for (U32 i = 0; i < count; ++i)
-			if (resources[i].Resource != nullptr)
-				dev.Get().dx12.FreeTexture(resources[i]);
-	}
-
-	std::vector<std::vector<GFX::Surface>> Pack::GetData(GFX::Device& dev) const
-	{
-		std::vector<std::vector<GFX::Surface>> vec;
-		vec.emplace_back(std::vector<GFX::Surface>());
-		vec.front().emplace_back(1, 1);
-		return vec;
+		{
+			ZE_DX_CHECK_FAILED(list->SetGraphicsRootDescriptorTable(bindCtx.Count++, descInfo.GPU), "Setting GFX texture pack resulted in debug layer messages!");
+		}
 	}
 }
