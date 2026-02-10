@@ -10,9 +10,10 @@ namespace ZE::AHI::XAudio2
 
 	public:
 		Device() = default;
-		Device(U32 sampleRate);
-		ZE_CLASS_DELETE(Device);
+		ZE_CLASS_MOVE(Device);
 		~Device() = default;
+
+		static Expected<Device> Create(U32 sampleRate) noexcept;
 
 		// Audio API Internal
 

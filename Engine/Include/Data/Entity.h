@@ -8,6 +8,9 @@ namespace ZE
 	// Identifier of single entity
 	typedef entt::entity EID;
 
+	// Identifier of invalid entity
+	inline constexpr const EID& INVALID_EID = entt::null;
+
 	// Identifier of parent for given entity
 	struct ParentID { EID ID = INVALID_EID; };
 
@@ -16,9 +19,6 @@ namespace ZE
 	{
 		std::vector<EID> Childs;
 	};
-
-	// Identifier of invalid entity
-	inline constexpr const EID& INVALID_EID = entt::null;
 
 	namespace Data
 	{

@@ -1139,7 +1139,7 @@ namespace ZE::GFX::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				shader->Init(*dev, "FSR2GenerateReactiveCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "FSR2GenerateReactiveCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_FSR2_PASS_TCR_AUTOGENERATE:

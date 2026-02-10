@@ -1,33 +1,36 @@
 #pragma once
 #include "Settings.h"
 
+// Dummy macro to silence warnings about missings macro arguments
+#define ZE_RHI_DUMMY 
+
 // Helpers for selecting which implementation will be available
 #if _ZE_RHI_DX11
-#	define ZE_RHI_DX11_TYPE D11
-#	define ZE_RHI_DX11_TEMPLATE_TYPE typename ZE_RHI_DX11_TYPE
+#	define ZE_RHI_DX11_TYPE(var) D11 var
+#	define ZE_RHI_DX11_TEMPLATE_TYPE typename ZE_RHI_DX11_TYPE(ZE_RHI_DUMMY)
 #else
-#	define ZE_RHI_DX11_TYPE
+#	define ZE_RHI_DX11_TYPE(var)
 #	define ZE_RHI_DX11_TEMPLATE_TYPE
 #endif
 #if _ZE_RHI_DX12
-#	define ZE_RHI_DX12_TYPE D12
-#	define ZE_RHI_DX12_TEMPLATE_TYPE typename ZE_RHI_DX12_TYPE
+#	define ZE_RHI_DX12_TYPE(var) D12 var
+#	define ZE_RHI_DX12_TEMPLATE_TYPE typename ZE_RHI_DX12_TYPE(ZE_RHI_DUMMY)
 #else
-#	define ZE_RHI_DX12_TYPE
+#	define ZE_RHI_DX12_TYPE(var)
 #	define ZE_RHI_DX12_TEMPLATE_TYPE
 #endif
 #if _ZE_RHI_GL
-#	define ZE_RHI_GL_TYPE GL
-#	define ZE_RHI_GL_TEMPLATE_TYPE typename ZE_RHI_GL_TYPE
+#	define ZE_RHI_GL_TYPE(var) GL var
+#	define ZE_RHI_GL_TEMPLATE_TYPE typename ZE_RHI_GL_TYPE(ZE_RHI_DUMMY)
 #else
-#	define ZE_RHI_GL_TYPE
+#	define ZE_RHI_GL_TYPE(var)
 #	define ZE_RHI_GL_TEMPLATE_TYPE
 #endif
 #if _ZE_RHI_VK
-#	define ZE_RHI_VK_TYPE VK
-#	define ZE_RHI_VK_TEMPLATE_TYPE typename ZE_RHI_VK_TYPE
+#	define ZE_RHI_VK_TYPE(var) VK var
+#	define ZE_RHI_VK_TEMPLATE_TYPE typename ZE_RHI_VK_TYPE(ZE_RHI_DUMMY)
 #else
-#	define ZE_RHI_VK_TYPE
+#	define ZE_RHI_VK_TYPE(var)
 #	define ZE_RHI_VK_TEMPLATE_TYPE
 #endif
 
@@ -55,7 +58,7 @@
 
 // Helpers for making template functions definitions later
 #define ZE_RHI_TEMPLATE_HEADER template<ZE_RHI_DX11_TEMPLATE_TYPE ZE_RHI_DX11_COMMA ZE_RHI_DX12_TEMPLATE_TYPE ZE_RHI_DX12_COMMA ZE_RHI_GL_TEMPLATE_TYPE ZE_RHI_GL_COMMA ZE_RHI_VK_TEMPLATE_TYPE ZE_RHI_VK_COMMA>
-#define ZE_RHI_TEMPLATE_SPEC ZE_RHI_DX11_TYPE ZE_RHI_DX11_COMMA ZE_RHI_DX12_TYPE ZE_RHI_DX12_COMMA ZE_RHI_GL_TYPE ZE_RHI_GL_COMMA ZE_RHI_VK_TYPE ZE_RHI_VK_COMMA
+#define ZE_RHI_TEMPLATE_SPEC ZE_RHI_DX11_TYPE(ZE_RHI_DUMMY) ZE_RHI_DX11_COMMA ZE_RHI_DX12_TYPE(ZE_RHI_DUMMY) ZE_RHI_DX12_COMMA ZE_RHI_GL_TYPE(ZE_RHI_DUMMY) ZE_RHI_GL_COMMA ZE_RHI_VK_TYPE(ZE_RHI_DUMMY) ZE_RHI_VK_COMMA
 
 namespace ZE::RHI
 {
@@ -63,19 +66,10 @@ namespace ZE::RHI
 	ZE_RHI_TEMPLATE_HEADER
 	union Backend final
 	{
-#if _ZE_RHI_DX11
-		D11 dx11;
-#endif
-#if _ZE_RHI_DX12
-		D12 dx12;
-#endif
-#if _ZE_RHI_GL
-		GL gl;
-#endif
-#if _ZE_RHI_VK
-		VK vk;
-#endif
-
+		ZE_RHI_DX11_TYPE(dx11);
+		ZE_RHI_DX12_TYPE(dx12)
+		ZE_RHI_GL_TYPE(gl);
+		ZE_RHI_VK_TYPE(vk);
 
 		constexpr Backend() noexcept;
 		constexpr Backend(Backend&& b) noexcept;
@@ -301,6 +295,8 @@ namespace ZE::RHI
 	}
 #pragma endregion
 }
+
+#undef ZE_RHI_DUMMY
 
 // Helpers for manipulating with active RHI implementations
 #if _ZE_RHI_DX11

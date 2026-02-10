@@ -2,7 +2,9 @@
 
 namespace ZE::AHI::OpenAL
 {
-	Device::Device(U32 sampleRate)
+	Expected<Device> Device::Create(U32 sampleRate) noexcept
 	{
+		Device dev = {};
+		return dev;
 	}
 }

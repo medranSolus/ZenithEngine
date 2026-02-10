@@ -16,12 +16,11 @@ namespace ZE::SFX
 
 	public:
 		Device() = default;
-		ZE_CLASS_DELETE(Device);
+		ZE_CLASS_MOVE(Device);
 		~Device() = default;
 
 		// Sample rate must be multiple of 100 Hz
-		constexpr void Init(U32 sampleRate = 0) { ZE_AHI_BACKEND_VAR.Init(sampleRate); }
-		constexpr void SwitchApi(AudioApiType nextApi, U32 sampleRate = 0) { ZE_AHI_BACKEND_VAR.Switch(nextApi, sampleRate); }
+		static Expected<Device> Create(U32 sampleRate = 0) noexcept { ZE_AHI_BACKEND_CREATE(Device, sampleRate); }
 		ZE_AHI_BACKEND_GET(Device);
 
 		// Main Audio API
