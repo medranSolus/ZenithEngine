@@ -8,6 +8,11 @@ namespace ZE::RHI::DX12
 	// Device Removed Extended Data handler
 	class DREDRecovery
 	{
+		template<typename T, U8 EXT>
+		static constexpr void HandleBreadcrumbNode(std::string& breadInfo, U32& id, const T* node) noexcept;
+		template<typename T, U8 EXT>
+		static constexpr void HandlePagefault(std::function<void(std::string_view)> writeString, const T& pageFault) noexcept;
+
 		static constexpr const char* DecodeLastOperation(D3D12_AUTO_BREADCRUMB_OP operation) noexcept;
 		static constexpr const char* DecodeAllocation(D3D12_DRED_ALLOCATION_TYPE allocation) noexcept;
 		static constexpr const char* DecodeDxgiError(HRESULT error) noexcept;
@@ -16,8 +21,8 @@ namespace ZE::RHI::DX12
 		DREDRecovery() = delete;
 
 		// Must be called before creation of the ID3D12Device
-		static void Enable(DX::DebugInfoManager& debugManager);
+		static void Enable() noexcept;
 		// Gather information after receiving device removed
-		static void SaveDeviceRemovedData(Device& dev, const std::string& filename);
+		static void SaveDeviceRemovedData(Device& dev, const std::string& filename) noexcept;
 	};
 }

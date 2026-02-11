@@ -25,8 +25,6 @@ namespace ZE::RHI::DX12
 	typedef ID3D12Debug6                             IDebug;
 	typedef ID3D12DebugDevice2                       IDebugDevice;
 	typedef ID3D12Device14                           IDevice;
-	typedef ID3D12DeviceRemovedExtendedData1         IDeviceRemovedExtendedData;
-	typedef ID3D12DeviceRemovedExtendedDataSettings1 IDeviceRemovedExtendedDataSettings;
 	typedef ID3D12Fence1                             IFence;
 	typedef ID3D12GraphicsCommandList10              IGraphicsCommandList;
 	typedef ID3D12Heap1                              IHeap;

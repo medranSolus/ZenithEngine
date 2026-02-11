@@ -4,6 +4,156 @@
 
 namespace ZE::RHI::DX12
 {
+	template<typename T, U8 EXT>
+	constexpr void DREDRecovery::HandleBreadcrumbNode(std::string& breadInfo, U32& id, const T* node) noexcept
+	{
+		breadInfo += "\tNode: " + std::to_string(id++);
+
+		breadInfo += "\n\tCommand Queue: ";
+		if (node->pCommandQueueDebugNameA)
+			breadInfo += node->pCommandQueueDebugNameA;
+		else if (node->pCommandQueueDebugNameW)
+			breadInfo += Utils::ToUTF8(node->pCommandQueueDebugNameW);
+		else
+			breadInfo += "UNKNOWN";
+
+		breadInfo += "\n\tCommand List: ";
+		if (node->pCommandListDebugNameA)
+			breadInfo += node->pCommandListDebugNameA;
+		else if (node->pCommandListDebugNameW)
+			breadInfo += Utils::ToUTF8(node->pCommandListDebugNameW);
+		else
+			breadInfo += "UNKNOWN";
+
+		breadInfo += "\n\tLast commands: ";
+		if (node->pCommandHistory)
+		{
+			std::string indent = "\t";
+			const char* prevOp = nullptr;
+			U32 prevSameOpCount = 0;
+			for (U32 i = 0, last = *node->pLastBreadcrumbValue; i <= last; ++i)
+			{
+				const char* op = DecodeLastOperation(node->pCommandHistory[i]);
+
+				std::pair<D3D12_DRED_BREADCRUMB_CONTEXT*, D3D12_DRED_BREADCRUMB_CONTEXT*> range = { nullptr, nullptr };
+				if constexpr (EXT > 0)
+				{
+					if (node->pBreadcrumbContexts)
+					{
+						struct Comparator
+						{
+							constexpr bool operator() (const D3D12_DRED_BREADCRUMB_CONTEXT& ctx, uint32_t i) const noexcept { return ctx.BreadcrumbIndex < i; }
+							constexpr bool operator() (uint32_t i, const D3D12_DRED_BREADCRUMB_CONTEXT& ctx) const noexcept { return i < ctx.BreadcrumbIndex; }
+						};
+
+						range = std::equal_range(node->pBreadcrumbContexts,
+							node->pBreadcrumbContexts + node->BreadcrumbContextsCount,
+							i, Comparator{});
+					}
+				}
+				if (op != prevOp || range.first != range.second
+					|| node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT
+					|| node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
+				{
+					if (prevSameOpCount > 0)
+					{
+						breadInfo += " x";
+						breadInfo += std::to_string(prevSameOpCount + 1);
+						prevSameOpCount = 0;
+					}
+
+					if (node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT && indent.size() > 1)
+						indent.pop_back();
+
+					breadInfo += "\n\t";
+					breadInfo += indent;
+					breadInfo += op;
+					prevOp = op;
+
+					if constexpr (EXT > 0)
+					{
+						if (range.first != range.second)
+						{
+							breadInfo += ":";
+							auto ctx = ++range.first;
+							do
+							{
+								breadInfo += " | \"";
+								breadInfo += Utils::ToUTF8(ctx->pContextString);
+								breadInfo += "\"";
+							} while (++ctx != range.second);
+						}
+					}
+					if (node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
+						indent += "\t";
+				}
+				else
+					++prevSameOpCount;
+			}
+		}
+		else
+			breadInfo += "NONE";
+
+		breadInfo += "\n\n";
+	}
+
+	template<typename T, U8 EXT>
+	constexpr void DREDRecovery::HandlePagefault(std::function<void(std::string_view)> writeString, const T& pageFault) noexcept
+	{
+		if (pageFault.PageFaultVA != 0)
+			writeString(std::format("\n[PAGE FAULT ADDRESS] 0x{:x}\n", Utils::SafeCast<U64>(pageFault.PageFaultVA)));
+		if constexpr (EXT > 1)
+		{
+			if (pageFault.PageFaultFlags != 0)
+			{
+				writeString("[PAGE FAULT FLAGS] ");
+				writeString(std::to_string(pageFault.PageFaultFlags));
+				writeString("\n");
+			}
+		}
+
+		auto getAllocInfo = [&](const T* node, std::string_view tag) -> std::string
+			{
+				std::string info;
+				while (node != nullptr)
+				{
+					info += tag;
+					if (node->ObjectNameA)
+						info += node->ObjectNameA;
+					else if (node->ObjectNameW)
+						info += Utils::ToUTF8(node->ObjectNameW);
+					else
+						info += "UNKNOWN";
+
+					if constexpr (EXT > 0)
+						info += std::format("(0x{:x})", Utils::SafeCast<U64>(reinterpret_cast<uintptr_t>(node->pObject)));
+
+					info += "\n\tAllocation type:";
+					info += DecodeAllocation(node->AllocationType);
+					info += "\n\n";
+
+					node = node->pNext;
+				}
+				if (info.size())
+					info.pop_back();
+				return info;
+			};
+
+		std::string allocInfo = getAllocInfo(pageFault.pHeadExistingAllocationNode, "\tLive Object: ");
+		if (allocInfo.size())
+		{
+			writeString("\n[DRED EXISTING ALLOCATIONS]\n");
+			writeString(allocInfo.c_str());
+		}
+
+		allocInfo = getAllocInfo(pageFault.pHeadRecentFreedAllocationNode, "\tFreed Object: ");
+		if (allocInfo.size())
+		{
+			writeString("\n[DRED FREED ALLOCATIONS]\n");
+			writeString(allocInfo.c_str());
+		}
+	}
+
 	constexpr const char* DREDRecovery::DecodeLastOperation(D3D12_AUTO_BREADCRUMB_OP operation) noexcept
 	{
 #define DECODE_OP(op, info) case op: return info
@@ -54,6 +204,15 @@ namespace ZE::RHI::DX12
 			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_DISPATCHMESH, "DispatchMesh()");
 			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_ENCODEFRAME, "EncodeFrame()");
 			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_RESOLVEENCODEROUTPUTMETADATA, "ResolveEncoderOutputMetadata()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_BARRIER, "Barrier()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_BEGIN_COMMAND_LIST, "Reset()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_DISPATCHGRAPH, "DispatchGraph()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_SETPROGRAM, "SetProgram()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_ENCODEFRAME1, "EncodeFrame1()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_RESOLVEENCODEROUTPUTMETADATA1, "ResolveEncoderOutputMetadata1()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_RESOLVEINPUTPARAMLAYOUT, "ResolveEncoderInputLayout()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES2, "ProcessFrames2()");
+			DECODE_OP(D3D12_AUTO_BREADCRUMB_OP_SET_WORK_GRAPH_MAXIMUM_GPU_INPUT_RECORDS, "SetWorkGraphMaximumInputRecords()");
 		default:
 			return "UNKNOW_OPERATION";
 		}
@@ -135,56 +294,82 @@ namespace ZE::RHI::DX12
 #undef DECODE_ERROR
 	}
 
-	void DREDRecovery::Enable(DX::DebugInfoManager& debugManager)
+	void DREDRecovery::Enable() noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
+		DX::ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred = nullptr;
+		DX::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dred1 = nullptr;
+		DX::ComPtr<ID3D12DeviceRemovedExtendedDataSettings2> dred2 = nullptr;
 
-		DX::ComPtr<IDeviceRemovedExtendedDataSettings> dred = nullptr;
-		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&dred)));
+		// Try to access highest possible DRED interface
+		HRESULT hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred2));
+		if (FAILED(hr))
+		{
+			hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred1));
+			if (FAILED(hr))
+				hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred));
+			else
+				dred = dred1;
+		}
+		else
+			dred = dred1 = dred2;
 
-		dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-		dred->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-		dred->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		if (dred)
+		{
+			dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			dred->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			if (dred1)
+			{
+				dred1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+				if (dred2)
+					dred2->UseMarkersOnlyAutoBreadcrumbs(false);
+			}
+		}
+		else
+		{
+			ZE_CODE_WARNING(DX::Error::Make(hr), "Cannot access DRED interface - no DRED output on device removed!");
+		}
 	}
 
-	void DREDRecovery::SaveDeviceRemovedData(Device& dev, const std::string& filename)
+	void DREDRecovery::SaveDeviceRemovedData(Device& dev, const std::string& filename) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		bool fileOutput = true;
 		std::string loggerOutput = "";
-		std::ofstream fin(filename.c_str());
-		if (!fin.good())
+		IO::File file;
+		
+		if (Status code = file.Open(filename, Base(IO::FileFlag::DefaultWrite)))
 		{
-			Logger::Error("Device Removed! Cannot create file <" + filename + ">. Falling back to classic logger!");
+			ZE_CODE_CRITICAL(code, "Device Removed! Cannot create file <" + filename + ">. Falling back to classic logger!");
 			fileOutput = false;
 		}
 
-		auto writeString = [&](const char* s)
-		{
-			if (fileOutput)
-				fin << s;
-			else
-				loggerOutput += s;
-		};
-
-		ZE_WIN_EXCEPT_RESULT = dev.GetDevice()->GetDeviceRemovedReason();
-		{
-			writeString(std::format("[HRESULT]  0x{:x}", Utils::SafeCast<U64>(ZE_WIN_EXCEPT_RESULT)).c_str());
-			const char* errorName = DecodeDxgiError(ZE_WIN_EXCEPT_RESULT);
-			if (errorName)
+		auto writeString = [&](std::string_view s)
 			{
-				writeString("(");
-				writeString(errorName);
-				writeString(")");
-			}
+				if (fileOutput)
+				{
+					if (Status code = file.Write(s.data(), s.size()))
+					{
+						ZE_CODE_ERROR(code, "Device Removed! Failed to write to file <" + filename + "> while saving DRED recovery data. Remaining data will be written via logger.");
+						fileOutput = false;
+						loggerOutput += s;
+					}
+				}
+				else
+					loggerOutput += s;
+			};
+
+		HRESULT hr = dev.GetDevice()->GetDeviceRemovedReason();
+		{
+			writeString(std::format("[HRESULT] 0x{:x}", Utils::SafeCast<U64>(hr)));
+			writeString("(");
+			writeString(DecodeDxgiError(hr));
+			writeString(")");
 		}
 		{
 			writeString("\n[MESSAGE]\n");
 
 			LPSTR msgBuffer = nullptr;
 			DWORD msgLen = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL, Utils::SafeCast<DWORD>(ZE_WIN_EXCEPT_RESULT), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&msgBuffer), 0, NULL);
+				nullptr, Utils::SafeCast<DWORD>(hr), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&msgBuffer), 0, nullptr);
 			if (msgLen)
 			{
 				writeString(msgBuffer);
@@ -194,165 +379,92 @@ namespace ZE::RHI::DX12
 				writeString("Unknown error code");
 		}
 		{
-			writeString("\n[FRAME]  ");
-			writeString(std::to_string(Settings::GetFrameIndex()).c_str());
+			writeString("\n[FRAME] ");
+			writeString(std::to_string(Settings::GetFrameIndex()));
 		}
 
-		DX::ComPtr<IDeviceRemovedExtendedData> dred = nullptr;
-		if (FAILED(dev.GetDev().As(&dred)))
-			Logger::Error("Cannot access IDeviceRemovedExtendedData - no DRED output!");
+		DX::ComPtr<ID3D12DeviceRemovedExtendedData> dred = nullptr;
+		DX::ComPtr<ID3D12DeviceRemovedExtendedData1> dred1 = nullptr;
+		DX::ComPtr<ID3D12DeviceRemovedExtendedData2> dred2 = nullptr;
+
+		// Try to access highest possible DRED interface
+		hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred2));
+		if (FAILED(hr))
+		{
+			hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred1));
+			if (FAILED(hr))
+				hr = D3D12GetDebugInterface(IID_PPV_ARGS(&dred));
+			else
+				dred = dred1;
+		}
+		else
+			dred = dred1 = dred2;
+
+
+		if (dred == nullptr)
+			Logger::Critical("Cannot access DRED extended data - no breadcrumbs output!");
 		else
 		{
-			D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault;
-			if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&pageFault)))
+			if (dred2)
 			{
-				if (pageFault.PageFaultVA != 0)
-					writeString(std::format("\n[PAGE FAULT ADDRESS]  0x{:x}\n", Utils::SafeCast<U64>(pageFault.PageFaultVA)).c_str());
-
-				auto getAllocInfo = [&](std::string& info, const D3D12_DRED_ALLOCATION_NODE1* node, const char* tag)
+				writeString("\n[DEVICE STATE] ");
+				switch (dred2->GetDeviceState())
 				{
-					while (node != nullptr)
-					{
-						info += tag;
-						if (node->ObjectNameA)
-							info += node->ObjectNameA;
-						else if (node->ObjectNameW)
-							info += Utils::ToUTF8(node->ObjectNameW);
-						else
-							info += "UNKNOWN";
-
-						info += std::format("(0x{:x})\n\tAllocation type:", Utils::SafeCast<U64>(reinterpret_cast<uintptr_t>(node->pObject)));
-						info += DecodeAllocation(node->AllocationType);
-						info += "\n\n";
-
-						node = node->pNext;
-					}
-					if (info.size())
-						info.pop_back();
-				};
-
-				std::string allocInfo;
-				getAllocInfo(allocInfo, pageFault.pHeadExistingAllocationNode, "\tLive Object: ");
-				if (allocInfo.size())
-				{
-					writeString("\n[DRED EXISTING ALLOCATIONS]\n");
-					writeString(allocInfo.c_str());
-				}
-
-				allocInfo = "";
-				getAllocInfo(allocInfo, pageFault.pHeadRecentFreedAllocationNode, "\tFreed Object: ");
-				if (allocInfo.size())
-				{
-					writeString("\n[DRED FREED ALLOCATIONS]\n");
-					writeString(allocInfo.c_str());
+				default:
+					ZE_ENUM_UNHANDLED();
+				case D3D12_DRED_DEVICE_STATE_UNKNOWN:
+					writeString("Unknown\n");
+					break;
+				case D3D12_DRED_DEVICE_STATE_HUNG:
+					writeString("Hung\n");
+					break;
+				case D3D12_DRED_DEVICE_STATE_FAULT:
+					writeString("Fault\n");
+					break;
+				case D3D12_DRED_DEVICE_STATE_PAGEFAULT:
+					writeString("Pagefault\n");
+					break;
 				}
 			}
 
-			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs;
-			if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput1(&breadcrumbs)) && breadcrumbs.pHeadAutoBreadcrumbNode)
+			D3D12_DRED_PAGE_FAULT_OUTPUT pageFault = {};
+			D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault1 = {};
+			D3D12_DRED_PAGE_FAULT_OUTPUT2 pageFault2 = {};
+			if (dred2 && SUCCEEDED(dred2->GetPageFaultAllocationOutput2(&pageFault2)))
+				HandlePagefault<D3D12_DRED_PAGE_FAULT_OUTPUT2, 2>(writeString, pageFault2);
+			else if (dred1 && SUCCEEDED(dred1->GetPageFaultAllocationOutput1(&pageFault1)))
+				HandlePagefault<D3D12_DRED_PAGE_FAULT_OUTPUT1, 1>(writeString, pageFault1);
+			else if (SUCCEEDED(dred->GetPageFaultAllocationOutput(&pageFault)))
+				HandlePagefault<D3D12_DRED_PAGE_FAULT_OUTPUT, 0>(writeString, pageFault);
+
+			std::string breadInfo;
+			U32 id = 0;
+			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT breadcrumbs = {};
+			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs1 = {};
+			if (dred1 && SUCCEEDED(dred1->GetAutoBreadcrumbsOutput1(&breadcrumbs1)) && breadcrumbs1.pHeadAutoBreadcrumbNode)
 			{
-				std::string breadInfo;
-				U32 id = 0;
+				for (const auto* node = breadcrumbs1.pHeadAutoBreadcrumbNode; node; node = node->pNext)
+				{
+					HandleBreadcrumbNode<D3D12_AUTO_BREADCRUMB_NODE1, 1>(breadInfo, id, node);
+				}
+			}
+			else if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput(&breadcrumbs)) && breadcrumbs.pHeadAutoBreadcrumbNode)
+			{
 				for (const auto* node = breadcrumbs.pHeadAutoBreadcrumbNode; node; node = node->pNext)
 				{
-					breadInfo += "\tNode: " + std::to_string(id++);
-
-					breadInfo += "\n\tCommand Queue: ";
-					if (node->pCommandQueueDebugNameA)
-						breadInfo += node->pCommandQueueDebugNameA;
-					else if (node->pCommandQueueDebugNameW)
-						breadInfo += Utils::ToUTF8(node->pCommandQueueDebugNameW);
-					else
-						breadInfo += "UNKNOWN";
-
-					breadInfo += "\n\tCommand List: ";
-					if (node->pCommandListDebugNameA)
-						breadInfo += node->pCommandListDebugNameA;
-					else if (node->pCommandListDebugNameW)
-						breadInfo += Utils::ToUTF8(node->pCommandListDebugNameW);
-					else
-						breadInfo += "UNKNOWN";
-
-					breadInfo += "\n\tLast commands: ";
-					if (node->pCommandHistory)
-					{
-						std::string indent = "\t";
-						const char* prevOp = nullptr;
-						U32 prevSameOpCount = 0;
-						for (U32 i = 0, last = *node->pLastBreadcrumbValue; i <= last; ++i)
-						{
-							const char* op = DecodeLastOperation(node->pCommandHistory[i]);
-
-							std::pair<D3D12_DRED_BREADCRUMB_CONTEXT*, D3D12_DRED_BREADCRUMB_CONTEXT*> range;
-							if (node->pBreadcrumbContexts)
-							{
-								struct Comparator
-								{
-									constexpr bool operator() (const D3D12_DRED_BREADCRUMB_CONTEXT& ctx, uint32_t i) const noexcept { return ctx.BreadcrumbIndex < i; }
-									constexpr bool operator() (uint32_t i, const D3D12_DRED_BREADCRUMB_CONTEXT& ctx) const noexcept { return i < ctx.BreadcrumbIndex; }
-								};
-
-								range = std::equal_range(node->pBreadcrumbContexts,
-									node->pBreadcrumbContexts + node->BreadcrumbContextsCount,
-									i, Comparator{});
-							}
-							if (op != prevOp || range.first != range.second
-								|| node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT
-								|| node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
-							{
-								if (prevSameOpCount > 0)
-								{
-									breadInfo += " x";
-									breadInfo += std::to_string(prevSameOpCount + 1);
-									prevSameOpCount = 0;
-								}
-
-								if (node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT && indent.size() > 1)
-									indent.pop_back();
-
-								breadInfo += "\n\t";
-								breadInfo += indent;
-								breadInfo += op;
-								prevOp = op;
-
-								if (range.first != range.second)
-								{
-									breadInfo += ":";
-									auto ctx = ++range.first;
-									do
-									{
-										breadInfo += " | \"";
-										breadInfo += Utils::ToUTF8(ctx->pContextString);
-										breadInfo += "\"";
-									} while (++ctx != range.second);
-								}
-								if (node->pCommandHistory[i] == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
-									indent += "\t";
-							}
-							else
-								++prevSameOpCount;
-						}
-					}
-					else
-						breadInfo += "NONE";
-
-					breadInfo += "\n\n";
+					HandleBreadcrumbNode<D3D12_AUTO_BREADCRUMB_NODE, 0>(breadInfo, id, node);
 				}
-				if (breadInfo.size())
-				{
-					breadInfo.pop_back();
-					writeString("\n[DRED AUTO BREADCRUMBS]\n");
-					writeString(breadInfo.c_str());
-				}
+			}
+			if (breadInfo.size())
+			{
+				breadInfo.pop_back();
+				writeString("\n[DRED AUTO BREADCRUMBS]\n");
+				writeString(breadInfo);
 			}
 		}
 
-		if (fileOutput)
-		{
-			fin.close();
-			Logger::Error("Device Removed! Saving crash dump to <" + filename + "> for inspection.");
-		}
-		else
-			Logger::Error("Device Removed Recovery data:\n" + loggerOutput);
+		Logger::Critical(fileOutput ?
+			"Device Removed! Saving crash dump to <" + filename + "> for inspection."
+			: "Device Removed Recovery data:\n" + loggerOutput);
 	}
 }
