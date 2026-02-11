@@ -20,7 +20,7 @@ namespace ZE::RHI::DX12
 		{
 			DX::ComPtr<IHeap> Heap = nullptr;
 
-			static void Init(Memory& chunk, HeapFlags flags, U64 size, void* userData);
+			static Status Init(Memory& chunk, HeapFlags flags, U64 size, void* userData) noexcept;
 			static void Destroy(Memory& chunk, void* userData) noexcept { chunk.Heap = nullptr; }
 		};
 		typedef Allocator::ChunkedTLSF<Memory, 4, 2> HeapAllocator;
@@ -55,19 +55,19 @@ namespace ZE::RHI::DX12
 		static constexpr D3D12_HEAP_TYPE GetHeapType(HeapFlags flags) noexcept;
 		static constexpr D3D12_HEAP_FLAGS GetHeapFlags(HeapFlags flags) noexcept;
 
-		static DX::ComPtr<IResource> CreateCommittedResource(Device& dev,
-			const D3D12_RESOURCE_DESC1& desc, D3D12_BARRIER_LAYOUT layout, HeapFlags flags);
-		static DX::ComPtr<IResource> CreateResource(Device& dev, const D3D12_RESOURCE_DESC1& desc,
-			D3D12_BARRIER_LAYOUT layout, U64 offset, IHeap* heap, HeapFlags flags);
+		static Expected<DX::ComPtr<IResource>> CreateCommittedResource(Device& dev,
+			const D3D12_RESOURCE_DESC1& desc, D3D12_BARRIER_LAYOUT layout, HeapFlags flags) noexcept;
+		static Expected<DX::ComPtr<IResource>> CreateResource(Device& dev, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 offset, IHeap* heap, HeapFlags flags) noexcept;
 
-		static ResourceInfo Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
-			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator);
+		static Expected<ResourceInfo> Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator) noexcept;
 		// Find and allocate smallest memory region in heap at given boundary (assuming boundary bigger than smallest chunk)
-		static ResourceInfo AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
-			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator);
+		static Expected<ResourceInfo> AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator) noexcept;
 		// Find and allocate smallest memory region in heap at minimal boundary (given chunk size is smallest possible)
-		static ResourceInfo AllocMinimalChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
-			D3D12_BARRIER_LAYOUT layout, HeapAllocator& allocator);
+		static Expected<ResourceInfo> AllocMinimalChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
+			D3D12_BARRIER_LAYOUT layout, HeapAllocator& allocator) noexcept;
 
 		// Remove allocated memory and return it to free pool merging whenever possible with nerby free regions
 		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept;
@@ -78,6 +78,8 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(AllocatorGPU);
 		~AllocatorGPU();
 
+		static Expected<AllocatorGPU> Create(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported, D3D12_TIGHT_ALIGNMENT_TIER alignmentTier) noexcept;
+
 		constexpr AllocTier GetCurrentTier() const noexcept { return allocTier; }
 		constexpr bool IsGpuUploadHeap() const noexcept { return mainAllocator.GetChunkCreationFlags() & HeapFlag::GpuUploadHeap; }
 		constexpr bool IsTightAlignmentEnabled() const noexcept { return tightAlignment; }
@@ -87,13 +89,11 @@ namespace ZE::RHI::DX12
 		void RemoveReadackBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, readbackBuffersAllocator); }
 		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
-		void Init(Device& dev, D3D12_RESOURCE_HEAP_TIER heapTier, bool gpuUploadHeapSupported, D3D12_TIGHT_ALIGNMENT_TIER alignmentTier);
-
-		ResourceInfo AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
+		Expected<ResourceInfo> AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc) noexcept;
 		// Buffers that can be written fast into from CPU
-		ResourceInfo AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
+		Expected<ResourceInfo> AllocDynamicBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc) noexcept;
 		// Buffers that can be written by GPU and read fast from CPU
-		ResourceInfo AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc);
-		ResourceInfo AllocTexture(Device& dev, const D3D12_RESOURCE_DESC1& desc);
+		Expected<ResourceInfo> AllocReadbackBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc) noexcept;
+		Expected<ResourceInfo> AllocTexture(Device& dev, const D3D12_RESOURCE_DESC1& desc) noexcept;
 	};
 }
