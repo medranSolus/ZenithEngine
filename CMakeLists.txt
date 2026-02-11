@@ -192,6 +192,7 @@ set_bool(ZE_AGILITY_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_AGS_ENABLED ${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 set_bool(ZE_ASSIMP_ENABLED ${ZE_EXTERNAL_MODEL_LOADING})
 set_bool(ZE_DLSS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
+set_bool(ZE_NGX_ENABLED ${ZE_DLSS_ENABLED})
 set_bool(ZE_DSTORE_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
@@ -273,7 +274,6 @@ set(BROTLI_LIB "brotlicommon")
 set(BROTLIDEC_LIB "brotlidec")
 set(BROTLIENC_LIB "brotlienc")
 set(BZIP2_LIB "bz2_static")
-set(DLSS_LIB "nvsdk_ngx")
 set(DSTORE_LIB "dstorage")
 set(ENTT_LIB "EnTT::EnTT")
 set(FTYPE_LIB "freetype")
@@ -281,6 +281,7 @@ set(FLAC_LIB "FLAC")
 set(HARFBUZZ_LIB "harfbuzz")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
+set(NGX_LIB "nvsdk_ngx")
 set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
 set(OPUS_LIB "opus")
@@ -302,17 +303,6 @@ endif()
 set(BROTLI_TARGET "${BROTLI_LIB}")
 set(BROTLI_TARGETS "${BROTLI_LIB}" "${BROTLIDEC_LIB}" "${BROTLIENC_LIB}")
 set(BZIP2_TARGET "${BZIP2_LIB}")
-if(${ZE_DLSS_ENABLED})
-	if(${ZE_PLATFORM_WINDOWS})
-		set(DLSS_TARGET "${DLSS_DIR}/lib/Windows_x86_64/x64/${DLSS_LIB}_d")
-		if(${ZE_BUILD_DEBUG})
-			set(DLSS_TARGET "${DLSS_TARGET}_dbg")
-		endif()
-		set(DLSS_TARGET "${DLSS_TARGET}.lib")
-	elseif(${ZE_PLATFORM_LINUX})
-		set(DLSS_TARGET "${DLSS_DIR}/lib/Linux_x86_64/lib${DLSS_LIB}.a")
-	endif()
-endif()
 if(${ZE_DSTORE_ENABLED})
 	set(DSTORE_TARGET "${DSTORE_DIR}/lib/x64/${DSTORE_LIB}.lib")
 endif()
@@ -322,6 +312,17 @@ set(FLAC_TARGET "${FLAC_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
 set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
+if(${ZE_NGX_ENABLED})
+	if(${ZE_PLATFORM_WINDOWS})
+		set(NGX_TARGET "${DLSS_DIR}/lib/Windows_x86_64/x64/${NGX_LIB}_d")
+		if(${ZE_BUILD_DEBUG})
+			set(NGX_TARGET "${NGX_TARGET}_dbg")
+		endif()
+		set(NGX_TARGET "${NGX_TARGET}.lib")
+	elseif(${ZE_PLATFORM_LINUX})
+		set(NGX_TARGET "${DLSS_DIR}/lib/Linux_x86_64/lib${NGX_LIB}.a")
+	endif()
+endif()
 set(OGG_TARGET "${OGG_LIB}")
 if(${ZE_ENABLE_OPENAL})
 	set(OPENAL_TARGET "${OPENAL_LIB}")
@@ -368,7 +369,6 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${ASSIMP_TARGET}
 	${BROTLI_TARGETS}
 	${BZIP2_TARGET}
-	${DLSS_TARGET}
 	${DSTORE_TARGET}
 	${ENTT_TARGET}
 	${FFXSDK_TARGETS}
@@ -377,6 +377,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${HARFBUZZ_TARGET}
 	${LIBPNG_TARGET}
 	${LIBSPNG_TARGET}
+	${NGX_TARGET}
 	${OGG_TARGET}
 	${OPENAL_TARGET}
 	${OPUS_TARGET}
@@ -493,6 +494,7 @@ add_compile_definitions(_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # Flags for enabling features per given target
 add_compile_definitions(_ZE_FFXAPI_ENABLED=$<BOOL:${ZE_FFXAPI_ENABLED}>)
 add_compile_definitions(_ZE_DLSS_ENABLED=$<BOOL:${ZE_DLSS_ENABLED}>)
+add_compile_definitions(_ZE_NGX_ENABLED=$<BOOL:${ZE_NGX_ENABLED}>)
 add_compile_definitions(_ZE_XESS_ENABLED=$<BOOL:${ZE_XESS_ENABLED}>)
 # General flags with project options
 add_compile_definitions(_ZE_USE_FFX_API_FSR_SHADERS=$<BOOL:${ZE_USE_FFX_API_FSR_SHADERS}>)

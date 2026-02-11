@@ -27,7 +27,6 @@ namespace ZE::GFX
 
 		static constexpr const char* GetFeatureSupportResult(NVSDK_NGX_Feature_Support_Result res) noexcept;
 		static constexpr const char* GetFeatureString(NVSDK_NGX_Feature feature, FeatureString stringType) noexcept;
-		static constexpr const char* GetResultString(NVSDK_NGX_Result res) noexcept;
 
 		static void NVSDK_CONV MessageHandler(const char* message, NVSDK_NGX_Logging_Level loggingLevel, NVSDK_NGX_Feature sourceComponent) noexcept;
 		static NVSDK_NGX_FeatureCommonInfo GetCommonInfo() noexcept;

@@ -19,8 +19,6 @@ namespace ZE::GFX
 	constexpr FfxApiSurfaceFormat GetFfxApiFormat(PixelFormat format) noexcept;
 	// Convert FFX SDK surface format into pixel format
 	constexpr PixelFormat GetPixelFormat(FfxApiSurfaceFormat format) noexcept;
-	// Get resulting string for given FFX API error code
-	constexpr const char* GetFfxApiReturnString(ffxReturnCode_t code) noexcept;
 
 #pragma region Functions
 	constexpr FfxApiSurfaceFormat GetFfxApiFormat(PixelFormat format) noexcept
@@ -222,30 +220,5 @@ namespace ZE::GFX
 			return PixelFormat::R9G9B9E5_SharedExp;
 		}
 	}
-
-	constexpr const char* GetFfxApiReturnString(ffxReturnCode_t code) noexcept
-	{
-#define DECODE(type, msg) case FFX_API_RETURN_##type: return #type ", " msg
-		switch (code)
-		{
-			DECODE(OK, "the oparation was successful");
-			DECODE(ERROR, "an error occurred that is not further specified");
-			DECODE(ERROR_UNKNOWN_DESCTYPE, "the structure type given was not recognized for the function or context with which it was used, this is likely a programming error");
-			DECODE(ERROR_RUNTIME_ERROR, "the underlying runtime (e.g. D3D12, Vulkan) or effect returned an error code");
-			DECODE(NO_PROVIDER, "no provider was found for the given structure type, this is likely a programming error");
-			DECODE(ERROR_MEMORY, "a memory allocation failed");
-			DECODE(ERROR_PARAMETER, "a parameter was invalid, e.g. a null pointer, empty resource or out-of-bounds enum value");
-		default:
-			return "Unknown error code";
-		}
-#undef DECODE
-	}
 #pragma endregion
 }
-
-// Variable holding last result code of FFX API SDK
-#define ZE_FFX_API_EXCEPT_RESULT __ffxApiReturnCode
-// Enable usage of ZE_FFX_* macros in current scope
-#define ZE_FFX_API_ENABLE() [[maybe_unused]] ffxReturnCode_t ZE_FFX_API_EXCEPT_RESULT
-// Performs assert check on return value of FFX SDK call, before using needs call to ZE_FFX_ENABLE()
-#define ZE_FFX_API_CHECK(call, info) ZE_FFX_API_EXCEPT_RESULT = (call); ZE_ASSERT(ZE_FFX_API_EXCEPT_RESULT == FFX_API_RETURN_OK, info)

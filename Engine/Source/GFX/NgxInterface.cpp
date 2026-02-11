@@ -115,36 +115,6 @@ namespace ZE::GFX
 #undef GET_STRING
 	}
 
-	constexpr const char* NgxInterface::GetResultString(NVSDK_NGX_Result res) noexcept
-	{
-#define GET_FAIL_STRING(feature, msg) case NVSDK_NGX_Result_FAIL_##feature: return #feature msg
-		switch (res)
-		{
-		case NVSDK_NGX_Result_Success: return "Success";
-		case NVSDK_NGX_Result_Fail: return "Fail";
-			GET_FAIL_STRING(FeatureNotSupported, ", feature is not supported on current hardware");
-			GET_FAIL_STRING(PlatformError, ", check API debug layer log for more information");
-			GET_FAIL_STRING(FeatureAlreadyExists, ", feature with given parameters already exists");
-			GET_FAIL_STRING(FeatureNotFound, ", feature with provided handle does not exist");
-			GET_FAIL_STRING(InvalidParameter, ", invalid parameter was provided");
-			GET_FAIL_STRING(ScratchBufferTooSmall, ", provided buffer is too small, please use size provided by NVSDK_NGX_GetScratchBufferSize");
-			GET_FAIL_STRING(NotInitialized, ", SDK was not initialized properly");
-			GET_FAIL_STRING(UnsupportedInputFormat, ", unsupported format used for input/output buffers");
-			GET_FAIL_STRING(RWFlagMissing, ", feature input/output needs RW access (UAV) (D3D11/D3D12 specific)");
-			GET_FAIL_STRING(MissingInput, ", feature was created with specific input but none is provided at evaluation");
-			GET_FAIL_STRING(UnableToInitializeFeature, ", feature is not available on the system");
-			GET_FAIL_STRING(OutOfDate, ", NGX system libraries are old and need an update");
-			GET_FAIL_STRING(OutOfGPUMemory, ", feature requires more GPU memory than it is available on system");
-			GET_FAIL_STRING(UnsupportedFormat, ", format used in input buffer(s) is not supported by feature");
-			GET_FAIL_STRING(UnableToWriteToAppDataPath, ", path provided in InApplicationDataPath cannot be written to");
-			GET_FAIL_STRING(UnsupportedParameter, ", unsupported parameter was provided (e.g. specific scaling factor is unsupported)");
-			GET_FAIL_STRING(Denied, ", the feature or application was denied (contact NVIDIA for further details)");
-			GET_FAIL_STRING(NotImplemented, ", the feature or functionality is not implemented");
-		default: return "UNKNOWN";
-		}
-#undef GET_FAIL_STRING
-	}
-
 	void NVSDK_CONV NgxInterface::MessageHandler(const char* message, NVSDK_NGX_Logging_Level loggingLevel, NVSDK_NGX_Feature sourceComponent) noexcept
 	{
 		if (loggingLevel == NVSDK_NGX_LOGGING_LEVEL_OFF || (ignoreInternalLogs && (sourceComponent == NVSDK_NGX_Feature_Reserved_SDK || sourceComponent == NVSDK_NGX_Feature_Reserved_Core)))
