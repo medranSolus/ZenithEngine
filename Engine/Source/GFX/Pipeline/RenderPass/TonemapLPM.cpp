@@ -4,7 +4,18 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	ExecuteData::~ExecuteData()
+	{
+		if (Initialized)
+		{
+			ZE_FFX_CHECK(ffxLpmContextDestroy(&Ctx), "Error destroying LPM context!");
+		}
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{
+		return Initialize(dev, buildData);
+	}
 
 	PassDesc GetDesc() noexcept
 	{
@@ -12,40 +23,28 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		syncStatus.SyncCompute(dev);
-		ZE_FFX_ENABLE();
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		ZE_FFX_CHECK(ffxLpmContextDestroy(&execData->Ctx), "Error destroying LPM context!");
-		delete execData;
-	}
-
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
-	{
-		ZE_FFX_ENABLE();
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
 		FfxLpmContextDescription ctxDesc = {};
 		ctxDesc.flags = 0;
 		ctxDesc.backendInterface = buildData.FfxInterface;
-		ZE_FFX_THROW_FAILED(ffxLpmContextCreate(&passData->Ctx, &ctxDesc), "Error creating LPM context!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxLpmContextCreate(&passData->Ctx, &ctxDesc), "Error creating LPM context!");
+		passData->Initialized = true;
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("TonemapLPM");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapLPM", PixelVal::White);
 
@@ -79,17 +78,17 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		dispatchDesc.displayWhitePoint[1] = displayProps.WhitePoint.y;
 		dispatchDesc.displayMinLuminance = displayProps.MinLuminance;
 		dispatchDesc.displayMaxLuminance = displayProps.MaxLuminance;
-		ZE_FFX_THROW_FAILED(ffxLpmContextDispatch(&data.Ctx, &dispatchDesc), "Error performing LPM!");
+		ZE_FFX_LOG_RET_FAILED(ffxLpmContextDispatch(&data.Ctx, &dispatchDesc), "Error performing LPM!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("Luma Preserving Mapper"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_LPM_VERSION_MAJOR), ZE_DEPAREN(FFX_LPM_VERSION_MINOR), ZE_DEPAREN(FFX_LPM_VERSION_PATCH)));
 

@@ -10,21 +10,24 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		RID Skybox;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
 		bool UpdateError = false;
 		bool UpdateData = false;
 		Data::CubemapSource NewSource = {};
 		Data::CubemapSource SourceData = {};
 		Resource::Texture::Pack SkyTexture;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	PassDesc GetDesc(const Data::CubemapSource& source) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* CopyInitData(void* data) noexcept;
 	void FreeInitData(void* data) noexcept;
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

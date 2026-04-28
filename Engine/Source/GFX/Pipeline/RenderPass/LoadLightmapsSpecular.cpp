@@ -1,12 +1,16 @@
 #include "GFX/Pipeline/RenderPass/LoadLightmapsSpecular.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
+#include "GUI/DearImGui.h"
 #include "GUI/DialogWindow.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
@@ -51,21 +55,10 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.CopyInitData = CopyInitData;
 		desc.FreeInitData = FreeInitData;
 		desc.DebugUI = DebugUI;
 		return desc;
-	}
-
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		syncStatus.SyncCompute(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->EnvMap.Free(dev);
-		execData->BrdfLut.Free(dev);
-		delete execData;
 	}
 
 	void* CopyInitData(void* data) noexcept
@@ -78,9 +71,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		delete reinterpret_cast<std::pair<std::string, Data::CubemapSource>*>(data);
 	}
 
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		UpdateStatus status = UpdateStatus::NoUpdate;
+		UpdateOperation status = UpdateOperation::NoUpdate;
 		if (!passData.UpdateError && passData.UpdateData)
 		{
 			if (passData.EnvMapNewSource.Data && passData.EnvMapNewSource != passData.EnvMapSource)
@@ -89,16 +82,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 				std::vector<Surface> textures;
 				if (passData.EnvMapNewSource.LoadTextures(textures))
 				{
-					passData.EnvMapSource = std::move(passData.EnvMapNewSource);
-					Resource::Texture::PackDesc texDesc;
+					Resource::Texture::PackDesc texDesc = {};
 					ZE_TEXTURE_SET_NAME(texDesc, "Environment Map");
 					texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+					ZE_EXPECT_RET_FAILED(passData.EnvMap, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
-					buildData.SyncStatus.SyncMain(dev);
-					buildData.SyncStatus.SyncCompute(dev);
-					passData.EnvMap.Free(dev);
-					passData.EnvMap.Init(dev, buildData.Assets.GetDisk(), texDesc);
-					status = UpdateStatus::GpuUploadRequired;
+					passData.EnvMapSource = std::move(passData.EnvMapNewSource);
+					status = UpdateOperation::GpuUploadRequired;
 				}
 				else
 				{
@@ -113,17 +103,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 				std::vector<Surface> textures;
 				if (textures.emplace_back().Load(passData.NewLutSource))
 				{
-					Resource::Texture::PackDesc texDesc;
+					Resource::Texture::PackDesc texDesc = {};
 					ZE_TEXTURE_SET_NAME(texDesc, "BRDF LUT");
 					texDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(textures));
-					passData.LutSource = passData.NewLutSource;
-					passData.NewLutSource = "";
+					ZE_EXPECT_RET_FAILED(passData.BrdfLut, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
-					buildData.SyncStatus.SyncMain(dev);
-					buildData.SyncStatus.SyncCompute(dev);
-					passData.BrdfLut.Free(dev);
-					passData.BrdfLut.Init(dev, buildData.Assets.GetDisk(), texDesc);
-					status = UpdateStatus::GpuUploadRequired;
+					passData.LutSource = std::move(passData.NewLutSource);
+					status = UpdateOperation::GpuUploadRequired;
 				}
 				else
 				{
@@ -135,20 +121,26 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		return status;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 		passData->EnvMapSource = envMapSource;
 		passData->LutSource = brdfLutSource;
 
-		Resource::Texture::PackDesc texDesc;
+		Resource::Texture::PackDesc texDesc = {};
 		std::vector<Surface> textures;
 
 		ZE_TEXTURE_SET_NAME(texDesc, "Environment Map");
 		if (!envMapSource.LoadTextures(textures))
-			throw ZE_RGC_EXCEPT("Error loading environmet map!");
+		{
+			Logger::Error("Error loading environmet map, falling back to generated texture!");
+			if (textures.size())
+				textures.pop_back();
+			for (U8 i = textures.size(); i < 6; i++)
+				textures.emplace_back(1, 1);
+		}
 		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
-		passData->EnvMap.Init(dev, buildData.Assets.GetDisk(), texDesc);
+		ZE_EXPECT_RET_FAILED(passData->EnvMap, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
 		texDesc.Textures.clear();
 		ZE_TEXTURE_SET_NAME(texDesc, "BRDF LUT");
@@ -158,30 +150,28 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 			if (surf.Load(brdfLutSource))
 				textures.emplace_back(std::move(surf));
 			else
-			{
-				ZE_WARNING("Error loading BRDF LUT from file, falling back to generating default one!");
-			}
+				Logger::Warning("Error loading BRDF LUT from file, falling back to generating default one!");
 		}
 		if (textures.size() == 0)
 			textures.emplace_back(GenerateBrdfLut(BRDF_LUT_SIZE, BRDF_LUT_SAMPLES_COUNT, BRDF_LUT_FP16));
 		texDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(textures));
-		passData->BrdfLut.Init(dev, buildData.Assets.GetDisk(), texDesc);
+		ZE_EXPECT_RET_FAILED(passData->BrdfLut, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		renderData.Buffers.RegisterOutsideResource(passData.Resources.CastConst<Resources>()->EnvMap,
-			passData.ExecData.Cast<ExecuteData>()->EnvMap, 0, FrameResourceType::TextureCube);
-		renderData.Buffers.RegisterOutsideResource(passData.Resources.CastConst<Resources>()->BrdfLut,
-			passData.ExecData.Cast<ExecuteData>()->BrdfLut, 0, FrameResourceType::Texture2D);
-		return false;
+		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->EnvMap,
+			static_cast<ExecuteData*>(passData.ExecData.get())->EnvMap, 0, FrameResourceType::TextureCube);
+		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->BrdfLut,
+			static_cast<ExecuteData*>(passData.ExecData.get())->BrdfLut, 0, FrameResourceType::Texture2D);
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+		ExecuteData& execData = *static_cast<ExecuteData*>(data);
 		if (ImGui::CollapsingHeader("Specular Lightmaps"))
 		{
 			Utils::ShowCubemapDebugUI("Loaded environmet map:", execData.EnvMapSource, "", execData.EnvMapNewSource, execData.UpdateData, execData.UpdateError);

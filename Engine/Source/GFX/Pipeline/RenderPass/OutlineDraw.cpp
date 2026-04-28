@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for OutlineDraw initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -19,50 +19,40 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->StateStencil.Free(dev);
-		execData->StateRender.Free(dev);
-		delete execData;
-	}
+		auto passData = std::make_unique<ExecuteData>();
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
-	{
-		ExecuteData* passData = new ExecuteData;
-
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Solid color
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawStencil");
-		passData->StateStencil.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->StateStencil, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
-		psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache);
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		psoDesc.FormatDS = PixelFormat::Unknown;
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
-		passData->StateRender.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->StateRender, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
 		Settings::AssureEntityPools<InsideFrustum>();
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Outline Draw");
 
@@ -71,8 +61,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		if (count)
 		{
 			ZE_PERF_GUARD("Outline Draw - outline present");
-			Resources ids = *passData.Resources.CastConst<Resources>();
-			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+			Resources ids = *reinterpret_cast<const Resources*>(passData.Resources.get());
+			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
 			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
@@ -114,7 +104,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 				auto& transformInfo = visibleGroup.get<InsideFrustum>(entity);
-				transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer));
+				ZE_EXPECT_RET_FAILED_CODE(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 				cbuffer.Bind(cl, ctx, transformInfo.Transform);
 				ctx.Reset();
 
@@ -132,7 +122,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			data.StateRender.Bind(cl);
 
 			ctx.SetFromEnd(0);
-			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 0.0f }); // Can be taken from mesh later
+			Resource::Constant<Float3> solidColor; // Can be taken from mesh later
+			ZE_EXPECT_RET_FAILED_CODE(solidColor, Resource::Constant<Float3>::Create(dev, { 1.0f, 1.0f, 0.0f }));
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();
 
@@ -157,8 +148,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ZE_PERF_START("Outline Draw - visibility clear");
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
-			return true;
 		}
-		return false;
+		return {};
 	}
 }

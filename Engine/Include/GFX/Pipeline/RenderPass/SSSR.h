@@ -18,9 +18,9 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		RID SSSR;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		FfxSssrContext Ctx;
+		FfxSssrContext Ctx = {};
 		UInt2 RenderSize = { 0, 0 };
 		float IblFactor = 0.55f;
 		float TemporalStabilityFactor = 0.6f;
@@ -32,14 +32,18 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		U32 MostDetailedMip = 0;
 		U32 SamplesPerQuad = 1;
 		bool TemporalVarianceGuidedTracingEnabled = true;
+		bool Initialized = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR(); }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

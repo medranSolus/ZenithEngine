@@ -9,14 +9,14 @@ namespace ZE::GFX::Pipeline::RenderPass
 	// Information about copying single buffer
 	struct CopyBufferEntry
 	{
-		CopyMethod Method;
+		CopyMethod Method = CopyMethod::Generic;
 		union CopyDesc
 		{
 			struct
 			{
-				U64 SrcOffset;
-				U64 DestOffset;
-				U64 Bytes;
+				U64 SrcOffset = UINT64_MAX;
+				U64 DestOffset = UINT64_MAX;
+				U64 Bytes = UINT64_MAX;
 			} BufferRegion;
 
 			constexpr CopyDesc() noexcept {}
@@ -39,13 +39,12 @@ namespace ZE::GFX::Pipeline::RenderPass
 			CopyBufferEntry Info[N];
 		};
 
-		static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return new ExecuteData(*reinterpret_cast<ExecuteData*>(initData)); }
-		static void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus) { delete reinterpret_cast<ExecuteData*>(data); }
+		static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept { return std::make_unique<ExecuteData>(*reinterpret_cast<ExecuteData*>(initData)); }
 		static void* CopyInitData(void* data) noexcept { return new ExecuteData(*reinterpret_cast<ExecuteData*>(data)); }
 		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 
 		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate = nullptr) noexcept;
-		static bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+		static Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	};
 
 #pragma region Functions
@@ -57,17 +56,16 @@ namespace ZE::GFX::Pipeline::RenderPass
 		desc.Init = Initialize;
 		desc.Evaluate = evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		desc.CopyInitData = CopyInitData;
 		desc.FreeInitData = FreeInitData;
 		return desc;
 	}
 
 	template<ResIndex N, const char* MARKER_STRING>
-	bool CopyBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status CopyBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		if constexpr (MARKER_STRING == nullptr)
 		{
@@ -102,7 +100,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 			}
 		}
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 #pragma endregion
 }

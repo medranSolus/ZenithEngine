@@ -18,7 +18,7 @@ namespace ZE::GUI
 
 		// Function is static only for the sake of running it inside render pass
 		static ImGuiRenderData CreateRenderData(GFX::Device& dev, PixelFormat outputFormat);
-		static void DestroyRenderData(GFX::Device& dev, ImGuiRenderData& data) noexcept;
+		static void DestroyRenderData(ImGuiRenderData& data) noexcept;
 		static void RunRender(GFX::CommandList& cl) noexcept;
 
 		void StartFrame(const Window::MainWindow& window) const noexcept;

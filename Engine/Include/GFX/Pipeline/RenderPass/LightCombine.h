@@ -19,18 +19,21 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		RID RenderTarget;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
-		bool AmbientOcclusionEnabled;
-		bool IBLState;
-		bool SSRState;
+		bool AmbientOcclusionEnabled = false;
+		bool IBLState = false;
+		bool SSRState = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

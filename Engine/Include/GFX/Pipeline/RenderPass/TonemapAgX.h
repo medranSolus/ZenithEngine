@@ -10,18 +10,21 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 		RID RenderTarget;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 		Float4 Params = { 1.1f, 1.08f, 1.09f, 0.17f }; // Exposure | Saturation boost | Contrast enhancement | Pivot point for contrast (mid-gray)
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::AgX; }
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

@@ -4,14 +4,14 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
 	{
 		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
-		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData),
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData),
 			formats.at(0), formats.at(1), formats.at(2), formats.at(3), formats.at(4), formats.at(5));
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1),
@@ -33,31 +33,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
-		while (stateCount--)
-		{
-			execData->StatesSolid[stateCount].Free(dev);
-			execData->StatesTransparent[stateCount].Free(dev);
-		}
-		execData->StatesSolid.DeleteArray();
-		execData->StatesTransparent.DeleteArray();
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
-		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept
 	{
 		const bool isMotion = Settings::ComputeMotionVectors();
-		const bool isReactive = Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::XeSS;
+		const bool isReactive = IsReactiveRequired(Settings::Upscaler);
 		if (isMotion != passData.MotionEnabled || isReactive != passData.ReactiveEnabled)
 		{
 			passData.MotionEnabled = isMotion;
@@ -65,10 +48,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 
-			Resource::PipelineStateDesc psoDesc;
+			Resource::PipelineStateDesc psoDesc = {};
 			psoDesc.FormatDS = formatDS;
 			psoDesc.InputLayout = Vertex::GetLayout();
-			psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "LambertVS_M" : "LambertVS", buildData.ShaderCache);
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "LambertVS_M" : "LambertVS", buildData.ShaderCache));
 			psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
 			psoDesc.FormatsRT[0] = formatNormal;
 			psoDesc.FormatsRT[1] = formatAlbedo;
@@ -85,7 +68,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				if (isReactive)
 					shaderName += "R";
 			}
-			buildData.SyncStatus.SyncMain(dev);
 			U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
 			while (stateIndex--)
 			{
@@ -93,64 +75,64 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				if ((isMotion || isReactive) && suffix.size())
 					suffix.erase(suffix.begin());
 
-				psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache);
+				ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, shaderName + suffix, buildData.ShaderCache));
 
 				psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 				ZE_PSO_SET_NAME(psoDesc, "LambertianSolid" + suffix);
-				passData.StatesSolid[stateIndex].Free(dev);
-				passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
+				ZE_EXPECT_RET_FAILED(passData.StatesSolid[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
 				psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
 				ZE_PSO_SET_NAME(psoDesc, "LambertianTransparent" + suffix);
-				passData.StatesTransparent[stateIndex].Free(dev);
-				passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
+				ZE_EXPECT_RET_FAILED(passData.StatesTransparent[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 			}
-			return UpdateStatus::InternalOnly;
+			return UpdateOperation::InternalOnly;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
-		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular, parallax
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		U8 stateIndex = Data::MaterialPBR::GetLastPipelineStateNumber() + 1;
-		passData->StatesSolid = new Resource::PipelineStateGfx[stateIndex];
-		passData->StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
+		passData->StatesSolid = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
+		passData->StatesTransparent = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
 		passData->MotionEnabled = !Settings::ComputeMotionVectors();
-		passData->ReactiveEnabled = Settings::Upscaler != UpscalerType::Fsr2 && Settings::Upscaler != UpscalerType::XeSS;
-		Update(dev, buildData, *passData, formatDS, formatNormal, formatAlbedo, formatMaterialParams, formatMotion, formatReactive);
+		passData->ReactiveEnabled = !IsReactiveRequired(Settings::Upscaler);
+		auto operation = Update(dev, buildData, *passData, formatDS, formatNormal, formatAlbedo, formatMaterialParams, formatMotion, formatReactive);
+		if (!operation)
+			return std::unexpected(operation.error());
 
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
-		passData->StateDepth.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
 		Settings::AssureEntityPools<InsideFrustumSolid, InsideFrustumNotSolid>();
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Lambertian");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_ASSERT(data.MotionEnabled == Settings::ComputeMotionVectors(),
 			"Lambertian pass not updated for changed motion vectors output settings!");
-		ZE_ASSERT(data.ReactiveEnabled == (Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::XeSS),
+		ZE_ASSERT(data.ReactiveEnabled == IsReactiveRequired(Settings::Upscaler),
 			"Lambertian pass not updated for changed reactive mask output settings!");
 
 		const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
@@ -201,26 +183,26 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				Matrix m = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 				Matrix mvp = viewProjection * m;
-				Resource::DynamicBufferAlloc transformAlloc;
+				Resource::DynamicBufferAlloc transformAlloc = {};
 				if (Settings::ComputeMotionVectors())
 				{
 					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
-					ModelTransformBufferMotion transformBuffer;
+					ModelTransformBufferMotion transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
 						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
-					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion));
+					ZE_EXPECT_RET_FAILED_CODE(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion)));
 				}
 				else
 				{
-					ModelTransformBuffer transformBuffer;
+					ModelTransformBuffer transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
-					transformAlloc = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
+					ZE_EXPECT_RET_FAILED_CODE(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer)));
 				}
 
 				auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
@@ -340,21 +322,21 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				{
 					const auto& transformPrev = Settings::Data.get<Data::TransformPrevious>(entity);
 
-					ModelTransformBufferMotion transformBuffer;
+					ModelTransformBufferMotion transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
 						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
-					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion));
+					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion)));
 				}
 				else
 				{
-					ModelTransformBuffer transformBuffer;
+					ModelTransformBuffer transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
-					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
+					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer)));
 				}
 
 				const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
@@ -389,6 +371,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		// Remove current visibility
 		Settings::Data.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 		ZE_PERF_STOP();
-		return solidCount != 0 || transparentCount != 0;
+		return {};
 	}
 }

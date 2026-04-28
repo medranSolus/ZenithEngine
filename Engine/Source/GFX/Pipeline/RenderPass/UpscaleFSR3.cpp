@@ -5,9 +5,24 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	ExecuteData::~ExecuteData()
+	{
+		if (Initialized)
+		{
+			Settings::RenderSize = Settings::DisplaySize;
+			ZE_FFX_CHECK(ffxFsr3UpscalerContextDestroy(&Ctx), "Error destroying FSR3 context!");
+		}
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{ 
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{
+		return Initialize(dev, buildData);
+	}
 
 	static void MessageHandler(FfxMsgType type, const wchar_t* msg) noexcept
 	{
@@ -31,35 +46,21 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		Settings::RenderSize = Settings::DisplaySize;
-		syncStatus.SyncMain(dev);
-		ZE_FFX_ENABLE();
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		ZE_FFX_CHECK(ffxFsr3UpscalerContextDestroy(&execData->Ctx), "Error destroying FSR3 context!");
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::Fsr3, passData.Quality);
 		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
 		{
-			ZE_FFX_ENABLE();
-			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
-			if (!firstUpdate)
+			if (passData.Initialized)
 			{
-				buildData.SyncStatus.SyncMain(dev);
-				ZE_FFX_CHECK(ffxFsr3UpscalerContextDestroy(&passData.Ctx), "Error destroying FSR3 context!");
+				ZE_FFX_LOG_RET_FAILED_EXPECT(ffxFsr3UpscalerContextDestroy(&passData.Ctx), "Error destroying FSR3 context!");
+				passData.Initialized = false;
 			}
+
 			FfxFsr3UpscalerContextDescription ctxDesc = {};
 			ctxDesc.flags = FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED | FFX_FSR3UPSCALER_ENABLE_DEPTH_INFINITE
 				| FFX_FSR3UPSCALER_ENABLE_AUTO_EXPOSURE | FFX_FSR3UPSCALER_ENABLE_HIGH_DYNAMIC_RANGE
@@ -68,26 +69,32 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 			ctxDesc.maxUpscaleSize = { passData.DisplaySize.X, passData.DisplaySize.Y };
 			ctxDesc.fpMessage = MessageHandler;
 			ctxDesc.backendInterface = buildData.FfxInterface;
-			ZE_FFX_THROW_FAILED(ffxFsr3UpscalerContextCreate(&passData.Ctx, &ctxDesc), "Error creating FSR3 context!");
-			return UpdateStatus::FrameBufferImpact;
+			ZE_FFX_LOG_RET_FAILED_EXPECT(ffxFsr3UpscalerContextCreate(&passData.Ctx, &ctxDesc), "Error creating FSR3 context!");
+			passData.Initialized = true;
+
+			Settings::RenderSize = renderSize;
+			passData.DisplaySize = Settings::DisplaySize;
+
+			return UpdateOperation::FrameBufferImpact;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
-		Update(dev, buildData, *passData, true);
+		auto passData = std::make_unique<ExecuteData>();
+		auto operation = Update(dev, buildData, *passData);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("Upscale FSR3");
 
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 		const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
 
@@ -121,17 +128,17 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
 		desc.viewSpaceToMetersFactor = 1.0f;
 		desc.flags = 0;
-		ZE_FFX_THROW_FAILED(ffxFsr3UpscalerContextDispatch(&data.Ctx, &desc), "Error performing FSR3!");
+		ZE_FFX_LOG_RET_FAILED(ffxFsr3UpscalerContextDispatch(&data.Ctx, &desc), "Error performing FSR3!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("FSR 3"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MAJOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_MINOR), ZE_DEPAREN(FFX_FSR3UPSCALER_VERSION_PATCH)));
 #if _ZE_USE_FFX_API_FSR_SHADERS

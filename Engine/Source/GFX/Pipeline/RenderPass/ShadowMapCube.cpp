@@ -5,22 +5,9 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
-	void Clean(Device& dev, ExecuteData& data) noexcept
+	Status Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT) noexcept
 	{
-		data.StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
-		while (stateCount--)
-		{
-			data.StatesSolid[stateCount].Free(dev);
-			data.StatesTransparent[stateCount].Free(dev);
-		}
-		data.StatesSolid.DeleteArray();
-		data.StatesTransparent.DeleteArray();
-	}
-
-	void Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT)
-	{
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(Float4), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
@@ -28,47 +15,49 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Geometry);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
-		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED_CODE(passData.BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeDepthGS", buildData.ShaderCache);
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeDepthGS", buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
-		passData.StateDepth.Init(dev, psoDesc, schema);
+		ZE_EXPECT_RET_FAILED_CODE(passData.StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
-		psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeGS", buildData.ShaderCache);
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeGS", buildData.ShaderCache));
 		psoDesc.RenderTargetsCount = 6;
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
-		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
-		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
+		passData.StatesSolid = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
+		passData.StatesTransparent = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
+
 		while (stateIndex--)
 		{
 			const char* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache));
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeSolid" + std::string(suffix));
-			passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
+			ZE_EXPECT_RET_FAILED_CODE(passData.StatesSolid[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeTransparent" + std::string(suffix));
-			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
+			ZE_EXPECT_RET_FAILED_CODE(passData.StatesTransparent[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 		}
 
 		Math::XMStoreFloat4x4(&passData.Projection, Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
 		Settings::AssureEntityPools<Solid, Transparent>();
+		return {};
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
-		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
+		ExecuteData& data, const Resources& ids, const Float3& lightPos, float lightVolume) noexcept
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Cube Clear", PixelVal::Gray);
@@ -81,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		{
 			ZE_PERF_GUARD("Shadow Map Cube - present");
 			// Prepare view-projections for casting onto 6 faces
-			CubeViewBuffer viewBuffer;
+			CubeViewBuffer viewBuffer = {};
 			const Vector position = Math::XMLoadFloat3(&lightPos);
 			const Vector up = { 0.0f, 1.0f, 0.0f, 0.0f };
 			const Matrix projection = Math::XMLoadFloat4x4(&data.Projection);
@@ -106,7 +95,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 			auto& cbuffer = *renderData.DynamicBuffer;
-			auto cubeBufferInfo = cbuffer.Alloc(dev, &viewBuffer, sizeof(CubeViewBuffer));
+			Resource::DynamicBufferAlloc cubeBufferInfo = {};
+			ZE_EXPECT_RET_FAILED_CODE(cubeBufferInfo, cbuffer.Alloc(dev, &viewBuffer, sizeof(CubeViewBuffer)));
 
 			// Split into groups based on materials and if inside light volume
 			ZE_PERF_START("Shadow Map Cube - visibility group split loop");
@@ -136,7 +126,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 			EID currentMaterial = INVALID_EID;
 			U8 currentState = UINT8_MAX;
-			Resource::Constant<Float4> shadowData(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f));
+			Resource::Constant<Float4> shadowData;
+			ZE_EXPECT_RET_FAILED_CODE(shadowData, Resource::Constant<Float4>::Create(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f)));
 			if (solidCount)
 			{
 				ZE_PERF_GUARD("Shadow Map Cube - solid present");
@@ -166,11 +157,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					EID entity = solidGroup[i];
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
 
-					TransformBuffer transformBuffer;
+					TransformBuffer transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.TransformTps, Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 					auto& transformInfo = solidGroup.get<Solid>(entity);
-					transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer));
+					ZE_EXPECT_RET_FAILED_CODE(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 					cbuffer.Bind(cl, ctx, transformInfo.Transform);
 					ctx.Reset();
 
@@ -277,9 +268,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					EID entity = transparentGroup[i];
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
 
-					TransformBuffer transformBuffer;
+					TransformBuffer transformBuffer = {};
 					Math::XMStoreFloat4x4(&transformBuffer.TransformTps, Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
-					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
+					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 
 					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
@@ -313,8 +304,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 			ZE_PERF_START("Shadow Map Cube - visibility clear");
 			Settings::Data.clear<Solid, Transparent>();
 			ZE_PERF_STOP();
-			return true;
 		}
-		return false;
+		return {};
 	}
 }

@@ -2,13 +2,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for LightCombine initialization formats!");
-		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.front());
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for LightCombine initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -35,19 +35,10 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept
 	{
 		const bool isAO = Settings::AmbientOcclusionType != AOType::None;
 		if (isAO != passData.AmbientOcclusionEnabled || Settings::IsEnabledIBL() != passData.IBLState || Settings::IsEnabledSSSR() != passData.SSRState)
@@ -56,28 +47,27 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 			passData.IBLState = Settings::IsEnabledIBL();
 			passData.SSRState = Settings::IsEnabledSSSR();
 
-			Resource::PipelineStateDesc psoDesc;
-			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
+			Resource::PipelineStateDesc psoDesc = {};
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.AmbientOcclusionEnabled, passData.IBLState, passData.SSRState), buildData.ShaderCache));
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 			psoDesc.Culling = Resource::CullMode::None;
 			psoDesc.RenderTargetsCount = 1;
 			psoDesc.FormatsRT[0] = outputFormat;
-			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.AmbientOcclusionEnabled, passData.IBLState, passData.SSRState), buildData.ShaderCache);
 			ZE_PSO_SET_NAME(psoDesc, psoDesc.PS->GetName());
 
-			buildData.SyncStatus.SyncMain(dev);
-			passData.State.Free(dev);
-			passData.State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex));
-			return UpdateStatus::GraphImpact;
+			ZE_EXPECT_RET_FAILED(passData.State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex)));
+
+			return UpdateOperation::GraphImpact;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 3, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO + SSR
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
@@ -86,20 +76,21 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		desc.AddRange({ 1, 8, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // BRDF LUT
 		desc.AddRange({ 1, 9, 6, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // IrrMap
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
-
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 		passData->AmbientOcclusionEnabled = Settings::AmbientOcclusionType == AOType::None;
 		passData->IBLState = !Settings::IsEnabledIBL();
-		Update(dev, buildData, *passData, outputFormat);
 
+		auto operation = Update(dev, buildData, *passData, outputFormat);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Light Combine");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_ASSERT(data.AmbientOcclusionEnabled == (Settings::AmbientOcclusionType != AOType::None),
 			"LightCombine pass not updated for changed ssao input settings!");
@@ -130,6 +121,6 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 }

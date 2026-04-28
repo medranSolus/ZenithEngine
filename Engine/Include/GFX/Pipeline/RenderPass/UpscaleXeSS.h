@@ -1,7 +1,8 @@
 #pragma once
-#include "GFX/Pipeline/PassDesc.h"
+#if _ZE_XESS_ENABLED
+#	include "GFX/Pipeline/PassDesc.h"
 ZE_WARNING_PUSH
-#include "xess/xess.h"
+#	include "xess/xess.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
@@ -12,21 +13,27 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		RID Depth;
 		RID MotionVectors;
 		RID ResponsiveMask;
+		RID AliasedBuffers;
+		RID AliasedTextures;
 		RID Output;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
 		UInt2 DisplaySize = { 0, 0 };
 		xess_quality_settings_t Quality = XESS_QUALITY_SETTING_AA;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::XeSS; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, ExecuteData& passData, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }
+#endif

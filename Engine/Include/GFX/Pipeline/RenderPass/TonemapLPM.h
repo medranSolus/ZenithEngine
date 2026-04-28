@@ -12,9 +12,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		RID RenderTarget;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		FfxLpmContext Ctx;
+		FfxLpmContext Ctx = {};
 		FfxLpmColorSpace ColorSpace = FfxLpmColorSpace::FFX_LPM_ColorSpace_REC709;
 		FfxLpmDisplayMode DisplayMode = FfxLpmDisplayMode::FFX_LPM_DISPLAYMODE_LDR;
 		bool Shoulder = true;
@@ -25,13 +25,17 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		float ShoulderContrast = 1.0f;
 		Float3 Saturation = { 0.0f, 0.0f, 0.0f };
 		Float3 CrossTalk = { 1.0f, 0.5f, 1.0f / 32.0f };
+		bool Initialized = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::LPM; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

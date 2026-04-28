@@ -19,24 +19,27 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		RID ReactiveMask;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx StateDepth;
-		Ptr<Resource::PipelineStateGfx> StatesSolid;
-		Ptr<Resource::PipelineStateGfx> StatesTransparent;
-		bool MotionEnabled;
-		bool ReactiveEnabled;
+		std::unique_ptr<Resource::PipelineStateGfx[]> StatesSolid;
+		std::unique_ptr<Resource::PipelineStateGfx[]> StatesTransparent;
+		bool MotionEnabled = false;
+		bool ReactiveEnabled = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return true; } // TODO: check input element count
 
 	PassDesc GetDesc(PixelFormat formatDS, PixelFormat formatNormal, PixelFormat formatAlbedo,
 		PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
-		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
-		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

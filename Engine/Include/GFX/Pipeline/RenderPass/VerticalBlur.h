@@ -11,14 +11,17 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		RID DepthStencil;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

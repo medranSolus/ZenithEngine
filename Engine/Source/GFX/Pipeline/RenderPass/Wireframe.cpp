@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for Wireframe initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -19,30 +19,21 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		delete execData;
-	}
+		auto passData = std::make_unique<ExecuteData>();
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS)
-	{
-		ExecuteData* passData = new ExecuteData;
-
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Solid color
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "SolidPS", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthReverse;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
@@ -51,13 +42,13 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		psoDesc.Topology = Resource::TopologyType::Line;
 		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
 		Settings::AssureEntityPools<InsideFrustum>();
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		auto group = Data::GetRenderGroup<Data::RenderWireframe>();
 		U64 count = group.size();
@@ -77,8 +68,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>();
 			count = visibleGroup.size();
 
-			Resources ids = *passData.Resources.CastConst<Resources>();
-			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "Wireframe", Pixel(0xBC, 0x54, 0x4B));
 			renderData.Buffers.BeginRaster(cl, ids.RenderTarget, ids.DepthStencil);
@@ -88,7 +79,8 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			data.State.Bind(cl);
 
 			ctx.SetFromEnd(0);
-			Resource::Constant<Float3> solidColor(dev, { 1.0f, 1.0f, 1.0f }); // Can be taken from mesh later
+			Resource::Constant<Float3> solidColor; // Can be taken from mesh later
+			ZE_EXPECT_RET_FAILED_CODE(solidColor, Resource::Constant<Float3>::Create(dev, { 1.0f, 1.0f, 1.0f }));
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();
 
@@ -102,11 +94,11 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				auto entity = visibleGroup[i];
 				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
 
-				TransformBuffer transformBuffer;
+				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
-				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
+				ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 				ctx.Reset();
 
 				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
@@ -120,8 +112,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			ZE_PERF_START("Wireframe - visibility clear");
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
-			return true;
 		}
-		return false;
+		return {};
 	}
 }

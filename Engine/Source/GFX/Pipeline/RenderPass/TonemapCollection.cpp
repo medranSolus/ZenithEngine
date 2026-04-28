@@ -4,13 +4,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapCollection initialization formats!");
-		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.front());
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapCollection initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -74,67 +74,54 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat, bool firstCall)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept
 	{
 		if (passData.CurrentTonemapper != Settings::Tonemapper)
 		{
 			passData.CurrentTonemapper = Settings::Tonemapper;
 
-			if (!firstCall)
-			{
-				buildData.SyncStatus.SyncMain(dev);
-				passData.State.Free(dev);
-			}
-
-			Resource::PipelineStateDesc psoDesc;
-			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.CurrentTonemapper), buildData.ShaderCache);
+			Resource::PipelineStateDesc psoDesc = {};
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.CurrentTonemapper), buildData.ShaderCache));
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 			psoDesc.Culling = Resource::CullMode::Back;
 			psoDesc.RenderTargetsCount = 1;
 			psoDesc.FormatsRT[0] = outputFormat;
 			ZE_PSO_SET_NAME(psoDesc, GetPsoName(passData.CurrentTonemapper));
 
-			passData.State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex));
+			ZE_EXPECT_RET_FAILED(passData.State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex)));
 
-			return UpdateStatus::InternalOnly;
+			return UpdateOperation::InternalOnly;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
 		desc.AddRange({ sizeof(float), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Exposure
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		passData->CurrentTonemapper = TonemapperType::LPM;
-		Update(dev, buildData, *passData, outputFormat, true);
+		auto operation = Update(dev, buildData, *passData, outputFormat);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapCollection");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapCollection", PixelVal::Cobalt);
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -144,20 +131,21 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapCollection
 		data.State.Bind(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
-		Resource::Constant<float> params(dev, data.Exposure);
+		Resource::Constant<float> params;
+		ZE_EXPECT_RET_FAILED_CODE(params, Resource::Constant<float>::Create(dev, data.Exposure));
 		params.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 		renderData.Buffers.EndRaster(cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("Tonemapping Collection"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			ImGui::Columns(2, "##tonemap_params", false);
 

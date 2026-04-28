@@ -2,7 +2,12 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	ExecuteData::~ExecuteData()
+	{
+		GUI::ImGuiManager::DestroyRenderData(GuiData);
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for DearImGui initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -11,57 +16,46 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 	PassDesc GetDesc(PixelFormat formatUI, PixelFormat formatRT) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::DearImGui) };
-		desc.InitializeFormats.reserve(1);
+		desc.InitializeFormats.reserve(2);
 		desc.InitializeFormats.emplace_back(formatUI);
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		GUI::ImGuiManager::DestroyRenderData(dev, execData->GuiData);
-		execData->State.Free(dev);
-		delete execData;
-	}
-
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT)
-	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 		passData->GuiData = GUI::ImGuiManager::CreateRenderData(dev, formatUI);
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // UI
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "GammaRemovePS", buildData.ShaderCache);
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "GammaRemovePS", buildData.ShaderCache));
 		psoDesc.Blender = Resource::BlendType::Normal;
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		ZE_PSO_SET_NAME(psoDesc, "ImGuiGammaRemove");
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
-
+		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		if (Settings::IsEnabledImGui())
 		{
 			ZE_PERF_GUARD("ImGui");
-			Resources ids = *passData.Resources.CastConst<Resources>();
-			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 			ZE_DRAW_TAG_BEGIN(dev, cl, "ImGui", PixelVal::Cobalt);
 
@@ -104,8 +98,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 			renderData.Buffers.Barrier(cl, barrier);
 
 			ZE_DRAW_TAG_END(dev, cl);
-			return true;
 		}
-		return false;
+		return {};
 	}
 }

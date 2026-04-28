@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapVDR initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -30,49 +30,40 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		delete execData;
-	}
+		auto passData = std::make_unique<ExecuteData>();
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
-	{
-		ExecuteData* passData = new ExecuteData;
-
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
 		desc.AddRange({ sizeof(TonemapParams), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Params
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "TonemapPS_V", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "TonemapPS_V", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::Back;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = outputFormat;
 		ZE_PSO_SET_NAME(psoDesc, "TonemapVDR");
 
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 		SetParams(passData->Params, passData->MidIn, passData->MidOut, passData->MaxRadiance);
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapVDR");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapVDR", PixelVal::Cobalt);
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -82,20 +73,21 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 		data.State.Bind(cl);
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
-		Resource::Constant<TonemapParams> params(dev, data.Params);
+		Resource::Constant<TonemapParams> params;
+		ZE_EXPECT_RET_FAILED_CODE(params, Resource::Constant<TonemapParams>::Create(dev, data.Params));
 		params.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 		renderData.Buffers.EndRaster(cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("VDR Tonemapper"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			bool updateParams = false;
 			ImGui::Columns(2, "##tonemap_params_vdr", false);

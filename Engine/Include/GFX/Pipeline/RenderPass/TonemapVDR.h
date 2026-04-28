@@ -21,21 +21,24 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapVDR
 		RID RenderTarget;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 		TonemapParams Params = {};
 		float MidIn = 0.18f;
 		float MidOut = 0.18f;
 		float MaxRadiance = 64.0f;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::FilmicVDR; }
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

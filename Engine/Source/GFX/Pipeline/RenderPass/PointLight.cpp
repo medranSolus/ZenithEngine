@@ -5,7 +5,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for PointLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
@@ -21,27 +21,16 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		execData->VolumeMesh.Free(dev);
-		ShadowMapCube::Clean(dev, execData->ShadowData);
-		delete execData;
-	}
+		auto passData = std::make_unique<ExecuteData>();
+		ZE_CODE_RET_FAILED_EXPECT(ShadowMapCube::Initialize(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow));
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData,
-		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth)
-	{
-		ExecuteData* passData = new ExecuteData;
-		ShadowMapCube::Initialize(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow);
-
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
 		desc.AddRange({ 1, 1, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Point light buffer
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
@@ -50,12 +39,12 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData->BindingIndex);
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "LightVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "PointLightPS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LightVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "PointLightPS", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Blender = Resource::BlendType::Light;
 		psoDesc.Culling = Resource::CullMode::Front;
@@ -64,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		psoDesc.FormatsRT[0] = formatLighting;
 		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "PointLight");
-		passData->State.Init(dev, psoDesc, schema);
+		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
 		const auto volume = Primitive::Sphere::MakeIcoSolid(3);
 		Resource::MeshData meshData =
@@ -75,19 +64,19 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			sizeof(Float3), 0
 		};
 		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(volume.Vertices, volume.Indices, meshData.IndexSize);
-		passData->VolumeMesh.Init(dev, buildData.Assets.GetDisk(), meshData);
+		ZE_EXPECT_RET_FAILED(passData->VolumeMesh, Resource::Mesh::Create(dev, buildData.Assets.GetDisk(), meshData));
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		auto group = Data::GetPointLightGroup();
 		const U64 count = group.size();
 		if (count)
 		{
 			ZE_PERF_GUARD("Point Light - present");
-			Resources ids = *passData.Resources.CastConst<Resources>();
-			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
 			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
@@ -112,7 +101,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					continue;
 
 				ZE_PERF_START("Point Light - shadow map");
-				ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume);
+				ZE_CODE_RET_FAILED(ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume));
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Point Light - after shadow map");
@@ -130,11 +119,12 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				ctx.BindingSchema.SetGraphics(cl);
 				data.State.Bind(cl);
 
-				Resource::Constant<Float3> lightPos(dev, transform.Position);
+				Resource::Constant<Float3> lightPos;
+				ZE_EXPECT_RET_FAILED_CODE(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
 				lightPos.Bind(cl, ctx);
 				light.Buffer.Bind(cl, ctx);
 
-				cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer));
+				ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -148,8 +138,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
-			return true;
 		}
-		return false;
+		return {};
 	}
 }

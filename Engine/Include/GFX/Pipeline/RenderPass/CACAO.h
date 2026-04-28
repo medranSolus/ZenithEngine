@@ -13,19 +13,23 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		RID AO;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		FfxCacaoContext Ctx;
+		FfxCacaoContext Ctx = {};
 		FfxCacaoSettings Settings = FFX_CACAO_DEFAULT_SETTINGS;
 		UInt2 RenderSize = { 0, 0 };
+		bool Initialized = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::AmbientOcclusionType == AOType::CACAO; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

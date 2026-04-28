@@ -209,7 +209,7 @@ namespace ZE::GUI
 		return backendData;
 	}
 
-	void ImGuiManager::DestroyRenderData(GFX::Device& dev, ImGuiRenderData& data) noexcept
+	void ImGuiManager::DestroyRenderData(ImGuiRenderData& data) noexcept
 	{
 		switch (Settings::GetGfxApi())
 		{

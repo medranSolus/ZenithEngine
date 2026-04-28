@@ -1,12 +1,27 @@
 #include "GFX/Pipeline/RenderPass/SSSR.h"
+#include "GFX/Error.h"
 #include "GFX/FfxBackendInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSSR
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	ExecuteData::~ExecuteData()
+	{
+		if (Initialized)
+		{
+			ZE_FFX_CHECK(ffxSssrContextDestroy(&Ctx), "Error destroying SSSR context!");
+		}
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{
+		return Initialize(dev, buildData);
+	}
 
 	PassDesc GetDesc() noexcept
 	{
@@ -15,61 +30,51 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		syncStatus.SyncCompute(dev);
-
-		ZE_FFX_ENABLE();
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		ZE_FFX_CHECK(ffxSssrContextDestroy(&execData->Ctx), "Error destroying SSSR context!");
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
 		if (passData.RenderSize != Settings::RenderSize)
 		{
-			ZE_FFX_ENABLE();
 			passData.RenderSize = Settings::RenderSize;
 
-			if (!firstUpdate)
+			if (passData.Initialized)
 			{
-				buildData.SyncStatus.SyncMain(dev);
-				buildData.SyncStatus.SyncCompute(dev);
-				ZE_FFX_CHECK(ffxSssrContextDestroy(&passData.Ctx), "Error destroying SSSR context!");
+				ZE_FFX_LOG_RET_FAILED_EXPECT(ffxSssrContextDestroy(&passData.Ctx), "Error destroying SSSR context!");
+				passData.Initialized = false;
 			}
+
 			FfxSssrContextDescription sssrDesc = {};
 			sssrDesc.flags = FFX_SSSR_ENABLE_DEPTH_INVERTED;
 			sssrDesc.renderSize.width = passData.RenderSize.X;
 			sssrDesc.renderSize.height = passData.RenderSize.Y;
 			sssrDesc.normalsHistoryBufferFormat = FFX::GetSurfaceFormat(PixelFormat::R16G16_Float);
 			sssrDesc.backendInterface = buildData.FfxInterface;
-			ZE_FFX_THROW_FAILED(ffxSssrContextCreate(&passData.Ctx, &sssrDesc), "Error creating SSSR context!");
-			return UpdateStatus::InternalOnly;
+			ZE_FFX_LOG_RET_FAILED_EXPECT(ffxSssrContextCreate(&passData.Ctx, &sssrDesc), "Error creating SSSR context!");
+			passData.Initialized = true;
+
+			return UpdateOperation::InternalOnly;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
-		Update(dev, buildData, *passData, true);
+		auto passData = std::make_unique<ExecuteData>();
+		auto operation = Update(dev, buildData, *passData);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		ZE_FFX_ENABLE();
 		ZE_PERF_GUARD("SSSR");
 
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "SSSR", Pixel(0x80, 0x00, 0x00));
@@ -117,18 +122,17 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.mostDetailedMip = data.MostDetailedMip;
 		desc.samplesPerQuad = data.SamplesPerQuad;
 		desc.temporalVarianceGuidedTracingEnabled = data.TemporalVarianceGuidedTracingEnabled;
-		ZE_FFX_THROW_FAILED(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
+		ZE_FFX_LOG_RET_FAILED(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("SSSR##options"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
-
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_SSSR_VERSION_MAJOR), ZE_DEPAREN(FFX_SSSR_VERSION_MINOR), ZE_DEPAREN(FFX_SSSR_VERSION_PATCH)));
 
 			ImGui::Text("IBL Factor");

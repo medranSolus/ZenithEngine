@@ -1,12 +1,16 @@
 #include "GFX/Pipeline/RenderPass/LoadLightmapsDiffuse.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
+#include "GUI/DearImGui.h"
 #include "GUI/DialogWindow.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
@@ -22,20 +26,10 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.CopyInitData = CopyInitData;
 		desc.FreeInitData = FreeInitData;
 		desc.DebugUI = DebugUI;
 		return desc;
-	}
-
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
-	{
-		syncStatus.SyncMain(dev);
-		syncStatus.SyncCompute(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->IrrMap.Free(dev);
-		delete execData;
 	}
 
 	void* CopyInitData(void* data) noexcept
@@ -48,9 +42,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		delete reinterpret_cast<Data::CubemapSource*>(data);
 	}
 
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		UpdateStatus status = UpdateStatus::NoUpdate;
+		UpdateOperation status = UpdateOperation::NoUpdate;
 		if (!passData.UpdateError && passData.UpdateData)
 		{
 			if (passData.IrrMapNewSource.Data && passData.IrrMapNewSource != passData.IrrMapSource)
@@ -59,16 +53,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 				std::vector<Surface> textures;
 				if (passData.IrrMapNewSource.LoadTextures(textures))
 				{
-					passData.IrrMapSource = std::move(passData.IrrMapNewSource);
-					Resource::Texture::PackDesc texDesc;
+					Resource::Texture::PackDesc texDesc = {};
 					ZE_TEXTURE_SET_NAME(texDesc, "Irradiance Map");
 					texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
+					ZE_EXPECT_RET_FAILED(passData.IrrMap, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
-					buildData.SyncStatus.SyncMain(dev);
-					buildData.SyncStatus.SyncCompute(dev);
-					passData.IrrMap.Free(dev);
-					passData.IrrMap.Init(dev, buildData.Assets.GetDisk(), texDesc);
-					status = UpdateStatus::GpuUploadRequired;
+					passData.IrrMapSource = std::move(passData.IrrMapNewSource);
+					status = UpdateOperation::GpuUploadRequired;
 				}
 				else
 				{
@@ -80,33 +71,39 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return status;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 		passData->IrrMapSource = irrMapSource;
 
-		Resource::Texture::PackDesc texDesc;
+		Resource::Texture::PackDesc texDesc = {};
 		std::vector<Surface> textures;
 
 		ZE_TEXTURE_SET_NAME(texDesc, "Irradiance Map");
 		if (!irrMapSource.LoadTextures(textures))
-			throw ZE_RGC_EXCEPT("Error loading irradiance map!");
+		{
+			Logger::Error("Error loading irradiance map, falling back to generated texture!");
+			if (textures.size())
+				textures.pop_back();
+			for (U8 i = textures.size(); i < 6; i++)
+				textures.emplace_back(1, 1);
+		}
 		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
-		passData->IrrMap.Init(dev, buildData.Assets.GetDisk(), texDesc);
+		ZE_EXPECT_RET_FAILED(passData->IrrMap, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), texDesc));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		renderData.Buffers.RegisterOutsideResource(passData.Resources.CastConst<Resources>()->IrrMap,
-			passData.ExecData.Cast<ExecuteData>()->IrrMap, 0, FrameResourceType::TextureCube);
-		return false;
+		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->IrrMap,
+			static_cast<ExecuteData*>(passData.ExecData.get())->IrrMap, 0, FrameResourceType::TextureCube);
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
-		ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+		ExecuteData& execData = *static_cast<ExecuteData*>(data);
 		if (ImGui::CollapsingHeader("Diffuse Lightmaps"))
 		{
 			Utils::ShowCubemapDebugUI("Loaded irradiance map:", execData.IrrMapSource, "", execData.IrrMapNewSource, execData.UpdateData, execData.UpdateError);

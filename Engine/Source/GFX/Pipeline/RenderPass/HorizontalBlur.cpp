@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for HorizontalBlur initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -15,47 +15,38 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		desc.InitializeFormats.emplace_back(formatRT);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		delete execData;
-	}
+		auto passData = std::make_unique<ExecuteData>();
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT)
-	{
-		ExecuteData* passData = new ExecuteData;
-
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Direction
 		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Blur texture
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-		psoDesc.SetShader(dev, psoDesc.PS, "BlurPS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "BlurPS", buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		ZE_PSO_SET_NAME(psoDesc, "HorizontalBlur");
-		passData->State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex));
+		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Horizontal Blur");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Outline Horizontal Blur", Pixel(0xF3, 0xEA, 0xAF));
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -64,7 +55,8 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		ctx.BindingSchema.SetGraphics(cl);
 		data.State.Bind(cl);
 
-		Resource::Constant<U32> direction(dev, false);
+		Resource::Constant<U32> direction;
+		ZE_EXPECT_RET_FAILED_CODE(direction, Resource::Constant<U32>::Create(dev, false));
 		direction.Bind(cl, ctx);
 		renderData.Buffers.SetSRV(cl, ctx, ids.Outline);
 		renderData.SettingsBuffer.Bind(cl, ctx);
@@ -72,6 +64,6 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 }

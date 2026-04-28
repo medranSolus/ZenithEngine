@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/Utils.h"
+#include "GUI/DearImGui.h"
 #include "GUI/DialogWindow.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Utils

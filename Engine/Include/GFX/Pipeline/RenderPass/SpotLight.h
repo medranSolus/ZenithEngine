@@ -14,19 +14,22 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		RID ShadowMapDepth;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		ShadowMap::ExecuteData ShadowData;
-		U32 BindingIndex;
+		ShadowMap::ExecuteData ShadowData = {};
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 		Resource::Mesh VolumeMesh;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return true; } // TODO: Check input data
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData,
-		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

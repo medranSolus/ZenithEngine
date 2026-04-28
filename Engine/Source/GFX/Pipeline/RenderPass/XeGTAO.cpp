@@ -1,18 +1,22 @@
 #include "GFX/Pipeline/RenderPass/XeGTAO.h"
 #include "GFX/Resource/Constant.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 {
 #pragma pack(push, 1)
 	struct ConstantsXeGTAO
 	{
-		::XeGTAO::GTAOConstants Constants;
-		float SliceCount;
-		float StepsPerSlice;
+		::XeGTAO::GTAOConstants Constants = {};
+		float SliceCount = 0.0f;
+		float StepsPerSlice = 0.0f;
 	};
 #pragma pack(pop)
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{ 
+		return Initialize(dev, buildData);
+	}
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept
 	{
@@ -54,45 +58,29 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		if (Settings::IsEnabledAsyncAO())
-			syncStatus.SyncCompute(dev);
-		else
-			syncStatus.SyncMain(dev);
-
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->StatePrefilter.Free(dev);
-		execData->StateAO.Free(dev);
-		execData->StateDenoise.Free(dev);
-		execData->HilbertLUT.Free(dev);
-		delete execData;
-	}
-
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
-	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 		passData->Settings.QualityLevel = 3;
 		passData->Settings.DenoisePasses = 1;
 		UpdateQualityInfo(*passData);
 
 		// Prefilter pass
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 1, 3, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // XeGTAO constants
 		desc.AddRange({ 5, 0, 1, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Viewspace depth map
 		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Source depth map
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Compute);
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndexPrefilter = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndexPrefilter, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::Shader prefilter(dev, "XeGTAOPrefilterDepthCS");
-		passData->StatePrefilter.Init(dev, prefilter, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter));
-		prefilter.Free(dev);
+		Resource::Shader shader;
+		ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, "XeGTAOPrefilterDepthCS"));
+		ZE_EXPECT_RET_FAILED(passData->StatePrefilter, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData->BindingIndexPrefilter)));
 
 		// Main pass
 		desc.Ranges.clear();
@@ -104,11 +92,10 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		desc.AddRange({ 1, 2, 6, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Hilber LUT
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Compute);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Compute);
-		passData->BindingIndexAO = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndexAO, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::Shader ao(dev, "XeGTAOMainCS");
-		passData->StateAO.Init(dev, ao, buildData.BindingLib.GetSchema(passData->BindingIndexAO));
-		ao.Free(dev);
+		ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, "XeGTAOMainCS"));
+		ZE_EXPECT_RET_FAILED(passData->StateAO, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData->BindingIndexAO)));
 
 		// Denoise passes
 		desc.Ranges.clear();
@@ -118,14 +105,13 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Prev AO map
 		desc.AddRange({ 1, 1, 2, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Depth edges
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Compute);
-		passData->BindingIndexDenoise = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndexDenoise, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::Shader denoise(dev, "XeGTAODenoiseCS");
-		passData->StateDenoise.Init(dev, denoise, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise));
-		denoise.Free(dev);
+		ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, "XeGTAODenoiseCS"));
+		ZE_EXPECT_RET_FAILED(passData->StateDenoise, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData->BindingIndexDenoise)));
 
 		// Create Hilbert look-up texture
-		Resource::Texture::PackDesc hilbertDesc;
+		Resource::Texture::PackDesc hilbertDesc = {};
 		ZE_TEXTURE_SET_NAME(hilbertDesc, "XeGTAO Hilbert LUT");
 		std::vector<Surface> surfaces;
 		surfaces.emplace_back(XE_HILBERT_WIDTH, XE_HILBERT_WIDTH, PixelFormat::R16_UInt);
@@ -137,16 +123,16 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 		hilbertDesc.Options = Resource::Texture::PackOption::StaticCreation;
 		hilbertDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfaces));
-		passData->HilbertLUT.Init(dev, buildData.Assets.GetDisk(), hilbertDesc);
+		ZE_EXPECT_RET_FAILED(passData->HilbertLUT, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), hilbertDesc));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("XeGTAO");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		const UInt2 size = renderData.Buffers.GetDimmensions(ids.Depth);
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "XeGTAO", Pixel(0x89, 0xCF, 0xF0));
@@ -157,7 +143,9 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		constants.StepsPerSlice = data.StepsPerSlice;
 		::XeGTAO::GTAOUpdateConstants(constants.Constants, size.X, size.Y, data.Settings,
 			reinterpret_cast<const float*>(&renderData.GraphData.Projection), true, static_cast<U32>(Settings::GetFrameIndex()));
-		auto cbufferInfo = cbuffer.Alloc(dev, &constants, sizeof(ConstantsXeGTAO));
+
+		Resource::DynamicBufferAlloc cbufferInfo = {};
+		ZE_EXPECT_RET_FAILED_CODE(cbufferInfo, cbuffer.Alloc(dev, &constants, sizeof(ConstantsXeGTAO)));
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(cl);
@@ -224,7 +212,8 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 			denoiseCtx.BindingSchema.SetCompute(cl);
 			data.StateDenoise.Bind(cl);
 
-			Resource::Constant<U32> lastDenoise(dev, data.Settings.DenoisePasses == 1);
+			Resource::Constant<U32> lastDenoise;
+			ZE_EXPECT_RET_FAILED_CODE(lastDenoise, Resource::Constant<U32>::Create(dev, data.Settings.DenoisePasses == 1));
 			lastDenoise.Bind(cl, denoiseCtx);
 			cbuffer.Bind(cl, denoiseCtx, cbufferInfo);
 			renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
@@ -254,7 +243,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 			if (data.Settings.DenoisePasses != 1)
 			{
 				denoiseCtx.Reset();
-				lastDenoise.Set(dev, true);
+				ZE_CODE_RET_FAILED(lastDenoise.Set(dev, true));
 				lastDenoise.Bind(cl, denoiseCtx);
 				denoiseCtx.SetFromEnd(3);
 				renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
@@ -274,14 +263,14 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 				});
 		}
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("XeGTAO"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version 1.30");
 

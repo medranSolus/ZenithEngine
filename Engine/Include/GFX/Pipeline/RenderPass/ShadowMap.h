@@ -19,17 +19,16 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 	struct ExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx StateDepth;
-		Ptr<Resource::PipelineStateGfx> StatesSolid;
-		Ptr<Resource::PipelineStateGfx> StatesTransparent;
-		Float4x4 Projection;
+		std::unique_ptr<Resource::PipelineStateGfx[]> StatesSolid;
+		std::unique_ptr<Resource::PipelineStateGfx[]> StatesTransparent;
+		Float4x4 Projection = {};
 	};
 
-	void Clean(Device& dev, ExecuteData& data) noexcept;
-	void Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData,
-		PixelFormat formatDS, PixelFormat formatRT, Matrix projection);
-	Matrix Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
+	Status Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData,
+		PixelFormat formatDS, PixelFormat formatRT, Matrix projection) noexcept;
+	Expected<Matrix> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
-		const Float3& lightDir, const Math::BoundingFrustum& frustum);
+		const Float3& lightDir, const Math::BoundingFrustum& frustum) noexcept;
 }

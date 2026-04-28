@@ -15,7 +15,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		RID BrdfLut;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
 		bool UpdateData = false;
 		bool UpdateError = false;
@@ -25,16 +25,19 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		std::string LutSource = "";
 		Resource::Texture::Pack EnvMap;
 		Resource::Texture::Pack BrdfLut;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledSSSR() || Settings::IsEnabledIBL(); }
 
 	PassDesc GetDesc(const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
 	void* CopyInitData(void* data) noexcept;
 	void FreeInitData(void* data) noexcept;
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

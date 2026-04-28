@@ -1,11 +1,34 @@
 #include "GFX/pipeline/RenderPass/UpscaleDLSS.h"
+#include "GFX/ExternalInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	ExecuteData::~ExecuteData()
+	{
+		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		if (ngx)
+		{
+			if (DlssHandle)
+			{
+				Settings::RenderSize = Settings::DisplaySize;
+				ngx->FreeFeature(DlssHandle);
+			}
+			if (NgxParam)
+				ngx->FreeParameter(NgxParam);
+			ExternalInterface::ReleaseConnectionNGX();
+		}
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{
+		return Initialize(dev, buildData);
+	}
 
 	PassDesc GetDesc() noexcept
 	{
@@ -14,114 +37,105 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		Settings::RenderSize = Settings::DisplaySize;
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		NgxInterface* ngx = dev.GetNGX();
-		if (ngx)
+		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		if (!ngx)
+			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized));
+
+		ZE_ASSERT(passData.Quality != NVSDK_NGX_PerfQuality_Value_UltraQuality, "DLSS ultra quality setting currently unsuported!");
+
+		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::DLSS, passData.Quality);
+		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
 		{
-			if (execData->DlssHandle)
-				ngx->FreeFeature(execData->DlssHandle);
-			if (execData->NgxParam)
-				ngx->FreeParameter(execData->NgxParam);
+			if (passData.DlssHandle)
+				ngx->FreeFeature(passData.DlssHandle);
+
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_Width, renderSize.X);
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_Height, renderSize.Y);
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_OutWidth, passData.DisplaySize.X);
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_OutHeight, passData.DisplaySize.Y);
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_PerfQualityValue, passData.Quality);
+			ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->CreateFeature(dev, NVSDK_NGX_Feature_SuperSampling, passData.NgxParam, passData.DlssHandle), "Error creating DLSS feature!");
+
+			Settings::RenderSize = renderSize;
+			passData.DisplaySize = Settings::DisplaySize;
+
+			return UpdateOperation::FrameBufferImpact;
 		}
-		delete execData;
+		return UpdateOperation::NoUpdate;
 	}
 
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		NgxInterface* ngx = dev.GetNGX();
-		if (ngx)
+		NgxInterface* ngx = ExternalInterface::CreateConnectionNGX(dev);
+		if (!ngx)
+			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_Fail));
+
+		if (!ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling))
 		{
-			ZE_ASSERT(passData.Quality != NVSDK_NGX_PerfQuality_Value_UltraQuality, "DLSS ultra quality setting currently unsuported!");
-
-			UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::DLSS, passData.Quality);
-			if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
-			{
-				Settings::RenderSize = renderSize;
-				passData.DisplaySize = Settings::DisplaySize;
-
-				passData.NgxParam->Set(NVSDK_NGX_Parameter_Width, renderSize.X);
-				passData.NgxParam->Set(NVSDK_NGX_Parameter_Height, renderSize.Y);
-				passData.NgxParam->Set(NVSDK_NGX_Parameter_OutWidth, passData.DisplaySize.X);
-				passData.NgxParam->Set(NVSDK_NGX_Parameter_OutHeight, passData.DisplaySize.Y);
-				passData.NgxParam->Set(NVSDK_NGX_Parameter_PerfQualityValue, passData.Quality);
-
-				if (passData.DlssHandle)
-					ngx->FreeFeature(passData.DlssHandle);
-
-				passData.DlssHandle = ngx->CreateFeature(dev, NVSDK_NGX_Feature_SuperSampling, passData.NgxParam);
-				ZE_ASSERT(passData.DlssHandle, "Error creating DLSS feature!");
-				return UpdateStatus::FrameBufferImpact;
-			}
+			Status ret = ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_FeatureNotSupported);
+			ZE_CODE_ERROR(ret, "DLSS is not supported on this system!");
+			return std::unexpected(ret);
 		}
-		return UpdateStatus::NoUpdate;
-	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
-	{
-		ExecuteData* passData = nullptr;
-		NgxInterface* ngx = dev.GetNGX();
-		if (ngx)
-		{
-			ZE_ASSERT(ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling), "DLSS is not available to be run on this system!");
-			passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
+		ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->AllocateParameter(passData->NgxParam), "Error allocating DLSS parameter!");
 
-			passData->NgxParam = ngx->AllocateParameter();
-			ZE_ASSERT(passData->NgxParam, "Error allocating DLSS parameter!");
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_CreationNodeMask, 1U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_VisibilityNodeMask, 1U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Feature_Create_Flags,
+			NVSDK_NGX_DLSS_Feature_Flags_IsHDR | NVSDK_NGX_DLSS_Feature_Flags_MVLowRes
+			| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted | NVSDK_NGX_DLSS_Feature_Flags_AutoExposure);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, false);
 
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_CreationNodeMask, 1U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_VisibilityNodeMask, 1U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Feature_Create_Flags,
-				NVSDK_NGX_DLSS_Feature_Flags_IsHDR | NVSDK_NGX_DLSS_Feature_Flags_MVLowRes
-				| NVSDK_NGX_DLSS_Feature_Flags_DepthInverted | NVSDK_NGX_DLSS_Feature_Flags_AutoExposure);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, false);
+		// Optimization presets
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, NVSDK_NGX_DLSS_Hint_Render_Preset_Default);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
 
-			// Optimization presets
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, NVSDK_NGX_DLSS_Hint_Render_Preset_Default);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
+		// Some default parameters
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_TonemapperType, NVSDK_NGX_TONEMAPPER_REINHARD);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSSMode, NVSDK_NGX_DLSS_Mode_DLSS);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Pre_Exposure, 1.0f);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Exposure_Scale, 1.0f);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Color_Subrect_Base_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Color_Subrect_Base_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Depth_Subrect_Base_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Depth_Subrect_Base_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_MV_SubrectBase_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_MV_SubrectBase_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Translucency_SubrectBase_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Translucency_SubrectBase_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Bias_Current_Color_SubrectBase_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Bias_Current_Color_SubrectBase_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Output_Subrect_Base_X, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Output_Subrect_Base_Y, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Indicator_Invert_X_Axis, 0U);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Indicator_Invert_Y_Axis, 0U);
 
-			// Some default parameters
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_TonemapperType, NVSDK_NGX_TONEMAPPER_REINHARD);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSSMode, NVSDK_NGX_DLSS_Mode_DLSS);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Pre_Exposure, 1.0f);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Exposure_Scale, 1.0f);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Color_Subrect_Base_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Color_Subrect_Base_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Depth_Subrect_Base_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Depth_Subrect_Base_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_MV_SubrectBase_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_MV_SubrectBase_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Translucency_SubrectBase_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Translucency_SubrectBase_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Bias_Current_Color_SubrectBase_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Input_Bias_Current_Color_SubrectBase_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Output_Subrect_Base_X, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Output_Subrect_Base_Y, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Indicator_Invert_X_Axis, 0U);
-			passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Indicator_Invert_Y_Axis, 0U);
-
-			Update(dev, buildData, *passData);
-		}
+		auto operation = Update(dev, buildData, *passData);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
+		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		if (!ngx)
+			return ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized);
+
 		ZE_PERF_GUARD("Upscale DLSS");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale DLSS", Pixel(0xAD, 0xFF, 0x2F));
@@ -139,21 +153,20 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Reset, renderData.GraphData.FrameTemporalReset);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, Utils::SafeCast<float>(Settings::FrameTime));
 
-		[[maybe_unused]] bool status = dev.GetNGX()->RunFeature(dev, cl, data.DlssHandle, data.NgxParam);
-		ZE_ASSERT(status, "Error running DLSS upscaling!");
+		ZE_NGX_LOG_RET_FAILED(ngx->RunFeature(dev, cl, data.DlssHandle, data.NgxParam), "Error running DLSS upscaling!");
 		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("DLSS"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
-			ImGui::Text("Version 310.1.0.0 (built with)");
+			ImGui::Text("Version 310.4.0.0 (built with)");
 
 			auto getQualityString = [](NVSDK_NGX_PerfQuality_Value quality) noexcept -> const char*
 				{

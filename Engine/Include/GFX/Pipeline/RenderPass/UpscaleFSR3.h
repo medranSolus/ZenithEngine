@@ -18,21 +18,25 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR3
 		RID PrevNearDepth;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		FfxFsr3UpscalerContext Ctx;
+		FfxFsr3UpscalerContext Ctx = {};
 		UInt2 DisplaySize = { 0, 0 };
 		FfxFsr3UpscalerQualityMode Quality = FFX_FSR3UPSCALER_QUALITY_MODE_NATIVEAA;
 		bool SharpeningEnabled = true;
 		float Sharpness = 0.7f;
+		bool Initialized = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::Fsr3; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

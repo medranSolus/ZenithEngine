@@ -17,11 +17,11 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		RID AO;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndexPrefilter;
-		U32 BindingIndexAO;
-		U32 BindingIndexDenoise;
+		U32 BindingIndexPrefilter = UINT32_MAX;
+		U32 BindingIndexAO = UINT32_MAX;
+		U32 BindingIndexDenoise = UINT32_MAX;
 		Resource::PipelineStateCompute StatePrefilter;
 		Resource::PipelineStateCompute StateAO;
 		Resource::PipelineStateCompute StateDenoise;
@@ -29,14 +29,17 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		::XeGTAO::GTAOSettings Settings;
 		float SliceCount;
 		float StepsPerSlice;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::AmbientOcclusionType == AOType::XeGTAO; }
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept;
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

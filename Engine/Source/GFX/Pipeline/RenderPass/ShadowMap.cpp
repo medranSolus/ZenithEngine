@@ -8,74 +8,63 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 #pragma pack(push, 1)
 	struct ShaderConstantData
 	{
-		Float3 LightPos;
-		float ParallaxScale;
-		U32 Flags;
+		Float3 LightPos = {};
+		float ParallaxScale = 0.0f;
+		U32 Flags = 0;
 	};
 #pragma pack(pop)
 
-	void Clean(Device& dev, ExecuteData& data) noexcept
+	Status Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData,
+		PixelFormat formatDS, PixelFormat formatRT, Matrix projection) noexcept
 	{
-		data.StateDepth.Free(dev);
-		U8 stateCount = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
-		while (stateCount--)
-		{
-			data.StatesSolid[stateCount].Free(dev);
-			data.StatesTransparent[stateCount].Free(dev);
-		}
-		data.StatesSolid.DeleteArray();
-		data.StatesTransparent.DeleteArray();
-	}
-
-	void Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData,
-		PixelFormat formatDS, PixelFormat formatRT, Matrix projection)
-	{
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
-		passData.BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED_CODE(passData.BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
-		Resource::PipelineStateDesc psoDesc;
-		psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache);
+		Resource::PipelineStateDesc psoDesc = {};
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
 		psoDesc.InputLayout = Vertex::GetLayout();
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapDepth");
-		passData.StateDepth.Init(dev, psoDesc, schema);
+		ZE_EXPECT_RET_FAILED_CODE(passData.StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
-		psoDesc.SetShader(dev, psoDesc.VS, "LambertVS", buildData.ShaderCache);
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "LambertVS", buildData.ShaderCache));
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
-		passData.StatesSolid = new Resource::PipelineStateGfx[stateIndex];
-		passData.StatesTransparent = new Resource::PipelineStateGfx[stateIndex];
+		passData.StatesSolid = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
+		passData.StatesTransparent = std::make_unique<Resource::PipelineStateGfx[]>(stateIndex);
+
 		while (stateIndex--)
 		{
 			const char* suffix = Data::MaterialPBR::DecodeShaderSuffix(Data::MaterialPBR::GetShaderFlagsForState(stateIndex));
-			psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache);
+			ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.PS, (shaderName + suffix).c_str(), buildData.ShaderCache));
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthBefore;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapSolid" + std::string(suffix));
-			passData.StatesSolid[stateIndex].Init(dev, psoDesc, schema);
+			ZE_EXPECT_RET_FAILED_CODE(passData.StatesSolid[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
 			psoDesc.DepthStencil = Resource::DepthStencilMode::StencilOff;
 			ZE_PSO_SET_NAME(psoDesc, "ShadowMapTransparent" + std::string(suffix));
-			passData.StatesTransparent[stateIndex].Init(dev, psoDesc, schema);
+			ZE_EXPECT_RET_FAILED_CODE(passData.StatesTransparent[stateIndex], Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 		}
 
 		Math::XMStoreFloat4x4(&passData.Projection, projection);
 		Settings::AssureEntityPools<InsideFrustumSolid, InsideFrustumNotSolid>();
+		return {};
 	}
 
-	Matrix Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
+	Expected<Matrix> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData,
 		ExecuteData& data, const Resources& ids, const Float3& lightPos,
-		const Float3& lightDir, const Math::BoundingFrustum& frustum)
+		const Float3& lightDir, const Math::BoundingFrustum& frustum) noexcept
 	{
 		// Clearing data on first usage
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Shadow Map Clear", PixelVal::Gray);
@@ -109,7 +98,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 
 			EID currentMaterial = INVALID_EID;
 			U8 currentState = UINT8_MAX;
-			Resource::Constant<ShaderConstantData> shadowData(dev, { lightPos, 0.0f, 0 });
+			Resource::Constant<ShaderConstantData> shadowData;
+			ZE_EXPECT_RET_FAILED(shadowData, Resource::Constant<ShaderConstantData>::Create(dev, { lightPos, 0.0f, 0 }));
 			if (solidCount)
 			{
 				ZE_PERF_GUARD("Shadow Map - solid present");
@@ -137,13 +127,13 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					EID entity = solidGroup[i];
 					const auto& transform = solidGroup.get<Data::TransformGlobal>(entity);
 
-					ModelTransformBuffer transformBuffer;
+					ModelTransformBuffer transformBuffer = {};
 					const Matrix modelTransform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, modelTransform);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, viewProjection * modelTransform);
 
 					auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
-					transformInfo.Transform = cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer));
+					ZE_EXPECT_RET_FAILED(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer)));
 					cbuffer.Bind(cl, ctx, transformInfo.Transform);
 					ctx.Reset();
 
@@ -192,7 +182,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(currentMaterial);
-						shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags });
+						ZE_CODE_RET_FAILED_EXPECT(shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags }));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
@@ -245,11 +235,11 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 					EID entity = transparentGroup[i];
 					const auto& transform = transparentGroup.get<Data::TransformGlobal>(entity);
 
-					ModelTransformBuffer transformBuffer;
+					ModelTransformBuffer transformBuffer = {};
 					const Matrix modelTransform = Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale));
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, modelTransform);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, viewProjection * modelTransform);
-					cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer));
+					ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer)));
 
 					const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
@@ -257,7 +247,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(material.ID);
-						shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags });
+						ZE_CODE_RET_FAILED_EXPECT(shadowData.Set(dev, { lightPos, matData.ParallaxScale, matData.Flags }));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 

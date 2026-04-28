@@ -6,9 +6,15 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	{
+		return Initialize(dev, buildData);
+	}
 
 	PassDesc GetDesc() noexcept
 	{
@@ -17,24 +23,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		Settings::RenderSize = Settings::DisplaySize;
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->StateUpscale.Free(dev);
-		execData->Coefficients.Free(dev);
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData)
-	{
-		UpdateStatus status = UpdateStatus::NoUpdate;
+		UpdateOperation status = UpdateOperation::NoUpdate;
 		if (passData.Float16Support != dev.IsShaderFloat16Supported())
 		{
 			passData.Float16Support = dev.IsShaderFloat16Supported();
@@ -50,11 +45,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 				if (Settings::GpuVendor == VendorGPU::Nvidia)
 					passData.BlockHeight = 32;
 			}
-			Resource::Shader upscale(dev, shaderName);
-			buildData.SyncStatus.SyncMain(dev);
-			passData.StateUpscale.Free(dev);
-			passData.StateUpscale.Init(dev, upscale, buildData.BindingLib.GetSchema(passData.BindingIndex));
-			upscale.Free(dev);
+			Resource::Shader shader;
+			ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, shaderName));
+			ZE_EXPECT_RET_FAILED(passData.StateUpscale, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData.BindingIndex)));
 
 			// Create coefficients textures
 			constexpr U32 COEFF_WIDTH = kFilterSize / 4;
@@ -73,14 +66,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 				surfacesUSM.emplace_back(COEFF_WIDTH, COEFF_HEIGHT, PixelFormat::R32G32B32A32_Float, coef_usm);
 			}
 
-			Resource::Texture::PackDesc coeffDesc;
+			Resource::Texture::PackDesc coeffDesc = {};
 			ZE_TEXTURE_SET_NAME(coeffDesc, "NIS Coefficients");
 			coeffDesc.Options = Resource::Texture::PackOption::StaticCreation;
 			coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesScale));
 			coeffDesc.AddTexture(Resource::Texture::Type::Tex2D, std::move(surfacesUSM));
-			passData.Coefficients.Free(dev);
-			passData.Coefficients.Init(dev, buildData.Assets.GetDisk(), coeffDesc);
-			status = UpdateStatus::GpuUploadRequired;
+			ZE_EXPECT_RET_FAILED(passData.Coefficients, Resource::Texture::Pack::Create(dev, buildData.Assets.GetDisk(), coeffDesc));
+			status = UpdateOperation::GpuUploadRequired;
 		}
 
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::NIS, static_cast<U32>(passData.Quality));
@@ -88,16 +80,16 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		{
 			Settings::RenderSize = renderSize;
 			passData.DisplaySize = Settings::DisplaySize;
-			status = status == UpdateStatus::GpuUploadRequired ? UpdateStatus::FrameBufferImpactGpuUpload : UpdateStatus::FrameBufferImpact;
+			status = status == UpdateOperation::GpuUploadRequired ? UpdateOperation::FrameBufferImpactGpuUpload : UpdateOperation::FrameBufferImpact;
 		}
 		return status;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // NIS constants
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack }); // Output
 		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Compute, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Input
@@ -114,20 +106,21 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 				Resource::Texture::EdgeColor::TransparentBlack,
 				0.0f, FLT_MAX, 0
 			});
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		passData->Float16Support = !dev.IsShaderFloat16Supported();
-		Update(dev, buildData, *passData);
-
+		auto operation = Update(dev, buildData, *passData);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Upscale NIS");
 
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
 		const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
 
@@ -144,21 +137,21 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		data.StateUpscale.Bind(cl);
 
 		auto& cbuffer = *renderData.DynamicBuffer;
-		cbuffer.Bind(cl, bindCtx, cbuffer.Alloc(dev, &config, sizeof(NISConfig)));
+		ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, bindCtx, &config, sizeof(NISConfig)));
 		renderData.Buffers.SetUAV(cl, bindCtx, ids.Output);
 		renderData.Buffers.SetSRV(cl, bindCtx, ids.Color);
 		data.Coefficients.Bind(cl, bindCtx);
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("NIS"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			ImGui::Text("Version 1.0.3");
 

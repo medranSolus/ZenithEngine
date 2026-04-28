@@ -11,25 +11,28 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		RID Output;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BlockHeight;
-		U32 BindingIndex;
+		U32 BlockHeight = UINT32_MAX;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateCompute StateUpscale;
 		Resource::Texture::Pack Coefficients;
-		bool Float16Support;
+		bool Float16Support = false;
 		UInt2 DisplaySize = { 0, 0 };
 		NISQualityMode Quality = NISQualityMode::MegaQuality;
 		bool SharpeningEnabled = true;
 		float Sharpness = 0.5f;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() { Settings::RenderSize = Settings::DisplaySize; }
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::NIS; }
 
 	PassDesc GetDesc() noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

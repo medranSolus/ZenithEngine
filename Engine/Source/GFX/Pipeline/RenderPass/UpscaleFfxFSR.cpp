@@ -1,12 +1,51 @@
-#include "GFX/Pipeline/RenderPass/UpscaleFfxFSR.h"
-#include "Data/Camera.h"
-#include "GUI/DearImGui.h"
+#if _ZE_FFX_API_ENABLED
+#	include "GFX/Pipeline/RenderPass/UpscaleFfxFSR.h"
+#	include "GFX/ExternalInterface.h"
+#	include "Data/Camera.h"
+#	include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats) { return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData)); }
+	static void FlushGPU(Device* dev) noexcept
+	{
+		static Device* srcDev = nullptr;
+		if (dev)
+			srcDev = dev;
+		else
+		{
+			ZE_ASSERT(srcDev, "No source device to flush GPU before releasing FFX-API context!");
+			Status code = srcDev->FlushGPU();
+			if (code)
+			{
+				ZE_CODE_ERROR(code, "Failed to flush GPU for FFX-API FSR context destruction, race condition may happen!");
+			}
+		}
+	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) { return Initialize(dev, buildData); }
+	ExecuteData::~ExecuteData()
+	{
+		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		if (ffx)
+		{
+			if (Ctx)
+			{
+				Settings::RenderSize = Settings::DisplaySize;
+				FlushGPU(nullptr);
+				ZE_FFX_API_CHECK(ffx->GetFunctions().DestroyContext(&Ctx, nullptr), "Error destroying FFX FSR context!");
+			}
+			ExternalInterface::ReleaseConnectionFfxApi();
+		}
+	}
+
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
+	}
+
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	{
+		return Initialize(dev, buildData);
+	}
 
 	static void MessageHandler(U32 type, const wchar_t* msg) noexcept
 	{
@@ -30,148 +69,147 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
-		if (ffxFunc)
-		{
-			ZE_FFX_API_ENABLE();
-			Settings::RenderSize = Settings::DisplaySize;
-			syncStatus.SyncMain(dev);
-			ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-			ZE_FFX_API_CHECK(ffxFunc->DestroyContext(&execData->Ctx, nullptr), "Error destroying FFX FSR context!");
-			delete execData;
-		}
-	}
+		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		if (!ffx)
+			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, bool firstUpdate)
-	{
-		const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
-		if (ffxFunc)
+		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::FfxFsr, passData.Quality);
+		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
 		{
-			UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::FfxFsr, passData.Quality);
-			if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
+			const FfxApiFunctions& ffxFunc = ffx->GetFunctions();
+			if (passData.Ctx)
 			{
-				ZE_FFX_API_ENABLE();
-				bool sizeChange = renderSize != Settings::RenderSize;
-				Settings::RenderSize = renderSize;
-				passData.DisplaySize = Settings::DisplaySize;
-
-				if (firstUpdate)
-				{
-					// Get possible versions of the FSR
-					ffxQueryDescGetVersions versionQuery = { FFX_API_QUERY_DESC_TYPE_GET_VERSIONS, nullptr };
-					versionQuery.createDescType = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
-					versionQuery.device = dev.GetFfxHandle();
-					versionQuery.outputCount = &passData.VersionCount;
-					versionQuery.versionIds = nullptr;
-					versionQuery.versionNames = nullptr;
-					ZE_FFX_API_CHECK(ffxFunc->Query(nullptr, &versionQuery.header), "Error getting possible number of FFX-API FSR versions!");
-
-					passData.VersionIds = std::make_unique<U64[]>(passData.VersionCount);
-					passData.VersionNames = std::make_unique<const char* []>(passData.VersionCount + 1);
-					if (ZE_FFX_API_EXCEPT_RESULT == FFX_API_RETURN_OK)
-					{
-						versionQuery.versionIds = passData.VersionIds.get();
-						versionQuery.versionNames = passData.VersionNames.get();
-						ZE_FFX_API_CHECK(ffxFunc->Query(nullptr, &versionQuery.header), "Error getting FFX-API FSR versions!");
-						passData.SelectedVersion = passData.VersionCount;
-					}
-					passData.VersionNames[passData.VersionCount] = "Driver default";
-				}
-				else
-				{
-					buildData.SyncStatus.SyncMain(dev);
-					ZE_FFX_API_CHECK(ffxFunc->DestroyContext(&passData.Ctx, nullptr), "Error destroying FFX-API FSR context!");
-				}
-				passData.PrevSelectedVersion = passData.SelectedVersion;
-
-				ffxOverrideVersion versionDesc = { FFX_API_DESC_TYPE_OVERRIDE_VERSION, nullptr };
-				ffxCreateContextDescUpscale ctxDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE, nullptr };
-				if (passData.SelectedVersion < passData.VersionCount)
-				{
-					versionDesc.versionId = passData.VersionIds[passData.SelectedVersion];
-					ctxDesc.header.pNext = &versionDesc.header;
-				}
-				ctxDesc.flags = FFX_UPSCALE_ENABLE_DEPTH_INVERTED | FFX_UPSCALE_ENABLE_DEPTH_INFINITE
-					| FFX_UPSCALE_ENABLE_AUTO_EXPOSURE | FFX_UPSCALE_ENABLE_HIGH_DYNAMIC_RANGE
-					| (_ZE_DEBUG_GFX_API ? FFX_UPSCALE_ENABLE_DEBUG_CHECKING : 0);
-				ctxDesc.maxRenderSize = { renderSize.X, renderSize.Y };
-				ctxDesc.maxUpscaleSize = { passData.DisplaySize.X, passData.DisplaySize.Y };
-				ctxDesc.fpMessage = MessageHandler;
-				ZE_FFX_API_CHECK(dev.CreateFfxCtx(&passData.Ctx, ctxDesc.header), "Error creating FFX-API FSR context!");
-				return sizeChange ? UpdateStatus::FrameBufferImpact : UpdateStatus::InternalOnly;
+				FlushGPU(nullptr);
+				ZE_FFX_API_LOG_RET_FAILED_EXPECT(ffxFunc.DestroyContext(&passData.Ctx, nullptr), "Error destroying FFX-API FSR context!");
+				passData.Ctx = nullptr;
 			}
+			else
+			{
+				// Get possible versions of the FSR
+				ffxQueryDescGetVersions versionQuery = { FFX_API_QUERY_DESC_TYPE_GET_VERSIONS, nullptr };
+				versionQuery.createDescType = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
+				versionQuery.device = dev.GetHandle();
+				versionQuery.outputCount = &passData.VersionCount;
+				versionQuery.versionIds = nullptr;
+				versionQuery.versionNames = nullptr;
+
+				ffxReturnCode_t res = ffxFunc.Query(nullptr, &versionQuery.header);
+				ZE_FFX_API_CHECK(res, "Error getting possible number of FFX-API FSR versions!");
+
+				if (passData.VersionCount)
+					passData.VersionIds = std::make_unique<U64[]>(passData.VersionCount);
+				passData.VersionNames = std::make_unique<const char* []>(passData.VersionCount + 1);
+				if (res == FFX_API_RETURN_OK)
+				{
+					versionQuery.versionIds = passData.VersionIds.get();
+					versionQuery.versionNames = passData.VersionNames.get();
+					ZE_FFX_API_CHECK(ffxFunc.Query(nullptr, &versionQuery.header), "Error getting FFX-API FSR versions!");
+					passData.SelectedVersion = passData.VersionCount;
+				}
+				passData.VersionNames[passData.VersionCount] = "Driver default";
+			}
+			passData.PrevSelectedVersion = passData.SelectedVersion;
+
+			ffxOverrideVersion versionOverrideDesc = { FFX_API_DESC_TYPE_OVERRIDE_VERSION, nullptr };
+			ffxCreateContextDescUpscaleVersion versionDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE_VERSION, nullptr };
+			ffxCreateContextDescUpscale ctxDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE, &versionDesc.header };
+
+			if (passData.SelectedVersion < passData.VersionCount)
+			{
+				versionOverrideDesc.versionId = passData.VersionIds[passData.SelectedVersion];
+				versionDesc.header.pNext = &versionOverrideDesc.header;
+			}
+			versionDesc.version = FFX_UPSCALER_VERSION;
+			ctxDesc.flags = FFX_UPSCALE_ENABLE_DEPTH_INVERTED | FFX_UPSCALE_ENABLE_DEPTH_INFINITE
+				| FFX_UPSCALE_ENABLE_AUTO_EXPOSURE | FFX_UPSCALE_ENABLE_HIGH_DYNAMIC_RANGE
+				| (_ZE_DEBUG_GFX_API ? FFX_UPSCALE_ENABLE_DEBUG_CHECKING : 0);
+			ctxDesc.maxRenderSize = { renderSize.X, renderSize.Y };
+			ctxDesc.maxUpscaleSize = { passData.DisplaySize.X, passData.DisplaySize.Y };
+			ctxDesc.fpMessage = MessageHandler;
+			ZE_FFX_API_LOG_RET_FAILED_EXPECT(ffx->CreateFfxCtx(dev, &passData.Ctx, ctxDesc.header), "Error creating FFX-API FSR context!");
+
+			bool sizeChange = renderSize != Settings::RenderSize;
+			Settings::RenderSize = renderSize;
+			passData.DisplaySize = Settings::DisplaySize;
+
+			return sizeChange ? UpdateOperation::FrameBufferImpact : UpdateOperation::InternalOnly;
 		}
-		return UpdateStatus::NoUpdate;
+		return UpdateOperation::NoUpdate;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
-		Update(dev, buildData, *passData, true);
+		FfxApiInterface* ffx = ExternalInterface::CreateConnectionFfxApi();
+		if (!ffx)
+			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
+
+		auto passData = std::make_unique<ExecuteData>();
+		auto operation = Update(dev, buildData, *passData);
+		if (!operation)
+			return std::unexpected(operation.error());
+		// Setup device pointer for releasing FFX context later
+		FlushGPU(&dev);
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
-		if (ffxFunc)
-		{
-			ZE_FFX_API_ENABLE();
-			ZE_PERF_GUARD("Upscale FFX-API FSR");
+		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		if (!ffx)
+			return ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR);
 
-			Resources ids = *passData.Resources.CastConst<Resources>();
-			ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
-			const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
-			const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
+		ZE_PERF_GUARD("Upscale FFX-API FSR");
 
-			ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale FFX-API FSR", Pixel(0xB2, 0x22, 0x22));
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
+		const UInt2 inputSize = renderData.Buffers.GetDimmensions(ids.Color);
+		const UInt2 outputSize = renderData.Buffers.GetDimmensions(ids.Output);
 
-			ffxDispatchDescUpscale desc = { FFX_API_DISPATCH_DESC_TYPE_UPSCALE, nullptr };
-			desc.commandList = cl.GetFfxHandle();
-			desc.color = renderData.Buffers.GetFfxResource(ids.Color, FFX_API_RESOURCE_STATE_COMPUTE_READ);
-			desc.depth = renderData.Buffers.GetFfxResource(ids.Depth, FFX_API_RESOURCE_STATE_COMPUTE_READ);
-			desc.motionVectors = renderData.Buffers.GetFfxResource(ids.MotionVectors, FFX_API_RESOURCE_STATE_COMPUTE_READ);
-			desc.exposure.resource = nullptr;
-			desc.reactive = renderData.Buffers.GetFfxResource(ids.ReactiveMask, FFX_API_RESOURCE_STATE_COMPUTE_READ);
-			desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
-			desc.output = renderData.Buffers.GetFfxResource(ids.Output, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
-			desc.jitterOffset.x = Data::GetUnitPixelJitterX(renderData.DynamicData.JitterCurrent.x, Settings::RenderSize.X);
-			desc.jitterOffset.y = Data::GetUnitPixelJitterY(renderData.DynamicData.JitterCurrent.y, Settings::RenderSize.Y);
-			desc.motionVectorScale.x = -Utils::SafeCast<float>(inputSize.X);
-			desc.motionVectorScale.y = -Utils::SafeCast<float>(inputSize.Y);
-			desc.renderSize = { inputSize.X, inputSize.Y };
-			desc.upscaleSize = { outputSize.X, outputSize.Y };
-			desc.enableSharpening = data.SharpeningEnabled;
-			desc.sharpness = data.Sharpness;
-			desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
-			desc.preExposure = 1.0f;
-			desc.reset = renderData.GraphData.FrameTemporalReset;
-			desc.cameraNear = FLT_MAX;
-			desc.cameraFar = renderData.DynamicData.NearClip;
-			desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
-			desc.viewSpaceToMetersFactor = 1.0f;
-			desc.flags = 0;
-			ZE_FFX_API_CHECK(ffxFunc->Dispatch(&data.Ctx, &desc.header), "Error performing FFX-API FSR!");
-			cl.RestoreExternalState(dev);
+		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale FFX-API FSR", Pixel(0xB2, 0x22, 0x22));
 
-			ZE_DRAW_TAG_END(dev, cl);
-			return true;
-		}
-		return false;
+		ffxDispatchDescUpscale desc = { FFX_API_DISPATCH_DESC_TYPE_UPSCALE, nullptr };
+		desc.commandList = cl.GetHandle();
+		desc.color = renderData.Buffers.GetFfxResource(ids.Color, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+		desc.depth = renderData.Buffers.GetFfxResource(ids.Depth, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+		desc.motionVectors = renderData.Buffers.GetFfxResource(ids.MotionVectors, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+		desc.exposure.resource = nullptr;
+		desc.reactive = renderData.Buffers.GetFfxResource(ids.ReactiveMask, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
+		desc.output = renderData.Buffers.GetFfxResource(ids.Output, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+		desc.jitterOffset.x = Data::GetUnitPixelJitterX(renderData.DynamicData.JitterCurrent.x, Settings::RenderSize.X);
+		desc.jitterOffset.y = Data::GetUnitPixelJitterY(renderData.DynamicData.JitterCurrent.y, Settings::RenderSize.Y);
+		desc.motionVectorScale.x = -Utils::SafeCast<float>(inputSize.X);
+		desc.motionVectorScale.y = -Utils::SafeCast<float>(inputSize.Y);
+		desc.renderSize = { inputSize.X, inputSize.Y };
+		desc.upscaleSize = { outputSize.X, outputSize.Y };
+		desc.enableSharpening = data.SharpeningEnabled;
+		desc.sharpness = data.Sharpness;
+		desc.frameTimeDelta = Utils::SafeCast<float>(Settings::FrameTime);
+		desc.preExposure = 1.0f;
+		desc.reset = renderData.GraphData.FrameTemporalReset;
+		desc.cameraNear = FLT_MAX;
+		desc.cameraFar = renderData.DynamicData.NearClip;
+		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
+		desc.viewSpaceToMetersFactor = 1.0f;
+		desc.flags = 0;
+		ZE_FFX_API_LOG_RET_FAILED(ffx->GetFunctions().Dispatch(&data.Ctx, &desc.header), "Error performing FFX-API FSR!");
+		cl.RestoreExternalState(dev);
+
+		ZE_DRAW_TAG_END(dev, cl);
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("FFX-API FSR"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			if (ImGui::BeginCombo("FSR Version", execData.VersionNames[execData.SelectedVersion]))
 			{
@@ -225,3 +263,4 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		}
 	}
 }
+#endif

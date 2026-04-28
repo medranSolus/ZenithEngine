@@ -11,17 +11,20 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 		RID UI;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		GUI::ImGuiRenderData GuiData;
-		U32 BindingIndex;
+		GUI::ImGuiRenderData GuiData = {};
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData();
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledImGui(); }
 
 	PassDesc GetDesc(PixelFormat formatUI, PixelFormat formatRT) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

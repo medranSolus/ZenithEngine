@@ -11,18 +11,18 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 #pragma pack(push, 1)
 	struct TonemapParams
 	{
-		float ParamA;
-		float ParamB;
-		float ParamC;
+		float ParamA = FLT_MAX;
+		float ParamB = FLT_MAX;
+		float ParamC = FLT_MAX;
 		float MidPoint = 0.538f;
 		float ToeStrength = 1.280f;
-		float ShoulderTreshold;
+		float ShoulderTreshold = FLT_MAX;
 		float FadeStart = 0.98f;
 		float FadeEnd = 1.16f;
-		float LuminanceTargetUCS;
-		float LuminanceTarget;
+		float LuminanceTargetUCS = FLT_MAX;
+		float LuminanceTarget = FLT_MAX;
 		float BlendRatio = 0.6f;
-		float CorrectionSDR;
+		float CorrectionSDR = FLT_MAX;
 	};
 #pragma pack(pop)
 
@@ -32,9 +32,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 		RID RenderTarget;
 	};
 
-	struct ExecuteData
+	struct ExecuteData final : public PassExecuteData
 	{
-		U32 BindingIndex;
+		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 		Resource::CBuffer ParamsBuffer;
 		TonemapParams Params = {};
@@ -44,14 +44,17 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 		bool UseJzazbz = true;
 		bool UpdatePso = false;
 		bool UpdateData = false;
+
+		ExecuteData() = default;
+		ZE_CLASS_MOVE(ExecuteData);
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::GranTurismo7; }
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus);
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat, bool firstCall = false);
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat);
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData);
-	void DebugUI(void* data) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept;
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	void DebugUI(PassExecuteData* data) noexcept;
 }

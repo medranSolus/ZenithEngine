@@ -4,13 +4,13 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 {
-	static UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, void* passData, const std::vector<PixelFormat>& formats)
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapGT7 initialization formats!");
-		return Update(dev, buildData, *reinterpret_cast<ExecuteData*>(passData), formats.front());
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static void* Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapGT7 initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -77,81 +77,67 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.Clean = Clean;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	void Clean(Device& dev, void* data, GpuSyncStatus& syncStatus)
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept
 	{
-		syncStatus.SyncMain(dev);
-		ExecuteData* execData = reinterpret_cast<ExecuteData*>(data);
-		execData->State.Free(dev);
-		execData->ParamsBuffer.Free(dev);
-		delete execData;
-	}
-
-	UpdateStatus Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat, bool firstCall)
-	{
-		UpdateStatus status = UpdateStatus::NoUpdate;
+		UpdateOperation status = UpdateOperation::NoUpdate;
 		if (passData.UpdatePso)
 		{
 			passData.UpdatePso = false;
 
-			if (!firstCall)
-			{
-				buildData.SyncStatus.SyncMain(dev);
-				passData.State.Free(dev);
-			}
-
-			Resource::PipelineStateDesc psoDesc;
-			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-			psoDesc.SetShader(dev, psoDesc.PS, passData.UseJzazbz ? "TonemapPS_GT7J" : "TonemapPS_GT7", buildData.ShaderCache);
+			Resource::PipelineStateDesc psoDesc = {};
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, passData.UseJzazbz ? "TonemapPS_GT7J" : "TonemapPS_GT7", buildData.ShaderCache));
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 			psoDesc.Culling = Resource::CullMode::Back;
 			psoDesc.RenderTargetsCount = 1;
 			psoDesc.FormatsRT[0] = outputFormat;
 			ZE_PSO_SET_NAME(psoDesc, passData.UseJzazbz ? "TonemapGT7_Jzazbz" : "TonemapGT7");
 
-			passData.State.Init(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex));
+			ZE_EXPECT_RET_FAILED(passData.State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex)));
 
-			status = UpdateStatus::InternalOnly;
+			status = UpdateOperation::InternalOnly;
 		}
 		if (passData.UpdateData)
 		{
 			passData.UpdateData = false;
-			passData.ParamsBuffer.Update(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData.Params, nullptr, sizeof(TonemapParams) });
+			ZE_CODE_RET_FAILED_EXPECT(passData.ParamsBuffer.Update(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData.Params, nullptr, sizeof(TonemapParams) }));
 
-			status = UpdateStatus::GpuUploadRequired;
+			status = UpdateOperation::GpuUploadRequired;
 		}
 		return status;
 	}
 
-	void* Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat)
+	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		ExecuteData* passData = new ExecuteData;
+		auto passData = std::make_unique<ExecuteData>();
 
-		Binding::SchemaDesc desc;
+		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
 		desc.AddRange({ 1, 0, 1, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // Params
 		desc.AddRange({ sizeof(float), 1, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Exposure
 		desc.AppendSamplers(buildData.Samplers);
-		passData->BindingIndex = buildData.BindingLib.AddDataBinding(dev, desc);
+		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		passData->UpdatePso = true;
-		Update(dev, buildData, *passData, outputFormat, true);
+		auto operation = Update(dev, buildData, *passData, outputFormat);
+		if (!operation)
+			return std::unexpected(operation.error());
 
 		SetParams(passData->Params, passData->Alpha, passData->LinearSection, GT7_SDR_PAPER_WHITE, passData->UseJzazbz);
-		passData->ParamsBuffer.Init(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData->Params, nullptr, sizeof(TonemapParams) });
+		ZE_EXPECT_RET_FAILED(passData->ParamsBuffer, Resource::CBuffer::Create(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData->Params, nullptr, sizeof(TonemapParams) }));
 
 		return passData;
 	}
 
-	bool Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData)
+	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapGT7");
-		Resources ids = *passData.Resources.CastConst<Resources>();
-		ExecuteData& data = *passData.ExecData.Cast<ExecuteData>();
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
 		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapGT7", PixelVal::Cobalt);
 		renderData.Buffers.BeginRaster(cl, ids.RenderTarget);
@@ -162,20 +148,21 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
 		data.ParamsBuffer.Bind(cl, ctx);
-		Resource::Constant<float> exposure(dev, data.Exposure);
+		Resource::Constant<float> exposure;
+		ZE_EXPECT_RET_FAILED_CODE(exposure, Resource::Constant<float>::Create(dev, data.Exposure));
 		exposure.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 		renderData.Buffers.EndRaster(cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return true;
+		return {};
 	}
 
-	void DebugUI(void* data) noexcept
+	void DebugUI(PassExecuteData* data) noexcept
 	{
 		if (ImGui::CollapsingHeader("GT7 Tonemapper"))
 		{
-			ExecuteData& execData = *reinterpret_cast<ExecuteData*>(data);
+			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
 			bool updateParams = false;
 			ImGui::Columns(2, "##tonemap_params_gt7", false);
