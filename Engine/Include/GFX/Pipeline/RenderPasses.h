@@ -26,7 +26,7 @@
 #if _ZE_DLSS_ENABLED
 #	include "RenderPass/UpscaleDLSS.h"
 #endif
-#if _ZE_FFXAPI_ENABLED
+#if _ZE_FFX_API_ENABLED
 #	include "RenderPass/UpscaleFfxFSR.h"
 #endif
 #include "RenderPass/UpscaleFSR1.h"

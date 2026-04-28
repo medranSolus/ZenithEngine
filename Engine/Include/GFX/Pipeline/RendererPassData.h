@@ -6,21 +6,12 @@
 #include "GFX/Resource/Shader.h"
 #include "FrameBuffer.h"
 #include "RendererData.h"
+ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_interface.h"
+ZE_WARNING_POP
 
 namespace ZE::GFX::Pipeline
 {
-	// Status whether pass performed any synchronization with the GPU already so in case of data updates additional syncs can be omitted
-	struct GpuSyncStatus
-	{
-		bool MainQueue = false;
-		bool ComputeQueue = false;
-		bool CopyQueue = false;
-
-		constexpr void SyncMain(Device& dev) { if (!MainQueue) { MainQueue = true; dev.WaitMain(dev.SetMainFence()); } }
-		constexpr void SyncCompute(Device& dev) { if (!ComputeQueue) { ComputeQueue = true; dev.WaitCompute(dev.SetComputeFence()); } }
-		constexpr void SyncCopy(Device& dev) { if (!CopyQueue) { CopyQueue = true; dev.WaitCopy(dev.SetCopyFence()); } }
-	};
-
 	// Data passed to render pass during building step
 	struct RendererPassBuildData
 	{
@@ -38,12 +29,8 @@ namespace ZE::GFX::Pipeline
 		// Sampler definitions provided by the renderer. Can be extended with custom samplers too
 		// if they don't overlap with main samplers (see Shader/Common/Samplers.hlsli)
 		std::vector<Resource::SamplerDesc> Samplers;
-		// General status if the specific synchronizations has been performed with the GPU
-		GpuSyncStatus SyncStatus = { false, false, false };
 		// Allows for caching same shader blobs between passes to speed up data loading
 		std::unordered_map<std::string, Resource::Shader> ShaderCache;
-
-		void FreeShaderCache(Device& dev) noexcept { for (auto& shader : ShaderCache) shader.second.Free(dev); }
 	};
 
 	// Main access point for all data to be used by pass provided by current renderer

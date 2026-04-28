@@ -8,13 +8,13 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 	struct Params
 	{
 		// Path to location of the precomputed BRDF LUT texture
-		std::string BrdfLutSource;
+		std::string BrdfLutSource = "";
 		// Path to location of the environment map texture
-		Data::CubemapSource EnvMapSource;
+		Data::CubemapSource EnvMapSource = {};
 		// Path to location of the irradiance map texture
-		Data::CubemapSource IrrMapSource;
+		Data::CubemapSource IrrMapSource = {};
 		// Path to location of skybox textures
-		Data::CubemapSource SkyboxSource;
+		Data::CubemapSource SkyboxSource = {};
 		// Dimensions of used shadow maps
 		U32 ShadowMapSize = 1024;
 		// Constant bias to be applied when performing shadow depth test

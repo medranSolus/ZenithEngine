@@ -228,7 +228,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			clearInfo.Info[0].ClearValue.Color = ColorF4(0.0f, 0.0f, 0.0f, 0.0f);
 
 			RenderNode node("reactiveClear", "", RenderPass::ClearBuffer<1 ZE_CLEAR_BUFFER_MARKER_SET>::GetDesc(Base(CorePassType::ReactiveMaskClear),
-				clearInfo, []() noexcept { return Settings::Upscaler == UpscalerType::Fsr2 || Settings::Upscaler == UpscalerType::Fsr3 || Settings::Upscaler == UpscalerType::FfxFsr || Settings::Upscaler == UpscalerType::XeSS; }), PassExecutionType::Producer);
+				clearInfo, []() noexcept { return IsReactiveRequired(Settings::Upscaler); }), PassExecutionType::Producer);
 			node.AddOutput("GB_R", TextureLayout::RenderTarget, "gbuffReactive");
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
@@ -442,7 +442,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.DisableExecDataCaching();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
-#if _ZE_FFXAPI_ENABLED
+#if _ZE_FFX_API_ENABLED
 		{
 			RenderNode node("upscale", "ffxfsr", RenderPass::UpscaleFfxFSR::GetDesc(), PassExecutionType::StaticProcessor);
 			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);

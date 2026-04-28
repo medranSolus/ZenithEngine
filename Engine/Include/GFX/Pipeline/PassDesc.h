@@ -5,15 +5,23 @@
 
 namespace ZE::GFX::Pipeline
 {
+	// Base structure for data created in render pass initialization and used in execution, can be extended with custom data for each pass
+	struct PassExecuteData
+	{
+		PassExecuteData() = default;
+		ZE_CLASS_DEFAULT(PassExecuteData);
+		virtual ~PassExecuteData() = default;
+	};
+
 	// Data unique to the given render pass with all needed information
 	struct PassData
 	{
-		Ptr<const RID> Resources;
-		PtrVoid ExecData = nullptr;
+		std::unique_ptr<RID> Resources;
+		std::unique_ptr<PassExecuteData> ExecData;
 	};
 
 	// Information about how update was performed for pass
-	enum class UpdateStatus : U8
+	enum class UpdateOperation : U8
 	{
 		NoUpdate,                    // Nothing updated
 		InternalOnly,                // Only internals of the pass were updated
@@ -24,22 +32,20 @@ namespace ZE::GFX::Pipeline
 	};
 
 	// Create all needed data for render pass
-	typedef void* (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*);
+	typedef Expected<std::unique_ptr<PassExecuteData>> (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*) noexcept;
 	// Evaluate whether pass shall run and if it cause update of the render graph
 	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
 	// Main function that will be performing rendering, obligatory, returns true if any commands have been recorded
-	typedef bool (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&);
+	typedef Status (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&) noexcept;
 	// Optional function to handle pass data update after render graph got it's update.
 	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
-	typedef UpdateStatus(*PassUpdatetCallback)(Device&, RendererPassBuildData&, void*, const std::vector<PixelFormat>&);
-	// Optional function that will be freeing up data used by pass
-	typedef void (*PassCleanCallback)(Device&, void*, GpuSyncStatus&);
+	typedef Expected<UpdateOperation> (*PassUpdatetCallback)(Device&, RendererPassBuildData&, PassExecuteData*, const std::vector<PixelFormat>&) noexcept;
 	// Optional function for copying init data for pass creation
 	typedef void* (*PassCopyInitDataCallback)(void*) noexcept;
 	// Optional function for freeing up init data for pass creation
 	typedef void (*PassFreeInitDataCallback)(void*) noexcept;
 	// Optional function for creating ImGui debug controls
-	typedef void (*PassDebugUICallback)(void*) noexcept;
+	typedef void (*PassDebugUICallback)(PassExecuteData*) noexcept;
 
 	// Types of every render pass present, including custom ones created outside engine
 	typedef U32 PassType;
@@ -116,8 +122,6 @@ namespace ZE::GFX::Pipeline
 		// Only required callback for pass execution
 		PassExecuteCallback Execute = nullptr;
 		PassUpdatetCallback Update = nullptr;
-		// Required if init callback returns pointer to arbitrary data
-		PassCleanCallback Clean = nullptr;
 		// Required if InitData is present
 		PassCopyInitDataCallback CopyInitData = nullptr;
 		// Required if InitData is present

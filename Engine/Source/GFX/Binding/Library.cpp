@@ -27,6 +27,6 @@ namespace ZE::GFX::Binding
 		Schema schema = {};
 		ZE_EXPECT_RET_FAILED(schema, Schema::Create(dev, desc));
 		schemas.emplace_back(std::move(schema));
-		return schemas.size() - 1;
+		return Utils::SafeCast<U32>(schemas.size() - 1);
 	}
 }

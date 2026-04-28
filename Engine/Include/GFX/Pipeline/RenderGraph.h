@@ -101,7 +101,6 @@ namespace ZE::GFX::Pipeline
 				U32 PassID = UINT32_MAX;
 				PassExecuteCallback Exec = nullptr;
 				PassData Data;
-				std::unique_ptr<RID[]> Resources;
 			};
 
 			std::vector<BarrierTransition> StartBarriers;
@@ -126,29 +125,28 @@ namespace ZE::GFX::Pipeline
 		RendererPassExecuteData execData;
 		ChainPool<CommandList> asyncListChain;
 		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
-		Data::Library<U32, std::pair<PtrVoid, PassCleanCallback>> passExecData;
+		Data::Library<U32, std::unique_ptr<PassExecuteData>> passExecData;
 		FfxInterface ffxInterface = {};
 		Data::Library<S32, FFX::InternalResourceDescription> ffxInternalBuffers;
 		bool ffxBuffersChanged = false;
 		GraphFinalizeFlags finalizationFlags = 0;
 
-		void PrepareFrameResources(Device& dev, SwapChain& swapChain);
-		void UnloadConfig(Device& dev) noexcept;
+		Status PrepareFrameResources(Device& dev, SwapChain& swapChain) noexcept;
+		void UnloadConfig() noexcept;
 
 	public:
 		RenderGraph() = default;
 		ZE_CLASS_MOVE(RenderGraph);
-		~RenderGraph() { ZE_ASSERT_FREED(passExecGroups == nullptr); }
+		~RenderGraph();
 
 		constexpr bool IsAsyncPresent() const noexcept { return asyncListChain.Get().IsInitialized(); }
 		constexpr EID GetCurrentCamera() const noexcept { return execData.GraphData.CurrentCamera; }
 
-		void Execute(Graphics& gfx);
+		Status Execute(Graphics& gfx) noexcept;
 
 		// Before executing render graph it's needed to set active camera
-		void SetCamera(EID camera);
+		void SetCamera(EID camera) noexcept;
 		// Need to be called before ending every frame
-		void UpdateFrameData(Device& dev);
-		void Free(Device& dev) noexcept;
+		void UpdateFrameData(Device& dev) noexcept;
 	};
 }
