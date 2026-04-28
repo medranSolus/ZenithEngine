@@ -12,6 +12,8 @@ namespace ZE::RHI::DX12
 		ZE_CLASS_MOVE(GFile);
 		~GFile() = default;
 
+		static Expected<GFile> Create() noexcept { return {}; }
+
 		bool Open(GFX::DiskManager& disk, std::string_view fileName) noexcept;
 
 		// IO API Internal

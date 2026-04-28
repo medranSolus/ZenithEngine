@@ -32,16 +32,23 @@ namespace ZE::RHI::DX12
 
 		struct UploadEntry
 		{
-			U64 CurrentFence;
-			EID ResID;
-			ResourceType Type;
-			IResource* DestResource;
+			U64 CurrentFence = 0;
+			EID ResID = INVALID_EID;
+			ResourceType Type = ResourceType::Buffer;
+			IResource* DestResource = nullptr;
 			std::shared_ptr<const U8[]> SrcMemory;
+		};
+
+		struct DecompressThreadData
+		{
+			BoolAtom CheckForDecompression = false;
+			Device* Dev = nullptr;
+			DiskManager* Disk = nullptr;
 		};
 
 		DX::ComPtr<IStorageFactory> factory;
 		DX::ComPtr<IStorageCustomDecompressionQueue> decompressQueue;
-		HANDLE decompressionEvent;
+		HANDLE decompressionEvent = nullptr;
 		DX::ComPtr<IStorageCompressionCodec> compressCodecGDeflate;
 
 		DX::ComPtr<IStorageQueue> fileQueue;
@@ -52,26 +59,31 @@ namespace ZE::RHI::DX12
 		std::vector<UploadEntry> uploadQueue;
 		std::unordered_map<U64, std::array<HANDLE, 2>> fenceEvents;
 
-		BoolAtom checkForDecompression = true;
+		std::unique_ptr<DecompressThreadData> decompressionData;
 		std::jthread cpuDecompressionThread;
 
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
-		void DecompressAssets(Device& dev) const;
+		void DecompressAssets(Device& dev) const noexcept;
 		void AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept;
+
+		void MoveFrom(DiskManager&& disk) noexcept;
 
 	public:
 		DiskManager() = default;
-		DiskManager(GFX::Device& dev);
-		ZE_CLASS_MOVE(DiskManager);
+		ZE_CLASS_NO_COPY(DiskManager);
+		DiskManager(DiskManager&& disk) noexcept { MoveFrom(std::move(disk)); }
+		DiskManager& operator=(DiskManager&& disk) noexcept { MoveFrom(std::move(disk)); return *this; }
 		~DiskManager();
 
-		DiskStatusHandle SetGPUUploadWaitPoint() noexcept;
-		void StartUploadGPU() noexcept;
-		bool IsGPUWorkPending(DiskStatusHandle handle) const noexcept;
-		bool WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle);
+		static Expected<DiskManager> Create(GFX::Device& dev) noexcept;
 
-		// IO API Internal
+		Expected<DiskStatusHandle> SetGPUUploadWaitPoint() noexcept;
+		void StartUploadGPU() const noexcept;
+		bool IsGPUWorkPending(DiskStatusHandle handle) const noexcept;
+		Status WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle) noexcept;
+
+		// Gfx API Internal
 
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
 		void AddTexturePackID(EID resourceID) noexcept { AddRequest(resourceID, nullptr, ResourceType::Texture, nullptr); }

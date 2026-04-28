@@ -39,8 +39,8 @@ namespace ZE::RHI::DX12
 
 		AllocTier allocTier = AllocTier::Tier1;
 		bool tightAlignment = false;
-		HeapAllocator::BlockAllocator blockAllocator;
-		HeapAllocator::ChunkAllocator chunkAllocator;
+		std::shared_ptr<HeapAllocator::BlockAllocator> blockAllocator;
+		std::shared_ptr<HeapAllocator::ChunkAllocator> chunkAllocator;
 
 		// Tier1: buffers | Tier2: buffers + textures
 		HeapAllocator mainAllocator;
@@ -73,8 +73,7 @@ namespace ZE::RHI::DX12
 		static void Remove(ResourceInfo& resInfo, HeapAllocator& allocator) noexcept;
 
 	public:
-		AllocatorGPU() : blockAllocator(BLOCK_ALLOC_CAPACITY), chunkAllocator(CHUNK_ALLOC_CAPACITY), mainAllocator(blockAllocator, chunkAllocator),
-			secondaryAllocator(blockAllocator, chunkAllocator), dynamicBuffersAllocator(blockAllocator, chunkAllocator), readbackBuffersAllocator(blockAllocator, chunkAllocator) {}
+		AllocatorGPU() noexcept;
 		ZE_CLASS_MOVE(AllocatorGPU);
 		~AllocatorGPU();
 
@@ -86,7 +85,7 @@ namespace ZE::RHI::DX12
 
 		void RemoveBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, mainAllocator); }
 		void RemoveDynamicBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, dynamicBuffersAllocator); }
-		void RemoveReadackBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, readbackBuffersAllocator); }
+		void RemoveReadbackBuffer(ResourceInfo& resInfo) noexcept { Remove(resInfo, readbackBuffersAllocator); }
 		void RemoveTexture(ResourceInfo& resInfo) noexcept { Remove(resInfo, allocTier == AllocTier::Tier2 ? mainAllocator : secondaryAllocator); }
 
 		Expected<ResourceInfo> AllocBuffer(Device& dev, const D3D12_RESOURCE_DESC1& desc) noexcept;

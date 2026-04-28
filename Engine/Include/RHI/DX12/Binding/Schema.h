@@ -10,8 +10,8 @@ namespace ZE::RHI::DX12::Binding
 		enum class BindType : U8 { Constant, CBV, SRV, UAV, Table };
 
 	private:
-		bool isCompute;
-		U32 count;
+		bool isCompute = false;
+		U32 count = 0;
 		std::unique_ptr<BindType[]> bindings;
 		DX::ComPtr<IRootSignature> signature;
 

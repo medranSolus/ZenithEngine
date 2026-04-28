@@ -1,16 +1,14 @@
 #pragma once
-#include "GFX/Pipeline/ResourceID.h"
 #include "GFX/Resource/Texture/Type.h"
 #include "GFX/DisplayProperties.h"
-#include "GFX/FfxApiFunctions.h"
 #include "GFX/ShaderModel.h"
 #include "Window/MainWindow.h"
 #include "AllocatorGPU.h"
 #include "CommandList.h"
 #include "DescriptorInfo.h"
 ZE_WARNING_PUSH
+#include "FidelityFX/host/ffx_types.h"
 #include "amd_ags.h"
-#include "xess/xess_d3d12.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -46,9 +44,6 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<ICommandQueue> computeQueue;
 		DX::ComPtr<ICommandQueue> copyQueue;
 
-		U32 commandListsCount = 0;
-		Ptr<ICommandList*> commandLists = nullptr;
-
 		UA64 mainFenceVal = 0;
 		DX::ComPtr<IFence> mainFence;
 		UA64 computeFenceVal = 0;
@@ -57,59 +52,49 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IFence> copyFence;
 
 		AllocatorGPU allocator;
-		struct
-		{
-			xess_context_handle_t Ctx = nullptr;
-			DescriptorInfo Descs = {};
-			xess_2d_t TargetRes = { 0, 0 };
-			xess_quality_settings_t Quality = XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
-			U32 InitFlags = 0;
-			RID BufferRegion = INVALID_RID;
-			RID TextureRegion = INVALID_RID;
-		} xessData = {};
 
-		DescriptorAllocator::BlockAllocator blockDescAllocator;
-		DescriptorAllocator::ChunkAllocator chunkDescAllocator;
+		std::shared_ptr<DescriptorAllocator::BlockAllocator> blockDescAllocator;
+		std::shared_ptr<DescriptorAllocator::ChunkAllocator> chunkDescAllocator;
 		DescriptorAllocator descriptorGpuAllocator;
 		DescriptorAllocator descriptorCpuAllocator;
 		U32 descriptorSize = 0;
 
 		// Hardware specific data
-		union
+		union HWData
 		{
-			AGSContext* gpuCtxAMD;
-		};
+			AGSContext* AMD;
+
+			constexpr HWData() noexcept : AMD(nullptr) {}
+			ZE_CLASS_NO_COPY(HWData);
+			constexpr HWData(HWData&& hw) noexcept : AMD(hw.AMD) { hw.AMD = nullptr; }
+			constexpr HWData& operator=(HWData&& hw) noexcept { AMD = hw.AMD; hw.AMD = nullptr; return *this; }
+			~HWData() {}
+
+		} gpuCtx = {};
 #if !_ZE_MODE_RELEASE
 		HMODULE pixCapturer = nullptr;
 #endif
-		HMODULE ffxApiDll = nullptr;
-		PfnFfxCreateContext ffxCreateContext = nullptr;
-		GFX::FfxApiFunctions ffxFunctions = {};
 		bool featureExistingHeap = false;
 		GFX::DisplayProperties displayProps = {};
 
-		void WaitCPU(IFence* fence, U64 val);
-		void WaitGPU(IFence* fence, ICommandQueue* queue, U64 val);
-		U64 SetFenceCPU(IFence* fence, UA64& fenceVal);
-		U64 SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal);
-		void Execute(ICommandQueue* queue, CommandList& cl);
+		static Status WaitCPU(IFence* fence, U64 val) noexcept;
+		static Status WaitGPU(IFence* fence, ICommandQueue* queue, U64 val) noexcept;
+		static Expected<U64> SetFenceCPU(IFence* fence, UA64& fenceVal) noexcept;
+		static Expected<U64> SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal) noexcept;
+		static void Execute(ICommandQueue* queue, CommandList& cl) noexcept;
+
+		void MoveFrom(Device& dev) noexcept;
 
 	public:
-		Device() noexcept
-			: blockDescAllocator(BLOCK_DESCRIPTOR_ALLOC_CAPACITY), chunkDescAllocator(CHUNK_DESCRIPTOR_ALLOC_CAPACITY),
-			descriptorGpuAllocator(blockDescAllocator, chunkDescAllocator, true),
-			descriptorCpuAllocator(blockDescAllocator, chunkDescAllocator) {}
-		Device(const Window::MainWindow& window, U32 descriptorCount);
-		ZE_CLASS_DELETE(Device);
+		Device() noexcept;
+		ZE_CLASS_NO_COPY(Device);
+		Device(Device&& dev) noexcept;
+		Device& operator=(Device&& dev) noexcept;
 		~Device();
 
-		constexpr U32 GetData() const noexcept { return Utils::SafeCast<U32>(descriptorGpuAllocator.GetChunkSize()); }
-		constexpr U32 GetCommandBufferSize() const noexcept { return commandListsCount; }
+		static Expected<Device> Create(const Window::MainWindow& window, U32 descriptorCount) noexcept;
 
 		constexpr void EndFrame() noexcept {}
-		constexpr bool IsXeSSEnabled() const noexcept { return xessData.Descs.Handle != nullptr; }
-		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { xessData.BufferRegion = buffer; xessData.TextureRegion = texture; }
-		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { return { xessData.BufferRegion, xessData.TextureRegion }; }
 
 		constexpr bool IsCoherentMemorySupported() const noexcept { return false; }
 		constexpr bool IsDedicatedAllocSupported() const noexcept { return true; }
@@ -117,31 +102,31 @@ namespace ZE::RHI::DX12
 		constexpr bool IsExtendedSynchronizationSupported() const noexcept { return false; }
 		constexpr bool IsUavNonUniformIndexing() const noexcept { return true; }
 
-		void* GetFfxHandle() const noexcept { return GetDevice(); }
+		void* GetHandle() const noexcept { return GetDevice(); }
 		const GFX::DisplayProperties* GetDisplayProperties() const noexcept { return &displayProps; }
 
 		U64 GetMainFence() const noexcept { return mainFenceVal; }
 		U64 GetComputeFence() const noexcept { return computeFenceVal; }
 		U64 GetCopyFence() const noexcept { return copyFenceVal; }
 
-		void WaitMain(U64 val) { WaitCPU(mainFence.Get(), val); }
-		void WaitCompute(U64 val) { WaitCPU(computeFence.Get(), val); }
-		void WaitCopy(U64 val) { WaitCPU(copyFence.Get(), val); }
+		Status WaitMain(U64 val) const noexcept { return WaitCPU(mainFence.Get(), val); }
+		Status WaitCompute(U64 val) const noexcept { return WaitCPU(computeFence.Get(), val); }
+		Status WaitCopy(U64 val) const noexcept { return WaitCPU(copyFence.Get(), val); }
 
-		U64 SetMainFenceCPU() { return SetFenceCPU(mainFence.Get(), mainFenceVal); }
-		U64 SetComputeFenceCPU() { return SetFenceCPU(computeFence.Get(), computeFenceVal); }
-		U64 SetCopyFenceCPU() { return SetFenceCPU(copyFence.Get(), copyFenceVal); }
+		Expected<U64> SetMainFenceCPU() noexcept { return SetFenceCPU(mainFence.Get(), mainFenceVal); }
+		Expected<U64> SetComputeFenceCPU() noexcept { return SetFenceCPU(computeFence.Get(), computeFenceVal); }
+		Expected<U64> SetCopyFenceCPU() noexcept { return SetFenceCPU(copyFence.Get(), copyFenceVal); }
 
-		void WaitMainFromCompute(U64 val) { WaitGPU(computeFence.Get(), mainQueue.Get(), val); }
-		void WaitMainFromCopy(U64 val) { WaitGPU(copyFence.Get(), mainQueue.Get(), val); }
-		void WaitComputeFromMain(U64 val) { WaitGPU(mainFence.Get(), computeQueue.Get(), val); }
-		void WaitComputeFromCopy(U64 val) { WaitGPU(copyFence.Get(), computeQueue.Get(), val); }
-		void WaitCopyFromMain(U64 val) { WaitGPU(mainFence.Get(), copyQueue.Get(), val); }
-		void WaitCopyFromCompute(U64 val) { WaitGPU(computeFence.Get(), copyQueue.Get(), val); }
+		Status WaitMainFromCompute(U64 val) const noexcept { return WaitGPU(computeFence.Get(), mainQueue.Get(), val); }
+		Status WaitMainFromCopy(U64 val) const noexcept { return WaitGPU(copyFence.Get(), mainQueue.Get(), val); }
+		Status WaitComputeFromMain(U64 val) const noexcept { return WaitGPU(mainFence.Get(), computeQueue.Get(), val); }
+		Status WaitComputeFromCopy(U64 val) const noexcept { return WaitGPU(copyFence.Get(), computeQueue.Get(), val); }
+		Status WaitCopyFromMain(U64 val) const noexcept { return WaitGPU(mainFence.Get(), copyQueue.Get(), val); }
+		Status WaitCopyFromCompute(U64 val) const noexcept { return WaitGPU(computeFence.Get(), copyQueue.Get(), val); }
 
-		U64 SetMainFence() { return SetFenceGPU(mainFence.Get(), mainQueue.Get(), mainFenceVal); }
-		U64 SetComputeFence() { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
-		U64 SetCopyFence() { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
+		Expected<U64> SetMainFence() noexcept { return SetFenceGPU(mainFence.Get(), mainQueue.Get(), mainFenceVal); }
+		Expected<U64> SetComputeFence() noexcept { return SetFenceGPU(computeFence.Get(), computeQueue.Get(), computeFenceVal); }
+		Expected<U64> SetCopyFence() noexcept { return SetFenceGPU(copyFence.Get(), copyQueue.Get(), copyFenceVal); }
 
 #if _ZE_GFX_MARKERS
 		void TagBeginMain(std::string_view tag, Pixel color) const noexcept { PIXBeginEvent(mainQueue.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data()); }
@@ -153,27 +138,19 @@ namespace ZE::RHI::DX12
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
 
-		const GFX::FfxApiFunctions* GetFfxFunctions() noexcept;
-		ffxReturnCode_t CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept;
-
-		xess_context_handle_t GetXeSSCtx();
-		void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags);
-		void FreeXeSS() noexcept;
-		std::pair<U64, U64> GetXeSSAliasableRegionSizes() const;
-
-		void OnMonitorChanged(const Window::MainWindow& window);
+		void OnMonitorChanged(const Window::MainWindow& window) noexcept;
 
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;
 		bool IsShaderFloat16Supported() const noexcept;
 
-		void Execute(GFX::CommandList* cls, U32 count);
-		void ExecuteMain(GFX::CommandList& cl);
-		void ExecuteCompute(GFX::CommandList& cl);
-		void ExecuteCopy(GFX::CommandList& cl);
+		void Execute(GFX::CommandList* cls, U32 count) const noexcept;
+		void ExecuteMain(GFX::CommandList& cl) const noexcept;
+		void ExecuteCompute(GFX::CommandList& cl) const noexcept;
+		void ExecuteCopy(GFX::CommandList& cl) const noexcept;
 
-		FfxBreadcrumbsBlockData AllocBreadcrumbsBlock(U64 bytes);
-		void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block);
+		Expected<FfxBreadcrumbsBlockData> AllocBreadcrumbsBlock(U64 bytes) noexcept;
+		void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept;
 
 		// Gfx API Internal
 
@@ -187,30 +164,27 @@ namespace ZE::RHI::DX12
 		constexpr U32 GetDescriptorSize() const noexcept { return descriptorSize; }
 		constexpr const DX::ComPtr<IDevice>& GetDev() const noexcept { return device; }
 
-		constexpr const xess_2d_t& GetXeSSTargetResolution() const noexcept { return xessData.TargetRes; }
-		constexpr xess_quality_settings_t GetXeSSQuality() const noexcept { return xessData.Quality; }
-		constexpr U32 GetXeSSInitFlags() const noexcept { return xessData.InitFlags; }
-
 		IDevice* GetDevice() const noexcept { return device.Get(); }
 		ICommandQueue* GetQueueMain() const noexcept { return mainQueue.Get(); }
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ICommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 		IDescriptorHeap* GetDescHeap() const noexcept { return descriptorGpuAllocator.GetMemory(nullptr).Heap.Get(); }
-		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GpuVendor == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtxAMD; }
+		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GpuVendor == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtx.AMD; }
 
-		void FreeBuffer(ResourceInfo& info) { allocator.RemoveBuffer(info); }
-		void FreeDynamicBuffer(ResourceInfo& info) { allocator.RemoveDynamicBuffer(info); }
-		void FreeTexture(ResourceInfo& info) { allocator.RemoveTexture(info); }
+		void FreeBuffer(ResourceInfo& info) noexcept { allocator.RemoveBuffer(info); }
+		void FreeDynamicBuffer(ResourceInfo& info) noexcept { allocator.RemoveDynamicBuffer(info); }
+		void FreeTexture(ResourceInfo& info) noexcept { allocator.RemoveTexture(info); }
+
+		U32 GetAllocatedDescsCount(const DescriptorInfo& info) const noexcept { return Utils::SafeCast<U32>((info.GpuSide ? descriptorGpuAllocator : descriptorCpuAllocator).GetSize(info.Handle)); }
 
 		D3D12_RESOURCE_DESC1 GetBufferDesc(U64 size) const noexcept;
 		D3D12_RESOURCE_DESC1 GetTextureDesc(U32 width, U32 height, U16 count,
 			DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept;
 
-		ResourceInfo CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic);
-		ResourceInfo CreateTexture(const D3D12_RESOURCE_DESC1& desc);
+		Expected<ResourceInfo> CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic) noexcept;
+		Expected<ResourceInfo> CreateTexture(const D3D12_RESOURCE_DESC1& desc) noexcept;
 
-		DescriptorInfo AllocDescs(U32 count, bool gpuHeap = true) noexcept;
+		Expected<DescriptorInfo> AllocDescs(U32 count, bool gpuHeap = true) noexcept;
 		void FreeDescs(DescriptorInfo& descInfo) noexcept;
-		U32 GetXeSSDescriptorsOffset() const noexcept;
 	};
 }

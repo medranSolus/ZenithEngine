@@ -10,7 +10,7 @@ namespace ZE::RHI::DX12::Resource
 		static constexpr U64 BLOCK_SHRINK_STEP = 2;
 
 		std::vector<std::pair<ResourceInfo, D3D12_GPU_VIRTUAL_ADDRESS>> resInfo;
-		Ptr<U8> buffer;
+		Ptr<U8> buffer = nullptr;
 		U32 nextOffset = 0;
 		U64 currentBlock = 0;
 #if !_ZE_RENDER_GRAPH_SINGLE_THREAD

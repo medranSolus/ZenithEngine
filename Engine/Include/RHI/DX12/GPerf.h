@@ -11,11 +11,12 @@ namespace ZE::RHI::DX12
 
 	public:
 		GPerf() = default;
-		GPerf(GFX::Device& dev);
 		ZE_CLASS_MOVE(GPerf);
 		~GPerf() = default;
 
 		static constexpr const char* GetApiString() noexcept { return "DX12"; }
+
+		static Expected<GPerf> Create(GFX::Device& dev) noexcept;
 
 		void Start(GFX::CommandList& cl) noexcept;
 		void Stop(GFX::CommandList& cl) const noexcept;

@@ -2,6 +2,9 @@
 #include "Platform/WinAPI/Error.h"
 #include "DebugInfoManager.h"
 
+// Make custom DXGI based HRESULT error code
+#define ZE_MAKE_DXGI_ERROR(u16) (0xA7FF0000L | (0xFFFF & u16))
+
 namespace ZE::RHI::DX
 {
 	// Main handler for DirectX Graphics Infrastructure based APIs error
@@ -11,7 +14,12 @@ namespace ZE::RHI::DX
 		Error() = default;
 
 	public:
-		static constexpr HRESULT DEBUG_MSG_ERROR = 0xA7FF0001L;
+		static constexpr HRESULT DEBUG_MSG_ERROR = ZE_MAKE_DXGI_ERROR(1);
+		static constexpr HRESULT ALLOC_ERROR = ZE_MAKE_DXGI_ERROR(2);
+		static constexpr HRESULT NO_ADAPTER_ERROR = ZE_MAKE_DXGI_ERROR(3);
+		static constexpr HRESULT ENHANCED_BARRIERS_ERROR = ZE_MAKE_DXGI_ERROR(4);
+		static constexpr HRESULT DSTORAGE_REQUEST_FAILURE = ZE_MAKE_DXGI_ERROR(5);
+		static constexpr HRESULT DISKMANAGER_INVALID_HANDLE = ZE_MAKE_DXGI_ERROR(6);
 
 		ZE_CLASS_MOVE(Error);
 		virtual ~Error() = default;
