@@ -22,8 +22,8 @@ namespace ZE::Window
 			enum class Type : bool { Down, Up };
 
 		private:
-			Type type;
-			U8 code;
+			Type type = Type::Up;
+			U8 code = 0;
 
 		public:
 			constexpr Event(Type type, U8 code) noexcept : type(type), code(code) {}
@@ -40,7 +40,7 @@ namespace ZE::Window
 		static constexpr size_t BUFFER_SIZE = 32;
 
 		bool autorepeatEnabled = false; // Accounting long key press
-		std::bitset<NUMBER_OF_VKEYS> keystates; // States for all virtual keys from WinAPI
+		std::bitset<NUMBER_OF_VKEYS> keystates = 0; // States for all virtual keys from WinAPI
 		std::deque<Event> keybuffer; // Buffer for KEY_UP/DOWN events
 		std::deque<char> charbuffer; // Buffer for ON_CHAR events
 
@@ -55,7 +55,7 @@ namespace ZE::Window
 
 	public:
 		Keyboard() = default;
-		ZE_CLASS_DELETE(Keyboard);
+		ZE_CLASS_MOVE(Keyboard);
 		~Keyboard() = default;
 
 		constexpr bool IsAutorepeat() const noexcept { return autorepeatEnabled; }
@@ -64,8 +64,8 @@ namespace ZE::Window
 
 		bool IsKeyReady() const noexcept { return static_cast<bool>(keybuffer.size()); }
 		bool IsCharReady() const noexcept { return static_cast<bool>(charbuffer.size()); }
-		void FlushKeys() noexcept { keybuffer = std::deque<Event>(); }
-		void FlushChars() noexcept { charbuffer = std::deque<char>(); }
+		void FlushKeys() noexcept { keybuffer.clear(); }
+		void FlushChars() noexcept { charbuffer.clear(); }
 
 		void Flush() noexcept;
 		std::optional<Event> ReadKey() noexcept;

@@ -43,12 +43,19 @@ namespace ZE::Platform::WinAPI
 		void EnterFullscreen() noexcept override;
 		void LeaveFullscreen() noexcept override;
 
+		void Destroy() noexcept;
+		void MoveFrom(Window&& wnd) noexcept;
+
 	public:
 		Window() = default;
-		ZE_CLASS_DELETE(Window);
-		virtual ~Window();
+		ZE_CLASS_NO_COPY(Window);
+		Window(Window&& wnd) noexcept { MoveFrom(std::move(wnd)); }
+		Window& operator=(Window&& wnd) noexcept { Destroy(); MoveFrom(std::move(wnd)); return *this; }
+		virtual ~Window() { Destroy(); }
 
 		static constexpr HINSTANCE GetInstance() noexcept { return wndClass.GetInstance(); }
+
+		static Expected<Window> Create(std::string_view name, U32 width = 0, U32 height = 0) noexcept;
 
 		constexpr HWND GetHandle() const noexcept { return wndHandle; }
 		constexpr U32 GetWidth() const noexcept override { return Utils::SafeCast<U32>(windowRect.right); }
@@ -56,9 +63,8 @@ namespace ZE::Platform::WinAPI
 		constexpr bool IsMonitorChanged() const noexcept override { return monitorChanged; }
 		constexpr void ProcessMonitorChange() noexcept override { monitorChanged = false; }
 
-		void Init(std::string_view name, U32 width = 0, U32 height = 0) override;
 		std::pair<bool, int> ProcessMessage() noexcept override;
-		void SetTitle(std::string_view title) override;
+		Status SetTitle(std::string_view title) noexcept override;
 		void NewImGuiFrame() const noexcept override;
 	};
 }

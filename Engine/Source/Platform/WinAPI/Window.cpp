@@ -7,11 +7,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace ZE::Platform::WinAPI
 {
-	Window::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandle(nullptr))
+	Window::WindowClass::WindowClass() noexcept : hInstance(GetModuleHandleW(nullptr))
 	{
 		const std::wstring className = Utils::ToUTF16(Settings::ENGINE_NAME);
 
-		WNDCLASSEX wndClassEx = { 0 };
+		WNDCLASSEX wndClassEx = {};
 		wndClassEx.cbClsExtra = 0;
 		wndClassEx.cbWndExtra = 0;
 		wndClassEx.hInstance = hInstance;
@@ -22,9 +22,15 @@ namespace ZE::Platform::WinAPI
 		wndClassEx.style = CS_OWNDC;
 		wndClassEx.lpszClassName = className.c_str();
 		wndClassEx.lpfnWndProc = HandleMsgSetup;
-		wndClassEx.hIcon = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
-		wndClassEx.hIconSm = static_cast<HICON>(LoadImage(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
-		RegisterClassExW(&wndClassEx);
+		wndClassEx.hIcon = static_cast<HICON>(LoadImageW(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 128, 128, 0));
+		wndClassEx.hIconSm = static_cast<HICON>(LoadImageW(hInstance, MAKEINTRESOURCE(ZE_APPICON), IMAGE_ICON, 32, 32, 0));
+
+		[[unlikely]]
+		if (RegisterClassExW(&wndClassEx) == 0)
+		{
+			ZE_CODE_CRITICAL(ZE_WIN_LAST_ERROR(), "Failed to register window class, need to abort application!");
+			std::abort();
+		}
 	}
 
 	LRESULT WINAPI Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
@@ -221,7 +227,7 @@ namespace ZE::Platform::WinAPI
 
 	void Window::TrapCursor() const noexcept
 	{
-		RECT rect;
+		RECT rect = {};
 		GetClientRect(wndHandle, &rect);
 		MapWindowPoints(wndHandle, nullptr, reinterpret_cast<POINT*>(&rect), 2);
 		ClipCursor(&rect);
@@ -262,77 +268,92 @@ namespace ZE::Platform::WinAPI
 		ShowWindow(wndHandle, SW_NORMAL);
 	}
 
-	Window::~Window()
+	void Window::Destroy() noexcept
 	{
-		ImGui_ImplWin32_Shutdown();
-		DestroyWindow(wndHandle);
+		if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData)
+			ImGui_ImplWin32_Shutdown();
+		if (wndHandle)
+		{
+			DestroyWindow(wndHandle);
+			wndHandle = nullptr;
+		}
 	}
 
-	void Window::Init(std::string_view name, U32 width, U32 height)
+	void Window::MoveFrom(Window&& wnd) noexcept
+	{
+		wndHandle = std::exchange(wnd.wndHandle, nullptr);
+		// Re-set to the new Window object handler
+		if (wndHandle)
+			SetWindowLongPtrW(wndHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+		windowRect = std::move(wnd.windowRect);
+		rawBuffer.clear();
+		monitorChanged = true;
+	}
+
+	Expected<Window> Window::Create(std::string_view name, U32 width, U32 height) noexcept
 	{
 		constexpr DWORD WIN_STYLE_EX = 0;
 
-		if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL)
-			throw ZE_WIN_EXCEPT_LAST();
+		ZE_WIN_RET_FAILED_LAST_EXPECT(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL);
 		// Initial DPI since no possible way to know window DPI
 		const UINT dpi = GetDpiForSystem();
 
+		Window window;
 		if (width == 0 || height == 0)
 		{
-			windowRect.top = 0;
-			windowRect.bottom = GetSystemMetricsForDpi(SM_CYMAXIMIZED, dpi);
-			windowRect.right = GetSystemMetricsForDpi(SM_CXMAXIMIZED, dpi);
-			windowRect.left = -GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) * 2;
+			window.windowRect.top = 0;
+			window.windowRect.bottom = GetSystemMetricsForDpi(SM_CYMAXIMIZED, dpi);
+			window.windowRect.right = GetSystemMetricsForDpi(SM_CXMAXIMIZED, dpi);
+			window.windowRect.left = -GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) * 2;
 		}
 		else
 		{
 			// Adjust window client area to match specified size
-			windowRect.left = 0;
-			windowRect.top = 0;
-			windowRect.right = width;
-			windowRect.bottom = height;
-			if (AdjustWindowRectExForDpi(&windowRect, WIN_STYLE, FALSE, WIN_STYLE_EX, dpi) == 0)
-				throw ZE_WIN_EXCEPT_LAST();
-			windowRect.right -= windowRect.left;
-			windowRect.bottom -= windowRect.top;
+			window.windowRect.left = 0;
+			window.windowRect.top = 0;
+			window.windowRect.right = width;
+			window.windowRect.bottom = height;
+			ZE_WIN_RET_FAILED_LAST_EXPECT(AdjustWindowRectExForDpi(&window.windowRect, WIN_STYLE, FALSE, WIN_STYLE_EX, dpi) == 0);
+			window.windowRect.right -= window.windowRect.left;
+			window.windowRect.bottom -= window.windowRect.top;
 
 			// Adjust window position to desktop window
-			RECT desktop = { 0 };
-			if (GetClientRect(GetDesktopWindow(), &desktop) == 0)
-				throw ZE_WIN_EXCEPT_LAST();
-			windowRect.left = (desktop.right - windowRect.right) / 2;
-			windowRect.top = (desktop.bottom - windowRect.bottom) / 2;
+			RECT desktop = {};
+			ZE_WIN_RET_FAILED_LAST_EXPECT(GetClientRect(GetDesktopWindow(), &desktop) == 0);
+			window.windowRect.left = (desktop.right - window.windowRect.right) / 2;
+			window.windowRect.top = (desktop.bottom - window.windowRect.bottom) / 2;
 		}
 
-		wndHandle = CreateWindowExW(WIN_STYLE_EX, Utils::ToUTF16(Settings::ENGINE_NAME).c_str(),
-			Utils::ToUTF16(name).c_str(), WIN_STYLE, windowRect.left, windowRect.top,
-			GetWidth(), GetHeight(), nullptr, nullptr, wndClass.GetInstance(), this);
-		if (wndHandle == nullptr)
-			throw ZE_WIN_EXCEPT_LAST();
+		window.wndHandle = CreateWindowExW(WIN_STYLE_EX, Utils::ToUTF16(Settings::ENGINE_NAME).c_str(),
+			Utils::ToUTF16(name).c_str(), WIN_STYLE, window.windowRect.left, window.windowRect.top,
+			window.windowRect.right, window.windowRect.bottom, nullptr, nullptr, wndClass.GetInstance(), &window);
+		ZE_WIN_RET_FAILED_LAST_EXPECT(window.wndHandle == nullptr);
 
 		if (width == 0 || height == 0)
 		{
-			ShowWindow(wndHandle, SW_SHOWMAXIMIZED);
+			ShowWindow(window.wndHandle, SW_SHOWMAXIMIZED);
 			// Get maximized client area
-			if (GetClientRect(wndHandle, &windowRect) == 0)
-				throw ZE_WIN_EXCEPT_LAST();
+			ZE_WIN_RET_FAILED_LAST_EXPECT(GetClientRect(window.wndHandle, &window.windowRect) == 0);
 		}
 		else
-			ShowWindow(wndHandle, SW_SHOW);
-		ImGui_ImplWin32_Init(wndHandle);
+			ShowWindow(window.wndHandle, SW_SHOW);
+		[[maybe_unused]] bool status = ImGui_ImplWin32_Init(window.wndHandle);
+		ZE_ASSERT(status, "Failed to initialize ImGui Win32 backend!");
 
-		RAWINPUTDEVICE rid;
+		RAWINPUTDEVICE rid = {};
 		rid.usUsagePage = 1; // Mouse page
 		rid.usUsage = 2; // Mouse usage
 		rid.dwFlags = 0;
 		rid.hwndTarget = nullptr;
-		if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
-			throw ZE_WIN_EXCEPT_LAST();
+		ZE_WIN_RET_FAILED_LAST_EXPECT(RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE);
+
+		return window;
 	}
 
 	std::pair<bool, int> Window::ProcessMessage() noexcept
 	{
-		MSG msg;
+		MSG msg = {};
 		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
@@ -343,10 +364,9 @@ namespace ZE::Platform::WinAPI
 		return { false, 0 };
 	}
 
-	void Window::SetTitle(std::string_view title)
+	Status Window::SetTitle(std::string_view title) noexcept
 	{
-		if (SetWindowTextW(wndHandle, Utils::ToUTF16(title).c_str()) == 0)
-			throw ZE_WIN_EXCEPT_LAST();
+		ZE_WIN_RET_FAILED_LAST(SetWindowTextW(wndHandle, Utils::ToUTF16(title).c_str()) == 0);
 	}
 
 	void Window::NewImGuiFrame() const noexcept

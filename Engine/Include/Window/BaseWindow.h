@@ -1,8 +1,6 @@
 #pragma once
 #include "Keyboard.h"
 #include "Mouse.h"
-#include "imgui.h"
-#include <bitset>
 
 namespace ZE::Window
 {
@@ -24,8 +22,11 @@ namespace ZE::Window
 
 	public:
 		BaseWindow() noexcept { flags[0] = true; flags[1] = false; }
-		ZE_CLASS_DELETE(BaseWindow);
+		ZE_CLASS_MOVE(BaseWindow);
 		virtual ~BaseWindow() = default;
+
+		// All MainWindow classes must implement this static creation method
+		//static Expected<BaseWindow> Create(std::string_view name, U32 width = 0, U32 height = 0) noexcept;
 
 		constexpr Keyboard& Keyboard() noexcept { return keyboard; }
 		constexpr Mouse& Mouse() noexcept { return mouse; }
@@ -40,10 +41,9 @@ namespace ZE::Window
 		virtual U32 GetWidth() const noexcept = 0;
 		virtual U32 GetHeight() const noexcept = 0;
 		virtual bool IsMonitorChanged() const noexcept = 0;
-		virtual void Init(std::string_view name, U32 width = 0, U32 height = 0) = 0;
 		virtual std::pair<bool, int> ProcessMessage() noexcept = 0;
 		virtual void ProcessMonitorChange() noexcept = 0;
-		virtual void SetTitle(std::string_view title) = 0;
+		virtual Status SetTitle(std::string_view title) noexcept = 0;
 		virtual void NewImGuiFrame() const noexcept = 0;
 	};
 }

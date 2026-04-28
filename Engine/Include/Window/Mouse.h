@@ -26,18 +26,18 @@ namespace ZE::Window
 			};
 			struct RawInput
 			{
-				S32 dX;
-				S32 dY;
+				S32 dX = 0;
+				S32 dY = 0;
 			};
 
 		private:
-			Type type;
-			S32 x;
-			S32 y;
-			RawInput delta;
-			bool left;
-			bool right;
-			bool wheel;
+			Type type = Type::Leave;
+			S32 x = 0;
+			S32 y = 0;
+			RawInput delta = {};
+			bool left = false;
+			bool right = false;
+			bool wheel = false;
 
 		public:
 			constexpr Event(Type type, const Mouse& mouse, S32 x, S32 y) noexcept
@@ -89,7 +89,7 @@ namespace ZE::Window
 
 	public:
 		Mouse() = default;
-		ZE_CLASS_DELETE(Mouse);
+		ZE_CLASS_MOVE(Mouse);
 		~Mouse() = default;
 
 		constexpr std::pair<S32, S32> GetPosition() const noexcept { return { GetX(), GetY() }; }
@@ -101,7 +101,7 @@ namespace ZE::Window
 		constexpr bool IsInWindow() const noexcept { return window; }
 
 		bool IsInput() const noexcept { return static_cast<bool>(eventBuffer.size()); }
-		void Flush() noexcept { eventBuffer = std::deque<Event>{}; }
+		void Flush() noexcept { eventBuffer.clear(); }
 
 		std::optional<Event> Read() noexcept;
 	};
