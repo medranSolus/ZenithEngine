@@ -48,11 +48,11 @@
 		std::error_code ec = {};
 
 	public:
-		Status() noexcept = default;
-		Status(const Status&) noexcept = default;
-		Status(Status&&) noexcept = default;
-		Status& operator=(const Status&) noexcept = default;
-		Status& operator=(Status&&) noexcept = default;
+		Status() = default;
+		Status(const Status&) = default;
+		Status(Status&&) = default;
+		Status& operator=(const Status&) = default;
+		Status& operator=(Status&&) = default;
 		~Status() = default;
 
 		constexpr Status(const std::error_code& e) noexcept : ec(e) {}

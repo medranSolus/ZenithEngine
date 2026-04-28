@@ -58,8 +58,8 @@ namespace ZE::Allocator
 		static constexpr U16 SMALL_BUFFER_SIZE = 1 << (MEMORY_CLASS_SHIFT + 1);
 		static constexpr U8 MAX_MEMORY_CLASSES = 65 - MEMORY_CLASS_SHIFT;
 
-		BlockAllocator& blockAllocator;
-		ChunkAllocator& chunkAllocator;
+		std::shared_ptr<BlockAllocator> blockAllocator;
+		std::shared_ptr<ChunkAllocator> chunkAllocator;
 
 		U64 chunkSize = 0;
 		U32 chunkSizeDivisor = 0;
@@ -101,7 +101,7 @@ namespace ZE::Allocator
 		void MergeBlock(Block* block, Block* prev) noexcept;
 
 	public:
-		constexpr ChunkedTLSF(BlockAllocator& blockAllocator, ChunkAllocator& chunkAllocator, bool singleChunk = false) noexcept
+		constexpr ChunkedTLSF(std::shared_ptr<BlockAllocator> blockAllocator, std::shared_ptr<ChunkAllocator> chunkAllocator, bool singleChunk = false) noexcept
 			: blockAllocator(blockAllocator), chunkAllocator(chunkAllocator) { SetSingleChunk(singleChunk); }
 		ZE_CLASS_MOVE(ChunkedTLSF);
 		constexpr ~ChunkedTLSF();
@@ -176,16 +176,16 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	typename ZE_CHUNKED_TLSF_TYPE::Block* ZE_CHUNKED_TLSF_TYPE::AllocWithChunk(U64 size, void* memoryUserData) noexcept
 	{
-		TLSFMemoryChunk<Memory>* newChunk = chunkAllocator.Alloc();
+		TLSFMemoryChunk<Memory>* newChunk = chunkAllocator->Alloc();
 		if (Status code = TLSFMemoryChunk<Memory>::InitMemory(newChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
 		{
 			ZE_CODE_ERROR(code, "Failed to initialize new TLSF memory chunk!");
-			chunkAllocator.Free(newChunk);
+			chunkAllocator->Free(newChunk);
 			return nullptr;
 		}
 
 		// Create new taken block
-		Block* newBlock = blockAllocator.Alloc();
+		Block* newBlock = blockAllocator->Alloc();
 		newBlock->Size = size;
 		newBlock->ChunkHandle = newChunk;
 		newBlock->MarkTaken();
@@ -199,7 +199,7 @@ namespace ZE::Allocator
 			Block* oldNullBlock = nullBlock;
 			oldNullBlock->MarkTaken();
 
-			nullBlock = blockAllocator.Alloc();
+			nullBlock = blockAllocator->Alloc();
 			nullBlock->MarkFree();
 			InsertFreeBlock(oldNullBlock);
 		}
@@ -254,7 +254,7 @@ namespace ZE::Allocator
 			}
 			else
 			{
-				Block* newBlock = blockAllocator.Alloc();
+				Block* newBlock = blockAllocator->Alloc();
 				currentBlock->PrevPhysical = newBlock;
 				prevBlock->NextPhysical = newBlock;
 				newBlock->PrevPhysical = prevBlock;
@@ -276,7 +276,7 @@ namespace ZE::Allocator
 			if (currentBlock == nullBlock)
 			{
 				// Setup new null block
-				nullBlock = blockAllocator.Alloc();
+				nullBlock = blockAllocator->Alloc();
 				nullBlock->Size = 0;
 				nullBlock->Offset = currentBlock->Offset + size;
 				nullBlock->ChunkHandle = currentBlock->ChunkHandle;
@@ -292,7 +292,7 @@ namespace ZE::Allocator
 			ZE_ASSERT((currentBlock->Size + currentBlock->Offset) <= chunkSize, "Resource too big for given range!");
 
 			// Create new free block
-			Block* newBlock = blockAllocator.Alloc();
+			Block* newBlock = blockAllocator->Alloc();
 			newBlock->Size = currentBlock->Size - size;
 			newBlock->Offset = currentBlock->Offset + size;
 			newBlock->ChunkHandle = currentBlock->ChunkHandle;
@@ -407,7 +407,7 @@ namespace ZE::Allocator
 		block->PrevPhysical = prev->PrevPhysical;
 		if (block->PrevPhysical)
 			block->PrevPhysical->NextPhysical = block;
-		blockAllocator.Free(prev);
+		blockAllocator->Free(prev);
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
@@ -432,7 +432,7 @@ namespace ZE::Allocator
 		firstListSize = 1U << (firstListSizePower != 0 ? firstListSizePower : SECOND_LEVEL_INDEX);
 		ZE_ASSERT(firstListSize <= SMALL_BUFFER_SIZE, "First segregated list should be big enough to create span across all bytes of small buffers!");
 
-		nullBlock = blockAllocator.Alloc();
+		nullBlock = blockAllocator->Alloc();
 		nullBlock->Size = chunkSize;
 		nullBlock->ChunkHandle = nullptr; // Lazy alloc: create first chunk only when requested (helpful in multiple pool scenario)
 		nullBlock->MarkFree();
@@ -451,10 +451,10 @@ namespace ZE::Allocator
 		// Create memory chunk as it will only be single one inside
 		if (IsSingleChunk())
 		{
-			TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
+			TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator->Alloc();
 			if (Status code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, initialChunkSize, memoryUserData))
 			{
-				chunkAllocator.Free(firstChunk);
+				chunkAllocator->Free(firstChunk);
 				return code;
 			}
 			nullBlock->ChunkHandle = firstChunk;
@@ -484,11 +484,11 @@ namespace ZE::Allocator
 				// Lazy allocation, create memory chunk on first request
 				if (nullBlock->ChunkHandle == nullptr)
 				{
-					TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator.Alloc();
+					TLSFMemoryChunk<Memory>* firstChunk = chunkAllocator->Alloc();
 					if (Status code = TLSFMemoryChunk<Memory>::InitMemory(firstChunk, chunkFlags, chunkSize * chunkSizeDivisor, memoryUserData))
 					{
 						ZE_CODE_ERROR(code, "Failed to lazy-initialize TLSF memory chunk for null block!");
-						chunkAllocator.Free(firstChunk);
+						chunkAllocator->Free(firstChunk);
 						return nullptr;
 					}
 					nullBlock->ChunkHandle = firstChunk;
@@ -591,7 +591,7 @@ namespace ZE::Allocator
 					if (IsFreeChunk())
 					{
 						TLSFMemoryChunk<Memory>::DestroyMemory(next->ChunkHandle, memoryUserData);
-						chunkAllocator.Free(next->ChunkHandle);
+						chunkAllocator->Free(next->ChunkHandle);
 						next->ChunkHandle = nullptr;
 
 						// Delete whole block
@@ -630,7 +630,7 @@ namespace ZE::Allocator
 		if (chunkSizeDivisor != 0 && nullBlock->ChunkHandle)
 		{
 			TLSFMemoryChunk<Memory>::DestroyMemory(nullBlock->ChunkHandle, memoryUserData);
-			chunkAllocator.Free(nullBlock->ChunkHandle);
+			chunkAllocator->Free(nullBlock->ChunkHandle);
 			nullBlock->ChunkHandle = nullptr;
 		}
 	}

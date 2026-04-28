@@ -68,15 +68,6 @@ namespace ZE
 #define __FILENAME__ ZE::GetFilename(__FILE__)
 #endif
 
-// Instantly return if received error code
-#define ZE_CODE_RET_FAILED(call) do { if (Status __code = (call)) return __code; } while (false)
-// Instantly return if received error code (wrapped in std::unexpected)
-#define ZE_CODE_RET_FAILED_EXPECT(call) do { if (Status __code = (call)) return std::unexpected(__code); } while (false)
-// Instantly return if received error code instead of expected object
-#define ZE_EXPECT_RET_FAILED(expectedVar, call) do { auto __exp = (call); if (!__exp) return std::unexpected(__exp.error()); expectedVar = std::move(*__exp); } while (false)
-// Instantly return if received error code instead of expected object (return error code only)
-#define ZE_EXPECT_RET_FAILED_CODE(expectedVar, call) do { auto __exp = (call); if (!__exp) return __exp.error(); expectedVar = std::move(*__exp); } while (false)
-
 // Log informational message base on given code
 #define ZE_CODE_INFO(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)
 // Log warning message base on given code
@@ -85,6 +76,19 @@ namespace ZE
 #define ZE_CODE_ERROR(code, msg) do { ZE_BREAK(); ZE::Logger::CodeError(code, msg, __LINE__, __FILENAME__); } while (false)
 // Log critical error message base on given code
 #define ZE_CODE_CRITICAL(code, msg) do { ZE_BREAK(); ZE::Logger::CodeCritical(code, msg, __LINE__, __FILENAME__); } while (false)
+
+// Instantly return if received error code
+#define ZE_CODE_RET_FAILED(call) do { if (Status __code = (call)) return __code; } while (false)
+// Instantly return if received error code (wrapped in std::unexpected)
+#define ZE_CODE_RET_FAILED_EXPECT(call) do { if (Status __code = (call)) return std::unexpected(__code); } while (false)
+// Instantly return if received error code and log aprioriate error
+#define ZE_LOG_RET_FAILED(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); return __code; } } while (false)
+// Instantly return if received error code (wrapped in std::unexpected) and log aprioriate error
+#define ZE_LOG_RET_FAILED_EXPECT(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); return std::unexpected(__code); } } while (false)
+// Instantly return if received error code instead of expected object
+#define ZE_EXPECT_RET_FAILED(expectedVar, call) do { auto __exp = (call); if (!__exp) return std::unexpected(__exp.error()); expectedVar = std::move(*__exp); } while (false)
+// Instantly return if received error code instead of expected object (return error code only)
+#define ZE_EXPECT_RET_FAILED_CODE(expectedVar, call) do { auto __exp = (call); if (!__exp) return __exp.error(); expectedVar = std::move(*__exp); } while (false)
 
 #if !_ZE_MODE_RELEASE
 // Log informational message base on given code (silenced in release build)

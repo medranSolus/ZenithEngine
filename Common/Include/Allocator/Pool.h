@@ -23,7 +23,7 @@ namespace ZE::Allocator
 			U64 Allocated = 0;
 		};
 
-		const U64 firstBlockCapacity;
+		U64 firstBlockCapacity;
 		bool freeBlock = false;
 		std::vector<ItemBlock> itemBlocks;
 
