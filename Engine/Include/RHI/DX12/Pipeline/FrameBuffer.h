@@ -16,13 +16,13 @@ namespace ZE::RHI::DX12::Pipeline
 	{
 		struct ResourceInitInfo
 		{
-			RID Handle;
-			U32 Chunks;
-			U32 ChunkOffset;
-			D3D12_RESOURCE_DESC1 Desc;
-			D3D12_CLEAR_VALUE ClearVal;
-			U32 ByteStride;
-			std::bitset<9> Flags;
+			RID Handle = INVALID_RID;
+			U32 Chunks = 0;
+			U32 ChunkOffset = 0;
+			D3D12_RESOURCE_DESC1 Desc = {};
+			D3D12_CLEAR_VALUE ClearVal = {};
+			U32 ByteStride = 0;
+			std::bitset<9> Flags = 0;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -46,12 +46,12 @@ namespace ZE::RHI::DX12::Pipeline
 		struct BufferData
 		{
 			DX::ComPtr<IResource> Resource;
-			UInt2 Size;
-			U16 Array;
-			U16 Mips;
-			PixelFormat Format;
-			D3D12_RESOURCE_DIMENSION Dimenions;
-			std::bitset<4> Flags;
+			UInt2 Size = {};
+			U16 Array = 0;
+			U16 Mips = 0;
+			PixelFormat Format = PixelFormat::Unknown;
+			D3D12_RESOURCE_DIMENSION Dimenions = D3D12_RESOURCE_DIMENSION_UNKNOWN;
+			std::bitset<4> Flags = 0;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -67,20 +67,20 @@ namespace ZE::RHI::DX12::Pipeline
 		};
 		struct HandleSRV
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE CpuShaderVisibleHandle;
-			D3D12_GPU_DESCRIPTOR_HANDLE GpuShaderVisibleHandle;
+			D3D12_CPU_DESCRIPTOR_HANDLE CpuShaderVisibleHandle = {};
+			D3D12_GPU_DESCRIPTOR_HANDLE GpuShaderVisibleHandle = {};
 		};
 		struct HandleUAV
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle;
-			D3D12_CPU_DESCRIPTOR_HANDLE CpuShaderVisibleHandle;
-			D3D12_GPU_DESCRIPTOR_HANDLE GpuShaderVisibleHandle;
+			D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle = {};
+			D3D12_CPU_DESCRIPTOR_HANDLE CpuShaderVisibleHandle = {};
+			D3D12_GPU_DESCRIPTOR_HANDLE GpuShaderVisibleHandle = {};
 		};
 
 #if !_ZE_MODE_RELEASE
 		mutable bool isRasterActive = false;
 #endif
-		RID resourceCount;
+		RID resourceCount = 0;
 		Ptr<BufferData> resources;
 		Ptr<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDsvHandles;
 		Ptr<Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>> rtvDsvMips; // No backbuffer
@@ -93,8 +93,9 @@ namespace ZE::RHI::DX12::Pipeline
 		DX::ComPtr<IHeap> mainHeap;
 		DX::ComPtr<IHeap> uavHeap;
 		DX::ComPtr<IHeap> bufferHeap;
-		DescriptorInfo descInfo;
-		DescriptorInfo descInfoCpu;
+		DescriptorInfo descInfo = {};
+		DescriptorInfo descInfoCpu = {};
+		Device* srcDev = nullptr;
 
 #if !_ZE_MODE_RELEASE
 		static void PrintMemory(std::string&& memID, U32 levelCount, U64 heapSize,
@@ -113,9 +114,10 @@ namespace ZE::RHI::DX12::Pipeline
 
 	public:
 		FrameBuffer() = default;
-		FrameBuffer(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc);
-		ZE_CLASS_DELETE(FrameBuffer);
+		ZE_CLASS_MOVE(FrameBuffer);
 		~FrameBuffer();
+
+		static Expected<FrameBuffer> Create(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc) noexcept;
 
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
 		constexpr U16 GetArraySize(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Array; }
@@ -168,16 +170,13 @@ namespace ZE::RHI::DX12::Pipeline
 
 		void RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
 
-		void MapResource(GFX::Device& dev, RID rid, void** ptr) const;
+		Status MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept;
 		void UnmapResource(RID rid) const noexcept;
 
 		FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept;
 
-		void ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
-			RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const;
 		void ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept;
-		void SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
-		void Free(GFX::Device& dev) noexcept;
+		Status SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 
 		// Gfx API Internal
 

@@ -1,7 +1,5 @@
 #include "RHI/DX12/Pipeline/FrameBuffer.h"
-#include "Data/Camera.h"
-#include "GFX/FfxApiFunctions.h"
-#include "GFX/XeSSException.h"
+#include "GFX/ExternalInterface.h"
 
 namespace ZE::RHI::DX12::Pipeline
 {
@@ -59,7 +57,10 @@ namespace ZE::RHI::DX12::Pipeline
 					image[offset + p] = PixelVal::White;
 			}
 		}
-		print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "B.png");
+		if (!print.Save("memory_print_dx12_" + memID + "_" + std::to_string(heapSize) + "B.png"))
+		{
+			ZE_FAIL("Failed to save framebuffer memory print image!");
+		}
 	}
 #endif
 
@@ -186,15 +187,15 @@ namespace ZE::RHI::DX12::Pipeline
 		switch (desc.Type)
 		{
 		default:
-		ZE_ENUM_UNHANDLED();
-		case GFX::Pipeline::BarrierType::Immediate:
-		break;
+			ZE_ENUM_UNHANDLED();
+			case GFX::Pipeline::BarrierType::Immediate:
+			break;
 		case GFX::Pipeline::BarrierType::SplitBegin:
-		barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
-		break;
+			barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
+			break;
 		case GFX::Pipeline::BarrierType::SplitEnd:
-		barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
-		break;
+			barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
+			break;
 		}
 		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
 		barrier.AccessAfter = GetBarrierAccess(desc.AccessAfter);
@@ -249,15 +250,15 @@ namespace ZE::RHI::DX12::Pipeline
 		switch (desc.Type)
 		{
 		default:
-		ZE_ENUM_UNHANDLED();
-		case GFX::Pipeline::BarrierType::Immediate:
-		break;
+			ZE_ENUM_UNHANDLED();
+			case GFX::Pipeline::BarrierType::Immediate:
+			break;
 		case GFX::Pipeline::BarrierType::SplitBegin:
-		barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
-		break;
+			barrier.SyncAfter = D3D12_BARRIER_SYNC_SPLIT;
+			break;
 		case GFX::Pipeline::BarrierType::SplitEnd:
-		barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
-		break;
+			barrier.SyncBefore = D3D12_BARRIER_SYNC_SPLIT;
+			break;
 		}
 		barrier.AccessBefore = GetBarrierAccess(desc.AccessBefore);
 		barrier.AccessAfter = GetBarrierAccess(desc.AccessAfter);
@@ -296,18 +297,19 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.GetList()->Barrier(groupIndex, groups);
 	}
 
-	FrameBuffer::FrameBuffer(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc)
+	Expected<FrameBuffer> FrameBuffer::Create(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc) noexcept
 	{
 		ZE_ASSERT(desc.Resources.size() > 0, "Empty FrameBuffer!");
 		ZE_ASSERT(desc.Resources.size() == desc.ResourceLifetimes.size(), "Not every resource have it's associated lifetime!");
 		ZE_ASSERT(desc.PassLevelCount > 0, "At least single pass level is required for passes to execute!");
 
-		ZE_DX_ENABLE_ID(dev.Get().dx12);
 		IDevice* device = dev.Get().dx12.GetDevice();
 		const bool tightAlignment = dev.Get().dx12.IsTightAlignment();
 		const U64 minimalChunkSize = tightAlignment ? D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT : D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
-		resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
+		FrameBuffer frameBuffer;
+		frameBuffer.srcDev = &dev.Get().dx12;
+		frameBuffer.resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
 		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
 		RID dsvCount = 0, dsvAdditionalMipsCount = 0;
 		RID srvCount = 0;
@@ -325,7 +327,7 @@ namespace ZE::RHI::DX12::Pipeline
 		resDesc.SamplerFeedbackMipRegion.Height = 0;
 		resDesc.SamplerFeedbackMipRegion.Depth = 0;
 
-		for (RID i = 1; i < resourceCount; ++i)
+		for (RID i = 1; i < frameBuffer.resourceCount; ++i)
 		{
 			const auto& res = desc.Resources.at(i);
 			ZE_ASSERT_WARN(res.Flags & GFX::Pipeline::FrameResourceFlag::InternalResourceActive, "Resource don't contain active flag! Redundant memory will be allocated on CPU.");
@@ -549,9 +551,13 @@ namespace ZE::RHI::DX12::Pipeline
 				heapDesc.SizeInBytes = AllocateResources(begin, resourcesInfo.end(), desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
 
 				heapDesc.Flags |= D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-				ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&bufferHeap)));
-				ZE_DX_SET_ID(bufferHeap, "GFX::Pipeline::FrameBuffer heap - Buffer");
-				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(bufferHeap.GetAddressOf()), &residencyPriority));
+				ZE_DX_RET_FAILED_EXPECT(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&frameBuffer.bufferHeap)));
+				ZE_DX_SET_ID(frameBuffer.bufferHeap, "GFX::Pipeline::FrameBuffer heap - Buffer");
+				HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.bufferHeap.GetAddressOf()), &residencyPriority);
+				if (FAILED(hr))
+				{
+					ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer buffer heap!");
+				}
 				heapDesc.Flags &= ~D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 
 #if !_ZE_MODE_RELEASE
@@ -573,9 +579,13 @@ namespace ZE::RHI::DX12::Pipeline
 				heapDesc.SizeInBytes = AllocateResources(begin, end, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
 
 				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
-				ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&uavHeap)));
-				ZE_DX_SET_ID(uavHeap, "GFX::Pipeline::FrameBuffer heap - UAV");
-				ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(uavHeap.GetAddressOf()), &residencyPriority));
+				ZE_DX_RET_FAILED_EXPECT(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&frameBuffer.uavHeap)));
+				ZE_DX_SET_ID(frameBuffer.uavHeap, "GFX::Pipeline::FrameBuffer heap - UAV");
+				HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.uavHeap.GetAddressOf()), &residencyPriority);
+				if (FAILED(hr))
+				{
+					ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer UAV heap!");
+				}
 				heapDesc.Flags &= ~D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
 				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
 
@@ -603,9 +613,13 @@ namespace ZE::RHI::DX12::Pipeline
 
 		// Allocate resources and create main heap
 		heapDesc.SizeInBytes = AllocateResources(resourcesInfo.begin(), resourcesInfo.begin() + mainHeapResourceCount, desc.ResourceLifetimes, desc.PassLevelCount, desc.Flags, minimalChunkSize);
-		ZE_DX_THROW_FAILED(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&mainHeap)));
-		ZE_DX_SET_ID(mainHeap, "GFX::Pipeline::FrameBuffer heap - main");
-		ZE_DX_THROW_FAILED(device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(mainHeap.GetAddressOf()), &residencyPriority));
+		ZE_DX_RET_FAILED_EXPECT(device->CreateHeap1(&heapDesc, nullptr, IID_PPV_ARGS(&frameBuffer.mainHeap)));
+		ZE_DX_SET_ID(frameBuffer.mainHeap, "GFX::Pipeline::FrameBuffer heap - main");
+		HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.mainHeap.GetAddressOf()), &residencyPriority);
+		if (FAILED(hr))
+		{
+			ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer main heap!");
+		}
 
 #if !_ZE_MODE_RELEASE
 		if (desc.Flags & GFX::Pipeline::FrameBufferFlag::DebugMemoryPrint)
@@ -621,15 +635,15 @@ namespace ZE::RHI::DX12::Pipeline
 			});
 
 		// Create all resources and fill their info
-		resources = new BufferData[resourceCount];
-		resources[BACKBUFFER_RID].Resource = nullptr;
-		resources[BACKBUFFER_RID].Size = desc.Resources.front().GetResolutionAdjustedSizes();
-		resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
-		resources[BACKBUFFER_RID].Mips = desc.Resources.front().MipLevels;
-		resources[BACKBUFFER_RID].Format = desc.Resources.front().Format;
+		frameBuffer.resources = new BufferData[frameBuffer.resourceCount];
+		frameBuffer.resources[BACKBUFFER_RID].Resource = nullptr;
+		frameBuffer.resources[BACKBUFFER_RID].Size = desc.Resources.front().GetResolutionAdjustedSizes();
+		frameBuffer.resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
+		frameBuffer.resources[BACKBUFFER_RID].Mips = desc.Resources.front().MipLevels;
+		frameBuffer.resources[BACKBUFFER_RID].Format = desc.Resources.front().Format;
 		for (auto& res : resourcesInfo)
 		{
-			auto& data = resources[res.Handle];
+			auto& data = frameBuffer.resources[res.Handle];
 			if (res.IsMemoryOnlyRegion())
 			{
 				data.Size = { static_cast<U32>(res.Desc.Width), static_cast<U32>(res.Desc.Width >> 32) };
@@ -652,7 +666,7 @@ namespace ZE::RHI::DX12::Pipeline
 			{
 				if (tightAlignment)
 					res.Desc.Alignment = 0;
-				ZE_DX_THROW_FAILED(device->CreatePlacedResource2(res.IsHeapBuffer() ? bufferHeap.Get() : (res.IsHeapUAV() ? uavHeap.Get() : mainHeap.Get()),
+				ZE_DX_RET_FAILED_EXPECT(device->CreatePlacedResource2(res.IsHeapBuffer() ? frameBuffer.bufferHeap.Get() : (res.IsHeapUAV() ? frameBuffer.uavHeap.Get() : frameBuffer.mainHeap.Get()),
 					res.ChunkOffset * minimalChunkSize, &res.Desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
 					res.Desc.Flags & (D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? &res.ClearVal : nullptr,
 					0, nullptr, IID_PPV_ARGS(&data.Resource)));
@@ -681,33 +695,35 @@ namespace ZE::RHI::DX12::Pipeline
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = rtvCount + rtvAdditionalMipsCount;
-		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)));
+		ZE_DX_RET_FAILED_EXPECT(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&frameBuffer.rtvDescHeap)));
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 		descHeapDesc.NumDescriptors = dsvCount + dsvAdditionalMipsCount;
-		ZE_DX_THROW_FAILED(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&dsvDescHeap)));
+		ZE_DX_RET_FAILED_EXPECT(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&frameBuffer.dsvDescHeap)));
 
 		// Prepare descriptors creation
-		rtvDsvHandles = new D3D12_CPU_DESCRIPTOR_HANDLE[resourceCount];
-		srvHandles = new HandleSRV[resourceCount];
-		uavHandles = new HandleUAV[resourceCount - 1];
+		frameBuffer.rtvDsvHandles = new D3D12_CPU_DESCRIPTOR_HANDLE[frameBuffer.resourceCount];
+		frameBuffer.srvHandles = new HandleSRV[frameBuffer.resourceCount];
+		frameBuffer.uavHandles = new HandleUAV[frameBuffer.resourceCount - 1];
 		if (rtvAdditionalMipsCount + dsvAdditionalMipsCount)
-			rtvDsvMips = new Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>[resourceCount - 1];
+			frameBuffer.rtvDsvMips = new Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>[frameBuffer.resourceCount - 1];
 		if (uavAdditionalMipsCount)
-			uavMips = new Ptr<HandleUAV>[resourceCount - 1];
+			frameBuffer.uavMips = new Ptr<HandleUAV>[frameBuffer.resourceCount - 1];
+
+		const RID uavDescCount = uavCount + uavAdditionalMipsCount - memoryOnlyUavCount;
+		ZE_EXPECT_RET_FAILED(frameBuffer.descInfo, dev.Get().dx12.AllocDescs(srvCount + uavDescCount));
+		if (uavDescCount)
+		{
+			ZE_EXPECT_RET_FAILED(frameBuffer.descInfoCpu, dev.Get().dx12.AllocDescs(uavDescCount, false));
+		}
 
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		const U32 dsvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 		const U32 srvUavDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
-		const RID uavDescCount = uavCount + uavAdditionalMipsCount - memoryOnlyUavCount;
-		descInfo = dev.Get().dx12.AllocDescs(srvCount + uavDescCount);
-		if (uavDescCount)
-			descInfoCpu = dev.Get().dx12.AllocDescs(uavDescCount, false);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandle = descInfo.CPU;
-		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = descInfo.GPU;
-		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = descInfoCpu.CPU;
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = frameBuffer.rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = frameBuffer.dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandle = frameBuffer.descInfo.CPU;
+		D3D12_GPU_DESCRIPTOR_HANDLE srvUavShaderVisibleHandleGpu = frameBuffer.descInfo.GPU;
+		D3D12_CPU_DESCRIPTOR_HANDLE uavHandle = frameBuffer.descInfoCpu.CPU;
 
 		// Create demanded views for each resource
 		for (const auto& res : resourcesInfo)
@@ -722,7 +738,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-					ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.Desc.DepthOrArraySize > 1)
@@ -774,16 +790,16 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					}
 
-					ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
-					rtvDsvHandles[res.Handle] = rtvHandle;
+					ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateRenderTargetView(frameBuffer.resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
+					frameBuffer.rtvDsvHandles[res.Handle] = rtvHandle;
 					rtvHandle.ptr += rtvDescSize;
 
 					// Generate RT views for proper mips
 					if (res.Desc.MipLevels > 1)
 					{
-						auto& targetResourceMip = rtvDsvMips[res.Handle - 1];
+						auto& targetResourceMip = frameBuffer.rtvDsvMips[res.Handle - 1];
 						targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
-						targetResourceMip[0] = rtvDsvHandles[res.Handle];
+						targetResourceMip[0] = frameBuffer.rtvDsvHandles[res.Handle];
 						for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 						{
 							switch (res.Desc.Dimension)
@@ -813,7 +829,7 @@ namespace ZE::RHI::DX12::Pipeline
 							break;
 							}
 
-							ZE_DX_THROW_FAILED_INFO(device->CreateRenderTargetView(resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
+							ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateRenderTargetView(frameBuffer.resources[res.Handle].Resource.Get(), &rtvDesc, rtvHandle));
 							targetResourceMip[i] = rtvHandle;
 							rtvHandle.ptr += rtvDescSize;
 						}
@@ -855,16 +871,16 @@ namespace ZE::RHI::DX12::Pipeline
 							dsvDesc.Texture1D.MipSlice = 0;
 						}
 					}
-					ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
-					rtvDsvHandles[res.Handle] = dsvHandle;
+					ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateDepthStencilView(frameBuffer.resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
+					frameBuffer.rtvDsvHandles[res.Handle] = dsvHandle;
 					dsvHandle.ptr += dsvDescSize;
 
 					// Generate views for proper mips
 					if (res.Desc.MipLevels > 1)
 					{
-						auto& targetResourceMip = rtvDsvMips[res.Handle - 1];
+						auto& targetResourceMip = frameBuffer.rtvDsvMips[res.Handle - 1];
 						targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
-						targetResourceMip[0] = rtvDsvHandles[res.Handle];
+						targetResourceMip[0] = frameBuffer.rtvDsvHandles[res.Handle];
 						for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 						{
 							if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
@@ -882,14 +898,14 @@ namespace ZE::RHI::DX12::Pipeline
 									dsvDesc.Texture1D.MipSlice = i;
 							}
 
-							ZE_DX_THROW_FAILED_INFO(device->CreateDepthStencilView(resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
+							ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateDepthStencilView(frameBuffer.resources[res.Handle].Resource.Get(), &dsvDesc, dsvHandle));
 							targetResourceMip[i] = dsvHandle;
 							dsvHandle.ptr += dsvDescSize;
 						}
 					}
 				}
 				else
-					rtvDsvHandles[res.Handle].ptr = UINT64_MAX;
+					frameBuffer.rtvDsvHandles[res.Handle].ptr = UINT64_MAX;
 				if ((res.Desc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0)
 				{
 					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -900,7 +916,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-					ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.IsCube())
@@ -981,13 +997,13 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					}
 
-					ZE_DX_THROW_FAILED_INFO(device->CreateShaderResourceView(resources[res.Handle].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
-					srvHandles[res.Handle] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
+					ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateShaderResourceView(frameBuffer.resources[res.Handle].Resource.Get(), &srvDesc, srvUavShaderVisibleHandle));
+					frameBuffer.srvHandles[res.Handle] = { srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 					srvUavShaderVisibleHandle.ptr += srvUavDescSize;
 					srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
 				}
 				else
-					srvHandles[res.Handle].CpuShaderVisibleHandle.ptr = srvHandles[res.Handle].GpuShaderVisibleHandle.ptr = UINT64_MAX;
+					frameBuffer.srvHandles[res.Handle].CpuShaderVisibleHandle.ptr = frameBuffer.srvHandles[res.Handle].GpuShaderVisibleHandle.ptr = UINT64_MAX;
 			}
 		}
 		// Split processing so UAV and SRV descriptors are placed next to each other
@@ -1004,7 +1020,7 @@ namespace ZE::RHI::DX12::Pipeline
 					{
 					default:
 					case D3D12_RESOURCE_DIMENSION_UNKNOWN:
-					ZE_ENUM_UNHANDLED();
+						ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
 						if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
@@ -1059,9 +1075,9 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					}
 
-					ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
+					ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateUnorderedAccessView(frameBuffer.resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
 					device->CopyDescriptorsSimple(1, srvUavShaderVisibleHandle, uavHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-					uavHandles[res.Handle - 1] = { uavHandle, srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
+					frameBuffer.uavHandles[res.Handle - 1] = { uavHandle, srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 					uavHandle.ptr += srvUavDescSize;
 					srvUavShaderVisibleHandle.ptr += srvUavDescSize;
 					srvUavShaderVisibleHandleGpu.ptr += srvUavDescSize;
@@ -1069,9 +1085,9 @@ namespace ZE::RHI::DX12::Pipeline
 					// Generate views for proper mips
 					if (res.Desc.MipLevels > 1)
 					{
-						auto& targetResourceMip = uavMips[res.Handle - 1];
+						auto& targetResourceMip = frameBuffer.uavMips[res.Handle - 1];
 						targetResourceMip = new HandleUAV[res.Desc.MipLevels];
-						targetResourceMip[0] = uavHandles[res.Handle - 1];
+						targetResourceMip[0] = frameBuffer.uavHandles[res.Handle - 1];
 
 						D3D12_CPU_DESCRIPTOR_HANDLE dstStart = srvUavShaderVisibleHandle;
 						D3D12_CPU_DESCRIPTOR_HANDLE srcStart = uavHandle;
@@ -1101,10 +1117,10 @@ namespace ZE::RHI::DX12::Pipeline
 								break;
 							}
 							default:
-							break;
+								break;
 							}
 
-							ZE_DX_THROW_FAILED_INFO(device->CreateUnorderedAccessView(resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
+							ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateUnorderedAccessView(frameBuffer.resources[res.Handle].Resource.Get(), nullptr, &uavDesc, uavHandle));
 							targetResourceMip[i] = { uavHandle, srvUavShaderVisibleHandle, srvUavShaderVisibleHandleGpu };
 							uavHandle.ptr += srvUavDescSize;
 							srvUavShaderVisibleHandle.ptr += srvUavDescSize;
@@ -1114,58 +1130,76 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 				}
 				else
-					uavHandles[res.Handle - 1].CpuHandle.ptr = uavHandles[res.Handle - 1].CpuShaderVisibleHandle.ptr = uavHandles[res.Handle - 1].GpuShaderVisibleHandle.ptr = UINT64_MAX;
+					frameBuffer.uavHandles[res.Handle - 1].CpuHandle.ptr = frameBuffer.uavHandles[res.Handle - 1].CpuShaderVisibleHandle.ptr = frameBuffer.uavHandles[res.Handle - 1].GpuShaderVisibleHandle.ptr = UINT64_MAX;
 			}
 		}
 
 		// Finish XeSS initialization with correct regions
-		auto xessRes = dev.Get().dx12.GetXeSSAliasableResources();
-		if (xessRes.first != INVALID_RID || xessRes.second != INVALID_RID)
+		GFX::XeSSInterface* xess = GFX::ExternalInterface::GetConnectionXeSS();
+		if (xess && xess->IsAliasableResourcesSupported())
 		{
-			ZE_XESS_ENABLE();
+			IHeap* tempBuffHeap = nullptr;
+			IHeap* tempTexHeap = nullptr;
+			U64 buffOffset = 0;
+			U64 texOffset = 0;
 
-			xess_d3d12_init_params_t initParams = {};
-			initParams.outputResolution = dev.Get().dx12.GetXeSSTargetResolution();
-			initParams.qualitySetting = dev.Get().dx12.GetXeSSQuality();
-			initParams.initFlags = dev.Get().dx12.GetXeSSInitFlags();
-			initParams.creationNodeMask = 0;
-			initParams.visibleNodeMask = 0;
-			if (xessRes.first != INVALID_RID)
+			RID resRegion = xess->Get().dx12.GetAliasableBufferResource();
+			if (resRegion != INVALID_RID)
 			{
-				initParams.pTempBufferHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? bufferHeap.Get() : mainHeap.Get();
-				initParams.bufferHeapOffset = static_cast<U64>(GetArraySize(xessRes.first));
-				initParams.bufferHeapOffset |= static_cast<U64>(GetMipCount(xessRes.first)) << 16;
-				initParams.bufferHeapOffset *= minimalChunkSize;
+				tempBuffHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? frameBuffer.bufferHeap.Get() : frameBuffer.mainHeap.Get();
+				buffOffset = static_cast<U64>(frameBuffer.GetArraySize(resRegion));
+				buffOffset |= static_cast<U64>(frameBuffer.GetMipCount(resRegion)) << 16;
+				buffOffset *= minimalChunkSize;
 			}
-			else
+			resRegion = xess->Get().dx12.GetAliasableTextureResource();
+			if (resRegion != INVALID_RID)
 			{
-				initParams.pTempBufferHeap = nullptr;
-				initParams.bufferHeapOffset = 0;
+				tempTexHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? frameBuffer.uavHeap.Get() : frameBuffer.mainHeap.Get();
+				texOffset = static_cast<U64>(frameBuffer.GetArraySize(resRegion));
+				texOffset |= static_cast<U64>(frameBuffer.GetMipCount(resRegion)) << 16;
+				texOffset *= minimalChunkSize;
 			}
-			if (xessRes.second != INVALID_RID)
-			{
-				initParams.pTempTextureHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? uavHeap.Get() : mainHeap.Get();
-				initParams.textureHeapOffset = static_cast<U64>(GetArraySize(xessRes.second));
-				initParams.textureHeapOffset |= static_cast<U64>(GetMipCount(xessRes.second)) << 16;
-				initParams.textureHeapOffset *= minimalChunkSize;
-			}
-			else
-			{
-				initParams.pTempTextureHeap = nullptr;
-				initParams.textureHeapOffset = 0;
-			}
-			initParams.pPipelineLibrary = nullptr;
-			ZE_XESS_THROW_FAILED(xessD3D12Init(dev.Get().dx12.GetXeSSCtx(), &initParams), "Error initializing XeSS D3D12 context!");
+			ZE_CODE_RET_FAILED_EXPECT(xess->Get().dx12.FinishInitialization(tempBuffHeap, buffOffset, tempTexHeap, texOffset));
 		}
+
+		return frameBuffer;
 	}
 
 	FrameBuffer::~FrameBuffer()
 	{
-		ZE_ASSERT_FREED(descInfo.Handle == nullptr && descInfoCpu.Handle == nullptr
-			&& rtvDescHeap == nullptr && dsvDescHeap == nullptr
-			&& mainHeap == nullptr && uavHeap == nullptr && bufferHeap == nullptr
-			&& resources == nullptr && rtvDsvHandles == nullptr && srvHandles == nullptr
-			&& uavHandles == nullptr && rtvDsvMips == nullptr && uavMips == nullptr);
+		if (descInfo.Handle)
+		{
+			ZE_ASSERT(srcDev, "No source Device for cleanup!");
+			srcDev->FreeDescs(descInfo);
+		}
+		if (descInfoCpu.Handle)
+		{
+			ZE_ASSERT(srcDev, "No source Device for cleanup!");
+			srcDev->FreeDescs(descInfoCpu);
+		}
+
+		if (resources)
+			resources.DeleteArray();
+		if (rtvDsvHandles)
+			rtvDsvHandles.DeleteArray();
+		if (srvHandles)
+			srvHandles.DeleteArray();
+		if (uavHandles)
+			uavHandles.DeleteArray();
+		if (rtvDsvMips)
+		{
+			for (RID i = 0; i < resourceCount - 1; ++i)
+				if (rtvDsvMips[i])
+					rtvDsvMips[i].DeleteArray();
+			rtvDsvMips.DeleteArray();
+		}
+		if (uavMips)
+		{
+			for (RID i = 0; i < resourceCount - 1; ++i)
+				if (uavMips[i])
+					uavMips[i].DeleteArray();
+			uavMips.DeleteArray();
+		}
 	}
 
 	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, U8 count) const noexcept
@@ -1556,13 +1590,13 @@ namespace ZE::RHI::DX12::Pipeline
 		srvHandles[rid].GpuShaderVisibleHandle = texDescInfo.GPU;
 	}
 
-	void FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const
+	Status FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_DX_ENABLE(dev.Get().dx12);
 
 		const D3D12_RANGE range = { 0 };
-		ZE_DX_THROW_FAILED(GetResource(rid)->Map(0, &range, ptr));
+		ZE_WIN_RET_FAILED(GetResource(rid)->Map(0, &range, ptr));
+		return {};
 	}
 
 	void FrameBuffer::UnmapResource(RID rid) const noexcept
@@ -1615,41 +1649,6 @@ namespace ZE::RHI::DX12::Pipeline
 		return resDesc;
 	}
 
-	void FrameBuffer::ExecuteXeSS(GFX::Device& dev, GFX::CommandList& cl, RID color, RID motionVectors, RID depth,
-		RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const
-	{
-		Device& device = dev.Get().dx12;
-		ZE_ASSERT(device.IsXeSSEnabled(), "XeSS not enabled!");
-		ZE_ASSERT(color < resourceCount, "Color resource ID outside available range!");
-		ZE_ASSERT(motionVectors < resourceCount, "Motion vectors resource ID outside available range!");
-		ZE_ASSERT(output < resourceCount, "XeSS output resource ID outside available range!");
-		ZE_XESS_ENABLE();
-
-		xess_d3d12_execute_params_t execParams = {};
-		execParams.pColorTexture = GetResource(color).Get();
-		execParams.pVelocityTexture = GetResource(motionVectors).Get();
-		execParams.pDepthTexture = depth != INVALID_RID ? GetResource(depth).Get() : nullptr;
-		execParams.pExposureScaleTexture = exposure != INVALID_RID ? GetResource(exposure).Get() : nullptr;
-		execParams.pResponsivePixelMaskTexture = responsive != INVALID_RID ? GetResource(responsive).Get() : nullptr;
-		execParams.pOutputTexture = GetResource(output).Get();
-
-		UInt2 renderSize = GetDimmensions(color);
-		execParams.jitterOffsetX = Data::GetUnitPixelJitterX(jitterX, renderSize.X);
-		execParams.jitterOffsetY = Data::GetUnitPixelJitterY(jitterY, renderSize.Y);
-		execParams.exposureScale = 1.0f;
-		execParams.resetHistory = static_cast<U32>(reset);
-		execParams.inputWidth = renderSize.X;
-		execParams.inputHeight = renderSize.Y;
-		execParams.inputColorBase = { 0, 0 };
-		execParams.inputMotionVectorBase = { 0, 0 };
-		execParams.inputDepthBase = { 0, 0 };
-		execParams.inputResponsiveMaskBase = { 0, 0 };
-		execParams.outputColorBase = { 0, 0 };
-		execParams.pDescriptorHeap = device.GetDescHeap();
-		execParams.descriptorHeapOffset = device.GetXeSSDescriptorsOffset();
-		ZE_XESS_THROW_FAILED(xessD3D12Execute(device.GetXeSSCtx(), cl.Get().dx12.GetList(), &execParams), "Error performing XeSS!");
-	}
-
 	void FrameBuffer::ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept
 	{
 		ZE_ASSERT(commandsBuffer < resourceCount, "Indirect arguments resource ID outside available range!");
@@ -1657,47 +1656,14 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.Get().dx12.GetList()->ExecuteIndirect(signature.Get().dx12.GetSignature(), 1, GetResource(commandsBuffer).Get(), commandsOffset, nullptr, 0);
 	}
 
-	void FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
+	Status FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
 	{
-		auto backbufferRtvSrv = swapChain.Get().dx12.GetCurrentBackbuffer(dev.Get().dx12, resources[BACKBUFFER_RID].Resource);
+		SwapChain::DescEntry backbufferRtvSrv = {};
+		ZE_EXPECT_RET_FAILED_CODE(backbufferRtvSrv, swapChain.Get().dx12.GetCurrentBackbuffer(dev.Get().dx12, resources[BACKBUFFER_RID].Resource));
+
 		rtvDsvHandles[BACKBUFFER_RID] = backbufferRtvSrv.RTV;
 		srvHandles[BACKBUFFER_RID].CpuShaderVisibleHandle = backbufferRtvSrv.SRVCpu;
 		srvHandles[BACKBUFFER_RID].GpuShaderVisibleHandle = backbufferRtvSrv.SRVGpu;
-	}
-
-	void FrameBuffer::Free(GFX::Device& dev) noexcept
-	{
-		rtvDescHeap = nullptr;
-		dsvDescHeap = nullptr;
-		mainHeap = nullptr;
-		uavHeap = nullptr;
-		bufferHeap = nullptr;
-		if (descInfo.Handle)
-			dev.Get().dx12.FreeDescs(descInfo);
-		if (descInfoCpu.Handle)
-			dev.Get().dx12.FreeDescs(descInfoCpu);
-
-		if (resources)
-			resources.DeleteArray();
-		if (rtvDsvHandles)
-			rtvDsvHandles.DeleteArray();
-		if (srvHandles)
-			srvHandles.DeleteArray();
-		if (uavHandles)
-			uavHandles.DeleteArray();
-		if (rtvDsvMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (rtvDsvMips[i])
-					rtvDsvMips[i].DeleteArray();
-			rtvDsvMips.DeleteArray();
-		}
-		if (uavMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (uavMips[i])
-					uavMips[i].DeleteArray();
-			uavMips.DeleteArray();
-		}
+		return {};
 	}
 }

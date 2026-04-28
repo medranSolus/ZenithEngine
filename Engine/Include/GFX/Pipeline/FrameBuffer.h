@@ -18,26 +18,25 @@ namespace ZE::GFX::Pipeline
 
 	public:
 		FrameBuffer() = default;
-		ZE_CLASS_DELETE(FrameBuffer);
+		ZE_CLASS_MOVE(FrameBuffer);
 		~FrameBuffer() = default;
 
-		constexpr void Init(Device& dev, const FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Init(dev, desc); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, const FrameBufferDesc& desc) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, desc); }
+		static Expected<FrameBuffer> Create(Device& dev, const FrameBufferDesc& desc) noexcept { ZE_RHI_BACKEND_CREATE(Pipeline::FrameBuffer, dev, desc); }
 		ZE_RHI_BACKEND_GET(Pipeline::FrameBuffer);
 
 		// Main Gfx API
 
 		// Get width and height of the resource
-		constexpr UInt2 GetDimmensions(RID rid) const noexcept { UInt2 dimm; ZE_RHI_BACKEND_CALL_RET(dimm, GetDimmensions, rid); return dimm; }
-		constexpr U16 GetArraySize(RID rid) const noexcept { U16 arraySize; ZE_RHI_BACKEND_CALL_RET(arraySize, GetArraySize, rid); return arraySize; }
-		constexpr U16 GetMipCount(RID rid) const noexcept { U16 mips; ZE_RHI_BACKEND_CALL_RET(mips, GetMipCount, rid); return mips; }
-		constexpr PixelFormat GetFormat(RID rid) const noexcept { PixelFormat format; ZE_RHI_BACKEND_CALL_RET(format, GetFormat, rid); return format; }
-		constexpr bool IsUAV(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUAV, rid); return val; }
-		constexpr bool IsCubeTexture(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCubeTexture, rid); return val; }
-		constexpr bool IsTexture1D(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsTexture1D, rid); return val; }
-		constexpr bool IsTexture3D(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsTexture3D, rid); return val; }
-		constexpr bool IsBuffer(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsBuffer, rid); return val; }
-		constexpr bool IsArrayView(RID rid) const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsArrayView, rid); return val; }
+		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetDimmensions, rid); }
+		constexpr U16 GetArraySize(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetArraySize, rid); }
+		constexpr U16 GetMipCount(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetMipCount, rid); }
+		constexpr PixelFormat GetFormat(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetFormat, rid); }
+		constexpr bool IsUAV(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsUAV, rid); }
+		constexpr bool IsCubeTexture(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsCubeTexture, rid); }
+		constexpr bool IsTexture1D(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsTexture1D, rid); }
+		constexpr bool IsTexture3D(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsTexture3D, rid); }
+		constexpr bool IsBuffer(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsBuffer, rid); }
+		constexpr bool IsArrayView(RID rid) const noexcept { ZE_RHI_BACKEND_CALL_RET(IsArrayView, rid); }
 
 		// When render targets have been created one after one without any depth stencil between them
 		// they are considered adjacent which can speed-up their setting in the pipeline.
@@ -104,17 +103,15 @@ namespace ZE::GFX::Pipeline
 
 		constexpr void RegisterOutsideResource(RID rid, Resource::Texture::Pack& textures, U32 textureIndex, FrameResourceType type) noexcept { ZE_RHI_BACKEND_CALL(RegisterOutsideResource, rid, textures, textureIndex, type); }
 
-		constexpr void MapResource(Device& dev, RID rid, void** ptr) const { ZE_RHI_BACKEND_CALL(MapResource, dev, rid, ptr); }
+		Status MapResource(Device& dev, RID rid, void** ptr) const noexcept { ZE_RHI_BACKEND_CALL_RET(MapResource, dev, rid, ptr); }
 		constexpr void UnmapResource(RID rid) const noexcept { ZE_RHI_BACKEND_CALL(UnmapResource, rid); }
 
-		constexpr FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept { FfxApiResource res = {}; ZE_RHI_BACKEND_CALL_RET(res, GetFfxResource, rid, state); return res; }
+#if _ZE_FFX_API_ENABLED
+		constexpr FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetFfxResource, rid, state); }
+#endif
 
-		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INALID_RID
-		constexpr void ExecuteXeSS(Device& dev, CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, float jitterX, float jitterY, bool reset) const { ZE_RHI_BACKEND_CALL(ExecuteXeSS, dev, cl, color, motionVectors, depth, exposure, responsive, output, jitterX, jitterY, reset); }
 		constexpr void ExecuteIndirect(CommandList& cl, CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteIndirect, cl, signature, commandsBuffer, commandsOffset); }
 
-		constexpr void SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL(SwapBackbuffer, dev, swapChain); }
-		// Before destroying FrameBuffer you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		Status SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL_RET(SwapBackbuffer, dev, swapChain); }
 	};
 }
