@@ -16,37 +16,38 @@ namespace ZE::GFX
 
 	public:
 		Material() = default;
-		Material(Device& dev, DiskManager& disk, const T& data, const Resource::Texture::PackDesc& desc) { Init(dev, disk, data, desc); }
-		Material(Device& dev, DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file) { Init(dev, disk, data, pack, file); }
 		ZE_CLASS_MOVE(Material);
 		~Material() = default;
 
 		static constexpr const char* GetTextureSchemaName() noexcept { return TEXTURE_SCHEMA_NAME; }
 
-		constexpr void UpdateData(Device& dev, DiskManager& disk, EID materialId, const T& data) const { ZE_VALID_EID(materialId); buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
+		static Expected<Material> Create(Device& dev, DiskManager& disk, const T& data, const Resource::Texture::PackDesc& desc) noexcept;
+		static Expected<Material> Create(Device& dev, DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file) noexcept;
+
+		constexpr void UpdateData(Device& dev, DiskManager& disk, EID materialId, const T& data) const { ZE_VALID_EID(materialId); return buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
 		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 		constexpr void BindTextures(CommandList& cl, Binding::Context& bindCtx) const noexcept { textures.Bind(cl, bindCtx); }
-		constexpr void Free(Device& dev) noexcept { buffer.Free(dev); textures.Free(dev); }
-
-		constexpr void Init(Device& dev, DiskManager& disk, const T& initData, const Resource::Texture::PackDesc& desc);
-		constexpr void Init(Device& dev, DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file);
 	};
 
 #pragma region Functions
 	template<typename T, const char* TEXTURE_SCHEMA_NAME>
-	constexpr void Material<T, TEXTURE_SCHEMA_NAME>::Init(Device& dev, DiskManager& disk,
-		const T& initData, const Resource::Texture::PackDesc& desc)
+	Expected<Material<T, TEXTURE_SCHEMA_NAME>> Material<T, TEXTURE_SCHEMA_NAME>::Create(Device& dev, DiskManager& disk,
+		const T& initData, const Resource::Texture::PackDesc& desc) noexcept
 	{
-		buffer.Init(dev, disk, { INVALID_EID, &initData, nullptr, sizeof(T) });
-		textures.Init(dev, disk, desc);
+		Material mat;
+		ZE_EXPECT_RET_FAILED(mat.buffer, Resource::CBuffer::Create(dev, disk, { INVALID_EID, &initData, nullptr, sizeof(T) }));
+		ZE_EXPECT_RET_FAILED(mat.textures, Resource::Texture::Pack::Create(dev, disk, desc));
+		return mat;
 	}
 
 	template<typename T, const char* TEXTURE_SCHEMA_NAME>
-	constexpr void Material<T, TEXTURE_SCHEMA_NAME>::Init(Device& dev, DiskManager& disk,
-		const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file)
+	Expected<Material<T, TEXTURE_SCHEMA_NAME>> Material<T, TEXTURE_SCHEMA_NAME>::Create(Device& dev, DiskManager& disk,
+		const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file) noexcept
 	{
-		buffer.Init(dev, disk, data, file);
-		textures.Init(dev, disk, pack, file);
+		Material mat;
+		ZE_EXPECT_RET_FAILED(mat.buffer, Resource::CBuffer::Create(dev, disk, data, file));
+		ZE_EXPECT_RET_FAILED(mat.textures, Resource::Texture::Pack::Create(dev, disk, pack, file));
+		return mat;
 	}
 #pragma endregion
 }

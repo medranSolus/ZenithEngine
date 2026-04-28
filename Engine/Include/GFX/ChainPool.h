@@ -8,14 +8,20 @@ namespace ZE::GFX
 	class ChainPool final
 	{
 		// TODO: Seems to be slower for now, investigate later
-		union
+		union Inner
 		{
 			Ptr<T> ptr;
 			T impl;
-		};
+
+			constexpr Inner() noexcept {}
+			ZE_CLASS_NO_COPY(Inner);
+			constexpr Inner(Inner&& i) noexcept;
+			constexpr Inner& operator=(Inner&& i) noexcept;
+			~Inner() {}
+		} inner;
 
 	public:
-		constexpr ChainPool();
+		constexpr ChainPool() noexcept;
 		ZE_CLASS_MOVE(ChainPool);
 		~ChainPool();
 
@@ -25,16 +31,37 @@ namespace ZE::GFX
 		constexpr const T& Get() const noexcept;
 		// Execute function on every inner resource, ex. when resources need special init/destroy or to alter their state
 		constexpr void Exec(std::function<void(T&)> x) noexcept;
+		// Execute function on every inner resource, and stop execution if any of them returned error status
+		constexpr Status ExecStatus(std::function<Status(T&)> x) noexcept;
 	};
 
 #pragma region Functions
 	template<typename T>
-	constexpr ChainPool<T>::ChainPool()
+	constexpr ChainPool<T>::Inner::Inner(Inner&& i) noexcept
 	{
 		if (Settings::GetChainResourceCount() > 1)
-			ptr = new T[Settings::GetChainResourceCount()];
+			ptr = std::exchange(i.ptr, nullptr);
 		else
-			new(&impl) T;
+			impl = std::move(i.impl);
+	}
+
+	template<typename T>
+	constexpr ChainPool<T>::Inner& ChainPool<T>::Inner::operator=(Inner&& i) noexcept
+	{
+		if (Settings::GetChainResourceCount() > 1)
+			ptr = std::exchange(i.ptr, nullptr);
+		else
+			impl = std::move(i.impl);
+		return *this;
+	}
+
+	template<typename T>
+	constexpr ChainPool<T>::ChainPool() noexcept
+	{
+		if (Settings::GetChainResourceCount() > 1)
+			inner.ptr = new T[Settings::GetChainResourceCount()];
+		else
+			new(&inner.impl) T;
 	}
 
 	template<typename T>
@@ -42,27 +69,27 @@ namespace ZE::GFX
 	{
 		if (Settings::GetChainResourceCount() > 1)
 		{
-			if (ptr)
-				ptr.DeleteArray();
+			if (inner.ptr)
+				inner.ptr.DeleteArray();
 		}
 		else
-			impl.~T();
+			inner.impl.~T();
 	}
 
 	template<typename T>
 	constexpr T& ChainPool<T>::Get() noexcept
 	{
 		if (Settings::GetChainResourceCount() > 1)
-			return ptr[Settings::GetCurrentChainResourceIndex()];
-		return impl;
+			return inner.ptr[Settings::GetCurrentChainResourceIndex()];
+		return inner.impl;
 	}
 
 	template<typename T>
 	constexpr const T& ChainPool<T>::Get() const noexcept
 	{
 		if (Settings::GetChainResourceCount() > 1)
-			return ptr[Settings::GetCurrentChainResourceIndex()];
-		return impl;
+			return inner.ptr[Settings::GetCurrentChainResourceIndex()];
+		return inner.impl;
 	}
 
 	template<typename T>
@@ -71,10 +98,27 @@ namespace ZE::GFX
 		if (Settings::GetChainResourceCount() > 1)
 		{
 			for (U32 i = Settings::GetChainResourceCount(); i;)
-				x(ptr[--i]);
+				x(inner.ptr[--i]);
 		}
 		else
-			x(impl);
+			x(inner.impl);
+	}
+
+	template<typename T>
+	constexpr Status ChainPool<T>::ExecStatus(std::function<Status(T&)> x) noexcept
+	{
+		if (Settings::GetChainResourceCount() > 1)
+		{
+			for (U32 i = Settings::GetChainResourceCount(); i;)
+			{
+				ZE_CODE_RET_FAILED(x(inner.ptr[--i]));
+			}
+			return {};
+		}
+		else
+		{
+			ZE_CODE_RET_FAILED(x(inner.impl));
+		}
 	}
 #pragma endregion
 }

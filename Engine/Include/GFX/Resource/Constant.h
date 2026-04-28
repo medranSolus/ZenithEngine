@@ -16,15 +16,15 @@ namespace ZE::GFX::Resource
 	class Constant final
 	{
 		static_assert(sizeof(T) % 4 == 0, "Size of a constant must be a multiple of 4 bytes!");
-		ZE_RHI_BACKEND(Resource::Constant);
+		ZE_RHI_BACKEND(Resource::Constant<T>);
 
 	public:
 		Constant() = default;
 		ZE_CLASS_MOVE(Constant);
 		~Constant() = default;
 
-		static constexpr Expected<Constant> Create(Device& dev, const T& value) noexcept { ZE_RHI_BACKEND_CREATE(Resource::Constant, dev, value); }
-		ZE_RHI_BACKEND_GET(Resource::Constant);
+		static constexpr Expected<Constant> Create(Device& dev, const T& value) noexcept { ZE_RHI_BACKEND_CREATE(Resource::Constant<T>, dev, value); }
+		ZE_RHI_BACKEND_GET(Resource::Constant<T>);
 
 		// Main Gfx API
 

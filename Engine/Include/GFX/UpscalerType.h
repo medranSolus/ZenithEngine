@@ -1,8 +1,4 @@
 #pragma once
-ZE_WARNING_PUSH
-#include "FidelityFX/host/ffx_fsr2.h"
-#include "FidelityFX/host/ffx_fsr3upscaler.h"
-ZE_WARNING_POP
 
 namespace ZE::GFX
 {
@@ -25,6 +21,7 @@ namespace ZE::GFX
 	// Get jitter subpixel offsets in UV space
 	constexpr float GetReactiveMaskClamp(UpscalerType upscaling) noexcept;
 	constexpr bool IsMotionRequired(UpscalerType upscaling) noexcept;
+	constexpr bool IsReactiveRequired(UpscalerType upscaling) noexcept;
 	constexpr bool IsJitterRequired(UpscalerType upscaling) noexcept;
 
 	// Pass UINT32_MAX for max quality regardles of upscaler
@@ -65,6 +62,25 @@ namespace ZE::GFX
 		case UpscalerType::FfxFsr:
 		case UpscalerType::XeSS:
 		case UpscalerType::DLSS:
+			return true;
+		}
+	}
+
+	constexpr bool IsReactiveRequired(UpscalerType upscaling) noexcept
+	{
+		switch (upscaling)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case UpscalerType::None:
+		case UpscalerType::Fsr1:
+		case UpscalerType::NIS:
+		case UpscalerType::DLSS:
+			return false;
+		case UpscalerType::Fsr2:
+		case UpscalerType::Fsr3:
+		case UpscalerType::FfxFsr:
+		case UpscalerType::XeSS:
 			return true;
 		}
 	}

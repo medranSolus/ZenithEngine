@@ -19,39 +19,34 @@ namespace ZE::GFX
 
 	public:
 		CommandList() = default;
-		constexpr CommandList(Device& dev, QueueType type) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
 		ZE_CLASS_MOVE(CommandList);
 		~CommandList() = default;
 
-		constexpr bool IsInitialized() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsInitialized); return val; }
-		constexpr void InitMain(Device& dev) { ZE_RHI_BACKEND_VAR.Init(dev); }
-		constexpr void Init(Device& dev, QueueType type = QueueType::Main) { ZE_RHI_BACKEND_VAR.Init(dev, type); }
-		constexpr void SwitchApi(GfxApiType nextApi, Device& dev, QueueType type) { ZE_RHI_BACKEND_VAR.Switch(nextApi, dev, type); }
+		static Expected<CommandList> CreateMain(Device& dev) noexcept { ZE_RHI_BACKEND_CREATE(CommandList, dev); }
+		static Expected<CommandList> Create(Device& dev, GFX::QueueType type = QueueType::Main) noexcept { ZE_RHI_BACKEND_CREATE(CommandList, dev, type); }
 		ZE_RHI_BACKEND_GET(CommandList);
 
 		// Main Gfx API
 
-		constexpr void* GetFfxHandle() const noexcept { void* handle = nullptr; ZE_RHI_BACKEND_CALL_RET(handle, GetFfxHandle); return handle; }
+		constexpr bool IsInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsInitialized); }
+		constexpr void* GetHandle() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetHandle); }
 
-		constexpr void Open(Device& dev) { ZE_RHI_BACKEND_CALL(Open, dev); }
-		constexpr void Open(Device& dev, Resource::PipelineStateCompute& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
-		constexpr void Open(Device& dev, Resource::PipelineStateGfx& pso) { ZE_RHI_BACKEND_CALL(Open, dev, pso); }
+		Status Open(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Open, dev); }
+		Status Open(Device& dev, Resource::PipelineStateCompute& pso) const noexcept { ZE_RHI_BACKEND_CALL_RET(Open, dev, pso); }
+		Status Open(Device& dev, Resource::PipelineStateGfx& pso) const noexcept { ZE_RHI_BACKEND_CALL_RET(Open, dev, pso); }
 
 		// After using command list for external libraries with their own set of memory it is necessary to restore original memory state.
 		// Note that this not include actual pipeline states set for this command list
 		constexpr void RestoreExternalState(GFX::Device& dev) const noexcept { ZE_RHI_BACKEND_CALL(RestoreExternalState, dev); }
 
-		constexpr void Close(Device& dev) { ZE_RHI_BACKEND_CALL(Close, dev); }
-		constexpr void Reset(Device& dev) { ZE_RHI_BACKEND_CALL(Reset, dev); }
+		Status Close(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Close, dev); }
+		Status Reset(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Reset, dev); }
 
-		constexpr void DrawFullscreen(Device& dev) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(DrawFullscreen, dev); }
+		constexpr void DrawFullscreen(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)
-		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
+		constexpr void Compute(Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept { ZE_RHI_BACKEND_CALL(Compute, dev, groupX, groupY, groupZ); }
 
-		constexpr void WriteBreadcrumbs(Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept(!_ZE_DEBUG_GFX_API) { ZE_RHI_BACKEND_CALL(WriteBreadcrumbs, dev, value, location, breadcrumbsBuffer, isBegin); }
-
-		// Before destroying command list you have to call this function for proper memory freeing
-		constexpr void Free(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(Free, dev); }
+		constexpr void WriteBreadcrumbs(Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept { ZE_RHI_BACKEND_CALL(WriteBreadcrumbs, dev, value, location, breadcrumbsBuffer, isBegin); }
 
 #if _ZE_GFX_MARKERS
 		constexpr void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept;

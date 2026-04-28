@@ -1,14 +1,15 @@
 #pragma once
-#if _ZE_RHI_DX11
-#	include "RHI/DX11/NgxInterface.h"
-#endif
-#if _ZE_RHI_DX12
-#	include "RHI/DX12/NgxInterface.h"
-#endif
-#if _ZE_RHI_VK
-#	include "RHI/VK/NgxInterface.h"
-#endif
-#include "RHI/Backend.h"
+#if _ZE_NGX_ENABLED
+#	if _ZE_RHI_DX11
+#		include "RHI/DX11/NgxInterface.h"
+#	endif
+#	if _ZE_RHI_DX12
+#		include "RHI/DX12/NgxInterface.h"
+#	endif
+#	if _ZE_RHI_VK
+#		include "RHI/VK/NgxInterface.h"
+#	endif
+#	include "RHI/Backend.h"
 
 namespace ZE::GFX
 {
@@ -32,19 +33,23 @@ namespace ZE::GFX
 		static NVSDK_NGX_FeatureCommonInfo GetCommonInfo() noexcept;
 		static void FreeScratchBuffer(NVSDK_NGX_Parameter* param) noexcept;
 
+		Status GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCapabilities, param); }
+
 	public:
 		NgxInterface() = default;
 		ZE_CLASS_MOVE(NgxInterface);
-		~NgxInterface() = default;
+		~NgxInterface();
+
+		static Expected<NgxInterface> Create(Device& dev, bool ignoreInternalMsg = true) noexcept;
+		ZE_RHI_BACKEND_GET(NgxInterface);
+
+		// Main Gfx API
 
 		constexpr bool IsInitialized() const noexcept { return ngxCaps && optimalSettingsCallback; }
 
-		bool Init(Device& dev, bool ignoreInternalMsg = true) noexcept;
-		void Free(Device& dev) noexcept;
-
-		NVSDK_NGX_Parameter* AllocateParameter() const noexcept;
-		NVSDK_NGX_Handle* CreateFeature(Device& dev, NVSDK_NGX_Feature feature, NVSDK_NGX_Parameter* initParam) const noexcept;
-		bool RunFeature(Device& dev, CommandList& cl, const NVSDK_NGX_Handle* feature, const NVSDK_NGX_Parameter* param) const noexcept;
+		Status AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept;
+		Status CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) const noexcept;
+		Status RunFeature(Device& dev, CommandList& cl, const NVSDK_NGX_Handle* feature, const NVSDK_NGX_Parameter* param) const noexcept;
 		// Parameters used for initialization of the features must be freed after freeing the feature itself
 		void FreeParameter(NVSDK_NGX_Parameter* param) const noexcept;
 		void FreeFeature(NVSDK_NGX_Handle* feature) const noexcept;
@@ -53,3 +58,4 @@ namespace ZE::GFX
 		UInt2 GetRenderSize(UInt2 targetSize, NVSDK_NGX_PerfQuality_Value quality) const noexcept;
 	};
 }
+#endif

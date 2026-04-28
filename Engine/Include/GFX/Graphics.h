@@ -1,5 +1,4 @@
 #pragma once
-#include "Resource/DynamicCBuffer.h"
 #include "ChainPool.h"
 #include "CommandList.h"
 #include "Device.h"
@@ -12,40 +11,21 @@ namespace ZE::GFX
 	{
 		Device device;
 		SwapChain swapChain;
-		// TODO: Move chainPool inside CL
 		ChainPool<CommandList> mainList;
 		ChainPool<U64> fenceChain;
 
 	public:
 		Graphics() = default;
-		ZE_CLASS_DELETE(Graphics);
-		~Graphics();
+		ZE_CLASS_MOVE(Graphics);
+		~Graphics() = default;
+
+		static Expected<Graphics> Create(const Window::MainWindow& window, U32 descriptorCount, bool backbufferSRV) noexcept;
 
 		constexpr Device& GetDevice() noexcept { return device; }
 		constexpr CommandList& GetMainList() noexcept { return mainList.Get(); }
 		constexpr SwapChain& GetSwapChain() noexcept { return swapChain; }
-		constexpr void WaitForFrame();
-		constexpr void Present();
 
-		void Init(const Window::MainWindow& window, U32 descriptorCount, bool backbufferSRV);
+		Status WaitForFrame() noexcept;
+		Status Present() noexcept;
 	};
-
-#pragma region Functions
-	constexpr void Graphics::WaitForFrame()
-	{
-		swapChain.StartFrame(device);
-		device.WaitMain(fenceChain.Get());
-		mainList.Get().Reset(device);
-	}
-
-	constexpr void Graphics::Present()
-	{
-		ZE_PERF_GUARD("Swapchain present");
-
-		fenceChain.Get() = device.SetMainFence();
-		swapChain.Present(device);
-		device.EndFrame();
-		Settings::AdvanceFrame();
-	}
-#pragma endregion
 }

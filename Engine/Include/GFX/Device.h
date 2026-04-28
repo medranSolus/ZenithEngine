@@ -9,7 +9,6 @@
 #	include "RHI/VK/Device.h"
 #endif
 #include "RHI/Backend.h"
-#include "NgxInterface.h"
 
 namespace ZE::GFX
 {
@@ -17,96 +16,76 @@ namespace ZE::GFX
 	class Device final
 	{
 		ZE_RHI_BACKEND(Device);
-#if _ZE_DLSS_ENABLED
-		NgxInterface ngx;
-#endif
 
 	public:
 		Device() = default;
-		ZE_CLASS_DELETE(Device);
-		~Device();
+		ZE_CLASS_MOVE(Device);
+		~Device() = default;
 
-		constexpr void Init(const Window::MainWindow& window, U32 descriptorCount) { ZE_RHI_BACKEND_VAR.Init(window, descriptorCount); }
-		constexpr void SwitchApi(GfxApiType nextApi, const Window::MainWindow& window) { U32 data; ZE_RHI_BACKEND_VAR.Switch(nextApi, window, data); }
+		static Expected<Device> Create(const Window::MainWindow& window, U32 descriptorCount) noexcept { ZE_RHI_BACKEND_CREATE(Device, window, descriptorCount); }
 		ZE_RHI_BACKEND_GET(Device);
 
 		// Main Gfx API
 
-		constexpr bool IsNGXEnabled() const noexcept;
-		constexpr NgxInterface* GetNGX() noexcept;
-
-		constexpr const FfxApiFunctions* GetFfxFunctions() noexcept { const FfxApiFunctions* ffxFunc = nullptr; ZE_RHI_BACKEND_CALL_RET(ffxFunc, GetFfxFunctions); return ffxFunc; }
-		constexpr void* GetFfxHandle() const noexcept { void* handle = nullptr; ZE_RHI_BACKEND_CALL_RET(handle, GetFfxHandle); return handle; }
-		constexpr ffxReturnCode_t CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept { ffxReturnCode_t ret = FFX_API_RETURN_OK; ZE_RHI_BACKEND_CALL_RET(ret, CreateFfxCtx, ctx, ctxHeader); return ret; }
-
-		constexpr bool IsXeSSEnabled() const noexcept { bool val = false; ZE_RHI_BACKEND_CALL_RET(val, IsXeSSEnabled); return val; }
-		constexpr xess_context_handle_t GetXeSSCtx() { xess_context_handle_t ctx = nullptr; ZE_RHI_BACKEND_CALL_RET(ctx, GetXeSSCtx); return ctx; }
-		constexpr void InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 flags) { ZE_RHI_BACKEND_CALL(InitializeXeSS, targetRes, quality, flags); }
-		constexpr void FreeXeSS() noexcept { ZE_RHI_BACKEND_CALL(FreeXeSS); }
-		// Buffer | Texture
-		constexpr std::pair<U64, U64> GetXeSSAliasableRegionSizes() const { std::pair<U64, U64> sizes = { 0, 0 }; ZE_RHI_BACKEND_CALL_RET(sizes, GetXeSSAliasableRegionSizes); return sizes; }
-		constexpr void SetXeSSAliasableResources(RID buffer, RID texture) noexcept { ZE_RHI_BACKEND_CALL(SetXeSSAliasableResources, buffer, texture); }
-		constexpr std::pair<RID, RID> GetXeSSAliasableResources() const noexcept { std::pair<RID, RID> res = { INVALID_RID, INVALID_RID }; ZE_RHI_BACKEND_CALL_RET(res, GetXeSSAliasableResources); return res; }
+		void* GetHandle() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetHandle); }
 
 		constexpr void OnMonitorChanged(const Window::MainWindow& window) { ZE_RHI_BACKEND_CALL(OnMonitorChanged, window); }
-		constexpr const DisplayProperties& GetDisplayProperties() const noexcept { const DisplayProperties* props; ZE_RHI_BACKEND_CALL_RET(props, GetDisplayProperties); return *props; }
+		constexpr const DisplayProperties& GetDisplayProperties() const noexcept { const DisplayProperties* props; ZE_RHI_BACKEND_CALL_RET_VAR(props, GetDisplayProperties); return *props; }
 
-		constexpr U64 GetMainFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetMainFence); return val; }
-		constexpr U64 GetComputeFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetComputeFence); return val; }
-		constexpr U64 GetCopyFence() const noexcept { U64 val; ZE_RHI_BACKEND_CALL_RET(val, GetCopyFence); return val; }
+		constexpr U64 GetMainFence() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetMainFence); }
+		constexpr U64 GetComputeFence() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetComputeFence); }
+		constexpr U64 GetCopyFence() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCopyFence); }
 
 		// CPU side wait for main queue
-		constexpr void WaitMain(U64 val) { ZE_RHI_BACKEND_CALL(WaitMain, val); }
+		Status WaitMain(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitMain, val); }
 		// CPU side wait for compute queue
-		constexpr void WaitCompute(U64 val) { ZE_RHI_BACKEND_CALL(WaitCompute, val); }
+		Status WaitCompute(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitCompute, val); }
 		// CPU side wait for copy queue
-		constexpr void WaitCopy(U64 val) { ZE_RHI_BACKEND_CALL(WaitCopy, val); }
-		// CPU side wait for all the commands to finish on GPU
-		constexpr void FlushGPU() { WaitMain(SetMainFence()); WaitCompute(SetComputeFence()); WaitCopy(SetCopyFence()); }
+		Status WaitCopy(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitCopy, val); }
 
 		// Set fence for main queue from CPU
-		constexpr U64 SetMainFenceCPU() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetMainFenceCPU); return val; }
+		constexpr Expected<U64> SetMainFenceCPU() noexcept { ZE_RHI_BACKEND_CALL_RET(SetMainFenceCPU); }
 		// Set fence for compute queue from CPU
-		constexpr U64 SetComputeFenceCPU() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetComputeFenceCPU); return val; }
+		constexpr Expected<U64> SetComputeFenceCPU() noexcept  { ZE_RHI_BACKEND_CALL_RET(SetComputeFenceCPU); }
 		// Set fence for copy queue from CPU
-		constexpr U64 SetCopyFenceCPU() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetCopyFenceCPU); return val; }
+		constexpr Expected<U64> SetCopyFenceCPU() noexcept { ZE_RHI_BACKEND_CALL_RET(SetCopyFenceCPU); }
 
 		// GPU side wait for main queue till compute queue will reach fence value
-		constexpr void WaitMainFromCompute(U64 val) { ZE_RHI_BACKEND_CALL(WaitMainFromCompute, val); }
+		Status WaitMainFromCompute(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitMainFromCompute, val); }
 		// GPU side wait for main queue till copy queue will reach fence value
-		constexpr void WaitMainFromCopy(U64 val) { ZE_RHI_BACKEND_CALL(WaitMainFromCopy, val); }
+		Status WaitMainFromCopy(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitMainFromCopy, val); }
 		// GPU side wait for compute queue till main queue will reach fence value
-		constexpr void WaitComputeFromMain(U64 val) { ZE_RHI_BACKEND_CALL(WaitComputeFromMain, val); }
+		Status WaitComputeFromMain(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitComputeFromMain, val); }
 		// GPU side wait for compute queue till copy queue will reach fence value
-		constexpr void WaitComputeFromCopy(U64 val) { ZE_RHI_BACKEND_CALL(WaitComputeFromCopy, val); }
+		Status WaitComputeFromCopy(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitComputeFromCopy, val); }
 		// GPU side wait for copy queue till main queue will reach fence value
-		constexpr void WaitCopyFromMain(U64 val) { ZE_RHI_BACKEND_CALL(WaitCopyFromMain, val); }
+		Status WaitCopyFromMain(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitCopyFromMain, val); }
 		// GPU side wait for copy queue till compute queue will reach fence value
-		constexpr void WaitCopyFromCompute(U64 val) { ZE_RHI_BACKEND_CALL(WaitCopyFromCompute, val); }
+		Status WaitCopyFromCompute(U64 val) const noexcept { ZE_RHI_BACKEND_CALL_RET(WaitCopyFromCompute, val); }
 
 		// GPU side signal from main queue for it's fence
-		constexpr U64 SetMainFence() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetMainFence); return val; }
+		constexpr Expected<U64> SetMainFence() noexcept { ZE_RHI_BACKEND_CALL_RET(SetMainFence); }
 		// GPU side signal from compute queue for it's fence
-		constexpr U64 SetComputeFence() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetComputeFence); return val; }
+		constexpr Expected<U64> SetComputeFence() noexcept { ZE_RHI_BACKEND_CALL_RET(SetComputeFence); }
 		// GPU side signal from copy queue for it's fence
-		constexpr U64 SetCopyFence() { U64 val; ZE_RHI_BACKEND_CALL_RET(val, SetCopyFence); return val; }
+		constexpr Expected<U64> SetCopyFence() noexcept { ZE_RHI_BACKEND_CALL_RET(SetCopyFence); }
 
-		constexpr ShaderModel GetMaxShaderModel() const noexcept { ShaderModel model; ZE_RHI_BACKEND_CALL_RET(model, GetMaxShaderModel); return model; }
-		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { std::pair<U32, U32> minMax; ZE_RHI_BACKEND_CALL_RET(minMax, GetWaveLaneCountRange); return minMax; }
-		constexpr bool IsShaderFloat16Supported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsShaderFloat16Supported); return val; }
-		constexpr bool IsCoherentMemorySupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsCoherentMemorySupported); return val; }
-		constexpr bool IsDedicatedAllocSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsDedicatedAllocSupported); return val; }
-		constexpr bool IsBufferMarkersSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsBufferMarkersSupported); return val; }
-		constexpr bool IsExtendedSynchronizationSupported() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsExtendedSynchronizationSupported); return val; }
-		constexpr bool IsUavNonUniformIndexing() const noexcept { bool val; ZE_RHI_BACKEND_CALL_RET(val, IsUavNonUniformIndexing); return val; }
+		constexpr ShaderModel GetMaxShaderModel() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetMaxShaderModel); }
+		constexpr std::pair<U32, U32> GetWaveLaneCountRange() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetWaveLaneCountRange); }
+		constexpr bool IsShaderFloat16Supported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsShaderFloat16Supported); }
+		constexpr bool IsCoherentMemorySupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsCoherentMemorySupported); }
+		constexpr bool IsDedicatedAllocSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsDedicatedAllocSupported); }
+		constexpr bool IsBufferMarkersSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsBufferMarkersSupported); }
+		constexpr bool IsExtendedSynchronizationSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsExtendedSynchronizationSupported); }
+		constexpr bool IsUavNonUniformIndexing() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsUavNonUniformIndexing); }
 
-		constexpr void Execute(CommandList* cls, U32 count) { ZE_RHI_BACKEND_CALL(Execute, cls, count); }
-		constexpr void ExecuteMain(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteMain, cl); }
-		constexpr void ExecuteCompute(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteCompute, cl); }
-		constexpr void ExecuteCopy(CommandList& cl) { ZE_RHI_BACKEND_CALL(ExecuteCopy, cl); }
+		constexpr void Execute(CommandList* cls, U32 count) const noexcept { ZE_RHI_BACKEND_CALL(Execute, cls, count); }
+		constexpr void ExecuteMain(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteMain, cl); }
+		constexpr void ExecuteCompute(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteCompute, cl); }
+		constexpr void ExecuteCopy(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteCopy, cl); }
 
-		constexpr FfxBreadcrumbsBlockData AllocBreadcrumbsBlock(U64 bytes) { FfxBreadcrumbsBlockData block = {}; ZE_RHI_BACKEND_CALL_RET(block, AllocBreadcrumbsBlock, bytes); return block; }
-		constexpr void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) { ZE_RHI_BACKEND_CALL(FreeBreadcrumbsBlock, block); }
+		constexpr Expected<FfxBreadcrumbsBlockData> AllocBreadcrumbsBlock(U64 bytes) noexcept { ZE_RHI_BACKEND_CALL_RET(AllocBreadcrumbsBlock, bytes); }
+		constexpr void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept { ZE_RHI_BACKEND_CALL(FreeBreadcrumbsBlock, block); }
 
 		constexpr void EndFrame() noexcept { ZE_RHI_BACKEND_CALL(EndFrame); }
 
@@ -119,36 +98,22 @@ namespace ZE::GFX
 		constexpr void TagEndCompute() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_RHI_BACKEND_CALL(TagEndCompute); } }
 		constexpr void TagEndCopy() const noexcept { if (Settings::IsEnabledGfxTags()) { ZE_RHI_BACKEND_CALL(TagEndCopy); } }
 #endif
+
+		// CPU side wait for all the commands to finish on GPU
+		Status FlushGPU() noexcept;
 	};
 
 #pragma region Functions
-	inline Device::~Device()
+	Status Device::FlushGPU() noexcept
 	{
-#if _ZE_DLSS_ENABLED
-		if (ngx.IsInitialized())
-			ngx.Free(*this);
-#endif
-	}
-
-	constexpr bool Device::IsNGXEnabled() const noexcept
-	{
-#if _ZE_DLSS_ENABLED
-		return ngx.IsInitialized();
-#else
-		return false
-#endif
-	}
-
-	constexpr NgxInterface* Device::GetNGX() noexcept
-	{
-#if _ZE_DLSS_ENABLED
-		if (Settings::GpuVendor == VendorGPU::Nvidia)
-		{
-			if (ngx.IsInitialized() || ngx.Init(*this))
-				return &ngx;
-		}
-#endif
-		return nullptr;
+		U64 val = 0;
+		ZE_EXPECT_RET_FAILED_CODE(val, SetMainFence());
+		ZE_CODE_RET_FAILED(WaitMain(val));
+		ZE_EXPECT_RET_FAILED_CODE(val, SetComputeFence());
+		ZE_CODE_RET_FAILED(WaitCompute(val));
+		ZE_EXPECT_RET_FAILED_CODE(val, SetCopyFence());
+		ZE_CODE_RET_FAILED(WaitCopy(val));
+		return {};
 	}
 #pragma endregion
 }

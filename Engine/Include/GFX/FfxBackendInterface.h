@@ -5,7 +5,7 @@
 #include "ChainPool.h"
 #include "DiskManager.h"
 ZE_WARNING_PUSH
-#include "FidelityFX/host/ffx_types.h"
+#include "FidelityFX/host/ffx_interface.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX::FFX

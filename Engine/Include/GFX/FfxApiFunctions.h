@@ -1,7 +1,8 @@
 #pragma once
+#if _ZE_FFX_API_ENABLED
 ZE_WARNING_PUSH
-#include "ffx_api.h"
-#include "ffx_api_types.h"
+#	include "ffx_api.h"
+#	include "ffx_api_types.h"
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -20,7 +21,7 @@ namespace ZE::GFX
 	// Convert FFX SDK surface format into pixel format
 	constexpr PixelFormat GetPixelFormat(FfxApiSurfaceFormat format) noexcept;
 
-#pragma region Functions
+#	pragma region Functions
 	constexpr FfxApiSurfaceFormat GetFfxApiFormat(PixelFormat format) noexcept
 	{
 		switch (format)
@@ -220,5 +221,6 @@ namespace ZE::GFX
 			return PixelFormat::R9G9B9E5_SharedExp;
 		}
 	}
-#pragma endregion
+#	pragma endregion
 }
+#endif

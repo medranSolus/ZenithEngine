@@ -21,7 +21,7 @@ namespace ZE::GFX::Resource
 		ZE_CLASS_MOVE(PipelineStateCompute);
 		~PipelineStateCompute() = default;
 
-		Expected<PipelineStateCompute> Create(Device& dev, Shader& shader, const Binding::Schema& binding) noexcept { ZE_RHI_BACKEND_CREATE(Resource::PipelineStateCompute, dev, shader, binding); }
+		static Expected<PipelineStateCompute> Create(Device& dev, Shader& shader, const Binding::Schema& binding) noexcept { ZE_RHI_BACKEND_CREATE(Resource::PipelineStateCompute, dev, shader, binding); }
 		ZE_RHI_BACKEND_GET(Resource::PipelineStateCompute);
 
 		// Main Gfx API
