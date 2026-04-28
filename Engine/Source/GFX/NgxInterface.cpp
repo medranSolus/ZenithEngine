@@ -1,3 +1,4 @@
+#if _ZE_NGX_ENABLED
 #include "GFX/NgxInterface.h"
 #include "GFX/CommandList.h"
 
@@ -208,80 +209,75 @@ namespace ZE::GFX
 		if (NVSDK_NGX_SUCCEED(res) && scratchBufferSize)
 		{
 			U8* scratchBuffer = nullptr;
-			res = param->Get(NVSDK_NGX_Parameter_Scratch, reinterpret_cast<void**>(&scratchBuffer));
-			ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to get scratch buffer pointer, possible memory leak! Error: " + std::string(GetResultString(res)));
+			ZE_NGX_CHECK(param->Get(NVSDK_NGX_Parameter_Scratch, reinterpret_cast<void**>(&scratchBuffer)), "Failed to get scratch buffer pointer, possible memory leak!");
 			if (scratchBuffer)
 				delete[] scratchBuffer;
 		}
 	}
 
-	bool NgxInterface::Init(Device& dev, bool ignoreInternalMsg) noexcept
+	NgxInterface::~NgxInterface()
 	{
-		ZE_ASSERT(!IsInitialized(), "NGX library already initialized!");
-		ZE_RHI_BACKEND_VAR.Init();
-
-		NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, InitNGX, dev, GetCommonInfo());
-		if (NVSDK_NGX_SUCCEED(res))
+		if (ngxCaps)
 		{
-			ZE_RHI_BACKEND_CALL_RET(res, GetCapabilities, ngxCaps);
-			if (NVSDK_NGX_SUCCEED(res) && ngxCaps)
+			Status res = {};
+			ZE_RHI_BACKEND_CALL_RET_VAR(res, DestroyParameter, ngxCaps);
+			if (res)
 			{
-				res = ngxCaps->Get(NVSDK_NGX_Parameter_DLSSOptimalSettingsCallback, reinterpret_cast<void**>(&optimalSettingsCallback));
-				if (NVSDK_NGX_SUCCEED(res) && optimalSettingsCallback)
-				{
-					ngxCaps->Set(NVSDK_NGX_Parameter_RTXValue, false); // Some older DLSS dlls still expect this value to be set
-					ignoreInternalLogs = ignoreInternalMsg;
-					return true;
-				}
-				else
-				{
-					ZE_FAIL("Cannot access DLSS callback for optimal settings! Error: " + std::string(GetResultString(res)));
-				}
+				ZE_CODE_ERROR(res, "Failed to free NGX capabilities!");
+			}
+		}
+	}
 
-				ZE_RHI_BACKEND_CALL_RET(res, DestroyParameter, ngxCaps);
-				ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to free NGX capabilities! Error: " + std::string(GetResultString(res)));
-				ngxCaps = nullptr;
+	Expected<NgxInterface> NgxInterface::Create(Device& dev, bool ignoreInternalMsg) noexcept
+	{
+		NgxInterface ngx;
+		auto createProxy = [&]() -> Expected<NgxInterface>
+			{
+				ZE_RHI_BACKEND_CREATE(NgxInterface, dev, GetCommonInfo());
+			};
+		auto expectedNgx = createProxy();
+		if (!expectedNgx)
+		{
+			ZE_CODE_ERROR(expectedNgx.error(), "Failed to initialize NGX!");
+			return std::unexpected(expectedNgx.error());
+		}
+		else
+			ngx = std::move(*expectedNgx);
+
+		Status code = ngx.GetCapabilities(ngx.ngxCaps);
+		if (!code && ngx.ngxCaps)
+		{
+			NVSDK_NGX_Result res = ngx.ngxCaps->Get(NVSDK_NGX_Parameter_DLSSOptimalSettingsCallback, reinterpret_cast<void**>(&ngx.optimalSettingsCallback));
+			if (NVSDK_NGX_SUCCEED(res) && ngx.optimalSettingsCallback)
+			{
+				ngx.ngxCaps->Set(NVSDK_NGX_Parameter_RTXValue, false); // Some older DLSS dlls still expect this value to be set
+				ngx.ignoreInternalLogs = ignoreInternalMsg;
+				return ngx;
 			}
 			else
 			{
-				ZE_FAIL("Error getting NGX parameters! Error: " + std::string(GetResultString(res)));
+				code = ZE_NGX_ERROR(res);
+				ZE_CODE_ERROR(code, "Cannot access DLSS callback for optimal settings!");
 			}
-			ZE_RHI_BACKEND_CALL_RET(res, Shutdown, dev);
-			ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to free NGX library! Error: " + std::string(GetResultString(res)));
 		}
 		else
 		{
-			ZE_FAIL("Failed to initialize NGX! Error: " + std::string(GetResultString(res)));
+			ZE_CODE_ERROR(code, "Error getting NGX capabilities!");
 		}
-		return false;
-	}
+		return std::unexpected(code);
+	}	
 
-	void NgxInterface::Free(Device& dev) noexcept
-	{
-		ZE_ASSERT(IsInitialized(), "NGX library already freed!");
-
-		[[maybe_unused]] NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, DestroyParameter, ngxCaps);
-		ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to free NGX capabilities! Error: " + std::string(GetResultString(res)));
-		ngxCaps = nullptr;
-
-		ZE_RHI_BACKEND_CALL_RET(res, Shutdown, dev);
-		ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to free NGX library! Error: " + std::string(GetResultString(res)));
-	}
-
-	NVSDK_NGX_Parameter* NgxInterface::AllocateParameter() const noexcept
+	Status NgxInterface::AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 
-		NVSDK_NGX_Parameter* param = nullptr;
-		[[maybe_unused]] NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, AllocateParameter, param);
-		ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to allocate param! Error: " + std::string(GetResultString(res)));
-		return param;
+		Status res = {};
+		ZE_RHI_BACKEND_CALL_RET_VAR(res, AllocateParameter, param);
+		ZE_CODE_RET_FAILED(res);
+		return {};
 	}
 
-	NVSDK_NGX_Handle* NgxInterface::CreateFeature(Device& dev, NVSDK_NGX_Feature feature, NVSDK_NGX_Parameter* initParam) const noexcept
+	Status NgxInterface::CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) const noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 
@@ -289,41 +285,70 @@ namespace ZE::GFX
 		FreeScratchBuffer(initParam);
 
 		U64 scratchBufferSize = 0;
-		NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, GetScratchBufferSize, feature, ngxCaps, scratchBufferSize);
-		if (NVSDK_NGX_FAILED(res))
+		Status code = {};
+		ZE_RHI_BACKEND_CALL_RET_VAR(code, GetScratchBufferSize, type, ngxCaps, scratchBufferSize);
+		if (code)
 		{
-			ZE_FAIL("Error getting NGX feature scratch buffer size! Error: " + std::string(GetResultString(res)));
-			return nullptr;
+			ZE_CODE_ERROR(code, "Error getting NGX feature scratch buffer size!");
+			return code;
 		}
+
 		initParam->Set(NVSDK_NGX_Parameter_RTXValue, false); // Some older DLSS dlls still expect this value to be set
 		initParam->Set(NVSDK_NGX_Parameter_Scratch_SizeInBytes, scratchBufferSize);
 		if (scratchBufferSize)
 			initParam->Set(NVSDK_NGX_Parameter_Scratch, new U8[scratchBufferSize]);
 
-		NVSDK_NGX_Handle* featureHandle = nullptr;
-		CommandList cl(dev, QueueType::Compute);
-		cl.Open(dev);
-		ZE_RHI_BACKEND_CALL_RET(res, CreateFeature, dev, cl, feature, initParam, featureHandle);
-		cl.Close(dev);
-		if (NVSDK_NGX_FAILED(res))
+		auto expCL = CommandList::Create(dev, QueueType::Compute);
+		if (!expCL)
 		{
-			ZE_FAIL("Error getting initializing NGX feature! Error: " + std::string(GetResultString(res)));
-			return nullptr;
+			ZE_CODE_ERROR(expCL.error(), "Failed to create command list for NGX feature initialization!");
+			return expCL.error();
 		}
+
+		CommandList cl = std::move(*expCL);
+		code = cl.Open(dev);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Failed to open command list for NGX feature initialization!");
+			return code;
+		}
+
+		ZE_RHI_BACKEND_CALL_RET_VAR(code, CreateFeature, dev, cl, type, initParam, feature);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Error creating NGX feature!");
+			return code;
+		}
+
+		code = cl.Close(dev);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Failed to close command list after NGX feature initialization!");
+			return code;
+		}
+
 		dev.ExecuteCompute(cl);
-		dev.WaitCompute(dev.SetComputeFence());
-		cl.Free(dev);
-		return featureHandle;
+		auto expFence = dev.SetComputeFence();
+		if (!expFence)
+		{
+			ZE_CODE_WARNING(expFence.error(), "Failed to set compute fence for NGX feature initialization, race condition may occur!");
+		}
+		else
+		{
+			code = dev.WaitCompute(*expFence);
+			if (code)
+			{
+				ZE_CODE_WARNING(expFence.error(), "Failed to flush compute queue for NGX feature initialization, race condition may occur!");
+			}
+		}
+		return {};
 	}
 
-	bool NgxInterface::RunFeature(Device& dev, CommandList& cl, const NVSDK_NGX_Handle* feature, const NVSDK_NGX_Parameter* param) const noexcept
+	Status NgxInterface::RunFeature(Device& dev, CommandList& cl, const NVSDK_NGX_Handle* feature, const NVSDK_NGX_Parameter* param) const noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 
-		NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, EvaluateFeature, dev, cl, feature, param);
-		return NVSDK_NGX_SUCCEED(res);
+		ZE_RHI_BACKEND_CALL_RET(EvaluateFeature, dev, cl, feature, param);
 	}
 
 	void NgxInterface::FreeParameter(NVSDK_NGX_Parameter* param) const noexcept
@@ -334,9 +359,12 @@ namespace ZE::GFX
 		// In case param was used to create a feature
 		FreeScratchBuffer(param);
 
-		[[maybe_unused]] NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, DestroyParameter, param);
-		ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to destroy NGX param! Error: " + std::string(GetResultString(res)));
+		Status code = {};
+		ZE_RHI_BACKEND_CALL_RET_VAR(code, DestroyParameter, param);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Failed to destroy NGX param!");
+		}
 	}
 
 	void NgxInterface::FreeFeature(NVSDK_NGX_Handle* feature) const noexcept
@@ -344,9 +372,12 @@ namespace ZE::GFX
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 		ZE_ASSERT(feature, "Empty NGX feature!");
 
-		[[maybe_unused]] NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, ReleaseFeature, feature);
-		ZE_ASSERT(NVSDK_NGX_SUCCEED(res), "Failed to destroy NGX feature! Error: " + std::string(GetResultString(res)));
+		Status code = {};
+		ZE_RHI_BACKEND_CALL_RET_VAR(code, ReleaseFeature, feature);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Failed to free NGX feature!");
+		}
 	}
 
 	bool NgxInterface::IsFeatureAvailable(Device& dev, NVSDK_NGX_Feature feature) const noexcept
@@ -370,15 +401,19 @@ namespace ZE::GFX
 #endif
 		// First general check if feature is supported at all
 		NVSDK_NGX_FeatureRequirement supported = {};
-		NVSDK_NGX_Result res = NVSDK_NGX_Result_Success;
-		ZE_RHI_BACKEND_CALL_RET(res, GetFeatureRequirements, dev, info, supported);
+		Status code = {};
+		ZE_RHI_BACKEND_CALL_RET_VAR(code, GetFeatureRequirements, dev, info, supported);
 
-		if (NVSDK_NGX_SUCCEED(res))
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "[" + std::string(GetFeatureString(feature, FeatureString::Name)) + "] Cannot feature requirements!");
+		}
+		else
 		{
 			if (supported.FeatureSupported == NVSDK_NGX_FeatureSupportResult_Supported)
 			{
 				S32 needsUpdatedDriver = 0;
-				res = ngxCaps->Get(GetFeatureString(feature, FeatureString::DriverUpdate), &needsUpdatedDriver);
+				NVSDK_NGX_Result res = ngxCaps->Get(GetFeatureString(feature, FeatureString::DriverUpdate), &needsUpdatedDriver);
 				if (NVSDK_NGX_SUCCEED(res))
 				{
 					if (needsUpdatedDriver)
@@ -397,7 +432,7 @@ namespace ZE::GFX
 				}
 				else
 				{
-					Logger::Warning("[NGX] [" + std::string(GetFeatureString(feature, FeatureString::Name)) + "] Cannot check if driver need updating!");
+					ZE_CODE_WARNING(ZE_NGX_ERROR(res), "[" + std::string(GetFeatureString(feature, FeatureString::Name)) + "] Cannot check if driver need updating!");
 				}
 				S32 featureAvailable = 0;
 				if (NVSDK_NGX_SUCCEED(ngxCaps->Get(GetFeatureString(feature, FeatureString::Available), &featureAvailable)))
@@ -436,9 +471,6 @@ namespace ZE::GFX
 				}
 			}
 		}
-		else
-			Logger::Warning("[NGX] [" + std::string(GetFeatureString(feature, FeatureString::Name)) + "] Cannot feature requirements!");
-
 		return false;
 	}
 
@@ -464,11 +496,12 @@ namespace ZE::GFX
 		}
 		else
 		{
-			ZE_FAIL("Error retrieving optimal render sizes for DLSS! Error: " + std::string(GetResultString(res)));
+			ZE_CODE_ERROR(ZE_NGX_ERROR(res), "Error retrieving optimal render sizes for DLSS!");
 		}
 		return renderSize;
 	}
 }
+#endif
 
 // What should be investigated for extended support
 #if 0

@@ -48,7 +48,7 @@ namespace ZE::GFX::Error
 		}
 	}
 
-#if _ZE_FFXAPI_ENABLED
+#if _ZE_FFX_API_ENABLED
 	std::string FfxApi::message(int condition) const
 	{
 		switch (static_cast<ffxReturnCode_t>(condition))
@@ -78,7 +78,7 @@ namespace ZE::GFX::Error
 #if _ZE_NGX_ENABLED
 	std::string NGX::message(int condition) const
 	{
-		switch (static_cast<NVSDK_NGX_Result>(condition))
+		switch (static_cast<NVSDK_NGX_Result>(condition == 0 ? NVSDK_NGX_Result_Success : condition))
 		{
 		default:
 			ZE_FAIL("Unknown NGX error code!");

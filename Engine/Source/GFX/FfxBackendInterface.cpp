@@ -278,37 +278,37 @@ namespace ZE::GFX::FFX
 		switch (dev.GetMaxShaderModel())
 		{
 		case ShaderModel::V5_0:
-		ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
-		[[fallthrough]];
+			ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
+			[[fallthrough]];
 		case ShaderModel::V5_1:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
+			break;
 		case ShaderModel::V6_0:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_0;
+			break;
 		case ShaderModel::V6_1:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_1;
+			break;
 		case ShaderModel::V6_2:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_2;
+			break;
 		case ShaderModel::V6_3:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_3;
+			break;
 		case ShaderModel::V6_4:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+			break;
 		case ShaderModel::V6_5:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_5;
+			break;
 		case ShaderModel::V6_6:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_6;
+			break;
 		case ShaderModel::V6_7:
 		case ShaderModel::V6_8:
 		case ShaderModel::V6_9:
-		deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
-		break;
+			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_6_7;
+			break;
 		}
 
 		auto minMax = dev.GetWaveLaneCountRange();
@@ -330,7 +330,6 @@ namespace ZE::GFX::FFX
 		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
 		if (--ffxInterface.ContextRefCount == 0)
 		{
-			Device& dev = GetDevice(backendInterface);
 			BackendContext& ctx = GetFfxCtx(backendInterface);
 
 			if (ffxInterface.InternalBuffers.Size())
@@ -338,18 +337,6 @@ namespace ZE::GFX::FFX
 				ffxInterface.InternalBuffers.Clear();
 				ffxInterface.NotifyBuffersChange = true;
 			}
-
-			// Free all remaining init resources
-			for (ResID ffxId : ctx.Resources.view<InitData>())
-			{
-				InitData& initData = ctx.Resources.get<InitData>(ffxId);
-				initData.IsBuffer ? initData.Buffer.Free(dev) : initData.Texture.Free(dev);
-			}
-			ctx.Resources.clear();
-
-			ctx.Pipelines.Transform([&dev](Resource::PipelineStateCompute& pipeline) { pipeline.Free(dev); });
-			ctx.Bindings.Transform([&dev](Binding::Schema& schema) { schema.Free(dev); });
-			ctx.CommandSignatures.Transform([&dev](CommandSignature& signature) { signature.Free(dev); });
 
 			ctx.~BackendContext();
 			delete[] reinterpret_cast<U8*>(ffxInterface.Ctx);
@@ -362,6 +349,14 @@ namespace ZE::GFX::FFX
 		const FfxCreateResourceDescription* createResourceDescription,
 		FfxUInt32 effectContextId, FfxResourceInternal* outTexture)
 	{
+#define ZE_FFX_RES_CHECK_FAILED(exp) \
+		if (!(exp)) \
+		{ \
+			ctx.Resources.destroy(ffxID); \
+			outTexture->internalIndex = 0; \
+			return FFX_ERROR_BACKEND_API_ERROR; \
+		}
+
 		ZE_ASSERT(createResourceDescription, "Empty FFX resource description");
 		ZE_ASSERT(outTexture, "Empty FFX out texture!");
 
@@ -405,6 +400,7 @@ namespace ZE::GFX::FFX
 		resDesc.Type = GetResourceType(createResourceDescription->resourceDescription.type);
 		ZE_FRAME_RES_SET_NAME(resDesc, Utils::ToUTF8(createResourceDescription->name));
 
+		FfxErrorCode retCode = FFX_OK;
 		if (createResourceDescription->initData.type == FFX_RESOURCE_INIT_DATA_TYPE_BUFFER
 			|| createResourceDescription->initData.type == FFX_RESOURCE_INIT_DATA_TYPE_VALUE)
 		{
@@ -424,7 +420,10 @@ namespace ZE::GFX::FFX
 				}
 				else
 					data.DataStatic = createResourceDescription->initData.buffer;
-				initData.Buffer.Init(dev, ffxInterface.Disk, data);
+
+				auto expBuffer = Resource::CBuffer::Create(dev, ffxInterface.Disk, data);
+				ZE_FFX_RES_CHECK_FAILED(expBuffer);
+				initData.Buffer = std::move(*expBuffer);
 			}
 			else
 			{
@@ -439,54 +438,58 @@ namespace ZE::GFX::FFX
 				switch (createResourceDescription->resourceDescription.type)
 				{
 				case FFX_RESOURCE_TYPE_TEXTURE1D:
-				texType = Resource::Texture::Type::Tex1D;
-				break;
+					texType = Resource::Texture::Type::Tex1D;
+					break;
 				default:
-				ZE_ENUM_UNHANDLED();
-				case FFX_RESOURCE_TYPE_TEXTURE2D:
-				break;
+					ZE_ENUM_UNHANDLED();
+					case FFX_RESOURCE_TYPE_TEXTURE2D:
+					break;
 				case FFX_RESOURCE_TYPE_TEXTURE_CUBE:
-				texType = Resource::Texture::Type::Cube;
-				break;
+					texType = Resource::Texture::Type::Cube;
+					break;
 				case FFX_RESOURCE_TYPE_TEXTURE3D:
-				texType = Resource::Texture::Type::Tex3D;
-				break;
+					texType = Resource::Texture::Type::Tex3D;
+					break;
 				}
 				packDesc.AddTexture(texType, std::move(surfaces));
 				ZE_TEXTURE_SET_NAME(packDesc, Utils::ToUTF8(createResourceDescription->name) + "_INIT_DATA");
-				initData.Texture.Init(dev, ffxInterface.Disk, packDesc);
+
+				auto expTex = Resource::Texture::Pack::Create(dev, ffxInterface.Disk, packDesc);
+				ZE_FFX_RES_CHECK_FAILED(expTex);
+				initData.Texture = std::move(*expTex);
 			}
-			DiskStatusHandle diskStatus = ffxInterface.Disk.SetGPUUploadWaitPoint();
+			auto diskStatus = ffxInterface.Disk.SetGPUUploadWaitPoint();
+			ZE_FFX_RES_CHECK_FAILED(diskStatus);
 			ffxInterface.Disk.StartUploadGPU();
 
 			CommandList barrierCL;
-			bool workPending = ffxInterface.Disk.IsGPUWorkPending(diskStatus);
+			bool workPending = ffxInterface.Disk.IsGPUWorkPending(*diskStatus);
 			if (workPending)
 			{
-				barrierCL.Init(dev);
-				barrierCL.Open(dev);
+				auto expCL = CommandList::Create(dev);
+				ZE_FFX_RES_CHECK_FAILED(expCL);
+				Status code = expCL->Open(dev);
+				ZE_FFX_RES_CHECK_FAILED(!code);
+				barrierCL = std::move(*expCL);
 			}
-			bool status = ffxInterface.Disk.WaitForUploadGPU(dev, barrierCL, diskStatus);
-			ZE_ASSERT(status, "Error uploading initial FFX resource data!");
+			Status code = ffxInterface.Disk.WaitForUploadGPU(dev, barrierCL, *diskStatus);
+			ZE_FFX_RES_CHECK_FAILED(!code);
 			if (workPending)
 			{
-				barrierCL.Close(dev);
+				code = barrierCL.Close(dev);
+				ZE_FFX_RES_CHECK_FAILED(!code);
 				dev.ExecuteMain(barrierCL);
-				dev.WaitMain(dev.SetMainFence());
-				barrierCL.Free(dev);
-			}
-			if (!status)
-			{
-				ctx.Resources.destroy(ffxID);
-				outTexture->internalIndex = 0;
-				return FFX_ERROR_BACKEND_API_ERROR;
+				auto expFence = dev.SetMainFence();
+				ZE_FFX_RES_CHECK_FAILED(expFence);
+				code = dev.WaitMain(*expFence);
+				ZE_FFX_RES_CHECK_FAILED(!code);
 			}
 
 			// Special type of job, meaning to initialize resource data
 			FfxGpuJobDescription copyJob = {};
 			copyJob.jobType = FFX_GPU_JOB_COPY;
 			copyJob.copyJobDescriptor.src = copyJob.copyJobDescriptor.dst = *outTexture;
-			ffxScheduleGpuJob(backendInterface, &copyJob);
+			retCode = ffxScheduleGpuJob(backendInterface, &copyJob);
 		}
 
 		ffxInterface.InternalBuffers.Add(outTexture->internalIndex, resDesc, INVALID_RID, effectContextId);
@@ -498,7 +501,8 @@ namespace ZE::GFX::FFX
 		if (createResourceDescription->name)
 			wcscpy_s(ctx.Resources.emplace<ResourceName>(ffxID).Name, createResourceDescription->name);
 #endif
-		return FFX_OK;
+#undef ZE_FFX_RES_CHECK_FAILED
+		return retCode;
 	}
 
 	FfxErrorCode ffxDestroyResource(FfxInterface* backendInterface, FfxResourceInternal resource, FfxUInt32 effectContextId)
@@ -512,12 +516,7 @@ namespace ZE::GFX::FFX
 			// Due to different handling of internal resources sometimes there can be request to delete resource that is not present (eg. FSR2 copy resources)
 			if (ctx.Resources.valid(id))
 			{
-				Device& dev = GetDevice(backendInterface);
 				ZE_ASSERT(ffxInterface.InternalBuffers.Contains(resource.internalIndex), "Resource has not been properly created!");
-
-				InitData* initData = ctx.Resources.try_get<InitData>(id);
-				if (initData)
-					initData->IsBuffer ? initData->Buffer.Free(dev) : initData->Texture.Free(dev);
 				ffxInterface.InternalBuffers.Remove(resource.internalIndex);
 
 				for (U64 i = 0; i < ctx.Jobs.size(); )
@@ -628,10 +627,14 @@ namespace ZE::GFX::FFX
 		{
 			Device& dev = GetDevice(backendInterface);
 			auto alloc = GetFfxInterface(backendInterface).DynamicBuffers.Get().Alloc(dev, data, size);
-
-			constantBuffer->data = reinterpret_cast<U32*>(alloc.Block);
-			constantBuffer->num32BitEntries = alloc.Offset;
-			return FFX_OK;
+			if (alloc)
+			{
+				constantBuffer->data = reinterpret_cast<U32*>(alloc->Block);
+				constantBuffer->num32BitEntries = alloc->Offset;
+				return FFX_OK;
+			}
+			ZE_CODE_ERROR(alloc.error(), "Failed to allocate FFX dynamic constant buffer memory!");
+			return FFX_ERROR_BACKEND_API_ERROR;
 		}
 		else
 			return FFX_ERROR_INVALID_POINTER;
@@ -640,7 +643,12 @@ namespace ZE::GFX::FFX
 	FfxErrorCode ffxMapResource(FfxInterface* backendInterface, FfxResourceInternal resource, void** ptr)
 	{
 		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
-		ffxInterface.Buffers.MapResource(GetDevice(backendInterface), GetRID(ffxInterface, resource.internalIndex), ptr);
+		Status code = ffxInterface.Buffers.MapResource(GetDevice(backendInterface), GetRID(ffxInterface, resource.internalIndex), ptr);
+		if (code)
+		{
+			ZE_CODE_ERROR(code, "Failed to map FFX resource!");
+			return FFX_ERROR_BACKEND_API_ERROR;
+		}
 		return FFX_OK;
 	}
 
@@ -740,16 +748,32 @@ namespace ZE::GFX::FFX
 			}
 			// TODO: cache binding based on input parameters
 			if (!ctx.Bindings.Contains(id))
-				ctx.Bindings.Add(id, dev, schemaDesc);
+			{
+				auto expBinding = Binding::Schema::Create(dev, schemaDesc);
+				if (!expBinding)
+				{
+					ZE_CODE_ERROR(expBinding.error(), "Failed to create FFX binding schema!");
+					return FFX_ERROR_BACKEND_API_ERROR;
+				}
+				ctx.Bindings.Add(id, std::move(*expBinding));
+			}
 			if (!ctx.BindingsReferences.Contains(id))
 				ctx.BindingsReferences.Add(id, 0ULL);
 
 			// Create pipeline
 			if (!ctx.Pipelines.Contains(id))
-				ctx.Pipelines.Add(id, dev, shader, ctx.Bindings.Get(id));
+			{
+				auto exp = Resource::PipelineStateCompute::Create(dev, shader, ctx.Bindings.Get(id));
+				[[unlikely]]
+				if (!exp)
+				{
+					ZE_CODE_ERROR(exp.error(), "Failed to create FFX pipeline!");
+					return FFX_ERROR_BACKEND_API_ERROR;
+				}
+				ctx.Pipelines.Add(id, std::move(*exp));
+			}
 			if (!ctx.PipelinesReferences.Contains(id))
 				ctx.PipelinesReferences.Add(id, 0ULL);
-			shader.Free(dev);
 		}
 		else
 		{
@@ -800,10 +824,19 @@ namespace ZE::GFX::FFX
 		// Only set the command signature if this is setup as an indirect workload
 		if (desc->indirectWorkload)
 		{
+			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
+			{
+				auto exp = CommandSignature::Create(dev, IndirectCommandType::Dispatch);
+				[[unlikely]]
+				if (!exp)
+				{
+					ZE_CODE_ERROR(exp.error(), "Cannot create indirect command signature for FFX pipeline!");
+					return FFX_ERROR_BACKEND_API_ERROR;
+				}
+				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, std::move(*exp));
+			}
 			if (!ctx.CommandSignaturesReferences.Contains(IndirectCommandType::Dispatch))
 				ctx.CommandSignaturesReferences.Add(IndirectCommandType::Dispatch, 0ULL);
-			if (!ctx.CommandSignatures.Contains(IndirectCommandType::Dispatch))
-				ctx.CommandSignatures.Add(IndirectCommandType::Dispatch, dev, IndirectCommandType::Dispatch);
 
 			outPipeline->cmdSignature = reinterpret_cast<FfxCommandSignature>(IndirectCommandType::Dispatch);
 			++ctx.CommandSignaturesReferences.Get(IndirectCommandType::Dispatch);
@@ -818,40 +851,33 @@ namespace ZE::GFX::FFX
 	{
 		if (pipeline)
 		{
-			Device& dev = GetDevice(backendInterface);
 			BackendContext& ctx = GetFfxCtx(backendInterface);
 
 			if (pipeline->rootSignature)
 			{
 				const U64 id = reinterpret_cast<U64>(pipeline->rootSignature);
 				ZE_ASSERT(ctx.BindingsReferences.Get(id) > 0, "Incorrect FFX binding reference count!");
+
 				if (--ctx.BindingsReferences.Get(id) == 0)
-				{
-					ctx.Bindings.Get(id).Free(dev);
 					ctx.Bindings.Remove(id);
-				}
 				pipeline->rootSignature = nullptr;
 			}
 			if (pipeline->cmdSignature)
 			{
 				const IndirectCommandType id = static_cast<IndirectCommandType>(reinterpret_cast<U64>(pipeline->cmdSignature));
 				ZE_ASSERT(ctx.CommandSignaturesReferences.Get(id) > 0, "Incorrect FFX command signature reference count!");
+
 				if (--ctx.CommandSignaturesReferences.Get(id) == 0)
-				{
-					ctx.CommandSignatures.Get(id).Free(dev);
 					ctx.CommandSignatures.Remove(id);
-				}
 				pipeline->cmdSignature = nullptr;
 			}
 			if (pipeline->pipeline)
 			{
 				const U64 id = reinterpret_cast<U64>(pipeline->pipeline);
 				ZE_ASSERT(ctx.PipelinesReferences.Get(id) > 0, "Incorrect FFX pipeline reference count!");
+
 				if (--ctx.PipelinesReferences.Get(id) == 0)
-				{
-					ctx.Pipelines.Get(id).Free(dev);
 					ctx.Pipelines.Remove(id);
-				}
 				pipeline->pipeline = nullptr;
 			}
 		}
@@ -879,23 +905,23 @@ namespace ZE::GFX::FFX
 			switch (job.jobType)
 			{
 			case FFX_GPU_JOB_CLEAR_FLOAT:
-			ExecuteClearJob(ffxInterface, cl, ffxInterface.Buffers, job.clearJobDescriptor);
-			break;
+				ExecuteClearJob(ffxInterface, cl, ffxInterface.Buffers, job.clearJobDescriptor);
+				break;
 			case FFX_GPU_JOB_COPY:
-			ExecuteCopyJob(ffxInterface, dev, cl, ffxInterface.Buffers, job.copyJobDescriptor);
-			break;
+				ExecuteCopyJob(ffxInterface, dev, cl, ffxInterface.Buffers, job.copyJobDescriptor);
+				break;
 			case FFX_GPU_JOB_COMPUTE:
-			ExecuteComputeJob(ffxInterface, dev, cl, dynamicBuffer, ffxInterface.Buffers, job.computeJobDescriptor);
-			break;
+				ExecuteComputeJob(ffxInterface, dev, cl, dynamicBuffer, ffxInterface.Buffers, job.computeJobDescriptor);
+				break;
 			case FFX_GPU_JOB_BARRIER:
-			ExecuteBarrierJob(ffxInterface, cl, ffxInterface.Buffers, job.barrierDescriptor);
-			break;
+				ExecuteBarrierJob(ffxInterface, cl, ffxInterface.Buffers, job.barrierDescriptor);
+				break;
 			case FFX_GPU_JOB_DISCARD:
-			ExecuteDiscardJob(ffxInterface, cl, ffxInterface.Buffers, job.discardJobDescriptor);
-			break;
+				ExecuteDiscardJob(ffxInterface, cl, ffxInterface.Buffers, job.discardJobDescriptor);
+				break;
 			default:
-			ZE_FAIL("Unknown FFX GPU job!");
-			break;
+				ZE_FAIL("Unknown FFX GPU job!");
+				break;
 			}
 		}
 		ctx.Jobs.clear();
@@ -904,10 +930,7 @@ namespace ZE::GFX::FFX
 		{
 			InitData& initData = ctx.Resources.get<InitData>(ffxId);
 			if (initData.LastFrameUsed + Settings::GetBackbufferCount() < Settings::GetFrameIndex())
-			{
-				initData.IsBuffer ? initData.Buffer.Free(dev) : initData.Texture.Free(dev);
 				ctx.Resources.remove<InitData>(ffxId);
-			}
 		}
 
 		return FFX_OK;
@@ -917,8 +940,14 @@ namespace ZE::GFX::FFX
 	{
 		ZE_ASSERT(blockData != nullptr, "Empty FFX Breadcrumbs block data!");
 
-		*blockData = GetDevice(backendInterface).AllocBreadcrumbsBlock(blockBytes);
-		return FFX_OK;
+		auto exp = GetDevice(backendInterface).AllocBreadcrumbsBlock(blockBytes);
+		if (exp)
+		{
+			*blockData = std::move(*exp);
+			return FFX_OK;
+		}
+		ZE_CODE_ERROR(exp.error(), "Failed to allocate FFX Breadcrumbs block!");
+		return FFX_ERROR_BACKEND_API_ERROR;
 	}
 
 	void ffxBreadcrumbsFreeBlock(FfxInterface* backendInterface, FfxBreadcrumbsBlockData* blockData)

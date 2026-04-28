@@ -1,9 +1,13 @@
 #include "GFX/UpscalerType.h"
 #include "GFX/Device.h"
-#include "GFX/XeSSException.h"
+#include "GFX/ExternalInterface.h"
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_fsr1.h"
-#include "ffx_upscale.h"
+#include "FidelityFX/host/ffx_fsr2.h"
+#include "FidelityFX/host/ffx_fsr3upscaler.h"
+#if _ZE_FFX_API_ENABLED
+#	include "ffx_upscale.h"
+#endif
 ZE_WARNING_POP
 
 namespace ZE::GFX
@@ -37,12 +41,12 @@ namespace ZE::GFX
 			ffxFsr3UpscalerGetRenderResolutionFromQualityMode(&renderSize.X, &renderSize.Y, targetSize.X, targetSize.Y, fsr3Quality);
 			return renderSize;
 		}
-#if _ZE_FFXAPI_ENABLED
+#if _ZE_FFX_API_ENABLED
 		case UpscalerType::FfxFsr:
 		{
 			UInt2 renderSize = {};
-			const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
-			if (ffxFunc)
+			FfxApiInterface* ffx = ExternalInterface::CreateConnectionFfxApi();
+			if (ffx)
 			{
 				ffxQueryDescUpscaleGetRenderResolutionFromQualityMode queryDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE, nullptr };
 				queryDesc.displayWidth = targetSize.X;
@@ -50,10 +54,12 @@ namespace ZE::GFX
 				queryDesc.qualityMode = quality;
 				queryDesc.pOutRenderWidth = &renderSize.X;
 				queryDesc.pOutRenderHeight = &renderSize.Y;
-				ffxReturnCode_t code = ffxFunc->Query(nullptr, &queryDesc.header);
-				if (code == FFX_API_RETURN_OK)
+				ffxReturnCode_t res = ffx->GetFunctions().Query(nullptr, &queryDesc.header);
+				ExternalInterface::ReleaseConnectionFfxApi();
+
+				if (res == FFX_API_RETURN_OK)
 					return renderSize;
-				ZE_FAIL("Failed obtaining render resolution from FFX API! Error message: " + std::string(GetFfxApiReturnString(code)));
+				ZE_CODE_ERROR(ZE_FFX_API_ERROR(res), "Failed obtaining render resolution from FFX API!");
 			}
 			return targetSize;
 		}
@@ -61,12 +67,20 @@ namespace ZE::GFX
 #if _ZE_XESS_ENABLED
 		case UpscalerType::XeSS:
 		{
-			ZE_XESS_ENABLE();
-			xess_2d_t renderSize = {};
-			const xess_2d_t output = { targetSize.X, targetSize.Y };
-			const xess_quality_settings_t xessQuality = quality == UINT32_MAX ? XESS_QUALITY_SETTING_AA : static_cast<xess_quality_settings_t>(quality);
-			ZE_XESS_CHECK(xessGetInputResolution(dev.GetXeSSCtx(), &output, xessQuality, &renderSize), "Error retrieving XeSS render resolution!");
-			return { renderSize.x, renderSize.y };
+			XeSSInterface* xess = ExternalInterface::CreateConnectionXeSS(dev);
+			if (xess)
+			{
+				xess_2d_t renderSize = {};
+				const xess_2d_t output = { targetSize.X, targetSize.Y };
+				const xess_quality_settings_t xessQuality = quality == UINT32_MAX ? XESS_QUALITY_SETTING_AA : static_cast<xess_quality_settings_t>(quality);
+				xess_result_t res = xessGetInputResolution(xess->GetCtx(), &output, xessQuality, &renderSize);
+				ExternalInterface::ReleaseConnectionXeSS();
+
+				if (res == XESS_RESULT_SUCCESS)
+					return { renderSize.x, renderSize.y };
+				ZE_CODE_ERROR(ZE_XESS_ERROR(res), "Error retrieving XeSS render resolution!");
+			}
+			return targetSize;
 		}
 #endif
 		case UpscalerType::NIS:
@@ -102,11 +116,13 @@ namespace ZE::GFX
 #if _ZE_DLSS_ENABLED
 		case UpscalerType::DLSS:
 		{
-			NgxInterface* ngx = dev.GetNGX();
+			NgxInterface* ngx = ExternalInterface::CreateConnectionNGX(dev);
 			if (ngx)
 			{
 				const NVSDK_NGX_PerfQuality_Value ngxQuality = quality == UINT32_MAX ? NVSDK_NGX_PerfQuality_Value_DLAA : static_cast<NVSDK_NGX_PerfQuality_Value>(quality);
-				return ngx->GetRenderSize(targetSize, ngxQuality);
+				UInt2 renderSize = ngx->GetRenderSize(targetSize, ngxQuality);
+				ExternalInterface::ReleaseConnectionNGX();
+				return renderSize;
 			}
 			return targetSize;
 		}
@@ -144,44 +160,43 @@ namespace ZE::GFX
 		}
 		case UpscalerType::FfxFsr:
 		{
-#if _ZE_FFXAPI_ENABLED
-			const FfxApiFunctions* ffxFunc = dev.GetFfxFunctions();
-			if (ffxFunc)
+#if _ZE_FFX_API_ENABLED
+			FfxApiInterface* ffx = ExternalInterface::CreateConnectionFfxApi();
+			if (ffx)
 			{
 				ffxQueryDescUpscaleGetJitterPhaseCount phaseDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTERPHASECOUNT, nullptr };
 				ffxQueryDescUpscaleGetJitterOffset jitterDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTEROFFSET, nullptr };
 				phaseDesc.renderWidth = renderSize.X;
 				phaseDesc.displayWidth = displaySize.X;
 				phaseDesc.pOutPhaseCount = &jitterDesc.phaseCount;
-				ffxReturnCode_t code = ffxFunc->Query(nullptr, &phaseDesc.header);
+				ffxReturnCode_t code = ffx->GetFunctions().Query(nullptr, &phaseDesc.header);
+
 				if (code == FFX_API_RETURN_OK)
 				{
 					jitterDesc.index = (phaseIndex + 1) % jitterDesc.phaseCount;
 					jitterDesc.pOutX = &jitterX;
 					jitterDesc.pOutY = &jitterY;
-					code = ffxFunc->Query(nullptr, &phaseDesc.header);
+					code = ffx->GetFunctions().Query(nullptr, &phaseDesc.header);
 					if (code == FFX_API_RETURN_OK)
-					{
 						phaseIndex = static_cast<U32>(jitterDesc.index);
-						return;
-					}
 					else
 					{
-						ZE_FAIL("Failed obtaining jitter offset from FFX API! Error message: " + std::string(GetFfxApiReturnString(code)));
+						ZE_CODE_ERROR(ZE_FFX_API_ERROR(code), "Failed obtaining jitter offset from FFX API!");
 					}
 				}
 				else
 				{
-					ZE_FAIL("Failed obtaining jitter phase count from FFX API! Error message: " + std::string(GetFfxApiReturnString(code)));
+					ZE_CODE_ERROR(ZE_FFX_API_ERROR(code), "Failed obtaining jitter phase count from FFX API!");
 				}
+				ExternalInterface::ReleaseConnectionFfxApi();
 			}
 			else
 			{
 				ZE_FAIL("Cannot obtain FFX API functions!");
+				phaseIndex = 0;
+				jitterX = 0.0f;
+				jitterY = 0.0f;
 			}
-			phaseIndex = 0;
-			jitterX = 0.0f;
-			jitterY = 0.0f;
 			break;
 #else
 			[[fallthrough]]; // Safe fallback to FSR3 jitter calculation (should be same anyway but who knows future(tm)..)
@@ -266,19 +281,19 @@ namespace ZE::GFX
 					U8 Code = 0;
 					GfxApiType LastApiCheck = GfxApiType::OpenGL;
 				} status = {};
+
 				if (status.Code == 0 || status.LastApiCheck != Settings::GetGfxApi())
 				{
 					status.LastApiCheck = Settings::GetGfxApi();
-					NgxInterface* ngx = dev.GetNGX();
+					NgxInterface* ngx = ExternalInterface::CreateConnectionNGX(dev);
 					if (ngx)
 					{
 						if (ngx->IsFeatureAvailable(dev, NVSDK_NGX_Feature_SuperSampling))
-						{
 							status.Code = 1;
-							return true;
-						}
+						ExternalInterface::ReleaseConnectionNGX();
 					}
-					status.Code = 2;
+					else
+						status.Code = 2;
 				}
 				return status.Code == 1;
 			}
