@@ -108,8 +108,8 @@ set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
-set(FFXAPI_DIR "${EXTERNAL_DIR}/FidelityFXSDK/Kits/FidelityFX")
-set(FFXAPI_DLL_DIR "${FFXAPI_DIR}/signedbin")
+set(FFX_API_DIR "${EXTERNAL_DIR}/FidelityFXSDK/Kits/FidelityFX")
+set(FFX_API_DLL_DIR "${FFX_API_DIR}/signedbin")
 set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK_Legacy/sdk")
 set(FLAC_DIR "${EXTERNAL_DIR}/flac")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
@@ -149,11 +149,11 @@ set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
-set(FFXAPI_INC_DIR "${FFXAPI_DIR}/api/include")
-set(FFXAPI_UPSCALE_INC_DIR "${FFXAPI_DIR}/upscalers/include")
-set(FFXAPI_FRAMEGEN_INC_DIR "${FFXAPI_DIR}/framegeneration/include")
-set(FFXAPI_DENOISER_INC_DIR "${FFXAPI_DIR}/denoisers/include")
-set(FFXAPI_RADCACHE_INC_DIR "${FFXAPI_DIR}/radiancecache/include")
+set(FFX_API_INC_DIR "${FFX_API_DIR}/api/include")
+set(FFX_API_UPSCALE_INC_DIR "${FFX_API_DIR}/upscalers/include")
+set(FFX_API_FRAMEGEN_INC_DIR "${FFX_API_DIR}/framegeneration/include")
+set(FFX_API_DENOISER_INC_DIR "${FFX_API_DIR}/denoisers/include")
+set(FFX_API_RADCACHE_INC_DIR "${FFX_API_DIR}/radiancecache/include")
 set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(FLAC_INC_DIR "${FLAC_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
@@ -194,8 +194,8 @@ set_bool(ZE_ASSIMP_ENABLED ${ZE_EXTERNAL_MODEL_LOADING})
 set_bool(ZE_DLSS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
 set_bool(ZE_NGX_ENABLED ${ZE_DLSS_ENABLED})
 set_bool(ZE_DSTORE_ENABLED ${ZE_ENABLE_DX12})
-set_bool(ZE_FFXAPI_ENABLED ${ZE_ENABLE_DX12})
-set_bool(ZE_FFXAPI_ENABLED_GEN ${ZE_ENABLE_DX12})
+set_bool(ZE_FFX_API_ENABLED ${ZE_ENABLE_DX12})
+set_bool(ZE_FFX_API_ENABLED_GEN ${ZE_ENABLE_DX12})
 set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
 set_bool(ZE_PIX_ENABLED ${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE})
 set_bool(ZE_XESS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
@@ -225,11 +225,11 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${DXTEX_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${FTYPE_INC_DIR}"
-	"${FFXAPI_INC_DIR}"
-	"${FFXAPI_UPSCALE_INC_DIR}"
-	"${FFXAPI_FRAMEGEN_INC_DIR}"
-	"${FFXAPI_DENOISER_INC_DIR}"
-	"${FFXAPI_RADCACHE_INC_DIR}"
+	"${FFX_API_INC_DIR}"
+	"${FFX_API_UPSCALE_INC_DIR}"
+	"${FFX_API_FRAMEGEN_INC_DIR}"
+	"${FFX_API_DENOISER_INC_DIR}"
+	"${FFX_API_RADCACHE_INC_DIR}"
 	"${FFXSDK_INC_DIR}"
 	"${FLAC_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
@@ -342,6 +342,9 @@ if(${ZE_ENABLE_XAUDIO2})
 endif()
 if(${ZE_XESS_ENABLED})
 	set(XESS_TARGET "${XESS_DIR}/lib/${XESS_LIB}.lib")
+    if(${ZE_ENABLE_DX11})
+		set(XESS_DX11_TARGET "${XESS_DIR}/lib/${XESS_LIB}_dx11.lib")
+    endif()
 endif()
 set(ZLIB_TARGET "zs")
 
@@ -384,6 +387,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
 	${XESS_TARGET}
+	${XESS_DX11_TARGET}
 	${VORB_TARGETS}
 	${VOLK_TARGET}
 	${ZLIB_TARGET})
@@ -492,7 +496,7 @@ add_compile_definitions(ZE_NGX_ID=${ZE_NGX_ID})
 # EnTT is causing errors due to usage of std::aligned_storage, to be removed when it's fixed in lib
 add_compile_definitions(_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING)
 # Flags for enabling features per given target
-add_compile_definitions(_ZE_FFXAPI_ENABLED=$<BOOL:${ZE_FFXAPI_ENABLED}>)
+add_compile_definitions(_ZE_FFX_API_ENABLED=$<BOOL:${ZE_FFX_API_ENABLED}>)
 add_compile_definitions(_ZE_DLSS_ENABLED=$<BOOL:${ZE_DLSS_ENABLED}>)
 add_compile_definitions(_ZE_NGX_ENABLED=$<BOOL:${ZE_NGX_ENABLED}>)
 add_compile_definitions(_ZE_XESS_ENABLED=$<BOOL:${ZE_XESS_ENABLED}>)
@@ -533,7 +537,7 @@ add_definition_flags(
 	"NDEBUG")
 
 # Shader flags
-set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DZE_USE_FFX_API_FSR2_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DZE_USE_FFX_API_FSR3_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${FFXAPI_DIR}\" /I \"${NIS_INC_DIR}\"")
+set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DZE_USE_FFX_API_FSR2_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DZE_USE_FFX_API_FSR3_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${FFX_API_DIR}\" /I \"${NIS_INC_DIR}\"")
 if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
 	if(NOT ${ZE_BUILD_PROFILE})

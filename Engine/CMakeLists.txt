@@ -35,8 +35,8 @@ if(${ZE_ENABLE_DX12})
     
     copy_runtime_data(ENGINE_AGILITY "${AGILITY_DIR}/bin/x64" "" "D3D12Core.dll" "AgilitySDK/")
     copy_runtime_data(ENGINE_DSTORE "${DSTORE_DIR}/bin/x64" "" ".dll" "")
-    copy_runtime_data(ENGINE_FFXAPI_DX12_LOADER "${FFXAPI_DLL_DIR}" "" "amd_fidelityfx_loader_dx12.dll" "")
-    copy_runtime_data(ENGINE_FFXAPI_DX12_UPSCALE "${FFXAPI_DLL_DIR}" "" "amd_fidelityfx_upscaler_dx12.dll" "")
+    copy_runtime_data(ENGINE_FFX_API_DX12_LOADER "${FFX_API_DLL_DIR}" "" "amd_fidelityfx_loader_dx12.dll" "")
+    copy_runtime_data(ENGINE_FFX_API_DX12_UPSCALE "${FFX_API_DLL_DIR}" "" "amd_fidelityfx_upscaler_dx12.dll" "")
 endif()
 
 # Hardware specific lib
@@ -51,6 +51,9 @@ if(${ZE_ENABLE_OPENAL})
 endif()
 if(${ZE_XESS_ENABLED})
     copy_runtime_data(ENGINE_XESS "${XESS_DIR}/bin" "${XESS_LIB}.dll" "" "")
+    if(${ZE_ENABLE_DX11})
+        copy_runtime_data(ENGINE_XESS_DX11 "${XESS_DIR}/bin" "${XESS_LIB}_dx11.dll" "" "")
+    endif()
 endif()
 if(${ZE_DLSS_ENABLED})
     if(${ZE_BUILD_RELEASE} OR ${ZE_BUILD_PROFILE})
@@ -152,13 +155,14 @@ add_dependencies(${ENGINE_TARGET}
     ${ENGINE_AGS_COPY_TARGET}
     ${ENGINE_DLSS_COPY_TARGET}
     ${ENGINE_DSTORE_COPY_TARGET}
-    ${ENGINE_FFXAPI_DX12_LOADER_COPY_TARGET}
-    ${ENGINE_FFXAPI_DX12_UPSCALE_COPY_TARGET}
-    ${ENGINE_FFXAPI_DX12_FRAMEGEN_COPY_TARGET}
+    ${ENGINE_FFX_API_DX12_LOADER_COPY_TARGET}
+    ${ENGINE_FFX_API_DX12_UPSCALE_COPY_TARGET}
+    ${ENGINE_FFX_API_DX12_FRAMEGEN_COPY_TARGET}
     ${ENGINE_PIX_COPY_TARGET}
     ${ENGINE_XAUDIO2_COPY_TARGET}
     ${ENGINE_OPENAL_COPY_TARGET}
-    ${ENGINE_XESS_COPY_TARGET})
+    ${ENGINE_XESS_COPY_TARGET}
+    ${ENGINE_XESS_DX11_COPY_TARGET})
 
 # Icon definition
 if(${ZE_PLATFORM_WINDOWS})

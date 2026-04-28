@@ -5,10 +5,9 @@
 
 namespace ZE::RHI::DX12
 {
-	void CommandList::Open(Device& dev, IPipelineState* state)
+	Status CommandList::Open(Device& dev, IPipelineState* state) const noexcept
 	{
-		ZE_DX_ENABLE(dev);
-		ZE_DX_THROW_FAILED(commands->Reset(allocator.Get(), state));
+		ZE_DX_RET_FAILED(commands->Reset(allocator.Get(), state));
 		RestoreExternalState(dev);
 	}
 
@@ -18,25 +17,27 @@ namespace ZE::RHI::DX12
 		commands->SetDescriptorHeaps(1, heaps);
 	}
 
-	CommandList::CommandList(GFX::Device& dev, GFX::QueueType type)
+	Expected<CommandList> CommandList::Create(GFX::Device& dev, GFX::QueueType type) noexcept
 	{
-		Init(dev.Get().dx12, type);
+		return Create(dev.Get().dx12, type);
 	}
 
-	void CommandList::Open(GFX::Device& dev)
+	Status CommandList::Open(GFX::Device& dev) const noexcept
 	{
-		Open(dev.Get().dx12, nullptr);
+		return Open(dev.Get().dx12, nullptr);
 	}
 
-	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
+	Status CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) const noexcept
 	{
-		Open(dev.Get().dx12, pso.Get().dx12.GetState());
+		return Open(dev.Get().dx12, pso.Get().dx12.GetState());
 	}
 
-	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
+	Status CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) const noexcept
 	{
-		Open(dev.Get().dx12, pso.Get().dx12.GetState());
+		if (Status code = Open(dev.Get().dx12, pso.Get().dx12.GetState()))
+			return code;
 		commands->IASetPrimitiveTopology(pso.Get().dx12.GetTopology());
+		return {};
 	}
 
 	void CommandList::RestoreExternalState(GFX::Device& dev) const noexcept
@@ -44,39 +45,34 @@ namespace ZE::RHI::DX12
 		RestoreExternalState(dev.Get().dx12);
 	}
 
-	void CommandList::Close(GFX::Device& dev)
+	Status CommandList::Close(GFX::Device& dev) const noexcept
 	{
-		Close(dev.Get().dx12);
+		return Close(dev.Get().dx12);
 	}
 
-	void CommandList::Reset(GFX::Device& dev)
+	Status CommandList::Reset(GFX::Device& dev) const noexcept
 	{
-		Reset(dev.Get().dx12);
+		return Reset(dev.Get().dx12);
 	}
 
-	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
+	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-
 		commands->IASetVertexBuffers(0, 0, nullptr);
 		commands->IASetIndexBuffer(nullptr);
-		ZE_DX_THROW_FAILED_INFO(commands->DrawInstanced(3, 1, 0, 0));
+		ZE_DX_CHECK_FAILED(commands->DrawInstanced(3, 1, 0, 0), "Fullscreen draw produced debug layer messages!");
 	}
 
-	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API)
+	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-		ZE_DX_THROW_FAILED_INFO(commands->Dispatch(groupX, groupY, groupZ));
+		ZE_DX_CHECK_FAILED(commands->Dispatch(groupX, groupY, groupZ), "Dispatch produced debug layer messages!");
 	}
 
-	void CommandList::WriteBreadcrumbs(GFX::Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept(!_ZE_DEBUG_GFX_API)
+	void CommandList::WriteBreadcrumbs(GFX::Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx12);
-
 		const D3D12_WRITEBUFFERIMMEDIATE_MODE mode = isBegin ? D3D12_WRITEBUFFERIMMEDIATE_MODE_MARKER_IN : D3D12_WRITEBUFFERIMMEDIATE_MODE_MARKER_OUT;
 		const D3D12_WRITEBUFFERIMMEDIATE_PARAMETER params = { location, value };
 
-		ZE_DX_THROW_FAILED_INFO(commands->WriteBufferImmediate(1, &params, &mode));
+		ZE_DX_CHECK_FAILED(commands->WriteBufferImmediate(1, &params, &mode), "Breadcrumb call produced debug layer messages!");
 	}
 
 #if _ZE_GFX_MARKERS
@@ -111,12 +107,12 @@ namespace ZE::RHI::DX12
 	}
 #endif
 
-	void CommandList::Init(Device& dev, GFX::QueueType type)
+	Expected<CommandList> CommandList::Create(Device& dev, GFX::QueueType type) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev);
-		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&allocator)));
-		ZE_DX_THROW_FAILED(dev.GetDevice()->CreateCommandList1(0,
-			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&commands)));
+		CommandList cl;
+		ZE_DX_RET_FAILED_EXPECT(dev.GetDevice()->CreateCommandAllocator(GetCommandType(type), IID_PPV_ARGS(&cl.allocator)));
+		ZE_DX_RET_FAILED_EXPECT(dev.GetDevice()->CreateCommandList1(0,
+			GetCommandType(type), D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cl.commands)));
 
 #if _ZE_DEBUG_GFX_NAMES
 		switch (type)
@@ -124,35 +120,34 @@ namespace ZE::RHI::DX12
 		default:
 		case GFX::QueueType::Main:
 		{
-			ZE_DX_SET_ID(allocator, "direct_allocator");
-			ZE_DX_SET_ID(commands, "direct_command");
+			ZE_DX_SET_ID(cl.allocator, "direct_allocator");
+			ZE_DX_SET_ID(cl.commands, "direct_command");
 			break;
 		}
 		case GFX::QueueType::Compute:
 		{
-			ZE_DX_SET_ID(allocator, "compute_allocator");
-			ZE_DX_SET_ID(commands, "compute_command");
+			ZE_DX_SET_ID(cl.allocator, "compute_allocator");
+			ZE_DX_SET_ID(cl.commands, "compute_command");
 			break;
 		}
 		case GFX::QueueType::Copy:
 		{
-			ZE_DX_SET_ID(allocator, "copy_allocator");
-			ZE_DX_SET_ID(commands, "copy_command");
+			ZE_DX_SET_ID(cl.allocator, "copy_allocator");
+			ZE_DX_SET_ID(cl.commands, "copy_command");
 			break;
 		}
 		}
 #endif
+		return cl;
 	}
 
-	void CommandList::Close(Device& dev)
+	Status CommandList::Close(Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE(dev);
-		ZE_DX_THROW_FAILED(commands->Close());
+		ZE_DX_RET_FAILED(commands->Close());
 	}
 
-	void CommandList::Reset(Device& dev)
+	Status CommandList::Reset(Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE(dev);
-		ZE_DX_THROW_FAILED(allocator->Reset());
+		ZE_DX_RET_FAILED(allocator->Reset());
 	}
 }

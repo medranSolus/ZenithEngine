@@ -47,11 +47,11 @@ namespace ZE::RHI::DX12
 			DX::ComPtr<IResource> buffer = nullptr;
 			ZE_DX_RET_FAILED_EXPECT(swapChain.swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 			ZE_DX_SET_ID(buffer, "Backbuffer_" + std::to_string(i));
-			ZE_DX_RET_FAILED_DEBUG(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle), "Failed to create RTV for swapchain!");
+			ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateRenderTargetView(buffer.Get(), &rtvDesc, rtvHandle));
 			swapChain.rtvSrv[i].RTV = rtvHandle;
 			if (shaderInput)
 			{
-				ZE_DX_RET_FAILED_DEBUG(device->CreateShaderResourceView(buffer.Get(), &srvDesc, swapChain.srvHandle.CPU));
+				ZE_DX_RET_FAILED_DEBUG_EXPECT(device->CreateShaderResourceView(buffer.Get(), &srvDesc, swapChain.srvHandle.CPU));
 				swapChain.rtvSrv[i].SRVCpu = swapChain.srvHandle.CPU;
 				swapChain.rtvSrv[i].SRVGpu = swapChain.srvHandle.GPU;
 				swapChain.srvHandle.CPU.ptr += srvDescSize;

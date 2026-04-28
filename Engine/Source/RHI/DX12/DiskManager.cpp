@@ -33,7 +33,7 @@ namespace ZE::RHI::DX12
 		if (!GetVolumeNameForVolumeMountPointW(volumePath, volumeName, ARRAYSIZE(volumeName)))
 			return false;
 
-		size_t length = wcslen(volumeName);
+		size_t length = std::wcslen(volumeName);
 		if (length && volumeName[length - 1] == L'\\')
 			volumeName[length - 1] = L'\0';
 
@@ -47,9 +47,9 @@ namespace ZE::RHI::DX12
 		query.PropertyId = StorageDeviceSeekPenaltyProperty;
 		query.QueryType = PropertyStandardQuery;
 
-		bool isSSD;
-		DWORD count;
-		DEVICE_SEEK_PENALTY_DESCRIPTOR result;
+		bool isSSD = false;
+		DWORD count = 0;
+		DEVICE_SEEK_PENALTY_DESCRIPTOR result = {};
 		if (DeviceIoControl(volume, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(STORAGE_PROPERTY_QUERY), &result, sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR), &count, nullptr))
 			isSSD = !result.IncursSeekPenalty;
 		else
@@ -59,10 +59,8 @@ namespace ZE::RHI::DX12
 		return isSSD;
 	}
 
-	void DiskManager::DecompressAssets(Device& dev) const
+	void DiskManager::DecompressAssets(Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE(dev);
-
 		ThreadPool& pool = Settings::GetThreadPool();
 		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(MINIMAL_DECOPRESSED_OBJECTS_PER_TURN));
 		auto requests = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST[]>(maxRequestCount);
@@ -81,12 +79,20 @@ namespace ZE::RHI::DX12
 			case WAIT_ABANDONED:
 				ZE_FAIL("Error occured in thread releasing DirectStorage decompression queue mutex!");
 			default:
-				throw ZE_WIN_EXCEPT_LAST();
+			{
+				ZE_CODE_ERROR(ZE_WIN_LAST_ERROR(), "Failure in waiting for DirectStorage decompression event, skipping processing of this batch!");
+				continue;
+			}
 			}
 
 			// Process custom formats first (with well known implementation of decompression)
 			U32 requestCount = 0;
-			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount));
+			HRESULT hr = decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount);
+			if (FAILED(hr))
+			{
+				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in getting DirectStorage custom decompression requests, skipping processing of this batch!");
+				requestCount = 0;
+			}
 			for (U32 i = 0; i < requestCount; ++i)
 			{
 				bool bzip2 = false;
@@ -130,8 +136,13 @@ namespace ZE::RHI::DX12
 
 			// Process built-in formats with codecs
 			U32 builtInRequestCount = 0;
-			ZE_DX_THROW_FAILED(decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
-				maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount));
+			hr = decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_BUILTIN,
+				maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount);
+			if (FAILED(hr))
+			{
+				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in getting DirectStorage built-in decompression requests, skipping processing of this batch!");
+				builtInRequestCount = 0;
+			}
 			for (U32 i = 0; i < builtInRequestCount; ++i)
 			{
 				DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST& req = requests[i + requestCount];
@@ -141,7 +152,7 @@ namespace ZE::RHI::DX12
 				case DSTORAGE_COMPRESSION_FORMAT_GDEFLATE:
 				{
 					size_t dataWritten = 0;
-					ZE_DX_THROW_FAILED(compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten));
+					hr = compressCodecGDeflate->DecompressBuffer(req.SrcBuffer, req.SrcSize, req.DstBuffer, req.DstSize, &dataWritten);
 					break;
 				}
 				default:
@@ -149,14 +160,18 @@ namespace ZE::RHI::DX12
 					break;
 				}
 				res.Id = req.Id;
-				res.Result = S_OK;
+				res.Result = hr;
 			}
 
 			// Wait for custom requests to complete
 			for (U32 i = 0; i < requestCount; ++i)
 				decompresionTasks[i].Get();
 
-			ZE_DX_THROW_FAILED(decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get()));
+			hr = decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get());
+			if (FAILED(hr))
+			{
+				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in setting DirectStorage decompression results, some requests might be reprocessed!");
+			}
 		}
 	}
 
@@ -181,11 +196,46 @@ namespace ZE::RHI::DX12
 		}
 	}
 
-	DiskManager::DiskManager(GFX::Device& dev)
+	void DiskManager::MoveFrom(DiskManager&& disk) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx12);
-		IDevice* device = dev.Get().dx12.GetDevice();
+		factory = std::move(disk.factory);
+		decompressQueue = std::move(disk.decompressQueue);
+		decompressionEvent = std::exchange(disk.decompressionEvent, nullptr);
+		compressCodecGDeflate = std::move(disk.compressCodecGDeflate);
 
+		fileQueue = std::move(disk.fileQueue);
+		memoryQueue = std::move(disk.memoryQueue);
+
+		currentFenceValue = disk.currentFenceValue.load();
+		uploadQueue = std::move(disk.uploadQueue);
+		fenceEvents = std::move(disk.fenceEvents);
+
+		decompressionData = std::move(disk.decompressionData);
+		if (decompressionData && decompressionData->CheckForDecompression)
+		{
+			disk.decompressionData->CheckForDecompression = false;
+			disk.cpuDecompressionThread.join();
+			disk.decompressionData->Disk = &disk;
+			disk.cpuDecompressionThread = std::jthread([data = disk.decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
+		}
+	}
+
+	DiskManager::~DiskManager()
+	{
+		data->checkForDecompression = false;
+		for (auto& events : fenceEvents)
+		{
+			if (events.second.at(0))
+				CloseHandle(events.second.at(0));
+			if (events.second.at(1))
+				CloseHandle(events.second.at(1));
+		}
+		if (decompressionEvent)
+			CloseHandle(decompressionEvent);
+	}
+
+	Expected<DiskManager> DiskManager::Create(GFX::Device& dev) noexcept
+	{
 		DWORD pathLen = GetCurrentDirectoryW(0, nullptr);
 		std::wstring currentPath(pathLen, L'\0');
 		bool isHDD;
@@ -206,15 +256,17 @@ namespace ZE::RHI::DX12
 		dsConfig.DisableGpuDecompressionMetacommand = false;
 		dsConfig.DisableGpuDecompression = false;
 		dsConfig.ForceFileBuffering = isHDD;
-		ZE_DX_THROW_FAILED(DStorageSetConfiguration1(&dsConfig));
-		ZE_DX_THROW_FAILED(DStorageGetFactory(IID_PPV_ARGS(&factory)));
-#if _ZE_DEBUG_GFX_API
-		factory->SetDebugFlags(DSTORAGE_DEBUG_SHOW_ERRORS | DSTORAGE_DEBUG_BREAK_ON_ERROR | (_ZE_DEBUG_GFX_NAMES ? DSTORAGE_DEBUG_RECORD_OBJECT_NAMES : 0));
-#endif
-		factory->SetStagingBufferSize(Settings::STAGING_BUFFER_SIZE);
+		ZE_DX_RET_FAILED_EXPECT(DStorageSetConfiguration1(&dsConfig));
 
-		ZE_DX_THROW_FAILED(factory.As(&decompressQueue));
-		decompressionEvent = decompressQueue->GetEvent();
+		DiskManager disk;
+		ZE_DX_RET_FAILED_EXPECT(DStorageGetFactory(IID_PPV_ARGS(&disk.factory)));
+#if _ZE_DEBUG_GFX_API
+		disk.factory->SetDebugFlags(DSTORAGE_DEBUG_SHOW_ERRORS | DSTORAGE_DEBUG_BREAK_ON_ERROR | (_ZE_DEBUG_GFX_NAMES ? DSTORAGE_DEBUG_RECORD_OBJECT_NAMES : 0));
+#endif
+		disk.factory->SetStagingBufferSize(Settings::STAGING_BUFFER_SIZE);
+
+		ZE_DX_RET_FAILED_EXPECT(disk.factory.As(&disk.decompressQueue));
+		disk.decompressionEvent = disk.decompressQueue->GetEvent();
 
 		DSTORAGE_QUEUE_DESC queueDesc = {};
 		queueDesc.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
@@ -223,39 +275,32 @@ namespace ZE::RHI::DX12
 #if _ZE_DEBUG_GFX_NAMES
 		queueDesc.Name = "DirectStorage file queue";
 #endif
-		queueDesc.Device = device;
-		ZE_DX_THROW_FAILED(factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&fileQueue)));
+		queueDesc.Device = dev.Get().dx12.GetDevice();
+		ZE_DX_RET_FAILED_EXPECT(disk.factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&disk.fileQueue)));
 
 		queueDesc.SourceType = DSTORAGE_REQUEST_SOURCE_MEMORY;
 #if _ZE_DEBUG_GFX_NAMES
 		queueDesc.Name = "DirectStorage memory queue";
 #endif
-		ZE_DX_THROW_FAILED(factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&memoryQueue)));
-		ZE_DX_THROW_FAILED(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&compressCodecGDeflate)));
+		ZE_DX_RET_FAILED_EXPECT(disk.factory->CreateQueue(&queueDesc, IID_PPV_ARGS(&disk.memoryQueue)));
+		ZE_DX_RET_FAILED_EXPECT(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&disk.compressCodecGDeflate)));
 
-		cpuDecompressionThread = std::jthread([this, &dev]() { this->DecompressAssets(dev.Get().dx12); });
+		disk.decompressionData = std::make_unique<DecompressThreadData>();
+		disk.decompressionData->CheckForDecompression = true;
+		disk.decompressionData->Dev = &dev.Get().dx12;
+		disk.decompressionData->Disk = &disk;
+		disk.cpuDecompressionThread = std::jthread([data = disk.decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
+		return disk;
 	}
 
-	DiskManager::~DiskManager()
-	{
-		checkForDecompression = false;
-		for (auto& events : fenceEvents)
-		{
-			if (events.second.at(0))
-				CloseHandle(events.second.at(0));
-			if (events.second.at(1))
-				CloseHandle(events.second.at(1));
-		}
-		if (decompressionEvent)
-			CloseHandle(decompressionEvent);
-	}
-
-	DiskStatusHandle DiskManager::SetGPUUploadWaitPoint() noexcept
+	Expected<DiskStatusHandle> DiskManager::SetGPUUploadWaitPoint() noexcept
 	{
 		HANDLE fileEvent = CreateEventW(nullptr, false, false, nullptr);
 		ZE_ASSERT(fileEvent, "Cannot create DirectStorage file queue fence event!");
+		ZE_WIN_RET_FAILED_LAST_EXPECT(!fileEvent);
 		HANDLE memoryEvent = CreateEventW(nullptr, false, false, nullptr);
 		ZE_ASSERT(memoryEvent, "Cannot create DirectStorage memory queue fence event!");
+		ZE_WIN_RET_FAILED_LAST_EXPECT(!memoryEvent);
 
 		fileQueue->EnqueueSetEvent(fileEvent);
 		memoryQueue->EnqueueSetEvent(memoryEvent);
@@ -266,7 +311,7 @@ namespace ZE::RHI::DX12
 		return reinterpret_cast<void*>(fence);
 	}
 
-	void DiskManager::StartUploadGPU() noexcept
+	void DiskManager::StartUploadGPU() const noexcept
 	{
 		fileQueue->Submit();
 		memoryQueue->Submit();
@@ -289,23 +334,19 @@ namespace ZE::RHI::DX12
 		return false;
 	}
 
-	bool DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle)
+	Status DiskManager::WaitForUploadGPU(GFX::Device& dev, GFX::CommandList& cl, DiskStatusHandle handle) noexcept
 	{
 		U64 handleFence = handle.CastPtr<U64>();
 		std::array<HANDLE, 2> evenHandles;
 		{
 			LockGuardRW lock(fenceMutex);
 			if (!fenceEvents.contains(handleFence))
-			{
-				ZE_FAIL("Unknown DiskStatusHandle handle to wait for!");
-				return false;
-			}
+				return DX::Error::Make(DX::Error::DISKMANAGER_INVALID_HANDLE);
 			evenHandles = fenceEvents.at(handleFence);
 			fenceEvents.erase(handleFence);
 		}
 
-		if (WaitForMultipleObjects(2, evenHandles.data(), true, INFINITE) != WAIT_OBJECT_0)
-			throw ZE_WIN_EXCEPT_LAST();
+		ZE_WIN_RET_FAILED_LAST(WaitForMultipleObjects(2, evenHandles.data(), true, INFINITE) != WAIT_OBJECT_0);
 
 		CloseHandle(evenHandles.at(0));
 		CloseHandle(evenHandles.at(1));
@@ -315,12 +356,9 @@ namespace ZE::RHI::DX12
 
 		if (SUCCEEDED(errorRecord.FirstFailure.HResult))
 		{
-			ZE_DX_ENABLE_INFO(dev.Get().dx12);
-
 			std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
 			std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
 			U64 removeCount = 0;
-
 			{
 				LockGuardRW lock(queueMutex);
 				for (auto& entry : uploadQueue)
@@ -397,12 +435,11 @@ namespace ZE::RHI::DX12
 			}
 			if (index)
 			{
-				ZE_DX_THROW_FAILED_INFO(cl.Get().dx12.GetList()->Barrier(index, barrierGroups));
+				ZE_DX_RET_FAILED_DEBUG(cl.Get().dx12.GetList()->Barrier(index, barrierGroups));
 			}
-			return true;
+			return {};
 		}
 
-		ZE_WARNING("The DirectStorage request failed!");
 #if !_ZE_MODE_RELEASE
 		switch (errorRecord.FirstFailure.CommandType)
 		{
@@ -458,7 +495,7 @@ namespace ZE::RHI::DX12
 		}
 		}
 #endif
-		return false;
+		return DX::Error::Make(DX::Error::DSTORAGE_REQUEST_FAILURE);
 	}
 
 	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,

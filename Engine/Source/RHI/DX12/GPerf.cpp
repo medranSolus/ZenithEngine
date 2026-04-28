@@ -2,15 +2,14 @@
 
 namespace ZE::RHI::DX12
 {
-	GPerf::GPerf(GFX::Device& dev)
+	Expected<GPerf> GPerf::Create(GFX::Device& dev) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx12);
-
+		GPerf perf;
 		D3D12_QUERY_HEAP_DESC desc = {};
 		desc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 		desc.Count = 2;
 		desc.NodeMask = 0;
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateQueryHeap(&desc, IID_PPV_ARGS(&queryHeap)));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CreateQueryHeap(&desc, IID_PPV_ARGS(&perf.queryHeap)));
 
 		D3D12_HEAP_PROPERTIES dataHeapDesc = {};
 		dataHeapDesc.Type = D3D12_HEAP_TYPE_READBACK;
@@ -19,8 +18,9 @@ namespace ZE::RHI::DX12
 		dataHeapDesc.CreationNodeMask = 0;
 		dataHeapDesc.VisibleNodeMask = 0;
 		const D3D12_RESOURCE_DESC1 dataDesc = dev.Get().dx12.GetBufferDesc(sizeof(U64) * 2);
-		ZE_DX_THROW_FAILED(dev.Get().dx12.GetDevice()->CreateCommittedResource2(&dataHeapDesc,
-			D3D12_HEAP_FLAG_NONE, &dataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, nullptr, IID_PPV_ARGS(&data)));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx12.GetDevice()->CreateCommittedResource2(&dataHeapDesc,
+			D3D12_HEAP_FLAG_NONE, &dataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, nullptr, IID_PPV_ARGS(&perf.data)));
+		return perf;
 	}
 
 	void GPerf::Start(GFX::CommandList& cl) noexcept

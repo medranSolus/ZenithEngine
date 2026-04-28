@@ -34,22 +34,22 @@ namespace ZE::RHI::DX
 	bool DebugInfoManager::CheckMessages() noexcept
 	{
 		if (instance == nullptr)
-		{
-			ZE_WARNING("Trying to check messages from DebugInfoManager while it has not yet been registered by the Device!");
 			return false;
-		}
+
 		const U64 count = instance->infoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
 		if (count)
 		{
 			Logger::Error("Found " + std::to_string(count) + " DirectX error messages!");
+			std::vector<U8> bytes = {};
 			for (U64 i = 0; i < count; ++i)
 			{
 				SIZE_T msgLen = 0;
 				HRESULT hr = instance->infoQueue->GetMessageW(DXGI_DEBUG_ALL, i, nullptr, &msgLen); // Get length of msg
 				if (SUCCEEDED(hr))
 				{
-					std::unique_ptr<U8[]> bytes = std::make_unique<U8[]>(msgLen);
-					DXGI_INFO_QUEUE_MESSAGE* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());
+					bytes.resize(msgLen);
+					std::memset(bytes.data(), 0, msgLen);
+					DXGI_INFO_QUEUE_MESSAGE* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.data());
 					hr = instance->infoQueue->GetMessageW(DXGI_DEBUG_ALL, i, msg, &msgLen); // Get msg
 					if (SUCCEEDED(hr))
 						Logger::Unformatted(true, msg->pDescription, true, true, true);

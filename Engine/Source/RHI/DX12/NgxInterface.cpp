@@ -3,80 +3,83 @@
 
 namespace ZE::RHI::DX12
 {
-	NVSDK_NGX_Result NgxInterface::InitNGX(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) const noexcept
+	NgxInterface::~NgxInterface()
 	{
-#if ZE_NGX_ID
-		return NVSDK_NGX_D3D12_Init(ZE_NGX_ID, Logger::LOG_DIR_W, dev.Get().dx12.GetDevice(), &info, NVSDK_NGX_Version_API);
-#else
-		return NVSDK_NGX_D3D12_Init_with_ProjectID(Settings::ENGINE_UUID, NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-			Settings::ENGINE_VERSION_STR, Logger::LOG_DIR_W,
-			dev.Get().dx12.GetDevice(), &info, NVSDK_NGX_Version_API);
-#endif
-	}
-
-	NVSDK_NGX_Result NgxInterface::Shutdown(GFX::Device& dev) const noexcept
-	{
-		return NVSDK_NGX_D3D12_Shutdown1(dev.Get().dx12.GetDevice());
-	}
-
-	NVSDK_NGX_Result NgxInterface::AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept
-	{
-		return NVSDK_NGX_D3D12_AllocateParameters(&param);
-	}
-
-	NVSDK_NGX_Result NgxInterface::GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept
-	{
-		return NVSDK_NGX_D3D12_GetCapabilityParameters(&param);
-	}
-
-	NVSDK_NGX_Result NgxInterface::DestroyParameter(NVSDK_NGX_Parameter* param) const noexcept
-	{
-		return NVSDK_NGX_D3D12_DestroyParameters(param);
-	}
-
-	NVSDK_NGX_Result NgxInterface::GetScratchBufferSize(NVSDK_NGX_Feature feature,
-		const NVSDK_NGX_Parameter* param, U64& bytes) const noexcept
-	{
-		return NVSDK_NGX_D3D12_GetScratchBufferSize(feature, param, &bytes);
-	}
-
-	NVSDK_NGX_Result NgxInterface::GetFeatureRequirements(GFX::Device& dev,
-		const NVSDK_NGX_FeatureDiscoveryInfo& featureInfo, NVSDK_NGX_FeatureRequirement& requirements) const noexcept
-	{
-		try
+		if (srcDev)
 		{
-			ZE_DX_ENABLE_INFO(dev.Get().dx12);
-			DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
-#if _ZE_DEBUG_GFX_API
-				ZE_DX_EXCEPT_MANAGER
-#endif
-			);
-			if (factory)
+			Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D12_Shutdown1(srcDev->Get().dx12.GetDevice()));
+			if (code)
 			{
-				DX::ComPtr<DX::IAdapter> adapter = nullptr;
-				if (SUCCEEDED(factory->EnumAdapterByLuid(dev.Get().dx12.GetDevice()->GetAdapterLuid(), IID_PPV_ARGS(&adapter))))
-					return NVSDK_NGX_D3D12_GetFeatureRequirements(adapter.Get(), &featureInfo, &requirements);
+				ZE_CODE_ERROR(code, "Failed to shutdown NGX!");
 			}
 		}
-		catch (...) {}
-		return NVSDK_NGX_Result_FAIL_PlatformError;
 	}
 
-	NVSDK_NGX_Result NgxInterface::CreateFeature(GFX::Device& dev, GFX::CommandList& cl, NVSDK_NGX_Feature feature,
+	Expected<NgxInterface> NgxInterface::Create(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept
+	{
+#if ZE_NGX_ID
+		Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D12_Init(ZE_NGX_ID, Logger::LOG_DIR_W, dev.Get().dx12.GetDevice(), &info, NVSDK_NGX_Version_API));
+#else
+		Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D12_Init_with_ProjectID(Settings::ENGINE_UUID, NVSDK_NGX_ENGINE_TYPE_CUSTOM,
+			Settings::ENGINE_VERSION_STR, Logger::LOG_DIR_W,
+			dev.Get().dx12.GetDevice(), &info, NVSDK_NGX_Version_API));
+#endif
+		if (code)
+			return std::unexpected(code);
+
+		NgxInterface ngx;
+		ngx.srcDev = &dev;
+		return ngx;
+	}
+
+	Status NgxInterface::AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept
+	{
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_AllocateParameters(&param));
+	}
+
+	Status NgxInterface::GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept
+	{
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_GetCapabilityParameters(&param));
+	}
+
+	Status NgxInterface::DestroyParameter(NVSDK_NGX_Parameter* param) const noexcept
+	{
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_DestroyParameters(param));
+	}
+
+	Status NgxInterface::GetScratchBufferSize(NVSDK_NGX_Feature feature,
+		const NVSDK_NGX_Parameter* param, U64& bytes) const noexcept
+	{
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_GetScratchBufferSize(feature, param, &bytes));
+	}
+
+	Status NgxInterface::GetFeatureRequirements(GFX::Device& dev,
+		const NVSDK_NGX_FeatureDiscoveryInfo& featureInfo, NVSDK_NGX_FeatureRequirement& requirements) const noexcept
+	{
+		DX::ComPtr<DX::IFactory> factory;
+		ZE_EXPECT_RET_FAILED_CODE(factory, DX::CreateFactory());
+
+		DX::ComPtr<DX::IAdapter> adapter = nullptr;
+		ZE_WIN_RET_FAILED(factory->EnumAdapterByLuid(dev.Get().dx12.GetDevice()->GetAdapterLuid(), IID_PPV_ARGS(&adapter)));
+
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_GetFeatureRequirements(adapter.Get(), &featureInfo, &requirements));
+	}
+
+	Status NgxInterface::CreateFeature(GFX::Device& dev, GFX::CommandList& cl, NVSDK_NGX_Feature feature,
 		NVSDK_NGX_Parameter* param, NVSDK_NGX_Handle*& handle) const noexcept
 	{
-		return NVSDK_NGX_D3D12_CreateFeature(cl.Get().dx12.GetList(), feature, param, &handle);
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_CreateFeature(cl.Get().dx12.GetList(), feature, param, &handle));
 	}
 
-	NVSDK_NGX_Result NgxInterface::EvaluateFeature(GFX::Device& dev, GFX::CommandList& cl, const NVSDK_NGX_Handle* handle,
+	Status NgxInterface::EvaluateFeature(GFX::Device& dev, GFX::CommandList& cl, const NVSDK_NGX_Handle* handle,
 		const NVSDK_NGX_Parameter* param, PFN_NVSDK_NGX_ProgressCallback progress) const noexcept
 	{
 		ZE_WARNING_DISABLE_MSVC(5039); // Progress callback is noexcept
-		return NVSDK_NGX_D3D12_EvaluateFeature(cl.Get().dx12.GetList(), handle, param, progress);
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_EvaluateFeature(cl.Get().dx12.GetList(), handle, param, progress));
 	}
 
-	NVSDK_NGX_Result NgxInterface::ReleaseFeature(NVSDK_NGX_Handle* handle) const noexcept
+	Status NgxInterface::ReleaseFeature(NVSDK_NGX_Handle* handle) const noexcept
 	{
-		return NVSDK_NGX_D3D12_ReleaseFeature(handle);
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_ReleaseFeature(handle));
 	}
 }

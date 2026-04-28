@@ -22,7 +22,7 @@ namespace ZE::RHI::DX
 			// Get highest possible performant GPU
 			if (FAILED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter))))
 				break;
-			DXGI_ADAPTER_DESC3 desc;
+			DXGI_ADAPTER_DESC3 desc = {};
 			if (SUCCEEDED(adapter->GetDesc3(&desc)))
 			{
 				// Ignore Basic Render Driver adapter

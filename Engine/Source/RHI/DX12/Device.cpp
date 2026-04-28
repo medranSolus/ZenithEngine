@@ -1,11 +1,7 @@
 #include "RHI/DX12/Device.h"
 #include "RHI/DX12/DREDRecovery.h"
 #include "GFX/CommandList.h"
-#include "GFX/XeSSException.h"
-#include "Data/Camera.h"
-ZE_WARNING_PUSH
-#include "dx12/ffx_api_dx12.h"
-ZE_WARNING_POP
+#include "GFX/Error.h"
 
 namespace ZE::RHI::DX12
 {
@@ -23,65 +19,137 @@ namespace ZE::RHI::DX12
 		return {};
 	}
 
-	void Device::WaitCPU(IFence* fence, U64 val)
+	Status Device::WaitCPU(IFence* fence, U64 val) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		if (fence->GetCompletedValue() < val)
 		{
 			HANDLE fenceEvent = CreateEventW(nullptr, false, false, nullptr);
-			ZE_ASSERT(fenceEvent, "Cannot create fence event!");
+			ZE_WIN_RET_FAILED_LAST(fenceEvent == nullptr);
 
-			ZE_DX_THROW_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
-			if (WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0)
-				throw ZE_WIN_EXCEPT_LAST();
-			if (CloseHandle(fenceEvent) == 0)
-				throw ZE_WIN_EXCEPT_LAST();
+			ZE_DX_RET_FAILED(fence->SetEventOnCompletion(val, fenceEvent));
+			ZE_WIN_RET_FAILED_LAST(WaitForSingleObject(fenceEvent, INFINITE) != WAIT_OBJECT_0);
+			ZE_WIN_RET_FAILED_LAST(CloseHandle(fenceEvent) == 0);
 		}
+		return {};
 	}
 
-	void Device::WaitGPU(IFence* fence, ICommandQueue* queue, U64 val)
+	Status Device::WaitGPU(IFence* fence, ICommandQueue* queue, U64 val) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-		ZE_DX_THROW_FAILED(queue->Wait(fence, val));
+		ZE_DX_RET_FAILED(queue->Wait(fence, val));
+		return {};
 	}
 
-	U64 Device::SetFenceCPU(IFence* fence, UA64& fenceVal)
+	Expected<U64> Device::SetFenceCPU(IFence* fence, UA64& fenceVal) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
-		ZE_DX_THROW_FAILED(fence->Signal(val));
+		ZE_DX_RET_FAILED_EXPECT(fence->Signal(val));
 		return val;
 	}
 
-	U64 Device::SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal)
+	Expected<U64> Device::SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
 		U64 val = ++fenceVal;
-		ZE_DX_THROW_FAILED(queue->Signal(fence, val));
+		ZE_DX_RET_FAILED_EXPECT(queue->Signal(fence, val));
 		return val;
 	}
 
-	void Device::Execute(ICommandQueue* queue, CommandList& cl)
+	void Device::Execute(ICommandQueue* queue, CommandList& cl) noexcept
 	{
 		ZE_ASSERT(cl.GetList() != nullptr, "Empty list!");
 		ICommandList* lists[] = { cl.GetList() };
-		ZE_DX_THROW_FAILED_INFO(queue->ExecuteCommandLists(1, lists));
+		ZE_DX_CHECK_FAILED(queue->ExecuteCommandLists(1, lists), "ExecuteCommandLists caused debug layer messages!");
 	}
 
-	Device::Device(const Window::MainWindow& window, U32 descriptorCount)
-		: blockDescAllocator(BLOCK_DESCRIPTOR_ALLOC_CAPACITY), chunkDescAllocator(CHUNK_DESCRIPTOR_ALLOC_CAPACITY),
+	void Device::MoveFrom(Device& dev) noexcept
+	{
+#if _ZE_DEBUG_GFX_API
+		debugManager = std::move(dev.debugManager);
+#endif
+		device = std::move(dev.device);
+		mainQueue = std::move(dev.mainQueue);
+		computeQueue = std::move(dev.computeQueue);
+		copyQueue = std::move(dev.copyQueue);
+
+		mainFenceVal = dev.mainFenceVal.load();
+		mainFence = std::move(dev.mainFence);
+		computeFenceVal = dev.computeFenceVal.load();
+		computeFence = std::move(dev.computeFence);
+		copyFenceVal = dev.copyFenceVal.load();
+		copyFence = std::move(dev.copyFence);
+
+		allocator = std::move(dev.allocator);
+
+		blockDescAllocator = std::move(dev.blockDescAllocator);
+		chunkDescAllocator = std::move(dev.chunkDescAllocator);
+		descriptorGpuAllocator = std::move(dev.descriptorGpuAllocator);
+		descriptorCpuAllocator = std::move(dev.descriptorCpuAllocator);
+		descriptorSize = dev.descriptorSize;
+		gpuCtx = std::exchange(dev.gpuCtx, {});
+
+#if !_ZE_MODE_RELEASE
+		pixCapturer = std::exchange(dev.pixCapturer, nullptr);
+#endif
+		featureExistingHeap = dev.featureExistingHeap;
+		displayProps = std::move(dev.displayProps);
+	}
+
+	Device::Device() noexcept
+		: blockDescAllocator(std::make_shared<DescriptorAllocator::BlockAllocator>(BLOCK_DESCRIPTOR_ALLOC_CAPACITY)),
+		chunkDescAllocator(std::make_shared<DescriptorAllocator::ChunkAllocator>(CHUNK_DESCRIPTOR_ALLOC_CAPACITY)),
 		descriptorGpuAllocator(blockDescAllocator, chunkDescAllocator, true),
 		descriptorCpuAllocator(blockDescAllocator, chunkDescAllocator)
-	{
-		ZE_WIN_ENABLE_EXCEPT();
-#if _ZE_DEBUG_GFX_NAMES
-		std::string ZE_DX_DEBUG_ID;
-#endif
-		// No support for 8 bit indices on DirectX
-		Settings::SetU8IndexBuffers(false);
-		Settings::SetGfxSupportSSSR(true);
+	{}
 
+	Device::Device(Device&& dev) noexcept
+		: blockDescAllocator(std::move(dev.blockDescAllocator)), chunkDescAllocator(std::move(dev.chunkDescAllocator)),
+		descriptorGpuAllocator(std::move(dev.descriptorGpuAllocator)),
+		descriptorCpuAllocator(std::move(dev.descriptorCpuAllocator))
+	{
+		MoveFrom(dev);
+	}
+
+	Device& Device::operator=(Device&& dev) noexcept
+	{
+		blockDescAllocator = std::move(dev.blockDescAllocator);
+		chunkDescAllocator = std::move(dev.chunkDescAllocator);
+		descriptorGpuAllocator = std::move(dev.descriptorGpuAllocator);
+		descriptorCpuAllocator = std::move(dev.descriptorCpuAllocator);
+		MoveFrom(dev);
+		return *this;
+	}
+
+	Device::~Device()
+	{
+		if (device)
+		{
+			switch (Settings::GpuVendor)
+			{
+			case GFX::VendorGPU::AMD:
+			{
+				agsDriverExtensionsDX12_DestroyDevice(gpuCtx.AMD, device.Get(), nullptr);
+				device.Detach();
+				agsDeInitialize(gpuCtx.AMD);
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		descriptorGpuAllocator.DestroyFreeChunks(nullptr);
+		descriptorCpuAllocator.DestroyFreeChunks(nullptr);
+
+#if !_ZE_MODE_RELEASE
+		if (pixCapturer)
+		{
+			const BOOL res = FreeLibrary(pixCapturer);
+			ZE_ASSERT(res, "Error unloading WinPixGpuCapturer.dll!");
+		}
+#endif
+	}
+
+	Expected<Device> Device::Create(const Window::MainWindow& window, U32 descriptorCount) noexcept
+	{
+		Device dev = {};
 #if !_ZE_MODE_RELEASE
 		// Load WinPixGpuCapturer.dll
 		if (Settings::IsEnabledPIXAttaching() && GetModuleHandleW(L"WinPixGpuCapturer.dll") == 0)
@@ -107,9 +175,11 @@ namespace ZE::RHI::DX12
 				Logger::Warning("Cannot load requested \"WinPixGpuCapturer.dll\"!");
 			else
 			{
-				pixCapturer = LoadLibraryW((pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll").c_str());
-				if (pixCapturer == nullptr)
-					Logger::Warning("Error loading \"WinPixGpuCapturer.dll\"! Error message:\n    " + Platform::WinAPI::WinApiException::TranslateErrorCode(GetLastError()));
+				dev.pixCapturer = LoadLibraryW((pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll").c_str());
+				if (dev.pixCapturer == nullptr)
+				{
+					ZE_CODE_WARNING(ZE_WIN_LAST_ERROR(), "Failed to load \"WinPixGpuCapturer.dll\"");
+				}
 			}
 		}
 #endif
@@ -117,121 +187,175 @@ namespace ZE::RHI::DX12
 #if _ZE_DEBUG_GFX_API
 		// Enable Debug Layer before calling any DirectX commands
 		DX::ComPtr<IDebug> debugInterface = nullptr;
-		ZE_DX_THROW_FAILED_NOINFO(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
+		ZE_DX_RET_FAILED_EXPECT(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
 		if (Settings::IsEnabledGPUValidation())
 			debugInterface->SetEnableGPUBasedValidation(true);
 
 		// Enable device removed recovery
-		DREDRecovery::Enable(debugManager);
+		DREDRecovery::Enable();
 #endif
 
-		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
-#if _ZE_DEBUG_GFX_API
-			debugManager
-#endif
-		);
-		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(factory
-#if _ZE_DEBUG_GFX_API
-			, debugManager
-#endif
-		);
+		// Find adapter
+		DX::ComPtr<DX::IFactory> factory;
+		ZE_EXPECT_RET_FAILED(factory, DX::CreateFactory());
+		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(factory);
+		if (adapter == nullptr)
+		{
+			ZE_DX_RET_FAILED_EXPECT(DX::Error::NO_ADAPTER_ERROR);
+		}
 
-		// Initialize via hardware specific functions
-		switch (Settings::GpuVendor)
-		{
-		case GFX::VendorGPU::AMD:
-		{
-			AGSConfiguration agsConfig = {};
-			if (agsInitialize(AGS_MAKE_VERSION(AMD_AGS_VERSION_MAJOR, AMD_AGS_VERSION_MINOR, AMD_AGS_VERSION_PATCH),
-				&agsConfig, &gpuCtxAMD, nullptr) == AGS_SUCCESS)
+		auto initDevice = [&](D3D_FEATURE_LEVEL level) -> HRESULT
 			{
-				AGSDX12DeviceCreationParams deviceParams = {};
-				deviceParams.pAdapter = adapter.Get();
-				deviceParams.iid = __uuidof(device);
-				deviceParams.FeatureLevel = MINIMAL_D3D_LEVEL;
-
-				AGSDX12ExtensionParams extensionParams = {};
-				AGSDX12ReturnedParams returnParams;
-				if (agsDriverExtensionsDX12_CreateDevice(gpuCtxAMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
+				HRESULT hr = E_FAIL;
+				// Initialize via hardware specific functions
+				switch (Settings::GpuVendor)
 				{
-					ZE_DX_THROW_FAILED(returnParams.pDevice->QueryInterface(IID_PPV_ARGS(&device)));
-					returnParams.pDevice->Release();
+				case GFX::VendorGPU::AMD:
+				{
+					AGSConfiguration agsConfig = {};
+					if (agsInitialize(AGS_MAKE_VERSION(AMD_AGS_VERSION_MAJOR, AMD_AGS_VERSION_MINOR, AMD_AGS_VERSION_PATCH),
+						&agsConfig, &dev.gpuCtx.AMD, nullptr) == AGS_SUCCESS)
+					{
+						AGSDX12DeviceCreationParams deviceParams = {};
+						deviceParams.pAdapter = adapter.Get();
+						deviceParams.iid = __uuidof(device);
+						deviceParams.FeatureLevel = MINIMAL_D3D_LEVEL;
+
+						AGSDX12ExtensionParams extensionParams = {};
+						AGSDX12ReturnedParams returnParams;
+						if (agsDriverExtensionsDX12_CreateDevice(dev.gpuCtx.AMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
+						{
+							hr = returnParams.pDevice->QueryInterface(IID_PPV_ARGS(&dev.device));
+							returnParams.pDevice->Release();
+							break;
+						}
+						agsDeInitialize(dev.gpuCtx.AMD);
+						dev.gpuCtx.AMD = nullptr;
+					}
+					Settings::GpuVendor = GFX::VendorGPU::Unknown;
 					break;
 				}
-				agsDeInitialize(gpuCtxAMD);
-				gpuCtxAMD = nullptr;
-			}
-			Settings::GpuVendor = GFX::VendorGPU::Unknown;
-			break;
-		}
-		default:
-		break;
-		}
+				default:
+					break;
+				}
 
-		// Failed to create GPU specific device
-		if (device == nullptr)
+				// Failed to create GPU specific device
+				if (dev.device == nullptr)
+					hr = D3D12CreateDevice(adapter.Get(), MINIMAL_D3D_LEVEL, IID_PPV_ARGS(&dev.device));
+				return hr;
+			};
+
+		std::array<D3D_FEATURE_LEVEL, 4> featureLevels =
 		{
-			ZE_DX_THROW_FAILED_NOINFO(D3D12CreateDevice(adapter.Get(), MINIMAL_D3D_LEVEL, IID_PPV_ARGS(&device)));
+			D3D_FEATURE_LEVEL_12_2,
+			D3D_FEATURE_LEVEL_12_1,
+			D3D_FEATURE_LEVEL_12_0,
+			D3D_FEATURE_LEVEL_11_1
+		};
+		HRESULT hr = E_FAIL;
+		for (D3D_FEATURE_LEVEL level : featureLevels)
+		{
+			hr = initDevice(level);
+			if (SUCCEEDED(hr))
+			{
+				Logger::Info("D3D12 device created with feature level " + std::to_string(level >> 12) + "_" + std::to_string((level >> 8) & 0xF));
+				break;
+			}
 		}
+		ZE_DX_RET_FAILED_EXPECT(hr);
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
-		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12)));
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12)));
 		if (!options12.EnhancedBarriersSupported)
-			throw ZE_CMP_EXCEPT("DX12 error: Enhanced Barriers not supported by current driver!");
+		{
+			ZE_DX_RET_FAILED_EXPECT(DX::Error::ENHANCED_BARRIERS_ERROR);
+		}
 
 #if _ZE_DEBUG_GFX_API
 		DX::ComPtr<IInfoQueue> infoQueue = nullptr;
-		ZE_DX_THROW_FAILED(device.As(&infoQueue));
-
-		// Set breaks on dangerous messages
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-
-		// Suppress non important messages
-		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-		D3D12_MESSAGE_ID denyIds[] =
+		hr = dev.device.As(&infoQueue);
+		if (SUCCEEDED(hr))
 		{
-			// D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-			// Bug in Visual Studio Graphics Debugger while capturing frame
-			D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
-			D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
-			// When asking for smaller alignment error is generated, silence it
-			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT,
-			D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT_SMALLRESOURCE,
-			// When performing initial upload of data from DirectStorage, barrier is required for proper initialization
-			D3D12_MESSAGE_ID_NON_OPTIMAL_BARRIER_ONLY_EXECUTE_COMMAND_LISTS,
-			// When DLSS is creating buffers with STATE_COPY_DESC while they can be set to STATE_COMMON since it doesn't make any difference
-			D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
-			// Bug in AgilitySDK 1.615.1 in conjuction with enhanced barriers where even when creating heap without not-zeroed flag it reports same issue. TODO: remove when fixed
-			D3D12_MESSAGE_ID_RENDER_TARGET_OR_DEPTH_STENCIL_RESOUCE_NOT_INITIALIZED,
-		};
+			// Set breaks on dangerous messages
+			hr = infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+			if (FAILED(hr))
+			{
+				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set breakpoints on corruption D3D12 messages!");
+			}
+			hr = infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+			if (FAILED(hr))
+			{
+				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set breakpoints on error D3D12 messages!");
+			}
 
-		D3D12_INFO_QUEUE_FILTER filter = {};
-		filter.DenyList.NumSeverities = 1;
-		filter.DenyList.pSeverityList = severities;
-		filter.DenyList.NumIDs = sizeof(denyIds) / sizeof(D3D12_MESSAGE_ID);
-		filter.DenyList.pIDList = denyIds;
+			// Suppress non important messages
+			D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+			D3D12_MESSAGE_ID denyIds[] =
+			{
+				// D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+				// Bug in Visual Studio Graphics Debugger while capturing frame
+				D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
+				D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
+				// When asking for smaller alignment error is generated, silence it
+				D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT,
+				D3D12_MESSAGE_ID_CREATERESOURCE_INVALIDALIGNMENT_SMALLRESOURCE,
+				// When performing initial upload of data from DirectStorage, barrier is required for proper initialization
+				D3D12_MESSAGE_ID_NON_OPTIMAL_BARRIER_ONLY_EXECUTE_COMMAND_LISTS,
+				// When DLSS is creating buffers with STATE_COPY_DESC while they can be set to STATE_COMMON since it doesn't make any difference
+				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
+				// Bug in AgilitySDK 1.615.1 in conjuction with enhanced barriers where even when creating heap without not-zeroed flag it reports same issue. TODO: remove when fixed
+				D3D12_MESSAGE_ID_RENDER_TARGET_OR_DEPTH_STENCIL_RESOUCE_NOT_INITIALIZED,
+			};
 
-		ZE_DX_THROW_FAILED(infoQueue->PushStorageFilter(&filter));
+			D3D12_INFO_QUEUE_FILTER filter = {};
+			filter.DenyList.NumSeverities = 1;
+			filter.DenyList.pSeverityList = severities;
+			filter.DenyList.NumIDs = sizeof(denyIds) / sizeof(D3D12_MESSAGE_ID);
+			filter.DenyList.pIDList = denyIds;
+
+			hr = infoQueue->PushStorageFilter(&filter);
+			if (FAILED(hr))
+			{
+				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set up filters on D3D12 messages!");
+			}
+		}
+		else
+		{
+			ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to access InfoQueue interface, falling back to default debug layer behavior!");
+		}
 
 		if (Settings::IsEnabledGPUValidation())
 		{
 			DX::ComPtr<IDebugDevice> debugDevice = nullptr;
-			ZE_DX_THROW_FAILED_NOINFO(device.As(&debugDevice));
+			hr = dev.device.As(&debugDevice);
+			if (SUCCEEDED(hr))
+			{
+				const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
+				hr = debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
+					&debugFeature, sizeof(D3D12_DEBUG_FEATURE));
+				if (FAILED(hr))
+				{
+					ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set debug device parameter feature flags!");
+				}
 
-			const D3D12_DEBUG_FEATURE debugFeature = D3D12_DEBUG_FEATURE_ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS;
-			ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_FEATURE_FLAGS,
-				&debugFeature, sizeof(D3D12_DEBUG_FEATURE)));
-
-			D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings = {};
-			// Should cover all messages
-			validationSettings.MaxMessagesPerCommandList = 1024;
-			// Can avoid most cases of TDRs
-			validationSettings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
-			validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
-			ZE_DX_THROW_FAILED(debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
-				&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS)));
+				D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings = {};
+				// Should cover all messages
+				validationSettings.MaxMessagesPerCommandList = 1024;
+				// Can avoid most cases of TDRs
+				validationSettings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
+				validationSettings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_FRONT_LOAD_CREATE_GUARDED_VALIDATION_SHADERS;
+				hr = debugDevice->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS,
+					&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS));
+				if (FAILED(hr))
+				{
+					ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set GPU based validation settings!");
+				}
+			}
+			else
+			{
+				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to access DebugDevice interface, requested GPU based validation impacted!");
+			}
 		}
 #endif
 		D3D12_COMMAND_QUEUE_DESC desc = {};
@@ -240,239 +364,144 @@ namespace ZE::RHI::DX12
 		desc.NodeMask = 0;
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&mainQueue)));
-		ZE_DX_SET_ID(mainQueue, "direct_queue");
-		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mainFence)));
-		ZE_DX_SET_ID(mainFence, "direct_fence");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateCommandQueue(&desc, IID_PPV_ARGS(&dev.mainQueue)));
+		ZE_DX_SET_ID(dev.mainQueue, "direct_queue");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&dev.mainFence)));
+		ZE_DX_SET_ID(dev.mainFence, "direct_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&computeQueue)));
-		ZE_DX_SET_ID(computeQueue, "compute_queue");
-		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&computeFence)));
-		ZE_DX_SET_ID(computeFence, "compute_fence");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateCommandQueue(&desc, IID_PPV_ARGS(&dev.computeQueue)));
+		ZE_DX_SET_ID(dev.computeQueue, "compute_queue");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&dev.computeFence)));
+		ZE_DX_SET_ID(dev.computeFence, "compute_fence");
 
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-		ZE_DX_THROW_FAILED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&copyQueue)));
-		ZE_DX_SET_ID(copyQueue, "copy_queue");
-		ZE_DX_THROW_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&copyFence)));
-		ZE_DX_SET_ID(copyFence, "copy_fence");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateCommandQueue(&desc, IID_PPV_ARGS(&dev.copyQueue)));
+		ZE_DX_SET_ID(dev.copyQueue, "copy_queue");
+		ZE_DX_RET_FAILED_EXPECT(dev.device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&dev.copyFence)));
+		ZE_DX_SET_ID(dev.copyFence, "copy_fence");
 
-		descriptorGpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, descriptorCount, 1, 3, this);
-		descriptorCpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_NONE, CPU_DESCRIPTOR_CHUNK_SIZE, 1, 3);
-		descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		if (Status code = dev.descriptorGpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, descriptorCount, 1, 3, &dev))
+		{
+			Logger::Error("Failed to initialize DX12 GPU descriptor heap allocator!");
+			return std::unexpected(code);
+		}
+		if (Status code = dev.descriptorCpuAllocator.Init(D3D12_DESCRIPTOR_HEAP_FLAG_NONE, CPU_DESCRIPTOR_CHUNK_SIZE, 1, 3))
+		{
+			Logger::Error("Failed to initialize DX12 CPU descriptor heap allocator!");
+			return std::unexpected(code);
+		}
+		dev.descriptorSize = dev.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		// Query feature support
 		D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
-		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
+		if (FAILED(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))))
+			options.ResourceHeapTier = D3D12_RESOURCE_HEAP_TIER_1;
+
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
-		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
+		if (FAILED(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5))))
+			options5.RaytracingTier = D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+
 		D3D12_FEATURE_DATA_D3D12_OPTIONS16 options16 = {};
-		ZE_WIN_THROW_FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &options16, sizeof(options16)));
+		if (FAILED(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &options16, sizeof(options16))))
+			options16.GPUUploadHeapSupported = false;
+
 		D3D12_FEATURE_DATA_EXISTING_HEAPS existingHeaps = {};
-		if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_EXISTING_HEAPS, &existingHeaps, sizeof(existingHeaps))))
-			featureExistingHeap = existingHeaps.Supported;
+		if (SUCCEEDED(dev.device->CheckFeatureSupport(D3D12_FEATURE_EXISTING_HEAPS, &existingHeaps, sizeof(existingHeaps))))
+			dev.featureExistingHeap = existingHeaps.Supported;
+
 		D3D12_FEATURE_DATA_TIGHT_ALIGNMENT tightAlignment = {};
-		if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_TIGHT_ALIGNMENT, &tightAlignment, sizeof(tightAlignment))))
+		if (FAILED(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_TIGHT_ALIGNMENT, &tightAlignment, sizeof(tightAlignment))))
 			tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
-		tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED; // TODO: Enable when DirectStorage stop complaining about size of the destination resource and will be able to perform normal copies
+		// TODO: Enable when DirectStorage stop complaining about size of the destination resource and will be able to perform normal copies
+		tightAlignment.SupportTier = D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
+
+		ZE_EXPECT_RET_FAILED(dev.allocator, AllocatorGPU::Create(dev, options.ResourceHeapTier, options16.GPUUploadHeapSupported, tightAlignment.SupportTier));
 
 		// Check for RT
 		switch (options5.RaytracingTier)
 		{
 		default:
-		ZE_ENUM_UNHANDLED();
+			ZE_ENUM_UNHANDLED();
 		case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
-		Settings::RayTracingTier = GFX::RayTracingTier::None;
-		break;
+			Settings::RayTracingTier = GFX::RayTracingTier::None;
+			break;
 		case D3D12_RAYTRACING_TIER_1_0:
-		Settings::RayTracingTier = GFX::RayTracingTier::V1_0;
-		break;
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_0;
+			break;
 		case D3D12_RAYTRACING_TIER_1_1:
-		Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
-		break;
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_1;
+			break;
 		case D3D12_RAYTRACING_TIER_1_2:
-		Settings::RayTracingTier = GFX::RayTracingTier::V1_2;
-		break;
-		}
-
-		allocator.Init(*this, options.ResourceHeapTier, options16.GPUUploadHeapSupported, tightAlignment.SupportTier);
-	}
-
-	Device::~Device()
-	{
-		FreeXeSS();
-		if (commandLists)
-			commandLists.Free();
-
-		switch (Settings::GpuVendor)
-		{
-		case GFX::VendorGPU::AMD:
-		{
-			agsDriverExtensionsDX12_DestroyDevice(gpuCtxAMD, device.Get(), nullptr);
-			device.Detach();
-			agsDeInitialize(gpuCtxAMD);
+			Settings::RayTracingTier = GFX::RayTracingTier::V1_2;
 			break;
 		}
-		default:
-		break;
-		}
-		descriptorGpuAllocator.DestroyFreeChunks(nullptr);
-		descriptorCpuAllocator.DestroyFreeChunks(nullptr);
 
-#if !_ZE_MODE_RELEASE
-		if (pixCapturer)
-		{
-			const BOOL res = FreeLibrary(pixCapturer);
-			ZE_ASSERT(res, "Error unloading WinPixGpuCapturer.dll!");
-		}
-#endif
-		if (ffxApiDll)
-		{
-			[[maybe_unused]] const BOOL res = FreeLibrary(ffxApiDll);
-			ZE_ASSERT(res, "Error unloading amd_fidelityfx_loader_dx12.dll!");
-			ffxApiDll = nullptr;
-		}
-	}
+		// No support for 8 bit indices on DirectX
+		Settings::SetU8IndexBuffers(false);
+		Settings::SetGfxSupportSSSR(true);
 
-	const GFX::FfxApiFunctions* Device::GetFfxFunctions() noexcept
-	{
-		if (!ffxApiDll)
-		{
-			ffxApiDll = LoadLibraryW(L"amd_fidelityfx_loader_dx12.dll");
-			if (!ffxApiDll)
-			{
-				Logger::Error("Error loading [amd_fidelityfx_loader_dx12.dll]!");
-				return nullptr;
-			}
-
-			ffxCreateContext = (PfnFfxCreateContext)GetProcAddress(ffxApiDll, "ffxCreateContext");
-			ffxFunctions.DestroyContext = (PfnFfxDestroyContext)GetProcAddress(ffxApiDll, "ffxDestroyContext");
-			ffxFunctions.Configure = (PfnFfxConfigure)GetProcAddress(ffxApiDll, "ffxConfigure");
-			ffxFunctions.Query = (PfnFfxQuery)GetProcAddress(ffxApiDll, "ffxQuery");
-			ffxFunctions.Dispatch = (PfnFfxDispatch)GetProcAddress(ffxApiDll, "ffxDispatch");
-		}
-		return &ffxFunctions;
-	}
-
-	ffxReturnCode_t Device::CreateFfxCtx(ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader) noexcept
-	{
-		if (GetFfxFunctions())
-		{
-			ffxCreateBackendDX12Desc backendDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12, ctxHeader.pNext };
-			backendDesc.device = device.Get();
-			ctxHeader.pNext = &backendDesc.header;
-			ffxReturnCode_t ret = ffxCreateContext(ctx, &ctxHeader, nullptr);
-			ctxHeader.pNext = backendDesc.header.pNext;
-			return ret;
-		}
-		return FFX_API_RETURN_ERROR_PARAMETER;
-	}
-
-	xess_context_handle_t Device::GetXeSSCtx()
-	{
-		if (xessData.Ctx == nullptr)
-		{
-			ZE_XESS_ENABLE();
-			ZE_XESS_THROW_FAILED(xessD3D12CreateContext(device.Get(), &xessData.Ctx), "Error creating XeSS D3D12 context!");
-			if (xessIsOptimalDriver(xessData.Ctx) == XESS_RESULT_WARNING_OLD_DRIVER)
-				Logger::Warning("Outdated Intel driver!");
-		}
-		return xessData.Ctx;
-	}
-
-	void Device::InitializeXeSS(UInt2 targetRes, xess_quality_settings_t quality, U32 initFlags)
-	{
-		ZE_ASSERT(!IsXeSSEnabled(), "XeSS already initialized!");
-		ZE_XESS_ENABLE();
-		xess_context_handle_t ctx = GetXeSSCtx();
-
-		xessData.TargetRes = { targetRes.X, targetRes.Y };
-		xessData.Quality = quality;
-		xessData.InitFlags = initFlags | XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP;
-		ZE_XESS_THROW_FAILED(xessD3D12BuildPipelines(ctx, nullptr, false, initFlags), "Error creating XeSS D3D12 pipelines!");
-
-		// Init external descriptor pool
-		xess_properties_t props = {};
-		ZE_XESS_THROW_FAILED(xessGetProperties(ctx, &xessData.TargetRes, &props), "Error querity XeSS properties!");
-		xessData.Descs = AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount());
-	}
-
-	void Device::FreeXeSS() noexcept
-	{
-		if (xessData.Ctx)
-		{
-			ZE_XESS_ENABLE();
-			ZE_XESS_CHECK(xessDestroyContext(xessData.Ctx), "Error destroying XeSS context!");
-			xessData.Ctx = nullptr;
-		}
-		if (xessData.Descs.Handle)
-			FreeDescs(xessData.Descs);
-
-		xessData.TargetRes = { 0, 0 };
-		xessData.InitFlags = 0;
-		xessData.BufferRegion = INVALID_RID;
-		xessData.TextureRegion = INVALID_RID;
-	}
-
-	std::pair<U64, U64> Device::GetXeSSAliasableRegionSizes() const
-	{
-		ZE_ASSERT(xessData.Ctx != nullptr, "XeSS not initialized!");
-		ZE_XESS_ENABLE();
-
-		xess_properties_t props = {};
-		ZE_XESS_THROW_FAILED(xessGetProperties(xessData.Ctx, &xessData.TargetRes, &props), "Error querity XeSS properties!");
-
-		return { props.tempBufferHeapSize, props.tempTextureHeapSize };
-	}
-
-	void Device::OnMonitorChanged(const Window::MainWindow& window)
-	{
-		DX::ComPtr<DX::IFactory> factory = DX::CreateFactory(
 #if _ZE_DEBUG_GFX_API
-			debugManager
+		DX::DebugInfoManager::Register(dev.debugManager);
 #endif
-		);
-		// Enumerate available outputs and find the one attached to our window
-		HMONITOR monitor = MonitorFromWindow(window.GetHandle(), MONITOR_DEFAULTTONEAREST);
-		for (U32 i = 0; monitor != nullptr; ++i)
+		return dev;
+	}
+
+	void Device::OnMonitorChanged(const Window::MainWindow& window) noexcept
+	{
+		bool found = false;
+		auto exp = DX::CreateFactory();
+		if (exp)
 		{
-			// Need to iterate over whole list of adapters again in case that current GPU doesn't own the output (in case of systems with integrated graphics)
-			DX::ComPtr<DX::IAdapter> tempAdapter = nullptr;
-			if (SUCCEEDED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tempAdapter))))
+			DX::ComPtr<DX::IFactory> factory = std::move(exp.value());
+			// Enumerate available outputs and find the one attached to our window
+			HMONITOR monitor = MonitorFromWindow(window.GetHandle(), MONITOR_DEFAULTTONEAREST);
+			for (U32 i = 0; !found; ++i)
 			{
-				for (U32 j = 0; true; ++j)
+				// Need to iterate over whole list of adapters again in case that current GPU doesn't own the output (in case of systems with integrated graphics)
+				DX::ComPtr<DX::IAdapter> tempAdapter = nullptr;
+				if (SUCCEEDED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tempAdapter))))
 				{
-					DX::ComPtr<IDXGIOutput> tempOutput = nullptr;
-					if (SUCCEEDED(tempAdapter->EnumOutputs(j, &tempOutput)))
+					for (U32 j = 0; true; ++j)
 					{
-						DX::ComPtr<DX::IOutput> output = nullptr;
-						if (SUCCEEDED(tempOutput.As(&output)))
+						DX::ComPtr<IDXGIOutput> tempOutput = nullptr;
+						if (SUCCEEDED(tempAdapter->EnumOutputs(j, &tempOutput)))
 						{
-							DXGI_OUTPUT_DESC1 desc;
-							if (SUCCEEDED(output->GetDesc1(&desc)))
+							DX::ComPtr<DX::IOutput> output = nullptr;
+							if (SUCCEEDED(tempOutput.As(&output)))
 							{
-								if (monitor == desc.Monitor)
+								DXGI_OUTPUT_DESC1 desc;
+								if (SUCCEEDED(output->GetDesc1(&desc)))
 								{
-									displayProps.RedPrimary = { desc.RedPrimary[0], desc.RedPrimary[1] };
-									displayProps.GreenPrimary = { desc.GreenPrimary[0], desc.GreenPrimary[1] };
-									displayProps.BluePrimary = { desc.BluePrimary[0], desc.BluePrimary[1] };
-									displayProps.WhitePoint = { desc.WhitePoint[0], desc.WhitePoint[1] };
-									displayProps.MinLuminance = desc.MinLuminance;
-									displayProps.MaxLuminance = desc.MaxLuminance;
-									monitor = nullptr;
-									break;
+									if (monitor == desc.Monitor)
+									{
+										displayProps.RedPrimary = { desc.RedPrimary[0], desc.RedPrimary[1] };
+										displayProps.GreenPrimary = { desc.GreenPrimary[0], desc.GreenPrimary[1] };
+										displayProps.BluePrimary = { desc.BluePrimary[0], desc.BluePrimary[1] };
+										displayProps.WhitePoint = { desc.WhitePoint[0], desc.WhitePoint[1] };
+										displayProps.MinLuminance = desc.MinLuminance;
+										displayProps.MaxLuminance = desc.MaxLuminance;
+										found = true;
+										break;
+									}
 								}
 							}
 						}
+						else
+							break;
 					}
-					else
-						break;
 				}
+				else
+					break;
 			}
-			else
-				break;
+			if (!found)
+				Logger::Warning("DX12 warning: Cannot find monitor attached to main window, using default display properties!");
 		}
-		if (monitor != nullptr)
+		else
+		{
+			ZE_CODE_WARNING(exp.error(), "Cannot create DXGI factory to query monitor infomation, using default display properties!");
+		}
+		if (!found)
 		{
 			// Default CIE 1931 xy chromaticity values for sRGB / Rec.709 
 			displayProps.RedPrimary = { 0.64f, 0.33f };
@@ -481,7 +510,6 @@ namespace ZE::RHI::DX12
 			displayProps.WhitePoint = { 0.3127f, 0.329f };
 			displayProps.MinLuminance = 0.0f;
 			displayProps.MaxLuminance = 300.0f;
-			Logger::Warning("DX12 warning: Cannot find monitor attached to main window, using default display properties!");
 		}
 	}
 
@@ -493,30 +521,30 @@ namespace ZE::RHI::DX12
 			switch (shaderModel.HighestShaderModel)
 			{
 			case D3D_SHADER_MODEL_5_1:
-			return GFX::ShaderModel::V5_1;
+				return GFX::ShaderModel::V5_1;
 			case D3D_SHADER_MODEL_6_0:
-			return GFX::ShaderModel::V6_0;
+				return GFX::ShaderModel::V6_0;
 			case D3D_SHADER_MODEL_6_1:
-			return GFX::ShaderModel::V6_1;
+				return GFX::ShaderModel::V6_1;
 			case D3D_SHADER_MODEL_6_2:
-			return GFX::ShaderModel::V6_2;
+				return GFX::ShaderModel::V6_2;
 			case D3D_SHADER_MODEL_6_3:
-			return GFX::ShaderModel::V6_3;
+				return GFX::ShaderModel::V6_3;
 			case D3D_SHADER_MODEL_6_4:
-			return GFX::ShaderModel::V6_4;
+				return GFX::ShaderModel::V6_4;
 			case D3D_SHADER_MODEL_6_5:
-			return GFX::ShaderModel::V6_5;
+				return GFX::ShaderModel::V6_5;
 			case D3D_SHADER_MODEL_6_6:
-			return GFX::ShaderModel::V6_6;
+				return GFX::ShaderModel::V6_6;
 			case D3D_SHADER_MODEL_6_7:
-			return GFX::ShaderModel::V6_7;
+				return GFX::ShaderModel::V6_7;
 			case D3D_SHADER_MODEL_6_8:
-			return GFX::ShaderModel::V6_8;
+				return GFX::ShaderModel::V6_8;
 			default:
-			ZE_WARNING("Shader model reported outside max known version 6.9, newer hardware detected!");
-			[[fallthrough]];
+				ZE_WARNING("Shader model reported outside max known version 6.9, newer hardware detected!");
+				[[fallthrough]];
 			case D3D_SHADER_MODEL_6_9:
-			return GFX::ShaderModel::V6_9;
+				return GFX::ShaderModel::V6_9;
 			}
 		}
 		return GFX::ShaderModel::V6_0;
@@ -539,20 +567,21 @@ namespace ZE::RHI::DX12
 		return false;
 	}
 
-	void Device::Execute(GFX::CommandList* cls, U32 count)
+	void Device::Execute(GFX::CommandList* cls, U32 count) const noexcept
 	{
+		ZE_ASSERT(count > 0 && cls, "No valid command lists provided!");
 		if (count == 1)
 		{
 			switch (cls->Get().dx12.GetList()->GetType())
 			{
 			default:
-			ZE_FAIL("Incorrect type of command list!!!"); [[fallthrough]];
+				ZE_ENUM_UNHANDLED();
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
-			return ExecuteMain(*cls);
+				return ExecuteMain(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-			return ExecuteCompute(*cls);
+				return ExecuteCompute(*cls);
 			case D3D12_COMMAND_LIST_TYPE_COPY:
-			return ExecuteCopy(*cls);
+				return ExecuteCopy(*cls);
 			}
 		}
 
@@ -564,6 +593,8 @@ namespace ZE::RHI::DX12
 
 			switch (cls[i].Get().dx12.GetList()->GetType())
 			{
+			default:
+				ZE_ENUM_UNHANDLED();
 			case D3D12_COMMAND_LIST_TYPE_DIRECT:
 			{
 				++mainCount;
@@ -579,34 +610,21 @@ namespace ZE::RHI::DX12
 				++copyCount;
 				break;
 			}
-			default:
-			ZE_FAIL("Incorrect type of command list!!!");
 			}
 		}
 
-		// Realloc if needed bigger list
-		count = std::max(commandListsCount, mainCount);
-		if (computeCount > count)
-			count = computeCount;
-		if (copyCount > count)
-			count = copyCount;
-		if (count > commandListsCount)
-		{
-			commandListsCount = count;
-			commandLists = reinterpret_cast<ICommandList**>(realloc(commandLists, count * sizeof(ICommandList*)));
-		}
-
 		// Execute lists
+		std::vector<ICommandList*> commandLists(std::max(mainCount, std::max(computeCount, copyCount)));
 		if (mainCount)
 		{
 			U32 i = 0, j = 0;
 			do
 			{
 				if (cls[i].Get().dx12.GetList()->GetType() == D3D12_COMMAND_LIST_TYPE_DIRECT)
-					commandLists[i++] = cls[j].Get().dx12.GetList();
+					commandLists.at(i++) = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < mainCount);
-			ZE_DX_THROW_FAILED_INFO(mainQueue->ExecuteCommandLists(mainCount, commandLists));
+			ZE_DX_CHECK_FAILED(mainQueue->ExecuteCommandLists(mainCount, commandLists.data()), "Executing DIRECT command lists produced debug layer messages!");
 		}
 		if (computeCount)
 		{
@@ -617,7 +635,7 @@ namespace ZE::RHI::DX12
 					commandLists[i++] = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < computeCount);
-			ZE_DX_THROW_FAILED_INFO(computeQueue->ExecuteCommandLists(computeCount, commandLists));
+			ZE_DX_CHECK_FAILED(computeQueue->ExecuteCommandLists(computeCount, commandLists.data()), "Executing COMPUTE command lists produced debug layer messages!");
 		}
 		if (copyCount)
 		{
@@ -628,29 +646,27 @@ namespace ZE::RHI::DX12
 					commandLists[i++] = cls[j].Get().dx12.GetList();
 				++j;
 			} while (i < copyCount);
-			ZE_DX_THROW_FAILED_INFO(copyQueue->ExecuteCommandLists(copyCount, commandLists));
+			ZE_DX_CHECK_FAILED(copyQueue->ExecuteCommandLists(copyCount, commandLists.data()), "Executing COPY command lists produced debug layer messages!");
 		}
 	}
 
-	void Device::ExecuteMain(GFX::CommandList& cl)
+	void Device::ExecuteMain(GFX::CommandList& cl) const noexcept
 	{
 		Execute(mainQueue.Get(), cl.Get().dx12);
 	}
 
-	void Device::ExecuteCompute(GFX::CommandList& cl)
+	void Device::ExecuteCompute(GFX::CommandList& cl) const noexcept
 	{
 		Execute(computeQueue.Get(), cl.Get().dx12);
 	}
 
-	void Device::ExecuteCopy(GFX::CommandList& cl)
+	void Device::ExecuteCopy(GFX::CommandList& cl) const noexcept
 	{
 		Execute(copyQueue.Get(), cl.Get().dx12);
 	}
 
-	FfxBreadcrumbsBlockData Device::AllocBreadcrumbsBlock(U64 bytes)
+	Expected<FfxBreadcrumbsBlockData> Device::AllocBreadcrumbsBlock(U64 bytes) noexcept
 	{
-		ZE_WIN_ENABLE_EXCEPT();
-
 		FfxBreadcrumbsBlockData blockData = {};
 		D3D12_RESOURCE_DESC1 desc = GetBufferDesc(bytes);
 		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
@@ -683,10 +699,11 @@ namespace ZE::RHI::DX12
 
 		// If VirtualAlloc path failed, try standard path
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		ResourceInfo res = allocator.AllocReadbackBuffer(*this, desc);
+		ResourceInfo res = {};
+		ZE_EXPECT_RET_FAILED(res, allocator.AllocReadbackBuffer(*this, desc));
 
 		const D3D12_RANGE range = {};
-		ZE_DX_THROW_FAILED(res.Resource->Map(0, &range, &blockData.memory));
+		ZE_DX_RET_FAILED_EXPECT(res.Resource->Map(0, &range, &blockData.memory));
 		res.Resource->AddRef(); // Allow for release later on
 
 		blockData.heap = res.Handle;
@@ -695,7 +712,7 @@ namespace ZE::RHI::DX12
 		return blockData;
 	}
 
-	void Device::FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block)
+	void Device::FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept
 	{
 		if (featureExistingHeap)
 		{
@@ -728,7 +745,7 @@ namespace ZE::RHI::DX12
 				block.memory = nullptr;
 			}
 
-			allocator.RemoveReadackBuffer(res);
+			allocator.RemoveReadbackBuffer(res);
 			block.buffer = nullptr;
 			block.heap = nullptr;
 		}
@@ -759,9 +776,7 @@ namespace ZE::RHI::DX12
 	D3D12_RESOURCE_DESC1 Device::GetTextureDesc(U32 width, U32 height, U16 count,
 		DXGI_FORMAT format, GFX::Resource::Texture::Type type) const noexcept
 	{
-		ZE_ASSERT(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
-			&& height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION,
-			"Texture too big!");
+		ZE_ASSERT(width < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION && height < D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION, "Texture too big!");
 		ZE_ASSERT(height == 1 || type != GFX::Resource::Texture::Type::Tex1D, "Height of 1D texture must be 1!");
 
 		D3D12_RESOURCE_DESC1 desc = {};
@@ -790,19 +805,19 @@ namespace ZE::RHI::DX12
 		return desc;
 	}
 
-	ResourceInfo Device::CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic)
+	Expected<ResourceInfo> Device::CreateBuffer(const D3D12_RESOURCE_DESC1& desc, bool dynamic) noexcept
 	{
 		if (dynamic)
 			return allocator.AllocDynamicBuffer(*this, desc);
 		return allocator.AllocBuffer(*this, desc);
 	}
 
-	ResourceInfo Device::CreateTexture(const D3D12_RESOURCE_DESC1& desc)
+	Expected<ResourceInfo> Device::CreateTexture(const D3D12_RESOURCE_DESC1& desc) noexcept
 	{
 		return allocator.AllocTexture(*this, desc);
 	}
 
-	DescriptorInfo Device::AllocDescs(U32 count, bool gpuHeap) noexcept
+	Expected<DescriptorInfo> Device::AllocDescs(U32 count, bool gpuHeap) noexcept
 	{
 		ZE_ASSERT(count > 0, "Cannot allocate empty descriptors!");
 
@@ -821,6 +836,7 @@ namespace ZE::RHI::DX12
 		else
 		{
 			ZE_FAIL("Run out of descriptors, make sure to configure engine with correct number of descriptors at the start!");
+			return std::unexpected(DX::Error::Make(DX::Error::ALLOC_ERROR));
 		}
 		return rangeStart;
 	}
@@ -832,13 +848,5 @@ namespace ZE::RHI::DX12
 		descInfo.Handle = nullptr;
 		descInfo.GPU.ptr = 0;
 		descInfo.CPU.ptr = 0;
-	}
-
-	U32 Device::GetXeSSDescriptorsOffset() const noexcept
-	{
-		ZE_ASSERT(IsXeSSEnabled(), "XeSS hasn't been initializd yet!");
-		U64 heapOffset = xessData.Descs.GPU.ptr - GetDescHeap()->GetGPUDescriptorHandleForHeapStart().ptr;
-		U64 singleSetCount = descriptorGpuAllocator.GetSize(xessData.Descs.Handle) / Settings::GetBackbufferCount();
-		return Utils::SafeCast<U32>(heapOffset + descriptorSize * singleSetCount * Settings::GetCurrentBackbufferIndex());
 	}
 }
