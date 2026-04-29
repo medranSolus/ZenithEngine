@@ -1,43 +1,34 @@
 #include "GUI/ImGuiManager.h"
-ZE_WARNING_PUSH
-#if _ZE_RHI_DX11
-#	include "backends/imgui_impl_dx11.h"
-#endif
-#if _ZE_RHI_DX12
-#	include "backends/imgui_impl_dx12.h"
-#endif
-#if _ZE_RHI_VK
-#	include "RHI/VK/VulkanException.h"
-#	include "backends/imgui_impl_vulkan.h"
-#endif
-ZE_WARNING_POP
+#include "GFX/ImGuiBackendData.h"
 
 namespace ZE::GUI
 {
-#if _ZE_RHI_VK
-	struct CustomDataVK
+	ImGuiManager::ImGuiManager() noexcept
 	{
-		VkRenderPass RenderPass;
-		VkFramebuffer Framebuffer;
-		VkDescriptorPool DescPool;
-	};
-#endif
-
-#if _ZE_RHI_DX12
-	struct CustomDataDX12
-	{
-		RHI::DX12::Device& Dev;
-		std::unordered_map<U64, RHI::DX12::DescriptorInfo> AllocatedDescs;
-
-		CustomDataDX12(RHI::DX12::Device& dev) noexcept : Dev(dev) {}
-		~CustomDataDX12() = default;
-	};
-#endif
-
-	ImGuiManager::ImGuiManager()
-	{
-		if (!std::filesystem::exists("imgui.ini") && std::filesystem::exists("imgui_default.ini"))
-			std::filesystem::copy_file("imgui_default.ini", "imgui.ini");
+		std::error_code ec = {};
+		bool configExists = std::filesystem::exists("imgui.ini", ec);
+		if (ec)
+		{
+			ZE_CODE_WARNING(ec, "Cannot check for presence of \"imgui.ini\" file, falling back to default config.");
+			configExists = false;
+			ec.clear();
+		}
+		if (!configExists)
+		{
+			configExists = std::filesystem::exists("imgui_default.ini");
+			if (ec)
+			{
+				ZE_CODE_ERROR(ec, "Cannot check for presence of \"imgui_default.ini\" file, ImGui windows may be invalid!");
+			}
+			else if (configExists)
+			{
+				configExists = std::filesystem::copy_file("imgui_default.ini", "imgui.ini", std::filesystem::copy_options::overwrite_existing, ec);
+				if (ec || !configExists)
+				{
+					ZE_CODE_ERROR(ec, "Could not copyy \"imgui_default.ini\" to active config file, ImGui windows may be invalid!");
+				}
+			}
+		}
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -49,297 +40,22 @@ namespace ZE::GUI
 		style.Colors[ImGuiCol_WindowBg].w = 0.785f;
 	}
 
-	ImGuiRenderData ImGuiManager::CreateRenderData(GFX::Device& dev, PixelFormat outputFormat)
-	{
-		ImGuiRenderData backendData = nullptr;
-		switch (Settings::GetGfxApi())
-		{
-#if _ZE_RHI_DX11
-		case GfxApiType::DX11:
-		{
-			backendData = reinterpret_cast<U8*>(1);
-			ImGui_ImplDX11_Init(dev.Get().dx11.GetDevice(), dev.Get().dx11.GetMainContext());
-			break;
-		}
-#endif
-#if _ZE_RHI_DX12
-		case GfxApiType::DX12:
-		{
-			backendData = new U8[sizeof(CustomDataDX12)];
-			new (backendData.Cast<CustomDataDX12>()) CustomDataDX12(dev.Get().dx12);
-
-			ImGui_ImplDX12_InitInfo initInfo = {};
-			initInfo.Device = dev.Get().dx12.GetDevice();
-			initInfo.CommandQueue = dev.Get().dx12.GetQueueMain();
-			initInfo.NumFramesInFlight = Utils::SafeCast<int>(Settings::GetBackbufferCount());
-			initInfo.RTVFormat = RHI::DX::GetDXFormat(outputFormat);
-			initInfo.DSVFormat = DXGI_FORMAT_UNKNOWN;
-			initInfo.UserData = backendData;
-			initInfo.SrvDescriptorHeap = dev.Get().dx12.GetDescHeap();
-			initInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
-				{
-					CustomDataDX12& dx12Data = *reinterpret_cast<CustomDataDX12*>(info->UserData);
-					RHI::DX12::DescriptorInfo descInfo = dx12Data.Dev.AllocDescs(1);
-					dx12Data.AllocatedDescs.emplace(descInfo.CPU.ptr, descInfo);
-					*out_cpu_desc_handle = descInfo.CPU;
-					*out_gpu_desc_handle = descInfo.GPU;
-				};
-			initInfo.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_desc_handle)
-				{
-					CustomDataDX12& dx12Data = *reinterpret_cast<CustomDataDX12*>(info->UserData);
-					auto it = dx12Data.AllocatedDescs.find(cpu_desc_handle.ptr);
-					if (it != dx12Data.AllocatedDescs.end())
-					{
-						dx12Data.Dev.FreeDescs(it->second);
-						dx12Data.AllocatedDescs.erase(it);
-					}
-					else
-					{
-						ZE_FAIL("Unknown descriptor to free for ImGui DX12 backend!");
-					}
-				};
-			[[maybe_unused]] bool status = ImGui_ImplDX12_Init(&initInfo);
-			ZE_ASSERT(status, "Error initializing ImGui DX12 backend!");
-			break;
-		}
-#endif
-#if _ZE_RHI_VK
-		case GfxApiType::Vulkan:
-		{
-			ZE_VK_ENABLE();
-			auto& device = dev.Get().vk;
-
-			// Create render pass for ImGui rendering
-			VkAttachmentDescription2 attachmentInfo = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr };
-			attachmentInfo.flags = 0;
-			attachmentInfo.format = RHI::VK::GetVkFormat(outputFormat);
-			attachmentInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-			attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-			attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			attachmentInfo.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachmentInfo.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			attachmentInfo.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-			VkAttachmentReference2 attachmentReference = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr };
-			attachmentReference.attachment = 0;
-			attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			attachmentReference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-			VkSubpassDescription2 subpassInfo = { VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2, nullptr };
-			subpassInfo.flags = 0;
-			subpassInfo.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpassInfo.viewMask = 1;
-			subpassInfo.inputAttachmentCount = 0;
-			subpassInfo.pInputAttachments = nullptr;
-			subpassInfo.colorAttachmentCount = 1;
-			subpassInfo.pColorAttachments = &attachmentReference;
-			subpassInfo.pResolveAttachments = nullptr;
-			subpassInfo.pDepthStencilAttachment = nullptr;
-			subpassInfo.preserveAttachmentCount = 0;
-			subpassInfo.pPreserveAttachments = nullptr;
-
-			VkSubpassDependency2 subpassDepInfo = { VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2, nullptr };
-			subpassDepInfo.srcSubpass = VK_SUBPASS_EXTERNAL;
-			subpassDepInfo.dstSubpass = 0;
-			subpassDepInfo.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT |
-				(device.CanPresentFromCompute() ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : 0);
-			subpassDepInfo.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-			subpassDepInfo.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-			subpassDepInfo.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-			subpassDepInfo.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-			subpassDepInfo.viewOffset = 0;
-
-			VkRenderPassCreateInfo2 passInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, nullptr };
-			passInfo.flags = 0;
-			passInfo.attachmentCount = 1;
-			passInfo.pAttachments = &attachmentInfo;
-			passInfo.subpassCount = 1;
-			passInfo.pSubpasses = &subpassInfo;
-			passInfo.dependencyCount = 1;
-			passInfo.pDependencies = &subpassDepInfo;
-			passInfo.correlatedViewMaskCount = 0;
-			passInfo.pCorrelatedViewMasks = nullptr;
-
-			VkRenderPass renderPass = VK_NULL_HANDLE;
-			ZE_VK_THROW_NOSUCC(vkCreateRenderPass2(device.GetDevice(), &passInfo, nullptr, &renderPass));
-
-			// Create descriptor pool for ImGui
-			const VkDescriptorPoolSize descPoolSize = { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , 1 };
-			VkDescriptorPoolCreateInfo descPoolInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr };
-			descPoolInfo.flags = 0;
-			descPoolInfo.maxSets = 1;
-			descPoolInfo.poolSizeCount = 1;
-			descPoolInfo.pPoolSizes = &descPoolSize;
-
-			VkDescriptorPool descPool = VK_NULL_HANDLE;
-			ZE_VK_THROW_NOSUCC(vkCreateDescriptorPool(device.GetDevice(), &descPoolInfo, nullptr, &descPool));
-
-			backendData = new U8[sizeof(CustomDataVK)];
-			*backendData.Cast<CustomDataVK>() = { renderPass, descPool };
-
-			// Init ImGui
-			ImGui_ImplVulkan_InitInfo initInfo;
-			initInfo.Instance = device.GetInstance();
-			initInfo.PhysicalDevice = device.GetPhysicalDevice();
-			initInfo.Device = device.GetDevice();
-			initInfo.QueueFamily = device.GetGfxQueueIndex();
-			initInfo.Queue = device.GetGfxQueue();
-			initInfo.PipelineCache = VK_NULL_HANDLE;
-			initInfo.DescriptorPool = descPool;
-			initInfo.Subpass = 0;
-			initInfo.ImageCount = initInfo.MinImageCount = Settings::GetBackbufferCount();
-			initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-			initInfo.Allocator = nullptr;
-			initInfo.CheckVkResultFn = [](VkResult res) { if (res != VK_SUCCESS) throw ZE_VK_EXCEPT(res); };
-			ImGui_ImplVulkan_LoadFunctions([](const char* name, void* instance) { return vkGetInstanceProcAddr(reinterpret_cast<VkInstance>(instance), name); }, initInfo.Instance);
-			ImGui_ImplVulkan_Init(&initInfo, renderPass);
-
-			ImGui_ImplVulkan_CreateFontsTexture();
-			break;
-		}
-#endif
-		default:
-		{
-			ZE_FAIL("ImGui not supported under current API!");
-			break;
-		}
-		}
-		ZE_ASSERT(backendData, "Error creating ImGui data!");
-		return backendData;
-	}
-
-	void ImGuiManager::DestroyRenderData(ImGuiRenderData& data) noexcept
-	{
-		switch (Settings::GetGfxApi())
-		{
-#if _ZE_RHI_DX11
-		case GfxApiType::DX11:
-		{
-			if (backendData)
-				ImGui_ImplDX11_Shutdown();
-			break;
-		}
-#endif
-#if _ZE_RHI_DX12
-		case GfxApiType::DX12:
-		{
-			if (data)
-			{
-				ImGui_ImplDX12_Shutdown();
-				ZE_ASSERT(data.Cast<CustomDataDX12>()->AllocatedDescs.size() == 0, "Not all descs are freed by ImGui DX12 backend!");
-				data.Cast<CustomDataDX12>()->~CustomDataDX12();
-				data.Delete();
-			}
-			return;
-		}
-#endif
-#if _ZE_RHI_VK
-		case GfxApiType::Vulkan:
-		{
-			if (data)
-			{
-				ImGui_ImplVulkan_Shutdown();
-				vkDestroyDescriptorPool(dev.Get().vk.GetDevice(), data.Cast<CustomDataVK>()->DescPool, nullptr);
-				vkDestroyRenderPass(dev.Get().vk.GetDevice(), data.Cast<CustomDataVK>()->RenderPass, nullptr);
-				data.Delete();
-			}
-			break;
-		}
-#endif
-		default:
-		{
-			ZE_FAIL("ImGui not supported under current API!");
-			break;
-		}
-		}
-		data = nullptr;
-	}
-
-	void ImGuiManager::RunRender(GFX::CommandList& cl) noexcept
-	{
-		switch (Settings::GetGfxApi())
-		{
-#if _ZE_RHI_DX11
-		case GfxApiType::DX11:
-		{
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-			break;
-		}
-#endif
-#if _ZE_RHI_DX12
-		case GfxApiType::DX12:
-		{
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cl.Get().dx12.GetList());
-			break;
-		}
-#endif
-#if _ZE_RHI_VK
-		case GfxApiType::Vulkan:
-		{
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cl.Get().vk.GetBuffer());
-			break;
-		}
-#endif
-		default:
-		{
-			ZE_FAIL("ImGui not supported under current API!");
-			break;
-		}
-		}
-	}
-
 	void ImGuiManager::StartFrame(const Window::MainWindow& window) const noexcept
 	{
-		switch (Settings::GetGfxApi())
-		{
-#if _ZE_RHI_DX11
-		case GfxApiType::DX11:
-		{
-			ImGui_ImplDX11_NewFrame();
-			break;
-		}
-#endif
-#if _ZE_RHI_DX12
-		case GfxApiType::DX12:
-		{
-			ImGui_ImplDX12_NewFrame();
-			break;
-		}
-#endif
-#if _ZE_RHI_VK
-		case GfxApiType::Vulkan:
-		{
-			ImGui_ImplVulkan_NewFrame();
-			break;
-		}
-#endif
-		default:
-		{
-			ZE_FAIL("ImGui not supported under current API!");
-			break;
-		}
-		}
+		GFX::ImGuiBackendData::NewFrame();
 		window.NewImGuiFrame();
 		ImGui::NewFrame();
 	}
 
-	void ImGuiManager::EndFrame() const noexcept
-	{
-		ImGui::Render();
-	}
-
-	void ImGuiManager::SetFont(std::string_view font, float size) const
+	void ImGuiManager::SetFont(std::string_view font, float size) const noexcept
 	{
 		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		if (atlas->Fonts.size())
 		{
 			atlas->Clear();
-#if _ZE_RHI_VK
-			if (Settings::GetGfxApi() == GfxApiType::Vulkan)
-				ImGui_ImplVulkan_CreateFontsTexture();
-#endif
+			GFX::ImGuiBackendData::RecreateFonts();
 		}
-		atlas->AddFontFromFileTTF(font.data(), size);
+		if (!atlas->AddFontFromFileTTF(font.data(), size))
+			Logger::Warning("Failed to load new font for ImGui: " + std::string(font));
 	}
 }

@@ -302,30 +302,38 @@ namespace ZE::RHI
 #if _ZE_RHI_DX11
 #	define ZE_GET_DX11_RHI_TYPE(type) ZE::RHI::DX11::##type ZE_RHI_DX11_COMMA
 #	define ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.dx11.##function##(__VA_ARGS__))
+#	define ZE_RHI_DX11_SWITCH_CALL_STATIC(type, ret, function, ...) ret## (ZE::RHI::DX11::##type##::##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_DX11_RHI_TYPE(type)
 #	define ZE_RHI_DX11_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("DirectX 11 has been disabled!"); ret## {}
+#	define ZE_RHI_DX11_SWITCH_CALL_STATIC(type, ret, function, ...) ZE_FAIL("DirectX 11 has been disabled!"); ret## {}
 #endif
 #if _ZE_RHI_DX12
 #	define ZE_GET_DX12_RHI_TYPE(type) ZE::RHI::DX12::##type ZE_RHI_DX12_COMMA
 #	define ZE_RHI_DX12_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.dx12.##function##(__VA_ARGS__))
+#	define ZE_RHI_DX12_SWITCH_CALL_STATIC(type, ret, function, ...) ret## (ZE::RHI::DX12::##type##::##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_DX12_RHI_TYPE(type)
 #	define ZE_RHI_DX12_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("DirectX 12 has been disabled!"); ret## {}
+#	define ZE_RHI_DX12_SWITCH_CALL_STATIC(type, ret, function, ...) ZE_FAIL("DirectX 12 has been disabled!"); ret## {}
 #endif
 #if _ZE_RHI_GL
 #	define ZE_GET_GL_RHI_TYPE(type) ZE::RHI::GL::##type ZE_RHI_GL_COMMA
 #	define ZE_RHI_GL_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.gl.##function##(__VA_ARGS__))
+#	define ZE_RHI_GL_SWITCH_CALL_STATIC(type, ret, function, ...) ret## (ZE::RHI::GL::##type##::##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_GL_RHI_TYPE(type)
 #	define ZE_RHI_GL_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("OpenGL has been disabled!"); ret## {}
+#	define ZE_RHI_GL_SWITCH_CALL_STATIC(type, ret, function, ...) ZE_FAIL("OpenGL has been disabled!"); ret## {}
 #endif
 #if _ZE_RHI_VK
 #	define ZE_GET_VK_RHI_TYPE(type) ZE::RHI::VK::##type ZE_RHI_VK_COMMA
 #	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.vk.##function##(__VA_ARGS__))
+#	define ZE_RHI_VK_SWITCH_CALL_STATIC(type, ret, function, ...) ret## (ZE::RHI::VK::##type##::##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_VK_RHI_TYPE(type)
 #	define ZE_RHI_VK_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("Vulkan has been disabled!"); ret## {}
+#	define ZE_RHI_VK_SWITCH_CALL_STATIC(type, ret, function, ...) ZE_FAIL("Vulkan has been disabled!"); ret## {}
 #endif
 
 // Type for proper graphics API implementations for all current APIs
@@ -385,9 +393,53 @@ namespace ZE::RHI
 	} \
 	}
 
+// Extended wrapper for calling static functions on currently active API implementation
+#define ZE_RHI_BACKEND_CALL_STATIC_EX(type, ret, function, ...) \
+	switch (Settings::GetGfxApi()) \
+	{ \
+	case ZE::RHI::ApiType::None: \
+	{ \
+		##ret## {}; \
+		break; \
+	} \
+	case ZE::RHI::ApiType::DX11: \
+	{ \
+		ZE_RHI_DX11_SWITCH_CALL_STATIC(type, ret, function, __VA_ARGS__); \
+		break; \
+	} \
+	case ZE::RHI::ApiType::DX12: \
+	{ \
+		ZE_RHI_DX12_SWITCH_CALL_STATIC(type, ret, function, __VA_ARGS__); \
+		break; \
+	} \
+	case ZE::RHI::ApiType::OpenGL: \
+	{ \
+		ZE_RHI_GL_SWITCH_CALL_STATIC(type, ret, function, __VA_ARGS__); \
+		break; \
+	} \
+	case ZE::RHI::ApiType::Vulkan: \
+	{ \
+		ZE_RHI_VK_SWITCH_CALL_STATIC(type, ret, function, __VA_ARGS__); \
+		break; \
+	} \
+	default: \
+	{ \
+		ZE_FAIL("Using not supported API!"); \
+		##ret## {}; \
+		break; \
+	} \
+	}
+
 // Wrapper for calling methods on currently active API implementation
 #define ZE_RHI_BACKEND_CALL(function, ...) ZE_RHI_BACKEND_CALL_EX(ZE_RHI_BACKEND_VAR, , function, __VA_ARGS__)
 // Wrapper for calling methods on currently active API implementation and returning with it's value
 #define ZE_RHI_BACKEND_CALL_RET(function, ...) ZE_RHI_BACKEND_CALL_EX(ZE_RHI_BACKEND_VAR, return, function, __VA_ARGS__)
 // Wrapper for calling methods on currently active API implementation and getting return value
 #define ZE_RHI_BACKEND_CALL_RET_VAR(returnVariable, function, ...) ZE_RHI_BACKEND_CALL_EX(ZE_RHI_BACKEND_VAR, returnVariable=, function, __VA_ARGS__)
+
+// Wrapper for calling static functions on currently active API implementation
+#define ZE_RHI_BACKEND_CALL_STATIC(type, function, ...) ZE_RHI_BACKEND_CALL_STATIC_EX(type, , function, __VA_ARGS__)
+// Wrapper for calling static functions on currently active API implementation and returning with it's value
+#define ZE_RHI_BACKEND_CALL_STATIC_RET(type, function, ...) ZE_RHI_BACKEND_CALL_STATIC_EX(type, return, function, __VA_ARGS__)
+// Wrapper for calling static functions on currently active API implementation and getting return value
+#define ZE_RHI_BACKEND_CALL_STATIC_RET_VAR(type, returnVariable, function, ...) ZE_RHI_BACKEND_CALL_STATIC_EX(type, returnVariable=, function, __VA_ARGS__)

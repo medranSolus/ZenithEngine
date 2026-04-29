@@ -1,7 +1,7 @@
 #pragma once
+#include "GFX/ImGuiBackendData.h"
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateGfx.h"
-#include "GUI/ImGuiManager.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 {
@@ -13,13 +13,13 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 
 	struct ExecuteData final : public PassExecuteData
 	{
-		GUI::ImGuiRenderData GuiData = {};
+		ImGuiBackendData GuiData;
 		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 
 		ExecuteData() = default;
 		ZE_CLASS_MOVE(ExecuteData);
-		virtual ~ExecuteData();
+		virtual ~ExecuteData() = default;
 	};
 
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledImGui(); }

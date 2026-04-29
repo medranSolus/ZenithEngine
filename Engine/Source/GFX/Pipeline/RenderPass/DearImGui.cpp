@@ -2,11 +2,6 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 {
-	ExecuteData::~ExecuteData()
-	{
-		GUI::ImGuiManager::DestroyRenderData(GuiData);
-	}
-
 	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for DearImGui initialization formats!");
@@ -28,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept
 	{
 		auto passData = std::make_unique<ExecuteData>();
-		passData->GuiData = GUI::ImGuiManager::CreateRenderData(dev, formatUI);
+		ZE_EXPECT_RET_FAILED(passData->GuiData, ImGuiBackendData::Create(dev, formatUI));
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // UI
@@ -63,7 +58,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 
 			// Render UI to temp buffer
 			renderData.Buffers.BeginRaster(cl, ids.UI);
-			GUI::ImGuiManager::RunRender(cl);
+			data.GuiData.RunRender(cl);
 			renderData.Buffers.EndRaster(cl);
 
 			// UI transition to SRV

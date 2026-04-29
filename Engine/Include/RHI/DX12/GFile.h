@@ -16,7 +16,7 @@ namespace ZE::RHI::DX12
 
 		bool Open(GFX::DiskManager& disk, std::string_view fileName) noexcept;
 
-		// IO API Internal
+		// Gfx API Internal
 
 		IStorageFile* GetStorageFile() const noexcept { return file.Get(); }
 	};
