@@ -11,7 +11,7 @@ namespace ZE::Data
 		// Radiant flux in Watts together with color
 		float Intensity = 0.0f;
 	};
-	struct Direction { Float3 Direction = {}; };
+	struct Direction { Float3 Dir = {}; };
 
 	// Component describing spot light params
 	struct SpotLight

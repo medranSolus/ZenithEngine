@@ -50,8 +50,8 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhardX
 		if (passData.CurrentTonemapper != Settings::Tonemapper)
 		{
 			Resource::PipelineStateDesc psoDesc = {};
-			psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache);
-			psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.CurrentTonemapper), buildData.ShaderCache);
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.CurrentTonemapper), buildData.ShaderCache));
 			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
 			psoDesc.Culling = Resource::CullMode::Back;
 			psoDesc.RenderTargetsCount = 1;

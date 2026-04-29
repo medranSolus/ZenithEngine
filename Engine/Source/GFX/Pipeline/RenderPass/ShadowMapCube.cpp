@@ -213,7 +213,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(currentMaterial);
-						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						ZE_CODE_RET_FAILED(shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale)));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
@@ -278,7 +278,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(material.ID);
-						shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale));
+						ZE_CODE_RET_FAILED(shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale)));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 

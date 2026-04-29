@@ -36,9 +36,13 @@ namespace ZE::GFX::Pipeline::RenderPass
 			RID Buffers[N];
 		};
 
-		struct ExecuteData
+		struct ExecuteData final : public PassExecuteData
 		{
 			ClearBufferEntry Info[N];
+
+			ExecuteData() = default;
+			ZE_CLASS_DEFAULT(ExecuteData);
+			virtual ~ExecuteData() = default;
 		};
 
 		static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept { return std::make_unique<ExecuteData>(*reinterpret_cast<ExecuteData*>(initData)); }

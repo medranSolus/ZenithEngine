@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderPass/UpscaleFSR3.h"
+#include "GFX/Error.h"
 #include "GFX/FfxBackendInterface.h"
 #include "Data/Camera.h"
 #include "GUI/DearImGui.h"
