@@ -13,7 +13,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		}
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -28,9 +28,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		FfxLpmContextDescription ctxDesc = {};
 		ctxDesc.flags = 0;
@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapLPM");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -79,10 +79,10 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		dispatchDesc.displayWhitePoint[1] = displayProps.WhitePoint.y;
 		dispatchDesc.displayMinLuminance = displayProps.MinLuminance;
 		dispatchDesc.displayMaxLuminance = displayProps.MaxLuminance;
-		ZE_FFX_LOG_RET_FAILED(ffxLpmContextDispatch(&data.Ctx, &dispatchDesc), "Error performing LPM!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxLpmContextDispatch(&data.Ctx, &dispatchDesc), "Error performing LPM!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

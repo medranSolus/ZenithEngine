@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for OutlineDraw initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -22,9 +22,9 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
@@ -52,7 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Outline Draw");
 
@@ -104,7 +104,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
 				auto& transformInfo = visibleGroup.get<InsideFrustum>(entity);
-				ZE_EXPECT_RET_FAILED_CODE(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
+				ZE_EXPECT_RET_FAILED(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 				cbuffer.Bind(cl, ctx, transformInfo.Transform);
 				ctx.Reset();
 
@@ -123,7 +123,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			ctx.SetFromEnd(0);
 			Resource::Constant<Float3> solidColor; // Can be taken from mesh later
-			ZE_EXPECT_RET_FAILED_CODE(solidColor, Resource::Constant<Float3>::Create(dev, { 1.0f, 1.0f, 0.0f }));
+			ZE_EXPECT_RET_FAILED(solidColor, Resource::Constant<Float3>::Create(dev, { 1.0f, 1.0f, 0.0f }));
 			solidColor.Bind(cl, ctx);
 			ctx.Reset();
 
@@ -149,6 +149,6 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Settings::Data.clear<InsideFrustum>();
 			ZE_PERF_STOP();
 		}
-		return {};
+		return count;
 	}
 }

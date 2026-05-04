@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -143,13 +143,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
 		FfxApiInterface* ffx = ExternalInterface::CreateConnectionFfxApi();
 		if (!ffx)
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		auto operation = Update(dev, buildData, *passData);
 		if (!operation)
 			return std::unexpected(operation.error());
@@ -158,11 +158,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
 		if (!ffx)
-			return ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR);
+			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
 		ZE_PERF_GUARD("Upscale FFX-API FSR");
 
@@ -198,11 +198,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
 		desc.viewSpaceToMetersFactor = 1.0f;
 		desc.flags = 0;
-		ZE_FFX_API_LOG_RET_FAILED(ffx->GetFunctions().Dispatch(&data.Ctx, &desc.header), "Error performing FFX-API FSR!");
+		ZE_FFX_API_LOG_RET_FAILED_EXPECT(ffx->GetFunctions().Dispatch(&data.Ctx, &desc.header), "Error performing FFX-API FSR!");
 		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

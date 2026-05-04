@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData)
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -85,9 +85,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return status;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Compute, Binding::RangeFlag::CBV }); // NIS constants
@@ -115,7 +115,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Upscale NIS");
 
@@ -137,14 +137,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 		data.StateUpscale.Bind(cl);
 
 		auto& cbuffer = *renderData.DynamicBuffer;
-		ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, bindCtx, &config, sizeof(NISConfig)));
+		ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, bindCtx, &config, sizeof(NISConfig)));
 		renderData.Buffers.SetUAV(cl, bindCtx, ids.Output);
 		renderData.Buffers.SetSRV(cl, bindCtx, ids.Color);
 		data.Coefficients.Bind(cl, bindCtx);
 
 		cl.Compute(dev, Math::DivideRoundUp(outputSize.X, 32U), Math::DivideRoundUp(outputSize.Y, data.BlockHeight), 1);
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

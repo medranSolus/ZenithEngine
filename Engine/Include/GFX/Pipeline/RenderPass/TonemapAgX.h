@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::AgX; }
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

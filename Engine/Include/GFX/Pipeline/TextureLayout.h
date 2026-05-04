@@ -1,5 +1,4 @@
 #pragma once
-#include "Types.h"
 
 namespace ZE::GFX::Pipeline
 {

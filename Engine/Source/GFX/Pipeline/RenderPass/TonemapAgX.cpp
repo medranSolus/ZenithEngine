@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapAgX initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -21,9 +21,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>>  Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
+	ExpectedPassExecuteData  Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
@@ -45,7 +45,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapAgX");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -60,13 +60,13 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
 		Resource::Constant<Float4> params;
-		ZE_EXPECT_RET_FAILED_CODE(params, Resource::Constant<Float4>::Create(dev, data.Params));
+		ZE_EXPECT_RET_FAILED(params, Resource::Constant<Float4>::Create(dev, data.Params));
 		params.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 		renderData.Buffers.EndRaster(cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

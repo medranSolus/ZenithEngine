@@ -30,7 +30,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 	PassDesc GetDesc(PixelFormat formatOutput) noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatOutput) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatOutput) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatOutput) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

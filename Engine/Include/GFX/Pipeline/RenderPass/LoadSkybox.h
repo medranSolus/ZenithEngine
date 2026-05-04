@@ -27,7 +27,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 	void* CopyInitData(void* data) noexcept;
 	void FreeInitData(void* data) noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

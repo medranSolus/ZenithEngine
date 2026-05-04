@@ -29,7 +29,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 	constexpr bool Evaluate() noexcept { return true; } // TODO: Check input data
 
 	PassDesc GetDesc(PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

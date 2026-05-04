@@ -76,17 +76,17 @@ namespace ZE::GFX::Pipeline
 	// Description of single resource in FrameBuffer
 	struct FrameResourceDesc
 	{
-		UInt2 Sizes;
-		U16 DepthOrArraySize; // When creating as 3D texture then use it as depth
-		FrameResourceFlags Flags;
-		PixelFormat Format;
+		UInt2 Sizes = {};
+		U16 DepthOrArraySize = 0; // When creating as 3D texture then use it as depth
+		FrameResourceFlags Flags = Base(FrameResourceFlag::None);
+		PixelFormat Format = PixelFormat::Unknown;
 		ColorF4 ClearColor;
 		float ClearDepth = 0.0f;
 		U8 ClearStencil = 0;
 		U16 MipLevels = 1;
 		FrameResourceType Type = FrameResourceType::Texture2D;
 #if _ZE_DEBUG_GFX_NAMES
-		std::string DebugName = "";
+		std::string DebugName;
 #endif
 
 		constexpr UInt2 GetResolutionAdjustedSizes() const noexcept;

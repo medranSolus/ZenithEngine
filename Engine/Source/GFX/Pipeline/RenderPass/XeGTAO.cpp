@@ -1,6 +1,5 @@
 #include "GFX/Pipeline/RenderPass/XeGTAO.h"
 #include "GFX/Resource/Constant.h"
-#include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 {
@@ -13,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 	};
 #pragma pack(pop)
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{ 
 		return Initialize(dev, buildData);
 	}
@@ -62,9 +61,9 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		passData->Settings.QualityLevel = 3;
 		passData->Settings.DenoisePasses = 1;
 		UpdateQualityInfo(*passData);
@@ -128,7 +127,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("XeGTAO");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -145,7 +144,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 			reinterpret_cast<const float*>(&renderData.GraphData.Projection), true, static_cast<U32>(Settings::GetFrameIndex()));
 
 		Resource::DynamicBufferAlloc cbufferInfo = {};
-		ZE_EXPECT_RET_FAILED_CODE(cbufferInfo, cbuffer.Alloc(dev, &constants, sizeof(ConstantsXeGTAO)));
+		ZE_EXPECT_RET_FAILED(cbufferInfo, cbuffer.Alloc(dev, &constants, sizeof(ConstantsXeGTAO)));
 
 		Binding::Context prefilterCtx{ renderData.Bindings.GetSchema(data.BindingIndexPrefilter) };
 		prefilterCtx.BindingSchema.SetCompute(cl);
@@ -213,7 +212,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 			data.StateDenoise.Bind(cl);
 
 			Resource::Constant<U32> lastDenoise;
-			ZE_EXPECT_RET_FAILED_CODE(lastDenoise, Resource::Constant<U32>::Create(dev, data.Settings.DenoisePasses == 1));
+			ZE_EXPECT_RET_FAILED(lastDenoise, Resource::Constant<U32>::Create(dev, data.Settings.DenoisePasses == 1));
 			lastDenoise.Bind(cl, denoiseCtx);
 			cbuffer.Bind(cl, denoiseCtx, cbufferInfo);
 			renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
@@ -243,7 +242,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 			if (data.Settings.DenoisePasses != 1)
 			{
 				denoiseCtx.Reset();
-				ZE_CODE_RET_FAILED(lastDenoise.Set(dev, true));
+				ZE_CODE_RET_FAILED_EXPECT(lastDenoise.Set(dev, true));
 				lastDenoise.Bind(cl, denoiseCtx);
 				denoiseCtx.SetFromEnd(3);
 				renderData.Buffers.SetUAV(cl, denoiseCtx, currentOutput);
@@ -263,7 +262,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 				});
 		}
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

@@ -5,7 +5,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for PointLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
@@ -24,10 +24,10 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		ZE_CODE_RET_FAILED_EXPECT(ShadowMapCube::Initialize(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow));
 
 		Binding::SchemaDesc desc = {};
@@ -68,7 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		auto group = Data::GetPointLightGroup();
 		const U64 count = group.size();
@@ -101,7 +101,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 					continue;
 
 				ZE_PERF_START("Point Light - shadow map");
-				ZE_CODE_RET_FAILED(ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume));
+				ZE_CODE_RET_FAILED_EXPECT(ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume));
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Point Light - after shadow map");
@@ -120,11 +120,11 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				data.State.Bind(cl);
 
 				Resource::Constant<Float3> lightPos;
-				ZE_EXPECT_RET_FAILED_CODE(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
+				ZE_EXPECT_RET_FAILED(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
 				lightPos.Bind(cl, ctx);
 				light.Buffer.Bind(cl, ctx);
 
-				ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
+				ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -139,6 +139,6 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			}
 			ZE_PERF_STOP();
 		}
-		return {};
+		return count;
 	}
 }

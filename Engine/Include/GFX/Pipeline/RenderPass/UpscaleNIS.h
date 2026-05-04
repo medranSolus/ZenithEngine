@@ -32,7 +32,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 
 	PassDesc GetDesc() noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

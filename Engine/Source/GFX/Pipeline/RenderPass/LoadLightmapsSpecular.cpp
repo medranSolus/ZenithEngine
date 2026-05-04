@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
@@ -121,9 +121,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		return status;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::string& brdfLutSource, const Data::CubemapSource& envMapSource) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		passData->EnvMapSource = envMapSource;
 		passData->LutSource = brdfLutSource;
 
@@ -136,7 +136,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 			Logger::Error("Error loading environmet map, falling back to generated texture!");
 			if (textures.size())
 				textures.pop_back();
-			for (U8 i = textures.size(); i < 6; i++)
+			for (U8 i = ZE::Utils::SafeCast<U8>(textures.size()); i < 6; i++)
 				textures.emplace_back(1, 1);
 		}
 		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
@@ -160,13 +160,13 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->EnvMap,
 			static_cast<ExecuteData*>(passData.ExecData.get())->EnvMap, 0, FrameResourceType::TextureCube);
 		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->BrdfLut,
 			static_cast<ExecuteData*>(passData.ExecData.get())->BrdfLut, 0, FrameResourceType::Texture2D);
-		return {};
+		return false;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

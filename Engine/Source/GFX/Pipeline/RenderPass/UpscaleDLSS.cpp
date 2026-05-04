@@ -25,7 +25,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -70,7 +70,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
 		NgxInterface* ngx = ExternalInterface::CreateConnectionNGX(dev);
 		if (!ngx)
@@ -83,7 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 			return std::unexpected(ret);
 		}
 
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->AllocateParameter(passData->NgxParam), "Error allocating DLSS parameter!");
 
 		passData->NgxParam->Set(NVSDK_NGX_Parameter_CreationNodeMask, 1U);
@@ -127,11 +127,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
 		if (!ngx)
-			return ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized);
+			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized));
 
 		ZE_PERF_GUARD("Upscale DLSS");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -153,11 +153,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Reset, renderData.GraphData.FrameTemporalReset);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, Utils::SafeCast<float>(Settings::FrameTime));
 
-		ZE_NGX_LOG_RET_FAILED(ngx->RunFeature(dev, cl, data.DlssHandle, data.NgxParam), "Error running DLSS upscaling!");
+		ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->RunFeature(dev, cl, data.DlssHandle, data.NgxParam), "Error running DLSS upscaling!");
 		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

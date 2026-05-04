@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for VerticalBlur initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -20,9 +20,9 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Direction
@@ -46,7 +46,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Vertical Blur");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -61,7 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 
 		data.State.SetStencilRef(cl, 0xFF);
 		Resource::Constant<U32> direction;
-		ZE_EXPECT_RET_FAILED_CODE(direction, Resource::Constant<U32>::Create(dev, true));
+		ZE_EXPECT_RET_FAILED(direction, Resource::Constant<U32>::Create(dev, true));
 		direction.Bind(cl, ctx);
 		renderData.Buffers.SetSRV(cl, ctx, ids.OutlineBlur);
 		renderData.SettingsBuffer.Bind(cl, ctx);
@@ -69,6 +69,6 @@ namespace ZE::GFX::Pipeline::RenderPass::VerticalBlur
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 }

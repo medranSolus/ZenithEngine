@@ -100,7 +100,7 @@ namespace ZE::GFX::Pipeline
 			{
 				U32 PassID = UINT32_MAX;
 				PassExecuteCallback Exec = nullptr;
-				PassData Data;
+				PassData Data = {};
 			};
 
 			std::vector<BarrierTransition> StartBarriers;
@@ -122,10 +122,10 @@ namespace ZE::GFX::Pipeline
 
 		std::unique_ptr<std::array<ExecutionGroup, 2>[]> passExecGroups;
 		U32 execGroupCount = 0;
-		RendererPassExecuteData execData;
+		RendererPassExecuteData execData = {};
 		ChainPool<CommandList> asyncListChain;
 		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
-		Data::Library<U32, std::unique_ptr<PassExecuteData>> passExecData;
+		Data::Library<U32, std::shared_ptr<PassExecuteData>> passExecData;
 		FfxInterface ffxInterface = {};
 		Data::Library<S32, FFX::InternalResourceDescription> ffxInternalBuffers;
 		bool ffxBuffersChanged = false;

@@ -13,14 +13,14 @@ namespace ZE::GFX::Pipeline
 	struct BarrierTransition
 	{
 		RID Resource = INVALID_RID;
-		TextureLayout LayoutBefore;
-		TextureLayout LayoutAfter;
-		ResourceAccesses AccessBefore;
-		ResourceAccesses AccessAfter;
+		TextureLayout LayoutBefore = TextureLayout::Undefined;
+		TextureLayout LayoutAfter = TextureLayout::Undefined;
+		ResourceAccesses AccessBefore = Base(ResourceAccess::None);
+		ResourceAccesses AccessAfter = Base(ResourceAccess::None);
 		// What pipeline stages have to complete before running this barrier
-		StageSyncs StageBefore;
+		StageSyncs StageBefore = Base(StageSync::None);
 		// What pipeline stages need to wait before this barrier completes
-		StageSyncs StageAfter;
+		StageSyncs StageAfter = Base(StageSync::None);
 		BarrierType Type = BarrierType::Immediate;
 		U32 Subresource = UINT32_MAX;
 	};

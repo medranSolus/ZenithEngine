@@ -2,7 +2,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for DearImGui initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1));
@@ -20,9 +20,9 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		ZE_EXPECT_RET_FAILED(passData->GuiData, ImGuiBackendData::Create(dev, formatUI));
 
 		Binding::SchemaDesc desc = {};
@@ -44,7 +44,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		if (Settings::IsEnabledImGui())
 		{
@@ -93,7 +93,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 			renderData.Buffers.Barrier(cl, barrier);
 
 			ZE_DRAW_TAG_END(dev, cl);
+			return true;
 		}
-		return {};
+		return false;
 	}
 }

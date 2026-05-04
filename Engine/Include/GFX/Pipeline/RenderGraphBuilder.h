@@ -37,8 +37,8 @@ namespace ZE::GFX::Pipeline
 	{
 		struct GraphConnection
 		{
-			U32 NodeIndex;
-			bool Required;
+			U32 NodeIndex = 0;
+			bool Required = false;
 		};
 		struct NodeDependency
 		{
@@ -71,10 +71,10 @@ namespace ZE::GFX::Pipeline
 			std::string GraphName;
 			std::vector<std::string> Outputs;
 			std::vector<std::string> OutputResources;
-			PassDesc Desc;
+			PassDesc Desc = {};
 		};
 
-		RenderGraphDesc initialDesc;
+		RenderGraphDesc initialDesc = {};
 		bool minimizeDistances = false;
 
 		Data::Library<std::string, FrameResourceDesc> resources;
@@ -88,7 +88,7 @@ namespace ZE::GFX::Pipeline
 		std::vector<U32> topoplogyOrder;
 
 		// Caching state of execution data between computations of graph to avoid reinitialization of them every time
-		Data::Library<std::string, std::pair<PtrVoid, PassCleanCallback>> execDataCache;
+		Data::Library<std::string, std::shared_ptr<PassExecuteData>> execDataCache;
 
 		// Render graph created via adjacency list
 		std::vector<ComputedNode> computedGraph;
@@ -100,27 +100,32 @@ namespace ZE::GFX::Pipeline
 		U32 dependencyLevelCount = 0;
 
 		static constexpr FrameResourceFlags GetInternalFlagsActiveResource(TextureLayout layout) noexcept;
+
 		bool IsGraphComputed() const noexcept { return computedGraph.size() && dependencyLevels.size() && computedResources.size() && dependencyLevelCount; }
 
 		bool CheckNodeProducerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence) const noexcept;
 		bool CheckNodeConsumerPresence(U32 node, std::vector<PresenceInfo>& nodesPresence, const std::vector<std::vector<U32>>& graphList) const noexcept;
 		bool SortNodesTopologyOrder(U32 currentNode, std::vector<std::bitset<2>>& visited) noexcept;
-		BuildResult LoadGraphDesc(Device& dev) noexcept;
-		BuildResult LoadResourcesDesc(Device& dev) noexcept;
+
+		Status LoadGraphDesc() noexcept;
+		Status LoadResourcesDesc() noexcept;
 		void LoadStartupPasses() noexcept;
 
 		// Order: input, inner, output (without already present resources from inputs)
 		std::unique_ptr<RID[]> GetNodeResources(U32 node) const noexcept;
 		FrameBufferDesc GetFrameBufferLayout(Device& dev, const class RenderGraph& graph) const noexcept;
-		std::pair<bool, bool> CascadePassUpdate(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const;
-		bool SetupPassData(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, PtrVoid& passExecData);
-		void GroupRenderPasses(Device& dev, class RenderGraph& graph);
-		std::pair<bool, bool> InitializeRenderPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData);
-		std::pair<bool, bool> InitializeStartupPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData);
+
+		Expected<std::pair<bool, bool>> CascadePassUpdate(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, bool cascadeUpdate) const noexcept;
+		Expected<bool> SetupPassData(Device& dev, class RenderGraph& graph, RendererPassBuildData& buildData, bool& gpuUploadRequired, RenderNode& node, U32 passId, std::shared_ptr<PassExecuteData>& passExecData) noexcept;
+		Status GroupRenderPasses(Device& dev, class RenderGraph& graph) noexcept;
+
+		Expected<std::pair<bool, bool>> InitializeRenderPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData) noexcept;
+		Expected<std::pair<bool, bool>> InitializeStartupPasses(Device& dev, RenderGraph& graph, RendererPassBuildData& buildData) noexcept;
+
 		void ComputeGroupSyncs(class RenderGraph& graph) const noexcept;
 		void UpdateFfxResourceIds(class RenderGraph& graph) const noexcept;
-		BuildResult FillPassBarriers(Device& dev, class RenderGraph& graph, bool clearPrevious = false) noexcept;
-		BuildResult ApplyComputedGraph(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph);
+		Status FillPassBarriers(Device& dev, class RenderGraph& graph, bool clearPrevious = false) noexcept;
+		Status ApplyComputedGraph(Device& dev, Data::AssetsStreamer& assets, RenderGraph& graph) noexcept;
 		void UpdateStartupPassesPresence() noexcept;
 
 	public:
@@ -128,17 +133,17 @@ namespace ZE::GFX::Pipeline
 		ZE_CLASS_MOVE(RenderGraphBuilder);
 		~RenderGraphBuilder() = default;
 
-		BuildResult LoadConfig(Device& dev, const RenderGraphDesc& desc, bool minimizePassDistances = false) noexcept;
+		Status LoadConfig(Device& dev, const RenderGraphDesc& desc, bool minimizePassDistances = false) noexcept;
 
-		BuildResult ComputeGraph(Device& dev) noexcept;
-		BuildResult FinalizeGraph(Device& dev, SwapChain& swapChain, Data::AssetsStreamer& assets, class RenderGraph& graph, GraphFinalizeFlags flags = 0);
+		Status ComputeGraph(Device& dev) noexcept;
+		Status FinalizeGraph(Device& dev, SwapChain& swapChain, Data::AssetsStreamer& assets, class RenderGraph& graph, GraphFinalizeFlags flags = 0) noexcept;
 
-		bool ExecuteStartupPasses(Device& dev, CommandList& cl, class RenderGraph& graph);
+		Expected<bool> ExecuteStartupPasses(Device& dev, CommandList& cl, class RenderGraph& graph) noexcept;
 
-		BuildResult UpdatePassConfiguration(Device& dev, CommandList& startupUpdateList, Data::AssetsStreamer& assets, class RenderGraph& graph);
+		Status UpdatePassConfiguration(Device& dev, CommandList& startupUpdateList, Data::AssetsStreamer& assets, class RenderGraph& graph, bool& signalUploadWait) noexcept;
 
-		void ClearConfig(Device& dev) noexcept;
-		void ClearComputedGraph(Device& dev, bool freePassDataCache = true) noexcept;
-		bool ShowCurrentPassesDebugUI(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph) noexcept;
+		void ClearConfig() noexcept;
+		void ClearComputedGraph(bool freePassDataCache = true) noexcept;
+		Expected<bool> ShowCurrentPassesDebugUI(Device& dev, Data::AssetsStreamer& assets, class RenderGraph& graph) noexcept;
 	};
 }

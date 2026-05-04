@@ -5,7 +5,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for SpotLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
@@ -24,12 +24,12 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
-		ShadowMap::Initialize(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow,
-			Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f }));
+		auto passData = std::make_shared<ExecuteData>();
+		ZE_CODE_RET_FAILED_EXPECT(ShadowMap::Initialize(dev, buildData, passData->ShadowData, formatShadowDepth, formatShadow,
+			Data::GetProjectionMatrix({ static_cast<float>(M_PI_2), 1.0f, 0.0001f })));
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(Float3), 1, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light position
@@ -71,7 +71,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		auto group = Data::GetSpotLightGroup();
 		const U64 count = group.size();
@@ -111,7 +111,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				ZE_PERF_START("Spot Light - shadow map");
 				TransformBuffer transformBuffer = {};
 				Matrix shadowMtx = {};
-				ZE_EXPECT_RET_FAILED_CODE(shadowMtx, ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
+				ZE_EXPECT_RET_FAILED(shadowMtx, ShadowMap::Execute(dev, cl, renderData, data.ShadowData,
 					*reinterpret_cast<ShadowMap::Resources*>(&ids.ShadowMap), transform.Position, lightData.Direction, lightFrustum));
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, shadowMtx);
 				ZE_PERF_STOP();
@@ -131,10 +131,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				const float circleScale = light.Volume * std::tanf(lightData.OuterAngle + 0.22f);
 
 				Resource::Constant<Float3> lightPos;
-				ZE_EXPECT_RET_FAILED_CODE(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
+				ZE_EXPECT_RET_FAILED(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
 				lightPos.Bind(cl, ctx);
 				light.Buffer.Bind(cl, ctx);
-				ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
+				ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(circleScale, light.Volume, circleScale) *
@@ -142,7 +142,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 							Math::XMLoadFloat3(&lightData.Direction), true, light.Volume) *
 						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&translation))));
 
-				ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
+				ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 				renderData.Buffers.SetSRV(cl, ctx, ids.ShadowMap);
 				renderData.Buffers.SetSRV(cl, ctx, ids.GBufferDepth);
 				renderData.BindRendererDynamicData(cl, ctx);
@@ -157,6 +157,6 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			}
 			ZE_PERF_STOP();
 		}
-		return {};
+		return true;
 	}
 }

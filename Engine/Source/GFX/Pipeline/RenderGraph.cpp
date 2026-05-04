@@ -95,7 +95,8 @@ namespace ZE::GFX::Pipeline
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
 					{
 						ZE_SPLIT_SUBMISSIONS_BEGIN(mainList);
-						ZE_CODE_RET_FAILED(parallelGroup.Passes[k].Exec(dev, mainList, execData, parallelGroup.Passes[k].Data));
+						bool run = false;
+						ZE_EXPECT_RET_FAILED_CODE(run, parallelGroup.Passes[k].Exec(dev, mainList, execData, parallelGroup.Passes[k].Data));
 						ZE_SPLIT_SUBMISSIONS_END(mainList, false);
 					}
 				}
@@ -143,7 +144,8 @@ namespace ZE::GFX::Pipeline
 					for (U32 k = 0; k < parallelGroup.PassCount; ++k)
 					{
 						ZE_SPLIT_SUBMISSIONS_BEGIN(asyncList);
-						ZE_CODE_RET_FAILED(parallelGroup.Passes[k].Exec(dev, asyncList, execData, parallelGroup.Passes[k].Data));
+						bool run = false;
+						ZE_EXPECT_RET_FAILED_CODE(run, parallelGroup.Passes[k].Exec(dev, asyncList, execData, parallelGroup.Passes[k].Data));
 						ZE_SPLIT_SUBMISSIONS_END(asyncList, true);
 					}
 				}

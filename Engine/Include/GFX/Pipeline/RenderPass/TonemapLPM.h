@@ -35,7 +35,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 	constexpr bool Evaluate() noexcept { return Settings::Tonemapper == TonemapperType::LPM; }
 
 	PassDesc GetDesc() noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

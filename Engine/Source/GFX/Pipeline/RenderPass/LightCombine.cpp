@@ -8,7 +8,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for LightCombine initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -63,9 +63,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 3, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack | Binding::RangeFlag::RangeSourceDynamic }); // Direct lighting + SSAO + SSR
@@ -86,7 +86,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Light Combine");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -121,6 +121,6 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 }

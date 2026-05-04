@@ -1,5 +1,4 @@
 #pragma once
-#include "Types.h"
 #include "TextureLayout.h"
 
 namespace ZE::GFX::Pipeline

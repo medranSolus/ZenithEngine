@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateCompute.h"
+#include "GUI/DearImGui.h"
 ZE_WARNING_PUSH
 #include "../Include/XeGTAO.h"
 ZE_WARNING_POP
@@ -39,7 +40,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 
 	void UpdateQualityInfo(ExecuteData& passData) noexcept;
 	PassDesc GetDesc() noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

@@ -45,12 +45,12 @@ namespace ZE::GFX::Pipeline::RenderPass
 			virtual ~ExecuteData() = default;
 		};
 
-		static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept { return std::make_unique<ExecuteData>(*reinterpret_cast<ExecuteData*>(initData)); }
+		static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept { return std::make_shared<ExecuteData>(*reinterpret_cast<ExecuteData*>(initData)); }
 		static void* CopyInitData(void* data) noexcept { return new ExecuteData(*reinterpret_cast<ExecuteData*>(data)); }
 		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
 
 		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate = nullptr) noexcept;
-		static Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+		static Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	};
 
 #pragma region Functions
@@ -68,7 +68,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 	}
 
 	template<ResIndex N, const char* MARKER_STRING>
-	Status ClearBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> ClearBuffer<N, MARKER_STRING>::Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
 		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
@@ -107,7 +107,7 @@ namespace ZE::GFX::Pipeline::RenderPass
 			}
 		}
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return N > 0;
 	}
 #pragma endregion
 }

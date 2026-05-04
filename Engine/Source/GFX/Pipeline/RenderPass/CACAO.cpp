@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -58,9 +58,9 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		passData->Settings.generateNormals = false;
 		auto operation = Update(dev, buildData, *passData);
@@ -69,7 +69,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("CACAO");
 
@@ -80,7 +80,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 		data.Settings.temporalSupersamplingAngleOffset = Math::PI * Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) / 3.0f;
 		data.Settings.temporalSupersamplingRadiusOffset = 1.0f + (Utils::SafeCast<float>(Settings::GetFrameIndex() % 3) - 1.0f) / 30.0f;
-		ZE_FFX_LOG_RET_FAILED(ffxCacaoUpdateSettings(&data.Ctx, &data.Settings, false), "Error updating CACAO settings!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxCacaoUpdateSettings(&data.Ctx, &data.Settings, false), "Error updating CACAO settings!");
 
 		FfxCacaoDispatchDescription desc = {};
 		desc.commandList = FFX::GetCommandList(cl);
@@ -93,10 +93,10 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		// Custom way of loading normals is chosen so no need to perform any unpacking from SDK (custom callbacks provided)
 		desc.normalUnpackMul = 1.0f;
 		desc.normalUnpackAdd = 0.0f;
-		ZE_FFX_LOG_RET_FAILED(ffxCacaoContextDispatch(&data.Ctx, &desc), "Error performing CACAO!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxCacaoContextDispatch(&data.Ctx, &desc), "Error performing CACAO!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

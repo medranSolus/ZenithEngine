@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapReinhard initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -70,9 +70,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc;
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Frame
@@ -87,7 +87,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("TonemapReinhard");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -102,13 +102,13 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhard
 
 		renderData.Buffers.SetSRV(cl, ctx, ids.Scene);
 		Resource::Constant<Float2> params;
-		ZE_EXPECT_RET_FAILED_CODE(params, Resource::Constant<Float2>::Create(dev, data.Params));
+		ZE_EXPECT_RET_FAILED(params, Resource::Constant<Float2>::Create(dev, data.Params));
 		params.Bind(cl, ctx);
 		cl.DrawFullscreen(dev);
 		renderData.Buffers.EndRaster(cl);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

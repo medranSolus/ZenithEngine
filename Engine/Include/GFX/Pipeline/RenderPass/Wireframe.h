@@ -26,6 +26,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 	constexpr bool Evaluate() noexcept { return true; } // TODO: check input element count
 
 	PassDesc GetDesc(PixelFormat formatRT, PixelFormat formatDS) noexcept;
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept;
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept;
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 }

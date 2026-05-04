@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for HorizontalBlur initialization formats!");
 		return Initialize(dev, buildData, formats.front());
@@ -18,9 +18,9 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(U32), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Direction
@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Horizontal Blur");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -56,7 +56,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 		data.State.Bind(cl);
 
 		Resource::Constant<U32> direction;
-		ZE_EXPECT_RET_FAILED_CODE(direction, Resource::Constant<U32>::Create(dev, false));
+		ZE_EXPECT_RET_FAILED(direction, Resource::Constant<U32>::Create(dev, false));
 		direction.Bind(cl, ctx);
 		renderData.Buffers.SetSRV(cl, ctx, ids.Outline);
 		renderData.SettingsBuffer.Bind(cl, ctx);
@@ -64,6 +64,6 @@ namespace ZE::GFX::Pipeline::RenderPass::HorizontalBlur
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 }

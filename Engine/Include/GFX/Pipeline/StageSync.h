@@ -1,5 +1,4 @@
 #pragma once
-#include "Types.h"
 #include "ResourceAccess.h"
 
 namespace ZE::GFX::Pipeline

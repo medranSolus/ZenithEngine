@@ -5,19 +5,11 @@
 
 namespace ZE::GFX::Pipeline
 {
-	// Base structure for data created in render pass initialization and used in execution, can be extended with custom data for each pass
-	struct PassExecuteData
-	{
-		PassExecuteData() = default;
-		ZE_CLASS_DEFAULT(PassExecuteData);
-		virtual ~PassExecuteData() = default;
-	};
-
 	// Data unique to the given render pass with all needed information
 	struct PassData
 	{
-		std::unique_ptr<RID> Resources;
-		std::unique_ptr<PassExecuteData> ExecData;
+		std::unique_ptr<RID[]> Resources;
+		std::shared_ptr<PassExecuteData> ExecData;
 	};
 
 	// Information about how update was performed for pass
@@ -31,12 +23,14 @@ namespace ZE::GFX::Pipeline
 		FrameBufferImpactGpuUpload,  // 'FrameBufferImpact' and 'GpuUploadRequired' combined
 	};
 
+	// Shorthand for return type expected to be returned by init callback
+	typedef Expected<std::shared_ptr<PassExecuteData>> ExpectedPassExecuteData;
 	// Create all needed data for render pass
-	typedef Expected<std::unique_ptr<PassExecuteData>> (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*) noexcept;
+	typedef ExpectedPassExecuteData (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*) noexcept;
 	// Evaluate whether pass shall run and if it cause update of the render graph
 	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
 	// Main function that will be performing rendering, obligatory, returns true if any commands have been recorded
-	typedef Status (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&) noexcept;
+	typedef Expected<bool> (*PassExecuteCallback)(Device&, CommandList&, RendererPassExecuteData&, PassData&) noexcept;
 	// Optional function to handle pass data update after render graph got it's update.
 	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
 	typedef Expected<UpdateOperation> (*PassUpdatetCallback)(Device&, RendererPassBuildData&, PassExecuteData*, const std::vector<PixelFormat>&) noexcept;

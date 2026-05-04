@@ -20,7 +20,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -81,16 +81,16 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		auto operation = Update(dev, buildData, *passData);
 		if (!operation)
 			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Upscale FSR2");
 
@@ -129,10 +129,10 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.autoTcScale = 1.0f; // Smaller values will increase stability at hard edges of translucent objects
 		desc.autoReactiveScale = 5.00f; // Larger values result in more reactive pixels
 		desc.autoReactiveMax = 0.90f; // Maximum value reactivity can reach
-		ZE_FFX_LOG_RET_FAILED(ffxFsr2ContextDispatch(&data.Ctx, &desc), "Error performing FSR2!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxFsr2ContextDispatch(&data.Ctx, &desc), "Error performing FSR2!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

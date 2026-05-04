@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 3, "Incorrect size for DirectionalLight initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1), formats.at(2));
@@ -23,10 +23,10 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData,
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData,
 		PixelFormat formatLighting, PixelFormat formatShadow, PixelFormat formatShadowDepth) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light direction
@@ -53,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Directional Light");
 
@@ -88,7 +88,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			{
 				ZE_PERF_GUARD("Directional Light - single loop item");
 				Resource::Constant<Float3> direction;
-				ZE_EXPECT_RET_FAILED_CODE(direction, Resource::Constant<Float3>::Create(dev, group.get<Data::Direction>(entity).Dir));
+				ZE_EXPECT_RET_FAILED(direction, Resource::Constant<Float3>::Create(dev, group.get<Data::Direction>(entity).Dir));
 				direction.Bind(cl, ctx);
 				group.get<Data::DirectionalLightBuffer>(entity).Buffer.Bind(cl, ctx);
 				ctx.Reset();
@@ -101,7 +101,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 				Base(ResourceAccess::ShaderResource), Base(ResourceAccess::RenderTarget), Base(StageSync::PixelShading), Base(StageSync::RenderTarget) });
 			renderData.Buffers.EndRaster(cl);
 			ZE_DRAW_TAG_END(dev, cl);
+			return true;
 		}
-		return {};
+		return false;
 	}
 }

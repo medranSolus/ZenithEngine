@@ -18,7 +18,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -60,16 +60,16 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		auto operation = Update(dev, buildData, *passData);
 		if (!operation)
 			return std::unexpected(operation.error());
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("SSSR");
 
@@ -122,10 +122,10 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		desc.mostDetailedMip = data.MostDetailedMip;
 		desc.samplesPerQuad = data.SamplesPerQuad;
 		desc.temporalVarianceGuidedTracingEnabled = data.TemporalVarianceGuidedTracingEnabled;
-		ZE_FFX_LOG_RET_FAILED(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
+		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxSssrContextDispatch(&data.Ctx, &desc), "Error performing SSSR!");
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

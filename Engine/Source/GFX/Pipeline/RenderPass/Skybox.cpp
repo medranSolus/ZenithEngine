@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for Skybox initialization formats!");
 
@@ -21,9 +21,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		return desc;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatRT, PixelFormat formatDS) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Skybox
@@ -59,7 +59,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Skybox");
 		Resources ids = *reinterpret_cast<const Resources*>(passData.Resources.get());
@@ -79,6 +79,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 
 		renderData.Buffers.EndRaster(cl);
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 }

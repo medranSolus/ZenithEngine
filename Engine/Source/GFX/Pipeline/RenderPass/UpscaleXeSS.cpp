@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return Update(dev, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}
@@ -101,8 +101,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 				"Error setting XeSS motion vectors scale!");
 
 			ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, Settings::DisplaySize, passData.Quality,
-				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK),
-				"XeSS context initialization failed!");
+				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK));
 
 			Settings::RenderSize = renderSize;
 			passData.DisplaySize = Settings::DisplaySize;
@@ -112,13 +111,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
 		XeSSInterface* xess = ExternalInterface::CreateConnectionXeSS(dev);
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNKNOWN));
 
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		auto operation = Update(dev, *passData);
 		if (!operation)
 			return std::unexpected(operation.error());
@@ -126,24 +125,24 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		XeSSInterface* xess = ExternalInterface::GetConnectionXeSS();
 		if (!xess)
-			return ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED);
+			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
 
 		ZE_PERF_GUARD("Upscale XeSS");
 
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale XeSS", Pixel(0xB2, 0x22, 0x22));
 
-		xess->Execute(dev, renderData.Buffers, cl,
+		ZE_CODE_RET_FAILED_EXPECT(xess->Execute(dev, renderData.Buffers, cl,
 			ids.Color, ids.MotionVectors, ids.Depth, INVALID_RID, ids.ResponsiveMask, ids.Output,
-			renderData.DynamicData.JitterCurrent, renderData.GraphData.FrameTemporalReset);
+			renderData.DynamicData.JitterCurrent, renderData.GraphData.FrameTemporalReset));
 		cl.RestoreExternalState(dev);
 
 		ZE_DRAW_TAG_END(dev, cl);
-		return {};
+		return true;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

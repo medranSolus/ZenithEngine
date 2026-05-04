@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
@@ -71,9 +71,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return status;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		passData->IrrMapSource = irrMapSource;
 
 		Resource::Texture::PackDesc texDesc = {};
@@ -85,7 +85,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 			Logger::Error("Error loading irradiance map, falling back to generated texture!");
 			if (textures.size())
 				textures.pop_back();
-			for (U8 i = textures.size(); i < 6; i++)
+			for (U8 i = ZE::Utils::SafeCast<U8>(textures.size()); i < 6; i++)
 				textures.emplace_back(1, 1);
 		}
 		texDesc.AddTexture(Resource::Texture::Type::Cube, std::move(textures));
@@ -94,11 +94,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->IrrMap,
 			static_cast<ExecuteData*>(passData.ExecData.get())->IrrMap, 0, FrameResourceType::TextureCube);
-		return {};
+		return false;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			formats.at(0), formats.at(1), formats.at(2), formats.at(3), formats.at(4), formats.at(5));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1),
@@ -90,10 +90,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatDS, PixelFormat formatNormal,
 		PixelFormat formatAlbedo, PixelFormat formatMaterialParams, PixelFormat formatMotion, PixelFormat formatReactive) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
@@ -124,7 +124,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		ZE_PERF_GUARD("Lambertian");
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -194,7 +194,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
 						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
-					ZE_EXPECT_RET_FAILED_CODE(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion)));
+					ZE_EXPECT_RET_FAILED(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBufferMotion)));
 				}
 				else
 				{
@@ -202,7 +202,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
-					ZE_EXPECT_RET_FAILED_CODE(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer)));
+					ZE_EXPECT_RET_FAILED(transformAlloc, cbuffer.Alloc(dev, &transformBuffer, sizeof(ModelTransformBuffer)));
 				}
 
 				auto& transformInfo = solidGroup.get<InsideFrustumSolid>(entity);
@@ -328,7 +328,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.PrevModelViewProjectionTps,
 						prevViewProjectionTps * Math::XMMatrixTranspose(Math::GetTransform(transformPrev.Position, transformPrev.Rotation, transformPrev.Scale)));
 
-					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion)));
+					ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBufferMotion)));
 				}
 				else
 				{
@@ -336,7 +336,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					Math::XMStoreFloat4x4(&transformBuffer.ModelTps, m);
 					Math::XMStoreFloat4x4(&transformBuffer.ModelViewProjectionTps, mvp);
 
-					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer)));
+					ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer)));
 				}
 
 				const Data::MaterialID material = transparentGroup.get<Data::MaterialID>(entity);
@@ -371,6 +371,6 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		// Remove current visibility
 		Settings::Data.clear<InsideFrustumSolid, InsideFrustumNotSolid>();
 		ZE_PERF_STOP();
-		return {};
+		return solidCount || transparentCount;
 	}
 }

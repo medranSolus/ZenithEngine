@@ -24,9 +24,9 @@ namespace ZE::GFX::Pipeline
 	// FrameBuffer creation data
 	struct FrameBufferDesc
 	{
-		FrameBufferFlags Flags;
+		FrameBufferFlags Flags = Base(FrameBufferFlag::None);
 		std::vector<FrameResourceDesc> Resources;
-		U32 PassLevelCount;
+		U32 PassLevelCount = 0;
 		// Start | End level
 		std::vector<std::pair<U32, U32>> ResourceLifetimes;
 	};

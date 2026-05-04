@@ -10,7 +10,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static Expected<std::unique_ptr<PassExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
@@ -64,9 +64,9 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return UpdateOperation::NoUpdate;
 	}
 
-	Expected<std::unique_ptr<ExecuteData>> Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept
 	{
-		auto passData = std::make_unique<ExecuteData>();
+		auto passData = std::make_shared<ExecuteData>();
 		passData->SourceData = source;
 
 		Resource::Texture::PackDesc texDesc = {};
@@ -78,7 +78,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 			Logger::Error("Error loading skybox textures, falling back to generated texture!");
 			if (textures.size())
 				textures.pop_back();
-			for (U8 i = textures.size(); i < 6; i++)
+			for (U8 i = ZE::Utils::SafeCast<U8>(textures.size()); i < 6; i++)
 				textures.emplace_back(1, 1);
 		}
 
@@ -88,11 +88,11 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return passData;
 	}
 
-	Status Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
 		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->Skybox,
 			static_cast<ExecuteData*>(passData.ExecData.get())->SkyTexture, 0, FrameResourceType::TextureCube);
-		return {};
+		return false;
 	}
 
 	void DebugUI(PassExecuteData* data) noexcept

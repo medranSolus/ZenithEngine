@@ -23,14 +23,22 @@ namespace ZE::GFX::Pipeline
 		RendererGraphData& GraphData;
 		FfxInterface& FfxInterface;
 		// Range slot used by renderer settings data CBuffer
-		Binding::Range SettingsRange;
+		Binding::Range SettingsRange = {};
 		// Range slot used by renderer dynamic data CBuffer
-		Binding::Range DynamicDataRange;
+		Binding::Range DynamicDataRange = {};
 		// Sampler definitions provided by the renderer. Can be extended with custom samplers too
 		// if they don't overlap with main samplers (see Shader/Common/Samplers.hlsli)
 		std::vector<Resource::SamplerDesc> Samplers;
 		// Allows for caching same shader blobs between passes to speed up data loading
 		std::unordered_map<std::string, Resource::Shader> ShaderCache;
+	};
+
+	// Base structure for data created in render pass initialization and used in execution, can be extended with custom data for each pass
+	struct PassExecuteData
+	{
+		PassExecuteData() = default;
+		ZE_CLASS_DEFAULT(PassExecuteData);
+		virtual ~PassExecuteData() = default;
 	};
 
 	// Main access point for all data to be used by pass provided by current renderer
@@ -44,11 +52,11 @@ namespace ZE::GFX::Pipeline
 		Resource::CBuffer SettingsBuffer;
 		// Current dynamic constant buffer used for uploading data to GPU
 		Ptr<Resource::DynamicCBuffer> DynamicBuffer;
-		RendererSettingsData SettingsData;
-		RendererDynamicData DynamicData;
-		RendererGraphData GraphData;
+		RendererSettingsData SettingsData = {};
+		RendererDynamicData DynamicData = {};
+		RendererGraphData GraphData = {};
 		// Pointer to arbitrary data to be used by custom passes
-		PtrVoid CustomData;
+		Ptr<PassExecuteData> CustomData;
 
 		void BindRendererDynamicData(CommandList& cl, Binding::Context& bindCtx) const noexcept { DynamicBuffer->Bind(cl, bindCtx, RENDERER_DYNAMIC_BUFFER); }
 	};
