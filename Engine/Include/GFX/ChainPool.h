@@ -113,12 +113,12 @@ namespace ZE::GFX
 			{
 				ZE_CODE_RET_FAILED(x(inner.ptr[--i]));
 			}
-			return {};
 		}
 		else
 		{
 			ZE_CODE_RET_FAILED(x(inner.impl));
 		}
+		return {};
 	}
 #pragma endregion
 }

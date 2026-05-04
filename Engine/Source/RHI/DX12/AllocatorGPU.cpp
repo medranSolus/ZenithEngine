@@ -148,7 +148,7 @@ namespace ZE::RHI::DX12
 
 	AllocatorGPU::AllocatorGPU() noexcept
 		: blockAllocator(std::make_shared<HeapAllocator::BlockAllocator>(BLOCK_ALLOC_CAPACITY)),
-		chunkAllocator(std::make_shared<HeapAllocator::BlockAllocator>(CHUNK_ALLOC_CAPACITY)),
+		chunkAllocator(std::make_shared<HeapAllocator::ChunkAllocator>(CHUNK_ALLOC_CAPACITY)),
 		mainAllocator(blockAllocator, chunkAllocator),
 		secondaryAllocator(blockAllocator, chunkAllocator),
 		dynamicBuffersAllocator(blockAllocator, chunkAllocator),

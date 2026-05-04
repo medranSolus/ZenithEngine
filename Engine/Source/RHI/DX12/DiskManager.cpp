@@ -67,7 +67,7 @@ namespace ZE::RHI::DX12
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
 		auto decompresionTasks = std::make_unique<Task<void>[]>(maxRequestCount);
 
-		while (checkForDecompression)
+		while (decompressionData->CheckForDecompression)
 		{
 			// Check if any requests ready with timeout for checking of program end
 			switch (WaitForSingleObject(decompressionEvent, MAX_DECOMPRESSION_WAIT))
@@ -104,7 +104,7 @@ namespace ZE::RHI::DX12
 				{
 					ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](void* dst, const void* src, U64 size) { std::memcpy(dst, src, size); },
+						[](void* dst, const void* src, U64 size) noexcept { std::memcpy(dst, src, size); },
 						req.DstBuffer, req.SrcBuffer, req.DstSize);
 					break;
 				}
@@ -116,7 +116,7 @@ namespace ZE::RHI::DX12
 				case DS_COMPRESSION_FORMAT_ZLIB:
 				{
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize)
+						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize) noexcept
 						{
 							IO::Compressor codec(bzip2 ? IO::CompressionFormat::Bzip2 : IO::CompressionFormat::ZLib);
 							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
@@ -165,7 +165,13 @@ namespace ZE::RHI::DX12
 
 			// Wait for custom requests to complete
 			for (U32 i = 0; i < requestCount; ++i)
-				decompresionTasks[i].Get();
+			{
+				auto exp = decompresionTasks[i].Get();
+				if (!exp)
+				{
+					ZE_CODE_ERROR(exp.error(), "Failed to wait for DirectStorage custom decompression tasks, some data might be corrupted!");
+				}
+			}
 
 			hr = decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get());
 			if (FAILED(hr))
@@ -222,7 +228,7 @@ namespace ZE::RHI::DX12
 
 	DiskManager::~DiskManager()
 	{
-		data->checkForDecompression = false;
+		decompressionData->CheckForDecompression = false;
 		for (auto& events : fenceEvents)
 		{
 			if (events.second.at(0))

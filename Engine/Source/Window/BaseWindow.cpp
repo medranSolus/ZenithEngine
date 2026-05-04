@@ -1,4 +1,5 @@
 #include "Window/BaseWindow.h"
+#include "GUI/DearImGui.h"
 
 namespace ZE::Window
 {

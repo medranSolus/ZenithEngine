@@ -38,7 +38,6 @@ namespace ZE
 	template <typename R>
 	constexpr Expected<R> Task<R>::Get() noexcept
 	{
-		R result = {};
 		if (data)
 		{
 			try
@@ -48,8 +47,17 @@ namespace ZE
 				// Check if some thread already started working on this task, if not do it yourself
 				if (!status)
 					data->task();
-				result = future.get();
-				data = nullptr;
+				if constexpr (std::is_void_v<R>)
+				{
+					future.get();
+					data = nullptr;
+				}
+				else
+				{
+					R result = future.get();
+					data = nullptr;
+					return result;
+				}
 			}
 			catch (const std::future_error& e)
 			{
@@ -58,10 +66,11 @@ namespace ZE
 			catch (const std::exception& e)
 			{
 				Logger::Error(e.what());
-				return std::unexpected(std::errc::interrupted);
+				return std::unexpected(std::make_error_code(std::errc::interrupted));
 			}
 		}
-		return result;
+		if constexpr (!std::is_void_v<R>)
+			return {};
 	}
 
 #pragma endregion

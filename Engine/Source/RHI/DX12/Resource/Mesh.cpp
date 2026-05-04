@@ -38,7 +38,7 @@ namespace ZE::RHI::DX12::Resource
 
 		const U32 vertexOffset = Math::AlignUp(mesh.indexView.SizeInBytes, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + mesh.vertexView.SizeInBytes);
-		mesh.info = device.CreateBuffer(desc, false);
+		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
 		mesh.indexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
 		mesh.vertexView.BufferLocation = mesh.indexView.BufferLocation + vertexOffset;
 		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer");
@@ -77,7 +77,7 @@ namespace ZE::RHI::DX12::Resource
 			"Only 16 and 32 bit indices are supported for DirectX 12!");
 
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
-		mesh.info = device.CreateBuffer(desc, false);
+		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
 		mesh.indexView.BufferLocation = mesh.vertexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer from file");
 

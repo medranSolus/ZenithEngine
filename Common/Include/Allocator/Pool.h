@@ -30,7 +30,7 @@ namespace ZE::Allocator
 		ItemBlock& CreateNewBlock() noexcept;
 
 	public:
-		Pool(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
+		constexpr Pool(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
 		ZE_CLASS_MOVE(Pool);
 		~Pool() { Clear(); }
 

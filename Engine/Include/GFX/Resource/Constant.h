@@ -28,7 +28,7 @@ namespace ZE::GFX::Resource
 
 		// Main Gfx API
 
-		constexpr Status Set(GFX::Device& dev, const T& value) noexcept { ZE_RHI_BACKEND_CALL(Set, dev, value); }
+		constexpr Status Set(GFX::Device& dev, const T& value) noexcept { ZE_RHI_BACKEND_CALL_RET(Set, dev, value); }
 		constexpr void Bind(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_RHI_BACKEND_CALL(Bind, cl, bindCtx); }
 	};
 }

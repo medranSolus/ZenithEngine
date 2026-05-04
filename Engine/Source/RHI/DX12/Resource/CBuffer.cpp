@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	~CBuffer()
+	CBuffer::~CBuffer()
 	{
 		if (resInfo.Handle)
 		{
@@ -18,13 +18,12 @@ namespace ZE::RHI::DX12::Resource
 
 		CBuffer buffer = {};
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.Bytes);
-		buffer.resInfo = device.CreateBuffer(desc, false);
-		ZE_DX_SET_ID(resInfo.Resource, "CBuffer");
-		buffer.address = resInfo.Resource->GetGPUVirtualAddress();
+		ZE_EXPECT_RET_FAILED(buffer.resInfo, device.CreateBuffer(desc, false));
+		ZE_DX_SET_ID(buffer.resInfo.Resource, "CBuffer");
+		buffer.address = buffer.resInfo.Resource->GetGPUVirtualAddress();
 		buffer.srcDev = &device;
 
-		if (Status code = Update(dev, disk, data); code)
-			return std::unexpected(code);
+		ZE_CODE_RET_FAILED_EXPECT(buffer.Update(dev, disk, data));
 		return buffer;
 	}
 
@@ -34,12 +33,12 @@ namespace ZE::RHI::DX12::Resource
 
 		CBuffer buffer = {};
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
-		buffer.resInfo = device.CreateBuffer(desc, false);
-		ZE_DX_SET_ID(resInfo.Resource, "CBuffer from file");
-		buffer.address = resInfo.Resource->GetGPUVirtualAddress();
+		ZE_EXPECT_RET_FAILED(buffer.resInfo, device.CreateBuffer(desc, false));
+		ZE_DX_SET_ID(buffer.resInfo.Resource, "CBuffer from file");
+		buffer.address = buffer.resInfo.Resource->GetGPUVirtualAddress();
 		buffer.srcDev = &device;
 
-		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
+		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, buffer.resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
 		return buffer;
 	}
 

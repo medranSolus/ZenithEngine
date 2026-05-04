@@ -112,7 +112,7 @@ namespace ZE::RHI::DX12
 			}
 		}
 
-		auto getAllocInfo = [&](const T* node, std::string_view tag) -> std::string
+		auto getAllocInfo = [&](const auto* node, std::string_view tag) noexcept -> std::string
 			{
 				std::string info;
 				while (node != nullptr)
@@ -342,11 +342,11 @@ namespace ZE::RHI::DX12
 			fileOutput = false;
 		}
 
-		auto writeString = [&](std::string_view s)
+		auto writeString = [&](std::string_view s) noexcept
 			{
 				if (fileOutput)
 				{
-					if (Status code = file.Write(s.data(), s.size()))
+					if (Status code = file.Write(s.data(), Utils::SafeCast<U32>(s.size())))
 					{
 						ZE_CODE_ERROR(code, "Device Removed! Failed to write to file <" + filename + "> while saving DRED recovery data. Remaining data will be written via logger.");
 						fileOutput = false;

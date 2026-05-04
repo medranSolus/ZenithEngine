@@ -25,7 +25,9 @@ namespace ZE::RHI::DX12
 		const U32 srvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = swapChain.rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		if (shaderInput)
-			swapChain.srvHandle = dev.Get().dx12.AllocDescs(descHeapDesc.NumDescriptors);
+		{
+			ZE_EXPECT_RET_FAILED(swapChain.srvHandle, dev.Get().dx12.AllocDescs(descHeapDesc.NumDescriptors));
+		}
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DX::GetDXFormat(Settings::BackbufferFormat);

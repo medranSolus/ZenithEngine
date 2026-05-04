@@ -9,7 +9,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 		Pack pack = {};
 		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
-		pack.descInfo = device.AllocDescs(pack.count);
+		ZE_EXPECT_RET_FAILED(pack.descInfo, device.AllocDescs(pack.count));
 		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
 		pack.srcDev = &device;
 
@@ -103,7 +103,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				texDesc.MipLevels = startSurface.GetMipCount();
 				*mipLevels = startSurface.GetMipCount();
 
-				resInfo = device.CreateTexture(texDesc);
+				ZE_EXPECT_RET_FAILED(resInfo, device.CreateTexture(texDesc));
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
 
 				const bool copySrc = desc.Options & GFX::Resource::Texture::PackOption::CopySource;
@@ -140,7 +140,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 		Pack pack = {};
 		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
-		pack.descInfo = device.AllocDescs(pack.count);
+		ZE_EXPECT_RET_FAILED(pack.descInfo, device.AllocDescs(pack.count));
 		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
 		pack.srcDev = &device;
 
@@ -229,7 +229,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				texDesc.MipLevels = tex.MipLevels;
 				*mipLevels = tex.MipLevels;
 
-				resInfo = device.CreateTexture(texDesc);
+				ZE_EXPECT_RET_FAILED(resInfo, device.CreateTexture(texDesc));
 				ZE_DX_SET_ID(resInfo.Resource, "Texture_from_file_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
 				diskManager.AddFileTextureRequest(resInfo.Resource.Get(), file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize, desc.Options & GFX::Resource::Texture::PackOption::CopySource);

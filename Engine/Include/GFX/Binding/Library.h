@@ -11,7 +11,7 @@ namespace ZE::GFX::Binding
 
 	public:
 		Library() = default;
-		ZE_CLASS_DELETE(Library);
+		ZE_CLASS_MOVE(Library);
 		~Library() = default;
 
 		constexpr Schema& GetSchema(U32 index) noexcept { ZE_ASSERT(index < schemas.size(), "Trying to get Schema out of range!"); return schemas.at(index); }

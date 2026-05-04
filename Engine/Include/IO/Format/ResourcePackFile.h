@@ -93,7 +93,7 @@ namespace ZE::IO::Format
 		U16 MipLevels = 0;
 		PixelFormat Format = PixelFormat::Unknown;
 		GFX::Resource::Texture::Type Type = GFX::Resource::Texture::Type::Tex1D;
-		CompressionFormat Compression = CompressionFormat:::None;
+		CompressionFormat Compression = CompressionFormat::None;
 	};
 #pragma pack(pop)
 }

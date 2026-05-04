@@ -7,7 +7,8 @@ namespace ZE::RHI::DX12::Resource
 		auto& device = dev.Get().dx12;
 
 		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
-		ResourceInfo resource = device.CreateBuffer(desc, true);
+		ResourceInfo resource = {};
+		ZE_EXPECT_RET_FAILED_CODE(resource, device.CreateBuffer(desc, true));
 		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
 		const D3D12_RANGE range = {};

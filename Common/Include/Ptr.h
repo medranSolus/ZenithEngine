@@ -11,10 +11,10 @@ namespace ZE
 	template<typename T>
 	class Ptr final
 	{
-		T* ptr;
+		T* ptr = nullptr;
 
 	public:
-		constexpr Ptr() noexcept : ptr(nullptr) {}
+		Ptr() = default;
 		constexpr Ptr(T* p) noexcept : ptr(p) {}
 		constexpr Ptr(Ptr&& p) noexcept : ptr(p.ptr) { p.ptr = nullptr; }
 		constexpr Ptr(const Ptr& p) noexcept : ptr(p.ptr) {}
@@ -56,10 +56,10 @@ namespace ZE
 	// Raw pointer wrapper specialization for Ptr<void> with reduced funcionality
 	class PtrVoid final
 	{
-		void* ptr;
+		void* ptr = nullptr;
 
 	public:
-		constexpr PtrVoid() noexcept : ptr(nullptr) {}
+		PtrVoid() = default;
 		constexpr PtrVoid(void* p) noexcept : ptr(p) {}
 		constexpr PtrVoid(PtrVoid&& p) noexcept : ptr(p.ptr) { p.ptr = nullptr; }
 		constexpr PtrVoid(const PtrVoid& p) noexcept : ptr(p.ptr) {}
