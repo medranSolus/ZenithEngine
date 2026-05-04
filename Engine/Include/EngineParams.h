@@ -8,16 +8,16 @@ namespace ZE
 	struct EngineParams
 	{
 		// Will be application name if not provided.
-		const char* WindowName;
+		const char* WindowName = nullptr;
 		// Width of client area, specify as 0 in either of dimensions to use current max resolution
-		U32 Width;
+		U32 Width = 0;
 		// Height of client area, specify as 0 in either of dimensions to use current max resolution
-		U32 Height;
+		U32 Height = 0;
 		// Number of descriptors to be created for supported graphics backend to use.
 		// Determines maximal number of objects and materials
-		U32 GraphicsDescriptorPoolSize;
+		U32 GraphicsDescriptorPoolSize = 1000;
 		// Set to true if required to have performance measurements entries in single line each.
-		bool SingleLinePerfEntry;
+		bool SingleLinePerfEntry = false;
 		// When computing render graph for passes minimize distances between dependant passes.
 		// Disables kicking off work earlier, trying to run pass as late as possible.
 		//
@@ -27,7 +27,7 @@ namespace ZE
 		// Provide custom render graph definition if needed, otherwise fill in CoreRenderer parameters
 		GFX::Pipeline::RenderGraphDesc* CustomRendererDesc = nullptr;
 		// Parameters used by render pipeline
-		GFX::Pipeline::CoreRenderer::Params CoreRendererParams;
+		GFX::Pipeline::CoreRenderer::Params CoreRendererParams = {};
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static void SetParsedParams(const CmdParser& parser, EngineParams& params) noexcept;

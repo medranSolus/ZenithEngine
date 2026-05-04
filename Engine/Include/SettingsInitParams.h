@@ -36,29 +36,29 @@ namespace ZE
 	struct SettingsInitParams
 	{
 		// Name of the application to register for external services.
-		const char* AppName;
+		const char* AppName = nullptr;
 		// Identificator of application current version. For convenience you can use ZE::Utils::MakeVersion()
-		U32 AppVersion;
+		U32 AppVersion = 0;
 		// Initial flags that enable engine features.
-		SettingsInitFlags Flags;
+		SettingsInitFlags Flags = 0;
 		// Selected API that RHI will be initialized to.
-		GfxApiType GraphicsAPI;
+		GfxApiType GraphicsAPI = GfxApiType::None;
 		// Selected API that AHI will be initialized to.
-		AudioApiType AudioAPI;
+		AudioApiType AudioAPI = AudioApiType::None;
 		// Number of backbuffers to create for swap chain, must be in range [2:16]
-		U32 BackbufferCount;
+		U32 BackbufferCount = 2;
 		// Allocate this number of threads from thread pool, decreasing it's number for static threads not managed by the pool.
-		U8 StaticThreadsCount;
+		U8 StaticThreadsCount = 0;
 		// Override number of threads used for scheduling tasks to thread pool.
 		// When set to 0 leaves calculation of optimal thread count to the pool.
 		// Set to UINT8_MAX to disable thread pool completly.
-		U8 CustomThreadPoolThreadsCount;
+		U8 CustomThreadPoolThreadsCount = 0;
 		// Type of upscaler to be used in graphics pipeline.
-		GFX::UpscalerType Upscaler;
+		GFX::UpscalerType Upscaler = GFX::UpscalerType::None;
 		// Type of ambient occlusion to be used in graphics pipeline.
-		GFX::AOType AmbientOcclusion;
+		GFX::AOType AmbientOcclusion = GFX::AOType::None;
 		// Type of tonemapper to be applied on the rendered image.
-		GFX::TonemapperType Tonemapper;
+		GFX::TonemapperType Tonemapper = GFX::TonemapperType::GranTurismo7;
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion,
