@@ -64,6 +64,7 @@ namespace ZE::RHI::DX12
 	{
 #if _ZE_DEBUG_GFX_API
 		debugManager = std::move(dev.debugManager);
+		DX::DebugInfoManager::Register(debugManager);
 #endif
 		device = std::move(dev.device);
 		mainQueue = std::move(dev.mainQueue);
@@ -188,6 +189,9 @@ namespace ZE::RHI::DX12
 		if (Settings::IsEnabledGPUValidation())
 			debugInterface->SetEnableGPUBasedValidation(true);
 
+		ZE_EXPECT_RET_FAILED(dev.debugManager, DX::DebugInfoManager::Create());
+		DX::DebugInfoManager::Register(dev.debugManager);
+
 		// Enable device removed recovery
 		DREDRecovery::Enable();
 #endif
@@ -201,7 +205,7 @@ namespace ZE::RHI::DX12
 			ZE_DX_RET_FAILED_EXPECT(DX::Error::NO_ADAPTER_ERROR);
 		}
 
-		auto initDevice = [&](D3D_FEATURE_LEVEL level) -> HRESULT
+		auto initDevice = [&](D3D_FEATURE_LEVEL level) noexcept -> HRESULT
 			{
 				HRESULT hr = E_FAIL;
 				// Initialize via hardware specific functions
@@ -437,9 +441,6 @@ namespace ZE::RHI::DX12
 		Settings::SetU8IndexBuffers(false);
 		Settings::SetGfxSupportSSSR(true);
 
-#if _ZE_DEBUG_GFX_API
-		DX::DebugInfoManager::Register(dev.debugManager);
-#endif
 		return dev;
 	}
 
