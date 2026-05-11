@@ -24,7 +24,7 @@ namespace ZE::GFX
 		static Expected<Material> Create(Device& dev, DiskManager& disk, const T& data, const Resource::Texture::PackDesc& desc) noexcept;
 		static Expected<Material> Create(Device& dev, DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file) noexcept;
 
-		constexpr void UpdateData(Device& dev, DiskManager& disk, EID materialId, const T& data) const { ZE_VALID_EID(materialId); return buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
+		constexpr Status UpdateData(Device& dev, DiskManager& disk, EID materialId, const T& data) const noexcept { ZE_VALID_EID(materialId); return buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
 		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 		constexpr void BindTextures(CommandList& cl, Binding::Context& bindCtx) const noexcept { textures.Bind(cl, bindCtx); }
 	};

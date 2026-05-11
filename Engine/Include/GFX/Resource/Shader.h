@@ -25,7 +25,7 @@ namespace ZE::GFX::Resource
 		// Main Gfx API
 
 #if _ZE_DEBUG_GFX_NAMES
-		const std::string& GetName() const noexcept { const std::string* name = nullptr; ZE_RHI_BACKEND_CALL_RET_VAR(name, GetName); return name ? *name : ""; }
+		const std::string& GetName() const noexcept { static std::string empty = ""; const std::string* name = nullptr; ZE_RHI_BACKEND_CALL_RET_VAR(name, GetName); return name ? *name : empty; }
 #endif
 	};
 }
