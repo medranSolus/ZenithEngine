@@ -63,6 +63,7 @@ namespace ZE::RHI::DX12
 				swapChain.rtvSrv[i].SRVCpu.ptr = swapChain.rtvSrv[i].SRVGpu.ptr = UINT64_MAX;
 			rtvHandle.ptr += rtvDescSize;
 		}
+		return swapChain;
 	}
 
 	SwapChain::~SwapChain()

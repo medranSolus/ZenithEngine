@@ -9,6 +9,7 @@ namespace ZE::RHI::DX12
 	{
 		ZE_DX_RET_FAILED(commands->Reset(allocator.Get(), state));
 		RestoreExternalState(dev);
+		return {};
 	}
 
 	void CommandList::RestoreExternalState(Device& dev) const noexcept
@@ -144,10 +145,12 @@ namespace ZE::RHI::DX12
 	Status CommandList::Close(Device& dev) const noexcept
 	{
 		ZE_DX_RET_FAILED(commands->Close());
+		return {};
 	}
 
 	Status CommandList::Reset(Device& dev) const noexcept
 	{
 		ZE_DX_RET_FAILED(allocator->Reset());
+		return {};
 	}
 }
