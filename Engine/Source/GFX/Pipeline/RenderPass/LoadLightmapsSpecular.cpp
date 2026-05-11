@@ -182,11 +182,22 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 			else
 				ImGui::Text("Generated %" PRIu32 "x%" PRIu32 ", samples: %" PRIu32 " %s", BRDF_LUT_SIZE, BRDF_LUT_SIZE, BRDF_LUT_SAMPLES_COUNT, BRDF_LUT_FP16 ? "16 bit" : "32 bit");
 
-			if (const auto selection = GUI::DialogWindow::FileBrowserButton("Load BRDF", "", GUI::DialogWindow::FileType::Image))
+			if (const auto selectionExp = GUI::DialogWindow::FileBrowserButton("Load BRDF", "", GUI::DialogWindow::FileType::Image))
 			{
-				execData.NewLutSource = *selection;
-				execData.UpdateData = true;
-				execData.UpdateError = false;
+				if (selectionExp)
+				{
+					if (*selectionExp)
+					{
+						execData.NewLutSource = **selectionExp;
+						execData.UpdateData = true;
+						execData.UpdateError = false;
+					}
+				}
+				else
+				{
+					ZE_CODE_ERROR(selectionExp.error(), "Error loading BRDF!");
+					execData.UpdateError = true;
+				}
 			}
 			ImGui::NewLine();
 		}

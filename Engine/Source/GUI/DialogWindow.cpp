@@ -6,7 +6,8 @@ namespace ZE::GUI::DialogWindow
 {
 	bool IsCorrectExtention(const std::filesystem::directory_entry& entry, FileType searchType) noexcept
 	{
-		if (entry.is_directory())
+		std::error_code ec = {};
+		if (entry.is_directory(ec))
 			return true;
 		switch (searchType)
 		{
@@ -54,14 +55,17 @@ namespace ZE::GUI::DialogWindow
 		return false;
 	}
 
-	std::vector<std::filesystem::directory_entry> GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType)
+	Expected<std::vector<std::filesystem::directory_entry>> GetDirContent(const std::filesystem::directory_entry& entry, FileType searchType) noexcept
 	{
 		std::vector<std::filesystem::directory_entry> dirContent;
-		for (const auto& e : std::filesystem::directory_iterator(entry, std::filesystem::directory_options::skip_permission_denied))
+		std::error_code ec = {};
+		for (const auto& e : std::filesystem::directory_iterator(entry, std::filesystem::directory_options::skip_permission_denied, ec))
 			if (IsCorrectExtention(e, searchType))
 				dirContent.emplace_back(e);
+		if (ec)
+			return std::unexpected(ec);
 
-		std::sort(dirContent.begin(), dirContent.end(), [searchType](const std::filesystem::directory_entry& e1, const std::filesystem::directory_entry& e2)
+		std::sort(dirContent.begin(), dirContent.end(), [searchType](const std::filesystem::directory_entry& e1, const std::filesystem::directory_entry& e2) noexcept
 			{
 				// Ascending
 				if (searchType != FileType::Directory)
@@ -76,20 +80,24 @@ namespace ZE::GUI::DialogWindow
 		return dirContent;
 	}
 
-	std::optional<std::string> FileBrowserButton(std::string_view title, std::string_view startDir, FileType searchType)
+	Expected<std::optional<std::string>> FileBrowserButton(std::string_view title, std::string_view startDir, FileType searchType) noexcept
 	{
 		static std::filesystem::directory_entry currentDir;
 		static U64 selected = UINT64_MAX;
-		auto setCurrentDir = [](const std::filesystem::path& newPath)
+		auto setCurrentDir = [](const std::filesystem::path& newPath) noexcept -> Status
 			{
-				currentDir.assign(newPath);
+				std::error_code ec = {};
+				currentDir.assign(newPath, ec);
 				selected = UINT64_MAX;
+				if (ec)
+					return ec;
+				return {};
 			};
 
 		// Button for opening pop-up window
 		if (ImGui::Button(title.data()))
 		{
-			setCurrentDir(std::filesystem::current_path().append(startDir));
+			ZE_CODE_RET_FAILED_EXPECT(setCurrentDir(std::filesystem::current_path().append(startDir)));
 			ImGui::OpenPopup(title.data());
 		}
 
@@ -100,11 +108,15 @@ namespace ZE::GUI::DialogWindow
 		if (ImGui::BeginPopupModal(title.data()))
 		{
 			if (!currentDir.exists())
-				setCurrentDir(std::filesystem::current_path());
+			{
+				ZE_CODE_RET_FAILED_EXPECT(setCurrentDir(std::filesystem::current_path()));
+			}
 
 			// Move up in directory structure
 			if (ImGui::Button(" ^ "))
-				setCurrentDir(currentDir.path().parent_path());
+			{
+				ZE_CODE_RET_FAILED_EXPECT(setCurrentDir(currentDir.path().parent_path()));
+			}
 			ImGui::SameLine();
 
 #if _ZE_PLATFORM_WINDOWS
@@ -116,6 +128,7 @@ namespace ZE::GUI::DialogWindow
 			if (ImGui::BeginCombo("##dialog_drive", drivePath))
 			{
 				DWORD driveMask = GetLogicalDrives();
+				ZE_WIN_RET_FAILED_LAST_EXPECT(driveMask == 0);
 				drivePath[0] = 'A';
 				for (; drivePath[0] <= 'Z'; ++drivePath[0])
 				{
@@ -123,7 +136,9 @@ namespace ZE::GUI::DialogWindow
 					{
 						bool selectedDrive = currentDrive == drivePath[0];
 						if (ImGui::Selectable(drivePath, selectedDrive))
-							setCurrentDir(drivePath);
+						{
+							ZE_CODE_RET_FAILED_EXPECT(setCurrentDir(drivePath));
+						}
 						if (selectedDrive)
 							ImGui::SetItemDefaultFocus();
 					}
@@ -134,7 +149,9 @@ namespace ZE::GUI::DialogWindow
 #else
 			// Button allowing for return to root dir
 			if (ImGui::Button(" / "))
-				setCurrentDir("/");
+			{
+				ZE_CODE_RET_FAILED_EXPECT(setCurrentDir("/"));
+			}
 #endif
 			ImGui::SameLine();
 
@@ -146,7 +163,8 @@ namespace ZE::GUI::DialogWindow
 
 			// Directory structure selection
 			ImGui::BeginChild("##dialog_content", { -1.0f, -35.0f }, true);
-			auto dirContent = GetDirContent(currentDir, searchType);
+			std::vector<std::filesystem::directory_entry> dirContent;
+			ZE_EXPECT_RET_FAILED(dirContent, GetDirContent(currentDir, searchType));
 			for (U64 i = 0; const auto& entry : dirContent)
 			{
 				if (ImGui::Selectable(entry.path().filename().string().c_str(), selected == i, ImGuiSelectableFlags_AllowDoubleClick))
@@ -186,7 +204,7 @@ namespace ZE::GUI::DialogWindow
 		}
 		if (selectedFile.size())
 			return selectedFile;
-		return {};
+		return std::optional<std::string>{};
 	}
 
 	bool ShowInfo(std::string_view title, std::string_view text) noexcept

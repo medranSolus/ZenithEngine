@@ -40,22 +40,44 @@ namespace ZE::GFX::Pipeline::RenderPass::Utils
 
 		ImGui::PushID(title);
 		ImGui::Text("Load: "); ImGui::SameLine();
-		if (const auto selection = GUI::DialogWindow::FileBrowserButton("Directory", newSourceDir, GUI::DialogWindow::FileType::Image))
+		if (const auto selectionExp = GUI::DialogWindow::FileBrowserButton("Directory", newSourceDir, GUI::DialogWindow::FileType::Image))
 		{
-			std::filesystem::path path = *selection;
-			if (path.has_extension() && path.has_parent_path())
+			if (selectionExp)
 			{
-				newSource.InitFolder(std::filesystem::relative(path.parent_path(), std::filesystem::current_path()).string(), path.extension().string());
-				updateData = true;
+				if (*selectionExp)
+				{
+					std::filesystem::path path = **selectionExp;
+					if (path.has_extension() && path.has_parent_path())
+					{
+						newSource.InitFolder(std::filesystem::relative(path.parent_path(), std::filesystem::current_path()).string(), path.extension().string());
+						updateData = true;
+					}
+					updateError = !updateData;
+				}
 			}
-			updateError = !updateData;
+			else
+			{
+				ZE_CODE_ERROR(selectionExp.error(), "Error getting directory content!");
+				updateError = true;
+			}
 		}
 		ImGui::SameLine();
-		if (const auto selection = GUI::DialogWindow::FileBrowserButton("Single File", newSourceDir, GUI::DialogWindow::FileType::Image))
+		if (const auto selectionExp = GUI::DialogWindow::FileBrowserButton("Single File", newSourceDir, GUI::DialogWindow::FileType::Image))
 		{
-			newSource.InitSingleFileCubemap(*selection);
-			updateData = true;
-			updateError = false;
+			if (selectionExp)
+			{
+				if (*selectionExp)
+				{
+					newSource.InitSingleFileCubemap(**selectionExp);
+					updateData = true;
+					updateError = false;
+				}
+			}
+			else
+			{
+				ZE_CODE_ERROR(selectionExp.error(), "Error getting directory content!");
+				updateError = true;
+			}
 		}
 		ImGui::PopID();
 	}
