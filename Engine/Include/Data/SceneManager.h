@@ -6,7 +6,7 @@ namespace ZE::Data
 {
 #if _ZE_EXTERNAL_MODEL_LOADING
 	// Load model data from external source
-	Task<bool> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform,
+	Task<Status> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform,
 		std::string_view filename, ExternalModelOptions options = Base(ExternalModelOption::None)) noexcept;
 #endif
 }

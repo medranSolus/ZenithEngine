@@ -2,10 +2,12 @@
 #include "Data/MaterialPBR.h"
 #include "Data/Tags.h"
 #include "GFX/Vertex.h"
+#include "GUI/DearImGui.h"
 #include "GUI/DialogWindow.h"
 #include "IO/Format/ResourcePackFile.h"
 #include "IO/Compressor.h"
 #include "IO/File.h"
+#include "IO/ResourcePackError.h"
 
 namespace ZE::Data
 {
@@ -25,9 +27,10 @@ namespace ZE::Data
 	}
 #endif
 
-	void AssetsStreamer::Init(GFX::Device& dev)
+	Expected<AssetsStreamer> AssetsStreamer::Create(GFX::Device& dev) noexcept
 	{
-		diskManager.Init(dev);
+		AssetsStreamer assets;
+		ZE_EXPECT_RET_FAILED(assets.diskManager, GFX::DiskManager::Create(dev));
 
 		// Initialize schema for known materials
 		GFX::Resource::Texture::Schema pbrTextureSchema = {};
@@ -36,7 +39,7 @@ namespace ZE::Data
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_METAL_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_ROUGH_NAME, GFX::Resource::Texture::Type::Tex2D);
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
-		texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
+		assets.texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 
 		// Preinitialize components that will be added anyway during loading resources
 		Settings::AssureEntityPools<std::string, MeshID, MaterialID, PackID, ParentID, Children,
@@ -47,37 +50,37 @@ namespace ZE::Data
 		InitTransformComponents();
 		InitMaterialPBRComponents();
 		InitCameraComponents();
+
+		return assets;
 	}
 
-	void AssetsStreamer::Free(GFX::Device& dev)
-	{
-	}
-
-	Task<IO::FileStatus> AssetsStreamer::LoadResourcePack(GFX::Device& dev, std::string_view packFile)
+	Task<Status> AssetsStreamer::LoadResourcePack(GFX::Device& dev, std::string_view packFile) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() -> IO::FileStatus
+			[&]() noexcept -> Status
 			{
 				IO::File file;
+				ZE_CODE_RET_FAILED(file.Open(packFile, Base(IO::FileFlag::DefaultRead)));
 				GFX::GFile gFile;
-				if (!file.Open(packFile, Base(IO::FileFlag::DefaultRead)) || !gFile.Open(diskManager, packFile))
-					return IO::FileStatus::ErrorOpeningFile;
+				ZE_CODE_RET_FAILED(gFile.Open(diskManager, packFile));
 
 				IO::Format::ResourcePackFileHeader header = {};
-				if (!file.Read(&header, sizeof(header)))
-					return IO::FileStatus::ErrorReading;
+				ZE_CODE_RET_FAILED(file.Read(&header, sizeof(header)));
+
 				// Check if signature is correct first and resources are present
 				if (std::memcmp(header.Signature, IO::Format::ResourcePackFileHeader::SIGNATURE_STR, 4) != 0)
-					return IO::FileStatus::ErrorBadSignature;
+					return ZE_RESPACK_ERROR(IO::ResourcePackStatus::ErrorBadSignature);
 				if (header.ResourcesCount == 0)
-					return IO::FileStatus::ErrorNoResources;
+					return ZE_RESPACK_ERROR(IO::ResourcePackStatus::ErrorNoResources);
 
 				// Prepare IDs for all created entities
 				std::vector<EID> resourceIds(header.ResourcesCount);
 				Settings::CreateEntities(resourceIds);
 
+				/* TODO: Resourcepack are not yet implemented fully, need to redesign this accordingly with proper async creation of resources
+				* 
 				// Handle files according to version
-				IO::FileStatus result = IO::FileStatus::Ok;
+				IO::ResourcePackStatus result = IO::ResourcePackStatus::Ok;
 				switch (header.Version)
 				{
 				case Utils::MakeVersion(1, 0, 0):
@@ -92,10 +95,10 @@ namespace ZE::Data
 					const IO::Format::ResourcePackTextureEntry* textureTable = reinterpret_cast<const IO::Format::ResourcePackTextureEntry*>(resourceTable + header.ResourcesCount);
 					const char* nameTable = reinterpret_cast<const char*>(textureTable + header.TexturesCount);
 
-					// Wait for last read and check if correct numer of bytes are read
-					if (tableWait.Get() != infoSectionSize)
+					// Wait for last read
+					if (tableWait.Get())
 					{
-						result = IO::FileStatus::ErrorReading;
+						result = IO::ResourcePackStatus::ErrorReading;
 						break;
 					}
 
@@ -152,7 +155,7 @@ namespace ZE::Data
 								if ((entry.Buffer.Compression == IO::CompressionFormat::None && entry.Buffer.Bytes != sizeof(MaterialPBR))
 									|| entry.Buffer.UncompressedSize != sizeof(MaterialPBR))
 								{
-									result = IO::FileStatus::ErrorIncorrectMaterialBufferSize;
+									result = IO::ResourcePackStatus::ErrorIncorrectMaterialBufferSize;
 									i = header.ResourcesCount;
 								}
 								else
@@ -172,7 +175,7 @@ namespace ZE::Data
 							}
 							else
 							{
-								result = IO::FileStatus::ErrorMissingMaterialEntries;
+								result = IO::ResourcePackStatus::ErrorMissingMaterialEntries;
 								i = header.ResourcesCount;
 							}
 							break;
@@ -181,7 +184,7 @@ namespace ZE::Data
 						{
 							if (resourceTable[i].Textures.TexturesCount == 0)
 							{
-								result = IO::FileStatus::ErrorUnknownTextureSchema;
+								result = IO::ResourcePackStatus::ErrorUnknownTextureSchema;
 								i = header.ResourcesCount;
 							}
 							else if (resourceTable[i].Textures.SchemaNameIndex != UINT32_MAX && resourceTable[i].Textures.SchemaNameSize)
@@ -206,7 +209,7 @@ namespace ZE::Data
 											|| texture.Width == 0 || texture.Height == 0
 											|| texture.DepthArraySize == 0 || texture.MipLevels == 0)
 										{
-											result = IO::FileStatus::ErrorIncorrectTextureEntry;
+											result = IO::ResourcePackStatus::ErrorIncorrectTextureEntry;
 											i = header.ResourcesCount;
 											break;
 										}
@@ -214,7 +217,7 @@ namespace ZE::Data
 								}
 								else
 								{
-									result = IO::FileStatus::ErrorUnknownTextureSchema;
+									result = IO::ResourcePackStatus::ErrorUnknownTextureSchema;
 									i = header.ResourcesCount;
 								}
 							}
@@ -224,14 +227,14 @@ namespace ZE::Data
 							break;
 						default:
 						{
-							result = IO::FileStatus::ErrorUnknownResourceEntry;
+							result = IO::ResourcePackStatus::ErrorUnknownResourceEntry;
 							i = header.ResourcesCount;
 							break;
 						}
 						}
 					}
 					// If integrity check failed then abort resource pack
-					if (result != IO::FileStatus::Ok)
+					if (result != IO::ResourcePackStatus::Ok)
 						break;
 
 					// When loading material entities, single resource is composed of 2 entries, so remove unneeded ones
@@ -350,12 +353,12 @@ namespace ZE::Data
 					{
 						if (wait.Get() != sizeof(MaterialPBR))
 						{
-							result = IO::FileStatus::ErrorReading;
+							result = IO::ResourcePackStatus::ErrorReading;
 							break;
 						}
 					}
 					materialBufferWait.clear();
-					if (result == IO::FileStatus::Ok)
+					if (result == IO::ResourcePackStatus::Ok)
 					{
 						for (auto& buffer : materialBuffers)
 						{
@@ -367,22 +370,22 @@ namespace ZE::Data
 				}
 				default:
 				{
-					result = IO::FileStatus::ErrorUnknowVersion;
+					result = IO::ResourcePackStatus::ErrorUnknowVersion;
 					break;
 				}
 				}
 				// If error occured abort all resources
-				if (result != IO::FileStatus::Ok)
+				if (result != IO::ResourcePackStatus::Ok)
 					Settings::DestroyEntities(resourceIds.begin(), resourceIds.end());
-
-				return result;
+					*/
+				return {};
 			});
 	}
 
-	Task<IO::FileStatus> AssetsStreamer::SaveResourcePack(GFX::Device& dev, std::string_view packFile, U16 packId, IO::CompressionFormat defaultCompression)
+	Task<Status> AssetsStreamer::SaveResourcePack(GFX::Device& dev, std::string_view packFile, U16 packId, IO::CompressionFormat defaultCompression) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() -> IO::FileStatus
+			[&]() noexcept -> Status
 			{
 				// Gather all resources for given group
 				std::vector<EID> resourceIds;
@@ -398,11 +401,10 @@ namespace ZE::Data
 				}
 
 				if (resourceIds.size() == 0)
-					return IO::FileStatus::ErrorNoResources;
+					return ZE_RESPACK_ERROR(IO::ResourcePackStatus::ErrorNoResources);
 
 				IO::File file;
-				if (!file.Open(packFile, Base(IO::FileFlag::DefaultWrite)))
-					return IO::FileStatus::ErrorOpeningFile;
+				ZE_CODE_RET_FAILED(file.Open(packFile, Base(IO::FileFlag::DefaultWrite)));
 
 				// Save general header info
 				IO::Format::ResourcePackFileHeader header = {};
@@ -417,8 +419,8 @@ namespace ZE::Data
 				header.ID = packId;
 				header.Flags = IO::Format::ResourcePackFlag::None;
 
-				std::vector<std::pair<U32, Task<U32>>> results;
-				results.emplace_back(Utils::SafeCast<U32>(sizeof(header)), file.WriteAsync(&header, sizeof(header), 0));
+				std::vector<Task<Status>> results;
+				results.emplace_back(file.WriteAsync(&header, sizeof(header), 0));
 
 				// Prepare resource table
 				auto resourceInfoTable = std::make_unique<IO::Format::ResourcePackEntry[]>(header.ResourcesCount);
@@ -458,15 +460,29 @@ namespace ZE::Data
 
 					// TODO: handle other types of resources
 				}
-				return IO::FileStatus::Ok;
+
+				// TODO: better error reporting
+				for (auto& res : results)
+				{
+					auto exp = res.Get();
+					if (exp)
+					{
+						ZE_CODE_RET_FAILED(*exp);
+					}
+					else
+					{
+						ZE_CODE_RET_FAILED(exp.error());
+					}
+				}
+				return {};
 			});
 	}
 
 #if _ZE_EXTERNAL_MODEL_LOADING
-	Task<MeshID> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh)
+	Task<Expected<MeshID>> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() -> MeshID
+			[&]() noexcept -> Expected<MeshID>
 			{
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
@@ -550,15 +566,15 @@ namespace ZE::Data
 				Settings::Data.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
 
 				// Load parsed mesh data into correct mesh and start it's upload to GPU
-				Settings::Data.emplace<GFX::Resource::Mesh>(meshId, dev, diskManager, meshData);
-				return { meshId };
+				ZE_EXPECT_RET_FAILED(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(dev, diskManager, meshData));
+				return MeshID{ meshId };
 			});
 	}
 
-	Task<MaterialID> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options)
+	Task<Expected<MaterialID>> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&, path = path]() -> MaterialID
+			[&, path = path]() noexcept -> Expected<MaterialID>
 			{
 				EID materialId = Settings::CreateEntity();
 
@@ -569,12 +585,12 @@ namespace ZE::Data
 				PBRFlags& flags = Settings::Data.emplace<PBRFlags>(materialId);
 
 				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
-				GFX::Resource::Texture::PackDesc texDesc;
+				GFX::Resource::Texture::PackDesc texDesc = {};
 				ZE_TEXTURE_SET_NAME(texDesc, Settings::Data.get<std::string>(materialId));
 				texDesc.Init(texSchema);
 				texDesc.ResourceID = materialId;
 
-				aiString texFile;
+				aiString texFile = {};
 				bool notSolid = false;
 				// Emissive: aiTextureType_EMISSIVE
 				// Decals: $mat.gltf.alphaMode
@@ -603,7 +619,7 @@ namespace ZE::Data
 					}
 				}
 
-				aiString metalTexFile;
+				aiString metalTexFile = {};
 				aiReturn metalTexRet = material.GetTexture(aiTextureType_METALNESS, 0, &metalTexFile);
 				aiReturn roughTexRet = material.GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texFile);
 
@@ -748,27 +764,41 @@ namespace ZE::Data
 				// Load custom data by default to resource pack 0
 				Settings::Data.emplace<PackID>(materialId).ID = 0;
 				// Start upload of buffer data and textures to GPU
-				Settings::Data.emplace<MaterialBuffersPBR>(materialId, dev, diskManager, data, texDesc);
-				return { materialId };
+				ZE_EXPECT_RET_FAILED(Settings::Data.emplace<MaterialBuffersPBR>(materialId), MaterialBuffersPBR::Create(dev, diskManager, data, texDesc));
+				return MaterialID{ materialId };
 			});
 	}
 #endif
 
-	void AssetsStreamer::ShowWindow(GFX::Device& dev)
+	Status AssetsStreamer::ShowWindow(GFX::Device& dev) noexcept
 	{
+		Status stat = {};
 		if (ImGui::Begin("Resource Manager"))
 		{
 			if (ImGui::CollapsingHeader("Resource packs"))
 			{
-				if (auto path = GUI::DialogWindow::FileBrowserButton("Load pack", RESOURCE_DIR, GUI::DialogWindow::FileType::ResourcePack))
+				if (auto pathExp = GUI::DialogWindow::FileBrowserButton("Load pack", RESOURCE_DIR, GUI::DialogWindow::FileType::ResourcePack))
 				{
-					auto result = LoadResourcePack(dev, path.value());
-					auto val = result.Get();
-					if (val != IO::FileStatus::Ok)
-						throw ZE_IO_EXCEPT(("Cannot load resource pack \"" + path.value() + "\"! Error: ") + IO::GetFileStatusString(val));
+					if (pathExp)
+					{
+						if (*pathExp)
+						{
+							auto result = LoadResourcePack(dev, pathExp->value()).Get();
+							if (result)
+								stat = *result;
+							else
+								stat = result.error();
+						}
+					}
+					else
+					{
+						ZE_CODE_ERROR(pathExp.error(), "Cannot get path for resource packs!");
+						stat= pathExp.error();
+					}
 				}
 			}
 			ImGui::End();
 		}
+		return stat;
 	}
 }

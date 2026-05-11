@@ -1,8 +1,6 @@
 #include "Data/SceneManager.h"
-#include "Data/MaterialPBR.h"
 #include "Data/Tags.h"
 #include "Data/Transform.h"
-#include "GFX/Vertex.h"
 
 namespace ZE::Data
 {
@@ -13,7 +11,7 @@ namespace ZE::Data
 			Settings::Data.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
 
 		// Load transforms for node
-		Vector translation, rotation, scaling;
+		Vector translation = {}, rotation = {}, scaling = {};
 		if (!Math::XMMatrixDecompose(&scaling, &rotation, &translation,
 			Math::XMMatrixTranspose(Math::XMLoadFloat4x4(reinterpret_cast<const Float4x4*>(&node.mTransformation)))))
 		{
@@ -88,12 +86,12 @@ namespace ZE::Data
 			Settings::Data.remove<Children>(currentEntity);
 	}
 
-	Task<bool> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform, std::string_view filename, ExternalModelOptions options) noexcept
+	Task<Status> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform, std::string_view filename, ExternalModelOptions options) noexcept
 	{
 		ZE_VALID_EID(root);
 
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() -> bool
+			[&]() noexcept -> Status
 			{
 				Assimp::Importer importer;
 				importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
@@ -124,7 +122,7 @@ namespace ZE::Data
 				if (!scene || std::strlen(error))
 				{
 					Logger::Error("Loading model \"" + std::string(filename) + "\": " + error);
-					return false;
+					return std::make_error_code(std::errc::io_error);
 				}
 
 				std::filesystem::path filePath(filename);
@@ -147,13 +145,13 @@ namespace ZE::Data
 				}
 
 				// Load geometry
-				std::vector<Task<MeshID>> meshWaitables;
+				std::vector<Task<Expected<MeshID>>> meshWaitables;
 				meshWaitables.reserve(scene->mNumMeshes);
 				for (U32 i = 0; i < scene->mNumMeshes; ++i)
 					meshWaitables.emplace_back(assets.ParseMesh(dev, *scene->mMeshes[i]));
 
 				// Load materials
-				std::vector<Task<MaterialID>> materialWaitables;
+				std::vector<Task<Expected<MaterialID>>> materialWaitables;
 				materialWaitables.reserve(scene->mNumMaterials);
 				for (U32 i = 0; i < scene->mNumMaterials; ++i)
 					materialWaitables.emplace_back(assets.ParseMaterial(dev, *scene->mMaterials[i], filePath.remove_filename().string(), options));
@@ -162,14 +160,32 @@ namespace ZE::Data
 				std::vector<std::pair<MeshID, MaterialID>> meshes;
 				meshes.reserve(scene->mNumMeshes);
 				for (auto& task : meshWaitables)
-					meshes.emplace_back(task.Get(), INVALID_EID);
+				{
+					Expected<MeshID> expId = {};
+					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
+					if (expId)
+						meshes.emplace_back(std::move(*expId), INVALID_EID);
+					else
+					{
+						ZE_CODE_RET_FAILED(expId.error());
+					}
+				}
 				meshWaitables.clear();
 
 				// Finish loading materials (after geometry to give more time to process)
 				std::vector<MaterialID> materials;
 				materials.reserve(scene->mNumMaterials);
 				for (auto& task : materialWaitables)
-					materials.emplace_back(task.Get());
+				{
+					Expected<MaterialID> expId = {};
+					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
+					if (expId)
+						materials.emplace_back(*expId);
+					else
+					{
+						ZE_CODE_RET_FAILED(expId.error());
+					}
+				}
 				materialWaitables.clear();
 
 				// Patch meshes with correct materials
@@ -182,7 +198,7 @@ namespace ZE::Data
 
 				// For root node apply top-level transform as it's set by the user
 				Settings::Data.get<Data::Transform>(root) = Settings::Data.get<Data::TransformGlobal>(root);
-				return true;
+				return {};
 			});
 	}
 #endif

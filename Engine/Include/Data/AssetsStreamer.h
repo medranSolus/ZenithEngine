@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/DiskManager.h"
 #include "IO/CompressionFormat.h"
-#include "IO/FileStatus.h"
 #include "ExternalModelOptions.h"
 #include "MaterialPBR.h"
 #include "LOD.h"
@@ -17,9 +16,9 @@ ZE_WARNING_POP
 namespace ZE::Data
 {
 	// Identifier of single geometry data
-	struct MeshID { EID ID; };
+	struct MeshID { EID ID = INVALID_EID; };
 	// Identifier of single material data
-	struct MaterialID { EID ID; };
+	struct MaterialID { EID ID = INVALID_EID; };
 
 	// Management class for performing dynamic loading of data to GPU
 	class AssetsStreamer final
@@ -56,27 +55,26 @@ namespace ZE::Data
 		ZE_CLASS_MOVE(AssetsStreamer);
 		~AssetsStreamer() = default;
 
+		static Expected<AssetsStreamer> Create(GFX::Device& dev) noexcept;
+
 		constexpr GFX::DiskManager& GetDisk() noexcept { return diskManager; }
 		constexpr GFX::Resource::Texture::Library& GetSchemaLib() noexcept { return texSchemaLib; }
 
-		Task<IO::FileStatus> LoadResourcePack(GFX::Device& dev, U16 packId) { return LoadResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT); }
-		Task<IO::FileStatus> SaveResourcePack(GFX::Device& dev, U16 packId, IO::CompressionFormat defaultCompression) { return SaveResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT, packId, defaultCompression); }
+		Task<Status> LoadResourcePack(GFX::Device& dev, U16 packId) noexcept { return LoadResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT); }
+		Task<Status> SaveResourcePack(GFX::Device& dev, U16 packId, IO::CompressionFormat defaultCompression) noexcept { return SaveResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT, packId, defaultCompression); }
 
-		void Init(GFX::Device& dev);
-		void Free(GFX::Device& dev);
-
-		Task<IO::FileStatus> LoadResourcePack(GFX::Device& dev, std::string_view packFile);
-		Task<IO::FileStatus> SaveResourcePack(GFX::Device& dev, std::string_view packFile, U16 packId, IO::CompressionFormat defaultCompression);
+		Task<Status> LoadResourcePack(GFX::Device& dev, std::string_view packFile) noexcept;
+		Task<Status> SaveResourcePack(GFX::Device& dev, std::string_view packFile, U16 packId, IO::CompressionFormat defaultCompression) noexcept;
 
 #if _ZE_EXTERNAL_MODEL_LOADING
-		Task<MeshID> ParseMesh(GFX::Device& dev, const aiMesh& mesh);
-		Task<MaterialID> ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options);
+		Task<Expected<MeshID>> ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept;
+		Task<Expected<MaterialID>> ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options) noexcept;
 #endif
-		void ShowWindow(GFX::Device& dev);
+		Status ShowWindow(GFX::Device& dev) noexcept;
 
 		template<typename Material, typename MaterialFlags>
-		MaterialID AddMaterial(GFX::Device& dev, MaterialFlags materialFlags, const Material& materialData,
-			const GFX::Resource::Texture::PackDesc& textureDesc, ResourceFlags resourceFlags)
+		Expected<MaterialID> AddMaterial(GFX::Device& dev, MaterialFlags materialFlags, const Material& materialData,
+			const GFX::Resource::Texture::PackDesc& textureDesc, ResourceFlags resourceFlags) noexcept
 		{
 			EID materialId = Settings::CreateEntity();
 			Settings::AssureEntityPools<Material, MaterialFlags, GFX::Material<Material, Material::TEX_SCHEMA_NAME>>();
@@ -84,7 +82,13 @@ namespace ZE::Data
 			Settings::Data.emplace<Material>(materialId, materialData);
 			Settings::Data.emplace<MaterialFlags>(materialId, materialFlags);
 
-			Settings::Data.emplace<GFX::Material<Material, Material::TEX_SCHEMA_NAME>>(materialId, dev, materialData, textureDesc);
+			auto exp = typename GFX::Material<Material, Material::TEX_SCHEMA_NAME>::Create(materialId, dev, materialData, textureDesc);
+			if (!exp)
+			{
+				Settings::DestroyEntity(materialId);
+				return std::unexpected(exp.error());
+			}
+			Settings::Data.emplace<GFX::Material<Material, Material::TEX_SCHEMA_NAME>>(std::move(*exp));
 
 			return { materialId };
 		}
