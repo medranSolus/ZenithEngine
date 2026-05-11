@@ -255,9 +255,12 @@ namespace ZE::RHI::DX12::Resource::Texture
 			ZE_ASSERT(srcDev, "No source Device for cleanup!");
 			srcDev->FreeDescs(descInfo);
 		}
-		for (U32 i = 0; i < count; ++i)
-			if (resources[i].Resource != nullptr)
-				srcDev->FreeTexture(resources[i]);
+		if (resources)
+		{
+			for (U32 i = 0; i < count; ++i)
+				if (resources[i].Resource != nullptr)
+					srcDev->FreeTexture(resources[i]);
+		}
 	}
 
 	void Pack::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept

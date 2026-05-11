@@ -270,10 +270,10 @@ namespace ZE::Platform::WinAPI
 
 	void Window::Destroy() noexcept
 	{
-		if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData)
-			ImGui_ImplWin32_Shutdown();
 		if (wndHandle)
 		{
+			if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData)
+				ImGui_ImplWin32_Shutdown();
 			DestroyWindow(wndHandle);
 			wndHandle = nullptr;
 		}
@@ -367,6 +367,7 @@ namespace ZE::Platform::WinAPI
 	Status Window::SetTitle(std::string_view title) noexcept
 	{
 		ZE_WIN_RET_FAILED_LAST(SetWindowTextW(wndHandle, Utils::ToUTF16(title).c_str()) == 0);
+		return {};
 	}
 
 	void Window::NewImGuiFrame() const noexcept
