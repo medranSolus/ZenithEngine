@@ -182,8 +182,8 @@ namespace ZE::RHI::DX12
 		allocator.tightAlignment = alignmentTier != D3D12_TIGHT_ALIGNMENT_TIER_NOT_SUPPORTED;
 
 		const HeapFlags flags = gpuUploadHeapSupported ? HeapFlag::GpuUploadHeap : HeapFlag::None;
-		const U64 normalChunk = allocator.tightAlignment ? TIGHT_CHUNK : NORMAL_CHUNK;
-		const U64 smallChunk = allocator.tightAlignment ? TIGHT_CHUNK : SMALL_CHUNK;
+		const U32 normalChunk = allocator.tightAlignment ? TIGHT_CHUNK : NORMAL_CHUNK;
+		const U32 smallChunk = allocator.tightAlignment ? TIGHT_CHUNK : SMALL_CHUNK;
 		switch (allocator.allocTier)
 		{
 		default:

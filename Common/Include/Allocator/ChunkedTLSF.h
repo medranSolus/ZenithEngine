@@ -413,7 +413,7 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	constexpr ZE_CHUNKED_TLSF_TYPE::~ChunkedTLSF()
 	{
-		if (chunkSizeDivisor != 0)
+		if (chunkSizeDivisor != 0 && nullBlock)
 		{
 			ZE_ASSERT(!nullBlock->ChunkHandle, "Memory used by free chunk not destroyed (forgot to call DestroyFreeChunks()), memory leak!");
 			ZE_ASSERT(nullBlock->Offset == 0 && nullBlock->Size == chunkSize, "Not all allocations have been freed before destroying allocator, memory leak!");
@@ -627,7 +627,7 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	void ZE_CHUNKED_TLSF_TYPE::DestroyFreeChunks(void* memoryUserData) noexcept
 	{
-		if (chunkSizeDivisor != 0 && nullBlock->ChunkHandle)
+		if (chunkSizeDivisor != 0 && nullBlock && nullBlock->ChunkHandle)
 		{
 			TLSFMemoryChunk<Memory>::DestroyMemory(nullBlock->ChunkHandle, memoryUserData);
 			chunkAllocator->Free(nullBlock->ChunkHandle);

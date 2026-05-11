@@ -79,10 +79,6 @@ namespace ZE::RHI::DX12
 
 		allocator = std::move(dev.allocator);
 
-		blockDescAllocator = std::move(dev.blockDescAllocator);
-		chunkDescAllocator = std::move(dev.chunkDescAllocator);
-		descriptorGpuAllocator = std::move(dev.descriptorGpuAllocator);
-		descriptorCpuAllocator = std::move(dev.descriptorCpuAllocator);
 		descriptorSize = dev.descriptorSize;
 		gpuCtx = std::exchange(dev.gpuCtx, {});
 
