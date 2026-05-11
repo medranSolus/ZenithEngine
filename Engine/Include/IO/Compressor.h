@@ -14,7 +14,7 @@ namespace ZE::IO
 		~Compressor() = default;
 
 		U32 GetOriginalSize(const void* compressedBuffer, U32 compressedSize) const noexcept;
-		std::vector<U8> Compress(const void* input, U32 inputSize) const noexcept;
-		void Decompress(const void* src, U32 srcSize, void* dst, U32 dstSize) const noexcept;
+		Expected<std::vector<U8>> Compress(const void* input, U32 inputSize) const noexcept;
+		Status Decompress(const void* src, U32 srcSize, void* dst, U32 dstSize) const noexcept;
 	};
 }
