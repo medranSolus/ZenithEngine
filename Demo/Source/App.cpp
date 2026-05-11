@@ -4,7 +4,7 @@
 #include "Data/Tags.h"
 
 template<typename T>
-void App::EnableProperty(EID entity)
+void App::EnableProperty(EID entity) noexcept
 {
 	if (!Settings::Data.all_of<T>(entity))
 		Settings::Data.emplace<T>(entity);
@@ -16,7 +16,7 @@ void App::EnableProperty(EID entity)
 }
 
 template<typename T>
-void App::DisableProperty(EID entity)
+void App::DisableProperty(EID entity) noexcept
 {
 	if (Settings::Data.all_of<T>(entity))
 		Settings::Data.remove<T>(entity);
@@ -27,7 +27,7 @@ void App::DisableProperty(EID entity)
 			DisableProperty<T>(child);
 }
 
-void App::ProcessInput()
+void App::ProcessInput() noexcept
 {
 	ZE_PERF_GUARD("Input processing");
 	Window::MainWindow& window = engine.Window();
@@ -158,8 +158,9 @@ void App::ProcessInput()
 	}
 }
 
-void App::ShowOptionsWindow()
+Status App::ShowOptionsWindow() noexcept
 {
+	Status stat = {};
 	if (ImGui::Begin("Options"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
 	{
 		if (ImGui::Button("Exit"))
@@ -170,12 +171,13 @@ void App::ShowOptionsWindow()
 		if (ImGui::Button(demoWindow ? "Hide" : "Show"))
 			demoWindow = !demoWindow;
 
-		engine.ShowRenderGraphDebugUI();
+		stat = engine.ShowRenderGraphDebugUI();
 	}
 	ImGui::End();
+	return stat;
 }
 
-void App::BuiltObjectTree(EID currentEntity, EID& selected)
+void App::BuiltObjectTree(EID currentEntity, EID& selected) noexcept
 {
 	const bool children = Settings::Data.all_of<Children>(currentEntity);
 	const bool expanded = ImGui::TreeNodeEx(reinterpret_cast<void*>(currentEntity),
@@ -201,10 +203,11 @@ void App::BuiltObjectTree(EID currentEntity, EID& selected)
 	}
 }
 
-void App::ShowObjectWindow()
+Status App::ShowObjectWindow() noexcept
 {
 	static EID selected = INVALID_EID;
 
+	Status stat = {};
 	if (ImGui::Begin("Objects"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
 	{
 		ImGui::Columns(2);
@@ -335,7 +338,7 @@ void App::ShowObjectWindow()
 				change = ImGui::ColorEdit4("Albedo", reinterpret_cast<float*>(&material.Albedo),
 					COLOR_FLAGS | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
 
-				auto useTexture = [pbrFlags, &material, &change](const char* text, Data::MaterialPBR::Flag flag)
+				auto useTexture = [pbrFlags, &material, &change](const char* text, Data::MaterialPBR::Flag flag) noexcept
 					{
 						ImGui::BeginDisabled(!(pbrFlags & flag));
 						bool useTex = material.Flags & flag;
@@ -376,10 +379,16 @@ void App::ShowObjectWindow()
 				useTexture("Use parallax texture", Data::MaterialPBR::Flag::UseParallaxTex);
 
 				if (change)
-					Settings::Data.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), materialId, material);
+				{
+					stat = Settings::Data.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), materialId, material);
+					if (stat)
+					{
+						ZE_CODE_ERROR(stat, "Error updating material " + std::to_string(static_cast<U64>(materialId)) + " data!");
+			}
+				}
 			}
 
-			if (Settings::Data.all_of<Data::PointLight>(selected))
+			if (!stat && Settings::Data.all_of<Data::PointLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
@@ -403,12 +412,16 @@ void App::ShowObjectWindow()
 				{
 					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
 
-					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					if (stat)
+					{
+						ZE_CODE_ERROR(stat, "Error updating point light " + std::to_string(static_cast<U64>(selected)) + " data!");
+					}
 					buffer.Volume = Math::Light::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
 
-			if (Settings::Data.all_of<Data::SpotLight>(selected))
+			if (!stat && Settings::Data.all_of<Data::SpotLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
@@ -455,12 +468,16 @@ void App::ShowObjectWindow()
 				{
 					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
 
-					buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					if (stat)
+					{
+						ZE_CODE_ERROR(stat, "Error updating spot light " + std::to_string(static_cast<U64>(selected)) + " data!");
+					}
 					buffer.Volume = Math::Light::GetLightVolume(light.Color, light.Intensity, light.AttnLinear, light.AttnQuad);
 				}
 			}
 
-			if (Settings::Data.all_of<Data::DirectionalLight>(selected))
+			if (!stat && Settings::Data.all_of<Data::DirectionalLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
@@ -478,15 +495,21 @@ void App::ShowObjectWindow()
 
 				ImGui::Text("Direction [X|Y|Z]");
 				ImGui::SetNextItemWidth(-5.0f);
-				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&Settings::Data.get<Data::Direction>(selected).Direction), -1.0f, 1.0f, "%.2f"))
+				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&Settings::Data.get<Data::Direction>(selected).Dir), -1.0f, 1.0f, "%.2f"))
 				{
-					Math::NormalizeStore(Settings::Data.get<Data::Direction>(selected).Direction);
+					Math::NormalizeStore(Settings::Data.get<Data::Direction>(selected).Dir);
 					change = true;
 				}
 
 				if (change)
-					Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(),
+				{
+					stat = Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(),
 						engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					if (stat)
+					{
+						ZE_CODE_ERROR(stat, "Error updating directional light " + std::to_string(static_cast<U64>(selected)) + " data!");
+			}
+				}
 			}
 
 			if (Settings::Data.all_of<Data::Camera>(selected))
@@ -514,9 +537,10 @@ void App::ShowObjectWindow()
 		}
 	}
 	ImGui::End();
+	return stat;
 }
 
-void App::PropagateTransformChange(EID childEntity)
+void App::PropagateTransformChange(EID childEntity) noexcept
 {
 	ZE_VALID_EID(childEntity);
 	ZE_ASSERT(Settings::Data.try_get<ParentID>(childEntity), "Incorrect child-parent structure defined!");
@@ -539,7 +563,7 @@ void App::PropagateTransformChange(EID childEntity)
 }
 
 EID App::AddCamera(std::string&& name, float nearZ, float fov,
-	Float3&& position, const Float3& angle)
+	Float3&& position, const Float3& angle) noexcept
 {
 	EID camera = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(camera, std::move(name));
@@ -567,23 +591,26 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	return camera;
 }
 
-EID App::AddModel(std::string&& name, Float3&& position,
-	const Float3& angle, float scale, const std::string& file, Data::ExternalModelOptions options)
+Expected<EID> App::AddModel(std::string&& name, Float3&& position,
+	const Float3& angle, float scale, const std::string& file, Data::ExternalModelOptions options) noexcept
 {
 	EID model = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(model, std::move(name));
 	Data::Transform transform = { Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale) };
 
-	if (!Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, file, options).Get())
+	auto load = Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, file, options).Get();
+	if (load)
 	{
-		// TODO: correct error handling
-		ZE_FAIL("Error loading model!");
+		ZE_CODE_RET_FAILED_EXPECT(*load);
 	}
+	else
+		return std::unexpected(load.error());
+
 	return model;
 }
 
-EID App::AddPointLight(std::string&& name, Float3&& position,
-	ColorF3&& color, float intensity, U64 range)
+Expected<EID> App::AddPointLight(std::string&& name, Float3&& position,
+	ColorF3&& color, float intensity, U64 range) noexcept
 {
 	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
@@ -597,14 +624,14 @@ EID App::AddPointLight(std::string&& name, Float3&& position,
 
 	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
 		Math::Light::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, nullptr, sizeof(Data::PointLight) });
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, nullptr, sizeof(Data::PointLight) }));
 
 	return light;
 }
 
-EID App::AddSpotLight(std::string&& name, Float3&& position,
+Expected<EID> App::AddSpotLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range,
-	float innerAngle, float outerAngle, const Float3& direction)
+	float innerAngle, float outerAngle, const Float3& direction) noexcept
 {
 	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
@@ -620,13 +647,13 @@ EID App::AddSpotLight(std::string&& name, Float3&& position,
 
 	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
 		Math::Light::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, nullptr, sizeof(Data::SpotLight) });
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, nullptr, sizeof(Data::SpotLight) }));
 
 	return light;
 }
 
-EID App::AddDirectionalLight(std::string&& name,
-	ColorF3&& color, float intensity, const Float3& direction)
+Expected<EID> App::AddDirectionalLight(std::string&& name,
+	ColorF3&& color, float intensity, const Float3& direction) noexcept
 {
 	EID light = Settings::CreateEntity();
 	Settings::Data.emplace<std::string>(light, std::move(name));
@@ -636,12 +663,12 @@ EID App::AddDirectionalLight(std::string&& name,
 	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
 
 	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);
-	buffer.Buffer.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, nullptr, sizeof(Data::DirectionalLight) });
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, nullptr, sizeof(Data::DirectionalLight) }));
 
 	return light;
 }
 
-void App::MakeFrame()
+Status App::MakeFrame() noexcept
 {
 	ZE_PERF_GUARD("Frame rendering");
 	if (demoWindow)
@@ -649,13 +676,13 @@ void App::MakeFrame()
 	if (Settings::IsEnabledImGui())
 	{
 		ZE_PERF_GUARD("GUI");
-		ShowOptionsWindow();
-		ShowObjectWindow();
+		ZE_CODE_RET_FAILED(ShowOptionsWindow());
+		ZE_CODE_RET_FAILED(ShowObjectWindow());
 	}
+	return {};
 }
 
-App::App(const CmdParser& params)
-	: engine(SettingsInitParams::GetParsedParams(params, APP_NAME, Settings::ENGINE_VERSION, 0))
+Status App::Init(const CmdParser& params) noexcept
 {
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);
@@ -663,15 +690,18 @@ App::App(const CmdParser& params)
 	engineParams.CoreRendererParams.BrdfLutSource = "";
 	engineParams.CoreRendererParams.SkyboxSource.InitFolder("Skybox/Space", ".png");
 	engineParams.CoreRendererParams.EnvMapSource = engineParams.CoreRendererParams.SkyboxSource;
-	engine.Init(engineParams);
+	ZE_CODE_RET_FAILED(engine.Init(engineParams));
 
 	engine.ImGui().SetFont("Fonts/Arial.ttf", 14.0f);
+
+	// Quick macro for just loading objects without needing their results besides error codes check
+#define ZE_LOAD_CHECK(call) do { auto __exp = (call); if (!__exp) { ZE_CODE_RET_FAILED(__exp.error()); } } while(false)
 
 	if (params.GetOption("cubePerfTest"))
 	{
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 
-		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f });
+		ZE_LOAD_CHECK(AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f }));
 
 		// Create mesh for all the cubes
 		EID meshId = Settings::CreateEntity();
@@ -688,7 +718,7 @@ App::App(const CmdParser& params)
 			sizeof(GFX::Vertex), 0
 		};
 		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
-		Settings::Data.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
+		ZE_EXPECT_RET_FAILED_CODE(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// And some materials for them all
 		std::array<EID, 255> materialIds;
@@ -708,9 +738,9 @@ App::App(const CmdParser& params)
 			data.ParallaxScale = 0.1f;
 
 			const GFX::Resource::Texture::Schema& texSchema = engine.Assets().GetSchemaLib().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
-			GFX::Resource::Texture::PackDesc texDesc;
+			GFX::Resource::Texture::PackDesc texDesc = {};
 			texDesc.Init(texSchema);
-			buffers.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc);
+			ZE_EXPECT_RET_FAILED_CODE(buffers, Data::MaterialBuffersPBR::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc));
 		}
 
 		// Create test cube entities
@@ -743,7 +773,7 @@ App::App(const CmdParser& params)
 	{
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 1.5f, -23.0f }, { 0.0f, 0.0f, 0.0f });
 
-		AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.57f, -0.58f, 0.59f });
+		ZE_LOAD_CHECK(AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.57f, -0.58f, 0.59f }));
 
 		// Mesh data for test sphere
 		EID meshId = Settings::CreateEntity();
@@ -759,7 +789,7 @@ App::App(const CmdParser& params)
 			sizeof(GFX::Vertex), 0
 		};
 		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(sphere.Vertices, sphere.Indices, meshData.IndexSize);
-		Settings::Data.emplace<GFX::Resource::Mesh>(meshId, engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData);
+		ZE_EXPECT_RET_FAILED_CODE(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// Create test entities
 		U32 testSize = params.GetNumber("lightParamsTestSize");
@@ -785,7 +815,7 @@ App::App(const CmdParser& params)
 				const GFX::Resource::Texture::Schema& texSchema = engine.Assets().GetSchemaLib().Get(Data::MaterialPBR::TEX_SCHEMA_NAME);
 				GFX::Resource::Texture::PackDesc texDesc;
 				texDesc.Init(texSchema);
-				buffers.Init(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc);
+				ZE_EXPECT_RET_FAILED_CODE(buffers, Data::MaterialBuffersPBR::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc));
 
 				// Object creation
 				EID model = Settings::CreateEntity();
@@ -811,41 +841,44 @@ App::App(const CmdParser& params)
 		// Sample Scene
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 2.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 
-		AddPointLight("Light bulb", { -2.4f, 2.8f, -1.1f }, { 1.0f, 1.0f, 1.0f }, 0.5f, 50);
-		AddModel("Sting sword", { -1.9f, 2.1f, -2.3f }, { 35.0f, 270.0f, 110.0f }, 0.045f, "Models/Sting_Sword/Sting_Sword.obj",
-			Base(Data::ExternalModelOption::FlipUV));
+		ZE_LOAD_CHECK(AddPointLight("Light bulb", { -2.4f, 2.8f, -1.1f }, { 1.0f, 1.0f, 1.0f }, 0.5f, 50));
+		ZE_LOAD_CHECK(AddModel("Sting sword", { -1.9f, 2.1f, -2.3f }, { 35.0f, 270.0f, 110.0f }, 0.045f, "Models/Sting_Sword/Sting_Sword.obj",
+			Base(Data::ExternalModelOption::FlipUV)));
 
 #if !_ZE_MODE_DEBUG
-		AddPointLight("Blue ilumination", { 10.8f, 5.9f, -0.1f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 60);
-		AddPointLight("Torch", { 15.6f, 3.2f, 0.9f }, { 1.0f, 0.0f, 0.2f }, 3.2f, 70);
+		ZE_LOAD_CHECK(AddPointLight("Blue ilumination", { 10.8f, 5.9f, -0.1f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 60));
+		ZE_LOAD_CHECK(AddPointLight("Torch", { 15.6f, 3.2f, 0.9f }, { 1.0f, 0.0f, 0.2f }, 3.2f, 70));
 
-		AddSpotLight("Space light", { 4.8f, 22.7f, -3.1f }, { 1.3f, 2.3f, 1.3f }, 3.5f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f });
-		AddSpotLight("Lion flare", { -14.0f, 0.5f, 2.2f }, { 0.8f, 0.0f, 0.8f }, 5.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f });
-		AddSpotLight("Dragon flame", { -6.5f, 0.0f, -2.9f }, { 0.04f, 0.0f, 0.52f }, 4.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 });
+		ZE_LOAD_CHECK(AddSpotLight("Space light", { 4.8f, 22.7f, -3.1f }, { 1.3f, 2.3f, 1.3f }, 3.5f, 126, 15.0f, 24.5f, { -0.64f, -1.0f, 0.5f }));
+		ZE_LOAD_CHECK(AddSpotLight("Lion flare", { -14.0f, 0.5f, 2.2f }, { 0.8f, 0.0f, 0.8f }, 5.0f, 150, 35.0f, 45.0f, { -1.0f, 1.0f, -0.7f }));
+		ZE_LOAD_CHECK(AddSpotLight("Dragon flame", { -6.5f, 0.0f, -2.9f }, { 0.04f, 0.0f, 0.52f }, 4.0f, 175, 27.0f, 43.0f, { -0.6f, 0.75f, 0.3 }));
 
-		AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f });
+		ZE_LOAD_CHECK(AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f }));
 
-		AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
-			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV));
+		ZE_LOAD_CHECK(AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
+			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV)));
 
 		if (!params.GetOption("noExternalAssets"))
 		{
-			AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
-				Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV);
+			ZE_LOAD_CHECK(AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
+				Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV));
 		}
 #endif
 	}
+	return {};
 }
 
-int App::Run()
+Expected<int> App::Run() noexcept
 {
 	constexpr double DELTA_TIME = 0.01;
 
-	engine.Start(currentCamera);
+	ZE_CODE_RET_FAILED_EXPECT(engine.Start(currentCamera));
 	double accumulator = 0.0;
 	while (run)
 	{
-		accumulator += engine.BeginFrame(DELTA_TIME, 25);
+		double timePass = 0.0;
+		ZE_EXPECT_RET_FAILED(timePass, engine.BeginFrame(DELTA_TIME, 25));
+		accumulator += timePass;
 
 		ZE_PERF_START("Input gather");
 		const std::pair<bool, int> status = engine.Window().ProcessMessage();
@@ -864,9 +897,9 @@ int App::Run()
 		}
 		//const double alpha = accumulator / DELTA_TIME;
 
-		MakeFrame();
+		ZE_CODE_RET_FAILED_EXPECT(MakeFrame());
 
-		engine.EndFrame();
+		ZE_CODE_RET_FAILED_EXPECT(engine.EndFrame());
 	}
 	return 0;
 }

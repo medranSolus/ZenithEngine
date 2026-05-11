@@ -30,11 +30,11 @@ namespace ZE
 		std::bitset<Flags::Count> flags = 0;
 		SFX::Device audioDev;
 
-		bool UploadSync();
+		Expected<bool> UploadSync();
 
 	public:
 		Engine(const SettingsInitParams& params) noexcept : StartupConfig(params) {}
-		ZE_CLASS_DELETE(Engine);
+		ZE_CLASS_MOVE(Engine);
 		virtual ~Engine();
 
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
@@ -45,12 +45,12 @@ namespace ZE
 		constexpr void SwitchDebugUI() noexcept { flags[Flags::SwitchImGui] = true; }
 
 		// Initialization method that must be called before using engine
-		bool Init(const EngineParams& params);
+		Status Init(const EngineParams& params) noexcept;
 		// Need to be called before starting first frame
-		void Start(EID camera) noexcept;
-		void ShowRenderGraphDebugUI() noexcept;
+		Status Start(EID camera) noexcept;
+		Status ShowRenderGraphDebugUI() noexcept;
 		// Returns number of update steps that have to be taken by simulations multiplied by delta time
-		double BeginFrame(double deltaTime, U64 maxUpdateSteps);
-		void EndFrame();
+		Expected<double> BeginFrame(double deltaTime, U64 maxUpdateSteps) noexcept;
+		Status EndFrame() noexcept;
 	};
 }

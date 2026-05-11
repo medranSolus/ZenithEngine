@@ -1,32 +1,34 @@
 #include "Engine.h"
-#include "Data/Light.h"
 #include "Data/Transform.h"
 
 namespace ZE
 {
-	bool Engine::UploadSync()
+	Expected<bool> Engine::UploadSync()
 	{
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& mainList = graphics.GetMainList();
-		DiskStatusHandle diskStatus = assets.GetDisk().SetGPUUploadWaitPoint();
+		DiskStatusHandle diskStatus = {};
+		ZE_EXPECT_RET_FAILED(diskStatus, assets.GetDisk().SetGPUUploadWaitPoint());
 		assets.GetDisk().StartUploadGPU();
 
-		ZE_PERF_START("Update upload data status");
+		ZE_PERF_GUARD("Update upload data status");
 		const bool gpuWorkPending = assets.GetDisk().IsGPUWorkPending(diskStatus);
 		if (gpuWorkPending)
-			mainList.Open(dev);
+		{
+			ZE_CODE_RET_FAILED_EXPECT(mainList.Open(dev));
+		}
 
-		[[maybe_unused]] bool status = assets.GetDisk().WaitForUploadGPU(dev, mainList, diskStatus);
-		ZE_ASSERT(status, "Error uploading engine GPU data!");
+		ZE_CODE_RET_FAILED_EXPECT(assets.GetDisk().WaitForUploadGPU(dev, mainList, diskStatus));
 		flags[ExecuteUploadSync] = false;
 
 		if (gpuWorkPending)
-			mainList.Close(dev);
-		ZE_PERF_STOP();
+		{
+			ZE_CODE_RET_FAILED_EXPECT(mainList.Close(dev));
+		}
 		return gpuWorkPending;
 	}
 
-	bool Engine::Init(const EngineParams& params)
+	Status Engine::Init(const EngineParams& params) noexcept
 	{
 		bool newReplacementStatus = false;
 		Allocator::CheckNewReplacement(newReplacementStatus);
@@ -40,42 +42,28 @@ namespace ZE
 		flags[Flags::Initialized] = true;
 		ZE_PERF_CONFIGURE(SetSingleLineLogEntry, params.SingleLinePerfEntry);
 
-		window.Init(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height);
+		ZE_EXPECT_RET_FAILED_CODE(window, Window::MainWindow::Create(params.WindowName ? params.WindowName : Settings::GetAppName(), params.Width, params.Height));
 		Settings::DisplaySize = { window.GetWidth(), window.GetHeight() };
 
-		graphics.Init(window, params.GraphicsDescriptorPoolSize, true); // GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		// GFX::Pipeline::IsBackbufferSRVInRenderGraph<GFX::Pipeline::RendererPBR>::VALUE);
+		ZE_EXPECT_RET_FAILED_CODE(graphics, GFX::Graphics::Create(window, params.GraphicsDescriptorPoolSize, true));
 		GFX::Device& dev = graphics.GetDevice();
 		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::Upscaler, UINT32_MAX);
 
-		assets.Init(dev);
-		audioDev.Init();
+		ZE_EXPECT_RET_FAILED_CODE(assets, Data::AssetsStreamer::Create(dev));
+		ZE_EXPECT_RET_FAILED_CODE(audioDev, SFX::Device::Create());
 
-		GFX::Pipeline::BuildResult buildRes = GFX::Pipeline::BuildResult::Success;
 		if (params.CustomRendererDesc)
 		{
-			buildRes = graphBuilder.LoadConfig(dev, *params.CustomRendererDesc);
-			if (buildRes == GFX::Pipeline::BuildResult::Success)
-			{
-				buildRes = graphBuilder.ComputeGraph(dev);
-				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					buildRes = graphBuilder.FinalizeGraph(dev, graphics.GetSwapChain(), assets, renderGraph);
-			}
+			ZE_ASSERT(params.CustomRendererDesc, "Custom renderer desc is not provided!");
+			ZE_CODE_RET_FAILED(graphBuilder.LoadConfig(dev, *params.CustomRendererDesc));
 		}
 		else
 		{
-			buildRes = graphBuilder.LoadConfig(dev, GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams));
-			if (buildRes == GFX::Pipeline::BuildResult::Success)
-			{
-				buildRes = graphBuilder.ComputeGraph(dev);
-				if (buildRes == GFX::Pipeline::BuildResult::Success)
-					buildRes = graphBuilder.FinalizeGraph(dev, graphics.GetSwapChain(), assets, renderGraph);
-			}
+			ZE_CODE_RET_FAILED(graphBuilder.LoadConfig(dev, GFX::Pipeline::CoreRenderer::GetDesc(params.CoreRendererParams)));
 		}
-		if (buildRes != GFX::Pipeline::BuildResult::Success)
-		{
-			Logger::Error(std::string("Error processing render gragh, reason: ") + GFX::Pipeline::DecodeBuildResult(buildRes));
-			return false;
-		}
+		ZE_CODE_RET_FAILED(graphBuilder.ComputeGraph(dev));
+		ZE_CODE_RET_FAILED(graphBuilder.FinalizeGraph(dev, graphics.GetSwapChain(), assets, renderGraph));
 
 		// Transform buffers: https://www.gamedev.net/forums/topic/708811-d3d12-best-approach-to-manage-constant-buffer-for-the-frame/5434325/
 		// Check for optimization UB code: https://github.com/xiw/stack/
@@ -121,7 +109,7 @@ namespace ZE
 		  - check out https://research.nvidia.com/publication/2017-02_hashed-alpha-testing, http://www.ludicon.com/castano/blog/articles/computing-alpha-mipmaps/
 		  - bigger concern, maybe create offline module to handle creation of mipmaps since they can be computed manually by artist?
 		*/
-		return true;
+		return {};
 	}
 
 	Engine::~Engine()
@@ -129,50 +117,38 @@ namespace ZE
 		if (flags[Flags::Initialized])
 		{
 			// Wait till all GPU operations are done
-			GFX::Device& dev = graphics.GetDevice();
-			dev.FlushGPU();
-
-			// Free all remaining gpu data
-			for (auto& buffer : Settings::Data.view<Data::DirectionalLightBuffer>())
-				Settings::Data.get<Data::DirectionalLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
-			Settings::Data.clear<Data::DirectionalLightBuffer>();
-			for (auto& buffer : Settings::Data.view<Data::SpotLightBuffer>())
-				Settings::Data.get<Data::SpotLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
-			Settings::Data.clear<Data::SpotLightBuffer>();
-			for (auto& buffer : Settings::Data.view<Data::PointLightBuffer>())
-				Settings::Data.get<Data::PointLightBuffer>(buffer).Buffer.Free(graphics.GetDevice());
-			Settings::Data.clear<Data::PointLightBuffer>();
-
-			for (auto& buffer : Settings::Data.view<Data::MaterialBuffersPBR>())
-				Settings::Data.get<Data::MaterialBuffersPBR>(buffer).Free(graphics.GetDevice());
-			Settings::Data.clear<Data::MaterialBuffersPBR>();
-			for (auto& buffer : Settings::Data.view<GFX::Resource::Mesh>())
-				Settings::Data.get<GFX::Resource::Mesh>(buffer).Free(graphics.GetDevice());
-			Settings::Data.clear<GFX::Resource::Mesh>();
-
-			renderGraph.Free(dev);
-			graphBuilder.ClearConfig(dev);
-			assets.Free(dev);
+			Status stat = graphics.GetDevice().FlushGPU();
+			if (stat)
+			{
+				ZE_CODE_ERROR(stat, "Failed to flush GPU before shutdown!");
+			}
 		}
 	}
 
-	void Engine::Start(EID camera) noexcept
+	Status Engine::Start(EID camera) noexcept
 	{
 		GFX::Device& dev = graphics.GetDevice();
 		GFX::CommandList& mainList = graphics.GetMainList();
 
-		UploadSync();
+		auto exp = UploadSync();
+		if (!exp)
+		{
+			ZE_CODE_RET_FAILED(exp.error());
+		}
 		renderGraph.SetCamera(camera);
 		renderGraph.UpdateFrameData(dev);
-		if (graphBuilder.ExecuteStartupPasses(dev, mainList, renderGraph))
+		bool gpuWorkNeeded = false;
+		ZE_EXPECT_RET_FAILED_CODE(gpuWorkNeeded, graphBuilder.ExecuteStartupPasses(dev, mainList, renderGraph));
+		if (gpuWorkNeeded)
 			dev.ExecuteMain(mainList);
 
 		// Frame 0 is special frame used only for any initialization of graph resources
 		Settings::AdvanceFrame();
 		prevTime = Perf::Get().GetNow();
+		return {};
 	}
 
-	void Engine::ShowRenderGraphDebugUI() noexcept
+	Status Engine::ShowRenderGraphDebugUI() noexcept
 	{
 		if (Settings::IsEnabledImGui())
 		{
@@ -187,6 +163,13 @@ namespace ZE
 					ImGui::Text("Current RHI:"); ImGui::SameLine();
 					switch (Settings::GetGfxApi())
 					{
+					default:
+						ZE_ENUM_UNHANDLED();
+					case GfxApiType::None:
+					{
+						ImGui::Text("No GFX");
+						break;
+					}
 					case GfxApiType::DX11:
 					{
 						ImGui::Text("DirectX 11");
@@ -291,28 +274,38 @@ namespace ZE
 
 					ImGui::NewLine();
 				}
-				if (graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph))
-					flags[ExecuteUploadSync] = true;
+				ZE_EXPECT_RET_FAILED_CODE(flags[ExecuteUploadSync], graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph));
 			}
 			ImGui::EndChild();
 		}
+		return {};
 	}
 
-	double Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps)
+	Expected<double> Engine::BeginFrame(double deltaTime, U64 maxUpdateSteps) noexcept
 	{
 #ifdef USE_PIX
 		if (flags[Flags::PixCapture])
 		{
 			if (Settings::GetGfxApi() == GfxApiType::DX12)
 			{
-				graphics.GetDevice().FlushGPU();
-				if (FAILED(PIXSetTargetWindow(window.GetHandle())))
-					Logger::Warning("Failed to set PIX target window!");
+				Status stat = graphics.GetDevice().FlushGPU();
+				if (stat)
+				{
+					ZE_CODE_WARNING(stat, "Failed to flush GPU execution for PIX capture!");
+				}
+				HRESULT hr = PIXSetTargetWindow(window.GetHandle());
+				if (FAILED(hr))
+				{
+					ZE_CODE_WARNING(ZE_WIN_ERROR(hr), "Failed to set PIX target window!");
+				}
 
 				PIXCaptureParameters params = {};
 				params.GpuCaptureParameters.FileName = L"Logs/capture.wpix";
-				if (FAILED(PIXBeginCapture2(PIX_CAPTURE_GPU, &params)))
-					Logger::Warning("Failed to begin PIX capture!");
+				hr = PIXBeginCapture2(PIX_CAPTURE_GPU, &params);
+				if (FAILED(hr))
+				{
+					ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failed to begin PIX capture!");
+				}
 				else
 					flags[Flags::PixCaptureInProgress] = true;
 			}
@@ -334,13 +327,13 @@ namespace ZE
 		if (Settings::IsEnabledImGui())
 		{
 			imgui.StartFrame(window);
-			assets.ShowWindow(graphics.GetDevice());
+			ZE_CODE_RET_FAILED_EXPECT(assets.ShowWindow(graphics.GetDevice()));
 		}
 		assets.GetDisk().StartUploadGPU();
 		return frameTime;
 	}
 
-	void Engine::EndFrame()
+	Status Engine::EndFrame() noexcept
 	{
 		// TODO: add module for checking if all settings parameters are correct and decide on subsystems updates (like changing gfx API, swapchain recreation)
 
@@ -355,7 +348,7 @@ namespace ZE
 
 		if (Settings::IsEnabledImGui())
 			imgui.EndFrame();
-		graphics.WaitForFrame();
+		ZE_CODE_RET_FAILED(graphics.WaitForFrame());
 
 		// Need to create proper ImGui context in render graph rebuild before it will be possible to run it
 		bool imguiDryRun = false;
@@ -366,9 +359,13 @@ namespace ZE
 			imguiDryRun = true;
 		}
 		// Update of render graph and it's data
-		GFX::Pipeline::BuildResult result = graphBuilder.UpdatePassConfiguration(dev, mainList, assets, renderGraph);
-		if (!ZE_PIPELINE_BUILD_SUCCESS(result))
-			throw ZE_RGC_EXCEPT("Error performing update on a render graph: " + std::string(GFX::Pipeline::DecodeBuildResult(result)));
+		bool uploadedNeeded = false;
+		Status result = graphBuilder.UpdatePassConfiguration(dev, mainList, assets, renderGraph, uploadedNeeded);
+		if (result)
+		{
+			ZE_CODE_ERROR(result, "Error performing update on a render graph!");
+			return result;
+		}
 		renderGraph.UpdateFrameData(dev);
 
 		// Get proper ImGui data ready since it was just enabled
@@ -378,13 +375,17 @@ namespace ZE
 			imgui.EndFrame();
 		}
 
-		if (result == GFX::Pipeline::BuildResult::WaitUpload || flags[ExecuteUploadSync])
+		if (uploadedNeeded || flags[ExecuteUploadSync])
 		{
 			// If any async passes has been processed then sync for initialization of resources
-			if (UploadSync() && renderGraph.IsAsyncPresent())
+			bool gpuWorkRecorded = false;
+			ZE_EXPECT_RET_FAILED_CODE(gpuWorkRecorded, UploadSync());
+			if (gpuWorkRecorded && renderGraph.IsAsyncPresent())
 			{
 				dev.ExecuteMain(mainList);
-				dev.WaitComputeFromMain(dev.SetMainFence());
+				U64 fence = 0;
+				ZE_EXPECT_RET_FAILED_CODE(fence, dev.SetMainFence());
+				ZE_CODE_RET_FAILED(dev.WaitComputeFromMain(fence));
 			}
 		}
 
@@ -400,7 +401,7 @@ namespace ZE
 		else if (Settings::Data.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
 			Settings::Data.clear<Data::TransformPrevious>();
 
-		renderGraph.Execute(graphics);
+		ZE_CODE_RET_FAILED(renderGraph.Execute(graphics));
 
 		if (flags[Flags::SwitchImGui] && Settings::IsEnabledImGui())
 		{
@@ -414,7 +415,7 @@ namespace ZE
 			for (EID id : Settings::Data.view<Data::TransformGlobal>())
 				static_cast<Data::TransformGlobal&>(Settings::Data.get<Data::TransformPrevious>(id)) = Settings::Data.get<Data::TransformGlobal>(id);
 		}
-		graphics.Present();
+		ZE_CODE_RET_FAILED(graphics.Present());
 
 		// Frame marker
 		ZE_PERF_STOP();
@@ -422,10 +423,14 @@ namespace ZE
 #ifdef USE_PIX
 		if (flags[Flags::PixCaptureInProgress])
 		{
-			if (FAILED(PIXEndCapture(false)))
-				Logger::Warning("Failed to end PIX capture!");
+			HRESULT hr = PIXEndCapture(false);
+			if (FAILED(hr))
+			{
+				ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failed to end PIX capture!");
+			}
 			flags[Flags::PixCaptureInProgress] = false;
 		}
 #endif
+		return {};
 	}
 }

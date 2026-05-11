@@ -88,8 +88,8 @@ namespace ZE
 
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
-		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized()); return gfxApi; }
-		static constexpr AudioApiType GetAudioApi() noexcept { ZE_ASSERT_INIT(Initialized()); return audioApi; }
+		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized() || gfxApi == GfxApiType::None); return gfxApi; }
+		static constexpr AudioApiType GetAudioApi() noexcept { ZE_ASSERT_INIT(Initialized() || audioApi == AudioApiType::None); return audioApi; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }

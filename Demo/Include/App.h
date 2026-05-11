@@ -11,7 +11,7 @@ class App final
 
 	Engine engine;
 	Data::CameraType cameraType = Data::CameraType::Person;
-	EID currentCamera;
+	EID currentCamera = INVALID_EID;
 	float moveSpeed = 0.25f;
 	float rollSpeed = 0.01f;
 	float rotateSpeed = 1.5f;
@@ -19,38 +19,41 @@ class App final
 	bool demoWindow = false;
 
 	template<typename T>
-	void EnableProperty(EID entity);
+	void EnableProperty(EID entity) noexcept;
 	template<typename T>
-	void DisableProperty(EID entity);
+	void DisableProperty(EID entity) noexcept;
 
-	void ProcessInput();
-	void ShowOptionsWindow();
-	void BuiltObjectTree(EID currentEntity, EID& selected);
-	void ShowObjectWindow();
-	void PropagateTransformChange(EID childEntity);
+	void ProcessInput() noexcept;
+	Status ShowOptionsWindow() noexcept;
+	void BuiltObjectTree(EID currentEntity, EID& selected) noexcept;
+	Status ShowObjectWindow() noexcept;
+	void PropagateTransformChange(EID childEntity) noexcept;
 
-	void AddModelButton();
-	void ChangeBackgroundButton();
-	void AddLightButton();
+	void AddModelButton() noexcept;
+	void ChangeBackgroundButton() noexcept;
+	void AddLightButton() noexcept;
 
 	EID AddCamera(std::string&& name, float nearZ, float fov,
-		Float3&& position, const Float3& angle);
-	EID AddModel(std::string&& name, Float3&& position,
+		Float3&& position, const Float3& angle) noexcept;
+	Expected<EID> AddModel(std::string&& name, Float3&& position,
 		const Float3& angle, float scale, const std::string& file,
-		Data::ExternalModelOptions options = Base(Data::ExternalModelOption::None));
-	EID AddPointLight(std::string&& name, Float3&& position,
-		ColorF3&& color, float intensity, U64 range);
-	EID AddSpotLight(std::string&& name, Float3&& position,
+		Data::ExternalModelOptions options = Base(Data::ExternalModelOption::None)) noexcept;
+	Expected<EID> AddPointLight(std::string&& name, Float3&& position,
+		ColorF3&& color, float intensity, U64 range) noexcept;
+	Expected<EID> AddSpotLight(std::string&& name, Float3&& position,
 		ColorF3&& color, float intensity, U64 range,
-		float innerAngle, float outerAngle, const Float3& direction);
-	EID AddDirectionalLight(std::string&& name,
-		ColorF3&& color, float intensity, const Float3& direction);
-	void MakeFrame();
+		float innerAngle, float outerAngle, const Float3& direction) noexcept;
+	Expected<EID> AddDirectionalLight(std::string&& name,
+		ColorF3&& color, float intensity, const Float3& direction) noexcept;
+
+	Status MakeFrame() noexcept;
 
 public:
-	App(const CmdParser& params);
-	ZE_CLASS_DELETE(App);
+	App(const CmdParser& params) noexcept
+		: engine(SettingsInitParams::GetParsedParams(params, APP_NAME, Settings::ENGINE_VERSION, 0)) {}
+	ZE_CLASS_MOVE(App);
 	~App() = default;
 
-	int Run();
+	Status Init(const CmdParser& params) noexcept;
+	Expected<int> Run() noexcept;
 };
