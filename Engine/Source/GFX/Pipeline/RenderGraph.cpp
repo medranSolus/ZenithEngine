@@ -173,7 +173,7 @@ namespace ZE::GFX::Pipeline
 
 	void RenderGraph::SetCamera(EID camera) noexcept
 	{
-		ZE_VALID_EID(execData.GraphData.CurrentCamera);
+		ZE_VALID_EID(camera);
 		execData.GraphData.CurrentCamera = camera;
 	}
 

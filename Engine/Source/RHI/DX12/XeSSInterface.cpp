@@ -69,8 +69,8 @@ namespace ZE::RHI::DX12
 		ZE_XESS_LOG_RET_FAILED(xessGetProperties(ctx, &outputRes, &props), "Error querity XeSS properties!");
 
 		ZE_EXPECT_RET_FAILED_CODE(descInfo, dev.Get().dx12.AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount()));
-		aliasBufferRegion = props.tempBufferHeapSize;
-		aliasTextureRegion = props.tempTextureHeapSize;
+		aliasBufferRegion = Utils::SafeCast<RID>(props.tempBufferHeapSize);
+		aliasTextureRegion = Utils::SafeCast<RID>(props.tempTextureHeapSize);
 		return {};
 	}
 
@@ -113,7 +113,7 @@ namespace ZE::RHI::DX12
 
 		U32 descSize = device.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		U32 singleSetCount = device.GetAllocatedDescsCount(descInfo) / Settings::GetBackbufferCount();
-		execParams.descriptorHeapOffset = descInfo.GPU.ptr - execParams.pDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr;
+		execParams.descriptorHeapOffset = Utils::SafeCast<U32>(descInfo.GPU.ptr - execParams.pDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr);
 		execParams.descriptorHeapOffset += descSize * singleSetCount * Settings::GetCurrentBackbufferIndex();
 
 		ZE_CODE_RET_FAILED(ZE_XESS_ERROR(xessD3D12Execute(ctx, cl.Get().dx12.GetList(), &execParams)));

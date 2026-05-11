@@ -65,7 +65,7 @@ namespace ZE::RHI::DX12
 		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(MINIMAL_DECOPRESSED_OBJECTS_PER_TURN));
 		auto requests = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_REQUEST[]>(maxRequestCount);
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
-		auto decompresionTasks = std::make_unique<Task<void>[]>(maxRequestCount);
+		auto decompresionTasks = std::make_unique<Task<Status>[]>(maxRequestCount);
 
 		while (decompressionData->CheckForDecompression)
 		{
@@ -104,7 +104,7 @@ namespace ZE::RHI::DX12
 				{
 					ZE_ASSERT(req.DstSize == req.SrcSize, "Unmatched sizes of buffers for asset!");
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[](void* dst, const void* src, U64 size) noexcept { std::memcpy(dst, src, size); },
+						[](void* dst, const void* src, U64 size) noexcept -> Status { std::memcpy(dst, src, size); return {}; },
 						req.DstBuffer, req.SrcBuffer, req.DstSize);
 					break;
 				}
@@ -116,11 +116,11 @@ namespace ZE::RHI::DX12
 				case DS_COMPRESSION_FORMAT_ZLIB:
 				{
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize) noexcept
+						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize) noexcept -> Status
 						{
 							IO::Compressor codec(bzip2 ? IO::CompressionFormat::Bzip2 : IO::CompressionFormat::ZLib);
 							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
-							codec.Decompress(src, srcSize, dst, dstSize);
+							return codec.Decompress(src, srcSize, dst, dstSize);
 						},
 						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
 					break;
@@ -167,9 +167,16 @@ namespace ZE::RHI::DX12
 			for (U32 i = 0; i < requestCount; ++i)
 			{
 				auto exp = decompresionTasks[i].Get();
-				if (!exp)
+				if (exp)
 				{
-					ZE_CODE_ERROR(exp.error(), "Failed to wait for DirectStorage custom decompression tasks, some data might be corrupted!");
+					if (*exp)
+					{
+						ZE_CODE_ERROR(*exp, "Failed to perform DirectStorage custom decompression task, some data might be corrupted!");
+					}
+				}
+				else
+				{
+					ZE_CODE_ERROR(exp.error(), "Failed to wait for DirectStorage custom decompression task, some data might be corrupted!");
 				}
 			}
 
@@ -216,19 +223,21 @@ namespace ZE::RHI::DX12
 		uploadQueue = std::move(disk.uploadQueue);
 		fenceEvents = std::move(disk.fenceEvents);
 
-		decompressionData = std::move(disk.decompressionData);
-		if (decompressionData && decompressionData->CheckForDecompression)
+		if (disk.decompressionData && disk.decompressionData->CheckForDecompression)
 		{
 			disk.decompressionData->CheckForDecompression = false;
 			disk.cpuDecompressionThread.join();
-			disk.decompressionData->Disk = &disk;
-			disk.cpuDecompressionThread = std::jthread([data = disk.decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
+			decompressionData = std::move(disk.decompressionData);
+			decompressionData->Disk = this;
+			decompressionData->CheckForDecompression = true;
+			cpuDecompressionThread = std::jthread([data = decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
 		}
 	}
 
 	DiskManager::~DiskManager()
 	{
-		decompressionData->CheckForDecompression = false;
+		if (decompressionData)
+			decompressionData->CheckForDecompression = false;
 		for (auto& events : fenceEvents)
 		{
 			if (events.second.at(0))
