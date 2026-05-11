@@ -26,6 +26,6 @@ namespace ZE::GFX
 
 		// Main Gfx API
 
-		constexpr bool Open(DiskManager& disk, std::string_view fileName) noexcept { ZE_RHI_BACKEND_CALL_RET(Open, disk, fileName); }
+		constexpr Status Open(DiskManager& disk, std::string_view fileName) noexcept { ZE_RHI_BACKEND_CALL_RET(Open, disk, fileName); }
 	};
 }

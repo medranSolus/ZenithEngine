@@ -90,7 +90,7 @@ namespace ZE::RHI::DX12
 			HRESULT hr = decompressQueue->GetRequests1(DSTORAGE_GET_REQUEST_FLAG_SELECT_CUSTOM, maxRequestCount, requests.get(), &requestCount);
 			if (FAILED(hr))
 			{
-				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in getting DirectStorage custom decompression requests, skipping processing of this batch!");
+				ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failure in getting DirectStorage custom decompression requests, skipping processing of this batch!");
 				requestCount = 0;
 			}
 			for (U32 i = 0; i < requestCount; ++i)
@@ -140,7 +140,7 @@ namespace ZE::RHI::DX12
 				maxRequestCount - requestCount, requests.get() + requestCount, &builtInRequestCount);
 			if (FAILED(hr))
 			{
-				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in getting DirectStorage built-in decompression requests, skipping processing of this batch!");
+				ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failure in getting DirectStorage built-in decompression requests, skipping processing of this batch!");
 				builtInRequestCount = 0;
 			}
 			for (U32 i = 0; i < builtInRequestCount; ++i)
@@ -176,7 +176,7 @@ namespace ZE::RHI::DX12
 			hr = decompressQueue->SetRequestResults(requestCount + builtInRequestCount, results.get());
 			if (FAILED(hr))
 			{
-				ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failure in setting DirectStorage decompression results, some requests might be reprocessed!");
+				ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failure in setting DirectStorage decompression results, some requests might be reprocessed!");
 			}
 		}
 	}

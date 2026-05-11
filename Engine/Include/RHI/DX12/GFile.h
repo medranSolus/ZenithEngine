@@ -14,7 +14,7 @@ namespace ZE::RHI::DX12
 
 		static Expected<GFile> Create() noexcept { return {}; }
 
-		bool Open(GFX::DiskManager& disk, std::string_view fileName) noexcept;
+		Status Open(GFX::DiskManager& disk, std::string_view fileName) noexcept;
 
 		// Gfx API Internal
 

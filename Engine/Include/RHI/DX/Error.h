@@ -53,9 +53,9 @@ namespace ZE::RHI::DX
 #endif
 
 // Check result of the call returning HRESULT and if failed, return said error
-#define ZE_DX_RET_FAILED(call) do { HRESULT __hr = (call); ZE_DX_CHECK_DEBUG_INFO(__hr); if (FAILED(__hr)) { ZE_BREAK(); return ZE::Platform::WinAPI::Error::Make(__hr); } } while (false)
+#define ZE_DX_RET_FAILED(call) do { HRESULT __hr = (call); ZE_DX_CHECK_DEBUG_INFO(__hr); if (FAILED(__hr)) { ZE_BREAK(); return ZE_WIN_ERROR(__hr); } } while (false)
 // Check result of the call returning HRESULT and if failed, return said error wrapped in std::unexpected
-#define ZE_DX_RET_FAILED_EXPECT(call) do { HRESULT __hr = (call); ZE_DX_CHECK_DEBUG_INFO(__hr); if (FAILED(__hr)) { ZE_BREAK(); return std::unexpected(ZE::Platform::WinAPI::Error::Make(__hr)); } } while (false)
+#define ZE_DX_RET_FAILED_EXPECT(call) do { HRESULT __hr = (call); ZE_DX_CHECK_DEBUG_INFO(__hr); if (FAILED(__hr)) { ZE_BREAK(); return std::unexpected(ZE_WIN_ERROR(__hr)); } } while (false)
 
 #if _ZE_DEBUG_GFX_NAMES
 // Sets debug name for GPU object with given id

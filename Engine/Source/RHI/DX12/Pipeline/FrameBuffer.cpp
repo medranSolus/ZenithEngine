@@ -556,7 +556,7 @@ namespace ZE::RHI::DX12::Pipeline
 				HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.bufferHeap.GetAddressOf()), &residencyPriority);
 				if (FAILED(hr))
 				{
-					ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer buffer heap!");
+					ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failed to set residency priority for FrameBuffer buffer heap!");
 				}
 				heapDesc.Flags &= ~D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 
@@ -584,7 +584,7 @@ namespace ZE::RHI::DX12::Pipeline
 				HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.uavHeap.GetAddressOf()), &residencyPriority);
 				if (FAILED(hr))
 				{
-					ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer UAV heap!");
+					ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failed to set residency priority for FrameBuffer UAV heap!");
 				}
 				heapDesc.Flags &= ~D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
 				heapDesc.Flags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
@@ -618,7 +618,7 @@ namespace ZE::RHI::DX12::Pipeline
 		HRESULT hr = device->SetResidencyPriority(1, reinterpret_cast<IPageable**>(frameBuffer.mainHeap.GetAddressOf()), &residencyPriority);
 		if (FAILED(hr))
 		{
-			ZE_CODE_ERROR(Platform::WinAPI::Error::Make(hr), "Failed to set residency priority for FrameBuffer main heap!");
+			ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failed to set residency priority for FrameBuffer main heap!");
 		}
 
 #if !_ZE_MODE_RELEASE
