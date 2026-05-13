@@ -198,6 +198,16 @@ namespace ZE
 				if (ImGui::CollapsingHeader("Performance"))
 				{
 					ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
+#if _ZE_MODE_PROFILE
+					ImGui::Text("Built-in profiling active"); ImGui::SameLine();
+					if (ImGui::Button("Save"))
+					{
+						ZE_PERF_SAVE();
+						flags[Flags::FlushPerfData] = true;
+					}
+#else
+					ImGui::Text("Built-in profiling inactive")
+#endif
 #ifdef USE_PIX
 					if (Settings::GetGfxApi() == GfxApiType::DX12)
 					{
@@ -419,6 +429,14 @@ namespace ZE
 
 		// Frame marker
 		ZE_PERF_STOP();
+
+#if _ZE_MODE_PROFILE
+		if (flags[Flags::FlushPerfData])
+		{
+			ZE_PERF_FLUSH();
+			flags[Flags::FlushPerfData] = false;
+		}
+#endif
 
 #ifdef USE_PIX
 		if (flags[Flags::PixCaptureInProgress])

@@ -17,6 +17,7 @@ namespace ZE
 			PixCaptureInProgress,
 			SwitchImGui,
 			NewReplacementActive,
+			FlushPerfData,
 			Count
 		};
 

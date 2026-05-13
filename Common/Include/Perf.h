@@ -60,6 +60,7 @@ namespace ZE
 #if _ZE_MODE_PROFILE
 		constexpr void SetSingleLineLogEntry(bool val) noexcept { flags[Flags::SingleLineLogEntry] = val; }
 		constexpr bool IsSingleLineLogEntry() const noexcept { return flags[Flags::SingleLineLogEntry]; }
+		void Flush() noexcept { ZE_ASSERT(lastTags.size() == 0, "Flushing data while active perf markers exist!"); data.clear(); }
 
 		void Start(const std::string& sectionTag) noexcept;
 		// Use for measuring short periods of time as it gets raw data based on RDTSC
@@ -76,6 +77,8 @@ namespace ZE
 #if _ZE_MODE_PROFILE
 // Use to configure tool behavior with given function
 #	define ZE_PERF_CONFIGURE(function, val) ZE::Perf::Get().##function##(val)
+#	define ZE_PERF_SAVE() ZE::Perf::Get().Save()
+#	define ZE_PERF_FLUSH() ZE::Perf::Get().Flush()
 #	define ZE_PERF_START(sectionTag) ZE::Perf::Get().Start(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
 #	define ZE_PERF_START_SHORT(sectionTag) ZE::Perf::Get().StartShort(sectionTag)
@@ -86,11 +89,13 @@ namespace ZE
 #else
 // Use to configure tool behavior with given function
 #	define ZE_PERF_CONFIGURE(function, val)
+#	define ZE_PERF_SAVE()
+#	define ZE_PERF_FLUSH()
 #	define ZE_PERF_START(sectionTag)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
 #	define ZE_PERF_START_SHORT(sectionTag)
-#	define ZE_PERF_STOP()
+#	define ZE_PERF_STOP() (0.0)
 // Use for measuring short periods of time as it gets raw data based on RDTSC
-#	define ZE_PERF_STOP_SHORT()
-#	define ZE_PERF_COUNT(sectionTag)
+#	define ZE_PERF_STOP_SHORT() (0.0)
+#	define ZE_PERF_COUNT(sectionTag) (0L)
 #endif

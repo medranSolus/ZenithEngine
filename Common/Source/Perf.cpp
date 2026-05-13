@@ -95,7 +95,6 @@ namespace ZE
 					}
 				}
 				fout.close();
-				data.clear();
 			}
 			else
 			{
