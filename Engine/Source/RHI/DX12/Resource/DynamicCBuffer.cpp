@@ -40,6 +40,7 @@ namespace ZE::RHI::DX12::Resource
 	Expected<DynamicCBuffer> DynamicCBuffer::Create(GFX::Device& dev) noexcept
 	{
 		DynamicCBuffer buffer = {};
+		buffer.srcDev = &dev.Get().dx12;
 		if (Status code = buffer.AllocBlock(dev))
 			return std::unexpected(code);
 		return buffer;
