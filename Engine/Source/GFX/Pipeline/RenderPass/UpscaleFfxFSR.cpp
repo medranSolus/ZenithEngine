@@ -80,7 +80,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::FfxFsr, passData.Quality);
-		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
+		const bool sizeChange = renderSize != Settings::RenderSize;
+		if (sizeChange || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
 		{
 			const FfxApiFunctions& ffxFunc = ffx->GetFunctions();
 			if (passData.Ctx)
@@ -115,6 +116,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 				passData.VersionNames[passData.VersionCount] = "Driver default";
 			}
 			passData.PrevSelectedVersion = passData.SelectedVersion;
+			passData.DisplaySize = Settings::DisplaySize;
 
 			ffxOverrideVersion versionOverrideDesc = { FFX_API_DESC_TYPE_OVERRIDE_VERSION, nullptr };
 			ffxCreateContextDescUpscaleVersion versionDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE_VERSION, nullptr };
@@ -134,10 +136,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 			ctxDesc.fpMessage = MessageHandler;
 			ZE_FFX_API_LOG_RET_FAILED_EXPECT(ffx->CreateFfxCtx(dev, &passData.Ctx, ctxDesc.header), "Error creating FFX-API FSR context!");
 
-			bool sizeChange = renderSize != Settings::RenderSize;
 			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
 			return sizeChange ? UpdateOperation::FrameBufferImpact : UpdateOperation::InternalOnly;
 		}
 		return UpdateOperation::NoUpdate;

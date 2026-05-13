@@ -54,6 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		{
 			if (passData.DlssHandle)
 				ngx->FreeFeature(passData.DlssHandle);
+			passData.DisplaySize = Settings::DisplaySize;
 
 			passData.NgxParam->Set(NVSDK_NGX_Parameter_Width, renderSize.X);
 			passData.NgxParam->Set(NVSDK_NGX_Parameter_Height, renderSize.Y);
@@ -63,8 +64,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 			ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->CreateFeature(dev, NVSDK_NGX_Feature_SuperSampling, passData.NgxParam, passData.DlssHandle), "Error creating DLSS feature!");
 
 			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
 			return UpdateOperation::FrameBufferImpact;
 		}
 		return UpdateOperation::NoUpdate;

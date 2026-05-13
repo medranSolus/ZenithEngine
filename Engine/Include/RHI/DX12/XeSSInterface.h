@@ -32,7 +32,7 @@ namespace ZE::RHI::DX12
 
 		static Expected<XeSSInterface> Create(GFX::Device& dev) noexcept;
 
-		constexpr bool IsInitialized() const noexcept { return descInfo.Handle != nullptr; }
+		constexpr bool IsInitialized() const noexcept { return ctx != nullptr; }
 		constexpr xess_context_handle_t GetCtx() const noexcept { return ctx; }
 		constexpr bool IsAliasableResourcesSupported() const noexcept { return aliasBufferRegionSize || aliasTextureRegionSize; }
 		constexpr U64 GetAliasableBufferRegionSize() const noexcept { return aliasBufferRegionSize; }

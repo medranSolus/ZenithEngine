@@ -95,17 +95,16 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 				ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetJitterScale(ctx, 1.0f, 1.0f),
 					"Error setting XeSS jitter scale!");
 			}
+			passData.DisplaySize = Settings::DisplaySize;
 
 			ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetVelocityScale(ctx,
 				-Utils::SafeCast<float>(renderSize.X), -Utils::SafeCast<float>(renderSize.Y)),
 				"Error setting XeSS motion vectors scale!");
 
-			ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, Settings::DisplaySize, passData.Quality,
+			ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, passData.DisplaySize, passData.Quality,
 				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK));
 
 			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
 			return UpdateOperation::FrameBufferImpact;
 		}
 		return UpdateOperation::NoUpdate;

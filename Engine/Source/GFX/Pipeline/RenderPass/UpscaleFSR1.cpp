@@ -48,6 +48,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 				ZE_FFX_LOG_RET_FAILED_EXPECT(ffxFsr1ContextDestroy(&passData.Ctx), "Error destroying FSR1 context!");
 				passData.Initialized = false;
 			}
+			passData.DisplaySize = Settings::DisplaySize;
 
 			FfxFsr1ContextDescription ctxDesc = {};
 			ctxDesc.flags = FFX_FSR1_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR1_ENABLE_RCAS;
@@ -59,8 +60,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 			passData.Initialized = true;
 
 			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
 			return UpdateOperation::FrameBufferImpact;
 		}
 		return UpdateOperation::NoUpdate;

@@ -61,6 +61,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 				ZE_FFX_LOG_RET_FAILED_EXPECT(ffxFsr2ContextDestroy(&passData.Ctx), "Error destroying FSR2 context!");
 				passData.Initialized = false;
 			}
+			passData.DisplaySize = Settings::DisplaySize;
 
 			FfxFsr2ContextDescription ctxDesc = {};
 			ctxDesc.flags = FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE
@@ -74,8 +75,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 			passData.Initialized = true;
 
 			Settings::RenderSize = renderSize;
-			passData.DisplaySize = Settings::DisplaySize;
-
 			return UpdateOperation::FrameBufferImpact;
 		}
 		return UpdateOperation::NoUpdate;
