@@ -32,6 +32,21 @@ namespace ZE
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 
+	// Description of heap sizes to be allocated by the allocators
+	struct HeapParams
+	{
+		// GPU heap for buffers only
+		U64 BuffersHeapSize = 256 * Math::MEGABYTE;
+		// GPU heap for textures only
+		U64 TexturesHeapSize = 512 * Math::MEGABYTE;
+		// CPU side heap for frequently uploaded buffers
+		U64 HostHeapSize = 64 * Math::MEGABYTE;
+		// CPU-mappable heap for upload data
+		U64 UploadHeapSize = 64 * Math::MEGABYTE;
+		// Single CPU staging buffer for preparing data before upload to GPU
+		U32 StagingBufferSize = 384 * Math::MEGABYTE;
+	};
+
 	// Initial parameters for global settings of Zenith Engine
 	struct SettingsInitParams
 	{
@@ -59,6 +74,8 @@ namespace ZE
 		GFX::AOType AmbientOcclusion = GFX::AOType::None;
 		// Type of tonemapper to be applied on the rendered image.
 		GFX::TonemapperType Tonemapper = GFX::TonemapperType::GranTurismo7;
+		// Custom sizes for heaps allocated by the engine
+		HeapParams HeapSizes = {};
 
 		static void SetupParser(CmdParser& parser) noexcept;
 		static SettingsInitParams GetParsedParams(const CmdParser& parser, const char* appName, U32 appVersion,

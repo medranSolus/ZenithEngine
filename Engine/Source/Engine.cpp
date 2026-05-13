@@ -206,7 +206,7 @@ namespace ZE
 						flags[Flags::FlushPerfData] = true;
 					}
 #else
-					ImGui::Text("Built-in profiling inactive")
+					ImGui::Text("Built-in profiling inactive");
 #endif
 #ifdef USE_PIX
 					if (Settings::GetGfxApi() == GfxApiType::DX12)

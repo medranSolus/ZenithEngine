@@ -190,18 +190,18 @@ namespace ZE::RHI::DX12
 			ZE_ENUM_UNHANDLED();
 		case AllocTier::Tier1:
 		{
-			ZE_CODE_RET_FAILED_EXPECT(allocator.mainAllocator.Init(MAIN_HEAP_FLAGS | flags, Settings::BUFFERS_HEAP_SIZE, normalChunk, 3));
-			ZE_CODE_RET_FAILED_EXPECT(allocator.secondaryAllocator.Init(SECONDARY_HEAP_FLAGS | flags, Settings::TEXTURES_HEAP_SIZE, smallChunk, 3));
+			ZE_CODE_RET_FAILED_EXPECT(allocator.mainAllocator.Init(MAIN_HEAP_FLAGS | flags, Settings::GetHeapSizes().BuffersHeapSize, normalChunk, 3));
+			ZE_CODE_RET_FAILED_EXPECT(allocator.secondaryAllocator.Init(SECONDARY_HEAP_FLAGS | flags, Settings::GetHeapSizes().TexturesHeapSize, smallChunk, 3));
 			break;
 		}
 		case AllocTier::Tier2:
 		{
-			ZE_CODE_RET_FAILED_EXPECT(allocator.mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS | flags, Settings::BUFFERS_HEAP_SIZE + Settings::TEXTURES_HEAP_SIZE, smallChunk, 3));
+			ZE_CODE_RET_FAILED_EXPECT(allocator.mainAllocator.Init(MAIN_HEAP_FLAGS | SECONDARY_HEAP_FLAGS | HeapFlag::AllowTexturesRTDS | flags, Settings::GetHeapSizes().BuffersHeapSize + Settings::GetHeapSizes().TexturesHeapSize, smallChunk, 3));
 			break;
 		}
 		}
-		ZE_CODE_RET_FAILED_EXPECT(allocator.dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::UPLOAD_HEAP_SIZE, normalChunk, 3));
-		ZE_CODE_RET_FAILED_EXPECT(allocator.readbackBuffersAllocator.Init(READBACK_BUFF_HEAP_FLAGS | flags, Settings::HOST_HEAP_SIZE, normalChunk, 3));
+		ZE_CODE_RET_FAILED_EXPECT(allocator.dynamicBuffersAllocator.Init(DYNAMIC_BUFF_HEAP_FLAGS | flags, Settings::GetHeapSizes().UploadHeapSize, normalChunk, 3));
+		ZE_CODE_RET_FAILED_EXPECT(allocator.readbackBuffersAllocator.Init(READBACK_BUFF_HEAP_FLAGS | flags, Settings::GetHeapSizes().HostHeapSize, normalChunk, 3));
 		return allocator;
 	}
 

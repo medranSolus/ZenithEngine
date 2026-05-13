@@ -34,16 +34,6 @@ namespace ZE
 		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY_VERSION(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
 
-		// GPU heap for buffers only
-		static constexpr U64 BUFFERS_HEAP_SIZE = 256 * Math::MEGABYTE;
-		// GPU heap for textures only
-		static constexpr U64 TEXTURES_HEAP_SIZE = 512 * Math::MEGABYTE;
-		// CPU side heap for frequently uploaded buffers
-		static constexpr U64 HOST_HEAP_SIZE = 64 * Math::MEGABYTE;
-		// CPU-mappable heap for upload data
-		static constexpr U64 UPLOAD_HEAP_SIZE = 64 * Math::MEGABYTE;
-		// Single CPU stating buffer for preparing data before upload to GPU
-		static constexpr U32 STAGING_BUFFER_SIZE = 384 * Math::MEGABYTE;
 		// Have to be adjusted per-platform
 		static constexpr U8 MAX_RENDER_TARGETS = 8;
 
@@ -68,6 +58,7 @@ namespace ZE
 		static inline U32 applicationVersion = 0;
 		static inline GfxApiType gfxApi = GfxApiType::None;
 		static inline AudioApiType audioApi = AudioApiType::None;
+		static inline HeapParams heapSizes = {};
 
 		static inline ThreadPool threadPool;
 		static inline std::bitset<Flags::Count> flags = 0;
@@ -90,6 +81,7 @@ namespace ZE
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized() || gfxApi == GfxApiType::None); return gfxApi; }
 		static constexpr AudioApiType GetAudioApi() noexcept { ZE_ASSERT_INIT(Initialized() || audioApi == AudioApiType::None); return audioApi; }
+		static constexpr const HeapParams& GetHeapSizes() noexcept { ZE_ASSERT_INIT(Initialized()); return heapSizes; }
 
 		static constexpr U64 GetFrameIndex() noexcept { return frameIndex; }
 		static constexpr void AdvanceFrame() noexcept { ++frameIndex; }
@@ -153,13 +145,13 @@ namespace ZE
 		switch (GetGfxApi())
 		{
 		default:
-		ZE_ENUM_UNHANDLED();
+			ZE_ENUM_UNHANDLED();
 		case GfxApiType::DX11:
 		case GfxApiType::OpenGL:
-		return 1;
+			return 1;
 		case GfxApiType::DX12:
 		case GfxApiType::Vulkan:
-		return GetBackbufferCount();
+			return GetBackbufferCount();
 		}
 	}
 
@@ -183,6 +175,8 @@ namespace ZE
 			"XAudio2 API is not enabled in current build!");
 		ZE_ASSERT(audioApi == AudioApiType::OpenAL && _ZE_AHI_OPENAL || audioApi != AudioApiType::OpenAL,
 			"OpenAL API is not enabled in current build!");
+
+		heapSizes = params.HeapSizes;
 
 #if !_ZE_MODE_RELEASE
 		flags[Flags::AttachPIX] = params.Flags & SettingsInitFlag::AllowPIXAttach;

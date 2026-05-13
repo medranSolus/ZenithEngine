@@ -278,7 +278,7 @@ namespace ZE::RHI::DX12
 #if _ZE_DEBUG_GFX_API
 		disk.factory->SetDebugFlags(DSTORAGE_DEBUG_SHOW_ERRORS | DSTORAGE_DEBUG_BREAK_ON_ERROR | (_ZE_DEBUG_GFX_NAMES ? DSTORAGE_DEBUG_RECORD_OBJECT_NAMES : 0));
 #endif
-		disk.factory->SetStagingBufferSize(Settings::STAGING_BUFFER_SIZE);
+		disk.factory->SetStagingBufferSize(Settings::GetHeapSizes().StagingBufferSize);
 
 		ZE_DX_RET_FAILED_EXPECT(disk.factory.As(&disk.decompressQueue));
 		disk.decompressionEvent = disk.decompressQueue->GetEvent();
@@ -519,8 +519,8 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(sourceBytes, "Zero sized source buffer!");
 		ZE_ASSERT(uncompressedSize, "Zero sized destination buffer!");
-		ZE_ASSERT(sourceBytes <= Settings::STAGING_BUFFER_SIZE, "Size of file buffer exceedes size of staging buffer! Max size: "
-			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(sourceBytes / Math::MEGABYTE));
+		ZE_ASSERT(sourceBytes <= Settings::GetHeapSizes().StagingBufferSize, "Size of file buffer exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::GetHeapSizes().StagingBufferSize) + " MB, provided: " + std::to_string(sourceBytes / Math::MEGABYTE));
 
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = GetCompressionFormat(compression);
@@ -549,8 +549,8 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(srcStatic || srcCopy, "Empty source buffer!");
 		ZE_ASSERT((srcStatic == nullptr) != (srcCopy == nullptr), "Only single source type have to be provided!");
 		ZE_ASSERT(bytes, "Zero sized source buffer!");
-		ZE_ASSERT(bytes <= Settings::STAGING_BUFFER_SIZE, "Size of buffer exceedes size of staging buffer! Max size: "
-			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
+		ZE_ASSERT(bytes <= Settings::GetHeapSizes().StagingBufferSize, "Size of buffer exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::GetHeapSizes().StagingBufferSize) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
 
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
@@ -585,8 +585,8 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(sourceBytes, "Zero sized source buffer!");
 		ZE_ASSERT(uncompressedSize, "Zero sized destination buffer!");
-		ZE_ASSERT(sourceBytes <= Settings::STAGING_BUFFER_SIZE, "Size of file texture exceedes size of staging buffer! Max size: "
-			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(sourceBytes / Math::MEGABYTE));
+		ZE_ASSERT(sourceBytes <= Settings::GetHeapSizes().StagingBufferSize, "Size of file texture exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::GetHeapSizes().StagingBufferSize) + " MB, provided: " + std::to_string(sourceBytes / Math::MEGABYTE));
 
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = GetCompressionFormat(compression);
@@ -612,8 +612,8 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(dest, "Empty destination resource!");
 		ZE_ASSERT(src, "Empty source texture!");
 		ZE_ASSERT(bytes, "Zero sized source texture buffer!");
-		ZE_ASSERT(bytes <= Settings::STAGING_BUFFER_SIZE, "Size of texture exceedes size of staging buffer! Max size: "
-			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
+		ZE_ASSERT(bytes <= Settings::GetHeapSizes().StagingBufferSize, "Size of texture exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::GetHeapSizes().StagingBufferSize) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
 
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
@@ -640,8 +640,8 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(src, "Empty source texture!");
 		ZE_ASSERT(bytes, "Zero sized source texture buffer!");
 		ZE_ASSERT(width && height, "Empty texture dimensions!");
-		ZE_ASSERT(bytes <= Settings::STAGING_BUFFER_SIZE, "Size of texture in array exceedes size of staging buffer! Max size: "
-			+ std::to_string(Settings::STAGING_BUFFER_SIZE) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
+		ZE_ASSERT(bytes <= Settings::GetHeapSizes().StagingBufferSize, "Size of texture in array exceedes size of staging buffer! Max size: "
+			+ std::to_string(Settings::GetHeapSizes().StagingBufferSize) + " MB, provided: " + std::to_string(bytes / Math::MEGABYTE));
 
 		DSTORAGE_REQUEST request = {};
 		request.Options.CompressionFormat = DSTORAGE_CUSTOM_COMPRESSION_0;
