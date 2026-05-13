@@ -16,15 +16,21 @@ namespace ZE::RHI::DX12
 	{
 		GFX::Device* srcDev = nullptr;
 
+		void MoveFrom(NgxInterface&& ngx) noexcept { srcDev = std::exchange(ngx.srcDev, nullptr); }
+
+		void Destroy() noexcept;
+
 	public:
 		NgxInterface() = default;
-		ZE_CLASS_MOVE(NgxInterface);
-		~NgxInterface();
+		ZE_CLASS_NO_COPY(NgxInterface);
+		NgxInterface(NgxInterface&& ngx) noexcept { MoveFrom(std::move(ngx)); }
+		NgxInterface& operator=(NgxInterface&& ngx) noexcept { Destroy(); MoveFrom(std::move(ngx));  return *this; }
+		~NgxInterface() { Destroy(); }
 
 		static Expected<NgxInterface> Create(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept;
 
 		Status AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept;
-		Status GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept;
+		Status GetCapabilities(Ptr<NVSDK_NGX_Parameter>& param) const noexcept;
 		Status DestroyParameter(NVSDK_NGX_Parameter* param) const noexcept;
 
 		Status GetScratchBufferSize(NVSDK_NGX_Feature feature,

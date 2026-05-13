@@ -23,7 +23,7 @@ namespace ZE::GFX
 		static inline bool ignoreInternalLogs = true;
 
 		ZE_RHI_BACKEND(NgxInterface);
-		NVSDK_NGX_Parameter* ngxCaps = nullptr;
+		Ptr<NVSDK_NGX_Parameter> ngxCaps;
 		PFN_NVSDK_NGX_DLSS_GetOptimalSettingsCallback optimalSettingsCallback = nullptr;
 
 		static constexpr const char* GetFeatureSupportResult(NVSDK_NGX_Feature_Support_Result res) noexcept;
@@ -33,7 +33,7 @@ namespace ZE::GFX
 		static NVSDK_NGX_FeatureCommonInfo GetCommonInfo() noexcept;
 		static void FreeScratchBuffer(NVSDK_NGX_Parameter* param) noexcept;
 
-		Status GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCapabilities, param); }
+		Status GetCapabilities(Ptr<NVSDK_NGX_Parameter>& param) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCapabilities, param); }
 
 	public:
 		NgxInterface() = default;
@@ -55,7 +55,7 @@ namespace ZE::GFX
 		void FreeFeature(NVSDK_NGX_Handle* feature) const noexcept;
 
 		bool IsFeatureAvailable(Device& dev, NVSDK_NGX_Feature feature) const noexcept;
-		UInt2 GetRenderSize(UInt2 targetSize, NVSDK_NGX_PerfQuality_Value quality) const noexcept;
+		UInt2 GetRenderSize(UInt2 targetSize, NVSDK_NGX_PerfQuality_Value quality) noexcept;
 	};
 }
 #endif

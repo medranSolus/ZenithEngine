@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::DX12
 {
-	NgxInterface::~NgxInterface()
+	void NgxInterface::Destroy() noexcept
 	{
 		if (srcDev)
 		{
@@ -37,7 +37,7 @@ namespace ZE::RHI::DX12
 		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_AllocateParameters(&param));
 	}
 
-	Status NgxInterface::GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept
+	Status NgxInterface::GetCapabilities(Ptr<NVSDK_NGX_Parameter>& param) const noexcept
 	{
 		return ZE_NGX_ERROR(NVSDK_NGX_D3D12_GetCapabilityParameters(&param));
 	}

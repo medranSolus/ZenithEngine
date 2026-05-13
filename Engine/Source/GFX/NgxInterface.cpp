@@ -474,7 +474,7 @@ namespace ZE::GFX
 		return false;
 	}
 
-	UInt2 NgxInterface::GetRenderSize(UInt2 targetSize, NVSDK_NGX_PerfQuality_Value quality) const noexcept
+	UInt2 NgxInterface::GetRenderSize(UInt2 targetSize, NVSDK_NGX_PerfQuality_Value quality) noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 
