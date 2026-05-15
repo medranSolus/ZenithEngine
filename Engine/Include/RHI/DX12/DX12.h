@@ -28,7 +28,7 @@ namespace ZE::RHI::DX12
 	typedef ID3D12Fence1                             IFence;
 	typedef ID3D12GraphicsCommandList10              IGraphicsCommandList;
 	typedef ID3D12Heap1                              IHeap;
-	typedef ID3D12InfoQueue                          IInfoQueue;
+	typedef ID3D12InfoQueue1                         IInfoQueue;
 	typedef ID3D12Pageable                           IPageable;
 	typedef ID3D12PipelineState                      IPipelineState;
 	typedef ID3D12QueryHeap                          IQueryHeap;

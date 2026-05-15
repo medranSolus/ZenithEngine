@@ -1,6 +1,7 @@
 #pragma once
 #if _ZE_NGX_ENABLED
 #	include "GFX/Error.h"
+#	include "DX12.h"
 ZE_WARNING_PUSH
 #	include "nvsdk_ngx.h"
 ZE_WARNING_POP
@@ -14,7 +15,7 @@ namespace ZE::RHI::DX12
 {
 	class NgxInterface final
 	{
-		GFX::Device* srcDev = nullptr;
+		DX::ComPtr<IDevice> srcDev;
 
 		void MoveFrom(NgxInterface&& ngx) noexcept { srcDev = std::exchange(ngx.srcDev, nullptr); }
 

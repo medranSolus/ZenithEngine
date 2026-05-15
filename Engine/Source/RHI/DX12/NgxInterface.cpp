@@ -7,7 +7,7 @@ namespace ZE::RHI::DX12
 	{
 		if (srcDev)
 		{
-			Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D12_Shutdown1(srcDev->Get().dx12.GetDevice()));
+			Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D12_Shutdown1(srcDev.Get()));
 			if (code)
 			{
 				ZE_CODE_ERROR(code, "Failed to shutdown NGX!");
@@ -28,7 +28,7 @@ namespace ZE::RHI::DX12
 			return std::unexpected(code);
 
 		NgxInterface ngx;
-		ngx.srcDev = &dev;
+		ngx.srcDev = dev.Get().dx12.GetDev();
 		return ngx;
 	}
 
