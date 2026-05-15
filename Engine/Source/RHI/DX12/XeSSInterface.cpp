@@ -8,6 +8,25 @@ ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
+	static void MessageHandler(const char* message, xess_logging_level_t level) noexcept
+	{
+		switch (level)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case XESS_LOGGING_LEVEL_ERROR:
+			Logger::Error(message);
+			break;
+		case XESS_LOGGING_LEVEL_WARNING:
+			Logger::Warning(message);
+			break;
+		case XESS_LOGGING_LEVEL_INFO:
+		case XESS_LOGGING_LEVEL_DEBUG:
+			Logger::Info(message);
+			break;
+		}
+	}
+
 	void XeSSInterface::Destroy() noexcept
 	{
 		if (ctx)
@@ -25,6 +44,7 @@ namespace ZE::RHI::DX12
 		aliasTextureRegionSize = 0;
 		aliasBufferRegion = INVALID_RID;
 		aliasTextureRegion = INVALID_RID;
+		refreshNeeded = true;
 	}
 
 	void XeSSInterface::MoveFrom(XeSSInterface&& xess) noexcept
@@ -38,14 +58,27 @@ namespace ZE::RHI::DX12
 		aliasTextureRegionSize = xess.aliasTextureRegionSize;
 		aliasBufferRegion = xess.aliasBufferRegion;
 		aliasTextureRegion = xess.aliasTextureRegion;
+		refreshNeeded = xess.refreshNeeded;
+	}
+
+	Status XeSSInterface::CreateCtx(Device& dev) noexcept
+	{
+		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.GetDevice(), &ctx),
+			"Error creating XeSS D3D12 context!");
+		refreshNeeded = false;
+
+		ZE_XESS_LOG_RET_FAILED(xessSetLoggingCallback(ctx,
+			_ZE_DEBUG_GFX_API ? XESS_LOGGING_LEVEL_DEBUG : XESS_LOGGING_LEVEL_WARNING, MessageHandler),
+			"Error setting XeSS message callback!");
+
+		return {};
 	}
 
 	Expected<XeSSInterface> XeSSInterface::Create(GFX::Device& dev) noexcept
 	{
 		XeSSInterface xess;
+		ZE_CODE_RET_FAILED_EXPECT(xess.CreateCtx(dev.Get().dx12));
 
-		ZE_XESS_LOG_RET_FAILED_EXPECT(xessD3D12CreateContext(dev.Get().dx12.GetDevice(), &xess.ctx), "Error creating XeSS D3D12 context!");
-		
 		if (xessIsOptimalDriver(xess.ctx) == XESS_RESULT_WARNING_OLD_DRIVER)
 			Logger::Warning("Outdated Intel driver!");
 
@@ -78,9 +111,7 @@ namespace ZE::RHI::DX12
 		ZE_ASSERT(IsCtxInitialized(), "XeSS Ctx not initialized!");
 
 		Destroy();
-
-		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.Get().dx12.GetDevice(), &ctx), "Error recreating XeSS D3D12 context!");
-		return {};
+		return CreateCtx(dev.Get().dx12);
 	}
 
 	Status XeSSInterface::Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,
@@ -122,8 +153,27 @@ namespace ZE::RHI::DX12
 		return {};
 	}
 
-	Status XeSSInterface::FinishInitialization(IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) const noexcept
+	Status XeSSInterface::FinishInitialization(Device& dev, IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) noexcept
 	{
+		// If trying to re-init ctx without destroying it first race condition may happen
+		if (refreshNeeded)
+		{
+			float jitterX = 0.0f, jitterY = 0.0f;
+			float velocityX = 0.0f, velocityY = 0.0f;
+			ZE_XESS_LOG_RET_FAILED(xessGetJitterScale(ctx, &jitterX, &jitterY),
+				"Error retrieving XeSS jitter scale!");
+			ZE_XESS_LOG_RET_FAILED(xessGetVelocityScale(ctx, &velocityX, &velocityY),
+				"Error retrieving XeSS velocity scale!");
+
+			ZE_XESS_LOG_RET_FAILED(xessDestroyContext(ctx),
+				"Error destroying XeSS context!");
+			ZE_CODE_RET_FAILED(CreateCtx(dev));
+
+			ZE_XESS_LOG_RET_FAILED(xessSetJitterScale(ctx, jitterX, jitterY),
+				"Error re-setting XeSS jitter scale!");
+			ZE_XESS_LOG_RET_FAILED(xessSetVelocityScale(ctx, velocityX, velocityY),
+				"Error res-setting XeSS motion vectors scale!");
+		}
 		xess_d3d12_init_params_t initParams = {};
 		initParams.outputResolution = outputRes;
 		initParams.qualitySetting = qualityMode;
@@ -136,6 +186,7 @@ namespace ZE::RHI::DX12
 		initParams.textureHeapOffset = texHeapOffset;
 		initParams.pPipelineLibrary = nullptr;
 		ZE_XESS_LOG_RET_FAILED(xessD3D12Init(ctx, &initParams), "Failed to initialize XeSS D3D12 context!");
+		refreshNeeded = true;
 		return {};
 	}
 }

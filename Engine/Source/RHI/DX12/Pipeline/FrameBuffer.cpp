@@ -1160,7 +1160,7 @@ namespace ZE::RHI::DX12::Pipeline
 				texOffset |= static_cast<U64>(frameBuffer.GetMipCount(resRegion)) << 16;
 				texOffset *= minimalChunkSize;
 			}
-			ZE_CODE_RET_FAILED_EXPECT(xess->Get().dx12.FinishInitialization(tempBuffHeap, buffOffset, tempTexHeap, texOffset));
+			ZE_CODE_RET_FAILED_EXPECT(xess->Get().dx12.FinishInitialization(dev.Get().dx12, tempBuffHeap, buffOffset, tempTexHeap, texOffset));
 		}
 
 		return frameBuffer;

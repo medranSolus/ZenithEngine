@@ -18,9 +18,11 @@ namespace ZE::RHI::DX12
 		U64 aliasTextureRegionSize = 0;
 		RID aliasBufferRegion = INVALID_RID;
 		RID aliasTextureRegion = INVALID_RID;
+		bool refreshNeeded = true;
 
 		void Destroy() noexcept;
 		void MoveFrom(XeSSInterface&& xess) noexcept;
+		Status CreateCtx(Device& dev) noexcept;
 
 	public:
 		XeSSInterface() = default;
@@ -49,7 +51,7 @@ namespace ZE::RHI::DX12
 		constexpr RID GetAliasableBufferResource() const noexcept { return aliasBufferRegion; }
 		constexpr RID GetAliasableTextureResource() const noexcept { return aliasTextureRegion; }
 
-		Status FinishInitialization(IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) const noexcept;
+		Status FinishInitialization(Device& dev, IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) noexcept;
 	};
 }
 #endif

@@ -41,25 +41,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return Initialize(dev, buildData);
 	}
 
-	static void MessageHandler(const char* message, xess_logging_level_t level) noexcept
-	{
-		switch (level)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case XESS_LOGGING_LEVEL_ERROR:
-			Logger::Error(message);
-			break;
-		case XESS_LOGGING_LEVEL_WARNING:
-			Logger::Warning(message);
-			break;
-		case XESS_LOGGING_LEVEL_INFO:
-		case XESS_LOGGING_LEVEL_DEBUG:
-			Logger::Info(message);
-			break;
-		}
-	}
-
 	PassDesc GetDesc() noexcept
 	{
 		PassDesc desc{ Base(CorePassType::UpscaleXeSS) };
@@ -85,19 +66,12 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 				FlushGPU(nullptr);
 				ZE_CODE_RET_FAILED_EXPECT(xess->FreeCtx(dev));
 			}
-			else
-			{
-				xess_context_handle_t ctx = xess->GetCtx();
-
-				ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetLoggingCallback(ctx,
-					_ZE_DEBUG_GFX_API ? XESS_LOGGING_LEVEL_DEBUG : XESS_LOGGING_LEVEL_WARNING, MessageHandler),
-					"Error setting XeSS message callback!");
-				ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetJitterScale(ctx, 1.0f, 1.0f),
-					"Error setting XeSS jitter scale!");
-			}
 			passData.DisplaySize = Settings::DisplaySize;
 
-			ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetVelocityScale(xess->GetCtx(),
+			xess_context_handle_t ctx = xess->GetCtx();
+			ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetJitterScale(ctx, 1.0f, 1.0f),
+				"Error setting XeSS jitter scale!");
+			ZE_XESS_LOG_RET_FAILED_EXPECT(xessSetVelocityScale(ctx,
 				-Utils::SafeCast<float>(renderSize.X), -Utils::SafeCast<float>(renderSize.Y)),
 				"Error setting XeSS motion vectors scale!");
 
