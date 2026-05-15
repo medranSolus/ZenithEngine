@@ -82,7 +82,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		{
 			xess_context_handle_t ctx = xess->GetCtx();
 
-			if (xess->IsInitialized())
+			if (xess->IsCtxInitialized())
 			{
 				FlushGPU(nullptr);
 				xess->FreeCtx(dev);

@@ -49,6 +49,8 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapReinhardX
 	{
 		if (passData.CurrentTonemapper != Settings::Tonemapper)
 		{
+			passData.CurrentTonemapper = Settings::Tonemapper;
+
 			Resource::PipelineStateDesc psoDesc = {};
 			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
 			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, GetPsoName(passData.CurrentTonemapper), buildData.ShaderCache));

@@ -13,8 +13,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		RID Depth;
 		RID MotionVectors;
 		RID ResponsiveMask;
-		RID AliasedBuffers;
-		RID AliasedTextures;
 		RID Output;
 	};
 

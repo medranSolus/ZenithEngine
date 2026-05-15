@@ -37,7 +37,6 @@ namespace ZE::RHI::DX12
 		aliasTextureRegionSize = xess.aliasTextureRegionSize;
 		aliasBufferRegion = xess.aliasBufferRegion;
 		aliasTextureRegion = xess.aliasTextureRegion;
-		srcDev = xess.srcDev;
 	}
 
 	Expected<XeSSInterface> XeSSInterface::Create(GFX::Device& dev) noexcept
@@ -54,7 +53,7 @@ namespace ZE::RHI::DX12
 
 	Status XeSSInterface::InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept
 	{
-		ZE_ASSERT(!IsInitialized(), "XeSS already initialized!");
+		ZE_ASSERT(!IsCtxInitialized(), "XeSS Ctx already initialized!");
 
 		outputRes = { targetRes.X, targetRes.Y };
 		qualityMode = quality;
@@ -75,7 +74,7 @@ namespace ZE::RHI::DX12
 
 	void XeSSInterface::FreeCtx(GFX::Device& dev) noexcept
 	{
-		ZE_ASSERT(IsInitialized(), "XeSS not initialized!");
+		ZE_ASSERT(IsCtxInitialized(), "XeSS Ctx not initialized!");
 
 		Destroy(false);
 	}
@@ -83,7 +82,7 @@ namespace ZE::RHI::DX12
 	Status XeSSInterface::Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,
 		RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, const Float2& jitter, bool reset) const noexcept
 	{
-		ZE_ASSERT(IsInitialized(), "XeSS not initialized!");
+		ZE_ASSERT(IsCtxInitialized(), "XeSS Ctx not initialized!");
 
 		Device& device = dev.Get().dx12;
 		Pipeline::FrameBuffer& frameBuff = buffers.Get().dx12;

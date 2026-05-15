@@ -29,6 +29,7 @@ namespace ZE::GFX
 		// Main Gfx Api
 
 		constexpr bool IsInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsInitialized); }
+		constexpr bool IsCtxInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsCtxInitialized); }
 		constexpr xess_context_handle_t GetCtx() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCtx); }
 		constexpr bool IsAliasableResourcesSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsAliasableResourcesSupported); }
 		constexpr U64 GetAliasableBufferRegionSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetAliasableBufferRegionSize); }
