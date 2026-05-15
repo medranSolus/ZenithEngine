@@ -31,8 +31,8 @@ namespace ZE
 		static constexpr const char* ENGINE_UUID = "5A656E69-7468-456E-6769-6E6553616669";
 		static constexpr const char* ENGINE_NAME = "ZenithEngine";
 		static constexpr const char* ENGINE_DISPLAY_NAME = "Zenith Engine";
-		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
-		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY_VERSION(_ZE_VERSION_MAJOR, _ZE_VERSION_MINOR, _ZE_VERSION_PATCH);
+		static constexpr U32 ENGINE_VERSION = Utils::MakeVersion(ZE_VERSION_MAJOR, ZE_VERSION_MINOR, ZE_VERSION_PATCH);
+		static constexpr const char* ENGINE_VERSION_STR = ZE_STRINGIFY_VERSION(ZE_VERSION_MAJOR, ZE_VERSION_MINOR, ZE_VERSION_PATCH);
 
 		// Have to be adjusted per-platform
 		static constexpr U8 MAX_RENDER_TARGETS = 8;
