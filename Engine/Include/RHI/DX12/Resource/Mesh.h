@@ -11,7 +11,6 @@ namespace ZE::RHI::DX12::Resource
 		D3D12_INDEX_BUFFER_VIEW indexView = {};
 		bool is16bitIndices = false;
 		ResourceInfo info = {};
-		Device* srcDev = nullptr;
 
 		constexpr bool IsIndexBufferPresent() const noexcept { return indexView.SizeInBytes != 0; }
 		constexpr U32 GetIndexSize() const noexcept { return is16bitIndices ? sizeof(U16) : sizeof(U32); }

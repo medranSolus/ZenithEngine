@@ -10,8 +10,8 @@ namespace ZE::RHI::DX12::Resource::Texture
 		Pack pack = {};
 		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
 		ZE_EXPECT_RET_FAILED(pack.descInfo, device.AllocDescs(pack.count));
+		GarbageCollector::Get().MarkActive(device, pack.descInfo.Handle);
 		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
-		pack.srcDev = &device;
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
@@ -141,8 +141,8 @@ namespace ZE::RHI::DX12::Resource::Texture
 		Pack pack = {};
 		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
 		ZE_EXPECT_RET_FAILED(pack.descInfo, device.AllocDescs(pack.count));
+		GarbageCollector::Get().MarkActive(device, pack.descInfo.Handle);
 		pack.resources = std::make_unique<ResourceInfo[]>(pack.count);
-		pack.srcDev = &device;
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
@@ -250,16 +250,17 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 	Pack::~Pack()
 	{
+		IDevice* dev = nullptr;
 		if (descInfo.Handle)
 		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDescs(descInfo);
+			dev = GarbageCollector::Get().MarkInactive(descInfo.Handle);
+			GarbageCollector::Get().Register(dev, std::move(descInfo));
 		}
 		if (resources)
 		{
 			for (U32 i = 0; i < count; ++i)
-				if (resources[i].Resource != nullptr)
-					srcDev->FreeTexture(resources[i]);
+				if (!resources[i].IsFree())
+					GarbageCollector::Get().RegisterTexture(dev, std::move(resources[i]));
 		}
 	}
 

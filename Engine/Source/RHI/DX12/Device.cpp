@@ -1,7 +1,7 @@
 #include "RHI/DX12/Device.h"
 #include "RHI/DX12/DREDRecovery.h"
+#include "RHI/DX12/GarbageCollector.h"
 #include "GFX/CommandList.h"
-#include "GFX/Error.h"
 
 namespace ZE::RHI::DX12
 {
@@ -119,6 +119,7 @@ namespace ZE::RHI::DX12
 	{
 		if (device)
 		{
+			GarbageCollector::Get().Flush(*this);
 			switch (Settings::GpuVendor)
 			{
 			case GFX::VendorGPU::AMD:
@@ -746,6 +747,11 @@ namespace ZE::RHI::DX12
 			block.buffer = nullptr;
 			block.heap = nullptr;
 		}
+	}
+
+	void Device::EndFrame() noexcept
+	{
+		GarbageCollector::Get().AdvanceFrame(*this);
 	}
 
 	D3D12_RESOURCE_DESC1 Device::GetBufferDesc(U64 size) const noexcept

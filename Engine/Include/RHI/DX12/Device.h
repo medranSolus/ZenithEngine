@@ -94,8 +94,6 @@ namespace ZE::RHI::DX12
 
 		static Expected<Device> Create(const Window::MainWindow& window, U32 descriptorCount) noexcept;
 
-		constexpr void EndFrame() noexcept {}
-
 		constexpr bool IsCoherentMemorySupported() const noexcept { return false; }
 		constexpr bool IsDedicatedAllocSupported() const noexcept { return true; }
 		constexpr bool IsBufferMarkersSupported() const noexcept { return false; }
@@ -151,6 +149,7 @@ namespace ZE::RHI::DX12
 
 		Expected<FfxBreadcrumbsBlockData> AllocBreadcrumbsBlock(U64 bytes) noexcept;
 		void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept;
+		void EndFrame() noexcept;
 
 		// Gfx API Internal
 

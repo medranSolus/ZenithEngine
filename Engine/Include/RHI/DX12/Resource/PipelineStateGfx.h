@@ -11,7 +11,7 @@ namespace ZE::RHI::DX12::Resource
 	public:
 		PipelineStateGfx() = default;
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() = default;
+		~PipelineStateGfx() { if (state) GarbageCollector::Get().Register(state); }
 
 		static Expected<PipelineStateGfx> Create(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding) noexcept;
 

@@ -1,4 +1,5 @@
 #include "RHI/DX12/ImGuiBackendData.h"
+#include "RHI/DX12/GarbageCollector.h"
 ZE_WARNING_PUSH
 #include "backends/imgui_impl_dx12.h"
 ZE_WARNING_POP
@@ -12,9 +13,8 @@ namespace ZE::RHI::DX12
 			ImGui_ImplDX12_Shutdown();
 			if (data->AllocatedDescs.size())
 			{
-				ZE_ASSERT(data->SrcDev, "No source Device for cleanup!");
 				for (auto& desc : data->AllocatedDescs)
-					data->SrcDev->FreeDescs(desc.second);
+					GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(desc.second.Handle), std::move(desc.second));
 			}
 		}
 	}
@@ -43,6 +43,7 @@ namespace ZE::RHI::DX12
 					dx12Data.AllocatedDescs.emplace(exp->CPU.ptr, *exp);
 					*out_cpu_desc_handle = exp->CPU;
 					*out_gpu_desc_handle = exp->GPU;
+					GarbageCollector::Get().MarkActive(*dx12Data.SrcDev, exp->Handle);
 				}
 				else
 				{
@@ -55,7 +56,7 @@ namespace ZE::RHI::DX12
 				auto it = dx12Data.AllocatedDescs.find(cpu_desc_handle.ptr);
 				if (it != dx12Data.AllocatedDescs.end())
 				{
-					dx12Data.SrcDev->FreeDescs(it->second);
+					GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(it->second.Handle), std::move(it->second));
 					dx12Data.AllocatedDescs.erase(it);
 				}
 				else

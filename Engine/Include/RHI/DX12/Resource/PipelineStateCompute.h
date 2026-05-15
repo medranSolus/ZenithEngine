@@ -10,7 +10,7 @@ namespace ZE::RHI::DX12::Resource
 	public:
 		PipelineStateCompute() = default;
 		ZE_CLASS_MOVE(PipelineStateCompute);
-		~PipelineStateCompute() = default;
+		~PipelineStateCompute() { if (state) GarbageCollector::Get().Register(state); }
 
 		static Expected<PipelineStateCompute> Create(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding) noexcept;
 

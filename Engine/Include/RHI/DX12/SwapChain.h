@@ -19,7 +19,6 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
 		std::unique_ptr<DescEntry[]> rtvSrv;
 		DescriptorInfo srvHandle = {};
-		Device* srcDev = nullptr;
 
 	public:
 		SwapChain() = default;

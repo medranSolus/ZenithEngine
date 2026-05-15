@@ -1,4 +1,5 @@
 #include "RHI/DX12/Resource/Mesh.h"
+#include "RHI/DX12/GarbageCollector.h"
 #include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX12::Resource
@@ -6,10 +7,7 @@ namespace ZE::RHI::DX12::Resource
 	Mesh::~Mesh()
 	{
 		if (info.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeBuffer(info);
-		}
+			GarbageCollector::Get().RegisterBuffer(GarbageCollector::Get().MarkInactive(info.Handle), std::move(info));
 	}
 
 	Expected<Mesh> Mesh::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshData& data) noexcept
@@ -17,7 +15,6 @@ namespace ZE::RHI::DX12::Resource
 		Device& device = dev.Get().dx12;
 
 		Mesh mesh = {};
-		mesh.srcDev = &device;
 		mesh.vertexView.SizeInBytes = data.VertexCount * data.VertexSize;
 		mesh.vertexView.StrideInBytes = data.VertexSize;
 
@@ -39,6 +36,8 @@ namespace ZE::RHI::DX12::Resource
 		const U32 vertexOffset = Math::AlignUp(mesh.indexView.SizeInBytes, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + mesh.vertexView.SizeInBytes);
 		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
+		GarbageCollector::Get().MarkActive(device, mesh.info.Handle);
+
 		mesh.indexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
 		mesh.vertexView.BufferLocation = mesh.indexView.BufferLocation + vertexOffset;
 		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer");
@@ -65,7 +64,6 @@ namespace ZE::RHI::DX12::Resource
 		Device& device = dev.Get().dx12;
 
 		Mesh mesh = {};
-		mesh.srcDev = &device;
 		mesh.vertexView.SizeInBytes = data.VertexCount * data.VertexSize;
 		mesh.vertexView.StrideInBytes = data.VertexSize;
 
@@ -78,6 +76,8 @@ namespace ZE::RHI::DX12::Resource
 
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
 		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
+		GarbageCollector::Get().MarkActive(device, mesh.info.Handle);
+
 		mesh.indexView.BufferLocation = mesh.vertexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer from file");
 

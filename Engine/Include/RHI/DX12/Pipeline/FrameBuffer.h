@@ -95,7 +95,6 @@ namespace ZE::RHI::DX12::Pipeline
 		DX::ComPtr<IHeap> bufferHeap;
 		DescriptorInfo descInfo = {};
 		DescriptorInfo descInfoCpu = {};
-		Device* srcDev = nullptr;
 
 #if !_ZE_MODE_RELEASE
 		static void PrintMemory(std::string&& memID, U32 levelCount, U64 heapSize,

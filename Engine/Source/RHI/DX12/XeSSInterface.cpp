@@ -15,10 +15,7 @@ namespace ZE::RHI::DX12
 			ZE_XESS_CHECK(xessDestroyContext(ctx), "Error destroying XeSS context!");
 		}
 		if (descInfo.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDescs(descInfo);
-		}
+			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
 
 		outputRes = {};
 		qualityMode = XESS_QUALITY_SETTING_AA;
@@ -69,8 +66,10 @@ namespace ZE::RHI::DX12
 		ZE_XESS_LOG_RET_FAILED(xessGetProperties(ctx, &outputRes, &props), "Error querity XeSS properties!");
 
 		ZE_EXPECT_RET_FAILED_CODE(descInfo, dev.Get().dx12.AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount()));
-		aliasBufferRegion = Utils::SafeCast<RID>(props.tempBufferHeapSize);
-		aliasTextureRegion = Utils::SafeCast<RID>(props.tempTextureHeapSize);
+		GarbageCollector::Get().MarkActive(dev.Get().dx12, descInfo.Handle);
+
+		aliasBufferRegionSize = props.tempBufferHeapSize;
+		aliasTextureRegionSize = props.tempTextureHeapSize;
 		return {};
 	}
 

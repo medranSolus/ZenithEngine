@@ -120,8 +120,17 @@ namespace ZE
 			Status stat = graphics.GetDevice().FlushGPU();
 			if (stat)
 			{
-				ZE_CODE_ERROR(stat, "Failed to flush GPU before shutdown!");
+				ZE_CODE_ERROR(stat, "Failed to flush GPU before shutdown, trying to wait for 2 seconds!");
+				try
+				{
+					std::this_thread::sleep_for(std::chrono::seconds(2));
+				}
+				catch (std::exception& e)
+				{
+					Logger::Error("Failed to wait for GPU flush during shutdown, GPU resources might not be properly released! Exception details: " + std::string(e.what()));
+				}
 			}
+			Settings::Data.clear();
 		}
 	}
 

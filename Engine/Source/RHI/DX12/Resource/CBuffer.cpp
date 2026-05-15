@@ -6,10 +6,7 @@ namespace ZE::RHI::DX12::Resource
 	CBuffer::~CBuffer()
 	{
 		if (resInfo.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeBuffer(resInfo);
-		}
+			GarbageCollector::Get().RegisterBuffer(GarbageCollector::Get().MarkInactive(resInfo.Handle), std::move(resInfo));
 	}
 
 	Expected<CBuffer> CBuffer::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::CBufferData& data) noexcept
@@ -19,9 +16,10 @@ namespace ZE::RHI::DX12::Resource
 		CBuffer buffer = {};
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.Bytes);
 		ZE_EXPECT_RET_FAILED(buffer.resInfo, device.CreateBuffer(desc, false));
+		GarbageCollector::Get().MarkActive(device, buffer.resInfo.Handle);
+
 		ZE_DX_SET_ID(buffer.resInfo.Resource, "CBuffer");
 		buffer.address = buffer.resInfo.Resource->GetGPUVirtualAddress();
-		buffer.srcDev = &device;
 
 		ZE_CODE_RET_FAILED_EXPECT(buffer.Update(dev, disk, data));
 		return buffer;
@@ -34,9 +32,10 @@ namespace ZE::RHI::DX12::Resource
 		CBuffer buffer = {};
 		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
 		ZE_EXPECT_RET_FAILED(buffer.resInfo, device.CreateBuffer(desc, false));
+		GarbageCollector::Get().MarkActive(device, buffer.resInfo.Handle);
+
 		ZE_DX_SET_ID(buffer.resInfo.Resource, "CBuffer from file");
 		buffer.address = buffer.resInfo.Resource->GetGPUVirtualAddress();
-		buffer.srcDev = &device;
 
 		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, buffer.resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
 		return buffer;

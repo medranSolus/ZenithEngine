@@ -9,6 +9,7 @@ namespace ZE::RHI::DX12::Resource
 		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
 		ResourceInfo resource = {};
 		ZE_EXPECT_RET_FAILED_CODE(resource, device.CreateBuffer(desc, true));
+		GarbageCollector::Get().MarkActive(device, resource.Handle);
 		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
 		const D3D12_RANGE range = {};
@@ -31,16 +32,12 @@ namespace ZE::RHI::DX12::Resource
 	DynamicCBuffer::~DynamicCBuffer()
 	{
 		for (auto& res : resInfo)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDynamicBuffer(res.first);
-		}
+			GarbageCollector::Get().RegisterDynamicBuffer(GarbageCollector::Get().MarkInactive(res.first.Handle), std::move(res.first));
 	}
 
 	Expected<DynamicCBuffer> DynamicCBuffer::Create(GFX::Device& dev) noexcept
 	{
 		DynamicCBuffer buffer = {};
-		buffer.srcDev = &dev.Get().dx12;
 		if (Status code = buffer.AllocBlock(dev))
 			return std::unexpected(code);
 		return buffer;
@@ -114,7 +111,7 @@ namespace ZE::RHI::DX12::Resource
 			if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
 			{
 				for (U64 i = currentBlock + 1; i < blockCount; ++i)
-					dev.Get().dx12.FreeDynamicBuffer(resInfo.at(i).first);
+					GarbageCollector::Get().RegisterDynamicBuffer(GarbageCollector::Get().MarkInactive(resInfo.at(i).first.Handle), std::move(resInfo.at(i).first));
 				resInfo.resize(currentBlock + 1);
 			}
 			currentBlock = 0;

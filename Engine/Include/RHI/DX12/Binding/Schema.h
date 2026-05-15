@@ -1,4 +1,5 @@
 #pragma once
+#include "RHI/DX12/GarbageCollector.h"
 #include "GFX/Binding/SchemaDesc.h"
 #include "GFX/CommandList.h"
 
@@ -18,7 +19,7 @@ namespace ZE::RHI::DX12::Binding
 	public:
 		Schema() = default;
 		ZE_CLASS_MOVE(Schema);
-		~Schema() = default;
+		~Schema() { if (signature) GarbageCollector::Get().Register(signature); }
 
 		static Expected<Schema> Create(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) noexcept;
 

@@ -1,5 +1,6 @@
 #include "RHI/DX12/SwapChain.h"
 #include "RHI/DX12/DREDRecovery.h"
+#include "RHI/DX12/GarbageCollector.h"
 
 namespace ZE::RHI::DX12
 {
@@ -9,7 +10,6 @@ namespace ZE::RHI::DX12
 		ZE_EXPECT_RET_FAILED(factory, DX::CreateFactory());
 
 		SwapChain swapChain = {};
-		swapChain.srcDev = &dev.Get().dx12;
 		ZE_EXPECT_RET_FAILED(swapChain.swapChain, DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), shaderInput, swapChain.presentFlags));
 
 		auto device = dev.Get().dx12.GetDevice();
@@ -27,6 +27,7 @@ namespace ZE::RHI::DX12
 		if (shaderInput)
 		{
 			ZE_EXPECT_RET_FAILED(swapChain.srvHandle, dev.Get().dx12.AllocDescs(descHeapDesc.NumDescriptors));
+			GarbageCollector::Get().MarkActive(dev.Get().dx12, swapChain.srvHandle.Handle);
 		}
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -69,10 +70,7 @@ namespace ZE::RHI::DX12
 	SwapChain::~SwapChain()
 	{
 		if (srvHandle.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDescs(srvHandle);
-		}
+			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(srvHandle.Handle), std::move(srvHandle));
 	}
 
 	Status SwapChain::Present(GFX::Device& dev) const noexcept

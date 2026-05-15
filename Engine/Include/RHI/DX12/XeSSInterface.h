@@ -18,7 +18,6 @@ namespace ZE::RHI::DX12
 		U64 aliasTextureRegionSize = 0;
 		RID aliasBufferRegion = INVALID_RID;
 		RID aliasTextureRegion = INVALID_RID;
-		Device* srcDev = nullptr;
 
 		void Destroy(bool destroyCtx = true) noexcept;
 		void MoveFrom(XeSSInterface&& xess) noexcept;

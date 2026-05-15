@@ -16,7 +16,6 @@ namespace ZE::RHI::DX12::Resource
 #if !_ZE_RENDER_GRAPH_SINGLE_THREAD
 		std::mutex allocLock;
 #endif
-		Device* srcDev = nullptr;
 
 		Status AllocBlock(GFX::Device& dev) noexcept;
 		Status MapBlock(GFX::Device& dev, U64 block) noexcept;

@@ -10,7 +10,6 @@ namespace ZE::RHI::DX12::Resource
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS address = 0;
 		ResourceInfo resInfo = {};
-		Device* srcDev = nullptr;
 
 	public:
 		CBuffer() = default;

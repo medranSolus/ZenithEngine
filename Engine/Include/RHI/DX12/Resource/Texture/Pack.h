@@ -16,7 +16,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 		U32 count = 0;
 		DescriptorInfo descInfo = {};
 		std::unique_ptr<ResourceInfo[]> resources;
-		Device* srcDev = nullptr;
 
 	public:
 		Pack() = default;

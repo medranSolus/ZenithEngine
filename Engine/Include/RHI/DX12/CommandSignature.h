@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Device.h"
 #include "GFX/IndirectCommandType.h"
+#include "GarbageCollector.h"
 
 namespace ZE::RHI::DX12
 {
@@ -11,7 +12,7 @@ namespace ZE::RHI::DX12
 	public:
 		CommandSignature() = default;
 		ZE_CLASS_MOVE(CommandSignature);
-		~CommandSignature() = default;
+		~CommandSignature() { if (signature) GarbageCollector::Get().Register(signature); }
 
 		static Expected<CommandSignature> Create(GFX::Device& dev, GFX::IndirectCommandType type) noexcept;
 

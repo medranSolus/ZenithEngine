@@ -308,7 +308,6 @@ namespace ZE::RHI::DX12::Pipeline
 		const U64 minimalChunkSize = tightAlignment ? D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT : D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
 		FrameBuffer frameBuffer;
-		frameBuffer.srcDev = &dev.Get().dx12;
 		frameBuffer.resourceCount = Utils::SafeCast<RID>(desc.Resources.size());
 		RID rtvCount = 0, rtvAdditionalMipsCount = 0;
 		RID dsvCount = 0, dsvAdditionalMipsCount = 0;
@@ -711,9 +710,11 @@ namespace ZE::RHI::DX12::Pipeline
 
 		const RID uavDescCount = uavCount + uavAdditionalMipsCount - memoryOnlyUavCount;
 		ZE_EXPECT_RET_FAILED(frameBuffer.descInfo, dev.Get().dx12.AllocDescs(srvCount + uavDescCount));
+		GarbageCollector::Get().MarkActive(dev.Get().dx12, frameBuffer.descInfo.Handle);
 		if (uavDescCount)
 		{
 			ZE_EXPECT_RET_FAILED(frameBuffer.descInfoCpu, dev.Get().dx12.AllocDescs(uavDescCount, false));
+			GarbageCollector::Get().MarkActive(dev.Get().dx12, frameBuffer.descInfoCpu.Handle);
 		}
 
 		const U32 rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -1168,15 +1169,9 @@ namespace ZE::RHI::DX12::Pipeline
 	FrameBuffer::~FrameBuffer()
 	{
 		if (descInfo.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDescs(descInfo);
-		}
+			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
 		if (descInfoCpu.Handle)
-		{
-			ZE_ASSERT(srcDev, "No source Device for cleanup!");
-			srcDev->FreeDescs(descInfoCpu);
-		}
+			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfoCpu.Handle), std::move(descInfoCpu));
 
 		if (resources)
 			resources.DeleteArray();
