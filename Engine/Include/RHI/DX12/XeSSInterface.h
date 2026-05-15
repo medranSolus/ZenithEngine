@@ -19,7 +19,7 @@ namespace ZE::RHI::DX12
 		RID aliasBufferRegion = INVALID_RID;
 		RID aliasTextureRegion = INVALID_RID;
 
-		void Destroy(bool destroyCtx = true) noexcept;
+		void Destroy() noexcept;
 		void MoveFrom(XeSSInterface&& xess) noexcept;
 
 	public:
@@ -40,7 +40,7 @@ namespace ZE::RHI::DX12
 		constexpr void SetAliasableResources(RID buffer, RID texture) noexcept { aliasBufferRegion = buffer; aliasTextureRegion = texture; }
 
 		Status InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept;
-		void FreeCtx(GFX::Device& dev) noexcept;
+		Status FreeCtx(GFX::Device& dev) noexcept;
 		Status Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,
 			RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, const Float2& jitter, bool reset) const noexcept;
 

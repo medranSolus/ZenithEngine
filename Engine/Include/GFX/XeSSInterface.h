@@ -37,7 +37,8 @@ namespace ZE::GFX
 		constexpr void SetAliasableResources(RID buffer, RID texture) noexcept { ZE_RHI_BACKEND_CALL(SetAliasableResources, buffer, texture); }
 
 		Status InitializeCtx(Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept { ZE_RHI_BACKEND_CALL_RET(InitializeCtx, dev, targetRes, quality, flags); }
-		constexpr void FreeCtx(Device& dev) noexcept { ZE_RHI_BACKEND_CALL(FreeCtx, dev); }
+		// May invalidate ctx handle but if ctx has been created it will be recreated if needed
+		Status FreeCtx(Device& dev) noexcept { ZE_RHI_BACKEND_CALL_RET(FreeCtx, dev); }
 
 		// Depth, exposure and responsive parameters are optional, when this buffers are not present then pass in INVALID_RID
 		Status Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl, RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, const Float2& jitter, bool reset) const noexcept { ZE_RHI_BACKEND_CALL_RET(Execute, dev, buffers, cl, color, motionVectors, depth, exposure, responsive, output, jitter, reset); }

@@ -8,11 +8,12 @@ ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
-	void XeSSInterface::Destroy(bool destroyCtx) noexcept
+	void XeSSInterface::Destroy() noexcept
 	{
-		if (ctx && destroyCtx)
+		if (ctx)
 		{
 			ZE_XESS_CHECK(xessDestroyContext(ctx), "Error destroying XeSS context!");
+			ctx = nullptr;
 		}
 		if (descInfo.Handle)
 			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
@@ -72,11 +73,14 @@ namespace ZE::RHI::DX12
 		return {};
 	}
 
-	void XeSSInterface::FreeCtx(GFX::Device& dev) noexcept
+	Status XeSSInterface::FreeCtx(GFX::Device& dev) noexcept
 	{
 		ZE_ASSERT(IsCtxInitialized(), "XeSS Ctx not initialized!");
 
-		Destroy(false);
+		Destroy();
+
+		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.Get().dx12.GetDevice(), &ctx), "Error recreating XeSS D3D12 context!");
+		return {};
 	}
 
 	Status XeSSInterface::Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,

@@ -119,7 +119,7 @@ namespace ZE::GFX::Error
 // Get XeSS error status code
 #define ZE_XESS_ERROR(code) ZE::GFX::Error::XeSS::Make(code)
 // Performs assert check on return value of XeSS call
-#define ZE_XESS_CHECK(call, info) do { [[maybe_unused]] xess_result_t __res = (call); ZE_ASSERT(__res < XESS_RESULT_SUCCESS, info); } while (false)
+#define ZE_XESS_CHECK(call, info) do { [[maybe_unused]] xess_result_t __res = (call); ZE_ASSERT(__res >= XESS_RESULT_SUCCESS, info); } while (false)
 // Return XeSS error if call failed and log error message
 #define ZE_XESS_LOG_RET_FAILED(call, info) do { xess_result_t __res = (call); if (__res < XESS_RESULT_SUCCESS) { Status __xessStatus = ZE_XESS_ERROR(__res); ZE_CODE_ERROR(__xessStatus, info); return __xessStatus; } } while (false)
 // Return XeSS error if call failed (wrapped in std::unexpected) and log error message
