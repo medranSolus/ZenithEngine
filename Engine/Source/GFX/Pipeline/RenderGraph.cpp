@@ -36,9 +36,9 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::UnloadConfig() noexcept
 	{
 		passExecData.Clear();
-		ffxInternalBuffers.Clear();
 		execGroupCount = 0;
 		passExecGroups = nullptr;
+		ffxInternalBuffers.Clear();
 	}
 
 	RenderGraph::~RenderGraph()

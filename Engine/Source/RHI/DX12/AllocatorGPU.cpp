@@ -102,24 +102,29 @@ namespace ZE::RHI::DX12
 	Expected<ResourceInfo> AllocatorGPU::Alloc(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,
 		D3D12_BARRIER_LAYOUT layout, U64 alignment, HeapAllocator& allocator) noexcept
 	{
+		ResourceInfo info = {};
 		if (bytes >= allocator.GetChunkSize())
 		{
-			DX::ComPtr<IResource> res;
-			ZE_EXPECT_RET_FAILED(res, CreateCommittedResource(dev, desc, layout, allocator.GetChunkCreationFlags()));
-			return ResourceInfo{ res, 0 };
+			ZE_EXPECT_RET_FAILED(info.Resource, CreateCommittedResource(dev, desc, layout, allocator.GetChunkCreationFlags()));
+			return info;
 		}
 
-		AllocHandle alloc = allocator.Alloc(bytes, alignment, &dev);
-		if (!alloc)
+		info.Handle = allocator.Alloc(bytes, alignment, &dev);
+		if (!info.Handle)
 		{
 			ZE_FAIL("Failed to allocate GPU memory!");
 			return std::unexpected(DX::Error::Make(DX::Error::ALLOC_ERROR));
 		}
 
-		DX::ComPtr<IResource> res;
-		ZE_EXPECT_RET_FAILED(res, CreateResource(dev, desc, layout, allocator.GetOffset(alloc),
-			allocator.GetMemory(alloc).Heap.Get(), allocator.GetChunkCreationFlags()));
-		return ResourceInfo{ res, alloc };
+		auto exp = CreateResource(dev, desc, layout, allocator.GetOffset(info.Handle),
+			allocator.GetMemory(info.Handle).Heap.Get(), allocator.GetChunkCreationFlags());
+		if (!exp)
+		{
+			allocator.Free(info.Handle, &dev);
+			return std::unexpected(exp.error());
+		}
+		info.Resource = std::move(*exp);
+		return info;
 	}
 
 	Expected<ResourceInfo> AllocatorGPU::AllocBigChunks(Device& dev, U64 bytes, const D3D12_RESOURCE_DESC1& desc,

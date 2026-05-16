@@ -31,6 +31,8 @@ namespace ZE::RHI::DX12::Resource
 
 	DynamicCBuffer::~DynamicCBuffer()
 	{
+		if (buffer)
+			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
 		for (auto& res : resInfo)
 			GarbageCollector::Get().RegisterDynamicBuffer(GarbageCollector::Get().MarkInactive(res.first.Handle), std::move(res.first));
 	}

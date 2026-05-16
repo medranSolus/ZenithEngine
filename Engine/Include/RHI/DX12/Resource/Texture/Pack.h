@@ -19,7 +19,9 @@ namespace ZE::RHI::DX12::Resource::Texture
 
 	public:
 		Pack() = default;
-		ZE_CLASS_MOVE(Pack);
+		ZE_CLASS_NO_COPY(Pack);
+		constexpr Pack(Pack&& pack) noexcept;
+		constexpr Pack& operator=(Pack&& pack) noexcept;
 		~Pack();
 
 		static Expected<Pack> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc) noexcept;
@@ -34,4 +36,19 @@ namespace ZE::RHI::DX12::Resource::Texture
 		IResource* GetResource(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return resources[index].Resource.Get(); }
 		DX::ComPtr<IResource> GetRes(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return resources[index].Resource; }
 	};
+
+#pragma region Functions
+	constexpr Pack::Pack(Pack&& pack) noexcept
+		: count(pack.count), descInfo(std::move(pack.descInfo)), resources(std::move(pack.resources))
+	{
+	}
+
+	constexpr Pack& Pack::operator=(Pack&& pack) noexcept
+	{
+		count = pack.count;
+		std::swap(descInfo, pack.descInfo);
+		std::swap(resources, pack.resources);
+		return *this;
+	}
+#pragma endregion
 }

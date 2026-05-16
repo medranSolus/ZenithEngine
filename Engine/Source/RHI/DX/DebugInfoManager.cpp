@@ -6,11 +6,11 @@ namespace ZE::RHI::DX
 	DebugInfoManager::~DebugInfoManager()
 	{
 		bool present = infoQueue != nullptr;
-		U32 refCount = infoQueue.Reset();
-		if (debug && refCount == 0)
+		infoQueue.Reset();
+		if (debug)
 			debug->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
 		debug.Reset();
-		if (dxgiDebugModule && present && refCount == 0)
+		if (dxgiDebugModule && present)
 			FreeLibrary(dxgiDebugModule);
 	}
 

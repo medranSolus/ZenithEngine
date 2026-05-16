@@ -19,7 +19,7 @@ namespace ZE
 		constexpr Ptr(Ptr&& p) noexcept : ptr(p.ptr) { p.ptr = nullptr; }
 		constexpr Ptr(const Ptr& p) noexcept : ptr(p.ptr) {}
 
-		constexpr Ptr& operator=(Ptr&& p) noexcept { ptr = p.ptr; p.ptr = nullptr; return *this; }
+		constexpr Ptr& operator=(Ptr&& p) noexcept { ptr = std::exchange(p.ptr, nullptr); return *this; }
 		constexpr Ptr& operator=(const Ptr& p) noexcept { ptr = p.ptr; return *this; }
 
 		~Ptr() = default;
@@ -64,7 +64,7 @@ namespace ZE
 		constexpr PtrVoid(PtrVoid&& p) noexcept : ptr(p.ptr) { p.ptr = nullptr; }
 		constexpr PtrVoid(const PtrVoid& p) noexcept : ptr(p.ptr) {}
 
-		constexpr PtrVoid& operator=(PtrVoid&& p) noexcept { ptr = p.ptr; p.ptr = nullptr; return *this; }
+		constexpr PtrVoid& operator=(PtrVoid&& p) noexcept { ptr = std::exchange(p.ptr, nullptr); return *this; }
 		constexpr PtrVoid& operator=(const PtrVoid& p) noexcept { ptr = p.ptr; return *this; }
 
 		~PtrVoid() = default;

@@ -81,12 +81,12 @@ namespace ZE::RHI::DX12::Pipeline
 		mutable bool isRasterActive = false;
 #endif
 		RID resourceCount = 0;
-		Ptr<BufferData> resources;
-		Ptr<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDsvHandles;
-		Ptr<Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>> rtvDsvMips; // No backbuffer
-		Ptr<HandleSRV> srvHandles;
-		Ptr<HandleUAV> uavHandles; // No backbuffer
-		Ptr<Ptr<HandleUAV>> uavMips; // No backbuffer
+		std::unique_ptr<BufferData[]> resources;
+		std::unique_ptr<D3D12_CPU_DESCRIPTOR_HANDLE[]> rtvDsvHandles;
+		std::unique_ptr<std::unique_ptr<D3D12_CPU_DESCRIPTOR_HANDLE[]>[]> rtvDsvMips; // No backbuffer
+		std::unique_ptr<HandleSRV[]> srvHandles;
+		std::unique_ptr<HandleUAV[]> uavHandles; // No backbuffer
+		std::unique_ptr<std::unique_ptr<HandleUAV[]>[]> uavMips; // No backbuffer
 
 		DX::ComPtr<IDescriptorHeap> rtvDescHeap;
 		DX::ComPtr<IDescriptorHeap> dsvDescHeap;
@@ -233,7 +233,7 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(RTVCount, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(RTVCount, scissorRects);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, adjacent, rtvDsvHandles + dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(RTVCount, handles, adjacent, rtvDsvHandles.get() + dsv);
 	}
 
 	template<U32 BarrierCount>

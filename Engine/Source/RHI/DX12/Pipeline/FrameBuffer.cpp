@@ -634,7 +634,7 @@ namespace ZE::RHI::DX12::Pipeline
 			});
 
 		// Create all resources and fill their info
-		frameBuffer.resources = new BufferData[frameBuffer.resourceCount];
+		frameBuffer.resources = std::make_unique_for_overwrite<BufferData[]>(frameBuffer.resourceCount);
 		frameBuffer.resources[BACKBUFFER_RID].Resource = nullptr;
 		frameBuffer.resources[BACKBUFFER_RID].Size = desc.Resources.front().GetResolutionAdjustedSizes();
 		frameBuffer.resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
@@ -700,13 +700,13 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_DX_RET_FAILED_EXPECT(device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&frameBuffer.dsvDescHeap)));
 
 		// Prepare descriptors creation
-		frameBuffer.rtvDsvHandles = new D3D12_CPU_DESCRIPTOR_HANDLE[frameBuffer.resourceCount];
-		frameBuffer.srvHandles = new HandleSRV[frameBuffer.resourceCount];
-		frameBuffer.uavHandles = new HandleUAV[frameBuffer.resourceCount - 1];
+		frameBuffer.rtvDsvHandles = std::make_unique_for_overwrite<D3D12_CPU_DESCRIPTOR_HANDLE[]>(frameBuffer.resourceCount);
+		frameBuffer.srvHandles = std::make_unique_for_overwrite<HandleSRV[]>(frameBuffer.resourceCount);
+		frameBuffer.uavHandles = std::make_unique_for_overwrite<HandleUAV[]>(frameBuffer.resourceCount - 1);
 		if (rtvAdditionalMipsCount + dsvAdditionalMipsCount)
-			frameBuffer.rtvDsvMips = new Ptr<D3D12_CPU_DESCRIPTOR_HANDLE>[frameBuffer.resourceCount - 1];
+			frameBuffer.rtvDsvMips = std::make_unique<std::unique_ptr<D3D12_CPU_DESCRIPTOR_HANDLE[]>[]>(frameBuffer.resourceCount - 1);
 		if (uavAdditionalMipsCount)
-			frameBuffer.uavMips = new Ptr<HandleUAV>[frameBuffer.resourceCount - 1];
+			frameBuffer.uavMips = std::make_unique<std::unique_ptr<HandleUAV[]>[]>(frameBuffer.resourceCount - 1);
 
 		const RID uavDescCount = uavCount + uavAdditionalMipsCount - memoryOnlyUavCount;
 		ZE_EXPECT_RET_FAILED(frameBuffer.descInfo, dev.Get().dx12.AllocDescs(srvCount + uavDescCount));
@@ -799,7 +799,7 @@ namespace ZE::RHI::DX12::Pipeline
 					if (res.Desc.MipLevels > 1)
 					{
 						auto& targetResourceMip = frameBuffer.rtvDsvMips[res.Handle - 1];
-						targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
+						targetResourceMip = std::make_unique_for_overwrite<D3D12_CPU_DESCRIPTOR_HANDLE[]>(res.Desc.MipLevels);
 						targetResourceMip[0] = frameBuffer.rtvDsvHandles[res.Handle];
 						for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 						{
@@ -880,7 +880,7 @@ namespace ZE::RHI::DX12::Pipeline
 					if (res.Desc.MipLevels > 1)
 					{
 						auto& targetResourceMip = frameBuffer.rtvDsvMips[res.Handle - 1];
-						targetResourceMip = new D3D12_CPU_DESCRIPTOR_HANDLE[res.Desc.MipLevels];
+						targetResourceMip = std::make_unique_for_overwrite<D3D12_CPU_DESCRIPTOR_HANDLE[]>(res.Desc.MipLevels);
 						targetResourceMip[0] = frameBuffer.rtvDsvHandles[res.Handle];
 						for (U16 i = 1; i < res.Desc.MipLevels; ++i)
 						{
@@ -1087,7 +1087,7 @@ namespace ZE::RHI::DX12::Pipeline
 					if (res.Desc.MipLevels > 1)
 					{
 						auto& targetResourceMip = frameBuffer.uavMips[res.Handle - 1];
-						targetResourceMip = new HandleUAV[res.Desc.MipLevels];
+						targetResourceMip = std::make_unique_for_overwrite<HandleUAV[]>(res.Desc.MipLevels);
 						targetResourceMip[0] = frameBuffer.uavHandles[res.Handle - 1];
 
 						D3D12_CPU_DESCRIPTOR_HANDLE dstStart = srvUavShaderVisibleHandle;
@@ -1172,29 +1172,6 @@ namespace ZE::RHI::DX12::Pipeline
 			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
 		if (descInfoCpu.Handle)
 			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfoCpu.Handle), std::move(descInfoCpu));
-
-		if (resources)
-			resources.DeleteArray();
-		if (rtvDsvHandles)
-			rtvDsvHandles.DeleteArray();
-		if (srvHandles)
-			srvHandles.DeleteArray();
-		if (uavHandles)
-			uavHandles.DeleteArray();
-		if (rtvDsvMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (rtvDsvMips[i])
-					rtvDsvMips[i].DeleteArray();
-			rtvDsvMips.DeleteArray();
-		}
-		if (uavMips)
-		{
-			for (RID i = 0; i < resourceCount - 1; ++i)
-				if (uavMips[i])
-					uavMips[i].DeleteArray();
-			uavMips.DeleteArray();
-		}
 	}
 
 	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, U8 count) const noexcept
@@ -1253,7 +1230,7 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 		cl.Get().dx12.GetList()->RSSetViewports(count, vieports);
 		cl.Get().dx12.GetList()->RSSetScissorRects(count, scissorRects);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(count, handles, false, rtvDsvHandles + dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(count, handles, false, rtvDsvHandles.get() + dsv);
 	}
 
 	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv) const noexcept
@@ -1264,7 +1241,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, dsv);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvHandles + dsv);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvHandles.get() + dsv);
 	}
 
 	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
@@ -1277,7 +1254,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, rtv);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvHandles + rtv, true, dsv != INVALID_RID ? rtvDsvHandles + dsv : nullptr);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvHandles.get() + rtv, true, dsv != INVALID_RID ? rtvDsvHandles.get() + dsv : nullptr);
 	}
 
 	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept
@@ -1291,7 +1268,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, dsv);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvMips[dsv - 1] + mipLevel);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(0, nullptr, true, rtvDsvMips[dsv - 1].get() + mipLevel);
 	}
 
 	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept
@@ -1309,7 +1286,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, rtv);
-		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rtv - 1] + mipLevel, true, dsv != INVALID_RID ? rtvDsvMips[dsv - 1] + mipLevel : nullptr);
+		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rtv - 1].get() + mipLevel, true, dsv != INVALID_RID ? rtvDsvMips[dsv - 1].get() + mipLevel : nullptr);
 	}
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept

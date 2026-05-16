@@ -22,7 +22,9 @@ namespace ZE::RHI::DX12::Resource
 
 	public:
 		DynamicCBuffer() = default;
-		ZE_CLASS_MOVE(DynamicCBuffer);
+		ZE_CLASS_NO_COPY(DynamicCBuffer);
+		constexpr DynamicCBuffer(DynamicCBuffer&& buff) noexcept;
+		constexpr DynamicCBuffer& operator=(DynamicCBuffer&& buff) noexcept;
 		~DynamicCBuffer();
 
 		static Expected<DynamicCBuffer> Create(GFX::Device& dev) noexcept;
@@ -31,4 +33,21 @@ namespace ZE::RHI::DX12::Resource
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept;
 		Status StartFrame(GFX::Device& dev) noexcept;
 	};
+
+#pragma region Functions
+	constexpr DynamicCBuffer::DynamicCBuffer(DynamicCBuffer&& buff) noexcept
+		: resInfo(std::move(buff.resInfo)), buffer(std::move(buff.buffer)),
+		nextOffset(buff.nextOffset), currentBlock(buff.currentBlock)
+	{
+	}
+
+	constexpr DynamicCBuffer& DynamicCBuffer::operator=(DynamicCBuffer&& buff) noexcept
+	{
+		std::swap(resInfo, buff.resInfo);
+		std::swap(buffer, buff.buffer);
+		nextOffset = buff.nextOffset;
+		currentBlock = buff.currentBlock;
+		return *this;
+	}
+#pragma endregion
 }

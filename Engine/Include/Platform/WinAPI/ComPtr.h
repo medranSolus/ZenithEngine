@@ -47,14 +47,14 @@ namespace ZE::Platform::WinAPI
 		constexpr ComPtr& operator=(const ComPtr<U>& other) noexcept { if (ptr != other.Get()) { ReleaseRef(); ptr = other.Get(); AddRef(); } return *this; }
 
 		// Move assignment
-		constexpr ComPtr& operator=(ComPtr&& other) noexcept { std::swap(ptr, other.ptr); return *this; }
+		constexpr ComPtr& operator=(ComPtr&& other) noexcept { T* p = other.Detach(); other.Attach(ptr); ptr = p; return *this; }
 		template<std::derived_from<IUnknown> U> requires std::convertible_to<U*, T*>
-		constexpr ComPtr& operator=(ComPtr<U>&& other) noexcept { std::swap(ptr, other.ptr); return *this; }
+		constexpr ComPtr& operator=(ComPtr<U>&& other) noexcept { U* p = other.Detach(); other.Attach(ptr); ptr = p; return *this; }
 
 		constexpr operator bool() const noexcept { return ptr != nullptr; }
 		constexpr T* operator->() const noexcept { return ptr; }
 		// For receiving out parameters - release current pointer first
-		constexpr T** operator&() noexcept { ReleaseRef(); return &ptr; }
+		constexpr T** operator&() noexcept { ReleaseRef(); ptr = nullptr; return &ptr; }
 
 		constexpr bool operator==(const void* other) const noexcept { return ptr == other; }
 		constexpr bool operator!=(const void* other) const noexcept { return ptr != other; }
@@ -63,7 +63,7 @@ namespace ZE::Platform::WinAPI
 		constexpr T** GetAddressOf() noexcept { return &ptr; }
 		constexpr T* const* GetAddressOf() const noexcept { return &ptr; }
 
-		constexpr void Attach(T* other) noexcept { ZE_ASSERT(other != ptr, "Cannot attach same object!"); ReleaseRef(); ptr = other; }
+		constexpr void Attach(T* other) noexcept { ReleaseRef(); ptr = other; }
 		constexpr T* Detach() noexcept { T* p = ptr; ptr = nullptr; return p; }
 		constexpr U32 Reset() noexcept { U32 refCount = ReleaseRef(); ptr = nullptr; return refCount; }
 
