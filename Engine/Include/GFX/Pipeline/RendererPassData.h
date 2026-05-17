@@ -31,6 +31,8 @@ namespace ZE::GFX::Pipeline
 		std::vector<Resource::SamplerDesc> Samplers;
 		// Allows for caching same shader blobs between passes to speed up data loading
 		std::unordered_map<std::string, Resource::Shader> ShaderCache;
+		// Information whether there will be update to the framebuffer resources during this graph update run
+		bool FrameBufferUpdatePending = false;
 	};
 
 	// Base structure for data created in render pass initialization and used in execution, can be extended with custom data for each pass

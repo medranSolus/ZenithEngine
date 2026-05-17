@@ -54,7 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::Fsr2, passData.Quality);
-		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
+		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize || buildData.FrameBufferUpdatePending)
 		{
 			if (passData.Initialized)
 			{
@@ -75,7 +75,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 			passData.Initialized = true;
 
 			Settings::RenderSize = renderSize;
-			return UpdateOperation::FrameBufferImpact;
+			return buildData.FrameBufferUpdatePending ? UpdateOperation::InternalOnly : UpdateOperation::FrameBufferImpact;
 		}
 		return UpdateOperation::NoUpdate;
 	}

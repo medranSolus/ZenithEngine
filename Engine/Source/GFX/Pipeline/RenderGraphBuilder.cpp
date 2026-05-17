@@ -2288,6 +2288,7 @@ namespace ZE::GFX::Pipeline
 			}
 		}
 
+		buildData.FrameBufferUpdatePending = framebufferUpdate || graph.ffxBuffersChanged;
 		std::pair<bool, bool> cascadeResult = { false, false };
 		ZE_EXPECT_RET_FAILED_CODE(cascadeResult, CascadePassUpdate(dev, graph, buildData, signalUploadWait, cascadeUpdate || graph.ffxBuffersChanged));
 		framebufferUpdate |= cascadeResult.first;

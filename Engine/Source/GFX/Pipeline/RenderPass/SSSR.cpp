@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		if (passData.RenderSize != Settings::RenderSize)
+		if (passData.RenderSize != Settings::RenderSize || buildData.FrameBufferUpdatePending)
 		{
 			passData.RenderSize = Settings::RenderSize;
 
