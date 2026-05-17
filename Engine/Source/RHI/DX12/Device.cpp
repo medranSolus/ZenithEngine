@@ -264,7 +264,8 @@ namespace ZE::RHI::DX12
 				break;
 			}
 		}
-		ZE_DX_RET_FAILED_EXPECT(hr);
+		ZE_DX_RET_FAILED_NO_DEBUG_EXPECT(hr);
+		ZE_DX_CHECK_DEBUG_INFO(hr); // Suppress any debug info generated during device creation, ex. for GBV
 
 		D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
 		ZE_DX_RET_FAILED_EXPECT(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12)));
