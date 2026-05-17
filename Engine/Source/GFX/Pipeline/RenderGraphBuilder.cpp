@@ -837,6 +837,7 @@ namespace ZE::GFX::Pipeline
 		{
 			if (node.GetDesc().Init)
 			{
+				passExecData = nullptr;
 				ZE_EXPECT_RET_FAILED(passExecData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData));
 				graph.passExecData.Add(passId, passExecData);
 				if (passExecData)
@@ -855,6 +856,7 @@ namespace ZE::GFX::Pipeline
 			{
 				if (node.GetDesc().Init)
 				{
+					passExecData = nullptr;
 					ZE_EXPECT_RET_FAILED(execData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData));
 					if (execData)
 						gpuUploadRequired |= node.IsInitDataGpuUploadRequired();
