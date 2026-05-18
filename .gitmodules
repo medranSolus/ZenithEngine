@@ -77,3 +77,6 @@
 [submodule "External/AudioFile"]
 	path = External/AudioFile
 	url = https://github.com/adamstark/AudioFile.git
+[submodule "External/HBAOPlus"]
+	path = External/HBAOPlus
+	url = https://github.com/NVIDIAGameWorks/HBAOPlus

@@ -39,6 +39,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [FreeType](https://gitlab.freedesktop.org/freetype/freetype) - [FREETYPE LICENSES](Doc/License/ThirdParty/FreeType.txt)
  - [FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) - [MIT License](Doc/License/ThirdParty/FidelityFXSDK.md)
  - [HarfBuzz](https://github.com/harfbuzz/harfbuzz) - [Old MIT license](Doc/License/ThirdParty/HarfBuzz.txt)
+ - [HBAO+](https://github.com/NVIDIAGameWorks/HBAOPlus) - [Nvidia Source Code License (1-Way Commercial)](Doc/License/ThirdParty/HBAO.txt)
  - [libpng](https://github.com/glennrp/libpng) - [PNG Reference Library License](Doc/License/ThirdParty/libpng.txt)
  - [libspng](https://github.com/randy408/libspng) - [BSD 2-Clause License](Doc/License/ThirdParty/libspng.txt)
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
