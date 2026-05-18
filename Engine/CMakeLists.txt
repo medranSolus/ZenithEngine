@@ -67,6 +67,12 @@ if(${ZE_DLSS_ENABLED})
         copy_runtime_data(ENGINE_DLSS "${DLSS_DIR}/lib/Linux_x86_64/${DLSS_LOCATION}" "libnvidia-ngx-dlss.so" "" "")
 	endif()
 endif()
+if(${ZE_ENABLE_DX11})
+    copy_runtime_data(ENGINE_HBAO_DX11 "${HBAO_DIR}/lib" "${HBAO_DX11_LIB}.dll" "" "")
+endif()
+if(${ZE_ENABLE_DX12})
+    copy_runtime_data(ENGINE_HBAO_DX12 "${HBAO_DIR}/lib" "${HBAO_DX12_LIB}.dll" "" "")
+endif()
 
 # Target files
 set(SRC_DIR "${ENGINE_DIR}/Source")
@@ -154,6 +160,8 @@ add_dependencies(${ENGINE_TARGET}
     ${ENGINE_AGILITY_SYMBOLS_COPY_TARGET}
     ${ENGINE_AGS_COPY_TARGET}
     ${ENGINE_DLSS_COPY_TARGET}
+    ${ENGINE_HBAO_DX11_COPY_TARGET}
+    ${ENGINE_HBAO_DX12_COPY_TARGET}
     ${ENGINE_DSTORE_COPY_TARGET}
     ${ENGINE_FFX_API_DX12_LOADER_COPY_TARGET}
     ${ENGINE_FFX_API_DX12_UPSCALE_COPY_TARGET}

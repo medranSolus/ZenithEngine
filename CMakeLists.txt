@@ -113,6 +113,7 @@ set(FFX_API_DLL_DIR "${FFX_API_DIR}/signedbin")
 set(FFXSDK_DIR "${EXTERNAL_DIR}/FidelityFXSDK_Legacy/sdk")
 set(FLAC_DIR "${EXTERNAL_DIR}/flac")
 set(HARFBUZZ_DIR "${EXTERNAL_DIR}/HarfBuzz")
+set(HBAO_DIR "${EXTERNAL_DIR}/HBAOPlus")
 set(IMGUI_DIR "${EXTERNAL_DIR}/ImGui")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
@@ -157,6 +158,7 @@ set(FFX_API_RADCACHE_INC_DIR "${FFX_API_DIR}/radiancecache/include")
 set(FFXSDK_INC_DIR "${FFXSDK_DIR}/include")
 set(FLAC_INC_DIR "${FLAC_DIR}/include")
 set(HARFBUZZ_INC_DIR "${HARFBUZZ_DIR}/src")
+set(HBAO_INC_DIR "${HBAO_DIR}/include")
 set(IMGUI_INC_DIR "${IMGUI_DIR}")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
@@ -233,6 +235,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${FFXSDK_INC_DIR}"
 	"${FLAC_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
+	"${HBAO_INC_DIR}"
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
 	"${LIBSPNG_INC_DIR}"
@@ -279,6 +282,8 @@ set(ENTT_LIB "EnTT::EnTT")
 set(FTYPE_LIB "freetype")
 set(FLAC_LIB "FLAC")
 set(HARFBUZZ_LIB "harfbuzz")
+set(HBAO_DX11_LIB "GFSDK_SSAO_D3D11.win64")
+set(HBAO_DX12_LIB "GFSDK_SSAO_D3D12.win64")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(NGX_LIB "nvsdk_ngx")
@@ -310,6 +315,13 @@ set(ENTT_TARGET "${ENTT_LIB}")
 set(FTYPE_TARGET "${FTYPE_LIB}")
 set(FLAC_TARGET "${FLAC_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
+if(${ZE_ENABLE_DX11})
+	set(HBAO_DX11_TARGET "${HBAO_DIR}/lib/${HBAO_DX11_LIB}.lib")
+endif()
+if(${ZE_ENABLE_DX12})
+	set(HBAO_DX12_TARGET "${HBAO_DIR}/lib/${HBAO_DX12_LIB}.lib")
+endif()
+set(HBAO_TARGETS "${HBAO_DX11_TARGET}" "${HBAO_DX12_TARGET}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
 set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
 if(${ZE_NGX_ENABLED})
@@ -378,6 +390,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${FTYPE_TARGET}
 	${FLAC_TARGET}
 	${HARFBUZZ_TARGET}
+	${HBAO_TARGETS}
 	${LIBPNG_TARGET}
 	${LIBSPNG_TARGET}
 	${NGX_TARGET}
