@@ -2250,6 +2250,8 @@ namespace ZE::GFX::Pipeline
 										bool update = false;
 										ZE_EXPECT_RET_FAILED_CODE(update, SetupPassData(dev, graph, buildData, signalUploadWait, pass, i, passInfo.Data.ExecData));
 										cascadeUpdate |= update;
+										// If some pass requires to force framebuffer reload
+										framebufferUpdate |= buildData.FrameBufferUpdatePending;
 
 										if (resourcesUpdate)
 											passInfo.Data.Resources = GetNodeResources(i);

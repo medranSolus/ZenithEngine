@@ -95,6 +95,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		if (!operation)
 			return std::unexpected(operation.error());
 		FlushGPU(&dev);
+		// Force update for framebuffer even if not signaled from render graph
+		// since due to internals requiring memory from framebuffer
+		buildData.FrameBufferUpdatePending |= xess->IsAliasableResourcesSupported();
 		return passData;
 	}
 
