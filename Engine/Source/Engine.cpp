@@ -231,7 +231,7 @@ namespace ZE
 
 				if (ImGui::CollapsingHeader("Effects"))
 				{
-					constexpr std::array<const char*, 3> AO_LEVELS = { "No AO", "XeGTAO", "CACAO" };
+					constexpr std::array<const char*, 4> AO_LEVELS = { "No AO", "XeGTAO", "CACAO", "HBAO+" };
 					if (ImGui::BeginCombo("Ambient Occlusion", AO_LEVELS.at(static_cast<U8>(Settings::AmbientOcclusionType))))
 					{
 						for (GFX::AOType i = GFX::AOType::None; const char* level : AO_LEVELS)

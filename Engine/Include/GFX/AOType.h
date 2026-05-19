@@ -7,6 +7,7 @@ namespace ZE::GFX
 	{
 		None,
 		XeGTAO,
-		CACAO
+		CACAO,
+		HBAO
 	};
 }

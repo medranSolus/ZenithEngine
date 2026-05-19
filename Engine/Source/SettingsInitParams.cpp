@@ -16,6 +16,7 @@ namespace ZE
 		parser.AddOption("dlss");
 		parser.AddOption("xegtao");
 		parser.AddOption("cacao");
+		parser.AddOption("hbao");
 		parser.AddOption("ibl");
 		parser.AddOption("sssr");
 
@@ -93,6 +94,8 @@ namespace ZE
 			params.AmbientOcclusion = GFX::AOType::XeGTAO;
 		else if (parser.GetOption("cacao"))
 			params.AmbientOcclusion = GFX::AOType::CACAO;
+		else if (parser.GetOption("hbao"))
+			params.AmbientOcclusion = GFX::AOType::HBAO;
 		else
 			params.AmbientOcclusion = GFX::AOType::None;
 

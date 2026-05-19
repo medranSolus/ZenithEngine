@@ -65,6 +65,7 @@ namespace ZE::GFX::Pipeline
 		PointLight,
 
 		CACAO,
+		HBAO,
 		XeGTAO,
 		SSSR,
 
