@@ -23,7 +23,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat formatUI, PixelFormat formatRT) noexcept
 	{
 		auto passData = std::make_shared<ExecuteData>();
-		ZE_EXPECT_RET_FAILED(passData->GuiData, ImGuiBackendData::Create(dev, formatUI));
+		ZE_EXPECT_RET_FAILED(passData->GuiData, External::ImGuiBackendData::Create(dev, formatUI));
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // UI

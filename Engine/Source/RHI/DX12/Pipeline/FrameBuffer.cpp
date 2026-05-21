@@ -1,5 +1,5 @@
 #include "RHI/DX12/Pipeline/FrameBuffer.h"
-#include "GFX/ExternalInterface.h"
+#include "GFX/External/InterfaceStorage.h"
 
 namespace ZE::RHI::DX12::Pipeline
 {
@@ -1136,7 +1136,7 @@ namespace ZE::RHI::DX12::Pipeline
 		}
 
 		// Finish XeSS initialization with correct regions
-		GFX::XeSSInterface* xess = GFX::ExternalInterface::GetConnectionXeSS();
+		auto xess = GFX::External::InterfaceStorage::GetConnectionXeSS();
 		if (xess && xess->IsAliasableResourcesSupported())
 		{
 			IHeap* tempBuffHeap = nullptr;
@@ -1595,7 +1595,7 @@ namespace ZE::RHI::DX12::Pipeline
 			else
 				resDesc.description.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
 
-			resDesc.description.format = GFX::GetFfxApiFormat(GetFormat(rid));
+			resDesc.description.format = GFX::External::GetFfxApiFormat(GetFormat(rid));
 			UInt2 sizes = GetDimmensions(rid);
 			if (resDesc.description.type == FFX_API_RESOURCE_TYPE_BUFFER)
 			{

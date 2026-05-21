@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/ImGuiBackendData.h"
+#include "GFX/External/ImGuiBackendData.h"
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 
@@ -13,7 +13,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DearImGui
 
 	struct ExecuteData final : public PassExecuteData
 	{
-		ImGuiBackendData GuiData;
+		External::ImGuiBackendData GuiData;
 		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 

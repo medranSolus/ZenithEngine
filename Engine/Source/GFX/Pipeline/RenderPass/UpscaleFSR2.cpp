@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/UpscaleFSR2.h"
-#include "GFX/Error.h"
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/Error.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "Data/Camera.h"
 #include "GUI/DearImGui.h"
 
@@ -100,14 +100,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale FSR2", Pixel(0xB2, 0x22, 0x22));
 
 		FfxFsr2DispatchDescription desc = {};
-		desc.commandList = FFX::GetCommandList(cl);
-		desc.color = FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.depth = FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.motionVectors = FFX::GetResource(renderData.Buffers, ids.MotionVectors, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.commandList = External::FFX::GetCommandList(cl);
+		desc.color = External::FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.depth = External::FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.motionVectors = External::FFX::GetResource(renderData.Buffers, ids.MotionVectors, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.exposure.resource = nullptr;
-		desc.reactive = FFX::GetResource(renderData.Buffers, ids.ReactiveMask, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.reactive = External::FFX::GetResource(renderData.Buffers, ids.ReactiveMask, FFX_RESOURCE_STATE_COMPUTE_READ);
 		desc.transparencyAndComposition.resource = nullptr; // Alpha value for special surfaces (reflections, animated textures, etc.), add when needed
-		desc.output = FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		desc.output = External::FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		desc.jitterOffset.x = Data::GetUnitPixelJitterX(renderData.DynamicData.JitterCurrent.x, Settings::RenderSize.X);
 		desc.jitterOffset.y = Data::GetUnitPixelJitterY(renderData.DynamicData.JitterCurrent.y, Settings::RenderSize.Y);
 		desc.motionVectorScale.x = -Utils::SafeCast<float>(inputSize.X);

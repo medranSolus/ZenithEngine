@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "GFX/Graphics.h"
 #include "RenderGraphBuilder.h"
 
@@ -127,7 +127,7 @@ namespace ZE::GFX::Pipeline
 		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
 		Data::Library<U32, std::shared_ptr<PassExecuteData>> passExecData;
 		FfxInterface ffxInterface = {};
-		Data::Library<S32, FFX::InternalResourceDescription> ffxInternalBuffers;
+		Data::Library<S32, External::FFX::InternalResourceDescription> ffxInternalBuffers;
 		bool ffxBuffersChanged = false;
 		GraphFinalizeFlags finalizationFlags = 0;
 

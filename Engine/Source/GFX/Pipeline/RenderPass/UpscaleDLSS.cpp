@@ -1,12 +1,12 @@
 #include "GFX/pipeline/RenderPass/UpscaleDLSS.h"
-#include "GFX/ExternalInterface.h"
+#include "GFX/External/InterfaceStorage.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 {
 	ExecuteData::~ExecuteData()
 	{
-		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		auto ngx = External::InterfaceStorage::GetConnectionNGX();
 		if (ngx)
 		{
 			if (DlssHandle)
@@ -16,7 +16,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 			}
 			if (NgxParam)
 				ngx->FreeParameter(NgxParam);
-			ExternalInterface::ReleaseConnectionNGX();
+			External::InterfaceStorage::ReleaseConnectionNGX();
 		}
 	}
 
@@ -43,7 +43,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		auto ngx = External::InterfaceStorage::GetConnectionNGX();
 		if (!ngx)
 			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized));
 
@@ -71,7 +71,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		NgxInterface* ngx = ExternalInterface::CreateConnectionNGX(dev);
+		auto ngx = External::InterfaceStorage::CreateConnectionNGX(dev);
 		if (!ngx)
 			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_Fail));
 
@@ -128,7 +128,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		NgxInterface* ngx = ExternalInterface::GetConnectionNGX();
+		auto ngx = External::InterfaceStorage::GetConnectionNGX();
 		if (!ngx)
 			return std::unexpected(ZE_NGX_ERROR(NVSDK_NGX_Result_FAIL_NotInitialized));
 

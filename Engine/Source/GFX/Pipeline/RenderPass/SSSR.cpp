@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/SSSR.h"
-#include "GFX/Error.h"
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/Error.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SSSR
@@ -50,7 +50,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 			sssrDesc.flags = FFX_SSSR_ENABLE_DEPTH_INVERTED;
 			sssrDesc.renderSize.width = passData.RenderSize.X;
 			sssrDesc.renderSize.height = passData.RenderSize.Y;
-			sssrDesc.normalsHistoryBufferFormat = FFX::GetSurfaceFormat(PixelFormat::R16G16_Float);
+			sssrDesc.normalsHistoryBufferFormat = External::FFX::GetSurfaceFormat(PixelFormat::R16G16_Float);
 			sssrDesc.backendInterface = buildData.FfxInterface;
 			ZE_FFX_LOG_RET_FAILED_EXPECT(ffxSssrContextCreate(&passData.Ctx, &sssrDesc), "Error creating SSSR context!");
 			passData.Initialized = true;
@@ -80,16 +80,16 @@ namespace ZE::GFX::Pipeline::RenderPass::SSSR
 		ZE_DRAW_TAG_BEGIN(dev, cl, "SSSR", Pixel(0x80, 0x00, 0x00));
 
 		FfxSssrDispatchDescription desc = {};
-		desc.commandList = FFX::GetCommandList(cl);
+		desc.commandList = External::FFX::GetCommandList(cl);
 
-		desc.color = FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.depth = FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.motionVectors = FFX::GetResource(renderData.Buffers, ids.MotionVectors, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.normal = FFX::GetResource(renderData.Buffers, ids.NormalMap, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.materialParameters = FFX::GetResource(renderData.Buffers, ids.MaterialData, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.environmentMap = FFX::GetResource(renderData.Buffers, ids.EnvironmentMap, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.brdfTexture = FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.output = FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		desc.color = External::FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.depth = External::FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.motionVectors = External::FFX::GetResource(renderData.Buffers, ids.MotionVectors, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.normal = External::FFX::GetResource(renderData.Buffers, ids.NormalMap, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.materialParameters = External::FFX::GetResource(renderData.Buffers, ids.MaterialData, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.environmentMap = External::FFX::GetResource(renderData.Buffers, ids.EnvironmentMap, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.brdfTexture = External::FFX::GetResource(renderData.Buffers, ids.BrdfLut, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.output = External::FFX::GetResource(renderData.Buffers, ids.SSSR, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		Matrix proj = Math::XMLoadFloat4x4(&renderData.GraphData.Projection);
 		Matrix view = Math::XMMatrixTranspose(Math::XMLoadFloat4x4(&renderData.DynamicData.ViewTps));

@@ -1,6 +1,6 @@
 #if _ZE_FFX_API_ENABLED
 #	include "GFX/Pipeline/RenderPass/UpscaleFfxFSR.h"
-#	include "GFX/ExternalInterface.h"
+#	include "GFX/External/InterfaceStorage.h"
 #	include "Data/Camera.h"
 #	include "GUI/DearImGui.h"
 
@@ -24,7 +24,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	ExecuteData::~ExecuteData()
 	{
-		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		auto ffx = External::InterfaceStorage::GetConnectionFfxApi();
 		if (ffx)
 		{
 			if (Ctx)
@@ -33,7 +33,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 				FlushGPU(nullptr);
 				ZE_FFX_API_CHECK(ffx->GetFunctions().DestroyContext(&Ctx, nullptr), "Error destroying FFX FSR context!");
 			}
-			ExternalInterface::ReleaseConnectionFfxApi();
+			External::InterfaceStorage::ReleaseConnectionFfxApi();
 		}
 	}
 
@@ -75,7 +75,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		auto ffx = External::InterfaceStorage::GetConnectionFfxApi();
 		if (!ffx)
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
@@ -83,7 +83,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		const bool sizeChange = renderSize != Settings::RenderSize;
 		if (sizeChange || passData.DisplaySize != Settings::DisplaySize || passData.PrevSelectedVersion != passData.SelectedVersion)
 		{
-			const FfxApiFunctions& ffxFunc = ffx->GetFunctions();
+			const auto& ffxFunc = ffx->GetFunctions();
 			if (passData.Ctx)
 			{
 				FlushGPU(nullptr);
@@ -144,7 +144,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		FfxApiInterface* ffx = ExternalInterface::CreateConnectionFfxApi();
+		auto ffx = External::InterfaceStorage::CreateConnectionFfxApi();
 		if (!ffx)
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 
@@ -159,7 +159,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		FfxApiInterface* ffx = ExternalInterface::GetConnectionFfxApi();
+		auto ffx = External::InterfaceStorage::GetConnectionFfxApi();
 		if (!ffx)
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
 

@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/CACAO.h"
-#include "GFX/Error.h"
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/Error.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::CACAO
@@ -83,10 +83,10 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxCacaoUpdateSettings(&data.Ctx, &data.Settings, false), "Error updating CACAO settings!");
 
 		FfxCacaoDispatchDescription desc = {};
-		desc.commandList = FFX::GetCommandList(cl);
-		desc.depthBuffer = FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.normalBuffer = FFX::GetResource(renderData.Buffers, ids.Normal, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.outputBuffer = FFX::GetResource(renderData.Buffers, ids.AO, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		desc.commandList = External::FFX::GetCommandList(cl);
+		desc.depthBuffer = External::FFX::GetResource(renderData.Buffers, ids.Depth, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.normalBuffer = External::FFX::GetResource(renderData.Buffers, ids.Normal, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.outputBuffer = External::FFX::GetResource(renderData.Buffers, ids.AO, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		// Matrix data is not modified inside callbacks, missing const specifier in header
 		desc.proj = reinterpret_cast<FfxFloat32x4x4*>(&renderData.GraphData.Projection);
 		desc.normalsToView = reinterpret_cast<FfxFloat32x4x4*>(&renderData.DynamicData.ViewTps);

@@ -45,7 +45,7 @@ namespace ZE::GFX::Pipeline
 	{
 		UnloadConfig();
 		finalizationFlags = 0;
-		FFX::DestroyInterface(ffxInterface);
+		External::FFX::DestroyInterface(ffxInterface);
 	}
 
 	Status RenderGraph::Execute(Graphics& gfx) noexcept

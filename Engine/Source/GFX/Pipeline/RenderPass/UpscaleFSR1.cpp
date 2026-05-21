@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/UpscaleFSR1.h"
-#include "GFX/Error.h"
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/Error.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
@@ -52,7 +52,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 
 			FfxFsr1ContextDescription ctxDesc = {};
 			ctxDesc.flags = FFX_FSR1_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR1_ENABLE_RCAS;
-			ctxDesc.outputFormat = FFX::GetSurfaceFormat(formatOutput);
+			ctxDesc.outputFormat = External::FFX::GetSurfaceFormat(formatOutput);
 			ctxDesc.maxRenderSize = { renderSize.X, renderSize.Y };
 			ctxDesc.displaySize = { passData.DisplaySize.X, passData.DisplaySize.Y };
 			ctxDesc.backendInterface = buildData.FfxInterface;
@@ -85,9 +85,9 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR1
 		ZE_DRAW_TAG_BEGIN(dev, cl, "Upscale FSR1", Pixel(0xC2, 0x32, 0x32));
 
 		FfxFsr1DispatchDescription desc = {};
-		desc.commandList = FFX::GetCommandList(cl);
-		desc.color = FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
-		desc.output = FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		desc.commandList = External::FFX::GetCommandList(cl);
+		desc.color = External::FFX::GetResource(renderData.Buffers, ids.Color, FFX_RESOURCE_STATE_COMPUTE_READ);
+		desc.output = External::FFX::GetResource(renderData.Buffers, ids.Output, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		desc.renderSize = { inputSize.X, inputSize.Y };
 		desc.enableSharpening = data.SharpeningEnabled;
 		desc.sharpness = data.Sharpness;

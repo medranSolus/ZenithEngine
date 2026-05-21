@@ -1,5 +1,5 @@
 #include "GUI/ImGuiManager.h"
-#include "GFX/ImGuiBackendData.h"
+#include "GFX/External/ImGuiBackendData.h"
 
 namespace ZE::GUI
 {
@@ -42,7 +42,7 @@ namespace ZE::GUI
 
 	void ImGuiManager::StartFrame(const Window::MainWindow& window) const noexcept
 	{
-		GFX::ImGuiBackendData::NewFrame();
+		GFX::External::ImGuiBackendData::NewFrame();
 		window.NewImGuiFrame();
 		ImGui::NewFrame();
 	}
@@ -53,7 +53,7 @@ namespace ZE::GUI
 		if (atlas->Fonts.size())
 		{
 			atlas->Clear();
-			GFX::ImGuiBackendData::RecreateFonts();
+			GFX::External::ImGuiBackendData::RecreateFonts();
 		}
 		if (!atlas->AddFontFromFileTTF(font.data(), size))
 			Logger::Warning("Failed to load new font for ImGui: " + std::string(font));

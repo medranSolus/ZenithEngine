@@ -1,7 +1,7 @@
 #include "GFX/Pipeline/RenderGraphBuilder.h"
 #include "GFX/Pipeline/CoreRenderer.h"
 #include "GFX/Pipeline/RenderGraph.h"
-#include "GFX/ExternalInterface.h"
+#include "GFX/External/InterfaceStorage.h"
 #include "GUI/DearImGui.h"
 
 // Helper macro to end loading config and return when condition is true
@@ -533,7 +533,7 @@ namespace ZE::GFX::Pipeline
 			});
 
 		// Add XeSS aliasable memory to the requested framebuffer regions
-		XeSSInterface* xess = ExternalInterface::GetConnectionXeSS();
+		auto xess = External::InterfaceStorage::GetConnectionXeSS();
 		if (xess && xess->IsAliasableResourcesSupported())
 		{
 			U32 xessPassId = UINT32_MAX;
@@ -828,9 +828,9 @@ namespace ZE::GFX::Pipeline
 		bool cascadeUpdate = false;
 		UInt2 renderSize = Settings::RenderSize;
 
-		FFX::PassInfo ffxPassInfo = {};
+		External::FFX::PassInfo ffxPassInfo = {};
 		ffxPassInfo.PassID = passId;
-		FFX::SetCurrentPass(graph.ffxInterface, &ffxPassInfo);
+		External::FFX::SetCurrentPass(graph.ffxInterface, &ffxPassInfo);
 
 		// Always compute exec data for invalid passes
 		if (node.GetDesc().Type == CorePassType::Invalid || node.IsExecDataCachingDisabled())
@@ -886,7 +886,7 @@ namespace ZE::GFX::Pipeline
 			}
 			passExecData = execData;
 		}
-		FFX::SetCurrentPass(graph.ffxInterface, nullptr);
+		External::FFX::SetCurrentPass(graph.ffxInterface, nullptr);
 
 		return cascadeUpdate || renderSize != Settings::RenderSize;
 	}
@@ -1052,7 +1052,7 @@ namespace ZE::GFX::Pipeline
 	void RenderGraphBuilder::UpdateFfxResourceIds(RenderGraph& graph) const noexcept
 	{
 		RID ffxBuffersOffset = Utils::SafeCast<RID>(computedResources.size());
-		graph.ffxInternalBuffers.Transform([&ffxBuffersOffset](FFX::InternalResourceDescription& desc) noexcept { desc.ResID = ffxBuffersOffset++; });
+		graph.ffxInternalBuffers.Transform([&ffxBuffersOffset](External::FFX::InternalResourceDescription& desc) noexcept { desc.ResID = ffxBuffersOffset++; });
 		graph.ffxBuffersChanged = false;
 	}
 
@@ -2006,7 +2006,7 @@ namespace ZE::GFX::Pipeline
 		ZE_PERF_GUARD("RenderGraphBuilder::FinalizeGraph");
 
 		// Need proper interface before passes will start using it
-		graph.ffxInterface = FFX::GetInterface(dev, graph.dynamicBuffers, graph.execData.Buffers, assets.GetDisk(), graph.ffxInternalBuffers, graph.ffxBuffersChanged);
+		graph.ffxInterface = External::FFX::GetInterface(dev, graph.dynamicBuffers, graph.execData.Buffers, assets.GetDisk(), graph.ffxInternalBuffers, graph.ffxBuffersChanged);
 
 		if (Status result = ApplyComputedGraph(dev, assets, graph))
 		{

@@ -1,6 +1,6 @@
 #include "GFX/Pipeline/RenderPass/TonemapLPM.h"
-#include "GFX/Error.h"
-#include "GFX/FfxBackendInterface.h"
+#include "GFX/External/Error.h"
+#include "GFX/External/FfxBackendInterface.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
@@ -50,9 +50,9 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapLPM
 		ZE_DRAW_TAG_BEGIN(dev, cl, "TonemapLPM", PixelVal::White);
 
 		FfxLpmDispatchDescription dispatchDesc = {};
-		dispatchDesc.commandList = FFX::GetCommandList(cl);
-		dispatchDesc.inputColor = FFX::GetResource(renderData.Buffers, ids.Scene, FFX_RESOURCE_STATE_COMPUTE_READ);
-		dispatchDesc.outputColor = FFX::GetResource(renderData.Buffers, ids.RenderTarget, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+		dispatchDesc.commandList = External::FFX::GetCommandList(cl);
+		dispatchDesc.inputColor = External::FFX::GetResource(renderData.Buffers, ids.Scene, FFX_RESOURCE_STATE_COMPUTE_READ);
+		dispatchDesc.outputColor = External::FFX::GetResource(renderData.Buffers, ids.RenderTarget, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 		dispatchDesc.shoulder = data.Shoulder;
 		dispatchDesc.softGap = data.SoftGap;
 		dispatchDesc.hdrMax = data.HdrMax;

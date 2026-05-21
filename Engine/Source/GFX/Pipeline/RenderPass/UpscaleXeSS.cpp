@@ -1,6 +1,6 @@
 #if _ZE_XESS_ENABLED
 #	include "GFX/Pipeline/RenderPass/UpscaleXeSS.h"
-#	include "GFX/ExternalInterface.h"
+#	include "GFX/External/InterfaceStorage.h"
 #	include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
@@ -23,11 +23,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	ExecuteData::~ExecuteData()
 	{
-		if (ExternalInterface::GetConnectionXeSS())
+		if (External::InterfaceStorage::GetConnectionXeSS())
 		{
 			Settings::RenderSize = Settings::DisplaySize;
 			FlushGPU(nullptr);
-			ExternalInterface::ReleaseConnectionXeSS();
+			External::InterfaceStorage::ReleaseConnectionXeSS();
 		}
 	}
 
@@ -54,7 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	Expected<UpdateOperation> Update(Device& dev, ExecuteData& passData) noexcept
 	{
-		XeSSInterface* xess = ExternalInterface::GetConnectionXeSS();
+		auto xess = External::InterfaceStorage::GetConnectionXeSS();
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
 
@@ -86,7 +86,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept
 	{
-		XeSSInterface* xess = ExternalInterface::CreateConnectionXeSS(dev);
+		auto xess = External::InterfaceStorage::CreateConnectionXeSS(dev);
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNKNOWN));
 
@@ -103,7 +103,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		XeSSInterface* xess = ExternalInterface::GetConnectionXeSS();
+		auto xess = External::InterfaceStorage::GetConnectionXeSS();
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
 
