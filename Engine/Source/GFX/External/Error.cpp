@@ -48,6 +48,58 @@ namespace ZE::GFX::External::Error
 		}
 	}
 
+	std::string HBAO::message(int condition) const
+	{
+		switch (static_cast<GFSDK_SSAO_Status>(condition))
+		{
+		default:
+			ZE_FAIL("Unknown HBAO+ error code!");
+			return "Unknown HBAO+ error code!";
+		case GFSDK_SSAO_OK:
+			return "Success";
+		case GFSDK_SSAO_VERSION_MISMATCH:
+			return "The header version number does not match the DLL version number";
+		case GFSDK_SSAO_NULL_ARGUMENT:
+			return "One of the required argument pointers is NULL";
+		case GFSDK_SSAO_INVALID_PROJECTION_MATRIX:
+			return "The projection matrix is not valid";
+		case GFSDK_SSAO_INVALID_WORLD_TO_VIEW_MATRIX:
+			return "The world-to-view matrix is not valid (transposing it may help)";
+		case GFSDK_SSAO_INVALID_NORMAL_TEXTURE_RESOLUTION:
+			return "The normal-texture resolution does not match the depth-texture resolution";
+		case GFSDK_SSAO_INVALID_NORMAL_TEXTURE_SAMPLE_COUNT:
+			return "The normal-texture sample count does not match the depth-texture sample count";
+		case GFSDK_SSAO_INVALID_VIEWPORT_DIMENSIONS:
+			return "One of the viewport dimensions (width or height) is 0";
+		case GFSDK_SSAO_INVALID_VIEWPORT_DEPTH_RANGE:
+			return "The viewport depth range is not a sub-range of [0.f,1.f]";
+		case GFSDK_SSAO_INVALID_SECOND_DEPTH_TEXTURE_RESOLUTION:
+			return "The resolution of the second depth texture does not match the one of the first depth texture";
+		case GFSDK_SSAO_INVALID_SECOND_DEPTH_TEXTURE_SAMPLE_COUNT:
+			return "The sample count of the second depth texture does not match the one of the first depth texture";
+		case GFSDK_SSAO_MEMORY_ALLOCATION_FAILED:
+			return "Failed to allocate memory on the heap";
+		case GFSDK_SSAO_INVALID_DEPTH_STENCIL_RESOLUTION:
+			return "The depth-stencil resolution does not match the output render-target resolution";
+		case GFSDK_SSAO_INVALID_DEPTH_STENCIL_SAMPLE_COUNT:
+			return "The depth-stencil sample count does not match the output render-target sample count";
+		case GFSDK_SSAO_D3D_FEATURE_LEVEL_NOT_SUPPORTED:
+			return "The current D3D11 feature level is lower than 11_0";
+		case GFSDK_SSAO_D3D_RESOURCE_CREATION_FAILED:
+			return "A resource-creation call has failed (running out of memory?)";
+		case GFSDK_SSAO_D3D12_UNSUPPORTED_DEPTH_CLAMP_MODE:
+			return "CLAMP_TO_BORDER is used (implemented on D3D11 & GL, but not on D3D12)";
+		case GFSDK_SSAO_D3D12_INVALID_HEAP_TYPE:
+			return "One of the heaps provided to GFSDK_SSAO_CreateContext_D3D12 has an unexpected type";
+		case GFSDK_SSAO_D3D12_INSUFFICIENT_DESCRIPTORS:
+			return "One of the heaps provided to GFSDK_SSAO_CreateContext_D3D12 has an insufficient number of descriptors";
+		case GFSDK_SSAO_D3D12_INVALID_NODE_MASK:
+			return "NodeMask has more than one bit set. HBAO+ only supports operation on one D3D12 device node";
+		case GFSDK_SSAO_NO_SECOND_LAYER_PROVIDED:
+			return "FullResDepthTexture2ndLayerSRV is not set, but DualLayerAO is enabled";
+		}
+	}
+
 #if _ZE_FFX_API_ENABLED
 	std::string FfxApi::message(int condition) const
 	{

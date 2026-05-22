@@ -5,6 +5,7 @@
 #include "RenderPass/CopyBuffer.h"
 #include "RenderPass/DearImGui.h"
 #include "RenderPass/DirectionalLight.h"
+#include "RenderPass/HBAO.h"
 #include "RenderPass/HorizontalBlur.h"
 #include "RenderPass/Lambertian.h"
 #include "RenderPass/LightCombine.h"

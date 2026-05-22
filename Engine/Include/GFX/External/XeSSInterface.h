@@ -25,6 +25,7 @@ namespace ZE::GFX::External
 
 		static Expected<XeSSInterface> Create(Device& dev) noexcept { ZE_RHI_BACKEND_CREATE(External::XeSSInterface, dev); }
 		ZE_RHI_BACKEND_GET(External::XeSSInterface);
+
 		// Main Gfx Api
 
 		constexpr bool IsInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsInitialized); }

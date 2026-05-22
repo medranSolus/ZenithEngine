@@ -1,6 +1,7 @@
 #pragma once
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_error.h"
+#include "GFSDK_SSAO.h"
 #if _ZE_FFX_API_ENABLED
 #	include "ffx_api.h"
 #endif
@@ -28,6 +29,23 @@ namespace ZE::GFX::External::Error
 		static Status Make(FfxErrorCode code) noexcept { return { static_cast<int>(code), GetCategory() }; }
 
 		const char* name() const noexcept override { return "FidelityFX Error"; }
+		std::string message(int condition) const override;
+	};
+
+	// Error handling for HBAO+ codes
+	class HBAO : public std::error_category
+	{
+	protected:
+		HBAO() = default;
+
+	public:
+		ZE_CLASS_MOVE(HBAO);
+		virtual ~HBAO() = default;
+
+		static constexpr const std::error_category& GetCategory() noexcept { static HBAO CATEGORY; return CATEGORY; }
+		static Status Make(GFSDK_SSAO_Status code) noexcept { return { static_cast<int>(code), GetCategory() }; }
+
+		const char* name() const noexcept override { return "HBAO+ Error"; }
 		std::string message(int condition) const override;
 	};
 
@@ -97,6 +115,15 @@ namespace ZE::GFX::External::Error
 #define ZE_FFX_LOG_RET_FAILED(call, info) do { FfxErrorCode __res = (call); if (__res != FFX_OK) { Status __ffxStatus = ZE_FFX_ERROR(__res); ZE_CODE_ERROR(__ffxStatus, info); return __ffxStatus; } } while (false)
 // Return FFX SDK error if call failed (wrapped in std::unexpected) and log error message
 #define ZE_FFX_LOG_RET_FAILED_EXPECT(call, info) do { FfxErrorCode __res = (call); if (__res != FFX_OK) { Status __ffxStatus = ZE_FFX_ERROR(__res); ZE_CODE_ERROR(__ffxStatus, info); return std::unexpected(__ffxStatus); } } while (false)
+
+// Get HBAO+ error status code
+#define ZE_HBAO_ERROR(code) ZE::GFX::External::Error::HBAO::Make(code)
+// Performs assert check on return value of HBAO+ call
+#define ZE_HBAO_CHECK(call, info) do { [[maybe_unused]] GFSDK_SSAO_Status __res = (call); ZE_ASSERT(__res == GFSDK_SSAO_OK, info); } while (false)
+// Return HBAO+ error if call failed and log error message
+#define ZE_HBAO_LOG_RET_FAILED(call, info) do { Status __hbaoStatus = (call); if (__hbaoStatus) { ZE_CODE_ERROR(__hbaoStatus, info); return __hbaoStatus; } } while (false)
+// Return HBAO+ error if call failed (wrapped in std::unexpected) and log error message
+#define ZE_HBAO_LOG_RET_FAILED_EXPECT(call, info) do {Status __hbaoStatus = (call); if (__hbaoStatus) { ZE_CODE_ERROR(__hbaoStatus, info); return std::unexpected(__hbaoStatus); } } while (false)
 
 // Get FFX API error status code
 #define ZE_FFX_API_ERROR(code) ZE::GFX::External::Error::FfxApi::Make(code)
