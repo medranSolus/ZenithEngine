@@ -28,6 +28,8 @@ namespace ZE::GFX::External
 
 		// Can be called optionally to trigger resource creation early and avoid stall during render call
 		Status CreateResources(Device& dev, const GFSDK_SSAO_Parameters& params, UInt2 renderSize) noexcept { ZE_RHI_BACKEND_CALL_RET(CreateResources, dev, params, renderSize); }
-		Status Render(Device& dev, Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params, RID depth, RID normals, RID output, bool blendMultiply = false, bool linearDepth = false) noexcept { ZE_RHI_BACKEND_CALL_RET(Render, dev, buffers, params, depth, normals, output, blendMultiply, linearDepth); }
+
+		// Normals are optional and transposed view matrix is only required if they are provided
+		Status Render(Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params, RID depth, RID normals, RID output, const Float4x4& projection, const Float4x4* viewTps, bool blendMultiply = false, bool linearDepth = false) noexcept { ZE_RHI_BACKEND_CALL_RET(Render, dev, cl, buffers, params, depth, normals, output, projection, viewTps, blendMultiply, linearDepth); }
 	};
 }

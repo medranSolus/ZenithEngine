@@ -20,7 +20,7 @@ namespace ZE::RHI::DX12::External
 		static Expected<HbaoCtx> Create(GFX::Device& dev) noexcept;
 
 		Status CreateResources(GFX::Device& dev, const GFSDK_SSAO_Parameters& params, UInt2 renderSize) noexcept;
-		Status Render(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params,
-			RID depth, RID normals, RID output, bool blendMultiply = false, bool linearDepth = false) noexcept;
+		Status Render(GFX::Device& dev, GFX::CommandList& cl, GFX::Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params,
+			RID depth, RID normals, RID output, const Float4x4& projection, const Float4x4* viewTps, bool blendMultiply, bool linearDepth) noexcept;
 	};
 }

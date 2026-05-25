@@ -308,6 +308,8 @@ namespace ZE::RHI::DX12
 				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
 				// Bug in AgilitySDK 1.615.1 in conjuction with enhanced barriers where even when creating heap without not-zeroed flag it reports same issue. TODO: remove when fixed
 				D3D12_MESSAGE_ID_RENDER_TARGET_OR_DEPTH_STENCIL_RESOUCE_NOT_INITIALIZED,
+				// HBAO+ starts execution by using a fence of 0
+				D3D12_MESSAGE_ID_FENCE_ZERO_WAIT,
 			};
 
 			D3D12_INFO_QUEUE_FILTER filter = {};

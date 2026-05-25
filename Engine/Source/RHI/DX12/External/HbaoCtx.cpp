@@ -21,7 +21,7 @@ namespace ZE::RHI::DX12::External
 		GarbageCollector::Get().MarkActive(device, hbao.srvDescInfo.Handle);
 
 		D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
-		descHeapDesc.NodeMask = 0;
+		descHeapDesc.NodeMask = 1;
 		descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		descHeapDesc.NumDescriptors = GFSDK_SSAO_NUM_DESCRIPTORS_RTV_HEAP_D3D12;
@@ -38,38 +38,46 @@ namespace ZE::RHI::DX12::External
 		customHeap.delete_ = ::operator delete;
 		customHeap.new_ = ::operator new;
 
-		ZE_HBAO_LOG_RET_FAILED_EXPECT(ZE_HBAO_ERROR(GFSDK_SSAO_CreateContext_D3D12(device.GetDevice(), 0, descHeaps, &hbao.ctx, &customHeap)), "Failed to initialize HBAO+!");
+		ZE_HBAO_LOG_RET_FAILED_EXPECT(ZE_HBAO_ERROR(GFSDK_SSAO_CreateContext_D3D12(device.GetDevice(), 1, descHeaps, &hbao.ctx, &customHeap)), "Failed to initialize HBAO+!");
 		return hbao;
 	}
 
 	Status HbaoCtx::CreateResources(GFX::Device& dev, const GFSDK_SSAO_Parameters& params, UInt2 renderSize) noexcept
 	{
 		// Cmd queue is used mostly for resources cleanup so better to always use Main and see if it breaks things
-		return ZE_HBAO_ERROR(ctx->PreCreateRTs(dev.Get().dx12.GetQueueMain(), params, renderSize.X, renderSize.Y));
+		Status stat = ZE_HBAO_ERROR(ctx->PreCreateRTs(dev.Get().dx12.GetQueueMain(), params, renderSize.X, renderSize.Y));
+		// Flush any warnings from HBAO+ initialization
+		[[maybe_unused]] HRESULT hr = S_OK;
+		ZE_DX_CHECK_DEBUG_INFO(hr);
+		return stat;
 	}
 
-	Status HbaoCtx::Render(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params,
-		RID depth, RID normals, RID output, bool blendMultiply, bool linearDepth) noexcept
+	Status HbaoCtx::Render(GFX::Device& dev, GFX::CommandList& cl, GFX::Pipeline::FrameBuffer& buffers, const GFSDK_SSAO_Parameters& params,
+		RID depth, RID normals, RID output, const Float4x4& projection, const Float4x4* viewTps, bool blendMultiply, bool linearDepth) noexcept
 	{
 		auto& framebuff = buffers.Get().dx12;
 
 		GFSDK_SSAO_InputData_D3D12 hbaoInput = {};
-		hbaoInput.DepthData;
-		GFSDK_SSAO_DepthTextureType     DepthTextureType;           //	 HARDWARE_DEPTHS, HARDWARE_DEPTHS_SUB_RANGE or VIEW_DEPTHS
-		GFSDK_SSAO_Matrix               ProjectionMatrix;           // 4x4 perspective matrix from the depth generation pass
+		hbaoInput.DepthData.DepthTextureType = GFSDK_SSAO_HARDWARE_DEPTHS;
+		std::memcpy(hbaoInput.DepthData.ProjectionMatrix.Data.Array, &projection, sizeof(Float4x4));
+		hbaoInput.DepthData.ProjectionMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;
 		hbaoInput.DepthData.MetersToViewSpaceUnits = 1.0f;
 		hbaoInput.DepthData.Viewport.Enable = false; // Just default viewport
 		hbaoInput.DepthData.FullResDepthTextureSRV.pResource = framebuff.GetResource(depth).Get();
-		hbaoInput.DepthData.FullResDepthTextureSRV.GpuHandle = framebuff.GetSRV(normals).GpuShaderVisibleHandle.ptr;
-		GFSDK_SSAO_ShaderResourceView_D3D12 FullResDepthTexture2ndLayerSRV; // Full-resolution depth texture for the second layer
-		ID3D12Resource* pResource;
-		GFSDK_SSAO_UINT64   GpuHandle;
+		hbaoInput.DepthData.FullResDepthTextureSRV.GpuHandle = framebuff.GetSRV(depth).GpuShaderVisibleHandle.ptr;
+		if (params.EnableDualLayerAO)
+		{
+			hbaoInput.DepthData.FullResDepthTexture2ndLayerSRV.pResource = framebuff.GetResource(depth).Get();
+			hbaoInput.DepthData.FullResDepthTexture2ndLayerSRV.GpuHandle = framebuff.GetSRV(depth).GpuShaderVisibleHandle.ptr;
+		}
 
 		if (normals != INVALID_RID)
 		{
-			hbaoInput.NormalData;
+			ZE_ASSERT(viewTps, "View matrix is required when normals are provided");
+
 			hbaoInput.NormalData.Enable = true;
-			GFSDK_SSAO_Matrix               WorldToViewMatrix;              // 4x4 WorldToView matrix from the depth generation pass
+			std::memcpy(hbaoInput.NormalData.WorldToViewMatrix.Data.Array, viewTps, sizeof(Float4x4));
+			hbaoInput.NormalData.WorldToViewMatrix.Layout = GFSDK_SSAO_COLUMN_MAJOR_ORDER;
 			hbaoInput.NormalData.DecodeScale = 1.0f;
 			hbaoInput.NormalData.DecodeBias = 0.0f;
 			hbaoInput.NormalData.FullResNormalTextureSRV.pResource = framebuff.GetResource(normals).Get();
@@ -86,6 +94,6 @@ namespace ZE::RHI::DX12::External
 		hbaoOutput.pRenderTargetView = &outputRTV;
 		hbaoOutput.Blend.Mode = blendMultiply ? GFSDK_SSAO_MULTIPLY_RGB : GFSDK_SSAO_OVERWRITE_RGB;
 
-		return ZE_HBAO_ERROR(ctx->RenderAO(dev.Get().dx12.GetQueueMain(), nullptr, hbaoInput, params, hbaoOutput, linearDepth ? GFSDK_SSAO_DRAW_AO : GFSDK_SSAO_RENDER_AO));
+		return ZE_HBAO_ERROR(ctx->RenderAO(dev.Get().dx12.GetQueueMain(), cl.Get().dx12.GetList(), hbaoInput, params, hbaoOutput, linearDepth ? GFSDK_SSAO_DRAW_AO : GFSDK_SSAO_RENDER_AO));
 	}
 }
