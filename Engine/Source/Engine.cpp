@@ -290,7 +290,11 @@ namespace ZE
 					ImGui::Checkbox("SSSR##enable", &sssr);
 					Settings::SetSSSR(sssr);
 					ImGui::EndDisabled();
-
+#if !_ZE_MODE_RELEASE
+					bool debugView = Settings::IsEnabledDebugView();
+					ImGui::Checkbox("Debug view##enable", &debugView);
+					Settings::SetDebugView(debugView);
+#endif
 					ImGui::NewLine();
 				}
 				ZE_EXPECT_RET_FAILED_CODE(flags[ExecuteUploadSync], graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph));

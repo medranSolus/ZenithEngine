@@ -48,6 +48,12 @@ PackedMaterialGB PackMaterialParams(const in float metalness, const in float rou
 	return float2(metalness, roughness);
 }
 
+// Get material parameters from opaque data format
+PackedMaterialGB ExtractMaterialParams(const in float4 data)
+{
+	return data.rg;
+}
+
 // Get metalness component from material parameters
 float GetMetalness(const in PackedMaterialGB materialParams)
 {

@@ -603,9 +603,30 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddOutput("RT", TextureLayout::CopyDest, BACKBUFFER_NAME);
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+#if !_ZE_MODE_RELEASE
+		{
+			RenderNode node("debugView", "", RenderPass::DebugView::GetDesc(Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
+			node.AddInput("lambertian.DS", TextureLayout::ShaderResource, false);
+			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource, false);
+			node.AddInput("lambertian.GB_ALB", TextureLayout::ShaderResource, false);
+			node.AddInput("lambertian.GB_MAT", TextureLayout::ShaderResource, false);
+			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource, false);
+			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource, false);
+			node.AddInput("pointLight.LB", TextureLayout::ShaderResource, false);
+			node.AddInput("ssao.SB", TextureLayout::ShaderResource, false);
+			node.AddInput("ssr.SSR", TextureLayout::ShaderResource, false);
+			node.AddInput("wireframe.RT", TextureLayout::ShaderResource, false);
+			node.AddInput("upscale.RT", TextureLayout::ShaderResource, false);
+			node.AddInput("outlineDraw.RT", TextureLayout::ShaderResource, false);
+			node.AddInput("tonemapSceneCopy.RT", TextureLayout::RenderTarget);
+			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+#endif
 		{
 			RenderNode node("imgui", "", RenderPass::DearImGui::GetDesc(PixelFormat::R8G8B8A8_UNorm, Settings::BackbufferFormat), PassExecutionType::StaticProcessor);
-			node.AddInput("tonemapSceneCopy.RT", TextureLayout::RenderTarget);
+			node.AddInput(_ZE_MODE_RELEASE ? "tonemapSceneCopy.RT" : "debugView.RT", TextureLayout::RenderTarget);
 			node.AddInnerBuffer(TextureLayout::RenderTarget,
 				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncDisplaySize | FrameResourceFlag::ForceSRV, PixelFormat::R8G8B8A8_UNorm, "ImGui UI buffer"));
 			node.AddOutput("RT", TextureLayout::RenderTarget, BACKBUFFER_NAME);
