@@ -126,7 +126,7 @@ namespace ZE::GFX::Pipeline
 		ChainPool<CommandList> asyncListChain;
 		ChainPool<Resource::DynamicCBuffer> dynamicBuffers;
 		Data::Library<U32, std::shared_ptr<PassExecuteData>> passExecData;
-		FfxInterface ffxInterface = {};
+		External::FFX::FfxBackendInterface ffxInterface = {};
 		Data::Library<S32, External::FFX::InternalResourceDescription> ffxInternalBuffers;
 		bool ffxBuffersChanged = false;
 		GraphFinalizeFlags finalizationFlags = 0;

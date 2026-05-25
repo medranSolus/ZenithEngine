@@ -2,6 +2,7 @@
 #include "Data/Library.h"
 #include "GFX/Pipeline/FrameBuffer.h"
 #include "GFX/Resource/DynamicCBuffer.h"
+#include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/ChainPool.h"
 #include "GFX/DiskManager.h"
 ZE_WARNING_PUSH
@@ -24,6 +25,44 @@ namespace ZE::GFX::External::FFX
 		U32 PassID = UINT32_MAX;
 	};
 
+	// ID of internally created resource
+	typedef U32 ResID;
+
+	// Main context used by FFX SDK
+	struct BackendContext
+	{
+		entt::basic_registry<ResID> Resources;
+		Data::Library<U64, Resource::PipelineStateCompute> Pipelines;
+		Data::Library<U64, U64> PipelinesReferences;
+		Data::Library<U64, Binding::Schema> Bindings;
+		Data::Library<U64, U64> BindingsReferences;
+		Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
+		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
+		Data::Library<FfxEffect, FfxEffectMemoryUsage> EffectMemoryUsage;
+		std::vector<Pipeline::BarrierTransition> Barriers;
+		std::vector<FfxGpuJobDescription> Jobs;
+	};
+
+	// Interface data setup when filling FfxInterface
+	struct BackendInterface
+	{
+		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
+		Pipeline::FrameBuffer& Buffers;
+		DiskManager& Disk;
+		Data::Library<S32, FFX::InternalResourceDescription>& InternalBuffers;
+		bool& NotifyBuffersChange;
+		U32 ContextRefCount = 0;
+		PassInfo CurrentPass = {};
+		std::unique_ptr<BackendContext> Ctx;
+	};
+
+	// Main point of interaction with FFX SDK
+	struct FfxBackendInterface
+	{
+		FfxInterface Interface = {};
+		std::unique_ptr<BackendInterface> Backend;
+	};
+
 	// Convert command list into handle used by FFX SDK
 	constexpr FfxCommandList GetCommandList(CommandList& cl) noexcept { return (FfxCommandList)&cl; }
 	// Convert pixel format into FFX SDK surface format
@@ -35,14 +74,14 @@ namespace ZE::GFX::External::FFX
 	FfxResource GetResource(Pipeline::FrameBuffer& buffers, RID rid, FfxResourceStates state) noexcept;
 
 	// Fill up pointers to FFX SDK backend callbacks
-	FfxInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers, Pipeline::FrameBuffer& frameBuffer,
+	FfxBackendInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers, Pipeline::FrameBuffer& frameBuffer,
 		DiskManager& disk, Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers, bool& notifyBuffersChange) noexcept;
 
 	// Set information about current pass for creation of internal buffers. Need to be called before and after Init/Update pass calls
-	void SetCurrentPass(FfxInterface& backendInterface, const PassInfo* info) noexcept;
+	void SetCurrentPass(FfxBackendInterface& backendInterface, const PassInfo* info) noexcept;
 
 	// Free up FFX SDK backend interface
-	void DestroyInterface(FfxInterface& backendInterface) noexcept;
+	void DestroyInterface(FfxBackendInterface& backendInterface) noexcept;
 
 #pragma region Functions
 	constexpr FfxSurfaceFormat GetSurfaceFormat(PixelFormat format) noexcept

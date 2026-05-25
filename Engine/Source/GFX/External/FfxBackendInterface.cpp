@@ -2,7 +2,6 @@
 #include "GFX/Pipeline/Barrier.h"
 #include "GFX/Resource/Texture/Pack.h"
 #include "GFX/Resource/CBuffer.h"
-#include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/External/FfxEffects.h"
 #include "GFX/CommandSignature.h"
 #include "Data/Library.h"
@@ -36,36 +35,6 @@ namespace ZE::GFX::External::FFX
 	struct DynamicResource
 	{
 		RID ResID;
-	};
-	// ID of internally created resource
-	typedef U32 ResID;
-
-	// Main context used by FFX SDK
-	struct BackendContext
-	{
-		entt::basic_registry<ResID> Resources;
-		Data::Library<U64, Resource::PipelineStateCompute> Pipelines;
-		Data::Library<U64, U64> PipelinesReferences;
-		Data::Library<U64, Binding::Schema> Bindings;
-		Data::Library<U64, U64> BindingsReferences;
-		Data::Library<IndirectCommandType, CommandSignature> CommandSignatures;
-		Data::Library<IndirectCommandType, U64> CommandSignaturesReferences;
-		Data::Library<FfxEffect, FfxEffectMemoryUsage> EffectMemoryUsage;
-		std::vector<Pipeline::BarrierTransition> Barriers;
-		std::vector<FfxGpuJobDescription> Jobs;
-	};
-
-	// Interface data setup when filling FfxInterface
-	struct BackendInterface
-	{
-		ChainPool<Resource::DynamicCBuffer>& DynamicBuffers;
-		Pipeline::FrameBuffer& Buffers;
-		DiskManager& Disk;
-		Data::Library<S32, FFX::InternalResourceDescription>& InternalBuffers;
-		bool& NotifyBuffersChange;
-		U32 ContextRefCount = 0;
-		PassInfo CurrentPass = {};
-		BackendContext* Ctx = nullptr;
 	};
 
 	// Interface functions used by FFX SDK backend
@@ -171,7 +140,7 @@ namespace ZE::GFX::External::FFX
 		return desc;
 	}
 
-	FfxInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers,
+	FfxBackendInterface GetInterface(Device& dev, ChainPool<Resource::DynamicCBuffer>& dynamicBuffers,
 		Pipeline::FrameBuffer& frameBuffer, DiskManager& disk,
 		Data::Library<S32, FFX::InternalResourceDescription>& internalBuffers,
 		bool& notifyBuffersChange) noexcept
@@ -207,27 +176,25 @@ namespace ZE::GFX::External::FFX
 		backendInterface.fpRegisterConstantBufferAllocator = ffxRegisterConstantBufferAllocator;
 
 		// Setup all custom backend memory
+		auto backend = std::make_unique<BackendInterface>(dynamicBuffers, frameBuffer, disk, internalBuffers, notifyBuffersChange);
 		backendInterface.scratchBufferSize = sizeof(BackendInterface);
-		backendInterface.scratchBuffer = new BackendInterface{ dynamicBuffers, frameBuffer, disk, internalBuffers, notifyBuffersChange };
+		backendInterface.scratchBuffer = backend.get();
 		backendInterface.device = &dev;
 
 		// Set assert printing
 		ffxAssertSetPrintingCallback(ffxAssertCallback);
-		return backendInterface;
+		return { backendInterface, std::move(backend) };
 	}
 
-	void SetCurrentPass(FfxInterface& backendInterface, const PassInfo* info) noexcept
+	void SetCurrentPass(FfxBackendInterface& backendInterface, const PassInfo* info) noexcept
 	{
-		GetFfxInterface(&backendInterface).CurrentPass = info ? *info : PassInfo{};
+		GetFfxInterface(&backendInterface.Interface).CurrentPass = info ? *info : PassInfo{};
 	}
 
-	void DestroyInterface(FfxInterface& backendInterface) noexcept
+	void DestroyInterface(FfxBackendInterface& backendInterface) noexcept
 	{
-		if (backendInterface.scratchBuffer)
-		{
-			delete reinterpret_cast<BackendInterface*>(backendInterface.scratchBuffer);
-			backendInterface.scratchBuffer = nullptr;
-		}
+		backendInterface.Backend = nullptr;
+		backendInterface.Interface.scratchBuffer = nullptr;
 	}
 
 #pragma region FFX backend functions
@@ -255,13 +222,7 @@ namespace ZE::GFX::External::FFX
 			*effectContextId = effect;
 
 		if (ffxInterface.ContextRefCount++ == 0)
-		{
-			U8* buffer = new U8[sizeof(BackendContext)];
-			std::memset(buffer, 0, sizeof(BackendContext));
-			reinterpret_cast<BackendInterface*>(backendInterface->scratchBuffer)->Ctx = reinterpret_cast<BackendContext*>(buffer);
-
-			new(reinterpret_cast<BackendContext*>(buffer)) BackendContext;
-		}
+			reinterpret_cast<BackendInterface*>(backendInterface->scratchBuffer)->Ctx = std::make_unique<BackendContext>();
 
 		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		if (!ctx.EffectMemoryUsage.Contains(effect))
@@ -330,16 +291,11 @@ namespace ZE::GFX::External::FFX
 		BackendInterface& ffxInterface = GetFfxInterface(backendInterface);
 		if (--ffxInterface.ContextRefCount == 0)
 		{
-			BackendContext& ctx = GetFfxCtx(backendInterface);
-
 			if (ffxInterface.InternalBuffers.Size())
 			{
 				ffxInterface.InternalBuffers.Clear();
 				ffxInterface.NotifyBuffersChange = true;
 			}
-
-			ctx.~BackendContext();
-			delete[] reinterpret_cast<U8*>(ffxInterface.Ctx);
 			ffxInterface.Ctx = nullptr;
 		}
 		return FFX_OK;

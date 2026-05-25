@@ -1619,7 +1619,7 @@ namespace ZE::GFX::Pipeline
 		ZE_CODE_RET_FAILED(GroupRenderPasses(dev, graph));
 
 		// Perform all needed work for active passes
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface.Interface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
 		std::pair<bool, bool> passStatus = { false, false };
 		ZE_EXPECT_RET_FAILED_CODE(passStatus, InitializeRenderPasses(dev, graph, buildData));
 		std::pair<bool, bool> startupPassStatus = { false, false };
@@ -2067,7 +2067,7 @@ namespace ZE::GFX::Pipeline
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::UpdatePassConfiguration");
 
-		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
+		RendererPassBuildData buildData = { graph.execData.Bindings, assets, graph.execData.GraphData, graph.ffxInterface.Interface, initialDesc.SettingsRange, initialDesc.DynamicDataRange, initialDesc.Samplers };
 		bool graphUpdate = false, cascadeUpdate = false, framebufferUpdate = false, runStartupPasses = false;
 		UInt2 renderSize = Settings::RenderSize;
 
