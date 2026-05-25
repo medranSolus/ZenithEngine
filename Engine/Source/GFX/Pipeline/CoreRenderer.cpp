@@ -352,6 +352,18 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
 		{
+			RenderNode node("ssao", "hbao", RenderPass::HBAO::GetDesc(PixelFormat::R16G16B16A16_Float), PassExecutionType::Producer);
+			node.AddInput("lambertian.DS", TextureLayout::ShaderResource);
+			node.AddInput("lambertian.GB_N", TextureLayout::ShaderResource);
+			node.AddInnerBuffer(TextureLayout::RenderTarget,
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R16G16B16A16_Float, "Unpacked normals"));
+			node.AddInnerBuffer(TextureLayout::RenderTarget,
+				GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::R8_UNorm, "HBAO"));
+			node.AddOutput("SB", TextureLayout::CopyDest, "ssao");
+			node.SetHintGfx();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
+		{
 			RenderNode node("ssr", "sssr", RenderPass::SSSR::GetDesc(), PassExecutionType::Producer);
 			node.AddInput("pointLight.LB", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.DS", TextureLayout::ShaderResource);
