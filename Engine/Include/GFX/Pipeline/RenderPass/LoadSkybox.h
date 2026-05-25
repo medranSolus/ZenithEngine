@@ -10,6 +10,18 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		RID Skybox;
 	};
 
+	struct InitData final : public PassInitData
+	{
+		Data::CubemapSource Source = {};
+
+		InitData() = default;
+		InitData(const Data::CubemapSource& src) noexcept : Source(src) {}
+		ZE_CLASS_DEFAULT(InitData);
+		virtual ~InitData() = default;
+
+		std::unique_ptr<PassInitData> Clone() const noexcept override { return std::make_unique<InitData>(*this); }
+	};
+
 	struct ExecuteData final : public PassExecuteData
 	{
 		bool UpdateError = false;
@@ -24,10 +36,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 	};
 
 	PassDesc GetDesc(const Data::CubemapSource& source) noexcept;
-	void* CopyInitData(void* data) noexcept;
-	void FreeInitData(void* data) noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
-	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const InitData& initData) noexcept;
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

@@ -4,7 +4,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::TonemapAgX
 {
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for TonemapAgX initialization formats!");
 		return Initialize(dev, buildData, formats.front());

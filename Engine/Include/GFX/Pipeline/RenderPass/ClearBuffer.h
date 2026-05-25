@@ -36,18 +36,18 @@ namespace ZE::GFX::Pipeline::RenderPass
 			RID Buffers[N];
 		};
 
-		struct ExecuteData final : public PassExecuteData
+		struct ExecuteData final : public PassExecuteData, public PassInitData
 		{
 			ClearBufferEntry Info[N];
 
 			ExecuteData() = default;
 			ZE_CLASS_DEFAULT(ExecuteData);
 			virtual ~ExecuteData() = default;
+
+			std::unique_ptr<PassInitData> Clone() const noexcept override { return std::make_unique<ExecuteData>(*this); }
 		};
 
-		static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept { return std::make_shared<ExecuteData>(*reinterpret_cast<ExecuteData*>(initData)); }
-		static void* CopyInitData(void* data) noexcept { return new ExecuteData(*reinterpret_cast<ExecuteData*>(data)); }
-		static void FreeInitData(void* data) noexcept { delete reinterpret_cast<ExecuteData*>(data); }
+		static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept { return std::make_shared<ExecuteData>(*static_cast<ExecuteData*>(initData)); }
 
 		static PassDesc GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate = nullptr) noexcept;
 		static Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
@@ -58,12 +58,10 @@ namespace ZE::GFX::Pipeline::RenderPass
 	PassDesc ClearBuffer<N, MARKER_STRING>::GetDesc(PassType type, const ExecuteData& clearInfo, PassEvaluateExecutionCallback evaluate) noexcept
 	{
 		PassDesc desc{ type };
-		desc.InitData = new ExecuteData(clearInfo);
+		desc.InitData = std::make_unique<ExecuteData>(clearInfo);
 		desc.Init = Initialize;
 		desc.Evaluate = evaluate;
 		desc.Execute = Execute;
-		desc.CopyInitData = CopyInitData;
-		desc.FreeInitData = FreeInitData;
 		return desc;
 	}
 

@@ -41,10 +41,8 @@ namespace ZE::GFX::Pipeline
 	public:
 		constexpr RenderNode(std::string&& graphName, std::string&& passName, PassDesc&& desc, PassExecutionType execType, bool async = false) noexcept
 			: graphName(std::forward<std::string>(graphName)), passName(std::forward<std::string>(passName)), desc(std::forward<PassDesc>(desc)), flags(async), execType(execType) {}
-		ZE_CLASS_MOVE_ONLY(RenderNode);
-		RenderNode(const RenderNode& node) noexcept { *this = node; }
-		RenderNode& operator=(const RenderNode& node) noexcept;
-		~RenderNode();
+		ZE_CLASS_DEFAULT(RenderNode);
+		~RenderNode() = default;
 
 		constexpr const std::string& GetGraphConnectorName() const noexcept { return graphName; }
 		constexpr const std::string& GetPassName() const noexcept { return passName; }

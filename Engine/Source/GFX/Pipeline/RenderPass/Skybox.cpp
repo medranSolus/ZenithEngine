@@ -3,7 +3,7 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 2, "Incorrect size for Skybox initialization formats!");
 

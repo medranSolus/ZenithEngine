@@ -2,46 +2,6 @@
 
 namespace ZE::GFX::Pipeline
 {
-	RenderNode& RenderNode::operator=(const RenderNode& node) noexcept
-	{
-		graphName = node.graphName;
-		passName = node.passName;
-		desc = node.desc;
-		// Copy since RenderNode manages lifetime of InitData
-		if (desc.InitData)
-		{
-			ZE_ASSERT(desc.CopyInitData, "CopyInitData callback not provided!");
-			desc.InitData = desc.CopyInitData ? desc.CopyInitData(node.desc.InitData) : nullptr;
-		}
-
-		flags = node.flags;
-		execType = node.execType;
-		scheduleAfter = node.scheduleAfter;
-		inputNames = node.inputNames;
-		inputRequired = node.inputRequired;
-		inputLayouts = node.inputLayouts;
-		innerBuffers = node.innerBuffers;
-		innerLayouts = node.innerLayouts;
-		outputNames = node.outputNames;
-		outputLayouts = node.outputLayouts;
-		outputResources = node.outputResources;
-		replacementOutputResources = node.replacementOutputResources;
-		return *this;
-	}
-
-	RenderNode::~RenderNode()
-	{
-		if (desc.InitData)
-		{
-			if (desc.FreeInitData)
-				desc.FreeInitData(desc.InitData);
-			else
-			{
-				ZE_FAIL("Cannot clear initialization data for pass [" + GetFullName() + "], no FreeInitData callback provided! Memory leak detected!");
-			}
-		}
-	}
-
 	void RenderNode::AddInput(std::string&& name, TextureLayout layout, bool required) noexcept
 	{
 		ZE_ASSERT(execType != PassExecutionType::Startup, "Startup pass cannot have any inputs!");

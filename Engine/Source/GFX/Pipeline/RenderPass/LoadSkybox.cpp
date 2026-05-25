@@ -10,34 +10,22 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
-		return Initialize(dev, buildData, *reinterpret_cast<Data::CubemapSource*>(initData));
+		return Initialize(dev, buildData, *static_cast<InitData*>(initData));
 	}
 
 	PassDesc GetDesc(const Data::CubemapSource& source) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::LoadSkybox) };
-		desc.InitData = new Data::CubemapSource{ source };
+		desc.InitData = std::make_unique<InitData>(source);
 		desc.Init = Initialize;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.CopyInitData = CopyInitData;
-		desc.FreeInitData = FreeInitData;
 		desc.DebugUI = DebugUI;
 		return desc;
-	}
-
-	void* CopyInitData(void* data) noexcept
-	{
-		return new Data::CubemapSource(*reinterpret_cast<Data::CubemapSource*>(data));
-	}
-
-	void FreeInitData(void* data) noexcept
-	{
-		delete reinterpret_cast<Data::CubemapSource*>(data);
 	}
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
@@ -64,16 +52,16 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 		return UpdateOperation::NoUpdate;
 	}
 
-	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& source) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const InitData& initData) noexcept
 	{
 		auto passData = std::make_shared<ExecuteData>();
-		passData->SourceData = source;
+		passData->SourceData = initData.Source;
 
 		Resource::Texture::PackDesc texDesc = {};
 		ZE_TEXTURE_SET_NAME(texDesc, "Skybox");
 
 		std::vector<Surface> textures;
-		if (!source.LoadTextures(textures))
+		if (!passData->SourceData.LoadTextures(textures))
 		{
 			Logger::Error("Error loading skybox textures, falling back to generated texture!");
 			if (textures.size())

@@ -10,6 +10,18 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		RID IrrMap;
 	};
 
+	struct InitData final : public PassInitData
+	{
+		Data::CubemapSource IrrMapSource = {};
+
+		InitData() = default;
+		InitData(const Data::CubemapSource& src) noexcept : IrrMapSource(src) {}
+		ZE_CLASS_DEFAULT(InitData);
+		virtual ~InitData() = default;
+
+		std::unique_ptr<PassInitData> Clone() const noexcept override { return std::make_unique<InitData>(*this); }
+	};
+
 	struct ExecuteData final : public PassExecuteData
 	{
 		bool UpdateData = false;
@@ -26,10 +38,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledIBL(); }
 
 	PassDesc GetDesc(const Data::CubemapSource& irrMapSource) noexcept;
-	void* CopyInitData(void* data) noexcept;
-	void FreeInitData(void* data) noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
-	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource) noexcept;
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const InitData& initData) noexcept;
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

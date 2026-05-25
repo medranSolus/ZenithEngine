@@ -12,7 +12,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 	};
 #pragma pack(pop)
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{ 
 		return Initialize(dev, buildData);
 	}

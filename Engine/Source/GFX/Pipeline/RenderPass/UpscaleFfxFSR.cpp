@@ -42,7 +42,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		return Initialize(dev, buildData);
 	}

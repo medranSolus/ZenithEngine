@@ -25,8 +25,6 @@ namespace ZE::GFX::Pipeline
 		ErrorIncorrectResourceFormat,
 		ErrorWrongResourceConfiguration,
 		ErrorPassExecutionCallbackNotProvided,
-		ErrorPassFreeInitDataCallbackNotProvided,
-		ErrorPassCopyInitDataCallbackNotProvided,
 		ErrorPassInitCallbackNotProvided,
 		ErrorResourceInputLayoutMismatch,
 		ErrorResourceOutputLayoutMismatch,

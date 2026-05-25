@@ -11,7 +11,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			formats.at(0), formats.at(1), formats.at(2), formats.at(3), formats.at(4), formats.at(5));
 	}
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 6, "Incorrect size for Lambertian initialization formats!");
 		return Initialize(dev, buildData, formats.at(0), formats.at(1),

@@ -144,10 +144,6 @@ namespace ZE::GFX::Pipeline
 
 				ZE_CHECK_FAILED_CONFIG_LOAD(!node.GetDesc().Execute, ErrorPassExecutionCallbackNotProvided,
 					"Execution callback missing in [" + node.GetFullName() + "]!");
-				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().FreeInitData, ErrorPassFreeInitDataCallbackNotProvided,
-					"FreeInitData callback missing in [" + node.GetFullName() + "]!");
-				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().CopyInitData, ErrorPassCopyInitDataCallbackNotProvided,
-					"CopyInitData callback missing in [" + node.GetFullName() + "]!");
 				ZE_CHECK_FAILED_CONFIG_LOAD(node.GetDesc().InitData && !node.GetDesc().Init, ErrorPassInitCallbackNotProvided,
 					"Init callback missing in [" + node.GetFullName() + "] while initialization data has been provided!");
 
@@ -838,7 +834,7 @@ namespace ZE::GFX::Pipeline
 			if (node.GetDesc().Init)
 			{
 				passExecData = nullptr;
-				ZE_EXPECT_RET_FAILED(passExecData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData));
+				ZE_EXPECT_RET_FAILED(passExecData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData.get()));
 				graph.passExecData.Add(passId, passExecData);
 				if (passExecData)
 					gpuUploadRequired |= node.IsInitDataGpuUploadRequired();
@@ -857,7 +853,7 @@ namespace ZE::GFX::Pipeline
 				if (node.GetDesc().Init)
 				{
 					passExecData = nullptr;
-					ZE_EXPECT_RET_FAILED(execData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData));
+					ZE_EXPECT_RET_FAILED(execData, node.GetDesc().Init(dev, buildData, node.GetDesc().InitializeFormats, node.GetDesc().InitData.get()));
 					if (execData)
 						gpuUploadRequired |= node.IsInitDataGpuUploadRequired();
 				}
@@ -963,7 +959,7 @@ namespace ZE::GFX::Pipeline
 				{
 					if (pass.Desc.Init)
 					{
-						ZE_EXPECT_RET_FAILED(execData, pass.Desc.Init(dev, buildData, pass.Desc.InitializeFormats, pass.Desc.InitData));
+						ZE_EXPECT_RET_FAILED(execData, pass.Desc.Init(dev, buildData, pass.Desc.InitializeFormats, pass.Desc.InitData.get()));
 						gpuUpload = initialDesc.StartupPasses.at(passId).IsInitDataGpuUploadRequired();
 					}
 				}

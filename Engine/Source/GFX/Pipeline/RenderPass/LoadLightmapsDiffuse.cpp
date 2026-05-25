@@ -10,36 +10,23 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(initData, "Empty intialization data!");
 
-		const Data::CubemapSource& sources = *reinterpret_cast<Data::CubemapSource*>(initData);
-		return Initialize(dev, buildData, sources);
+		return Initialize(dev, buildData, *static_cast<InitData*>(initData));
 	}
 
 	PassDesc GetDesc(const Data::CubemapSource& irrMapSource) noexcept
 	{
 		PassDesc desc{ Base(CorePassType::LoadLightmapsDiffuse) };
-		desc.InitData = new Data::CubemapSource{ irrMapSource };
+		desc.InitData = std::make_unique<InitData>(irrMapSource);
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
-		desc.CopyInitData = CopyInitData;
-		desc.FreeInitData = FreeInitData;
 		desc.DebugUI = DebugUI;
 		return desc;
-	}
-
-	void* CopyInitData(void* data) noexcept
-	{
-		return new Data::CubemapSource(*reinterpret_cast<Data::CubemapSource*>(data));
-	}
-
-	void FreeInitData(void* data) noexcept
-	{
-		delete reinterpret_cast<Data::CubemapSource*>(data);
 	}
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
@@ -71,16 +58,16 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 		return status;
 	}
 
-	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const Data::CubemapSource& irrMapSource) noexcept
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const InitData& initData) noexcept
 	{
 		auto passData = std::make_shared<ExecuteData>();
-		passData->IrrMapSource = irrMapSource;
+		passData->IrrMapSource = initData.IrrMapSource;
 
 		Resource::Texture::PackDesc texDesc = {};
 		std::vector<Surface> textures;
 
 		ZE_TEXTURE_SET_NAME(texDesc, "Irradiance Map");
-		if (!irrMapSource.LoadTextures(textures))
+		if (!passData->IrrMapSource.LoadTextures(textures))
 		{
 			Logger::Error("Error loading irradiance map, falling back to generated texture!");
 			if (textures.size())

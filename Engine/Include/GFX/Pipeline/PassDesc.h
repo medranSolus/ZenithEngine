@@ -11,6 +11,16 @@ namespace ZE::GFX::Pipeline
 		std::unique_ptr<RID[]> Resources;
 		std::shared_ptr<PassExecuteData> ExecData;
 	};
+	
+	// Base class for optional data used during pass initialization
+	struct PassInitData
+	{
+		PassInitData() = default;
+		ZE_CLASS_DEFAULT(PassInitData);
+		virtual ~PassInitData() = default;
+
+		virtual std::unique_ptr<PassInitData> Clone() const noexcept = 0;
+	};
 
 	// Information about how update was performed for pass
 	enum class UpdateOperation : U8
@@ -26,7 +36,7 @@ namespace ZE::GFX::Pipeline
 	// Shorthand for return type expected to be returned by init callback
 	typedef Expected<std::shared_ptr<PassExecuteData>> ExpectedPassExecuteData;
 	// Create all needed data for render pass
-	typedef ExpectedPassExecuteData (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, void*) noexcept;
+	typedef ExpectedPassExecuteData (*PassInitCallback)(Device&, RendererPassBuildData&, const std::vector<PixelFormat>&, PassInitData*) noexcept;
 	// Evaluate whether pass shall run and if it cause update of the render graph
 	typedef bool (*PassEvaluateExecutionCallback)() noexcept;
 	// Main function that will be performing rendering, obligatory, returns true if any commands have been recorded
@@ -34,10 +44,6 @@ namespace ZE::GFX::Pipeline
 	// Optional function to handle pass data update after render graph got it's update.
 	// Can also cause render graph update when causes critical changes to the global settings (like render size for upscaling)
 	typedef Expected<UpdateOperation> (*PassUpdatetCallback)(Device&, RendererPassBuildData&, PassExecuteData*, const std::vector<PixelFormat>&) noexcept;
-	// Optional function for copying init data for pass creation
-	typedef void* (*PassCopyInitDataCallback)(void*) noexcept;
-	// Optional function for freeing up init data for pass creation
-	typedef void (*PassFreeInitDataCallback)(void*) noexcept;
 	// Optional function for creating ImGui debug controls
 	typedef void (*PassDebugUICallback)(PassExecuteData*) noexcept;
 
@@ -104,11 +110,11 @@ namespace ZE::GFX::Pipeline
 	ZE_ENUM_OPERATORS(CorePassType, PassType);
 
 	// Information about given render pass
-	struct PassDesc
+	struct PassDesc final
 	{
 		PassType Type = Base(CorePassType::Invalid);
 		// Optional data for pass intialization
-		PtrVoid InitData = nullptr;
+		std::unique_ptr<PassInitData> InitData;
 		// Optional list of pixel formats for buffers used in pass
 		std::vector<PixelFormat> InitializeFormats;
 		PassInitCallback Init = nullptr;
@@ -118,11 +124,14 @@ namespace ZE::GFX::Pipeline
 		// Only required callback for pass execution
 		PassExecuteCallback Execute = nullptr;
 		PassUpdatetCallback Update = nullptr;
-		// Required if InitData is present
-		PassCopyInitDataCallback CopyInitData = nullptr;
-		// Required if InitData is present
-		PassFreeInitDataCallback FreeInitData = nullptr;
 		// Only used in non-release builds or in demo/editor
 		PassDebugUICallback DebugUI = nullptr;
+
+		PassDesc() = default;
+		constexpr PassDesc(PassType type) noexcept : Type(type), Evaluate(nullptr), Execute(nullptr), Update(nullptr), DebugUI(nullptr) {}
+		ZE_CLASS_MOVE_ONLY(PassDesc);
+		PassDesc(const PassDesc& desc) noexcept { *this = desc; }
+		PassDesc& operator=(const PassDesc& desc) noexcept;
+		~PassDesc() = default;
 	};
 }

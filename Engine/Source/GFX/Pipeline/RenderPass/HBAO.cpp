@@ -9,7 +9,7 @@ namespace ZE::GFX::Pipeline::RenderPass::HBAO
 		return Update(dev, buildData, *static_cast<ExecuteData*>(passData));
 	}
 
-	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, void* initData) noexcept
+	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for HBAO initialization formats!");
 		return Initialize(dev, buildData, formats.front());
