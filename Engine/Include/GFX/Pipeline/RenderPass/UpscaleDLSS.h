@@ -19,8 +19,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 	{
 		UInt2 DisplaySize = { 0, 0 };
 		NVSDK_NGX_PerfQuality_Value Quality = NVSDK_NGX_PerfQuality_Value_DLAA;
-		bool SharpeningEnabled = true;
-		float Sharpness = 0.0f;
+		std::array<NVSDK_NGX_DLSS_Hint_Render_Preset, 6> QualityPresets;
+		bool PresetUpdate = true;
 		NVSDK_NGX_Parameter* NgxParam = nullptr;
 		NVSDK_NGX_Handle* DlssHandle = nullptr;
 

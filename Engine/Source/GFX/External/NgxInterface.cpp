@@ -197,26 +197,21 @@ namespace ZE::GFX::External
 		commonInfo.PathListInfo.Length = 0;
 		commonInfo.InternalData = nullptr;
 		commonInfo.LoggingInfo.LoggingCallback = MessageHandler;
-		commonInfo.LoggingInfo.MinimumLoggingLevel = _ZE_MODE_PROFILE || _ZE_MODE_RELEASE ? NVSDK_NGX_LOGGING_LEVEL_OFF : (_ZE_MODE_DEV ? NVSDK_NGX_LOGGING_LEVEL_ON : NVSDK_NGX_LOGGING_LEVEL_VERBOSE);
+		commonInfo.LoggingInfo.MinimumLoggingLevel = _ZE_MODE_PROFILE || _ZE_MODE_RELEASE ? NVSDK_NGX_LOGGING_LEVEL_OFF : NVSDK_NGX_LOGGING_LEVEL_ON;
 		commonInfo.LoggingInfo.DisableOtherLoggingSinks = true;
 		return commonInfo;
 	}
 
 	void NgxInterface::FreeScratchBuffer(NVSDK_NGX_Parameter* param) noexcept
 	{
-		U64 scratchBufferSize = 0;
-		NVSDK_NGX_Result res = param->Get(NVSDK_NGX_Parameter_Scratch_SizeInBytes, &scratchBufferSize);
-		if (NVSDK_NGX_SUCCEED(res) && scratchBufferSize)
-		{
-			U8* scratchBuffer = nullptr;
-			ZE_NGX_CHECK(param->Get(NVSDK_NGX_Parameter_Scratch, reinterpret_cast<void**>(&scratchBuffer)), "Failed to get scratch buffer pointer, possible memory leak!");
-			if (scratchBuffer)
-				delete[] scratchBuffer;
-		}
+		auto it = scratchBuffersCache.find(param);
+		if (it != scratchBuffersCache.end())
+			scratchBuffersCache.erase(it);
 	}
 
 	NgxInterface::~NgxInterface()
 	{
+		ZE_ASSERT(scratchBuffersCache.size() == 0, "Not all NGX features were freed!");
 		if (ngxCaps)
 		{
 			Status res = {};
@@ -277,7 +272,7 @@ namespace ZE::GFX::External
 		return {};
 	}
 
-	Status NgxInterface::CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) const noexcept
+	Status NgxInterface::CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 
@@ -296,7 +291,13 @@ namespace ZE::GFX::External
 		initParam->Set(NVSDK_NGX_Parameter_RTXValue, false); // Some older DLSS dlls still expect this value to be set
 		initParam->Set(NVSDK_NGX_Parameter_Scratch_SizeInBytes, scratchBufferSize);
 		if (scratchBufferSize)
-			initParam->Set(NVSDK_NGX_Parameter_Scratch, new U8[scratchBufferSize]);
+		{
+			ZE_ASSERT(scratchBuffersCache.find(initParam) == scratchBuffersCache.end(), "Scratch buffer for this parameter already exists!");
+
+			auto scratchBuffer = std::make_unique<U8[]>(scratchBufferSize);
+			initParam->Set(NVSDK_NGX_Parameter_Scratch, scratchBuffer.get());
+			scratchBuffersCache.emplace(initParam, std::move(scratchBuffer));
+		}
 
 		auto expCL = CommandList::Create(dev, QueueType::Compute);
 		if (!expCL)
@@ -351,7 +352,7 @@ namespace ZE::GFX::External
 		ZE_RHI_BACKEND_CALL_RET(EvaluateFeature, dev, cl, feature, param);
 	}
 
-	void NgxInterface::FreeParameter(NVSDK_NGX_Parameter* param) const noexcept
+	void NgxInterface::FreeParameter(NVSDK_NGX_Parameter* param) noexcept
 	{
 		ZE_ASSERT(IsInitialized(), "NGX library not yet initialized!");
 		ZE_ASSERT(param, "Empty NGX parameter!");

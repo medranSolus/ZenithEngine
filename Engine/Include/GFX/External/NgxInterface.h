@@ -25,15 +25,17 @@ namespace ZE::GFX::External
 		ZE_RHI_BACKEND(External::NgxInterface);
 		Ptr<NVSDK_NGX_Parameter> ngxCaps;
 		PFN_NVSDK_NGX_DLSS_GetOptimalSettingsCallback optimalSettingsCallback = nullptr;
+		std::unordered_map<NVSDK_NGX_Parameter*, std::unique_ptr<U8[]>> scratchBuffersCache;
 
 		static constexpr const char* GetFeatureSupportResult(NVSDK_NGX_Feature_Support_Result res) noexcept;
 		static constexpr const char* GetFeatureString(NVSDK_NGX_Feature feature, FeatureString stringType) noexcept;
 
 		static void NVSDK_CONV MessageHandler(const char* message, NVSDK_NGX_Logging_Level loggingLevel, NVSDK_NGX_Feature sourceComponent) noexcept;
 		static NVSDK_NGX_FeatureCommonInfo GetCommonInfo() noexcept;
-		static void FreeScratchBuffer(NVSDK_NGX_Parameter* param) noexcept;
 
 		Status GetCapabilities(Ptr<NVSDK_NGX_Parameter>& param) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCapabilities, param); }
+
+		void FreeScratchBuffer(NVSDK_NGX_Parameter* param) noexcept;
 
 	public:
 		NgxInterface() = default;
@@ -48,10 +50,10 @@ namespace ZE::GFX::External
 		constexpr bool IsInitialized() const noexcept { return ngxCaps && optimalSettingsCallback; }
 
 		Status AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept;
-		Status CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) const noexcept;
+		Status CreateFeature(Device& dev, NVSDK_NGX_Feature type, NVSDK_NGX_Parameter* initParam, NVSDK_NGX_Handle*& feature) noexcept;
 		Status RunFeature(Device& dev, CommandList& cl, const NVSDK_NGX_Handle* feature, const NVSDK_NGX_Parameter* param) const noexcept;
 		// Parameters used for initialization of the features must be freed after freeing the feature itself
-		void FreeParameter(NVSDK_NGX_Parameter* param) const noexcept;
+		void FreeParameter(NVSDK_NGX_Parameter* param) noexcept;
 		void FreeFeature(NVSDK_NGX_Handle* feature) const noexcept;
 
 		bool IsFeatureAvailable(Device& dev, NVSDK_NGX_Feature feature) const noexcept;

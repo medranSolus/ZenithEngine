@@ -50,11 +50,20 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		ZE_ASSERT(passData.Quality != NVSDK_NGX_PerfQuality_Value_UltraQuality, "DLSS ultra quality setting currently unsuported!");
 
 		UInt2 renderSize = CalculateRenderSize(dev, Settings::DisplaySize, UpscalerType::DLSS, passData.Quality);
-		if (renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize)
+		bool sizeChanged = renderSize != Settings::RenderSize || passData.DisplaySize != Settings::DisplaySize;
+		if (sizeChanged || passData.PresetUpdate)
 		{
 			if (passData.DlssHandle)
 				ngx->FreeFeature(passData.DlssHandle);
 			passData.DisplaySize = Settings::DisplaySize;
+			passData.PresetUpdate = false;
+
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA, passData.QualityPresets.at(5));
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, passData.QualityPresets.at(4));
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, passData.QualityPresets.at(3));
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, passData.QualityPresets.at(2));
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, passData.QualityPresets.at(1));
+			passData.NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, passData.QualityPresets.at(0));
 
 			passData.NgxParam->Set(NVSDK_NGX_Parameter_Width, renderSize.X);
 			passData.NgxParam->Set(NVSDK_NGX_Parameter_Height, renderSize.Y);
@@ -64,7 +73,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 			ZE_NGX_LOG_RET_FAILED_EXPECT(ngx->CreateFeature(dev, NVSDK_NGX_Feature_SuperSampling, passData.NgxParam, passData.DlssHandle), "Error creating DLSS feature!");
 
 			Settings::RenderSize = renderSize;
-			return UpdateOperation::FrameBufferImpact;
+			return sizeChanged ? UpdateOperation::FrameBufferImpact : UpdateOperation::InternalOnly;
 		}
 		return UpdateOperation::NoUpdate;
 	}
@@ -93,15 +102,18 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Enable_Output_Subrects, false);
 
 		// Optimization presets
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, NVSDK_NGX_DLSS_Hint_Render_Preset_Default);
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, NVSDK_NGX_DLSS_Hint_Render_Preset_K);
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, NVSDK_NGX_DLSS_Hint_Render_Preset_F);
+		passData->QualityPresets =
+		{
+			NVSDK_NGX_DLSS_Hint_Render_Preset_F,
+			NVSDK_NGX_DLSS_Hint_Render_Preset_K,
+			NVSDK_NGX_DLSS_Hint_Render_Preset_K,
+			NVSDK_NGX_DLSS_Hint_Render_Preset_K,
+			NVSDK_NGX_DLSS_Hint_Render_Preset_Default,
+			NVSDK_NGX_DLSS_Hint_Render_Preset_F,
+		};
 
 		// Some default parameters
-		passData->NgxParam->Set(NVSDK_NGX_Parameter_TonemapperType, NVSDK_NGX_TONEMAPPER_REINHARD);
+		passData->NgxParam->Set(NVSDK_NGX_Parameter_TonemapperType, NVSDK_NGX_TONEMAPPER_ACES);
 		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSSMode, NVSDK_NGX_DLSS_Mode_DLSS);
 		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Pre_Exposure, 1.0f);
 		passData->NgxParam->Set(NVSDK_NGX_Parameter_DLSS_Exposure_Scale, 1.0f);
@@ -148,7 +160,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_Y, renderData.DynamicData.JitterCurrent.y);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_X, -Utils::SafeCast<float>(inputSize.X));
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_Y, -Utils::SafeCast<float>(inputSize.Y));
-		data.NgxParam->Set(NVSDK_NGX_Parameter_Sharpness, data.SharpeningEnabled ? data.Sharpness : 0.0f);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Reset, renderData.GraphData.FrameTemporalReset);
 		data.NgxParam->Set(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, Utils::SafeCast<float>(Settings::FrameTime));
 
@@ -165,69 +176,112 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		{
 			ExecuteData& execData = *static_cast<ExecuteData*>(data);
 
-			ImGui::Text("Version 310.4.0.0 (built with)");
+			ImGui::Text("Version 310.6.0 (built with)");
 
-			auto getQualityString = [](NVSDK_NGX_PerfQuality_Value quality) noexcept -> const char*
-				{
-					switch (quality)
+			ImGui::Columns(2, "##dlss_settings", false);
+			{
+				auto getQualityString = [](NVSDK_NGX_PerfQuality_Value quality) noexcept -> const char*
 					{
-					case NVSDK_NGX_PerfQuality_Value_MaxPerf:
-						return "Performance";
-					case NVSDK_NGX_PerfQuality_Value_Balanced:
-						return "Balanced";
-					case NVSDK_NGX_PerfQuality_Value_MaxQuality:
-						return "Quality";
-					case NVSDK_NGX_PerfQuality_Value_UltraPerformance:
-						return "Ultra Performance";
-						break;
-					default:
-					case NVSDK_NGX_PerfQuality_Value_UltraQuality:
-						ZE_ENUM_UNHANDLED();
-					case NVSDK_NGX_PerfQuality_Value_DLAA:
-						return "DLAA";
-					}
-				};
-			constexpr std::array<NVSDK_NGX_PerfQuality_Value, 5> LEVELS =
-			{
-				NVSDK_NGX_PerfQuality_Value_UltraPerformance,
-				NVSDK_NGX_PerfQuality_Value_MaxPerf,
-				NVSDK_NGX_PerfQuality_Value_Balanced,
-				NVSDK_NGX_PerfQuality_Value_MaxQuality,
-				NVSDK_NGX_PerfQuality_Value_DLAA
-			};
-			if (ImGui::BeginCombo("Quality level", getQualityString(execData.Quality)))
-			{
-				for (auto level : LEVELS)
+						switch (quality)
+						{
+						case NVSDK_NGX_PerfQuality_Value_MaxPerf:
+							return "Performance";
+						case NVSDK_NGX_PerfQuality_Value_Balanced:
+							return "Balanced";
+						case NVSDK_NGX_PerfQuality_Value_MaxQuality:
+							return "Quality";
+						case NVSDK_NGX_PerfQuality_Value_UltraPerformance:
+							return "Ultra Performance";
+						case NVSDK_NGX_PerfQuality_Value_UltraQuality:
+							return "Ultra Quality";
+						default:
+						case NVSDK_NGX_PerfQuality_Value_DLAA:
+							return "DLAA";
+						}
+					};
+				if (ImGui::BeginCombo("Quality level", getQualityString(execData.Quality)))
 				{
-					const bool selected = level == execData.Quality;
-					if (ImGui::Selectable(getQualityString(level), selected))
-						execData.Quality = level;
-					if (selected)
-						ImGui::SetItemDefaultFocus();
+					constexpr std::array<NVSDK_NGX_PerfQuality_Value, 5> LEVELS =
+					{
+						NVSDK_NGX_PerfQuality_Value_UltraPerformance,
+						NVSDK_NGX_PerfQuality_Value_MaxPerf,
+						NVSDK_NGX_PerfQuality_Value_Balanced,
+						NVSDK_NGX_PerfQuality_Value_MaxQuality,
+						NVSDK_NGX_PerfQuality_Value_DLAA
+					};
+					for (auto level : LEVELS)
+					{
+						const bool selected = level == execData.Quality;
+						if (ImGui::Selectable(getQualityString(level), selected))
+							execData.Quality = level;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
-			}
-
-			ImGui::Columns(2, "##sharpness_settings", false);
-			{
-				ImGui::Text("Sharpness");
 			}
 			ImGui::NextColumn();
 			{
-				ImGui::Checkbox("##enable_sharpness", &execData.SharpeningEnabled);
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("Enable an additional sharpening pass");
+				auto getPresetString = [](NVSDK_NGX_DLSS_Hint_Render_Preset preset) noexcept -> const char*
+					{
+						switch (preset)
+						{
+						default:
+							ZE_ENUM_UNHANDLED();
+						case NVSDK_NGX_DLSS_Hint_Render_Preset_Default:
+							return "Default";
+						case NVSDK_NGX_DLSS_Hint_Render_Preset_F:
+							return "Preset F";
+						case NVSDK_NGX_DLSS_Hint_Render_Preset_J:
+							return "Preset J";
+						case NVSDK_NGX_DLSS_Hint_Render_Preset_K:
+							return "Preset K";
+						}
+					};
+				auto& currentPreset = execData.QualityPresets.at(static_cast<U8>(execData.Quality));
+				if (ImGui::BeginCombo("Quality preset", getPresetString(currentPreset)))
+				{
+					auto getPresetInfoString = [](NVSDK_NGX_DLSS_Hint_Render_Preset preset) noexcept -> const char*
+						{
+							switch (preset)
+							{
+							default:
+								ZE_ENUM_UNHANDLED();
+							case NVSDK_NGX_DLSS_Hint_Render_Preset_Default:
+								return "Default behavior";
+							case NVSDK_NGX_DLSS_Hint_Render_Preset_F:
+								return "Intended for Ultra Perf/DLAA modes. The default preset for Ultra Perf";
+							case NVSDK_NGX_DLSS_Hint_Render_Preset_J:
+								return "Similar to preset K. Preset J might exhibit slightly less ghosting at the cost of extra flickering. Preset K is generally recommended over preset J";
+							case NVSDK_NGX_DLSS_Hint_Render_Preset_K:
+								return "Default preset for DLAA/Perf/Balanced/Quality modes that is transformer based. Best image quality preset at a higher performance cost";
+							}
+						};
+					constexpr std::array<NVSDK_NGX_DLSS_Hint_Render_Preset, 4> PRESETS =
+					{
+						NVSDK_NGX_DLSS_Hint_Render_Preset_Default,
+						NVSDK_NGX_DLSS_Hint_Render_Preset_F,
+						NVSDK_NGX_DLSS_Hint_Render_Preset_J,
+						NVSDK_NGX_DLSS_Hint_Render_Preset_K,
+					};
+					for (auto preset : PRESETS)
+					{
+						const bool selected = preset == currentPreset;
+						if (ImGui::Selectable(getPresetString(preset), selected))
+						{
+							currentPreset = preset;
+							execData.PresetUpdate = true;
+						}
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip(getPresetInfoString(preset));
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
 			}
 			ImGui::Columns(1);
 
-			if (!execData.SharpeningEnabled)
-				ImGui::BeginDisabled(true);
-			GUI::InputClamp(0.0f, 1.0f, execData.Sharpness,
-				ImGui::InputFloat("##dlss_sharpness", &execData.Sharpness, 0.01f, 0.1f, "%.2f"));
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness");
-			if (!execData.SharpeningEnabled)
-				ImGui::EndDisabled();
 			ImGui::NewLine();
 		}
 	}
