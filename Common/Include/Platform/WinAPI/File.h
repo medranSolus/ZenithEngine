@@ -49,29 +49,28 @@ namespace ZE::Platform::WinAPI
 			return task;
 		}
 
-		OVERLAPPED* overlapped = new OVERLAPPED{};
+		std::unique_ptr<OVERLAPPED> overlapped = std::make_unique<OVERLAPPED>();
 		overlapped->Offset = static_cast<U32>(offset & UINT32_MAX);
 		overlapped->OffsetHigh = static_cast<U32>(offset >> 32);
 		overlapped->hEvent = CreateEventW(nullptr, false, false, nullptr);
 
 		BOOL operation;
 		if constexpr (IS_READ)
-			operation = ReadFileEx(osFile, buffer, size, overlapped, File::TransferCompletionCallback);
+			operation = ReadFileEx(osFile, buffer, size, overlapped.get(), File::TransferCompletionCallback);
 		else
-			operation = WriteFileEx(osFile, buffer, size, overlapped, File::TransferCompletionCallback);
+			operation = WriteFileEx(osFile, buffer, size, overlapped.get(), File::TransferCompletionCallback);
 
 		if (operation == 0)
 		{
 			Status lastError = ZE_WIN_LAST_ERROR();
 			[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
 			ZE_ASSERT(status, "Error closing file event handle!");
-			delete overlapped;
 
 			Task<Status> task(std::packaged_task<Status()>(std::bind([](Status code) noexcept -> Status { return code; }, lastError)));
 			return task;
 		}
 
-		Task<Status> task(std::packaged_task<Status()>(std::bind([](OVERLAPPED* overlapped, U32 requestedBytes) noexcept -> Status
+		Task<Status> task(std::packaged_task<Status()>(std::bind([overlapped = std::move(overlapped)](U32 requestedBytes) noexcept -> Status
 			{
 				// Wait for async operation to complete
 				Status code = {};
@@ -103,10 +102,9 @@ namespace ZE::Platform::WinAPI
 
 				[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
 				ZE_ASSERT(status, "Error closing file event handle!");
-				delete overlapped;
 
 				return code;
-			}, overlapped, size)));
+			}, size)));
 		return task;
 	}
 #pragma endregion
