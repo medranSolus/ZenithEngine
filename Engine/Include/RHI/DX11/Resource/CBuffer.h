@@ -27,7 +27,7 @@ namespace ZE::RHI::DX11::Resource
 
 		// Gfx API Internal
 
-		void Free() noexcept { buffer = nullptr; }
+		IBuffer* GetBuffer() const noexcept { return buffer.Get(); }
 
 		void Update(Device& dev, const GFX::Resource::CBufferData& data) const;
 	};
