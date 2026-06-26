@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "GFX/Device.h"
 
 namespace ZE::RHI::DX11
 {
@@ -13,14 +13,14 @@ namespace ZE::RHI::DX11
 
 	public:
 		SwapChain() = default;
-		SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput);
 		ZE_CLASS_MOVE(SwapChain);
 		~SwapChain() = default;
 
-		constexpr void StartFrame(GFX::Device& dev) {}
-		void Free(GFX::Device& dev) noexcept { srv = nullptr; rtv = nullptr; backBuffer = nullptr; swapChain = nullptr; }
+		static Expected<SwapChain> Create(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput) noexcept;
 
-		void Present(GFX::Device& dev) const;
+		constexpr void StartFrame(GFX::Device& dev) noexcept {}
+
+		Status Present(GFX::Device& dev) const noexcept;
 
 		// Gfx API Internal
 

@@ -30,6 +30,7 @@ namespace ZE::RHI::DX11
 	typedef ID3D11Resource             IResource;
 	typedef ID3D11SamplerState         ISamplerState;
 	typedef ID3D11ShaderResourceView1  IShaderResourceView;
+	typedef ID3D11Texture1D            ITexture1D;
 	typedef ID3D11Texture2D1           ITexture2D;
 	typedef ID3D11Texture3D1           ITexture3D;
 	typedef ID3D11UnorderedAccessView1 IUnorderedAccessView;

@@ -2,43 +2,38 @@
 
 namespace ZE::RHI::DX11
 {
-	SwapChain::SwapChain(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput)
+	Expected<SwapChain> SwapChain::Create(const Window::MainWindow& window, GFX::Device& dev, bool shaderInput) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
-
 		// Retrieve factory used to create device
-		DX::ComPtr<DX::IDevice> dxgiDevice = nullptr;
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDev().As(&dxgiDevice));
-		DX::ComPtr<DX::IAdapter> adapter = nullptr;
-		ZE_DX_THROW_FAILED(dxgiDevice->GetAdapter(&adapter));
-		DX::ComPtr<DX::IFactory> factory = nullptr;
-		ZE_DX_THROW_FAILED(adapter->GetParent(IID_PPV_ARGS(&factory)));
+		DX::ComPtr<DX::IDevice> dxgiDevice;
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDev().As(&dxgiDevice));
+		DX::ComPtr<IDXGIAdapter> adapter;
+		ZE_DX_RET_FAILED_EXPECT(dxgiDevice->GetAdapter(&adapter));
+		DX::ComPtr<DX::IFactory> factory;
+		ZE_DX_RET_FAILED_EXPECT(adapter->GetParent(IID_PPV_ARGS(&factory)));
 
-		presentFlags = DX::CreateSwapChain(std::move(factory), dev.Get().dx11.GetDevice(), window.GetHandle(), swapChain, shaderInput
-#if _ZE_DEBUG_GFX_API
-			, dev.Get().dx11.GetInfoManager()
-#endif
-		);
+		SwapChain swapChain;
+		ZE_EXPECT_RET_FAILED(swapChain.swapChain, DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), shaderInput, swapChain.presentFlags));
 
 		// Retrieve RTV
-		ZE_DX_THROW_FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateRenderTargetView1(backBuffer.Get(), nullptr, &rtv));
+		ZE_DX_RET_FAILED_EXPECT(swapChain.swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChain.backBuffer)));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateRenderTargetView1(swapChain.backBuffer.Get(), nullptr, &swapChain.rtv));
 		if (shaderInput)
 		{
-			ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateShaderResourceView1(backBuffer.Get(), nullptr, &srv));
+			ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateShaderResourceView1(swapChain.backBuffer.Get(), nullptr, &swapChain.srv));
 		}
+		return swapChain;
 	}
 
-	void SwapChain::Present(GFX::Device& dev) const
+	Status SwapChain::Present(GFX::Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
-		ZE_DX_SET_DEBUG_WATCH();
-		if (FAILED(ZE_WIN_EXCEPT_RESULT = swapChain->Present(0, presentFlags)))
+		HRESULT hr = swapChain->Present(0, presentFlags);
+		if (FAILED(hr))
 		{
-			if (ZE_WIN_EXCEPT_RESULT == DXGI_ERROR_DEVICE_REMOVED)
-				throw ZE_DX_EXCEPT(dev.Get().dx11.GetDevice()->GetDeviceRemovedReason());
-			else
-				throw ZE_DX_EXCEPT(ZE_WIN_EXCEPT_RESULT);
+			if (hr == DXGI_ERROR_DEVICE_REMOVED)
+				hr = dev.Get().dx11.GetDevice()->GetDeviceRemovedReason();
+			return ZE_DX_ERROR(hr);
 		}
+		return {};
 	}
 }
