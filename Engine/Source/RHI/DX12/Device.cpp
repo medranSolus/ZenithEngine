@@ -60,7 +60,7 @@ namespace ZE::RHI::DX12
 		ZE_DX_CHECK_FAILED(queue->ExecuteCommandLists(1, lists), "ExecuteCommandLists caused debug layer messages!");
 	}
 
-	void Device::MoveFrom(Device& dev) noexcept
+	void Device::MoveFrom(Device&& dev) noexcept
 	{
 #if _ZE_DEBUG_GFX_API
 		debugManager = std::move(dev.debugManager);
@@ -81,7 +81,7 @@ namespace ZE::RHI::DX12
 		allocator = std::move(dev.allocator);
 
 		descriptorSize = dev.descriptorSize;
-		gpuCtx = std::exchange(dev.gpuCtx, {});
+		std::swap(gpuCtx, dev.gpuCtx);
 
 #if !_ZE_MODE_RELEASE
 		pixCapturer = std::exchange(dev.pixCapturer, nullptr);
@@ -102,7 +102,7 @@ namespace ZE::RHI::DX12
 		descriptorGpuAllocator(std::move(dev.descriptorGpuAllocator)),
 		descriptorCpuAllocator(std::move(dev.descriptorCpuAllocator))
 	{
-		MoveFrom(dev);
+		MoveFrom(std::move(dev));
 	}
 
 	Device& Device::operator=(Device&& dev) noexcept
@@ -111,7 +111,7 @@ namespace ZE::RHI::DX12
 		chunkDescAllocator = std::move(dev.chunkDescAllocator);
 		descriptorGpuAllocator = std::move(dev.descriptorGpuAllocator);
 		descriptorCpuAllocator = std::move(dev.descriptorCpuAllocator);
-		MoveFrom(dev);
+		MoveFrom(std::move(dev));
 		return *this;
 	}
 
@@ -124,6 +124,7 @@ namespace ZE::RHI::DX12
 			{
 			case GFX::VendorGPU::AMD:
 			{
+				ZE_ASSERT(gpuCtx.AMD, "Invalid AMD AGS context!");
 				agsDriverExtensionsDX12_DestroyDevice(gpuCtx.AMD, device.Get(), nullptr);
 				device.Detach();
 				agsDeInitialize(gpuCtx.AMD);
@@ -224,12 +225,20 @@ namespace ZE::RHI::DX12
 						deviceParams.FeatureLevel = MINIMAL_D3D_LEVEL;
 
 						AGSDX12ExtensionParams extensionParams = {};
-						AGSDX12ReturnedParams returnParams;
+						const std::wstring appName = Utils::ToUTF16(Settings::GetAppName());
+						extensionParams.pAppName = appName.c_str();
+						extensionParams.pEngineName = Settings::ENGINE_NAME_WIDE;
+						extensionParams.appVersion = Settings::GetAppVersion();
+						extensionParams.engineVersion = Settings::ENGINE_VERSION;
+						extensionParams.uavSlot = 7;
+						AGSDX12ReturnedParams returnParams = {};
 						if (agsDriverExtensionsDX12_CreateDevice(dev.gpuCtx.AMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
 						{
 							hr = returnParams.pDevice->QueryInterface(IID_PPV_ARGS(&dev.device));
 							returnParams.pDevice->Release();
-							break;
+
+							if (SUCCEEDED(hr))
+								break;
 						}
 						agsDeInitialize(dev.gpuCtx.AMD);
 						dev.gpuCtx.AMD = nullptr;
@@ -283,12 +292,12 @@ namespace ZE::RHI::DX12
 			hr = infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 			if (FAILED(hr))
 			{
-				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set breakpoints on corruption D3D12 messages!");
+				ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to set breakpoints on corruption D3D12 messages!");
 			}
 			hr = infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
 			if (FAILED(hr))
 			{
-				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set breakpoints on error D3D12 messages!");
+				ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to set breakpoints on error D3D12 messages!");
 			}
 
 			// Suppress non important messages
@@ -321,12 +330,12 @@ namespace ZE::RHI::DX12
 			hr = infoQueue->PushStorageFilter(&filter);
 			if (FAILED(hr))
 			{
-				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set up filters on D3D12 messages!");
+				ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to set up filters on D3D12 messages!");
 			}
 		}
 		else
 		{
-			ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to access InfoQueue interface, falling back to default debug layer behavior!");
+			ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to access InfoQueue interface, falling back to default debug layer behavior!");
 		}
 
 		if (Settings::IsEnabledGPUValidation())
@@ -340,7 +349,7 @@ namespace ZE::RHI::DX12
 					&debugFeature, sizeof(D3D12_DEBUG_FEATURE));
 				if (FAILED(hr))
 				{
-					ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set debug device parameter feature flags!");
+					ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to set debug device parameter feature flags!");
 				}
 
 				D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS validationSettings = {};
@@ -353,12 +362,12 @@ namespace ZE::RHI::DX12
 					&validationSettings, sizeof(D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS));
 				if (FAILED(hr))
 				{
-					ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to set GPU based validation settings!");
+					ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to set GPU based validation settings!");
 				}
 			}
 			else
 			{
-				ZE_CODE_WARNING(DX::Error::Make(hr), "Failed to access DebugDevice interface, requested GPU based validation impacted!");
+				ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Failed to access DebugDevice interface, requested GPU based validation impacted!");
 			}
 		}
 #endif
@@ -446,72 +455,6 @@ namespace ZE::RHI::DX12
 		Settings::SetGfxSupportSSSR(true);
 
 		return dev;
-	}
-
-	void Device::OnMonitorChanged(const Window::MainWindow& window) noexcept
-	{
-		bool found = false;
-		auto exp = DX::CreateFactory();
-		if (exp)
-		{
-			DX::ComPtr<DX::IFactory> factory = std::move(exp.value());
-			// Enumerate available outputs and find the one attached to our window
-			HMONITOR monitor = MonitorFromWindow(window.GetHandle(), MONITOR_DEFAULTTONEAREST);
-			for (U32 i = 0; !found; ++i)
-			{
-				// Need to iterate over whole list of adapters again in case that current GPU doesn't own the output (in case of systems with integrated graphics)
-				DX::ComPtr<DX::IAdapter> tempAdapter = nullptr;
-				if (SUCCEEDED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tempAdapter))))
-				{
-					for (U32 j = 0; true; ++j)
-					{
-						DX::ComPtr<IDXGIOutput> tempOutput = nullptr;
-						if (SUCCEEDED(tempAdapter->EnumOutputs(j, &tempOutput)))
-						{
-							DX::ComPtr<DX::IOutput> output = nullptr;
-							if (SUCCEEDED(tempOutput.As(&output)))
-							{
-								DXGI_OUTPUT_DESC1 desc;
-								if (SUCCEEDED(output->GetDesc1(&desc)))
-								{
-									if (monitor == desc.Monitor)
-									{
-										displayProps.RedPrimary = { desc.RedPrimary[0], desc.RedPrimary[1] };
-										displayProps.GreenPrimary = { desc.GreenPrimary[0], desc.GreenPrimary[1] };
-										displayProps.BluePrimary = { desc.BluePrimary[0], desc.BluePrimary[1] };
-										displayProps.WhitePoint = { desc.WhitePoint[0], desc.WhitePoint[1] };
-										displayProps.MinLuminance = desc.MinLuminance;
-										displayProps.MaxLuminance = desc.MaxLuminance;
-										found = true;
-										break;
-									}
-								}
-							}
-						}
-						else
-							break;
-					}
-				}
-				else
-					break;
-			}
-			if (!found)
-				Logger::Warning("DX12 warning: Cannot find monitor attached to main window, using default display properties!");
-		}
-		else
-		{
-			ZE_CODE_WARNING(exp.error(), "Cannot create DXGI factory to query monitor infomation, using default display properties!");
-		}
-		if (!found)
-		{
-			// Default CIE 1931 xy chromaticity values for sRGB / Rec.709 
-			displayProps.RedPrimary = { 0.64f, 0.33f };
-			displayProps.GreenPrimary = { 0.3f, 0.6f };
-			displayProps.BluePrimary = { 0.15f, 0.06f };
-			displayProps.WhitePoint = { 0.3127f, 0.329f };
-			displayProps.MinLuminance = 0.0f;
-			displayProps.MaxLuminance = 300.0f;
-		}
 	}
 
 	GFX::ShaderModel Device::GetMaxShaderModel() const noexcept
@@ -842,7 +785,7 @@ namespace ZE::RHI::DX12
 		else
 		{
 			ZE_FAIL("Run out of descriptors, make sure to configure engine with correct number of descriptors at the start!");
-			return std::unexpected(DX::Error::Make(DX::Error::ALLOC_ERROR));
+			return std::unexpected(ZE_DX_ERROR(DX::Error::ALLOC_ERROR));
 		}
 		return rangeStart;
 	}
