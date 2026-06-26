@@ -3,10 +3,12 @@
 
 namespace ZE::RHI::DX11::Resource
 {
-	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshData& data)
-		: vertexSize(data.VertexSize), vertexCount(data.VertexCount)
+	Expected<Mesh> Mesh::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshData& data) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx11);
+		Mesh mesh = {};
+		mesh.vertexSize = data.VertexSize;
+		mesh.vertexCount = data.VertexCount;
+		mesh.indexCount = data.IndexCount;
 
 		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -21,49 +23,51 @@ namespace ZE::RHI::DX11::Resource
 		resData.SysMemPitch = 0;
 		resData.SysMemSlicePitch = 0;
 
-		std::unique_ptr<U8[]> dataBuffer = nullptr;
 		if (data.IndexCount)
 		{
 			// Pack mesh data into single buffer: index + vertex data
 			ZE_ASSERT(data.IndexSize == sizeof(U16) || data.IndexSize == sizeof(U32),
 				"Only 16 and 32 bit indices are supported for DirectX 11!");
 
-			indexCount = data.IndexCount;
-			is16bitIndices = data.IndexSize == sizeof(U16);
+			mesh.is16bitIndices = data.IndexSize == sizeof(U16);
 			bufferDesc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
 		}
+		else
+			mesh.is16bitIndices = false;
 
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &buffer));
-		ZE_DX_SET_ID(buffer, "Mesh geometry buffer");
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &mesh.buffer));
+		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer");
 		if (data.MeshID != INVALID_EID)
 			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
+
+		return mesh;
 	}
 
-	Mesh::Mesh(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::MeshFileData& data, IO::File& file)
-		: vertexSize(data.VertexSize), vertexCount(data.VertexCount)
+	Expected<Mesh> Mesh::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshFileData& data, GFX::GFile& file) noexcept
 	{
+		Mesh mesh = {};
+		mesh.vertexSize = data.VertexSize;
+		mesh.vertexCount = data.VertexCount;
+		mesh.indexCount = data.IndexCount;
+
+		return mesh;
 	}
 
-	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept(!_ZE_DEBUG_GFX_API)
+	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx11);
-
 		IDeviceContext* ctx = cl.Get().dx11.GetContext();
+
 		const U32 offset = Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
 		ctx->IASetVertexBuffers(0, 1, buffer.GetAddressOf(), &vertexSize, &offset);
+
 		if (IsIndexBufferPresent())
 		{
 			ctx->IASetIndexBuffer(buffer.Get(), is16bitIndices ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0);
-			ZE_DX_THROW_FAILED_INFO(ctx->DrawIndexed(indexCount, 0, 0));
+			ZE_DX_CHECK_FAILED(ctx->DrawIndexed(indexCount, 0, 0), "DrawIndexed caused debug messages!");
 		}
 		else
 		{
-			ZE_DX_THROW_FAILED_INFO(ctx->Draw(vertexCount, 0));
+			ZE_DX_CHECK_FAILED(ctx->Draw(vertexCount, 0), "Draw caused debug messages!");
 		}
-	}
-
-	GFX::Resource::MeshData Mesh::GetData(GFX::Device& dev, GFX::CommandList& cl) const
-	{
-		return { INVALID_EID, nullptr, 0, 0, 0, 0 };
 	}
 }
