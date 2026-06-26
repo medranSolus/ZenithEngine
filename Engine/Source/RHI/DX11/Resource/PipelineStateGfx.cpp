@@ -2,21 +2,22 @@
 
 namespace ZE::RHI::DX11::Resource
 {
-	PipelineStateGfx::PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding)
+	Expected<PipelineStateGfx> PipelineStateGfx::Create(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx11);
-		auto device = dev.Get().dx11.GetDevice();
-		topology = DX::GetTopology(desc.Topology, desc.Ordering);
-
 		ZE_ASSERT(desc.VS, "Vertex Shader is always required!");
+
+		PipelineStateGfx state;
+		state.topology = DX::GetTopology(desc.Topology, desc.Ordering);
+
+		auto device = dev.Get().dx11.GetDevice();
 		ID3DBlob* bytecode = desc.VS->Get().dx11.GetBytecode();
-		ZE_DX_THROW_FAILED(device->CreateVertexShader(bytecode->GetBufferPointer(),
-			bytecode->GetBufferSize(), nullptr, &vertexShader));
-		ZE_DX_SET_ID(vertexShader, desc.VS->Get().dx11.GetName() + "_" + desc.DebugName);
+		ZE_DX_RET_FAILED_EXPECT(device->CreateVertexShader(bytecode->GetBufferPointer(),
+			bytecode->GetBufferSize(), nullptr, &state.vertexShader));
+		ZE_DX_SET_ID(state.vertexShader, *desc.VS->Get().dx11.GetName() + "_" + desc.DebugName);
 
 		if (desc.InputLayout.size())
 		{
-			auto elements = std::make_unique<D3D11_INPUT_ELEMENT_DESC[]>(desc.InputLayout.size());
+			auto elements = std::make_unique_for_overwrite<D3D11_INPUT_ELEMENT_DESC[]>(desc.InputLayout.size());
 			for (U32 i = 0; i < desc.InputLayout.size(); ++i)
 			{
 				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
@@ -30,44 +31,51 @@ namespace ZE::RHI::DX11::Resource
 				element.InstanceDataStepRate = 0;
 			}
 
-			ZE_DX_THROW_FAILED(device->CreateInputLayout(elements.get(), Utils::SafeCast<UINT>(desc.InputLayout.size()),
-				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &inputLayout));
-			ZE_DX_SET_ID(inputLayout, "Layout_" + desc.DebugName);
+			ZE_DX_RET_FAILED_EXPECT(device->CreateInputLayout(elements.get(), Utils::SafeCast<UINT>(desc.InputLayout.size()),
+				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &state.inputLayout));
+			ZE_DX_SET_ID(state.inputLayout, "Layout_" + desc.DebugName);
 		}
 
 		if (desc.DS)
 		{
 			bytecode = desc.DS->Get().dx11.GetBytecode();
-			ZE_DX_THROW_FAILED(device->CreateDomainShader(bytecode->GetBufferPointer(),
-				bytecode->GetBufferSize(), nullptr, &domainShader));
-			ZE_DX_SET_ID(domainShader, desc.DS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_RET_FAILED_EXPECT(device->CreateDomainShader(bytecode->GetBufferPointer(),
+				bytecode->GetBufferSize(), nullptr, &state.domainShader));
+			ZE_DX_SET_ID(state.domainShader, *desc.DS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.HS)
 		{
 			bytecode = desc.HS->Get().dx11.GetBytecode();
-			ZE_DX_THROW_FAILED(device->CreateHullShader(bytecode->GetBufferPointer(),
-				bytecode->GetBufferSize(), nullptr, &hullShader));
-			ZE_DX_SET_ID(hullShader, desc.HS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_RET_FAILED_EXPECT(device->CreateHullShader(bytecode->GetBufferPointer(),
+				bytecode->GetBufferSize(), nullptr, &state.hullShader));
+			ZE_DX_SET_ID(state.hullShader, *desc.HS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.GS)
 		{
 			bytecode = desc.GS->Get().dx11.GetBytecode();
-			ZE_DX_THROW_FAILED(device->CreateGeometryShader(bytecode->GetBufferPointer(),
-				bytecode->GetBufferSize(), nullptr, &geometryShader));
-			ZE_DX_SET_ID(geometryShader, desc.GS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_RET_FAILED_EXPECT(device->CreateGeometryShader(bytecode->GetBufferPointer(),
+				bytecode->GetBufferSize(), nullptr, &state.geometryShader));
+			ZE_DX_SET_ID(state.geometryShader, *desc.GS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 		if (desc.PS)
 		{
 			bytecode = desc.PS->Get().dx11.GetBytecode();
-			ZE_DX_THROW_FAILED(device->CreatePixelShader(bytecode->GetBufferPointer(),
-				bytecode->GetBufferSize(), nullptr, &pixelShader));
-			ZE_DX_SET_ID(pixelShader, desc.PS->Get().dx11.GetName() + "_" + desc.DebugName);
+			ZE_DX_RET_FAILED_EXPECT(device->CreatePixelShader(bytecode->GetBufferPointer(),
+				bytecode->GetBufferSize(), nullptr, &state.pixelShader));
+			ZE_DX_SET_ID(state.pixelShader, *desc.PS->Get().dx11.GetName() + "_" + desc.DebugName);
 		}
 
 		D3D11_BLEND_DESC1 blendDesc = CD3D11_BLEND_DESC1(CD3D11_DEFAULT{});
 		auto& blendTarget = blendDesc.RenderTarget[0];
 		switch (desc.Blender)
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Resource::BlendType::None:
+		{
+			blendTarget.BlendEnable = FALSE;
+			break;
+		}
 		case GFX::Resource::BlendType::Light:
 		{
 			blendTarget.BlendEnable = TRUE;
@@ -83,11 +91,9 @@ namespace ZE::RHI::DX11::Resource
 			blendTarget.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 			break;
 		}
-		default:
-			break;
 		}
-		ZE_DX_THROW_FAILED(device->CreateBlendState1(&blendDesc, &blendState));
-		ZE_DX_SET_ID(blendState, "Blender_" + desc.DebugName);
+		ZE_DX_RET_FAILED_EXPECT(device->CreateBlendState1(&blendDesc, &state.blendState));
+		ZE_DX_SET_ID(state.blendState, "Blender_" + desc.DebugName);
 
 		D3D11_DEPTH_STENCIL_DESC stencilDesc = {};
 		stencilDesc.DepthEnable = TRUE;
@@ -149,8 +155,8 @@ namespace ZE::RHI::DX11::Resource
 			break;
 		}
 		}
-		ZE_DX_THROW_FAILED(device->CreateDepthStencilState(&stencilDesc, &depthStencilState));
-		ZE_DX_SET_ID(depthStencilState, "DSS_" + desc.DebugName);
+		ZE_DX_RET_FAILED_EXPECT(device->CreateDepthStencilState(&stencilDesc, &state.depthStencilState));
+		ZE_DX_SET_ID(state.depthStencilState, "DSS_" + desc.DebugName);
 
 		D3D11_RASTERIZER_DESC2 rasterDesc = CD3D11_RASTERIZER_DESC2(CD3D11_DEFAULT{});
 		rasterDesc.DepthBias = 0;
@@ -159,21 +165,10 @@ namespace ZE::RHI::DX11::Resource
 		rasterDesc.FillMode = desc.IsWireframe() ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 		rasterDesc.CullMode = GetCulling(desc.Culling);
 		rasterDesc.DepthClipEnable = desc.IsDepthClip();
-		ZE_DX_THROW_FAILED(device->CreateRasterizerState2(&rasterDesc, &rasterState));
-		ZE_DX_SET_ID(rasterState, "Raster_" + desc.DebugName);
-	}
+		ZE_DX_RET_FAILED_EXPECT(device->CreateRasterizerState2(&rasterDesc, &state.rasterState));
+		ZE_DX_SET_ID(state.rasterState, "Raster_" + desc.DebugName);
 
-	void PipelineStateGfx::Free(GFX::Device& dev) noexcept
-	{
-		inputLayout = nullptr;
-		vertexShader = nullptr;
-		domainShader = nullptr;
-		hullShader = nullptr;
-		geometryShader = nullptr;
-		pixelShader = nullptr;
-		blendState = nullptr;
-		depthStencilState = nullptr;
-		rasterState = nullptr;
+		return state;
 	}
 
 	void PipelineStateGfx::Bind(IDeviceContext* ctx) const noexcept

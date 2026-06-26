@@ -18,13 +18,13 @@ namespace ZE::RHI::DX11::Resource
 
 	public:
 		PipelineStateGfx() = default;
-		PipelineStateGfx(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding);
 		ZE_CLASS_MOVE(PipelineStateGfx);
-		~PipelineStateGfx() { ZE_ASSERT_FREED(vertexShader == nullptr); }
+		~PipelineStateGfx() = default;
+
+		static Expected<PipelineStateGfx> Create(GFX::Device& dev, const GFX::Resource::PipelineStateDesc& desc, const GFX::Binding::Schema& binding) noexcept;
 
 		void SetStencilRef(GFX::CommandList& cl, U32 refValue) const noexcept { SetStencilRef(cl.Get().dx11.GetContext(), refValue); }
 		void Bind(GFX::CommandList& cl) const noexcept { Bind(cl.Get().dx11.GetContext()); }
-		void Free(GFX::Device& dev) noexcept;
 
 		// Gfx API Internal
 

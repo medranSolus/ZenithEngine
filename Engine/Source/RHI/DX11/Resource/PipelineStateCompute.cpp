@@ -2,12 +2,12 @@
 
 namespace ZE::RHI::DX11::Resource
 {
-	PipelineStateCompute::PipelineStateCompute(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding)
+	Expected<PipelineStateCompute> PipelineStateCompute::Create(GFX::Device& dev, GFX::Resource::Shader& shader, const GFX::Binding::Schema& binding) noexcept
 	{
-		ZE_DX_ENABLE_ID(dev.Get().dx11);
-
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateComputeShader(shader.Get().dx11.GetBytecode()->GetBufferPointer(),
-			shader.Get().dx11.GetBytecode()->GetBufferSize(), nullptr, &computeShader));
-		ZE_DX_SET_ID(computeShader, shader.Get().dx11.GetName());
+		PipelineStateCompute state;
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateComputeShader(shader.Get().dx11.GetBytecode()->GetBufferPointer(),
+			shader.Get().dx11.GetBytecode()->GetBufferSize(), nullptr, &state.computeShader));
+		ZE_DX_SET_ID(state.computeShader, *shader.Get().dx11.GetName());
+		return state;
 	}
 }
