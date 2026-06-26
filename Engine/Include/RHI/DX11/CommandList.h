@@ -24,26 +24,31 @@ namespace ZE::RHI::DX11
 
 	public:
 		CommandList() = default;
-		CommandList(GFX::Device& dev);
-		CommandList(GFX::Device& dev, GFX::QueueType type);
 		ZE_CLASS_MOVE(CommandList);
-		~CommandList() { ZE_ASSERT(tagManager == nullptr && commands == nullptr && context == nullptr, "Command list not freed before deletion!"); }
+		~CommandList() = default;
 
-		constexpr void Open(GFX::Device& dev) {}
+		static Expected<CommandList> Create(GFX::Device& dev) noexcept;
+		static Expected<CommandList> Create(GFX::Device& dev, GFX::QueueType type) noexcept;
 
-		void Reset(GFX::Device& dev) { commands = nullptr; }
+		constexpr void RestoreExternalState(GFX::Device& dev) const noexcept {}
+		constexpr void WriteBreadcrumbs(GFX::Device& dev, U32 value, U64 location, void* breadcrumbsBuffer, bool isBegin) const noexcept {}
+
+		bool IsInitialized() const noexcept { return context != nullptr; }
+		void* GetHandle() const noexcept { return GetContext(); }
+		Status Open(GFX::Device& dev) const noexcept { return {}; }
+		Status Reset(GFX::Device& dev) noexcept { commands = nullptr; return {}; }
+
 #if _ZE_GFX_MARKERS
 		void TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept { tagManager->BeginEvent(Utils::ToUTF16(tag).c_str()); }
 		void TagEnd(GFX::Device& dev) const noexcept { tagManager->EndEvent(); }
 #endif
 
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso);
-		void Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso);
-		void Close(GFX::Device& dev);
+		Status Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) const noexcept;
+		Status Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) const noexcept;
+		Status Close(GFX::Device& dev) noexcept;
 
-		void DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API);
-		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API);
-		void Free(GFX::Device& dev) noexcept;
+		void DrawFullscreen(GFX::Device& dev) const noexcept;
+		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept;
 
 		// Gfx API Internal
 

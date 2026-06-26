@@ -21,11 +21,11 @@ set(ZE_NGX_ID 0 CACHE STRING "Unique identifier used for initialization
 	(contact Nvidia before release here: https://developer.nvidia.com/sw-notification).
 	When set to 0 for development, engine UUID will be used.")
 
-option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" OFF)
+option(ZE_ENABLE_DX11 "Enable DirectX 11 API usage" ON)
 option(ZE_ENABLE_DX12 "Enable DirectX 12 API usage" ON)
 option(ZE_ENABLE_GL "Enable OpenGL API usage" OFF)
 option(ZE_ENABLE_VK "Enable Vulkan API usage" OFF)
-option(ZE_ENABLE_OPENAL "Enable OpenAL API usage" ON)
+option(ZE_ENABLE_OPENAL "Enable OpenAL API usage" OFF)
 option(ZE_ENABLE_XAUDIO2 "Enable XAudio2 API usage" ON)
 option(ZE_EXTERNAL_MODEL_LOADING "Enable external model loading module of engine, making it possible to load custom file formats" ON)
 option(ZE_USE_WIDE_ENTITY_ID "Forces usage of 64bit enitity ID (when large number of enities is possible)" OFF)

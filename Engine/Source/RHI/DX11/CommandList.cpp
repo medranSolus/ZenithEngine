@@ -4,73 +4,64 @@
 
 namespace ZE::RHI::DX11
 {
-	CommandList::CommandList(GFX::Device& dev)
+	Expected<CommandList> CommandList::Create(GFX::Device& dev) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
-
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx = nullptr;
 		dev.Get().dx11.GetDevice()->GetImmediateContext3(&tempCtx);
-		deferred = false;
 
-		ZE_DX_THROW_FAILED(tempCtx.As(&context));
+		CommandList cl;
+		cl.deferred = false;
+		ZE_DX_RET_FAILED_EXPECT(tempCtx.As(&cl.context));
 #if _ZE_GFX_MARKERS
-		ZE_DX_THROW_FAILED(context.As(&tagManager));
+		ZE_DX_RET_FAILED_EXPECT(cl.context.As(&cl.tagManager));
 #endif
+		return cl;
 	}
 
-	CommandList::CommandList(GFX::Device& dev, GFX::QueueType type)
+	Expected<CommandList> CommandList::Create(GFX::Device& dev, GFX::QueueType type) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
-
 		DX::ComPtr<ID3D11DeviceContext3> tempCtx = nullptr;
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateDeferredContext3(0, &tempCtx));
-		deferred = true;
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateDeferredContext3(0, &tempCtx));
 
-		ZE_DX_THROW_FAILED(tempCtx.As(&context));
+		CommandList cl;
+		cl.deferred = true;
+		ZE_DX_RET_FAILED_EXPECT(tempCtx.As(&cl.context));
 #if _ZE_GFX_MARKERS
-		ZE_DX_THROW_FAILED(context.As(&tagManager));
+		ZE_DX_RET_FAILED_EXPECT(cl.context.As(&cl.tagManager));
 #endif
+		return cl;
 	}
 
-	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso)
+	Status CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateCompute& pso) const noexcept
 	{
 		pso.Get().dx11.Bind(context.Get());
+		return {};
 	}
 
-	void CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso)
+	Status CommandList::Open(GFX::Device& dev, GFX::Resource::PipelineStateGfx& pso) const noexcept
 	{
 		pso.Get().dx11.Bind(context.Get());
+		return {};
 	}
 
-	void CommandList::Close(GFX::Device& dev)
+	Status CommandList::Close(GFX::Device& dev) noexcept
 	{
 		if (deferred)
 		{
-			ZE_DX_ENABLE(dev.Get().dx11);
-			ZE_DX_THROW_FAILED(context->FinishCommandList(FALSE, &commands));
+			ZE_DX_RET_FAILED(context->FinishCommandList(FALSE, &commands));
 		}
+		return {};
 	}
 
-	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept(!_ZE_DEBUG_GFX_API)
+	void CommandList::DrawFullscreen(GFX::Device& dev) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx11);
-		ZE_DX_THROW_FAILED_INFO(context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr));
-		ZE_DX_THROW_FAILED_INFO(context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0));
-		ZE_DX_THROW_FAILED_INFO(context->Draw(3, 0));
+		ZE_DX_CHECK_FAILED(context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr), "Reset of vertex buffer for fullscreen draw generated debug messages!");
+		ZE_DX_CHECK_FAILED(context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0), "Reset of index buffer for fullscreen draw generated debug messages!");
+		ZE_DX_CHECK_FAILED(context->Draw(3, 0), "Fullscreen draw produced debug layer messages!");
 	}
 
-	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept(!_ZE_DEBUG_GFX_API)
+	void CommandList::Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept
 	{
-		ZE_DX_ENABLE_INFO(dev.Get().dx11);
-		ZE_DX_THROW_FAILED_INFO(context->Dispatch(groupX, groupY, groupZ));
-	}
-
-	void CommandList::Free(GFX::Device& dev) noexcept
-	{
-#if _ZE_GFX_MARKERS
-		tagManager = nullptr;
-#endif
-		commands = nullptr;
-		context = nullptr;
+		ZE_DX_CHECK_FAILED(context->Dispatch(groupX, groupY, groupZ), "Dispatch produced debug layer messages!");
 	}
 }

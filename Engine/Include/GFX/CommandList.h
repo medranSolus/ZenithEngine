@@ -39,8 +39,8 @@ namespace ZE::GFX
 		// Note that this not include actual pipeline states set for this command list
 		constexpr void RestoreExternalState(GFX::Device& dev) const noexcept { ZE_RHI_BACKEND_CALL(RestoreExternalState, dev); }
 
-		Status Close(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Close, dev); }
-		Status Reset(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL_RET(Reset, dev); }
+		Status Close(Device& dev) noexcept { ZE_RHI_BACKEND_CALL_RET(Close, dev); }
+		Status Reset(Device& dev) noexcept { ZE_RHI_BACKEND_CALL_RET(Reset, dev); }
 
 		constexpr void DrawFullscreen(Device& dev) const noexcept { ZE_RHI_BACKEND_CALL(DrawFullscreen, dev); }
 		// For best performance each thread group should be multiple of 32 (ideally as many as 2*processors on GPU)

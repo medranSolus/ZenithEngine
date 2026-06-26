@@ -42,8 +42,8 @@ namespace ZE::RHI::DX12
 
 		void RestoreExternalState(GFX::Device& dev) const noexcept;
 
-		Status Close(GFX::Device& dev) const noexcept;
-		Status Reset(GFX::Device& dev) const noexcept;
+		Status Close(GFX::Device& dev) noexcept;
+		Status Reset(GFX::Device& dev) noexcept;
 
 		void DrawFullscreen(GFX::Device& dev) const noexcept;
 		void Compute(GFX::Device& dev, U32 groupX, U32 groupY, U32 groupZ) const noexcept;
@@ -62,7 +62,7 @@ namespace ZE::RHI::DX12
 		IGraphicsCommandList* GetList() const noexcept { return commands.Get(); }
 		Status Open(Device& dev) const noexcept { return Open(dev, nullptr); }
 
-		Status Close(Device& dev) const noexcept;
+		Status Close(Device& dev) noexcept;
 		Status Reset(Device& dev) const noexcept;
 	};
 }

@@ -46,12 +46,12 @@ namespace ZE::RHI::DX12
 		RestoreExternalState(dev.Get().dx12);
 	}
 
-	Status CommandList::Close(GFX::Device& dev) const noexcept
+	Status CommandList::Close(GFX::Device& dev) noexcept
 	{
 		return Close(dev.Get().dx12);
 	}
 
-	Status CommandList::Reset(GFX::Device& dev) const noexcept
+	Status CommandList::Reset(GFX::Device& dev) noexcept
 	{
 		return Reset(dev.Get().dx12);
 	}
@@ -142,7 +142,7 @@ namespace ZE::RHI::DX12
 		return cl;
 	}
 
-	Status CommandList::Close(Device& dev) const noexcept
+	Status CommandList::Close(Device& dev) noexcept
 	{
 		ZE_DX_RET_FAILED(commands->Close());
 		return {};

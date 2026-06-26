@@ -18,6 +18,10 @@ namespace ZE::RHI::DX
 			return "The DirectStorage request failed!";
 		case DISKMANAGER_INVALID_HANDLE:
 			return "Unknown DiskStatusHandle handle to wait for!";
+		case INVALID_MAP_RESOURCE:
+			return "Trying to map resource not intended for mapping!";
+		case NO_MEMORY_ONLY_RES:
+			return "Memory only resources are not supported in DX11 backend due to simplified memory management!";
 		default:
 			return Platform::WinAPI::Error::message(condition);
 		}

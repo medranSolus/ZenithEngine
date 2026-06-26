@@ -44,7 +44,8 @@ namespace ZE::GFX::Pipeline
 		// When creating buffer, allow it to hold indirect rendering arguments
 		AllowIndirect = 0x2000,
 		// Treat resource as memory region to be reserved inside FrameBuffer without actual resource allocation.
-		// Sizes::X should hold lower (LSB) part of U64 size of memory region in bytes and Sizes::Y should hold upper (MSB) part
+		// Sizes::X should hold lower (LSB) part of U64 size of memory region in bytes and Sizes::Y should hold upper (MSB) part.
+		// Warning: Not supported by DX11 backend due to simplified memory management!
 		NoResourceCreation = 0x4000,
 		// Similar to NoResourceCreation but disables reserving memory for this resource indicating that it's held outside the FrameBuffer.
 		// Such resource needs to be registered into FrameBuffer before it can be first used. Only supports SRV resources
