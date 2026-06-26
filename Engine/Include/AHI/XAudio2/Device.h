@@ -5,8 +5,8 @@ namespace ZE::AHI::XAudio2
 {
 	class Device final
 	{
-		ComPtr<IXAudio2> device = nullptr;
-		Ptr<IXAudio2MasteringVoice> masterVoice = nullptr;
+		ComPtr<IXAudio2> device;
+		Ptr<IXAudio2MasteringVoice> masterVoice;
 
 	public:
 		Device() = default;
@@ -17,5 +17,6 @@ namespace ZE::AHI::XAudio2
 
 		// Audio API Internal
 
+		IXAudio2* GetDevice() const noexcept { return device.Get(); }
 	};
 }

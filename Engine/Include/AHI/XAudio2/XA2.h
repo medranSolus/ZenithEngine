@@ -1,6 +1,7 @@
 #pragma once
 // Headers needed for XAudio2
 #include "Platform/WinAPI/ComPtr.h"
+#include "Error.h"
 ZE_WARNING_PUSH
 #include "xapobase.h"
 #include "xapofx.h"
