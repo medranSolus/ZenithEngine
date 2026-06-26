@@ -50,8 +50,7 @@ namespace ZE::RHI::DX12::Pipeline
 			U16 Array = 0;
 			U16 Mips = 0;
 			PixelFormat Format = PixelFormat::Unknown;
-			D3D12_RESOURCE_DIMENSION Dimenions = D3D12_RESOURCE_DIMENSION_UNKNOWN;
-			std::bitset<4> Flags = 0;
+			std::bitset<7> Flags = 0;
 
 			constexpr bool IsCube() const noexcept { return Flags[0]; }
 			constexpr void SetCube() noexcept { Flags[0] = true; }
@@ -62,6 +61,12 @@ namespace ZE::RHI::DX12::Pipeline
 			constexpr void SetMemoryOnlyRegion() noexcept { Flags[2] = true; }
 			constexpr bool IsOutsideResource() const noexcept { return Flags[3]; }
 			constexpr void SetOutsideResource() noexcept { Flags[3] = true; }
+			constexpr bool IsBuffer() const noexcept { return Flags[4]; }
+			constexpr void SetBuffer() noexcept { Flags[4] = true; }
+			constexpr bool IsTex1D() const noexcept { return Flags[5]; }
+			constexpr void SetTex1D() noexcept { Flags[5] = true; }
+			constexpr bool IsTex3D() const noexcept { return Flags[6]; }
+			constexpr void SetTex3D() noexcept { Flags[6] = true; }
 
 			bool IsResourceRegistered() const noexcept { return Resource != nullptr; }
 		};
@@ -124,9 +129,9 @@ namespace ZE::RHI::DX12::Pipeline
 		constexpr PixelFormat GetFormat(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Format; }
 		constexpr bool IsUAV(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); if (rid == BACKBUFFER_RID) return false; return uavHandles[rid - 1].CpuHandle.ptr != UINT64_MAX; }
 		constexpr bool IsCubeTexture(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsCube(); }
-		constexpr bool IsTexture1D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE1D; }
-		constexpr bool IsTexture3D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE3D; }
-		constexpr bool IsBuffer(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Dimenions == D3D12_RESOURCE_DIMENSION_BUFFER; }
+		constexpr bool IsTexture1D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsTex1D(); }
+		constexpr bool IsTexture3D(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsTex3D(); }
+		constexpr bool IsBuffer(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsBuffer(); }
 		constexpr bool IsArrayView(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].IsArrayView(); }
 
 		template<U8 RTVCount>
@@ -174,13 +179,14 @@ namespace ZE::RHI::DX12::Pipeline
 
 		FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept;
 
-		void ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept;
+		Status ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept;
 		Status SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept;
 
 		// Gfx API Internal
 
 		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(resources[rid].IsResourceRegistered(), "Outside resource not registered!"); return resources[rid].Resource; }
 		const D3D12_CPU_DESCRIPTOR_HANDLE& GetRTV(RID rtv) const noexcept { ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!"); return rtvDsvHandles[rtv]; }
+		const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV(RID dsv) const noexcept { ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!"); return rtvDsvHandles[dsv]; }
 		const HandleSRV& GetSRV(RID srv) const noexcept { ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!"); return srvHandles[srv]; }
 		const HandleUAV& GetUAV(RID uav) const noexcept { ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!"); return uavHandles[uav - 1]; }
 	};

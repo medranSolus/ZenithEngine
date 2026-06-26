@@ -110,8 +110,7 @@ namespace ZE::GFX::Pipeline
 		constexpr FfxApiResource GetFfxResource(RID rid, U32 state) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetFfxResource, rid, state); }
 #endif
 
-		constexpr void ExecuteIndirect(CommandList& cl, CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteIndirect, cl, signature, commandsBuffer, commandsOffset); }
-
+		Status ExecuteIndirect(CommandList& cl, CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept { ZE_RHI_BACKEND_CALL_RET(ExecuteIndirect, cl, signature, commandsBuffer, commandsOffset); }
 		Status SwapBackbuffer(Device& dev, SwapChain& swapChain) noexcept { ZE_RHI_BACKEND_CALL_RET(SwapBackbuffer, dev, swapChain); }
 	};
 }

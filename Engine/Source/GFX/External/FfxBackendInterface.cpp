@@ -93,7 +93,7 @@ namespace ZE::GFX::External::FFX
 	void FlushBarriers(BackendContext& ctx, CommandList& cl, Pipeline::FrameBuffer& buffers);
 	void ExecuteClearJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxClearFloatJobDescription& job);
 	void ExecuteCopyJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxCopyJobDescription& job);
-	void ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job);
+	FfxErrorCode ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job);
 	void ExecuteBarrierJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxBarrierDescription& job);
 	void ExecuteDiscardJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxDiscardJobDescription& job);
 
@@ -1164,7 +1164,7 @@ namespace ZE::GFX::External::FFX
 			buffers.Copy(dev, cl, srcId, destId);
 	}
 
-	void ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job)
+	FfxErrorCode ExecuteComputeJob(BackendInterface& ffxInterface, Device& dev, CommandList& cl, Resource::DynamicCBuffer& dynamicBuffer, Pipeline::FrameBuffer& buffers, const FfxComputeJobDescription& job)
 	{
 		BackendContext& ctx = GetFfxCtx(ffxInterface);
 		// Transition all the UAVs and SRVs
@@ -1234,12 +1234,18 @@ namespace ZE::GFX::External::FFX
 		// Dispatch (or dispatch indirect)
 		if (job.pipeline.cmdSignature)
 		{
-			buffers.ExecuteIndirect(cl,
+			Status stat = buffers.ExecuteIndirect(cl,
 				ctx.CommandSignatures.Get(static_cast<IndirectCommandType>(reinterpret_cast<U64>(job.pipeline.cmdSignature))),
 				GetRID(ffxInterface, job.cmdArgument.internalIndex), job.cmdArgumentOffset);
+			if (stat)
+			{
+				ZE_CODE_ERROR(stat, "Failed to execute indirect job!");
+				return FFX_ERROR_BACKEND_API_ERROR;
+			}
 		}
 		else
 			cl.Compute(dev, job.dimensions[0], job.dimensions[1], job.dimensions[2]);
+		return FFX_OK;
 	}
 
 	void ExecuteBarrierJob(BackendInterface& ffxInterface, CommandList& cl, Pipeline::FrameBuffer& buffers, const FfxBarrierDescription& job)

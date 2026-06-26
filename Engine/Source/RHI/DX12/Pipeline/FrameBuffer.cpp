@@ -302,6 +302,7 @@ namespace ZE::RHI::DX12::Pipeline
 		ZE_ASSERT(desc.Resources.size() > 0, "Empty FrameBuffer!");
 		ZE_ASSERT(desc.Resources.size() == desc.ResourceLifetimes.size(), "Not every resource have it's associated lifetime!");
 		ZE_ASSERT(desc.PassLevelCount > 0, "At least single pass level is required for passes to execute!");
+		ZE_ASSERT(desc.Resources.size() < INVALID_RID, "Too much resources, needed wider type!");
 
 		IDevice* device = dev.Get().dx12.GetDevice();
 		const bool tightAlignment = dev.Get().dx12.IsTightAlignment();
@@ -416,10 +417,10 @@ namespace ZE::RHI::DX12::Pipeline
 					D3D12_CLEAR_VALUE clearDesc = {};
 					clearDesc.Format = resDesc.Format;
 					// Check usage flags
-					bool isRT = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceRTV | GFX::Pipeline::FrameResourceFlag::InternalUsageRenderTarget);
-					bool isDS = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceDSV | GFX::Pipeline::FrameResourceFlag::InternalUsageDepth);
-					bool isUA = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceUAV | GFX::Pipeline::FrameResourceFlag::InternalUsageUnorderedAccess);
-					bool isSR = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceSRV | GFX::Pipeline::FrameResourceFlag::InternalUsageShaderResource);
+					const bool isRT = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceRTV | GFX::Pipeline::FrameResourceFlag::InternalUsageRenderTarget);
+					const bool isDS = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceDSV | GFX::Pipeline::FrameResourceFlag::InternalUsageDepth);
+					const bool isUA = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceUAV | GFX::Pipeline::FrameResourceFlag::InternalUsageUnorderedAccess);
+					const bool isSR = res.Flags & (GFX::Pipeline::FrameResourceFlag::ForceSRV | GFX::Pipeline::FrameResourceFlag::InternalUsageShaderResource);
 					if (isRT)
 					{
 						ZE_ASSERT(resDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER, "Cannot create render target view for buffer resource!");
@@ -636,20 +637,36 @@ namespace ZE::RHI::DX12::Pipeline
 		// Create all resources and fill their info
 		frameBuffer.resources = std::make_unique_for_overwrite<BufferData[]>(frameBuffer.resourceCount);
 		frameBuffer.resources[BACKBUFFER_RID].Resource = nullptr;
-		frameBuffer.resources[BACKBUFFER_RID].Size = desc.Resources.front().GetResolutionAdjustedSizes();
-		frameBuffer.resources[BACKBUFFER_RID].Array = desc.Resources.front().DepthOrArraySize;
-		frameBuffer.resources[BACKBUFFER_RID].Mips = desc.Resources.front().MipLevels;
-		frameBuffer.resources[BACKBUFFER_RID].Format = desc.Resources.front().Format;
+		frameBuffer.resources[BACKBUFFER_RID].Size = desc.Resources.at(BACKBUFFER_RID).GetResolutionAdjustedSizes();
+		frameBuffer.resources[BACKBUFFER_RID].Array = desc.Resources.at(BACKBUFFER_RID).DepthOrArraySize;
+		frameBuffer.resources[BACKBUFFER_RID].Mips = desc.Resources.at(BACKBUFFER_RID).MipLevels;
+		frameBuffer.resources[BACKBUFFER_RID].Format = desc.Resources.at(BACKBUFFER_RID).Format;
 		for (auto& res : resourcesInfo)
 		{
 			auto& data = frameBuffer.resources[res.Handle];
+			switch (res.Desc.Dimension)
+			{
+			case D3D12_RESOURCE_DIMENSION_BUFFER:
+				data.SetBuffer();
+				break;
+			case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
+				data.SetTex1D();
+				break;
+			default:
+				ZE_ENUM_UNHANDLED();
+			case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
+				break;
+			case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
+				data.SetTex3D();
+				break;
+			}
+
 			if (res.IsMemoryOnlyRegion())
 			{
 				data.Size = { static_cast<U32>(res.Desc.Width), static_cast<U32>(res.Desc.Width >> 32) };
 				data.Array = static_cast<U16>(res.ChunkOffset);
 				data.Mips = static_cast<U16>(res.ChunkOffset >> 16);
 				data.Format = PixelFormat::Unknown;
-				data.Dimenions = res.Desc.Dimension;
 				data.SetMemoryOnlyRegion();
 			}
 			else if (res.IsOutsideResource())
@@ -658,7 +675,6 @@ namespace ZE::RHI::DX12::Pipeline
 				data.Array = 0;
 				data.Mips = 0;
 				data.Format = DX::GetFormatFromDX(res.Desc.Format);
-				data.Dimenions = res.Desc.Dimension;
 				data.SetOutsideResource();
 			}
 			else
@@ -675,14 +691,13 @@ namespace ZE::RHI::DX12::Pipeline
 				data.Array = res.Desc.DepthOrArraySize;
 				data.Mips = res.Desc.MipLevels;
 				data.Format = DX::GetFormatFromDX(res.Desc.Format);
-				data.Dimenions = res.Desc.Dimension;
 
-				if (data.Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE1D
-					|| data.Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
+				if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D
+					|| res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 				{
 					if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
 						data.SetArrayView();
-					if (res.IsCube() && data.Dimenions == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
+					if (res.IsCube() && res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 						data.SetCube();
 				}
 			}
@@ -742,7 +757,7 @@ namespace ZE::RHI::DX12::Pipeline
 						ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
-						if (res.Desc.DepthOrArraySize > 1)
+						if (res.IsArrayView())
 						{
 							rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 							rtvDesc.Texture2DArray.MipSlice = 0;
@@ -767,7 +782,7 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
 					{
-						if (res.Desc.DepthOrArraySize > 1)
+						if (res.IsArrayView())
 						{
 							rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
 							rtvDesc.Texture1DArray.MipSlice = 0;
@@ -812,7 +827,7 @@ namespace ZE::RHI::DX12::Pipeline
 							}
 							case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 							{
-								if (res.Desc.DepthOrArraySize > 1)
+								if (res.IsArrayView())
 									rtvDesc.Texture2DArray.MipSlice = i;
 								else
 									rtvDesc.Texture2D.MipSlice = i;
@@ -820,7 +835,7 @@ namespace ZE::RHI::DX12::Pipeline
 							}
 							case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
 							{
-								if (res.Desc.DepthOrArraySize > 1)
+								if (res.IsArrayView())
 									rtvDesc.Texture1DArray.MipSlice = i;
 								else
 									rtvDesc.Texture1D.MipSlice = i;
@@ -844,7 +859,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 					if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 					{
-						if (res.Desc.DepthOrArraySize > 1)
+						if (res.IsArrayView())
 						{
 							dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 							dsvDesc.Texture2DArray.MipSlice = 0;
@@ -859,7 +874,7 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					else
 					{
-						if (res.Desc.DepthOrArraySize > 1)
+						if (res.IsArrayView())
 						{
 							dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
 							dsvDesc.Texture1DArray.MipSlice = 0;
@@ -886,14 +901,14 @@ namespace ZE::RHI::DX12::Pipeline
 						{
 							if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 							{
-								if (res.Desc.DepthOrArraySize > 1)
+								if (res.IsArrayView())
 									dsvDesc.Texture2DArray.MipSlice = i;
 								else
 									dsvDesc.Texture2D.MipSlice = i;
 							}
 							else
 							{
-								if (res.Desc.DepthOrArraySize > 1)
+								if (res.IsArrayView())
 									dsvDesc.Texture1DArray.MipSlice = i;
 								else
 									dsvDesc.Texture1D.MipSlice = i;
@@ -939,7 +954,7 @@ namespace ZE::RHI::DX12::Pipeline
 								srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 							}
 						}
-						else if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
+						else if (res.IsArrayView())
 						{
 							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 							srvDesc.Texture2DArray.MostDetailedMip = 0;
@@ -970,7 +985,7 @@ namespace ZE::RHI::DX12::Pipeline
 					}
 					case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
 					{
-						if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
+						if (res.IsArrayView())
 						{
 							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
 							srvDesc.Texture1DArray.MostDetailedMip = 0;
@@ -1190,7 +1205,7 @@ namespace ZE::RHI::DX12::Pipeline
 			{
 				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-				handles[realCount] = rtvDsvHandles[id];
+				handles[realCount] = GetRTV(id);
 				ZE_ASSERT(handles[realCount].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
 				SetupViewport(vieports[realCount], scissorRects[realCount], id);
@@ -1205,9 +1220,7 @@ namespace ZE::RHI::DX12::Pipeline
 	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, RID dsv, U8 count) const noexcept
 	{
 		ZE_ASSERT(count <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
-		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 		EnterRaster();
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handles[Settings::MAX_RENDER_TARGETS];
@@ -1221,8 +1234,8 @@ namespace ZE::RHI::DX12::Pipeline
 			{
 				ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
 
-				handles[realCount] = rtvDsvHandles[id];
-				ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+				handles[realCount] = GetRTV(id);
+				ZE_ASSERT(handles[realCount].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
 				SetupViewport(vieports[realCount], scissorRects[realCount], id);
 				++realCount;
@@ -1235,9 +1248,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv) const noexcept
 	{
-		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, dsv);
@@ -1246,11 +1257,8 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
 	{
-		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
-		ZE_ASSERT(dsv == INVALID_RID || dsv < resourceCount, "DSV resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-		ZE_ASSERT(dsv == INVALID_RID || rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetRTV(rtv).ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(dsv == INVALID_RID || GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 
 		EnterRaster();
 		SetViewport(cl.Get().dx12, rtv);
@@ -1259,9 +1267,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept
 	{
-		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
 		ZE_ASSERT(rtvDsvMips[dsv - 1] != nullptr, "Mips for current resource not supported!");
 		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
@@ -1273,11 +1279,8 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept
 	{
-		ZE_ASSERT(rtv < resourceCount, "RTV resource ID outside available range!");
-		ZE_ASSERT(dsv == INVALID_RID || dsv < resourceCount, "DSV resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
-		ZE_ASSERT(dsv == INVALID_RID || rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetRTV(rtv).ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(dsv == INVALID_RID || GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 		ZE_ASSERT(rtvDsvMips != nullptr, "Mips not supported as no resource has been created with mips greater than 1!");
 		ZE_ASSERT(rtvDsvMips[rtv - 1] != nullptr, "Mips for current RTV resource not supported!");
 		ZE_ASSERT(dsv == INVALID_RID || rtvDsvMips[dsv - 1] != nullptr, "Mips for current DSV resource not supported!");
@@ -1291,7 +1294,6 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept
 	{
-		ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(GetSRV(srv).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being shader resource!");
 
 		const auto& schema = bindCtx.BindingSchema.Get().dx12;
@@ -1315,8 +1317,6 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
 		const auto& schema = bindCtx.BindingSchema.Get().dx12;
@@ -1340,8 +1340,6 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 		ZE_ASSERT(uavMips != nullptr, "Mips not supported as no UAV resource has been created with mips greater than 1!");
 		ZE_ASSERT(uavMips[uav - 1] != nullptr, "Mips for current resource not supported!");
@@ -1376,27 +1374,22 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rtv, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rtvDsvHandles[rtv].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
+		ZE_ASSERT(GetRTV(rtv).ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 
-		cl.Get().dx12.GetList()->ClearRenderTargetView(rtvDsvHandles[rtv],
+		cl.Get().dx12.GetList()->ClearRenderTargetView(GetRTV(rtv),
 			reinterpret_cast<const float*>(&color), 0, nullptr);
 	}
 
 	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID dsv, float depth, U8 stencil) const noexcept
 	{
-		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 
-		cl.Get().dx12.GetList()->ClearDepthStencilView(rtvDsvHandles[dsv],
+		cl.Get().dx12.GetList()->ClearDepthStencilView(GetDSV(dsv),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
 	}
 
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID uav, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(uav).CpuHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
 		const HandleUAV& desc = GetUAV(uav);
@@ -1406,8 +1399,6 @@ namespace ZE::RHI::DX12::Pipeline
 
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID uav, const Pixel colors[4]) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(uav).CpuHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
 		const HandleUAV& desc = GetUAV(uav);
@@ -1492,7 +1483,7 @@ namespace ZE::RHI::DX12::Pipeline
 	void FrameBuffer::InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::Texture::Pack& texture, U32 index) const noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(!IsBuffer(rid), "Trying to initialize non-texture resource with texter!");
+		ZE_ASSERT(!IsBuffer(rid), "Trying to initialize non-texture resource with texture!");
 
 		cl.Get().dx12.GetList()->CopyResource(GetResource(rid).Get(), texture.Get().dx12.GetResource(index));
 	}
@@ -1551,7 +1542,6 @@ namespace ZE::RHI::DX12::Pipeline
 		res.Array = resDesc.DepthOrArraySize;
 		res.Mips = resDesc.MipLevels;
 		res.Format = DX::GetFormatFromDX(resDesc.Format);
-		res.Dimenions = GetDimension(type);
 
 		if (type == GFX::Pipeline::FrameResourceType::TextureCube)
 			res.SetCube();
@@ -1621,11 +1611,12 @@ namespace ZE::RHI::DX12::Pipeline
 		return resDesc;
 	}
 
-	void FrameBuffer::ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept
+	Status FrameBuffer::ExecuteIndirect(GFX::CommandList& cl, GFX::CommandSignature& signature, RID commandsBuffer, U32 commandsOffset) const noexcept
 	{
 		ZE_ASSERT(commandsBuffer < resourceCount, "Indirect arguments resource ID outside available range!");
 
 		cl.Get().dx12.GetList()->ExecuteIndirect(signature.Get().dx12.GetSignature(), 1, GetResource(commandsBuffer).Get(), commandsOffset, nullptr, 0);
+		return {};
 	}
 
 	Status FrameBuffer::SwapBackbuffer(GFX::Device& dev, GFX::SwapChain& swapChain) noexcept
