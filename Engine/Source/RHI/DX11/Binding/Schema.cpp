@@ -2,15 +2,15 @@
 
 namespace ZE::RHI::DX11::Binding
 {
-	Schema::Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc)
+	Expected<Schema> Schema::Create(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
+		Schema schema;
 
-		samplersCount = Utils::SafeCast<U32>(desc.Samplers.size());
-		if (samplersCount)
+		schema.samplersCount = Utils::SafeCast<U32>(desc.Samplers.size());
+		if (schema.samplersCount)
 		{
-			samplers = new std::pair<U32, DX::ComPtr<ISamplerState>>[desc.Samplers.size()];
-			for (U32 i = 0; const auto & samplerDesc : desc.Samplers)
+			schema.samplers = std::make_unique_for_overwrite<std::pair<U32, DX::ComPtr<ISamplerState>>[]>(desc.Samplers.size());
+			for (U32 i = 0; const auto& samplerDesc : desc.Samplers)
 			{
 				D3D11_SAMPLER_DESC splrDesc = {};
 				splrDesc.Filter = GetFilterType(samplerDesc.Type);
@@ -24,13 +24,13 @@ namespace ZE::RHI::DX11::Binding
 				splrDesc.MinLOD = samplerDesc.MinLOD;
 				splrDesc.MaxLOD = samplerDesc.MaxLOD;
 
-				samplers[i].first = samplerDesc.Slot;
-				ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateSamplerState(&splrDesc, &samplers[i++].second));
+				schema.samplers[i].first = samplerDesc.Slot;
+				ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateSamplerState(&splrDesc, &schema.samplers[i++].second));
 			}
 		}
 
 		// Check input data
-		count = 0;
+		schema.count = 0;
 		U32 dataCount = 0;
 		GFX::ShaderPresenceMask shaderPresenceConstants;
 		for (const auto& entry : desc.Ranges)
@@ -43,7 +43,7 @@ namespace ZE::RHI::DX11::Binding
 				{
 					ZE_ASSERT(!shaderPresenceConstants.SetPresence(entry.Shaders), "Only single Constant per shader type is allowed!");
 				}
-				++count;
+				++schema.count;
 				++dataCount;
 			}
 			else if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
@@ -52,24 +52,24 @@ namespace ZE::RHI::DX11::Binding
 			}
 			else
 			{
-				count += entry.Count;
+				schema.count += entry.Count;
 				dataCount += entry.Count;
 			}
-			activeShaders.SetPresence(entry.Shaders);
+			schema.activeShaders.SetPresence(entry.Shaders);
 		}
-		ZE_ASSERT(activeShaders.IsCompute() != activeShaders.IsGfx(),
+		ZE_ASSERT(schema.activeShaders.IsCompute() != schema.activeShaders.IsGfx(),
 			"Compute Shader binding detected alongside other shaders resulting in disabling all other graphics shader stages. Check creation of the SchemaDesc!");
 
 		// Gather slots
-		slots = new SlotInfo[count];
-		slotsData = new SlotData[dataCount];
-		for (U32 i = 0, j = 0; const auto & entry : desc.Ranges)
+		schema.slots = std::make_unique_for_overwrite<SlotInfo[]>(schema.count);
+		schema.slotsData = std::make_unique_for_overwrite<SlotData[]>(dataCount);
+		for (U32 i = 0, j = 0; const auto& entry : desc.Ranges)
 		{
 			if (entry.Flags & GFX::Binding::RangeFlag::Constant)
 			{
 				ZE_ASSERT(entry.StartSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too much shader slots!");
-				slots[i++] = { j, 1 };
-				slotsData[j++] = { entry.Shaders, entry.StartSlot, 1 };
+				schema.slots[i++] = { j, 1 };
+				schema.slotsData[j++] = { entry.Shaders, entry.StartSlot, 1 };
 			}
 			else
 			{
@@ -78,34 +78,25 @@ namespace ZE::RHI::DX11::Binding
 
 				if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				{
-					slots[i++] = { j, 1 };
-					slotsData[j++] = { entry.Shaders, entry.StartSlot, entry.Count };
+					schema.slots[i++] = { j, 1 };
+					schema.slotsData[j++] = { entry.Shaders, entry.StartSlot, entry.Count };
 				}
 				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
 				{
-					++slots[i - 1].SlotsCount;
-					slotsData[j - 1] = { entry.Shaders, entry.StartSlot, entry.Count };
+					++schema.slots[i - 1].SlotsCount;
+					schema.slotsData[j - 1] = { entry.Shaders, entry.StartSlot, entry.Count };
 				}
 				else
 				{
 					for (U32 k = 0; k < entry.Count; ++k)
 					{
-						slots[i++] = { j, 1 };
-						slotsData[j++] = { entry.Shaders, entry.StartSlot + k, 1 };
+						schema.slots[i++] = { j, 1 };
+						schema.slotsData[j++] = { entry.Shaders, entry.StartSlot + k, 1 };
 					}
 				}
 			}
 		}
-	}
-
-	void Schema::Free(GFX::Device& dev) noexcept
-	{
-		if (slots)
-			slots.DeleteArray();
-		if (slotsData)
-			slotsData.DeleteArray();
-		if (samplers)
-			samplers.DeleteArray();
+		return schema;
 	}
 
 	void Schema::SetCompute(GFX::CommandList& cl) const noexcept

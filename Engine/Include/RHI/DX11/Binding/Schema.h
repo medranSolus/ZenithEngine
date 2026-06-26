@@ -22,21 +22,21 @@ namespace ZE::RHI::DX11::Binding
 
 	private:
 		GFX::ShaderPresenceMask activeShaders;
-		U32 count;
-		Ptr<SlotInfo> slots;
-		Ptr<SlotData> slotsData;
-		U32 samplersCount;
-		Ptr<std::pair<U32, DX::ComPtr<ISamplerState>>> samplers;
+		U32 count = 0;
+		std::unique_ptr<SlotInfo[]> slots;
+		std::unique_ptr<SlotData[]> slotsData;
+		U32 samplersCount = 0;
+		std::unique_ptr<std::pair<U32, DX::ComPtr<ISamplerState>>[]> samplers;
 
 	public:
 		Schema() = default;
-		Schema(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc);
 		ZE_CLASS_MOVE(Schema);
-		~Schema() { ZE_ASSERT(slots == nullptr && slotsData == nullptr && samplers == nullptr, "Resource not freed before deletion!"); }
+		~Schema() = default;
+
+		static Expected<Schema> Create(GFX::Device& dev, const GFX::Binding::SchemaDesc& desc) noexcept;
 
 		constexpr U32 GetCount() const noexcept { return count; }
 
-		void Free(GFX::Device& dev) noexcept;
 		void SetCompute(GFX::CommandList& cl) const noexcept;
 		void SetGraphics(GFX::CommandList& cl) const noexcept;
 

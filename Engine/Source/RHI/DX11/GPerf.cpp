@@ -2,20 +2,22 @@
 
 namespace ZE::RHI::DX11
 {
-	GPerf::GPerf(GFX::Device& dev)
+	Expected<GPerf> GPerf::Create(GFX::Device& dev) noexcept
 	{
-		ZE_DX_ENABLE(dev.Get().dx11);
+		GPerf state;
 
 		D3D11_QUERY_DESC1 desc = {};
 		desc.MiscFlags = 0;
 		desc.ContextType = D3D11_CONTEXT_TYPE_ALL;
 
 		desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &disjoint));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &state.disjoint));
 
 		desc.Query = D3D11_QUERY_TIMESTAMP;
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &begin));
-		ZE_DX_THROW_FAILED(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &end));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &state.begin));
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateQuery1(&desc, &state.end));
+
+		return state;
 	}
 
 	void GPerf::Start(GFX::CommandList& cl) noexcept

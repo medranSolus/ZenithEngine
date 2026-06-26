@@ -12,24 +12,24 @@ namespace ZE::RHI::DX11::Resource
 		static constexpr U32 BLOCK_SIZE = 64 * Math::KILOBYTE;
 
 		std::vector<std::pair<DX::ComPtr<IBuffer>, Data::Library<U32, U32>>> blocks;
+		Ptr<U8> buffer;
 		U32 nextOffset = 0;
 		U64 currentBlock = 0;
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
 		std::mutex allocLock;
 #endif
 
-		void AllocBlock(GFX::Device& dev);
+		Status AllocBlock(GFX::Device& dev) noexcept;
 
 	public:
 		DynamicCBuffer() = default;
-		DynamicCBuffer(GFX::Device& dev) { AllocBlock(dev); }
 		ZE_CLASS_MOVE(DynamicCBuffer);
-		~DynamicCBuffer() { ZE_ASSERT_FREED(blocks.size() == 0); };
+		~DynamicCBuffer();
 
-		void Free(GFX::Device& dev) noexcept { blocks.clear(); }
+		static Expected<DynamicCBuffer> Create(GFX::Device& dev) noexcept;
 
-		GFX::Resource::DynamicBufferAlloc Alloc(GFX::Device& dev, const void* values, U32 bytes);
+		Expected<GFX::Resource::DynamicBufferAlloc> Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept;
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept;
-		void StartFrame(GFX::Device& dev);
+		Status StartFrame(GFX::Device& dev) noexcept;
 	};
 }
