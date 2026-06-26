@@ -1,35 +1,49 @@
 #pragma once
-#include "GFX/CommandList.h"
+#if _ZE_NGX_ENABLED
+#	include "GFX/External/Error.h"
+#	include "RHI/DX11/DX11.h"
 ZE_WARNING_PUSH
-#include "nvsdk_ngx.h"
+#	include "nvsdk_ngx.h"
 ZE_WARNING_POP
 
+namespace ZE::GFX
+{
+	class Device;
+	class CommandList;
+}
 namespace ZE::RHI::DX11::External
 {
 	class NgxInterface final
 	{
+		DX::ComPtr<IDevice> srcDev;
+
+		void MoveFrom(NgxInterface&& ngx) noexcept { srcDev = std::exchange(ngx.srcDev, nullptr); }
+
+		void Destroy() noexcept;
+
 	public:
 		NgxInterface() = default;
-		ZE_CLASS_MOVE(NgxInterface);
-		~NgxInterface() = default;
+		ZE_CLASS_NO_COPY(NgxInterface);
+		NgxInterface(NgxInterface&& ngx) noexcept { MoveFrom(std::move(ngx)); }
+		NgxInterface& operator=(NgxInterface&& ngx) noexcept { Destroy(); MoveFrom(std::move(ngx));  return *this; }
+		~NgxInterface() { Destroy(); }
 
-		NVSDK_NGX_Result InitNGX(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept;
-		NVSDK_NGX_Result Shutdown(GFX::Device& dev) noexcept;
+		static Expected<NgxInterface> Create(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept;
 
-		NVSDK_NGX_Result AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept;
-		NVSDK_NGX_Result GetCapabilities(NVSDK_NGX_Parameter*& param) const noexcept;
-		NVSDK_NGX_Result DestroyParameter(NVSDK_NGX_Parameter* param) const noexcept;
+		Status AllocateParameter(NVSDK_NGX_Parameter*& param) const noexcept;
+		Status GetCapabilities(Ptr<NVSDK_NGX_Parameter>& param) const noexcept;
+		Status DestroyParameter(NVSDK_NGX_Parameter* param) const noexcept;
 
-		NVSDK_NGX_Result GetScratchBufferSize(NVSDK_NGX_Feature feature,
+		Status GetScratchBufferSize(NVSDK_NGX_Feature feature,
 			const NVSDK_NGX_Parameter* param, U64& bytes) const noexcept;
-		NVSDK_NGX_Result GetFeatureRequirements(GFX::Device& dev,
-			const NVSDK_NGX_FeatureDiscoveryInfo& featureInfo,
+		Status GetFeatureRequirements(GFX::Device& dev, const NVSDK_NGX_FeatureDiscoveryInfo& featureInfo,
 			NVSDK_NGX_FeatureRequirement& requirements) const noexcept;
 
-		NVSDK_NGX_Result CreateFeature(GFX::Device& dev, GFX::CommandList& cl, NVSDK_NGX_Feature feature,
+		Status CreateFeature(GFX::Device& dev, GFX::CommandList& cl, NVSDK_NGX_Feature feature,
 			NVSDK_NGX_Parameter* param, NVSDK_NGX_Handle*& handle) const noexcept;
-		NVSDK_NGX_Result EvaluateFeature(GFX::Device& dev, GFX::CommandList& cl, const NVSDK_NGX_Handle* handle,
+		Status EvaluateFeature(GFX::Device& dev, GFX::CommandList& cl, const NVSDK_NGX_Handle* handle,
 			const NVSDK_NGX_Parameter* param, PFN_NVSDK_NGX_ProgressCallback progress = nullptr) const noexcept;
-		NVSDK_NGX_Result ReleaseFeature(NVSDK_NGX_Handle* handle) const noexcept;
+		Status ReleaseFeature(NVSDK_NGX_Handle* handle) const noexcept;
 	};
 }
+#endif
