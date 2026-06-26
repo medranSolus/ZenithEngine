@@ -149,8 +149,7 @@ namespace ZE::RHI::DX12::External
 		execParams.descriptorHeapOffset = Utils::SafeCast<U32>(descInfo.GPU.ptr - execParams.pDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr);
 		execParams.descriptorHeapOffset += descSize * singleSetCount * Settings::GetCurrentBackbufferIndex();
 
-		ZE_CODE_RET_FAILED(ZE_XESS_ERROR(xessD3D12Execute(ctx, cl.Get().dx12.GetList(), &execParams)));
-		return {};
+		return ZE_XESS_ERROR(xessD3D12Execute(ctx, cl.Get().dx12.GetList(), &execParams));
 	}
 
 	Status XeSSInterface::FinishInitialization(Device& dev, IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) noexcept

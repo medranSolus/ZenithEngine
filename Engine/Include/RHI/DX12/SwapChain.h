@@ -1,5 +1,5 @@
 #pragma once
-#include "GFX/CommandList.h"
+#include "GFX/Device.h"
 
 namespace ZE::RHI::DX12
 {

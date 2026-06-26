@@ -103,4 +103,72 @@ namespace ZE::RHI::DX
 			Logger::Warning("Cannot set window association with newly created swapchain!");
 		return swapChain;
 	}
+
+	GFX::DisplayProperties GetDisplayProperties(HWND hWnd) noexcept
+	{
+		GFX::DisplayProperties displayProps = {};
+		bool found = false;
+		auto exp = DX::CreateFactory();
+		if (exp)
+		{
+			DX::ComPtr<DX::IFactory> factory = std::move(exp.value());
+			// Enumerate available outputs and find the one attached to our window
+			HMONITOR monitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+			for (U32 i = 0; !found; ++i)
+			{
+				// Need to iterate over whole list of adapters again in case that current GPU doesn't own the output (in case of systems with integrated graphics)
+				DX::ComPtr<DX::IAdapter> tempAdapter = nullptr;
+				if (SUCCEEDED(factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tempAdapter))))
+				{
+					for (U32 j = 0; true; ++j)
+					{
+						DX::ComPtr<IDXGIOutput> tempOutput = nullptr;
+						if (SUCCEEDED(tempAdapter->EnumOutputs(j, &tempOutput)))
+						{
+							DX::ComPtr<DX::IOutput> output = nullptr;
+							if (SUCCEEDED(tempOutput.As(&output)))
+							{
+								DXGI_OUTPUT_DESC1 desc;
+								if (SUCCEEDED(output->GetDesc1(&desc)))
+								{
+									if (monitor == desc.Monitor)
+									{
+										displayProps.RedPrimary = { desc.RedPrimary[0], desc.RedPrimary[1] };
+										displayProps.GreenPrimary = { desc.GreenPrimary[0], desc.GreenPrimary[1] };
+										displayProps.BluePrimary = { desc.BluePrimary[0], desc.BluePrimary[1] };
+										displayProps.WhitePoint = { desc.WhitePoint[0], desc.WhitePoint[1] };
+										displayProps.MinLuminance = desc.MinLuminance;
+										displayProps.MaxLuminance = desc.MaxLuminance;
+										found = true;
+										break;
+									}
+								}
+							}
+						}
+						else
+							break;
+					}
+				}
+				else
+					break;
+			}
+			if (!found)
+				Logger::Warning("DX warning: Cannot find monitor attached to main window, using default display properties!");
+		}
+		else
+		{
+			ZE_CODE_WARNING(exp.error(), "Cannot create DXGI factory to query monitor infomation, using default display properties!");
+		}
+		if (!found)
+		{
+			// Default CIE 1931 xy chromaticity values for sRGB / Rec.709 
+			displayProps.RedPrimary = { 0.64f, 0.33f };
+			displayProps.GreenPrimary = { 0.3f, 0.6f };
+			displayProps.BluePrimary = { 0.15f, 0.06f };
+			displayProps.WhitePoint = { 0.3127f, 0.329f };
+			displayProps.MinLuminance = 0.0f;
+			displayProps.MaxLuminance = 300.0f;
+		}
+		return displayProps;
+	}
 }

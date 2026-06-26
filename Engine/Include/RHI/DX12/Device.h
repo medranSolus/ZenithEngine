@@ -83,7 +83,7 @@ namespace ZE::RHI::DX12
 		static Expected<U64> SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal) noexcept;
 		static void Execute(ICommandQueue* queue, CommandList& cl) noexcept;
 
-		void MoveFrom(Device& dev) noexcept;
+		void MoveFrom(Device&& dev) noexcept;
 
 	public:
 		Device() noexcept;
@@ -136,7 +136,7 @@ namespace ZE::RHI::DX12
 		void TagEndCopy() const noexcept { PIXEndEvent(copyQueue.Get()); }
 #endif
 
-		void OnMonitorChanged(const Window::MainWindow& window) noexcept;
+		void OnMonitorChanged(const Window::MainWindow& window) noexcept { displayProps = DX::GetDisplayProperties(window.GetHandle()); }
 
 		GFX::ShaderModel GetMaxShaderModel() const noexcept;
 		std::pair<U32, U32> GetWaveLaneCountRange() const noexcept;

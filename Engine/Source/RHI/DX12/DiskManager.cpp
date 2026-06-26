@@ -356,7 +356,7 @@ namespace ZE::RHI::DX12
 		{
 			LockGuardRW lock(fenceMutex);
 			if (!fenceEvents.contains(handleFence))
-				return DX::Error::Make(DX::Error::DISKMANAGER_INVALID_HANDLE);
+				return ZE_DX_ERROR(DX::Error::DISKMANAGER_INVALID_HANDLE);
 			evenHandles = fenceEvents.at(handleFence);
 			fenceEvents.erase(handleFence);
 		}
@@ -510,7 +510,7 @@ namespace ZE::RHI::DX12
 		}
 		}
 #endif
-		return DX::Error::Make(DX::Error::DSTORAGE_REQUEST_FAILURE);
+		return ZE_DX_ERROR(DX::Error::DSTORAGE_REQUEST_FAILURE);
 	}
 
 	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,

@@ -113,7 +113,7 @@ namespace ZE::RHI::DX12
 		if (!info.Handle)
 		{
 			ZE_FAIL("Failed to allocate GPU memory!");
-			return std::unexpected(DX::Error::Make(DX::Error::ALLOC_ERROR));
+			return std::unexpected(ZE_DX_ERROR(DX::Error::ALLOC_ERROR));
 		}
 
 		auto exp = CreateResource(dev, desc, layout, allocator.GetOffset(info.Handle),

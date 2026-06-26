@@ -326,7 +326,7 @@ namespace ZE::RHI::DX12
 		}
 		else
 		{
-			ZE_CODE_WARNING(DX::Error::Make(hr), "Cannot access DRED interface - no DRED output on device removed!");
+			ZE_CODE_WARNING(ZE_DX_ERROR(hr), "Cannot access DRED interface - no DRED output on device removed!");
 		}
 	}
 

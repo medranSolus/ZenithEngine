@@ -1,6 +1,7 @@
 #pragma once
 // Headers needed for DirectX Graphics Infrastructure
 #include "GFX/Resource/Topology.h"
+#include "GFX/DisplayProperties.h"
 #include "Error.h"
 ZE_WARNING_PUSH
 #include <dxgi1_6.h>
@@ -43,6 +44,8 @@ namespace ZE::RHI::DX
 	// Creates swap chain for window and returns present flags
 	Expected<ComPtr<ISwapChain>> CreateSwapChain(ComPtr<IFactory> factory,
 		IUnknown* device, HWND window, bool shaderInput, U32& presentFlags) noexcept;
+
+	GFX::DisplayProperties GetDisplayProperties(HWND hWnd) noexcept;
 
 #pragma region Functions
 	// List of mappings between PixelFormat and DXGI_FORMAT for enum decoding in X() macro

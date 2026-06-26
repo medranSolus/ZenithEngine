@@ -78,6 +78,8 @@ namespace ZE::RHI::DX12::Resource
 		blendTarget.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		switch (desc.Blender)
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
 		case GFX::Resource::BlendType::None:
 		{
 			blendTarget.BlendEnable = FALSE;

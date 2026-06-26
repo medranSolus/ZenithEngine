@@ -9,7 +9,7 @@ namespace ZE::RHI::DX12
 		DX::ComPtr<DX::IFactory> factory = nullptr;
 		ZE_EXPECT_RET_FAILED(factory, DX::CreateFactory());
 
-		SwapChain swapChain = {};
+		SwapChain swapChain;
 		ZE_EXPECT_RET_FAILED(swapChain.swapChain, DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), shaderInput, swapChain.presentFlags));
 
 		auto device = dev.Get().dx12.GetDevice();
@@ -85,7 +85,7 @@ namespace ZE::RHI::DX12
 #endif
 				hr = dev.Get().dx12.GetDevice()->GetDeviceRemovedReason();
 			}
-			return DX::Error::Make(hr);
+			return ZE_DX_ERROR(hr);
 		}
 		return {};
 	}
