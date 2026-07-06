@@ -59,7 +59,9 @@ namespace ZE::RHI::DX11::Resource
 			dev.Get().dx11.GetMainContext()->Unmap(blocks.at(currentBlock).first.Get(), 0);
 			nextOffset = 0;
 			if (++currentBlock >= blocks.size())
-				AllocBlock(dev);
+			{
+				ZE_CODE_RET_FAILED_EXPECT(AllocBlock(dev));
+			}
 			else
 			{
 				D3D11_MAPPED_SUBRESOURCE subres = {};

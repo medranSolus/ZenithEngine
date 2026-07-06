@@ -30,9 +30,12 @@ namespace ZE::RHI::DX11
 	Expected<Device> Device::Create(const Window::MainWindow& window, U32 descriptorCount) noexcept
 	{
 		DX::ComPtr<DX::IFactory> factory;
-		ZE_DX_RET_FAILED_EXPECT(factory, DX::CreateFactory());
-		DX::ComPtr<DX::IAdapter> adapter;
-		ZE_DX_RET_FAILED_EXPECT(adapter, DX::CreateAdapter(factory));
+		ZE_EXPECT_RET_FAILED(factory, DX::CreateFactory());
+		DX::ComPtr<DX::IAdapter> adapter = DX::CreateAdapter(factory);
+		if (adapter == nullptr)
+		{
+			ZE_DX_RET_FAILED_EXPECT(DX::Error::NO_ADAPTER_ERROR);
+		}
 
 		Device dev;
 #if _ZE_DEBUG_GFX_API

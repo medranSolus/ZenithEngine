@@ -452,6 +452,7 @@ if(${ZE_COMPILER_MSVC})
 		"${CXX_DEBUG_ENABLE_FLAGS} ${CXX_OPTIMIZATION_FLAGS}"
 		"${CXX_OPTIMIZATION_FLAGS}")
 	add_compile_options(/Wall
+		/we4715 # Not all control paths return a value should always cause an error
 		/we4834 # Treat ignoring return value marked as [[nodiscard]] as error
 		/wd4061 # Not all enums are explicitly handled in switch where `default` is present
 		/wd4100 # Unreferenced formal parameter
