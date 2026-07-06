@@ -198,16 +198,43 @@ FfxFloat32x4 SampleDilatedReactiveMasks(const in FfxFloat32x2 uv)
 	return tx_dilatedReactiveMask.SampleLevel(splr_LinearClamp, uv, 0);
 }
 
+#ifdef _ZE_COMPILER_FXC
+// Fix for error X3508 where FXC requires all struct members of out parameters to be filled in single function
+void ComputeReprojectedUVs_FXC(const in AccumulationPassCommonParams params, out FfxFloat32x2 fReprojectedHrUv, out FfxBoolean bIsExistingSample)
+{
+    fReprojectedHrUv = params.fHrUv + params.fMotionVector;
+
+    bIsExistingSample = IsUvInside(fReprojectedHrUv);
+}
+
+RectificationBox GetRectificationBox_FXC()
+{
+	RectificationBox box;
+    box.boxCenter = FfxFloat32x3(0.0f, 0.0f, 0.0f);
+    box.boxVec = FfxFloat32x3(0.0f, 0.0f, 0.0f);
+    box.aabbMin = FfxFloat32x3(0.0f, 0.0f, 0.0f);
+    box.aabbMax = FfxFloat32x3(0.0f, 0.0f, 0.0f);
+    box.fBoxCenterWeight = FfxFloat32(0.0f);
+	return box;
+}
+#endif
+
 #include "WarningGuardOn.hlsli"
 #ifdef _ZE_FFX_API
 #	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_sample.h"
 #	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_upsample.h"
 #	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_reproject.h"
+#	ifdef _ZE_COMPILER_FXC
+#		define ComputeReprojectedUVs(params) ComputeReprojectedUVs_FXC(params, params.fReprojectedHrUv, params.bIsExistingSample); data.clippingBox = GetRectificationBox_FXC()
+#	endif
 #	include "upscalers/fsr3/include/gpu/fsr3upscaler/ffx_fsr3upscaler_accumulate.h"
 #else
 #	include "fsr3upscaler/ffx_fsr3upscaler_sample.h"
 #	include "fsr3upscaler/ffx_fsr3upscaler_upsample.h"
 #	include "fsr3upscaler/ffx_fsr3upscaler_reproject.h"
+#	ifdef _ZE_COMPILER_FXC
+#		define ComputeReprojectedUVs(params) ComputeReprojectedUVs_FXC(params, params.fReprojectedHrUv, params.bIsExistingSample); data.clippingBox = GetRectificationBox_FXC()
+#	endif
 #	include "fsr3upscaler/ffx_fsr3upscaler_accumulate.h"
 #endif
 #include "WarningGuardOff.hlsli"
