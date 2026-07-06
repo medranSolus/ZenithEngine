@@ -101,7 +101,7 @@ namespace ZE::GFX::Pipeline
 		// Manually transition resource between layout and access in pipeline, recomended to use only on innner resources!
 		constexpr void Barrier(CommandList& cl, const BarrierTransition& desc) const noexcept { ZE_RHI_BACKEND_CALL(Barrier, cl, desc); }
 
-		constexpr void RegisterOutsideResource(RID rid, Resource::Texture::Pack& textures, U32 textureIndex, FrameResourceType type) noexcept { ZE_RHI_BACKEND_CALL(RegisterOutsideResource, rid, textures, textureIndex, type); }
+		Status RegisterOutsideResource(RID rid, Resource::Texture::Pack& textures, U32 textureIndex, FrameResourceType type) noexcept { ZE_RHI_BACKEND_CALL_RET(RegisterOutsideResource, rid, textures, textureIndex, type); }
 
 		Status MapResource(Device& dev, RID rid, void** ptr) const noexcept { ZE_RHI_BACKEND_CALL_RET(MapResource, dev, rid, ptr); }
 		constexpr void UnmapResource(RID rid) const noexcept { ZE_RHI_BACKEND_CALL(UnmapResource, rid); }

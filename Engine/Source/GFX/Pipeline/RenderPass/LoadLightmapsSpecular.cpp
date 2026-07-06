@@ -148,10 +148,10 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsSpecular
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->EnvMap,
-			static_cast<ExecuteData*>(passData.ExecData.get())->EnvMap, 0, FrameResourceType::TextureCube);
-		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->BrdfLut,
-			static_cast<ExecuteData*>(passData.ExecData.get())->BrdfLut, 0, FrameResourceType::Texture2D);
+		ZE_CODE_RET_FAILED_EXPECT(renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->EnvMap,
+			static_cast<ExecuteData*>(passData.ExecData.get())->EnvMap, 0, FrameResourceType::TextureCube));
+		ZE_CODE_RET_FAILED_EXPECT(renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->BrdfLut,
+			static_cast<ExecuteData*>(passData.ExecData.get())->BrdfLut, 0, FrameResourceType::Texture2D));
 		return false;
 	}
 

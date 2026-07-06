@@ -37,6 +37,9 @@ namespace ZE::RHI::DX11::Pipeline
 			constexpr void SetTex3D() noexcept { Flags[5] = true; }
 		};
 
+#if !_ZE_MODE_RELEASE
+		mutable bool isRasterActive = false;
+#endif
 		RID resourceCount = 0;
 		std::unique_ptr<BufferData[]> resources;
 		// Is SRV | correct binding slots
@@ -51,6 +54,7 @@ namespace ZE::RHI::DX11::Pipeline
 		std::unique_ptr<std::unique_ptr<DX::ComPtr<IDepthStencilView>[]>[]> dsvMips; // No backbuffer
 		std::unique_ptr<std::unique_ptr<DX::ComPtr<IUnorderedAccessView>[]>[]> uavMips; // No backbuffer
 
+		void EnterRaster() const noexcept;
 		void SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;
 
@@ -60,6 +64,12 @@ namespace ZE::RHI::DX11::Pipeline
 		~FrameBuffer() = default;
 
 		static Expected<FrameBuffer> Create(GFX::Device& dev, const GFX::Pipeline::FrameBufferDesc& desc) noexcept;
+
+		// Barriers not needed in the API
+		template<U32 BarrierCount>
+		constexpr void Barrier(GFX::CommandList& cl, const std::array<GFX::Pipeline::BarrierTransition, BarrierCount>& barriers) const noexcept {}
+		constexpr void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept {}
+		constexpr void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept {}
 
 		constexpr UInt2 GetDimmensions(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Size; }
 		constexpr U16 GetArraySize(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Array; }
@@ -107,12 +117,7 @@ namespace ZE::RHI::DX11::Pipeline
 		void InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::CBuffer& buffer) const noexcept;
 		void InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::Texture::Pack& texture, U32 index) const noexcept;
 
-		template<U32 BarrierCount>
-		void Barrier(GFX::CommandList& cl, const std::array<GFX::Pipeline::BarrierTransition, BarrierCount>& barriers) const noexcept;
-		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
-		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
-
-		void RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
+		Status RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
 
 		Status MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept;
 		void UnmapResource(RID rid) const noexcept;
@@ -130,33 +135,13 @@ namespace ZE::RHI::DX11::Pipeline
 	};
 
 #pragma region Functions
-	template<U32 RTVCount>
-	void FrameBuffer::SetRTV(GFX::CommandList& cl, const RID* rid, bool adjacent) const noexcept
+	template<U8 RTVCount>
+	void FrameBuffer::BeginRaster(GFX::CommandList& cl, const RID* rtv, bool adjacent) const noexcept
 	{
-		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetRTV() should be only used for multiple render targets!");
+		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::BeginRaster() should be only used for multiple render targets!");
+		static_assert(RTVCount <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
 
-		ID3D11RenderTargetView* handles[RTVCount];
-		D3D11_VIEWPORT vieports[RTVCount];
-		for (U32 i = 0; i < RTVCount; ++i)
-		{
-			RID id = rid[i];
-			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
-
-			handles[i] = static_cast<ID3D11RenderTargetView*>(rtvs[id].Get());
-			ZE_ASSERT(handles[i], "Current resource is not suitable for being render target!");
-			SetupViewport(vieports[i], id);
-		}
-		cl.Get().dx11.GetContext()->RSSetViewports(RTVCount, vieports);
-		cl.Get().dx11.GetContext()->OMSetRenderTargets(RTVCount, handles, nullptr);
-	}
-
-	template<U32 RTVCount>
-	void FrameBuffer::SetOutput(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept
-	{
-		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::SetOutput() should be only used for multiple render targets!");
-		ZE_ASSERT(dsv != 0, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(dsvs[dsv - 1], "Current resource is not suitable for being depth stencil!");
-
+		EnterRaster();
 		ID3D11RenderTargetView* handles[RTVCount];
 		D3D11_VIEWPORT vieports[RTVCount];
 		for (U32 i = 0; i < RTVCount; ++i)
@@ -169,14 +154,28 @@ namespace ZE::RHI::DX11::Pipeline
 			SetupViewport(vieports[i], id);
 		}
 		cl.Get().dx11.GetContext()->RSSetViewports(RTVCount, vieports);
-		cl.Get().dx11.GetContext()->OMSetRenderTargets(RTVCount, handles, dsvs[dsv - 1].Get());
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(RTVCount, handles, nullptr);
 	}
 
-	template<U32 BarrierCount>
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, const std::array<GFX::Pipeline::TransitionInfo, BarrierCount>& barriers) const noexcept
+	template<U8 RTVCount>
+	void FrameBuffer::BeginRaster(GFX::CommandList& cl, const RID* rtv, RID dsv, bool adjacent) const noexcept
 	{
-		for (const auto& barrier : barriers)
-			BarrierTransition(cl, barrier.RID, barrier.BeforeState, barrier.AfterState);
+		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::BeginRaster() should be only used for multiple render targets!");
+		static_assert(RTVCount <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
+		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
+
+		EnterRaster();
+		ID3D11RenderTargetView* handles[RTVCount];
+		D3D11_VIEWPORT vieports[RTVCount];
+		for (U32 i = 0; i < RTVCount; ++i)
+		{
+			RID id = rtv[i];
+			handles[i] = static_cast<ID3D11RenderTargetView*>(GetRTV(id));
+			ZE_ASSERT(handles[i], "Current resource is not suitable for being render target!");
+			SetupViewport(vieports[i], id);
+		}
+		cl.Get().dx11.GetContext()->RSSetViewports(RTVCount, vieports);
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(RTVCount, handles, GetDSV(dsv));
 	}
 #pragma endregion
 }

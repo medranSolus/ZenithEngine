@@ -1525,7 +1525,7 @@ namespace ZE::RHI::DX12::Pipeline
 		PerformBarrier(cl.Get().dx12, &barrierTex, static_cast<U32>(!buffer), &barrierBuff, static_cast<U32>(buffer));
 	}
 
-	void FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
+	Status FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
 	{
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(resources[rid].IsOutsideResource(), "Trying to register data to incorrect not outside resource!");
@@ -1543,13 +1543,39 @@ namespace ZE::RHI::DX12::Pipeline
 		res.Mips = resDesc.MipLevels;
 		res.Format = DX::GetFormatFromDX(resDesc.Format);
 
-		if (type == GFX::Pipeline::FrameResourceType::TextureCube)
+		switch (type)
+		{
+		case GFX::Pipeline::FrameResourceType::Buffer:
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Pipeline::FrameResourceType::Texture1D:
+		{
+			res.SetTex1D();
+			[[fallthrough]];
+		}
+		case GFX::Pipeline::FrameResourceType::Texture2D:
+		{
+			if (res.Array > 1)
+				res.SetArrayView();
+			break;
+		}
+		case GFX::Pipeline::FrameResourceType::TextureCube:
+		{
 			res.SetCube();
-		else if (type != GFX::Pipeline::FrameResourceType::Texture3D && res.Array > 1)
-			res.SetArrayView();
+			if (res.Array > 6)
+				res.SetArrayView();
+			break;
+		}
+		case GFX::Pipeline::FrameResourceType::Texture3D:
+		{
+			res.SetTex3D();
+			break;
+		}
+		}
 
 		srvHandles[rid].CpuShaderVisibleHandle = texDescInfo.CPU;
 		srvHandles[rid].GpuShaderVisibleHandle = texDescInfo.GPU;
+		return {};
 	}
 
 	Status FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept

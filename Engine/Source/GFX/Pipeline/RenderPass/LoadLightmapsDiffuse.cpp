@@ -83,8 +83,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadLightmapsDiffuse
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->IrrMap,
-			static_cast<ExecuteData*>(passData.ExecData.get())->IrrMap, 0, FrameResourceType::TextureCube);
+		ZE_CODE_RET_FAILED_EXPECT(renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->IrrMap,
+			static_cast<ExecuteData*>(passData.ExecData.get())->IrrMap, 0, FrameResourceType::TextureCube));
 		return false;
 	}
 

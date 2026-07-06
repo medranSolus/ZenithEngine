@@ -172,7 +172,7 @@ namespace ZE::RHI::DX12::Pipeline
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept;
 		void Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept;
 
-		void RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
+		Status RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept;
 
 		Status MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept;
 		void UnmapResource(RID rid) const noexcept;
@@ -205,9 +205,7 @@ namespace ZE::RHI::DX12::Pipeline
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
 			RID id = rtv[i];
-			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
-
-			handles[i] = rtvDsvHandles[id];
+			handles[i] = GetRTV(id);
 			ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
 		}
@@ -221,9 +219,7 @@ namespace ZE::RHI::DX12::Pipeline
 	{
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::BeginRaster() should be only used for multiple render targets!");
 		static_assert(RTVCount <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
-		ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
-		ZE_ASSERT(rtvDsvHandles[dsv].ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(GetDSV(dsv).ptr != UINT64_MAX, "Current resource is not suitable for being depth stencil!");
 		EnterRaster();
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handles[RTVCount];
@@ -232,9 +228,7 @@ namespace ZE::RHI::DX12::Pipeline
 		for (U32 i = 0; i < RTVCount; ++i)
 		{
 			RID id = rtv[i];
-			ZE_ASSERT(id < resourceCount, "Resource ID outside available range!");
-
-			handles[i] = rtvDsvHandles[id];
+			handles[i] = GetRTV(id);
 			ZE_ASSERT(handles[i].ptr != UINT64_MAX, "Current resource is not suitable for being render target!");
 			SetupViewport(vieports[i], scissorRects[i], id);
 		}

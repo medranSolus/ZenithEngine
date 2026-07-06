@@ -78,8 +78,8 @@ namespace ZE::GFX::Pipeline::RenderPass::LoadSkybox
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->Skybox,
-			static_cast<ExecuteData*>(passData.ExecData.get())->SkyTexture, 0, FrameResourceType::TextureCube);
+		ZE_CODE_RET_FAILED_EXPECT(renderData.Buffers.RegisterOutsideResource(reinterpret_cast<Resources*>(passData.Resources.get())->Skybox,
+			static_cast<ExecuteData*>(passData.ExecData.get())->SkyTexture, 0, FrameResourceType::TextureCube));
 		return false;
 	}
 

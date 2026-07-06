@@ -2,6 +2,15 @@
 
 namespace ZE::RHI::DX11::Pipeline
 {
+	void FrameBuffer::EnterRaster() const noexcept
+	{
+#if !_ZE_MODE_RELEASE
+		ZE_ASSERT(!isRasterActive, "Starting rasterization without calling EndRaster()!");
+
+		isRasterActive = true;
+#endif
+	}
+
 	void FrameBuffer::SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept
 	{
 		const UInt2 size = resources[rid].Size;
@@ -189,13 +198,13 @@ namespace ZE::RHI::DX11::Pipeline
 						texDesc.MiscFlags = 0;
 						texDesc.TextureLayout = D3D11_TEXTURE_LAYOUT_UNDEFINED;
 
+						if (dataDesc.Array > 1 || resDesc.Flags & GFX::Pipeline::FrameResourceFlag::ArrayView)
+							dataDesc.SetArrayView();
 						if (dataDesc.IsCube())
 						{
 							texDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 							texDesc.ArraySize *= 6;
 						}
-						if (dataDesc.Array > 1 || resDesc.Flags & GFX::Pipeline::FrameResourceFlag::ArrayView)
-							dataDesc.SetArrayView();
 
 						DX::ComPtr<ITexture2D> texture;
 						ZE_DX_RET_FAILED_EXPECT(device->CreateTexture2D1(&texDesc, nullptr, &texture));
@@ -224,11 +233,13 @@ namespace ZE::RHI::DX11::Pipeline
 					}
 					}
 
+					// TODO: all resources for now act like temporal before some aliasing can be implementd
 					if (resDesc.Flags & GFX::Pipeline::FrameResourceFlag::Temporal)
 					{
 
 					}
 
+					bool stencilView = resDesc.Flags & GFX::Pipeline::FrameResourceFlag::StencilView;
 					if (isRT)
 					{
 						D3D11_RENDER_TARGET_VIEW_DESC1 rtvDesc = {};
@@ -353,22 +364,54 @@ namespace ZE::RHI::DX11::Pipeline
 					else if (isDS)
 					{
 						D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-						dsvDesc.Format = DX::ConvertDepthFormatToDSV(info.Desc.Format);
+						dsvDesc.Format = DX::ConvertDepthFormatToDSV(DX::GetDXFormat(dataDesc.Format));
 						dsvDesc.Flags = 0;
-						if (info.Desc.ArraySize > 1)
+
+						switch (resDesc.Type)
 						{
-							dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-							dsvDesc.Texture2DArray.MipSlice = 0;
-							dsvDesc.Texture2DArray.FirstArraySlice = 0;
-							dsvDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
-							framebuffer.resources[i].SetArrayView();
-						}
-						else
+						case GFX::Pipeline::FrameResourceType::Texture1D:
 						{
-							dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-							dsvDesc.Texture2D.MipSlice = 0;
+							if (dataDesc.IsArrayView())
+							{
+								dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
+								dsvDesc.Texture1DArray.MipSlice = 0;
+								dsvDesc.Texture1DArray.FirstArraySlice = 0;
+								dsvDesc.Texture1DArray.ArraySize = dataDesc.Array;
+							}
+							else
+							{
+								dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
+								dsvDesc.Texture1D.MipSlice = 0;
+							}
+							break;
 						}
-						ZE_DX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &framebuffer.dsvs[i - 1]));
+						case GFX::Pipeline::FrameResourceType::Buffer:
+						case GFX::Pipeline::FrameResourceType::TextureCube:
+						case GFX::Pipeline::FrameResourceType::Texture3D:
+						{
+							ZE_FAIL("Depth stencil view can only be created for 1D and 2D textures!");
+							[[fallthrough]];
+						}
+						default:
+							ZE_ENUM_UNHANDLED();
+						case GFX::Pipeline::FrameResourceType::Texture2D:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+								dsvDesc.Texture2DArray.MipSlice = 0;
+								dsvDesc.Texture2DArray.FirstArraySlice = 0;
+								dsvDesc.Texture2DArray.ArraySize = dataDesc.Array;
+							}
+							else
+							{
+								dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+								dsvDesc.Texture2D.MipSlice = 0;
+							}
+							break;
+						}
+						}
+						ZE_DX_RET_FAILED_EXPECT(device->CreateDepthStencilView(dataDesc.Resource.Get(), &dsvDesc, &framebuffer.dsvs[i - 1]));
 
 						// Generate views for proper mips
 						if (dataDesc.Mips > 1)
@@ -381,129 +424,254 @@ namespace ZE::RHI::DX11::Pipeline
 							targetResourceMip[0] = framebuffer.dsvs[i - 1];
 							for (U16 j = 1; j < dataDesc.Mips; ++j)
 							{
-								if (dataDesc.ArraySize > 1)
-									dsvDesc.Texture2DArray.MipSlice = j;
-								else
-									dsvDesc.Texture2D.MipSlice = j;
-
-								ZE_DX_THROW_FAILED(device->CreateDepthStencilView(info.Texture.Get(), &dsvDesc, &targetResourceMip[j]));
+								switch (resDesc.Type)
+								{
+								case GFX::Pipeline::FrameResourceType::Texture1D:
+								{
+									if (dataDesc.IsArrayView())
+										dsvDesc.Texture1DArray.MipSlice = j;
+									else
+										dsvDesc.Texture1D.MipSlice = j;
+									break;
+								}
+								case GFX::Pipeline::FrameResourceType::Buffer:
+								case GFX::Pipeline::FrameResourceType::TextureCube:
+								case GFX::Pipeline::FrameResourceType::Texture3D:
+								{
+									ZE_FAIL("Depth stencil view can only be created for 1D and 2D textures!");
+									[[fallthrough]];
+								}
+								default:
+									ZE_ENUM_UNHANDLED();
+								case GFX::Pipeline::FrameResourceType::Texture2D:
+								{
+									if (dataDesc.IsArrayView())
+										dsvDesc.Texture2DArray.MipSlice = j;
+									else
+										dsvDesc.Texture2D.MipSlice = j;
+									break;
+								}
+								}
+								ZE_DX_RET_FAILED_EXPECT(device->CreateDepthStencilView(dataDesc.Resource.Get(), &dsvDesc, &targetResourceMip[j]));
 							}
 						}
 					}
 					if (isUA)
 					{
+						D3D11_UNORDERED_ACCESS_VIEW_DESC1 uavDesc = {};
+						uavDesc.Format = DX::ConvertDepthFormatToResourceView(DX::GetTypedDepthDXFormat(dataDesc.Format), stencilView);
 
+						switch (resDesc.Type)
+						{
+						case GFX::Pipeline::FrameResourceType::Buffer:
+						{
+							uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+							uavDesc.Buffer.FirstElement = 0;
+							uavDesc.Buffer.NumElements = dataDesc.Size.X;
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::Texture1D:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY;
+								uavDesc.Texture1DArray.MipSlice = 0;
+								uavDesc.Texture1DArray.FirstArraySlice = 0;
+								uavDesc.Texture1DArray.ArraySize = dataDesc.Array;
+							}
+							else
+							{
+								uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1D;
+								uavDesc.Texture1D.MipSlice = 0;
+							}
+							break;
+						}
+						default:
+							ZE_ENUM_UNHANDLED();
+						case GFX::Pipeline::FrameResourceType::Texture2D:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+								uavDesc.Texture2DArray.MipSlice = 0;
+								uavDesc.Texture2DArray.FirstArraySlice = 0;
+								uavDesc.Texture2DArray.ArraySize = dataDesc.Array;
+								uavDesc.Texture2DArray.PlaneSlice = 0;
+							}
+							else
+							{
+								uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+								uavDesc.Texture2D.MipSlice = 0;
+								uavDesc.Texture2D.PlaneSlice = 0;
+							}
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::TextureCube:
+						{
+							uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+							uavDesc.Texture2DArray.MipSlice = 0;
+							uavDesc.Texture2DArray.FirstArraySlice = 0;
+							uavDesc.Texture2DArray.ArraySize = dataDesc.Array * 6;
+							uavDesc.Texture2DArray.PlaneSlice = 0;
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::Texture3D:
+						{
+							uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+							uavDesc.Texture3D.MipSlice = 0;
+							uavDesc.Texture3D.FirstWSlice = 0;
+							uavDesc.Texture3D.WSize = dataDesc.Array;
+							break;
+						}
+						}
+						ZE_DX_RET_FAILED_EXPECT(device->CreateUnorderedAccessView1(dataDesc.Resource.Get(), &uavDesc, &framebuffer.uavs[i - 1]));
+
+						// Generate views for proper mips
+						if (dataDesc.Mips > 1)
+						{
+							if (!framebuffer.uavMips)
+								framebuffer.uavMips = std::make_unique<std::unique_ptr<DX::ComPtr<IUnorderedAccessView>[]>[]>(framebuffer.resourceCount - 1);
+
+							auto& targetResourceMip = framebuffer.uavMips[i - 1];
+							targetResourceMip = std::make_unique_for_overwrite<DX::ComPtr<IUnorderedAccessView>[]>(dataDesc.Mips);
+							targetResourceMip[0] = framebuffer.uavs[i - 1];
+
+							for (U16 j = 1; j < dataDesc.Mips; ++j)
+							{
+								switch (resDesc.Type)
+								{
+								case GFX::Pipeline::FrameResourceType::Buffer:
+								{
+									ZE_FAIL("No mip levels for buffer resources!");
+									break;
+								}
+								case GFX::Pipeline::FrameResourceType::Texture1D:
+								{
+									if (dataDesc.IsArrayView())
+										uavDesc.Texture1DArray.MipSlice = j;
+									else
+										uavDesc.Texture1D.MipSlice = j;
+									break;
+								}
+								default:
+									ZE_ENUM_UNHANDLED();
+								case GFX::Pipeline::FrameResourceType::Texture2D:
+								{
+									if (dataDesc.IsArrayView())
+										uavDesc.Texture2DArray.MipSlice = j;
+									else
+										uavDesc.Texture2D.MipSlice = j;
+									break;
+								}
+								case GFX::Pipeline::FrameResourceType::TextureCube:
+								{
+									uavDesc.Texture2DArray.MipSlice = j;
+									break;
+								}
+								case GFX::Pipeline::FrameResourceType::Texture3D:
+								{
+									uavDesc.Texture3D.MipSlice = j;
+									break;
+								}
+								}
+								ZE_DX_RET_FAILED_EXPECT(device->CreateUnorderedAccessView1(dataDesc.Resource.Get(), &uavDesc, &targetResourceMip[j]));
+							}
+						}
 					}
 					if (isSR)
 					{
-						DXGI_FORMAT format = DX::ConvertDepthFormatToResourceView(DX::GetTypedDepthDXFormat(dataDesc.Format), resDesc.Flags & GFX::Pipeline::FrameResourceFlag::StencilView);
+						D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
+						srvDesc.Format = DX::ConvertDepthFormatToResourceView(DX::GetTypedDepthDXFormat(dataDesc.Format), stencilView);
 
+						switch (resDesc.Type)
+						{
+						case GFX::Pipeline::FrameResourceType::Buffer:
+						{
+							srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+							srvDesc.BufferEx.FirstElement = 0;
+							srvDesc.BufferEx.NumElements = dataDesc.Size.X;
+							srvDesc.BufferEx.Flags = resDesc.Flags & GFX::Pipeline::FrameResourceFlag::RawBufferView ? D3D11_BUFFEREX_SRV_FLAG_RAW : 0;
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::Texture1D:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
+								srvDesc.Texture1DArray.MostDetailedMip = 0;
+								srvDesc.Texture1DArray.MipLevels = dataDesc.Mips;
+								srvDesc.Texture1DArray.FirstArraySlice = 0;
+								srvDesc.Texture1DArray.ArraySize = dataDesc.Array;
+							}
+							else
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
+								srvDesc.Texture1D.MostDetailedMip = 0;
+								srvDesc.Texture1D.MipLevels = dataDesc.Mips;
+							}
+							break;
+						}
+						default:
+							ZE_ENUM_UNHANDLED();
+						case GFX::Pipeline::FrameResourceType::Texture2D:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+								srvDesc.Texture2DArray.MostDetailedMip = 0;
+								srvDesc.Texture2DArray.MipLevels = dataDesc.Mips;
+								srvDesc.Texture2DArray.FirstArraySlice = 0;
+								srvDesc.Texture2DArray.ArraySize = dataDesc.Array;
+								srvDesc.Texture2DArray.PlaneSlice = 0;
+							}
+							else
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+								srvDesc.Texture2D.MostDetailedMip = 0;
+								srvDesc.Texture2D.MipLevels = dataDesc.Mips;
+								srvDesc.Texture2D.PlaneSlice = 0;
+							}
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::TextureCube:
+						{
+							if (dataDesc.IsArrayView())
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+								srvDesc.TextureCubeArray.MostDetailedMip = 0;
+								srvDesc.TextureCubeArray.MipLevels = dataDesc.Mips;
+								srvDesc.TextureCubeArray.First2DArrayFace = 0;
+								srvDesc.TextureCubeArray.NumCubes = dataDesc.Array;
+							}
+							else
+							{
+								srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+								srvDesc.TextureCube.MostDetailedMip = 0;
+								srvDesc.TextureCube.MipLevels = dataDesc.Mips;
+							}
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::Texture3D:
+						{
+							srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+							srvDesc.Texture3D.MostDetailedMip = 0;
+							srvDesc.Texture3D.MipLevels = dataDesc.Mips;
+							break;
+						}
+						}
+						ZE_DX_RET_FAILED_EXPECT(device->CreateShaderResourceView1(dataDesc.Resource.Get(), &srvDesc, &framebuffer.srvs[i]));
 					}
-
-
-
-					
-
 				}
 			}
 		}
-
-		// Create view arrays
-		if (dsvMipsPresent)
-		if (uavMipsPresent)
-			framebuffer.uavMips = std::make_unique<std::unique_ptr<DX::ComPtr<IUnorderedAccessView>[]>[]>(framebuffer.resourceCount - 1);
-		
-		// Create views
-		for (RID i = 1; const auto& info : resourcesInfo)
-		{
-			if (info.IsUAV())
-			{
-				D3D11_UNORDERED_ACCESS_VIEW_DESC1 uavDesc = {};
-				uavDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
-				if (info.Desc.ArraySize > 1)
-				{
-					uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-					uavDesc.Texture2DArray.MipSlice = 0;
-					uavDesc.Texture2DArray.FirstArraySlice = 0;
-					uavDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
-					uavDesc.Texture2DArray.PlaneSlice = 0;
-					framebuffer.resources[i].SetArrayView();
-				}
-				else
-				{
-					uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-					uavDesc.Texture2D.MipSlice = 0;
-					uavDesc.Texture2D.PlaneSlice = 0;
-				}
-				ZE_DX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &framebuffer.uavs[i - 1]));
-
-				// Generate views for proper mips
-				if (info.Desc.MipLevels > 1)
-				{
-					auto& targetResourceMip = framebuffer.uavMips[i - 1];
-					targetResourceMip = new DX::ComPtr<IUnorderedAccessView>[info.Desc.MipLevels];
-					targetResourceMip[0] = framebuffer.uavs[i - 1];
-
-					for (U16 j = 1; j < info.Desc.MipLevels; ++j)
-					{
-						if (info.Desc.ArraySize > 1)
-							uavDesc.Texture2DArray.MipSlice = j;
-						else
-							uavDesc.Texture2D.MipSlice = j;
-
-						ZE_DX_THROW_FAILED(device->CreateUnorderedAccessView1(info.Texture.Get(), &uavDesc, &targetResourceMip[j]));
-					}
-				}
-			}
-			if (info.IsSRV())
-			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
-				srvDesc.Format = DX::ConvertDepthFormatToResourceView(info.Desc.Format, info.UseStencilView());
-				if (info.IsCube())
-				{
-					if (info.Desc.ArraySize > 6)
-					{
-						srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-						srvDesc.TextureCubeArray.MostDetailedMip = 0;
-						srvDesc.TextureCubeArray.MipLevels = info.Desc.MipLevels;
-						srvDesc.TextureCubeArray.First2DArrayFace = 0;
-						srvDesc.TextureCubeArray.NumCubes = info.Desc.ArraySize / 6;
-						framebuffer.resources[i].SetArrayView();
-					}
-					else
-					{
-						srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-						srvDesc.TextureCube.MostDetailedMip = 0;
-						srvDesc.TextureCube.MipLevels = info.Desc.MipLevels;
-					}
-				}
-				else if (info.Desc.ArraySize > 1)
-				{
-					srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-					srvDesc.Texture2DArray.MostDetailedMip = 0;
-					srvDesc.Texture2DArray.MipLevels = info.Desc.MipLevels;
-					srvDesc.Texture2DArray.FirstArraySlice = 0;
-					srvDesc.Texture2DArray.ArraySize = info.Desc.ArraySize;
-					srvDesc.Texture2DArray.PlaneSlice = 0;
-					framebuffer.resources[i].SetArrayView();
-				}
-				else
-				{
-					srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-					srvDesc.Texture2D.MostDetailedMip = 0;
-					srvDesc.Texture2D.MipLevels = info.Desc.MipLevels;
-					srvDesc.Texture2D.PlaneSlice = 0;
-				}
-				ZE_DX_THROW_FAILED(device->CreateShaderResourceView1(info.Texture.Get(), &srvDesc, &framebuffer.srvs[i]));
-			}
-			++i;
-		}
+		return framebuffer;
 	}
 
 	void FrameBuffer::BeginRasterSparse(GFX::CommandList& cl, const RID* rtv, U8 count) const noexcept
 	{
 		ZE_ASSERT(count <= Settings::MAX_RENDER_TARGETS, "Too many render targets!");
 
+		EnterRaster();
 		ID3D11RenderTargetView* handles[Settings::MAX_RENDER_TARGETS];
 		D3D11_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
@@ -531,6 +699,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
+		EnterRaster();
 		ID3D11RenderTargetView* handles[Settings::MAX_RENDER_TARGETS];
 		D3D11_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
@@ -556,6 +725,7 @@ namespace ZE::RHI::DX11::Pipeline
 	{
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
+		EnterRaster();
 		SetViewport(cl.Get().dx11, dsv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(0, nullptr, GetDSV(dsv));
 	}
@@ -565,8 +735,9 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(GetRTV(rtv), "Current resource is not suitable for being render target!");
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
+		EnterRaster();
 		SetViewport(cl.Get().dx11, rtv);
-		auto* view = reinterpret_cast<ID3D11RenderTargetView*>(GetRTV(rtv));
+		auto* view = static_cast<ID3D11RenderTargetView*>(GetRTV(rtv));
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, &view, GetDSV(dsv));
 	}
 
@@ -577,6 +748,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(dsvMips[dsv - 1] != nullptr, "Mips for current resource not supported!");
 		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
 
+		EnterRaster();
 		SetViewport(cl.Get().dx11, dsv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(0, nullptr, dsvMips[dsv - 1][mipLevel].Get());
 	}
@@ -592,6 +764,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(mipLevel < GetMipCount(rtv), "Mip level outside available range!");
 		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
 
+		EnterRaster();
 		SetViewport(cl.Get().dx11, rtv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, reinterpret_cast<ID3D11RenderTargetView**>(rtvMips[rtv - 1][mipLevel].GetAddressOf()), dsv != INVALID_RID ? reinterpret_cast<ID3D11DepthStencilView*>(dsvMips[dsv - 1][mipLevel].Get()) : nullptr);
 	}
@@ -687,55 +860,6 @@ namespace ZE::RHI::DX11::Pipeline
 		}
 	}
 
-	void FrameBuffer::BarrierTransition(GFX::CommandList& cl, RID rid, GFX::Resource::State before, GFX::Resource::State after) const noexcept
-	{
-		auto* ctx = cl.Get().dx11.GetContext();
-		if (before == GFX::Resource::StateRenderTarget
-			|| before == GFX::Resource::StateDepthRead
-			|| before == GFX::Resource::StateDepthWrite)
-			ctx->OMSetRenderTargets(0, nullptr, nullptr);
-		else if (before == GFX::Resource::StateUnorderedAccess)
-		{
-			ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
-			for (auto it = currentSlots.begin(); it != currentSlots.end();)
-			{
-				if (!it->first)
-				{
-					ZE_ASSERT(it->second.BindStart + it->second.Count < D3D11_PS_CS_UAV_REGISTER_COUNT, "Too wide binding range!");
-					ctx->CSSetUnorderedAccessViews(it->second.BindStart, it->second.Count, nullUav, nullptr);
-					it = currentSlots.erase(it);
-				}
-				else
-					++it;
-			}
-		}
-		else
-		{
-			ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
-			for (auto it = currentSlots.begin(); it != currentSlots.end();)
-			{
-				if (it->first)
-				{
-					ZE_ASSERT(it->second.BindStart + it->second.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too wide binding range!");
-
-					if (it->second.Shaders & GFX::Resource::ShaderType::Vertex)
-						ctx->VSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
-					if (it->second.Shaders & GFX::Resource::ShaderType::Domain)
-						ctx->DSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
-					if (it->second.Shaders & GFX::Resource::ShaderType::Hull)
-						ctx->HSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
-					if (it->second.Shaders & GFX::Resource::ShaderType::Geometry)
-						ctx->GSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
-					if (it->second.Shaders & GFX::Resource::ShaderType::Pixel)
-						ctx->PSSetShaderResources(it->second.BindStart, it->second.Count, nullSrv);
-					it = currentSlots.erase(it);
-				}
-				else
-					++it;
-			}
-		}
-	}
-
 	void FrameBuffer::SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept
 	{
 		ZE_ASSERT(res < resourceCount, "Resource ID outside available range!");
@@ -790,49 +914,12 @@ namespace ZE::RHI::DX11::Pipeline
 
 	void FrameBuffer::Copy(GFX::Device& dev, GFX::CommandList& cl, RID src, RID dest) const noexcept
 	{
-
 		ZE_ASSERT(src < resourceCount, "Source resource ID outside available range!");
 		ZE_ASSERT(dest < resourceCount, "Destination resource ID outside available range!");
 		ZE_ASSERT(GetDimmensions(src) == GetDimmensions(dest), "Resources must have same dimmensions for copy!");
 
-		IDevice* device = dev.Get().dx12.GetDevice();
-		IGraphicsCommandList* list = cl.Get().dx12.GetList();
-		IResource* srcRes = GetResource(src).Get();
-		IResource* destRes = GetResource(dest).Get();
-		D3D12_RESOURCE_DESC1 srcDesc = srcRes->GetDesc1();
-		D3D12_RESOURCE_DESC1 destDesc = destRes->GetDesc1();
-
-		if (destDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || srcDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
-		{
-			D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-			srcLocation.pResource = srcRes;
-			if (srcDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
-			{
-				srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				srcLocation.SubresourceIndex = 0;
-			}
-			else
-			{
-				srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-				device->GetCopyableFootprints1(&srcDesc, 0, 1, 0, &srcLocation.PlacedFootprint, nullptr, nullptr, nullptr);
-			}
-
-			D3D12_TEXTURE_COPY_LOCATION destLocation = {};
-			destLocation.pResource = destRes;
-			if (destDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
-			{
-				destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				destLocation.SubresourceIndex = 0;
-			}
-			else
-			{
-				destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-				device->GetCopyableFootprints1(&destDesc, 0, 1, 0, &destLocation.PlacedFootprint, nullptr, nullptr, nullptr);
-			}
-			list->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
-		}
-		else
-			list->CopyBufferRegion(destRes, 0, srcRes, 0, destDesc.Width);
+		// Copy full resource for now, correct this if encountered issues
+		cl.Get().dx11.GetContext()->CopyResource(resources[dest].Resource.Get(), resources[src].Resource.Get());
 	}
 
 	void FrameBuffer::CopyFullResource(GFX::CommandList& cl, RID src, RID dest) const noexcept
@@ -852,13 +939,13 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(destOffset + bytes <= GetDimmensions(dest).X, "Destination copy region outside of resource!");
 
 		D3D11_BOX box = {};
-		box.left = srcOffset;
-		box.right = srcOffset + bytes;
+		box.left = Utils::SafeCast<U32>(srcOffset);
+		box.right = Utils::SafeCast<U32>(srcOffset + bytes);
 		box.top = 0;
 		box.bottom = 1;
 		box.front = 0;
 		box.back = 1;
-		cl.Get().dx11.GetContext()->CopySubresourceRegion1(GetResource(dest).Get(), 0, destOffset, 0, 0, GetResource(src).Get(), 0, &box, 0);
+		cl.Get().dx11.GetContext()->CopySubresourceRegion1(GetResource(dest).Get(), 0, Utils::SafeCast<U32>(destOffset), 0, 0, GetResource(src).Get(), 0, &box, 0);
 	}
 
 	void FrameBuffer::InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::CBuffer& buffer) const noexcept
@@ -870,78 +957,91 @@ namespace ZE::RHI::DX11::Pipeline
 
 	void FrameBuffer::InitResource(GFX::CommandList& cl, RID rid, const GFX::Resource::Texture::Pack& texture, U32 index) const noexcept
 	{
-
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(!IsBuffer(rid), "Trying to initialize non-texture resource with texture!");
 
 		cl.Get().dx11.GetContext()->CopyResource(GetResource(rid).Get(), texture.Get().dx11.GetResource(index));
 	}
 
-	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept
+	Status FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
 	{
-
-		ZE_ASSERT(barriers, "Empty barriers to perform!");
-		ZE_ASSERT(count > 0, "No barriers to perform!");
-
-		std::vector<D3D12_TEXTURE_BARRIER> texBarriers;
-		std::vector<D3D12_BUFFER_BARRIER> buffBarriers;
-		texBarriers.reserve(count);
-		U32 texCount = 0, buffCount = 0;
-		for (U32 i = 0; i < count; ++i)
-		{
-			if (IsBuffer(barriers[i].Resource))
-			{
-				FillBarier(buffBarriers.emplace_back(), barriers[i]);
-				++buffCount;
-			}
-			else
-			{
-				FillBarier(texBarriers.emplace_back(), barriers[i]);
-				++texCount;
-			}
-		}
-		PerformBarrier(cl.Get().dx12, texBarriers.data(), texCount, buffBarriers.data(), buffCount);
-	}
-
-	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition& desc) const noexcept
-	{
-
-		D3D12_TEXTURE_BARRIER barrierTex;
-		D3D12_BUFFER_BARRIER barrierBuff;
-		bool buffer = IsBuffer(desc.Resource);
-		if (buffer)
-			FillBarier(barrierBuff, desc);
-		else
-			FillBarier(barrierTex, desc);
-		PerformBarrier(cl.Get().dx12, &barrierTex, static_cast<U32>(!buffer), &barrierBuff, static_cast<U32>(buffer));
-	}
-
-	void FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
-	{
-
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(resources[rid].IsOutsideResource(), "Trying to register data to incorrect not outside resource!");
 		ZE_ASSERT(type != GFX::Pipeline::FrameResourceType::Buffer, "Cannot register buffer resource when passing texture pack!");
-		ZE_ASSERT(textures.Get().dx12.GetDescInfo().GpuSide, "Texture descriptors need to be visible for GPU!");
 
 		auto& res = resources[rid];
-		res.Resource = textures.Get().dx12.GetRes(textureIndex);
+		res.Resource = textures.Get().dx11.GetResource(textureIndex);
 
-		const auto& resDesc = res.Resource->GetDesc1();
-		const auto& texDescInfo = textures.Get().dx12.GetDescInfo();
+		switch (type)
+		{
+		case GFX::Pipeline::FrameResourceType::Buffer:
+		default:
+			ZE_ENUM_UNHANDLED();
+		case GFX::Pipeline::FrameResourceType::Texture1D:
+		{
+			DX::ComPtr<ITexture1D> tex;
+			ZE_DX_RET_FAILED(res.Resource->QueryInterface(IID_PPV_ARGS(&tex)));
 
-		res.Size = { Utils::SafeCast<U32>(resDesc.Width), resDesc.Height };
-		res.Array = resDesc.DepthOrArraySize;
-		res.Mips = resDesc.MipLevels;
-		res.Format = DX::GetFormatFromDX(resDesc.Format);
+			D3D11_TEXTURE1D_DESC desc = {};
+			tex->GetDesc(&desc);
 
-		if (type == GFX::Pipeline::FrameResourceType::TextureCube)
+			res.Size = { desc.Width, 1 };
+			res.Array = Utils::SafeCast<U16>(desc.ArraySize);
+			res.Mips = Utils::SafeCast<U16>(desc.MipLevels);
+			res.Format = DX::GetFormatFromDX(desc.Format);
+
+			res.SetTex1D();
+			if (res.Array > 1)
+				res.SetArrayView();
+			break;
+		}
+		case GFX::Pipeline::FrameResourceType::TextureCube:
+		{
 			res.SetCube();
-		else if (type != GFX::Pipeline::FrameResourceType::Texture3D && res.Array > 1)
-			res.SetArrayView();
+			[[fallthrough]];
+		}
+		case GFX::Pipeline::FrameResourceType::Texture2D:
+		{
+			DX::ComPtr<ITexture2D> tex;
+			ZE_DX_RET_FAILED(res.Resource->QueryInterface(IID_PPV_ARGS(&tex)));
 
-		srvHandles[rid].CpuShaderVisibleHandle = texDescInfo.CPU;
-		srvHandles[rid].GpuShaderVisibleHandle = texDescInfo.GPU;
+			D3D11_TEXTURE2D_DESC1 desc = {};
+			tex->GetDesc1(&desc);
+
+			res.Size = { desc.Width, desc.Height };
+			res.Array = Utils::SafeCast<U16>(desc.ArraySize);
+			res.Mips = Utils::SafeCast<U16>(desc.MipLevels);
+			res.Format = DX::GetFormatFromDX(desc.Format);
+
+			if (res.IsCube())
+			{
+				if (res.Array > 6)
+					res.SetArrayView();
+			}
+			else if (res.Array > 1)
+				res.SetArrayView();
+			break;
+		}
+		case GFX::Pipeline::FrameResourceType::Texture3D:
+		{
+			DX::ComPtr<ITexture3D> tex;
+			ZE_DX_RET_FAILED(res.Resource->QueryInterface(IID_PPV_ARGS(&tex)));
+
+			D3D11_TEXTURE3D_DESC1 desc = {};
+			tex->GetDesc1(&desc);
+
+			res.Size = { desc.Width, desc.Height };
+			res.Array = Utils::SafeCast<U16>(desc.Depth);
+			res.Mips = Utils::SafeCast<U16>(desc.MipLevels);
+			res.Format = DX::GetFormatFromDX(desc.Format);
+
+			res.SetTex3D();
+			break;
+		}
+		}
+
+		srvs[rid] = textures.Get().dx11.GetView(textureIndex);
+		return {};
 	}
 
 	Status FrameBuffer::MapResource(GFX::Device& dev, RID rid, void** ptr) const noexcept
@@ -1058,39 +1158,5 @@ namespace ZE::RHI::DX11::Pipeline
 			srvs[BACKBUFFER_RID] = swapChain.Get().dx11.GetSRV();
 		}
 		return {};
-	}
-
-	void FrameBuffer::ExitTransitions(GFX::Device& dev, GFX::CommandList& cl, U64 level) const noexcept
-	{
-		auto* ctx = cl.Get().dx11.GetContext();
-		ctx->OMSetRenderTargets(0, nullptr, nullptr);
-
-		ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
-		ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
-
-		for (const auto& slot : currentSlots)
-		{
-			if (slot.first)
-			{
-				ZE_ASSERT(slot.second.BindStart + slot.second.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too wide binding range!");
-
-				if (slot.second.Shaders & GFX::Resource::ShaderType::Vertex)
-					ctx->VSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
-				if (slot.second.Shaders & GFX::Resource::ShaderType::Domain)
-					ctx->DSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
-				if (slot.second.Shaders & GFX::Resource::ShaderType::Hull)
-					ctx->HSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
-				if (slot.second.Shaders & GFX::Resource::ShaderType::Geometry)
-					ctx->GSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
-				if (slot.second.Shaders & GFX::Resource::ShaderType::Pixel)
-					ctx->PSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
-			}
-			else
-			{
-				ZE_ASSERT(slot.second.BindStart + slot.second.Count < D3D11_PS_CS_UAV_REGISTER_COUNT, "Too wide binding range!");
-				ctx->CSSetUnorderedAccessViews(slot.second.BindStart, slot.second.Count, nullUav, nullptr);
-			}
-		}
-		currentSlots.clear();
 	}
 }
