@@ -37,6 +37,7 @@ namespace ZE::RHI::DX11::Resource
 
 		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &mesh.buffer));
 		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer");
+
 		if (data.MeshID != INVALID_EID)
 			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
 
@@ -50,6 +51,29 @@ namespace ZE::RHI::DX11::Resource
 		mesh.vertexCount = data.VertexCount;
 		mesh.indexCount = data.IndexCount;
 
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bufferDesc.CPUAccessFlags = 0;
+		bufferDesc.MiscFlags = 0;
+		bufferDesc.ByteWidth = data.UncompressedSize;
+		bufferDesc.StructureByteStride = 0;
+
+		if (data.IndexCount)
+		{
+			ZE_ASSERT(data.IndexFormat == PixelFormat::R16_UInt || data.IndexFormat == PixelFormat::R32_UInt,
+				"Only 16 and 32 bit indices are supported for DirectX 11!");
+
+			mesh.is16bitIndices = data.IndexFormat == PixelFormat::R16_UInt;
+			bufferDesc.BindFlags |= D3D11_BIND_INDEX_BUFFER;
+		}
+		else
+			mesh.is16bitIndices = false;
+
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &mesh.buffer));
+		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer from file");
+
+		disk.Get().dx11.AddFileBufferRequest(data.MeshID, mesh.buffer.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 		return mesh;
 	}
 
