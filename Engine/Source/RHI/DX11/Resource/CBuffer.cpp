@@ -81,7 +81,7 @@ namespace ZE::RHI::DX11::Resource
 
 		CBuffer cbuff = {};
 		cbuff.impl.SetBuffer(std::move(buffer));
-		disk.Get().dx11.AddFileBufferRequest(data.ResourceID, cbuff.GetBuffer(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
+		disk.Get().dx11.AddFileBufferRequest(data.ResourceID, cbuff.impl.GetResource(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 		return cbuff;
 	}
 }

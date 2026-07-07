@@ -73,7 +73,7 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &mesh.buffer));
 		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer from file");
 
-		disk.Get().dx11.AddFileBufferRequest(data.MeshID, mesh.buffer.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
+		disk.Get().dx11.AddFileBufferRequest(data.MeshID, mesh.buffer, file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 		return mesh;
 	}
 

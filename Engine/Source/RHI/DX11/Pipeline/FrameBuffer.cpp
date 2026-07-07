@@ -960,7 +960,9 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
 		ZE_ASSERT(!IsBuffer(rid), "Trying to initialize non-texture resource with texture!");
 
-		cl.Get().dx11.GetContext()->CopyResource(GetResource(rid).Get(), texture.Get().dx11.GetResource(index));
+		DX::ComPtr<IResource> res;
+		texture.Get().dx11.GetView(index)->GetResource(&res);
+		cl.Get().dx11.GetContext()->CopyResource(GetResource(rid).Get(), res.Get());
 	}
 
 	Status FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
@@ -970,7 +972,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(type != GFX::Pipeline::FrameResourceType::Buffer, "Cannot register buffer resource when passing texture pack!");
 
 		auto& res = resources[rid];
-		res.Resource = textures.Get().dx11.GetResource(textureIndex);
+		textures.Get().dx11.GetView(textureIndex)->GetResource(&res.Resource);
 
 		switch (type)
 		{

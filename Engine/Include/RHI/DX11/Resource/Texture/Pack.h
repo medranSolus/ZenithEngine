@@ -2,24 +2,27 @@
 #include "GFX/Resource/Texture/PackDesc.h"
 #include "GFX/Binding/Context.h"
 #include "GFX/CommandList.h"
-#include "IO/File.h"
+#include "GFX/GFile.h"
 
 namespace ZE::RHI::DX11::Resource::Texture
 {
 	class Pack final
 	{
 		U32 count = 0;
-		Ptr<DX::ComPtr<IShaderResourceView>> srvs;
+		std::unique_ptr<DX::ComPtr<IShaderResourceView>[]> srvs;
 
 	public:
 		Pack() = default;
-		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc);
-		Pack(GFX::Device& dev, IO::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, IO::File& file);
 		ZE_CLASS_MOVE(Pack);
-		~Pack();
+		~Pack() = default;
+
+		static Expected<Pack> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackDesc& desc) noexcept;
+		static Expected<Pack> Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::Texture::PackFileDesc& desc, GFX::GFile& file) noexcept;
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept;
-		void Free(GFX::Device& dev) noexcept;
-		std::vector<std::vector<GFX::Surface>> GetData(GFX::Device& dev) const;
+
+		// Gfx API Internal
+
+		DX::ComPtr<IShaderResourceView> GetView(U32 index) const noexcept { ZE_ASSERT(index < count, "Texture resource index out of range!"); return srvs[index]; }
 	};
 }

@@ -23,6 +23,7 @@ namespace ZE::RHI::DX11::Resource
 		static Expected<CBufferInternal> Create(Device& dev, const void* data, U32 bytes) noexcept;
 
 		IBuffer* GetBuffer() const noexcept { return buffer.Get(); }
+		DX::ComPtr<IResource> GetResource() const noexcept { return buffer; }
 		void SetBuffer(DX::ComPtr<IBuffer> newBuffer) noexcept { buffer = std::move(newBuffer); }
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept { BindCBuffer(buffer.GetAddressOf(), cl, bindCtx); }
 		
