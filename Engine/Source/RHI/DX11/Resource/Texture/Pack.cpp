@@ -211,7 +211,9 @@ namespace ZE::RHI::DX11::Resource::Texture
 				ZE_DX_RET_FAILED_EXPECT(device->CreateShaderResourceView1(resource.Get(), &srvDesc, &pack.srvs[i]));
 				ZE_DX_SET_ID(pack.srvs[i], "TextureSRV_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)));
 
-				disk.Get().dx11.AddFileTextureRequest(requestsBarrier.get(), resource, file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize);
+				U32 rowPitch = tex.Width * Utils::GetFormatSize(tex.Format);
+				disk.Get().dx11.AddFileTextureRequest(requestsBarrier.get(), resource, file, tex.DataOffset, tex.SourceBytes,
+					tex.Compression, tex.UncompressedSize, rowPitch, rowPitch * tex.Height);
 			}
 			++i;
 		}

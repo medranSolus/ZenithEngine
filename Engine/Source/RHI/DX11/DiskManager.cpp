@@ -96,13 +96,13 @@ namespace ZE::RHI::DX11
 	}
 
 	void DiskManager::AddFileTextureRequest(std::latch* barrier, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
-		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, U32 rowPitch, U32 depthPitch) noexcept
 	{
 		LockGuardRW lock(bucketMutex);
 		ZE_ASSERT(statusBuckets.size() > 0, "There should always be at least one bucket!");
 
 		statusBuckets.back().emplace_back(Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression, std::latch* barrier) noexcept -> Status
+			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression, U32 rowPitch, U32 depthPitch, std::latch* barrier) noexcept -> Status
 			{
 				const void* decompressedBuff = nullptr;
 				std::unique_ptr<U8[]> decompressedData;
@@ -126,13 +126,14 @@ namespace ZE::RHI::DX11
 				dst->GetDevice(&dev);
 				DX::ComPtr<ID3D11DeviceContext> ctx;
 				dev->GetImmediateContext(&ctx);
-				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff, 0, 0), "There were debug messages during buffer upload!");
+				// TODO: Maybe need to do it per subresource too?...
+				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff, rowPitch, depthPitch), "There were debug messages during buffer upload!");
 
 				if (barrier)
 					barrier->count_down();
 				return {};
 			},
-			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression, barrier));
+			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression, rowPitch, depthPitch, barrier));
 	}
 
 	void DiskManager::AddTexturePackID(EID resourceID, std::unique_ptr<std::latch> barrier) noexcept

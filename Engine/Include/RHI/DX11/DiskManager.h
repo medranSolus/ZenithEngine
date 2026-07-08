@@ -38,7 +38,7 @@ namespace ZE::RHI::DX11
 		void AddFileBufferRequest(EID resourceID, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
 		void AddFileTextureRequest(std::latch* barrier, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
-			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, U32 rowPitch, U32 depthPitch) noexcept;
 		void AddTexturePackID(EID resourceID, std::unique_ptr<std::latch> barrier) noexcept;
 	};
 }
