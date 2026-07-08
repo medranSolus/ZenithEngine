@@ -187,10 +187,17 @@ namespace ZE::RHI::DX11::Resource::Texture
 		pack.count = Utils::SafeCast<U32>(desc.Textures.size());
 		pack.srvs = std::make_unique_for_overwrite<DX::ComPtr<IShaderResourceView>[]>(pack.count);
 
+		std::unique_ptr<std::latch> requestsBarrier;
+		if (desc.ResourceID != INVALID_EID)
+			requestsBarrier = std::make_unique<std::latch>(pack.count);
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
 			if (tex.Format == PixelFormat::Unknown)
+			{
 				pack.srvs[i] = nullptr;
+				if (requestsBarrier)
+					requestsBarrier->count_down();
+			}
 			else
 			{
 				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
@@ -203,12 +210,12 @@ namespace ZE::RHI::DX11::Resource::Texture
 
 				ZE_DX_RET_FAILED_EXPECT(device->CreateShaderResourceView1(resource.Get(), &srvDesc, &pack.srvs[i]));
 				ZE_DX_SET_ID(pack.srvs[i], "TextureSRV_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)));
-			
-				disk.Get().dx11.AddFileTextureRequest(resource, file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize);
+
+				disk.Get().dx11.AddFileTextureRequest(requestsBarrier.get(), resource, file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize);
 			}
 			++i;
 		}
-		disk.Get().dx11.AddTexturePackID(desc.ResourceID);
+		disk.Get().dx11.AddTexturePackID(desc.ResourceID, std::move(requestsBarrier));
 		return pack;
 	}
 

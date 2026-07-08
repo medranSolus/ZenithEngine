@@ -116,13 +116,13 @@ namespace ZE::RHI::DX12
 				case DS_COMPRESSION_FORMAT_ZLIB:
 				{
 					decompresionTasks[i] = pool.Schedule(ThreadPriority::Normal,
-						[bzip2](const void* src, U32 srcSize, void* dst, U32 dstSize) noexcept -> Status
+						[](const void* src, U32 srcSize, void* dst, U32 dstSize, bool bzip2) noexcept -> Status
 						{
 							IO::Compressor codec(bzip2 ? IO::CompressionFormat::Bzip2 : IO::CompressionFormat::ZLib);
 							ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
 							return codec.Decompress(src, srcSize, dst, dstSize);
 						},
-						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize));
+						req.SrcBuffer, Utils::SafeCast<U32>(req.SrcSize), req.DstBuffer, Utils::SafeCast<U32>(req.DstSize), bzip2);
 					break;
 				}
 				ZE_WARNING_POP;
