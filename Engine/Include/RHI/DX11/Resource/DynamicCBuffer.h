@@ -12,7 +12,6 @@ namespace ZE::RHI::DX11::Resource
 		static constexpr U32 BLOCK_SIZE = 64 * Math::KILOBYTE;
 
 		std::vector<std::pair<DX::ComPtr<IBuffer>, Data::Library<U32, U32>>> blocks;
-		Ptr<U8> buffer;
 		U32 nextOffset = 0;
 		U64 currentBlock = 0;
 #ifndef _ZE_RENDER_GRAPH_SINGLE_THREAD
@@ -24,7 +23,7 @@ namespace ZE::RHI::DX11::Resource
 	public:
 		DynamicCBuffer() = default;
 		ZE_CLASS_MOVE(DynamicCBuffer);
-		~DynamicCBuffer();
+		~DynamicCBuffer() = default;
 
 		static Expected<DynamicCBuffer> Create(GFX::Device& dev) noexcept;
 

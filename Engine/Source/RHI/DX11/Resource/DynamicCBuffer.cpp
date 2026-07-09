@@ -16,26 +16,8 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_RET_FAILED(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &buff));
 		ZE_DX_SET_ID(buff, "DynamicCBuffer_" + std::to_string(blocks.size()));
 
-		D3D11_MAPPED_SUBRESOURCE subres = {};
-		ZE_DX_RET_FAILED(dev.Get().dx11.GetMainContext()->Map(buff.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
-
-		buffer = reinterpret_cast<U8*>(subres.pData);
 		blocks.emplace_back(std::move(buff), Data::Library<U32, U32>{});
-
 		return {};
-	}
-
-	DynamicCBuffer::~DynamicCBuffer()
-	{
-		if (buffer && blocks.size())
-		{
-			DX::ComPtr<ID3D11Device> dev;
-			blocks.at(currentBlock).first->GetDevice(&dev);
-
-			DX::ComPtr<ID3D11DeviceContext> ctx;
-			dev->GetImmediateContext(&ctx);
-			ctx->Unmap(blocks.at(currentBlock).first.Get(), 0);
-		}
 	}
 
 	Expected<DynamicCBuffer> DynamicCBuffer::Create(GFX::Device& dev) noexcept
@@ -56,20 +38,19 @@ namespace ZE::RHI::DX11::Resource
 #endif
 		if (nextOffset + newBlock > BLOCK_SIZE)
 		{
-			dev.Get().dx11.GetMainContext()->Unmap(blocks.at(currentBlock).first.Get(), 0);
 			nextOffset = 0;
 			if (++currentBlock >= blocks.size())
 			{
 				ZE_CODE_RET_FAILED_EXPECT(AllocBlock(dev));
 			}
-			else
-			{
-				D3D11_MAPPED_SUBRESOURCE subres = {};
-				ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetMainContext()->Map(blocks.at(currentBlock).first.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
-				buffer = reinterpret_cast<U8*>(subres.pData);
-			}
 		}
+
+		// DX11 does not allow for buffers to be mapped while using them on GPU
+		D3D11_MAPPED_SUBRESOURCE subres = {};
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetMainContext()->Map(blocks.at(currentBlock).first.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
+		U8* buffer = reinterpret_cast<U8*>(subres.pData);
 		std::memcpy(buffer + nextOffset, values, bytes);
+		dev.Get().dx11.GetMainContext()->Unmap(blocks.at(currentBlock).first.Get(), 0);
 
 		blocks.at(currentBlock).second.Add(nextOffset, newBlock / 16);
 		GFX::Resource::DynamicBufferAlloc info
@@ -124,8 +105,6 @@ namespace ZE::RHI::DX11::Resource
 		if (blockCount > 1)
 		{
 			auto ctx = dev.Get().dx11.GetMainContext();
-			ctx->Unmap(blocks.at(currentBlock).first.Get(), 0);
-			buffer = nullptr;
 
 			if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
 				blocks.resize(currentBlock + 1);
@@ -138,11 +117,9 @@ namespace ZE::RHI::DX11::Resource
 
 				block.second.Clear();
 			}
-
-			ZE_DX_RET_FAILED(ctx->Map(blocks.front().first.Get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &subres));
-			buffer = reinterpret_cast<U8*>(subres.pData);
 			currentBlock = 0;
 		}
+		blocks.front().second.Clear();
 		nextOffset = 0;
 
 		return {};
