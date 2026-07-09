@@ -1,7 +1,7 @@
 #ifndef SHADOW_PS_HLSLI
 #define SHADOW_PS_HLSLI
 #include "Buffers.hlsli"
-#include "PhongFlags.hlsli"
+#include "PbrFlags.hlsli"
 
 struct ShadowBuffer
 {

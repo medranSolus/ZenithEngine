@@ -5,12 +5,21 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 {
+#pragma pack(push, 1)
+	struct ShaderConstantData
+	{
+		Float3 LightPos = {};
+		float ParallaxScale = 0.0f;
+		U32 Flags = 0;
+	};
+#pragma pack(pop)
+
 	Status Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT) noexcept
 	{
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
-		desc.AddRange({ sizeof(Float4), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
-		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular (not used), parallax
+		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
+		desc.AddRange({ 5, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, metal (not used), roughness (not used), parallax
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Geometry);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);
@@ -126,8 +135,8 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 			EID currentMaterial = INVALID_EID;
 			U8 currentState = UINT8_MAX;
-			Resource::Constant<Float4> shadowData;
-			ZE_EXPECT_RET_FAILED_CODE(shadowData, Resource::Constant<Float4>::Create(dev, Float4(lightPos.x, lightPos.y, lightPos.z, 0.0f)));
+			Resource::Constant<ShaderConstantData> shadowData;
+			ZE_EXPECT_RET_FAILED_CODE(shadowData, Resource::Constant<ShaderConstantData>::Create(dev, ShaderConstantData{ lightPos, 0.0f, 0 }));
 			if (solidCount)
 			{
 				ZE_PERF_GUARD("Shadow Map Cube - solid present");
@@ -213,7 +222,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(currentMaterial);
-						ZE_CODE_RET_FAILED(shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale)));
+						ZE_CODE_RET_FAILED(shadowData.Set(dev, ShaderConstantData{ lightPos, matData.ParallaxScale, matData.Flags }));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(currentMaterial).BindTextures(cl, ctx);
 
@@ -278,7 +287,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 						currentMaterial = material.ID;
 
 						const auto& matData = Settings::Data.get<Data::MaterialPBR>(material.ID);
-						ZE_CODE_RET_FAILED(shadowData.Set(dev, Float4(lightPos.x, lightPos.y, lightPos.z, matData.ParallaxScale)));
+						ZE_CODE_RET_FAILED(shadowData.Set(dev, ShaderConstantData{ lightPos, matData.ParallaxScale, matData.Flags }));
 						shadowData.Bind(cl, ctx);
 						Settings::Data.get<Data::MaterialBuffersPBR>(material.ID).BindTextures(cl, ctx);
 

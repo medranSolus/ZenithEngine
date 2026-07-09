@@ -98,7 +98,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
-		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, specular, parallax
+		desc.AddRange({ 5, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, metal, roughness, parallax
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		desc.AppendSamplers(buildData.Samplers);
