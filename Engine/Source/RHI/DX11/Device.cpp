@@ -141,7 +141,7 @@ namespace ZE::RHI::DX11
 		Settings::RayTracingTier = GFX::RayTracingTier::None;
 		// No support for 8 bit indices on DirectX
 		Settings::SetU8IndexBuffers(false);
-		Settings::SetGfxSupportSSSR(true);
+		Settings::SetGfxSupportSSSR(false);
 
 		return dev;
 	}

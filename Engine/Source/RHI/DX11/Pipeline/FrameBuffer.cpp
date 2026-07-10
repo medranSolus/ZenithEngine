@@ -2,13 +2,39 @@
 
 namespace ZE::RHI::DX11::Pipeline
 {
-	void FrameBuffer::EnterRaster() const noexcept
+	void FrameBuffer::EnterRaster(GFX::CommandList& cl) const noexcept
 	{
 #if !_ZE_MODE_RELEASE
 		ZE_ASSERT(!isRasterActive, "Starting rasterization without calling EndRaster()!");
 
 		isRasterActive = true;
 #endif
+		auto* ctx = cl.Get().dx11.GetContext();
+		for (auto& slot : currentSlots)
+		{
+			if (slot.first)
+			{
+				ZE_ASSERT(slot.second.BindStart + slot.second.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, "Too wide binding range!");
+				ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
+
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Vertex)
+					ctx->VSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Domain)
+					ctx->DSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Hull)
+					ctx->HSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Geometry)
+					ctx->GSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+				if (slot.second.Shaders & GFX::Resource::ShaderType::Pixel)
+					ctx->PSSetShaderResources(slot.second.BindStart, slot.second.Count, nullSrv);
+			}
+			else
+			{
+				ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
+				ctx->CSSetUnorderedAccessViews(slot.second.BindStart, slot.second.Count, nullUav, nullptr);
+			}
+		}
+		currentSlots.clear();
 	}
 
 	void FrameBuffer::SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept
@@ -43,7 +69,7 @@ namespace ZE::RHI::DX11::Pipeline
 
 		framebuffer.resources = std::make_unique<BufferData[]>(framebuffer.resourceCount);
 		framebuffer.resources[BACKBUFFER_RID].Resource = nullptr;
-		framebuffer.resources[BACKBUFFER_RID].Size = desc.Resources.at(BACKBUFFER_RID).Sizes;
+		framebuffer.resources[BACKBUFFER_RID].Size = desc.Resources.at(BACKBUFFER_RID).GetResolutionAdjustedSizes();
 		framebuffer.resources[BACKBUFFER_RID].Array = desc.Resources.at(BACKBUFFER_RID).DepthOrArraySize;
 		framebuffer.resources[BACKBUFFER_RID].Mips = desc.Resources.at(BACKBUFFER_RID).MipLevels;
 		framebuffer.resources[BACKBUFFER_RID].Format = desc.Resources.at(BACKBUFFER_RID).Format;
@@ -189,7 +215,7 @@ namespace ZE::RHI::DX11::Pipeline
 						texDesc.Height = dataDesc.Size.Y;
 						texDesc.MipLevels = dataDesc.Mips;
 						texDesc.ArraySize = dataDesc.Array;
-						texDesc.Format = DX::GetTypedDepthDXFormat(dataDesc.Format);
+						texDesc.Format = DX::GetNonDepthDXFormat(dataDesc.Format);
 						texDesc.SampleDesc.Count = 1;
 						texDesc.SampleDesc.Quality = 0;
 						texDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -203,7 +229,7 @@ namespace ZE::RHI::DX11::Pipeline
 						if (dataDesc.IsCube())
 						{
 							texDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
-							texDesc.ArraySize *= 6;
+							texDesc.ArraySize = dataDesc.Array *= 6;
 						}
 
 						DX::ComPtr<ITexture2D> texture;
@@ -295,7 +321,7 @@ namespace ZE::RHI::DX11::Pipeline
 							rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 							rtvDesc.Texture2DArray.MipSlice = 0;
 							rtvDesc.Texture2DArray.FirstArraySlice = 0;
-							rtvDesc.Texture2DArray.ArraySize = dataDesc.Array * 6;
+							rtvDesc.Texture2DArray.ArraySize = dataDesc.Array;
 							rtvDesc.Texture2DArray.PlaneSlice = 0;
 							break;
 						}
@@ -386,7 +412,6 @@ namespace ZE::RHI::DX11::Pipeline
 							break;
 						}
 						case GFX::Pipeline::FrameResourceType::Buffer:
-						case GFX::Pipeline::FrameResourceType::TextureCube:
 						case GFX::Pipeline::FrameResourceType::Texture3D:
 						{
 							ZE_FAIL("Depth stencil view can only be created for 1D and 2D textures!");
@@ -408,6 +433,14 @@ namespace ZE::RHI::DX11::Pipeline
 								dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 								dsvDesc.Texture2D.MipSlice = 0;
 							}
+							break;
+						}
+						case GFX::Pipeline::FrameResourceType::TextureCube:
+						{
+							dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+							dsvDesc.Texture2DArray.MipSlice = 0;
+							dsvDesc.Texture2DArray.FirstArraySlice = 0;
+							dsvDesc.Texture2DArray.ArraySize = dataDesc.Array;
 							break;
 						}
 						}
@@ -511,7 +544,7 @@ namespace ZE::RHI::DX11::Pipeline
 							uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 							uavDesc.Texture2DArray.MipSlice = 0;
 							uavDesc.Texture2DArray.FirstArraySlice = 0;
-							uavDesc.Texture2DArray.ArraySize = dataDesc.Array * 6;
+							uavDesc.Texture2DArray.ArraySize = dataDesc.Array;
 							uavDesc.Texture2DArray.PlaneSlice = 0;
 							break;
 						}
@@ -641,7 +674,7 @@ namespace ZE::RHI::DX11::Pipeline
 								srvDesc.TextureCubeArray.MostDetailedMip = 0;
 								srvDesc.TextureCubeArray.MipLevels = dataDesc.Mips;
 								srvDesc.TextureCubeArray.First2DArrayFace = 0;
-								srvDesc.TextureCubeArray.NumCubes = dataDesc.Array;
+								srvDesc.TextureCubeArray.NumCubes = dataDesc.Array / 6;
 							}
 							else
 							{
@@ -671,7 +704,7 @@ namespace ZE::RHI::DX11::Pipeline
 	{
 		ZE_ASSERT(count <= Settings::MAX_RENDER_TARGETS, "Too many render targets!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		ID3D11RenderTargetView* handles[Settings::MAX_RENDER_TARGETS];
 		D3D11_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
@@ -699,7 +732,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		ID3D11RenderTargetView* handles[Settings::MAX_RENDER_TARGETS];
 		D3D11_VIEWPORT vieports[Settings::MAX_RENDER_TARGETS];
 		U8 realCount = 0;
@@ -725,7 +758,7 @@ namespace ZE::RHI::DX11::Pipeline
 	{
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		SetViewport(cl.Get().dx11, dsv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(0, nullptr, GetDSV(dsv));
 	}
@@ -733,12 +766,12 @@ namespace ZE::RHI::DX11::Pipeline
 	void FrameBuffer::BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv) const noexcept
 	{
 		ZE_ASSERT(GetRTV(rtv), "Current resource is not suitable for being render target!");
-		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
+		ZE_ASSERT(dsv == INVALID_RID || GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		SetViewport(cl.Get().dx11, rtv);
 		auto* view = static_cast<ID3D11RenderTargetView*>(GetRTV(rtv));
-		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, &view, GetDSV(dsv));
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, &view, dsv != INVALID_RID ? GetDSV(dsv) : nullptr);
 	}
 
 	void FrameBuffer::BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept
@@ -748,7 +781,7 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(dsvMips[dsv - 1] != nullptr, "Mips for current resource not supported!");
 		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		SetViewport(cl.Get().dx11, dsv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(0, nullptr, dsvMips[dsv - 1][mipLevel].Get());
 	}
@@ -764,12 +797,12 @@ namespace ZE::RHI::DX11::Pipeline
 		ZE_ASSERT(mipLevel < GetMipCount(rtv), "Mip level outside available range!");
 		ZE_ASSERT(mipLevel < GetMipCount(dsv), "Mip level outside available range!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		SetViewport(cl.Get().dx11, rtv);
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(1, reinterpret_cast<ID3D11RenderTargetView**>(rtvMips[rtv - 1][mipLevel].GetAddressOf()), dsv != INVALID_RID ? reinterpret_cast<ID3D11DepthStencilView*>(dsvMips[dsv - 1][mipLevel].Get()) : nullptr);
 	}
 
-	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept
+	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv, U32 adjacentCount) const noexcept
 	{
 		ZE_ASSERT(GetSRV(srv), "Current resource is not suitable for being shader resource!");
 
@@ -781,33 +814,32 @@ namespace ZE::RHI::DX11::Pipeline
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
 			currentSlots.emplace_back(true, slotData);
-			for (U32 j = 0; j < slotData.Count; ++j, ++slotData.BindStart, ++srv)
+			for (U32 j = 0, count = adjacentCount ? adjacentCount : slotData.Count; j < count; ++j, ++slotData.BindStart, ++srv)
 			{
-				auto* view = GetSRV(srv);
+				ID3D11ShaderResourceView* view = static_cast<ID3D11ShaderResourceView*>(GetSRV(srv));
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
-					ctx->CSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+					ctx->CSSetShaderResources(slotData.BindStart, 1, &view);
 				else
 				{
 					if (slotData.Shaders & GFX::Resource::ShaderType::Vertex)
-						ctx->VSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+						ctx->VSSetShaderResources(slotData.BindStart, 1, &view);
 					if (slotData.Shaders & GFX::Resource::ShaderType::Domain)
-						ctx->DSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+						ctx->DSSetShaderResources(slotData.BindStart, 1, &view);
 					if (slotData.Shaders & GFX::Resource::ShaderType::Hull)
-						ctx->HSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+						ctx->HSSetShaderResources(slotData.BindStart, 1, &view);
 					if (slotData.Shaders & GFX::Resource::ShaderType::Geometry)
-						ctx->GSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+						ctx->GSSetShaderResources(slotData.BindStart, 1, &view);
 					if (slotData.Shaders & GFX::Resource::ShaderType::Pixel)
-						ctx->PSSetShaderResources(slotData.BindStart, 1, reinterpret_cast<ID3D11ShaderResourceView**>(&view));
+						ctx->PSSetShaderResources(slotData.BindStart, 1, &view);
 				}
+				ZE_DX_CHECK_FAILED(void(), "Setting SRV produced debug messages!");
 			}
 		}
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U32 adjacentCount) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
-		ZE_ASSERT(GetUAV(uav), "Current resource is not suitable for being unnordered access!");
+		ZE_ASSERT(GetUAV(uav), "Current resource is not suitable for being unordered access!");
 
 		auto& schema = bindCtx.BindingSchema.Get().dx11;
 		auto slotInfo = schema.GetCurrentSlot(bindCtx.Count++);
@@ -818,7 +850,7 @@ namespace ZE::RHI::DX11::Pipeline
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
 			currentSlots.emplace_back(false, slotData);
-			for (U32 j = 0; j < slotData.Count; ++j, ++slotData.BindStart)
+			for (U32 j = 0, count = adjacentCount ? adjacentCount : slotData.Count; j < count; ++j, ++slotData.BindStart)
 			{
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
 					ctx->CSSetUnorderedAccessViews(slotData.BindStart, 1, reinterpret_cast<ID3D11UnorderedAccessView* const*>(uavs[uav++].GetAddressOf()), nullptr);
@@ -826,14 +858,13 @@ namespace ZE::RHI::DX11::Pipeline
 				{
 					ZE_FAIL("Cannot use UAV outside compute shader!");
 				}
+				ZE_DX_CHECK_FAILED(void(), "Setting UAV produced debug messages!");
 			}
 		}
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
+	void FrameBuffer::SetUAVMip(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
 	{
-		ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(uav), "Current resource is not suitable for being unnordered access!");
 		ZE_ASSERT(uavMips != nullptr, "Mips not supported as no UAV resource has been created with mips greater than 1!");
 		ZE_ASSERT(uavMips[uav - 1] != nullptr, "Mips for current resource not supported!");
@@ -856,6 +887,7 @@ namespace ZE::RHI::DX11::Pipeline
 				{
 					ZE_FAIL("Cannot use UAV outside compute shader!");
 				}
+				ZE_DX_CHECK_FAILED(void(), "Setting UAV produced debug messages!");
 			}
 		}
 	}
@@ -874,6 +906,8 @@ namespace ZE::RHI::DX11::Pipeline
 
 		isRasterActive = false;
 #endif
+		ID3D11RenderTargetView* nullRTV[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
+		cl.Get().dx11.GetContext()->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, nullRTV, nullptr);
 	}
 
 	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept

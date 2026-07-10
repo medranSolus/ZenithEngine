@@ -106,7 +106,7 @@ namespace ZE::GFX::Pipeline::RenderPass::LightCombine
 		ctx.BindingSchema.SetGraphics(cl);
 		data.State.Bind(cl);
 
-		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight);
+		renderData.Buffers.SetSRV(cl, ctx, ids.DirectLight, 1 + (ids.SSAO != INVALID_RID) + (ids.SSR != INVALID_RID));
 		renderData.BindRendererDynamicData(cl, ctx);
 		renderData.SettingsBuffer.Bind(cl, ctx);
 		if (data.IBLState || data.SSRState)

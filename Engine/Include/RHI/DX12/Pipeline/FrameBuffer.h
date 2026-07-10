@@ -148,9 +148,9 @@ namespace ZE::RHI::DX12::Pipeline
 		void BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept;
 		void BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept;
 
-		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept;
+		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv, U32 adjacentCount) const noexcept;
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U32 adjacentCount) const noexcept;
+		void SetUAVMip(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept;
 		void SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept;
 
 		void EndRaster(GFX::CommandList& cl) const noexcept;

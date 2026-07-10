@@ -239,7 +239,7 @@ namespace ZE::GFX::External::FFX
 		switch (dev.GetMaxShaderModel())
 		{
 		case ShaderModel::V5_0:
-			ZE_WARNING("No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1");
+			// No option to specify lower shader model in FFX SDK than 5.1 so in case of older APIs assume 5.1
 			[[fallthrough]];
 		case ShaderModel::V5_1:
 			deviceCapabilities->maximumSupportedShaderModel = FFX_SHADER_MODEL_5_1;
@@ -1205,7 +1205,7 @@ namespace ZE::GFX::External::FFX
 			{
 				RID rid = GetRID(ffxInterface, job.uavTextures[i].resource.internalIndex);
 				if (job.uavTextures[i].mip)
-					buffers.SetUAV(cl, bindCtx, rid, Utils::SafeCast<U16>(job.uavTextures[i].mip));
+					buffers.SetUAVMip(cl, bindCtx, rid, Utils::SafeCast<U16>(job.uavTextures[i].mip));
 				else
 					buffers.SetUAV(cl, bindCtx, rid);
 			}

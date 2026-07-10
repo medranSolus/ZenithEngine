@@ -54,7 +54,7 @@ namespace ZE::RHI::DX11::Pipeline
 		std::unique_ptr<std::unique_ptr<DX::ComPtr<IDepthStencilView>[]>[]> dsvMips; // No backbuffer
 		std::unique_ptr<std::unique_ptr<DX::ComPtr<IUnorderedAccessView>[]>[]> uavMips; // No backbuffer
 
-		void EnterRaster() const noexcept;
+		void EnterRaster(GFX::CommandList& cl) const noexcept;
 		void SetupViewport(D3D11_VIEWPORT& viewport, RID rid) const noexcept;
 		void SetViewport(CommandList& cl, RID rid) const noexcept;
 
@@ -98,9 +98,9 @@ namespace ZE::RHI::DX11::Pipeline
 		void BeginRasterDepthOnly(GFX::CommandList& cl, RID dsv, U16 mipLevel) const noexcept;
 		void BeginRaster(GFX::CommandList& cl, RID rtv, RID dsv, U16 mipLevel) const noexcept;
 
-		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept;
-		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept;
+		void SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv, U32 adjacentCount) const noexcept;
+		void SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U32 adjacentCount) const noexcept;
+		void SetUAVMip(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept;
 		void SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept;
 
 		void EndRaster(GFX::CommandList& cl) const noexcept;
@@ -130,8 +130,8 @@ namespace ZE::RHI::DX11::Pipeline
 		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); return resources[rid].Resource; }
 		IRenderTargetView* GetRTV(RID rtv) const noexcept { ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!"); return rtvs[rtv].Get(); }
 		IShaderResourceView* GetSRV(RID srv) const noexcept { ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!"); return srvs[srv].Get(); }
-		IDepthStencilView* GetDSV(RID dsv) const noexcept { ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!"); return dsvs[dsv - 1].Get(); }
-		IUnorderedAccessView* GetUAV(RID uav) const noexcept { ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!"); return uavs[uav - 1].Get(); }
+		IDepthStencilView* GetDSV(RID dsv) const noexcept { ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!"); return dsvs[dsv - 1].Get(); }
+		IUnorderedAccessView* GetUAV(RID uav) const noexcept { ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unordered access!"); return uavs[uav - 1].Get(); }
 	};
 
 #pragma region Functions
@@ -141,7 +141,7 @@ namespace ZE::RHI::DX11::Pipeline
 		static_assert(RTVCount > 1, "For performance reasons FrameBuffer::BeginRaster() should be only used for multiple render targets!");
 		static_assert(RTVCount <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		ID3D11RenderTargetView* handles[RTVCount];
 		D3D11_VIEWPORT vieports[RTVCount];
 		for (U32 i = 0; i < RTVCount; ++i)
@@ -164,7 +164,7 @@ namespace ZE::RHI::DX11::Pipeline
 		static_assert(RTVCount <= Settings::MAX_RENDER_TARGETS, "Exceeding max number of concurrently bound render targets!");
 		ZE_ASSERT(GetDSV(dsv), "Current resource is not suitable for being depth stencil!");
 
-		EnterRaster();
+		EnterRaster(cl);
 		ID3D11RenderTargetView* handles[RTVCount];
 		D3D11_VIEWPORT vieports[RTVCount];
 		for (U32 i = 0; i < RTVCount; ++i)

@@ -151,7 +151,7 @@ namespace ZE::GFX::Pipeline::RenderPass::XeGTAO
 		data.StatePrefilter.Bind(cl);
 
 		cbuffer.Bind(cl, prefilterCtx, cbufferInfo);
-		renderData.Buffers.SetUAV(cl, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
+		renderData.Buffers.SetUAVMip(cl, prefilterCtx, ids.ViewspaceDepth, 0); // Bind 5 mip levels
 		renderData.Buffers.SetSRV(cl, prefilterCtx, ids.Depth);
 		renderData.SettingsBuffer.Bind(cl, prefilterCtx);
 		cl.Compute(dev, Math::DivideRoundUp(size.X, 16U), Math::DivideRoundUp(size.Y, 16U), 1);

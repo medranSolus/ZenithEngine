@@ -67,15 +67,17 @@ namespace ZE::GFX::Pipeline
 		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
 		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
-		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetSRV, cl, bindCtx, rid); }
+		// When some of the BufferPack resources are missing then specify adjacentCount parameter to actual number of resources to be bound
+		constexpr void SetSRV(CommandList& cl, Binding::Context& bindCtx, RID rid, U32 adjacentCount = 0) const noexcept { ZE_RHI_BACKEND_CALL(SetSRV, cl, bindCtx, rid, adjacentCount); }
 		// When current bind slot is inside BufferPack then only one call for first resource is required in case of resource adjacency.
 		// Resources are considered adjacent when during creation in render graph they have been specified one by one.
 		// Resource adjacency is based on type of view type, SRV and UAV are grouped separately, ex:
 		// 1: SRV/UAV, 2: SRV, 3: SRV/UAV
 		// Resources 1, 2 and 3 are adjacent in SRV group and can be set in one call, while resources 1 and 3 are still adjacent in UAV group.
 		// WARNING! Resources with higher mips levels are never adjacent with resources created after them!
-		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid); }
-		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid, mipLevel); }
+		// When some of the BufferPack resources are missing then specify adjacentCount parameter to actual number of resources to be bound
+		constexpr void SetUAV(CommandList& cl, Binding::Context& bindCtx, RID rid, U32 adjacentCount = 0) const noexcept { ZE_RHI_BACKEND_CALL(SetUAV, cl, bindCtx, rid, adjacentCount); }
+		constexpr void SetUAVMip(CommandList& cl, Binding::Context& bindCtx, RID rid, U16 mipLevel) const noexcept { ZE_RHI_BACKEND_CALL(SetUAVMip, cl, bindCtx, rid, mipLevel); }
 		constexpr void SetResourceNGX(NVSDK_NGX_Parameter* param, std::string_view name, RID res) const noexcept { ZE_RHI_BACKEND_CALL(SetResourceNGX, param, name, res); }
 
 		// All begin rasterization commands must end with this function so proper handling of render passes is ensured

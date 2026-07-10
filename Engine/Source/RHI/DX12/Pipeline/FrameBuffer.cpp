@@ -757,7 +757,7 @@ namespace ZE::RHI::DX12::Pipeline
 						ZE_ENUM_UNHANDLED();
 					case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 					{
-						if (res.IsArrayView())
+						if (res.IsArrayView() || res.IsCube())
 						{
 							rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 							rtvDesc.Texture2DArray.MipSlice = 0;
@@ -827,7 +827,7 @@ namespace ZE::RHI::DX12::Pipeline
 							}
 							case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
 							{
-								if (res.IsArrayView())
+								if (res.IsArrayView() || res.IsCube())
 									rtvDesc.Texture2DArray.MipSlice = i;
 								else
 									rtvDesc.Texture2D.MipSlice = i;
@@ -859,7 +859,7 @@ namespace ZE::RHI::DX12::Pipeline
 
 					if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 					{
-						if (res.IsArrayView())
+						if (res.IsArrayView() || res.IsCube())
 						{
 							dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 							dsvDesc.Texture2DArray.MipSlice = 0;
@@ -901,7 +901,7 @@ namespace ZE::RHI::DX12::Pipeline
 						{
 							if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 							{
-								if (res.IsArrayView())
+								if (res.IsArrayView() || res.IsCube())
 									dsvDesc.Texture2DArray.MipSlice = i;
 								else
 									dsvDesc.Texture2D.MipSlice = i;
@@ -1292,7 +1292,7 @@ namespace ZE::RHI::DX12::Pipeline
 		cl.Get().dx12.GetList()->OMSetRenderTargets(1, rtvDsvMips[rtv - 1].get() + mipLevel, true, dsv != INVALID_RID ? rtvDsvMips[dsv - 1].get() + mipLevel : nullptr);
 	}
 
-	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv) const noexcept
+	void FrameBuffer::SetSRV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID srv, U32 adjacentCount) const noexcept
 	{
 		ZE_ASSERT(GetSRV(srv).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being shader resource!");
 
@@ -1315,7 +1315,7 @@ namespace ZE::RHI::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, GetSRV(srv).GpuShaderVisibleHandle);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav) const noexcept
+	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U32 adjacentCount) const noexcept
 	{
 		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 
@@ -1338,7 +1338,7 @@ namespace ZE::RHI::DX12::Pipeline
 			list->SetGraphicsRootDescriptorTable(bindCtx.Count++, GetUAV(uav).GpuShaderVisibleHandle);
 	}
 
-	void FrameBuffer::SetUAV(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
+	void FrameBuffer::SetUAVMip(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, RID uav, U16 mipLevel) const noexcept
 	{
 		ZE_ASSERT(GetUAV(uav).GpuShaderVisibleHandle.ptr != UINT64_MAX, "Current resource is not suitable for being unnordered access!");
 		ZE_ASSERT(uavMips != nullptr, "Mips not supported as no UAV resource has been created with mips greater than 1!");
