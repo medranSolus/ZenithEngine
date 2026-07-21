@@ -169,6 +169,8 @@ add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H|NIS_USE_HA
 
 ############# PS PERMUTATIONS ##############
 
+add_shader_permutation("DebugViewPS" "_ZE_UINT_INPUT:U")
+
 add_shader_permutation("PbrPS" "_ZE_TRANSPARENT:T")
 add_shader_permutation("PbrPS" "_ZE_USE_PARALLAX:P")
 add_shader_permutation("PbrPS" "_ZE_OUTPUT_MOTION:M")

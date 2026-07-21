@@ -44,6 +44,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DebugView
 		U32 BindingIndex = UINT32_MAX;
 		Resource::PipelineStateGfx State;
 		Mode ViewMode = Mode::None;
+		Mode PrevViewMode = Mode::None;
 
 		ExecuteData() = default;
 		ZE_CLASS_MOVE(ExecuteData);
@@ -53,6 +54,7 @@ namespace ZE::GFX::Pipeline::RenderPass::DebugView
 	constexpr bool Evaluate() noexcept { return Settings::IsEnabledDebugView(); }
 
 	PassDesc GetDesc(PixelFormat outputFormat) noexcept;
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept;
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept;
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;

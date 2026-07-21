@@ -4,6 +4,12 @@
 
 namespace ZE::GFX::Pipeline::RenderPass::DebugView
 {
+	static Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, PassExecuteData* passData, const std::vector<PixelFormat>& formats) noexcept
+	{
+		ZE_ASSERT(formats.size() == 1, "Incorrect size for DebugView initialization formats!");
+		return Update(dev, buildData, *static_cast<ExecuteData*>(passData), formats.front());
+	}
+
 	static ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, const std::vector<PixelFormat>& formats, PassInitData* initData) noexcept
 	{
 		ZE_ASSERT(formats.size() == 1, "Incorrect size for DebugView initialization formats!");
@@ -17,11 +23,34 @@ namespace ZE::GFX::Pipeline::RenderPass::DebugView
 		desc.Init = Initialize;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
+		desc.Update = Update;
 		desc.DebugUI = DebugUI;
 		return desc;
 	}
 
-	ExpectedPassExecuteData  Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
+	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat outputFormat) noexcept
+	{
+		const bool isUint = passData.ViewMode == Mode::SSAO;
+		if ((passData.PrevViewMode == Mode::SSAO) != isUint)
+		{
+			Resource::PipelineStateDesc psoDesc = {};
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, isUint ? "DebugViewPS_U" : "DebugViewPS", buildData.ShaderCache));
+			psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
+			psoDesc.Culling = Resource::CullMode::Back;
+			psoDesc.RenderTargetsCount = 1;
+			psoDesc.FormatsRT[0] = outputFormat;
+			ZE_PSO_SET_NAME(psoDesc, isUint ? "DebugViewUINT" : "DebugView");
+
+			ZE_EXPECT_RET_FAILED(passData.State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData.BindingIndex)));
+
+			passData.PrevViewMode = passData.ViewMode;
+			return UpdateOperation::InternalOnly;
+		}
+		return UpdateOperation::NoUpdate;
+	}
+
+	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData, PixelFormat outputFormat) noexcept
 	{
 		auto passData = std::make_shared<ExecuteData>();
 
@@ -32,17 +61,10 @@ namespace ZE::GFX::Pipeline::RenderPass::DebugView
 		desc.AppendSamplers(buildData.Samplers);
 		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
-		Resource::PipelineStateDesc psoDesc = {};
-		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "FullscreenVS", buildData.ShaderCache));
-		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.PS, "DebugViewPS", buildData.ShaderCache));
-		psoDesc.DepthStencil = Resource::DepthStencilMode::DepthOff;
-		psoDesc.Culling = Resource::CullMode::Back;
-		psoDesc.RenderTargetsCount = 1;
-		psoDesc.FormatsRT[0] = outputFormat;
-		ZE_PSO_SET_NAME(psoDesc, "DebugView");
-
-		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
-
+		passData->PrevViewMode = Mode::SSAO;
+		auto operation = Update(dev, buildData, *passData, outputFormat);
+		if (!operation)
+			return std::unexpected(operation.error());
 		return passData;
 	}
 
