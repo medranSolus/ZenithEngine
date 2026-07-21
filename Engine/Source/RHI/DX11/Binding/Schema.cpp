@@ -103,28 +103,33 @@ namespace ZE::RHI::DX11::Binding
 	{
 		ZE_ASSERT(activeShaders.IsCompute(), "Schema is not created for compute pass!");
 
+		auto* ctx = cl.Get().dx11.GetContext();
 		for (U32 i = 0; i < samplersCount; ++i)
-			cl.Get().dx11.GetContext()->CSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+			ctx->CSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+
+		ID3D11UnorderedAccessView* nullUAV[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
+		ctx->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, nullUAV, nullptr);
 	}
 
 	void Schema::SetGraphics(GFX::CommandList& cl) const noexcept
 	{
 		ZE_ASSERT(!activeShaders.IsCompute(), "Schema is not created for graphics pass!");
 
+		auto* ctx = cl.Get().dx11.GetContext();
 		if (activeShaders.IsVertex())
 			for (U32 i = 0; i < samplersCount; ++i)
-				cl.Get().dx11.GetContext()->VSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+				ctx->VSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 		if (activeShaders.IsDomain())
 			for (U32 i = 0; i < samplersCount; ++i)
-				cl.Get().dx11.GetContext()->DSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+				ctx->DSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 		if (activeShaders.IsHull())
 			for (U32 i = 0; i < samplersCount; ++i)
-				cl.Get().dx11.GetContext()->HSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+				ctx->HSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 		if (activeShaders.IsGeometry())
 			for (U32 i = 0; i < samplersCount; ++i)
-				cl.Get().dx11.GetContext()->GSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+				ctx->GSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 		if (activeShaders.IsPixel())
 			for (U32 i = 0; i < samplersCount; ++i)
-				cl.Get().dx11.GetContext()->PSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
+				ctx->PSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 	}
 }

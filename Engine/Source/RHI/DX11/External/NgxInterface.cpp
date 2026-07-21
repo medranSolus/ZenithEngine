@@ -70,7 +70,7 @@ namespace ZE::RHI::DX11::External
 	Status NgxInterface::CreateFeature(GFX::Device& dev, GFX::CommandList& cl, NVSDK_NGX_Feature feature,
 		NVSDK_NGX_Parameter* param, NVSDK_NGX_Handle*& handle) const noexcept
 	{
-		return ZE_NGX_ERROR(NVSDK_NGX_D3D11_CreateFeature(cl.Get().dx11.GetContext(), feature, param, &handle));
+		return ZE_NGX_ERROR(NVSDK_NGX_D3D11_CreateFeature(dev.Get().dx11.GetMainContext(), feature, param, &handle));
 	}
 
 	Status NgxInterface::EvaluateFeature(GFX::Device& dev, GFX::CommandList& cl, const NVSDK_NGX_Handle* handle,

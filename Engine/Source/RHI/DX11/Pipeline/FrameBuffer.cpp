@@ -2,13 +2,33 @@
 
 namespace ZE::RHI::DX11::Pipeline
 {
+	void FrameBuffer::FlushState(GFX::CommandList& cl, bool rt, bool uav, bool srv) const noexcept
+	{
+		auto* ctx = cl.Get().dx11.GetContext();
+		if (!isRasterActive && rt)
+			ctx->OMSetRenderTargets(0, nullptr, nullptr);
+		if (uav)
+		{
+			ID3D11UnorderedAccessView* nullUAV[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
+			ctx->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, nullUAV, nullptr);
+		}
+		if (srv)
+		{
+			ID3D11ShaderResourceView* nullSrv[D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT] = { nullptr };
+			ctx->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+			ctx->DSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+			ctx->HSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+			ctx->GSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+			ctx->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+			ctx->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT, nullSrv);
+		}
+	}
+
 	void FrameBuffer::EnterRaster(GFX::CommandList& cl) const noexcept
 	{
-#if !_ZE_MODE_RELEASE
 		ZE_ASSERT(!isRasterActive, "Starting rasterization without calling EndRaster()!");
 
 		isRasterActive = true;
-#endif
 		auto* ctx = cl.Get().dx11.GetContext();
 		for (auto& slot : currentSlots)
 		{
@@ -901,27 +921,22 @@ namespace ZE::RHI::DX11::Pipeline
 
 	void FrameBuffer::EndRaster(GFX::CommandList& cl) const noexcept
 	{
-#if !_ZE_MODE_RELEASE
 		ZE_ASSERT(isRasterActive, "Calling EndRaster() while not in rasterization mode!");
 
 		isRasterActive = false;
-#endif
 		ID3D11RenderTargetView* nullRTV[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
 		cl.Get().dx11.GetContext()->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, nullRTV, nullptr);
 	}
 
 	void FrameBuffer::ClearRTV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rtvs[rid], "Current resource is not suitable for being render target!");
-
-		cl.Get().dx11.GetContext()->ClearRenderTargetView(rtvs[rid].Get(), reinterpret_cast<const float*>(&color));
+		ZE_ASSERT(GetRTV(rid), "Current resource is not suitable for being render target!");
+		
+		cl.Get().dx11.GetContext()->ClearRenderTargetView(GetRTV(rid), reinterpret_cast<const float*>(&color));
 	}
 
 	void FrameBuffer::ClearDSV(GFX::CommandList& cl, RID rid, float depth, U8 stencil) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!");
 		ZE_ASSERT(GetDSV(rid), "Current resource is not suitable for being depth stencil!");
 
 		cl.Get().dx11.GetContext()->ClearDepthStencilView(GetDSV(rid),
@@ -930,17 +945,49 @@ namespace ZE::RHI::DX11::Pipeline
 
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const ColorF4& color) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(rid), "Current resource is not suitable for being unnordered access!");
 
-		cl.Get().dx11.GetContext()->ClearUnorderedAccessViewFloat(GetUAV(rid), reinterpret_cast<const float*>(&color));
+		// Fix for situation where FFX SDK does clear on UINT UAVs with float commands
+		switch (GetFormat(rid))
+		{
+		case PixelFormat::R32G32B32A32_UInt:
+		case PixelFormat::R32G32B32A32_SInt:
+		case PixelFormat::R16G16B16A16_UInt:
+		case PixelFormat::R16G16B16A16_SInt:
+		case PixelFormat::R8G8B8A8_UInt:
+		case PixelFormat::R8G8B8A8_SInt:
+		case PixelFormat::R32G32B32_UInt:
+		case PixelFormat::R32G32B32_SInt:
+		case PixelFormat::R32G32_UInt:
+		case PixelFormat::R32G32_SInt:
+		case PixelFormat::R16G16_UInt:
+		case PixelFormat::R16G16_SInt:
+		case PixelFormat::R8G8_UInt:
+		case PixelFormat::R8G8_SInt:
+		case PixelFormat::R32_UInt:
+		case PixelFormat::R32_SInt:
+		case PixelFormat::R16_UInt:
+		case PixelFormat::R16_SInt:
+		case PixelFormat::R8_UInt:
+		case PixelFormat::R8_SInt:
+		case PixelFormat::R10G10B10A2_UInt:
+		{
+			Pixel colors[4] = {};
+			colors[0].Red = static_cast<U8>(color.RGBA.x / 255.0f);
+			colors[0].Green = static_cast<U8>(color.RGBA.y / 255.0f);
+			colors[0].Blue = static_cast<U8>(color.RGBA.z / 255.0f);
+			colors[0].Alpha = static_cast<U8>(color.RGBA.w / 255.0f);
+			cl.Get().dx11.GetContext()->ClearUnorderedAccessViewUint(GetUAV(rid), reinterpret_cast<const U32*>(colors));
+			break;
+		}
+		default:
+			cl.Get().dx11.GetContext()->ClearUnorderedAccessViewFloat(GetUAV(rid), reinterpret_cast<const float*>(&color));
+			break;
+		}
 	}
 
 	void FrameBuffer::ClearUAV(GFX::CommandList& cl, RID rid, const Pixel colors[4]) const noexcept
 	{
-		ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!");
-		ZE_ASSERT(rid != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!");
 		ZE_ASSERT(GetUAV(rid), "Current resource is not suitable for being unnordered access!");
 
 		cl.Get().dx11.GetContext()->ClearUnorderedAccessViewUint(GetUAV(rid), reinterpret_cast<const U32*>(colors));
@@ -997,6 +1044,18 @@ namespace ZE::RHI::DX11::Pipeline
 		DX::ComPtr<IResource> res;
 		texture.Get().dx11.GetView(index)->GetResource(&res);
 		cl.Get().dx11.GetContext()->CopyResource(GetResource(rid).Get(), res.Get());
+	}
+
+	void FrameBuffer::Barrier(GFX::CommandList& cl, const GFX::Pipeline::BarrierTransition* barriers, U32 count) const noexcept
+	{
+		bool flushOutput = isRasterActive, flushUAV = false, flushSRV = false;
+		for (U32 i = 0; i < count && (!flushOutput || !flushUAV || !flushSRV); ++i)
+		{
+			flushOutput |= IsFlushNeededOutput(barriers[i]);
+			flushUAV |= IsFlushNeededUAV(barriers[i]);
+			flushSRV |= IsFlushNeededSRV(barriers[i]);
+		}
+		FlushState(cl, flushOutput, flushUAV, flushSRV);
 	}
 
 	Status FrameBuffer::RegisterOutsideResource(RID rid, GFX::Resource::Texture::Pack& textures, U32 textureIndex, GFX::Pipeline::FrameResourceType type) noexcept
