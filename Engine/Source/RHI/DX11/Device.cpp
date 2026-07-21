@@ -142,6 +142,7 @@ namespace ZE::RHI::DX11
 		// No support for 8 bit indices on DirectX
 		Settings::SetU8IndexBuffers(false);
 		Settings::SetGfxSupportSSSR(false);
+		Settings::SetGfxSupportAsyncQueue(false);
 
 		return dev;
 	}

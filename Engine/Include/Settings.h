@@ -25,6 +25,7 @@ namespace ZE
 			SplitRenderSubmissions,
 			IBL,
 			DebugView,
+			SupportedAsyncQueue,
 			Count,
 		};
 
@@ -110,6 +111,7 @@ namespace ZE
 		static constexpr bool IsEnabledSplitRenderSubmissions() noexcept { return flags[Flags::SplitRenderSubmissions]; }
 		static constexpr bool IsEnabledIBL() noexcept { return flags[Flags::IBL]; }
 		static constexpr bool IsEnabledDebugView() noexcept { return flags[Flags::DebugView]; }
+		static constexpr bool IsSupportedAsyncQueue() noexcept { return flags[Flags::SupportedAsyncQueue]; }
 
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
@@ -118,6 +120,7 @@ namespace ZE
 		static constexpr void SetGfxSupportSSSR(bool enabled) noexcept { flags[Flags::SupportedSSSR] = enabled; }
 		static constexpr void SetIBL(bool enabled) noexcept { flags[Flags::IBL] = enabled; }
 		static constexpr void SetDebugView(bool enabled) noexcept { flags[Flags::DebugView] = enabled; }
+		static constexpr void SetGfxSupportAsyncQueue(bool enabled) noexcept { flags[Flags::SupportedAsyncQueue] = enabled; }
 
 		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
 		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }

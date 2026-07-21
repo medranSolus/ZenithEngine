@@ -1936,6 +1936,7 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 		}
+		asyncComputeEnabled &= Settings::IsSupportedAsyncQueue();
 		ZE_PERF_STOP();
 
 		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - check correct resources flags");

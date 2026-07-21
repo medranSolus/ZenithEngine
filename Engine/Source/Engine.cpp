@@ -258,8 +258,8 @@ namespace ZE
 									Settings::Upscaler = i;
 								if (selected)
 									ImGui::SetItemDefaultFocus();
-								i = static_cast<GFX::UpscalerType>(static_cast<U8>(i) + 1);
 							}
+							i = static_cast<GFX::UpscalerType>(static_cast<U8>(i) + 1);
 						}
 						ImGui::EndCombo();
 					}
