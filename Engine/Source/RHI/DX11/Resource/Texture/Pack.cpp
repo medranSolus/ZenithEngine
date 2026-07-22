@@ -141,13 +141,15 @@ namespace ZE::RHI::DX11::Resource::Texture
 
 		for (U32 i = 0; const auto& tex : desc.Textures)
 		{
-			const U32 surfaces = Utils::SafeCast<U32>(tex.Surfaces.size());
+			U32 surfaces = Utils::SafeCast<U32>(tex.Surfaces.size());
 			if (surfaces == 0)
 				pack.srvs[i] = nullptr;
 			else
 			{
 				// Gather source data
 				const GFX::Surface& startSurface = tex.Surfaces.front();
+				surfaces = surfaces > 1 ? surfaces : startSurface.GetArraySize();
+
 				auto resData = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(surfaces);
 				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
@@ -155,10 +157,13 @@ namespace ZE::RHI::DX11::Resource::Texture
 					ZE_ASSERT(surface.GetWidth() == startSurface.GetWidth(), "Every surface should have same width!");
 					ZE_ASSERT(surface.GetHeight() == startSurface.GetHeight(), "Every surface should have same height!");
 
-					resData[j].pSysMem = surface.GetBuffer();
-					resData[j].SysMemPitch = surface.GetRowByteSize();
-					resData[j].SysMemSlicePitch = 0;
-					++j;
+					for (U16 k = 0; k < surface.GetArraySize(); ++k)
+					{
+						resData[j].pSysMem = surface.GetBuffer() + surface.GetSliceByteSize() * k;
+						resData[j].SysMemPitch = surface.GetRowByteSize();
+						resData[j].SysMemSlicePitch = Utils::SafeCast<U32>(surface.GetSliceByteSize());
+						++j;
+					}
 				}
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC1 srvDesc = {};
@@ -167,7 +172,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 				DX::ComPtr<IResource> resource;
 				ZE_EXPECT_RET_FAILED(resource, CreateTexture(device, srvDesc, resData.get(),
 					tex.Type, startSurface.GetWidth(), startSurface.GetHeight(), startSurface.GetMipCount(),
-					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : (surfaces > 1 ? surfaces : startSurface.GetArraySize()),
+					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : surfaces,
 					D3D11_USAGE_IMMUTABLE));
 				ZE_DX_SET_ID(resource, "Texture_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
 
