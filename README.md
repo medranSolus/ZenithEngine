@@ -16,6 +16,50 @@ Working with project from command prompt is described [here](Doc/CMakeCLI.md).
 Current tasks and issues are tracked with associated [project page](https://github.com/users/medranSolus/projects/5) where all issues are grouped into corresponding categories.
 Additional list of in-code TODO actions is located [here](Doc/TODO.md) for purpose of tracking possible changes and improvements not large enough to be put into separate issue.
 
+## Features
+
+- Physically Based Rendering metallic workflow
+- Image Based Lighting
+- Upscalers:
+  - FidelityFX Super Resolution 1
+  - FidelityFX Super Resolution 2
+  - FidelityFX Super Resolution 3
+  - FSR Upscaling
+  - NVIDIA DLSS
+  - Intel XeSS
+  - NVIDIA Image Scaling
+- Ambient Occlusion:
+  - FidelityFX CACAO
+  - NVIDIA HBAO+
+  - Intel XeGTAO
+- FidelityFX Stochastic Screen Space Reflections
+- Asynchronous data streaming with DirectStorage
+- Tonemappers:
+  - Classic exposure
+  - Reinhard (Normal, Extended, Luma, Luma Jodie, Luma White Preservation))
+  - RomBinDaHouse
+  - Filmic (Hable, AMD VDR)
+  - ACES (Normal, Nautilus)
+  - AgX
+  - Khronos PBR Neutral
+  - Gran Turismo 7
+  - FidelityFX Luma Preserving Mapper
+- Tools:
+  - Automatic mipmap generation
+  - BRDF LUT generation
+  - Texture conversions (cubemap formats included)
+
+### Graphics features support
+
+| API | DX11 | DX12 | Vulkan |
+|:---:|:---:|:---:|:---:|
+| SSSR | :x: | :white_check_mark: | TBD |
+| FFX FSR | :x: | :white_check_mark: | :x: |
+| XeSS | :white_check_mark: * | :white_check_mark: | TBD |
+| HBAO+ | :white_check_mark: | :white_check_mark: | :x: |
+
+**Intel GPUs only*
+
 ## License
 
 Zenith Engine project is divided into 4 distinct parts, each with license on it's own.
