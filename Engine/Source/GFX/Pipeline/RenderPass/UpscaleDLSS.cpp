@@ -1,5 +1,6 @@
 #include "GFX/pipeline/RenderPass/UpscaleDLSS.h"
 #include "GFX/External/InterfaceStorage.h"
+#include "Data/Camera.h"
 #include "GUI/DearImGui.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
@@ -156,8 +157,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleDLSS
 		renderData.Buffers.SetResourceNGX(data.NgxParam, NVSDK_NGX_Parameter_MotionVectors, ids.MotionVectors);
 		renderData.Buffers.SetResourceNGX(data.NgxParam, NVSDK_NGX_Parameter_Output, ids.Output);
 
-		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_X, renderData.DynamicData.JitterCurrent.x);
-		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_Y, renderData.DynamicData.JitterCurrent.y);
+		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_X, Data::GetUnitPixelJitterX(renderData.DynamicData.JitterCurrent.x, Settings::RenderSize.X));
+		data.NgxParam->Set(NVSDK_NGX_Parameter_Jitter_Offset_Y, Data::GetUnitPixelJitterY(renderData.DynamicData.JitterCurrent.y, Settings::RenderSize.Y));
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_X, -Utils::SafeCast<float>(inputSize.X));
 		data.NgxParam->Set(NVSDK_NGX_Parameter_MV_Scale_Y, -Utils::SafeCast<float>(inputSize.Y));
 		data.NgxParam->Set(NVSDK_NGX_Parameter_Reset, renderData.GraphData.FrameTemporalReset);

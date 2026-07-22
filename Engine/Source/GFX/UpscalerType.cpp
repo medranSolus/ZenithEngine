@@ -51,7 +51,7 @@ namespace ZE::GFX
 				ffxQueryDescUpscaleGetRenderResolutionFromQualityMode queryDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE, nullptr };
 				queryDesc.displayWidth = targetSize.X;
 				queryDesc.displayHeight = targetSize.Y;
-				queryDesc.qualityMode = quality;
+				queryDesc.qualityMode = quality == UINT32_MAX ? FFX_UPSCALE_QUALITY_MODE_NATIVEAA : static_cast<FfxApiUpscaleQualityMode>(quality);
 				queryDesc.pOutRenderWidth = &renderSize.X;
 				queryDesc.pOutRenderHeight = &renderSize.Y;
 				ffxReturnCode_t res = ffx->GetFunctions().Query(nullptr, &queryDesc.header);
@@ -154,8 +154,6 @@ namespace ZE::GFX
 			U32 phaseCount = ffxFsr2GetJitterPhaseCount(renderSize.X, displaySize.X);
 			phaseIndex = (phaseIndex + 1) % phaseCount;
 			ffxFsr2GetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
-			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
-			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
 			break;
 		}
 		case UpscalerType::FfxFsr:
@@ -176,7 +174,7 @@ namespace ZE::GFX
 					jitterDesc.index = (phaseIndex + 1) % jitterDesc.phaseCount;
 					jitterDesc.pOutX = &jitterX;
 					jitterDesc.pOutY = &jitterY;
-					code = ffx->GetFunctions().Query(nullptr, &phaseDesc.header);
+					code = ffx->GetFunctions().Query(nullptr, &jitterDesc.header);
 					if (code == FFX_API_RETURN_OK)
 						phaseIndex = static_cast<U32>(jitterDesc.index);
 					else
@@ -207,11 +205,12 @@ namespace ZE::GFX
 			U32 phaseCount = ffxFsr3UpscalerGetJitterPhaseCount(renderSize.X, displaySize.X);
 			phaseIndex = (phaseIndex + 1) % phaseCount;
 			ffxFsr3UpscalerGetJitterOffset(&jitterX, &jitterY, phaseIndex, phaseCount);
-			jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
-			jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
 			break;
 		}
 		}
+		// Pack jitter projection space
+		jitterX = 2.0f * jitterX / Utils::SafeCast<float>(renderSize.X);
+		jitterY = -2.0f * jitterY / Utils::SafeCast<float>(renderSize.Y);
 	}
 
 	float CalculateMipBias(U32 renderWidth, U32 targetWidth, UpscalerType upscaling) noexcept
