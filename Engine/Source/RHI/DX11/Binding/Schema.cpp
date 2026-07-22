@@ -107,8 +107,8 @@ namespace ZE::RHI::DX11::Binding
 		for (U32 i = 0; i < samplersCount; ++i)
 			ctx->CSSetSamplers(samplers[i].first, 1, samplers[i].second.GetAddressOf());
 
-		ID3D11UnorderedAccessView* nullUAV[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
-		ctx->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, nullUAV, nullptr);
+		ID3D11UnorderedAccessView* nullUAV[D3D11_1_UAV_SLOT_COUNT] = { nullptr };
+		ctx->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, nullUAV, nullptr);
 	}
 
 	void Schema::SetGraphics(GFX::CommandList& cl) const noexcept

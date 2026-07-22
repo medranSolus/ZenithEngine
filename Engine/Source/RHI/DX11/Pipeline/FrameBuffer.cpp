@@ -9,8 +9,8 @@ namespace ZE::RHI::DX11::Pipeline
 			ctx->OMSetRenderTargets(0, nullptr, nullptr);
 		if (uav)
 		{
-			ID3D11UnorderedAccessView* nullUAV[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
-			ctx->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, nullUAV, nullptr);
+			ID3D11UnorderedAccessView* nullUAV[D3D11_1_UAV_SLOT_COUNT] = { nullptr };
+			ctx->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, nullUAV, nullptr);
 		}
 		if (srv)
 		{
@@ -50,7 +50,7 @@ namespace ZE::RHI::DX11::Pipeline
 			}
 			else
 			{
-				ID3D11UnorderedAccessView* nullUav[D3D11_PS_CS_UAV_REGISTER_COUNT] = { nullptr };
+				ID3D11UnorderedAccessView* nullUav[D3D11_1_UAV_SLOT_COUNT] = { nullptr };
 				ctx->CSSetUnorderedAccessViews(slot.second.BindStart, slot.second.Count, nullUav, nullptr);
 			}
 		}
