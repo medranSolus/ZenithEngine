@@ -158,7 +158,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.AddResource("upscaledScene",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::R16G16B16A16_Float, "Upscaled scene"));
 		graphDesc.AddResource("tonemapedScene",
-			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), Settings::BackbufferFormat, "Tonemapped scene"));
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), Utils::RemoveSRGB(Settings::BackbufferFormat), "Tonemapped scene"));
 
 		// Outline related resources
 		graphDesc.AddResource("outlineDepth",

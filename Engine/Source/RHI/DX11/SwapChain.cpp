@@ -15,9 +15,15 @@ namespace ZE::RHI::DX11
 		SwapChain swapChain;
 		ZE_EXPECT_RET_FAILED(swapChain.swapChain, DX::CreateSwapChain(std::move(factory), dev.Get().dx12.GetQueueMain(), window.GetHandle(), shaderInput, swapChain.presentFlags));
 
-		// Retrieve RTV
+		// Create views
 		ZE_DX_RET_FAILED_EXPECT(swapChain.swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChain.backBuffer)));
-		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateRenderTargetView1(swapChain.backBuffer.Get(), nullptr, &swapChain.rtv));
+
+		D3D11_RENDER_TARGET_VIEW_DESC1 rtvDesc = {};
+		rtvDesc.Format = DX::GetDXFormat(Settings::BackbufferFormat);
+		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		rtvDesc.Texture2D.MipSlice = 0;
+		rtvDesc.Texture2D.PlaneSlice = 0;
+		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateRenderTargetView1(swapChain.backBuffer.Get(), &rtvDesc, &swapChain.rtv));
 		if (shaderInput)
 		{
 			ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateShaderResourceView1(swapChain.backBuffer.Get(), nullptr, &swapChain.srv));
