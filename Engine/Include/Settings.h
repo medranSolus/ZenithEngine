@@ -102,9 +102,9 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
-		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::EnabledSSSR] && flags[Flags::SupportedSSSR]; }
+		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::EnabledSSSR] && IsSupportedSSSR(); }
 		static constexpr bool IsSupportedSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SupportedSSSR]; }
-		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO]; }
+		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO] && IsSupportedAsyncQueue(); }
 		static constexpr bool IsEnabledCopySourceGPUData() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::CopySourceGPUData]; }
 		static constexpr bool IsEnabledNoCulling() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::NoCulling]; }
 		static constexpr bool IsEnabledImGui() noexcept { return flags[Flags::ImGui]; }
