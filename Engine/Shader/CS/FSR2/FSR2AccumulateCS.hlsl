@@ -16,7 +16,7 @@
 #include "GBufferUtils.hlsli"
 
 UAV2D(upscaledColor, FfxFloat32x4, 0, 0);
-UAV2D(lockStatus, unorm FfxFloat32x2, 1, 1);
+UAV2D(lockStatus, FfxFloat32x2, 1, 1);
 UAV2D(newLocks, unorm FfxFloat32, 2, 2);
 UAV2D(lumaHistory, FfxFloat32x4, 3, 3);
 
@@ -54,7 +54,7 @@ void StoreUpscaledOutput(const in FfxUInt32x2 pxCoord, const in FfxFloat32x3 col
 
 TEXTURE_EX(exposure, Texture2D<FfxFloat32x2>, 0, EXPOSURE_RANGE);
 TEXTURE_EX(upscaledColor, Texture2D<FfxFloat32x4>, 2, UPSCALED_COLOR_RANGE);
-TEXTURE_EX(lockStatus, Texture2D<unorm FfxFloat32x2>, 3, LOCK_STATUS_RANGE);
+TEXTURE_EX(lockStatus, Texture2D<FfxFloat32x2>, 3, LOCK_STATUS_RANGE);
 TEXTURE_EX(inputColor, Texture2D<FfxFloat32x4>, 4, INPUT_COLOR_RANGE);
 TEXTURE_EX(lumaHistory, Texture2D<unorm FfxFloat32x4>, 5, LUMA_HISTORY_RANGE);
 TEXTURE_EX(imgMips, Texture2D<FfxFloat32>, 6, IMG_MIPS_RANGE);
