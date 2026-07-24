@@ -473,6 +473,12 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
+			node.AddInnerBuffer(TextureLayout::Undefined,
+				{ { 0, 0 }, 0, Base(FrameResourceFlag::NoResourceCreation), PixelFormat::Unknown, ColorF4{}, 0.0f, 0, 0,
+				FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME("XeSS aliasable texture region"), RenderPass::UpscaleXeSS::AliasableMemoryQuery });
+			node.AddInnerBuffer(TextureLayout::Undefined,
+				{ { 0, 0 }, 0, Base(FrameResourceFlag::NoResourceCreation), PixelFormat::Unknown, ColorF4{}, 0.0f, 0, 0,
+				FrameResourceType::Buffer ZE_FRAME_RES_INIT_NAME("XeSS aliasable buffer region"), RenderPass::UpscaleXeSS::AliasableMemoryQuery });
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

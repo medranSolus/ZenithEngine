@@ -13,6 +13,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		RID Depth;
 		RID MotionVectors;
 		RID ResponsiveMask;
+		RID AliasableTexture;
+		RID AliasableBuffer;
 		RID Output;
 	};
 
@@ -28,9 +30,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 
 	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::XeSS; }
 
+	Expected<UInt2> AliasableMemoryQuery(Device& dev, const FrameResourceDesc& desc) noexcept;
 	PassDesc GetDesc() noexcept;
 	Expected<UpdateOperation> Update(Device& dev, ExecuteData& passData) noexcept;
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Expected<bool> Prepare(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }

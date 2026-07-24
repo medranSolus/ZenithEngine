@@ -41,10 +41,32 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		return Initialize(dev, buildData);
 	}
 
+	Expected<UInt2> AliasableMemoryQuery(Device& dev, const FrameResourceDesc& desc) noexcept
+	{
+		auto xess = External::InterfaceStorage::CreateConnectionXeSS(dev);
+		if (!xess)
+			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
+
+		UInt2 size = { 0, 0 };
+		if (xess->IsAliasableResourcesSupported())
+		{
+			U64 bytes = 0;
+			if (desc.Type == FrameResourceType::Buffer)
+				bytes = xess->GetAliasableBufferRegionSize();
+			else
+				bytes = xess->GetAliasableTextureRegionSize();
+			size.X = Utils::SafeCast<U32>(bytes);
+			size.Y = Utils::SafeCast<U32>(bytes >> 32);
+		}
+		External::InterfaceStorage::ReleaseConnectionXeSS();
+		return size;
+	}
+
 	PassDesc GetDesc() noexcept
 	{
 		PassDesc desc{ Base(CorePassType::UpscaleXeSS) };
 		desc.Init = Initialize;
+		desc.Prepare = Prepare;
 		desc.Evaluate = Evaluate;
 		desc.Execute = Execute;
 		desc.Update = Update;
@@ -99,6 +121,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		// since due to internals requiring memory from framebuffer
 		buildData.FrameBufferUpdatePending |= xess->IsAliasableResourcesSupported();
 		return passData;
+	}
+
+	Expected<bool> Prepare(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
+	{
+		auto xess = External::InterfaceStorage::GetConnectionXeSS();
+		if (!xess)
+			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
+		return false;
 	}
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
