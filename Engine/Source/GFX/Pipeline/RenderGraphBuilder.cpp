@@ -425,7 +425,7 @@ namespace ZE::GFX::Pipeline
 			auto it = std::find(computedResources.begin(), computedResources.end(), renderNode.GetInnerBufferName(inner));
 			if (it != computedResources.end())
 				rid = Utils::SafeCast<RID>(std::distance(computedResources.begin(), it));
-			ZE_ASSERT(rid != INVALID_RID, "Inner buffers must always be present after computing graph!");
+			ZE_ASSERT(rid != INVALID_RID || renderNode.GetInnerBuffers().at(inner).MemoryQuery, "Inner buffers must always be present after computing graph if they don't have a memory query capability!");
 			rids[i++] = rid;
 		}
 		for (const auto& output : out)
@@ -443,7 +443,7 @@ namespace ZE::GFX::Pipeline
 		return rids;
 	}
 
-	FrameBufferDesc RenderGraphBuilder::GetFrameBufferLayout(Device& dev, const RenderGraph& graph) const noexcept
+	Expected<FrameBufferDesc> RenderGraphBuilder::GetFrameBufferLayout(Device& dev, const RenderGraph& graph) const noexcept
 	{
 		ZE_PERF_GUARD("RenderGraphBuilder::GetFrameBufferLayout");
 
@@ -459,6 +459,10 @@ namespace ZE::GFX::Pipeline
 		{
 			const auto& res = resources.Get(std::string(resName));
 			desc.Resources.emplace_back(res);
+			if (res.MemoryQuery)
+			{
+				ZE_EXPECT_RET_FAILED(desc.Resources.back().Sizes, res.MemoryQuery(dev, res));
+			}
 			resourceLookup.emplace(resName, std::make_pair<U32, U32>(UINT32_MAX, 0U));
 			if (res.Flags & (FrameResourceFlag::Temporal | FrameResourceFlag::OutsideResource))
 				resourceLookup.at(resName) = { 0U, dependencyLevelCount };
@@ -500,11 +504,14 @@ namespace ZE::GFX::Pipeline
 				const auto& node = passDescs.at(i).at(computed.NodeGroupIndex);
 				for (ResIndex j = 0, size = Utils::SafeCast<ResIndex>(node.GetInnerBuffers().size()); j < size; ++j)
 				{
-					auto& lifetime = resourceLookup.at(node.GetInnerBufferName(j));
-					if (lifetime.first > depStart)
-						lifetime.first = depStart;
-					if (lifetime.second < depEnd)
-						lifetime.second = depEnd;
+					auto lifetime = resourceLookup.find(node.GetInnerBufferName(j));
+					if (lifetime != resourceLookup.end())
+					{
+						if (lifetime->second.first > depStart)
+							lifetime->second.first = depStart;
+						if (lifetime->second.second < depEnd)
+							lifetime->second.second = depEnd;
+					}
 				}
 			}
 		}
@@ -1223,7 +1230,10 @@ namespace ZE::GFX::Pipeline
 
 							for (ResIndex inner = 0; inner < renderNode.GetInnerBuffers().size(); ++inner)
 							{
-								auto& lifetime = resourceLifetimes.at(resourceLookup.at(renderNode.GetInnerBufferName(inner)));
+								auto lookup = resourceLookup.find(renderNode.GetInnerBufferName(inner));
+								if (lookup != resourceLookup.end())
+								{
+									auto& lifetime = resourceLifetimes.at(lookup->second);
 								TextureLayout layout = renderNode.GetInnerBufferLayout(inner);
 
 								lifetime.emplace(depLevel, ResourceState{ layout, layout,
@@ -1232,6 +1242,7 @@ namespace ZE::GFX::Pipeline
 									async, execGroupIndex, j });
 							}
 						}
+					}
 					}
 					return {};
 				};
@@ -1941,7 +1952,7 @@ namespace ZE::GFX::Pipeline
 
 		ZE_PERF_START("RenderGraphBuilder::ComputeGraph - check correct resources flags");
 		BuildResultCode result = BuildResultCode::Success;
-		resources.TransformCheck([&result](const std::string& name, const FrameResourceDesc& res) noexcept -> bool
+		resources.TransformCheck([&result, &dev](const std::string& name, FrameResourceDesc& res) noexcept -> bool
 			{
 				if ((res.Flags & (FrameResourceFlag::InternalUsageRenderTarget | FrameResourceFlag::InternalUsageUnorderedAccess))
 					&& (res.Flags & FrameResourceFlag::InternalUsageDepth))
@@ -1967,6 +1978,21 @@ namespace ZE::GFX::Pipeline
 					ZE_FAIL("Simultaneous access cannot be used on depth stencil in resource [" + name + "]!");
 					result = BuildResultCode::ErrorWrongResourceConfiguration;
 					return true;
+				}
+				if (res.MemoryQuery)
+				{
+					// Check if resource will be truly active
+					auto expSize = res.MemoryQuery(dev, res);
+					if (expSize)
+					{
+						if (expSize->X == 0 && expSize->Y == 0)
+							res.Flags &= ~FrameResourceFlag::InternalResourceActive;
+					}
+					else
+					{
+						ZE_CODE_ERROR(expSize.error(), "Failed to query memory size for resource [" + name + "]!");
+						return true;
+					}
 				}
 				return false;
 			});
@@ -2023,7 +2049,9 @@ namespace ZE::GFX::Pipeline
 		settingsData.Bytes = sizeof(RendererSettingsData);
 		ZE_EXPECT_RET_FAILED_CODE(graph.execData.SettingsBuffer, Resource::CBuffer::Create(dev, assets.GetDisk(), settingsData));
 
-		ZE_EXPECT_RET_FAILED_CODE(graph.execData.Buffers, FrameBuffer::Create(dev, GetFrameBufferLayout(dev, graph)));
+		FrameBufferDesc framebufferDesc = {};
+		ZE_EXPECT_RET_FAILED_CODE(framebufferDesc, GetFrameBufferLayout(dev, graph));
+		ZE_EXPECT_RET_FAILED_CODE(graph.execData.Buffers, FrameBuffer::Create(dev, framebufferDesc));
 		ZE_CODE_RET_FAILED(graph.PrepareFrameResources(dev, swapChain));
 
 		return {};
@@ -2338,7 +2366,10 @@ namespace ZE::GFX::Pipeline
 				}
 			}
 			graph.execData.Buffers = {};
-			ZE_EXPECT_RET_FAILED_CODE(graph.execData.Buffers, FrameBuffer::Create(dev, GetFrameBufferLayout(dev, graph)));
+
+			FrameBufferDesc framebufferDesc = {};
+			ZE_EXPECT_RET_FAILED_CODE(framebufferDesc, GetFrameBufferLayout(dev, graph));
+			ZE_EXPECT_RET_FAILED_CODE(graph.execData.Buffers, FrameBuffer::Create(dev, framebufferDesc));
 
 			runStartupPasses = true;
 		}

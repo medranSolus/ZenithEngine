@@ -74,6 +74,9 @@ namespace ZE::GFX::Pipeline
 		Texture1D, Texture2D, TextureCube, Texture3D
 	};
 
+	// Callback function to query memory size of resource in bytes. Can return 0 to indicate that this resource won't be used and will be skipped during FrameBuffer creation
+	typedef Expected<UInt2>(*FrameResourceMemoryQueryCallback)(Device&, const struct FrameResourceDesc&);
+
 	// Description of single resource in FrameBuffer
 	struct FrameResourceDesc
 	{
@@ -89,6 +92,7 @@ namespace ZE::GFX::Pipeline
 #if _ZE_DEBUG_GFX_NAMES
 		std::string DebugName;
 #endif
+		FrameResourceMemoryQueryCallback MemoryQuery = nullptr;
 
 		constexpr UInt2 GetResolutionAdjustedSizes() const noexcept;
 	};
