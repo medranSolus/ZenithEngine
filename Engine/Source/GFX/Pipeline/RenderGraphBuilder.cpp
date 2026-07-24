@@ -1234,15 +1234,15 @@ namespace ZE::GFX::Pipeline
 								if (lookup != resourceLookup.end())
 								{
 									auto& lifetime = resourceLifetimes.at(lookup->second);
-								TextureLayout layout = renderNode.GetInnerBufferLayout(inner);
+									TextureLayout layout = renderNode.GetInnerBufferLayout(inner);
 
-								lifetime.emplace(depLevel, ResourceState{ layout, layout,
-									GetAccessFromLayout(layout), renderNode.IsGfxPass(),
-									renderNode.IsComputePass(), renderNode.IsRayTracingPass(),
-									async, execGroupIndex, j });
+									lifetime.emplace(depLevel, ResourceState{ layout, layout,
+										GetAccessFromLayout(layout), renderNode.IsGfxPass(),
+										renderNode.IsComputePass(), renderNode.IsRayTracingPass(),
+										async, execGroupIndex, j });
+								}
 							}
 						}
-					}
 					}
 					return {};
 				};
@@ -2089,6 +2089,23 @@ namespace ZE::GFX::Pipeline
 				recordedCommands |= runGpuCmd;
 			}
 		}
+		// Also finilize startup of passes requiring FrameBuffer to be present
+		for (U32 i = 0; i < passDescs.size(); ++i)
+		{
+			auto& computed = computedGraph.at(i);
+
+			if (computed.Present)
+			{
+				auto& activePass = passDescs.at(i).at(computed.NodeGroupIndex);
+
+				if (activePass.GetDesc().Prepare)
+				{
+					bool runGpuCmd = false;
+					ZE_EXPECT_RET_FAILED(runGpuCmd, activePass.GetDesc().Prepare(dev, cl, graph.execData, computed.GraphPassInfo.Cast<RenderGraph::ParallelPassGroup::PassInfo>()->Data));
+					recordedCommands |= runGpuCmd;
+				}
+			}
+		}
 		return recordedCommands;
 	}
 
@@ -2118,7 +2135,7 @@ namespace ZE::GFX::Pipeline
 				switch (op)
 				{
 				default:
-				ZE_ENUM_UNHANDLED();
+					ZE_ENUM_UNHANDLED();
 				case UpdateOperation::NoUpdate:
 					break;
 				case UpdateOperation::GpuUploadRequired:

@@ -11,6 +11,7 @@ namespace ZE::GFX::Pipeline
 			InitData = nullptr;
 		InitializeFormats = desc.InitializeFormats;
 		Init = desc.Init;
+		Prepare = desc.Prepare;
 		Evaluate = desc.Evaluate;
 		Execute = desc.Execute;
 		Update = desc.Update;
