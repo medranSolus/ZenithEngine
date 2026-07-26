@@ -1228,6 +1228,10 @@ namespace ZE::GFX::Pipeline
 
 			for (RID rid = 0; rid < resourceLifetimes.size(); ++rid)
 			{
+				// Skip resources that are just memory regions
+				if (resources.Get(std::string(computedResources.at(rid))).Flags & FrameResourceFlag::NoResourceCreation)
+					continue;
+
 				auto& lifetime = resourceLifetimes.at(rid);
 				ZE_ASSERT(lifetime.size() > 0, "Computing transitions for resource that have no record of usage!");
 
@@ -1354,12 +1358,17 @@ namespace ZE::GFX::Pipeline
 		ZE_PERF_START("RenderGraphBuilder::FillPassBarriers - initial transitions");
 		for (RID rid = 0; rid < resourceLifetimes.size(); ++rid)
 		{
+			auto& res = resources.Get(std::string(computedResources.at(rid)));
+			// Skip resources that are just memory regions
+			if (res.Flags & FrameResourceFlag::NoResourceCreation)
+				continue;
+
 			auto& lifetime = resourceLifetimes.at(rid);
 			auto firstUsage = lifetime.begin();
 			auto lastUsage = lifetime.end();
 			ZE_ASSERT(firstUsage->second.GetExecGroup(graph).PassGroupCount, "Placing barrier in execution group without any passes!");
 
-			if (resources.Get(std::string(computedResources.at(rid))).Flags & FrameResourceFlag::Temporal)
+			if (res.Flags & FrameResourceFlag::Temporal)
 			{
 				TextureLayout firstLayout = firstUsage->second.InputLayout;
 				TextureLayout lastLayout = lastUsage->second.OutputLayout;
