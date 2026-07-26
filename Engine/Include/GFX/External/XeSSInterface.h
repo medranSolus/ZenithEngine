@@ -32,11 +32,10 @@ namespace ZE::GFX::External
 		constexpr bool IsCtxInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsCtxInitialized); }
 		constexpr xess_context_handle_t GetCtx() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetCtx); }
 		constexpr bool IsAliasableResourcesSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsAliasableResourcesSupported); }
-		constexpr U64 GetAliasableBufferRegionSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetAliasableBufferRegionSize); }
-		constexpr U64 GetAliasableTextureRegionSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetAliasableTextureRegionSize); }
-		constexpr void SetAliasableResources(RID buffer, RID texture) noexcept { ZE_RHI_BACKEND_CALL(SetAliasableResources, buffer, texture); }
+		constexpr Expected<U64> GetAliasableBufferRegionSize(UInt2 targetRes) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetAliasableBufferRegionSize, targetRes); }
+		constexpr Expected<U64> GetAliasableTextureRegionSize(UInt2 targetRes) const noexcept { ZE_RHI_BACKEND_CALL_RET(GetAliasableTextureRegionSize, targetRes); }
 
-		Status InitializeCtx(Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept { ZE_RHI_BACKEND_CALL_RET(InitializeCtx, dev, targetRes, quality, flags); }
+		Status InitializeCtx(Device& dev, Pipeline::FrameBuffer& buffers, UInt2 targetRes, xess_quality_settings_t quality, U32 flags, RID aliasableBuffer, RID aliasableTexture) noexcept { ZE_RHI_BACKEND_CALL_RET(InitializeCtx, dev, buffers, targetRes, quality, flags, aliasableBuffer, aliasableTexture); }
 		// May invalidate ctx handle
 		Status FreeCtx(Device& dev) noexcept { ZE_RHI_BACKEND_CALL_RET(FreeCtx, dev); }
 

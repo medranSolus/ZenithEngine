@@ -52,9 +52,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		{
 			U64 bytes = 0;
 			if (desc.Type == FrameResourceType::Buffer)
-				bytes = xess->GetAliasableBufferRegionSize();
+			{
+				ZE_EXPECT_RET_FAILED(bytes, xess->GetAliasableBufferRegionSize(Settings::DisplaySize));
+			}
 			else
-				bytes = xess->GetAliasableTextureRegionSize();
+			{
+				ZE_EXPECT_RET_FAILED(bytes, xess->GetAliasableTextureRegionSize(Settings::DisplaySize));
+			}
 			size.X = Utils::SafeCast<U32>(bytes);
 			size.Y = Utils::SafeCast<U32>(bytes >> 32);
 		}
@@ -97,9 +101,6 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 				-Utils::SafeCast<float>(renderSize.X), -Utils::SafeCast<float>(renderSize.Y)),
 				"Error setting XeSS motion vectors scale!");
 
-			ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, passData.DisplaySize, passData.Quality,
-				XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK));
-
 			Settings::RenderSize = renderSize;
 			return UpdateOperation::FrameBufferImpact;
 		}
@@ -128,6 +129,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		auto xess = External::InterfaceStorage::GetConnectionXeSS();
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
+
+		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
+		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
+		ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, renderData.Buffers, data.DisplaySize, data.Quality,
+			XESS_INIT_FLAG_INVERTED_DEPTH | XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_RESPONSIVE_PIXEL_MASK,
+			ids.AliasableBuffer, ids.AliasableTexture));
+
 		return false;
 	}
 

@@ -11,14 +11,6 @@ namespace ZE::RHI::DX12::External
 	{
 		xess_context_handle_t ctx = nullptr;
 		DescriptorInfo descInfo = {};
-		xess_2d_t outputRes = { 0, 0 };
-		xess_quality_settings_t qualityMode = XESS_QUALITY_SETTING_AA;
-		U32 initFlags = 0;
-		U64 aliasBufferRegionSize = 0;
-		U64 aliasTextureRegionSize = 0;
-		RID aliasBufferRegion = INVALID_RID;
-		RID aliasTextureRegion = INVALID_RID;
-		bool refreshNeeded = true;
 
 		void Destroy() noexcept;
 		void MoveFrom(XeSSInterface&& xess) noexcept;
@@ -36,22 +28,16 @@ namespace ZE::RHI::DX12::External
 		constexpr bool IsInitialized() const noexcept { return ctx != nullptr; }
 		constexpr bool IsCtxInitialized() const noexcept { return descInfo.Handle != nullptr; }
 		constexpr xess_context_handle_t GetCtx() const noexcept { return ctx; }
-		constexpr bool IsAliasableResourcesSupported() const noexcept { return aliasBufferRegionSize || aliasTextureRegionSize; }
-		constexpr U64 GetAliasableBufferRegionSize() const noexcept { return aliasBufferRegionSize; }
-		constexpr U64 GetAliasableTextureRegionSize() const noexcept { return aliasTextureRegionSize; }
-		constexpr void SetAliasableResources(RID buffer, RID texture) noexcept { aliasBufferRegion = buffer; aliasTextureRegion = texture; }
+		constexpr bool IsAliasableResourcesSupported() const noexcept { return true; }
 
-		Status InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept;
+		Expected<U64> GetAliasableBufferRegionSize(UInt2 targetRes) const noexcept;
+		Expected<U64> GetAliasableTextureRegionSize(UInt2 targetRes) const noexcept;
+
+		Status InitializeCtx(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, UInt2 targetRes,
+			xess_quality_settings_t quality, U32 flags, RID aliasableBuffer, RID aliasableTexture) noexcept;
 		Status FreeCtx(GFX::Device& dev) noexcept;
 		Status Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,
 			RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, const Float2& jitter, bool reset) const noexcept;
-
-		// Gfx API Internal
-
-		constexpr RID GetAliasableBufferResource() const noexcept { return aliasBufferRegion; }
-		constexpr RID GetAliasableTextureResource() const noexcept { return aliasTextureRegion; }
-
-		Status FinishInitialization(Device& dev, IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) noexcept;
 	};
 }
 #endif

@@ -29,11 +29,11 @@ namespace ZE::RHI::DX11::External
 		constexpr bool IsCtxInitialized() const noexcept { return ctxInit; }
 		constexpr xess_context_handle_t GetCtx() const noexcept { return ctx; }
 		constexpr bool IsAliasableResourcesSupported() const noexcept { return false; }
-		constexpr U64 GetAliasableBufferRegionSize() const noexcept { return 0; }
-		constexpr U64 GetAliasableTextureRegionSize() const noexcept { return 0; }
-		constexpr void SetAliasableResources(RID buffer, RID texture) noexcept {}
+		constexpr Expected<U64> GetAliasableBufferRegionSize(UInt2 targetRes) const noexcept { return 0; }
+		constexpr Expected<U64> GetAliasableTextureRegionSize(UInt2 targetRes) const noexcept { return 0; }
 
-		Status InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept;
+		Status InitializeCtx(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, UInt2 targetRes,
+			xess_quality_settings_t quality, U32 flags, RID aliasableBuffer, RID aliasableTexture) noexcept;
 		Status FreeCtx(GFX::Device& dev) noexcept;
 		Status Execute(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, GFX::CommandList& cl,
 			RID color, RID motionVectors, RID depth, RID exposure, RID responsive, RID output, const Float2& jitter, bool reset) const noexcept;

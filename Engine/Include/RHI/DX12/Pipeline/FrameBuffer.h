@@ -184,11 +184,17 @@ namespace ZE::RHI::DX12::Pipeline
 
 		// Gfx API Internal
 
+		IHeap* GetHeapMain() const noexcept { return mainHeap.Get(); }
+		IHeap* GetHeapUAV() const noexcept { return uavHeap ? uavHeap.Get() : mainHeap.Get(); }
+		IHeap* GetHeapBuffer() const noexcept { return bufferHeap ? bufferHeap.Get() : mainHeap.Get(); }
+
 		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(resources[rid].IsResourceRegistered(), "Outside resource not registered!"); return resources[rid].Resource; }
 		const D3D12_CPU_DESCRIPTOR_HANDLE& GetRTV(RID rtv) const noexcept { ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!"); return rtvDsvHandles[rtv]; }
 		const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV(RID dsv) const noexcept { ZE_ASSERT(dsv < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(dsv != BACKBUFFER_RID, "Cannot use backbuffer as depth stencil!"); return rtvDsvHandles[dsv]; }
 		const HandleSRV& GetSRV(RID srv) const noexcept { ZE_ASSERT(srv < resourceCount, "Resource ID outside available range!"); return srvHandles[srv]; }
 		const HandleUAV& GetUAV(RID uav) const noexcept { ZE_ASSERT(uav < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(uav != BACKBUFFER_RID, "Cannot use backbuffer as unnordered access!"); return uavHandles[uav - 1]; }
+		
+		U64 GetHeapOffset(RID rid, bool tightAlignment) const noexcept;
 	};
 
 #pragma region Functions

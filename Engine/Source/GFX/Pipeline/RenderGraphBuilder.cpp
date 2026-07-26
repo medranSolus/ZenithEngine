@@ -534,64 +534,6 @@ namespace ZE::GFX::Pipeline
 				else
 					desc.ResourceLifetimes.emplace_back(0U, dependencyLevelCount);
 			});
-
-		// Add XeSS aliasable memory to the requested framebuffer regions
-		auto xess = External::InterfaceStorage::GetConnectionXeSS();
-		if (xess && xess->IsAliasableResourcesSupported())
-		{
-			U32 xessPassId = UINT32_MAX;
-			for (U32 i = 0; const auto& passGroup : passDescs)
-			{
-				for (const auto& pass : passGroup)
-				{
-					if (pass.GetDesc().Type == CorePassType::UpscaleXeSS)
-					{
-						xessPassId = i;
-						break;
-					}
-				}
-				if (xessPassId != UINT32_MAX)
-					break;
-				++i;
-			}
-			ZE_ASSERT(xessPassId != UINT32_MAX, "When XeSS is enabled it must be in the graph!");
-
-			const U32 depStart = dependencyLevels.at(xessPassId);
-
-			FrameResourceDesc frameDesc = {};
-			frameDesc.DepthOrArraySize = 0;
-			frameDesc.Flags = FrameResourceFlag::InternalResourceActive | FrameResourceFlag::NoResourceCreation;
-			frameDesc.Format = PixelFormat::Unknown;
-			frameDesc.ClearColor = ColorF4{};
-			frameDesc.ClearDepth = 0.0f;
-			frameDesc.ClearStencil = 0;
-			frameDesc.MipLevels = 0;
-
-			RID buffer = INVALID_RID, texture = INVALID_RID;
-			U64 regionSize = xess->GetAliasableBufferRegionSize();
-			if (regionSize)
-			{
-				frameDesc.Sizes.X = static_cast<U32>(regionSize);
-				frameDesc.Sizes.Y = static_cast<U32>(regionSize >> 32);
-				frameDesc.Type = FrameResourceType::Buffer;
-
-				buffer = Utils::SafeCast<RID>(desc.Resources.size());
-				desc.Resources.emplace_back(frameDesc);
-				desc.ResourceLifetimes.emplace_back(depStart, depStart + 1);
-			}
-			regionSize = xess->GetAliasableTextureRegionSize();
-			if (regionSize)
-			{
-				frameDesc.Sizes.X = static_cast<U32>(regionSize);
-				frameDesc.Sizes.Y = static_cast<U32>(regionSize >> 32);
-				frameDesc.Type = FrameResourceType::Texture2D;
-
-				texture = Utils::SafeCast<RID>(desc.Resources.size());
-				desc.Resources.emplace_back(frameDesc);
-				desc.ResourceLifetimes.emplace_back(depStart, depStart + 1);
-			}
-			xess->SetAliasableResources(buffer, texture);
-		}
 		return desc;
 	}
 

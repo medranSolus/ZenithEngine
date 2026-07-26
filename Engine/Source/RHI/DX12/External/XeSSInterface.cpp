@@ -36,36 +36,18 @@ namespace ZE::RHI::DX12::External
 		}
 		if (descInfo.Handle)
 			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
-
-		outputRes = {};
-		qualityMode = XESS_QUALITY_SETTING_AA;
-		initFlags = 0;
-		aliasBufferRegionSize = 0;
-		aliasTextureRegionSize = 0;
-		aliasBufferRegion = INVALID_RID;
-		aliasTextureRegion = INVALID_RID;
-		refreshNeeded = true;
 	}
 
 	void XeSSInterface::MoveFrom(XeSSInterface&& xess) noexcept
 	{
 		ctx = std::exchange(xess.ctx, nullptr);
 		descInfo = std::move(xess.descInfo);
-		outputRes = xess.outputRes;
-		qualityMode = xess.qualityMode;
-		initFlags = xess.initFlags;
-		aliasBufferRegionSize = xess.aliasBufferRegionSize;
-		aliasTextureRegionSize = xess.aliasTextureRegionSize;
-		aliasBufferRegion = xess.aliasBufferRegion;
-		aliasTextureRegion = xess.aliasTextureRegion;
-		refreshNeeded = xess.refreshNeeded;
 	}
 
 	Status XeSSInterface::CreateCtx(Device& dev) noexcept
 	{
 		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.GetDevice(), &ctx),
 			"Error creating XeSS D3D12 context!");
-		refreshNeeded = false;
 
 		ZE_XESS_LOG_RET_FAILED(xessSetLoggingCallback(ctx,
 			_ZE_DEBUG_GFX_API ? XESS_LOGGING_LEVEL_DEBUG : XESS_LOGGING_LEVEL_WARNING, MessageHandler),
@@ -85,24 +67,54 @@ namespace ZE::RHI::DX12::External
 		return xess;
 	}
 
-	Status XeSSInterface::InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept
+	Expected<U64> XeSSInterface::GetAliasableBufferRegionSize(UInt2 targetRes) const noexcept
+	{
+		xess_properties_t props = {};
+		xess_2d_t outputRes = { targetRes.X, targetRes.Y };
+		ZE_XESS_LOG_RET_FAILED_EXPECT(xessGetProperties(ctx, &outputRes, &props), "Error querying XeSS properties!");
+		return props.tempBufferHeapSize;
+	}
+
+	Expected<U64> XeSSInterface::GetAliasableTextureRegionSize(UInt2 targetRes) const noexcept
+	{
+		xess_properties_t props = {};
+		xess_2d_t outputRes = { targetRes.X, targetRes.Y };
+		ZE_XESS_LOG_RET_FAILED_EXPECT(xessGetProperties(ctx, &outputRes, &props), "Error querying XeSS properties!");
+		return props.tempTextureHeapSize;
+	}
+
+	Status XeSSInterface::InitializeCtx(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, UInt2 targetRes,
+		xess_quality_settings_t quality, U32 flags, RID aliasableBuffer, RID aliasableTexture) noexcept
 	{
 		ZE_ASSERT(!IsCtxInitialized(), "XeSS Ctx already initialized!");
 
-		outputRes = { targetRes.X, targetRes.Y };
-		qualityMode = quality;
-		initFlags = flags | XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP;
-		ZE_XESS_LOG_RET_FAILED(xessD3D12BuildPipelines(ctx, nullptr, false, initFlags), "Error building XeSS D3D12 pipelines!");
+		auto& framebuffer = buffers.Get().dx12;
+		auto& device = dev.Get().dx12;
+
+		xess_d3d12_init_params_t initParams = {};
+		initParams.outputResolution = { targetRes.X, targetRes.Y };
+		initParams.qualitySetting = quality;
+		initParams.initFlags = flags | XESS_INIT_FLAG_EXTERNAL_DESCRIPTOR_HEAP;
+		initParams.creationNodeMask = 0;
+		initParams.visibleNodeMask = 0;
+		initParams.pTempBufferHeap = framebuffer.GetHeapBuffer();
+		initParams.bufferHeapOffset = framebuffer.GetHeapOffset(aliasableBuffer, device.IsTightAlignment());
+		initParams.pTempTextureHeap = framebuffer.GetHeapUAV();
+		initParams.textureHeapOffset = framebuffer.GetHeapOffset(aliasableTexture, device.IsTightAlignment());
+		initParams.pPipelineLibrary = nullptr;
+
+		ZE_XESS_LOG_RET_FAILED(xessD3D12BuildPipelines(ctx, nullptr, false, initParams.initFlags), "Error building XeSS D3D12 pipelines!");
 
 		// Init external descriptor pool
 		xess_properties_t props = {};
-		ZE_XESS_LOG_RET_FAILED(xessGetProperties(ctx, &outputRes, &props), "Error querity XeSS properties!");
+		ZE_XESS_LOG_RET_FAILED(xessGetProperties(ctx, &initParams.outputResolution, &props), "Error querying XeSS properties!");
 
-		ZE_EXPECT_RET_FAILED_CODE(descInfo, dev.Get().dx12.AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount()));
-		GarbageCollector::Get().MarkActive(dev.Get().dx12, descInfo.Handle);
+		ZE_EXPECT_RET_FAILED_CODE(descInfo, device.AllocDescs(props.requiredDescriptorCount * Settings::GetBackbufferCount()));
+		GarbageCollector::Get().MarkActive(device, descInfo.Handle);
 
-		aliasBufferRegionSize = props.tempBufferHeapSize;
-		aliasTextureRegionSize = props.tempTextureHeapSize;
+		// Finish initialization
+		ZE_XESS_LOG_RET_FAILED(xessD3D12Init(ctx, &initParams), "Failed to initialize XeSS D3D12 context!");
+
 		return {};
 	}
 
@@ -150,43 +162,6 @@ namespace ZE::RHI::DX12::External
 		execParams.descriptorHeapOffset += descSize * singleSetCount * Settings::GetCurrentBackbufferIndex();
 
 		return ZE_XESS_ERROR(xessD3D12Execute(ctx, cl.Get().dx12.GetList(), &execParams));
-	}
-
-	Status XeSSInterface::FinishInitialization(Device& dev, IHeap* buffHeap, U64 buffHeapOffset, IHeap* texHeap, U64 texHeapOffset) noexcept
-	{
-		// If trying to re-init ctx without destroying it first race condition may happen
-		if (refreshNeeded)
-		{
-			float jitterX = 0.0f, jitterY = 0.0f;
-			float velocityX = 0.0f, velocityY = 0.0f;
-			ZE_XESS_LOG_RET_FAILED(xessGetJitterScale(ctx, &jitterX, &jitterY),
-				"Error retrieving XeSS jitter scale!");
-			ZE_XESS_LOG_RET_FAILED(xessGetVelocityScale(ctx, &velocityX, &velocityY),
-				"Error retrieving XeSS velocity scale!");
-
-			ZE_XESS_LOG_RET_FAILED(xessDestroyContext(ctx),
-				"Error destroying XeSS context!");
-			ZE_CODE_RET_FAILED(CreateCtx(dev));
-
-			ZE_XESS_LOG_RET_FAILED(xessSetJitterScale(ctx, jitterX, jitterY),
-				"Error re-setting XeSS jitter scale!");
-			ZE_XESS_LOG_RET_FAILED(xessSetVelocityScale(ctx, velocityX, velocityY),
-				"Error res-setting XeSS motion vectors scale!");
-		}
-		xess_d3d12_init_params_t initParams = {};
-		initParams.outputResolution = outputRes;
-		initParams.qualitySetting = qualityMode;
-		initParams.initFlags = initFlags;
-		initParams.creationNodeMask = 0;
-		initParams.visibleNodeMask = 0;
-		initParams.pTempBufferHeap = buffHeap;
-		initParams.bufferHeapOffset = buffHeapOffset;
-		initParams.pTempTextureHeap = texHeap;
-		initParams.textureHeapOffset = texHeapOffset;
-		initParams.pPipelineLibrary = nullptr;
-		ZE_XESS_LOG_RET_FAILED(xessD3D12Init(ctx, &initParams), "Failed to initialize XeSS D3D12 context!");
-		refreshNeeded = true;
-		return {};
 	}
 }
 #endif

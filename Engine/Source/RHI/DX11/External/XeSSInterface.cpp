@@ -66,7 +66,8 @@ namespace ZE::RHI::DX11::External
 		return xess;
 	}
 
-	Status XeSSInterface::InitializeCtx(GFX::Device& dev, UInt2 targetRes, xess_quality_settings_t quality, U32 flags) noexcept
+	Status XeSSInterface::InitializeCtx(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, UInt2 targetRes,
+		xess_quality_settings_t quality, U32 flags, RID aliasableBuffer, RID aliasableTexture) noexcept
 	{
 		ZE_ASSERT(!IsCtxInitialized(), "XeSS Ctx already initialized!");
 

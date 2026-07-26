@@ -1149,35 +1149,6 @@ namespace ZE::RHI::DX12::Pipeline
 					frameBuffer.uavHandles[res.Handle - 1].CpuHandle.ptr = frameBuffer.uavHandles[res.Handle - 1].CpuShaderVisibleHandle.ptr = frameBuffer.uavHandles[res.Handle - 1].GpuShaderVisibleHandle.ptr = UINT64_MAX;
 			}
 		}
-
-		// Finish XeSS initialization with correct regions
-		auto xess = GFX::External::InterfaceStorage::GetConnectionXeSS();
-		if (xess && xess->IsAliasableResourcesSupported())
-		{
-			IHeap* tempBuffHeap = nullptr;
-			IHeap* tempTexHeap = nullptr;
-			U64 buffOffset = 0;
-			U64 texOffset = 0;
-
-			RID resRegion = xess->Get().dx12.GetAliasableBufferResource();
-			if (resRegion != INVALID_RID)
-			{
-				tempBuffHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? frameBuffer.bufferHeap.Get() : frameBuffer.mainHeap.Get();
-				buffOffset = static_cast<U64>(frameBuffer.GetArraySize(resRegion));
-				buffOffset |= static_cast<U64>(frameBuffer.GetMipCount(resRegion)) << 16;
-				buffOffset *= minimalChunkSize;
-			}
-			resRegion = xess->Get().dx12.GetAliasableTextureResource();
-			if (resRegion != INVALID_RID)
-			{
-				tempTexHeap = dev.Get().dx12.GetCurrentAllocTier() == AllocatorGPU::AllocTier::Tier1 ? frameBuffer.uavHeap.Get() : frameBuffer.mainHeap.Get();
-				texOffset = static_cast<U64>(frameBuffer.GetArraySize(resRegion));
-				texOffset |= static_cast<U64>(frameBuffer.GetMipCount(resRegion)) << 16;
-				texOffset *= minimalChunkSize;
-			}
-			ZE_CODE_RET_FAILED_EXPECT(xess->Get().dx12.FinishInitialization(dev.Get().dx12, tempBuffHeap, buffOffset, tempTexHeap, texOffset));
-		}
-
 		return frameBuffer;
 	}
 
@@ -1654,5 +1625,13 @@ namespace ZE::RHI::DX12::Pipeline
 		srvHandles[BACKBUFFER_RID].CpuShaderVisibleHandle = backbufferRtvSrv.SRVCpu;
 		srvHandles[BACKBUFFER_RID].GpuShaderVisibleHandle = backbufferRtvSrv.SRVGpu;
 		return {};
+	}
+
+	U64 FrameBuffer::GetHeapOffset(RID rid, bool tightAlignment) const noexcept
+	{
+		U64 offset = GetArraySize(rid);
+		offset |= static_cast<U64>(GetMipCount(rid)) << 16;
+		offset *= tightAlignment ? D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT : D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+		return offset;
 	}
 }
