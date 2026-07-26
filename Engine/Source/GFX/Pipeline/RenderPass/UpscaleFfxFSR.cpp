@@ -71,6 +71,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	Expected<UInt2> InnerMemoryQuery(Device& dev, const FrameResourceDesc& desc) noexcept
 	{
+		UInt2 size = { 0, 0 };
+		/*
 		auto ffx = External::InterfaceStorage::CreateConnectionFfxApi();
 		if (!ffx)
 			return std::unexpected(ZE_FFX_API_ERROR(FFX_API_RETURN_ERROR));
@@ -98,8 +100,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		{
 			ZE_WARNING("Failed to query for FFX FSR memory usage, no memory aliasing!");
 		}
-		size = { 0, 0 };
 		External::InterfaceStorage::ReleaseConnectionFfxApi();
+		*/
 		return size;
 	}
 
