@@ -13,6 +13,8 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		RID Depth;
 		RID MotionVectors;
 		RID ReactiveMask;
+		RID AliasableRegion;
+		RID NonAliasableRegion;
 		RID Output;
 	};
 
@@ -36,9 +38,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 
 	constexpr bool Evaluate() noexcept { return Settings::Upscaler == UpscalerType::FfxFsr; }
 
+	Expected<UInt2> InnerMemoryQuery(Device& dev, const FrameResourceDesc& desc) noexcept;
 	PassDesc GetDesc() noexcept;
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept;
 	ExpectedPassExecuteData Initialize(Device& dev, RendererPassBuildData& buildData) noexcept;
+	Expected<bool> Prepare(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept;
 	void DebugUI(PassExecuteData* data) noexcept;
 }
