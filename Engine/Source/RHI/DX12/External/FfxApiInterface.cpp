@@ -13,6 +13,7 @@ namespace ZE::RHI::DX12::External
 		auto* ffx = GFX::External::InterfaceStorage::GetConnectionFfxApi();
 		ZE_ASSERT(ffx, "While FFX API is active the interface must be present!");
 		auto& d3dFfx = ffx->Get().dx12;
+		ZE_ASSERT(d3dFfx.device, "Device pointer should always be present!");
 
 		D3D12_RESOURCE_DESC1 resDesc = {};
 		resDesc.Dimension = desc->Dimension;
@@ -35,11 +36,11 @@ namespace ZE::RHI::DX12::External
 			if (allocator)
 			{
 				D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-				d3dFfx.device->GetResourceAllocationInfo3(0, 1, &resDesc, nullptr, nullptr, &info);
+				d3dFfx.device->GetDevice()->GetResourceAllocationInfo3(0, 1, &resDesc, nullptr, nullptr, &info);
 
 				if (allocator->availableSize >= info.SizeInBytes)
 				{
-					HRESULT hr = d3dFfx.device->CreatePlacedResource1(allocator->aliasableHeap.Get(), allocator->nextOffset, &resDesc, initialState, clearVal, IID_PPV_ARGS(resource));
+					HRESULT hr = d3dFfx.device->GetDevice()->CreatePlacedResource1(allocator->aliasableHeap.Get(), allocator->nextOffset, &resDesc, initialState, clearVal, IID_PPV_ARGS(resource));
 					if (FAILED(hr))
 					{
 						ZE_CODE_ERROR(ZE_DX_ERROR(hr), "Failed to create FFX API placed resource, falling back to committed resource path!");
@@ -59,7 +60,7 @@ namespace ZE::RHI::DX12::External
 		}
 		if (*resource == nullptr)
 		{
-			HRESULT hr = d3dFfx.device->CreateCommittedResource2(heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, initialState, clearVal, nullptr, IID_PPV_ARGS(resource));
+			HRESULT hr = d3dFfx.device->GetDevice()->CreateCommittedResource2(heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, initialState, clearVal, nullptr, IID_PPV_ARGS(resource));
 			if (FAILED(hr))
 			{
 				ZE_CODE_ERROR(ZE_DX_ERROR(hr), "Failed to create FFX API committed resource!");
@@ -74,6 +75,7 @@ namespace ZE::RHI::DX12::External
 		auto* ffx = GFX::External::InterfaceStorage::GetConnectionFfxApi();
 		ZE_ASSERT(ffx, "While FFX API is active the interface must be present!");
 		auto& d3dFfx = ffx->Get().dx12;
+		ZE_ASSERT(d3dFfx.device, "Device pointer should always be present!");
 
 		if (d3dFfx.aliasableResources.contains(reinterpret_cast<U64>(resource)))
 		{
@@ -81,7 +83,7 @@ namespace ZE::RHI::DX12::External
 
 			D3D12_RESOURCE_DESC desc = resource->GetDesc();
 			D3D12_RESOURCE_ALLOCATION_INFO1 info = {};
-			d3dFfx.device->GetResourceAllocationInfo1(0, 1, &desc, &info);
+			d3dFfx.device->GetDevice()->GetResourceAllocationInfo1(0, 1, &desc, &info);
 
 			if (d3dFfx.RemoveAllocation(effectId, info.SizeInBytes))
 				return FFX_API_RETURN_ERROR_PARAMETER;
@@ -96,6 +98,7 @@ namespace ZE::RHI::DX12::External
 		auto* ffx = GFX::External::InterfaceStorage::GetConnectionFfxApi();
 		ZE_ASSERT(ffx, "While FFX API is active the interface must be present!");
 		auto& d3dFfx = ffx->Get().dx12;
+		ZE_ASSERT(d3dFfx.device, "Device pointer should always be present!");
 
 		if (aliasable && heapDesc->Properties.Type == D3D12_HEAP_TYPE_DEFAULT)
 		{
@@ -119,7 +122,7 @@ namespace ZE::RHI::DX12::External
 		if (*heap == nullptr)
 		{
 			*startOffset = 0;
-			HRESULT hr = d3dFfx.device->CreateHeap1(heapDesc, nullptr, IID_PPV_ARGS(heap));
+			HRESULT hr = d3dFfx.device->GetDevice()->CreateHeap1(heapDesc, nullptr, IID_PPV_ARGS(heap));
 			if (FAILED(hr))
 			{
 				ZE_CODE_ERROR(ZE_DX_ERROR(hr), "Failed to create FFX API heap!");
@@ -141,6 +144,34 @@ namespace ZE::RHI::DX12::External
 				return FFX_API_RETURN_ERROR_PARAMETER;
 		}
 		return FFX_API_RETURN_OK;
+	}
+
+	FfxApiConstantBufferAllocation FfxApiInterface::CBufferAllocCallback(void* data, const U64 size) noexcept
+	{
+		auto* ffx = GFX::External::InterfaceStorage::GetConnectionFfxApi();
+		ZE_ASSERT(ffx, "While FFX API is active the interface must be present!");
+		auto& d3dFfx = ffx->Get().dx12;
+		ZE_ASSERT(d3dFfx.device, "Device pointer should always be present!");
+		ZE_ASSERT(d3dFfx.ringBuffer, "DynamicCBuffer pointer should always be present!");
+
+		FfxApiConstantBufferAllocation alloc = {};
+		auto exp = d3dFfx.ringBuffer->Alloc(*d3dFfx.device, data, Utils::SafeCast<U32>(size));
+		if (exp)
+		{
+			alloc.resource.resource = d3dFfx.ringBuffer->GetAllocBuffer(*exp);
+			alloc.resource.description.type = FFX_API_RESOURCE_TYPE_BUFFER;
+			alloc.resource.description.format = FFX_API_SURFACE_FORMAT_UNKNOWN;
+			alloc.resource.description.size = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+			alloc.resource.description.stride = 0;
+			alloc.resource.description.alignment = 0;
+			alloc.resource.description.mipCount = 1;
+			alloc.resource.description.flags = FFX_API_RESOURCE_FLAGS_NONE;
+			alloc.resource.description.usage = FFX_API_RESOURCE_USAGE_READ_ONLY;
+			alloc.resource.state = FFX_API_RESOURCE_STATE_GENERIC_READ;
+
+			alloc.handle = d3dFfx.ringBuffer->GetBindHandle(*exp);
+		}
+		return alloc;
 	}
 
 	FfxApiInterface::ResourceAllocation* FfxApiInterface::AcquireRegion(U32 effectId) noexcept
@@ -188,6 +219,7 @@ namespace ZE::RHI::DX12::External
 		ffxCreateContext = ffxInt.ffxCreateContext;
 		ffxFunctions = std::move(ffxInt.ffxFunctions);
 		device = std::move(ffxInt.device);
+		ringBuffer = std::move(ffxInt.ringBuffer);
 		aliasableResources = std::move(ffxInt.aliasableResources);
 		effectAllocs = std::move(ffxInt.effectAllocs);
 		newAliasableRegion = std::move(ffxInt.newAliasableRegion);
@@ -218,7 +250,8 @@ namespace ZE::RHI::DX12::External
 			return std::unexpected(code);
 		}
 
-		ffxInt.device = dev.Get().dx12.GetDev();
+		// Device should not move it's location during the lifetime
+		ffxInt.device = &dev.Get().dx12;
 		return ffxInt;
 	}
 
@@ -226,15 +259,18 @@ namespace ZE::RHI::DX12::External
 	{
 		if (ffxApiDll)
 		{
+			// In case it got moved
+			device = &dev.Get().dx12;
+
 			ffxCreateBackendDX12AllocationCallbacksDesc allocCallbacksDescs = { FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12_ALLOCATION_CALLBACKS, ctxHeader.pNext };
 			allocCallbacksDescs.pfnFfxResourceAllocator = FfxApiInterface::ResourceAllocCallback;
 			allocCallbacksDescs.pfnFfxResourceDeallocator = FfxApiInterface::ResourceDeallocCallback;
 			allocCallbacksDescs.pfnFfxHeapAllocator = FfxApiInterface::HeapAllocCallback;
 			allocCallbacksDescs.pfnFfxHeapDeallocator = FfxApiInterface::HeapDeallocCallback;
-			allocCallbacksDescs.pfnFfxConstantBufferAllocator = nullptr;
+			allocCallbacksDescs.pfnFfxConstantBufferAllocator = FfxApiInterface::CBufferAllocCallback;
 
 			ffxCreateBackendDX12Desc backendDesc = { FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12, &allocCallbacksDescs.header };
-			backendDesc.device = dev.Get().dx12.GetDevice();
+			backendDesc.device = device->GetDevice();
 
 			if (aliasableRegion != INVALID_RID)
 			{

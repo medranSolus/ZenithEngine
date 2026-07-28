@@ -2,6 +2,7 @@
 #if _ZE_FFX_API_ENABLED
 #	include "GFX/External/FfxApiFunctions.h"
 #	include "GFX/Pipeline/FrameBuffer.h"
+#	include "GFX/Resource/DynamicCBuffer.h"
 
 namespace ZE::RHI::DX12::External
 {
@@ -19,7 +20,8 @@ namespace ZE::RHI::DX12::External
 		PfnFfxCreateContext ffxCreateContext = nullptr;
 		GFX::External::FfxApiFunctions ffxFunctions = {};
 
-		DX::ComPtr<IDevice> device;
+		Ptr<Device> device;
+		Ptr<Resource::DynamicCBuffer> ringBuffer;
 		std::set<U64> aliasableResources;
 		std::unordered_map<U32, ResourceAllocation> effectAllocs;
 		ResourceAllocation newAliasableRegion = {};
@@ -30,6 +32,7 @@ namespace ZE::RHI::DX12::External
 		static ffxReturnCode_t ResourceDeallocCallback(U32 effectId, ID3D12Resource* resource) noexcept;
 		static ffxReturnCode_t HeapAllocCallback(U32 effectId, const D3D12_HEAP_DESC* heapDesc, bool aliasable, ID3D12Heap** heap, U64* startOffset) noexcept;
 		static ffxReturnCode_t HeapDeallocCallback(U32 effectId, ID3D12Heap* heap, U64 startOffset, U64 heapSize) noexcept;
+		static FfxApiConstantBufferAllocation CBufferAllocCallback(void* data, const U64 size) noexcept;
 
 		ResourceAllocation* AcquireRegion(U32 effectId) noexcept;
 		bool RemoveAllocation(U32 effectId, U64 bytes) noexcept;
@@ -47,6 +50,7 @@ namespace ZE::RHI::DX12::External
 
 		constexpr bool IsInitialized() const noexcept { return ffxApiDll; }
 		constexpr const GFX::External::FfxApiFunctions* GetFunctions() const noexcept { return &ffxFunctions; }
+		constexpr void SetCurrentFrameDynamicCBuffer(GFX::Resource::DynamicCBuffer& buffer) noexcept { ringBuffer = &buffer.Get().dx12; }
 
 		ffxReturnCode_t CreateFfxCtx(GFX::Device& dev, GFX::Pipeline::FrameBuffer& buffers, ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader, RID aliasableRegion) noexcept;
 	};

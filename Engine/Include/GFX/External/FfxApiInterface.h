@@ -28,9 +28,10 @@ namespace ZE::GFX::External
 
 		// Main Gfx Api
 
-		constexpr bool IsInitialized() const noexcept {  ZE_RHI_BACKEND_CALL_RET(IsInitialized); }
+		constexpr bool IsInitialized() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsInitialized); }
 		constexpr const FfxApiFunctions& GetFunctions() const noexcept { const FfxApiFunctions* func = nullptr; ZE_RHI_BACKEND_CALL_RET_VAR(func, GetFunctions); return *func; }
 		constexpr ffxReturnCode_t CreateFfxCtx(Device& dev, Pipeline::FrameBuffer& buffers, ffxContext* ctx, ffxCreateContextDescHeader& ctxHeader, RID aliasableRegion) noexcept { ZE_RHI_BACKEND_CALL_RET(CreateFfxCtx, dev, buffers, ctx, ctxHeader, aliasableRegion); }
+		constexpr void SetCurrentFrameDynamicCBuffer(Resource::DynamicCBuffer& buffer) noexcept { ZE_RHI_BACKEND_CALL(SetCurrentFrameDynamicCBuffer, buffer); }
 	};
 }
 #endif

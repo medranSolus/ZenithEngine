@@ -1,4 +1,5 @@
 #include "GFX/Pipeline/RenderGraph.h"
+#include "GFX/External/InterfaceStorage.h"
 #include "Data/Camera.h"
 #include "Data/Transform.h"
 
@@ -22,6 +23,12 @@ namespace ZE::GFX::Pipeline
 	Status RenderGraph::PrepareFrameResources(Device& dev, SwapChain& swapChain) noexcept
 	{
 		execData.DynamicBuffer = &dynamicBuffers.Get();
+#if _ZE_FFX_API_ENABLED
+		auto* ffx = External::InterfaceStorage::GetConnectionFfxApi();
+		if (ffx)
+			ffx->SetCurrentFrameDynamicCBuffer(*execData.DynamicBuffer);
+#endif
+
 		ZE_LOG_RET_FAILED(execData.DynamicBuffer->StartFrame(dev), "Failed to advance dynamic CBuffer into next frame!");
 		auto exp = execData.DynamicBuffer->Alloc(dev, &execData.DynamicData, sizeof(RendererDynamicData));
 		if (!exp)

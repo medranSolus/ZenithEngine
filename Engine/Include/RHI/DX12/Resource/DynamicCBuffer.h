@@ -17,8 +17,8 @@ namespace ZE::RHI::DX12::Resource
 		std::mutex allocLock;
 #endif
 
-		Status AllocBlock(GFX::Device& dev) noexcept;
-		Status MapBlock(GFX::Device& dev, U64 block) noexcept;
+		Status AllocBlock(Device& dev) noexcept;
+		Status MapBlock(U64 block) noexcept;
 
 	public:
 		DynamicCBuffer() = default;
@@ -29,9 +29,17 @@ namespace ZE::RHI::DX12::Resource
 
 		static Expected<DynamicCBuffer> Create(GFX::Device& dev) noexcept;
 
-		Expected<GFX::Resource::DynamicBufferAlloc> Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept;
+		Expected<GFX::Resource::DynamicBufferAlloc> Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept { return Alloc(dev.Get().dx12, values, bytes); }
+
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept;
 		Status StartFrame(GFX::Device& dev) noexcept;
+
+		// Gfx API Internal
+
+		IResource* GetAllocBuffer(const GFX::Resource::DynamicBufferAlloc& alloc) const noexcept { return resInfo.at(alloc.Block).first.Resource.Get(); }
+		D3D12_GPU_VIRTUAL_ADDRESS GetBindHandle(const GFX::Resource::DynamicBufferAlloc& alloc) const noexcept { return resInfo.at(alloc.Block).second + alloc.Offset; }
+
+		Expected<GFX::Resource::DynamicBufferAlloc> Alloc(Device& dev, const void* values, U32 bytes) noexcept;
 	};
 
 #pragma region Functions

@@ -2,14 +2,12 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	Status DynamicCBuffer::AllocBlock(GFX::Device& dev) noexcept
+	Status DynamicCBuffer::AllocBlock(Device& dev) noexcept
 	{
-		auto& device = dev.Get().dx12;
-
-		const D3D12_RESOURCE_DESC1 desc = dev.Get().dx12.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+		const D3D12_RESOURCE_DESC1 desc = dev.GetBufferDesc(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
 		ResourceInfo resource = {};
-		ZE_EXPECT_RET_FAILED_CODE(resource, device.CreateBuffer(desc, true));
-		GarbageCollector::Get().MarkActive(device, resource.Handle);
+		ZE_EXPECT_RET_FAILED_CODE(resource, dev.CreateBuffer(desc, true));
+		GarbageCollector::Get().MarkActive(dev, resource.Handle);
 		ZE_DX_SET_ID(resource.Resource, "DynamicCBuffer_" + std::to_string(resInfo.size()));
 
 		const D3D12_RANGE range = {};
@@ -20,7 +18,7 @@ namespace ZE::RHI::DX12::Resource
 		return {};
 	}
 
-	Status DynamicCBuffer::MapBlock(GFX::Device& dev, U64 block) noexcept
+	Status DynamicCBuffer::MapBlock(U64 block) noexcept
 	{
 		ZE_ASSERT(block < resInfo.size(), "Trying to map block outside of range!");
 
@@ -40,40 +38,9 @@ namespace ZE::RHI::DX12::Resource
 	Expected<DynamicCBuffer> DynamicCBuffer::Create(GFX::Device& dev) noexcept
 	{
 		DynamicCBuffer buffer = {};
-		if (Status code = buffer.AllocBlock(dev))
+		if (Status code = buffer.AllocBlock(dev.Get().dx12))
 			return std::unexpected(code);
 		return buffer;
-	}
-
-	Expected<GFX::Resource::DynamicBufferAlloc> DynamicCBuffer::Alloc(GFX::Device& dev, const void* values, U32 bytes) noexcept
-	{
-		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
-		ZE_ASSERT(bytes <= D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, "Structure too large for dynamic buffer!");
-
-		const U32 newBlock = Math::AlignUp(bytes, 256U);
-#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
-		LockGuardRW lock(allocLock);
-#endif
-		if (nextOffset + newBlock > D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
-		{
-			nextOffset = 0;
-			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
-			Status code = {};
-			if (++currentBlock >= resInfo.size())
-				code = AllocBlock(dev);
-			else
-				code = MapBlock(dev, currentBlock);
-			if (code)
-				return std::unexpected(code);
-		}
-		std::memcpy(buffer + nextOffset, values, bytes);
-
-		GFX::Resource::DynamicBufferAlloc info
-		{
-			nextOffset, currentBlock
-		};
-		nextOffset += newBlock;
-		return info;
 	}
 
 	void DynamicCBuffer::Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx, const GFX::Resource::DynamicBufferAlloc& allocInfo) const noexcept
@@ -86,7 +53,7 @@ namespace ZE::RHI::DX12::Resource
 		ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::CBV,
 			"Bind slot is not a constant buffer! Wrong root signature or order of bindings!");
 
-		const D3D12_GPU_VIRTUAL_ADDRESS address = resInfo.at(allocInfo.Block).second + allocInfo.Offset;
+		const D3D12_GPU_VIRTUAL_ADDRESS address = GetBindHandle(allocInfo);
 		auto* list = cl.Get().dx12.GetList();
 		if (schema.IsCompute())
 		{
@@ -107,7 +74,7 @@ namespace ZE::RHI::DX12::Resource
 		if (blockCount > 1)
 		{
 			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
-			if (Status code = MapBlock(dev, 0))
+			if (Status code = MapBlock(0))
 				return code;
 
 			if (currentBlock + BLOCK_SHRINK_STEP < blockCount)
@@ -119,5 +86,36 @@ namespace ZE::RHI::DX12::Resource
 			currentBlock = 0;
 		}
 		return {};
+	}
+
+	Expected<GFX::Resource::DynamicBufferAlloc> DynamicCBuffer::Alloc(Device& dev, const void* values, U32 bytes) noexcept
+	{
+		ZE_ASSERT(buffer, "Dynamic buffer has been freed already!");
+		ZE_ASSERT(bytes <= D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, "Structure too large for dynamic buffer!");
+
+		const U32 newBlock = Math::AlignUp(bytes, 256U);
+#if !_ZE_RENDER_GRAPH_SINGLE_THREAD
+		LockGuardRW lock(allocLock);
+#endif
+		if (nextOffset + newBlock > D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
+		{
+			nextOffset = 0;
+			resInfo.at(currentBlock).first.Resource->Unmap(0, nullptr);
+			Status code = {};
+			if (++currentBlock >= resInfo.size())
+				code = AllocBlock(dev);
+			else
+				code = MapBlock(currentBlock);
+			if (code)
+				return std::unexpected(code);
+		}
+		std::memcpy(buffer + nextOffset, values, bytes);
+
+		GFX::Resource::DynamicBufferAlloc info
+		{
+			nextOffset, currentBlock
+		};
+		nextOffset += newBlock;
+		return info;
 	}
 }
