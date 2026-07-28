@@ -16,15 +16,15 @@ namespace ZE::GFX::External
 	class InterfaceStorage final
 	{
 #if _ZE_FFX_API_ENABLED
-		static inline FfxApiInterface ffx;
+		static inline std::unique_ptr<FfxApiInterface> ffx;
 		static inline U8 ffxRefCount = 0;
 #endif
 #if _ZE_NGX_ENABLED
-		static inline NgxInterface ngx;
+		static inline std::unique_ptr<NgxInterface> ngx;
 		static inline U8 ngxRefCount = 0;
 #endif
 #if _ZE_XESS_ENABLED
-		static inline XeSSInterface xess;
+		static inline std::unique_ptr<XeSSInterface> xess;
 		static inline U8 xessRefCount = 0;
 #endif
 

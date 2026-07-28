@@ -13,18 +13,18 @@ namespace ZE::GFX::External
 				ZE_CODE_ERROR(exp.error(), "Failed to initialize FFX API interface!");
 				return nullptr;
 			}
-			ffx = std::move(*exp);
+			ffx = std::make_unique<FfxApiInterface>(std::move(*exp));
 		}
 		++ffxRefCount;
-		return &ffx;
+		return ffx.get();
 	}
 
 	FfxApiInterface* InterfaceStorage::GetConnectionFfxApi() noexcept
 	{
 		if (ffxRefCount)
 		{
-			ZE_ASSERT(ffx.IsInitialized(), "Ref count incorrect, FFX API interface not initialized!");
-			return &ffx;
+			ZE_ASSERT(ffx && ffx->IsInitialized(), "Ref count incorrect, FFX API interface not initialized!");
+			return ffx.get();
 		}
 		return nullptr;
 	}
@@ -34,7 +34,7 @@ namespace ZE::GFX::External
 		if (ffxRefCount)
 		{
 			if (--ffxRefCount == 0)
-				ffx = {};
+				ffx = nullptr;
 		}
 	}
 #endif
@@ -52,18 +52,18 @@ namespace ZE::GFX::External
 				ZE_CODE_ERROR(exp.error(), "Failed to initialize NGX interface!");
 				return nullptr;
 			}
-			ngx = std::move(*exp);
+			ngx = std::make_unique<NgxInterface>(std::move(*exp));
 		}
 		++ngxRefCount;
-		return &ngx;
+		return ngx.get();
 	}
 
 	NgxInterface* InterfaceStorage::GetConnectionNGX() noexcept
 	{
 		if (ngxRefCount)
 		{
-			ZE_ASSERT(ngx.IsInitialized(), "Ref count incorrect, NGX interface not initialized!");
-			return &ngx;
+			ZE_ASSERT(ngx && ngx->IsInitialized(), "Ref count incorrect, NGX interface not initialized!");
+			return ngx.get();
 		}
 		return nullptr;
 	}
@@ -73,7 +73,7 @@ namespace ZE::GFX::External
 		if (ngxRefCount)
 		{
 			if (--ngxRefCount == 0)
-				ngx = {};
+				ngx = nullptr;
 		}
 	}
 #endif
@@ -89,18 +89,18 @@ namespace ZE::GFX::External
 				ZE_CODE_ERROR(exp.error(), "Failed to initialize XeSS interface!");
 				return nullptr;
 			}
-			xess = std::move(*exp);
+			xess = std::make_unique<XeSSInterface>(std::move(*exp));
 		}
 		++xessRefCount;
-		return &xess;
+		return xess.get();
 	}
 
 	XeSSInterface* InterfaceStorage::GetConnectionXeSS() noexcept
 	{
 		if (xessRefCount)
 		{
-			ZE_ASSERT(xess.IsInitialized(), "Ref count incorrect, XeSS interface not initialized!");
-			return &xess;
+			ZE_ASSERT(xess && xess->IsInitialized(), "Ref count incorrect, XeSS interface not initialized!");
+			return xess.get();
 		}
 		return nullptr;
 	}
@@ -110,7 +110,7 @@ namespace ZE::GFX::External
 		if (xessRefCount)
 		{
 			if (--xessRefCount == 0)
-				xess = {};
+				xess = nullptr;
 		}
 	}
 #endif
