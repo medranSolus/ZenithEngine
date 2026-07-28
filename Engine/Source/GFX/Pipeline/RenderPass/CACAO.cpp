@@ -108,7 +108,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 			ImGui::Text("Version " ZE_STRINGIFY_VERSION(ZE_DEPAREN(FFX_CACAO_VERSION_MAJOR), ZE_DEPAREN(FFX_CACAO_VERSION_MINOR), ZE_DEPAREN(FFX_CACAO_VERSION_PATCH)));
 
 			constexpr std::array<const char*, 5> LEVELS = { "Lowest", "Low", "Medium", "High", "Highest" };
-			if (ImGui::BeginCombo("Quality level", LEVELS.at(execData.Settings.qualityLevel)))
+			if (ImGui::BeginCombo("Quality level##cacao", LEVELS.at(execData.Settings.qualityLevel)))
 			{
 				for (FfxCacaoQuality i = FFX_CACAO_QUALITY_LOWEST; const char* level : LEVELS)
 				{

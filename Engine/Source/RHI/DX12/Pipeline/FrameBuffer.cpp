@@ -494,7 +494,7 @@ namespace ZE::RHI::DX12::Pipeline
 						info.SetRawBufferView();
 					if (res.Flags & GFX::Pipeline::FrameResourceFlag::Temporal)
 						info.SetTemporal();
-					if (res.Flags & GFX::Pipeline::FrameResourceFlag::ArrayView)
+					if (res.Flags & GFX::Pipeline::FrameResourceFlag::ArrayView || res.DepthOrArraySize > 1)
 						info.ForceArrayView();
 					info.ByteStride = sizes.Y; // In case of buffer resource
 				}
@@ -695,7 +695,7 @@ namespace ZE::RHI::DX12::Pipeline
 				if (res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D
 					|| res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 				{
-					if (res.Desc.DepthOrArraySize > 1 || res.IsArrayView())
+					if (res.IsArrayView())
 						data.SetArrayView();
 					if (res.IsCube() && res.Desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
 						data.SetCube();

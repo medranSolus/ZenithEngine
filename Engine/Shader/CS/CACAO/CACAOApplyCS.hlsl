@@ -9,7 +9,7 @@ void FFX_CACAO_Apply_StoreOutput(const in FfxUInt32x2 coord, const in FfxFloat32
 	ua_ssao[coord] = val * 255.0f;
 }
 
-FfxFloat32x2 FFX_CACAO_Apply_LoadSSAOPass(const in FfxUInt32x2 coord, const in FfxUInt32 passId)
+FfxFloat32x2 FFX_CACAO_Apply_LoadSSAOPass(const in FfxInt32x2 coord, const in FfxInt32 passId)
 {
 	return tx_ping.Load(FfxInt32x4(coord, passId, 0));
 }
