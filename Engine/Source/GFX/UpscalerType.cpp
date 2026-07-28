@@ -45,7 +45,7 @@ namespace ZE::GFX
 		case UpscalerType::FfxFsr:
 		{
 			UInt2 renderSize = {};
-			auto ffx = External::InterfaceStorage::CreateConnectionFfxApi();
+			auto ffx = External::InterfaceStorage::CreateConnectionFfxApi(dev);
 			if (ffx)
 			{
 				ffxQueryDescUpscaleGetRenderResolutionFromQualityMode queryDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE, nullptr };
@@ -159,7 +159,7 @@ namespace ZE::GFX
 		case UpscalerType::FfxFsr:
 		{
 #if _ZE_FFX_API_ENABLED
-			auto ffx = External::InterfaceStorage::CreateConnectionFfxApi();
+			auto ffx = External::InterfaceStorage::CreateConnectionFfxApi(dev);
 			if (ffx)
 			{
 				ffxQueryDescUpscaleGetJitterPhaseCount phaseDesc = { FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTERPHASECOUNT, nullptr };

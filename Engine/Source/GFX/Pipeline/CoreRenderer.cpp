@@ -464,9 +464,6 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.AddInnerBuffer(TextureLayout::Undefined,
 				{ { 0, 0 }, 0, Base(FrameResourceFlag::NoResourceCreation), PixelFormat::Unknown, ColorF4{}, 0.0f, 0, 0,
 				FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME("FFX FSR aliasable region"), RenderPass::UpscaleFfxFSR::InnerMemoryQuery });
-			node.AddInnerBuffer(TextureLayout::Undefined,
-				{ { 0, 0 }, 0, FrameResourceFlag::NoResourceCreation | FrameResourceFlag::Temporal, PixelFormat::Unknown, ColorF4{}, 0.0f, 0, 0,
-				FrameResourceType::Texture2D ZE_FRAME_RES_INIT_NAME("FFX FSR non-aliasable region"), RenderPass::UpscaleFfxFSR::InnerMemoryQuery });
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
 			graphDesc.RenderPasses.emplace_back(std::move(node));

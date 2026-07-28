@@ -187,6 +187,7 @@ namespace ZE::RHI::DX12::Pipeline
 		IHeap* GetHeapMain() const noexcept { return mainHeap.Get(); }
 		IHeap* GetHeapUAV() const noexcept { return uavHeap ? uavHeap.Get() : mainHeap.Get(); }
 		IHeap* GetHeapBuffer() const noexcept { return bufferHeap ? bufferHeap.Get() : mainHeap.Get(); }
+		DX::ComPtr<IHeap> GetUAVHeap() const noexcept { return uavHeap ? uavHeap : mainHeap; }
 
 		DX::ComPtr<IResource> GetResource(RID rid) const noexcept { ZE_ASSERT(rid < resourceCount, "Resource ID outside available range!"); ZE_ASSERT(resources[rid].IsResourceRegistered(), "Outside resource not registered!"); return resources[rid].Resource; }
 		const D3D12_CPU_DESCRIPTOR_HANDLE& GetRTV(RID rtv) const noexcept { ZE_ASSERT(rtv < resourceCount, "Resource ID outside available range!"); return rtvDsvHandles[rtv]; }

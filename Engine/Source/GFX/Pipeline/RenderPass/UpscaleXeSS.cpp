@@ -130,6 +130,11 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleXeSS
 		if (!xess)
 			return std::unexpected(ZE_XESS_ERROR(XESS_RESULT_ERROR_UNINITIALIZED));
 
+		if (xess->IsCtxInitialized())
+		{
+			ZE_CODE_RET_FAILED_EXPECT(xess->FreeCtx(dev));
+		}
+
 		Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
 		ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 		ZE_CODE_RET_FAILED_EXPECT(xess->InitializeCtx(dev, renderData.Buffers, data.DisplaySize, data.Quality,

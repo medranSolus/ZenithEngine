@@ -32,7 +32,7 @@ namespace ZE::GFX::External
 		InterfaceStorage() = delete;
 
 #if _ZE_FFX_API_ENABLED
-		static FfxApiInterface* CreateConnectionFfxApi() noexcept;
+		static FfxApiInterface* CreateConnectionFfxApi(Device& dev) noexcept;
 		static FfxApiInterface* GetConnectionFfxApi() noexcept;
 		static void ReleaseConnectionFfxApi() noexcept;
 #endif

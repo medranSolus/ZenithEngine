@@ -14,12 +14,13 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		RID MotionVectors;
 		RID ReactiveMask;
 		RID AliasableRegion;
-		RID NonAliasableRegion;
 		RID Output;
 	};
 
 	struct ExecuteData final : public PassExecuteData
 	{
+		static inline U64 SelectedVersionID = UINT64_MAX;
+
 		ffxContext Ctx = nullptr;
 		UInt2 DisplaySize = { 0, 0 };
 		FfxApiUpscaleQualityMode Quality = FFX_UPSCALE_QUALITY_MODE_NATIVEAA;

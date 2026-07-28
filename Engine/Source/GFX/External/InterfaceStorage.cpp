@@ -3,11 +3,11 @@
 namespace ZE::GFX::External
 {
 #if _ZE_FFX_API_ENABLED
-	FfxApiInterface* InterfaceStorage::CreateConnectionFfxApi() noexcept
+	FfxApiInterface* InterfaceStorage::CreateConnectionFfxApi(Device& dev) noexcept
 	{
 		if (ffxRefCount == 0)
 		{
-			auto exp = FfxApiInterface::Create();
+			auto exp = FfxApiInterface::Create(dev);
 			if (!exp)
 			{
 				ZE_CODE_ERROR(exp.error(), "Failed to initialize FFX API interface!");
