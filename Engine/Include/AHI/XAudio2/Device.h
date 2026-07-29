@@ -19,6 +19,6 @@ namespace ZE::AHI::XAudio2
 
 		// Audio API Internal
 
-		IXAudio2* GetDevice() const noexcept { return device.Get(); }
+		constexpr IXAudio2* GetDevice() const noexcept { return device.Get(); }
 	};
 }

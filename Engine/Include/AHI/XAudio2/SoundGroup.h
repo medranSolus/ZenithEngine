@@ -10,6 +10,7 @@ namespace ZE::AHI::XAudio2
 	class SoundGroup final
 	{
 		Ptr<IXAudio2SubmixVoice> submixVoice;
+		U32 processingStage = 0;
 
 	public:
 		SoundGroup() = default;
@@ -22,6 +23,7 @@ namespace ZE::AHI::XAudio2
 
 		// Audio API Internal
 
-		IXAudio2SubmixVoice* GetVoice() const noexcept { return submixVoice; }
+		constexpr IXAudio2SubmixVoice* GetVoice() const noexcept { return submixVoice; }
+		constexpr U32 GetStage() const noexcept { return processingStage; }
 	};
 }
