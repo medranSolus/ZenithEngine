@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::CACAO
 
 	Expected<UpdateOperation> Update(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData) noexcept
 	{
-		if (passData.RenderSize != Settings::RenderSize)
+		if (passData.RenderSize != Settings::RenderSize || buildData.FrameBufferUpdatePending)
 		{
 			if (passData.Initialized)
 			{

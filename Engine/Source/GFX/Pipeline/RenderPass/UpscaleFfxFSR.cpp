@@ -179,6 +179,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 			return std::unexpected(operation.error());
 		// Setup device pointer for releasing FFX context later
 		FlushGPU(&dev);
+		buildData.FrameBufferUpdatePending = true;
 		return passData;
 	}
 
