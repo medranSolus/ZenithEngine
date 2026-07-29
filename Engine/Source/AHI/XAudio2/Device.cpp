@@ -22,12 +22,11 @@ namespace ZE::AHI::XAudio2
 		dev.device->SetDebugConfiguration(&debugConf, nullptr);
 #endif
 		if (sampleRate != 0)
-			sampleRate = Math::Clamp(static_cast<U32>((sampleRate + XAUDIO2_QUANTUM_DENOMINATOR - 1) / XAUDIO2_QUANTUM_DENOMINATOR) * XAUDIO2_QUANTUM_DENOMINATOR,
-				static_cast<U32>(XAUDIO2_MIN_SAMPLE_RATE), static_cast<U32>(XAUDIO2_MAX_SAMPLE_RATE));
+			sampleRate = ComputeSampleRate(sampleRate);
 		else
 			sampleRate = XAUDIO2_DEFAULT_SAMPLERATE;
 		ZE_XA2_RET_FAILED_EXPECT(dev.device->CreateMasteringVoice(&dev.masterVoice,
-			XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, nullptr, nullptr, AudioCategory_GameMedia));
+			XAUDIO2_DEFAULT_CHANNELS, sampleRate, 0, nullptr, nullptr, AudioCategory_GameMedia));
 		return dev;
 	}
 }

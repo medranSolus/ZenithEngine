@@ -19,10 +19,12 @@ namespace ZE::SFX
 		ZE_CLASS_MOVE(Track);
 		~Track() = default;
 
-		static Expected<Track> Create(Device& dev) noexcept { ZE_AHI_BACKEND_CREATE(Track, dev); }
+		static Expected<Track> Create(Device& dev, const SoundGroup* group = nullptr) noexcept { ZE_AHI_BACKEND_CREATE(Track, dev, group); }
 		ZE_AHI_BACKEND_GET(Track);
 
 		// Main Audio API
 
+		constexpr void SetVolume(float decibels) noexcept { ZE_AHI_BACKEND_CALL(SetVolume, decibels); }
+		constexpr void SetPitch(float semitones) noexcept { ZE_AHI_BACKEND_CALL(SetPitch, semitones); }
 	};
 }
