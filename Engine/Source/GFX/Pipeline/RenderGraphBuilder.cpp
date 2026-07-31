@@ -1930,7 +1930,7 @@ namespace ZE::GFX::Pipeline
 					result = BuildResultCode::ErrorWrongResourceConfiguration;
 					return true;
 				}
-				if (res.MemoryQuery)
+				if ((res.Flags & FrameResourceFlag::InternalResourceActive) && res.MemoryQuery)
 				{
 					// Check if resource will be truly active
 					auto expSize = res.MemoryQuery(dev, res);
