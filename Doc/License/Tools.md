@@ -1,4 +1,4 @@
-# Zenith Engine Edit Tool License
+# Zenith Engine Tools License
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
