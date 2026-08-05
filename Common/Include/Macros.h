@@ -2,6 +2,11 @@
 #include "Intrinsics.h"
 #include "Logger.h"
 
+// Helper macro to create a FourCC code from four characters
+#define ZE_MAKE_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24))
+// Helper macro to check if a FourCC code matches the given four characters
+#define ZE_IS_FOURCC(fourCC, c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == fourCC
+
 #pragma region Asserts
 #if _ZE_MODE_DEBUG || _ZE_MODE_DEV
 // Debug assert with ability to specify level of log entry

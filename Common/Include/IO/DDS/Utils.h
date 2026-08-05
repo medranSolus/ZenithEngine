@@ -6,7 +6,7 @@
 namespace ZE::IO::DDS
 {
 	// Identifier of DDS file 'DDS '
-	inline constexpr U32 MAGIC_NUMBER = 0x20534444;
+	inline constexpr U32 MAGIC_NUMBER = ZE_MAKE_FOURCC('D', 'D', 'S', ' ');
 
 	// Data about corresponding surface in memory
 	struct SurfaceData

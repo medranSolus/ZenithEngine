@@ -25,7 +25,7 @@ namespace ZE::IO::DDS
 		default:
 			ZE_ENUM_UNHANDLED();
 		case FileResult::Unknown:
-			return "Unknown DDS error!";
+			return "Unknown DDS error";
 		}
 	}
 }

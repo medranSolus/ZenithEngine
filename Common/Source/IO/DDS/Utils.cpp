@@ -5,7 +5,6 @@ namespace ZE::IO::DDS
 	static constexpr FormatDDS ParseDDSFormat(const PixelFormatDDS& format) noexcept
 	{
 #define ZE_IS_MASK(r, g, b, a) (format.RBitMask == r && format.GBitMask == g && format.BBitMask == b && format.ABitMask == a)
-#define ZE_IS_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == format.FourCC
 
 		// SRGB formats are written using the DX10 extended header
 		if (format.Flags & PixelFlag::RGB)
@@ -71,27 +70,27 @@ namespace ZE::IO::DDS
 		}
 		else if (format.Flags & PixelFlag::FourCC)
 		{
-			if (ZE_IS_FOURCC('D', 'X', 'T', '1')) return FormatDDS::BC1_UNorm;
-			if (ZE_IS_FOURCC('D', 'X', 'T', '3')) return FormatDDS::BC2_UNorm;
-			if (ZE_IS_FOURCC('D', 'X', 'T', '5')) return FormatDDS::BC3_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'D', 'X', 'T', '1')) return FormatDDS::BC1_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'D', 'X', 'T', '3')) return FormatDDS::BC2_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'D', 'X', 'T', '5')) return FormatDDS::BC3_UNorm;
 
 			// While pre-mulitplied alpha isn't directly supported,
 			// they are basically the same as these BC formats so they can be mapped
-			if (ZE_IS_FOURCC('D', 'X', 'T', '2')) return FormatDDS::BC2_UNorm;
-			if (ZE_IS_FOURCC('D', 'X', 'T', '4')) return FormatDDS::BC3_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'D', 'X', 'T', '2')) return FormatDDS::BC2_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'D', 'X', 'T', '4')) return FormatDDS::BC3_UNorm;
 
-			if (ZE_IS_FOURCC('A', 'T', 'I', '1')) return FormatDDS::BC4_UNorm;
-			if (ZE_IS_FOURCC('B', 'C', '4', 'U')) return FormatDDS::BC4_UNorm;
-			if (ZE_IS_FOURCC('B', 'C', '4', 'S')) return FormatDDS::BC4_SNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'A', 'T', 'I', '1')) return FormatDDS::BC4_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'B', 'C', '4', 'U')) return FormatDDS::BC4_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'B', 'C', '4', 'S')) return FormatDDS::BC4_SNorm;
 
-			if (ZE_IS_FOURCC('A', 'T', 'I', '2')) return FormatDDS::BC5_UNorm;
-			if (ZE_IS_FOURCC('B', 'C', '5', 'U')) return FormatDDS::BC5_UNorm;
-			if (ZE_IS_FOURCC('B', 'C', '5', 'S')) return FormatDDS::BC5_SNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'A', 'T', 'I', '2')) return FormatDDS::BC5_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'B', 'C', '5', 'U')) return FormatDDS::BC5_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'B', 'C', '5', 'S')) return FormatDDS::BC5_SNorm;
 
 			// BC6H and BC7 are written using the DX10 extended header
 
-			if (ZE_IS_FOURCC('R', 'G', 'B', 'G')) return FormatDDS::R8G8_B8G8_UNorm;
-			if (ZE_IS_FOURCC('G', 'R', 'G', 'B')) return FormatDDS::G8R8_G8B8_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'R', 'G', 'B', 'G')) return FormatDDS::R8G8_B8G8_UNorm;
+			if (ZE_IS_FOURCC(format.FourCC, 'G', 'R', 'G', 'B')) return FormatDDS::G8R8_G8B8_UNorm;
 
 			// Check for D3DFORMAT enums being set here.
 			switch (format.FourCC)
@@ -116,7 +115,6 @@ namespace ZE::IO::DDS
 		}
 
 		return FormatDDS::Unknown;
-#undef ZE_IS_FOURCC
 #undef ZE_IS_MASK
 	}
 
@@ -169,7 +167,6 @@ namespace ZE::IO::DDS
 	Status EncodeFile(File& file, const SurfaceData& srcData) noexcept
 	{
 #define ZE_DDS_CHECK_WRITE(item) ZE_CODE_RET_FAILED(file.Write(&item, sizeof(item)))
-#define ZE_MAKE_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24))
 
 		U32 destRowSize = 0, destSliceSize = 0;
 		GetSurfaceInfo(srcData.Width, srcData.Height, srcData.Format, destRowSize, destSliceSize);
@@ -294,14 +291,12 @@ namespace ZE::IO::DDS
 			}
 		}
 		return Error::Make(FileResult::Ok);
-#undef ZE_MAKE_FOURCC
 #undef ZE_DDS_CHECK_WRITE
 	}
 
 	Status ParseFile(File& file, FileData& destData) noexcept
 	{
 #define ZE_DDS_CHECK_READ(item) ZE_CODE_RET_FAILED(file.Read(&item, sizeof(item)))
-#define ZE_IS_FOURCC(c0, c1, c2, c3) (static_cast<U32>(c0) | (static_cast<U32>(c1) << 8) | (static_cast<U32>(c2) << 16) | (static_cast<U32>(c3) << 24)) == header.Format.FourCC
 
 		// DDS format definition: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
 
@@ -319,7 +314,7 @@ namespace ZE::IO::DDS
 		bool alpha = false;
 		U16 arraySize = 1;
 		U16 depth = 1;
-		if (ZE_IS_FOURCC('D', 'X', '1', '0'))
+		if (ZE_IS_FOURCC(header.Format.FourCC, 'D', 'X', '1', '0'))
 		{
 			HeaderDXT10 dxt10Header = {};
 			ZE_DDS_CHECK_READ(dxt10Header);
@@ -434,7 +429,6 @@ namespace ZE::IO::DDS
 		destData.ImageMemory = image;
 
 		return Error::Make(FileResult::Ok);
-#undef ZE_IS_FOURCC
 #undef ZE_DDS_CHECK_READ
 	}
 }
