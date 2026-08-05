@@ -240,6 +240,25 @@
 #include "IO/DDS/Utils.h"
 
 /*
+* BasicTypes.h
+*/
+#include "IO/WAV/ChunkHeaders.h"
+
+/*
+* BasicTypes.h
+* string
+*/
+#include "IO/WAV/FileResult.h"
+
+/*
+* IO/File.h
+*** BasicTypes.h
+*** memory
+* SFX/AudioBuffer.h
+*/
+#include "IO/WAV/Utils.h"
+
+/*
 * IO/FileFlags.h
 * cstdio
 * Platform/X/File.h

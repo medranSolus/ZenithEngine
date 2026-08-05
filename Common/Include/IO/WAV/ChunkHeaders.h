@@ -1,4 +1,5 @@
 #pragma once
+#include "BasicTypes.h"
 
 namespace ZE::IO::WAV
 {

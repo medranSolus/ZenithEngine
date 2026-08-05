@@ -1,4 +1,6 @@
 #pragma once
+#include "BasicTypes.h"
+#include <memory>
 
 namespace ZE::SFX
 {

@@ -205,17 +205,17 @@ namespace ZE::AHI
 // Helpers for manipulating with active AHI implementations
 #if _ZE_AHI_OPENAL
 #	define ZE_GET_OPENAL_AHI_TYPE(type) ZE::AHI::OpenAL::##type ZE_AHI_OPENAL_COMMA
-#	define ZE_AHI_OPENAL_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.oal.##function##(__VA_ARGS__); break
+#	define ZE_AHI_OPENAL_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.oal.##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_OPENAL_AHI_TYPE(type)
-#	define ZE_AHI_OPENAL_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("OpenAL has been disabled!")
+#	define ZE_AHI_OPENAL_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("OpenAL has been disabled!"); ret## {}
 #endif
 #if _ZE_AHI_XAUDIO2
 #	define ZE_GET_XAUDIO2_AHI_TYPE(type) ZE::AHI::XAudio2::##type ZE_AHI_XAUDIO2_COMMA
-#	define ZE_AHI_XAUDIO2_SWITCH_CALL(variable, ret, function, ...) ret## ##variable##.xa2.##function##(__VA_ARGS__); break
+#	define ZE_AHI_XAUDIO2_SWITCH_CALL(variable, ret, function, ...) ret## (##variable##.xa2.##function##(__VA_ARGS__))
 #else
 #	define ZE_GET_XAUDIO2_RHI_TYPE(type)
-#	define ZE_AHI_XAUDIO2_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("XAudio2 has been disabled!")
+#	define ZE_AHI_XAUDIO2_SWITCH_CALL(variable, ret, function, ...) ZE_FAIL("XAudio2 has been disabled!"); ret## {}
 #endif
 
 // Type for proper graphics API implementations for all current APIs
