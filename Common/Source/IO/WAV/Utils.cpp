@@ -4,7 +4,7 @@
 
 namespace ZE::IO::WAV
 {
-	Expected<SFX::AudioBuffer> ParseFile(File& file) noexcept
+	Expected<SFX::AudioBuffer> ParseFileInfo(File& file) noexcept
 	{
 #define ZE_WAV_CHECK_READ(item) ZE_CODE_RET_FAILED_EXPECT(file.Read(&item, sizeof(item))); currentOffset += sizeof(item)
 
@@ -104,5 +104,23 @@ namespace ZE::IO::WAV
 		}
 		return buffer;
 #undef ZE_WAV_CHECK_READ
+	}
+
+	Status LoadSampleData(File& file, SFX::AudioBuffer& buffer, U32 blockSize, U32 writeOffset) noexcept
+	{
+		ZE_ASSERT(buffer.Samples && buffer.Bytes || buffer.Bytes == 0, "Buffer must be allocated before loading sample data!");
+
+		if (buffer.Bytes)
+		{
+			ZE_ASSERT(blockSize + writeOffset <= buffer.Bytes, "Reading beyond buffer bounds!");
+
+			if (blockSize == 0)
+			{
+				blockSize = buffer.Bytes;
+				writeOffset = 0;
+			}
+			ZE_CODE_RET_FAILED_EXPECT(file.Read(buffer.Samples.get() + writeOffset, blockSize));
+		}
+		return {};
 	}
 }

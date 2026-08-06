@@ -79,6 +79,14 @@ namespace ZE::Platform::WinAPI
 		}
 	}
 
+	U64 File::GetOffset(FILE* stdFile) const noexcept
+	{
+		if (stdFile)
+			return static_cast<U64>(_ftelli64_nolock(stdFile));
+		else
+			return currentOffset;
+	}
+
 	Status File::Read(void* buffer, U32 size) const noexcept
 	{
 		ZE_ASSERT(osFile, "File not opened!");

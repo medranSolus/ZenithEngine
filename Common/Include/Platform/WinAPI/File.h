@@ -25,6 +25,7 @@ namespace ZE::Platform::WinAPI
 		~File() { Close(); }
 
 		void SetOffset(FILE* stdFile, U64 offset) noexcept;
+		U64 GetOffset(FILE* stdFile) const noexcept;
 
 		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
 		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<false>(buffer, size, offset); }

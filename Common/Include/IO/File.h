@@ -27,6 +27,7 @@ namespace ZE::IO
 
 		// Set current offset for synchronous operations
 		void SetOffset(U64 offset) noexcept { platformImpl.SetOffset(stdFile, offset); }
+		U64 GetOffset() const noexcept { return platformImpl.GetOffset(stdFile); }
 
 		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return platformImpl.ReadAsync(buffer, size, offset); }
 		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }

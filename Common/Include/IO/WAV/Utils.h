@@ -13,6 +13,9 @@ namespace ZE::IO::WAV
 	// Identifier of WAV file chunk 'data'
 	inline constexpr U32 DATA_MAGIC_NUMBER = ZE_MAKE_FOURCC('d', 'a', 't', 'a');
 
-	// Load and parse WAV file from disk
-	Expected<SFX::AudioBuffer> ParseFile(File& file) noexcept;
+	// Load and parse WAV file information from disk. Returns file handle pointing at the start of the sample data
+	Expected<SFX::AudioBuffer> ParseFileInfo(File& file) noexcept;
+	// Load sample data, must first call ParseFileInfo to get the buffer size and allocate memory for it.
+	// Set blockSize to 0 to read full buffer
+	Status LoadSampleData(File& file, SFX::AudioBuffer& buffer, U32 blockSize, U32 writeOffset) noexcept;
 }
