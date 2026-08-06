@@ -119,7 +119,7 @@ namespace ZE::IO::WAV
 				blockSize = buffer.Bytes;
 				writeOffset = 0;
 			}
-			ZE_CODE_RET_FAILED_EXPECT(file.Read(buffer.Samples.get() + writeOffset, blockSize));
+			ZE_CODE_RET_FAILED(file.Read(buffer.Samples.get() + writeOffset, blockSize));
 		}
 		return {};
 	}
