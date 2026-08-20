@@ -39,6 +39,7 @@ namespace ZE
 		virtual ~Engine();
 
 		constexpr GFX::Graphics& Gfx() noexcept { return graphics; }
+		constexpr SFX::Device& Sfx() noexcept { return audioDev; }
 		constexpr GUI::ImGuiManager& ImGui() noexcept { return imgui; }
 		constexpr Window::MainWindow& Window() noexcept { return window; }
 		constexpr GFX::Pipeline::RenderGraph& RenderGraph() noexcept { return renderGraph; }
