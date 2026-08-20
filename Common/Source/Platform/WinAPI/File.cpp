@@ -65,6 +65,20 @@ namespace ZE::Platform::WinAPI
 		return code;
 	}
 
+	Expected<U64> File::GetSize(FILE* stdFile) const noexcept
+	{
+		HANDLE osHandle = osFile;
+		if (!osHandle)
+		{
+			ZE_ASSERT(stdFile, "Without Windows handle, FILE pointer must be valid!");
+			osHandle = reinterpret_cast<HANDLE>(_get_osfhandle(_fileno(stdFile)));
+		}
+		LARGE_INTEGER size = {};
+		if (GetFileSizeEx(osHandle, &size))
+			return static_cast<U64>(size.QuadPart);
+		return std::unexpected(ZE_WIN_LAST_ERROR());
+	}
+
 	void File::SetOffset(FILE* stdFile, U64 offset) noexcept
 	{
 		if (stdFile)

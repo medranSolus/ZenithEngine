@@ -25,6 +25,7 @@ namespace ZE::IO
 		// Only available when async flag is not set
 		FILE* GetHandle() const noexcept { return stdFile; }
 
+		Expected<U64> GetSize() const noexcept { return platformImpl.GetSize(stdFile); }
 		// Set current offset for synchronous operations
 		void SetOffset(U64 offset) noexcept { platformImpl.SetOffset(stdFile, offset); }
 		U64 GetOffset() const noexcept { return platformImpl.GetOffset(stdFile); }

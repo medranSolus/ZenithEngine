@@ -24,6 +24,7 @@ namespace ZE::Platform::WinAPI
 		ZE_CLASS_MOVE(File);
 		~File() { Close(); }
 
+		Expected<U64> GetSize(FILE* stdFile) const noexcept;
 		void SetOffset(FILE* stdFile, U64 offset) noexcept;
 		U64 GetOffset(FILE* stdFile) const noexcept;
 
