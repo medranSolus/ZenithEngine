@@ -56,6 +56,10 @@ namespace ZE::IO::WAV
 		{
 		case Base(FormatExtensionHeaderSize::None):
 		{
+			buffer.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(formatChunk.FormatEx.Format.NumChannels));
+			if (buffer.Channels == 0)
+				return std::unexpected(Error::Make(FileResult::IncorrectAudioFormat));
+
 			buffer.BitsPerSample = Utils::SafeCast<U8>(formatChunk.FormatEx.Format.BitsPerSample);
 			switch (formatChunk.FormatEx.Format.AudioFormat)
 			{
@@ -77,6 +81,8 @@ namespace ZE::IO::WAV
 		}
 		case Base(FormatExtensionHeaderSize::Extensible):
 		{
+			// Channel mask is based on the same values as in WAVEFORMATEXTENSIBLE
+			buffer.Channels = formatChunk.ChannelMask;
 			buffer.BitsPerSample = Utils::SafeCast<U8>(formatChunk.BitsPerSample);
 			buffer.IsFloat = buffer.BitsPerSample == 32;
 			break;
@@ -98,10 +104,7 @@ namespace ZE::IO::WAV
 
 		buffer.Bytes = dataChunk.SampleDataSize;
 		if (buffer.Bytes)
-		{
 			buffer.Samples = std::make_shared<U8[]>(buffer.Bytes);
-			ZE_CODE_RET_FAILED_EXPECT(file.Read(buffer.Samples.get(), buffer.Bytes));
-		}
 		return buffer;
 #undef ZE_WAV_CHECK_READ
 	}

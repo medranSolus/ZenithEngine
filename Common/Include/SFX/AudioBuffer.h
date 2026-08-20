@@ -1,5 +1,5 @@
 #pragma once
-#include "BasicTypes.h"
+#include "ChannelMask.h"
 #include <memory>
 
 namespace ZE::SFX
@@ -9,6 +9,7 @@ namespace ZE::SFX
 	{
 		U32 Bytes = 0;
 		U32 SampleRate = 0;
+		ChannelMask Channels = 0;
 		U8 BitsPerSample = 0;
 		bool IsFloat = false;
 		std::shared_ptr<U8[]> Samples;

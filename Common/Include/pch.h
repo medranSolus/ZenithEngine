@@ -252,7 +252,8 @@
 
 /*
 * IO/File.h
-*** BasicTypes.h
+***** Macros.h
+*** ChannelMask.h
 *** memory
 * SFX/AudioBuffer.h
 */
