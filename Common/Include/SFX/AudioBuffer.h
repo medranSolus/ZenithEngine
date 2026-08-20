@@ -13,8 +13,8 @@ namespace ZE::SFX
 		U8 BitsPerSample = 0;
 		bool IsFloat = false;
 		std::shared_ptr<U8[]> Samples;
-
-		// Load and parse audio file from disk
-		Status LoadFile(std::string_view filename) noexcept;
 	};
+
+	// Load and parse audio file from disk
+	Expected<AudioBuffer> LoadFile(std::string_view filename) noexcept;
 }

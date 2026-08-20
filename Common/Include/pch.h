@@ -272,6 +272,13 @@
 #include "IO/FileFlags.h"
 
 /*
+* BasicTypes.h
+* string
+* FLAC/stream_decoder.h
+*/
+#include "SFX/FileError.h"
+
+/*
 * Standard headers, remove if appears above
 */
 #include <algorithm>
