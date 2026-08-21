@@ -230,7 +230,7 @@ namespace ZE::Math
 		case FilterType::Gauss:
 		{
 			bool evenWindow = (samples.size() & 1) == 0;
-			U32 windowSize = Utils::SafeCast<U32>((filterCoeff->size() << 1) - (filterCoeff->size() & 1) - static_cast<U32>(!evenWindow));
+			U32 windowSize = Utils::SafeCast<U32>((filterCoeff->size() << 1) - static_cast<U32>(!evenWindow));
 			ZE_ASSERT(filterCoeff != nullptr, "Filter coefficients must be provided for this filter type!");
 			ZE_ASSERT(windowSize * windowSize == samples.size(), "Not enough filter coefficients provided!");
 

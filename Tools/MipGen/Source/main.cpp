@@ -22,6 +22,7 @@ struct MipParams
 	U32 Cores = 1;
 	bool GammaCorrection = false;
 	bool SrcOriginalLayer = false;
+	bool NormalMapEncoding = false;
 	float AlphaTestTreshold = FLT_MAX;
 	float FilterCoeffParam = 0.0f;
 	U32 WindowSize = 2;
@@ -42,8 +43,8 @@ struct Sample
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
 ResultCode RunJob(MipParams& job) noexcept;
-Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount, bool gammaCorrection) noexcept;
-Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount) noexcept;
+Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount) noexcept;
+Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount, bool gammaCorrection, bool normalMap) noexcept;
 Sample ConvertToSourceFormat(const Float4& val, PixelFormat format, U8 channelCount, bool gammaCorrection) noexcept;
 
 int main(int argc, char* argv[])
@@ -53,6 +54,7 @@ int main(int argc, char* argv[])
 	parser.AddOption("help-filter-coeff-param");
 	parser.AddOption("gamma-correction");
 	parser.AddOption("src-org-layer");
+	parser.AddOption("normal-map");
 	parser.AddOption("box", 'b');
 	parser.AddOption("gamma-average", 'g');
 	parser.AddOption("bilinear", 'l');
@@ -131,6 +133,7 @@ int main(int argc, char* argv[])
 	params.Cores = parser.GetNumber("cores");
 	params.GammaCorrection = parser.GetOption("gamma-correction");
 	params.SrcOriginalLayer = parser.GetOption("src-org-layer");
+	params.NormalMapEncoding = parser.GetOption("normal-map");
 	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
 	params.WindowSize = parser.GetNumber("window-size");
 	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("filter"));
@@ -173,7 +176,9 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		params.GammaCorrection = command["gamma-correction"].get<bool>();
 	if (command.contains("src-org-layer"))
 		params.SrcOriginalLayer = command["src-org-layer"].get<bool>();
-	if (command.contains("window-size"))
+	if (command.contains("normal-map"))
+		params.NormalMapEncoding = command["normal-map"].get<bool>();
+	if (command.contains("filter-coeff-param"))
 		params.FilterCoeffParam = command["filter-coeff-param"].get<float>();
 	if (command.contains("window-size"))
 		params.WindowSize = command["window-size"].get<U32>();
@@ -269,7 +274,6 @@ ResultCode RunJob(MipParams& job) noexcept
 			coeff /= coeffSum;
 	}
 
-	// TODO: Multithreaded version
 	const U8 channelCount = Utils::GetChannelCount(surface.GetFormat());
 	const PixelFormat format = Utils::GetSingleChannelFormat(surface.GetFormat());
 	const U8 pixelSize = surface.GetPixelSize();
@@ -343,9 +347,9 @@ ResultCode RunJob(MipParams& job) noexcept
 								{
 									for (U32 colOffset : columnOffsets)
 									{
-										Sample sample = GetPixelSample(srcBuffer + colOffset * pixelSize + rowOffset * srcRowSize, channelSize, channelCount, job.GammaCorrection);
+										Sample sample = GetPixelSample(srcBuffer + colOffset * pixelSize + rowOffset * srcRowSize, channelSize, channelCount);
 										// Convert to float for processing
-										samples.emplace_back(ConvertToFloat(sample, format, channelCount));
+										samples.emplace_back(ConvertToFloat(sample, format, channelCount, job.GammaCorrection, job.NormalMapEncoding));
 									}
 								}
 
@@ -355,6 +359,12 @@ ResultCode RunJob(MipParams& job) noexcept
 								// https://asawicki.info/articles/alpha_test.php5
 								if (alphaRemap)
 									mipVal.w = std::max(mipVal.w, (mipVal.w + 2.0f * job.AlphaTestTreshold) / 3.0f);
+
+								if (job.NormalMapEncoding)
+								{
+									Vector nrm = Math::XMVector3Normalize(Math::XMLoadFloat4(&mipVal));
+									Math::XMStoreFloat3(reinterpret_cast<Float3*>(&mipVal), Math::XMVectorMultiplyAdd(nrm, Math::XMVectorReplicate(0.5f), Math::XMVectorReplicate(0.5f)));
+								}
 
 								// Convert back to original format
 								Sample pixel = ConvertToSourceFormat(mipVal, format, channelCount, job.GammaCorrection);
@@ -419,7 +429,7 @@ ResultCode RunJob(MipParams& job) noexcept
 				tasks.emplace_back(task);
 			}
 		}
-		maxTasks = Math::AlignDown(maxTasks, job.Cores);
+		maxTasks = (maxTasks / job.Cores) * job.Cores;
 		job.Cores = std::clamp(job.Cores, 2U, maxTasks);
 
 		std::vector<std::thread> workers;
@@ -466,7 +476,7 @@ ResultCode RunJob(MipParams& job) noexcept
 	return ResultCode::CannotSaveFile;
 }
 
-Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount, bool gammaCorrection) noexcept
+Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount) noexcept
 {
 	Sample pixelValue = {};
 	pixelValue.RGBA[0].UInt = 0;
@@ -483,16 +493,16 @@ Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount, bool gammaCor
 	return pixelValue;
 }
 
-Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount) noexcept
+Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount, bool gammaCorrection, bool normalMap) noexcept
 {
 	Sample val = {};
 	switch (format)
 	{
 	default:
-	ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 	case PixelFormat::Unknown:
-	ZE_FAIL("Unsupported pixel format for float convertion!");
-	[[fallthrough]];
+		ZE_FAIL("Unsupported pixel format for float convertion!");
+		[[fallthrough]];
 	case PixelFormat::R32_Float:
 	{
 		std::memcpy(&val, &pixel, sizeof(Sample));
@@ -555,25 +565,58 @@ Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount) 
 		break;
 	}
 	}
-	return { val.RGBA[0].Float, val.RGBA[1].Float, val.RGBA[2].Float, val.RGBA[3].Float };
+
+	Float4 out = { val.RGBA[0].Float, val.RGBA[1].Float, val.RGBA[2].Float, val.RGBA[3].Float };
+	if (gammaCorrection)
+	{
+		Vector srgb = Math::XMLoadFloat4(&out);
+
+		Vector cutoff = Math::XMVectorAndInt(Math::XMVectorGreaterOrEqual(srgb, Math::XMVectorReplicate(0.04045f)), Math::XMVectorSplatOne());
+		Vector lower = Math::XMVectorDivide(srgb, Math::XMVectorReplicate(12.92f));
+		Vector higher = Math::XMVectorPow(Math::XMVectorDivide(Math::XMVectorAdd(srgb, Math::XMVectorReplicate(0.55f)), Math::XMVectorReplicate(1.055f)), Math::XMVectorReplicate(2.4f));
+		
+		Math::XMStoreFloat3(reinterpret_cast<Float3*>(&out), Math::XMVectorLerpV(lower, higher, cutoff));
+	}
+	if (normalMap)
+		Math::XMStoreFloat4(&out, Math::XMVectorMultiplyAdd(Math::XMLoadFloat4(&out), Math::XMVectorReplicate(2.0f), Math::XMVectorReplicate(-1.0f)));
+
+	return out;
 }
 
 Sample ConvertToSourceFormat(const Float4& val, PixelFormat format, U8 channelCount, bool gammaCorrection) noexcept
 {
 	Sample pixel = {};
-	pixel.RGBA[0].Float = val.x;
-	pixel.RGBA[1].Float = val.y;
-	pixel.RGBA[2].Float = val.z;
+	if (gammaCorrection)
+	{
+		Vector linearColor = Math::XMLoadFloat4(&val);
+
+		Vector cutoff = Math::XMVectorAndInt(Math::XMVectorGreaterOrEqual(linearColor, Math::XMVectorReplicate(0.0031308f)), Math::XMVectorSplatOne());
+		Vector lower = Math::XMVectorMultiply(linearColor, Math::XMVectorReplicate(12.92f));
+		Vector higher = Math::XMVectorMultiplyAdd(Math::XMVectorReplicate(1.055f), Math::XMVectorPow(linearColor, Math::XMVectorReplicate(1.0f / 2.4f)), Math::XMVectorReplicate(-0.55f));
+
+		Float3 out = {};
+		Math::XMStoreFloat3(&out, Math::XMVectorLerpV(lower, higher, cutoff));
+		pixel.RGBA[0].Float = out.x;
+		pixel.RGBA[1].Float = out.y;
+		pixel.RGBA[2].Float = out.z;
+	}
+	else
+	{
+		pixel.RGBA[0].Float = val.x;
+		pixel.RGBA[1].Float = val.y;
+		pixel.RGBA[2].Float = val.z;
+	}
 	pixel.RGBA[3].Float = val.w;
+
 	switch (format)
 	{
 	default:
-	ZE_ENUM_UNHANDLED();
+		ZE_ENUM_UNHANDLED();
 	case PixelFormat::Unknown:
-	ZE_FAIL("Unsupported pixel format for converting from float!");
-	[[fallthrough]];
+		ZE_FAIL("Unsupported pixel format for converting from float!");
+		[[fallthrough]];
 	case PixelFormat::R32_Float:
-	break;
+		break;
 	case PixelFormat::R32_UInt:
 	{
 		for (U8 i = 0; i < channelCount; ++i)
