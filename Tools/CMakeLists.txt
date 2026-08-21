@@ -33,3 +33,10 @@ add_subdirectory(BrdfGen)
 add_subdirectory(CubeConv)
 add_subdirectory(MipGen)
 add_subdirectory(TexEdit)
+
+# Texconv
+add_custom_command(OUTPUT "${ZE_BIN_DIR}/Tools/${TEXCONV_TARGET}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_BIN_DIR}/${TEXCONV_TARGET}" "${ZE_BIN_DIR}/Tools"
+    COMMENT "Copying Texconv tool"
+    DEPENDS "${EXTERNAL_BIN_DIR}/${TEXCONV_TARGET}")
+add_custom_target(texconv ALL DEPENDS "${ZE_BIN_DIR}/Tools/${TEXCONV_TARGET}")

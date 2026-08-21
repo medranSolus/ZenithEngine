@@ -76,6 +76,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [bzip2](https://gitlab.com/bzip2/bzip2) - [libbzip2 License v1.0.6](Doc/License/ThirdParty/bzip2.txt)
  - [Dear ImGui](https://github.com/ocornut/imgui) - [The MIT License](Doc/License/ThirdParty/Dear_ImGui.txt)
  - [DirectXMath](https://github.com/microsoft/DirectXMath) - [The MIT License (MIT)](Doc/License/ThirdParty/DirectXMath.txt)
+ - [DirectXTex](https://github.com/microsoft/DirectXTex) - [MIT License](Doc/License/ThirdParty/DirectXTex.txt)
  - [DLSS](https://github.com/NVIDIA/DLSS) - [NVIDIA RTX SDKs LICENSE](Doc/License/ThirdParty/DLSS.txt)
  - [EnTT](https://github.com/skypjack/entt) - [The MIT License (MIT)](Doc/License/ThirdParty/EnTT.txt)
  - [flac](https://github.com/xiph/flac) - [BDS-3-Clause License](Doc/License/ThirdParty/flac.txt)

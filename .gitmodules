@@ -9,7 +9,7 @@
 	url = https://github.com/microsoft/DirectXMath
 [submodule "External/DirectXTex"]
 	path = External/DirectXTex
-	url = https://github.com/microsoft/DirectXTex
+	url = https://github.com/microsoft/DirectXTex.git
 [submodule "External/ImGui"]
 	path = External/ImGui
 	url = https://github.com/ocornut/imgui.git

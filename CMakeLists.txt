@@ -105,6 +105,7 @@ set(BZIP2_DIR "${EXTERNAL_DIR}/bzip2")
 set(DLSS_DIR "${EXTERNAL_DIR}/DLSS")
 set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
+set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(FFX_API_DIR "${EXTERNAL_DIR}/FidelityFXSDK/Kits/FidelityFX")
@@ -146,6 +147,7 @@ set(BZIP2_INC_DIR "${BZIP2_DIR}")
 set(DLSS_INC_DIR "${DLSS_DIR}/include")
 set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
+set(DXTEX_INC_DIR "${DXTEX_DIR}")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(FFX_API_INC_DIR "${FFX_API_DIR}/api/include")
@@ -254,10 +256,12 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 if(${ZE_PLATFORM_WINDOWS})
 	set(LIB_EXT ".lib")
 	set(SHARED_LIB_EXT ".dll")
+	set(EXEC_EXT ".exe")
 	set(LIB_PREFIX "")
 else()
 	set(LIB_EXT ".a")
 	set(SHARED_LIB_EXT ".so")
+	set(EXEC_EXT "")
 	set(LIB_PREFIX "lib")
 endif()
 
@@ -275,6 +279,7 @@ set(BROTLIDEC_LIB "brotlidec")
 set(BROTLIENC_LIB "brotlienc")
 set(BZIP2_LIB "bz2_static")
 set(DSTORE_LIB "dstorage")
+set(DXTEX_LIB "DirectXTex")
 set(ENTT_LIB "EnTT::EnTT")
 set(FTYPE_LIB "freetype")
 set(FLAC_LIB "FLAC")
@@ -309,6 +314,7 @@ if(${ZE_DSTORE_ENABLED})
 	set(DSTORE_TARGET "${DSTORE_DIR}/lib/x64/${DSTORE_LIB}.lib")
 endif()
 set(ENTT_TARGET "${ENTT_LIB}")
+set(DXTEX_TARGET "${DXTEX_LIB}")
 set(FTYPE_TARGET "${FTYPE_LIB}")
 set(FLAC_TARGET "${FLAC_LIB}")
 set(HARFBUZZ_TARGET "${HARFBUZZ_LIB}")
@@ -345,6 +351,7 @@ endif()
 if(${ZE_PIX_ENABLED})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
 endif()
+set(TEXCONV_TARGET "texconv${EXEC_EXT}")
 if(${ZE_ENABLE_XAUDIO2})
 	set(XAUDIO2_TARGETS "${XAUDIO2_DIR}/release/lib/x64/${XAUDIO2_LIB}.lib"
 		"${XAUDIO2_DIR}/release/lib/x64/xapobaseredist.lib")
@@ -607,6 +614,31 @@ set(LIBPNG_CACHE_ARGS "-DPNG_SHARED:BOOL=OFF"
 	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
 add_external_project(LIBPNG "" "" "" "ZLIB")
 copy_inner_file(LIBPNG HeaderConfig "" "pnglibconf.h")
+
+# DirectXTex
+if(ZE_BUILD_TOOLS)
+	set(DXTEX_CACHE_ARGS "-DBUILD_TOOLS:BOOL=ON"
+		"-DBUILD_SHARED_LIBS:BOOL=OFF"
+		"-DBUILD_SAMPLE:BOOL=OFF"
+		"-BUILD_DX11:BOOL=ON"
+		"-DBUILD_DX12:BOOL=ON"
+		"-DBC_USE_OPENMP:BOOL=ON"
+		"-DBUILD_XBOX_EXTS_XBOXONE:BOOL=OFF"
+		"-DBUILD_XBOX_EXTS_SCARLETT:BOOL=OFF"
+		"-DENABLE_SPECTRE_MITIGATION:BOOL=OFF"
+		"-DDISABLE_MSVC_ITERATOR_DEBUGGING:BOOL=OFF"
+		"-DENABLE_CODE_ANALYSIS:BOOL=OFF"
+		"-DENABLE_CODE_COVERAGE:BOOL=OFF"
+		"-DENABLE_CODE_PROFILING:BOOL=OFF"
+		"-DUSE_PREBUILT_SHADERS:BOOL=OFF"
+		"-DNO_WCHAR_T:BOOL=OFF"
+		"-DBUILD_FUZZING:BOOL=OFF"
+		"-DENABLE_OPENEXR_SUPPORT:BOOL=OFF"
+		"-DENABLE_LIBJPEG_SUPPORT:BOOL=OFF"
+		"-DENABLE_LIBPNG_SUPPORT:BOOL=OFF")
+	add_external_project(DXTEX "lib/" "" "" "")
+	copy_inner_file(DXTEX Texconv "bin/" "${TEXCONV_TARGET}")
+endif()
 
 # Assimp
 if(${ZE_EXTERNAL_MODEL_LOADING})
