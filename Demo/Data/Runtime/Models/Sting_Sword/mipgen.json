@@ -1,0 +1,65 @@
+[
+  {
+    "source": "Sting_Base_Color.png",
+    "out": "tex/albedo.dds",
+    "cores": 15,
+    "filter": 4,
+    "window-size": 6,
+    "gamma-correction": false,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Emissive.png",
+    "out": "tex/emissive.dds",
+    "cores": 15,
+    "filter": 4,
+    "window-size": 6,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Height.png",
+    "out": "tex/height.dds",
+    "cores": 15,
+    "filter": 5,
+    "window-size": 5,
+    "filter-coeff-param": 1.5,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Metallic.png",
+    "out": "tex/metal.dds",
+    "cores": 15,
+    "filter": 5,
+    "window-size": 5,
+    "filter-coeff-param": 1.5,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Mixed_AO.png",
+    "out": "tex/ao.dds",
+    "cores": 15,
+    "filter": 5,
+    "window-size": 5,
+    "filter-coeff-param": 1.5,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Normal_DirectX.png",
+    "out": "tex/normal.dds",
+    "cores": 15,
+    "filter": 5,
+    "window-size": 5,
+    "filter-coeff-param": 1.5,
+    "normal-map": true,
+    "src-org-layer": true
+  },
+  {
+    "source": ".Sting_Roughness.png",
+    "out": "tex/roughness.dds",
+    "cores": 15,
+    "filter": 5,
+    "window-size": 5,
+    "filter-coeff-param": 1.5,
+    "src-org-layer": true
+  }
+]

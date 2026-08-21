@@ -41,7 +41,7 @@ struct Sample
 	} RGBA[4];
 };
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept;
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view sourceDir) noexcept;
 ResultCode RunJob(MipParams& job) noexcept;
 Sample GetPixelSample(U8* memory, U8 channelSize, U8 channelCount) noexcept;
 Float4 ConvertToFloat(const Sample& pixel, PixelFormat format, U8 channelCount, bool gammaCorrection, bool normalMap) noexcept;
@@ -98,20 +98,24 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			json::json jsonArray;
-			fin >> jsonArray;
+			json::json jsonarray;
+			fin >> jsonarray;
+
+			const std::filesystem::path path = json;
+			std::string sourceDir = path.parent_path().string();
+
 			ResultCode retCode = ResultCode::Success;
-			if (jsonArray.is_array())
-			{
-				for (const auto& item : jsonArray)
+			if (jsonarray.is_array())
+			{				
+				for (const auto& item : jsonarray)
 				{
-					retCode = ProcessJsonCommand(item);
+					retCode = ProcessJsonCommand(item, sourceDir);
 					if (retCode != ResultCode::Success)
 						return retCode;
 				}
 			}
 			else
-				retCode = ProcessJsonCommand(jsonArray);
+				retCode = ProcessJsonCommand(jsonarray, "");
 			if (retCode != ResultCode::Success)
 				return retCode;
 		}
@@ -154,11 +158,22 @@ int main(int argc, char* argv[])
 	return RunJob(params);
 }
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view sourceDir) noexcept
 {
 	MipParams params = {};
+	std::string source, out;
 	if (command.contains("source"))
-		params.Source = command["source"].get<std::string_view>();
+	{
+		if (sourceDir.empty())
+			params.Source = command["source"].get<std::string_view>();
+		else
+		{
+			source = sourceDir;
+			source += "/";
+			source += command["source"].get<std::string_view>();
+			params.Source = source;
+		}
+	}
 	else
 	{
 		Logger::Error("JSON command missing required \"source\" parameter!");
@@ -166,7 +181,17 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 	}
 
 	if (command.contains("out"))
-		params.OutFile = command["out"].get<std::string_view>();
+	{
+		if (sourceDir.empty())
+			params.OutFile = command["out"].get<std::string_view>();
+		else
+		{
+			out = sourceDir;
+			out += "/";
+			out += command["out"].get<std::string_view>();
+			params.OutFile = out;
+		}
+	}
 	else
 		params.OutFile = params.Source;
 

@@ -5,9 +5,9 @@ Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
-map_Kd Sting_Base_Color.png
-norm Sting_Normal_DirectX.png
-map_Ke Sting_Emissive.png
-map_Pm Sting_Metallic.png
-map_Pr Sting_Roughness.png
-bump Sting_Height.png
+map_Kd tex/albedo.dds
+norm tex/normal.dds
+map_Ke tex/emissive.dds
+map_Pm tex/metal.dds
+map_Pr tex/roughness.dds
+bump tex/height.dds
