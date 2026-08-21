@@ -83,7 +83,7 @@ namespace ZE::Platform::WinAPI
 	{
 		if (stdFile)
 		{
-			const S32 status = _fseeki64_nolock(stdFile, static_cast<S64>(offset), SEEK_SET);
+			[[maybe_unused]] const S32 status = _fseeki64_nolock(stdFile, static_cast<S64>(offset), SEEK_SET);
 			ZE_ASSERT(status == 0, "Error setting file offset!");
 		}
 		else

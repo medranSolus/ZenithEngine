@@ -99,16 +99,16 @@ namespace ZE
 // Log informational message base on given code (silenced in release build)
 #	define ZE_CODE_INFO_DEBUG(code, msg) ZE::Logger::CodeInfo(code, msg, __LINE__, __FILENAME__)
 // Log warning message base on given code (silenced in release build)
-#	define ZE_CODE_WARNING(code, msg) do { ZE_BREAK(); ZE::Logger::CodeWarning(code, msg, __LINE__, __FILENAME__); } while (false)
+#	define ZE_CODE_WARNING_DEBUG(code, msg) do { ZE_BREAK(); ZE::Logger::CodeWarning(code, msg, __LINE__, __FILENAME__); } while (false)
 // Log error message base on given code (silenced in release build)
-#	define ZE_CODE_ERROR(code, msg) do { ZE_BREAK(); ZE::Logger::CodeError(code, msg, __LINE__, __FILENAME__); } while (false)
+#	define ZE_CODE_ERROR_DEBUG(code, msg) do { ZE_BREAK(); ZE::Logger::CodeError(code, msg, __LINE__, __FILENAME__); } while (false)
 #else
 // Log informational message base on given code (silenced in release build)
 #	define ZE_CODE_INFO_DEBUG(code, msg) ((void)0)
 // Log warning message base on given code (silenced in release build)
-#	define ZE_CODE_WARNING(code, msg) ZE_BREAK(); ((void)0)
+#	define ZE_CODE_WARNING_DEBUG(code, msg) ZE_BREAK(); ((void)0)
 // Log error message base on given code (silenced in release build)
-#	define ZE_CODE_ERROR(code, msg) ZE_BREAK(); ((void)0)
+#	define ZE_CODE_ERROR_DEBUG(code, msg) ZE_BREAK(); ((void)0)
 #endif
 
 #pragma endregion
