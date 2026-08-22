@@ -63,8 +63,9 @@ float GetParallaxDepth(const in float2 uv, const in float3 tangentLightDir,
 float3 GetMappedNormal(const in float3x3 TBN, const in float2 texcoord,
 	uniform Texture2D normalMap, uniform SamplerState splr, uniform float mipBias)
 {
-	// Sample normal to tangent space
-	const float3 tangentNormal = normalMap.SampleBias(splr, texcoord, mipBias).rgb * 2.0f - 1.0f;
+	// Reconstruct z and sample normal to tangent space
+	const float2 packedNormal = normalMap.SampleBias(splr, texcoord, mipBias).rg * 2.0f - 1.0f;
+	const float3 tangentNormal = float3(packedNormal, sqrt(saturate(1.0f - dot(packedNormal, packedNormal))));
 	// Transform from tangent into world space
 	return normalize(mul(tangentNormal, TBN));
 }
