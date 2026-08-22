@@ -587,6 +587,10 @@ namespace ZE::Utils
 		case PixelFormat::R32G32_UInt:
 		case PixelFormat::R32G32_SInt:
 		case PixelFormat::R32G8_DepthStencil: // In fact second component of depth stencil takes 32 bits of real memory
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_SRGB:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
 		case PixelFormat::YUV_Y216:
 		case PixelFormat::YUV_Y210:
 		return 64;
@@ -637,11 +641,6 @@ namespace ZE::Utils
 		case PixelFormat::YUV_P208:
 		case PixelFormat::YUV_NV12:
 		return 8;
-		case PixelFormat::BC1_UNorm:
-		case PixelFormat::BC1_UNorm_SRGB:
-		case PixelFormat::BC4_UNorm:
-		case PixelFormat::BC4_SNorm:
-		return 4;
 		}
 	}
 

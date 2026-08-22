@@ -35,8 +35,8 @@ namespace ZE::GFX
 		ZE_CLASS_MOVE(Surface);
 		~Surface() = default;
 
-		static constexpr U32 GetRowByteSize(U32 width, PixelFormat format, U16 mip) noexcept { return Math::AlignUp((std::max(width >> mip, 1U) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
-		static constexpr U64 GetSliceByteSize(U32 width, U32 height, PixelFormat format, U16 mip) noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(width, format, mip)) * std::max(height >> mip, 1U), SLICE_PITCH_ALIGNMENT); }
+		static constexpr U32 GetRowByteSize(U32 width, PixelFormat format, U16 mip) noexcept { return Math::AlignUp((std::max(width >> (mip + (Utils::IsCompressedFormat(format) ? 2 : 0)), 1U) * Utils::GetFormatBitCount(format)) / 8, ROW_PITCH_ALIGNMENT); }
+		static constexpr U64 GetSliceByteSize(U32 width, U32 height, PixelFormat format, U16 mip) noexcept { return Math::AlignUp(static_cast<U64>(GetRowByteSize(width, format, mip)) * std::max(height >> (mip + (Utils::IsCompressedFormat(format) ? 2 : 0)), 1U), SLICE_PITCH_ALIGNMENT); }
 
 		static U64 GetMipOffset(U32 width, U32 height, U16 depth, PixelFormat format, U16 mipLevel, U16 depthLevel) noexcept;
 

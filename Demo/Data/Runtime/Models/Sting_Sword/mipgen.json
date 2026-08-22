@@ -9,7 +9,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Emissive.png",
+    "source": "Sting_Emissive.png",
     "out": "tex/emissive.dds",
     "cores": 15,
     "filter": 4,
@@ -17,7 +17,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Height.png",
+    "source": "Sting_Height.png",
     "out": "tex/height.dds",
     "cores": 15,
     "filter": 5,
@@ -26,7 +26,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Metallic.png",
+    "source": "Sting_Metallic.png",
     "out": "tex/metal.dds",
     "cores": 15,
     "filter": 5,
@@ -35,7 +35,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Mixed_AO.png",
+    "source": "Sting_Mixed_AO.png",
     "out": "tex/ao.dds",
     "cores": 15,
     "filter": 5,
@@ -44,7 +44,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Normal_DirectX.png",
+    "source": "Sting_Normal_DirectX.png",
     "out": "tex/normal.dds",
     "cores": 15,
     "filter": 5,
@@ -54,7 +54,7 @@
     "src-org-layer": true
   },
   {
-    "source": ".Sting_Roughness.png",
+    "source": "Sting_Roughness.png",
     "out": "tex/roughness.dds",
     "cores": 15,
     "filter": 5,
