@@ -38,5 +38,5 @@ add_subdirectory(TexEdit)
 add_custom_command(OUTPUT "${ZE_BIN_DIR}/Tools/${TEXCONV_TARGET}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_BIN_DIR}/${TEXCONV_TARGET}" "${ZE_BIN_DIR}/Tools"
     COMMENT "Copying Texconv tool"
-    DEPENDS "${EXTERNAL_BIN_DIR}/${TEXCONV_TARGET}")
+    DEPENDS "${EXTERNAL_BIN_DIR}/${DXTEX_TARGET}${LIB_EXT}")
 add_custom_target(texconv ALL DEPENDS "${ZE_BIN_DIR}/Tools/${TEXCONV_TARGET}")
