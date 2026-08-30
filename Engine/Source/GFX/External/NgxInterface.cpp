@@ -388,7 +388,8 @@ namespace ZE::GFX::External
 		NVSDK_NGX_FeatureCommonInfo commonInfo = GetCommonInfo();
 		NVSDK_NGX_FeatureDiscoveryInfo info = {};
 		info.SDKVersion = NVSDK_NGX_Version_API;
-		info.ApplicationDataPath = Logger::LOG_DIR_W;
+		std::wstring dataPath = Utils::ToUTF16(Logger::GetDir());
+		info.ApplicationDataPath = dataPath.c_str();
 		info.FeatureID = feature;
 		info.FeatureInfo = &commonInfo;
 #if ZE_NGX_ID

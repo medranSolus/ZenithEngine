@@ -17,11 +17,12 @@ namespace ZE::RHI::DX11::External
 
 	Expected<NgxInterface> NgxInterface::Create(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept
 	{
+		std::wstring dataPath = Utils::ToUTF16(Logger::GetDir());
 #if ZE_NGX_ID
-		Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D11_Init(ZE_NGX_ID, Logger::LOG_DIR_W, dev.Get().dx11.GetDevice(), &info, NVSDK_NGX_Version_API));
+		Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D11_Init(ZE_NGX_ID, dataPath.c_str(), dev.Get().dx11.GetDevice(), &info, NVSDK_NGX_Version_API));
 #else
 		Status code = ZE_NGX_ERROR(NVSDK_NGX_D3D11_Init_with_ProjectID(Settings::ENGINE_UUID, NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-			Settings::ENGINE_VERSION_STR, Logger::LOG_DIR_W,
+			Settings::ENGINE_VERSION_STR, dataPath.c_str(),
 			dev.Get().dx11.GetDevice(), &info, NVSDK_NGX_Version_API));
 #endif
 		if (code)

@@ -42,10 +42,10 @@ namespace ZE
 			if (firstUse)
 			{
 				firstUse = false;
-				fout.open(LOG_FILE, std::ofstream::trunc);
+				fout.open(logFile, std::ofstream::trunc);
 			}
 			else
-				fout.open(LOG_FILE, std::ofstream::app);
+				fout.open(logFile, std::ofstream::app);
 
 			if (fout.good())
 			{
@@ -113,7 +113,7 @@ namespace ZE
 	bool Logger::CreateLogDir(bool noLock) noexcept
 	{
 		Status code = {};
-		bool exists = std::filesystem::exists(LOG_DIR, code);
+		bool exists = std::filesystem::exists(logDir, code);
 		if (code)
 		{
 #if !_ZE_MODE_RELEASE
@@ -125,7 +125,7 @@ namespace ZE
 		{
 			LockGuardRW lock(fileMutex, !noLock);
 			// Not checking return value since Windows always reports it as false, no matter if directory got created or not
-			std::filesystem::create_directories(LOG_DIR, code);
+			std::filesystem::create_directories(logDir, code);
 			if (code)
 			{
 #if !_ZE_MODE_RELEASE
@@ -133,7 +133,7 @@ namespace ZE
 #endif
 				return false;
 			}
-			exists = std::filesystem::exists(LOG_DIR, code);
+			exists = std::filesystem::exists(logDir, code);
 			if (code)
 			{
 #if !_ZE_MODE_RELEASE
@@ -143,5 +143,14 @@ namespace ZE
 			}
 		}
 		return exists;
+	}
+
+	void Logger::SetLogsOuput(std::string_view dir, std::string_view file) noexcept
+	{
+		logDir = dir;
+		logFile = logDir;
+		if (!logDir.empty() && logDir.back() != '/')
+			logFile += '/';
+		logFile += file;
 	}
 }

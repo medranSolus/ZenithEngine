@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
 	parser.AddString("source-nz");
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
+	parser.AddString("log-dir");
+	parser.AddString("log-file");
 	parser.Parse(argc, argv);
 
 	if (parser.GetOption("help-sample-delta"))
@@ -82,6 +84,10 @@ int main(int argc, char* argv[])
 		Logger::InfoNoFile("  Only used when <specular> option is specified.");
 		return ResultCode::Success;
 	}
+
+	std::string_view logDir = parser.GetString("log-dir");
+	std::string_view logFile = parser.GetString("log-file");
+	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_CubeConv.txt" : logFile);
 
 	std::string_view json = parser.GetString("json");
 	if (!json.empty())

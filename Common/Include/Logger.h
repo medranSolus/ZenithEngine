@@ -10,14 +10,10 @@ namespace ZE
 	// Static logger service
 	class Logger final
 	{
-	public:
-		static constexpr const char* LOG_DIR = "./Logs/";
-		static constexpr const wchar_t* LOG_DIR_W = L"./Logs/";
-
-	private:
 		enum class Level : U8 { Info, Warning, Error, Critical };
 
-		static constexpr const char* LOG_FILE = "./Logs/log.txt";
+		static inline std::string_view logDir = "./Logs";
+		static inline std::string logFile = "./Logs/log.txt";
 
 		static inline bool firstUse = true;
 		static inline std::shared_mutex consoleMutex;
@@ -30,6 +26,8 @@ namespace ZE
 
 	public:
 		Logger() = delete;
+
+		static constexpr std::string_view GetDir() noexcept { return logDir; }
 
 		static void InfoNoFile(std::string_view info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine, false); }
 		static void Info(std::string_view info, bool flush = false, bool newLine = true) noexcept { Log(Level::Info, info, flush, newLine); }
@@ -44,5 +42,6 @@ namespace ZE
 
 		static void Unformatted(bool error, std::string_view msg, bool newLine = true, bool indent = true, bool fileOnly = false) noexcept;
 		static bool CreateLogDir(bool noLock = false) noexcept;
+		static void SetLogsOuput(std::string_view dir, std::string_view file) noexcept;
 	};
 }
