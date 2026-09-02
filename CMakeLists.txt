@@ -351,6 +351,7 @@ endif()
 if(${ZE_PIX_ENABLED})
 	set(PIX_TARGET "${PIX_DIR}/bin/x64/${PIX_LIB}.lib")
 endif()
+set(TEXASM_TARGET "texassemble${EXEC_EXT}")
 set(TEXCONV_TARGET "texconv${EXEC_EXT}")
 if(${ZE_ENABLE_XAUDIO2})
 	set(XAUDIO2_TARGETS "${XAUDIO2_DIR}/release/lib/x64/${XAUDIO2_LIB}.lib"
@@ -638,6 +639,7 @@ if(ZE_BUILD_TOOLS)
 		"-DENABLE_LIBPNG_SUPPORT:BOOL=OFF")
 	add_external_project(DXTEX "lib/" "" "" "")
 	copy_inner_file(DXTEX Texconv "bin/" "${TEXCONV_TARGET}")
+	copy_inner_file(DXTEX Texassemble "bin/" "${TEXASM_TARGET}")
 endif()
 
 # Assimp
