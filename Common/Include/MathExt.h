@@ -27,6 +27,8 @@ namespace ZE::Math
 		Kaiser = 3,
 		Lanczos = 4,
 		Gauss = 5,
+		BicubicSharp = 6,
+		BicubicSmooth = 7,
 	};
 
 	// Used for traversal of corresponding cubemap face in 3D space
@@ -221,6 +223,41 @@ namespace ZE::Math
 	}
 
 	template<typename T>
+	constexpr T CatmullRom(T t) noexcept
+	{
+		t = std::abs(t);
+		if (t >= 2.0)
+			return static_cast<T>(0.0);
+
+		T t2 = t * t;
+		T t3 = t2 * t;
+		if (t <= 1.0)
+			return static_cast<T>(1.5) * t3 - static_cast<T>(2.5) * t2 + static_cast<T>(1.0);
+		return static_cast<T>(-0.5) * t3 + static_cast<T>(2.5) * t2 - static_cast<T>(4.0) * t + static_cast<T>(2.0);
+	}
+
+	template<typename T>
+	constexpr T MitchellNetravali(T x, T B = 1.0 / 3.0, T C = 1.0 / 3.0) noexcept
+	{
+		x = std::abs(x);
+		if (x >= 2.0)
+			return static_cast<T>(0.0);
+
+		T x2 = x * x;
+		T x3 = x2 * x;
+		if (x < 1.0)
+		{
+			return ((static_cast<T>(12.0) - static_cast<T>(9.0) * B - static_cast<T>(6.0) * C) * x3 +
+				(static_cast<T>(-18.0) + static_cast<T>(12.0) * B + static_cast<T>(6.0) * C) * x2 +
+				(static_cast<T>(6.0) - static_cast<T>(2.0) * B)) * (static_cast<T>(1.0) / static_cast<T>(6.0));
+		}
+		return ((static_cast<T>(-B) - static_cast<T>(6.0) * C) * x3 +
+			(static_cast<T>(6.0) * B + static_cast<T>(30.0) * C) * x2 +
+			(static_cast<T>(-12.0) * B - static_cast<T>(48.0) * C) * x +
+			(static_cast<T>(8.0) * B + static_cast<T>(24.0) * C)) * (static_cast<T>(1.0) / static_cast<T>(6.0));
+	}
+
+	template<typename T>
 	constexpr T Lerp(T a, T b, T weight) noexcept
 	{
 		return a + weight * (b - a);
@@ -264,6 +301,8 @@ namespace ZE::Math
 	UInt3 SampleCubemap(const Vector& direction, U32 cubemapSize) noexcept;
 	// Samples cubemap in given direction, returns UV coords and face index
 	Float2 SampleCubemapUV(const Vector& direction, U32& faceIndex) noexcept;
+	// Compute filter coefficients for given filter if required
+	std::vector<float> GetFilterCoefficients(FilterType filter, U32 windowSize, float coeffParam = 0.0f) noexcept;
 	// Number of filter coefficients must match ceil(sqrt(samples.size()) / 2)
-	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX = 0.5f, float bilinearFactorY = 0.5f, const std::vector<float>* filterCoeff = nullptr) noexcept;
+	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float factorX = 0.5f, float factorY = 0.5f, const std::vector<float>* filterCoeff = nullptr) noexcept;
 }

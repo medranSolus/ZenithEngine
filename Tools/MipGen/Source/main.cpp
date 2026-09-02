@@ -55,12 +55,6 @@ int main(int argc, char* argv[])
 	parser.AddOption("gamma-correction");
 	parser.AddOption("src-org-layer");
 	parser.AddOption("normal-map");
-	parser.AddOption("box", 'b');
-	parser.AddOption("gamma-average", 'g');
-	parser.AddOption("bilinear", 'l');
-	parser.AddOption("kaiser", 'k');
-	parser.AddOption("lanczos", 'z');
-	parser.AddOption("gauss", 'u');
 	parser.AddNumber("filter", 0, 'f');
 	parser.AddNumber("window-size", 2, 'w'); // Bilinear will override this to minimal value 2
 	parser.AddNumber("cores", 1, 'c');
@@ -75,7 +69,7 @@ int main(int argc, char* argv[])
 	if (parser.GetOption("help-filter"))
 	{
 		Logger::InfoNoFile("Mip generation filter help:");
-		Logger::InfoNoFile("  0:Box, 1:GammaAverage, 2:Bilinear, 3:Kaiser, 4:Lanczos, 5:Gauss");
+		Logger::InfoNoFile("  0:Box, 1:GammaAverage, 2:Bilinear, 3:Kaiser, 4:Lanczos, 5:Gauss, 6:BicubicSharp, 7:BicubicSmooth");
 		return ResultCode::Success;
 	}
 
@@ -147,19 +141,6 @@ int main(int argc, char* argv[])
 	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
 	params.WindowSize = parser.GetNumber("window-size");
 	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("filter"));
-
-	if (parser.GetOption("box"))
-		params.Filter = Math::FilterType::Box;
-	else if (parser.GetOption("gamma-average"))
-		params.Filter = Math::FilterType::GammaAverage;
-	else if (parser.GetOption("bilinear"))
-		params.Filter = Math::FilterType::Bilinear;
-	else if (parser.GetOption("kaiser"))
-		params.Filter = Math::FilterType::Kaiser;
-	else if (parser.GetOption("lanczos"))
-		params.Filter = Math::FilterType::Lanczos;
-	else if (parser.GetOption("gauss"))
-		params.Filter = Math::FilterType::Gauss;
 
 	return RunJob(params);
 }
@@ -245,65 +226,7 @@ ResultCode RunJob(MipParams& job) noexcept
 	}
 
 	// Create filter coefficients if needed
-	std::vector<float> filterCoeffs;
-	if (job.Filter != Math::FilterType::Box && job.Filter != Math::FilterType::GammaAverage && job.Filter != Math::FilterType::Bilinear)
-	{
-		filterCoeffs.resize((job.WindowSize >> 1) + (job.WindowSize & 1));
-		const U32 coeffSize = Utils::SafeCast<U32>(filterCoeffs.size());
-
-		float coeffSum = 0.0f;
-		switch (job.Filter)
-		{
-		case Math::FilterType::Kaiser:
-		{
-			if (job.FilterCoeffParam == 0.0f)
-				job.FilterCoeffParam = 7.64f;
-
-			for (U32 i = 0; i < coeffSize; ++i)
-			{
-				// Regular Kaiser window reaches 1 at length / 2 so need to scale it correctly
-				const float k = Math::Kaiser(static_cast<float>(i + coeffSize), job.FilterCoeffParam, static_cast<float>(coeffSize * 2));
-				filterCoeffs.at(i) = k;
-				coeffSum += k;
-			}
-			break;
-		}
-		case Math::FilterType::Lanczos:
-		{
-			for (U32 i = 0; i < coeffSize; ++i)
-			{
-				const float l = Math::Lanczos(static_cast<float>(i), static_cast<float>(coeffSize));
-				filterCoeffs.at(i) = l;
-				coeffSum += l;
-			}
-			break;
-		}
-		case Math::FilterType::Gauss:
-		{
-			if (job.FilterCoeffParam == 0.0f)
-				job.FilterCoeffParam = 2.6f;
-
-			for (U32 i = 0; i < coeffSize; ++i)
-			{
-				const float g = Math::Gauss(static_cast<float>(i), job.FilterCoeffParam);
-				filterCoeffs.at(i) = g;
-				coeffSum += g;
-			}
-			break;
-		}
-		default:
-		break;
-		}
-
-		// Normalize filter coefficients, symetric kernel requires doubling the sum
-		// but just for even windows, odd windows have center coeff counted once
-		coeffSum *= 2.0f;
-		if (job.WindowSize & 1)
-			coeffSum -= filterCoeffs.front();
-
-		for (float& coeff : filterCoeffs)
-			coeff /= coeffSum;
-	}
+	std::vector<float> filterCoeffs = Math::GetFilterCoefficients(job.Filter, job.WindowSize, job.FilterCoeffParam);
 
 	const U8 channelCount = Utils::GetChannelCount(surface.GetFormat());
 	const PixelFormat format = Utils::GetSingleChannelFormat(surface.GetFormat());

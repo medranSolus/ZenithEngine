@@ -182,12 +182,88 @@ namespace ZE::Math
 		return uv;
 	}
 
-	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float bilinearFactorX, float bilinearFactorY, const std::vector<float>* filterCoeff) noexcept
+	std::vector<float> GetFilterCoefficients(FilterType filter, U32 windowSize, float coeffParam) noexcept
+	{
+		std::vector<float> coeffs;
+
+		switch (filter)
+		{
+		default:
+			break;
+		case Math::FilterType::Kaiser:
+		case Math::FilterType::Lanczos:
+		case Math::FilterType::Gauss:
+		{
+			coeffs.resize((windowSize >> 1) + (windowSize & 1));
+			const U32 coeffSize = Utils::SafeCast<U32>(coeffs.size());
+
+			float coeffSum = 0.0f;
+			switch (filter)
+			{
+			case Math::FilterType::Kaiser:
+			{
+				if (coeffParam == 0.0f)
+					coeffParam = 7.64f;
+
+				for (U32 i = 0; i < coeffSize; ++i)
+				{
+					// Regular Kaiser window reaches 1 at length / 2 so need to scale it correctly
+					const float k = Math::Kaiser(static_cast<float>(i + coeffSize), coeffParam, static_cast<float>(coeffSize * 2));
+					coeffs.at(i) = k;
+					coeffSum += k;
+				}
+				break;
+			}
+			case Math::FilterType::Lanczos:
+			{
+				for (U32 i = 0; i < coeffSize; ++i)
+				{
+					const float l = Math::Lanczos(static_cast<float>(i), static_cast<float>(coeffSize));
+					coeffs.at(i) = l;
+					coeffSum += l;
+				}
+				break;
+			}
+			case Math::FilterType::Gauss:
+			{
+				if (coeffParam == 0.0f)
+					coeffParam = 2.6f;
+
+				for (U32 i = 0; i < coeffSize; ++i)
+				{
+					const float g = Math::Gauss(static_cast<float>(i), coeffParam);
+					coeffs.at(i) = g;
+					coeffSum += g;
+				}
+				break;
+			}
+			default:
+				break;
+			}
+
+			// Normalize filter coefficients, symetric kernel requires doubling the sum
+			// but just for even windows, odd windows have center coeff counted once
+			coeffSum *= 2.0f;
+			if (windowSize & 1)
+				coeffSum -= coeffs.front();
+
+			for (float& coeff : coeffs)
+				coeff /= coeffSum;
+			break;
+		}
+		}
+
+		return coeffs;
+	}
+
+	Vector ApplyFilter(FilterType filter, std::vector<Float4>& samples, float factorX, float factorY, const std::vector<float>* filterCoeff) noexcept
 	{
 		// https://bgolus.medium.com/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec
 		Vector result = {};
 		switch (filter)
 		{
+		default:
+			ZE_ENUM_UNHANDLED();
 		case FilterType::Box:
 		{
 			for (const auto& sample : samples)
@@ -212,10 +288,10 @@ namespace ZE::Math
 		{
 			ZE_ASSERT(samples.size() == 4, "Bilinear filter requires exactly 4 samples!");
 			// Bilinear interpolation weights
-			const Vector w1 = XMVectorReplicate((1.0f - bilinearFactorY) * (1.0f - bilinearFactorX));
-			const Vector w2 = XMVectorReplicate(bilinearFactorY * (1.0f - bilinearFactorX));
-			const Vector w3 = XMVectorReplicate((1.0f - bilinearFactorY) * bilinearFactorX);
-			const Vector w4 = XMVectorReplicate(bilinearFactorY * bilinearFactorX);
+			const Vector w1 = XMVectorReplicate((1.0f - factorY) * (1.0f - factorX));
+			const Vector w2 = XMVectorReplicate(factorY * (1.0f - factorX));
+			const Vector w3 = XMVectorReplicate((1.0f - factorY) * factorX);
+			const Vector w4 = XMVectorReplicate(factorY * factorX);
 
 			const Vector v1 = XMLoadFloat4(&samples.at(0));
 			const Vector v2 = XMLoadFloat4(&samples.at(1));
@@ -271,8 +347,32 @@ namespace ZE::Math
 			}
 			break;
 		}
-		default:
+		case FilterType::BicubicSharp:
+		case FilterType::BicubicSmooth:
+		{
+			ZE_ASSERT(samples.size() == 16, "Bicubic filter requires exactly 16 samples!");
+			const bool sharp = filter == FilterType::BicubicSharp;
+
+			float coeffSum = 0.0f;
+			U8 i = 0;
+			for (S32 dy = -1; dy <= 2; ++dy)
+			{
+				float y = factorY - static_cast<float>(dy);
+				float weightY = sharp ? Math::CatmullRom(y) : Math::MitchellNetravali(y);
+
+				for (S32 dx = -1; dx <= 2; ++dx)
+				{
+					float x = factorX - static_cast<float>(dx);
+					float weight = (sharp ? Math::CatmullRom(x) : Math::MitchellNetravali(x)) * weightY;
+					coeffSum += weight;
+
+					result = Math::XMVectorMultiplyAdd(Math::XMLoadFloat4(&samples.at(i++)), Math::XMVectorReplicate(weight), result);
+				}
+			}
+
+			result = XMVectorMultiply(result, XMVectorReplicate(1.0f / coeffSum));
 			break;
+		}
 		}
 		return result;
 	}
