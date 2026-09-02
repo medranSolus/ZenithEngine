@@ -46,7 +46,8 @@ namespace TexOps
 		}
 	}
 
-	void ConvertToCubemap(const GFX::Surface& surface, GFX::Surface& cubemap, U32 cores, bool bilinear, bool fp16) noexcept
+	void ConvertToCubemap(const GFX::Surface& surface, GFX::Surface& cubemap, U32 cores,
+		Math::FilterType filter, float filterCoeff, U32 windowSize, bool noAlpha, bool fp16) noexcept
 	{
 		U8* cubemapBuffer = cubemap.GetBuffer();
 		const U8* hdriBuffer = surface.GetBuffer();
@@ -56,7 +57,10 @@ namespace TexOps
 		const U64 sliceSize = cubemap.GetSliceByteSize();
 		const U8 pixelSize = cubemap.GetPixelSize();
 
-		auto processCubemap = [&surface, &cubemap, hdriBuffer, hdriRowSize, rowSize, sliceSize, pixelSize, bilinear, fp16](U8* cubemapBuffer, U16 startFace, U16 endFace)
+		const S32 halfWindow = Utils::SafeCast<S32>(windowSize) >> 1;
+		std::vector<float> filterCoeffs = Math::GetFilterCoefficients(filter, windowSize, filterCoeff);
+
+		auto processCubemap = [&surface, &cubemap, &filterCoeffs, halfWindow, hdriBuffer, hdriRowSize, rowSize, sliceSize, pixelSize, filter, windowSize, noAlpha, fp16](U8* cubemapBuffer, U16 startFace, U16 endFace)
 			{
 				for (U16 a = startFace; a < endFace; ++a)
 				{
@@ -85,7 +89,18 @@ namespace TexOps
 							const float hdriY = (1.0f - polarAngle / Math::PI) * static_cast<float>(surface.GetHeight());
 
 							Float3 hdriPixel = {};
-							if (bilinear)
+							switch (filter)
+							{
+							default:
+								ZE_ENUM_UNHANDLED();
+							case Math::FilterType::Box:
+							{
+								const U32 hdriXIdx = std::clamp(static_cast<U32>(hdriX), 0U, surface.GetWidth() - 1);
+								const U32 hdriYIdx = std::clamp(static_cast<U32>(hdriY), 0U, surface.GetHeight() - 1);
+								hdriPixel = *reinterpret_cast<const Float3*>(hdriBuffer + hdriYIdx * hdriRowSize + hdriXIdx * sizeof(Float3));
+								break;
+							}
+							case Math::FilterType::Bilinear:
 							{
 								// Factor gives the contribution of the next column, while the contribution of intX is 1 - factor
 								float intX, intY;
@@ -124,12 +139,81 @@ namespace TexOps
 
 								const Vector interpolated = Math::ApplyFilter(Math::FilterType::Bilinear, samples, std::abs(factorX), std::abs(factorY));
 								Math::XMStoreFloat3(&hdriPixel, interpolated);
+								break;
 							}
-							else
+							case Math::FilterType::GammaAverage:
+							case Math::FilterType::Kaiser:
+							case Math::FilterType::Lanczos:
+							case Math::FilterType::Gauss:
 							{
-								const U32 hdriXIdx = std::clamp(static_cast<U32>(hdriX), 0U, surface.GetWidth() - 1);
-								const U32 hdriYIdx = std::clamp(static_cast<U32>(hdriY), 0U, surface.GetHeight() - 1);
-								hdriPixel = *reinterpret_cast<const Float3*>(hdriBuffer + hdriYIdx * hdriRowSize + hdriXIdx * pixelSize);
+								S32 baseYIdx = static_cast<S32>(hdriX);
+								S32 baseXIdx = static_cast<S32>(hdriY);
+
+								std::vector<Float4> samples;
+								samples.reserve(static_cast<U64>(windowSize) * windowSize);
+								for (S32 dy = -halfWindow - (windowSize & 1); dy < halfWindow; ++dy)
+								{
+									S32 pointY = baseYIdx + dy;
+									if (pointY < 0)
+										pointY += surface.GetHeight();
+									else if (static_cast<U32>(pointY) >= surface.GetHeight())
+										pointY -= surface.GetHeight();
+
+									for (S32 dx = -halfWindow - (windowSize & 1); dx < halfWindow; ++dx)
+									{
+										S32 pointX = baseXIdx + dx;
+										if (pointX < 0)
+											pointX += surface.GetWidth();
+										else if (static_cast<U32>(pointX) >= surface.GetWidth())
+											pointX -= surface.GetWidth();
+
+										const Float3 sample = *reinterpret_cast<const Float3*>(hdriBuffer + pointY * hdriRowSize + pointX * sizeof(Float3));
+										samples.emplace_back(sample.x, sample.y, sample.z, 0.0f);
+									}
+								}
+
+								const Vector interpolated = Math::ApplyFilter(filter, samples, 0.0f, 0.0f, &filterCoeffs);
+								Math::XMStoreFloat3(&hdriPixel, interpolated);
+								break;
+							}
+							case Math::FilterType::BicubicSharp:
+							case Math::FilterType::BicubicSmooth:
+							{
+								// Base integer pixel
+								float intX, intY;
+								float factorX = std::modf(hdriX, &intX);
+								float factorY = std::modf(hdriY, &intY);
+
+								U32 baseYIdx = static_cast<U32>(intY);
+								U32 baseXIdx = static_cast<U32>(intX);
+
+								std::vector<Float4> samples;
+								samples.reserve(16);
+								for (S32 dy = -1; dy <= 2; ++dy)
+								{
+									S32 pointY = baseYIdx + dy;
+									if (pointY < 0)
+										pointY += surface.GetHeight();
+									else if (static_cast<U32>(pointY) >= surface.GetHeight())
+										pointY -= surface.GetHeight();
+
+									for (S32 dx = -1; dx <= 2; ++dx)
+									{
+										S32 pointX = baseXIdx + dx;
+										if (pointX < 0)
+											pointX += surface.GetWidth();
+										else if (static_cast<U32>(pointX) >= surface.GetWidth())
+											pointX -= surface.GetWidth();
+
+										const Float3 sample = *reinterpret_cast<const Float3*>(hdriBuffer + pointY * hdriRowSize + pointX * sizeof(Float3));
+										samples.emplace_back(sample.x, sample.y, sample.z, 0.0f);
+									}
+								}
+
+								const Vector interpolated = Math::ApplyFilter(filter, samples, factorX, factorY);
+								Math::XMStoreFloat3(&hdriPixel, interpolated);
+								break;
+							}
 							}
 
 							const U64 cubemapOffset = Utils::SafeCast<U64>(y) * rowSize + Utils::SafeCast<U64>(x) * pixelSize;
@@ -138,10 +222,12 @@ namespace TexOps
 								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset) = Math::FP16::EncodeFloat16(hdriPixel.x);
 								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 2) = Math::FP16::EncodeFloat16(hdriPixel.y);
 								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 4) = Math::FP16::EncodeFloat16(hdriPixel.z);
-								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 6) = Math::FP16::EncodeFloat16(0.0f);
+								*reinterpret_cast<U16*>(cubemapBuffer + cubemapOffset + 6) = Math::FP16::EncodeFloat16(1.0f);
 							}
-							else
+							else if (noAlpha)
 								*reinterpret_cast<Float3*>(cubemapBuffer + cubemapOffset) = hdriPixel;
+							else
+								*reinterpret_cast<Float4*>(cubemapBuffer + cubemapOffset) = { hdriPixel.x, hdriPixel.y, hdriPixel.z, 1.0f };
 						}
 					}
 					cubemapBuffer += sliceSize;

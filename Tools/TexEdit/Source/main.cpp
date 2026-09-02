@@ -23,7 +23,9 @@ struct JobParams
 	bool FlipY = false;
 	bool HdriCubemap = false;
 	bool Fp16 = false;
-	bool Bilinear = false;
+	float FilterCoeffParam = 0.0f;
+	Math::FilterType Filter = Math::FilterType::Box;
+	U32 WindowSize = 2;
 };
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
@@ -32,11 +34,15 @@ ResultCode RunJob(const JobParams& job) noexcept;
 int main(int argc, char* argv[])
 {
 	CmdParser parser;
+	parser.AddOption("help-cube-filter");
+	parser.AddOption("help-filter-coeff-param");
 	parser.AddOption("no-alpha", 'a');
 	parser.AddOption("flip-y", 'y');
 	parser.AddOption("hdri-cubemap", 'q');
 	parser.AddOption("fp16", 'f');
-	parser.AddOption("bilinear", 'b');
+	parser.AddFloat("filter-coeff-param");
+	parser.AddNumber("cube-filter");
+	parser.AddNumber("window-size", 2);
 	parser.AddNumber("cores", 1, 'c');
 	parser.AddString("source", "", 's');
 	parser.AddString("out", "", 'o');
@@ -44,6 +50,23 @@ int main(int argc, char* argv[])
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
 	parser.Parse(argc, argv);
+
+	if (parser.GetOption("help-cube-filter"))
+	{
+		Logger::InfoNoFile("HDRI cubemap conversion filter help:");
+		Logger::InfoNoFile("  0:Box, 1:GammaAverage, 2:Bilinear, 3:Kaiser, 4:Lanczos, 5:Gauss, 6:BicubicSharp, 7:BicubicSmooth");
+		return ResultCode::Success;
+	}
+
+	if (parser.GetOption("help-filter-coeff-param"))
+	{
+		Logger::InfoNoFile("Filter coefficient parameter help:");
+		Logger::InfoNoFile("  This is additional parameter used when creating complex filtration windows and it's meaning is depended on algorithm used.");
+		Logger::InfoNoFile("  For Kaiser filter this is alpha parameter. (ex. value 7.64)");
+		Logger::InfoNoFile("  For Gauss filter this is sigma parameter. (ex. value 2.6)");
+		Logger::InfoNoFile("  Other filter types do not utilize this value.");
+		return ResultCode::Success;
+	}
 
 	std::string_view logDir = parser.GetString("log-dir");
 	std::string_view logFile = parser.GetString("log-file");
@@ -97,7 +120,9 @@ int main(int argc, char* argv[])
 	params.FlipY = parser.GetOption("flip-y");
 	params.HdriCubemap = parser.GetOption("hdri-cubemap");
 	params.Fp16 = parser.GetOption("fp16");
-	params.Bilinear = parser.GetOption("bilinear");
+	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
+	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("cube-filter"));
+	params.WindowSize = parser.GetNumber("window-size");
 
 	return RunJob(params);
 }
@@ -128,8 +153,12 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		params.HdriCubemap = command["hdri-cubemap"].get<bool>();
 	if (command.contains("fp16"))
 		params.Fp16 = command["fp16"].get<bool>();
-	if (command.contains("bilinear"))
-		params.Bilinear = command["bilinear"].get<bool>();
+	if (command.contains("filter-coeff-param"))
+		params.FilterCoeffParam = command["filter-coeff-param"].get<float>();
+	if (command.contains("cube-filter"))
+		params.Filter = static_cast<Math::FilterType>(command["cube-filter"].get<U32>());
+	if (command.contains("window-size"))
+		params.WindowSize = command["window-size"].get<U32>();
 
 	return RunJob(params);
 }
@@ -173,14 +202,16 @@ ResultCode RunJob(const JobParams& job) noexcept
 	bool saved = false;
 	if (job.HdriCubemap)
 	{
-		if (job.NoAlpha || job.FlipY)
-			Logger::Warning("Other operations specified during HDRi format processing will be ignored!");
+		if (job.FlipY)
+			Logger::Warning("Flipping Y channel while processing HDRI images is not permitted!");
+		if (job.WindowSize == 0)
+			Logger::Warning("Window size of 0 is not valid for HDRI to cubemap conversion, using default value of 2!");
 		if (2 * surface.GetHeight() != surface.GetWidth())
-			Logger::Warning("Source image is not in expected 2:1 aspect ratio for HDRi to cubemap conversion!");
+			Logger::Warning("Source image is not in expected 2:1 aspect ratio for HDRI to cubemap conversion!");
+		
+		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, job.Fp16 ? PixelFormat::R16G16B16A16_Float : (job.NoAlpha ? PixelFormat::R32G32B32_Float : PixelFormat::R32G32B32A32_Float), false);
 
-		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, job.Fp16 ? PixelFormat::R16G16B16A16_Float : PixelFormat::R32G32B32_Float, false);
-
-		TexOps::ConvertToCubemap(surface, cubemap, job.Cores, job.Bilinear, job.Fp16);
+		TexOps::ConvertToCubemap(surface, cubemap, job.Cores, job.Filter, job.FilterCoeffParam, job.WindowSize == 0 ? 2 : job.WindowSize, job.NoAlpha, job.Fp16);
 		Logger::Info("Converted to 6-faced cubemap");
 		saved = cubemap.Save(job.OutFile);
 	}

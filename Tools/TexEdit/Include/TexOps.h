@@ -9,5 +9,6 @@ namespace TexOps
 	void SimpleProcess(GFX::Surface& surface, U32 cores, bool noAlpha, bool flipY) noexcept;
 
 	// Converts an equirectangular HDRi surface to a cubemap surface
-	void ConvertToCubemap(const GFX::Surface& surface, GFX::Surface& cubemap, U32 cores, bool bilinear, bool fp16) noexcept;
+	void ConvertToCubemap(const GFX::Surface& surface, GFX::Surface& cubemap, U32 cores,
+		Math::FilterType filter, float filterCoeff, U32 windowSize, bool noAlpha, bool fp16) noexcept;
 }
