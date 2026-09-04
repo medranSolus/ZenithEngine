@@ -26,6 +26,7 @@ struct JobParams
 	float FilterCoeffParam = 0.0f;
 	Math::FilterType Filter = Math::FilterType::Box;
 	U32 WindowSize = 2;
+	U32 CubeWidth = 0;
 };
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept;
@@ -42,6 +43,7 @@ int main(int argc, char* argv[])
 	parser.AddOption("fp16", 'f');
 	parser.AddFloat("filter-coeff-param");
 	parser.AddNumber("cube-filter");
+	parser.AddNumber("cube-width");
 	parser.AddNumber("window-size", 2);
 	parser.AddNumber("cores", 1, 'c');
 	parser.AddString("source", "", 's');
@@ -123,6 +125,7 @@ int main(int argc, char* argv[])
 	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
 	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("cube-filter"));
 	params.WindowSize = parser.GetNumber("window-size");
+	params.CubeWidth = parser.GetNumber("cube-width");
 
 	return RunJob(params);
 }
@@ -159,6 +162,8 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		params.Filter = static_cast<Math::FilterType>(command["cube-filter"].get<U32>());
 	if (command.contains("window-size"))
 		params.WindowSize = command["window-size"].get<U32>();
+	if (command.contains("cube-width"))
+		params.CubeWidth = command["cube-width"].get<U32>();
 
 	return RunJob(params);
 }
@@ -209,7 +214,8 @@ ResultCode RunJob(const JobParams& job) noexcept
 		if (2 * surface.GetHeight() != surface.GetWidth())
 			Logger::Warning("Source image is not in expected 2:1 aspect ratio for HDRI to cubemap conversion!");
 		
-		GFX::Surface cubemap(surface.GetWidth() / 2, surface.GetHeight(), 1, 1, 6, job.Fp16 ? PixelFormat::R16G16B16A16_Float : (job.NoAlpha ? PixelFormat::R32G32B32_Float : PixelFormat::R32G32B32A32_Float), false);
+		U32 width = job.CubeWidth == 0 ? surface.GetHeight() : job.CubeWidth;
+		GFX::Surface cubemap(width, width, 1, 1, 6, job.Fp16 ? PixelFormat::R16G16B16A16_Float : (job.NoAlpha ? PixelFormat::R32G32B32_Float : PixelFormat::R32G32B32A32_Float), false);
 
 		TexOps::ConvertToCubemap(surface, cubemap, job.Cores, job.Filter, job.FilterCoeffParam, job.WindowSize == 0 ? 2 : job.WindowSize, job.NoAlpha, job.Fp16);
 		Logger::Info("Converted to 6-faced cubemap");
