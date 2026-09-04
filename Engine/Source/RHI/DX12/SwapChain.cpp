@@ -81,7 +81,7 @@ namespace ZE::RHI::DX12
 			if (hr == DXGI_ERROR_DEVICE_REMOVED)
 			{
 #if _ZE_DEBUG_GFX_API
-				DREDRecovery::SaveDeviceRemovedData(dev.Get().dx12, std::string(Logger::LOG_DIR) + "tdr_error.txt");
+				DREDRecovery::SaveDeviceRemovedData(dev.Get().dx12, std::string(Logger::GetDir()) + "tdr_error.txt");
 #endif
 				hr = dev.Get().dx12.GetDevice()->GetDeviceRemovedReason();
 			}
