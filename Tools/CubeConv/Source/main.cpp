@@ -459,7 +459,7 @@ void ConvoluteIrradiance(GFX::Surface& convolution, const std::vector<U8*>& face
 							*reinterpret_cast<U16*>(image + convolutionOffset) = Math::FP16::EncodeFloat16(Math::XMVectorGetX(irradiance));
 							*reinterpret_cast<U16*>(image + convolutionOffset + 2) = Math::FP16::EncodeFloat16(Math::XMVectorGetY(irradiance));
 							*reinterpret_cast<U16*>(image + convolutionOffset + 4) = Math::FP16::EncodeFloat16(Math::XMVectorGetZ(irradiance));
-							*reinterpret_cast<U16*>(image + convolutionOffset + 6) = Math::FP16::EncodeFloat16(0.0f);
+							*reinterpret_cast<U16*>(image + convolutionOffset + 6) = Math::FP16::EncodeFloat16(1.0f);
 						}
 						else
 							Math::XMStoreFloat3(reinterpret_cast<Float3*>(image + convolutionOffset), irradiance);
@@ -665,7 +665,7 @@ void ConvolutePrefiltered(GFX::Surface& convolution, const std::vector<U8*>& fac
 								*reinterpret_cast<U16*>(convolutionBuffer + convolutionOffset) = Math::FP16::EncodeFloat16(Math::XMVectorGetX(prefilteredColor));
 								*reinterpret_cast<U16*>(convolutionBuffer + convolutionOffset + 2) = Math::FP16::EncodeFloat16(Math::XMVectorGetY(prefilteredColor));
 								*reinterpret_cast<U16*>(convolutionBuffer + convolutionOffset + 4) = Math::FP16::EncodeFloat16(Math::XMVectorGetZ(prefilteredColor));
-								*reinterpret_cast<U16*>(convolutionBuffer + convolutionOffset + 6) = Math::FP16::EncodeFloat16(0.0f);
+								*reinterpret_cast<U16*>(convolutionBuffer + convolutionOffset + 6) = Math::FP16::EncodeFloat16(1.0f);
 							}
 							else
 								Math::XMStoreFloat3(reinterpret_cast<Float3*>(convolutionBuffer + convolutionOffset), prefilteredColor);
