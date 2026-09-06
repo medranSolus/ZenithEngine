@@ -177,18 +177,17 @@ int main(int argc, char* argv[])
 
 ResultCode ProcessJsonCommand(const json::json& command) noexcept
 {
-	std::string_view output = "";
+	ConvolutionParams params = {};
 	if (command.contains("out"))
-		output = command["out"].get<std::string_view>();
+		params.OutputFile = command["out"].get<std::string_view>();
 	else
 	{
 		Logger::Error("JSON command missing required \"out\" parameter!");
 		return ResultCode::NoOutputFile;
 	}
 
-	std::vector<std::string_view> sourceArray;
 	if (command.contains("source"))
-		sourceArray.emplace_back(command["source"].get<std::string_view>());
+		params.SourceFiles.emplace_back(command["source"].get<std::string_view>());
 	else
 	{
 		bool hasAllFaces = true;
@@ -201,13 +200,13 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 
 		if (hasAllFaces)
 		{
-			sourceArray.reserve(6);
-			sourceArray.emplace_back(command["source-px"].get<std::string_view>());
-			sourceArray.emplace_back(command["source-nx"].get<std::string_view>());
-			sourceArray.emplace_back(command["source-py"].get<std::string_view>());
-			sourceArray.emplace_back(command["source-ny"].get<std::string_view>());
-			sourceArray.emplace_back(command["source-pz"].get<std::string_view>());
-			sourceArray.emplace_back(command["source-nz"].get<std::string_view>());
+			params.SourceFiles.reserve(6);
+			params.SourceFiles.emplace_back(command["source-px"].get<std::string_view>());
+			params.SourceFiles.emplace_back(command["source-nx"].get<std::string_view>());
+			params.SourceFiles.emplace_back(command["source-py"].get<std::string_view>());
+			params.SourceFiles.emplace_back(command["source-ny"].get<std::string_view>());
+			params.SourceFiles.emplace_back(command["source-pz"].get<std::string_view>());
+			params.SourceFiles.emplace_back(command["source-nz"].get<std::string_view>());
 		}
 		else
 		{
@@ -226,7 +225,6 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		}
 	}
 
-	ConvolutionParams params = {};
 	if (command.contains("fp16"))
 		params.Fp16 = command["fp16"].get<bool>();
 	if (command.contains("specular"))
