@@ -156,7 +156,7 @@ namespace ZE::Math::FP16
 	template<typename F>
 	auto EncodeFloat16Fast(F&& value) noexcept
 	{
-		return Internal::Float16Encoder::Encode<false>(std::forward<F>(std::clamp(value, -MAX_VAL, MAX_VAL));
+		return Internal::Float16Encoder::Encode<false>(std::forward<F>(std::clamp(value, -MAX_VAL, MAX_VAL)));
 	}
 
 	template<typename F>
