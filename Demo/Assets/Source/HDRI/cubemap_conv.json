@@ -1,0 +1,66 @@
+[
+  {
+    "source": "fortress_1k.dds",
+    "out": "fortress_irr_64px_1024s.dds",
+    "sample-delta": 0.006,
+    "cores": 16,
+    "resize": 64
+  },
+  {
+    "source": "fortress_1k.dds",
+    "out": "fortress_env_1k_4096s.dds",
+    "specular": true,
+    "sample-mip-adjst": true,
+    "samples-count": 4096,
+    "cores": 16,
+    "resize": 1024
+  },
+  {
+    "source": "kloppenheim_1k.dds",
+    "out": "kloppenheim_irr_64px_1024s.dds",
+    "sample-delta": 0.006,
+    "cores": 16,
+    "resize": 64
+  },
+  {
+    "source": "kloppenheim_1k.dds",
+    "out": "kloppenheim_env_1k_4096s.dds",
+    "specular": true,
+    "sample-mip-adjst": true,
+    "samples-count": 4096,
+    "cores": 16,
+    "resize": 1024
+  },
+  {
+    "source": "newport_loft_2k.dds",
+    "out": "newport_loft_irr_64px_1024s.dds",
+    "sample-delta": 0.006,
+    "cores": 16,
+    "resize": 64
+  },
+  {
+    "source": "newport_loft_2k.dds",
+    "out": "newport_loft_env_2k_4096s.dds",
+    "specular": true,
+    "sample-mip-adjst": true,
+    "samples-count": 4096,
+    "cores": 16,
+    "resize": 2048
+  },
+  {
+    "source": "satara_night_no_lamps_4k.dds",
+    "out": "satara_night_no_lamps_irr_64px_1024s.dds",
+    "sample-delta": 0.006,
+    "cores": 16,
+    "resize": 64
+  },
+  {
+    "source": "satara_night_no_lamps_4k.dds",
+    "out": "satara_night_no_lamps_env_2k_4096s.dds",
+    "specular": true,
+    "sample-mip-adjst": true,
+    "samples-count": 4096,
+    "cores": 16,
+    "resize": 2048
+  }
+]

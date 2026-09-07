@@ -1,0 +1,9 @@
+[
+  {
+    "out": "brdf_lut_ggx_512px_8192s_half.dds",
+    "fp16": true,
+    "size": 512,
+    "samples": 8192,
+    "cores": 16
+  }
+]

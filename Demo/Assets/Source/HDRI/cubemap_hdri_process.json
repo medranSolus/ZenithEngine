@@ -1,0 +1,70 @@
+[
+  {
+    "tex-edit": {
+      "source": "fortress_4k.hdr",
+      "out": "fortress_1k.dds",
+      "no-alpha": true,
+      "hdri-cubemap": true,
+      "cube-filter": 7,
+      "cube-width": 1024
+    },
+    "mip-gen": {
+      "source": "fortress_1k.dds",
+      "gamma-correction": false,
+      "src-org-layer": true,
+      "window-size": 7,
+      "filter": 4
+    }
+  },
+  {
+    "tex-edit": {
+      "source": "kloppenheim_4k.hdr",
+      "out": "kloppenheim_1k.dds",
+      "no-alpha": true,
+      "hdri-cubemap": true,
+      "cube-filter": 7,
+      "cube-width": 1024
+    },
+    "mip-gen": {
+      "source": "kloppenheim_1k.dds",
+      "gamma-correction": false,
+      "src-org-layer": true,
+      "window-size": 7,
+      "filter": 4
+    }
+  },
+  {
+    "tex-edit": {
+      "source": "newport_loft_8k.hdr",
+      "out": "newport_loft_2k.dds",
+      "no-alpha": true,
+      "hdri-cubemap": true,
+      "cube-filter": 7,
+      "cube-width": 2048
+    },
+    "mip-gen": {
+      "source": "newport_loft_2k.dds",
+      "gamma-correction": false,
+      "src-org-layer": true,
+      "window-size": 7,
+      "filter": 4
+    }
+  },
+  {
+    "tex-edit": {
+      "source": "satara_night_no_lamps_16k.hdr",
+      "out": "satara_night_no_lamps_4k.dds",
+      "no-alpha": true,
+      "hdri-cubemap": true,
+      "cube-filter": 7,
+      "cube-width": 4096
+    },
+    "mip-gen": {
+      "source": "satara_night_no_lamps_4k.dds",
+      "gamma-correction": false,
+      "src-org-layer": true,
+      "window-size": 7,
+      "filter": 4
+    }
+  }
+]

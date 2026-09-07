@@ -178,6 +178,7 @@ set(ZLIB_INC_DIR "${ZLIB_DIR}")
 ############# CUSTOM CMAKE MODULES ##############
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")
+include(AssetsPipeline)
 include(BoolAssign)
 include(CompileFilter)
 include(External)

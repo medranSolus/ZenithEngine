@@ -4,6 +4,9 @@ Bin/
 # CMake generation data
 Build/
 
+# Generated assets data
+**/Assets/Runtime/
+
 # Visual Studio temp file after opening .rc files
 *.aps
 

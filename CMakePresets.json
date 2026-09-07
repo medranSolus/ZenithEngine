@@ -1,8 +1,8 @@
 ﻿{
   "version": 3,
   "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 22,
+    "major": 4,
+    "minor": 4,
     "patch": 0
   },
   "configurePresets": [
@@ -10,7 +10,7 @@
       "name": "default",
       "hidden": true,
       "cacheVariables": {
-        "ZE_CMAKE_VERSION": "3.22",
+        "ZE_CMAKE_VERSION": "4.4",
         "ZE_PLATFORM_WINDOWS": false,
         "ZE_PLATFORM_LINUX": false,
         "ZE_PLATFORM_ANDROID": false,
