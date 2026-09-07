@@ -18,6 +18,8 @@ namespace std
 
 namespace ZE::Math::FP16
 {
+	static constexpr float MAX_VAL = 65504.0f;
+
 	// Source: https://stackoverflow.com/a/3542975
 	namespace Internal
 	{
@@ -154,13 +156,13 @@ namespace ZE::Math::FP16
 	template<typename F>
 	auto EncodeFloat16Fast(F&& value) noexcept
 	{
-		return Internal::Float16Encoder::Encode<false>(std::forward<F>(value));
+		return Internal::Float16Encoder::Encode<false>(std::forward<F>(std::clamp(value, -MAX_VAL, MAX_VAL));
 	}
 
 	template<typename F>
 	auto EncodeFloat16(F&& value) noexcept
 	{
-		return Internal::Float16Encoder::Encode<true>(std::forward<F>(value));
+		return Internal::Float16Encoder::Encode<true>(std::forward<F>(std::clamp(value, -MAX_VAL, MAX_VAL)));
 	}
 
 	template<typename F = float, typename X>
