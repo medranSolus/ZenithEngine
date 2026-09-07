@@ -5,13 +5,9 @@ if(${ZE_PLATFORM_WINDOWS})
     enable_language(RC)
     set(RES_FILE "${ZE_BUILD_DIR}/resource.rc")
     file(WRITE ${RES_FILE}
-        "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Data/icon.ico\"")
+        "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Assets/icon.ico\"")
 endif()
 
-# Post build data copy
-if(NOT ${ZE_CI_JOB})
-    copy_runtime_data(DEMO "Data/Runtime" "" "" "")
-endif()
 
 # Target files
 set(INC_DIR "${DEMO_DIR}/Include")
@@ -28,6 +24,6 @@ set_target_properties(${DEMO_TARGET} PROPERTIES
 target_compile_features(${DEMO_TARGET} PRIVATE ${ZE_CXX_STD})
 target_include_directories(${DEMO_TARGET} PRIVATE ${INC_DIR} ${ZE_INC_DIRS})
 target_link_libraries(${DEMO_TARGET} PRIVATE ${ENGINE_TARGET})
-if(NOT ZE_CI_JOB)
-    add_dependencies(${DEMO_TARGET} ${DEMO_COPY_TARGET})
-endif()
+
+# Assets preprocessing
+add_subdirectory(Assets)
