@@ -29,7 +29,7 @@ struct JobParams
 	U32 CubeWidth = 0;
 };
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept;
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir, std::string_view outDir) noexcept;
 ResultCode RunJob(const JobParams& job) noexcept;
 
 int main(int argc, char* argv[])
@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
 	parser.AddString("source", "", 's');
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
+	parser.AddString("source-dir");
+	parser.AddString("out-dir");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
 	parser.Parse(argc, argv);
@@ -74,6 +76,10 @@ int main(int argc, char* argv[])
 	std::string_view logFile = parser.GetString("log-file");
 	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_TexEdit.txt" : logFile);
 
+	// Override for output directories
+	std::string_view srcDir = parser.GetString("source-dir");
+	std::string_view outDir = parser.GetString("out-dir");
+
 	std::string_view json = parser.GetString("json");
 	if (!json.empty())
 	{
@@ -92,18 +98,19 @@ int main(int argc, char* argv[])
 			{
 				for (const auto& item : jsonArray)
 				{
-					retCode = ProcessJsonCommand(item);
+					retCode = ProcessJsonCommand(item, srcDir, outDir);
 					if (retCode != ResultCode::Success)
 						return retCode;
 				}
 			}
 			else
-				retCode = ProcessJsonCommand(jsonArray);
+				retCode = ProcessJsonCommand(jsonArray, srcDir, outDir);
 			if (retCode != ResultCode::Success)
 				return retCode;
 		}
 	}
 
+	std::string src, out;
 	JobParams params = {};
 	params.Source = parser.GetString("source");
 	if (params.Source.empty())
@@ -113,10 +120,13 @@ int main(int argc, char* argv[])
 		Logger::Error("No source file specified!");
 		return ResultCode::NoSourceFile;
 	}
+	Utils::AppendToDirectory(srcDir, params.Source, src);
 
 	params.OutFile = parser.GetString("out");
 	if (params.OutFile.empty())
 		params.OutFile = params.Source;
+	else
+		Utils::AppendToDirectory(outDir, params.OutFile, out);
 	params.Cores = parser.GetNumber("cores");
 	params.NoAlpha = parser.GetOption("no-alpha");
 	params.FlipY = parser.GetOption("flip-y");
@@ -130,11 +140,15 @@ int main(int argc, char* argv[])
 	return RunJob(params);
 }
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir, std::string_view outDir) noexcept
 {
+	std::string src, out;
 	JobParams params = {};
 	if (command.contains("source"))
+	{
 		params.Source = command["source"].get<std::string_view>();
+		Utils::AppendToDirectory(srcDir, params.Source, src);
+	}
 	else
 	{
 		Logger::Error("JSON command missing required \"source\" parameter!");
@@ -142,7 +156,10 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 	}
 
 	if (command.contains("out"))
+	{
 		params.OutFile = command["out"].get<std::string_view>();
+		Utils::AppendToDirectory(outDir, params.OutFile, out);
+	}
 	else
 		params.OutFile = params.Source;
 

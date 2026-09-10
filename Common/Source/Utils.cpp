@@ -136,6 +136,18 @@ namespace ZE::Utils
 		return output;
 	}
 
+	void AppendToDirectory(std::string_view parentPath, std::string_view& path, std::string& memory) noexcept
+	{
+		if (!parentPath.empty())
+		{
+			memory = parentPath;
+			if (memory.back() != '/')
+				memory += '/';
+			memory += path;
+			path = memory;
+		}
+	}
+
 	void* AlignedAlloc(U64 size, U64 alignment) noexcept
 	{
 		ZE_ASSERT(size != 0, "Invalid size of allocation!");

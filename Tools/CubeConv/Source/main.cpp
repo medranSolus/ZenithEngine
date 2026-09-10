@@ -28,7 +28,7 @@ struct ConvolutionParams
 	U32 ConvolutionSize = 0;
 };
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept;
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir, std::string_view outDir) noexcept;
 ResultCode RunJob(ConvolutionParams& params) noexcept;
 void ConvoluteIrradiance(GFX::Surface& convolution, const std::vector<U8*>& faces, const std::vector<GFX::Surface>& cubemap, ConvolutionParams& params) noexcept;
 void ConvolutePrefiltered(GFX::Surface& convolution, const std::vector<U8*>& faces, const std::vector<GFX::Surface>& cubemap, ConvolutionParams& params) noexcept;
@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
 	parser.AddString("source-nz");
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
+	parser.AddString("source-dir");
+	parser.AddString("out-dir");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
 	parser.Parse(argc, argv);
@@ -89,6 +91,10 @@ int main(int argc, char* argv[])
 	std::string_view logFile = parser.GetString("log-file");
 	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_CubeConv.txt" : logFile);
 
+	// Override for output directories
+	std::string_view srcDir = parser.GetString("source-dir");
+	std::string_view outDir = parser.GetString("out-dir");
+
 	std::string_view json = parser.GetString("json");
 	if (!json.empty())
 	{
@@ -107,18 +113,19 @@ int main(int argc, char* argv[])
 			{
 				for (const auto& item : jsonArray)
 				{
-					retCode = ProcessJsonCommand(item);
+					retCode = ProcessJsonCommand(item, srcDir, outDir);
 					if (retCode != ResultCode::Success)
 						return retCode;
 				}
 			}
 			else
-				retCode = ProcessJsonCommand(jsonArray);
+				retCode = ProcessJsonCommand(jsonArray, srcDir, outDir);
 			if (retCode != ResultCode::Success)
 				return retCode;
 		}
 	}
 
+	std::string out;
 	ConvolutionParams params = {};
 	params.OutputFile = parser.GetString("out");
 	if (params.OutputFile.empty())
@@ -128,7 +135,9 @@ int main(int argc, char* argv[])
 		Logger::Error("No output file specified for cubemap convolution!");
 		return ResultCode::NoOutputFile;
 	}
+	Utils::AppendToDirectory(outDir, params.OutputFile, out);
 
+	std::vector<std::string> src;
 	std::string_view source = parser.GetString("source");
 	if (source.empty())
 	{
@@ -141,13 +150,14 @@ int main(int argc, char* argv[])
 		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-pz")).empty();
 		anyFace |= !params.SourceFiles.emplace_back(parser.GetString("source-nz")).empty();
 
-		for (const auto& face : params.SourceFiles)
+		for (auto& face : params.SourceFiles)
 		{
 			if (face.empty())
 			{
 				hasAllFaces = false;
 				break;
 			}
+			Utils::AppendToDirectory(srcDir, face, src.emplace_back());
 		}
 
 		if (!hasAllFaces)
@@ -162,7 +172,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	else
-		params.SourceFiles.emplace_back(source);
+		Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(source), src.emplace_back());
 
 	params.Fp16 = parser.GetOption("fp16");
 	params.Specular = parser.GetOption("specular");
@@ -175,11 +185,16 @@ int main(int argc, char* argv[])
 	return RunJob(params);
 }
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir, std::string_view outDir) noexcept
 {
+	std::string out;
+	std::vector<std::string> src;
 	ConvolutionParams params = {};
 	if (command.contains("out"))
+	{
 		params.OutputFile = command["out"].get<std::string_view>();
+		Utils::AppendToDirectory(outDir, params.OutputFile, out);
+	}
 	else
 	{
 		Logger::Error("JSON command missing required \"out\" parameter!");
@@ -201,12 +216,12 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		if (hasAllFaces)
 		{
 			params.SourceFiles.reserve(6);
-			params.SourceFiles.emplace_back(command["source-px"].get<std::string_view>());
-			params.SourceFiles.emplace_back(command["source-nx"].get<std::string_view>());
-			params.SourceFiles.emplace_back(command["source-py"].get<std::string_view>());
-			params.SourceFiles.emplace_back(command["source-ny"].get<std::string_view>());
-			params.SourceFiles.emplace_back(command["source-pz"].get<std::string_view>());
-			params.SourceFiles.emplace_back(command["source-nz"].get<std::string_view>());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-px"].get<std::string_view>()), src.emplace_back());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-nx"].get<std::string_view>()), src.emplace_back());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-py"].get<std::string_view>()), src.emplace_back());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-ny"].get<std::string_view>()), src.emplace_back());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-pz"].get<std::string_view>()), src.emplace_back());
+			Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source-nz"].get<std::string_view>()), src.emplace_back());
 		}
 		else
 		{

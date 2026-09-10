@@ -12,7 +12,7 @@ enum ResultCode : int
 	CannotSaveFile = -2
 };
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept;
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view outDir) noexcept;
 ResultCode RunJob(std::string_view output, U32 size, U32 samples, U32 cores, bool fp16) noexcept;
 
 int main(int argc, char* argv[])
@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
 	parser.AddNumber("cores", 1, 'c');
 	parser.AddString("out", "", 'o');
 	parser.AddString("json", "", 'j');
+	parser.AddString("out-dir");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
 	parser.Parse(argc, argv);
@@ -31,6 +32,9 @@ int main(int argc, char* argv[])
 	std::string_view logDir = parser.GetString("log-dir");
 	std::string_view logFile = parser.GetString("log-file");
 	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_BrdfGen.txt" : logFile);
+
+	// Override for output directories
+	std::string_view outDir = parser.GetString("out-dir");
 
 	std::string_view json = parser.GetString("json");
 	if (!json.empty())
@@ -50,18 +54,19 @@ int main(int argc, char* argv[])
 			{
 				for (const auto& item : jsonArray)
 				{
-					retCode = ProcessJsonCommand(item);
+					retCode = ProcessJsonCommand(item, outDir);
 					if (retCode != ResultCode::Success)
 						return retCode;
 				}
 			}
 			else
-				retCode = ProcessJsonCommand(jsonArray);
+				retCode = ProcessJsonCommand(jsonArray, outDir);
 			if (retCode != ResultCode::Success)
 				return retCode;
 		}
 	}
 
+	std::string out;
 	std::string_view output = parser.GetString("out");
 	if (output.empty())
 	{
@@ -70,6 +75,7 @@ int main(int argc, char* argv[])
 		Logger::Error("No output file specified to generate LUT!");
 		return ResultCode::NoOutputFile;
 	}
+	Utils::AppendToDirectory(outDir, output, out);
 
 	bool fp16 = parser.GetOption("fp16");
 	U32 size = parser.GetNumber("size");
@@ -79,8 +85,9 @@ int main(int argc, char* argv[])
 	return RunJob(output, size, samples, cores, fp16);
 }
 
-ResultCode ProcessJsonCommand(const json::json& command) noexcept
+ResultCode ProcessJsonCommand(const json::json& command, std::string_view outDir) noexcept
 {
+	std::string out;
 	std::string_view output = "";
 	if (command.contains("out"))
 		output = command["out"].get<std::string_view>();
@@ -89,6 +96,7 @@ ResultCode ProcessJsonCommand(const json::json& command) noexcept
 		Logger::Error("JSON command missing required \"out\" parameter!");
 		return ResultCode::NoOutputFile;
 	}
+	Utils::AppendToDirectory(outDir, output, out);
 
 	bool fp16 = false;
 	if (command.contains("fp16"))

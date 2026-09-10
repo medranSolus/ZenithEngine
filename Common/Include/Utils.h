@@ -68,6 +68,8 @@ namespace ZE::Utils
 	std::vector<std::string> ParseQuoted(const std::string& input) noexcept;
 	// Split string based on given delimeter
 	std::deque<std::string_view> SplitString(std::string_view input, std::string_view delimeter) noexcept;
+	// Modify path to include additional parent path
+	void AppendToDirectory(std::string_view parentPath, std::string_view& path, std::string& memory) noexcept;
 
 	// Allocate aligned memory with power of 2 alignment
 	void* AlignedAlloc(U64 size, U64 alignment) noexcept;
