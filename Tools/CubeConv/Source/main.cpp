@@ -202,7 +202,7 @@ ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir
 	}
 
 	if (command.contains("source"))
-		params.SourceFiles.emplace_back(command["source"].get<std::string_view>());
+		Utils::AppendToDirectory(srcDir, params.SourceFiles.emplace_back(command["source"].get<std::string_view>()), src.emplace_back());
 	else
 	{
 		bool hasAllFaces = true;

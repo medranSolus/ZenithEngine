@@ -44,14 +44,15 @@ macro(add_assets_target TARGET_NAME)
     "   message(FATAL_ERROR \"Missing tools: \${MISSING_TOOLS}! First build the [ZenithTools] target in Release configuration, then run assets preprocessing again.\")\n"
     "endif()\n")
     
-    add_custom_command(OUTPUT "${ZE_BUILD_DIR}/tools.present"
-        COMMAND ${CMAKE_COMMAND} -E rm -f "${ASSETS_OUT_DIR}/build.stamp"
+    add_custom_command(OUTPUT "${ASSETS_LOG_DIR}/tools_present.stamp"
+        COMMAND ${CMAKE_COMMAND} -E rm -f "${ASSETS_LOG_DIR}/build.stamp"
         COMMAND ${CMAKE_COMMAND} -DTOOLS_PATH:STRING=${ASSETS_TOOLS_PATH} -DTOOL_NAMES=${REQUIRED_TOOLS} -P ${ASSETS_TEMP_DIR}/ToolCheckInline.cmake
+        COMMAND ${CMAKE_COMMAND} -E touch "${ASSETS_LOG_DIR}/tools_present.stamp"
         COMMENT "Starting assets processing")
-    list(PREPEND ASSETS_OUTPUTS "${ZE_BUILD_DIR}/tools.present")
+    list(PREPEND ASSETS_OUTPUTS "${ASSETS_LOG_DIR}/tools_present.stamp")
 
     add_custom_target(${TARGET_NAME} COMMENT "Finished assets processing"
-        COMMAND ${CMAKE_COMMAND} -E touch "${ASSETS_OUT_DIR}/build.stamp"
+        COMMAND ${CMAKE_COMMAND} -E touch "${ASSETS_LOG_DIR}/build.stamp"
         DEPENDS ${ASSETS_OUTPUTS} VERBATIM)
 endmacro()
 
@@ -163,6 +164,8 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
     set(ENVMAP_JSON_SCRIPT_PATH "${ASSETS_SRC_DIR}/${ENVMAP_JSON_SCRIPT}")
     get_filename_component(HDRI_PATH "${SKYBOX_JSON_SCRIPT}" DIRECTORY)
     set(HDRI_PATH "${ASSETS_SRC_DIR}/${HDRI_PATH}")
+    set(SKYBOX_DEST_PATH "${ASSETS_OUT_DIR}/${SKYBOX_OUT_PATH}")
+    set(ENVMAP_DEST_PATH "${ASSETS_OUT_DIR}/${ENVMAP_OUT_PATH}")
 
     # Step 1: generate correct skybox cubemaps with mips
     file(READ "${SKYBOX_JSON_SCRIPT_PATH}" JSON_RAW)
@@ -171,6 +174,7 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
     
     set(SKYBOX_OUT_LIST "")
     set(SKYBOX_JSON_TEMP_DIR "${ASSETS_TEMP_DIR}/SkyboxJsons")
+    set(SKYBOX_WAIT_LIST "")
     foreach(SKYBOX_IDX RANGE "${JOB_COUNT}")
         string(JSON SKYBOX_DESC GET "${JSON_RAW}" "${SKYBOX_IDX}")
         
@@ -185,14 +189,16 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
         file(WRITE "${TEXEDIT_JSON}" "${TEXEDIT_JOB}")
         file(WRITE "${MIPGEN_JSON}" "${MIPGEN_JOB}")
 
-        set(SKYBOX_OUT "${HDRI_PATH}/${SKYBOX_NAME}")
-        add_custom_command(OUTPUT "${SKYBOX_OUT}"
+        set(SKYBOX_OUT "${SKYBOX_DEST_PATH}${SKYBOX_NAME}")
+        set(SKYBOX_WAIT "${ASSETS_LOG_DIR}/${SKYBOX_NAME_NO_EXT}_mipgen.txt")
+        add_custom_command(OUTPUT "${SKYBOX_WAIT}"
             COMMENT "Generating skybox from HDRI: ${SKYBOX_NAME}"
-            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXEDIT} --json ${TEXEDIT_JSON} --log-dir ${ASSETS_LOG_DIR} --log-file ${SKYBOX_NAME_NO_EXT}_texedit.txt
-            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MIPGEN} --json ${MIPGEN_JSON} --log-dir ${ASSETS_LOG_DIR} --log-file ${SKYBOX_NAME_NO_EXT}_mipgen.txt
-            WORKING_DIRECTORY "${HDRI_PATH}"
+            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXEDIT} --json ${TEXEDIT_JSON} --source-dir ${HDRI_PATH} --out-dir ${SKYBOX_DEST_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${SKYBOX_NAME_NO_EXT}_texedit.txt
+            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MIPGEN} --json ${MIPGEN_JSON} --source-dir ${SKYBOX_DEST_PATH} --out-dir ${SKYBOX_DEST_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${SKYBOX_NAME_NO_EXT}_mipgen.txt
             DEPENDS "${SKYBOX_JSON_SCRIPT_PATH};${HDRI_PATH}/${HDRI_NAME}" VERBATIM)
         list(APPEND SKYBOX_OUT_LIST "${SKYBOX_OUT}")
+        list(APPEND ASSETS_OUTPUTS "${SKYBOX_OUT}")
+        list(APPEND SKYBOX_WAIT_LIST "${SKYBOX_WAIT}")
     endforeach()
         
     # Step 2: convolute HDRI skyboxes
@@ -206,44 +212,35 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
         string(JSON ENVMAP_DESC GET "${JSON_RAW}" "${JOB_IDX}")
         string(JSON ENVMAP_NAME GET "${ENVMAP_DESC}" "out")
         
-        set(LAST_ENVMAP_OUT "${HDRI_PATH}/${ENVMAP_NAME}")
+        set(LAST_ENVMAP_OUT "${ENVMAP_DEST_PATH}${ENVMAP_NAME}")
         list(APPEND ENVMAP_OUT_LIST "${LAST_ENVMAP_OUT}")
+        list(APPEND ASSETS_OUTPUTS "${LAST_ENVMAP_OUT}")
     endforeach()
     
     list(POP_BACK ENVMAP_OUT_LIST)
     math(EXPR JOB_COUNT "${JOB_COUNT} + 1")
-    add_custom_command(OUTPUT "${LAST_ENVMAP_OUT}"
+    set(CONV_FINISH_FILE "${ASSETS_LOG_DIR}/hdri_process_cubeconv.stamp")
+    add_custom_command(OUTPUT "${CONV_FINISH_FILE}"
         COMMENT "Convoluting <${JOB_COUNT}> light maps"
-        COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_CUBECONV} --json ${ENVMAP_JSON_SCRIPT_PATH} --log-dir ${ASSETS_LOG_DIR}
-        WORKING_DIRECTORY "${HDRI_PATH}"
-        BYPRODUCTS "${ENVMAP_OUT_LIST}"
-        DEPENDS "${ENVMAP_JSON_SCRIPT_PATH};${SKYBOX_OUT_LIST}" VERBATIM)
+        COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_CUBECONV} --json ${ENVMAP_JSON_SCRIPT_PATH} --source-dir ${SKYBOX_DEST_PATH} --out-dir ${ENVMAP_DEST_PATH} --log-dir ${ASSETS_LOG_DIR}
+        COMMAND ${CMAKE_COMMAND} -E touch "${CONV_FINISH_FILE}"
+        DEPENDS "${ENVMAP_JSON_SCRIPT_PATH};${SKYBOX_WAIT_LIST}" VERBATIM)
     list(APPEND ENVMAP_OUT_LIST "${LAST_ENVMAP_OUT}")
-
-    foreach(ENVMAP ${ENVMAP_OUT_LIST})
-        get_filename_component(ENVMAP_DIR "${ENVMAP}" DIRECTORY)
+    
+    # Step 3: compress results
+    foreach(ENVMAP ${ENVMAP_OUT_LIST})        
         get_filename_component(ENVMAP_NAME "${ENVMAP}" NAME)
-        set(ENVMAP_OUT "${ASSETS_OUT_DIR}/${ENVMAP_OUT_PATH}${ENVMAP_NAME}")
-        
-        add_custom_command(OUTPUT "${ENVMAP_OUT}"
-            COMMENT "Compressing resulting light map: ${ENVMAP_NAME}"
-            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${TEX_FORMAT_HDR} -o ${ENVMAP_DIR} -nologo -y ${ENVMAP}
-            COMMAND ${CMAKE_COMMAND} -E rename ${ENVMAP} ${ENVMAP_OUT}
-            DEPENDS "${ENVMAP}" VERBATIM)
-        list(APPEND ASSETS_OUTPUTS "${ENVMAP_OUT}")
+        add_custom_command(OUTPUT "${ENVMAP}"
+            COMMENT "Compressing light map: ${ENVMAP_NAME}"
+            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${TEX_FORMAT_HDR} -o ${ENVMAP_DEST_PATH} -nologo -y ${ENVMAP}
+            DEPENDS "${CONV_FINISH_FILE}" VERBATIM)
     endforeach()
 
-    # Step 3: compress results
     foreach(SKYBOX ${SKYBOX_OUT_LIST})
-        get_filename_component(SKYBOX_DIR "${SKYBOX}" DIRECTORY)
         get_filename_component(SKYBOX_NAME "${SKYBOX}" NAME)
-        set(SKYBOX_OUT "${ASSETS_OUT_DIR}/${SKYBOX_OUT_PATH}${SKYBOX_NAME}")
-
-        add_custom_command(OUTPUT "${SKYBOX_OUT}"
+        add_custom_command(OUTPUT "${SKYBOX}"
             COMMENT "Compressing skybox: ${SKYBOX_NAME}"
-            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${TEX_FORMAT_COLOR} -o ${SKYBOX_DIR} -nologo -y ${SKYBOX}
-            COMMAND ${CMAKE_COMMAND} -E rename ${SKYBOX} ${SKYBOX_OUT}
-            DEPENDS "${ENVMAP_OUT_LIST}" VERBATIM)
-        list(APPEND ASSETS_OUTPUTS "${SKYBOX_OUT}")
+            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${TEX_FORMAT_COLOR} -o ${SKYBOX_DEST_PATH} -nologo -y ${SKYBOX}
+            DEPENDS "${CONV_FINISH_FILE}" VERBATIM)
     endforeach()
 endmacro()
