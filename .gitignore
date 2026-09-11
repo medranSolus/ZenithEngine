@@ -4,6 +4,9 @@ Bin/
 # CMake generation data
 Build/
 
+# Source assets data
+**/Assets/Source/
+
 # Generated assets data
 **/Assets/Runtime/
 

@@ -6,6 +6,8 @@ Before contributing read [coding guidelines](Doc/CodeGuidelines.md) for style co
 
 Working with project from command prompt is described [here](Doc/CMakeCLI.md).
 
+To download assets required for Demo application, you can use command `download-assets`. [Gdown](https://github.com/wkentaro/gdown) is required for this operation or you can manually download it into `Demo/Assets/Source` directory from [this link](https://drive.google.com/drive/folders/1ouu77adp_svOkpFIKTCIa5Tctyf1tXS5).
+
 **Requirements:**
  - Windows SDK 10.0.20348.0
  - Vulkan SDK 1.3.250.0

@@ -5,14 +5,15 @@ function Display-Info
     Write-Output "`n>Zenith Engine CLI build tool syntax:"
     Write-Output "    build.ps1"
     Write-Output "        <COMMAND: (default - build project)"
-    Write-Output "            help - display tool syntax (MODE not required)"
-    Write-Output "            init - initialize submodules (MODE not required)"
-    Write-Output "            clean/clear - clear the build system (MODE not required)"
-    Write-Output "            clean-ext/clear-ext - clear builded external libraries (MODE not required)"
-    Write-Output "            clean-all/clear-all - clear builded external libraries and the build system (MODE not required)"
-    Write-Output "            up - update submodules (MODE not required)"
-    Write-Output "            gen - generate build system"
-    Write-Output "            run - run tech demo (you can specify additional arguments after MODE parameter that will be passed to the application)>"
+    Write-Output "            help - display tool syntax"
+    Write-Output "            init - initialize submodules"
+    Write-Output "            download-assets - download asset files for the demo application (MODE argument can hold browser-specific options)"
+    Write-Output "            clean/clear - clear the build system"
+    Write-Output "            clean-ext/clear-ext - clear built external libraries"
+    Write-Output "            clean-all/clear-all - clear built external libraries and the build system"
+    Write-Output "            up - update submodules"
+    Write-Output "            gen - generate build system (MODE argument required)"
+    Write-Output "            run - run tech demo (MODE argument required; you can specify additional arguments after MODE parameter that will be passed to the application)>"
     Write-Output "        <MODE: D|Debug; Dev|Development; P|Profile; R|Release; CI (static analysis setup)>"
     Write-Output "        <ARGS: additional parameters for run command>`n"
 }
@@ -35,6 +36,19 @@ Switch ($command)
         Get-ChildItem Bin -Recurse | Remove-Item -Recurse
         Get-ChildItem Build -Recurse | Remove-Item -Recurse
         Get-ChildItem External/Bin -Recurse | Remove-Item -Recurse
+        exit 0
+    }
+    "download-assets"
+    {
+        if ($mode)
+        {
+            gdown "https://drive.google.com/drive/folders/1ouu77adp_svOkpFIKTCIa5Tctyf1tXS5" --cookies-from-browser $mode --output Demo/Assets/Source
+            Remove-Item ~/.cache/gdown/cookies.txt
+        }
+        else
+        {
+            gdown "https://drive.google.com/drive/folders/1ouu77adp_svOkpFIKTCIa5Tctyf1tXS5" --output Demo/Assets/Source
+        }
         exit 0
     }
     "init"
