@@ -244,3 +244,37 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
             DEPENDS "${CONV_FINISH_FILE}" VERBATIM)
     endforeach()
 endmacro()
+
+macro(process_models MODELS_PATH)
+    file(GLOB MODELS_LIST LIST_DIRECTORIES TRUE RELATIVE "${ASSETS_SRC_DIR}/${MODELS_PATH}" "${ASSETS_SRC_DIR}/${MODELS_PATH}*")
+
+    foreach(MODEL_DIR ${MODELS_LIST})
+        set(MODEL_DIR_PATH "${ASSETS_SRC_DIR}/${MODELS_PATH}${MODEL_DIR}")
+        file(GLOB SCRIPTS_LIST RELATIVE "${MODEL_DIR_PATH}" "${MODEL_DIR_PATH}/*.json")
+
+        foreach(MODEL_SCRIPT ${SCRIPTS_LIST})
+            set(MODEL_SCRIPT_PATH "${MODEL_DIR_PATH}/${MODEL_SCRIPT}")
+            file(READ "${MODEL_SCRIPT_PATH}" JSON_RAW)
+            string(JSON JOB_COUNT LENGTH "${JSON_RAW}")
+            math(EXPR JOB_COUNT "${JOB_COUNT} - 1")
+
+            if ("${MODEL_SCRIPT}" STREQUAL "model_copy.json")
+                # Simple copy of the source files
+                foreach(COPY_IDX RANGE "${JOB_COUNT}")
+                    string(JSON COPY_SRC GET "${JSON_RAW}" "${COPY_IDX}")
+
+                    set(COPY_OUT "${ASSETS_OUT_DIR}/${MODELS_PATH}${MODEL_DIR}/${COPY_SRC}")
+                    add_custom_command(OUTPUT "${COPY_OUT}"
+                        COMMENT "Copying model file: ${MODEL_DIR}/${COPY_SRC}"
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MODEL_DIR_PATH}/${COPY_SRC}" "${COPY_OUT}"
+                        DEPENDS "${MODEL_SCRIPT_PATH};${MODEL_DIR_PATH}/${COPY_SRC}")
+                    list(APPEND ASSETS_OUTPUTS "${COPY_OUT}")
+                endforeach()
+            elseif("${MODEL_SCRIPT}" STREQUAL "model_mipgen.json")
+                # Generate mipmaps for material textures
+            else()
+                message("Ignoring unknown assets json file: ${MODEL_DIR}/${MODEL_SCRIPT}")
+            endif()
+        endforeach()
+    endforeach()
+endmacro()

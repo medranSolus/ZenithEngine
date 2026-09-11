@@ -12,6 +12,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 	generate_brdf("brdf_gen.json" "Lightmaps/")
 	merge_cubemaps("Skybox/")
 	process_hdris("HDRI/cubemap_hdri_process.json" "HDRI/cubemap_conv.json" "Skybox/" "Lightmaps/")
+	process_models("Models/")
 
 	add_assets_target("ZenithDemoAssets")
 endif()
