@@ -25,7 +25,7 @@ namespace ZE
 		}
 	}
 
-	void CmdParser::Parse(const std::deque<std::string_view>& params) noexcept
+	bool CmdParser::Parse(const std::deque<std::string_view>& params) noexcept
 	{
 		for (U64 i = 0; i < params.size(); ++i)
 		{
@@ -172,7 +172,9 @@ namespace ZE
 				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <FLOAT>");
 			for (const auto& val : strings)
 				Logger::InfoNoFile("  --" + val.first + (shortNamesLut.contains(val.first) ? "/-" + std::string(1, shortNamesLut.at(val.first)) : "") + " <STRING>");
+			return true;
 		}
+		return false;
 	}
 
 	void CmdParser::AddOption(std::string_view name, char shortName) noexcept
@@ -203,22 +205,22 @@ namespace ZE
 		AddShortName(shortName, ParamType::String, name);
 	}
 
-	void CmdParser::Parse(int argc, char* argv[]) noexcept
+	bool CmdParser::Parse(int argc, char* argv[]) noexcept
 	{
 		if (argc < 2)
-			return;
+			return false;
 
 		std::deque<std::string_view> argvParams;
 		for (int i = 1; i < argc; ++i)
 			argvParams.emplace_back(argv[i]);
-		Parse(argvParams);
+		return Parse(argvParams);
 	}
 
-	void CmdParser::Parse(std::string_view clParams) noexcept
+	bool CmdParser::Parse(std::string_view clParams) noexcept
 	{
 		if (clParams.empty())
-			return;
-		Parse(Utils::SplitString(clParams, " "));
+			return false;
+		return Parse(Utils::SplitString(clParams, " "));
 	}
 
 	bool CmdParser::GetOption(std::string_view name) const noexcept

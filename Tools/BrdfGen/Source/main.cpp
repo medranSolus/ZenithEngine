@@ -27,7 +27,8 @@ int main(int argc, char* argv[])
 	parser.AddString("out-dir");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
-	parser.Parse(argc, argv);
+	if (parser.Parse(argc, argv))
+		return ResultCode::Success;
 
 	std::string_view logDir = parser.GetString("log-dir");
 	std::string_view logFile = parser.GetString("log-file");

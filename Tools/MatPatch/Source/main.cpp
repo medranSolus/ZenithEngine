@@ -22,11 +22,12 @@ int main(int argc, char* argv[])
 	parser.AddString("out");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
-	parser.Parse(argc, argv);
+	if (parser.Parse(argc, argv))
+		return ResultCode::Success;
 
 	std::string_view logDir = parser.GetString("log-dir");
 	std::string_view logFile = parser.GetString("log-file");
-	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_MipGen.txt" : logFile);
+	Logger::SetLogsOuput(logDir.empty() ? Logger::GetDir() : logDir, logFile.empty() ? "log_MatPatch.txt" : logFile);
 
 	std::string_view materialFile = parser.GetString("material");
 	if (materialFile.empty())

@@ -53,7 +53,8 @@ int main(int argc, char* argv[])
 	parser.AddString("out-dir");
 	parser.AddString("log-dir");
 	parser.AddString("log-file");
-	parser.Parse(argc, argv);
+	if (parser.Parse(argc, argv))
+		return ResultCode::Success;
 
 	if (parser.GetOption("help-cube-filter"))
 	{

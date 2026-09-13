@@ -26,7 +26,7 @@ namespace ZE
 
 		bool ParamPresent(std::string_view name) const noexcept;
 		void AddShortName(char shortName, ParamType type, std::string_view name) noexcept;
-		void Parse(const std::deque<std::string_view>& params) noexcept;
+		bool Parse(const std::deque<std::string_view>& params) noexcept;
 
 	public:
 		CmdParser() noexcept { AddOption("help", 'h'); }
@@ -42,8 +42,9 @@ namespace ZE
 		// Adds string parameter
 		void AddString(std::string_view name, std::string_view defValue = "", char shortName = ' ') noexcept;
 
-		void Parse(int argc, char* argv[]) noexcept;
-		void Parse(std::string_view clParams) noexcept;
+		// Returns true if help parameter was invoked
+		bool Parse(int argc, char* argv[]) noexcept;
+		bool Parse(std::string_view clParams) noexcept;
 		bool GetOption(std::string_view name) const noexcept;
 		U32 GetNumber(std::string_view name) const noexcept;
 		float GetFloat(std::string_view name) const noexcept;
