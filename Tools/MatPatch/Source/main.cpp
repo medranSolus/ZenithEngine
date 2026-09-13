@@ -10,9 +10,14 @@ enum ResultCode : int
 	NoSourceFile = -1,
 	NoMipgenScript = -2,
 	CopyFailed = -3,
+	NoWorkPerformed = -4,
+	InvalidFileFormat = -5,
+	ReadError = -6,
+	WriteError = -7,
 };
 
 std::vector<std::pair<std::string, std::string>> GetTextureReplacement(std::string_view mipgenScript) noexcept;
+ResultCode CopyMaterial(std::string_view materialFile, std::string_view outFile) noexcept;
 
 int main(int argc, char* argv[])
 {
@@ -45,20 +50,76 @@ int main(int argc, char* argv[])
 			Logger::Error("No script with patching operation specified!");
 			return ResultCode::NoMipgenScript;
 		}
-		Logger::InfoNoFile("No script with patching operation specified, performing simple copy.");
-		Status error = {};
-		std::filesystem::copy_file(materialFile, outFile, std::filesystem::copy_options::overwrite_existing, error);
-		if (error)
-		{
-			ZE_CODE_ERROR(error, "Error copying material file!");
-			return ResultCode::CopyFailed;
-		}
-		return ResultCode::Success;
+		Logger::Warning("No script with patching operation specified, performing simple copy.");
+		return CopyMaterial(materialFile, outFile);
 	}
 	if (outFile.empty())
 		outFile = materialFile;
 	
 	std::vector<std::pair<std::string, std::string>> textureReplace = GetTextureReplacement(mipgen);
+	if (textureReplace.empty())
+	{
+		Logger::Warning("No textures to replace in mipgen script, performing simple copy.");
+		return CopyMaterial(materialFile, outFile);
+	}
+
+	std::filesystem::path path(materialFile);
+	std::string ext = path.extension().string();
+	std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
+
+	std::ifstream fin(materialFile.data());
+	if (!fin.good())
+	{
+		Logger::Error("Cannot open material file \"" + std::string(materialFile) + "\"!");
+		return ResultCode::ReadError;
+	}
+	std::ofstream fout(outFile.data(), std::ios_base::out | std::ios_base::trunc);
+	if (!fout.good())
+	{
+		Logger::Error("Cannot create output file \"" + std::string(outFile) + "\"!");
+		return ResultCode::WriteError;
+	}
+
+	if (ext == ".mtl")
+	{
+		std::string line;
+		bool first = true;
+		while(std::getline(fin, line))
+		{
+			if (first)
+				first = false;
+			else
+				fout << std::endl;
+			for (const auto& [source, output] : textureReplace)
+			{
+				U64 offset = line.find(source);
+				if (offset != std::string::npos)
+				{
+					line.replace(offset, source.length(), output);
+					break;
+				}
+			}
+			fout << line;
+		}
+	}
+	else
+	{
+		Logger::Error("Unsupported material file format \"" + std::string(materialFile) + "\"!");
+		return ResultCode::InvalidFileFormat;
+	}
+
+	return ResultCode::Success;
+}
+
+ResultCode CopyMaterial(std::string_view materialFile, std::string_view outFile) noexcept
+{
+	Status error = {};
+	std::filesystem::copy_file(materialFile, outFile, std::filesystem::copy_options::overwrite_existing, error);
+	if (error)
+	{
+		ZE_CODE_ERROR(error, "Error copying material file!");
+		return ResultCode::CopyFailed;
+	}
 	return ResultCode::Success;
 }
 
@@ -78,8 +139,8 @@ std::vector<std::pair<std::string, std::string>> GetTextureReplacement(std::stri
 			{
 				if (item.contains("source") && item.contains("out"))
 				{
-					std::string source = jsonarray["source"].get<std::string>();
-					std::string output = jsonarray["out"].get<std::string>();
+					std::string source = item["source"].get<std::string>();
+					std::string output = item["out"].get<std::string>();
 					texturePairs.emplace_back(source, output);
 				}
 			}
