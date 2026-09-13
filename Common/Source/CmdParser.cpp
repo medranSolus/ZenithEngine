@@ -110,7 +110,7 @@ namespace ZE
 					if (++i >= params.size())
 					{
 						Logger::Error("Parameter list too short, missing value for parameter \"" + std::string(param) + "\"!");
-						return;
+						return false;
 					}
 					if (params.at(i).front() == '-')
 					{
@@ -126,7 +126,7 @@ namespace ZE
 					if (++i >= params.size())
 					{
 						Logger::Error("Parameter list too short, missing value for parameter \"" + std::string(param) + "\"!");
-						return;
+						return false;
 					}
 					if (params.at(i).front() == '-')
 					{
@@ -142,7 +142,7 @@ namespace ZE
 					if (++i >= params.size())
 					{
 						Logger::Error("Parameter list too short, missing value for parameter \"" + std::string(param) + "\"!");
-						return;
+						return false;
 					}
 					if (params.at(i).front() == '-')
 					{
