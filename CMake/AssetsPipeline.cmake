@@ -15,6 +15,7 @@ macro(setup_assets_vars SRC OUT TOOLS)
     set(TOOL_TEXCONV "texconv${EXEC_EXT}")
     set(TOOL_BRDFGEN "BrdfGen${EXEC_EXT}")
     set(TOOL_CUBECONV "CubeConv${EXEC_EXT}")
+    set(TOOL_MATPATCH "MatPatch${EXEC_EXT}")
     set(TOOL_MIPGEN "MipGen${EXEC_EXT}")
     set(TOOL_TEXEDIT "TexEdit${EXEC_EXT}")
 
@@ -30,7 +31,7 @@ endmacro()
 #   TARGET_NAME = name of the target for assets generation
 macro(add_assets_target TARGET_NAME)
     # Check that all required tools are created first
-    set(REQUIRED_TOOLS "${TOOL_TEXASM}\;${TOOL_TEXCONV}\;${TOOL_BRDFGEN}\;${TOOL_CUBECONV}\;${TOOL_MIPGEN};${TOOL_TEXEDIT}")
+    set(REQUIRED_TOOLS "${TOOL_TEXASM};${TOOL_TEXCONV};${TOOL_BRDFGEN};${TOOL_CUBECONV};${TOOL_MATPATCH};${TOOL_MIPGEN};${TOOL_TEXEDIT}")
 
     file(WRITE "${ASSETS_TEMP_DIR}/ToolCheckInline.cmake"
     "set(MISSING_TOOLS \"\")\n"

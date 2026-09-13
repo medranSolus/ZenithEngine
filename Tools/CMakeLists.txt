@@ -31,6 +31,7 @@ endmacro()
 
 add_subdirectory(BrdfGen)
 add_subdirectory(CubeConv)
+add_subdirectory(MatPatch)
 add_subdirectory(MipGen)
 add_subdirectory(TexEdit)
 
@@ -50,4 +51,4 @@ add_custom_target(texconv ALL DEPENDS "${ZE_BIN_DIR}/Tools/${TEXCONV_TARGET}")
 
 # Tools group
 add_custom_target(ZenithTools)
-add_dependencies(ZenithTools BrdfGen CubeConv MipGen TexEdit texassemble texconv)
+add_dependencies(ZenithTools BrdfGen CubeConv MatPatch MipGen TexEdit texassemble texconv)
