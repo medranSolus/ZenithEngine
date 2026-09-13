@@ -251,6 +251,7 @@ macro(process_models MODELS_PATH)
 
     foreach(MODEL_DIR ${MODELS_LIST})
         set(MODEL_DIR_PATH "${ASSETS_SRC_DIR}/${MODELS_PATH}${MODEL_DIR}")
+        set(MODEL_OUT_PATH "${ASSETS_OUT_DIR}/${MODELS_PATH}${MODEL_DIR}")
         file(GLOB SCRIPTS_LIST RELATIVE "${MODEL_DIR_PATH}" "${MODEL_DIR_PATH}/*.json")
 
         foreach(MODEL_SCRIPT ${SCRIPTS_LIST})
@@ -264,7 +265,7 @@ macro(process_models MODELS_PATH)
                 foreach(COPY_IDX RANGE "${JOB_COUNT}")
                     string(JSON COPY_SRC GET "${JSON_RAW}" "${COPY_IDX}")
 
-                    set(COPY_OUT "${ASSETS_OUT_DIR}/${MODELS_PATH}${MODEL_DIR}/${COPY_SRC}")
+                    set(COPY_OUT "${MODEL_OUT_PATH}/${COPY_SRC}")
                     add_custom_command(OUTPUT "${COPY_OUT}"
                         COMMENT "Copying model file: ${MODEL_DIR}/${COPY_SRC}"
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MODEL_DIR_PATH}/${COPY_SRC}" "${COPY_OUT}"
@@ -273,6 +274,28 @@ macro(process_models MODELS_PATH)
                 endforeach()
             elseif("${MODEL_SCRIPT}" STREQUAL "model_mipgen.json")
                 # Generate mipmaps for material textures
+                set(TEX_SRC_LIST "")
+                set(MIPMAP_OUT_LIST "")
+                foreach(MIPMAP_IDX RANGE "${JOB_COUNT}")
+                    string(JSON MIPMAP_DESC GET "${JSON_RAW}" "${MIPMAP_IDX}")
+                    string(JSON MIPMAP_OUT GET "${MIPMAP_DESC}" "out")
+                    string(JSON TEX_SRC GET "${MIPMAP_DESC}" "source")
+
+                    set(LAST_MIPMAP_OUT "${MODEL_OUT_PATH}/${MIPMAP_OUT}")
+                    list(APPEND ASSETS_OUTPUTS "${LAST_MIPMAP_OUT}")
+                    list(APPEND MIPMAP_OUT_LIST "${LAST_MIPMAP_OUT}")
+                    list(APPEND TEX_SRC_LIST "${ASSETS_SRC_DIR}/${MODELS_PATH}${MODEL_DIR}/${TEX_SRC}")
+                endforeach()
+                
+                list(POP_BACK MIPMAP_OUT_LIST)
+                math(EXPR JOB_COUNT "${JOB_COUNT} + 1")
+                add_custom_command(OUTPUT "${LAST_MIPMAP_OUT}"
+                    COMMENT "Generating <${JOB_COUNT}> mipmaps for model: ${MODEL_DIR}"
+                    COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MIPGEN} --json ${MODEL_SCRIPT_PATH} --source-dir ${MODEL_DIR_PATH} --out-dir ${MODEL_OUT_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${MODEL_DIR}_mipgen.txt
+                    BYPRODUCTS "${MIPMAP_OUT_LIST}"
+                    DEPENDS "${MODEL_SCRIPT_PATH};${TEX_SRC_LIST}" VERBATIM)
+            elseif("${MODEL_SCRIPT}" STREQUAL "model_info.json")
+                # Perform various transformations on model files
             else()
                 message("Ignoring unknown assets json file: ${MODEL_DIR}/${MODEL_SCRIPT}")
             endif()
