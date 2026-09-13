@@ -98,10 +98,7 @@ int main(int argc, char* argv[])
 	{
 		std::ifstream fin(json.data());
 		if (!fin.good())
-		{
-			fin.close();
 			Logger::Error("Cannot open JSON batch job file \"" + std::string(json) + "\"!");
-		}
 		else
 		{
 			json::json jsonarray;
