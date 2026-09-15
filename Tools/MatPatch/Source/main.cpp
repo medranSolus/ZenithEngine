@@ -22,6 +22,8 @@ ResultCode CopyMaterial(std::string_view materialFile, std::string_view outFile)
 int main(int argc, char* argv[])
 {
 	CmdParser parser;
+	parser.AddOption("help-unique-texture-entries");
+	parser.AddOption("unique-texture-entries");
 	parser.AddString("material");
 	parser.AddString("mipgen");
 	parser.AddString("out");
@@ -29,6 +31,12 @@ int main(int argc, char* argv[])
 	parser.AddString("log-file");
 	if (parser.Parse(argc, argv))
 		return ResultCode::Success;
+
+	if (parser.GetOption("help-unique-texture-entries"))
+	{
+		Logger::InfoNoFile("When providing texture files to replace from the mipgen file, if each texture appears only once in the material, you cane use this flag to speed up matching of textures in the material file.");
+		return ResultCode::Success;
+	}
 
 	std::string_view logDir = parser.GetString("log-dir");
 	std::string_view logFile = parser.GetString("log-file");
@@ -80,6 +88,7 @@ int main(int argc, char* argv[])
 		return ResultCode::WriteError;
 	}
 
+	bool uniqueTex = parser.GetOption("unique-texture-entries");
 	if (ext == ".mtl")
 	{
 		std::string line;
@@ -90,12 +99,15 @@ int main(int argc, char* argv[])
 				first = false;
 			else
 				fout << std::endl;
-			for (const auto& [source, output] : textureReplace)
+			for (auto it = textureReplace.begin(); it != textureReplace.end(); ++it)
 			{
+				const auto& source = it->first;
 				U64 offset = line.find(source);
 				if (offset != std::string::npos)
 				{
-					line.replace(offset, source.length(), output);
+					line.replace(offset, source.length(), it->second);
+					if (uniqueTex)
+						textureReplace.erase(it);
 					break;
 				}
 			}

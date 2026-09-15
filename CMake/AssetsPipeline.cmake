@@ -316,9 +316,17 @@ macro(process_models MODELS_PATH)
                     set(MATERIAL_PATH "${MODEL_DIR_PATH}/${MATERIAL_NAME}")
                     set(MATERIAL_OUT_PATH "${MODEL_OUT_PATH}/${MATERIAL_NAME}")
 
+                    set(MATERIAL_ERROR "")
+                    string(JSON UNIQ_TEXTURES ERROR_VARIABLE MATERIAL_ERROR GET "${JSON_RAW}" "unique-texture-entries")
+                    if ((NOT "${UNIQ_TEXTURES}" STREQUAL "unique-texture-entries-NOTFOUND") AND ${UNIQ_TEXTURES})
+                        set(UNIQ_TEXTURES "--unique-texture-entries")
+                    else()
+                        set(UNIQ_TEXTURES "")
+                    endif()
+
                     add_custom_command(OUTPUT "${MATERIAL_OUT_PATH}"
                         COMMENT "Patching material file: ${MODEL_DIR}/${MATERIAL_NAME}"
-                        COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MATPATCH} --material ${MATERIAL_PATH} --mipgen ${MODEL_DIR_PATH}/model_mipgen.json --out ${MATERIAL_OUT_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${MODEL_DIR}_matpatch.txt
+                        COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MATPATCH} ${UNIQ_TEXTURES} --material ${MATERIAL_PATH} --mipgen ${MODEL_DIR_PATH}/model_mipgen.json --out ${MATERIAL_OUT_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${MODEL_DIR}_matpatch.txt
                         DEPENDS "${MODEL_SCRIPT_PATH};${MATERIAL_PATH}" VERBATIM)
                     list(APPEND ASSETS_OUTPUTS "${MATERIAL_OUT_PATH}")
                 endif()
