@@ -42,12 +42,12 @@ Switch ($command)
     {
         if ($mode)
         {
-            gdown "https://drive.google.com/drive/folders/1ouu77adp_svOkpFIKTCIa5Tctyf1tXS5" --cookies-from-browser $mode --output Demo/Assets/Source
+            gdown "https://drive.google.com/drive/folders/10GcAQkm5hcYfWgKnhCbTL5siJvPiffJA" --cookies-from-browser $mode --output Demo/Assets/Source
             Remove-Item ~/.cache/gdown/cookies.txt
         }
         else
         {
-            gdown "https://drive.google.com/drive/folders/1ouu77adp_svOkpFIKTCIa5Tctyf1tXS5" --output Demo/Assets/Source
+            gdown "https://drive.google.com/drive/folders/10GcAQkm5hcYfWgKnhCbTL5siJvPiffJA" --output Demo/Assets/Source
         }
         exit 0
     }
