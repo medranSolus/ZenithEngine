@@ -330,6 +330,23 @@ macro(process_models MODELS_PATH)
                         DEPENDS "${MODEL_SCRIPT_PATH};${MATERIAL_PATH}" VERBATIM)
                     list(APPEND ASSETS_OUTPUTS "${MATERIAL_OUT_PATH}")
                 endif()
+                
+                string(JSON COPY_FILES ERROR_VARIABLE MATERIAL_ERROR GET "${JSON_RAW}" "copy")
+                if (NOT "${COPY_FILES}" STREQUAL "copy-NOTFOUND")
+                    string(JSON JOB_COUNT LENGTH "${COPY_FILES}")
+                    math(EXPR JOB_COUNT "${JOB_COUNT} - 1")
+
+                    foreach(COPY_IDX RANGE "${JOB_COUNT}")
+                        string(JSON COPY_SRC GET "${COPY_FILES}" "${COPY_IDX}")
+
+                        set(COPY_OUT "${MODEL_OUT_PATH}/${COPY_SRC}")
+                        add_custom_command(OUTPUT "${COPY_OUT}"
+                            COMMENT "Copying model file: ${MODEL_DIR}/${COPY_SRC}"
+                            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MODEL_DIR_PATH}/${COPY_SRC}" "${COPY_OUT}"
+                            DEPENDS "${MODEL_SCRIPT_PATH};${MODEL_DIR_PATH}/${COPY_SRC}")
+                        list(APPEND ASSETS_OUTPUTS "${COPY_OUT}")
+                    endforeach()
+                endif()
             else()
                 message("Ignoring unknown assets json file: ${MODEL_DIR}/${MODEL_SCRIPT}")
             endif()
