@@ -114,6 +114,40 @@ int main(int argc, char* argv[])
 			fout << line;
 		}
 	}
+	else if (ext == ".gltf")
+	{
+		json::json gltf;
+		fin >> gltf;
+		if (gltf.contains("images") && gltf["images"].is_array())
+		{
+			for (auto& image : gltf["images"])
+			{
+				if (image.contains("uri"))
+				{
+					std::string uri = image["uri"].get<std::string>();
+					for (auto it = textureReplace.begin(); it != textureReplace.end(); ++it)
+					{
+						const auto& source = it->first;
+						U64 offset = uri.find(source);
+						if (offset != std::string::npos)
+						{
+							uri.replace(offset, source.length(), it->second);
+							image["uri"] = uri;
+							if (uniqueTex)
+								textureReplace.erase(it);
+							break;
+						}
+					}
+				}
+			}
+			fout << gltf;
+		}
+		else
+		{
+			Logger::Error("Unrecognized glTF formatting in file \"" + std::string(materialFile) + "\"!");
+			return ResultCode::InvalidFileFormat;
+		}
+	}
 	else
 	{
 		Logger::Error("Unsupported material file format \"" + std::string(materialFile) + "\"!");
