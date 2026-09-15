@@ -1,4 +1,5 @@
 #include "IO/File.h"
+#include <filesystem>
 
 namespace ZE::IO
 {
@@ -39,6 +40,30 @@ namespace ZE::IO
 	Status File::Open(std::string_view fileName, FileFlags flags, U8** fileMapping) noexcept
 	{
 		ZE_ASSERT(!stdFile, "File already opened!");
+		if (flags & FileFlag::CreateOnOpen)
+		{
+			U64 pos = fileName.find_last_of("\\/");
+			if (pos != std::string_view::npos)
+			{
+				std::string_view dir = fileName.substr(0, pos);
+				Status code = {};
+				bool exists = std::filesystem::exists(dir, code);
+				if (code)
+				{
+					ZE_CODE_WARNING(code, "Error checking if directory \"" + std::string(dir) + "\" exists, trying to create anyway.");
+					exists = false;
+				}
+				if (!exists)
+				{
+					std::filesystem::create_directories(dir, code);
+					if (code)
+					{
+						ZE_CODE_ERROR(code, "Error creating directory \"" + std::string(dir) + "\"!");
+						return code;
+					}
+				}
+			}
+		}
 		return platformImpl.Open(fileName, flags, fileMapping, stdFile);
 	}
 
