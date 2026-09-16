@@ -70,17 +70,20 @@ PSOut main(float3 worldPos : POSITION,
 	else
 		albedo = cb_material.Albedo;
 	
-	float metalness;
-	if (cb_material.Flags & ZE_PBR_USE_METAL_TEX)
-		metalness = tx_metalness.SampleBias(splr_AR, tc, cb_settingsData.MipBias).r;
+	float roughness, metalness;
+	if (cb_material.Flags & ZE_PBR_MERGED_ROUGH_METAL)
+	{
+		float2 params = tx_shadingParams.SampleBias(splr_AR, tc, cb_settingsData.MipBias).rg;
+		roughness = lerp(params.r, cb_material.Roughness, step(0.5f, cb_material.Flags & ZE_PBR_USE_ROUGH_TEX));
+		metalness = lerp(params.g, cb_material.Metalness, step(0.5f, cb_material.Flags & ZE_PBR_USE_METAL_TEX));
+	}
 	else
-		metalness = cb_material.Metalness;
-	
-	float roughness;
-	if (cb_material.Flags & ZE_PBR_USE_ROUGH_TEX)
-		roughness = tx_roughness.SampleBias(splr_AR, tc, cb_settingsData.MipBias).r;
-	else
-		roughness = cb_material.Roughness;
+	{
+		float param = tx_shadingParams.SampleBias(splr_AR, tc, cb_settingsData.MipBias).r;
+		float option = step(0.5f, cb_material.Flags & ZE_PBR_USE_ROUGH_TEX);
+		roughness = lerp(param, cb_material.Roughness, option);
+		metalness = lerp(cb_material.Metalness, param, option);
+	}
 	
 	// Write all outputs
 	PSOut pso;

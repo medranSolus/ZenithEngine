@@ -20,8 +20,7 @@ namespace ZE::Data
 		static constexpr const char TEX_SCHEMA_NAME[] = "PBR";
 		static constexpr const char TEX_ALBEDO_NAME[] = "albedo";
 		static constexpr const char TEX_NORMAL_NAME[] = "normal";
-		static constexpr const char TEX_METAL_NAME[] = "metalness";
-		static constexpr const char TEX_ROUGH_NAME[] = "roughness";
+		static constexpr const char TEX_SHADING_PARAMS_NAME[] = "roughMetal";
 		static constexpr const char TEX_HEIGHT_NAME[] = "height";
 
 		enum Flag : U8
@@ -31,8 +30,9 @@ namespace ZE::Data
 			UseNormalTex = 2,
 			UseMetalnessTex = 4,
 			UseRoughnessTex = 8,
-			UseParallaxTex = 16,
-			IsTransparent = 32,
+			MergedRoughnessMetal = 16,
+			UseParallaxTex = 32,
+			IsTransparent = 64,
 			// Mask to indicate which flags contribute to physical permutations of shader
 			PermutationMask = UseParallaxTex | IsTransparent
 		};
@@ -63,14 +63,13 @@ namespace ZE::Data
 		// Remove UseSpecularPowerAlpha, as it's used in shader directly
 		//
 		// Ordering based on bitfield: Parallax|Transparent
-		// Eg: Texture|Specular -> 0b1010 -> 10
-		return static_cast<U8>(flags.Flags & Flag::PermutationMask) >> 4;
+		return static_cast<U8>(flags.Flags & Flag::PermutationMask) >> 5;
 	}
 
 	constexpr PBRFlags MaterialPBR::GetShaderFlagsForState(U8 stateNumber) noexcept
 	{
 		// Retrieve original position of flags
-		return { static_cast<U8>(stateNumber << 4) };
+		return { static_cast<U8>(stateNumber << 5) };
 	}
 
 	constexpr const char* MaterialPBR::DecodeShaderSuffix(PBRFlags flags) noexcept

@@ -19,7 +19,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
 		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
-		desc.AddRange({ 5, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, metal (not used), roughness (not used), parallax
+		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, roughness+metal (not used), parallax
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Geometry);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Pixel);

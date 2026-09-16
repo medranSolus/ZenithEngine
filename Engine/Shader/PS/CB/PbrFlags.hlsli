@@ -6,5 +6,6 @@ static const uint ZE_PBR_USE_ALBEDO_TEX = 1;
 static const uint ZE_PBR_USE_NORMAL_TEX = 2;
 static const uint ZE_PBR_USE_METAL_TEX = 4;
 static const uint ZE_PBR_USE_ROUGH_TEX = 8;
+static const uint ZE_PBR_MERGED_ROUGH_METAL = 16;
 
 #endif // PBR_FLAGS_PS_HLSLI
