@@ -124,8 +124,12 @@ namespace ZE::Platform::WinAPI
 		const bool async = flags & IO::FileFlag::EnableAsync;
 
 		// In case of long pathnames + normalization
-		std::wstring osFilename = L"\\\\?\\" + Utils::ToUTF16(fileName);
-		std::replace(osFilename.begin(), osFilename.end(), L'/', L'\\');
+		std::wstring osFilename = Utils::ToUTF16(fileName);
+		if (osFilename.size() > 1 && osFilename.at(1) == L':')
+		{
+			osFilename = L"\\\\?\\" + osFilename;
+			std::replace(osFilename.begin(), osFilename.end(), L'/', L'\\');
+		}
 
 		// First create OS file handle as it get's most of the options available
 		osFile = CreateFileW(osFilename.c_str(), (write ? GENERIC_WRITE : 0) | (read ? GENERIC_READ : 0), !write ? 0 : FILE_SHARE_READ,
