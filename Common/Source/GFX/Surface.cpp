@@ -824,4 +824,98 @@ namespace ZE::GFX
 		}
 		return true;
 	}
+
+	bool Surface::ReplaceChannels(const Surface* channels, U8 count) noexcept
+	{
+		ZE_ASSERT(channels, "Empty channels list!");
+		ZE_ASSERT(count < 5 && count > 1, "Incorrect number of channels to replace!");
+		if (channels == 0 || count < 2 || count > 4)
+			return false;
+
+		// Get initial data from first surface, but all other must have the same characteristics
+		format = Utils::ExpandSingleChannelFormat(channels[0].GetFormat(), count);
+		alpha = channels[0].alpha && count == 4;
+		width = channels[0].width;
+		height = channels[0].height;
+		depth = channels[0].depth;
+		mipCount = channels[0].mipCount;
+		arraySize = channels[0].arraySize;
+
+		// Sanity checks
+#if !_ZE_MODE_RELEASE
+		for (U8 i = 1; i < count; ++i)
+		{
+			ZE_ASSERT(channels[i].format == channels[0].GetFormat(), "Incorrect format in the " + std::to_string(i) + " surface!");
+			ZE_ASSERT(channels[i].width == width, "Incorrect width in the " + std::to_string(i) + " surface!");
+			ZE_ASSERT(channels[i].height == height, "Incorrect height in the " + std::to_string(i) + " surface!");
+			ZE_ASSERT(channels[i].depth == depth, "Incorrect depth in the " + std::to_string(i) + " surface!");
+			ZE_ASSERT(channels[i].mipCount == mipCount, "Incorrect depth in the " + std::to_string(i) + " surface!");
+			ZE_ASSERT(channels[i].arraySize == arraySize, "Incorrect arraySize in the " + std::to_string(i) + " surface!");
+		}
+#endif
+
+		memorySize = 0;
+		const U8 pixelSize = Utils::GetFormatSize(format);
+		for (U16 a = 0; a < arraySize; ++a)
+		{
+			U32 currentWidth = width;
+			U32 currentHeight = height;
+			U16 currentDepth = depth;
+			for (U16 mip = 0; mip < mipCount; ++mip)
+			{
+				memorySize += Math::AlignUp(static_cast<U64>(Math::AlignUp(currentWidth * pixelSize, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
+
+				currentWidth >>= 1;
+				if (currentWidth == 0)
+					currentWidth = 1;
+				currentHeight >>= 1;
+				if (currentHeight == 0)
+					currentHeight = 1;
+				currentDepth >>= 1;
+				if (currentDepth == 0)
+					currentDepth = 1;
+			}
+		}
+		memory = std::make_shared<U8[]>(memorySize);
+
+		// Copy channel data
+		U8* destMemory = memory.get();
+		U64 srcMemoryOffset = 0;
+		const U8 channelSize = pixelSize / count;
+		for (U16 a = 0; a < arraySize; ++a)
+		{
+			U32 currentWidth = width;
+			U32 currentHeight = height;
+			U16 currentDepth = depth;
+			for (U16 mip = 0; mip < mipCount; ++mip)
+			{
+				U32 currentDestRowSize = GetRowByteSize(mip);
+				U32 currentSrcRowSize = channels[0].GetRowByteSize(mip);
+				for (U16 d = 0; d < currentDepth; ++d)
+				{
+					for (U32 y = 0; y < currentHeight; ++y)
+					{
+						for (U32 x = 0; x < currentWidth; ++x)
+						{
+							for (U8 channel = 0; channel < count; ++channel)
+								std::memcpy(destMemory + x * pixelSize + channel * channelSize, channels[channel].GetBuffer() + srcMemoryOffset + x * channelSize, channelSize);
+						}
+						srcMemoryOffset += currentSrcRowSize;
+						destMemory += currentDestRowSize;
+					}
+				}
+
+				currentWidth >>= 1;
+				if (currentWidth == 0)
+					currentWidth = 1;
+				currentHeight >>= 1;
+				if (currentHeight == 0)
+					currentHeight = 1;
+				currentDepth >>= 1;
+				if (currentDepth == 0)
+					currentDepth = 1;
+			}
+		}
+		return true;
+	}
 }

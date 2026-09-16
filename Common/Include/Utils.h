@@ -44,6 +44,8 @@ namespace ZE::Utils
 	constexpr float GetAlpha(U32 alphaChannel, PixelFormat format) noexcept;
 	// Extract format of single channel
 	constexpr PixelFormat GetSingleChannelFormat(PixelFormat format) noexcept;
+	// Get single channel format and convert it into corresponding multi-channel version (ex, R32_Float x3 -> R32B32G32_Float)
+	constexpr PixelFormat ExpandSingleChannelFormat(PixelFormat format, U8 count) noexcept;
 	// Indicate which part of pixel is occupied by each channel
 	constexpr void FillFormatChannelMasks(PixelFormat format, U32& maskR, U32& maskG, U32& maskB, U32& maskA) noexcept;
 	// Get number of bytes that single pixel is occupying
@@ -1031,6 +1033,184 @@ namespace ZE::Utils
 			return PixelFormat::Unknown;
 		}
 		}
+	}
+
+	constexpr PixelFormat ExpandSingleChannelFormat(PixelFormat format, U8 count) noexcept
+	{
+		ZE_ASSERT(count > 1 && count < 5, "Incorrect number of channels to expand to!");
+		ZE_ASSERT(GetChannelCount(format) == 1, "Format should already be in single channel version!");
+
+		switch (format)
+		{
+		case PixelFormat::R32_Float:
+		case PixelFormat::R32_Depth:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R32G32_Float;
+			case 3:
+				return PixelFormat::R32G32B32_Float;
+			case 4:
+				return PixelFormat::R32G32B32A32_Float;
+			}
+			break;
+		}
+		case PixelFormat::R32_UInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R32G32_UInt;
+			case 3:
+				return PixelFormat::R32G32B32_UInt;
+			case 4:
+				return PixelFormat::R32G32B32A32_UInt;
+			}
+			break;
+		}
+		case PixelFormat::R32_SInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R32G32_SInt;
+			case 3:
+				return PixelFormat::R32G32B32_SInt;
+			case 4:
+				return PixelFormat::R32G32B32A32_SInt;
+			}
+			break;
+		}
+		case PixelFormat::R16_Float:
+		case PixelFormat::R16_Depth:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R16G16_Float;
+			case 4:
+				return PixelFormat::R16G16B16A16_Float;
+			}
+			break;
+		}
+		case PixelFormat::R16_UInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R16G16_UInt;
+			case 4:
+				return PixelFormat::R16G16B16A16_UInt;
+			}
+			break;
+		}
+		case PixelFormat::R16_SInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R16G16_SInt;
+			case 4:
+				return PixelFormat::R16G16B16A16_SInt;
+			}
+			break;
+		}
+		case PixelFormat::R16_UNorm:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R16G16_UNorm;
+			case 4:
+				return PixelFormat::R16G16B16A16_UNorm;
+			}
+			break;
+		}
+		case PixelFormat::R16_SNorm:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R16G16_SNorm;
+			case 4:
+				return PixelFormat::R16G16B16A16_SNorm;
+			}
+			break;
+		}
+		case PixelFormat::R8_UInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R8G8_UInt;
+			case 4:
+				return PixelFormat::R8G8B8A8_UInt;
+			}
+			break;
+		}
+		case PixelFormat::R8_SInt:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R8G8_SInt;
+			case 4:
+				return PixelFormat::R8G8B8A8_SInt;
+			}
+			break;
+		}
+		case PixelFormat::R8_UNorm:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R8G8_UNorm;
+			case 4:
+				return PixelFormat::R8G8B8A8_UNorm;
+			}
+			break;
+		}
+		case PixelFormat::R8_SNorm:
+		{
+			switch (count)
+			{
+			default:
+				break;
+			case 2:
+				return PixelFormat::R8G8_SNorm;
+			case 4:
+				return PixelFormat::R8G8B8A8_SNorm;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		ZE_FAIL("Unsupported format to multiply!");
+		return PixelFormat::Unknown;
 	}
 
 	constexpr void FillFormatChannelMasks(PixelFormat format, U32& maskR, U32& maskG, U32& maskB, U32& maskA) noexcept
