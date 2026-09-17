@@ -46,7 +46,7 @@ macro(add_assets_target TARGET_NAME)
     "endif()\n")
     
     add_custom_command(OUTPUT "${ASSETS_LOG_DIR}/tools_present.stamp"
-        COMMAND ${CMAKE_COMMAND} -E rm -f "${ASSETS_LOG_DIR}/build.stamp"
+        COMMAND ${CMAKE_COMMAND} -E rm -f "${ASSETS_LOG_DIR}/tools_present.stamp"
         COMMAND ${CMAKE_COMMAND} -DTOOLS_PATH:STRING=${ASSETS_TOOLS_PATH} -DTOOL_NAMES=${REQUIRED_TOOLS} -P ${ASSETS_TEMP_DIR}/ToolCheckInline.cmake
         COMMAND ${CMAKE_COMMAND} -E touch "${ASSETS_LOG_DIR}/tools_present.stamp"
         COMMENT "Starting assets processing")
@@ -218,15 +218,14 @@ macro(process_hdris SKYBOX_JSON_SCRIPT ENVMAP_JSON_SCRIPT SKYBOX_OUT_PATH ENVMAP
         list(APPEND ASSETS_OUTPUTS "${LAST_ENVMAP_OUT}")
     endforeach()
     
-    list(POP_BACK ENVMAP_OUT_LIST)
-    math(EXPR JOB_COUNT "${JOB_COUNT} + 1")
     set(CONV_FINISH_FILE "${ASSETS_LOG_DIR}/hdri_process_cubeconv.stamp")
+    math(EXPR JOB_COUNT "${JOB_COUNT} + 1")
     add_custom_command(OUTPUT "${CONV_FINISH_FILE}"
         COMMENT "Convoluting <${JOB_COUNT}> light maps"
+        COMMAND ${CMAKE_COMMAND} -E rm -f "${CONV_FINISH_FILE}"
         COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_CUBECONV} --json ${ENVMAP_JSON_SCRIPT_PATH} --source-dir ${SKYBOX_DEST_PATH} --out-dir ${ENVMAP_DEST_PATH} --log-dir ${ASSETS_LOG_DIR}
         COMMAND ${CMAKE_COMMAND} -E touch "${CONV_FINISH_FILE}"
         DEPENDS "${ENVMAP_JSON_SCRIPT_PATH};${SKYBOX_WAIT_LIST}" VERBATIM)
-    list(APPEND ENVMAP_OUT_LIST "${LAST_ENVMAP_OUT}")
     
     # Step 3: compress results
     foreach(ENVMAP ${ENVMAP_OUT_LIST})        
@@ -288,12 +287,6 @@ macro(process_models MODELS_PATH)
                     if ("${COMPRESSION}" STREQUAL "compression-NOTFOUND")
                         message("File ${MIPMAP_OUT} have no compression specified, skipping compression step.")
                         list(APPEND MIPMAP_OUT_LIST "${MIPMAP_OUT_PATH}")
-                    else()
-                        get_filename_component(MIPMAP_DIR "${MIPMAP_OUT_PATH}" DIRECTORY)
-                        add_custom_command(OUTPUT "${MIPMAP_OUT_PATH}"
-                            COMMENT "Compressing model mipmap: ${MODEL_DIR}/${MIPMAP_OUT}"
-                            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${COMPRESSION} -o ${MIPMAP_DIR} -nologo -y ${MIPMAP_OUT_PATH}
-                            DEPENDS "${MODEL_SCRIPT_PATH};${MIPMAP_FINISH_FILE}" VERBATIM)
                     endif()
 
                     list(APPEND TEX_SRC_LIST "${ASSETS_SRC_DIR}/${MODELS_PATH}${MODEL_DIR}/${TEX_SRC}")
@@ -303,10 +296,28 @@ macro(process_models MODELS_PATH)
                 math(EXPR JOB_COUNT "${JOB_COUNT} + 1")
                 add_custom_command(OUTPUT "${MIPMAP_FINISH_FILE}"
                     COMMENT "Generating <${JOB_COUNT}> mipmaps for model: ${MODEL_DIR}"
+                    COMMAND ${CMAKE_COMMAND} -E rm -f "${MIPMAP_FINISH_FILE}"
                     COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_MIPGEN} --json ${MODEL_SCRIPT_PATH} --source-dir ${MODEL_DIR_PATH} --out-dir ${MODEL_OUT_PATH} --log-dir ${ASSETS_LOG_DIR} --log-file ${MODEL_DIR}_mipgen.txt
                     COMMAND ${CMAKE_COMMAND} -E touch "${MIPMAP_FINISH_FILE}"
                     BYPRODUCTS "${MIPMAP_OUT_LIST}"
                     DEPENDS "${MODEL_SCRIPT_PATH};${TEX_SRC_LIST}" VERBATIM)
+                    
+                math(EXPR JOB_COUNT "${JOB_COUNT} - 1")
+                foreach(MIPMAP_IDX RANGE "${JOB_COUNT}")
+                    string(JSON MIPMAP_DESC GET "${JSON_RAW}" "${MIPMAP_IDX}")
+                    string(JSON MIPMAP_OUT GET "${MIPMAP_DESC}" "out")
+                    set(COMPRESSION_ERROR "")
+                    string(JSON COMPRESSION ERROR_VARIABLE COMPRESSION_ERROR GET "${MIPMAP_DESC}" "compression")
+
+                    set(MIPMAP_OUT_PATH "${MODEL_OUT_PATH}/${MIPMAP_OUT}")
+                    if (NOT "${COMPRESSION}" STREQUAL "compression-NOTFOUND")
+                        get_filename_component(MIPMAP_DIR "${MIPMAP_OUT_PATH}" DIRECTORY)
+                        add_custom_command(OUTPUT "${MIPMAP_OUT_PATH}"
+                            COMMENT "Compressing model mipmap: ${MODEL_DIR}/${MIPMAP_OUT}"
+                            COMMAND ${ASSETS_TOOLS_PATH}/${TOOL_TEXCONV} --format ${COMPRESSION} -o ${MIPMAP_DIR} -nologo -y ${MIPMAP_OUT_PATH}
+                            DEPENDS "${MODEL_SCRIPT_PATH};${MIPMAP_FINISH_FILE}" VERBATIM)
+                    endif()
+                endforeach()
             elseif("${MODEL_SCRIPT}" STREQUAL "model_info.json")
                 # Perform various transformations on model files
                 set(MATERIAL_ERROR "")
