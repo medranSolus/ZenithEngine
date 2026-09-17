@@ -13,17 +13,20 @@ enum ResultCode : int
 	CannotLoadFile = -2,
 	CannotSaveFile = -3,
 	CannotPerformOperation = -4,
+	TooManySources = -5,
+	MergeError = -6,
 };
 
 struct MipParams
 {
 	std::string_view Source = "";
+	std::vector<std::string_view> MergeSources;
 	std::string_view OutFile = "";
 	U32 Cores = 1;
 	bool GammaCorrection = false;
 	bool SrcOriginalLayer = false;
 	bool NormalMapEncoding = false;
-	float AlphaTestTreshold = FLT_MAX;
+	float AlphaTestThreshold = FLT_MAX;
 	float FilterCoeffParam = 0.0f;
 	U32 WindowSize = 2;
 	Math::FilterType Filter = Math::FilterType::Box;
@@ -58,6 +61,7 @@ int main(int argc, char* argv[])
 	parser.AddNumber("filter", 0, 'f');
 	parser.AddNumber("window-size", 2, 'w'); // Bilinear will override this to minimal value 2
 	parser.AddNumber("cores", 1, 'c');
+	parser.AddFloat("alpha-threshold", FLT_MAX);
 	parser.AddFloat("filter-coeff-param");
 	parser.AddString("source", "", 's');
 	parser.AddString("out", "", 'o');
@@ -142,6 +146,7 @@ int main(int argc, char* argv[])
 	params.GammaCorrection = parser.GetOption("gamma-correction");
 	params.SrcOriginalLayer = parser.GetOption("src-org-layer");
 	params.NormalMapEncoding = parser.GetOption("normal-map");
+	params.AlphaTestThreshold = parser.GetFloat("alpha-threshold");
 	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
 	params.WindowSize = parser.GetNumber("window-size");
 	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("filter"));
@@ -151,12 +156,12 @@ int main(int argc, char* argv[])
 
 ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir, std::string_view outDir) noexcept
 {
-	std::string src, out;
+	std::vector<std::string> memSources;
 	MipParams params = {};
 	if (command.contains("source"))
 	{
 		params.Source = command["source"].get<std::string_view>();
-		Utils::AppendToDirectory(srcDir, params.Source, src);
+		Utils::AppendToDirectory(srcDir, params.Source, memSources.emplace_back());
 	}
 	else
 	{
@@ -167,7 +172,7 @@ ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir
 	if (command.contains("out"))
 	{
 		params.OutFile = command["out"].get<std::string_view>();
-		Utils::AppendToDirectory(outDir, params.OutFile, out);
+		Utils::AppendToDirectory(outDir, params.OutFile, memSources.emplace_back());
 	}
 	else
 		params.OutFile = params.Source;
@@ -180,12 +185,20 @@ ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir
 		params.SrcOriginalLayer = command["src-org-layer"].get<bool>();
 	if (command.contains("normal-map"))
 		params.NormalMapEncoding = command["normal-map"].get<bool>();
+	if (command.contains("alpha-threshold"))
+		params.AlphaTestThreshold = command["alpha-threshold"].get<float>();
 	if (command.contains("filter-coeff-param"))
 		params.FilterCoeffParam = command["filter-coeff-param"].get<float>();
 	if (command.contains("window-size"))
 		params.WindowSize = command["window-size"].get<U32>();
 	if (command.contains("filter"))
 		params.Filter = static_cast<Math::FilterType>(command["filter"].get<U32>());
+	
+	if (command.contains("merge"))
+	{
+		for (const auto& merge : command["merge"])
+			Utils::AppendToDirectory(srcDir, params.MergeSources.emplace_back(merge.get<std::string_view>()), memSources.emplace_back());
+	}
 
 	return RunJob(params);
 }
@@ -204,7 +217,36 @@ ResultCode RunJob(MipParams& job) noexcept
 	}
 
 	GFX::Surface surface;
-	if (!surface.Load(job.Source, false, true))
+	if (job.MergeSources.size())
+	{
+		if (job.MergeSources.size() > 3)
+		{
+			Logger::Error("Trying to merge more than 4 channels!");
+			return ResultCode::TooManySources;
+		}
+
+		std::vector<GFX::Surface> channels;
+		if (!channels.emplace_back().Load(job.Source))
+		{
+			Logger::Error("Cannot load main source file \"" + std::string(job.Source) + "\"!");
+			return ResultCode::CannotLoadFile;
+		}
+		for (const auto& merge : job.MergeSources)
+		{
+			if (!channels.emplace_back().Load(merge))
+			{
+				Logger::Error("Cannot load merging source file \"" + std::string(merge) + "\"!");
+				return ResultCode::CannotLoadFile;
+			}
+		}
+
+		if (!surface.ReplaceChannels(channels.data(), Utils::SafeCast<U8>(channels.size()), true))
+		{
+			Logger::Error("Error while merging surfaces for out file \"" + std::string(job.OutFile) + "\"!");
+			return ResultCode::MergeError;
+		}
+	}
+	else if (!surface.Load(job.Source, false, true))
 	{
 		Logger::Error("Cannot load file \"" + std::string(job.Source) + "\"!");
 		return ResultCode::CannotLoadFile;
@@ -222,7 +264,7 @@ ResultCode RunJob(MipParams& job) noexcept
 	const PixelFormat format = Utils::GetSingleChannelFormat(surface.GetFormat());
 	const U8 pixelSize = surface.GetPixelSize();
 	const U8 channelSize = pixelSize / channelCount;
-	const bool alphaRemap = channelCount == 4 && job.AlphaTestTreshold != FLT_MAX;
+	const bool alphaRemap = channelCount == 4 && job.AlphaTestThreshold != FLT_MAX;
 	const S32 halfWindow = Utils::SafeCast<S32>(job.WindowSize) >> 1;
 
 	auto generate = [&](U16 startMip, U16 mipCount, U32 startRow, U32 rowCount)
@@ -302,7 +344,7 @@ ResultCode RunJob(MipParams& job) noexcept
 
 								// https://asawicki.info/articles/alpha_test.php5
 								if (alphaRemap)
-									mipVal.w = std::max(mipVal.w, (mipVal.w + 2.0f * job.AlphaTestTreshold) / 3.0f);
+									mipVal.w = std::max(mipVal.w, (mipVal.w + 2.0f * job.AlphaTestThreshold) / 3.0f);
 
 								if (job.NormalMapEncoding)
 								{
