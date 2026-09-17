@@ -604,11 +604,27 @@ namespace ZE::GFX
 				spng_ihdr header = {};
 				header.width = width;
 				header.height = height;
-				header.bit_depth = Utils::GetChannelSize(format) * 8;
+				header.bit_depth = Utils::GetFormatBitCount(format);
+				switch (Utils::GetChannelCount(format))
+				{
+				default:
+				case 4:
 				header.color_type = SPNG_COLOR_TYPE_TRUECOLOR_ALPHA;
+					break;
+				case 3:
+					header.color_type = SPNG_COLOR_TYPE_TRUECOLOR;
+					break;
+				case 2:
+					header.color_type = SPNG_COLOR_TYPE_GRAYSCALE_ALPHA;
+					break;
+				case 1:
+					header.color_type = SPNG_COLOR_TYPE_GRAYSCALE;
+					break;
+				}
 				header.compression_method = 0;
 				header.filter_method = 0;
 				header.interlace_method = SPNG_INTERLACE_NONE;
+				spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
 				result = spng_set_ihdr(ctx, &header);
 				if (!result)
 				{
