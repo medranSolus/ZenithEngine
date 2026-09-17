@@ -8,6 +8,9 @@ if(${ZE_PLATFORM_WINDOWS})
         "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Assets/icon.ico\"")
 endif()
 
+# Location of the data files
+file(RELATIVE_PATH ASSETS_PATH "${ZE_BUILD_DIR}" "${DEMO_DIR}/Assets/Runtime")
+add_compile_definitions(ZE_DEMO_ASSETS_PATH="${ASSETS_PATH}")
 
 # Target files
 set(INC_DIR "${DEMO_DIR}/Include")
