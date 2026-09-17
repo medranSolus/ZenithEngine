@@ -23,6 +23,10 @@ struct JobParams
 	bool FlipY = false;
 	bool HdriCubemap = false;
 	bool Fp16 = false;
+	bool ExtractR = false;
+	bool ExtractG = false;
+	bool ExtractB = false;
+	bool ExtractA = false;
 	float FilterCoeffParam = 0.0f;
 	Math::FilterType Filter = Math::FilterType::Box;
 	U32 WindowSize = 2;
@@ -41,6 +45,10 @@ int main(int argc, char* argv[])
 	parser.AddOption("flip-y", 'y');
 	parser.AddOption("hdri-cubemap", 'q');
 	parser.AddOption("fp16", 'f');
+	parser.AddOption("extract-r");
+	parser.AddOption("extract-g");
+	parser.AddOption("extract-b");
+	parser.AddOption("extract-a");
 	parser.AddFloat("filter-coeff-param");
 	parser.AddNumber("cube-filter");
 	parser.AddNumber("cube-width");
@@ -130,6 +138,10 @@ int main(int argc, char* argv[])
 	params.FlipY = parser.GetOption("flip-y");
 	params.HdriCubemap = parser.GetOption("hdri-cubemap");
 	params.Fp16 = parser.GetOption("fp16");
+	params.ExtractR = parser.GetOption("extract-r");
+	params.ExtractG = parser.GetOption("extract-g");
+	params.ExtractB = parser.GetOption("extract-b");
+	params.ExtractA = parser.GetOption("extract-a");
 	params.FilterCoeffParam = parser.GetFloat("filter-coeff-param");
 	params.Filter = static_cast<Math::FilterType>(parser.GetNumber("cube-filter"));
 	params.WindowSize = parser.GetNumber("window-size");
@@ -171,6 +183,14 @@ ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir
 		params.HdriCubemap = command["hdri-cubemap"].get<bool>();
 	if (command.contains("fp16"))
 		params.Fp16 = command["fp16"].get<bool>();
+	if (command.contains("extract-r"))
+		params.ExtractR = command["extract-r"].get<bool>();
+	if (command.contains("extract-g"))
+		params.ExtractG = command["extract-g"].get<bool>();
+	if (command.contains("extract-b"))
+		params.ExtractB = command["extract-b"].get<bool>();
+	if (command.contains("extract-a"))
+		params.ExtractA = command["extract-a"].get<bool>();
 	if (command.contains("filter-coeff-param"))
 		params.FilterCoeffParam = command["filter-coeff-param"].get<float>();
 	if (command.contains("cube-filter"))
@@ -186,7 +206,7 @@ ResultCode ProcessJsonCommand(const json::json& command, std::string_view srcDir
 ResultCode RunJob(const JobParams& job) noexcept
 {
 	// Early out if nothing to do
-	if (!job.NoAlpha && !job.FlipY && !job.HdriCubemap)
+	if (!job.NoAlpha && !job.FlipY && !job.HdriCubemap && !job.ExtractR && !job.ExtractG && !job.ExtractB && !job.ExtractA)
 	{
 		ResultCode retCode = ResultCode::NoWorkPerformed;
 		if (job.OutFile == job.Source)
@@ -235,6 +255,76 @@ ResultCode RunJob(const JobParams& job) noexcept
 		TexOps::ConvertToCubemap(surface, cubemap, job.Cores, job.Filter, job.FilterCoeffParam, job.WindowSize == 0 ? 2 : job.WindowSize, job.NoAlpha, job.Fp16);
 		Logger::Info("Converted to 6-faced cubemap");
 		saved = cubemap.Save(job.OutFile);
+	}
+	else if (job.ExtractR || job.ExtractG || job.ExtractB || job.ExtractA)
+	{
+		GFX::Surface r, g, b, a;
+		if (surface.ExtractChannel(job.ExtractR ? &r : nullptr, job.ExtractG ? &g : nullptr, job.ExtractB ? &b : nullptr, job.ExtractA ? &a : nullptr))
+		{
+			U64 extPos = job.OutFile.rfind('.');
+			if (extPos != std::string_view::npos)
+			{
+				std::string outBase(job.OutFile.substr(0, extPos));
+				std::string ext(job.OutFile.substr(extPos));
+				bool error = false;
+				if (job.ExtractR)
+				{
+					std::string outFile = outBase + "_r" + ext;
+					if (r.Save(outFile))
+						Logger::Info("Saved extracted R channel to file \"" + outFile + "\"");
+					else
+					{
+						error = true;
+						Logger::Error("Error saving extracted R channel to file \"" + outFile + "\"!");
+					}
+				}
+				if (job.ExtractG)
+				{
+					std::string outFile = outBase + "_g" + ext;
+					if (r.Save(outFile))
+						Logger::Info("Saved extracted G channel to file \"" + outFile + "\"");
+					else
+					{
+						error = true;
+						Logger::Error("Error saving extracted G channel to file \"" + outFile + "\"!");
+					}
+				}
+				if (job.ExtractB)
+				{
+					std::string outFile = outBase + "_b" + ext;
+					if (r.Save(outFile))
+						Logger::Info("Saved extracted B channel to file \"" + outFile + "\"");
+					else
+					{
+						error = true;
+						Logger::Error("Error saving extracted B channel to file \"" + outFile + "\"!");
+					}
+				}
+				if (job.ExtractA)
+				{
+					std::string outFile = outBase + "_a" + ext;
+					if (r.Save(outFile))
+						Logger::Info("Saved extracted A channel to file \"" + outFile + "\"");
+					else
+					{
+						error = true;
+						Logger::Error("Error saving extracted A channel to file \"" + outFile + "\"!");
+					}
+				}
+				return error ? ResultCode::CannotSaveFile : ResultCode::Success;
+			}
+			else
+			{
+				Logger::Error("Error determining extension of the file \"" + std::string(job.OutFile) + "\"!");
+				return ResultCode::CannotSaveFile;
+			}
+
+		}
+		else
+		{
+			Logger::Error("Error extracting channels from file \"" + std::string(job.OutFile) + "\"!");
+			return ResultCode::CannotPerformOperation;
+		}
 	}
 	else
 	{
