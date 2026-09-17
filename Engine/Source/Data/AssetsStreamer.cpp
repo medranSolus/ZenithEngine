@@ -621,206 +621,226 @@ namespace ZE::Data
 				aiString metalTexFile = {};
 				aiReturn metalTexRet = material.GetTexture(aiTextureType_METALNESS, 0, &metalTexFile);
 				aiReturn roughTexRet = material.GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texFile);
+				bool parseRough = (options & ExternalModelOption::IgnoreRoughnessTex) == 0;
+				bool parseMetal = (options & ExternalModelOption::IgnoreMetalnessTex) == 0;
 
 				// Get roughness and metal texture (ensure that it's in correct format: R - roughness, G - metalness)
-				if (roughTexRet == aiReturn_SUCCESS && metalTexRet == aiReturn_SUCCESS)
+				if (parseRough || parseMetal)
 				{
-					if (texFile == metalTexFile)
+					if (roughTexRet == aiReturn_SUCCESS && metalTexRet == aiReturn_SUCCESS)
 					{
-						if (((options & ExternalModelOption::ExtractRoughnessMask) != 0 && (options & ExternalModelOption::ExtractRoughnessChannelR) == 0)
-							|| ((options & ExternalModelOption::ExtractMetalnessMask) != 0 && (options & ExternalModelOption::ExtractMetalnessChannelG) == 0))
+						if (texFile == metalTexFile)
 						{
-							if ((options & ExternalModelOption::ExtractRoughnessMask) == ((options & ExternalModelOption::ExtractMetalnessMask) >> 3))
+							if (((options & ExternalModelOption::ExtractRoughnessMask) != 0 && (options & ExternalModelOption::ExtractRoughnessChannelR) == 0)
+								|| ((options & ExternalModelOption::ExtractMetalnessMask) != 0 && (options & ExternalModelOption::ExtractMetalnessChannelG) == 0))
 							{
-								ZE_WARNING("Same channel used for extracting packed roughness and metalness texture! Falling back to default B for metalness and G for roughness.");
-								options &= ~(ExternalModelOption::ExtractRoughnessMask | ExternalModelOption::ExtractMetalnessMask);
-								options |= ExternalModelOption::ExtractMetalnessChannelB | ExternalModelOption::ExtractRoughnessChannelG; // Standard for glTF
-							}
+								if ((options & ExternalModelOption::ExtractRoughnessMask) == ((options & ExternalModelOption::ExtractMetalnessMask) >> 3))
+								{
+									ZE_WARNING("Same channel used for extracting packed roughness and metalness texture! Falling back to default B for metalness and G for roughness.");
+									options &= ~(ExternalModelOption::ExtractRoughnessMask | ExternalModelOption::ExtractMetalnessMask);
+									options |= ExternalModelOption::ExtractMetalnessChannelB | ExternalModelOption::ExtractRoughnessChannelG; // Standard for glTF
+								}
 
-							std::vector<GFX::Surface> surfaces;
-							if (surfaces.emplace_back().Load(path + texFile.C_Str()))
-							{
-								switch (Utils::GetChannelCount(surfaces.front().GetFormat()))
+								std::vector<GFX::Surface> surfaces;
+								if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 								{
-								default:
-								case 1:
-									break;
-								case 2:
-								{
-									// Just swap channels
-									U8 channelSize = Utils::GetChannelSize(surfaces.front().GetFormat());
-									// Check if the channels are not compressed - then it's up to user to provide better texture
-									if (channelSize == 0)
+									switch (Utils::GetChannelCount(surfaces.front().GetFormat()))
 									{
-										Logger::Error("When providing an compressed texture (" + std::string(texFile.C_Str()) + "), it is required for it to be in correct channel order!");
+									default:
+									case 1:
 										break;
-									}
-									for (U16 a = 0; a < surfaces.front().GetArraySize(); ++a)
+									case 2:
 									{
-										U32 currentWidth = surfaces.front().GetWidth();
-										U32 currentHeight = surfaces.front().GetHeight();
-										U16 currentDepth = surfaces.front().GetDepth();
-										for (U16 mip = 0; mip < surfaces.front().GetMipCount(); ++mip)
+										// Just swap channels
+										U8 channelSize = Utils::GetChannelSize(surfaces.front().GetFormat());
+										// Check if the channels are not compressed - then it's up to user to provide better texture
+										if (channelSize == 0)
 										{
-											U32 rowSize = surfaces.front().GetRowByteSize(mip);
-											for (U16 d = 0; d < currentDepth; ++d)
+											Logger::Error("When providing an compressed texture (" + std::string(texFile.C_Str()) + "), it is required for it to be in correct channel order!");
+											break;
+										}
+										for (U16 a = 0; a < surfaces.front().GetArraySize(); ++a)
+										{
+											U32 currentWidth = surfaces.front().GetWidth();
+											U32 currentHeight = surfaces.front().GetHeight();
+											U16 currentDepth = surfaces.front().GetDepth();
+											for (U16 mip = 0; mip < surfaces.front().GetMipCount(); ++mip)
 											{
-												U8* image = surfaces.front().GetImage(a, mip, d);
-												for (U32 y = 0; y < currentHeight; ++y)
+												U32 rowSize = surfaces.front().GetRowByteSize(mip);
+												for (U16 d = 0; d < currentDepth; ++d)
 												{
-													U32 rowOffset = rowSize * y;
-													for (U32 x = 0; x < currentWidth; ++x)
+													U8* image = surfaces.front().GetImage(a, mip, d);
+													for (U32 y = 0; y < currentHeight; ++y)
 													{
-														U8* pixel = image + rowOffset + x * channelSize * 2;
-														U32 temp = 0;
-														std::memcpy(&temp, pixel, channelSize);
-														std::memcpy(pixel, pixel + channelSize, channelSize);
-														std::memcpy(pixel + channelSize, &temp, channelSize);
+														U32 rowOffset = rowSize * y;
+														for (U32 x = 0; x < currentWidth; ++x)
+														{
+															U8* pixel = image + rowOffset + x * channelSize * 2;
+															U32 temp = 0;
+															std::memcpy(&temp, pixel, channelSize);
+															std::memcpy(pixel, pixel + channelSize, channelSize);
+															std::memcpy(pixel + channelSize, &temp, channelSize);
+														}
 													}
 												}
 											}
+
+											currentWidth >>= 1;
+											if (currentWidth == 0)
+												currentWidth = 1;
+											currentHeight >>= 1;
+											if (currentHeight == 0)
+												currentHeight = 1;
+											currentDepth >>= 1;
+											if (currentDepth == 0)
+												currentDepth = 1;
 										}
+										break;
+									}
+									case 3:
+									case 4:
+									{
+										GFX::Surface* channelR = nullptr;
+										GFX::Surface* channelG = nullptr;
+										GFX::Surface* channelB = nullptr;
+										GFX::Surface* channelA = nullptr;
 
-										currentWidth >>= 1;
-										if (currentWidth == 0)
-											currentWidth = 1;
-										currentHeight >>= 1;
-										if (currentHeight == 0)
-											currentHeight = 1;
-										currentDepth >>= 1;
-										if (currentDepth == 0)
-											currentDepth = 1;
-									}
-									break;
-								}
-								case 3:
-								case 4:
-								{
-									surfaces.emplace_back(); // Roughness
-									surfaces.emplace_back(); // Metalness
-									GFX::Surface* channelR = nullptr;
-									GFX::Surface* channelG = nullptr;
-									GFX::Surface* channelB = nullptr;
-									GFX::Surface* channelA = nullptr;
-
-									switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractRoughnessMask))
-									{
-									case ExternalModelOption::ExtractRoughnessChannelR:
-									{
-										channelR = &surfaces.at(1);
-										break;
-									}
-									default:
-									case ExternalModelOption::ExtractRoughnessChannelG:
-									{
-										channelG = &surfaces.at(1);
-										break;
-									}
-									case ExternalModelOption::ExtractRoughnessChannelB:
-									{
-										channelB = &surfaces.at(1);
-										break;
-									}
-									case ExternalModelOption::ExtractRoughnessChannelA:
-									{
-										channelA = &surfaces.at(1);
-										break;
-									}
-									}
-									switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractMetalnessMask))
-									{
-									default:
-									case ExternalModelOption::ExtractMetalnessChannelR:
-									{
-										channelR = &surfaces.at(2);
-										break;
-									}
-									case ExternalModelOption::ExtractMetalnessChannelG:
-									{
-										channelG = &surfaces.at(2);
-										break;
-									}
-									case ExternalModelOption::ExtractMetalnessChannelB:
-									{
-										channelB = &surfaces.at(2);
-										break;
-									}
-									case ExternalModelOption::ExtractMetalnessChannelA:
-									{
-										channelA = &surfaces.at(2);
-										break;
-									}
-									}
-
-									if (surfaces.front().ExtractChannel(channelR, channelG, channelB, channelA))
-									{
-										if (surfaces.front().ReplaceChannels(surfaces.data() + 1, 2))
+										if (parseRough)
 										{
-											surfaces.resize(1);
-											texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-											flags |= MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
+											surfaces.emplace_back();
+											switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractRoughnessMask))
+											{
+											case ExternalModelOption::ExtractRoughnessChannelR:
+											{
+												channelR = &surfaces.back();
+												break;
+											}
+											default:
+											case ExternalModelOption::ExtractRoughnessChannelG:
+											{
+												channelG = &surfaces.back();
+												break;
+											}
+											case ExternalModelOption::ExtractRoughnessChannelB:
+											{
+												channelB = &surfaces.back();
+												break;
+											}
+											case ExternalModelOption::ExtractRoughnessChannelA:
+											{
+												channelA = &surfaces.back();
+												break;
+											}
+											}
 										}
+										if (parseMetal)
+										{
+											surfaces.emplace_back();
+											switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractMetalnessMask))
+											{
+											default:
+											case ExternalModelOption::ExtractMetalnessChannelR:
+											{
+												channelR = &surfaces.back();
+												break;
+											}
+											case ExternalModelOption::ExtractMetalnessChannelG:
+											{
+												channelG = &surfaces.back();
+												break;
+											}
+											case ExternalModelOption::ExtractMetalnessChannelB:
+											{
+												channelB = &surfaces.back();
+												break;
+											}
+											case ExternalModelOption::ExtractMetalnessChannelA:
+											{
+												channelA = &surfaces.back();
+												break;
+											}
+											}
+										}
+
+										if (surfaces.front().ExtractChannel(channelR, channelG, channelB, channelA))
+										{
+											if (parseRough != parseMetal)
+											{
+												surfaces.erase(surfaces.begin());
+												texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+												if (parseRough)
+													flags |= MaterialPBR::Flag::UseRoughnessTex;
+												if (parseMetal)
+													flags |= MaterialPBR::Flag::UseMetalnessTex;
+											}
+											else if (surfaces.front().ReplaceChannels(surfaces.data() + 1, 2))
+											{
+												surfaces.resize(1);
+												texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+												flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
+											}
+										}
+										break;
 									}
-									break;
+									}
 								}
+							}
+							else
+							{
+								std::vector<GFX::Surface> surfaces;
+								if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+								{
+									texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+									flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
 								}
 							}
 						}
 						else
 						{
 							std::vector<GFX::Surface> surfaces;
-							if (surfaces.emplace_back().Load(path + texFile.C_Str()))
+							bool loadedRoughness = parseRough && surfaces.emplace_back().Load(path + texFile.C_Str());
+							bool loadedMetalness = parseMetal && surfaces.emplace_back().Load(path + metalTexFile.C_Str());
+
+							if (loadedRoughness && loadedMetalness)
 							{
+								if (surfaces.emplace_back().ReplaceChannels(surfaces.data(), 2))
+								{
+									surfaces.erase(surfaces.begin(), surfaces.begin() + 2);
+									texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+									flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
+								}
+							}
+							else if (loadedRoughness)
+							{
+								surfaces.pop_back();
 								texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-								flags |= MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
+								flags |= MaterialPBR::Flag::UseRoughnessTex;
+							}
+							else if (loadedMetalness)
+							{
+								surfaces.erase(surfaces.begin());
+								texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+								flags |= MaterialPBR::Flag::UseMetalnessTex;
 							}
 						}
 					}
-					else
+					else if (roughTexRet == aiReturn_SUCCESS && parseRough)
 					{
 						std::vector<GFX::Surface> surfaces;
-						bool loadRoughness = surfaces.emplace_back().Load(path + texFile.C_Str());
-						bool loadMetalness = surfaces.emplace_back().Load(path + metalTexFile.C_Str());
-
-						if (loadRoughness && loadMetalness)
+						if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 						{
-							if (surfaces.emplace_back().ReplaceChannels(surfaces.data(), 2))
-							{
-								surfaces.erase(surfaces.begin(), surfaces.begin() + 2);
-								texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-								flags |= MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
-							}
-						}
-						else if (loadRoughness)
-						{
-							surfaces.pop_back();
 							texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 							flags |= MaterialPBR::Flag::UseRoughnessTex;
 						}
-						else if (loadMetalness)
+					}
+					else if (metalTexRet == aiReturn_SUCCESS && parseMetal)
+					{
+						std::vector<GFX::Surface> surfaces;
+						if (surfaces.emplace_back().Load(path + metalTexFile.C_Str()))
 						{
-							surfaces.erase(surfaces.begin());
 							texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 							flags |= MaterialPBR::Flag::UseMetalnessTex;
 						}
-					}
-				}
-				else if (roughTexRet == aiReturn_SUCCESS)
-				{
-					std::vector<GFX::Surface> surfaces;
-					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
-					{
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseRoughnessTex;
-					}
-				}
-				else if (metalTexRet == aiReturn_SUCCESS)
-				{
-					std::vector<GFX::Surface> surfaces;
-					if (surfaces.emplace_back().Load(path + metalTexFile.C_Str()))
-					{
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseMetalnessTex;
 					}
 				}
 				metalTexFile.Clear();

@@ -3,7 +3,7 @@
 namespace ZE::Data
 {
 	// Options for loading external model
-	typedef U8 ExternalModelOptions;
+	typedef U16 ExternalModelOptions;
 	// Single option for loading external model
 	enum class ExternalModelOption : ExternalModelOptions
 	{
@@ -31,8 +31,13 @@ namespace ZE::Data
 		// Mask to get all metalness extraction channels
 		ExtractMetalnessMask = ExtractMetalnessChannelR | ExtractMetalnessChannelG | ExtractMetalnessChannelB | ExtractMetalnessChannelA,
 
+		// During parsing don't bother with loading roughness texture (ignored if model contain merged roughness+metalness texture with 2 channels)
+		IgnoreRoughnessTex = 0x40,
+		// During parsing don't bother with loading metalness texture (ignored if model contain merged roughness+metalness texture with 2 channels)
+		IgnoreMetalnessTex = 0x80,
+
 		// Flip UV coordinates for given model
-		FlipUV = 0x40,
+		FlipUV = 0x0100,
 	};
 	ZE_ENUM_OPERATORS(ExternalModelOption, ExternalModelOptions);
 }
