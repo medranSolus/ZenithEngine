@@ -177,29 +177,35 @@ std::vector<std::pair<std::string, std::string>> GetTextureReplacement(std::stri
 		Logger::Error("Cannot open mipgen script \"" + std::string(mipgenScript) + "\"!");
 	else
 	{
+		auto getEntry = [&texturePairs](const json::json& item) noexcept
+			{
+				if (item.contains("out"))
+				{
+					std::string output = item["out"].get<std::string>();
+					if (item.contains("name-replacement"))
+						texturePairs.emplace_back(item["name-replacement"].get<std::string>(), output);
+					else
+					{
+						if (item.contains("source"))
+							texturePairs.emplace_back(item["source"].get<std::string>(), output);
+						if (item.contains("merge"))
+						{
+							for (const auto& mergeSrc : item["merge"])
+								texturePairs.emplace_back(mergeSrc.get<std::string>(), output);
+						}
+					}
+				}
+			};
+
 		json::json jsonarray;
 		fin >> jsonarray;
 		if (jsonarray.is_array())
 		{
 			for (const auto& item : jsonarray)
-			{
-				if (item.contains("source") && item.contains("out"))
-				{
-					std::string source = item["source"].get<std::string>();
-					std::string output = item["out"].get<std::string>();
-					texturePairs.emplace_back(source, output);
-				}
-			}
+				getEntry(item);
 		}
 		else
-		{
-			if (jsonarray.contains("source") && jsonarray.contains("out"))
-			{
-				std::string source = jsonarray["source"].get<std::string>();
-				std::string output = jsonarray["out"].get<std::string>();
-				texturePairs.emplace_back(source, output);
-			}
-		}
+			getEntry(jsonarray);
 	}
 	return texturePairs;
 }
