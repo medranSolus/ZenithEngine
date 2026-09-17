@@ -609,7 +609,7 @@ namespace ZE::GFX
 				{
 				default:
 				case 4:
-				header.color_type = SPNG_COLOR_TYPE_TRUECOLOR_ALPHA;
+					header.color_type = SPNG_COLOR_TYPE_TRUECOLOR_ALPHA;
 					break;
 				case 3:
 					header.color_type = SPNG_COLOR_TYPE_TRUECOLOR;
@@ -744,7 +744,7 @@ namespace ZE::GFX
 		// - single texture with height of rows
 		// - Every mip level smaller in 3D dimmensions than previous one
 		U64 channelMemorySize = 0;
-		const U8 channelSize = Utils::GetFormatBitCount(singleChannelFormat) / 8;
+		const U8 channelSize = Utils::GetFormatSize(singleChannelFormat);
 		for (U16 a = 0; a < arraySize; ++a)
 		{
 			U32 currentWidth = width;
@@ -767,6 +767,7 @@ namespace ZE::GFX
 		}
 
 		// Init all destination textures
+		GFX::Surface* srcSurface = nullptr;
 		auto initSurface = [&](Surface& channel)
 			{
 				channel.format = singleChannelFormat;
@@ -778,6 +779,7 @@ namespace ZE::GFX
 				channel.arraySize = arraySize;
 				channel.memorySize = channelMemorySize;
 				channel.memory = std::make_shared<U8[]>(channelMemorySize);
+				srcSurface = &channel;
 			};
 		if (channelR)
 			initSurface(*channelR);
@@ -791,6 +793,7 @@ namespace ZE::GFX
 		// Copy channel data
 		U8* srcMemory = memory.get();
 		U64 destMemoryOffset = 0;
+		const U8 pixelSize = Utils::GetFormatSize(format);
 		for (U16 a = 0; a < arraySize; ++a)
 		{
 			U32 currentWidth = width;
@@ -798,33 +801,36 @@ namespace ZE::GFX
 			U16 currentDepth = depth;
 			for (U16 mip = 0; mip < mipCount; ++mip)
 			{
+				U64 currentSrcSliceSize = GetSliceByteSize(mip);
+				U32 currentSrcRowSize = GetRowByteSize(mip);
+
+				U64 currentDestSliceSize = srcSurface->GetSliceByteSize(mip);
+				U32 currentDestRowSize = srcSurface->GetRowByteSize(mip);
 				for (U16 d = 0; d < currentDepth; ++d)
 				{
+					U8* srcSlice = srcMemory;
+					U64 destSliceOffset = destMemoryOffset;
 					for (U32 y = 0; y < currentHeight; ++y)
 					{
-						// Only place with row alignment, everything above have slive alignment
+						// Only place with row alignment, everything above have slice alignment
 						for (U32 x = 0; x < currentWidth; ++x)
 						{
+							U8* srcPixel = x * pixelSize + srcSlice;
+							U64 destOffset = x * channelSize + destSliceOffset;
 							if (channelR)
-								std::memcpy(channelR->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
-							srcMemory += channelSize;
+								std::memcpy(channelR->GetBuffer() + destOffset, srcPixel, channelSize);
 							if (channelG)
-								std::memcpy(channelG->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
-							srcMemory += channelSize;
+								std::memcpy(channelG->GetBuffer() + destOffset, srcPixel + channelSize, channelSize);
 							if (channelB)
-								std::memcpy(channelB->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
-							srcMemory += channelSize;
+								std::memcpy(channelB->GetBuffer() + destOffset, srcPixel + 2 * channelSize, channelSize);
 							if (channelA)
-								std::memcpy(channelA->GetBuffer() + destMemoryOffset, srcMemory, channelSize);
-							srcMemory += channelSize;
-
-							destMemoryOffset += channelSize;
+								std::memcpy(channelA->GetBuffer() + destOffset, srcPixel + 3 * channelSize, channelSize);
 						}
-						destMemoryOffset = Math::AlignUp(destMemoryOffset, static_cast<U64>(ROW_PITCH_ALIGNMENT));
-						srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(ROW_PITCH_ALIGNMENT)));
+						srcSlice += currentSrcRowSize;
+						destSliceOffset += currentDestRowSize;
 					}
-					destMemoryOffset = Math::AlignUp(destMemoryOffset, SLICE_PITCH_ALIGNMENT);
-					srcMemory = reinterpret_cast<U8*>(Math::AlignUp(reinterpret_cast<U64>(srcMemory), static_cast<U64>(SLICE_PITCH_ALIGNMENT)));
+					srcMemory += currentSrcSliceSize;
+					destMemoryOffset += currentDestSliceSize;
 				}
 
 				currentWidth >>= 1;
@@ -841,7 +847,7 @@ namespace ZE::GFX
 		return true;
 	}
 
-	bool Surface::ReplaceChannels(const Surface* channels, U8 count) noexcept
+	bool Surface::ReplaceChannels(const Surface* channels, U8 count, bool allocMips) noexcept
 	{
 		ZE_ASSERT(channels, "Empty channels list!");
 		ZE_ASSERT(count < 5 && count > 1, "Incorrect number of channels to replace!");
@@ -869,7 +875,7 @@ namespace ZE::GFX
 			ZE_ASSERT(channels[i].arraySize == arraySize, "Incorrect arraySize in the " + std::to_string(i) + " surface!");
 		}
 #endif
-
+		U16 computedMipCount = allocMips ? Math::GetMipLevels(width, height) : mipCount;
 		memorySize = 0;
 		const U8 pixelSize = Utils::GetFormatSize(format);
 		for (U16 a = 0; a < arraySize; ++a)
@@ -877,7 +883,7 @@ namespace ZE::GFX
 			U32 currentWidth = width;
 			U32 currentHeight = height;
 			U16 currentDepth = depth;
-			for (U16 mip = 0; mip < mipCount; ++mip)
+			for (U16 mip = 0; mip < computedMipCount; ++mip)
 			{
 				memorySize += Math::AlignUp(static_cast<U64>(Math::AlignUp(currentWidth * pixelSize, ROW_PITCH_ALIGNMENT)) * currentHeight, SLICE_PITCH_ALIGNMENT) * currentDepth;
 
@@ -903,22 +909,33 @@ namespace ZE::GFX
 			U32 currentWidth = width;
 			U32 currentHeight = height;
 			U16 currentDepth = depth;
-			for (U16 mip = 0; mip < mipCount; ++mip)
+			for (U16 mip = 0; mip < computedMipCount; ++mip)
 			{
+				U64 currentDestSliceSize = GetSliceByteSize(mip);
 				U32 currentDestRowSize = GetRowByteSize(mip);
+
+				U64 currentSrcSliceSize = channels[0].GetSliceByteSize(mip);
 				U32 currentSrcRowSize = channels[0].GetRowByteSize(mip);
 				for (U16 d = 0; d < currentDepth; ++d)
 				{
-					for (U32 y = 0; y < currentHeight; ++y)
+					U8* destSlice = destMemory;
+					U64 srcSliceOffset = srcMemoryOffset;
+					if (mip < mipCount)
 					{
-						for (U32 x = 0; x < currentWidth; ++x)
+						for (U32 y = 0; y < currentHeight; ++y)
 						{
-							for (U8 channel = 0; channel < count; ++channel)
-								std::memcpy(destMemory + x * pixelSize + channel * channelSize, channels[channel].GetBuffer() + srcMemoryOffset + x * channelSize, channelSize);
+							for (U32 x = 0; x < currentWidth; ++x)
+							{
+								for (U8 channel = 0; channel < count; ++channel)
+									std::memcpy(destSlice + x * pixelSize + channel * channelSize, channels[channel].GetBuffer() + srcSliceOffset + x * channelSize, channelSize);
+							}
+							srcSliceOffset += currentSrcRowSize;
+							destSlice += currentDestRowSize;
 						}
-						srcMemoryOffset += currentSrcRowSize;
-						destMemory += currentDestRowSize;
 					}
+					// Need to my by slices in case for small images
+					destMemory += currentDestSliceSize;
+					srcMemoryOffset += currentSrcSliceSize;
 				}
 
 				currentWidth >>= 1;
@@ -932,6 +949,7 @@ namespace ZE::GFX
 					currentDepth = 1;
 			}
 		}
+		mipCount = computedMipCount;
 		return true;
 	}
 }
