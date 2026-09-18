@@ -634,7 +634,7 @@ namespace ZE::Data
 							if (((options & ExternalModelOption::ExtractRoughnessMask) != 0 && (options & ExternalModelOption::ExtractRoughnessChannelR) == 0)
 								|| ((options & ExternalModelOption::ExtractMetalnessMask) != 0 && (options & ExternalModelOption::ExtractMetalnessChannelG) == 0))
 							{
-								if ((options & ExternalModelOption::ExtractRoughnessMask) == ((options & ExternalModelOption::ExtractMetalnessMask) >> 3))
+								if ((options & ExternalModelOption::ExtractRoughnessMask) == ((options & ExternalModelOption::ExtractMetalnessMask) >> 4))
 								{
 									ZE_WARNING("Same channel used for extracting packed roughness and metalness texture! Falling back to default B for metalness and G for roughness.");
 									options &= ~(ExternalModelOption::ExtractRoughnessMask | ExternalModelOption::ExtractMetalnessMask);
@@ -647,6 +647,13 @@ namespace ZE::Data
 									switch (Utils::GetChannelCount(surfaces.front().GetFormat()))
 									{
 									default:
+									case 0:
+									{
+										// Probably already compressed texture, ignore it an just load as-is
+										texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+										flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
+										break;
+									}
 									case 1:
 										break;
 									case 2:
@@ -704,38 +711,40 @@ namespace ZE::Data
 										GFX::Surface* channelG = nullptr;
 										GFX::Surface* channelB = nullptr;
 										GFX::Surface* channelA = nullptr;
+										if (parseRough)
+											surfaces.emplace_back();
+										if (parseMetal)
+											surfaces.emplace_back();
 
 										if (parseRough)
 										{
-											surfaces.emplace_back();
 											switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractRoughnessMask))
 											{
 											case ExternalModelOption::ExtractRoughnessChannelR:
 											{
-												channelR = &surfaces.back();
+												channelR = &surfaces.at(1);
 												break;
 											}
 											default:
 											case ExternalModelOption::ExtractRoughnessChannelG:
 											{
-												channelG = &surfaces.back();
+												channelG = &surfaces.at(1);
 												break;
 											}
 											case ExternalModelOption::ExtractRoughnessChannelB:
 											{
-												channelB = &surfaces.back();
+												channelB = &surfaces.at(1);
 												break;
 											}
 											case ExternalModelOption::ExtractRoughnessChannelA:
 											{
-												channelA = &surfaces.back();
+												channelA = &surfaces.at(1);
 												break;
 											}
 											}
 										}
 										if (parseMetal)
 										{
-											surfaces.emplace_back();
 											switch (static_cast<ExternalModelOption>(options & ExternalModelOption::ExtractMetalnessMask))
 											{
 											default:
@@ -867,7 +876,7 @@ namespace ZE::Data
 					data.Metalness = 0.0f;
 
 				if (material.Get(AI_MATKEY_ROUGHNESS_FACTOR, data.Roughness) != aiReturn_SUCCESS)
-					data.Roughness = 0.7f;
+					data.Roughness = 1.0f;
 
 				if (material.Get(AI_MATKEY_BUMPSCALING, data.ParallaxScale) != aiReturn_SUCCESS)
 					data.ParallaxScale = 0.1f;
