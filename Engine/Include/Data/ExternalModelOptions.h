@@ -14,30 +14,30 @@ namespace ZE::Data
 		// Extract roughness from combined texture with metalness on channel G. Must be used together with same set of metalness flags and not with same channel, default behavior
 		ExtractRoughnessChannelG = 0x02,
 		// Extract roughness from combined texture with metalness on channel B. Must be used together with same set of metalness flags and not with same channel
-		ExtractRoughnessChannelB = 0x03,
+		ExtractRoughnessChannelB = 0x04,
 		// Extract roughness from combined texture with metalness on channel A. Must be used together with same set of metalness flags and not with same channel
-		ExtractRoughnessChannelA = 0x04,
+		ExtractRoughnessChannelA = 0x08,
 		// Mask to get all roughness extraction channels
 		ExtractRoughnessMask = ExtractRoughnessChannelR | ExtractRoughnessChannelG | ExtractRoughnessChannelB | ExtractRoughnessChannelA,
 
 		// Extract metalness from combined texture with roughness on channel R. Must be used together with same set of roughness flags and not with same channel, default behavior
-		ExtractMetalnessChannelR = ExtractRoughnessChannelR << 3,
+		ExtractMetalnessChannelR = ExtractRoughnessChannelR << 4,
 		// Extract metalness from combined texture with roughness on channel G. Must be used together with same set of roughness flags and not with same channel
-		ExtractMetalnessChannelG = ExtractRoughnessChannelG << 3,
+		ExtractMetalnessChannelG = ExtractRoughnessChannelG << 4,
 		// Extract metalness from combined texture with roughness on channel B. Must be used together with same set of roughness flags and not with same channel
-		ExtractMetalnessChannelB = ExtractRoughnessChannelB << 3,
+		ExtractMetalnessChannelB = ExtractRoughnessChannelB << 4,
 		// Extract metalness from combined texture with roughness on channel A. Must be used together with same set of roughness flags and not with same channel
-		ExtractMetalnessChannelA = ExtractRoughnessChannelA << 3,
+		ExtractMetalnessChannelA = ExtractRoughnessChannelA << 4,
 		// Mask to get all metalness extraction channels
 		ExtractMetalnessMask = ExtractMetalnessChannelR | ExtractMetalnessChannelG | ExtractMetalnessChannelB | ExtractMetalnessChannelA,
 
 		// During parsing don't bother with loading roughness texture (ignored if model contain merged roughness+metalness texture with 2 channels)
-		IgnoreRoughnessTex = 0x40,
+		IgnoreRoughnessTex = 0x0100,
 		// During parsing don't bother with loading metalness texture (ignored if model contain merged roughness+metalness texture with 2 channels)
-		IgnoreMetalnessTex = 0x80,
+		IgnoreMetalnessTex = 0x0200,
 
 		// Flip UV coordinates for given model
-		FlipUV = 0x0100,
+		FlipUV = 0x0400,
 	};
 	ZE_ENUM_OPERATORS(ExternalModelOption, ExternalModelOptions);
 }
