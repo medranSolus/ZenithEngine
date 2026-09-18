@@ -12,7 +12,7 @@ namespace ZE
 	{
 		enum class Level : U8 { Info, Warning, Error, Critical };
 
-		static inline std::string_view logDir = "./Logs";
+		static inline std::string_view logDir = "./Logs/";
 		static inline std::string logFile = "./Logs/log.txt";
 
 		static inline bool firstUse = true;

@@ -77,7 +77,7 @@ namespace ZE
 	{
 		if (Logger::CreateLogDir())
 		{
-			std::ofstream fout(Logger::GetDir() + (LOG_FILE + Utils::GetCurrentTimestamp(true) + LOG_FILE_EXT), std::ios_base::trunc);
+			std::ofstream fout(Logger::GetDir().data() + (LOG_FILE + Utils::GetCurrentTimestamp(true) + LOG_FILE_EXT), std::ios_base::trunc);
 			if (fout.good())
 			{
 				if (IsSingleLineLogEntry())
