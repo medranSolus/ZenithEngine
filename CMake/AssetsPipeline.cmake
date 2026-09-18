@@ -134,7 +134,7 @@ macro(merge_cubemaps CUBES_PATH)
 
         # Sanity check for correct number of files
         list(LENGTH CUBEMAP_SRC_LIST CUBEMAP_LIST_LEN)
-        if (NOT (${CUBEMAP_LIST_LEN} EQUAL 6))
+        if(NOT (${CUBEMAP_LIST_LEN} EQUAL 6))
             message(FATAL_ERROR "Incorrect number [${CUBEMAP_LIST_LEN}] of surfaces in the directory: ${CUBEMAP_DIR}!")
         endif()
         # Sort them so that they will be in correct order
@@ -259,7 +259,7 @@ macro(process_models MODELS_PATH)
             string(JSON JOB_COUNT LENGTH "${JSON_RAW}")
             math(EXPR JOB_COUNT "${JOB_COUNT} - 1")
 
-            if ("${MODEL_SCRIPT}" STREQUAL "model_copy.json")
+            if("${MODEL_SCRIPT}" STREQUAL "model_copy.json")
                 # Simple copy of the source files
                 foreach(COPY_IDX RANGE "${JOB_COUNT}")
                     string(JSON COPY_SRC GET "${JSON_RAW}" "${COPY_IDX}")

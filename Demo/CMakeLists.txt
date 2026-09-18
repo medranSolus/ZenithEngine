@@ -8,8 +8,15 @@ if(${ZE_PLATFORM_WINDOWS})
         "${ZE_ICON_ID} ICON \"${DEMO_DIR}/Assets/icon.ico\"")
 endif()
 
-# Location of the data files
-file(RELATIVE_PATH ASSETS_PATH "${ZE_BUILD_DIR}" "${DEMO_DIR}/Assets/Runtime")
+# Copy or instrument the information about assets location
+if(${ZE_STANDALONE_BUILD})
+    set(ASSETS_PATH "")
+    copy_runtime_data(DEMO_ASSETS "${ASSETS_BUILD_DIR}" "" "" "")
+else()
+    set(ASSETS_BUILD_DIR "${DEMO_DIR}/Assets/Runtime/")
+    file(RELATIVE_PATH ASSETS_PATH "${ZE_BUILD_DIR}" "${ASSETS_BUILD_DIR}")
+    set(ASSETS_PATH "${ASSETS_PATH}/")
+endif()
 add_compile_definitions(ZE_DEMO_ASSETS_PATH="${ASSETS_PATH}")
 
 # Target files
@@ -27,6 +34,7 @@ set_target_properties(${DEMO_TARGET} PROPERTIES
 target_compile_features(${DEMO_TARGET} PRIVATE ${ZE_CXX_STD})
 target_include_directories(${DEMO_TARGET} PRIVATE ${INC_DIR} ${ZE_INC_DIRS})
 target_link_libraries(${DEMO_TARGET} PRIVATE ${ENGINE_TARGET})
+add_dependencies(${DEMO_TARGET} ${DEMO_ASSETS_COPY_TARGET})
 
 # Assets preprocessing
 add_subdirectory(Assets)

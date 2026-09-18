@@ -3,6 +3,12 @@
 #include "Data/Camera.h"
 using namespace ZE;
 
+#if _ZE_STANDALONE_BUILD
+#define ZE_GET_ASSET_PATH(filepath) filepath 
+#else
+#define ZE_GET_ASSET_PATH(filepath) std::string(ZE_DEMO_ASSETS_PATH) + filepath
+#endif
+
 class App final
 {
 	static constexpr const char* WINDOW_TITLE = "Zenith Engine Demo v" ZE_STRINGIFY(ZE_VERSION_MAJOR) "." ZE_STRINGIFY(ZE_VERSION_MINOR) "." ZE_STRINGIFY(ZE_VERSION_PATCH);

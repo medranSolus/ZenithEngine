@@ -598,7 +598,7 @@ Expected<EID> App::AddModel(std::string&& name, Float3&& position,
 	Settings::Data.emplace<std::string>(model, std::move(name));
 	Data::Transform transform = { Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale) };
 
-	auto load = Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, file, options).Get();
+	auto load = Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, ZE_GET_ASSET_PATH(file), options).Get();
 	if (load)
 	{
 		ZE_CODE_RET_FAILED_EXPECT(*load);
@@ -687,12 +687,18 @@ Status App::Init(const CmdParser& params) noexcept
 	EngineParams engineParams = {};
 	EngineParams::SetParsedParams(params, engineParams);
 	engineParams.WindowName = WINDOW_TITLE;
-	engineParams.CoreRendererParams.BrdfLutSource = "";
-	engineParams.CoreRendererParams.SkyboxSource.InitFolder("Skybox/Space", ".png");
+	if (!params.GetOption("noExternalAssets"))
+	{
+		engineParams.CoreRendererParams.BrdfLutSource = ZE_GET_ASSET_PATH("Lightmaps/brdf_lut_ggx_512px_8192s_half.dds");
+		engineParams.CoreRendererParams.EnvMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/newport_loft_env_2k_4096s.dds"));
+		engineParams.CoreRendererParams.IrrMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/newport_loft_irr_64px_1024s.dds"));
+		engineParams.CoreRendererParams.SkyboxSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Skybox/newport_loft_2k.dds"));
+	}
 	engineParams.CoreRendererParams.EnvMapSource = engineParams.CoreRendererParams.SkyboxSource;
 	ZE_CODE_RET_FAILED(engine.Init(engineParams));
 
 	engine.ImGui().SetFont("Fonts/Arial.ttf", 14.0f);
+	engine.ImGui().SetFont(ZE_GET_ASSET_PATH("Fonts/Arial.ttf"), 14.0f);
 
 	// Quick macro for just loading objects without needing their results besides error codes check
 #define ZE_LOAD_CHECK(call) do { auto __exp = (call); if (!__exp) { ZE_CODE_RET_FAILED(__exp.error()); } } while(false)
@@ -842,8 +848,11 @@ Status App::Init(const CmdParser& params) noexcept
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 2.0f, 0.0f }, { 0.0f, 90.0f, 0.0f });
 
 		ZE_LOAD_CHECK(AddPointLight("Light bulb", { -2.4f, 2.8f, -1.1f }, { 1.0f, 1.0f, 1.0f }, 0.5f, 50));
+		if (!params.GetOption("noExternalAssets"))
+		{
 		ZE_LOAD_CHECK(AddModel("Sting sword", { -1.9f, 2.1f, -2.3f }, { 35.0f, 270.0f, 110.0f }, 0.045f, "Models/Sting_Sword/Sting_Sword.obj",
 			Base(Data::ExternalModelOption::FlipUV)));
+		}
 
 #if !_ZE_MODE_DEBUG
 		ZE_LOAD_CHECK(AddPointLight("Blue ilumination", { 10.8f, 5.9f, -0.1f }, { 0.0f, 0.46f, 1.0f }, 10.0f, 60));
@@ -855,12 +864,11 @@ Status App::Init(const CmdParser& params) noexcept
 
 		ZE_LOAD_CHECK(AddDirectionalLight("Moon", { 0.7608f, 0.7725f, 0.8f }, 0.1f, { 0.0f, -0.7f, -0.7f }));
 
-		ZE_LOAD_CHECK(AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
-			static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV)));
-
 		if (!params.GetOption("noExternalAssets"))
 		{
-			ZE_LOAD_CHECK(AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/SponzaIntel/NewSponza_Main_glTF_002.gltf",
+			ZE_LOAD_CHECK(AddModel("TIE", { 1.2f, 6.7f, 0.2f }, { -23.2f, 9.41f, -28.72f }, 1.0f, "Models/tie/tie.obj",
+				static_cast<Data::ExternalModelOptions>(Data::ExternalModelOption::FlipUV)));
+			ZE_LOAD_CHECK(AddModel("Sponza", { 0.0f, 0.0f, 0.0f }, Math::NoRotationAngles(), 1.0f, "Models/IntelSponza/NewSponza_Main_glTF_003.gltf",
 				Data::ExternalModelOption::ExtractMetalnessChannelB | Data::ExternalModelOption::ExtractRoughnessChannelG | Data::ExternalModelOption::FlipUV));
 		}
 #endif
