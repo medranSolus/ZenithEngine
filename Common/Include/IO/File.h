@@ -30,7 +30,9 @@ namespace ZE::IO
 		void SetOffset(U64 offset) noexcept { platformImpl.SetOffset(stdFile, offset); }
 		U64 GetOffset() const noexcept { return platformImpl.GetOffset(stdFile); }
 
+		// When encountered EOF will return error code IO::AsyncEofResult with proper number of bytes read
 		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return platformImpl.ReadAsync(buffer, size, offset); }
+		// When encountered EOF will return error code IO::AsyncEofResult with proper number of bytes written
 		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }
 
 		Status Read(void* buffer, U32 size) const noexcept;

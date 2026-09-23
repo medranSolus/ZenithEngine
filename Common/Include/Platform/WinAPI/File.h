@@ -1,4 +1,5 @@
 #pragma once
+#include "IO/AsyncEofResult.h"
 #include "IO/FileFlags.h"
 #include "Error.h"
 #include "Task.h"
@@ -76,7 +77,6 @@ namespace ZE::Platform::WinAPI
 			{
 				// Wait for async operation to complete
 				Status code = {};
-				U32 transferedBytes = 0;
 				bool wait = true;
 				do
 				{
@@ -85,9 +85,13 @@ namespace ZE::Platform::WinAPI
 					case WAIT_OBJECT_0:
 					{
 						if (overlapped->Offset == 0)
-							transferedBytes = overlapped->OffsetHigh;
+						{
+							// Check transfered bytes
+							if (overlapped->OffsetHigh < requestedBytes)
+								code = IO::AsyncEofResult::Make(overlapped->OffsetHigh);
+						}
 						else
-							code = std::make_error_code(std::errc::io_error);
+							code = ZE_WIN_ERROR(static_cast<HRESULT>(overlapped->Offset));
 						wait = false;
 						break;
 					}

@@ -251,6 +251,10 @@
 #include "IO/WAV/FileResult.h"
 
 /*
+***** Macros.h
+*** IO/FileFlags.h
+*** cstdio
+*** Platform/X/File.h
 * IO/File.h
 ***** Macros.h
 *** ChannelMask.h
@@ -258,18 +262,6 @@
 * SFX/AudioBuffer.h
 */
 #include "IO/WAV/Utils.h"
-
-/*
-* IO/FileFlags.h
-* cstdio
-* Platform/X/File.h
-*/
-#include "IO/File.h"
-
-/*
-* Macros.h
-*/
-#include "IO/FileFlags.h"
 
 /*
 * BasicTypes.h
@@ -298,6 +290,9 @@
 #	include "Platform/WinAPI/Error.h"
 
 /*
+*** BasicTypes.h
+*** string
+* IO/AsyncEofResult.h
 * IO/FileFlags.h
 * Platform/WinAPI/Error.h
 * Task.h
