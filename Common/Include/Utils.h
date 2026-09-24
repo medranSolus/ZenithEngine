@@ -1,5 +1,5 @@
 #pragma once
-#include "Types.h"
+#include "SFX/ChannelMask.h"
 #include "PixelFormat.h"
 #include <bit>
 #include <deque>
@@ -82,6 +82,8 @@ namespace ZE::Utils
 
 	// Returns formated timestamp of current time
 	std::string GetCurrentTimestamp(bool fileFormatting = false) noexcept;
+	// Get channel mask from Vorbis comment entry
+	SFX::ChannelMask ParseVorbisChannelMask(const char* commentEntry, U32 length) noexcept;
 
 #pragma region Functions
 	template<typename C, typename T>

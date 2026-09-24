@@ -159,7 +159,8 @@
 #include "Types.h"
 
 /*
-* Types.h
+*** Macros.h
+* SFX/ChannelMask.h
 * PixelFormat.h
 * bit
 * deque
@@ -256,7 +257,6 @@
 *** cstdio
 *** Platform/X/File.h
 * IO/File.h
-***** Macros.h
 *** ChannelMask.h
 *** memory
 * SFX/AudioBuffer.h

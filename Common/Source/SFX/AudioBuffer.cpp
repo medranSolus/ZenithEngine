@@ -25,19 +25,22 @@ namespace ZE::SFX
 
 		if (ext == ".wav")
 		{
-			auto buffer = IO::WAV::ParseFileInfo(file);
-			if (!buffer)
+			auto bufferDesc = IO::WAV::ParseFileInfo<false>(file);
+			if (!bufferDesc)
 			{
-				ZE_CODE_ERROR(buffer.error(), "Error parsing header of \"" + path.string() + "\" file!");
-				return std::unexpected(buffer.error());
+				ZE_CODE_ERROR(bufferDesc.error(), "Error parsing header of \"" + path.string() + "\" file!");
+				return std::unexpected(bufferDesc.error());
 			}
-			errorCode = IO::WAV::LoadSampleData(file, *buffer, 0, 0);
+			AudioBuffer buffer = { *bufferDesc };
+			if (buffer.Desc.Bytes)
+				buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
+			errorCode = IO::WAV::LoadSampleData(file, buffer.Samples.get(), buffer.Desc.Bytes, 0);
 			if (errorCode)
 			{
 				ZE_CODE_ERROR(errorCode, "Error loading sample data of \"" + path.string() + "\" file!");
 				return std::unexpected(errorCode);
 			}
-			return *buffer;
+			return buffer;
 		}
 		else if (ext == ".flac")
 		{
@@ -55,7 +58,7 @@ namespace ZE::SFX
 			{
 				IO::File& File;
 				Status& Code;
-				SFX::AudioBuffer Buffer = {};
+				AudioBuffer Buffer = {};
 				U8 ChannelCount = 0;
 				U32 WriteOffset = 0;
 			};
@@ -70,22 +73,26 @@ namespace ZE::SFX
 					if (*bytes > 0)
 					{
 						FILE* file = reinterpret_cast<FlacCtx*>(ctx)->File.GetHandle();
-						*bytes = std::fread(buffer, sizeof(FLAC__byte), *bytes, file);
+						U64 bytesRead = std::fread(buffer, sizeof(FLAC__byte), *bytes, file);
 
 						if (std::ferror(file))
 							return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
-						if (*bytes == 0)
+						if (bytesRead < *bytes)
+						{
+							*bytes = bytesRead;
 							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+						}
 						return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 					}
-					else
 						return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 				};
 			FLAC__StreamDecoderSeekCallback seek = [](const FLAC__StreamDecoder* decoder, FLAC__uint64 offset, void* ctx) noexcept -> FLAC__StreamDecoderSeekStatus
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
-					reinterpret_cast<FlacCtx*>(ctx)->File.SetOffset(offset);
-					return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+
+					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
+					context.Code = context.File.SetOffset(offset);
+					return context.Code ? FLAC__STREAM_DECODER_SEEK_STATUS_ERROR : FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 				};
 			FLAC__StreamDecoderTellCallback tell = [](const FLAC__StreamDecoder* decoder, FLAC__uint64* offset, void* ctx) noexcept -> FLAC__StreamDecoderTellStatus
 				{
@@ -124,8 +131,8 @@ namespace ZE::SFX
 					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
 
 					// Sanity check
-					const U8 sampleBytes = Math::DivideRoundUp<U8>(context.Buffer.BitsPerSample, 8);
-					if (context.Buffer.Bytes < context.WriteOffset + (frame->header.blocksize * context.ChannelCount * sampleBytes))
+					const U8 sampleBytes = Math::DivideRoundUp<U8>(context.Buffer.Desc.BitsPerSample, 8);
+					if (context.Buffer.Desc.Bytes < context.WriteOffset + (frame->header.blocksize * context.ChannelCount * sampleBytes))
 						return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
 
 					// Copy into interleaved format
@@ -152,33 +159,23 @@ namespace ZE::SFX
 						ZE_ASSERT(context.Buffer.Samples == nullptr, "FLAC STREAMINFO metadata already processed!");
 
 						context.ChannelCount = Utils::SafeCast<U8>(metadata->data.stream_info.channels);
-						context.Buffer.Bytes = Utils::SafeCast<U32>(metadata->data.stream_info.total_samples * context.ChannelCount * Math::DivideRoundUp(metadata->data.stream_info.bits_per_sample, 8U));
-						context.Buffer.SampleRate = metadata->data.stream_info.sample_rate;
-						context.Buffer.BitsPerSample = Utils::SafeCast<U8>(metadata->data.stream_info.bits_per_sample);
-						context.Buffer.IsFloat = false;
-						context.Buffer.Samples = std::make_shared<U8[]>(context.Buffer.Bytes);
+						context.Buffer.Desc.Bytes = Utils::SafeCast<U32>(metadata->data.stream_info.total_samples * context.ChannelCount * Math::DivideRoundUp(metadata->data.stream_info.bits_per_sample, 8U));
+						context.Buffer.Desc.SampleRate = metadata->data.stream_info.sample_rate;
+						context.Buffer.Desc.BitsPerSample = Utils::SafeCast<U8>(metadata->data.stream_info.bits_per_sample);
+						context.Buffer.Desc.IsFloat = false;
+						context.Buffer.Samples = std::make_shared<U8[]>(context.Buffer.Desc.Bytes);
 						break;
 					}
 					case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 					{
-						constexpr const char* CHANNELMASK_TAG = "channelmask=";
 						for (U32 i = 0; i < metadata->data.vorbis_comment.num_comments; ++i)
 						{
 							auto& comment = metadata->data.vorbis_comment.comments[i];
-							bool found = true;
-							for (U32 j = 0; j < comment.length && j < 12; ++j)
-							{
-								if (std::tolower(comment.entry[j]) != CHANNELMASK_TAG[j])
-								{
-									found = false;
-									break;
-								}
-							}
 							// Parse channel mask
-							if (found)
+							ChannelMask mask = Utils::ParseVorbisChannelMask(reinterpret_cast<const char*>(comment.entry), comment.length);
+							if (mask != 0)
 							{
-								// Same as values used in the specification
-								reinterpret_cast<FlacCtx*>(ctx)->Buffer.Channels = std::strtoul(reinterpret_cast<const char*>(comment.entry + 12), nullptr, 0);
+								reinterpret_cast<FlacCtx*>(ctx)->Buffer.Desc.Channels = mask;
 								break;
 							}
 						}
@@ -213,11 +210,11 @@ namespace ZE::SFX
 			{
 				FLAC__stream_decoder_process_until_end_of_metadata(decoder);
 
-				if (ctx.Buffer.Channels == 0)
+				if (ctx.Buffer.Desc.Channels == 0)
 				{
 					// Fallback when no channel mask is provided
-					ctx.Buffer.Channels = GetDefaultMask(ctx.ChannelCount);
-					if (ctx.Buffer.Channels == 0)
+					ctx.Buffer.Desc.Channels = GetDefaultMask(ctx.ChannelCount);
+					if (ctx.Buffer.Desc.Channels == 0)
 						ctx.Code = ZE_FLAC_DECODER_ERROR(FLAC__STREAM_DECODER_ERROR_STATUS_BAD_METADATA);
 				}
 

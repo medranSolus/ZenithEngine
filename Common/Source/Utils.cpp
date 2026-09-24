@@ -207,4 +207,20 @@ namespace ZE::Utils
 		buff.pop_back();
 		return buff;
 	}
+
+	SFX::ChannelMask ParseVorbisChannelMask(const char* commentEntry, U32 length) noexcept
+	{
+		constexpr const char* CHANNELMASK_TAG = "channelmask=";
+		bool found = true;
+		for (U32 j = 0; j < length && j < 12; ++j)
+		{
+			if (std::tolower(commentEntry[j]) != CHANNELMASK_TAG[j])
+			{
+				found = false;
+				break;
+			}
+		}
+		// Same as values used in the specification
+		return found ? SafeCast<U8>(std::strtoul(commentEntry + 12, nullptr, 0)) : 0;
+	}
 }
