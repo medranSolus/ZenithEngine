@@ -41,10 +41,14 @@ namespace ZE::Platform::WinAPI
 				{
 				case WAIT_OBJECT_0:
 				{
-					if (overlapped.Offset == 0 && size == overlapped.OffsetHigh)
-						currentOffset += size;
+					if (overlapped.Offset == 0)
+					{
+						currentOffset += overlapped.OffsetHigh;
+						if (size != overlapped.OffsetHigh)
+							code = IO::EofResult::Make(overlapped.OffsetHigh);
+					}
 					else
-						code = std::make_error_code(std::errc::io_error);
+						code = ZE_WIN_ERROR(static_cast<HRESULT>(overlapped.Offset));
 					wait = false;
 					break;
 				}
@@ -79,18 +83,20 @@ namespace ZE::Platform::WinAPI
 		return std::unexpected(ZE_WIN_LAST_ERROR());
 	}
 
-	void File::SetOffset(FILE* stdFile, U64 offset) noexcept
+	Status File::SetOffset(FILE* stdFile, U64 offset) noexcept
 	{
+		Status ret = {};
 		if (stdFile)
 		{
-			[[maybe_unused]] const S32 status = _fseeki64_nolock(stdFile, static_cast<S64>(offset), SEEK_SET);
-			ZE_ASSERT(status == 0, "Error setting file offset!");
+			if (_fseeki64_nolock(stdFile, static_cast<S64>(offset), SEEK_SET) != 0)
+				ret = std::make_error_code(std::errc::invalid_argument);
 		}
 		else
 		{
 			ZE_ASSERT(osFile, "File not opened!");
 			currentOffset = offset;
 		}
+		return ret;
 	}
 
 	U64 File::GetOffset(FILE* stdFile) const noexcept

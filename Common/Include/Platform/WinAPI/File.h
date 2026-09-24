@@ -1,5 +1,5 @@
 #pragma once
-#include "IO/AsyncEofResult.h"
+#include "IO/EofResult.h"
 #include "IO/FileFlags.h"
 #include "Error.h"
 #include "Task.h"
@@ -26,7 +26,7 @@ namespace ZE::Platform::WinAPI
 		~File() { Close(); }
 
 		Expected<U64> GetSize(FILE* stdFile) const noexcept;
-		void SetOffset(FILE* stdFile, U64 offset) noexcept;
+		Status SetOffset(FILE* stdFile, U64 offset) noexcept;
 		U64 GetOffset(FILE* stdFile) const noexcept;
 
 		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return PerformAsyncOperation<true>(buffer, size, offset); }
@@ -88,7 +88,7 @@ namespace ZE::Platform::WinAPI
 						{
 							// Check transfered bytes
 							if (overlapped->OffsetHigh < requestedBytes)
-								code = IO::AsyncEofResult::Make(overlapped->OffsetHigh);
+								code = IO::EofResult::Make(overlapped->OffsetHigh);
 						}
 						else
 							code = ZE_WIN_ERROR(static_cast<HRESULT>(overlapped->Offset));

@@ -27,15 +27,17 @@ namespace ZE::IO
 
 		Expected<U64> GetSize() const noexcept { return platformImpl.GetSize(stdFile); }
 		// Set current offset for synchronous operations
-		void SetOffset(U64 offset) noexcept { platformImpl.SetOffset(stdFile, offset); }
+		Status SetOffset(U64 offset) noexcept { return platformImpl.SetOffset(stdFile, offset); }
 		U64 GetOffset() const noexcept { return platformImpl.GetOffset(stdFile); }
 
-		// When encountered EOF will return error code IO::AsyncEofResult with proper number of bytes read
+		// When encountered EOF will return error code IO::EofResult with proper number of bytes read
 		Task<Status> ReadAsync(void* buffer, U32 size, U64 offset) noexcept { return platformImpl.ReadAsync(buffer, size, offset); }
-		// When encountered EOF will return error code IO::AsyncEofResult with proper number of bytes written
+		// When encountered EOF will return error code IO::EofResult with proper number of bytes written
 		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }
 
+		// When encountered EOF will return error code IO::EofResult with proper number of bytes read
 		Status Read(void* buffer, U32 size) const noexcept;
+		// When encountered EOF will return error code IO::EofResult with proper number of bytes written
 		Status Write(const void* buffer, U32 size) const noexcept;
 
 		Status Open(std::string_view fileName, FileFlags flags = Base(FileFlag::Default), U8** fileMapping = nullptr) noexcept;

@@ -13,9 +13,10 @@ namespace ZE::IO
 
 		if (stdFile)
 		{	
-			if (std::fread(buffer, 1, size, stdFile) == size)
+			U32 read = Utils::SafeCast<U32>(std::fread(buffer, 1, size, stdFile));
+			if (read == size)
 				return {};
-			return std::make_error_code(std::io_errc::stream);
+			return EofResult::Make(read);
 		}
 		return platformImpl.Read(buffer, size);
 	}
@@ -30,9 +31,10 @@ namespace ZE::IO
 
 		if (stdFile)
 		{
-			if (std::fwrite(buffer, 1, size, stdFile) == size)
+			U32 written = std::fwrite(buffer, 1, size, stdFile);
+			if (written == size)
 				return {};
-			return std::make_error_code(std::io_errc::stream);
+			return EofResult::Make(written);
 		}
 		return platformImpl.Write(buffer, size);
 	}

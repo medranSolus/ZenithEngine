@@ -292,7 +292,7 @@
 /*
 *** BasicTypes.h
 *** string
-* IO/AsyncEofResult.h
+* IO/EofResult.h
 * IO/FileFlags.h
 * Platform/WinAPI/Error.h
 * Task.h
