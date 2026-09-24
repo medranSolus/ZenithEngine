@@ -72,15 +72,18 @@ namespace ZE::SFX
 
 					if (*bytes > 0)
 					{
-						FILE* file = reinterpret_cast<FlacCtx*>(ctx)->File.GetHandle();
-						U64 bytesRead = std::fread(buffer, sizeof(FLAC__byte), *bytes, file);
+						auto& context = *reinterpret_cast<FlacCtx*>(ctx);
+						context.Code = context.File.Read(buffer, Utils::SafeCast<U32>(*bytes));
 
-						if (std::ferror(file))
-							return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
-						if (bytesRead < *bytes)
+						if (context.Code)
 						{
-							*bytes = bytesRead;
+							if (IO::EofResult::IsEOF(context.Code))
+							{
+								*bytes = IO::EofResult::GetRealBytes(context.Code);
+								context.Code = {};
 							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+						}
+							return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 						}
 						return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 					}
@@ -120,7 +123,12 @@ namespace ZE::SFX
 			FLAC__StreamDecoderEofCallback eof = [](const FLAC__StreamDecoder* decoder, void* ctx) noexcept -> FLAC__bool
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
-					return std::feof(reinterpret_cast<FlacCtx*>(ctx)->File.GetHandle());
+					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
+					auto size = context.File.GetSize(); // TODO: change later to just check with max position when abstracting file opening from this function
+					if (size)
+						return context.File.GetOffset() >= *size;
+					context.Code = size.error();
+					return false;
 				};
 			FLAC__StreamDecoderWriteCallback write = [](const FLAC__StreamDecoder* decoder, const FLAC__Frame* frame, const FLAC__int32* const buffer[], void* ctx) noexcept -> FLAC__StreamDecoderWriteStatus
 				{

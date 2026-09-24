@@ -31,7 +31,7 @@ namespace ZE::IO
 
 		if (stdFile)
 		{
-			U32 written = std::fwrite(buffer, 1, size, stdFile);
+			U32 written = Utils::SafeCast<U32>(std::fwrite(buffer, 1, size, stdFile));
 			if (written == size)
 				return {};
 			return EofResult::Make(written);
