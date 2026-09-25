@@ -2,7 +2,6 @@
 #include "SFX/FileError.h"
 #include "IO/WAV/Utils.h"
 ZE_WARNING_PUSH
-#include "ogg/ogg.h"
 #include "vorbis/vorbisfile.h"
 #include "opus.h"
 ZE_WARNING_POP
@@ -20,15 +19,15 @@ namespace ZE::SFX
 		{
 			ZE_FAIL("Unknown audio file format!");
 			return std::unexpected(IO::WAV::Error::Make(IO::WAV::FileResult::Unknown));
-			}
+		}
 		case FileSourceType::WAV:
-			{
+		{
 			U64 dataStart = 0;
 			ZE_EXPECT_RET_FAILED(buffer.Desc, IO::WAV::ParseFileInfo(file, dataStart, startOffset));
 			buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
 			ZE_CODE_RET_FAILED_EXPECT(IO::WAV::LoadSampleData(file, dataStart, buffer.Samples.get(), buffer.Desc.Bytes, 0));
 			break;
-			}
+		}
 		case FileSourceType::Flac:
 		{
 			FLAC__StreamDecoder* decoder = FLAC__stream_decoder_new();
@@ -72,14 +71,14 @@ namespace ZE::SFX
 								*bytes = IO::EofResult::GetRealBytes(context.Code);
 								context.Code = {};
 								context.ReadOffset += *bytes;
-							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
-						}
+								return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+							}
 							return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 						}
 						context.ReadOffset += *bytes;
 						return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 					}
-						return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+					return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 				};
 			FLAC__StreamDecoderSeekCallback seek = [](const FLAC__StreamDecoder* decoder, FLAC__uint64 offset, void* ctx) noexcept -> FLAC__StreamDecoderSeekStatus
 				{
@@ -102,7 +101,7 @@ namespace ZE::SFX
 					ZE_ASSERT(streamLen, "Empty stream length!");
 
 					*streamLen = reinterpret_cast<FlacCtx*>(ctx)->RegionSize;
-						return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+					return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 				};
 			FLAC__StreamDecoderEofCallback eof = [](const FLAC__StreamDecoder* decoder, void* ctx) noexcept -> FLAC__bool
 				{
@@ -221,6 +220,91 @@ namespace ZE::SFX
 		}
 		case FileSourceType::Ogg:
 		{
+			struct OggCtx
+			{
+				IO::File& File;
+				Status Code;
+				U64 ReadOffset = 0;
+			};
+
+			OggCtx ctx = { file };
+			OggVorbis_File decoder = {};
+			decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
+				{
+					ZE_ASSERT(ctx, "Empty vorbis file context!");
+
+					auto& context = *reinterpret_cast<OggCtx*>(ctx);
+					U32 bytes = Utils::SafeCast<U32>(size * count);
+					context.Code = context.File.Read(buffer, bytes, context.ReadOffset);
+
+					if (context.Code)
+					{
+						if (IO::EofResult::IsEOF(context.Code))
+						{
+							bytes = IO::EofResult::GetRealBytes(context.Code);
+							context.ReadOffset += bytes;
+							count = bytes / size;
+							context.Code = {};
+						}
+						else
+							count = 0;
+					}
+					else
+						context.ReadOffset += bytes;
+					return count;
+				};
+			decoder.callbacks.seek_func = [](void* ctx, ogg_int64_t offset, int whence) noexcept -> int
+				{
+					ZE_ASSERT(ctx, "Empty vorbis file context!");
+
+					reinterpret_cast<OggCtx*>(ctx)->ReadOffset = Utils::SafeCast<U64>(offset);
+					return 0;
+				};
+			decoder.callbacks.close_func = nullptr;
+			decoder.callbacks.tell_func = [](void* ctx) noexcept -> long
+				{
+					ZE_ASSERT(ctx, "Empty vorbis file context!");
+					return Utils::SafeCast<long>(reinterpret_cast<OggCtx*>(ctx)->ReadOffset);
+				};
+
+			/* https://xiph.org/vorbis/doc/vorbisfile/reference.html
+			OV_FALSE - Not true, or no data available
+			OV_HOLE - Vorbisfile encoutered missing or corrupt data in the bitstream. Recovery is normally automatic and this return code is for informational purposes only.
+			OV_EREAD - Read error while fetching compressed data for decode
+			OV_EFAULT - Internal inconsistency in encode or decode state. Continuing is likely not possible.
+			OV_EIMPL - Feature not implemented
+			OV_EINVAL - Either an invalid argument, or incompletely initialized argument passed to a call
+			OV_ENOTVORBIS - The given file/data was not recognized as Ogg Vorbis data.
+			OV_EBADHEADER - The file/data is apparently an Ogg Vorbis stream, but contains a corrupted or undecipherable header.
+			OV_EVERSION - The bitstream format revision of the given stream is not supported.
+			OV_EBADLINK - The given link exists in the Vorbis data stream, but is not decipherable due to garbacge or corruption.
+			OV_ENOSEEK - The given stream is not seekable
+			*/
+
+			if (ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks) < 0)
+			{
+				ZE_FAIL("Not ogg stream!");
+				/*
+				OV_EREAD - A read from media returned an error.
+				OV_ENOTVORBIS - Bitstream does not contain any Vorbis data.
+				OV_EVERSION - Vorbis version mismatch.
+				OV_EBADHEADER - Invalid Vorbis bitstream header.
+				OV_EFAULT - Internal logic fault; indicates a bug or heap/stack corruption.
+				*/
+			}
+
+			vorbis_info* streamInfo = ov_info(&decoder, -1);
+			if (streamInfo)
+			{
+				// Check audio params, else error
+				int currentStream = 0;
+				long bytesRead = ov_read(&decoder, nullptr, 0, 0, 2, 1, &currentStream);
+			}
+
+			if (ov_clear(&decoder) != 0)
+			{
+				ZE_FAIL("Error closing!");
+			}
 			break;
 		}
 		case FileSourceType::Opus:
