@@ -9,46 +9,33 @@ ZE_WARNING_POP
 
 namespace ZE::SFX
 {
-	Expected<AudioBuffer> LoadFile(std::string_view filename) noexcept
+	Expected<AudioBuffer> LoadFile(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type) noexcept
 	{
-		const std::filesystem::path path(filename);
-		std::string ext = path.extension().string();
-		std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
-
-		IO::File file;
-		Status errorCode = file.Open(filename, Base(IO::FileFlag::DefaultRead));
-		if (errorCode)
+		AudioBuffer buffer = {};
+		switch (type)
 		{
-			ZE_CODE_ERROR(errorCode, "Error openinig \"" + path.string() + "\" file!");
-			return std::unexpected(errorCode);
-		}
-
-		if (ext == ".wav")
+		default:
+			ZE_ENUM_UNHANDLED();
+		case FileSourceType::Unknown:
 		{
-			auto bufferDesc = IO::WAV::ParseFileInfo<false>(file);
-			if (!bufferDesc)
-			{
-				ZE_CODE_ERROR(bufferDesc.error(), "Error parsing header of \"" + path.string() + "\" file!");
-				return std::unexpected(bufferDesc.error());
+			ZE_FAIL("Unknown audio file format!");
+			return std::unexpected(IO::WAV::Error::Make(IO::WAV::FileResult::Unknown));
 			}
-			AudioBuffer buffer = { *bufferDesc };
-			if (buffer.Desc.Bytes)
-				buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
-			errorCode = IO::WAV::LoadSampleData(file, buffer.Samples.get(), buffer.Desc.Bytes, 0);
-			if (errorCode)
+		case FileSourceType::WAV:
 			{
-				ZE_CODE_ERROR(errorCode, "Error loading sample data of \"" + path.string() + "\" file!");
-				return std::unexpected(errorCode);
+			U64 dataStart = 0;
+			ZE_EXPECT_RET_FAILED(buffer.Desc, IO::WAV::ParseFileInfo(file, dataStart, startOffset));
+			buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
+			ZE_CODE_RET_FAILED_EXPECT(IO::WAV::LoadSampleData(file, dataStart, buffer.Samples.get(), buffer.Desc.Bytes, 0));
+			break;
 			}
-			return buffer;
-		}
-		else if (ext == ".flac")
+		case FileSourceType::Flac:
 		{
 			FLAC__StreamDecoder* decoder = FLAC__stream_decoder_new();
 			if (!decoder)
 			{
 				ZE_FAIL("Failed to create FLAC decoder!");
-				return std::unexpected(ZE_FLAC_DECODER_INIT_ERROR(FLAC__STREAM_DECODER_INIT_STATUS_MEMORY_ALLOCATION_ERROR)	);
+				return std::unexpected(ZE_FLAC_DECODER_INIT_ERROR(FLAC__STREAM_DECODER_INIT_STATUS_MEMORY_ALLOCATION_ERROR));
 			}
 			FLAC__stream_decoder_set_md5_checking(decoder, _ZE_MODE_DEBUG);
 			FLAC__stream_decoder_set_metadata_respond(decoder, FLAC__METADATA_TYPE_STREAMINFO);
@@ -57,13 +44,16 @@ namespace ZE::SFX
 			struct FlacCtx
 			{
 				IO::File& File;
-				Status& Code;
-				AudioBuffer Buffer = {};
+				AudioBuffer& Buffer;
+				U64 StartOffset = 0;
+				U64 RegionSize = 0;
+				Status Code;
 				U8 ChannelCount = 0;
 				U32 WriteOffset = 0;
+				U64 ReadOffset = 0;
 			};
 
-			FlacCtx ctx = { file, errorCode };
+			FlacCtx ctx = { file, buffer, startOffset, regionSize };
 			FLAC__StreamDecoderReadCallback read = [](const FLAC__StreamDecoder* decoder, FLAC__byte buffer[], size_t* bytes, void* ctx) noexcept -> FLAC__StreamDecoderReadStatus
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
@@ -73,7 +63,7 @@ namespace ZE::SFX
 					if (*bytes > 0)
 					{
 						auto& context = *reinterpret_cast<FlacCtx*>(ctx);
-						context.Code = context.File.Read(buffer, Utils::SafeCast<U32>(*bytes));
+						context.Code = context.File.Read(buffer, Utils::SafeCast<U32>(*bytes), context.ReadOffset);
 
 						if (context.Code)
 						{
@@ -81,10 +71,12 @@ namespace ZE::SFX
 							{
 								*bytes = IO::EofResult::GetRealBytes(context.Code);
 								context.Code = {};
+								context.ReadOffset += *bytes;
 							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 						}
 							return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 						}
+						context.ReadOffset += *bytes;
 						return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 					}
 						return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
@@ -93,16 +85,15 @@ namespace ZE::SFX
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
 
-					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
-					context.Code = context.File.SetOffset(offset);
-					return context.Code ? FLAC__STREAM_DECODER_SEEK_STATUS_ERROR : FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+					reinterpret_cast<FlacCtx*>(ctx)->ReadOffset = offset;
+					return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 				};
 			FLAC__StreamDecoderTellCallback tell = [](const FLAC__StreamDecoder* decoder, FLAC__uint64* offset, void* ctx) noexcept -> FLAC__StreamDecoderTellStatus
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
 					ZE_ASSERT(offset, "Empty FLAC offset!");
 
-					*offset = reinterpret_cast<FlacCtx*>(ctx)->File.GetOffset();
+					*offset = reinterpret_cast<FlacCtx*>(ctx)->ReadOffset;
 					return FLAC__STREAM_DECODER_TELL_STATUS_OK;
 				};
 			FLAC__StreamDecoderLengthCallback length = [](const FLAC__StreamDecoder* decoder, FLAC__uint64* streamLen, void* ctx) noexcept -> FLAC__StreamDecoderLengthStatus
@@ -110,25 +101,15 @@ namespace ZE::SFX
 					ZE_ASSERT(ctx, "Empty FLAC context!");
 					ZE_ASSERT(streamLen, "Empty stream length!");
 
-					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
-					auto size = context.File.GetSize();
-					if (size)
-					{
-						*streamLen = *size;
+					*streamLen = reinterpret_cast<FlacCtx*>(ctx)->RegionSize;
 						return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
-					}
-					context.Code = size.error();
-					return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
 				};
 			FLAC__StreamDecoderEofCallback eof = [](const FLAC__StreamDecoder* decoder, void* ctx) noexcept -> FLAC__bool
 				{
 					ZE_ASSERT(ctx, "Empty FLAC context!");
+
 					auto& context = *reinterpret_cast<FlacCtx*>(ctx);
-					auto size = context.File.GetSize(); // TODO: change later to just check with max position when abstracting file opening from this function
-					if (size)
-						return context.File.GetOffset() >= *size;
-					context.Code = size.error();
-					return false;
+					return context.ReadOffset >= context.StartOffset + context.RegionSize;
 				};
 			FLAC__StreamDecoderWriteCallback write = [](const FLAC__StreamDecoder* decoder, const FLAC__Frame* frame, const FLAC__int32* const buffer[], void* ctx) noexcept -> FLAC__StreamDecoderWriteStatus
 				{
@@ -231,23 +212,22 @@ namespace ZE::SFX
 				FLAC__stream_decoder_finish(decoder);
 			}
 			else
-				errorCode = ZE_FLAC_DECODER_INIT_ERROR(initStatus);
+				ctx.Code = ZE_FLAC_DECODER_INIT_ERROR(initStatus);
 
 			FLAC__stream_decoder_delete(decoder);
-			if (!errorCode)
-				return ctx.Buffer;
+			if (ctx.Code)
+				return std::unexpected(ctx.Code);
+			break;
 		}
-		else if (ext == ".ogg")
+		case FileSourceType::Ogg:
 		{
+			break;
 		}
-		else if (ext == ".opus")
+		case FileSourceType::Opus:
 		{
+			break;
 		}
-		else
-		{
-			ZE_FAIL("Unsupported audio file format: \"" + ext + "\"");
-			return std::unexpected(IO::WAV::Error::Make(IO::WAV::FileResult::Unknown));
 		}
-		return std::unexpected(errorCode);
+		return buffer;
 	}
 }

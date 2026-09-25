@@ -4,65 +4,138 @@
 
 namespace ZE::Platform::WinAPI
 {
-	void File::TransferCompletionCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) noexcept
+	template<bool IS_READ, typename BuffBtr>
+	Task<Status> File::PerformAsyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept
 	{
-		ZE_ASSERT(lpOverlapped->hEvent != nullptr, "Empty file event handle!");
+		ZE_ASSERT(osFile, "File not opened!");
+		if (buffer == nullptr || size == 0)
+		{
+			ZE_FAIL("Invalid file buffer!");
 
-		// Store error code and bytes transfered in offset
-		lpOverlapped->Offset = dwErrorCode;
-		lpOverlapped->OffsetHigh = dwNumberOfBytesTransfered;
-		SetEvent(lpOverlapped->hEvent);
+			Task<Status> task(std::packaged_task<Status()>([]() noexcept -> Status { return std::make_error_code(std::errc::invalid_argument); }));
+			return task;
+		}
+
+		std::unique_ptr<OVERLAPPED> overlapped = std::make_unique<OVERLAPPED>();
+		overlapped->Offset = static_cast<U32>(offset & UINT32_MAX);
+		overlapped->OffsetHigh = static_cast<U32>(offset >> 32);
+		overlapped->hEvent = CreateEventW(nullptr, false, false, nullptr);
+
+		BOOL operation;
+		if constexpr (IS_READ)
+			operation = ReadFile(osFile, buffer, size, nullptr, overlapped.get());
+		else
+			operation = WriteFile(osFile, buffer, size, nullptr, overlapped.get());
+
+		if (!operation)
+		{
+			DWORD error = GetLastError();
+			if (error != ERROR_IO_PENDING)
+			{
+				Status lastError = ZE_WIN_ERROR(static_cast<HRESULT>(error));
+				[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
+				ZE_ASSERT(status, "Error closing file event handle!");
+
+				Task<Status> task(std::packaged_task<Status()>(std::bind([](Status code) noexcept -> Status { return code; }, lastError)));
+				return task;
+			}
+		}
+
+		Task<Status> task(std::packaged_task<Status()>(std::bind([overlapped = std::move(overlapped)](HANDLE fileHandle, U32 requestedBytes) noexcept -> Status
+			{
+				// Wait for async IO operation to complete
+				Status code = {};
+				bool wait = true;
+				do
+				{
+					switch (WaitForSingleObject(overlapped->hEvent, INFINITE))
+					{
+					case WAIT_OBJECT_0:
+					{
+						DWORD bytesProcessed = 0;
+						if (GetOverlappedResult(fileHandle, overlapped.get(), &bytesProcessed, TRUE) != 0)
+							code = ZE_WIN_LAST_ERROR();
+						else if (requestedBytes != bytesProcessed)
+							code = IO::EofResult::Make(bytesProcessed);
+						wait = false;
+						break;
+					}
+					case WAIT_IO_COMPLETION:
+						break;
+					default:
+					{
+						code = ZE_WIN_LAST_ERROR();
+						wait = false;
+						break;
+					}
+					}
+				} while (wait);
+
+				[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
+				ZE_ASSERT(status, "Error closing file event handle!");
+
+				return code;
+			}, osFile, size)));
+		return task;
 	}
 
 	template<bool IS_READ, typename BuffBtr>
-	Status File::PerformSyncOperation(BuffBtr buffer, U32 size) const noexcept
+	Status File::PerformSyncOperation(BuffBtr buffer, U32 size, U64 offset) noexcept
 	{
+		ZE_ASSERT(osFile, "File not opened!");
+		if (offset == UINT64_MAX)
+			offset = currentOffset;
+
 		OVERLAPPED overlapped = {};
-		overlapped.Offset = static_cast<U32>(currentOffset & UINT32_MAX);
-		overlapped.OffsetHigh = static_cast<U32>(currentOffset >> 32);
+		overlapped.Offset = static_cast<U32>(offset & UINT32_MAX);
+		overlapped.OffsetHigh = static_cast<U32>(offset >> 32);
 		overlapped.hEvent = CreateEventW(nullptr, false, false, nullptr);
 
 		BOOL operation;
 		if constexpr (IS_READ)
-			operation = ReadFileEx(osFile, buffer, size, &overlapped, File::TransferCompletionCallback);
+			operation = ReadFile(osFile, buffer, size, nullptr, &overlapped);
 		else
-			operation = WriteFileEx(osFile, buffer, size, &overlapped, File::TransferCompletionCallback);
+			operation = WriteFile(osFile, buffer, size, nullptr, &overlapped);
 
 		Status code = {};
-		if (operation == 0)
-			code = ZE_WIN_LAST_ERROR();
-		else
+		if (!operation)
 		{
-			// Wait for async operation to complete
-			bool wait = true;
-			do
-			{
-				switch (WaitForSingleObjectEx(overlapped.hEvent, INFINITE, TRUE))
-				{
-				case WAIT_OBJECT_0:
-				{
-					if (overlapped.Offset == 0)
-					{
-						currentOffset += overlapped.OffsetHigh;
-						if (size != overlapped.OffsetHigh)
-							code = IO::EofResult::Make(overlapped.OffsetHigh);
-					}
-					else
-						code = ZE_WIN_ERROR(static_cast<HRESULT>(overlapped.Offset));
-					wait = false;
-					break;
-				}
-				case WAIT_IO_COMPLETION:
-					break;
-				default:
-				{
-					code = ZE_WIN_LAST_ERROR();
-					wait = false;
-					break;
-				}
-				}
-			} while (wait);
+			DWORD error = GetLastError();
+			if (error != ERROR_IO_PENDING)
+				code = ZE_WIN_ERROR(static_cast<HRESULT>(error));
 		}
+
+		// Wait for IO operation to complete
+		bool wait = true;
+		do
+		{
+			switch (WaitForSingleObject(overlapped.hEvent, INFINITE))
+			{
+			case WAIT_OBJECT_0:
+			{
+				DWORD bytesProcessed = 0;
+				if (GetOverlappedResult(osFile, &overlapped, &bytesProcessed, TRUE) != 0)
+					code = ZE_WIN_LAST_ERROR();
+				else
+				{
+					offset += bytesProcessed;
+					currentOffset = offset;
+					if (size != bytesProcessed)
+						code = IO::EofResult::Make(bytesProcessed);
+				}
+				wait = false;
+				break;
+			}
+			case WAIT_IO_COMPLETION:
+				break;
+			default:
+			{
+				code = ZE_WIN_LAST_ERROR();
+				wait = false;
+				break;
+			}
+			}
+		} while (wait);
 
 		[[maybe_unused]] const BOOL status = CloseHandle(overlapped.hEvent);
 		ZE_ASSERT(status, "Error closing file event handle!");
@@ -107,16 +180,24 @@ namespace ZE::Platform::WinAPI
 			return currentOffset;
 	}
 
-	Status File::Read(void* buffer, U32 size) const noexcept
+	Task<Status> File::ReadAsync(void* buffer, U32 size, U64 offset) noexcept
 	{
-		ZE_ASSERT(osFile, "File not opened!");
-		return PerformSyncOperation<true>(buffer, size);
+		return PerformAsyncOperation<true>(buffer, size, offset);
 	}
 
-	Status File::Write(const void* buffer, U32 size) const noexcept
+	Task<Status> File::WriteAsync(const void* buffer, U32 size, U64 offset) noexcept
 	{
-		ZE_ASSERT(osFile, "File not opened!");
-		return PerformSyncOperation<false>(buffer, size);
+		return PerformAsyncOperation<false>(buffer, size, offset);
+	}
+
+	Status File::Read(void* buffer, U32 size, U64 offset) noexcept
+	{
+		return PerformSyncOperation<true>(buffer, size, offset);
+	}
+
+	Status File::Write(const void* buffer, U32 size, U64 offset) noexcept
+	{
+		return PerformSyncOperation<false>(buffer, size, offset);
 	}
 
 	Status File::Open(std::string_view fileName, IO::FileFlags flags, U8** fileMapping, FILE*& stdFile) noexcept

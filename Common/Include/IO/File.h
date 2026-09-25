@@ -36,9 +36,9 @@ namespace ZE::IO
 		Task<Status> WriteAsync(const void* buffer, U32 size, U64 offset) noexcept { return platformImpl.WriteAsync(buffer, size, offset); }
 
 		// When encountered EOF will return error code IO::EofResult with proper number of bytes read
-		Status Read(void* buffer, U32 size) const noexcept;
+		Status Read(void* buffer, U32 size, U64 offset = UINT64_MAX) noexcept;
 		// When encountered EOF will return error code IO::EofResult with proper number of bytes written
-		Status Write(const void* buffer, U32 size) const noexcept;
+		Status Write(const void* buffer, U32 size, U64 offset = UINT64_MAX) noexcept;
 
 		Status Open(std::string_view fileName, FileFlags flags = Base(FileFlag::Default), U8** fileMapping = nullptr) noexcept;
 		void Close(U8* fileMapping = nullptr) noexcept;

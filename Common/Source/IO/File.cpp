@@ -3,7 +3,7 @@
 
 namespace ZE::IO
 {
-	Status File::Read(void* buffer, U32 size) const noexcept
+	Status File::Read(void* buffer, U32 size, U64 offset) noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{
@@ -13,15 +13,19 @@ namespace ZE::IO
 
 		if (stdFile)
 		{	
+			if (offset != UINT64_MAX)
+			{
+				ZE_CODE_RET_FAILED(SetOffset(offset));
+			}
 			U32 read = Utils::SafeCast<U32>(std::fread(buffer, 1, size, stdFile));
 			if (read == size)
 				return {};
 			return EofResult::Make(read);
 		}
-		return platformImpl.Read(buffer, size);
+		return platformImpl.Read(buffer, size, offset);
 	}
 
-	Status File::Write(const void* buffer, U32 size) const noexcept
+	Status File::Write(const void* buffer, U32 size, U64 offset) noexcept
 	{
 		if (buffer == nullptr || size == 0)
 		{
@@ -31,12 +35,16 @@ namespace ZE::IO
 
 		if (stdFile)
 		{
+			if (offset != UINT64_MAX)
+			{
+				ZE_CODE_RET_FAILED(SetOffset(offset));
+			}
 			U32 written = Utils::SafeCast<U32>(std::fwrite(buffer, 1, size, stdFile));
 			if (written == size)
 				return {};
 			return EofResult::Make(written);
 		}
-		return platformImpl.Write(buffer, size);
+		return platformImpl.Write(buffer, size, offset);
 	}
 
 	Status File::Open(std::string_view fileName, FileFlags flags, U8** fileMapping) noexcept

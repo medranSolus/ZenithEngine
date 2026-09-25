@@ -4,6 +4,13 @@
 
 namespace ZE::SFX
 {
+	// Types of files supported by loader
+	enum class FileSourceType : U8
+	{
+		Unknown = 0,
+		WAV, Flac, Ogg, Opus
+	};
+
 	// Description of the main audio parameters
 	struct AudioDesc
 	{
@@ -22,5 +29,5 @@ namespace ZE::SFX
 	};
 
 	// Load and parse audio file from disk
-	Expected<AudioBuffer> LoadFile(std::string_view filename) noexcept;
+	Expected<AudioBuffer> LoadFile(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type) noexcept;
 }
