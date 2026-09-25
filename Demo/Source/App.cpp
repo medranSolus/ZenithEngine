@@ -694,7 +694,6 @@ Status App::Init(const CmdParser& params) noexcept
 		engineParams.CoreRendererParams.IrrMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/newport_loft_irr_64px_1024s.dds"));
 		engineParams.CoreRendererParams.SkyboxSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Skybox/newport_loft_2k.dds"));
 	}
-	engineParams.CoreRendererParams.EnvMapSource = engineParams.CoreRendererParams.SkyboxSource;
 	ZE_CODE_RET_FAILED(engine.Init(engineParams));
 
 	engine.ImGui().SetFont("Fonts/Arial.ttf", 14.0f);
