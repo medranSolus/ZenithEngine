@@ -80,3 +80,6 @@
 [submodule "External/HBAOPlus"]
 	path = External/HBAOPlus
 	url = https://github.com/NVIDIAGameWorks/HBAOPlus
+[submodule "External/opusfile"]
+	path = External/opusfile
+	url = https://github.com/xiph/opusfile.git

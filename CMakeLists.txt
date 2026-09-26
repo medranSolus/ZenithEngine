@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION ${ZE_CMAKE_VERSION})
 cmake_policy(SET CMP0091 NEW) # Setting of MSVC runtime library
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # No import files used in the project
 
 ######### PROJECT CONFIGURATION #########
 
@@ -122,6 +123,7 @@ set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
 set(OGG_DIR "${EXTERNAL_DIR}/ogg")
 set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
 set(OPUS_DIR "${EXTERNAL_DIR}/opus")
+set(OPUSFILE_DIR "${EXTERNAL_DIR}/opusfile")
 set(QOI_DIR "${EXTERNAL_DIR}/qoixx")
 set(VOLK_DIR "${EXTERNAL_DIR}/volk")
 set(VORB_DIR "${EXTERNAL_DIR}/vorbis")
@@ -167,6 +169,7 @@ set(NIS_INC_DIR "${NIS_DIR}/NIS")
 set(OGG_INC_DIR "${OGG_DIR}/include")
 set(OPENAL_INC_DIR "${NIS_DIR}/include")
 set(OPUS_INC_DIR "${OPUS_DIR}/include")
+set(OPUSFILE_INC_DIR "${OPUSFILE_DIR}/include")
 set(QOI_INC_DIR "${QOI_DIR}/include")
 set(VORB_INC_DIR "${VORB_DIR}/include")
 set(VOLK_INC_DIR "${VOLK_DIR}")
@@ -224,7 +227,6 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${BZIP2_INC_DIR}"
 	"${DLSS_INC_DIR}"
 	"${DSTORE_INC_DIR}"
-	"${DXMATH_INC_DIR}"
 	"${DXTEX_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${FTYPE_INC_DIR}"
@@ -234,18 +236,12 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${FFX_API_DENOISER_INC_DIR}"
 	"${FFX_API_RADCACHE_INC_DIR}"
 	"${FFXSDK_INC_DIR}"
-	"${FLAC_INC_DIR}"
 	"${HARFBUZZ_INC_DIR}"
 	"${HBAO_INC_DIR}"
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
-	"${LIBSPNG_INC_DIR}"
 	"${NIS_INC_DIR}"
-	"${OGG_INC_DIR}"
 	"${OPENAL_INC_DIR}"
-	"${OPUS_INC_DIR}"
-	"${QOI_INC_DIR}"
-	"${VORB_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
 	"${XAUDIO2_INC_DIR}"
@@ -294,6 +290,7 @@ set(NGX_LIB "nvsdk_ngx")
 set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
 set(OPUS_LIB "opus")
+set(OPUSFILE_LIB "opusfile")
 set(VORB_LIB "vorbis")
 set(VORBENC_LIB "vorbisenc")
 set(VORBFILE_LIB "vorbisfile")
@@ -345,6 +342,7 @@ if(${ZE_ENABLE_OPENAL})
 	set(OPENAL_TARGET "${OPENAL_LIB}")
 endif()
 set(OPUS_TARGET "${OPUS_LIB}")
+set(OPUSFILE_TARGET "${OPUSFILE_LIB}")
 set(VORB_TARGET "${VORB_LIB}")
 set(VORB_TARGETS "${VORB_LIB}" "${VORBENC_LIB}" "${VORBFILE_LIB}")
 if(${ZE_VOLK_ENABLED})
@@ -398,7 +396,6 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${HARFBUZZ_TARGET}
 	${HBAO_TARGETS}
 	${LIBPNG_TARGET}
-	${LIBSPNG_TARGET}
 	${NGX_TARGET}
 	${OPENAL_TARGET}
 	${PIX_TARGET}
@@ -684,7 +681,7 @@ if(${ZE_ENABLE_OPENAL})
 		"-DALSOFT_UPDATE_BUILD_VERSION:BOOL=OFF"
 		"-DALSOFT_EAX:BOOL=OFF"
 		"-DALSOFT_SEARCH_INSTALL_DATADIR:BOOL=OFF"
-		"-DZLIB_FOUND:BOOL=OFF"
+		"-DZLIB_FOUND:BOOL=ON"
 		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 		"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
@@ -830,6 +827,33 @@ set(OPUS_CACHE_ARGS "-DOPUS_BUILD_SHARED_LIBRARY:BOOL=OFF"
 	"-DOPUS_BUILD_FRAMEWORK:BOOL=OFF"
 	"-DOPUS_STATIC_RUNTIME:BOOL=OFF")
 add_external_project(OPUS "" "" "" "")
+
+# opusfile
+set(OPUSFILE_DEP_SCRIPT "${ZE_BUILD_DIR}/opusfile_dep.cmake")
+set(OPUSFILE_CACHE_ARGS "-DOP_DISABLE_HTTP:BOOL=ON"
+	"-DOP_DISABLE_FLOAT_API:BOOL=OFF"
+	"-DOP_FIXED_POINT:BOOL=OFF"
+	"-DOP_ENABLE_ASSERTIONS:BOOL=${ZE_EXTERNAL_BUILD_DEBUG_INFO}"
+	"-DOP_DISABLE_EXAMPLES:BOOL=ON"
+	"-DOP_DISABLE_DOCS:BOOL=ON"
+	"-DCMAKE_PROJECT_OpusFile_INCLUDE:STRING=${OPUSFILE_DEP_SCRIPT}")
+# Script for signaling where are dep libraries
+if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${OPUSFILE_TARGET}${LIB_EXT}")
+	file(WRITE "${OPUSFILE_DEP_SCRIPT}" "
+	  if(NOT TARGET Ogg::ogg)
+		add_library(Ogg::ogg UNKNOWN IMPORTED GLOBAL)
+		set_target_properties(Ogg::ogg PROPERTIES
+		  IMPORTED_LOCATION \"${EXTERNAL_BIN_DIR}/${OGG_TARGET}${LIB_EXT}\"
+		  INTERFACE_INCLUDE_DIRECTORIES \"${OGG_INC_DIR}\")
+	  endif()
+	  if(NOT TARGET Opus::opus)
+		add_library(Opus::opus UNKNOWN IMPORTED GLOBAL)
+		set_target_properties(Opus::opus PROPERTIES
+		  IMPORTED_LOCATION \"${EXTERNAL_BIN_DIR}/${OPUS_TARGET}${LIB_EXT}\"
+		  INTERFACE_INCLUDE_DIRECTORIES \"${OPUS_INC_DIR}\")
+	  endif()")
+endif()
+add_external_project(OPUSFILE "" "" "" "OPUS;OGG")
 
 # EnTT
 if(${ZE_COMPILER_MSVC})
