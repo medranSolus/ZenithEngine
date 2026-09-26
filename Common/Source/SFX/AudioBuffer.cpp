@@ -223,11 +223,12 @@ namespace ZE::SFX
 			struct OggCtx
 			{
 				IO::File& File;
+				U64 RegionSize = 0;
 				Status Code;
 				U64 ReadOffset = 0;
 			};
 
-			OggCtx ctx = { file };
+			OggCtx ctx = { file, regionSize };
 			OggVorbis_File decoder = {};
 			decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
 				{
@@ -257,7 +258,12 @@ namespace ZE::SFX
 				{
 					ZE_ASSERT(ctx, "Empty vorbis file context!");
 
-					reinterpret_cast<OggCtx*>(ctx)->ReadOffset = Utils::SafeCast<U64>(offset);
+					auto& context = *reinterpret_cast<OggCtx*>(ctx);
+					if (whence == SEEK_END)
+						offset = context.RegionSize - offset;
+					else if (whence == SEEK_CUR)
+						offset += context.ReadOffset;
+					context.ReadOffset = Utils::SafeCast<U64>(offset);
 					return 0;
 				};
 			decoder.callbacks.close_func = nullptr;
@@ -267,44 +273,128 @@ namespace ZE::SFX
 					return Utils::SafeCast<long>(reinterpret_cast<OggCtx*>(ctx)->ReadOffset);
 				};
 
-			/* https://xiph.org/vorbis/doc/vorbisfile/reference.html
-			OV_FALSE - Not true, or no data available
-			OV_HOLE - Vorbisfile encoutered missing or corrupt data in the bitstream. Recovery is normally automatic and this return code is for informational purposes only.
-			OV_EREAD - Read error while fetching compressed data for decode
-			OV_EFAULT - Internal inconsistency in encode or decode state. Continuing is likely not possible.
-			OV_EIMPL - Feature not implemented
-			OV_EINVAL - Either an invalid argument, or incompletely initialized argument passed to a call
-			OV_ENOTVORBIS - The given file/data was not recognized as Ogg Vorbis data.
-			OV_EBADHEADER - The file/data is apparently an Ogg Vorbis stream, but contains a corrupted or undecipherable header.
-			OV_EVERSION - The bitstream format revision of the given stream is not supported.
-			OV_EBADLINK - The given link exists in the Vorbis data stream, but is not decipherable due to garbacge or corruption.
-			OV_ENOSEEK - The given stream is not seekable
-			*/
-
-			if (ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks) < 0)
+			ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks)));
+			if (!ctx.Code)
 			{
-				ZE_FAIL("Not ogg stream!");
-				/*
-				OV_EREAD - A read from media returned an error.
-				OV_ENOTVORBIS - Bitstream does not contain any Vorbis data.
-				OV_EVERSION - Vorbis version mismatch.
-				OV_EBADHEADER - Invalid Vorbis bitstream header.
-				OV_EFAULT - Internal logic fault; indicates a bug or heap/stack corruption.
-				*/
+				vorbis_info* streamInfo = ov_info(&decoder, -1);
+				if (streamInfo)
+				{
+					buffer.Desc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
+					// But requires remapping to correct order
+					buffer.Desc.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(streamInfo->channels));
+					buffer.Desc.BitsPerSample = 16;
+					buffer.Desc.IsFloat = false;
+
+					S64 samples = ov_pcm_total(&decoder, -1);
+					if (samples > 0)
+					{
+						buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * 2 * streamInfo->channels);
+						buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
+
+						long bytesRead = 0;
+						U32 readOffset = 0;
+						do
+						{
+							int currentStream = 0;
+							bytesRead = ov_read(&decoder, reinterpret_cast<char*>(buffer.Samples.get() + readOffset),
+								Utils::SafeCast<int>(buffer.Desc.Bytes - readOffset), 0, 2, 1, &currentStream);
+							if (bytesRead > 0)
+								readOffset += bytesRead;
+							else if (bytesRead == OV_HOLE)
+								bytesRead = 1;
+							else if (bytesRead < 0)
+								ctx.Code = ZE_VORBIS_ERROR(bytesRead);
+						} while (bytesRead > 0);
+						ZE_ASSERT(buffer.Desc.Bytes >= readOffset, "Shouldn't happen!");
+
+						// Re-fit buffer to proper size
+						if (readOffset < buffer.Desc.Bytes)
+						{
+							auto audioBuffer = std::make_shared<U8[]>(readOffset);
+							std::memcpy(audioBuffer.get(), buffer.Samples.get(), readOffset);
+							buffer.Samples = std::move(audioBuffer);
+							buffer.Desc.Bytes = readOffset;
+							samples = readOffset / (2 * streamInfo->channels);
+						}
+
+						// Fix channel ordering in samples
+						switch (streamInfo->channels)
+						{
+						default:
+						case 1:
+						case 2:
+						case 4: // Channel order is the same
+							break;
+						case 3:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+						{
+							S16* sample = reinterpret_cast<S16*>(buffer.Samples.get());
+							for (S64 i = 0; i < samples; ++i)
+							{
+								// All require swapping FC and FR order
+								std::swap(sample[1], sample[2]);
+
+								switch (streamInfo->channels)
+								{
+								default:
+									// Source: FL, FC, FR
+									// Dest:   FL, FR, FC
+								case 3:
+									// Source: FL, FC, FR, BL, BR
+									// Dest:   FL, FR, FC, BL, BR
+								case 5:
+									break;
+								case 6:
+								{
+									// Source: FL, FC, FR, BL, BR, LFE
+									// Dest:   FL, FR, FC, LFE, BL, BR
+									S16 lfe = sample[3];
+									sample[3] = sample[4];
+									sample[4] = sample[5];
+									sample[5] = lfe;
+									break;
+								}
+								case 7:
+								{
+									// Source: FL, FC, FR, SL, SR, BC, LFE
+									// Dest:   FL, FR, FC, LFE, BC, SL, SR
+									S16 sr = sample[4];
+									sample[4] = sample[5];
+									sample[5] = sample[3];
+									sample[3] = sample[6];
+									sample[6] = sr;
+									break;
+								}
+								case 8:
+								{
+									// Source: FL, FC, FR, SL, SR, BL, BR, LFE
+									// Dest:   FL, FR, FC, LFE, BL, BR, SL, SR
+									S16 sr = sample[4];
+									sample[4] = sample[5];
+									sample[5] = sample[6];
+									sample[6] = sample[3];
+									sample[3] = sample[7];
+									sample[7] = sr;
+									break;
+								}
+								}
+								sample += streamInfo->channels;
+							}
+							break;
+						}
+						}
+					}
+					else
+						ctx.Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples));
+				}
+				else
+					ctx.Code = ZE_VORBIS_ERROR(OV_FALSE);
 			}
 
-			vorbis_info* streamInfo = ov_info(&decoder, -1);
-			if (streamInfo)
-			{
-				// Check audio params, else error
-				int currentStream = 0;
-				long bytesRead = ov_read(&decoder, nullptr, 0, 0, 2, 1, &currentStream);
-			}
-
-			if (ov_clear(&decoder) != 0)
-			{
-				ZE_FAIL("Error closing!");
-			}
+			ov_clear(&decoder);
 			break;
 		}
 		case FileSourceType::Opus:
