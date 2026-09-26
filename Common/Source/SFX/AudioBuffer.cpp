@@ -18,7 +18,7 @@ namespace ZE::SFX
 		case FileSourceType::Unknown:
 		{
 			ZE_FAIL("Unknown audio file format!");
-			return std::unexpected(IO::WAV::Error::Make(IO::WAV::FileResult::Unknown));
+			return std::unexpected(ZE_WAV_ERROR(IO::WAV::FileResult::Unknown));
 		}
 		case FileSourceType::WAV:
 		{

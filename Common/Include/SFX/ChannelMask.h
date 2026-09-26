@@ -35,7 +35,7 @@ namespace ZE::SFX
 		Stereo_4_0 = FrontLeft | FrontRight | BackLeft | BackRight,
 		Stereo_5_0 = FrontLeft | FrontRight | FrontCenter | BackLeft | BackRight,
 		Stereo_5_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight,
-		Stereo_6_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight | BackCenter,
+		Stereo_6_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackCenter | SideLeft | SideRight,
 		Stereo_7_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight | SideLeft | SideRight,
 	};
 	ZE_ENUM_OPERATORS(SoundChannel, ChannelMask);

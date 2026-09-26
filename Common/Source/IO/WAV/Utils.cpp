@@ -26,17 +26,17 @@ namespace ZE::IO::WAV
 		ZE_WAV_CHECK_READ(riffChunk);
 
 		if (riffChunk.FileTypeMagicNumber != RIFF_MAGIC_NUMBER)
-			return std::unexpected(Error::Make(FileResult::IncorrectMagicNumberRIFF));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectMagicNumberRIFF));
 		if (riffChunk.FileFormatMagicNumber != WAVE_MAGIC_NUMBER)
-			return std::unexpected(Error::Make(FileResult::IncorrectMagicNumberWAVE));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectMagicNumberWAVE));
 		if (riffChunk.FileSize < sizeof(RiffChunkHeader) + sizeof(FormatChunkHeader) + sizeof(DataChunkHeader) - 8)
-			return std::unexpected(Error::Make(FileResult::FileTooSmall));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::FileTooSmall));
 
 		FormatExtensionChunkHeader formatChunk = {};
 		ZE_WAV_CHECK_READ(formatChunk.FormatEx.Format);
 
 		if (formatChunk.FormatEx.Format.MagicNumber != FORMAT_MAGIC_NUMBER)
-			return std::unexpected(Error::Make(FileResult::IncorrectMagicNumberFormatChunk));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectMagicNumberFormatChunk));
 
 		switch (formatChunk.FormatEx.Format.Size)
 		{
@@ -51,12 +51,12 @@ namespace ZE::IO::WAV
 		case Base(FormatHeaderSize::Extended):
 		{
 			if (formatChunk.FormatEx.Format.AudioFormat != FormatTag::Extended)
-				return std::unexpected(Error::Make(FileResult::IncorrectAudioFormat));
+				return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectAudioFormat));
 			ZE_CODE_RET_FAILED_EXPECT(checkRead(&formatChunk.FormatEx.ExtensionSize, sizeof(FormatExtensionChunkHeader) - sizeof(FormatChunkHeader)));
 			break;
 		}
 		default:
-			return std::unexpected(Error::Make(FileResult::FormatChunkTooSmall));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::FormatChunkTooSmall));
 		}
 
 		// Parse audio description
@@ -69,7 +69,7 @@ namespace ZE::IO::WAV
 		{
 			buffer.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(formatChunk.FormatEx.Format.NumChannels));
 			if (buffer.Channels == 0)
-				return std::unexpected(Error::Make(FileResult::IncorrectAudioFormat));
+				return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectAudioFormat));
 
 			buffer.BitsPerSample = Utils::SafeCast<U8>(formatChunk.FormatEx.Format.BitsPerSample);
 			switch (formatChunk.FormatEx.Format.AudioFormat)
@@ -81,12 +81,12 @@ namespace ZE::IO::WAV
 			{
 				buffer.IsFloat = true;
 				if (buffer.BitsPerSample != 32)
-					return std::unexpected(Error::Make(FileResult::IncorrectAudioFormat));
+					return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectAudioFormat));
 				break;
 			}
 			case Base(FormatTag::Extended):
 			default:
-				return std::unexpected(Error::Make(FileResult::IncorrectAudioFormat));
+				return std::unexpected(ZE_WAV_ERROR(FileResult::IncorrectAudioFormat));
 			}
 			break;
 		}
@@ -99,7 +99,7 @@ namespace ZE::IO::WAV
 			break;
 		}
 		default:
-			return std::unexpected(Error::Make(FileResult::UnknownFormatChunkExtension));
+			return std::unexpected(ZE_WAV_ERROR(FileResult::UnknownFormatChunkExtension));
 		}
 
 		// Locate data chunk

@@ -35,3 +35,5 @@ namespace ZE::IO::WAV
 		std::string message(int condition) const override;
 	};
 }
+
+#define ZE_WAV_ERROR(result) ZE::IO::WAV::Error::Make(result)
