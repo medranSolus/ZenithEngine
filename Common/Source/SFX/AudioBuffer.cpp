@@ -24,7 +24,7 @@ namespace ZE::SFX
 		{
 			U64 dataStart = 0;
 			ZE_EXPECT_RET_FAILED(buffer.Desc, IO::WAV::ParseFileInfo(file, dataStart, startOffset));
-			buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
+			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 			ZE_CODE_RET_FAILED_EXPECT(IO::WAV::LoadSampleData(file, dataStart, buffer.Samples.get(), buffer.Desc.Bytes, 0));
 			break;
 		}
@@ -151,7 +151,7 @@ namespace ZE::SFX
 						context.Buffer.Desc.SampleRate = metadata->data.stream_info.sample_rate;
 						context.Buffer.Desc.BitsPerSample = Utils::SafeCast<U8>(metadata->data.stream_info.bits_per_sample);
 						context.Buffer.Desc.IsFloat = false;
-						context.Buffer.Samples = std::make_shared<U8[]>(context.Buffer.Desc.Bytes);
+						context.Buffer.Samples = std::make_shared_for_overwrite<U8[]>(context.Buffer.Desc.Bytes);
 						break;
 					}
 					case FLAC__METADATA_TYPE_VORBIS_COMMENT:
@@ -289,7 +289,7 @@ namespace ZE::SFX
 					if (samples > 0)
 					{
 						buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * streamInfo->channels);
-						buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
+						buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
 						// Create final interleaved channel mappings
 						U8 channelMapping[8] = {};
@@ -394,7 +394,7 @@ namespace ZE::SFX
 						// Re-fit buffer to proper size
 						if (writeOffset < buffer.Desc.Bytes)
 						{
-							auto audioBuffer = std::make_shared<U8[]>(writeOffset);
+							auto audioBuffer = std::make_shared_for_overwrite<U8[]>(writeOffset);
 							std::memcpy(audioBuffer.get(), buffer.Samples.get(), writeOffset);
 							buffer.Samples = std::move(audioBuffer);
 							buffer.Desc.Bytes = writeOffset;
@@ -425,17 +425,44 @@ namespace ZE::SFX
 
 			OggOpusCtx ctx = { file, regionSize };
 			OpusFileCallbacks opusCallbacks = {};
-			opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bufferSize) noexcept -> int
+			opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bytes) noexcept -> int
 				{
-					return 0;
+					ZE_ASSERT(ctx, "Empty opus file context!");
+
+					auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+					context.Code = context.File.Read(buffer, Utils::SafeCast<U32>(bytes), context.ReadOffset);
+
+					if (context.Code)
+					{
+						if (IO::EofResult::IsEOF(context.Code))
+						{
+							bytes = Utils::SafeCast<int>(IO::EofResult::GetRealBytes(context.Code));
+							context.ReadOffset += bytes;
+							context.Code = {};
+						}
+						else
+							bytes = 0;
+					}
+					else
+						context.ReadOffset += bytes;
+					return bytes;
 				};
 			opusCallbacks.seek = [](void* ctx, opus_int64 offset, int whence) noexcept -> int
 				{
+					ZE_ASSERT(ctx, "Empty opus file context!");
+
+					auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+					if (whence == SEEK_END)
+						offset = context.RegionSize - offset;
+					else if (whence == SEEK_CUR)
+						offset += context.ReadOffset;
+					context.ReadOffset = Utils::SafeCast<U64>(offset);
 					return 0;
 				};
 			opusCallbacks.tell = [](void* ctx) noexcept -> opus_int64
 				{
-					return 0;
+					ZE_ASSERT(ctx, "Empty opus file context!");
+					return Utils::SafeCast<opus_int64>(reinterpret_cast<OggOpusCtx*>(ctx)->ReadOffset);
 				};
 			opusCallbacks.close = nullptr;
 
@@ -450,11 +477,91 @@ namespace ZE::SFX
 				{
 					U8 channelCount = Utils::SafeCast<U8>(op_channel_count(decoder, -1));
 
-					buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * channelCount);
+					buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * channelCount);
 					buffer.Desc.SampleRate = 48000;
 					buffer.Desc.Channels = GetDefaultMask(channelCount);
 					buffer.Desc.BitsPerSample = 32;
 					buffer.Desc.IsFloat = true;
+					buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
+
+					S32 samplesRead = 0;
+					S32 bufferSpace = Utils::SafeCast<S32>(samples * channelCount);
+					float* interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
+					do
+					{
+						samplesRead = op_read_float(decoder, interleavedSamples, bufferSpace, nullptr);
+						if (samplesRead > 0)
+						{
+							S32 offset = samplesRead * channelCount;
+							bufferSpace -= offset;
+							interleavedSamples += offset;
+						}
+						else if (samplesRead == OP_HOLE)
+							samplesRead = 1;
+						else if (samplesRead < 0)
+							ctx.Code = ZE_OPUS_ERROR(samplesRead);
+					} while (samplesRead > 0);
+
+					// Change to expected interleaving of samples (same order as for vorbis)
+					switch (channelCount)
+					{
+					default:
+					case 1:
+					case 2:
+					case 4:
+						// Same channel order
+						break;
+					case 3:
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					{
+						interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
+						for (S64 i = 0; i < samples; ++i)
+						{
+							// All require swapping FC and FR order
+							std::swap(interleavedSamples[1], interleavedSamples[2]);
+
+							switch (channelCount)
+							{
+							default:
+							case 3:
+							case 5:
+								break;
+							case 6:
+							{
+								float lfe = interleavedSamples[3];
+								interleavedSamples[3] = interleavedSamples[4];
+								interleavedSamples[4] = interleavedSamples[5];
+								interleavedSamples[5] = lfe;
+								break;
+							}
+							case 7:
+							{
+								float sr = interleavedSamples[4];
+								interleavedSamples[4] = interleavedSamples[5];
+								interleavedSamples[5] = interleavedSamples[3];
+								interleavedSamples[3] = interleavedSamples[6];
+								interleavedSamples[6] = sr;
+								break;
+							}
+							case 8:
+							{
+								float sr = interleavedSamples[4];
+								interleavedSamples[4] = interleavedSamples[5];
+								interleavedSamples[5] = interleavedSamples[6];
+								interleavedSamples[6] = interleavedSamples[3];
+								interleavedSamples[3] = interleavedSamples[7];
+								interleavedSamples[7] = sr;
+								break;
+							}
+							}
+							interleavedSamples += channelCount;
+						}
+						break;
+					}
+					}
 				}
 				else
 					ctx.Code = ZE_OPUS_ERROR(Utils::SafeCast<S32>(samples));
