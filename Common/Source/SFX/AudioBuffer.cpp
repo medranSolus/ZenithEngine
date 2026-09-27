@@ -277,114 +277,128 @@ namespace ZE::SFX
 			if (!ctx.Code)
 			{
 				vorbis_info* streamInfo = ov_info(&decoder, -1);
-				if (streamInfo)
+				if (streamInfo && streamInfo->channels <= 8 && streamInfo->channels > 0)
 				{
 					buffer.Desc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
 					// But requires remapping to correct order
 					buffer.Desc.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(streamInfo->channels));
-					buffer.Desc.BitsPerSample = 16;
-					buffer.Desc.IsFloat = false;
+					buffer.Desc.BitsPerSample = 32;
+					buffer.Desc.IsFloat = true;
 
 					S64 samples = ov_pcm_total(&decoder, -1);
 					if (samples > 0)
 					{
-						buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * 2 * streamInfo->channels);
+						buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * streamInfo->channels);
 						buffer.Samples = std::make_shared<U8[]>(buffer.Desc.Bytes);
 
-						long bytesRead = 0;
-						U32 readOffset = 0;
-						do
-						{
-							int currentStream = 0;
-							bytesRead = ov_read(&decoder, reinterpret_cast<char*>(buffer.Samples.get() + readOffset),
-								Utils::SafeCast<int>(buffer.Desc.Bytes - readOffset), 0, 2, 1, &currentStream);
-							if (bytesRead > 0)
-								readOffset += bytesRead;
-							else if (bytesRead == OV_HOLE)
-								bytesRead = 1;
-							else if (bytesRead < 0)
-								ctx.Code = ZE_VORBIS_ERROR(bytesRead);
-						} while (bytesRead > 0);
-						ZE_ASSERT(buffer.Desc.Bytes >= readOffset, "Shouldn't happen!");
-
-						// Re-fit buffer to proper size
-						if (readOffset < buffer.Desc.Bytes)
-						{
-							auto audioBuffer = std::make_shared<U8[]>(readOffset);
-							std::memcpy(audioBuffer.get(), buffer.Samples.get(), readOffset);
-							buffer.Samples = std::move(audioBuffer);
-							buffer.Desc.Bytes = readOffset;
-							samples = readOffset / (2 * streamInfo->channels);
-						}
-
-						// Fix channel ordering in samples
+						// Create final interleaved channel mappings
+						U8 channelMapping[8] = {};
 						switch (streamInfo->channels)
 						{
 						default:
 						case 1:
 						case 2:
-						case 4: // Channel order is the same
+						case 4:
+						{
+							// Channel order is the same
+							for (U8 i = 0; i < Utils::SafeCast<U8>(streamInfo->channels); ++i)
+								channelMapping[i] = i;
 							break;
+						}
 						case 3:
 						case 5:
 						case 6:
 						case 7:
 						case 8:
 						{
-							S16* sample = reinterpret_cast<S16*>(buffer.Samples.get());
-							for (S64 i = 0; i < samples; ++i)
-							{
 								// All require swapping FC and FR order
-								std::swap(sample[1], sample[2]);
+							channelMapping[0] = 0;
+							channelMapping[1] = 2;
+							channelMapping[2] = 1;
 
 								switch (streamInfo->channels)
 								{
 								default:
+							case 3:
 									// Source: FL, FC, FR
 									// Dest:   FL, FR, FC
-								case 3:
+								break;
+							case 5:
+							{
 									// Source: FL, FC, FR, BL, BR
 									// Dest:   FL, FR, FC, BL, BR
-								case 5:
+								channelMapping[3] = 3;
+								channelMapping[4] = 4;
 									break;
+							}
 								case 6:
 								{
 									// Source: FL, FC, FR, BL, BR, LFE
 									// Dest:   FL, FR, FC, LFE, BL, BR
-									S16 lfe = sample[3];
-									sample[3] = sample[4];
-									sample[4] = sample[5];
-									sample[5] = lfe;
+								channelMapping[3] = 4;
+								channelMapping[4] = 5;
+								channelMapping[5] = 3;
 									break;
 								}
 								case 7:
 								{
 									// Source: FL, FC, FR, SL, SR, BC, LFE
 									// Dest:   FL, FR, FC, LFE, BC, SL, SR
-									S16 sr = sample[4];
-									sample[4] = sample[5];
-									sample[5] = sample[3];
-									sample[3] = sample[6];
-									sample[6] = sr;
+								channelMapping[3] = 5;
+								channelMapping[4] = 6;
+								channelMapping[5] = 4;
+								channelMapping[6] = 3;
 									break;
 								}
 								case 8:
 								{
 									// Source: FL, FC, FR, SL, SR, BL, BR, LFE
 									// Dest:   FL, FR, FC, LFE, BL, BR, SL, SR
-									S16 sr = sample[4];
-									sample[4] = sample[5];
-									sample[5] = sample[6];
-									sample[6] = sample[3];
-									sample[3] = sample[7];
-									sample[7] = sr;
+								channelMapping[3] = 6;
+								channelMapping[4] = 7;
+								channelMapping[5] = 4;
+								channelMapping[6] = 5;
+								channelMapping[7] = 3;
 									break;
 								}
 								}
-								sample += streamInfo->channels;
-							}
 							break;
 						}
+						}
+
+						S64 samplesRead = 0;
+						U32 writeOffset = 0;
+						float* interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
+						do
+						{
+							int currentStream = 0;
+							float** readSamples = nullptr;
+							samplesRead = ov_read_float(&decoder, reinterpret_cast<float***>(&readSamples), 4096, &currentStream);
+							if (samplesRead > 0 && readSamples)
+							{
+								for (S64 i = 0; i < samplesRead; ++i)
+								{
+									for (int c = 0; c < streamInfo->channels; ++c)
+										interleavedSamples[channelMapping[c]] = readSamples[c][i];
+									interleavedSamples += streamInfo->channels;
+									writeOffset += streamInfo->channels * sizeof(float);
+								}
+							}
+							else if (samplesRead == OV_HOLE)
+								samplesRead = 1;
+							else if (samplesRead < 0)
+								ctx.Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samplesRead));
+						} while (samplesRead > 0);
+						ZE_ASSERT(buffer.Desc.Bytes >= writeOffset, "Shouldn't happen!");
+
+						// Re-fit buffer to proper size
+						if (writeOffset < buffer.Desc.Bytes)
+						{
+							auto audioBuffer = std::make_shared<U8[]>(writeOffset);
+							std::memcpy(audioBuffer.get(), buffer.Samples.get(), writeOffset);
+							buffer.Samples = std::move(audioBuffer);
+							buffer.Desc.Bytes = writeOffset;
+							samples = writeOffset / (2 * streamInfo->channels);
 						}
 					}
 					else
@@ -392,9 +406,11 @@ namespace ZE::SFX
 				}
 				else
 					ctx.Code = ZE_VORBIS_ERROR(OV_FALSE);
+				ov_clear(&decoder);
 			}
 
-			ov_clear(&decoder);
+			if (ctx.Code)
+				return std::unexpected(ctx.Code);
 			break;
 		}
 		case FileSourceType::Opus:
