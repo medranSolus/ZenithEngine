@@ -218,9 +218,9 @@ namespace ZE::SFX
 				return std::unexpected(ctx.Code);
 			break;
 		}
-		case FileSourceType::Ogg:
+		case FileSourceType::OggVorbis:
 		{
-			struct OggCtx
+			struct OggVorbisCtx
 			{
 				IO::File& File;
 				U64 RegionSize = 0;
@@ -228,13 +228,13 @@ namespace ZE::SFX
 				U64 ReadOffset = 0;
 			};
 
-			OggCtx ctx = { file, regionSize };
+			OggVorbisCtx ctx = { file, regionSize };
 			OggVorbis_File decoder = {};
 			decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
 				{
 					ZE_ASSERT(ctx, "Empty vorbis file context!");
 
-					auto& context = *reinterpret_cast<OggCtx*>(ctx);
+					auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
 					U32 bytes = Utils::SafeCast<U32>(size * count);
 					context.Code = context.File.Read(buffer, bytes, context.ReadOffset);
 
@@ -258,7 +258,7 @@ namespace ZE::SFX
 				{
 					ZE_ASSERT(ctx, "Empty vorbis file context!");
 
-					auto& context = *reinterpret_cast<OggCtx*>(ctx);
+					auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
 					if (whence == SEEK_END)
 						offset = context.RegionSize - offset;
 					else if (whence == SEEK_CUR)
@@ -270,7 +270,7 @@ namespace ZE::SFX
 			decoder.callbacks.tell_func = [](void* ctx) noexcept -> long
 				{
 					ZE_ASSERT(ctx, "Empty vorbis file context!");
-					return Utils::SafeCast<long>(reinterpret_cast<OggCtx*>(ctx)->ReadOffset);
+					return Utils::SafeCast<long>(reinterpret_cast<OggVorbisCtx*>(ctx)->ReadOffset);
 				};
 
 			ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks)));
@@ -413,9 +413,9 @@ namespace ZE::SFX
 				return std::unexpected(ctx.Code);
 			break;
 		}
-		case FileSourceType::Opus:
+		case FileSourceType::OggOpus:
 		{
-			struct OpusCtx
+			struct OggOpusCtx
 			{
 				IO::File& File;
 				U64 RegionSize = 0;
@@ -423,7 +423,7 @@ namespace ZE::SFX
 				U64 ReadOffset = 0;
 			};
 
-			OpusCtx ctx = { file, regionSize };
+			OggOpusCtx ctx = { file, regionSize };
 			OpusFileCallbacks opusCallbacks = {};
 			opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bufferSize) noexcept -> int
 				{

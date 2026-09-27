@@ -8,7 +8,7 @@ namespace ZE::SFX
 	enum class FileSourceType : U8
 	{
 		Unknown = 0,
-		WAV, Flac, Ogg, Opus
+		WAV, Flac, OggVorbis, OggOpus, VorbisStream, OpusStream
 	};
 
 	// Description of the main audio parameters
