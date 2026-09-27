@@ -57,8 +57,26 @@ namespace ZE::SFX::FileError
 		const char* name() const noexcept override { return "Vorbis Error"; }
 		std::string message(int condition) const override;
 	};
+
+	// Main handler of Opus stream errors
+	class OpusError : public std::error_category
+	{
+	protected:
+		OpusError() = default;
+
+	public:
+		ZE_CLASS_MOVE(OpusError);
+		virtual ~OpusError() = default;
+
+		static constexpr const std::error_category& GetCategory() noexcept { static OpusError CATEGORY; return CATEGORY; }
+		static Status Make(S32 result) noexcept { return { static_cast<int>(result), GetCategory() }; }
+
+		const char* name() const noexcept override { return "Opus Error"; }
+		std::string message(int condition) const override;
+	};
 }
 
 #define ZE_FLAC_DECODER_INIT_ERROR(result) ZE::SFX::FileError::FlacDecoderInit::Make(result)
 #define ZE_FLAC_DECODER_ERROR(result) ZE::SFX::FileError::FlacDecoderError::Make(result)
 #define ZE_VORBIS_ERROR(result) ZE::SFX::FileError::VorbisError::Make(result)
+#define ZE_OPUS_ERROR(result) ZE::SFX::FileError::OpusError::Make(result)

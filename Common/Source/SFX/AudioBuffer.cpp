@@ -3,7 +3,7 @@
 #include "IO/WAV/Utils.h"
 ZE_WARNING_PUSH
 #include "vorbis/vorbisfile.h"
-#include "opus.h"
+#include "opusfile.h"
 ZE_WARNING_POP
 
 namespace ZE::SFX
@@ -311,57 +311,57 @@ namespace ZE::SFX
 						case 7:
 						case 8:
 						{
-								// All require swapping FC and FR order
+							// All require swapping FC and FR order
 							channelMapping[0] = 0;
 							channelMapping[1] = 2;
 							channelMapping[2] = 1;
 
-								switch (streamInfo->channels)
-								{
-								default:
+							switch (streamInfo->channels)
+							{
+							default:
 							case 3:
-									// Source: FL, FC, FR
-									// Dest:   FL, FR, FC
+								// Source: FL, FC, FR
+								// Dest:   FL, FR, FC
 								break;
 							case 5:
 							{
-									// Source: FL, FC, FR, BL, BR
-									// Dest:   FL, FR, FC, BL, BR
+								// Source: FL, FC, FR, BL, BR
+								// Dest:   FL, FR, FC, BL, BR
 								channelMapping[3] = 3;
 								channelMapping[4] = 4;
-									break;
+								break;
 							}
-								case 6:
-								{
-									// Source: FL, FC, FR, BL, BR, LFE
-									// Dest:   FL, FR, FC, LFE, BL, BR
+							case 6:
+							{
+								// Source: FL, FC, FR, BL, BR, LFE
+								// Dest:   FL, FR, FC, LFE, BL, BR
 								channelMapping[3] = 4;
 								channelMapping[4] = 5;
 								channelMapping[5] = 3;
-									break;
-								}
-								case 7:
-								{
-									// Source: FL, FC, FR, SL, SR, BC, LFE
-									// Dest:   FL, FR, FC, LFE, BC, SL, SR
+								break;
+							}
+							case 7:
+							{
+								// Source: FL, FC, FR, SL, SR, BC, LFE
+								// Dest:   FL, FR, FC, LFE, BC, SL, SR
 								channelMapping[3] = 5;
 								channelMapping[4] = 6;
 								channelMapping[5] = 4;
 								channelMapping[6] = 3;
-									break;
-								}
-								case 8:
-								{
-									// Source: FL, FC, FR, SL, SR, BL, BR, LFE
-									// Dest:   FL, FR, FC, LFE, BL, BR, SL, SR
+								break;
+							}
+							case 8:
+							{
+								// Source: FL, FC, FR, SL, SR, BL, BR, LFE
+								// Dest:   FL, FR, FC, LFE, BL, BR, SL, SR
 								channelMapping[3] = 6;
 								channelMapping[4] = 7;
 								channelMapping[5] = 4;
 								channelMapping[6] = 5;
 								channelMapping[7] = 3;
-									break;
-								}
-								}
+								break;
+							}
+							}
 							break;
 						}
 						}
@@ -415,6 +415,57 @@ namespace ZE::SFX
 		}
 		case FileSourceType::Opus:
 		{
+			struct OpusCtx
+			{
+				IO::File& File;
+				U64 RegionSize = 0;
+				Status Code;
+				U64 ReadOffset = 0;
+			};
+
+			OpusCtx ctx = { file, regionSize };
+			OpusFileCallbacks opusCallbacks = {};
+			opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bufferSize) noexcept -> int
+				{
+					return 0;
+				};
+			opusCallbacks.seek = [](void* ctx, opus_int64 offset, int whence) noexcept -> int
+				{
+					return 0;
+				};
+			opusCallbacks.tell = [](void* ctx) noexcept -> opus_int64
+				{
+					return 0;
+				};
+			opusCallbacks.close = nullptr;
+
+			int error = 0;
+			OggOpusFile* decoder = op_open_callbacks(&ctx, &opusCallbacks, nullptr, 0, &error);
+			if (decoder)
+			{
+				ZE_ASSERT(op_link_count(decoder) == 1, "By default only single link streams are supported!");
+				
+				S64 samples = op_pcm_total(decoder, -1);
+				if (samples > 0)
+				{
+					U8 channelCount = Utils::SafeCast<U8>(op_channel_count(decoder, -1));
+
+					buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * channelCount);
+					buffer.Desc.SampleRate = 48000;
+					buffer.Desc.Channels = GetDefaultMask(channelCount);
+					buffer.Desc.BitsPerSample = 32;
+					buffer.Desc.IsFloat = true;
+				}
+				else
+					ctx.Code = ZE_OPUS_ERROR(Utils::SafeCast<S32>(samples));
+
+				op_free(decoder);
+			}
+			else
+				ctx.Code = ZE_OPUS_ERROR(error);
+
+			if (ctx.Code)
+				return std::unexpected(ctx.Code);
 			break;
 		}
 		}
