@@ -22,9 +22,13 @@
 #if !_ZE_MODE_RELEASE
 // Assert allowing debug break
 #	define ZE_BREAK() ZE::Intrin::DebugBreak()
+// Assert allowing for debug break when condition is met
+#	define ZE_BREAK_IF(condition) do { if (condition) ZE::Intrin::DebugBreak(); } while (false)
 #else
 // Assert allowing debug break
 #	define ZE_BREAK() ((void)0)
+// Assert allowing for debug break when condition is met
+#	define ZE_BREAK_IF(condition) ((void)0)
 #endif
 
 // Regular debug assert

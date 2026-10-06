@@ -10,7 +10,8 @@ namespace ZE
 		std::shared_mutex* lock = nullptr;
 
 	public:
-		constexpr LockGuard(std::shared_mutex& mutex, bool aquireLock = true) noexcept;
+		constexpr LockGuard(std::shared_mutex& mutex, bool aquireLock = true) noexcept : LockGuard(&mutex, aquireLock) {}
+		constexpr LockGuard(std::shared_mutex* mutex, bool aquireLock = true) noexcept;
 		ZE_CLASS_DELETE(LockGuard);
 		~LockGuard();
 	};
@@ -22,15 +23,15 @@ namespace ZE
 
 #pragma region Functions
 	template<bool SHARED>
-	constexpr LockGuard<SHARED>::LockGuard(std::shared_mutex& mutex, bool aquireLock) noexcept
+	constexpr LockGuard<SHARED>::LockGuard(std::shared_mutex* mutex, bool aquireLock) noexcept
 	{
 		if (aquireLock)
 		{
-			lock = &mutex;
+			lock = mutex;
 			if constexpr (SHARED)
-				mutex.lock_shared();
+				lock->lock_shared();
 			else
-				mutex.lock();
+				lock->lock();
 		}
 	}
 
