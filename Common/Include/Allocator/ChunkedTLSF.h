@@ -127,6 +127,8 @@ namespace ZE::Allocator
 		void Free(AllocHandle allocation, void* memoryUserData) noexcept;
 		// Delete allocated chunks not used by any allocation (only by null block), required to call before destruction of allocator
 		void DestroyFreeChunks(void* memoryUserData) noexcept;
+		// Check if there are no holes or memory leaks inside the allocator
+		bool ValidateIntegrity() noexcept;
 	};
 
 #pragma region Functions
@@ -594,27 +596,35 @@ namespace ZE::Allocator
 						chunkAllocator->Free(next->ChunkHandle);
 						next->ChunkHandle = nullptr;
 
-						// Delete whole block
-						if (prev)
+						// Remove block from the chain
+						prev = next->PrevPhysical;
+						if (prev != nullptr)
 							prev->NextPhysical = next->NextPhysical;
-						if (next->NextPhysical)
-							next->NextPhysical->PrevPhysical = prev;
 
 						// Setup new null block
 						if (next == nullBlock)
 						{
-							ZE_ASSERT(prev, "Trying to remove chunk when there is no more left!");
+							ZE_ASSERT(next->NextPhysical == nullptr, "Null block should be at the end of the chain!");
 
 							if (prev->IsFree())
 							{
-								RemoveFreeBlock(prev);
+								blockAllocator->Free(next);
 								nullBlock = prev;
 							}
 							else
 							{
+								nullBlock->Offset = prev->Offset + prev->Size;
 								nullBlock->Size = 0;
 								nullBlock->ChunkHandle = prev->ChunkHandle;
 							}
+						}
+						else
+						{
+							ZE_ASSERT(next->NextPhysical, "There should be next block since this is not a null block!");
+
+							next->NextPhysical->PrevPhysical = prev;
+							RemoveFreeBlock(next);
+							blockAllocator->Free(next);
 						}
 					}
 					else
@@ -633,6 +643,53 @@ namespace ZE::Allocator
 			chunkAllocator->Free(nullBlock->ChunkHandle);
 			nullBlock->ChunkHandle = nullptr;
 		}
+	}
+
+	ZE_CHUNKED_TLSF_TEMPLATE
+	bool ZE_CHUNKED_TLSF_TYPE::ValidateIntegrity() noexcept
+	{
+		Block* curr = nullBlock;
+		if (nullBlock && nullBlock->Offset + nullBlock->Size != chunkSize)
+		{
+			ZE_FAIL("Failed integrity check: null block is not at the end!");
+			return false;
+		}
+		while (curr)
+		{
+			Block* prev = curr->PrevPhysical;
+
+			if (prev)
+			{
+				if (prev->ChunkHandle == curr->ChunkHandle)
+				{
+					if (prev->Offset + prev->Size != curr->Offset)
+					{
+						ZE_FAIL("Failed integrity check: physical blocks are not continuous!");
+						return false;
+					}
+				}
+				else
+				{
+					if (curr->Offset != 0)
+					{
+						ZE_FAIL("Failed integrity check: block offset at chunk start is not 0!");
+						return false;
+					}
+					if (prev->Offset + prev->Size != chunkSize)
+					{
+						ZE_FAIL("Failed integrity check: last block of the chunk is not at the end!");
+						return false;
+					}
+				}
+			}
+			else if (curr->Offset != 0)
+			{
+				ZE_FAIL("Failed integrity check: first block offset is not 0!");
+				return false;
+			}
+			curr = prev;
+		}
+		return true;
 	}
 #pragma endregion
 }
